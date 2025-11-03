@@ -1,20 +1,61 @@
-// Root-level variables (custom DSL)
-$primary: #5b21b6;
-$bg: #f8fafc;
+import ./theme-def.uxdsl;
 
 /* Standard CSS compatible with the plugin's substitution */
 body {
   display: grid;
   padding: xs(6px) lg(20px);
   margin: 0;
-  background: $bg;
-  color: #111827;
+  background: theme(primary.dark);
+  color: theme(primary.contrast);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans,
     'Apple Color Emoji', 'Segoe UI Emoji';
+  /* Avoid accidental horizontal scroll during resize */
+  overflow-x: hidden;
 }
 
 .hello {
-  color: $primary;
+  color: theme(primary.contrast);
   font-weight: 600;
   letter-spacing: 0.25px;
+}
+
+.app {
+  box-sizing: border-box;
+  max-width: 1040px;
+  width: 100%;
+  margin: 0 auto;
+  padding: xs(12px) lg(24px);
+}
+
+.grid {
+  display: grid;
+  /* Flexible columns that won’t overflow when resizing */
+  grid-template-columns: xs(1fr) lg(repeat(auto-fit, minmax(240px, 1fr)));
+  gap: xs(12px) lg(16px);
+  align-items: stretch;
+}
+
+.card {
+  border-radius: 10px;
+  padding: xs(12px) lg(16px);
+  color: theme(primary.contrast);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+  /* Make large lists smooth without JS: */
+  content-visibility: auto;
+  contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */
+}
+
+.card--light { background: theme(primary.light); }
+.card--main  { background: theme(primary.main); }
+.card--dark  { background: theme(primary.dark); }
+
+.card__title {
+  margin: 0 0 8px 0;
+  font-size: 1.1rem;
+}
+
+.card__meta {
+  margin: 0;
+  opacity: 0.9;
+  font-size: 0.9rem;
 }

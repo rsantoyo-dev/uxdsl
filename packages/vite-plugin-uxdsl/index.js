@@ -8,6 +8,7 @@ const path = require('path');
 const { createRequire } = require('module');
 
 let projectRoot = process.cwd();
+let isDev = false;
 
 function getPostcss() {
   // Try local resolution first
@@ -56,6 +57,7 @@ function uxdslPlugin(userOptions = {}) {
     enforce: 'pre',
     configResolved(config) {
       projectRoot = config.root || projectRoot;
+      isDev = config.command === 'serve' || config.mode === 'development';
     },
     resolveId(id, importer) {
       if (id && id.endsWith('.uxdsl')) {
@@ -69,31 +71,81 @@ function uxdslPlugin(userOptions = {}) {
       const source = fs.readFileSync(id, 'utf-8');
       const cleaned = stripLineComments(source);
 
+      // Inline simple imports so authors can keep everything in UXDSL only
+      const visited = new Set();
+      const self = this;
+      function inlineImports(fileId, content) {
+        visited.add(fileId);
+        const lines = content.split(/\r?\n/);
+        const out = [];
+        const importRe = /^\s*(?:@import|@use|import)\s+(?:["']?)([^"';]+\.uxdsl)(?:["']?)\s*;?\s*$/;
+        for (const line of lines) {
+          const m = line.match(importRe);
+          if (m) {
+            const rel = m[1];
+            const dep = path.resolve(path.dirname(fileId), rel);
+            if (fs.existsSync(dep)) {
+              try { self.addWatchFile(dep); } catch {}
+              const depSrc = fs.readFileSync(dep, 'utf-8');
+              const depClean = stripLineComments(depSrc);
+              out.push(inlineImports(dep, depClean));
+              continue;
+            }
+          }
+          out.push(line);
+        }
+        return out.join('\n');
+      }
+      const inlined = inlineImports(id, cleaned);
+
       // Lazy require to avoid resolution issues during SSR build
       let uxdsl;
       try {
-        // Prefer local workspace package name
-        uxdsl = require('postcss-uxdsl');
+        // Prefer local workspace build output if present (for live dev)
+        const localDist = path.resolve(__dirname, '../postcss-uxdsl/dist/index.js');
+        if (fs.existsSync(localDist)) {
+          try { delete require.cache[localDist]; } catch {}
+          uxdsl = require(localDist);
+        } else {
+          uxdsl = require('postcss-uxdsl');
+        }
       } catch (e) {
-        // Fallback: relative require in monorepo
+        // Last resort: relative require in monorepo structure
         const alt = path.resolve(__dirname, '../postcss-uxdsl/index.js');
         uxdsl = require(alt);
       }
 
       const postcss = getPostcss();
-      const result = await postcss([uxdsl(userOptions)]).process(cleaned, {
-        from: id,
-        map: false,
-      });
-      const css = result.css;
+      // Support CJS default export, ESM default, or direct plugin object
+      let pluginInstance;
+      if (typeof uxdsl === 'function') {
+        pluginInstance = uxdsl(userOptions);
+      } else if (uxdsl && typeof uxdsl.default === 'function') {
+        pluginInstance = uxdsl.default(userOptions);
+      } else if (uxdsl && typeof uxdsl === 'object' && uxdsl.postcss === true) {
+        pluginInstance = uxdsl;
+      } else {
+        throw new Error('vite-plugin-uxdsl: Loaded postcss-uxdsl but it was not a plugin factory');
+      }
 
-      // Inject CSS at runtime and export it for potential debugging
+      const result = await postcss([pluginInstance]).process(inlined, {
+        from: id,
+        map: isDev ? { inline: true, annotation: false, sourcesContent: true } : false,
+      });
+      const css = result.css + (isDev ? `\n/*# sourceURL=${id} */` : '');
+
+      // Inject CSS at runtime, replacing existing tag on HMR to avoid duplicates
       const code = `const css = ${JSON.stringify(css)};\n` +
         `if (typeof document !== 'undefined') {\n` +
-        `  const s = document.createElement('style');\n` +
-        `  s.setAttribute('data-uxdsl', ${JSON.stringify(id)});\n` +
+        `  const sel = 'style[data-uxdsl=' + JSON.stringify(${JSON.stringify(id)}) + ']';\n` +
+        `  let s = document.querySelector(sel);\n` +
+        `  if (!s) {\n` +
+        `    s = document.createElement('style');\n` +
+        `    s.setAttribute('data-uxdsl', ${JSON.stringify(id)});\n` +
+        (isDev ? `    s.setAttribute('data-source-url', ${JSON.stringify(id)});\n` : '') +
+        `    document.head.appendChild(s);\n` +
+        `  }\n` +
         `  s.textContent = css;\n` +
-        `  document.head.appendChild(s);\n` +
         `}\n` +
         `export default css;`;
 
