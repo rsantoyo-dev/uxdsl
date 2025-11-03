@@ -1,0 +1,19 @@
+// Root-level variables (custom DSL)
+$primary: #5b21b6;
+$bg: #f8fafc;
+
+/* Standard CSS compatible with the plugin's substitution */
+body {
+  margin: 0;
+  background: $bg;
+  color: #111827;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans,
+    'Apple Color Emoji', 'Segoe UI Emoji';
+}
+
+.hello {
+  color: $primary;
+  font-weight: 600;
+  letter-spacing: 0.25px;
+}
+

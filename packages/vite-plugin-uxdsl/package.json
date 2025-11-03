@@ -1,0 +1,16 @@
+{
+  "name": "vite-plugin-uxdsl",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "Vite loader for .uxdsl files",
+  "dependencies": {
+    "postcss": "^8.5.6",
+    "postcss-uxdsl": "file:../postcss-uxdsl"
+  }
+}
