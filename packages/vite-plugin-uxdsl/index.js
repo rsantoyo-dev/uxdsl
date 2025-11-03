@@ -50,7 +50,7 @@ function stripLineComments(input) {
     .join('\n');
 }
 
-function uxdslPlugin() {
+function uxdslPlugin(userOptions = {}) {
   return {
     name: 'vite-plugin-uxdsl',
     enforce: 'pre',
@@ -81,7 +81,7 @@ function uxdslPlugin() {
       }
 
       const postcss = getPostcss();
-      const result = await postcss([uxdsl()]).process(cleaned, {
+      const result = await postcss([uxdsl(userOptions)]).process(cleaned, {
         from: id,
         map: false,
       });
