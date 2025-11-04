@@ -1,6 +1,12 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function App() {
+  const [mode, setMode] = useState('auto'); // 'auto' | 'light' | 'dark'
+
+  useEffect(() => {
+    const root = document.documentElement;
+    
+  });
   const COUNT = 10000;
   const variants = ['light', 'main', 'dark'];
   const cards = Array.from({ length: COUNT }, (_, i) => {
@@ -16,6 +22,7 @@ export default function App() {
   return (
     <div className="app">
       <h1 className="hello">UXDSL Theme Demo</h1>
+      
       <p>
         Tokens via <code>theme(primary.*)</code>; responsive via <code>xs()/lg()</code>.
       </p>

@@ -10,7 +10,8 @@ const postcss = require('postcss');
 const valueParser = require('postcss-value-parser');
 
 const DEFAULT_BPS = { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
-const defaultThemeVar = (path) => `var(--${String(path).trim().replace(/\./g, '-')})`;
+// Map theme(foo.bar) -> var(--dsl__theme__foo-bar)
+const defaultThemeVar = (path) => `var(--dsl__theme__${String(path).trim().replace(/\./g, '-')})`;
 
 function normalizeBreakpoints(input) {
   if (!input) return { map: { ...DEFAULT_BPS }, ordered: Object.entries(DEFAULT_BPS).map(([n, px]) => ({ name: n, px })) };

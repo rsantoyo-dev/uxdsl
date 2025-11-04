@@ -10,6 +10,21 @@ const { createRequire } = require('module');
 let projectRoot = process.cwd();
 let isDev = false;
 
+function resolveDefaultThemeFile() {
+  try {
+    const pkgPath = require.resolve('postcss-uxdsl');
+    const baseDir = path.dirname(pkgPath);
+    const candidates = [
+      path.resolve(baseDir, 'src/theme/default-palette.css'),
+      path.resolve(baseDir, 'dist/theme/default-palette.css'),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) return f;
+    }
+  } catch {}
+  return '';
+}
+
 function getPostcss() {
   // Try local resolution first
   try {
@@ -134,9 +149,23 @@ function uxdslPlugin(userOptions = {}) {
       });
       const css = result.css + (isDev ? `\n/*# sourceURL=${id} */` : '');
 
+      // Load default palette CSS and watch it in dev so edits apply live
+      let themeCss = '';
+      const themeFile = resolveDefaultThemeFile();
+      if (themeFile) {
+        try { this.addWatchFile(themeFile); } catch {}
+        try { themeCss = fs.readFileSync(themeFile, 'utf-8'); } catch {}
+      }
+
       // Inject CSS at runtime, replacing existing tag on HMR to avoid duplicates
       const code = `const css = ${JSON.stringify(css)};\n` +
+        `const themeCss = ${JSON.stringify(themeCss)};\n` +
         `if (typeof document !== 'undefined') {\n` +
+        `  if (themeCss) {\n` +
+        `    let t = document.querySelector('style[data-uxdsl-theme="default-palette"]');\n` +
+        `    if (!t) { t = document.createElement('style'); t.setAttribute('data-uxdsl-theme', 'default-palette'); document.head.appendChild(t); }\n` +
+        `    if (t.textContent !== themeCss) t.textContent = themeCss;\n` +
+        `  }\n` +
         `  const sel = 'style[data-uxdsl=' + JSON.stringify(${JSON.stringify(id)}) + ']';\n` +
         `  let s = document.querySelector(sel);\n` +
         `  if (!s) {\n` +

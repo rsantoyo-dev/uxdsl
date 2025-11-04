@@ -5,8 +5,9 @@ body {
   display: grid;
   padding: xs(6px) lg(20px);
   margin: 0;
-  background: theme(primary.dark);
-  color: theme(primary.contrast);
+  background: theme(light);
+  color: theme(light.contrast);
+  color-scheme: light dark;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans,
     'Apple Color Emoji', 'Segoe UI Emoji';
   /* Avoid accidental horizontal scroll during resize */
@@ -14,7 +15,6 @@ body {
 }
 
 .hello {
-  color: theme(primary.contrast);
   font-weight: 600;
   letter-spacing: 0.25px;
 }
@@ -25,6 +25,19 @@ body {
   width: 100%;
   margin: 0 auto;
   padding: xs(12px) lg(24px);
+}
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 12px;
+}
+
+.toolbar label {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .grid {

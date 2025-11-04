@@ -1,0 +1,103 @@
+:root {
+  /* Primary */
+  --dsl__theme__primary-main: #2C415C;
+  --dsl__theme__primary-light: #8AA7BA;
+  --dsl__theme__primary-dark: #25374E;
+  --dsl__theme__primary-contrast: #FFFFFF;
+
+  /* Surfaces (app background + text) */
+  --dsl__theme__surface-main: #FFFFFF;
+  --dsl__theme__surface-contrast: #0B1220;
+
+  /* Secondary */
+  --dsl__theme__secondary-main: #475569;
+  --dsl__theme__secondary-light: #94A3B8;
+  --dsl__theme__secondary-dark: #334155;
+  --dsl__theme__secondary-contrast: #FFFFFF;
+
+  /* Tertiary */
+  --dsl__theme__tertiary-main: #CBD5E1;
+  --dsl__theme__tertiary-light: #E2E8F0;
+  --dsl__theme__tertiary-dark: #94A3B8;
+  --dsl__theme__tertiary-contrast: #000000;
+
+  /* Success */
+  --dsl__theme__success-main: #166534;
+  --dsl__theme__success-light: #15803D;
+  --dsl__theme__success-dark: #166534;
+  --dsl__theme__success-contrast: #FFFFFF;
+
+  /* Info */
+  --dsl__theme__info-main: #2563EB;
+  --dsl__theme__info-light: #3B82F6;
+  --dsl__theme__info-dark: #2563EB;
+  --dsl__theme__info-contrast: #FFFFFF;
+
+  /* Warning */
+  --dsl__theme__warning-main: #F59E0B;
+  --dsl__theme__warning-light: #F59E0B;
+  --dsl__theme__warning-dark: #D97706;
+  --dsl__theme__warning-contrast: #0B1220;
+
+  /* Error */
+  --dsl__theme__error-main: #C61625;
+  --dsl__theme__error-light: #EC1B2E;
+  --dsl__theme__error-dark: #C61625;
+  --dsl__theme__error-contrast: #FFFFFF;
+
+  /* Dark */
+  --dsl__theme__dark-main: #ff0000;
+  --dsl__theme__dark-light: #475569;
+  --dsl__theme__dark-dark: #0B1220;
+  --dsl__theme__dark-contrast: #FFFFFF;
+
+  /* Neutral */
+  --dsl__theme__neutral-main: #E2E8F0;
+  --dsl__theme__neutral-light: #F8FAFC;
+  --dsl__theme__neutral-dark: #CBD5E1;
+  --dsl__theme__neutral-contrast: #0B1220;
+
+  /* Light */
+  --dsl__theme__light-main: #FFFFFF;
+  --dsl__theme__light-light: #F8FAFC;
+  --dsl__theme__light-dark: #F1F5F9;
+  --dsl__theme__light-contrast: #0B1220;
+}
+
+/* Hint to the browser that both color schemes are supported */
+html { color-scheme: light dark; }
+
+/* Respect system preference: switch primary tokens in dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dsl__theme__primary-main: #1F2937;
+    --dsl__theme__primary-light: #475569;
+    --dsl__theme__primary-dark: #0B1220;
+    --dsl__theme__primary-contrast: #FFFFFF;
+
+    --dsl__theme__surface-main: #0B1220;
+    --dsl__theme__surface-contrast: #FFFFFF;
+  }
+}
+
+/* Manual override via attribute on <html> (aka :root) */
+html[data-dsl-theme="dark"] {
+  --dsl__theme__primary-main: #1F2937;
+  --dsl__theme__primary-light: #475569;
+  --dsl__theme__primary-dark: #0B1220;
+  --dsl__theme__primary-contrast: #FFFFFF;
+
+  --dsl__theme__surface-main: #0B1220;
+  --dsl__theme__surface-contrast: #FFFFFF;
+}
+
+/* Force-light override even if the system prefers dark */
+html[data-dsl-theme="light"] {
+  --dsl__theme__primary-main: #2C415C;
+  --dsl__theme__primary-light: #8AA7BA;
+  --dsl__theme__primary-dark: #25374E;
+  --dsl__theme__primary-contrast: #FFFFFF;
+
+  --dsl__theme__surface-main: #FFFFFF;
+  --dsl__theme__surface-contrast: #0B1220;
+}

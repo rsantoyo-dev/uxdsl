@@ -1,5 +1,4 @@
 // Minimal theme overrides (optional)
 $dsl_theme_bp_md: 560px;
 
-//$dsl_theme_primary_contrast: #e11a1aff;
-
+$dsl_theme_primary_contrast: #def;
