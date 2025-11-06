@@ -125,6 +125,24 @@ export default function App() {
       <p>
         Tokens via <code>palette(primary.*)</code>; responsive via <code>xs()/lg()</code>.
       </p>
+      <div className="showcase">
+        <div className="showcase__box">
+          <strong>Badges</strong>
+          <div className="showcase__stack">
+            <span className="badge">New</span>
+            <span className="badge">Sale</span>
+            <span className="badge">Limited</span>
+            <span className="badge">Beta</span>
+          </div>
+          <div className="vis vis--mobile">Mobile view</div>
+          <div className="vis vis--desktop">Desktop view</div>
+          <button className="cta">Call to action</button>
+        </div>
+        <div className="showcase__box">
+          <strong>Layout</strong>
+          <p>Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
+        </div>
+      </div>
       <div className="grid">{cards}</div>
     </div>
   );

@@ -6,6 +6,7 @@
   /* Make large lists smooth without JS: */
   content-visibility: auto;
   contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */
+  min-width: 0; /* prevent inline overflow */
 }
 
 .card--light { background: palette(primary-light); }

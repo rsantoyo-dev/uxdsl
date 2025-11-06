@@ -3,6 +3,11 @@
 @import './theme-def.uxdsl';
 
 /* Standard CSS compatible with the plugin's substitution */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { width: 100%; }
+code, pre { overflow-wrap: anywhere; white-space: pre-wrap; }
+img, video, svg { max-width: 100%; height: auto; }
+
 body {
   display: grid;
   padding: xs(6px) lg(20px);
@@ -27,6 +32,8 @@ body {
   width: 100%;
   margin: 0 auto;
   padding: xs(12px) lg(24px);
+  min-width: 0; /* allow children to shrink */
+  overflow-wrap: anywhere; /* avoid overflow from long tokens */
 }
 
 .toolbar {
@@ -36,6 +43,7 @@ body {
   margin: 8px 0 12px;
   /* Prevent horizontal overflow on small screens */
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .toolbar label {
@@ -53,5 +61,62 @@ body {
   /* Allow content to shrink and avoid overflow */
   min-width: 0;
 }
+
+/* Responsive showcase demonstrating multiple properties */
+.showcase {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: xs(8px) lg(16px);
+  align-items: stretch;
+  margin: 12px 0 16px;
+  min-width: 0;
+}
+
+.showcase__box {
+  flex: 1 1 0%;
+  background: xs(palette(light-main)) md(palette(tertiary-light)) lg(palette(primary-light));
+  color: palette(surface-contrast);
+  padding: xs(8px) md(12px) lg(16px);
+  border-radius: xs(8px) lg(12px);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+  min-width: 0;
+}
+
+.showcase__stack {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: xs(6px) lg(12px);
+  flex-wrap: wrap;
+  margin: 8px 0;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  background: xs(palette(primary-light)) lg(palette(primary-dark));
+  color: palette(primary-contrast);
+  border-radius: xs(6px) md(999px);
+  padding: xs(4px 6px) lg(6px 10px);
+  font-weight: 600;
+  letter-spacing: 0.25px;
+}
+
+.vis { font-size: 0.9rem; opacity: 0.9; }
+.vis--mobile { display: xs(block) lg(none); }
+.vis--desktop { display: xs(none) lg(block); }
+
+.cta {
+  margin-top: 8px;
+  display: inline-block;
+  background: palette(primary-main);
+  color: palette(primary-contrast);
+  border: none;
+  border-radius: 8px;
+  padding: xs(8px 10px) md(10px 14px) lg(12px 16px);
+  font-size: xs(14px) md(16px) lg(18px);
+  cursor: pointer;
+}
+
+.cta:hover { filter: brightness(0.95); }
 
 /* Card-specific styles moved to components/Card.uxdsl */
