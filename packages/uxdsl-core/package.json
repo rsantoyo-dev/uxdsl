@@ -1,0 +1,30 @@
+{
+  "name": "uxdsl-core",
+  "version": "0.0.5",
+  "description": "Core processing engine for UXDSL - a lightweight CSS DSL for design systems",
+  "main": "index.js",
+  "keywords": [
+    "css",
+    "dsl",
+    "design-system",
+    "postcss",
+    "uxdsl",
+    "lightweight"
+  ],
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/uxdsl-core"
+  },
+  "bugs": {
+    "url": "https://github.com/rsantoyo-dev/uxdsl/issues"
+  },
+  "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
+  "dependencies": {
+    "postcss": "^8.5.6",
+    "postcss-value-parser": "^4.2.0",
+    "postcss-uxdsl": "^0.0.3"
+  }
+}

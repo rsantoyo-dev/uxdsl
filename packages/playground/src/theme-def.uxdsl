@@ -1,4 +1,14 @@
-// Minimal theme overrides (optional)
-$dsl_theme_bp_md: 560px;
+/* App-level theme overrides (hyphen alias variables). These override the
+   default palette injected by the plugin. You can tweak any tokens here. */
 
-$dsl_theme_primary_contrast: #def;
+:root {
+  /* Brand primary */
+  --primary-main: #ffe015;      /* blue-500 */
+
+}
+
+/* Respect system preference: switch primary tokens in dark mode */
+@media (prefers-color-scheme: dark) {
+  :root {
+  --primary-main: #4be07d;
+}   }

@@ -6,6 +6,19 @@
 const fs = require('fs');
 const path = require('path');
 const { createRequire } = require('module');
+let processUxdsl;
+try {
+  processUxdsl = require('uxdsl-core');
+} catch (err) {
+  try {
+    const resolved = require.resolve('uxdsl-core', { paths: [__dirname] });
+    processUxdsl = require(resolved);
+  } catch {
+    // Fallback for monorepo/dev setups where the package isn't installed yet
+    const localPath = path.resolve(__dirname, '../uxdsl-core');
+    processUxdsl = require(localPath);
+  }
+}
 
 let projectRoot = process.cwd();
 let isDev = false;
@@ -13,10 +26,17 @@ let isDev = false;
 function resolveDefaultThemeFile() {
   try {
     const pkgPath = require.resolve('postcss-uxdsl');
-    const baseDir = path.dirname(pkgPath);
+    const resolvedDir = path.dirname(pkgPath); // may be package root or dist/
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, 'package.json'))
+      ? resolvedDir
+      : path.resolve(resolvedDir, '..');
     const candidates = [
-      path.resolve(baseDir, 'src/theme/default-palette.css'),
-      path.resolve(baseDir, 'dist/theme/default-palette.css'),
+      // package root src (monorepo/dev)
+      path.resolve(pkgRoot, 'src/theme/default-palette.css'),
+      // package root dist (published)
+      path.resolve(pkgRoot, 'dist/theme/default-palette.css'),
+      // resolved dir sibling 'theme' (if main points to dist/index.js and theme shipped alongside)
+      path.resolve(resolvedDir, 'theme/default-palette.css'),
     ];
     for (const f of candidates) {
       if (fs.existsSync(f)) return f;
@@ -84,70 +104,11 @@ function uxdslPlugin(userOptions = {}) {
       if (!id.endsWith('.uxdsl')) return null;
 
       const source = fs.readFileSync(id, 'utf-8');
-      const cleaned = stripLineComments(source);
 
-      // Inline simple imports so authors can keep everything in UXDSL only
-      const visited = new Set();
-      const self = this;
-      function inlineImports(fileId, content) {
-        visited.add(fileId);
-        const lines = content.split(/\r?\n/);
-        const out = [];
-        const importRe = /^\s*(?:@import|@use|import)\s+(?:["']?)([^"';]+\.uxdsl)(?:["']?)\s*;?\s*$/;
-        for (const line of lines) {
-          const m = line.match(importRe);
-          if (m) {
-            const rel = m[1];
-            const dep = path.resolve(path.dirname(fileId), rel);
-            if (fs.existsSync(dep)) {
-              try { self.addWatchFile(dep); } catch {}
-              const depSrc = fs.readFileSync(dep, 'utf-8');
-              const depClean = stripLineComments(depSrc);
-              out.push(inlineImports(dep, depClean));
-              continue;
-            }
-          }
-          out.push(line);
-        }
-        return out.join('\n');
-      }
-      const inlined = inlineImports(id, cleaned);
+      // Process with core
+      const css = await processUxdsl(source, { ...userOptions, fileId: id });
 
-      // Lazy require to avoid resolution issues during SSR build
-      let uxdsl;
-      try {
-        // Prefer local workspace build output if present (for live dev)
-        const localDist = path.resolve(__dirname, '../postcss-uxdsl/dist/index.js');
-        if (fs.existsSync(localDist)) {
-          try { delete require.cache[localDist]; } catch {}
-          uxdsl = require(localDist);
-        } else {
-          uxdsl = require('postcss-uxdsl');
-        }
-      } catch (e) {
-        // Last resort: relative require in monorepo structure
-        const alt = path.resolve(__dirname, '../postcss-uxdsl/index.js');
-        uxdsl = require(alt);
-      }
-
-      const postcss = getPostcss();
-      // Support CJS default export, ESM default, or direct plugin object
-      let pluginInstance;
-      if (typeof uxdsl === 'function') {
-        pluginInstance = uxdsl(userOptions);
-      } else if (uxdsl && typeof uxdsl.default === 'function') {
-        pluginInstance = uxdsl.default(userOptions);
-      } else if (uxdsl && typeof uxdsl === 'object' && uxdsl.postcss === true) {
-        pluginInstance = uxdsl;
-      } else {
-        throw new Error('vite-plugin-uxdsl: Loaded postcss-uxdsl but it was not a plugin factory');
-      }
-
-      const result = await postcss([pluginInstance]).process(inlined, {
-        from: id,
-        map: isDev ? { inline: true, annotation: false, sourcesContent: true } : false,
-      });
-      const css = result.css + (isDev ? `\n/*# sourceURL=${id} */` : '');
+      const finalCss = css + (isDev ? `\n/*# sourceURL=${id} */` : '');
 
       // Load default palette CSS and watch it in dev so edits apply live
       let themeCss = '';
@@ -158,7 +119,7 @@ function uxdslPlugin(userOptions = {}) {
       }
 
       // Inject CSS at runtime, replacing existing tag on HMR to avoid duplicates
-      const code = `const css = ${JSON.stringify(css)};\n` +
+      const code = `const css = ${JSON.stringify(finalCss)};\n` +
         `const themeCss = ${JSON.stringify(themeCss)};\n` +
         `if (typeof document !== 'undefined') {\n` +
         `  if (themeCss) {\n` +

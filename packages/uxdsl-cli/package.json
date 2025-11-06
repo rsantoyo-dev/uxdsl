@@ -1,0 +1,29 @@
+{
+  "name": "uxdsl-cli",
+  "version": "0.0.3",
+  "description": "CLI tool for processing UXDSL files to CSS",
+  "bin": {
+    "uxdsl": "./bin/uxdsl.js"
+  },
+  "keywords": [
+    "cli",
+    "css",
+    "dsl",
+    "uxdsl",
+    "build-tool"
+  ],
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/uxdsl-cli"
+  },
+  "bugs": {
+    "url": "https://github.com/rsantoyo-dev/uxdsl/issues"
+  },
+  "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
+  "dependencies": {
+    "uxdsl-core": "^0.0.4"
+  }
+}

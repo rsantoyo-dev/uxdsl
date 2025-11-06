@@ -1,12 +1,14 @@
-import ./theme-def.uxdsl;
+
+
+@import './theme-def.uxdsl';
 
 /* Standard CSS compatible with the plugin's substitution */
 body {
   display: grid;
   padding: xs(6px) lg(20px);
   margin: 0;
-  background: theme(light);
-  color: theme(light.contrast);
+  background: theme(light-main);
+  color: theme(light-contrast);
   color-scheme: light dark;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, Noto Sans,
     'Apple Color Emoji', 'Segoe UI Emoji';
@@ -51,16 +53,16 @@ body {
 .card {
   border-radius: 10px;
   padding: xs(12px) lg(16px);
-  color: theme(primary.contrast);
+  color: theme(primary-contrast);
   box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
   /* Make large lists smooth without JS: */
   content-visibility: auto;
   contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */
 }
 
-.card--light { background: theme(primary.light); }
-.card--main  { background: theme(primary.main); }
-.card--dark  { background: theme(primary.dark); }
+.card--light { background: theme(primary-light); }
+.card--main  { background: theme(primary-main); }
+.card--dark  { background: theme(primary-dark); }
 
 .card__title {
   margin: 0 0 8px 0;

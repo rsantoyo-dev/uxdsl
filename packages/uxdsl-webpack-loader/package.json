@@ -1,0 +1,31 @@
+{
+  "name": "uxdsl-webpack-loader",
+  "version": "0.0.3",
+  "description": "Webpack loader for UXDSL files - process .uxdsl to CSS",
+  "main": "index.js",
+  "keywords": [
+    "webpack",
+    "loader",
+    "css",
+    "dsl",
+    "uxdsl",
+    "postcss"
+  ],
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/uxdsl-webpack-loader"
+  },
+  "bugs": {
+    "url": "https://github.com/rsantoyo-dev/uxdsl/issues"
+  },
+  "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
+  "dependencies": {
+    "uxdsl-core": "^0.0.4"
+  },
+  "peerDependencies": {
+    "webpack": "^5.0.0"
+  }
+}

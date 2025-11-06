@@ -1,0 +1,31 @@
+{
+  "Responsive property (media)": {
+    "prefix": ["uxr-prop"],
+    "description": "Standard CSS media queries for a single property (works in SCSS)",
+    "body": [
+      "${1:property}: ${2:base};",
+      "@media (min-width: ${3:768}px) {",
+      "  ${4:.selector} { ${1}: ${5:md}; }",
+      "}",
+      "@media (min-width: ${6:1024}px) {",
+      "  ${4} { ${1}: ${7:lg}; }",
+      "}"
+    ]
+  },
+  "Responsive rule (media)": {
+    "prefix": ["uxr-rule"],
+    "description": "Duplicate the selector across media queries (works in SCSS)",
+    "body": [
+      "${1:.selector} {",
+      "  ${2:property}: ${3:base};",
+      "}",
+      "@media (min-width: ${4:768}px) {",
+      "  ${1} { ${2}: ${5:md}; }",
+      "}",
+      "@media (min-width: ${6:1024}px) {",
+      "  ${1} { ${2}: ${7:lg}; }",
+      "}"
+    ]
+  }
+}
+

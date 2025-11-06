@@ -1,0 +1,19 @@
+{
+  "files.associations": {
+    "*.uxdsl": "scss"
+  },
+  "css.customData": [
+    ".vscode/uxdsl.custom-data.json"
+  ],
+  "scss.customData": [
+    ".vscode/uxdsl.custom-data.json"
+  ],
+  "less.customData": [
+    ".vscode/uxdsl.custom-data.json"
+  ],
+  "css.lint.unknownAtRules": "ignore",
+  "scss.lint.unknownAtRules": "ignore",
+  "editor.colorDecorators": true,
+  "css.colorDecorators.enable": true
+}
+

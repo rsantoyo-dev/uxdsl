@@ -1,3 +1,4 @@
+
 :root {
   /* Primary */
   --dsl__theme__primary-main: #2C415C;
@@ -77,27 +78,9 @@ html { color-scheme: light dark; }
 
     --dsl__theme__surface-main: #0B1220;
     --dsl__theme__surface-contrast: #FFFFFF;
+
+      --dsl__theme__light-main: #1a1818;
+      --dsl__theme__light-contrast: #ffffff;
   }
 }
 
-/* Manual override via attribute on <html> (aka :root) */
-html[data-dsl-theme="dark"] {
-  --dsl__theme__primary-main: #1F2937;
-  --dsl__theme__primary-light: #475569;
-  --dsl__theme__primary-dark: #0B1220;
-  --dsl__theme__primary-contrast: #FFFFFF;
-
-  --dsl__theme__surface-main: #0B1220;
-  --dsl__theme__surface-contrast: #FFFFFF;
-}
-
-/* Force-light override even if the system prefers dark */
-html[data-dsl-theme="light"] {
-  --dsl__theme__primary-main: #2C415C;
-  --dsl__theme__primary-light: #8AA7BA;
-  --dsl__theme__primary-dark: #25374E;
-  --dsl__theme__primary-contrast: #FFFFFF;
-
-  --dsl__theme__surface-main: #FFFFFF;
-  --dsl__theme__surface-contrast: #0B1220;
-}
