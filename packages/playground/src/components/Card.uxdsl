@@ -1,21 +1,29 @@
+@import '../mixins.uxdsl';
+
 .card {
-  border-radius: 10px;
-  padding: xs(12px) lg(16px);
+  border-radius: $radius-md;
+  padding: var(--pad2-density-2);
   color: palette(primary-contrast);
-  box-shadow: 0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: $shadow-soft;
   /* Make large lists smooth without JS: */
   content-visibility: auto;
   contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */
   min-width: 0; /* prevent inline overflow */
 }
 
-.card--light { background: palette(primary-light); }
-.card--main  { background: palette(primary-main); }
-.card--dark  { background: palette(primary-dark); }
+.card--light {
+  background: palette(primary-light);
+}
+.card--main {
+  background: palette(primary-main);
+}
+.card--dark {
+  background: palette(primary-dark);
+}
 
 .card__title {
   margin: 0 0 8px 0;
-  font-size: 1.1rem;
+  font-size: xs(20px) lg(30px);
 }
 
 .card__meta {
@@ -23,3 +31,4 @@
   opacity: 0.9;
   font-size: 0.9rem;
 }
+ 

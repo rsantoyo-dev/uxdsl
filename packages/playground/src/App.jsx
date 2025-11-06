@@ -138,7 +138,7 @@ export default function App() {
           <div className="vis vis--desktop">Desktop view</div>
           <button className="cta">Call to action</button>
         </div>
-        <div className="showcase__box">
+        <div className="showcase__box showcase__box--grad">
           <strong>Layout</strong>
           <p>Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
         </div>
