@@ -19,6 +19,42 @@ let cachedThemeFile: string | undefined;
 let cachedThemeCss: string | null = null;
 let cachedThemeMtime: number | null = null;
 
+type BreakpointSpec =
+  | Record<string, number>
+  | Array<[string, number]>
+  | Array<{ name: string; min?: number; px?: number }>;
+
+const DEFAULT_BPS: Record<string, number> = {
+  xs: 0,
+  sm: 480,
+  md: 768,
+  lg: 1024,
+  xl: 1280,
+};
+
+function normalizeBpMap(input?: BreakpointSpec): Record<string, number> {
+  if (!input) return { ...DEFAULT_BPS };
+  if (Array.isArray(input)) {
+    const map: Record<string, number> = {};
+    input.forEach((it: any) => {
+      if (Array.isArray(it)) {
+        map[String(it[0])] = Number(it[1]);
+      } else if (it && typeof it === 'object') {
+        const name = String(it.name || '').trim();
+        const px = Number(it.min ?? it.px);
+        if (name && !Number.isNaN(px)) map[name] = px;
+      }
+    });
+    return map;
+  }
+  const map: Record<string, number> = {};
+  Object.keys(input || {}).forEach((k) => {
+    const v = (input as Record<string, number>)[k];
+    if (typeof v === 'number' && !Number.isNaN(v)) map[k] = v;
+  });
+  return map;
+}
+
 function resolveProcessUxdsl(): ProcessFn {
   if (cachedProcess) return cachedProcess;
 
@@ -174,7 +210,14 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // Process with core
       const css = await processUxdsl(source, { ...userOptions, fileId: id });
 
-      const finalCss = css + (isDev ? `\n/*# sourceURL=${id} */` : "");
+      // Embed breakpoint metadata so the runtime can adjust media queries if desired
+      const bpMap = normalizeBpMap((userOptions as any)?.breakpoints);
+      const bpMeta = `/*@uxdsl-bp ${JSON.stringify(bpMap)}*/`;
+
+      const finalCss =
+        css +
+        `\n${bpMeta}` +
+        (isDev ? `\n/*# sourceURL=${id} */` : "");
 
       // Load default palette CSS and watch it in dev so edits apply live
       let themeCss = "";

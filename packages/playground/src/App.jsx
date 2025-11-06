@@ -15,6 +15,9 @@ export default function App() {
       if (localStorage.getItem('uxdsl:palette')) {
         withRuntime(({ loadPersisted }) => loadPersisted());
       }
+      if (localStorage.getItem('uxdsl:breakpoints')) {
+        withRuntime(({ breakpoints }) => breakpoints.load());
+      }
     } catch {}
     // Snapshot initial computed tokens we care about for reset
     const doc = document.documentElement;
@@ -85,6 +88,19 @@ export default function App() {
       if (Object.keys(snap).length) applyPalette(snap, { persist: false });
     });
   }
+
+  // Demo: Breakpoint runtime controls
+  function setMd900() {
+    withRuntime(({ breakpoints }) => breakpoints.update('md', 900, { persist: true }));
+  }
+
+  function setLg1200() {
+    withRuntime(({ breakpoints }) => breakpoints.update('lg', 1200, { persist: true }));
+  }
+
+  function resetBps() {
+    withRuntime(({ breakpoints }) => breakpoints.reset(undefined, { clearPersist: true }));
+  }
   const COUNT = 5000;
   const variants = ['light', 'main', 'dark'];
   const cards = Array.from({ length: COUNT }, (_, i) => {
@@ -100,6 +116,10 @@ export default function App() {
         <button onClick={setPrimaryGreen}>Primary: Green</button>
         <button onClick={randomizePrimary}>Randomize Primary</button>
         <button onClick={clearOverrides}>Reset</button>
+        <span style={{ marginLeft: 8, opacity: 0.7 }}>|</span>
+        <button onClick={setMd900}>md = 900px</button>
+        <button onClick={setLg1200}>lg = 1200px</button>
+        <button onClick={resetBps}>Reset breakpoints</button>
       </div>
       
       <p>
