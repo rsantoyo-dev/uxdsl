@@ -1,0 +1,6 @@
+@import "./duplicate-partial.uxdsl";
+@import "./duplicate-partial.uxdsl";
+
+body {
+  color: theme(primary-main);
+}

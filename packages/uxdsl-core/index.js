@@ -23,8 +23,11 @@ function stripLineComments(input) {
     .join('\n');
 }
 
-function inlineImports(fileId, content, visited = new Set()) {
-  visited.add(fileId);
+function inlineImports(fileId, content, visited = new Set(), stack = []) {
+  if (!visited.has(fileId)) {
+    visited.add(fileId);
+  }
+  stack.push(fileId);
   const lines = content.split(/\r?\n/);
   const out = [];
   const importRe = /^\s*(?:@import|@use|import)\s+(?:["']?)([^"';]+\.uxdsl)(?:["']?)\s*;?\s*$/;
@@ -34,14 +37,23 @@ function inlineImports(fileId, content, visited = new Set()) {
       const rel = m[1];
       const dep = path.resolve(path.dirname(fileId), rel);
       if (fs.existsSync(dep)) {
+        if (stack.includes(dep)) {
+          const cycleStart = stack.indexOf(dep);
+          const cyclePath = stack.slice(cycleStart).concat(dep).map((p) => path.relative(process.cwd(), p));
+          throw new Error(`Circular import detected in UXDSL files: ${cyclePath.join(' -> ')}`);
+        }
+        if (visited.has(dep)) {
+          continue;
+        }
         const depSrc = fs.readFileSync(dep, 'utf-8');
         const depClean = stripLineComments(depSrc);
-        out.push(inlineImports(dep, depClean, visited));
+        out.push(inlineImports(dep, depClean, visited, stack));
         continue;
       }
     }
     out.push(line);
   }
+  stack.pop();
   return out.join('\n');
 }
 

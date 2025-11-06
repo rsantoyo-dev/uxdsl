@@ -1,0 +1,5 @@
+@import "./cycle-a.uxdsl";
+
+.b {
+  color: blue;
+}

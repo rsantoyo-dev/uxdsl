@@ -1,0 +1,3 @@
+:root {
+  --dup-test: 1;
+}

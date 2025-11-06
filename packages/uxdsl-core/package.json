@@ -13,6 +13,9 @@
   ],
   "author": "Ricardo Santoyo <rsantoyo-dev>",
   "license": "MIT",
+  "scripts": {
+    "test": "node test/inline-imports.test.js"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/rsantoyo-dev/uxdsl.git",

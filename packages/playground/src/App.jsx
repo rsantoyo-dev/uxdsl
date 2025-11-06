@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import Card from './components/Card.jsx';
 
 async function withRuntime(cb) {
   const mod = await import('postcss-uxdsl/runtime');
@@ -88,12 +89,7 @@ export default function App() {
   const variants = ['light', 'main', 'dark'];
   const cards = Array.from({ length: COUNT }, (_, i) => {
     const v = variants[i % variants.length];
-    return (
-      <div key={i} className={`card card--${v}`}>
-        <h2 className="card__title">Card #{i + 1}</h2>
-        <p className="card__meta">background: theme(primary.{v})</p>
-      </div>
-    );
+    return <Card key={i} index={i} variant={v} />;
   });
 
   return (
