@@ -123,7 +123,7 @@ export default function App() {
       </div>
       
       <p>
-        Tokens via <code>theme(primary.*)</code>; responsive via <code>xs()/lg()</code>.
+        Tokens via <code>palette(primary.*)</code>; responsive via <code>xs()/lg()</code>.
       </p>
       <div className="grid">{cards}</div>
     </div>

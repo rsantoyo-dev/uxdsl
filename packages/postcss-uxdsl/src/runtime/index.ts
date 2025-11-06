@@ -1,5 +1,5 @@
 // Runtime helpers for UXDSL
-// - Palette: set/get/reset CSS variables for theme()/palette()
+// - Palette: set/get/reset CSS variables consumed by palette()
 // - Breakpoints: adjust media query thresholds emitted by the UXDSL plugin at runtime
 
 const PREFIX = "dsl__theme__";

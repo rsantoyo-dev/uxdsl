@@ -17,7 +17,7 @@ export default defineConfig({
         ['lg', 1024],
         ['xl', 1280],
       ],
-      // Map theme(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__theme__foo-bar))
+      // Map palette(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__theme__foo-bar))
       // Hyphen vars for DX; canonical prefixed vars as fallback
       themeVar: (path) => {
         const hy = String(path).replace(/\./g, '-');

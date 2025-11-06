@@ -2,7 +2,7 @@
 // Features:
 // - Root-level "$var: value;" variable declarations
 // - $var substitutions inside declaration values
-// - theme(path.to.token) / palette(path-to-token) -> CSS var mapping
+// - palette(path-to-token) -> CSS var mapping
 // - Responsive value functions: xs(...), sm(...), md(...), lg(...), xl(...)
 
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
@@ -27,7 +27,7 @@ const DEFAULT_BPS: Record<string, number> = {
   xl: 1280,
 };
 
-// Map theme(foo.bar|foo-bar) -> var(--dsl__theme__foo-bar)
+// Map palette(foo.bar|foo-bar) -> var(--dsl__theme__foo-bar)
 const defaultThemeVar = (path: string) =>
   `var(--dsl__theme__${String(path).trim().replace(/\./g, "-")})`;
 
@@ -103,7 +103,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       });
 
-      // Walk declarations to handle theme()/palette() and responsive bp(...) values
+      // Walk declarations to handle palette() and responsive bp(...) values
       root.walkDecls((decl) => {
         if (typeof decl.value !== "string") return;
 
@@ -113,11 +113,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
         parsed.walk((node) => {
           const n: any = node as any;
-          // theme(foo.bar) or palette(foo-bar) -> CSS var
-          if (
-            n.type === "function" &&
-            (n.value === "theme" || n.value === "palette")
-          ) {
+          // palette(foo-bar) -> CSS var
+          if (n.type === "function" && n.value === "palette") {
             const inner = valueParser.stringify(n.nodes).trim();
             const normalized = normalizeTokenPath(inner);
             n.type = "word";
@@ -137,7 +134,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         });
 
         if (!hasResponsive) {
-          // theme()/palette() may have been rewritten above
+          // palette() may have been rewritten above
           decl.value = parsed.toString().replace(/\s+/g, " ").trim();
           return;
         }

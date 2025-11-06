@@ -162,6 +162,10 @@ function getPostcss() {
   );
 }
 
+function cleanId(id: string): string {
+  return (id || "").replace(/[?#].*$/, "");
+}
+
 function stripLineComments(input: string): string {
   // Remove // comments naively, line-by-line, ignoring those inside quotes
   return input
@@ -195,20 +199,22 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       isDev = config.command === "serve" || config.mode === "development";
     },
     resolveId(id: string, importer: string | undefined) {
-      if (id && id.endsWith(".uxdsl")) {
-        return path.isAbsolute(id)
-          ? id
-          : path.resolve(path.dirname(importer || ""), id);
+      const base = cleanId(id);
+      if (base && base.endsWith(".uxdsl")) {
+        return path.isAbsolute(base)
+          ? base
+          : path.resolve(path.dirname(importer || ""), base);
       }
       return null;
     },
     async load(id: string) {
-      if (!id.endsWith(".uxdsl")) return null;
+      const baseId = cleanId(id);
+      if (!baseId.endsWith(".uxdsl")) return null;
 
-      const source = fs.readFileSync(id, "utf-8");
+      const source = fs.readFileSync(baseId, "utf-8");
 
       // Process with core
-      const css = await processUxdsl(source, { ...userOptions, fileId: id });
+      const css = await processUxdsl(source, { ...userOptions, fileId: baseId });
 
       // Embed breakpoint metadata so the runtime can adjust media queries if desired
       const bpMap = normalizeBpMap((userOptions as any)?.breakpoints);
@@ -217,7 +223,7 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       const finalCss =
         css +
         `\n${bpMeta}` +
-        (isDev ? `\n/*# sourceURL=${id} */` : "");
+        (isDev ? `\n/*# sourceURL=${baseId} */` : "");
 
       // Load default palette CSS and watch it in dev so edits apply live
       let themeCss = "";
@@ -242,14 +248,14 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         `    if (t.textContent !== themeCss) t.textContent = themeCss;\n` +
         `  }\n` +
         `  const sel = 'style[data-uxdsl=' + JSON.stringify(${JSON.stringify(
-          id
+          baseId
         )}) + ']';\n` +
         `  let s = document.querySelector(sel);\n` +
         `  if (!s) {\n` +
         `    s = document.createElement('style');\n` +
-        `    s.setAttribute('data-uxdsl', ${JSON.stringify(id)});\n` +
+        `    s.setAttribute('data-uxdsl', ${JSON.stringify(baseId)});\n` +
         (isDev
-          ? `    s.setAttribute('data-source-url', ${JSON.stringify(id)});\n`
+          ? `    s.setAttribute('data-source-url', ${JSON.stringify(baseId)});\n`
           : "") +
         `    document.head.appendChild(s);\n` +
         `  }\n` +

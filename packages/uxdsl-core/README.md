@@ -15,7 +15,7 @@ const processUxdsl = require('uxdsl-core');
 
 const css = await processUxdsl(`
 body {
-  background: theme(primary.main);
+  background: palette(primary.main);
   padding: xs(10px) lg(20px);
 }
 `, {
