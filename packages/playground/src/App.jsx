@@ -110,7 +110,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <h1 className="hello">UXDSL Theme Demo</h1>
+      <h1 className="hello dsl-typo">UXDSL Theme Demo</h1>
       <div className="toolbar">
         <button onClick={setPrimaryBlue}>Primary: Blue</button>
         <button onClick={setPrimaryGreen}>Primary: Green</button>
@@ -127,20 +127,20 @@ export default function App() {
       </p>
       <div className="showcase">
         <div className="showcase__box">
-          <strong>Badges</strong>
+          <span className="dsl-typo" data-typo="h3">Badges</span>
           <div className="showcase__stack">
             <span className="badge">New</span>
             <span className="badge">Sale</span>
             <span className="badge">Limited</span>
             <span className="badge">Beta</span>
           </div>
-          <div className="vis vis--mobile">Mobile view</div>
-          <div className="vis vis--desktop">Desktop view</div>
+          <div className="vis vis--mobile dsl-typo" data-typo="small">Mobile view</div>
+          <div className="vis vis--desktop dsl-typo" data-typo="small">Desktop view</div>
           <button className="cta">Call to action</button>
         </div>
         <div className="showcase__box showcase__box--grad">
-          <strong>Layout</strong>
-          <p>Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
+          <span className="dsl-typo" data-typo="h2">Layout</span>
+          <p className="dsl-typo">Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
         </div>
       </div>
       <div className="grid">{cards}</div>

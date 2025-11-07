@@ -17,11 +17,11 @@ export default defineConfig({
         ['lg', 1024],
         ['xl', 1280],
       ],
-      // Map palette(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__theme__foo-bar))
+      // Map palette(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__palette__foo-bar), var(--dsl__color__foo-bar))
       // Hyphen vars for DX; canonical prefixed vars as fallback
       themeVar: (path) => {
         const hy = String(path).replace(/\./g, '-');
-        return `var(--${hy}, var(--dsl__theme__${hy}))`;
+        return `var(--${hy}, var(--dsl__palette__${hy}, var(--dsl__color__${hy})))`;
       },
       // Map color(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__color__foo-bar))
       colorVar: (path) => {

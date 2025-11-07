@@ -24,6 +24,9 @@ let cachedSpacingMtime: number | null = null;
 let cachedColorsFile: string | undefined;
 let cachedColorsCss: string | null = null;
 let cachedColorsMtime: number | null = null;
+let cachedTypeFile: string | undefined;
+let cachedTypeCss: string | null = null;
+let cachedTypeMtime: number | null = null;
 
 type BreakpointSpec =
   | Record<string, number>
@@ -179,6 +182,30 @@ function resolveDefaultColorsFile(): string {
   return cachedColorsFile;
 }
 
+function resolveDefaultTypographyFile(): string {
+  if (cachedTypeFile !== undefined) return cachedTypeFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-typography.css"),
+      path.resolve(pkgRoot, "dist/theme/default-typography.css"),
+      path.resolve(resolvedDir, "theme/default-typography.css"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedTypeFile = f;
+        return cachedTypeFile;
+      }
+    }
+  } catch (err) {}
+  cachedTypeFile = "";
+  return cachedTypeFile;
+}
+
 function readCachedThemeCss(file: string): string {
   if (!file) return "";
   try {
@@ -223,6 +250,22 @@ function readCachedColorsCss(file: string): string {
   } catch (err) {
     cachedColorsCss = null;
     cachedColorsMtime = null;
+    return "";
+  }
+}
+
+function readCachedTypographyCss(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedTypeCss === null || cachedTypeMtime !== stat.mtimeMs) {
+      cachedTypeCss = fs.readFileSync(file, "utf-8");
+      cachedTypeMtime = stat.mtimeMs;
+    }
+    return cachedTypeCss ?? "";
+  } catch (err) {
+    cachedTypeCss = null;
+    cachedTypeMtime = null;
     return "";
   }
 }
@@ -354,12 +397,32 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         colorsCss = readCachedColorsCss(colorsFile);
       }
 
+      // Load default typography CSS and process via UXDSL so xs()/md() expand
+      let typeCss = "";
+      const typeFile = resolveDefaultTypographyFile();
+      if (typeFile) {
+        try {
+          this.addWatchFile(typeFile);
+        } catch (err) {
+          // Ignore
+        }
+        const src = readCachedTypographyCss(typeFile);
+        if (src) {
+          try {
+            typeCss = await processUxdsl(src, { ...userOptions, fileId: typeFile });
+          } catch (err) {
+            typeCss = src;
+          }
+        }
+      }
+
       // Inject CSS at runtime, replacing existing tag on HMR to avoid duplicates
       const code =
         `const css = ${JSON.stringify(finalCss)};\n` +
         `const themeCss = ${JSON.stringify(themeCss)};\n` +
         `const spacingCss = ${JSON.stringify(spacingCss)};\n` +
         `const colorsCss = ${JSON.stringify(colorsCss)};\n` +
+        `const typeCss = ${JSON.stringify(typeCss)};\n` +
         `if (typeof document !== 'undefined') {\n` +
         `  if (themeCss) {\n` +
         `    let t = document.querySelector('style[data-uxdsl-theme="default-palette"]');\n` +
@@ -372,9 +435,14 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         `    if (sp.textContent !== spacingCss) sp.textContent = spacingCss;\n` +
         `  }\n` +
         `  if (colorsCss) {\n` +
-        `    let c = document.querySelector('style[data-uxdsl-theme=\"default-colors\"]');\n` +
-        `    if (!c) { c = document.createElement('style'); c.setAttribute('data-uxdsl-theme', 'default-colors'); document.head.appendChild(c); }\n` +
-        `    if (c.textContent !== colorsCss) c.textContent = colorsCss;\n` +
+          `    let c = document.querySelector('style[data-uxdsl-theme=\"default-colors\"]');\n` +
+          `    if (!c) { c = document.createElement('style'); c.setAttribute('data-uxdsl-theme', 'default-colors'); document.head.appendChild(c); }\n` +
+          `    if (c.textContent !== colorsCss) c.textContent = colorsCss;\n` +
+          `  }\n` +
+        `  if (typeCss) {\n` +
+        `    let ty = document.querySelector('style[data-uxdsl-theme=\"default-typography\"]');\n` +
+        `    if (!ty) { ty = document.createElement('style'); ty.setAttribute('data-uxdsl-theme', 'default-typography'); document.head.appendChild(ty); }\n` +
+        `    if (ty.textContent !== typeCss) ty.textContent = typeCss;\n` +
         `  }\n` +
         `  const sel = 'style[data-uxdsl=' + JSON.stringify(${JSON.stringify(
           baseId

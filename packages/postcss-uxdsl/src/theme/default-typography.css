@@ -1,0 +1,78 @@
+:root {
+  /* UI font families */
+  --font-ui: Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-code: Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace;
+
+  /* Headings */
+  --h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
+  --h1-weight: 700;
+
+  --h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
+  --h2-weight: 700;
+
+  --h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
+  --h3-weight: 600;
+
+  --h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
+  --h4-weight: 600;
+
+  --h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
+  --h5-weight: 600;
+
+  --h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
+  --h6-weight: 600;
+
+  /* Body text */
+  --p-size: xs(16px) md(17.2px);
+  --p-weight: 400;
+  --p-line: xs(1.35) md(1.375);
+
+  --span-size: xs(14px) sm(15px) md(16px);
+  --span-weight: 400;
+
+  --body-size: xs(14px) sm(16px) md(18px);
+  --body-weight: 400;
+
+  --caption-size: xs(12px) sm(13px) md(14px);
+  --caption-opacity: 0.8;
+
+  --small-size: xs(12px) sm(13px) md(14px);
+
+  --pre-size: xs(14px) sm(15px) md(16px);
+}
+
+/* Single opt-in gate for DS typography */
+.dsl-typo {
+  font-family: var(--font-ui), sans-serif;
+  color: inherit;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+/* Element-aware rules (low specificity via :where) */
+:where(h1).dsl-typo { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); }
+:where(h2).dsl-typo { font-size: var(--h2-size); font-weight: var(--h2-weight, 700); }
+:where(h3).dsl-typo { font-size: var(--h3-size); font-weight: var(--h3-weight, 600); }
+:where(h4).dsl-typo { font-size: var(--h4-size); font-weight: var(--h4-weight, 600); }
+:where(h5).dsl-typo { font-size: var(--h5-size); font-weight: var(--h5-weight, 600); }
+:where(h6).dsl-typo { font-size: var(--h6-size); font-weight: var(--h6-weight, 600); }
+
+:where(p).dsl-typo { font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); }
+:where(span).dsl-typo { font-size: var(--span-size); font-weight: var(--span-weight, 400); }
+:where(small).dsl-typo { font-size: var(--small-size); opacity: var(--caption-opacity, 1); }
+:where(.caption).dsl-typo, :where(caption).dsl-typo { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); }
+:where(pre).dsl-typo, :where(code).dsl-typo { font-family: var(--font-code), monospace; font-size: var(--pre-size); }
+
+/* Attribute fallback for non-semantic tags */
+.dsl-typo[data-typo="h1"] { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); }
+.dsl-typo[data-typo="h2"] { font-size: var(--h2-size); font-weight: var(--h2-weight, 700); }
+.dsl-typo[data-typo="h3"] { font-size: var(--h3-size); font-weight: var(--h3-weight, 600); }
+.dsl-typo[data-typo="h4"] { font-size: var(--h4-size); font-weight: var(--h4-weight, 600); }
+.dsl-typo[data-typo="h5"] { font-size: var(--h5-size); font-weight: var(--h5-weight, 600); }
+.dsl-typo[data-typo="h6"] { font-size: var(--h6-size); font-weight: var(--h6-weight, 600); }
+.dsl-typo[data-typo="p"] { font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); }
+.dsl-typo[data-typo="small"], .dsl-typo[data-typo="caption"] { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); }
+.dsl-typo[data-typo="pre"], .dsl-typo[data-typo="code"] { font-family: var(--font-code), monospace; font-size: var(--pre-size); }
+

@@ -1,68 +1,68 @@
 
 :root {
   /* Primary */
-  --dsl__theme__primary-main: #2C415C;
-  --dsl__theme__primary-light: #8AA7BA;
-  --dsl__theme__primary-dark: #25374E;
-  --dsl__theme__primary-contrast: #FFFFFF;
+  --dsl__palette__primary-main: var(--dsl__color__teal-500);
+  --dsl__palette__primary-light: var(--dsl__color__teal-300);
+  --dsl__palette__primary-dark: var(--dsl__color__teal-600);
+  --dsl__palette__primary-contrast: var(--dsl__color__white);
 
   /* Surfaces (app background + text) */
-  --dsl__theme__surface-main: #FFFFFF;
-  --dsl__theme__surface-contrast: #0B1220;
+  --dsl__palette__surface-main: var(--dsl__color__white);
+  --dsl__palette__surface-contrast: var(--dsl__color__gray-900);
 
   /* Secondary */
-  --dsl__theme__secondary-main: #475569;
-  --dsl__theme__secondary-light: #94A3B8;
-  --dsl__theme__secondary-dark: #334155;
-  --dsl__theme__secondary-contrast: #FFFFFF;
+  --dsl__palette__secondary-main: var(--dsl__color__gray-600);
+  --dsl__palette__secondary-light: var(--dsl__color__gray-400);
+  --dsl__palette__secondary-dark: var(--dsl__color__gray-700);
+  --dsl__palette__secondary-contrast: var(--dsl__color__white);
 
   /* Tertiary */
-  --dsl__theme__tertiary-main: #CBD5E1;
-  --dsl__theme__tertiary-light: #E2E8F0;
-  --dsl__theme__tertiary-dark: #94A3B8;
-  --dsl__theme__tertiary-contrast: #000000;
+  --dsl__palette__tertiary-main: var(--dsl__color__gray-300);
+  --dsl__palette__tertiary-light: var(--dsl__color__gray-200);
+  --dsl__palette__tertiary-dark: var(--dsl__color__gray-400);
+  --dsl__palette__tertiary-contrast: var(--dsl__color__black);
 
   /* Success */
-  --dsl__theme__success-main: #166534;
-  --dsl__theme__success-light: #15803D;
-  --dsl__theme__success-dark: #166534;
-  --dsl__theme__success-contrast: #FFFFFF;
+  --dsl__palette__success-main: var(--dsl__color__green-700);
+  --dsl__palette__success-light: var(--dsl__color__green-600);
+  --dsl__palette__success-dark: var(--dsl__color__green-700);
+  --dsl__palette__success-contrast: var(--dsl__color__white);
 
   /* Info */
-  --dsl__theme__info-main: #2563EB;
-  --dsl__theme__info-light: #3B82F6;
-  --dsl__theme__info-dark: #2563EB;
-  --dsl__theme__info-contrast: #FFFFFF;
+  --dsl__palette__info-main: var(--dsl__color__blue-500);
+  --dsl__palette__info-light: var(--dsl__color__blue-400);
+  --dsl__palette__info-dark: var(--dsl__color__blue-500);
+  --dsl__palette__info-contrast: var(--dsl__color__white);
 
   /* Warning */
-  --dsl__theme__warning-main: #F59E0B;
-  --dsl__theme__warning-light: #F59E0B;
-  --dsl__theme__warning-dark: #D97706;
-  --dsl__theme__warning-contrast: #0B1220;
+  --dsl__palette__warning-main: var(--dsl__color__orange-500);
+  --dsl__palette__warning-light: var(--dsl__color__orange-500);
+  --dsl__palette__warning-dark: var(--dsl__color__orange-600);
+  --dsl__palette__warning-contrast: var(--dsl__color__gray-900);
 
   /* Error */
-  --dsl__theme__error-main: #C61625;
-  --dsl__theme__error-light: #EC1B2E;
-  --dsl__theme__error-dark: #C61625;
-  --dsl__theme__error-contrast: #FFFFFF;
+  --dsl__palette__error-main: var(--dsl__color__red-600);
+  --dsl__palette__error-light: var(--dsl__color__red-500);
+  --dsl__palette__error-dark: var(--dsl__color__red-600);
+  --dsl__palette__error-contrast: var(--dsl__color__white);
 
   /* Dark */
-  --dsl__theme__dark-main: #ff0000;
-  --dsl__theme__dark-light: #475569;
-  --dsl__theme__dark-dark: #0B1220;
-  --dsl__theme__dark-contrast: #FFFFFF;
+  --dsl__palette__dark-main: #ff0000; /* no exact color scale match; keep */
+  --dsl__palette__dark-light: var(--dsl__color__gray-600);
+  --dsl__palette__dark-dark: var(--dsl__color__gray-900);
+  --dsl__palette__dark-contrast: var(--dsl__color__white);
 
   /* Neutral */
-  --dsl__theme__neutral-main: #E2E8F0;
-  --dsl__theme__neutral-light: #F8FAFC;
-  --dsl__theme__neutral-dark: #CBD5E1;
-  --dsl__theme__neutral-contrast: #0B1220;
+  --dsl__palette__neutral-main: var(--dsl__color__gray-200);
+  --dsl__palette__neutral-light: var(--dsl__color__gray-50);
+  --dsl__palette__neutral-dark: var(--dsl__color__gray-300);
+  --dsl__palette__neutral-contrast: var(--dsl__color__gray-900);
 
   /* Light */
-  --dsl__theme__light-main: #FFFFFF;
-  --dsl__theme__light-light: #F8FAFC;
-  --dsl__theme__light-dark: #F1F5F9;
-  --dsl__theme__light-contrast: #0B1220;
+  --dsl__palette__light-main: var(--dsl__color__white);
+  --dsl__palette__light-light: var(--dsl__color__gray-50);
+  --dsl__palette__light-dark: var(--dsl__color__gray-100);
+  --dsl__palette__light-contrast: var(--dsl__color__gray-900);
 }
 
 /* Hint to the browser that both color schemes are supported */
@@ -71,16 +71,15 @@ html { color-scheme: light dark; }
 /* Respect system preference: switch primary tokens in dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --dsl__theme__primary-main: #1F2937;
-    --dsl__theme__primary-light: #475569;
-    --dsl__theme__primary-dark: #0B1220;
-    --dsl__theme__primary-contrast: #FFFFFF;
+    --dsl__palette__primary-main: var(--dsl__color__gray-800);
+    --dsl__palette__primary-light: var(--dsl__color__gray-600);
+    --dsl__palette__primary-dark: var(--dsl__color__gray-900);
+    --dsl__palette__primary-contrast: var(--dsl__color__white);
 
-    --dsl__theme__surface-main: #0B1220;
-    --dsl__theme__surface-contrast: #FFFFFF;
+    --dsl__palette__surface-main: var(--dsl__color__gray-900);
+    --dsl__palette__surface-contrast: var(--dsl__color__white);
 
-      --dsl__theme__light-main: #1a1818;
-      --dsl__theme__light-contrast: #ffffff;
+      --dsl__palette__light-main: #1a1818; /* keep custom */
+      --dsl__palette__light-contrast: var(--dsl__color__white);
   }
 }
-

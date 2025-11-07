@@ -29,9 +29,9 @@ const DEFAULT_BPS: Record<string, number> = {
   xl: 1280,
 };
 
-// Map palette(foo.bar|foo-bar) -> var(--dsl__theme__foo-bar)
+// Map palette(foo.bar|foo-bar) -> var(--dsl__palette__foo-bar)
 const defaultThemeVar = (path: string) =>
-  `var(--dsl__theme__${String(path).trim().replace(/\./g, "-")})`;
+  `var(--dsl__palette__${String(path).trim().replace(/\./g, "-")})`;
 
 // Map space(2) -> var(--space-2)
 const defaultSpaceVar = (index: string) =>

@@ -5,6 +5,10 @@
   /* Brand primary */
   --primary-main: #ffe015;      /* blue-500 */
 
+  /* Typography overrides (demo) */
+  --h2-size: xs(32px) md(44px) lg(52px);
+  --h3-size: xs(26px) md(30px) lg(34px);
+
 }
 
 /* Respect system preference: switch primary tokens in dark mode */
