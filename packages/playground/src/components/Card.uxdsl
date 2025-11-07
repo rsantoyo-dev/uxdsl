@@ -1,8 +1,8 @@
-@import '../mixins.uxdsl';
+@import "../mixins.uxdsl";
 
 .card {
-  border-radius: $radius-md;
-  padding: var(--pad2-density-2);
+  border-radius: var(--border-radius-1);
+  padding: var(--pad-density-1);
   color: palette(primary-contrast);
   box-shadow: $shadow-soft;
   /* Make large lists smooth without JS: */
@@ -31,4 +31,3 @@
   opacity: 0.9;
   font-size: 0.9rem;
 }
- 

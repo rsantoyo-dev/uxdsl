@@ -5,7 +5,7 @@ $shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
 
 /* Responsive density variables: use like `padding: var(--pad-density-2)` */
 :root {
-  --pad-density-1: xs(2px) md(4px);
+  --pad-density-1: xs(2px) md(16px);
   --pad-density-2: xs(4px) md(8px);
   --pad-density-3: xs(6px) md(12px);
   --pad-density-4: xs(8px) md(16px);

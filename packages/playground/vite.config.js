@@ -23,6 +23,11 @@ export default defineConfig({
         const hy = String(path).replace(/\./g, '-');
         return `var(--${hy}, var(--dsl__theme__${hy}))`;
       },
+      // Map color(foo.bar|foo-bar) -> var(--foo-bar, var(--dsl__color__foo-bar))
+      colorVar: (path) => {
+        const hy = String(path).replace(/\./g, '-');
+        return `var(--${hy}, var(--dsl__color__${hy}))`;
+      },
     }),
   ],
 });

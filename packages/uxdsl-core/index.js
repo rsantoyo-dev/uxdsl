@@ -1,7 +1,17 @@
 const fs = require('fs');
 const path = require('path');
 const postcss = require('postcss');
-const uxdslPlugin = require('postcss-uxdsl');
+let uxdslPlugin;
+try {
+  const localPath = path.resolve(__dirname, '../postcss-uxdsl');
+  uxdslPlugin = require(localPath);
+} catch (e1) {
+  try {
+    uxdslPlugin = require('postcss-uxdsl');
+  } catch (e2) {
+    throw e1;
+  }
+}
 
 function stripLineComments(input) {
   // Remove // comments naively, line-by-line, ignoring those inside quotes

@@ -18,6 +18,12 @@ let cachedProcess: ProcessFn | null = null;
 let cachedThemeFile: string | undefined;
 let cachedThemeCss: string | null = null;
 let cachedThemeMtime: number | null = null;
+let cachedSpacingFile: string | undefined;
+let cachedSpacingCss: string | null = null;
+let cachedSpacingMtime: number | null = null;
+let cachedColorsFile: string | undefined;
+let cachedColorsCss: string | null = null;
+let cachedColorsMtime: number | null = null;
 
 type BreakpointSpec =
   | Record<string, number>
@@ -118,6 +124,61 @@ function resolveDefaultThemeFile(): string {
   return cachedThemeFile;
 }
 
+function resolveDefaultSpacingFile(): string {
+  if (cachedSpacingFile !== undefined) return cachedSpacingFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath); // may be package root or dist/
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      // package root src (monorepo/dev)
+      path.resolve(pkgRoot, "src/theme/default-spacing.css"),
+      // package root dist (published)
+      path.resolve(pkgRoot, "dist/theme/default-spacing.css"),
+      // resolved dir sibling 'theme' (if main points to dist/index.js and theme shipped alongside)
+      path.resolve(resolvedDir, "theme/default-spacing.css"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedSpacingFile = f;
+        return cachedSpacingFile;
+      }
+    }
+  } catch (err) {
+    // Ignore resolution errors
+  }
+  cachedSpacingFile = "";
+  return cachedSpacingFile;
+}
+
+function resolveDefaultColorsFile(): string {
+  if (cachedColorsFile !== undefined) return cachedColorsFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath); // may be package root or dist/
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-colors.css"),
+      path.resolve(pkgRoot, "dist/theme/default-colors.css"),
+      path.resolve(resolvedDir, "theme/default-colors.css"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedColorsFile = f;
+        return cachedColorsFile;
+      }
+    }
+  } catch (err) {
+    // ignore
+  }
+  cachedColorsFile = "";
+  return cachedColorsFile;
+}
+
 function readCachedThemeCss(file: string): string {
   if (!file) return "";
   try {
@@ -130,6 +191,38 @@ function readCachedThemeCss(file: string): string {
   } catch (err) {
     cachedThemeCss = null;
     cachedThemeMtime = null;
+    return "";
+  }
+}
+
+function readCachedSpacingCss(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedSpacingCss === null || cachedSpacingMtime !== stat.mtimeMs) {
+      cachedSpacingCss = fs.readFileSync(file, "utf-8");
+      cachedSpacingMtime = stat.mtimeMs;
+    }
+    return cachedSpacingCss ?? "";
+  } catch (err) {
+    cachedSpacingCss = null;
+    cachedSpacingMtime = null;
+    return "";
+  }
+}
+
+function readCachedColorsCss(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedColorsCss === null || cachedColorsMtime !== stat.mtimeMs) {
+      cachedColorsCss = fs.readFileSync(file, "utf-8");
+      cachedColorsMtime = stat.mtimeMs;
+    }
+    return cachedColorsCss ?? "";
+  } catch (err) {
+    cachedColorsCss = null;
+    cachedColorsMtime = null;
     return "";
   }
 }
@@ -237,15 +330,51 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         themeCss = readCachedThemeCss(themeFile);
       }
 
+      // Load default spacing CSS and watch it in dev so edits apply live
+      let spacingCss = "";
+      const spacingFile = resolveDefaultSpacingFile();
+      if (spacingFile) {
+        try {
+          this.addWatchFile(spacingFile);
+        } catch (err) {
+          // Ignore if watcher not available
+        }
+        spacingCss = readCachedSpacingCss(spacingFile);
+      }
+
+      // Load default colors CSS
+      let colorsCss = "";
+      const colorsFile = resolveDefaultColorsFile();
+      if (colorsFile) {
+        try {
+          this.addWatchFile(colorsFile);
+        } catch (err) {
+          // Ignore
+        }
+        colorsCss = readCachedColorsCss(colorsFile);
+      }
+
       // Inject CSS at runtime, replacing existing tag on HMR to avoid duplicates
       const code =
         `const css = ${JSON.stringify(finalCss)};\n` +
         `const themeCss = ${JSON.stringify(themeCss)};\n` +
+        `const spacingCss = ${JSON.stringify(spacingCss)};\n` +
+        `const colorsCss = ${JSON.stringify(colorsCss)};\n` +
         `if (typeof document !== 'undefined') {\n` +
         `  if (themeCss) {\n` +
         `    let t = document.querySelector('style[data-uxdsl-theme="default-palette"]');\n` +
         `    if (!t) { t = document.createElement('style'); t.setAttribute('data-uxdsl-theme', 'default-palette'); document.head.appendChild(t); }\n` +
         `    if (t.textContent !== themeCss) t.textContent = themeCss;\n` +
+        `  }\n` +
+        `  if (spacingCss) {\n` +
+        `    let sp = document.querySelector('style[data-uxdsl-theme=\"default-spacing\"]');\n` +
+        `    if (!sp) { sp = document.createElement('style'); sp.setAttribute('data-uxdsl-theme', 'default-spacing'); document.head.appendChild(sp); }\n` +
+        `    if (sp.textContent !== spacingCss) sp.textContent = spacingCss;\n` +
+        `  }\n` +
+        `  if (colorsCss) {\n` +
+        `    let c = document.querySelector('style[data-uxdsl-theme=\"default-colors\"]');\n` +
+        `    if (!c) { c = document.createElement('style'); c.setAttribute('data-uxdsl-theme', 'default-colors'); document.head.appendChild(c); }\n` +
+        `    if (c.textContent !== colorsCss) c.textContent = colorsCss;\n` +
         `  }\n` +
         `  const sel = 'style[data-uxdsl=' + JSON.stringify(${JSON.stringify(
           baseId
