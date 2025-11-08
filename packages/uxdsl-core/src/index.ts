@@ -18,17 +18,32 @@ import postcss, { Result } from 'postcss';
 // monorepo path (../postcss-uxdsl) and fall back to the installed package.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let uxdslPlugin: any;
-try {
-  const localPath = path.resolve(__dirname, '../postcss-uxdsl');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  uxdslPlugin = require(localPath);
-} catch (e1) {
-  try {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
-    uxdslPlugin = require('postcss-uxdsl');
-  } catch (e2) {
-    // Preserve the original resolution error to aid debugging
-    throw e1;
+{
+  // Prefer the monorepo local package; account for being run from dist/
+  const candidates = [
+    path.resolve(__dirname, '../postcss-uxdsl'),
+    path.resolve(__dirname, '../../postcss-uxdsl'),
+  ];
+  let loaded = false;
+  for (const p of candidates) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      uxdslPlugin = require(p);
+      loaded = true;
+      break;
+    } catch {}
+  }
+  if (!loaded) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      uxdslPlugin = require('postcss-uxdsl');
+      loaded = true;
+    } catch (e) {
+      // Re-throw a more actionable message
+      throw new Error(
+        'uxdsl-core: unable to resolve postcss-uxdsl locally or from dependencies. Ensure packages/postcss-uxdsl is built or installed.'
+      );
+    }
   }
 }
 

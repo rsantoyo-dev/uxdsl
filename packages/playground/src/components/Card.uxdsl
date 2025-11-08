@@ -1,7 +1,7 @@
 @import "../mixins.uxdsl";
 
 .card {
-  padding: xs(space(2)) md(space(4));
+  padding: density(5);
   color: palette(primary-contrast);
   /* Make large lists smooth without JS: */
   content-visibility: auto;

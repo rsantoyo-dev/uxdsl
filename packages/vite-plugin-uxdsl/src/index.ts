@@ -27,6 +27,9 @@ let cachedColorsMtime: number | null = null;
 let cachedTypeFile: string | undefined;
 let cachedTypeCss: string | null = null;
 let cachedTypeMtime: number | null = null;
+let cachedDensFile: string | undefined;
+let cachedDensCss: string | null = null;
+let cachedDensMtime: number | null = null;
 
 type BreakpointSpec =
   | Record<string, number>
@@ -206,6 +209,30 @@ function resolveDefaultTypographyFile(): string {
   return cachedTypeFile;
 }
 
+function resolveDefaultDensitiesFile(): string {
+  if (cachedDensFile !== undefined) return cachedDensFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-densities.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-densities.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-densities.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedDensFile = f;
+        return cachedDensFile;
+      }
+    }
+  } catch (err) {}
+  cachedDensFile = "";
+  return cachedDensFile;
+}
+
 function readCachedThemeCss(file: string): string {
   if (!file) return "";
   try {
@@ -234,6 +261,22 @@ function readCachedSpacingCss(file: string): string {
   } catch (err) {
     cachedSpacingCss = null;
     cachedSpacingMtime = null;
+    return "";
+  }
+}
+
+function readCachedDensities(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedDensCss === null || cachedDensMtime !== stat.mtimeMs) {
+      cachedDensCss = fs.readFileSync(file, "utf-8");
+      cachedDensMtime = stat.mtimeMs;
+    }
+    return cachedDensCss ?? "";
+  } catch (err) {
+    cachedDensCss = null;
+    cachedDensMtime = null;
     return "";
   }
 }
@@ -349,6 +392,17 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
 
       const source = fs.readFileSync(baseId, "utf-8");
 
+      // Ensure default density tokens are loaded BEFORE processing this file,
+      // so density(n) can resolve to theme tokens during the same pass.
+      const densFileEarly = resolveDefaultDensitiesFile();
+      if (densFileEarly) {
+        try { this.addWatchFile(densFileEarly); } catch {}
+        const densSrc = readCachedDensities(densFileEarly);
+        if (densSrc) {
+          try { await processUxdsl(densSrc, { ...userOptions, fileId: densFileEarly }); } catch {}
+        }
+      }
+
       // Process with core
       const css = await processUxdsl(source, { ...userOptions, fileId: baseId });
 
@@ -413,6 +467,17 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
           } catch (err) {
             typeCss = src;
           }
+        }
+      }
+
+      // Load default densities tokens (@theme) and process via UXDSL
+      // This primarily populates the plugin's global density token cache.
+      const densFile = resolveDefaultDensitiesFile();
+      if (densFile) {
+        try { this.addWatchFile(densFile); } catch {}
+        const src = readCachedDensities(densFile);
+        if (src) {
+          try { await processUxdsl(src, { ...userOptions, fileId: densFile }); } catch {}
         }
       }
 

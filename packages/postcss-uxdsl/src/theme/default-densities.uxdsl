@@ -1,0 +1,11 @@
+/* Default density tokens. Users can override in their app theme. */
+@theme {
+  /* Generic densities */
+  density-1: xs(space(1)) md(space(3));
+  density-2: xs(space(3)) md(space(6));
+  density-3: xs(space(4)) md(space(8));
+  density-4: xs(space(6)) md(space(12));
+  density-5: xs(space(8)) md(space(16));
+
+  /* Families removed for now to keep density generic */
+}

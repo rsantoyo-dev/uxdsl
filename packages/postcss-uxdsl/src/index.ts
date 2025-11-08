@@ -87,6 +87,13 @@ function normalizeTokenPath(input: string): string {
 }
 
 function uxdslPlugin(opts: UxDslOptions = {}) {
+  // Global density token cache across files processed in this process.
+  // Allows defaults to be provided from a separate @theme file.
+  const GLOBAL_DENSITY_TOKENS: Record<string, string> = (uxdslPlugin as any).__density || Object.create(null);
+  // Ensure the function object holds the same reference so subsequent
+  // plugin instances see the accumulated tokens.
+  (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
+
   const { map: bps } = normalizeBreakpoints(opts.breakpoints);
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
@@ -102,6 +109,25 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root) {
       const vars: Record<string, string> = Object.create(null);
+      const densityTokens: Record<string, string> = Object.create(null);
+
+      // Collect theme-driven density tokens (generic only) and store globally
+      root.walkAtRules("theme", (at) => {
+        at.walkDecls((decl) => {
+          const prop = String((decl as any).prop || "").trim();
+          // Accept only generic: density-<n>
+          const m = prop.match(/^density-(\d+)$/);
+          if (m) {
+            const n = m[1];
+            const key = `${n}`;
+            const val = String((decl as any).value || "").trim();
+            densityTokens[key] = val;
+            GLOBAL_DENSITY_TOKENS[key] = val;
+          }
+        });
+        // Remove @theme blocks from output
+        at.remove();
+      });
 
       // Collect root-level $vars and remove the declarations
       root.each((node) => {
@@ -117,9 +143,50 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       });
 
-      function rewriteFuncs(input: string): string {
+      function rewriteFuncs(input: string, _forProp?: string): string {
         const p = valueParser(input);
         p.walk((node: any) => {
+          // Token-aware density helpers
+          if (node.type === "function" && (node.value === "density" || node.value === "densities")) {
+            const ordered = Object.keys(bps)
+              .map((name) => ({ name, px: (bps as any)[name] as number }))
+              .filter((it) => typeof it.px === "number" && !Number.isNaN(it.px))
+              .sort((a, b) => a.px - b.px);
+
+            const innerText = valueParser.stringify(node.nodes).trim();
+
+            if (node.value === "density") {
+              let idx = innerText;
+              if ((idx.startsWith('"') && idx.endsWith('"')) || (idx.startsWith("'") && idx.endsWith("'"))) idx = idx.slice(1, -1);
+              const base = parseInt(idx.trim(), 10);
+              if (!Number.isNaN(base) && ordered.length > 0) {
+                const token = densityTokens[String(base)]
+                  || GLOBAL_DENSITY_TOKENS[String(base)];
+                if (token) {
+                  node.type = "word";
+                  node.value = token;
+                  return;
+                }
+                const parts = ordered.map((bp, i) => `${bp.name}(space(${base + i}))`);
+                node.type = "word";
+                node.value = parts.join(" ");
+                return;
+              }
+            } else {
+              const rawVals = innerText.split(",").map((s) => s.trim()).filter(Boolean);
+              const steps: number[] = rawVals.map((s) => parseInt(s.replace(/[^-\d]/g, ""), 10)).filter((n) => !Number.isNaN(n));
+              if (steps.length > 0 && ordered.length > 0) {
+                const parts = ordered.map((bp, i) => {
+                  const step = typeof steps[i] === "number" ? steps[i] : steps[steps.length - 1];
+                  return `${bp.name}(space(${step}))`;
+                });
+                node.type = "word";
+                node.value = parts.join(" ");
+                return;
+              }
+            }
+            return;
+          }
           if (node.type === "function" && node.value === "palette") {
             const inner = valueParser.stringify(node.nodes).trim();
             const normalized = normalizeTokenPath(inner);
@@ -158,7 +225,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkDecls((decl) => {
         if (typeof decl.value !== "string") return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
-        const phase1Text = rewriteFuncs(decl.value);
+        const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
 
         // Phase 2: extract responsive values
         const parsed = valueParser(phase1Text);
@@ -171,7 +238,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const bp = n.value as string;
             // Ensure functions inside the responsive value are also normalized
             const raw = valueParser.stringify(n.nodes).trim();
-            const valueString = rewriteFuncs(raw);
+            const valueString = rewriteFuncs(raw, (decl as any).prop);
             bpValues.push({ bp, text: valueString });
             n.type = "word";
             n.value = "";
