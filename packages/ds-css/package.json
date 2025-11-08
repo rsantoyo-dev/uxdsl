@@ -1,0 +1,21 @@
+{
+  "name": "ds-css",
+  "version": "0.0.0",
+  "description": "Reserved placeholder for Design System CSS (dscss)",
+  "main": "index.js",
+  "type": "module",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "keywords": [
+    "design-system",
+    "css",
+    "dscss",
+    "placeholder"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "license": "MIT"
+}

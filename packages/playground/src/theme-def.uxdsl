@@ -3,16 +3,16 @@
 
 :root {
   /* Brand primary */
-  --primary-main: #ffe015;      /* blue-500 */
+  --primary-main: #ffe015; /* blue-500 */
 
   /* Typography overrides (demo) */
-  --h2-size: xs(32px) md(44px) lg(52px);
-  --h3-size: xs(26px) md(30px) lg(34px);
-
+  //--h2-size: xs(32px) md(44px) lg(52px);
+  //--h3-size: xs(60px) md(30px) lg(34px);
 }
 
 /* Respect system preference: switch primary tokens in dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-  --primary-main: #4be07d;
-}   }
+    --primary-main: #0a6360;
+  }
+}

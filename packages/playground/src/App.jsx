@@ -1,5 +1,6 @@
-import React, { useEffect, useRef } from 'react';
-import Card from './components/Card.jsx';
+import React, { useEffect, useRef, useState } from 'react';
+import Performance from './components/Performance.jsx';
+import DemoTypography from './components/DemoTypography.jsx';
 
 async function withRuntime(cb) {
   const mod = await import('postcss-uxdsl/runtime');
@@ -101,22 +102,21 @@ export default function App() {
   function resetBps() {
     withRuntime(({ breakpoints }) => breakpoints.reset(undefined, { clearPersist: true }));
   }
-  const COUNT = 5000;
-  const variants = ['light', 'main', 'dark'];
-  const cards = Array.from({ length: COUNT }, (_, i) => {
-    const v = variants[i % variants.length];
-    return <Card key={i} index={i} variant={v} />;
-  });
+  const [view, setView] = useState('typography'); // 'typography' | 'performance'
+  // Large list demo moved into <Performance /> and toggled via menu
 
   return (
     <div className="app">
-      <h1 className="hello dsl-typo">UXDSL Theme Demo</h1>
+      <h1 className="hello ds-typo">UXDSL Theme Demo</h1>
       <div className="toolbar">
+        <label className="ds-typo" data-typo="small" style={{ marginRight: 4 }}>View:</label>
+        <button onClick={() => setView('typography')} disabled={view === 'typography'}>Typography</button>
+        <button onClick={() => setView('performance')} disabled={view === 'performance'}>Performance</button>
+        <span style={{ marginLeft: 8, opacity: 0.7 }}>|</span>
         <button onClick={setPrimaryBlue}>Primary: Blue</button>
         <button onClick={setPrimaryGreen}>Primary: Green</button>
         <button onClick={randomizePrimary}>Randomize Primary</button>
         <button onClick={clearOverrides}>Reset</button>
-        <span style={{ marginLeft: 8, opacity: 0.7 }}>|</span>
         <button onClick={setMd900}>md = 900px</button>
         <button onClick={setLg1200}>lg = 1200px</button>
         <button onClick={resetBps}>Reset breakpoints</button>
@@ -127,23 +127,23 @@ export default function App() {
       </p>
       <div className="showcase">
         <div className="showcase__box">
-          <span className="dsl-typo" data-typo="h3">Badges</span>
+          <span className="ds-typo" data-typo="h3">Badges</span>
           <div className="showcase__stack">
             <span className="badge">New</span>
             <span className="badge">Sale</span>
             <span className="badge">Limited</span>
             <span className="badge">Beta</span>
           </div>
-          <div className="vis vis--mobile dsl-typo" data-typo="small">Mobile view</div>
-          <div className="vis vis--desktop dsl-typo" data-typo="small">Desktop view</div>
+          <div className="vis vis--mobile ds-typo" data-typo="small">Mobile view</div>
+          <div className="vis vis--desktop ds-typo" data-typo="small">Desktop view</div>
           <button className="cta">Call to action</button>
         </div>
         <div className="showcase__box showcase__box--grad">
-          <span className="dsl-typo" data-typo="h2">Layout</span>
-          <p className="dsl-typo">Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
+          <span className="ds-typo" data-typo="h2">Layout</span>
+          <p className="ds-typo">Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
         </div>
       </div>
-      <div className="grid">{cards}</div>
+      {view === 'typography' ? <DemoTypography /> : <Performance />}
     </div>
   );
 }

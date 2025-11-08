@@ -1,0 +1,33 @@
+@import "../mixins.uxdsl";
+
+.demo-typography {
+  display: grid;
+  gap: xs(space(3)) md(space(4));
+  padding: xs(space(3)) md(space(6));
+}
+
+.demo-typography__list {
+  display: grid;
+  gap: xs(space(3)) md(space(4));
+}
+
+.demo-typography__item {
+  display: grid;
+  gap: xs(space(2)) md(space(3));
+}
+
+.demo-typography__meta {
+  opacity: 0.85;
+}
+
+.demo-typography__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: xs(space(2)) md(space(3));
+}
+
+.demo-typography__stack {
+  display: grid;
+  gap: xs(space(2)) md(space(3));
+}

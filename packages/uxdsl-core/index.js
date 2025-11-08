@@ -1,3 +1,13 @@
+// CommonJS entry for uxdsl-core
+// 1) Prefer compiled TypeScript build if available (dist/index.js)
+// 2) Fall back to a local JS implementation (same logic) so dev works without build
+
+try {
+  module.exports = require('./dist/index.js');
+  return;
+} catch (_) {}
+
+// --- Fallback JS implementation (mirrors src/index.ts functionality) ---
 const fs = require('fs');
 const path = require('path');
 const postcss = require('postcss');
@@ -14,7 +24,6 @@ try {
 }
 
 function stripLineComments(input) {
-  // Remove // comments naively, line-by-line, ignoring those inside quotes
   return input
     .split(/\r?\n/g)
     .map((line) => {
@@ -34,9 +43,7 @@ function stripLineComments(input) {
 }
 
 function inlineImports(fileId, content, visited = new Set(), stack = []) {
-  if (!visited.has(fileId)) {
-    visited.add(fileId);
-  }
+  if (!visited.has(fileId)) visited.add(fileId);
   stack.push(fileId);
   const lines = content.split(/\r?\n/);
   const out = [];
@@ -49,8 +56,13 @@ function inlineImports(fileId, content, visited = new Set(), stack = []) {
       if (fs.existsSync(dep)) {
         if (stack.includes(dep)) {
           const cycleStart = stack.indexOf(dep);
-          const cyclePath = stack.slice(cycleStart).concat(dep).map((p) => path.relative(process.cwd(), p));
-          throw new Error(`Circular import detected in UXDSL files: ${cyclePath.join(' -> ')}`);
+          const cyclePath = stack
+            .slice(cycleStart)
+            .concat(dep)
+            .map((p) => path.relative(process.cwd(), p));
+          throw new Error(
+            `Circular import detected in UXDSL files: ${cyclePath.join(' -> ')}`
+          );
         }
         if (visited.has(dep)) {
           continue;
@@ -68,20 +80,14 @@ function inlineImports(fileId, content, visited = new Set(), stack = []) {
 }
 
 async function processUxdsl(source, options = {}) {
-  // Strip comments
   let cleaned = stripLineComments(source);
-
-  // Inline imports if fileId is provided
   if (options.fileId) {
     cleaned = inlineImports(options.fileId, cleaned);
   }
-
-  // Process with PostCSS
   const result = await postcss([uxdslPlugin(options)]).process(cleaned, {
     from: options.fileId || undefined,
-    map: false, // No sourcemaps for core
+    map: false,
   });
-
   return result.css;
 }
 

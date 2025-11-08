@@ -3,6 +3,7 @@
   "version": "0.1.1",
   "description": "Core processing engine for UXDSL - a lightweight CSS DSL for design systems",
   "main": "index.js",
+  "types": "dist/index.d.ts",
   "keywords": [
     "css",
     "dsl",
@@ -14,6 +15,8 @@
   "author": "Ricardo Santoyo <rsantoyo-dev>",
   "license": "MIT",
   "scripts": {
+    "build": "../postcss-uxdsl/node_modules/.bin/tsc -p .",
+    "clean": "rm -rf dist",
     "test": "node test/inline-imports.test.js"
   },
   "repository": {

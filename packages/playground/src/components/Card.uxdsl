@@ -1,10 +1,8 @@
 @import "../mixins.uxdsl";
 
 .card {
-  border-radius: var(--border-radius-1);
-  padding: var(--pad-density-1);
+  padding: xs(space(2)) md(space(4));
   color: palette(primary-contrast);
-  box-shadow: $shadow-soft;
   /* Make large lists smooth without JS: */
   content-visibility: auto;
   contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */

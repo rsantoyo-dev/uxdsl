@@ -28,7 +28,7 @@ body {
   display: grid;
   padding: xs(space(2)) md(space(4));
   background: palette(light-main);
-  color: color(purple.300);
+  color: palette(light-contrast);
   color-scheme: light dark;
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
     Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji";
@@ -94,9 +94,7 @@ body {
   background: xs(palette(light-main)) md(palette(tertiary-light))
     lg(palette(primary-light));
   color: palette(surface-contrast);
-  padding: var(--pad2-density-2);
-  border-radius: xs($radius-md) lg($radius-md);
-  box-shadow: $shadow-soft;
+  padding: xs(space(5)) md(space(8));
   min-width: 0;
 }
 
@@ -113,8 +111,7 @@ body {
   align-items: center;
   background: xs(palette(primary-light)) lg(palette(primary-dark));
   color: palette(primary-contrast);
-  border-radius: xs($radius-md) md($radius-pill);
-  padding: var(--pad2-density-1);
+  padding: xs(space(2)) md(space(4));
   font-weight: 600;
   letter-spacing: 0.25px;
 }
@@ -135,9 +132,7 @@ body {
   display: inline-block;
   background: palette(primary-main);
   color: palette(primary-contrast);
-  border: none;
-  border-radius: $radius-md;
-  padding: var(--pad2-density-3);
+  padding: xs(space(3)) md(space(6));
   font-size: xs(14px) md(16px) lg(18px);
   cursor: pointer;
 }
