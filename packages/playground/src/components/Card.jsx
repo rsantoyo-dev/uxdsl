@@ -6,7 +6,7 @@ export default function Card({ index = 0, variant = 'main', title, meta, childre
   const metaText = meta ?? `background: palette(primary.${variant})`;
   return (
     <div className={`card card--${variant}`}>
-      <h2 className="card__title ds-typo">{headerText}</h2>
+      <h6 className="card__title ds-typo">{headerText}</h6>
       {metaText ? (
         <p className="card__meta ds-typo">{metaText}</p>
       ) : null}

@@ -1,0 +1,9 @@
+/* Default border tokens (composite + widths). Apps can override. */
+@theme {
+  /* Composite shorthand presets */
+  border-1: xs(1px solid color(gray.300));
+  border-2: xs(space(1) solid color(gray.300));
+  border-3: xs(space(2) solid color(gray.400));
+  border-4: xs(space(3) solid color(gray.500));
+  border-5: xs(space(4) solid color(gray.600));
+}

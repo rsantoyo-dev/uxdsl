@@ -1,0 +1,8 @@
+/* Default responsive radius tokens. Apps can override in their @theme. */
+@theme {
+  radius-1: xs(space(1)) lg(space(2));
+  radius-2: xs(space(2)) lg(space(3));
+  radius-3: xs(space(3)) lg(space(4));
+  radius-4: xs(space(4)) lg(space(6));
+  radius-5: xs(space(6)) lg(space(8));
+}

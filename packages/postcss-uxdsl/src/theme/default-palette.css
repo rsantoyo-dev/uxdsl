@@ -47,7 +47,7 @@
   --dsl__palette__error-contrast: var(--dsl__color__white);
 
   /* Dark */
-  --dsl__palette__dark-main: #ff0000; /* no exact color scale match; keep */
+  --dsl__palette__dark-main: var(--dsl__color__gray-900); /* no exact color scale match; keep */
   --dsl__palette__dark-light: var(--dsl__color__gray-600);
   --dsl__palette__dark-dark: var(--dsl__color__gray-900);
   --dsl__palette__dark-contrast: var(--dsl__color__white);

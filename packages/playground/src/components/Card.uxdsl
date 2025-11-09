@@ -1,16 +1,16 @@
 @import "../mixins.uxdsl";
 
 .card {
-  padding: density(5);
+  display: flex;
+  flex-direction: column;
+  padding: density(1);
+  border-radius: radius(2);
   color: palette(primary-contrast);
-  /* Make large lists smooth without JS: */
-  content-visibility: auto;
-  contain-intrinsic-size: 140px; /* reserve vertical space for off-screen cards */
   min-width: 0; /* prevent inline overflow */
 }
 
 .card--light {
-  background: palette(primary-light);
+  background: palette(primary_light);
 }
 .card--main {
   background: palette(primary-main);
@@ -20,8 +20,7 @@
 }
 
 .card__title {
-  margin: 0 0 8px 0;
-  font-size: xs(20px) lg(30px);
+  margin: 0 0 space(1) 0;
 }
 
 .card__meta {

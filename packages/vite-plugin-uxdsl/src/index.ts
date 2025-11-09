@@ -30,6 +30,15 @@ let cachedTypeMtime: number | null = null;
 let cachedDensFile: string | undefined;
 let cachedDensCss: string | null = null;
 let cachedDensMtime: number | null = null;
+let cachedRadiiFile: string | undefined;
+let cachedRadiiCss: string | null = null;
+let cachedRadiiMtime: number | null = null;
+let cachedShadowsFile: string | undefined;
+let cachedShadowsCss: string | null = null;
+let cachedShadowsMtime: number | null = null;
+let cachedBordersFile: string | undefined;
+let cachedBordersCss: string | null = null;
+let cachedBordersMtime: number | null = null;
 
 type BreakpointSpec =
   | Record<string, number>
@@ -233,6 +242,78 @@ function resolveDefaultDensitiesFile(): string {
   return cachedDensFile;
 }
 
+function resolveDefaultRadiiFile(): string {
+  if (cachedRadiiFile !== undefined) return cachedRadiiFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-radii.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-radii.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-radii.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedRadiiFile = f;
+        return cachedRadiiFile;
+      }
+    }
+  } catch {}
+  cachedRadiiFile = "";
+  return cachedRadiiFile;
+}
+
+function resolveDefaultShadowsFile(): string {
+  if (cachedShadowsFile !== undefined) return cachedShadowsFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-shadows.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-shadows.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-shadows.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedShadowsFile = f;
+        return cachedShadowsFile;
+      }
+    }
+  } catch {}
+  cachedShadowsFile = "";
+  return cachedShadowsFile;
+}
+
+function resolveDefaultBordersFile(): string {
+  if (cachedBordersFile !== undefined) return cachedBordersFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-borders.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-borders.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-borders.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedBordersFile = f;
+        return cachedBordersFile;
+      }
+    }
+  } catch {}
+  cachedBordersFile = "";
+  return cachedBordersFile;
+}
+
 function readCachedThemeCss(file: string): string {
   if (!file) return "";
   try {
@@ -277,6 +358,54 @@ function readCachedDensities(file: string): string {
   } catch (err) {
     cachedDensCss = null;
     cachedDensMtime = null;
+    return "";
+  }
+}
+
+function readCachedRadii(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedRadiiCss === null || cachedRadiiMtime !== stat.mtimeMs) {
+      cachedRadiiCss = fs.readFileSync(file, "utf-8");
+      cachedRadiiMtime = stat.mtimeMs;
+    }
+    return cachedRadiiCss ?? "";
+  } catch (err) {
+    cachedRadiiCss = null;
+    cachedRadiiMtime = null;
+    return "";
+  }
+}
+
+function readCachedShadows(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedShadowsCss === null || cachedShadowsMtime !== stat.mtimeMs) {
+      cachedShadowsCss = fs.readFileSync(file, "utf-8");
+      cachedShadowsMtime = stat.mtimeMs;
+    }
+    return cachedShadowsCss ?? "";
+  } catch (err) {
+    cachedShadowsCss = null;
+    cachedShadowsMtime = null;
+    return "";
+  }
+}
+
+function readCachedBorders(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedBordersCss === null || cachedBordersMtime !== stat.mtimeMs) {
+      cachedBordersCss = fs.readFileSync(file, "utf-8");
+      cachedBordersMtime = stat.mtimeMs;
+    }
+    return cachedBordersCss ?? "";
+  } catch (err) {
+    cachedBordersCss = null;
+    cachedBordersMtime = null;
     return "";
   }
 }
@@ -400,6 +529,36 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         const densSrc = readCachedDensities(densFileEarly);
         if (densSrc) {
           try { await processUxdsl(densSrc, { ...userOptions, fileId: densFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default radii tokens are loaded before processing
+      const radiiFileEarly = resolveDefaultRadiiFile();
+      if (radiiFileEarly) {
+        try { this.addWatchFile(radiiFileEarly); } catch {}
+        const radiiSrc = readCachedRadii(radiiFileEarly);
+        if (radiiSrc) {
+          try { await processUxdsl(radiiSrc, { ...userOptions, fileId: radiiFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default shadow tokens are loaded before processing
+      const shadowsFileEarly = resolveDefaultShadowsFile();
+      if (shadowsFileEarly) {
+        try { this.addWatchFile(shadowsFileEarly); } catch {}
+        const shSrc = readCachedShadows(shadowsFileEarly);
+        if (shSrc) {
+          try { await processUxdsl(shSrc, { ...userOptions, fileId: shadowsFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default borders tokens are loaded before processing
+      const bordersFileEarly = resolveDefaultBordersFile();
+      if (bordersFileEarly) {
+        try { this.addWatchFile(bordersFileEarly); } catch {}
+        const bSrc = readCachedBorders(bordersFileEarly);
+        if (bSrc) {
+          try { await processUxdsl(bSrc, { ...userOptions, fileId: bordersFileEarly }); } catch {}
         }
       }
 
