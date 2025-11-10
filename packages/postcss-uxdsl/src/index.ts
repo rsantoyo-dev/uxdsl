@@ -89,10 +89,14 @@ function normalizeTokenPath(input: string): string {
 function uxdslPlugin(opts: UxDslOptions = {}) {
   // Global density token cache across files processed in this process.
   // Allows defaults to be provided from a separate @theme file.
-  const GLOBAL_DENSITY_TOKENS: Record<string, string> = (uxdslPlugin as any).__density || Object.create(null);
-  const GLOBAL_RADIUS_TOKENS: Record<string, string> = (uxdslPlugin as any).__radii || Object.create(null);
-  const GLOBAL_SHADOW_TOKENS: Record<string, string> = (uxdslPlugin as any).__shadows || Object.create(null);
-  const GLOBAL_BORDER_TOKENS: Record<string, string> = (uxdslPlugin as any).__borders || Object.create(null);
+  const GLOBAL_DENSITY_TOKENS: Record<string, string> =
+    (uxdslPlugin as any).__density || Object.create(null);
+  const GLOBAL_RADIUS_TOKENS: Record<string, string> =
+    (uxdslPlugin as any).__radii || Object.create(null);
+  const GLOBAL_SHADOW_TOKENS: Record<string, string> =
+    (uxdslPlugin as any).__shadows || Object.create(null);
+  const GLOBAL_BORDER_TOKENS: Record<string, string> =
+    (uxdslPlugin as any).__borders || Object.create(null);
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
@@ -115,6 +119,85 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root) {
       const vars: Record<string, string> = Object.create(null);
+      // Selector-scoped typography directives
+      // Supports: @ds-typo(h1), @ds(h1), and @ds-h1 (no params)
+      root.walkRules((rule) => {
+        const applyTypo = (at: any, variantRaw: string) => {
+          let tag = String(variantRaw || "").trim();
+          // Strip optional wrapping quotes
+          if (
+            (tag.startsWith('"') && tag.endsWith('"')) ||
+            (tag.startsWith("'") && tag.endsWith("'"))
+          ) {
+            tag = tag.slice(1, -1);
+          }
+          // Strip optional parentheses, e.g. "(h1)"
+          if (tag.startsWith("(") && tag.endsWith(")")) {
+            tag = tag.slice(1, -1).trim();
+          }
+          tag = tag.toLowerCase();
+          const insert = (prop: string, value: string) => {
+            (rule as any).insertBefore(at, { prop, value });
+          };
+          // Default block margin behavior for typographic elements
+          // Use 'auto' per request (computes to 0 for top/bottom in most cases)
+          insert("margin-block-start", "auto");
+          insert("margin-block-end", "auto");
+          switch (tag) {
+            case "h1":
+              insert("font-size", "var(--h1-size)");
+              insert("font-weight", "var(--h1-weight, 700)");
+              break;
+            case "h2":
+              insert("font-size", "var(--h2-size)");
+              insert("font-weight", "var(--h2-weight, 700)");
+              break;
+            case "h3":
+              insert("font-size", "var(--h3-size)");
+              insert("font-weight", "var(--h3-weight, 600)");
+              break;
+            case "h4":
+              insert("font-size", "var(--h4-size)");
+              insert("font-weight", "var(--h4-weight, 600)");
+              break;
+            case "h5":
+              insert("font-size", "var(--h5-size)");
+              insert("font-weight", "var(--h5-weight, 600)");
+              break;
+            case "h6":
+              insert("font-size", "var(--h6-size)");
+              insert("font-weight", "var(--h6-weight, 600)");
+              break;
+            case "p":
+              insert("font-size", "var(--p-size)");
+              insert("line-height", "var(--p-line, normal)");
+              insert("font-weight", "var(--p-weight, 400)");
+              break;
+            case "span":
+              insert("font-size", "var(--span-size)");
+              insert("font-weight", "var(--span-weight, 400)");
+              break;
+            case "small":
+              insert("font-size", "var(--small-size)");
+              break;
+            case "caption":
+              insert("font-size", "var(--caption-size)");
+              insert("opacity", "var(--caption-opacity, 0.8)");
+              break;
+            case "pre":
+            case "code":
+              insert("font-family", "var(--font-code), monospace");
+              insert("font-size", "var(--pre-size)");
+              break;
+            default:
+              break;
+          }
+          at.remove();
+        };
+
+        // @ds-typo(h1)
+        rule.walkAtRules("ds-typo", (at) => applyTypo(at, at.params || ""));
+      });
       const densityTokens: Record<string, string> = Object.create(null);
       const radiusTokens: Record<string, string> = Object.create(null);
       const shadowTokens: Record<string, string> = Object.create(null);
@@ -183,7 +266,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         const p = valueParser(input);
         p.walk((node: any) => {
           // Token-aware density helpers
-          if (node.type === "function" && (node.value === "density" || node.value === "densities")) {
+          if (
+            node.type === "function" &&
+            (node.value === "density" || node.value === "densities")
+          ) {
             const ordered = Object.keys(bps)
               .map((name) => ({ name, px: (bps as any)[name] as number }))
               .filter((it) => typeof it.px === "number" && !Number.isNaN(it.px))
@@ -193,27 +279,42 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
             if (node.value === "density") {
               let idx = innerText;
-              if ((idx.startsWith('"') && idx.endsWith('"')) || (idx.startsWith("'") && idx.endsWith("'"))) idx = idx.slice(1, -1);
+              if (
+                (idx.startsWith('"') && idx.endsWith('"')) ||
+                (idx.startsWith("'") && idx.endsWith("'"))
+              )
+                idx = idx.slice(1, -1);
               const base = parseInt(idx.trim(), 10);
               if (!Number.isNaN(base) && ordered.length > 0) {
-                const token = densityTokens[String(base)]
-                  || GLOBAL_DENSITY_TOKENS[String(base)];
+                const token =
+                  densityTokens[String(base)] ||
+                  GLOBAL_DENSITY_TOKENS[String(base)];
                 if (token) {
                   node.type = "word";
                   node.value = token;
                   return;
                 }
-                const parts = ordered.map((bp, i) => `${bp.name}(space(${base + i}))`);
+                const parts = ordered.map(
+                  (bp, i) => `${bp.name}(space(${base + i}))`
+                );
                 node.type = "word";
                 node.value = parts.join(" ");
                 return;
               }
             } else {
-              const rawVals = innerText.split(",").map((s) => s.trim()).filter(Boolean);
-              const steps: number[] = rawVals.map((s) => parseInt(s.replace(/[^-\d]/g, ""), 10)).filter((n) => !Number.isNaN(n));
+              const rawVals = innerText
+                .split(",")
+                .map((s) => s.trim())
+                .filter(Boolean);
+              const steps: number[] = rawVals
+                .map((s) => parseInt(s.replace(/[^-\d]/g, ""), 10))
+                .filter((n) => !Number.isNaN(n));
               if (steps.length > 0 && ordered.length > 0) {
                 const parts = ordered.map((bp, i) => {
-                  const step = typeof steps[i] === "number" ? steps[i] : steps[steps.length - 1];
+                  const step =
+                    typeof steps[i] === "number"
+                      ? steps[i]
+                      : steps[steps.length - 1];
                   return `${bp.name}(space(${step}))`;
                 });
                 node.type = "word";
@@ -224,7 +325,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             return;
           }
           // Radius helpers: radius(n) or rounded(n)
-          if (node.type === "function" && (node.value === "radius" || node.value === "rounded")) {
+          if (
+            node.type === "function" &&
+            (node.value === "radius" || node.value === "rounded")
+          ) {
             const innerText = valueParser.stringify(node.nodes).trim();
             // Keyword support
             if (/^['"]?(pill|full)['"]?$/.test(innerText)) {
@@ -238,10 +342,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               return;
             }
             let idx = innerText;
-            if ((idx.startsWith('"') && idx.endsWith('"')) || (idx.startsWith("'") && idx.endsWith("'"))) idx = idx.slice(1, -1);
+            if (
+              (idx.startsWith('"') && idx.endsWith('"')) ||
+              (idx.startsWith("'") && idx.endsWith("'"))
+            )
+              idx = idx.slice(1, -1);
             const n = parseInt(idx.trim(), 10);
             if (!Number.isNaN(n)) {
-              const tok = radiusTokens[String(n)] || GLOBAL_RADIUS_TOKENS[String(n)];
+              const tok =
+                radiusTokens[String(n)] || GLOBAL_RADIUS_TOKENS[String(n)];
               if (tok) {
                 node.type = "word";
                 node.value = tok;
@@ -250,12 +359,19 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               // Fallback simple ramp
               const ordered = Object.keys(bps)
                 .map((name) => ({ name, px: (bps as any)[name] as number }))
-                .filter((it) => typeof it.px === "number" && !Number.isNaN(it.px))
+                .filter(
+                  (it) => typeof it.px === "number" && !Number.isNaN(it.px)
+                )
                 .sort((a, b) => a.px - b.px);
               if (ordered.length) {
                 const parts = ordered.map((bp, i) => {
                   const base = Math.max(2, n * 2);
-                  const step = i === 0 ? base : i === 1 ? Math.round(base * 2) : Math.round(base * 3);
+                  const step =
+                    i === 0
+                      ? base
+                      : i === 1
+                      ? Math.round(base * 2)
+                      : Math.round(base * 3);
                   return `${bp.name}(${step}px)`;
                 });
                 node.type = "word";
@@ -266,13 +382,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             return;
           }
           // Shadow helpers: shadow(n) or elevation(n)
-          if (node.type === "function" && (node.value === "shadow" || node.value === "elevation")) {
+          if (
+            node.type === "function" &&
+            (node.value === "shadow" || node.value === "elevation")
+          ) {
             const innerText = valueParser.stringify(node.nodes).trim();
             let idx = innerText;
-            if ((idx.startsWith('"') && idx.endsWith('"')) || (idx.startsWith("'") && idx.endsWith("'"))) idx = idx.slice(1, -1);
+            if (
+              (idx.startsWith('"') && idx.endsWith('"')) ||
+              (idx.startsWith("'") && idx.endsWith("'"))
+            )
+              idx = idx.slice(1, -1);
             const n = parseInt(idx.trim(), 10);
             if (!Number.isNaN(n)) {
-              const tok = shadowTokens[String(n)] || GLOBAL_SHADOW_TOKENS[String(n)];
+              const tok =
+                shadowTokens[String(n)] || GLOBAL_SHADOW_TOKENS[String(n)];
               if (tok) {
                 node.type = "word";
                 node.value = tok;
@@ -280,11 +404,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               }
               // Fallback mapping 1..5
               const fallbacks: Record<number, string> = {
-                1: '0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.10)',
-                2: '0 1px 2px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.12)',
-                3: '0 2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.14)',
-                4: '0 4px 6px rgba(0,0,0,0.08), 0 10px 15px rgba(0,0,0,0.16)',
-                5: '0 10px 15px rgba(0,0,0,0.10), 0 20px 25px rgba(0,0,0,0.20)'
+                1: "0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.10)",
+                2: "0 1px 2px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.12)",
+                3: "0 2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.14)",
+                4: "0 4px 6px rgba(0,0,0,0.08), 0 10px 15px rgba(0,0,0,0.16)",
+                5: "0 10px 15px rgba(0,0,0,0.10), 0 20px 25px rgba(0,0,0,0.20)",
               };
               const fb = fallbacks[n] || fallbacks[1];
               node.type = "word";
@@ -296,27 +420,47 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Border helper: border(n[, color][, style])
           if (node.type === "function" && node.value === "border") {
             const innerText = valueParser.stringify(node.nodes).trim();
-            const parts = innerText.split(',').map((s) => s.trim()).filter(Boolean);
-            let idx = parts[0] || '';
-            if ((idx.startsWith('"') && idx.endsWith('"')) || (idx.startsWith("'") && idx.endsWith("'"))) idx = idx.slice(1, -1);
+            const parts = innerText
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            let idx = parts[0] || "";
+            if (
+              (idx.startsWith('"') && idx.endsWith('"')) ||
+              (idx.startsWith("'") && idx.endsWith("'"))
+            )
+              idx = idx.slice(1, -1);
             const n = parseInt(idx, 10);
             // Determine optional color/style args if provided
-            const arg1 = parts[1] || '';
-            const arg2 = parts[2] || '';
-            const looksColor = (s: string) => /^(color\(|palette\(|var\(|#|rgb\(|hsl\()/i.test(s);
-            const looksStyle = (s: string) => /^(solid|dashed|dotted|double|groove|ridge|inset|outset)$/i.test(s);
-            const colorArg = looksColor(arg1) ? arg1 : looksColor(arg2) ? arg2 : '';
-            const styleArg = looksStyle(arg1) ? arg1 : looksStyle(arg2) ? arg2 : 'solid';
+            const arg1 = parts[1] || "";
+            const arg2 = parts[2] || "";
+            const looksColor = (s: string) =>
+              /^(color\(|palette\(|var\(|#|rgb\(|hsl\()/i.test(s);
+            const looksStyle = (s: string) =>
+              /^(solid|dashed|dotted|double|groove|ridge|inset|outset)$/i.test(
+                s
+              );
+            const colorArg = looksColor(arg1)
+              ? arg1
+              : looksColor(arg2)
+              ? arg2
+              : "";
+            const styleArg = looksStyle(arg1)
+              ? arg1
+              : looksStyle(arg2)
+              ? arg2
+              : "solid";
             if (!Number.isNaN(n)) {
-              const comp = borderTokens[String(n)] || GLOBAL_BORDER_TOKENS[String(n)];
+              const comp =
+                borderTokens[String(n)] || GLOBAL_BORDER_TOKENS[String(n)];
               if (comp) {
-                node.type = 'word';
+                node.type = "word";
                 node.value = comp;
                 return;
               }
               const width = `space(${n})`;
-              const color = colorArg || 'color(gray.300)';
-              node.type = 'word';
+              const color = colorArg || "color(gray.300)";
+              node.type = "word";
               node.value = `${width} ${styleArg} ${color}`;
               return;
             }

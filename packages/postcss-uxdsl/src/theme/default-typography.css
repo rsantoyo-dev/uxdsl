@@ -27,18 +27,18 @@
   --p-weight: 400;
   --p-line: xs(1.35) md(1.375);
 
-  --span-size: xs(14px) sm(15px) md(16px);
+  --span-size: xs(14px)  md(16px);
   --span-weight: 400;
 
-  --body-size: xs(14px) sm(16px) md(18px);
+  --body-size: xs(14px) md(18px);
   --body-weight: 400;
 
-  --caption-size: xs(12px) sm(13px) md(14px);
+  --caption-size: xs(12px)  md(14px);
   --caption-opacity: 0.8;
 
-  --small-size: xs(12px) sm(13px) md(14px);
+  --small-size: xs(12px)  md(14px);
 
-  --pre-size: xs(14px) sm(15px) md(16px);
+  --pre-size: xs(14px) md(16px);
 }
 
 /* Single opt-in gate for DS typography */

@@ -1,0 +1,35 @@
+@import "../mixins.uxdsl";
+
+.perf-grid {
+  display: grid;
+  grid-template-columns: xs(1fr) lg(repeat(auto-fit, minmax(240px, 1fr)));
+  gap: xs(space(3)) md(space(4));
+  align-items: stretch;
+  min-width: 0;
+}
+
+.perf-card {
+  display: flex;
+  flex-direction: column;
+  padding: density(2);
+  border-radius: 0; /* fastest */
+  color: palette(primary-contrast);
+  content-visibility: auto;
+  contain: layout paint;
+  contain-intrinsic-size: 120px; /* reserve height for off-screen */
+  min-width: 0;
+}
+
+.perf-card__title {
+  @ds-typo (h6);
+}
+
+.perf-card--light {
+  background: palette(primary-light);
+}
+.perf-card--main {
+  background: palette(primary-main);
+}
+.perf-card--dark {
+  background: palette(primary-dark);
+}

@@ -57,42 +57,37 @@ export default function DemoTypography() {
   function renderSample(variant) {
     const text = SAMPLES[variant] || 'Sample text';
     switch (variant) {
-      case 'h1': return <h1 className="ds-typo">{text}</h1>;
-      case 'h2': return <h2 className="ds-typo">{text}</h2>;
-      case 'h3': return <h3 className="ds-typo">{text}</h3>;
-      case 'h4': return <h4 className="ds-typo">{text}</h4>;
-      case 'h5': return <h5 className="ds-typo">{text}</h5>;
-      case 'h6': return <h6 className="ds-typo">{text}</h6>;
-      case 'p': return <p className="ds-typo">{text}</p>;
-      case 'span': return <span className="ds-typo">{text}</span>;
-      case 'caption': return <span className="ds-typo caption" data-typo="caption">{text}</span>;
-      case 'small': return <small className="ds-typo" data-typo="small">{text}</small>;
-      case 'pre': return <pre className="ds-typo" data-typo="pre">{text}</pre>;
+      case 'h1': return <h1>{text}</h1>;
+      case 'h2': return <h2>{text}</h2>;
+      case 'h3': return <h3>{text}</h3>;
+      case 'h4': return <h4>{text}</h4>;
+      case 'h5': return <h5>{text}</h5>;
+      case 'h6': return <h6>{text}</h6>;
+      case 'p': return <p>{text}</p>;
+      case 'span': return <span>{text}</span>;
+      case 'caption': return <span className="caption">{text}</span>;
+      case 'small': return <small>{text}</small>;
+      case 'pre': return <pre>{text}</pre>;
       case 'body':
       default:
         // Fallback to paragraph style for 'body'
-        return <p className="ds-typo">{text}</p>;
+        return <p>{text}</p>;
     }
   }
 
   return (
     <section className="demo-typography">
-      <h2 className="ds-typo" data-typo="h2">Typography Demo</h2>
+      <h6>Typography Demo</h6>
 
       <div className="demo-typography__list">
-        {VARIANTS.map((v, i) => {
-          const cardVariant = i % 3 === 0 ? 'light' : i % 3 === 1 ? 'main' : 'dark';
-          return (
-            <Card
-              key={v}
-              variant={cardVariant}
-              title={`${v.toUpperCase()} - ${currentBp}`}
-              meta={''}
-            >
+        {VARIANTS.map((v) => (
+          <Card key={v}>
+            <div className="card-content">
+              <small className="">{v} - {currentBp}</small>
               {renderSample(v)}
-            </Card>
-          );
-        })}
+            </div>
+          </Card>
+        ))}
       </div>
     </section>
   );

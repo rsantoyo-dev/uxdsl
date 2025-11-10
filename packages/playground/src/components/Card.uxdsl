@@ -3,14 +3,14 @@
 .card {
   display: flex;
   flex-direction: column;
-  padding: density(1);
+  padding: density(2);
   border-radius: radius(2);
   color: palette(primary-contrast);
   min-width: 0; /* prevent inline overflow */
 }
 
 .card--light {
-  background: palette(primary_light);
+  background: palette(primary-light);
 }
 .card--main {
   background: palette(primary-main);
@@ -19,12 +19,4 @@
   background: palette(primary-dark);
 }
 
-.card__title {
-  margin: 0 0 space(1) 0;
-}
-
-.card__meta {
-  margin: 0;
-  opacity: 0.9;
-  font-size: 0.9rem;
-}
+/* Card is container-only; title/meta styles removed */
