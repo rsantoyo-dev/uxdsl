@@ -1,0 +1,30 @@
+/* Default input packs. Apps can override in their own @theme. */
+@theme {
+  input-contained: {
+    @ds-surface (contained);
+    caret: palette(primary-main);
+    placeholder: color(neutral-dark);
+    :focus { border: border(1, palette(primary-main)); shadow: shadow(2); }
+    :invalid { border: border(1, palette(error-main)); }
+    :disabled { color: color(neutral-dark); }
+  }
+
+  input-outlined: {
+    @ds-surface (outlined);
+    caret: palette(primary-main);
+    placeholder: color(neutral-dark);
+    :focus { border: border(1, palette(primary-main)); }
+    :invalid { border: border(1, palette(error-main)); }
+  }
+
+  input-underline: {
+    @ds-surface (flat);
+    border: none;
+    underline: 1px solid color(neutral-dark);
+    caret: palette(primary-main);
+    placeholder: color(neutral-dark);
+    :focus { underline: 1px solid palette(primary-main); }
+    :invalid { underline: 1px solid palette(error-main); }
+  }
+}
+

@@ -102,6 +102,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
     uxdslPlugin as any
   ).__buttonPacks || Object.create(null);
+  const GLOBAL_INPUT_PACKS: Record<string, any> = (
+    uxdslPlugin as any
+  ).__inputPacks || Object.create(null);
   const GLOBAL_SURFACE_PACKS: Record<string, Record<string, string>> = (
     uxdslPlugin as any
   ).__surfacePacks || Object.create(null);
@@ -112,6 +115,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   (uxdslPlugin as any).__shadows = GLOBAL_SHADOW_TOKENS;
   (uxdslPlugin as any).__borders = GLOBAL_BORDER_TOKENS;
   (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
+  (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
   (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
 
   const { map: bps } = normalizeBreakpoints(opts.breakpoints);
@@ -419,16 +423,30 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               (GLOBAL_SURFACE_PACKS as any)[vname] = parsed.base;
             }
           }
+          // input packs: input-<variant>: { padding.., radius.., bg.., color.., border.., shadow.., caret.., placeholder.. }
+          const inp = prop.match(/^input-([a-zA-Z][\w-]*)$/);
+          if (inp) {
+            const vname = inp[1].toLowerCase();
+            const rawVal = String((decl as any).value || "").trim();
+            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
+              const parsed = parseButtonPack(rawVal);
+              (root as any).__inputPacks = (root as any).__inputPacks || Object.create(null);
+              (root as any).__inputPacks[vname] = { base: parsed.base, states: parsed.states };
+              (GLOBAL_INPUT_PACKS as any)[vname] = { base: parsed.base, states: parsed.states };
+            }
+          }
         });
 
-        // Also support rule-form packs: `button-contained: { ... }` and `surface-contained: { ... }`
+        // Also support rule-form packs: `button-contained: { ... }`, `surface-contained: { ... }`, `input-contained: { ... }`
         at.walkRules((r) => {
           const sel = String((r as any).selector || "").trim();
           const mBtn = sel.match(/^button-([a-zA-Z][\w-]*):?$/);
           const mSurf = sel.match(/^surface-([a-zA-Z][\w-]*):?$/);
-          if (!mBtn && !mSurf) return;
+          const mInp = sel.match(/^input-([a-zA-Z][\w-]*):?$/);
+          if (!mBtn && !mSurf && !mInp) return;
           const isSurface = !!mSurf;
-          const vname = (mBtn ? mBtn[1] : mSurf![1]).toLowerCase();
+          const isInput = !!mInp;
+          const vname = (mBtn ? mBtn[1] : (mSurf ? mSurf[1] : mInp![1])).toLowerCase();
           const base: Record<string, string> = Object.create(null);
           const states: Record<string, Record<string, string>> = Object.create(
             null
@@ -463,6 +481,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               (root as any).__surfacePacks || Object.create(null);
             (root as any).__surfacePacks[vname] = base;
             (GLOBAL_SURFACE_PACKS as any)[vname] = base;
+          } else if (isInput) {
+            (root as any).__inputPacks = (root as any).__inputPacks || Object.create(null);
+            (root as any).__inputPacks[vname] = { base, states };
+            (GLOBAL_INPUT_PACKS as any)[vname] = { base, states };
           } else {
             const parsed = { base, states };
             (root as any).__btnPacks =
@@ -526,6 +548,80 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {
+        // @ds-input(variant [tone] [size])
+        rule.walkAtRules("ds-input", (at) => {
+          let inner = String((at.params || "").trim());
+          if ((inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith("'") && inner.endsWith("'"))) inner = inner.slice(1, -1);
+          if (inner.startsWith("(") && inner.endsWith(")")) inner = inner.slice(1, -1).trim();
+          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          const known = new Set(["contained", "outlined", "underline"]);
+          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
+          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          const sizeToken = parts.find((p) => /^\d+$/.test(p));
+          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
+          const surfPacks: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
+          const inputPacks: any = (root as any).__inputPacks || (uxdslPlugin as any).__inputPacks || {};
+          // Use flat surface as base for underline variant, otherwise named variant
+          const surfVariant = variant === "underline" ? "flat" : variant;
+          const baseProps = computeSurfaceBase(surfPacks, surfVariant, toneFamily, sizeToken);
+          const insert = (prop: string, value: string) => { (rule as any).insertBefore(at, { prop, value }); };
+          // Normalize input element defaults
+          insert("box-sizing", "border-box");
+          insert("outline", "none");
+          insert("appearance", "none");
+          insert("width", "100%");
+          // Apply base surface props
+          Object.keys(baseProps).forEach((k) => insert(k, baseProps[k]!));
+          // Underline variant: enforce bottom-only border
+          if (variant === "underline") {
+            insert("border", "none");
+            const main = toneFamily ? `palette(${toneFamily}-main)` : (baseProps["border"] || "1px solid currentColor");
+            insert("border-bottom", typeof main === "string" && main.startsWith("palette(") ? `1px solid ${main.replace(/^.*\(|\)$/g,'')}` : String(main));
+            insert("box-shadow", "none");
+          }
+          // Apply input pack extras + states
+          const pack = inputPacks[variant] || inputPacks["contained"] || { base: {}, states: {} };
+          const base = pack.base || {};
+          // caret-color
+          if (base.caret) insert("caret-color", base.caret);
+          // placeholder creates ::placeholder rule
+          if (base.placeholder) {
+            const ph = postcss.rule({ selector: `${(rule as any).selector}::placeholder` });
+            ph.append({ prop: "color", value: base.placeholder });
+            (rule.parent as any).insertAfter(rule, ph);
+          }
+          // States
+          const stateToSels: Record<string, string[]> = {
+            hover: [":hover"],
+            focus: [":focus"],
+            disabled: [":disabled", '[aria-disabled="true"]'],
+            invalid: [":invalid", '[aria-invalid="true"]'],
+          };
+          Object.keys(pack.states || {}).forEach((kRaw: string) => {
+            const decls = pack.states[kRaw] || {};
+            const key = kRaw.replace(/^&/, '').replace(/^:/, '').toLowerCase();
+            const pseudos = stateToSels[key] || [":" + key];
+            pseudos.forEach((pz) => {
+              const newRule = postcss.rule({ selector: `${(rule as any).selector}${pz}` });
+              Object.keys(decls).forEach((dk) => {
+                const dv = decls[dk];
+                if (dk === "caret") newRule.append({ prop: "caret-color", value: dv });
+                else if (dk === "placeholder") {
+                  const phr = postcss.rule({ selector: `${(rule as any).selector}${pz}::placeholder` });
+                  phr.append({ prop: "color", value: dv });
+                  (rule.parent as any).insertAfter(newRule, phr);
+                } else if (dk === "underline") {
+                  newRule.append({ prop: "border", value: "none" });
+                  newRule.append({ prop: "border-bottom", value: dv });
+                } else {
+                  newRule.append({ prop: dk, value: dv });
+                }
+              });
+              (rule.parent as any).insertAfter(rule, newRule);
+            });
+          });
+          at.remove();
+        });
         // @ds-surface(variant [tone])
         rule.walkAtRules("ds-surface", (at) => {
           let inner = String((at.params || "").trim());

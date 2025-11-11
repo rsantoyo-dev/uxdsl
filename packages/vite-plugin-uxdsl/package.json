@@ -1,6 +1,6 @@
 {
   "name": "vite-plugin-uxdsl",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Vite loader for .uxdsl files",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -23,8 +23,8 @@
   "license": "MIT",
   "dependencies": {
     "postcss": "^8.5.6",
-    "postcss-uxdsl": "^0.1.1",
-    "uxdsl-core": "^0.1.1"
+    "postcss-uxdsl": "^0.1.2",
+    "uxdsl-core": "^0.1.2"
   },
   "peerDependencies": {
     "vite": "^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0"

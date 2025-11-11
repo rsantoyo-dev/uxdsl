@@ -1,0 +1,27 @@
+@import "../mixins.uxdsl";
+
+.demo-inputs {
+  display: grid;
+  gap: density(2);
+}
+
+.demo-inputs__controls {
+  display: flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.demo-inputs__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: density(2);
+}
+
+.input.input--contained { @ds-input (contained); }
+.input.input--outlined { @ds-input (outlined); }
+.input.input--underline { @ds-input (underline); }
+
+.input.input--contained.input--secondary { @ds-input (contained secondary); }
+.input.input--outlined.input--secondary { @ds-input (outlined secondary); }
+.input.input--underline.input--secondary { @ds-input (underline secondary); }
+

@@ -4,6 +4,7 @@ import DemoTypography from './components/DemoTypography.jsx';
 import DemoButtons from './components/DemoButtons.jsx';
 import DemoSurfaces from './components/DemoSurfaces.jsx';
 import DemoSpacing from './components/DemoSpacing.jsx';
+import DemoInputs from './components/DemoInputs.jsx';
 
 async function withRuntime(cb) {
   const mod = await import('postcss-uxdsl/runtime');
@@ -105,7 +106,7 @@ export default function App() {
   function resetBps() {
     withRuntime(({ breakpoints }) => breakpoints.reset(undefined, { clearPersist: true }));
   }
-  const [view, setView] = useState('typography'); // 'typography' | 'spacing' | 'surfaces' | 'buttons' | 'performance'
+  const [view, setView] = useState('typography'); // 'typography' | 'spacing' | 'surfaces' | 'buttons' | 'inputs' | 'performance'
   // Large list demo moved into <Performance /> and toggled via menu
 
   return (
@@ -117,6 +118,7 @@ export default function App() {
         <button onClick={() => setView('spacing')} disabled={view === 'spacing'}>Spacing</button>
         <button onClick={() => setView('surfaces')} disabled={view === 'surfaces'}>Surfaces</button>
         <button onClick={() => setView('buttons')} disabled={view === 'buttons'}>Buttons</button>
+        <button onClick={() => setView('inputs')} disabled={view === 'inputs'}>Inputs</button>
         <button onClick={() => setView('performance')} disabled={view === 'performance'}>Performance</button>
         <span style={{ marginLeft: 8, opacity: 0.7 }}>|</span>
         <button onClick={setPrimaryBlue}>Primary: Blue</button>
@@ -132,6 +134,7 @@ export default function App() {
       {view === 'spacing' && <DemoSpacing />}
       {view === 'surfaces' && <DemoSurfaces />}
       {view === 'buttons' && <DemoButtons />}
+      {view === 'inputs' && <DemoInputs />}
       {view === 'performance' && <Performance />}
     </div>
   );

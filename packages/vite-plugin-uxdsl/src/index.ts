@@ -42,6 +42,9 @@ let cachedBordersMtime: number | null = null;
 let cachedSurfacesFile: string | undefined;
 let cachedSurfacesCss: string | null = null;
 let cachedSurfacesMtime: number | null = null;
+let cachedInputsFile: string | undefined;
+let cachedInputsCss: string | null = null;
+let cachedInputsMtime: number | null = null;
 let cachedButtonsFile: string | undefined;
 let cachedButtonsCss: string | null = null;
 let cachedButtonsMtime: number | null = null;
@@ -344,6 +347,30 @@ function resolveDefaultSurfacesFile(): string {
   return cachedSurfacesFile;
 }
 
+function resolveDefaultInputsFile(): string {
+  if (cachedInputsFile !== undefined) return cachedInputsFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-inputs.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-inputs.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-inputs.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedInputsFile = f;
+        return cachedInputsFile;
+      }
+    }
+  } catch {}
+  cachedInputsFile = "";
+  return cachedInputsFile;
+}
+
 function resolveDefaultButtonsFile(): string {
   if (cachedButtonsFile !== undefined) return cachedButtonsFile;
   try {
@@ -476,6 +503,22 @@ function readCachedSurfaces(file: string): string {
   } catch (err) {
     cachedSurfacesCss = null;
     cachedSurfacesMtime = null;
+    return "";
+  }
+}
+
+function readCachedInputs(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedInputsCss === null || cachedInputsMtime !== stat.mtimeMs) {
+      cachedInputsCss = fs.readFileSync(file, "utf-8");
+      cachedInputsMtime = stat.mtimeMs;
+    }
+    return cachedInputsCss ?? "";
+  } catch (err) {
+    cachedInputsCss = null;
+    cachedInputsMtime = null;
     return "";
   }
 }
@@ -655,6 +698,16 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         const sSrc = readCachedSurfaces(surfacesFileEarly);
         if (sSrc) {
           try { await processUxdsl(sSrc, { ...userOptions, fileId: surfacesFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default inputs packs are loaded before processing
+      const inputsFileEarly = resolveDefaultInputsFile();
+      if (inputsFileEarly) {
+        try { this.addWatchFile(inputsFileEarly); } catch {}
+        const iSrc = readCachedInputs(inputsFileEarly);
+        if (iSrc) {
+          try { await processUxdsl(iSrc, { ...userOptions, fileId: inputsFileEarly }); } catch {}
         }
       }
 
