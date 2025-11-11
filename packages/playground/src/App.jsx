@@ -1,6 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Performance from './components/Performance.jsx';
 import DemoTypography from './components/DemoTypography.jsx';
+import DemoButtons from './components/DemoButtons.jsx';
+import DemoSurfaces from './components/DemoSurfaces.jsx';
+import DemoSpacing from './components/DemoSpacing.jsx';
 
 async function withRuntime(cb) {
   const mod = await import('postcss-uxdsl/runtime');
@@ -102,7 +105,7 @@ export default function App() {
   function resetBps() {
     withRuntime(({ breakpoints }) => breakpoints.reset(undefined, { clearPersist: true }));
   }
-  const [view, setView] = useState('typography'); // 'typography' | 'performance'
+  const [view, setView] = useState('typography'); // 'typography' | 'spacing' | 'surfaces' | 'buttons' | 'performance'
   // Large list demo moved into <Performance /> and toggled via menu
 
   return (
@@ -111,6 +114,9 @@ export default function App() {
       <div className="toolbar">
         <label className="ds-typo" data-typo="small" style={{ marginRight: 4 }}>View:</label>
         <button onClick={() => setView('typography')} disabled={view === 'typography'}>Typography</button>
+        <button onClick={() => setView('spacing')} disabled={view === 'spacing'}>Spacing</button>
+        <button onClick={() => setView('surfaces')} disabled={view === 'surfaces'}>Surfaces</button>
+        <button onClick={() => setView('buttons')} disabled={view === 'buttons'}>Buttons</button>
         <button onClick={() => setView('performance')} disabled={view === 'performance'}>Performance</button>
         <span style={{ marginLeft: 8, opacity: 0.7 }}>|</span>
         <button onClick={setPrimaryBlue}>Primary: Blue</button>
@@ -122,28 +128,11 @@ export default function App() {
         <button onClick={resetBps}>Reset breakpoints</button>
       </div>
       
-      <p>
-        Tokens via <code>palette(primary.*)</code>; responsive via <code>xs()/lg()</code>.
-      </p>
-      <div className="showcase">
-        <div className="showcase__box">
-          <span className="ds-typo" data-typo="h3">Badges</span>
-          <div className="showcase__stack">
-            <span className="badge">New</span>
-            <span className="badge">Sale</span>
-            <span className="badge">Limited</span>
-            <span className="badge">Beta</span>
-          </div>
-          <div className="vis vis--mobile ds-typo" data-typo="small">Mobile view</div>
-          <div className="vis vis--desktop ds-typo" data-typo="small">Desktop view</div>
-          <button className="cta">Call to action</button>
-        </div>
-        <div className="showcase__box showcase__box--grad">
-          <span className="ds-typo" data-typo="h2">Layout</span>
-          <p className="ds-typo">Flex flips at <code>md</code>; padding and colors adapt by breakpoint.</p>
-        </div>
-      </div>
-      {view === 'typography' ? <DemoTypography /> : <Performance />}
+      {view === 'typography' && <DemoTypography />}
+      {view === 'spacing' && <DemoSpacing />}
+      {view === 'surfaces' && <DemoSurfaces />}
+      {view === 'buttons' && <DemoButtons />}
+      {view === 'performance' && <Performance />}
     </div>
   );
 }

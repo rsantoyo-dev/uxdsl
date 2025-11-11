@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './DemoTypography.uxdsl';
-import Card from './Card.jsx';
 
 // Lazy import runtime utilities similar to App.jsx
 async function withRuntime(cb) {
@@ -27,18 +26,18 @@ const VARIANTS = [
 ];
 
 const SAMPLES = {
-  h1: 'Taxing Laughter: The Joke Tax Chronicles',
-  h2: 'The People of the Kingdom',
-  h3: 'The Joke Tax',
-  h4: 'People stopped telling jokes',
-  h5: 'A Fortnight of Silence',
-  h6: 'A Royal Change of Heart',
-  p: 'The king, seeing how much happier his subjects were, realized the error of his ways and repealed the joke tax.',
-  span: 'Inline span text example',
-  body: 'Body content example text for layout and rhythm.',
-  caption: 'Caption text for images or notes',
-  small: 'Small helper text',
-  pre: 'const jokeTax = false; // humor is free',
+  h1: 'UXDSL: A Design System Language',
+  h2: 'Composable, Responsive, Token‑Driven CSS',
+  h3: 'Write intent, not breakpoints',
+  h4: 'Surface, Button, Typography primitives',
+  h5: 'Tokens power palettes, spacing, radii',
+  h6: 'Tiny syntax, big ergonomics',
+  p: 'UXDSL is a thin layer on top of SCSS/CSS. Keep writing regular styles and progressively add tiny directives (e.g., @ds-typo, @ds-surface, density()) to express design‑system intent. It compiles to plain CSS, so existing code keeps working and no runtime is required.',
+  span: 'Declarative, predictable, framework‑agnostic.',
+  body: 'The focus is ergonomics: tokens and packs encode system choices (spacing, palette, radii, shadows) while staying fully opt‑in. Use as little or as much DSL as you need; legacy SCSS remains valid and interoperable with UXDSL files.',
+  caption: 'Demo content for UXDSL typography',
+  small: 'Built for speed and clarity',
+  pre: '/* @ds-typo(h2); padding: density(2); */',
 };
 
 export default function DemoTypography() {
@@ -77,16 +76,16 @@ export default function DemoTypography() {
 
   return (
     <section className="demo-typography">
-      <h6>Typography Demo</h6>
+      <h6>UXDSL Typography</h6>
 
       <div className="demo-typography__list">
         {VARIANTS.map((v) => (
-          <Card key={v}>
+          <div className="card" key={v}>
             <div className="card-content">
               <small className="">{v} - {currentBp}</small>
               {renderSample(v)}
             </div>
-          </Card>
+          </div>
         ))}
       </div>
     </section>

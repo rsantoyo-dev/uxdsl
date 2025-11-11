@@ -3,9 +3,7 @@
 .card {
   display: flex;
   flex-direction: column;
-  padding: density(2);
-  border-radius: radius(2);
-  color: palette(primary-contrast);
+  @ds-surface (contained);
   min-width: 0; /* prevent inline overflow */
 }
 

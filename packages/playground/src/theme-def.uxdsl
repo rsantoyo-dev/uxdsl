@@ -3,7 +3,15 @@
 
 :root {
   /* Brand primary */
-  --primary-main: #ffe015; /* blue-500 */
+  --primary-main: #00675b;
+  --primary-light: #439889;
+  --primary-dark: #003f3d;
+  --primary-contrast: #ffffff;
+  /* Secondary */
+  --secondary-main: #f57c00;
+  --secondary-light: #ffad42;
+  --secondary-dark: #bb4d00;
+  --secondary-contrast: #000000;
 
   /* Typography overrides (demo) */
   //--h2-size: xs(32px) md(44px) lg(52px);
@@ -13,6 +21,6 @@
 /* Respect system preference: switch primary tokens in dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary-main: #0a6360;
+    //--primary-main: #0a6360;
   }
 }

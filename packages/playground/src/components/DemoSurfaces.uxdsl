@@ -1,0 +1,48 @@
+@import "../mixins.uxdsl";
+
+.demo-surfaces {
+  display: grid;
+  gap: density(2);
+}
+
+.demo-surfaces__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(220px, 1fr));
+  gap: density(2);
+}
+
+.surface {
+  display: grid;
+  gap: space(2);
+}
+
+.surface--contained {
+  @ds-surface (contained);
+}
+.surface--outlined {
+  @ds-surface (outlined);
+}
+.surface--flat {
+  @ds-surface (flat);
+}
+
+.surface--contained.surface--secondary {
+  @ds-surface (contained secondary);
+}
+.surface--outlined.surface--secondary {
+  @ds-surface (outlined secondary);
+}
+.surface--flat.surface--secondary {
+  @ds-surface (flat secondary);
+}
+
+/* Size variants */
+.surface--contained-lg {
+  @ds-surface (contained primary 4);
+}
+.surface--outlined-lg {
+  @ds-surface (contained outlined );
+}
+.surface--flat-lg {
+  @ds-surface (flat 4);
+}

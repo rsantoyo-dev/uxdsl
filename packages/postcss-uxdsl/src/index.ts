@@ -97,12 +97,22 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
     (uxdslPlugin as any).__shadows || Object.create(null);
   const GLOBAL_BORDER_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__borders || Object.create(null);
+  // Global button packs (e.g. button-contained/outlined/flat) so they can be
+  // defined in a separate @theme file and used across files in the same process.
+  const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
+    uxdslPlugin as any
+  ).__buttonPacks || Object.create(null);
+  const GLOBAL_SURFACE_PACKS: Record<string, Record<string, string>> = (
+    uxdslPlugin as any
+  ).__surfacePacks || Object.create(null);
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
   (uxdslPlugin as any).__radii = GLOBAL_RADIUS_TOKENS;
   (uxdslPlugin as any).__shadows = GLOBAL_SHADOW_TOKENS;
   (uxdslPlugin as any).__borders = GLOBAL_BORDER_TOKENS;
+  (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
+  (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
 
   const { map: bps } = normalizeBreakpoints(opts.breakpoints);
   const toVar =
@@ -203,6 +213,147 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const shadowTokens: Record<string, string> = Object.create(null);
       const borderTokens: Record<string, string> = Object.create(null);
 
+      // Parse a button pack body "{ ... }" into base + states maps
+      function parseButtonPack(rawVal: string): {
+        base: Record<string, string>;
+        states: Record<string, Record<string, string>>;
+      } {
+        const outBase: Record<string, string> = Object.create(null);
+        const outStates: Record<string, Record<string, string>> = Object.create(
+          null
+        );
+        let s = String(rawVal || "").trim();
+        if (s.startsWith("{") && s.endsWith("}")) s = s.slice(1, -1);
+        let i = 0;
+        const N = s.length;
+        const isWs = (ch: string) => /\s/.test(ch);
+        function skipWs() {
+          while (i < N && isWs(s[i]!)) i++;
+        }
+        function readUntilTopLevelSemi(): string {
+          let depth = 0;
+          let buf = "";
+          while (i < N) {
+            const ch = s[i]!;
+            if (ch === "{") {
+              depth++;
+              buf += ch;
+              i++;
+              continue;
+            }
+            if (ch === "}" && depth > 0) {
+              depth--;
+              buf += ch;
+              i++;
+              continue;
+            }
+            if (ch === ";" && depth === 0) {
+              i++;
+              break;
+            }
+            buf += ch;
+            i++;
+          }
+          return buf.trim();
+        }
+        while (i < N) {
+          skipWs();
+          if (i >= N) break;
+          if (s[i] === "&" || s[i] === ":") {
+            // Read state key up to '{'
+            let key = "";
+            while (i < N && s[i] !== "{") {
+              key += s[i];
+              i++;
+            }
+            key = key.trim();
+            if (i < N && s[i] === "{") {
+              i++; // skip '{'
+              let depth = 1;
+              let inner = "";
+              while (i < N && depth > 0) {
+                const ch = s[i]!;
+                if (ch === "{") {
+                  depth++;
+                  inner += ch;
+                  i++;
+                  continue;
+                }
+                if (ch === "}") {
+                  depth--;
+                  if (depth === 0) {
+                    i++;
+                    break;
+                  }
+                  inner += ch;
+                  i++;
+                  continue;
+                }
+                inner += ch;
+                i++;
+              }
+              const norm = key
+                .replace(/^&/, "")
+                .replace(/^:/, "")
+                .trim()
+                .toLowerCase();
+              const stateDecls: Record<string, string> = Object.create(null);
+              // Split inner by top-level ';'
+              let j = 0;
+              const M = inner.length;
+              function readInnerUntilSemi(): string {
+                let d = 0,
+                  b = "";
+                while (j < M) {
+                  const ch2 = inner[j]!;
+                  if (ch2 === "{") {
+                    d++;
+                    b += ch2;
+                    j++;
+                    continue;
+                  }
+                  if (ch2 === "}" && d > 0) {
+                    d--;
+                    b += ch2;
+                    j++;
+                    continue;
+                  }
+                  if (ch2 === ";" && d === 0) {
+                    j++;
+                    break;
+                  }
+                  b += ch2;
+                  j++;
+                }
+                return b.trim();
+              }
+              while (j < M) {
+                while (j < M && /\s/.test(inner[j]!)) j++;
+                const line = readInnerUntilSemi();
+                if (!line) break;
+                const idx = line.indexOf(":");
+                if (idx > 0) {
+                  const k = line.slice(0, idx).trim().toLowerCase();
+                  const v = line.slice(idx + 1).trim();
+                  if (k) stateDecls[k] = v;
+                }
+              }
+              if (Object.keys(stateDecls).length) outStates[norm] = stateDecls;
+            }
+            continue;
+          }
+          const chunk = readUntilTopLevelSemi();
+          if (!chunk) break;
+          const idx = chunk.indexOf(":");
+          if (idx > 0) {
+            const k = chunk.slice(0, idx).trim().toLowerCase();
+            const v = chunk.slice(idx + 1).trim();
+            if (k) outBase[k] = v;
+          }
+        }
+        return { base: outBase, states: outStates };
+      }
+
       // Collect theme-driven density tokens (generic only) and store globally
       root.walkAtRules("theme", (at) => {
         at.walkDecls((decl) => {
@@ -243,9 +394,332 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             borderTokens[key] = val;
             GLOBAL_BORDER_TOKENS[key] = val;
           }
+          // button packs: button-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; }
+          const pack = prop.match(/^button-([a-zA-Z][\w-]*)$/);
+          if (pack) {
+            const vname = pack[1].toLowerCase();
+            const rawVal = String((decl as any).value || "").trim();
+            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
+              const parsed = parseButtonPack(rawVal);
+              (root as any).__btnPacks =
+                (root as any).__btnPacks || Object.create(null);
+              (root as any).__btnPacks[vname] = parsed;
+              GLOBAL_BUTTON_PACKS[vname] = parsed as any;
+            }
+          }
+          // surface packs: surface-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; shadow:.. }
+          const surf = prop.match(/^surface-([a-zA-Z][\w-]*)$/);
+          if (surf) {
+            const vname = surf[1].toLowerCase();
+            const rawVal = String((decl as any).value || "").trim();
+            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
+              const parsed = parseButtonPack(rawVal);
+              (root as any).__surfacePacks = (root as any).__surfacePacks || Object.create(null);
+              (root as any).__surfacePacks[vname] = parsed.base;
+              (GLOBAL_SURFACE_PACKS as any)[vname] = parsed.base;
+            }
+          }
+        });
+
+        // Also support rule-form packs: `button-contained: { ... }` and `surface-contained: { ... }`
+        at.walkRules((r) => {
+          const sel = String((r as any).selector || "").trim();
+          const mBtn = sel.match(/^button-([a-zA-Z][\w-]*):?$/);
+          const mSurf = sel.match(/^surface-([a-zA-Z][\w-]*):?$/);
+          if (!mBtn && !mSurf) return;
+          const isSurface = !!mSurf;
+          const vname = (mBtn ? mBtn[1] : mSurf![1]).toLowerCase();
+          const base: Record<string, string> = Object.create(null);
+          const states: Record<string, Record<string, string>> = Object.create(
+            null
+          );
+          (r.nodes || []).forEach((n: any) => {
+            if (!n) return;
+            if (n.type === "decl") {
+              const k = String(n.prop || "")
+                .trim()
+                .toLowerCase();
+              const v = String(n.value || "").trim();
+              if (k) base[k] = v;
+            } else if (!isSurface && n.type === "rule") {
+              // Selector can be ':hover' or '&:hover'
+              let st = String(n.selector || "").trim();
+              st = st.replace(/^&/, "").replace(/^:/, "").toLowerCase();
+              const sd: Record<string, string> = Object.create(null);
+              (n.nodes || []).forEach((dn: any) => {
+                if (dn && dn.type === "decl") {
+                  const k = String(dn.prop || "")
+                    .trim()
+                    .toLowerCase();
+                  const v = String(dn.value || "").trim();
+                  if (k) sd[k] = v;
+                }
+              });
+              if (st && Object.keys(sd).length) states[st] = sd;
+            }
+          });
+          if (isSurface) {
+            (root as any).__surfacePacks =
+              (root as any).__surfacePacks || Object.create(null);
+            (root as any).__surfacePacks[vname] = base;
+            (GLOBAL_SURFACE_PACKS as any)[vname] = base;
+          } else {
+            const parsed = { base, states };
+            (root as any).__btnPacks =
+              (root as any).__btnPacks || Object.create(null);
+            (root as any).__btnPacks[vname] = parsed;
+            GLOBAL_BUTTON_PACKS[vname] = parsed as any;
+          }
         });
         // Remove @theme blocks from output
         at.remove();
+      });
+
+      // Helper to compute surface base props for a given variant/tone/size
+      function computeSurfaceBase(
+        packsObj: any,
+        variant: string,
+        toneFamily: string,
+        sizeToken?: string
+      ): Record<string, string> {
+        const base = (packsObj && (packsObj[variant] || packsObj["contained"])) || {};
+        const out: Record<string, string> = Object.create(null);
+        const copyKeys = [
+          ["padding", "padding"],
+          ["radius", "border-radius"],
+          ["bg", "background"],
+          ["color", "color"],
+          ["border", "border"],
+          ["shadow", "box-shadow"],
+        ] as Array<[string, string]>;
+        copyKeys.forEach(([k, css]) => {
+          const v = (base as any)[k];
+          if (typeof v === "string" && v) out[css] = v;
+        });
+        if (toneFamily) {
+          const main = `palette(${toneFamily}-main)`;
+          const dark = `palette(${toneFamily}-dark)`;
+          const contrast = `palette(${toneFamily}-contrast)`;
+          if (variant === "outlined") {
+            out["background"] = "transparent";
+            out["color"] = main;
+            out["border"] = `1px solid ${main}`;
+          } else if (variant === "flat") {
+            out["background"] = "transparent";
+            out["color"] = main;
+            out["border"] = out["border"] || "none";
+          } else {
+            out["background"] = main;
+            out["color"] = contrast;
+            out["border"] = out["border"] || "none";
+          }
+        }
+        if (sizeToken && /^\d+$/.test(sizeToken)) {
+          const n = parseInt(sizeToken, 10);
+          if (!Number.isNaN(n)) {
+            out["padding"] = `density(${n})`;
+            out["border-radius"] = `radius(${n})`;
+          }
+        }
+        return out;
+      }
+
+      // After tokens are known, expand @ds-surface and @ds-button using packs
+      root.walkRules((rule) => {
+        // @ds-surface(variant [tone])
+        rule.walkAtRules("ds-surface", (at) => {
+          let inner = String((at.params || "").trim());
+          if ((inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith("'") && inner.endsWith("'"))) inner = inner.slice(1, -1);
+          if (inner.startsWith("(") && inner.endsWith(")")) inner = inner.slice(1, -1).trim();
+          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          const known = new Set(["contained", "outlined", "flat"]);
+          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
+          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          const sizeToken = parts.find((p) => /^\d+$/.test(p));
+          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
+          const packs: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
+          const props = computeSurfaceBase(packs, variant, toneFamily, sizeToken);
+          const insert = (prop: string, value: string) => { (rule as any).insertBefore(at, { prop, value }); };
+          Object.keys(props).forEach((k) => insert(k, props[k]!));
+          at.remove();
+        });
+
+        // @ds-button(variant?) using packs
+        rule.walkAtRules("ds-button", (at) => {
+          const rawIn = String((at.params || "").trim());
+          let inner = rawIn;
+          if (
+            (inner.startsWith('"') && inner.endsWith('"')) ||
+            (inner.startsWith("'") && inner.endsWith("'"))
+          ) {
+            inner = inner.slice(1, -1);
+          }
+          if (inner.startsWith("(") && inner.endsWith(")")) {
+            inner = inner.slice(1, -1).trim();
+          }
+          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          const known = new Set(["contained", "outlined", "flat"]);
+          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
+          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          const sizeToken = parts.find((p) => /^\d+$/.test(p));
+          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
+          // Prefer packs defined in the same file; fall back to global packs
+          const packs: any =
+            (root as any).__btnPacks || GLOBAL_BUTTON_PACKS || {};
+          const pack: any = packs[variant] || packs["contained"];
+          const insert = (
+            prop: string,
+            value: string,
+            targetRule: Rule | null = null
+          ) => {
+            const trg: any = targetRule || rule;
+            trg.insertBefore(at, { prop, value });
+          };
+          const wrapBtnVar = (
+            k: string,
+            raw: string,
+            stateKey?: string
+          ): string => {
+            const suffix = stateKey
+              ? stateKey === "focusvisible"
+                ? "-focus-visible"
+                : `-${stateKey}`
+              : "";
+            if (k === "bg") return `var(--ds-btn-bg${suffix}, ${raw})`;
+            if (k === "color") return `var(--ds-btn-fg${suffix}, ${raw})`;
+            if (k === "border") return `var(--ds-btn-border${suffix}, ${raw})`;
+            return raw;
+          };
+          const applyPack = (
+            p: Record<string, string>,
+            targetRule: Rule | null = null,
+            stateKey?: string
+          ) => {
+            const map: Array<[keyof typeof p, string]> = [
+              ["padding" as any, "padding"],
+              ["radius" as any, "border-radius"],
+              ["bg" as any, "background"],
+              ["color" as any, "color"],
+              ["border" as any, "border"],
+            ];
+            map.forEach(([k, css]) => {
+              const val: any = (p as any)[k];
+              if (typeof val === "string" && val) {
+                const out =
+                  k === ("bg" as any) ||
+                  k === ("color" as any) ||
+                  k === ("border" as any)
+                    ? wrapBtnVar(String(k), val, stateKey)
+                    : val;
+                insert(css, out, targetRule);
+              }
+            });
+          };
+          function emitStateRules(
+            states: Record<string, Record<string, string>> | undefined
+          ) {
+            if (!states) return;
+            const sel = String((rule as any).selector || "");
+            const baseSels = sel
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const stateToSels: Record<string, string[]> = {
+              hover: [":hover"],
+              active: [":active"],
+              focus: [":focus"],
+              disabled: [":disabled", '[aria-disabled="true"]'],
+              selected: [
+                ".is-selected",
+                '[aria-pressed="true"]',
+                '[aria-selected="true"]',
+              ],
+              focusvisible: [":focus-visible"],
+            };
+            Object.keys(states).forEach((kRaw) => {
+              const key = kRaw
+                .replace(/^&/, "")
+                .replace(/^:/, "")
+                .toLowerCase();
+              const pseudos = stateToSels[key] || [":" + key];
+              const decls = states[kRaw] || states[key] || {};
+              pseudos.forEach((pz) => {
+                const newSel = baseSels.map((s) => `${s}${pz}`).join(", ");
+                const newRule = postcss.rule({ selector: newSel });
+                applyPack(decls, newRule as any, key);
+                (rule.parent as any).insertAfter(rule, newRule);
+              });
+            });
+          }
+          // Apply surface base first, then states from button pack
+          const surfPacks: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
+          const surfProps = computeSurfaceBase(surfPacks, variant, toneFamily, sizeToken);
+          // Insert padding/border-radius directly; var-wrap color/bg/border
+          if (surfProps["padding"]) insert("padding", surfProps["padding"]);
+          if (surfProps["border-radius"]) insert("border-radius", surfProps["border-radius"]);
+          if (surfProps["background"]) insert("background", `var(--ds-btn-bg, ${surfProps["background"]})`);
+          if (surfProps["color"]) insert("color", `var(--ds-btn-fg, ${surfProps["color"]})`);
+          if (surfProps["border"]) insert("border", `var(--ds-btn-border, ${surfProps["border"]})`);
+
+          if (pack) {
+            const st =
+              pack.states && typeof pack.states === "object"
+                ? (pack.states as any)
+                : undefined;
+            emitStateRules(st);
+          } else {
+            // Minimal fallback if no packs are defined
+            insert("padding", "density(2)");
+            insert("border-radius", "radius(2)");
+            if (variant === "outlined") {
+              insert("background", "transparent");
+              insert("color", "palette(primary-main)");
+              insert("border", "border(1, palette(primary-main))");
+            } else if (variant === "flat") {
+              insert("background", "transparent");
+              insert("color", "palette(primary-main)");
+              insert("border", "none");
+            } else {
+              insert("background", "palette(primary-main)");
+              insert("color", "palette(primary-contrast)");
+              insert("border", "none");
+            }
+          }
+          // Optional inline tone mapping: second token adjusts CSS variables consumed by btn packs
+          if (toneFamily) {
+            const main = `palette(${toneFamily}-main)`;
+            const dark = `palette(${toneFamily}-dark)`;
+            const contrast = `palette(${toneFamily}-contrast)`;
+            const insertVar = (name: string, value: string) => {
+              (rule as any).insertBefore(at, { prop: `--${name}`, value });
+            };
+            if (variant === "outlined") {
+              insertVar("ds-btn-bg", "transparent");
+              insertVar("ds-btn-fg", main);
+              insertVar("ds-btn-border", `1px solid ${main}`);
+              insertVar("ds-btn-fg-hover", dark);
+              insertVar("ds-btn-border-hover", `1px solid ${dark}`);
+              insertVar("ds-btn-bg-selected", main);
+              insertVar("ds-btn-fg-selected", contrast);
+              insertVar("ds-btn-border-selected", `1px solid ${main}`);
+            } else if (variant === "flat") {
+              insertVar("ds-btn-bg", "transparent");
+              insertVar("ds-btn-fg", main);
+              insertVar("ds-btn-border", "none");
+              insertVar("ds-btn-fg-hover", dark);
+              insertVar("ds-btn-fg-selected", dark);
+            } else {
+              insertVar("ds-btn-bg", main);
+              insertVar("ds-btn-fg", contrast);
+              insertVar("ds-btn-border", "none");
+              insertVar("ds-btn-bg-hover", dark);
+              insertVar("ds-btn-fg-hover", contrast);
+              insertVar("ds-btn-bg-selected", dark);
+              insertVar("ds-btn-fg-selected", contrast);
+            }
+          }
+          at.remove();
+        });
       });
 
       // Collect root-level $vars and remove the declarations

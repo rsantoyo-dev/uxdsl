@@ -1,0 +1,42 @@
+@import "../mixins.uxdsl";
+
+.demo-buttons {
+  display: grid;
+  gap: density(2);
+}
+
+.demo-buttons__controls {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+}
+
+.demo-buttons__row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, max-content));
+  gap: density(2);
+}
+
+.btn {
+  @ds-button (contained);
+  @ds-typo (body);
+  cursor: pointer;
+}
+
+.btn.btn--outlined {
+  @ds-button (outlined primary);
+}
+.btn.btn--flat {
+  @ds-button (flat primary);
+}
+
+/* Paint examples: reuse structure, change tone via decorator */
+.btn--secondary {
+  @ds-button (contained secondary);
+}
+.btn--outlined.btn--secondary {
+  @ds-button (outlined secondary);
+}
+.btn--flat.btn--secondary {
+  @ds-button (flat secondary);
+}

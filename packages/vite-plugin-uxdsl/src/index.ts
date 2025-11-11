@@ -39,6 +39,12 @@ let cachedShadowsMtime: number | null = null;
 let cachedBordersFile: string | undefined;
 let cachedBordersCss: string | null = null;
 let cachedBordersMtime: number | null = null;
+let cachedSurfacesFile: string | undefined;
+let cachedSurfacesCss: string | null = null;
+let cachedSurfacesMtime: number | null = null;
+let cachedButtonsFile: string | undefined;
+let cachedButtonsCss: string | null = null;
+let cachedButtonsMtime: number | null = null;
 
 type BreakpointSpec =
   | Record<string, number>
@@ -314,6 +320,54 @@ function resolveDefaultBordersFile(): string {
   return cachedBordersFile;
 }
 
+function resolveDefaultSurfacesFile(): string {
+  if (cachedSurfacesFile !== undefined) return cachedSurfacesFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-surfaces.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-surfaces.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-surfaces.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedSurfacesFile = f;
+        return cachedSurfacesFile;
+      }
+    }
+  } catch {}
+  cachedSurfacesFile = "";
+  return cachedSurfacesFile;
+}
+
+function resolveDefaultButtonsFile(): string {
+  if (cachedButtonsFile !== undefined) return cachedButtonsFile;
+  try {
+    const pkgPath = nodeRequire.resolve("postcss-uxdsl");
+    const resolvedDir = path.dirname(pkgPath);
+    const pkgRoot = fs.existsSync(path.resolve(resolvedDir, "package.json"))
+      ? resolvedDir
+      : path.resolve(resolvedDir, "..");
+    const candidates = [
+      path.resolve(pkgRoot, "src/theme/default-buttons.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-buttons.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-buttons.uxdsl"),
+    ];
+    for (const f of candidates) {
+      if (fs.existsSync(f)) {
+        cachedButtonsFile = f;
+        return cachedButtonsFile;
+      }
+    }
+  } catch {}
+  cachedButtonsFile = "";
+  return cachedButtonsFile;
+}
+
 function readCachedThemeCss(file: string): string {
   if (!file) return "";
   try {
@@ -406,6 +460,38 @@ function readCachedBorders(file: string): string {
   } catch (err) {
     cachedBordersCss = null;
     cachedBordersMtime = null;
+    return "";
+  }
+}
+
+function readCachedSurfaces(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedSurfacesCss === null || cachedSurfacesMtime !== stat.mtimeMs) {
+      cachedSurfacesCss = fs.readFileSync(file, "utf-8");
+      cachedSurfacesMtime = stat.mtimeMs;
+    }
+    return cachedSurfacesCss ?? "";
+  } catch (err) {
+    cachedSurfacesCss = null;
+    cachedSurfacesMtime = null;
+    return "";
+  }
+}
+
+function readCachedButtons(file: string): string {
+  if (!file) return "";
+  try {
+    const stat = fs.statSync(file);
+    if (cachedButtonsCss === null || cachedButtonsMtime !== stat.mtimeMs) {
+      cachedButtonsCss = fs.readFileSync(file, "utf-8");
+      cachedButtonsMtime = stat.mtimeMs;
+    }
+    return cachedButtonsCss ?? "";
+  } catch (err) {
+    cachedButtonsCss = null;
+    cachedButtonsMtime = null;
     return "";
   }
 }
@@ -559,6 +645,26 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         const bSrc = readCachedBorders(bordersFileEarly);
         if (bSrc) {
           try { await processUxdsl(bSrc, { ...userOptions, fileId: bordersFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default surface packs are loaded before processing
+      const surfacesFileEarly = resolveDefaultSurfacesFile();
+      if (surfacesFileEarly) {
+        try { this.addWatchFile(surfacesFileEarly); } catch {}
+        const sSrc = readCachedSurfaces(surfacesFileEarly);
+        if (sSrc) {
+          try { await processUxdsl(sSrc, { ...userOptions, fileId: surfacesFileEarly }); } catch {}
+        }
+      }
+
+      // Ensure default button packs are loaded before processing so @ds-button works
+      const buttonsFileEarly = resolveDefaultButtonsFile();
+      if (buttonsFileEarly) {
+        try { this.addWatchFile(buttonsFileEarly); } catch {}
+        const btnSrc = readCachedButtons(buttonsFileEarly);
+        if (btnSrc) {
+          try { await processUxdsl(btnSrc, { ...userOptions, fileId: buttonsFileEarly }); } catch {}
         }
       }
 

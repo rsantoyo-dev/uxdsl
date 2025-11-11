@@ -4,7 +4,11 @@
   display: grid;
 }
 
-.card-content {
+.demo-typography .card {
+  @ds-surface;
+}
+
+.demo-typography .card-content {
   display: grid;
 }
 

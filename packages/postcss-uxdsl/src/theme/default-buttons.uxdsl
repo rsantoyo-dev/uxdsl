@@ -1,0 +1,37 @@
+/* Default button packs. Apps can override in their own @theme. */
+@theme {
+  button-contained: {
+    @ds-surface (contained);
+    :hover {
+      bg: palette(primary-dark);
+      color: palette(primary-contrast);
+    }
+    :selected {
+      bg: palette(primary-dark);
+      color: palette(primary-contrast);
+    }
+  }
+
+  button-outlined: {
+    @ds-surface (outlined);
+    :hover {
+      color: palette(primary-dark);
+      border: border(1, palette(primary-dark));
+    }
+    :selected {
+      bg: palette(primary-main);
+      color: palette(primary-contrast);
+      border: border(1, palette(primary-main));
+    }
+  }
+
+  button-flat: {
+    @ds-surface (flat);
+    :hover {
+      color: palette(primary-dark);
+    }
+    :selected {
+      color: palette(primary-dark);
+    }
+  }
+}

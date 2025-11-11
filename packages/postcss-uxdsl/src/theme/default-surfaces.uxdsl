@@ -1,0 +1,29 @@
+/* Default surface packs. Apps can override in their own @theme. */
+@theme {
+  surface-contained: {
+    padding: density(2);
+    radius: radius(2);
+    bg: palette(surface-main);
+    color: palette(surface-contrast);
+    border: palette(surface-dark);
+    shadow: shadow(1);
+  }
+
+  surface-outlined: {
+    padding: density(2);
+    radius: radius(2);
+    bg: transparent;
+    color: palette(surface-contrast);
+    border: border(1, palette(neutral-main));
+    shadow: none;
+  }
+
+  surface-flat: {
+    padding: density(2);
+    radius: radius(2);
+    bg: transparent;
+    color: palette(surface-contrast);
+    border: none;
+    shadow: none;
+  }
+}

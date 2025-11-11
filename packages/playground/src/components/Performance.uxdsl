@@ -14,9 +14,6 @@
   padding: density(2);
   border-radius: 0; /* fastest */
   color: palette(primary-contrast);
-  content-visibility: auto;
-  contain: layout paint;
-  contain-intrinsic-size: 120px; /* reserve height for off-screen */
   min-width: 0;
 }
 
