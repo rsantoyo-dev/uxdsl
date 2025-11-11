@@ -25,3 +25,10 @@
 .input.input--outlined.input--secondary { @ds-input (outlined secondary); }
 .input.input--underline.input--secondary { @ds-input (underline secondary); }
 
+// SCSS example: mixin for size adjustment
+@mixin input-size($n) {
+  padding: density($n);
+  border-radius: radius($n);
+}
+
+.input.input--sass-2 { @ds-input (underline tertiary 2); @include input-size(2); }

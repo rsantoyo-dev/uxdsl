@@ -5,7 +5,17 @@ import type { Plugin, ResolvedConfig } from "vite";
 import type uxdslPlugin from "postcss-uxdsl";
 
 // Reuse the PostCSS plugin option typings so user options stay aligned with core
-export type UxDslPluginOptions = Parameters<typeof uxdslPlugin>[0];
+export type UxDslPluginOptions = Parameters<typeof uxdslPlugin>[0] & {
+  /**
+   * Enable SCSS pre-pass for .uxdsl files.
+   * - 'auto' (default): try to compile with 'sass' if available; skip silently otherwise
+   * - 'on': require 'sass' and throw if not found
+   * - 'off': do not run SCSS pre-pass
+   */
+  scss?: 'auto' | 'on' | 'off';
+  /** Additional load paths for Sass resolver */
+  scssLoadPaths?: string[];
+};
 
 const nodeRequire = createRequire(__filename);
 
@@ -648,7 +658,64 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       const baseId = cleanId(id);
       if (!baseId.endsWith(".uxdsl")) return null;
 
-      const source = fs.readFileSync(baseId, "utf-8");
+      const rawSource = fs.readFileSync(baseId, "utf-8");
+      const scssMode = (userOptions as any)?.scss ?? 'auto';
+
+      // Optional SCSS pre-pass: compile SCSS features inside .uxdsl before UXDSL transform
+      let source = rawSource;
+      if (scssMode !== 'off') {
+        // Inline @import "*.uxdsl" before handing to Sass (Sass doesn't resolve unknown extensions)
+        const inlineUxdslImports = (content: string, filePath: string, seen = new Set<string>()): string => {
+          if (!filePath) return content;
+          const dir = path.dirname(filePath);
+          const importRe = /^\s*@import\s+["']([^"']+\.uxdsl)["']\s*;?\s*$/;
+          const lines = content.split(/\r?\n/);
+          const out: string[] = [];
+          for (const line of lines) {
+            const m = line.match(importRe);
+            if (m) {
+              const rel = m[1];
+              const dep = path.resolve(dir, rel);
+              if (fs.existsSync(dep) && !seen.has(dep)) {
+                seen.add(dep);
+                const src = fs.readFileSync(dep, 'utf-8');
+                out.push(inlineUxdslImports(src, dep, seen));
+                continue;
+              }
+            }
+            out.push(line);
+          }
+          return out.join('\n');
+        };
+        const preInlined = inlineUxdslImports(rawSource, baseId);
+        let sass: any = null;
+        try {
+          // prefer app's sass if installed
+          const appRequire = createRequire(path.join(projectRoot, 'package.json'));
+          sass = appRequire('sass');
+        } catch {}
+        if (!sass) {
+          try { sass = nodeRequire('sass'); } catch {}
+        }
+        if (sass) {
+          try {
+            const opts: any = {
+              syntax: 'scss',
+              loadPaths: [path.dirname(baseId)].concat((userOptions as any)?.scssLoadPaths || []),
+              // quietDeps: true, // keep output clean if available
+            };
+            const res = sass.compileString(preInlined, opts);
+            source = res.css as string;
+          } catch (e: any) {
+            if ((scssMode as string) === 'on') throw e;
+            // degrade gracefully in 'auto'
+            try { console.warn('[uxdsl] SCSS pre-pass failed for', baseId, e?.message || e); } catch {}
+            source = rawSource;
+          }
+        } else if (scssMode === 'on') {
+          throw new Error("vite-plugin-uxdsl: 'sass' not found. Install 'sass' or set scss: 'off'.");
+        }
+      }
 
       // Ensure default density tokens are loaded BEFORE processing this file,
       // so density(n) can resolve to theme tokens during the same pass.

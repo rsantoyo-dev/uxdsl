@@ -1,0 +1,36 @@
+{
+  "extends": ["stylelint-config-standard-scss"],
+  "rules": {
+    "scss/at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": [
+          "ds-button",
+          "ds-surface",
+          "ds-typo",
+          "ds-input",
+          "theme"
+        ]
+      }
+    ],
+    "scss/dollar-variable-pattern": null,
+    "scss/at-import-partial-extension": null,
+    "property-no-unknown": [
+      true,
+      {
+        "ignoreProperties": ["/^--/"]
+      }
+    ]
+  },
+  "overrides": [
+    {
+      "files": ["**/*.uxdsl"],
+      "customSyntax": "postcss-scss",
+      "rules": {
+        "at-rule-no-unknown": null,
+        "scss/at-rule-no-unknown": [true, { "ignoreAtRules": ["ds-button","ds-surface","ds-typo","ds-input","theme"] }],
+        "function-no-unknown": [true, { "ignoreFunctions": ["density","densities","space","palette","color","radius","shadow","border","xs","sm","md","lg","xl"] }]
+      }
+    }
+  ]
+}

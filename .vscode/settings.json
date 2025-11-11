@@ -2,18 +2,15 @@
   "files.associations": {
     "*.uxdsl": "scss"
   },
-  "css.customData": [
-    ".vscode/uxdsl.custom-data.json"
-  ],
-  "scss.customData": [
-    ".vscode/uxdsl.custom-data.json"
-  ],
-  "less.customData": [
-    ".vscode/uxdsl.custom-data.json"
-  ],
-  "css.lint.unknownAtRules": "ignore",
+  // Let Stylelint handle diagnostics; suppress built-in CSS/SCSS validators
+  "css.validate": false,
+  "scss.validate": false,
+  // Avoid noisy unknown at-rule warnings in the preview language service
   "scss.lint.unknownAtRules": "ignore",
-  "editor.colorDecorators": true,
-  "css.colorDecorators.enable": true
+  "css.lint.unknownAtRules": "ignore",
+  // Ensure the Stylelint VS Code extension validates these languages
+  "stylelint.validate": ["css", "scss"],
+  // Optional: format on save if you have a formatter
+  "editor.formatOnSave": false
 }
 

@@ -3,16 +3,20 @@
 .card {
   display: flex;
   flex-direction: column;
+
   @ds-surface (contained);
+
   min-width: 0; /* prevent inline overflow */
 }
 
 .card--light {
   background: palette(primary-light);
 }
+
 .card--main {
   background: palette(primary-main);
 }
+
 .card--dark {
   background: palette(primary-dark);
 }

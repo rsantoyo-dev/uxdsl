@@ -7,16 +7,19 @@
 *::after {
   box-sizing: border-box;
 }
+
 html,
 body,
 #root {
   width: 100%;
 }
+
 code,
 pre {
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+
 img,
 video,
 svg {
@@ -30,8 +33,9 @@ body {
   background: palette(light-main);
   color: palette(light-contrast);
   color-scheme: light dark;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto,
-    Helvetica, Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji";
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+
   /* Avoid accidental horizontal scroll during resize */
   overflow-x: hidden;
 }
@@ -58,6 +62,7 @@ body {
   gap: 8px;
   align-items: center;
   margin: 8px 0 12px;
+
   /* Prevent horizontal overflow on small screens */
   flex-wrap: wrap;
   min-width: 0;
@@ -71,10 +76,12 @@ body {
 
 .grid {
   display: grid;
+
   /* Flexible columns that won’t overflow when resizing */
   grid-template-columns: xs(1fr) lg(repeat(auto-fit, minmax(240px, 1fr)));
   gap: xs(12px) lg(16px);
   align-items: stretch;
+
   /* Allow content to shrink and avoid overflow */
   min-width: 0;
 }
@@ -100,9 +107,8 @@ body {
 
 .showcase__stack {
   display: flex;
-  flex-direction: xs(column) md(row);
+  flex-flow: xs(column) md(row) wrap;
   gap: xs(6px) lg(12px);
-  flex-wrap: wrap;
   margin: 8px 0;
 }
 
@@ -120,9 +126,11 @@ body {
   font-size: 0.9rem;
   opacity: 0.9;
 }
+
 .vis--mobile {
   display: xs(block) lg(none);
 }
+
 .vis--desktop {
   display: xs(none) lg(block);
 }

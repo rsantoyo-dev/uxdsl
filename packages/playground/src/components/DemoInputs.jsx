@@ -21,6 +21,10 @@ export default function DemoInputs() {
         <input className="input input--outlined input--secondary" placeholder="outlined · secondary" disabled={disabled} aria-invalid={invalid || undefined} />
         <input className="input input--underline input--secondary" placeholder="underline · secondary" disabled={disabled} aria-invalid={invalid || undefined} />
       </div>
+      <h3>SCSS in .uxdsl</h3>
+      <div className="demo-inputs__row">
+        <input className="input input--underline input--sass-2" placeholder="underline · tertiary · size 2 (SCSS)" disabled={disabled} aria-invalid={invalid || undefined} />
+      </div>
       <h3>Other types (defaults)</h3>
       <div className="demo-inputs__row">
         <input type="text" className="input input--contained" placeholder="text" disabled={disabled} aria-invalid={invalid || undefined} />

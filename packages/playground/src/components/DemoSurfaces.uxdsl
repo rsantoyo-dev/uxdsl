@@ -19,9 +19,11 @@
 .surface--contained {
   @ds-surface (contained);
 }
+
 .surface--outlined {
   @ds-surface (outlined);
 }
+
 .surface--flat {
   @ds-surface (flat);
 }
@@ -29,9 +31,11 @@
 .surface--contained.surface--secondary {
   @ds-surface (contained secondary);
 }
+
 .surface--outlined.surface--secondary {
   @ds-surface (outlined secondary);
 }
+
 .surface--flat.surface--secondary {
   @ds-surface (flat secondary);
 }
@@ -40,9 +44,23 @@
 .surface--contained-lg {
   @ds-surface (contained primary 4);
 }
+
 .surface--outlined-lg {
-  @ds-surface (contained outlined );
+  @ds-surface (outlined primary 3);
 }
+
 .surface--flat-lg {
   @ds-surface (flat 4);
 }
+
+// SCSS example: variable + mixin + classes
+$tone: tertiary;
+
+@mixin surface-size($n) {
+  padding: density($n);
+  border-radius: radius($n);
+}
+
+.surface--sass-1 { @ds-surface (contained #{$tone} 1) }
+.surface--sass-2 { @ds-surface (outlined #{$tone} 2) }
+.surface--sass-3 { @ds-surface (flat #{$tone} 3)}

@@ -102,9 +102,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
     uxdslPlugin as any
   ).__buttonPacks || Object.create(null);
-  const GLOBAL_INPUT_PACKS: Record<string, any> = (
-    uxdslPlugin as any
-  ).__inputPacks || Object.create(null);
+  const GLOBAL_INPUT_PACKS: Record<string, any> =
+    (uxdslPlugin as any).__inputPacks || Object.create(null);
   const GLOBAL_SURFACE_PACKS: Record<string, Record<string, string>> = (
     uxdslPlugin as any
   ).__surfacePacks || Object.create(null);
@@ -418,7 +417,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const rawVal = String((decl as any).value || "").trim();
             if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
               const parsed = parseButtonPack(rawVal);
-              (root as any).__surfacePacks = (root as any).__surfacePacks || Object.create(null);
+              (root as any).__surfacePacks =
+                (root as any).__surfacePacks || Object.create(null);
               (root as any).__surfacePacks[vname] = parsed.base;
               (GLOBAL_SURFACE_PACKS as any)[vname] = parsed.base;
             }
@@ -430,9 +430,16 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const rawVal = String((decl as any).value || "").trim();
             if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
               const parsed = parseButtonPack(rawVal);
-              (root as any).__inputPacks = (root as any).__inputPacks || Object.create(null);
-              (root as any).__inputPacks[vname] = { base: parsed.base, states: parsed.states };
-              (GLOBAL_INPUT_PACKS as any)[vname] = { base: parsed.base, states: parsed.states };
+              (root as any).__inputPacks =
+                (root as any).__inputPacks || Object.create(null);
+              (root as any).__inputPacks[vname] = {
+                base: parsed.base,
+                states: parsed.states,
+              };
+              (GLOBAL_INPUT_PACKS as any)[vname] = {
+                base: parsed.base,
+                states: parsed.states,
+              };
             }
           }
         });
@@ -446,7 +453,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           if (!mBtn && !mSurf && !mInp) return;
           const isSurface = !!mSurf;
           const isInput = !!mInp;
-          const vname = (mBtn ? mBtn[1] : (mSurf ? mSurf[1] : mInp![1])).toLowerCase();
+          const vname = (
+            mBtn ? mBtn[1] : mSurf ? mSurf[1] : mInp![1]
+          ).toLowerCase();
           const base: Record<string, string> = Object.create(null);
           const states: Record<string, Record<string, string>> = Object.create(
             null
@@ -482,7 +491,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             (root as any).__surfacePacks[vname] = base;
             (GLOBAL_SURFACE_PACKS as any)[vname] = base;
           } else if (isInput) {
-            (root as any).__inputPacks = (root as any).__inputPacks || Object.create(null);
+            (root as any).__inputPacks =
+              (root as any).__inputPacks || Object.create(null);
             (root as any).__inputPacks[vname] = { base, states };
             (GLOBAL_INPUT_PACKS as any)[vname] = { base, states };
           } else {
@@ -504,7 +514,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         toneFamily: string,
         sizeToken?: string
       ): Record<string, string> {
-        const base = (packsObj && (packsObj[variant] || packsObj["contained"])) || {};
+        const base =
+          (packsObj && (packsObj[variant] || packsObj["contained"])) || {};
         const out: Record<string, string> = Object.create(null);
         const copyKeys = [
           ["padding", "padding"],
@@ -551,20 +562,51 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         // @ds-input(variant [tone] [size])
         rule.walkAtRules("ds-input", (at) => {
           let inner = String((at.params || "").trim());
-          if ((inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith("'") && inner.endsWith("'"))) inner = inner.slice(1, -1);
-          if (inner.startsWith("(") && inner.endsWith(")")) inner = inner.slice(1, -1).trim();
-          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          if (
+            (inner.startsWith('"') && inner.endsWith('"')) ||
+            (inner.startsWith("'") && inner.endsWith("'"))
+          )
+            inner = inner.slice(1, -1);
+          if (inner.startsWith("(") && inner.endsWith(")"))
+            inner = inner.slice(1, -1).trim();
+          const parts = inner
+            .split(/[\s,]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
           const known = new Set(["contained", "outlined", "underline"]);
-          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
-          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          let variant = (
+            parts.find((p) => known.has(p.toLowerCase())) || "contained"
+          ).toLowerCase();
+          const toneToken = parts.find(
+            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
+          );
           const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
-          const surfPacks: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
-          const inputPacks: any = (root as any).__inputPacks || (uxdslPlugin as any).__inputPacks || {};
+          const toneFamily = toneToken
+            ? (() => {
+                let fam = normalizeTokenPath(toneToken);
+                if (fam.includes("-")) fam = fam.split("-")[0];
+                return fam;
+              })()
+            : "";
+          const surfPacks: any =
+            (root as any).__surfacePacks ||
+            (uxdslPlugin as any).__surfacePacks ||
+            {};
+          const inputPacks: any =
+            (root as any).__inputPacks ||
+            (uxdslPlugin as any).__inputPacks ||
+            {};
           // Use flat surface as base for underline variant, otherwise named variant
           const surfVariant = variant === "underline" ? "flat" : variant;
-          const baseProps = computeSurfaceBase(surfPacks, surfVariant, toneFamily, sizeToken);
-          const insert = (prop: string, value: string) => { (rule as any).insertBefore(at, { prop, value }); };
+          const baseProps = computeSurfaceBase(
+            surfPacks,
+            surfVariant,
+            toneFamily,
+            sizeToken
+          );
+          const insert = (prop: string, value: string) => {
+            (rule as any).insertBefore(at, { prop, value });
+          };
           // Normalize input element defaults
           insert("box-sizing", "border-box");
           insert("outline", "none");
@@ -575,18 +617,28 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Underline variant: enforce bottom-only border
           if (variant === "underline") {
             insert("border", "none");
-            const main = toneFamily ? `palette(${toneFamily}-main)` : (baseProps["border"] || "1px solid currentColor");
-            insert("border-bottom", typeof main === "string" && main.startsWith("palette(") ? `1px solid ${main.replace(/^.*\(|\)$/g,'')}` : String(main));
+            const main = toneFamily
+              ? `palette(${toneFamily}-main)`
+              : baseProps["border"] || "1px solid currentColor";
+            insert(
+              "border-bottom",
+              typeof main === "string" && main.startsWith("palette(")
+                ? `1px solid ${main.replace(/^.*\(|\)$/g, "")}`
+                : String(main)
+            );
             insert("box-shadow", "none");
           }
           // Apply input pack extras + states
-          const pack = inputPacks[variant] || inputPacks["contained"] || { base: {}, states: {} };
+          const pack = inputPacks[variant] ||
+            inputPacks["contained"] || { base: {}, states: {} };
           const base = pack.base || {};
           // caret-color
           if (base.caret) insert("caret-color", base.caret);
           // placeholder creates ::placeholder rule
           if (base.placeholder) {
-            const ph = postcss.rule({ selector: `${(rule as any).selector}::placeholder` });
+            const ph = postcss.rule({
+              selector: `${(rule as any).selector}::placeholder`,
+            });
             ph.append({ prop: "color", value: base.placeholder });
             (rule.parent as any).insertAfter(rule, ph);
           }
@@ -599,15 +651,20 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           };
           Object.keys(pack.states || {}).forEach((kRaw: string) => {
             const decls = pack.states[kRaw] || {};
-            const key = kRaw.replace(/^&/, '').replace(/^:/, '').toLowerCase();
+            const key = kRaw.replace(/^&/, "").replace(/^:/, "").toLowerCase();
             const pseudos = stateToSels[key] || [":" + key];
             pseudos.forEach((pz) => {
-              const newRule = postcss.rule({ selector: `${(rule as any).selector}${pz}` });
+              const newRule = postcss.rule({
+                selector: `${(rule as any).selector}${pz}`,
+              });
               Object.keys(decls).forEach((dk) => {
                 const dv = decls[dk];
-                if (dk === "caret") newRule.append({ prop: "caret-color", value: dv });
+                if (dk === "caret")
+                  newRule.append({ prop: "caret-color", value: dv });
                 else if (dk === "placeholder") {
-                  const phr = postcss.rule({ selector: `${(rule as any).selector}${pz}::placeholder` });
+                  const phr = postcss.rule({
+                    selector: `${(rule as any).selector}${pz}::placeholder`,
+                  });
                   phr.append({ prop: "color", value: dv });
                   (rule.parent as any).insertAfter(newRule, phr);
                 } else if (dk === "underline") {
@@ -625,17 +682,45 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         // @ds-surface(variant [tone])
         rule.walkAtRules("ds-surface", (at) => {
           let inner = String((at.params || "").trim());
-          if ((inner.startsWith('"') && inner.endsWith('"')) || (inner.startsWith("'") && inner.endsWith("'"))) inner = inner.slice(1, -1);
-          if (inner.startsWith("(") && inner.endsWith(")")) inner = inner.slice(1, -1).trim();
-          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          if (
+            (inner.startsWith('"') && inner.endsWith('"')) ||
+            (inner.startsWith("'") && inner.endsWith("'"))
+          )
+            inner = inner.slice(1, -1);
+          if (inner.startsWith("(") && inner.endsWith(")"))
+            inner = inner.slice(1, -1).trim();
+          const parts = inner
+            .split(/[\s,]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
           const known = new Set(["contained", "outlined", "flat"]);
-          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
-          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          let variant = (
+            parts.find((p) => known.has(p.toLowerCase())) || "contained"
+          ).toLowerCase();
+          const toneToken = parts.find(
+            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
+          );
           const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
-          const packs: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
-          const props = computeSurfaceBase(packs, variant, toneFamily, sizeToken);
-          const insert = (prop: string, value: string) => { (rule as any).insertBefore(at, { prop, value }); };
+          const toneFamily = toneToken
+            ? (() => {
+                let fam = normalizeTokenPath(toneToken);
+                if (fam.includes("-")) fam = fam.split("-")[0];
+                return fam;
+              })()
+            : "";
+          const packs: any =
+            (root as any).__surfacePacks ||
+            (uxdslPlugin as any).__surfacePacks ||
+            {};
+          const props = computeSurfaceBase(
+            packs,
+            variant,
+            toneFamily,
+            sizeToken
+          );
+          const insert = (prop: string, value: string) => {
+            (rule as any).insertBefore(at, { prop, value });
+          };
           Object.keys(props).forEach((k) => insert(k, props[k]!));
           at.remove();
         });
@@ -653,12 +738,25 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           if (inner.startsWith("(") && inner.endsWith(")")) {
             inner = inner.slice(1, -1).trim();
           }
-          const parts = inner.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean);
+          const parts = inner
+            .split(/[\s,]+/)
+            .map((s) => s.trim())
+            .filter(Boolean);
           const known = new Set(["contained", "outlined", "flat"]);
-          let variant = (parts.find((p) => known.has(p.toLowerCase())) || "contained").toLowerCase();
-          const toneToken = parts.find((p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p));
+          let variant = (
+            parts.find((p) => known.has(p.toLowerCase())) || "contained"
+          ).toLowerCase();
+          const toneToken = parts.find(
+            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
+          );
           const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken ? (() => { let fam = normalizeTokenPath(toneToken); if (fam.includes("-")) fam = fam.split("-")[0]; return fam; })() : "";
+          const toneFamily = toneToken
+            ? (() => {
+                let fam = normalizeTokenPath(toneToken);
+                if (fam.includes("-")) fam = fam.split("-")[0];
+                return fam;
+              })()
+            : "";
           // Prefer packs defined in the same file; fall back to global packs
           const packs: any =
             (root as any).__btnPacks || GLOBAL_BUTTON_PACKS || {};
@@ -671,149 +769,75 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const trg: any = targetRule || rule;
             trg.insertBefore(at, { prop, value });
           };
-          const wrapBtnVar = (
-            k: string,
-            raw: string,
-            stateKey?: string
-          ): string => {
-            const suffix = stateKey
-              ? stateKey === "focusvisible"
-                ? "-focus-visible"
-                : `-${stateKey}`
-              : "";
-            if (k === "bg") return `var(--ds-btn-bg${suffix}, ${raw})`;
-            if (k === "color") return `var(--ds-btn-fg${suffix}, ${raw})`;
-            if (k === "border") return `var(--ds-btn-border${suffix}, ${raw})`;
-            return raw;
-          };
-          const applyPack = (
-            p: Record<string, string>,
-            targetRule: Rule | null = null,
-            stateKey?: string
-          ) => {
-            const map: Array<[keyof typeof p, string]> = [
-              ["padding" as any, "padding"],
-              ["radius" as any, "border-radius"],
-              ["bg" as any, "background"],
-              ["color" as any, "color"],
-              ["border" as any, "border"],
-            ];
-            map.forEach(([k, css]) => {
-              const val: any = (p as any)[k];
-              if (typeof val === "string" && val) {
-                const out =
-                  k === ("bg" as any) ||
-                  k === ("color" as any) ||
-                  k === ("border" as any)
-                    ? wrapBtnVar(String(k), val, stateKey)
-                    : val;
-                insert(css, out, targetRule);
-              }
-            });
-          };
-          function emitStateRules(
-            states: Record<string, Record<string, string>> | undefined
-          ) {
-            if (!states) return;
+          // Apply surface base first, then states from button pack
+          const surfPacks: any =
+            (root as any).__surfacePacks ||
+            (uxdslPlugin as any).__surfacePacks ||
+            {};
+          const surfProps = computeSurfaceBase(
+            surfPacks,
+            variant,
+            toneFamily,
+            sizeToken
+          );
+
+          // PRODUCTION OPTIMIZATION: Generate direct CSS values instead of complex variables
+          if (surfProps["padding"]) insert("padding", surfProps["padding"]);
+          if (surfProps["border-radius"])
+            insert("border-radius", surfProps["border-radius"]);
+          if (surfProps["background"])
+            insert("background", surfProps["background"]);
+          if (surfProps["color"]) insert("color", surfProps["color"]);
+          if (surfProps["border"]) insert("border", surfProps["border"]);
+
+          // Generate optimized state rules without excessive variables
+          if (pack && pack.states) {
+            const states = pack.states as Record<
+              string,
+              Record<string, string>
+            >;
             const sel = String((rule as any).selector || "");
             const baseSels = sel
               .split(",")
               .map((s) => s.trim())
               .filter(Boolean);
-            const stateToSels: Record<string, string[]> = {
-              hover: [":hover"],
-              active: [":active"],
-              focus: [":focus"],
-              disabled: [":disabled", '[aria-disabled="true"]'],
-              selected: [
-                ".is-selected",
-                '[aria-pressed="true"]',
-                '[aria-selected="true"]',
-              ],
-              focusvisible: [":focus-visible"],
-            };
-            Object.keys(states).forEach((kRaw) => {
-              const key = kRaw
-                .replace(/^&/, "")
-                .replace(/^:/, "")
-                .toLowerCase();
-              const pseudos = stateToSels[key] || [":" + key];
-              const decls = states[kRaw] || states[key] || {};
-              pseudos.forEach((pz) => {
-                const newSel = baseSels.map((s) => `${s}${pz}`).join(", ");
+
+            Object.keys(states).forEach((stateKey) => {
+              const stateProps = states[stateKey];
+              if (!stateProps) return;
+
+              // Map state keys to CSS pseudo-classes
+              const pseudoMap: Record<string, string[]> = {
+                hover: [":hover"],
+                active: [":active"],
+                focus: [":focus"],
+                disabled: [":disabled", '[aria-disabled="true"]'],
+                selected: [
+                  ".is-selected",
+                  '[aria-pressed="true"]',
+                  '[aria-selected="true"]',
+                ],
+                focusvisible: [":focus-visible"],
+              };
+
+              const pseudos = pseudoMap[stateKey] || [":" + stateKey];
+              pseudos.forEach((pseudo) => {
+                const newSel = baseSels.map((s) => `${s}${pseudo}`).join(", ");
                 const newRule = postcss.rule({ selector: newSel });
-                applyPack(decls, newRule as any, key);
+
+                // Apply state properties directly
+                Object.keys(stateProps).forEach((prop) => {
+                  const value = stateProps[prop];
+                  if (value) {
+                    newRule.insertBefore(at, { prop, value });
+                  }
+                });
+
                 (rule.parent as any).insertAfter(rule, newRule);
               });
             });
           }
-          // Apply surface base first, then states from button pack
-          const surfPacks: any = (root as any).__surfacePacks || (uxdslPlugin as any).__surfacePacks || {};
-          const surfProps = computeSurfaceBase(surfPacks, variant, toneFamily, sizeToken);
-          // Insert padding/border-radius directly; var-wrap color/bg/border
-          if (surfProps["padding"]) insert("padding", surfProps["padding"]);
-          if (surfProps["border-radius"]) insert("border-radius", surfProps["border-radius"]);
-          if (surfProps["background"]) insert("background", `var(--ds-btn-bg, ${surfProps["background"]})`);
-          if (surfProps["color"]) insert("color", `var(--ds-btn-fg, ${surfProps["color"]})`);
-          if (surfProps["border"]) insert("border", `var(--ds-btn-border, ${surfProps["border"]})`);
 
-          if (pack) {
-            const st =
-              pack.states && typeof pack.states === "object"
-                ? (pack.states as any)
-                : undefined;
-            emitStateRules(st);
-          } else {
-            // Minimal fallback if no packs are defined
-            insert("padding", "density(2)");
-            insert("border-radius", "radius(2)");
-            if (variant === "outlined") {
-              insert("background", "transparent");
-              insert("color", "palette(primary-main)");
-              insert("border", "border(1, palette(primary-main))");
-            } else if (variant === "flat") {
-              insert("background", "transparent");
-              insert("color", "palette(primary-main)");
-              insert("border", "none");
-            } else {
-              insert("background", "palette(primary-main)");
-              insert("color", "palette(primary-contrast)");
-              insert("border", "none");
-            }
-          }
-          // Optional inline tone mapping: second token adjusts CSS variables consumed by btn packs
-          if (toneFamily) {
-            const main = `palette(${toneFamily}-main)`;
-            const dark = `palette(${toneFamily}-dark)`;
-            const contrast = `palette(${toneFamily}-contrast)`;
-            const insertVar = (name: string, value: string) => {
-              (rule as any).insertBefore(at, { prop: `--${name}`, value });
-            };
-            if (variant === "outlined") {
-              insertVar("ds-btn-bg", "transparent");
-              insertVar("ds-btn-fg", main);
-              insertVar("ds-btn-border", `1px solid ${main}`);
-              insertVar("ds-btn-fg-hover", dark);
-              insertVar("ds-btn-border-hover", `1px solid ${dark}`);
-              insertVar("ds-btn-bg-selected", main);
-              insertVar("ds-btn-fg-selected", contrast);
-              insertVar("ds-btn-border-selected", `1px solid ${main}`);
-            } else if (variant === "flat") {
-              insertVar("ds-btn-bg", "transparent");
-              insertVar("ds-btn-fg", main);
-              insertVar("ds-btn-border", "none");
-              insertVar("ds-btn-fg-hover", dark);
-              insertVar("ds-btn-fg-selected", dark);
-            } else {
-              insertVar("ds-btn-bg", main);
-              insertVar("ds-btn-fg", contrast);
-              insertVar("ds-btn-border", "none");
-              insertVar("ds-btn-bg-hover", dark);
-              insertVar("ds-btn-fg-hover", contrast);
-              insertVar("ds-btn-bg-selected", dark);
-              insertVar("ds-btn-fg-selected", contrast);
-            }
-          }
           at.remove();
         });
       });

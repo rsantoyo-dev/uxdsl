@@ -20,12 +20,14 @@
 .btn {
   @ds-button (contained);
   @ds-typo (body);
+
   cursor: pointer;
 }
 
 .btn.btn--outlined {
   @ds-button (outlined primary);
 }
+
 .btn.btn--flat {
   @ds-button (flat primary);
 }
@@ -34,9 +36,21 @@
 .btn--secondary {
   @ds-button (contained secondary);
 }
+
 .btn--outlined.btn--secondary {
   @ds-button (outlined secondary);
 }
+
 .btn--flat.btn--secondary {
   @ds-button (flat secondary);
+}
+
+// SCSS example: generate size variants via loop
+$min: 1;
+$max: 3;
+
+@for $i from $min through $max {
+  .btn--sass-size-#{$i} {
+    @ds-button (contained secondary #{$i});
+  }
 }

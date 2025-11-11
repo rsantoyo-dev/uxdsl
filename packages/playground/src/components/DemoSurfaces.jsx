@@ -36,6 +36,22 @@ export default function DemoSurfaces() {
         </div>
       </div>
 
+      <h3>SCSS in .uxdsl</h3>
+      <div className="demo-surfaces__row">
+        <div className="surface surface--sass-1">
+          <small>contained · tertiary · size 1</small>
+          <p>SCSS: $tone + @mixin surface-size(1)</p>
+        </div>
+        <div className="surface surface--sass-2">
+          <small>outlined · tertiary · size 2</small>
+          <p>SCSS: $tone + @mixin surface-size(2)</p>
+        </div>
+        <div className="surface surface--sass-3">
+          <small>flat · tertiary · size 3</small>
+          <p>SCSS: $tone + @mixin surface-size(3)</p>
+        </div>
+      </div>
+
       <h3>Size variants</h3>
       <div className="demo-surfaces__row">
         <div className="surface surface--contained-lg">

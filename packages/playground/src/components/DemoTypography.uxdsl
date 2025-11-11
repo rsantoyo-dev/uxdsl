@@ -16,34 +16,44 @@
 .demo-typography h1 {
   @ds-typo (h1);
 }
+
 .demo-typography h2 {
   @ds-typo (h2);
 }
+
 .demo-typography h3 {
   @ds-typo (h3);
 }
+
 .demo-typography h4 {
   @ds-typo (h4);
 }
+
 .demo-typography h5 {
   @ds-typo (h5);
 }
+
 .demo-typography h6 {
   @ds-typo (h6);
 }
+
 .demo-typography p {
   @ds-typo (p);
 }
+
 .demo-typography span {
   @ds-typo (span);
 }
+
 .demo-typography small {
   @ds-typo (small);
 }
+
 .demo-typography pre,
 .demo-typography code {
   @ds-typo (pre);
 }
+
 .demo-typography .caption {
   @ds-typo (caption);
 }

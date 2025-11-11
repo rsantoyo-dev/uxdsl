@@ -24,9 +24,11 @@
 .perf-card--light {
   background: palette(primary-light);
 }
+
 .perf-card--main {
   background: palette(primary-main);
 }
+
 .perf-card--dark {
   background: palette(primary-dark);
 }

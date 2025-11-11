@@ -26,6 +26,12 @@ export default function DemoButtons() {
         <button type="button" aria-pressed={selected} className="btn btn--outlined btn--secondary">Outlined · Secondary</button>
         <button type="button" aria-pressed={selected} className="btn btn--flat btn--secondary">Flat · Secondary</button>
       </div>
+      <h3>SCSS in .uxdsl</h3>
+      <div className="demo-buttons__row">
+        <button type="button" aria-pressed={selected} className="btn btn--sass-size-1">Sass loop (size 1)</button>
+        <button type="button" aria-pressed={selected} className="btn btn--sass-size-2">Sass loop (size 2)</button>
+        <button type="button" aria-pressed={selected} className="btn btn--sass-size-3">Sass loop (size 3)</button>
+      </div>
     </section>
   );
 }

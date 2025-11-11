@@ -6,21 +6,22 @@
   --primary-main: #00675b;
   --primary-light: #439889;
   --primary-dark: #003f3d;
-  --primary-contrast: #ffffff;
+  --primary-contrast: #fff;
+
   /* Secondary */
   --secondary-main: #f57c00;
   --secondary-light: #ffad42;
   --secondary-dark: #bb4d00;
-  --secondary-contrast: #000000;
+  --secondary-contrast: #000;
 
   /* Typography overrides (demo) */
-  //--h2-size: xs(32px) md(44px) lg(52px);
-  //--h3-size: xs(60px) md(30px) lg(34px);
+  // --h2-size: xs(32px) md(44px) lg(52px);
+  // --h3-size: xs(60px) md(30px) lg(34px);
 }
 
 /* Respect system preference: switch primary tokens in dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    //--primary-main: #0a6360;
+    // --primary-main: #0a6360;
   }
 }
