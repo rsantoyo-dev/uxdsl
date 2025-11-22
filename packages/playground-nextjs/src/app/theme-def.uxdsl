@@ -5,104 +5,115 @@
   /* =============================
      Palette aliases (brand example)
      ============================= */
-  // --primary-main: #0d5c63;
-  // --primary-light: #33a0a8;
-  // --primary-dark: #063539;
-  // --primary-contrast: #f5fbff;
+  /*
+  --primary-main: #0d5c63;
+  --primary-light: #33a0a8;
+  --primary-dark: #063539;
+  --primary-contrast: #f5fbff;
 
-  // --secondary-main: #f97316;
-  // --secondary-light: #ffab66;
-  // --secondary-dark: #c2410c;
-  // --secondary-contrast: #1a0b02;
+  --secondary-main: #f97316;
+  --secondary-light: #ffab66;
+  --secondary-dark: #c2410c;
+  --secondary-contrast: #1a0b02;
 
-  // --success-main: #1f7a4c;
-  // --success-light: #4ade80;
-  // --success-dark: #145532;
-  // --success-contrast: #f0fff4;
+  --success-main: #1f7a4c;
+  --success-light: #4ade80;
+  --success-dark: #145532;
+  --success-contrast: #f0fff4;
 
-  // --warning-main: #facc15;
-  // --warning-light: #fde047;
-  // --warning-dark: #a16207;
-  // --warning-contrast: #1f1300;
+  --warning-main: #facc15;
+  --warning-light: #fde047;
+  --warning-dark: #a16207;
+  --warning-contrast: #1f1300;
 
-  // --surface-main: #fdfcf8;
-  // --surface-light: #ffffff;
-  // --surface-dark: #e7e1cf;
-  // --surface-contrast: #0f172a;
+  --surface-main: #fdfcf8;
+  --surface-light: #ffffff;
+  --surface-dark: #e7e1cf;
+  --surface-contrast: #0f172a;
+  */
 
   /* Bridge aliases to canonical DS tokens */
-  // --ds__palette__primary-main: var(--primary-main);
-  // --ds__palette__primary-light: var(--primary-light);
-  // --ds__palette__primary-dark: var(--primary-dark);
-  // --ds__palette__primary-contrast: var(--primary-contrast);
+  /*
+  --ds__palette__primary-main: var(--primary-main);
+  --ds__palette__primary-light: var(--primary-light);
+  --ds__palette__primary-dark: var(--primary-dark);
+  --ds__palette__primary-contrast: var(--primary-contrast);
 
-  // --ds__palette__secondary-main: var(--secondary-main);
-  // --ds__palette__secondary-light: var(--secondary-light);
-  // --ds__palette__secondary-dark: var(--secondary-dark);
-  // --ds__palette__secondary-contrast: var(--secondary-contrast);
+  --ds__palette__secondary-main: var(--secondary-main);
+  --ds__palette__secondary-light: var(--secondary-light);
+  --ds__palette__secondary-dark: var(--secondary-dark);
+  --ds__palette__secondary-contrast: var(--secondary-contrast);
 
-  // --ds__palette__success-main: var(--success-main);
-  // --ds__palette__success-light: var(--success-light);
-  // --ds__palette__success-dark: var(--success-dark);
-  // --ds__palette__success-contrast: var(--success-contrast);
+  --ds__palette__success-main: var(--success-main);
+  --ds__palette__success-light: var(--success-light);
+  --ds__palette__success-dark: var(--success-dark);
+  --ds__palette__success-contrast: var(--success-contrast);
 
-  // --ds__palette__warning-main: var(--warning-main);
-  // --ds__palette__warning-light: var(--warning-light);
-  // --ds__palette__warning-dark: var(--warning-dark);
-  // --ds__palette__warning-contrast: var(--warning-contrast);
+  --ds__palette__warning-main: var(--warning-main);
+  --ds__palette__warning-light: var(--warning-light);
+  --ds__palette__warning-dark: var(--warning-dark);
+  --ds__palette__warning-contrast: var(--warning-contrast);
 
-  // --ds__palette__surface-main: var(--surface-main);
-  // --ds__palette__surface-light: var(--surface-light);
-  // --ds__palette__surface-dark: var(--surface-dark);
-  // --ds__palette__surface-contrast: var(--surface-contrast);
+  --ds__palette__surface-main: var(--surface-main);
+  --ds__palette__surface-light: var(--surface-light);
+  --ds__palette__surface-dark: var(--surface-dark);
+  --ds__palette__surface-contrast: var(--surface-contrast);
+  */
 
   /* =============================
      Typography + font families
      ============================= */
-  // --font-ui: cursive, "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-  // --font-ui-2: fantasy, "Segoe UI", system-ui, -apple-system, sans-serif;
+  /*
+  --font-ui: cursive, "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-ui-2: fantasy, "Segoe UI", system-ui, -apple-system, sans-serif;
+  */
   --font-code: "JetBrains Mono", "SF Mono", Menlo, monospace;
 
-  // --h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
-  // --h1-weight: 700;
-  // --h1-font-family: var(--font-ui);
+  /*
+  --h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
+  --h1-weight: 700;
+  --h1-font-family: var(--font-ui);
 
-  // --h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
-  // --h2-weight: 700;
-  // --h2-font-family: var(--font-ui);
+  --h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
+  --h2-weight: 700;
+  --h2-font-family: var(--font-ui);
 
-  // --h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
-  // --h3-weight: 600;
-  // --h3-font-family: var(--font-ui);
+  --h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
+  --h3-weight: 600;
+  --h3-font-family: var(--font-ui);
 
-  // --h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
-  // --h4-weight: 600;
-  // --h4-font-family: var(--font-ui);
+  --h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
+  --h4-weight: 600;
+  --h4-font-family: var(--font-ui);
 
-  // --h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
-  // --h5-weight: 600;
-  // --h5-font-family: var(--font-ui-2, var(--font-ui));
+  --h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
+  --h5-weight: 600;
+  --h5-font-family: var(--font-ui-2, var(--font-ui));
 
-  // --h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
-  // --h6-weight: 600;
-  // --h6-font-family: var(--font-ui-2, var(--font-ui));
+  --h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
+  --h6-weight: 600;
+  --h6-font-family: var(--font-ui-2, var(--font-ui));
+  */
 
 
   /* =============================
      Custom spacing scale (1–12)
      ============================= */
-  --space-1: 0.175rem; /* 2.8px */
-  --space-2: 0.35rem;  /* 5.6px */
-  --space-3: 0.55rem;  /* 8.8px */
-  --space-4: 0.8rem;   /* 12.8px */
-  --space-5: 1rem;     /* 16px */
-  --space-6: 1.35rem;  /* 21.6px */
-  --space-7: 1.75rem;  /* 28px */
-  --space-8: 2.25rem;  /* 36px */
-  --space-9: 2.75rem;  /* 44px */
-  --space-10: 3.5rem;  /* 56px */
-  --space-11: 4.25rem; /* 68px */
-  --space-12: 5rem;    /* 80px */
+  /* Moved to uxdsl.theme.json */
+  /*
+  --space-1: 0.175rem;
+  --space-2: 0.35rem;
+  --space-3: 0.55rem;
+  --space-4: 0.8rem;
+  --space-5: 1rem;
+  --space-6: 1.35rem;
+  --space-7: 1.75rem;
+  --space-8: 2.25rem;
+  --space-9: 2.75rem;
+  --space-10: 3.5rem;
+  --space-11: 4.25rem;
+  --space-12: 5rem;
+  */
 }
 
 /* =============================

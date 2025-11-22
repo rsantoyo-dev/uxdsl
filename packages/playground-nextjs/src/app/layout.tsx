@@ -1,9 +1,11 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
-import InlineStyles from './InlineStyles'
+import './uxdsl.css'
 import AppHeader from '@/components/AppHeader'
 import SideNav from '@/components/SideNav'
 import ThemeProvider from '@/components/ThemeProvider'
+import ThemeScript from '@/components/ThemeScript'
+import theme from '../../uxdsl.theme.json'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
@@ -23,13 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <InlineStyles />
+        <ThemeScript theme={theme} />
       </head>
-      <body className={`app ${inter.className}`}>
+      <body>
         <ThemeProvider
-   
           persist={false}
-          clearPersist={true}
         >
           <AppHeader />
           <div className="layout">

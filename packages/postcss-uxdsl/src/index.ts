@@ -19,6 +19,7 @@ interface UxDslOptions {
   themeVar?: (path: string) => string;
   spaceVar?: (index: string) => string;
   colorVar?: (path: string) => string;
+  theme?: Record<string, any>;
 }
 
 const DEFAULT_BPS: Record<string, number> = {
@@ -135,6 +136,33 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   return {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root) {
+      if (opts.theme) {
+        const themeDecls: Declaration[] = [];
+        const addVar = (prop: string, value: string) => {
+           themeDecls.push(postcss.decl({ prop: `--${prop}`, value }));
+        };
+        if (opts.theme.palette) {
+            Object.entries(opts.theme.palette).forEach(([key, val]) => {
+                addVar(key, String(val));
+                addVar(`ds__palette__${key}`, String(val));
+            });
+        }
+        if (opts.theme.spacing) {
+             Object.entries(opts.theme.spacing).forEach(([key, val]) => {
+                addVar(key, String(val));
+            });
+        }
+        if (opts.theme.typography) {
+             Object.entries(opts.theme.typography).forEach(([key, val]) => {
+                addVar(key, String(val));
+            });
+        }
+        if (themeDecls.length > 0) {
+            const rootRule = postcss.rule({ selector: ':root' });
+            rootRule.append(themeDecls);
+            root.prepend(rootRule);
+        }
+      }
       const vars: Record<string, string> = Object.create(null);
       // Selector-scoped typography directives
       // Supports: @ds-typo(h1), @ds(h1), and @ds-h1 (no params)

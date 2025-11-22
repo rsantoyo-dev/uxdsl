@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
+
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
   { id: 'secondary', title: 'Secondary', detail: 'Complementary elements and secondary CTAs' },
@@ -15,11 +17,65 @@ const paletteCards = [
 ]
 
 const variants = [
-  { id: 'main', label: 'Main fill' },
-  { id: 'light', label: 'Light tint' },
-  { id: 'dark', label: 'Dark shade' },
-  { id: 'contrast', label: 'Contrast text' },
+  { id: 'main' },
+  { id: 'light' },
+  { id: 'dark' },
+  { id: 'contrast' },
 ]
+
+function rgbToHex(rgb: string) {
+  if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return '';
+  const values = rgb.match(/\d+/g);
+  if (!values || values.length < 3) return rgb;
+  const r = parseInt(values[0]);
+  const g = parseInt(values[1]);
+  const b = parseInt(values[2]);
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+}
+
+function getContrastColor(rgb: string) {
+  if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return 'inherit';
+  const values = rgb.match(/\d+/g);
+  if (!values || values.length < 3) return 'inherit';
+  const r = parseInt(values[0]);
+  const g = parseInt(values[1]);
+  const b = parseInt(values[2]);
+  
+  // Calculate relative luminance
+  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+  return yiq >= 128 ? '#000000' : '#ffffff';
+}
+
+function ColorToken({ tone, variant }: { tone: string, variant: string }) {
+  const ref = useRef<HTMLLIElement>(null)
+  const [colorValues, setColorValues] = useState({ hex: '', rgb: '', textColor: 'inherit' })
+
+  useEffect(() => {
+    if (ref.current) {
+      const style = window.getComputedStyle(ref.current)
+      const bgColor = style.backgroundColor
+      setColorValues({
+        hex: rgbToHex(bgColor),
+        rgb: bgColor,
+        textColor: getContrastColor(bgColor)
+      })
+    }
+  }, [tone, variant])
+
+  return (
+    <li
+      ref={ref}
+      className={`palette-token palette-card-${tone}-${variant}`}
+      style={{ color: colorValues.textColor }}
+    >
+      <span className="token-name">{tone}-{variant}</span>
+      <div className="token-values">
+        <span className="token-hex">{colorValues.hex}</span>
+        <span className="token-rgb">{colorValues.rgb}</span>
+      </div>
+    </li>
+  )
+}
 
 export default function DemoPalette() {
   return (
@@ -28,8 +84,8 @@ export default function DemoPalette() {
         <div>
           <h3 className="demo-title">Palette helpers</h3>
           <p className="demo-subtitle">
-            Each card relies purely on <code>palette(tone-variant)</code> helpers and matching classes, no runtime color
-            parsing required.
+            Each card relies purely on <code>palette(tone-variant)</code> helpers.
+            Values are computed at runtime from the applied CSS variables.
           </p>
         </div>
       </div>
@@ -44,14 +100,7 @@ export default function DemoPalette() {
 
             <ul className="palette-token-list">
               {variants.map((variant) => (
-                <li
-                  key={variant.id}
-                  className={`palette-token palette-card-${tone.id}-${variant.id}`}
-                >
-                  <span className="token-label">{variant.label}</span>
-                  <code className="token-helper">palette({tone.id}-{variant.id})</code>
-                  <code className="token-css">--ds__palette__{tone.id}-{variant.id}</code>
-                </li>
+                <ColorToken key={variant.id} tone={tone.id} variant={variant.id} />
               ))}
             </ul>
           </article>

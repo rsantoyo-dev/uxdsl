@@ -164,6 +164,7 @@ async function loadConfig(argv) {
     );
     resolvedConfig.breakpoints = configModule.breakpoints || DEFAULT_BREAKPOINTS;
     resolvedConfig.watch = configModule.watch || [];
+    resolvedConfig.theme = configModule.theme;
   }
   if (!resolvedConfig.entry || !resolvedConfig.outFile) {
     throw new Error('Both entry and outFile must be provided');
@@ -177,12 +178,16 @@ async function loadConfig(argv) {
 }
 
 async function buildOnce(config) {
+  if (config.theme) console.log('[uxdsl] Theme config detected');
   const source = fs.readFileSync(config.entry, 'utf8');
   const resolveImport = createImportResolver(config);
   const result = await postcss([
     postcssImport({ resolve: resolveImport }),
     postcssAdvancedVariables(),
-    uxdslPlugin({ breakpoints: config.breakpoints || DEFAULT_BREAKPOINTS }),
+    uxdslPlugin({ 
+      breakpoints: config.breakpoints || DEFAULT_BREAKPOINTS,
+      theme: config.theme
+    }),
   ]).process(source, {
     from: config.entry,
     to: config.outFile,

@@ -11,6 +11,7 @@
 @import 'postcss-uxdsl/theme/default-inputs.uxdsl';
 
 @import './theme-def.uxdsl';
+@import './layout.uxdsl';
 @import './app.uxdsl';
 @import './theming/page.uxdsl';
 
@@ -21,3 +22,4 @@
 @import '../components/CardDemo.uxdsl';
 @import '../components/DemoColors.uxdsl';
 @import '../components/DemoSpacing.uxdsl';
+@import '../components/SideNav.uxdsl';

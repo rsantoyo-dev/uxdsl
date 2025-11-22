@@ -1,0 +1,33 @@
+{
+  "palette": {
+    "primary-main": "#1f7a4c",
+    "primary-light": "#4ade80",
+    "primary-dark": "#145532",
+    "primary-contrast": "#f0fff4",
+    "secondary-main": "#f97316",
+    "secondary-light": "#ffab66",
+    "secondary-dark": "#c2410c",
+    "secondary-contrast": "#1a0b02",
+    "surface-main": "#fdfcf8",
+    "surface-light": "#ffffff",
+    "surface-dark": "#e7e1cf",
+    "surface-contrast": "#0f172a"
+  },
+  "spacing": {
+    "space-1": "0.175rem",
+    "space-2": "0.35rem",
+    "space-3": "0.55rem",
+    "space-4": "0.8rem",
+    "space-5": "1rem",
+    "space-6": "1.35rem",
+    "space-7": "1.75rem",
+    "space-8": "2.25rem",
+    "space-9": "2.75rem",
+    "space-10": "3.5rem",
+    "space-11": "4.25rem",
+    "space-12": "5rem"
+  },
+  "typography": {
+    "font-code": "\"JetBrains Mono\", \"SF Mono\", Menlo, monospace"
+  }
+}

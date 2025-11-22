@@ -1,0 +1,122 @@
+/* Burger Button (Mobile Only) */
+.side-nav__burger {
+  /* Use library button style */
+  @ds-button(outlined);
+  
+  display: xs(flex) md(none);
+  align-items: center;
+  justify-content: center;
+  padding: density(2); /* Faster/tighter padding */
+  margin-bottom: space(2);
+  width: fit-content;
+}
+
+/* Backdrop (Mobile Only) */
+.side-nav__backdrop {
+  display: xs(block) md(none);
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 99;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease; /* Faster animation */
+}
+.side-nav__backdrop.is-open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Menu Container */
+.side-nav__menu {
+  /* Mobile: Fixed Drawer */
+  position: xs(fixed) md(static);
+  top: xs(0) md(auto);
+  left: xs(0) md(auto);
+  bottom: xs(0) md(auto);
+  width: xs(280px) md(auto);
+  z-index: xs(100) md(auto);
+  
+  /* Mobile: Off-canvas transition */
+  transform: xs(translateX(-100%)) md(none);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* Faster animation */
+
+  /* Desktop: Reset styles & Sidebar look */
+  padding: xs(space(4)) md(space(3));
+  height: xs(100%) md(auto);
+  overflow-y: auto;
+
+  @ds-surface(flat);
+  
+  /* Ensure background is opaque on mobile (overrides flat's transparent) */
+  background: palette(surface-main);
+
+  border: xs(none) md(border(1, palette(neutral-dark, 0.15)));
+  border-right: xs(border(1, palette(neutral-dark, 0.1))) md(border(1, palette(neutral-dark, 0.15)));
+  border-radius: xs(0) md(radius(2));
+  box-shadow: xs(shadow(3)) md(none);
+}
+
+.side-nav__menu.is-open {
+  transform: translateX(0);
+}
+
+/* Mobile Header (Title + Close) */
+.side-nav__header {
+  display: xs(flex) md(none);
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: space(4);
+}
+.side-nav__title {
+  @ds-typo(h5);
+  margin: 0;
+}
+.side-nav__close {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: palette(surface-contrast, 0.7);
+  padding: space(1);
+}
+
+/* Section & List Styles */
+.side-nav__section + .side-nav__section {
+  margin-top: space(4);
+}
+
+.side-nav__section-title {
+  @ds-typo (h5);
+  margin: 0 0 space(2) 0;
+}
+
+.side-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: space(1);
+}
+
+.side-nav__link {
+  @ds-typo (body);
+  text-decoration: none;
+  color: palette(surface-contrast, 0.8);
+  padding: space(1) space(2);
+  border-radius: radius(1);
+  display: block;
+  transition: all 0.2s ease;
+}
+
+.side-nav__link:hover {
+  background: palette(primary-light);
+  color: palette(primary-dark);
+  opacity: 0.8;
+}
+
+.side-nav__link[aria-current="page"] {
+  background: palette(primary-light);
+  color: palette(primary-dark);
+  font-weight: 600;
+}

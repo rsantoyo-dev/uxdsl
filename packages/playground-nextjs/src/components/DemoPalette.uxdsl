@@ -12,11 +12,14 @@
 .palette-card__title { @ds-typo (h5); margin: 0; }
 .palette-card__detail { @ds-typo (body); margin: 0; opacity: 0.85; }
 
-.palette-token-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: row; flex-wrap: wrap; gap: density(2); align-items: stretch; }
-.palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; gap: density(1); flex: 1 1 180px; min-width: 180px; }
-.token-label { @ds-typo (caption); opacity: 0.8; }
-.token-helper { @ds-typo (caption); opacity: 0.9; }
-.token-css { @ds-typo (tag); opacity: 0.75; }
+.palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: density(2); }
+.palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: density(12); min-width: 0; }
+.palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: density(2); gap: density(1); }
+.palette-token:last-child .token-values { position: static; align-items: flex-start; }
+.token-name { @ds-typo (caption); opacity: 0.8; }
+.token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: density(1); right: density(1); }
+.token-hex { @ds-typo (caption); font-family: monospace; opacity: 0.8; }
+.token-rgb { @ds-typo (tag); font-family: monospace; opacity: 0.7; font-size: 0.7em; }
 
 @mixin palette-card($tone, $variant, $set-text: false) {
   .palette-card-#{$tone}-#{$variant} {
@@ -32,12 +35,12 @@
 $tones: primary, secondary, tertiary, success, info, warning, error, dark, neutral, light, surface;
 $variants: main, light, dark;
 
-// MAIN + LIGHT + DARK
+/* MAIN + LIGHT + DARK */
 @each $tone in $tones {
   @each $variant in $variants {
     @include palette-card($tone, $variant);
   }
 
-  // CONTRAST variant (with text color)
+  /* CONTRAST variant (with text color) */
   @include palette-card($tone, contrast, true);
 }
