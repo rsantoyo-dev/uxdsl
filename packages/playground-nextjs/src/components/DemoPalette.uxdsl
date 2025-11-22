@@ -6,14 +6,14 @@
 .demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
 
 .palette-stack { display: flex; flex-direction: column; gap: density(2); }
-.palette-card { @ds-surface (contained surface); display: flex; flex-direction: column; gap: density(1); transition: transform 150ms ease, box-shadow 150ms ease; }
-.palette-card:hover { transform: translateY(-2px); box-shadow: shadow(2); }
+.palette-card { @ds-surface (contained surface); display: flex; flex-direction: column; gap: density(1); }
 .palette-card__header { display: flex; flex-direction: column; gap: density(2); }
 .palette-card__title { @ds-typo (h5); margin: 0; }
 .palette-card__detail { @ds-typo (body); margin: 0; opacity: 0.85; }
 
 .palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: density(2); }
-.palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: density(12); min-width: 0; }
+.palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: density(12); min-width: 0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.palette-token:hover { transform: scale(1.02); z-index: 1; box-shadow: shadow(2); }
 .palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: density(2); gap: density(1); }
 .palette-token:last-child .token-values { position: static; align-items: flex-start; }
 .token-name { @ds-typo (caption); opacity: 0.8; }

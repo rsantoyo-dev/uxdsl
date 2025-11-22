@@ -25,10 +25,21 @@ export default function ThemeScript({ theme }: { theme: any }) {
       })
     }
 
+    let cssContent = `:root { ${cssVars.join('; ')} }`
+
+    if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {
+      const darkVars: string[] = []
+      Object.entries(theme.modes.dark.palette).forEach(([key, val]) => {
+        darkVars.push(`--${key}: ${val}`)
+        darkVars.push(`--ds__palette__${key}: ${val}`)
+      })
+      cssContent += ` @media (prefers-color-scheme: dark) { :root { ${darkVars.join('; ')} } }`
+    }
+
     return (
       <style
         id="uxdsl-ssr-theme"
-        dangerouslySetInnerHTML={{ __html: `:root { ${cssVars.join('; ')} }` }}
+        dangerouslySetInnerHTML={{ __html: cssContent }}
       />
     )
   })
