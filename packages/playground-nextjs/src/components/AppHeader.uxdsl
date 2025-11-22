@@ -1,0 +1,16 @@
+.app-header {
+  @ds-surface(primary, 1);
+  padding: density(2) density(4);
+  color: palette(primary-contrast);
+  border-bottom: border(1) solid palette(primary-dark);
+}
+
+.app-header__inner {
+  display: flex;
+  align-items: center;
+}
+
+.app-header__title {
+  @ds-typo(h4);
+  margin: 0;
+}

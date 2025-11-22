@@ -1,0 +1,12 @@
+/* Theming page styles (UXDSL) */
+
+/* Reuse the same palette grid/swatches styling as DemoPalette */
+.palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: space(3); }
+
+.palette-swatch { @ds-surface (contained); padding: space(3); border-radius: radius(2); box-shadow: shadow(1); }
+.palette-swatch__title { @ds-typo (h5); margin: 0 0 space(2) 0; text-transform: capitalize; }
+.palette-swatch__rows { display: grid; gap: space(1); }
+.palette-swatch .row { display: flex; align-items: baseline; justify-content: space-between; }
+.palette-swatch .label { @ds-typo (small); opacity: 0.75; }
+.palette-swatch .value { @ds-typo (body); }
+

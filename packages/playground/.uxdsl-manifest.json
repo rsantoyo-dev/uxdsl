@@ -1,0 +1,159 @@
+{
+  "version": 1,
+  "generatedAt": "2025-11-19T15:10:51.198Z",
+  "breakpoints": {
+    "xs": 0,
+    "sm": 480,
+    "md": 790,
+    "lg": 1024,
+    "xl": 1280
+  },
+  "tokens": {
+    "density": {
+      "1": "xs(space(1)) md(space(3))",
+      "2": "xs(space(3)) md(space(6))",
+      "3": "xs(space(4)) md(space(8))",
+      "4": "xs(space(6)) md(space(12))",
+      "5": "xs(space(8)) md(space(16))"
+    },
+    "radius": {
+      "1": "xs(space(1)) lg(space(2))",
+      "2": "xs(space(2)) lg(space(3))",
+      "3": "xs(space(3)) lg(space(4))",
+      "4": "xs(space(4)) lg(space(6))",
+      "5": "xs(space(6)) lg(space(8))"
+    },
+    "shadow": {
+      "1": "0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1)",
+      "2": "0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12)",
+      "3": "0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14)",
+      "4": "0 4px 6px rgba(0, 0, 0, 0.08), 0 10px 15px rgba(0, 0, 0, 0.16)",
+      "5": "0 10px 15px rgba(0, 0, 0, 0.1), 0 20px 25px rgba(0, 0, 0, 0.2)"
+    },
+    "border": {
+      "1": "xs(1px solid color(gray.300))",
+      "2": "xs(space(1) solid color(gray.300))",
+      "3": "xs(space(2) solid color(gray.400))",
+      "4": "xs(space(3) solid color(gray.500))",
+      "5": "xs(space(4) solid color(gray.600))"
+    }
+  },
+  "packs": {
+    "button": {
+      "contained": {
+        "base": {},
+        "states": {
+          "hover": {
+            "bg": "palette(primary-dark)",
+            "color": "palette(primary-contrast)"
+          },
+          "selected": {
+            "bg": "palette(primary-dark)",
+            "color": "palette(primary-contrast)"
+          }
+        }
+      },
+      "outlined": {
+        "base": {},
+        "states": {
+          "hover": {
+            "color": "palette(primary-dark)",
+            "border": "border(1, palette(primary-dark))"
+          },
+          "selected": {
+            "bg": "palette(primary-main)",
+            "color": "palette(primary-contrast)",
+            "border": "border(1, palette(primary-main))"
+          }
+        }
+      },
+      "flat": {
+        "base": {},
+        "states": {
+          "hover": {
+            "color": "palette(primary-dark)"
+          },
+          "selected": {
+            "color": "palette(primary-dark)"
+          }
+        }
+      }
+    },
+    "surface": {
+      "contained": {
+        "padding": "density(2)",
+        "radius": "radius(2)",
+        "bg": "palette(surface-main)",
+        "color": "palette(surface-contrast)",
+        "border": "palette(surface-dark)",
+        "shadow": "shadow(1)"
+      },
+      "outlined": {
+        "padding": "density(2)",
+        "radius": "radius(2)",
+        "bg": "transparent",
+        "color": "palette(surface-contrast)",
+        "border": "border(1, palette(neutral-main))",
+        "shadow": "none"
+      },
+      "flat": {
+        "padding": "density(2)",
+        "radius": "radius(2)",
+        "bg": "transparent",
+        "color": "palette(surface-contrast)",
+        "border": "none",
+        "shadow": "none"
+      }
+    },
+    "input": {
+      "contained": {
+        "base": {
+          "caret": "palette(primary-main)",
+          "placeholder": "color(neutral-dark)"
+        },
+        "states": {
+          "focus": {
+            "border": "border(1, palette(primary-main))",
+            "shadow": "shadow(2)"
+          },
+          "invalid": {
+            "border": "border(1, palette(error-main))"
+          },
+          "disabled": {
+            "color": "color(neutral-dark)"
+          }
+        }
+      },
+      "outlined": {
+        "base": {
+          "caret": "palette(primary-main)",
+          "placeholder": "color(neutral-dark)"
+        },
+        "states": {
+          "focus": {
+            "border": "border(1, palette(primary-main))"
+          },
+          "invalid": {
+            "border": "border(1, palette(error-main))"
+          }
+        }
+      },
+      "underline": {
+        "base": {
+          "border": "none",
+          "underline": "1px solid color(neutral-dark)",
+          "caret": "palette(primary-main)",
+          "placeholder": "color(neutral-dark)"
+        },
+        "states": {
+          "focus": {
+            "underline": "1px solid palette(primary-main)"
+          },
+          "invalid": {
+            "underline": "1px solid palette(error-main)"
+          }
+        }
+      }
+    }
+  }
+}

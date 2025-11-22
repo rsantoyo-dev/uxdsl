@@ -1,0 +1,47 @@
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import InlineStyles from './InlineStyles'
+import AppHeader from '@/components/AppHeader'
+import SideNav from '@/components/SideNav'
+import ThemeProvider from '@/components/ThemeProvider'
+
+const inter = Inter({ subsets: ['latin'], display: 'swap' })
+
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
+export const metadata: Metadata = {
+  title: 'UXDSL Next.js Playground',
+  description: 'Next.js playground with UXDSL styling',
+}
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+  return (
+    <html lang="en">
+      <head>
+        <InlineStyles />
+      </head>
+      <body className={`app ${inter.className}`}>
+        <ThemeProvider
+   
+          persist={false}
+          clearPersist={true}
+        >
+          <AppHeader />
+          <div className="layout">
+            <aside className="layout__nav">
+              <SideNav />
+            </aside>
+            <div className="layout__content">
+              {children}
+            </div>
+          </div>
+        </ThemeProvider>
+      </body>
+    </html>
+  )
+}

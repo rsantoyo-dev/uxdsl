@@ -3,16 +3,10 @@
 
 :root {
   /* Brand primary */
-  --primary-main: #00675b;
-  --primary-light: #439889;
-  --primary-dark: #003f3d;
-  --primary-contrast: #fff;
+
 
   /* Secondary */
-  --secondary-main: #f57c00;
-  --secondary-light: #ffad42;
-  --secondary-dark: #bb4d00;
-  --secondary-contrast: #000;
+
 
   /* Typography overrides (demo) */
   // --h2-size: xs(32px) md(44px) lg(52px);

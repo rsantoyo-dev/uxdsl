@@ -24,6 +24,12 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "dependencies": {
-    "uxdsl-core": "^0.1.2"
+    "chokidar": "^3.6.0",
+    "minimist": "^1.2.8",
+    "postcss": "^8.5.6",
+    "postcss-advanced-variables": "^3.0.0",
+    "postcss-import": "^16.1.0",
+    "postcss-scss": "^4.0.9",
+    "postcss-uxdsl": "^0.1.2"
   }
 }

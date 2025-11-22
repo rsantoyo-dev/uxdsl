@@ -1,0 +1,37 @@
+/* DemoColors component styles reauthored like DemoPalette */
+
+.demo-section { display: flex; flex-direction: column; gap: density(2); }
+.demo-title { @ds-typo (h4); margin: 0; }
+.demo-subtitle { @ds-typo (body); margin: 0; opacity: 0.75; max-width: 640px; }
+
+.colors-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: density(2); }
+.colors-swatch { @ds-surface (contained surface); display: flex; flex-direction: column; gap: density(2); padding: density(2); border-radius: radius(2); box-shadow: shadow(1); transition: transform 150ms ease, box-shadow 150ms ease; }
+.colors-swatch:hover { transform: translateY(-2px); box-shadow: shadow(2); }
+.colors-swatch__title { @ds-typo (h5); margin: 0; text-transform: capitalize; }
+.colors-swatch__rows { display: flex; flex-direction: column; gap: density(1); }
+.row { display: flex; align-items: center; justify-content: space-between; gap: density(1); }
+.label { @ds-typo (caption); text-transform: uppercase; letter-spacing: 0.08em; opacity: 0.65; }
+
+.color-chip { border-radius: radius(1); padding: density(1); display: flex; flex-direction: column; gap: density(1); min-width: 180px; box-shadow: shadow(1); background: palette(surface-main, 0.25); color: palette(surface-contrast); transition: transform 120ms ease, box-shadow 120ms ease; }
+.color-chip:hover { transform: translateY(-2px); box-shadow: shadow(2); }
+.chip__line { display: block; font-feature-settings: 'tnum'; }
+
+$color-families: (blue, indigo, purple, pink, red, orange, yellow, green, teal, cyan, gray);
+$color-shades: (50, 100, 200, 300, 400, 500, 600, 700, 800, 900);
+
+@mixin color-chip($family, $shade) {
+   .chip--#{$family}-#{$shade} {
+      background: color(#{$family}-#{$shade});
+      border: 1px solid color(#{$family}-#{$shade});
+      color: color(white);
+      @if ($shade <= 400) {
+         color: color(black);
+      }
+   }
+}
+
+@each $family in $color-families {
+   @each $shade in $color-shades {
+      @include color-chip($family, $shade);
+   }
+}

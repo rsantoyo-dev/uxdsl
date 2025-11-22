@@ -1,0 +1,108 @@
+{
+  "uxdslVersion": "0.1.2",
+  "theme": {
+    "name": "Default",
+    "author": "UXDSL",
+    "description": "Core semantic design tokens and surfaces",
+    "license": "MIT",
+    "generatedAt": ""
+  },
+  "defaults": {
+    "files": {
+      "colors": "src/theme/default-colors.css",
+      "palette": "src/theme/default-palette.css",
+      "spacing": "src/theme/default-spacing.css",
+      "densities": "src/theme/default-densities.uxdsl",
+      "radii": "src/theme/default-radii.uxdsl",
+      "shadows": "src/theme/default-shadows.uxdsl",
+      "borders": "src/theme/default-borders.uxdsl",
+      "typography": "src/theme/default-typography.uxdsl",
+      "surfaces": "src/theme/default-surfaces.uxdsl",
+      "buttons": "src/theme/default-buttons.uxdsl",
+      "inputs": "src/theme/default-inputs.uxdsl",
+      "motion": "src/theme/default-motion.css"
+    },
+    "breakpoints": {
+      "xs": 0,
+      "sm": 480,
+      "md": 768,
+      "lg": 1024,
+      "xl": 1280
+    }
+  },
+  "tokens": {
+    "paletteFamilies": [
+      "primary",
+      "secondary",
+      "tertiary",
+      "success",
+      "info",
+      "warning",
+      "error",
+      "dark",
+      "neutral",
+      "light",
+      "surface"
+    ],
+    "toneContract": [
+      "main",
+      "contrast",
+      "light?",
+      "dark?",
+      "border?",
+      "hover?",
+      "active?",
+      "disabled?"
+    ],
+    "states": ["hover", "active", "selected", "disabled", "focus", "invalid"],
+    "space": { "min": 1, "max": 16 },
+    "density": { "min": 1, "max": 5 },
+    "radius": { "min": 1, "max": 5 },
+    "shadow": { "min": 1, "max": 5 },
+    "border": { "min": 1, "max": 5 },
+    "motion": {
+      "durations": ["--motion-dur-1", "--motion-dur-2", "--motion-dur-3", "--motion-dur-4", "--motion-dur-5"],
+      "easings": ["--motion-ease-standard", "--motion-ease-emphasis", "--motion-ease-enter", "--motion-ease-exit"]
+    }
+  },
+  "packs": {
+    "surface": ["contained", "outlined", "flat"],
+    "button": ["contained", "outlined", "flat"],
+    "input": ["contained", "outlined", "underline"]
+  },
+  "directives": {
+    "ds-typo": {
+      "variants": ["h1","h2","h3","h4","h5","h6","p","span","body","caption","small","pre"]
+    },
+    "ds-surface": {
+      "params": ["variant", "tone?", "size?"],
+      "variants": ["contained", "outlined", "flat"]
+    },
+    "ds-button": {
+      "params": ["variant", "tone?", "size?"],
+      "variants": ["contained", "outlined", "flat"],
+      "stateVars": [
+        "--ds-btn-bg", "--ds-btn-fg", "--ds-btn-border",
+        "--ds-btn-bg-hover", "--ds-btn-fg-hover", "--ds-btn-border-hover",
+        "--ds-btn-bg-selected", "--ds-btn-fg-selected", "--ds-btn-border-selected"
+      ]
+    },
+    "ds-input": {
+      "params": ["variant", "tone?", "size?"],
+      "variants": ["contained", "outlined", "underline"],
+      "extras": ["caret-color", "::placeholder color"]
+    }
+  },
+  "helpers": {
+    "functions": [
+      "density(n)",
+      "space(n)",
+      "palette(path)",
+      "color(path)",
+      "radius(n|pill|full|circle)",
+      "shadow(n)",
+      "border(n[, color][, style])",
+      "xs(val)", "sm(val)", "md(val)", "lg(val)", "xl(val)"
+    ]
+  }
+}

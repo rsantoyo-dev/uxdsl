@@ -29,17 +29,21 @@ const DEFAULT_BPS: Record<string, number> = {
   xl: 1280,
 };
 
-// Map palette(foo.bar|foo-bar) -> var(--dsl__palette__foo-bar)
-const defaultThemeVar = (path: string) =>
-  `var(--dsl__palette__${String(path).trim().replace(/\./g, "-")})`;
+// Map palette(foo.bar|foo-bar) -> resolve to --ds__palette__*
+const defaultThemeVar = (path: string) => {
+  const key = String(path).trim().replace(/\./g, "-");
+  return `var(--ds__palette__${key})`;
+};
 
 // Map space(2) -> var(--space-2)
 const defaultSpaceVar = (index: string) =>
   `var(--space-${String(index).trim()})`;
 
-// Map color(blue.500|blue-500) -> var(--dsl__color__blue-500)
-const defaultColorVar = (path: string) =>
-  `var(--dsl__color__${String(path).trim().replace(/\./g, "-")})`;
+// Map color(blue.500|blue-500) -> resolve to --ds__color__*
+const defaultColorVar = (path: string) => {
+  const key = String(path).trim().replace(/\./g, "-");
+  return `var(--ds__color__${key})`;
+};
 
 function normalizeBreakpoints(input?: BreakpointSpec) {
   if (!input) {
@@ -160,46 +164,72 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             case "h1":
               insert("font-size", "var(--h1-size)");
               insert("font-weight", "var(--h1-weight, 700)");
+              insert("font-family", "var(--h1-font-family, var(--font-ui))");
               break;
             case "h2":
               insert("font-size", "var(--h2-size)");
               insert("font-weight", "var(--h2-weight, 700)");
+              insert("font-family", "var(--h2-font-family, var(--font-ui))");
               break;
             case "h3":
               insert("font-size", "var(--h3-size)");
               insert("font-weight", "var(--h3-weight, 600)");
+              insert("font-family", "var(--h3-font-family, var(--font-ui))");
               break;
             case "h4":
               insert("font-size", "var(--h4-size)");
               insert("font-weight", "var(--h4-weight, 600)");
+              insert("font-family", "var(--h4-font-family, var(--font-ui))");
               break;
             case "h5":
               insert("font-size", "var(--h5-size)");
               insert("font-weight", "var(--h5-weight, 600)");
+              insert(
+                "font-family",
+                "var(--h5-font-family, var(--font-ui-2, var(--font-ui)))"
+              );
               break;
             case "h6":
               insert("font-size", "var(--h6-size)");
               insert("font-weight", "var(--h6-weight, 600)");
+              insert(
+                "font-family",
+                "var(--h6-font-family, var(--font-ui-2, var(--font-ui)))"
+              );
               break;
             case "p":
               insert("font-size", "var(--p-size)");
               insert("line-height", "var(--p-line, normal)");
               insert("font-weight", "var(--p-weight, 400)");
+              insert("font-family", "var(--p-font-family, var(--font-ui))");
               break;
             case "span":
               insert("font-size", "var(--span-size)");
               insert("font-weight", "var(--span-weight, 400)");
+              insert("font-family", "var(--span-font-family, var(--font-ui))");
               break;
             case "small":
               insert("font-size", "var(--small-size)");
+              insert("opacity", "var(--caption-opacity, 0.8)");
+              insert(
+                "font-family",
+                "var(--small-font-family, var(--font-ui-2, var(--font-ui)))"
+              );
               break;
             case "caption":
               insert("font-size", "var(--caption-size)");
               insert("opacity", "var(--caption-opacity, 0.8)");
+              insert(
+                "font-family",
+                "var(--caption-font-family, var(--font-ui-2, var(--font-ui)))"
+              );
               break;
             case "pre":
             case "code":
-              insert("font-family", "var(--font-code), monospace");
+              insert(
+                "font-family",
+                "var(--pre-font-family, var(--font-code)), monospace"
+              );
               insert("font-size", "var(--pre-size)");
               break;
             default:
@@ -623,7 +653,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             insert(
               "border-bottom",
               typeof main === "string" && main.startsWith("palette(")
-                ? `1px solid ${main.replace(/^.*\(|\)$/g, "")}`
+                ? `1px solid ${main}`
                 : String(main)
             );
             insert("box-shadow", "none");
@@ -1062,7 +1092,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           }
           if (node.type === "function" && node.value === "palette") {
             const inner = valueParser.stringify(node.nodes).trim();
-            const normalized = normalizeTokenPath(inner);
+            // Support palette(token[, alpha]) where alpha is 0..1
+            const parts = inner
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const token = parts[0] || "";
+            const normalized = normalizeTokenPath(token);
+            const alphaRaw = parts[1];
+            if (alphaRaw != null && alphaRaw !== "") {
+              const a = Math.max(0, Math.min(1, Number(alphaRaw)));
+              const pct = Math.round(a * 100);
+              node.type = "word";
+              node.value = `color-mix(in srgb, ${toVar(normalized)} ${pct}%, transparent)`;
+              return;
+            }
             node.type = "word";
             node.value = toVar(normalized);
             return;
@@ -1222,7 +1266,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           const n: any = node as any;
           if (n.type === "function" && n.value === "palette") {
             const inner = valueParser.stringify(n.nodes).trim();
-            const normalized = normalizeTokenPath(inner);
+            const parts = inner
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+            const token = parts[0] || "";
+            const normalized = normalizeTokenPath(token);
+            const alphaRaw = parts[1];
+            if (alphaRaw != null && alphaRaw !== "") {
+              const a = Math.max(0, Math.min(1, Number(alphaRaw)));
+              const pct = Math.round(a * 100);
+              n.type = "word";
+              n.value = `color-mix(in srgb, ${toVar(normalized)} ${pct}%, transparent)`;
+              changed = true;
+              return;
+            }
             n.type = "word";
             n.value = toVar(normalized);
             changed = true;

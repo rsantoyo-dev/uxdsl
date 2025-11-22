@@ -2,7 +2,7 @@
 // - Palette: set/get/reset CSS variables consumed by palette()
 // - Breakpoints: adjust media query thresholds emitted by the UXDSL plugin at runtime
 
-const PREFIX = "dsl__palette__";
+const PREFIX = "ds__palette__"; // canonical prefix for palette vars
 const STORE_KEY = "uxdsl:palette";
 const STORE_BP_KEY = "uxdsl:breakpoints";
 

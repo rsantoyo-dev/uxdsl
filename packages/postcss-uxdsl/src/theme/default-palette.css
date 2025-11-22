@@ -1,68 +1,69 @@
-
 :root {
   /* Primary */
-  --dsl__palette__primary-main: var(--dsl__color__teal-500);
-  --dsl__palette__primary-light: var(--dsl__color__teal-300);
-  --dsl__palette__primary-dark: var(--dsl__color__teal-600);
-  --dsl__palette__primary-contrast: var(--dsl__color__white);
+  --ds__palette__primary-main: var(--ds__color__teal-500);
+  --ds__palette__primary-light: var(--ds__color__teal-300);
+  --ds__palette__primary-dark: var(--ds__color__teal-600);
+  --ds__palette__primary-contrast: var(--ds__color__white);
 
   /* Surfaces (app background + text) */
-  --dsl__palette__surface-main: var(--dsl__color__white);
-  --dsl__palette__surface-contrast: var(--dsl__color__gray-900);
+  --ds__palette__surface-main: var(--ds__color__white);
+  --ds__palette__surface-light: var(--ds__color__gray-50);
+  --ds__palette__surface-dark: var(--ds__color__gray-200);
+  --ds__palette__surface-contrast: var(--ds__color__gray-900);
 
   /* Secondary */
-  --dsl__palette__secondary-main: var(--dsl__color__gray-600);
-  --dsl__palette__secondary-light: var(--dsl__color__gray-400);
-  --dsl__palette__secondary-dark: var(--dsl__color__gray-700);
-  --dsl__palette__secondary-contrast: var(--dsl__color__white);
+  --ds__palette__secondary-main: var(--ds__color__gray-600);
+  --ds__palette__secondary-light: var(--ds__color__gray-400);
+  --ds__palette__secondary-dark: var(--ds__color__gray-700);
+  --ds__palette__secondary-contrast: var(--ds__color__white);
 
   /* Tertiary */
-  --dsl__palette__tertiary-main: var(--dsl__color__gray-300);
-  --dsl__palette__tertiary-light: var(--dsl__color__gray-200);
-  --dsl__palette__tertiary-dark: var(--dsl__color__gray-400);
-  --dsl__palette__tertiary-contrast: var(--dsl__color__black);
+  --ds__palette__tertiary-main: var(--ds__color__gray-300);
+  --ds__palette__tertiary-light: var(--ds__color__gray-200);
+  --ds__palette__tertiary-dark: var(--ds__color__gray-400);
+  --ds__palette__tertiary-contrast: var(--ds__color__black);
 
   /* Success */
-  --dsl__palette__success-main: var(--dsl__color__green-700);
-  --dsl__palette__success-light: var(--dsl__color__green-600);
-  --dsl__palette__success-dark: var(--dsl__color__green-700);
-  --dsl__palette__success-contrast: var(--dsl__color__white);
+  --ds__palette__success-main: var(--ds__color__green-700);
+  --ds__palette__success-light: var(--ds__color__green-600);
+  --ds__palette__success-dark: var(--ds__color__green-700);
+  --ds__palette__success-contrast: var(--ds__color__white);
 
   /* Info */
-  --dsl__palette__info-main: var(--dsl__color__blue-500);
-  --dsl__palette__info-light: var(--dsl__color__blue-400);
-  --dsl__palette__info-dark: var(--dsl__color__blue-500);
-  --dsl__palette__info-contrast: var(--dsl__color__white);
+  --ds__palette__info-main: var(--ds__color__blue-500);
+  --ds__palette__info-light: var(--ds__color__blue-400);
+  --ds__palette__info-dark: var(--ds__color__blue-500);
+  --ds__palette__info-contrast: var(--ds__color__white);
 
   /* Warning */
-  --dsl__palette__warning-main: var(--dsl__color__orange-500);
-  --dsl__palette__warning-light: var(--dsl__color__orange-500);
-  --dsl__palette__warning-dark: var(--dsl__color__orange-600);
-  --dsl__palette__warning-contrast: var(--dsl__color__gray-900);
+  --ds__palette__warning-main: var(--ds__color__orange-500);
+  --ds__palette__warning-light: var(--ds__color__orange-500);
+  --ds__palette__warning-dark: var(--ds__color__orange-600);
+  --ds__palette__warning-contrast: var(--ds__color__gray-900);
 
   /* Error */
-  --dsl__palette__error-main: var(--dsl__color__red-600);
-  --dsl__palette__error-light: var(--dsl__color__red-500);
-  --dsl__palette__error-dark: var(--dsl__color__red-600);
-  --dsl__palette__error-contrast: var(--dsl__color__white);
+  --ds__palette__error-main: var(--ds__color__red-600);
+  --ds__palette__error-light: var(--ds__color__red-500);
+  --ds__palette__error-dark: var(--ds__color__red-600);
+  --ds__palette__error-contrast: var(--ds__color__white);
 
   /* Dark */
-  --dsl__palette__dark-main: var(--dsl__color__gray-900); /* no exact color scale match; keep */
-  --dsl__palette__dark-light: var(--dsl__color__gray-600);
-  --dsl__palette__dark-dark: var(--dsl__color__gray-900);
-  --dsl__palette__dark-contrast: var(--dsl__color__white);
+  --ds__palette__dark-main: var(--ds__color__gray-900); /* no exact color scale match; keep */
+  --ds__palette__dark-light: var(--ds__color__gray-600);
+  --ds__palette__dark-dark: var(--ds__color__gray-900);
+  --ds__palette__dark-contrast: var(--ds__color__white);
 
   /* Neutral */
-  --dsl__palette__neutral-main: var(--dsl__color__gray-200);
-  --dsl__palette__neutral-light: var(--dsl__color__gray-50);
-  --dsl__palette__neutral-dark: var(--dsl__color__gray-300);
-  --dsl__palette__neutral-contrast: var(--dsl__color__gray-900);
+  --ds__palette__neutral-main: var(--ds__color__gray-200);
+  --ds__palette__neutral-light: var(--ds__color__gray-50);
+  --ds__palette__neutral-dark: var(--ds__color__gray-300);
+  --ds__palette__neutral-contrast: var(--ds__color__gray-900);
 
   /* Light */
-  --dsl__palette__light-main: var(--dsl__color__white);
-  --dsl__palette__light-light: var(--dsl__color__gray-50);
-  --dsl__palette__light-dark: var(--dsl__color__gray-100);
-  --dsl__palette__light-contrast: var(--dsl__color__gray-900);
+  --ds__palette__light-main: var(--ds__color__white);
+  --ds__palette__light-light: var(--ds__color__gray-50);
+  --ds__palette__light-dark: var(--ds__color__gray-100);
+  --ds__palette__light-contrast: var(--ds__color__gray-900);
 }
 
 /* Hint to the browser that both color schemes are supported */
@@ -71,15 +72,17 @@ html { color-scheme: light dark; }
 /* Respect system preference: switch primary tokens in dark mode */
 @media (prefers-color-scheme: dark) {
   :root {
-    --dsl__palette__primary-main: var(--dsl__color__gray-800);
-    --dsl__palette__primary-light: var(--dsl__color__gray-600);
-    --dsl__palette__primary-dark: var(--dsl__color__gray-900);
-    --dsl__palette__primary-contrast: var(--dsl__color__white);
+    --ds__palette__primary-main: var(--ds__color__gray-800);
+    --ds__palette__primary-light: var(--ds__color__gray-600);
+    --ds__palette__primary-dark: var(--ds__color__gray-900);
+    --ds__palette__primary-contrast: var(--ds__color__white);
 
-    --dsl__palette__surface-main: var(--dsl__color__gray-900);
-    --dsl__palette__surface-contrast: var(--dsl__color__white);
+    --ds__palette__surface-main: var(--ds__color__gray-900);
+    --ds__palette__surface-light: var(--ds__color__gray-700);
+    --ds__palette__surface-dark: var(--ds__color__black);
+    --ds__palette__surface-contrast: var(--ds__color__white);
 
-      --dsl__palette__light-main: #1a1818; /* keep custom */
-      --dsl__palette__light-contrast: var(--dsl__color__white);
+    --ds__palette__light-main: #1a1818; /* keep custom */
+    --ds__palette__light-contrast: var(--ds__color__white);
   }
 }

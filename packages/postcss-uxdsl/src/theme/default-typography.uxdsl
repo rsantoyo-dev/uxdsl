@@ -1,0 +1,94 @@
+:root {
+  /* UI font families */
+  --font-ui: Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-ui-2: Roboto, "Helvetica Neue", Arial, sans-serif;
+
+  --font-code: Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace;
+
+  /* Headings */
+  --h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
+  --h1-weight: 700;
+  --h1-font-family: var(--font-ui);
+
+  --h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
+  --h2-weight: 700;
+  --h2-font-family: var(--font-ui);
+
+  --h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
+  --h3-weight: 600;
+  --h3-font-family: var(--font-ui);
+
+  --h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
+  --h4-weight: 600;
+  --h4-font-family: var(--font-ui);
+
+  --h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
+  --h5-weight: 600;
+  --h5-font-family: var(--font-ui-2, var(--font-ui));
+
+  --h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
+  --h6-weight: 600;
+  --h6-font-family: var(--font-ui-2, var(--font-ui));
+
+  /* Body text */
+  --p-size: xs(16px) md(17.2px);
+  --p-weight: 400;
+  --p-line: xs(1.35) md(1.375);
+  --p-font-family: var(--font-ui);
+
+  --span-size: xs(14px)  md(16px);
+  --span-weight: 400;
+  --span-font-family: var(--font-ui);
+
+  --body-size: xs(14px) md(18px);
+  --body-weight: 400;
+  --body-font-family: var(--font-ui);
+
+  --caption-size: xs(12px)  md(14px);
+  --caption-opacity: 0.8;
+  --caption-font-family: var(--font-ui-2, var(--font-ui));
+
+  --small-size: xs(12px)  md(14px);
+  --small-font-family: var(--font-ui-2, var(--font-ui));
+
+  --pre-size: xs(14px) md(16px);
+  --pre-font-family: var(--font-code);
+}
+
+/* Single opt-in gate for DS typography */
+.ds-typo {
+  font-family: var(--font-ui), sans-serif;
+  color: inherit;
+  margin-block-start: 0;
+  margin-block-end: 0;
+  margin-inline-start: 0;
+  margin-inline-end: 0;
+}
+
+/* Element-aware rules (low specificity via :where) */
+:where(h1).ds-typo { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); }
+:where(h2).ds-typo { font-size: var(--h2-size); font-weight: var(--h2-weight, 700); font-family: var(--h2-font-family, var(--font-ui)); }
+:where(h3).ds-typo { font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); }
+:where(h4).ds-typo { font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); }
+:where(h5).ds-typo { font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); }
+:where(h6).ds-typo { font-size: var(--h6-size); font-weight: var(--h6-weight, 600); font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui))); }
+
+:where(p).ds-typo { font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); font-family: var(--p-font-family, var(--font-ui)); }
+:where(span).ds-typo { font-size: var(--span-size); font-weight: var(--span-weight, 400); font-family: var(--span-font-family, var(--font-ui)); }
+:where(small).ds-typo { font-size: var(--small-size); opacity: var(--caption-opacity, 1); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); }
+:where(.caption).ds-typo, :where(caption).ds-typo { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); }
+:where(pre).ds-typo, :where(code).ds-typo { font-family: var(--pre-font-family, var(--font-code)), monospace; font-size: var(--pre-size); }
+
+/* Attribute fallback for non-semantic tags */
+.ds-typo[data-typo="h1"] { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); }
+.ds-typo[data-typo="h2"] { font-size: var(--h2-size); font-weight: var(--h2-weight, 700); font-family: var(--h2-font-family, var(--font-ui)); }
+.ds-typo[data-typo="h3"] { font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); }
+.ds-typo[data-typo="h4"] { font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); }
+.ds-typo[data-typo="h5"] { font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); }
+.ds-typo[data-typo="h6"] { font-size: var(--h6-size); font-weight: var(--h6-weight, 600); font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui))); }
+.ds-typo[data-typo="p"] { font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); font-family: var(--p-font-family, var(--font-ui)); }
+.ds-typo[data-typo="span"] { font-size: var(--span-size); font-weight: var(--span-weight, 400); font-family: var(--span-font-family, var(--font-ui)); }
+.ds-typo[data-typo="small"] { font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); }
+.ds-typo[data-typo="caption"] { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); }
+.ds-typo[data-typo="pre"], .ds-typo[data-typo="code"] { font-family: var(--pre-font-family, var(--font-code)), monospace; font-size: var(--pre-size); }
+

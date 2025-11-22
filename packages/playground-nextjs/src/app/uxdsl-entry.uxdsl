@@ -1,0 +1,23 @@
+@import 'postcss-uxdsl/theme/default-colors.css';
+@import 'postcss-uxdsl/theme/default-palette.css';
+@import 'postcss-uxdsl/theme/default-spacing.css';
+@import 'postcss-uxdsl/theme/default-typography.uxdsl';
+@import 'postcss-uxdsl/theme/default-densities.uxdsl';
+@import 'postcss-uxdsl/theme/default-radii.uxdsl';
+@import 'postcss-uxdsl/theme/default-shadows.uxdsl';
+@import 'postcss-uxdsl/theme/default-borders.uxdsl';
+@import 'postcss-uxdsl/theme/default-surfaces.uxdsl';
+@import 'postcss-uxdsl/theme/default-buttons.uxdsl';
+@import 'postcss-uxdsl/theme/default-inputs.uxdsl';
+
+@import './theme-def.uxdsl';
+@import './app.uxdsl';
+@import './theming/page.uxdsl';
+
+@import '../components/DemoPalette.uxdsl';
+@import '../components/AppHeader.uxdsl';
+@import '../components/ButtonDemo.uxdsl';
+@import '../components/InputDemo.uxdsl';
+@import '../components/CardDemo.uxdsl';
+@import '../components/DemoColors.uxdsl';
+@import '../components/DemoSpacing.uxdsl';

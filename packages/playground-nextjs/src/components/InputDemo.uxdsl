@@ -1,0 +1,10 @@
+/* InputDemo component styles */
+
+.input, .input--contained { @ds-input (contained); }
+.input--outlined { @ds-input (outlined primary); }
+.input--underline { @ds-input (underline primary); }
+
+.input--sm { @ds-input (contained primary 1); }
+.input--md { @ds-input (contained primary 2); }
+.input--lg { @ds-input (contained primary 3); }
+

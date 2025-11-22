@@ -222,6 +222,10 @@ function resolveDefaultTypographyFile(): string {
       ? resolvedDir
       : path.resolve(resolvedDir, "..");
     const candidates = [
+      // Prefer .uxdsl if present
+      path.resolve(pkgRoot, "src/theme/default-typography.uxdsl"),
+      path.resolve(pkgRoot, "dist/theme/default-typography.uxdsl"),
+      path.resolve(resolvedDir, "theme/default-typography.uxdsl"),
       path.resolve(pkgRoot, "src/theme/default-typography.css"),
       path.resolve(pkgRoot, "dist/theme/default-typography.css"),
       path.resolve(resolvedDir, "theme/default-typography.css"),
@@ -699,10 +703,46 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         }
         if (sass) {
           try {
+            const basedir = path.dirname(baseId);
+            const loadPaths = [basedir].concat((userOptions as any)?.scssLoadPaths || []);
+            // Custom importer so @import/@use of .uxdsl works in Sass
+            const importer: any = {
+              canonicalize(urlStr: string, opts2: any) {
+                // Only handle .uxdsl targets
+                if (!/\.uxdsl($|\?|#)/.test(urlStr)) return null;
+                const { pathToFileURL } = require('url');
+                const tryResolve = (from: string) => {
+                  const abs = path.isAbsolute(urlStr) ? urlStr : path.resolve(from, urlStr);
+                  if (fs.existsSync(abs)) return pathToFileURL(abs);
+                  return null;
+                };
+                // Try load paths
+                for (const lp of loadPaths) {
+                  const u = tryResolve(lp);
+                  if (u) return u;
+                }
+                // Try relative to containing file
+                const containing = (opts2 && opts2.containingUrl && (opts2.containingUrl as URL).pathname)
+                  ? path.dirname((opts2.containingUrl as URL).pathname)
+                  : basedir;
+                const rel = tryResolve(containing);
+                if (rel) return rel;
+                return null;
+              },
+              load(canonicalUrl: URL) {
+                try {
+                  const filepath = canonicalUrl.pathname;
+                  const contents = fs.readFileSync(filepath, 'utf-8');
+                  return { contents, syntax: 'scss' };
+                } catch {
+                  return null;
+                }
+              }
+            };
             const opts: any = {
               syntax: 'scss',
-              loadPaths: [path.dirname(baseId)].concat((userOptions as any)?.scssLoadPaths || []),
-              // quietDeps: true, // keep output clean if available
+              loadPaths,
+              importers: [importer],
             };
             const res = sass.compileString(preInlined, opts);
             source = res.css as string;
