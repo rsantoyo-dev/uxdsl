@@ -31,11 +31,13 @@
   "exports": {
     ".": {
       "require": "./dist/index.js",
-      "import": "./dist/index.mjs"
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./runtime": {
       "require": "./dist/runtime.js",
-      "import": "./dist/runtime.mjs"
+      "import": "./dist/runtime.js",
+      "types": "./dist/runtime.d.ts"
     },
     "./theme/*": "./src/theme/*"
   },

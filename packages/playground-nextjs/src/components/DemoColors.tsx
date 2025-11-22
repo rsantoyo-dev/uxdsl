@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import runtime from 'postcss-uxdsl/runtime'
 
 const families = [
   'blue','indigo','purple','pink','red','orange','yellow','green','teal','cyan','gray'
@@ -55,13 +56,11 @@ function ColorScaleToken({ family, shade }: { family: string; shade: string }) {
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
-    const varName = `color__${family}-${shade}`; // Note: UXDSL uses --ds__color__...
+    // Update CSS variables globally via runtime
+    // This will also update any linked palette tokens
+    runtime.updateColor(`${family}-${shade}`, newHex)
     
-    // Update CSS variables globally
-    // We need to target the specific variable format UXDSL uses
-    document.documentElement.style.setProperty(`--ds__${varName}`, newHex);
-    
-    // Dispatch event for other components
+    // Dispatch event for other components (UI updates only)
     console.log(`[DemoColors] Dispatching event: ${family}-${shade} -> ${newHex}`);
     window.dispatchEvent(new CustomEvent('uxdsl:color-change', { 
       detail: { token: `${family}-${shade}`, value: newHex } 
@@ -112,6 +111,8 @@ export default function DemoColors() {
         <h3 className="demo-title">Color Scales</h3>
         <p className="demo-subtitle">
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.
+          <br />
+          Usage example: <code>background: color(blue-500)</code>
         </p>
       </div>
 

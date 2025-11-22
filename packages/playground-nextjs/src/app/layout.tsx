@@ -1,13 +1,10 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './uxdsl.css'
 import AppHeader from '@/components/AppHeader'
 import SideNav from '@/components/SideNav'
 import ThemeProvider from '@/components/ThemeProvider'
 import ThemeScript from '@/components/ThemeScript'
 import theme from '../../uxdsl.theme.json'
-
-const inter = Inter({ subsets: ['latin'], display: 'swap' })
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0

@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import runtime from 'postcss-uxdsl/runtime'
+import theme from '../../uxdsl.theme.json'
 
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
@@ -79,6 +81,7 @@ function useColorMap() {
   }
 
   useEffect(() => {
+    // Build the map once on mount to establish initial links based on defaults
     buildMap()
   }, [])
   
@@ -136,28 +139,38 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
 
       // If we find a match in the map, establish a link
       // We only do this if we don't have a link yet, to avoid overwriting
-      if (colorMap[hex] && !linkedToken) {
-        const tokenName = colorMap[hex]
-        console.log(`[DemoPalette] Linking ${tone}-${variant} to ${tokenName}`)
-        setLinkedToken(tokenName)
+      if (!linkedToken) {
+        // Try to find link based on DEFAULT value from theme
+        // This ensures we link correctly even if the current color is overridden
+        const defaultHex = (theme.palette as Record<string, string>)[`${tone}-${variant}`]
+        const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
-        // Check if the linked token has an override
-        const overrideVar = `--ds__color__${tokenName}`
-        const overrideValue = document.documentElement.style.getPropertyValue(overrideVar)
-        
-        if (overrideValue && overrideValue.toUpperCase() !== hex) {
-             console.log(`[DemoPalette] Found override for ${tokenName}: ${overrideValue}`)
-             // Apply it!
-             const varName = `${tone}-${variant}`
-             document.documentElement.style.setProperty(`--${varName}`, overrideValue)
-             document.documentElement.style.setProperty(`--ds__palette__${varName}`, overrideValue)
-             
-             const newRgb = hexToRgbString(overrideValue)
-             setColorValues({
-                hex: overrideValue.toUpperCase(),
-                rgb: newRgb,
-                textColor: getContrastColor(newRgb)
-             })
+        if (tokenName) {
+            console.log(`[DemoPalette] Linking ${tone}-${variant} to ${tokenName} (via ${defaultHex ? 'default' : 'current'})`)
+            setLinkedToken(tokenName)
+            
+            // Register dependency in runtime
+            runtime.link(`${tone}-${variant}`, tokenName)
+
+            // Check if the linked token has an override
+            const overrideVar = `--ds__color__${tokenName}`
+            const overrideValue = document.documentElement.style.getPropertyValue(overrideVar)
+            
+            // If the source token (green-600) is overridden, we should update our local state to match
+            if (overrideValue) {
+                 console.log(`[DemoPalette] Found override for ${tokenName}: ${overrideValue}`)
+                 // We don't need to update runtime here because if the source is overridden, 
+                 // the CSS var for this palette token should already be pointing to it (via var(--...))
+                 // OR if it was manually set, we might need to fix it.
+                 
+                 // But for the UI (hex display), we need to update
+                 const newRgb = hexToRgbString(overrideValue)
+                 setColorValues({
+                    hex: overrideValue.toUpperCase(),
+                    rgb: newRgb,
+                    textColor: getContrastColor(newRgb)
+                 })
+            }
         }
       }
     }
@@ -173,11 +186,7 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
 
       // If the changed token is the one we are linked to...
       if (linkedToken === token) {
-        const varName = `${tone}-${variant}`
-        
-        // Update our CSS variable to match the new value
-        document.documentElement.style.setProperty(`--${varName}`, value)
-        document.documentElement.style.setProperty(`--ds__palette__${varName}`, value)
+        // CSS update is handled by runtime now!
         
         // Update local state
         const newRgb = hexToRgbString(value)

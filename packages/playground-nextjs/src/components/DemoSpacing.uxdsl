@@ -1,31 +1,136 @@
-/* DemoSpacing component styles (UXDSL) */
+/* DemoSpacing styles */
 
-/* Concentric spacing demo */
-.spacing-demo { width: 320px; height: 320px; margin: 0 auto; position: relative; }
-.spacing-demo__layer { box-sizing: border-box; width: 100%; height: 100%; position: absolute; inset: 0; border-radius: radius(2); background-clip: content-box; border: 1px solid color-mix(in srgb, var(--ds__palette__primary-dark) 35%, transparent); }
-.spacing-demo__label { position: absolute; top: space(1); left: 50%; transform: translateX(-50%); @ds-typo (small); background: palette(surface-main, 0.6); color: palette(surface-contrast); border-radius: radius(1); padding: space(1) space(2); }
-.spacing-demo__layer--1  { padding: space(1);  background: palette(primary-light, 0.01); }
-// .spacing-demo__layer--2  { padding: space(2);  background: palette(primary-light, 0.14); }
-// .spacing-demo__layer--3  { padding: space(3);  background: palette(primary-light, 0.20); }
-// .spacing-demo__layer--4  { padding: space(4);  background: palette(primary-light, 0.26); }
-// .spacing-demo__layer--5  { padding: space(5);  background: palette(primary-light, 0.32); }
-// .spacing-demo__layer--6  { padding: space(6);  background: palette(primary-light, 0.38); }
-// .spacing-demo__layer--7  { padding: space(7);  background: palette(primary-light, 0.44); }
-// .spacing-demo__layer--8  { padding: space(8);  background: palette(primary-light, 0.50); }
-// .spacing-demo__layer--9  { padding: space(9);  background: palette(primary-light, 0.56); }
-// .spacing-demo__layer--10 { padding: space(10); background: palette(primary-light, 0.62); }
-// .spacing-demo__layer--11 { padding: space(11); background: palette(primary-light, 0.68); }
-// .spacing-demo__layer--12 { padding: space(12); background: palette(primary-light, 0.74); }
+.spacing-section { display: flex; flex-direction: column; gap: density(4); }
+.spacing-header { display: flex; flex-direction: column; gap: density(2); }
 
-/* Spacing grid helpers */
-.spacing-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: space(2); }
-.space-box { @ds-surface (outlined); border: border(1, palette(neutral-dark, 0.2)); border-radius: radius(2); }
-.space-box__inner { background: palette(primary-light); opacity: 0.1; border-radius: radius(1); }
-.pad--1  { padding: space(1); }
-.pad--2  { padding: space(2); }
-.pad--3  { padding: space(3); }
-.pad--4  { padding: space(4); }
-.pad--5  { padding: space(5); }
-.pad--6  { padding: space(6); }
-.pad--7  { padding: space(7); }
-.pad--8  { padding: space(8); }
+.spacing-doll-container { display: flex; flex-direction: column; gap: density(2); }
+.doll-controls { display: flex; gap: density(2); align-items: center; }
+.doll-wrapper { 
+  display: flex; 
+  justify-content: center; 
+  width: 100%; 
+  overflow: auto; 
+  padding: density(2);
+  background: palette(surface-light);
+  border-radius: radius(2);
+  border: 1px solid palette(neutral-light);
+}
+
+.doll-layer {
+  border: 1px solid palette(primary-main, 0.3);
+  background: palette(primary-main, 0.05);
+  border-radius: radius(1);
+  position: relative;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.doll-layer:hover {
+  background: palette(primary-main, 0.1);
+  border-color: palette(primary-main, 0.8);
+  box-shadow: shadow(1);
+}
+
+.doll-label-corner {
+  position: absolute;
+  top: 0;
+  left: 2px;
+  @ds-typo(tag);
+  font-size: 0.6rem;
+  opacity: 0.6;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.doll-center {
+  background: palette(surface-main);
+  padding: density(2);
+  border-radius: radius(1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 40px;
+  box-shadow: shadow(1);
+  @ds-typo(caption);
+  font-weight: bold;
+  color: palette(primary-dark);
+}
+
+/* Generate padding classes for doll layers */
+@for $i from 1 through 8 {
+  .doll-layer--#{$i} {
+    padding: space($i);
+  }
+}
+
+.spacing-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: density(2);
+}
+
+.spacing-card {
+  @ds-surface(outlined);
+  padding: density(2);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(1);
+  border-radius: radius(1);
+  transition: transform 0.2s ease;
+}
+
+.spacing-card:hover {
+  transform: translateY(-2px);
+  box-shadow: shadow(2);
+}
+
+.spacing-card__preview {
+  background: palette(neutral-light, 0.3);
+  border-radius: radius(1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100px;
+  position: relative;
+}
+
+/* Visualizing the space as a square */
+.spacing-box {
+  background: palette(secondary-main);
+  border-radius: 2px;
+  position: relative;
+}
+
+/* Generate size classes for grid boxes */
+@for $i from 1 through 8 {
+  .spacing-box--#{$i} {
+    width: space($i);
+    height: space($i);
+  }
+}
+
+.spacing-card__label {
+  @ds-typo(caption);
+  font-family: monospace;
+  font-weight: bold;
+}
+
+.spacing-card__value {
+  @ds-typo(tag);
+  opacity: 0.7;
+}
+
+.spacing-card__input {
+  @ds-input(contained small);
+  width: 100%;
+  text-align: center;
+  font-family: monospace;
+  font-size: 0.8rem;
+  position: relative;
+  z-index: 10;
+  cursor: text;
+}

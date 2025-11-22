@@ -1,7 +1,10 @@
 import ButtonDemo from '@/components/ButtonDemo'
 import CardDemo from '@/components/CardDemo'
 import DemoPalette from '@/components/DemoPalette'
-
+import DemoColors from '@/components/DemoColors'
+import DemoTypography from '@/components/DemoTypography'
+import DemoSpacing from '@/components/DemoSpacing'
+import InputDemo from '@/components/InputDemo'
 
 export default function Home() {
   return (
@@ -32,19 +35,39 @@ export default function Home() {
           </ul>
         </section>
 
+        <section id="colors" className="section">
+          <h2 className="section-title">Colors</h2>
+          <DemoColors />
+        </section>
+
+        <section id="palette" className="section">
+          <h2 className="section-title">Palette</h2>
+          <DemoPalette />
+        </section>
+
+        <section id="typography" className="section">
+          <h2 className="section-title">Typography</h2>
+          <DemoTypography />
+        </section>
+
+        <section id="spacing" className="section">
+          <h2 className="section-title">Spacing</h2>
+          <DemoSpacing />
+        </section>
+
         <section id="buttons" className="section">
           <h2 className="section-title">Buttons</h2>
           <ButtonDemo />
         </section>
 
+        <section id="inputs" className="section">
+          <h2 className="section-title">Inputs</h2>
+          <InputDemo />
+        </section>
+
         <section id="cards" className="section">
           <h2 className="section-title">Cards</h2>
           <CardDemo />
-        </section>
-
-        <section id="palette" className="section">
-          <h2 className="section-title">Demo Palette</h2>
-          <DemoPalette />
         </section>
 
         <section id="getting-started" className="section">

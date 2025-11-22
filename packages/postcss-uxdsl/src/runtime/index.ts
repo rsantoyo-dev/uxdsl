@@ -6,6 +6,10 @@ const PREFIX = "ds__palette__"; // canonical prefix for palette vars
 const STORE_KEY = "uxdsl:palette";
 const STORE_BP_KEY = "uxdsl:breakpoints";
 
+// Dependency graph: source -> Set<dependent>
+// e.g. "green-600" -> Set("primary-main", "success-main")
+const dependencies: Record<string, Set<string>> = {};
+
 type ScopeOption = Element | string | undefined;
 
 type PaletteUpdate = Record<string, string>;
@@ -59,6 +63,23 @@ function target(scope?: ScopeOption): Element {
   return el || document.documentElement;
 }
 
+export function link(alias: string, source: string): void {
+  const s = normalize(source);
+  const a = normalize(alias);
+  if (!dependencies[s]) {
+    dependencies[s] = new Set();
+  }
+  dependencies[s].add(a);
+}
+
+export function unlink(alias: string, source: string): void {
+  const s = normalize(source);
+  const a = normalize(alias);
+  if (dependencies[s]) {
+    dependencies[s].delete(a);
+  }
+}
+
 export function updatePalette(
   token: string,
   value: string,
@@ -66,19 +87,57 @@ export function updatePalette(
 ): void {
   if (typeof document === "undefined") return;
   const el = target(opts.scope) as HTMLElement;
+  const normToken = normalize(token);
+  
+  // Update the token itself
   el.style.setProperty(aliasVarName(token), value);
   el.style.setProperty(canonicalVarName(token), value);
+  
+  // Propagate to dependents
+  if (dependencies[normToken]) {
+    dependencies[normToken].forEach(dep => {
+      // Recursively update dependents, but don't persist them individually
+      // (unless we want to snapshot the whole state, but usually we persist the source)
+      updatePalette(dep, value, { ...opts, persist: false });
+    });
+  }
+
   if (opts.persist) {
     try {
       const store = JSON.parse(
         localStorage.getItem(STORE_KEY) || "{}"
       ) as PaletteUpdate;
-      store[normalize(token)] = value;
+      store[normToken] = value;
       localStorage.setItem(STORE_KEY, JSON.stringify(store));
     } catch {
       /* ignore persistence errors */
     }
   }
+}
+
+export function updateColor(
+  token: string,
+  value: string,
+  opts: UpdateOptions = {}
+): void {
+  if (typeof document === "undefined") return;
+  const el = target(opts.scope) as HTMLElement;
+  const normToken = normalize(token);
+  
+  // Update the color token variable
+  // Assuming standard UXDSL naming: --ds__color__<token>
+  const varName = `--ds__color__${normToken}`;
+  el.style.setProperty(varName, value);
+  
+  // Propagate to dependents (palette tokens)
+  if (dependencies[normToken]) {
+    dependencies[normToken].forEach(dep => {
+      updatePalette(dep, value, { ...opts, persist: false });
+    });
+  }
+  
+  // We don't currently persist color token updates in the default palette store
+  // If needed, we could add a separate store or mix them in.
 }
 
 export function applyPalette(
@@ -147,10 +206,18 @@ export function loadPersisted(opts: LoadOptions = {}): void {
 
 const runtime = {
   updatePalette,
+  updateColor,
   applyPalette,
   getPalette,
   resetPalette,
   loadPersisted,
+  link,
+  unlink,
+  getBreakpoints,
+  applyBreakpoints,
+  updateBreakpoint,
+  resetBreakpoints,
+  loadPersistedBreakpoints,
 };
 
 export default runtime;

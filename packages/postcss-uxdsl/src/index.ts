@@ -157,10 +157,26 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                 addVar(key, String(val));
             });
         }
+        if (opts.theme.fonts && opts.theme.fonts.families) {
+             Object.entries(opts.theme.fonts.families).forEach(([key, val]) => {
+                addVar(`font-${key}`, String(val));
+            });
+        }
         if (themeDecls.length > 0) {
             const rootRule = postcss.rule({ selector: ':root' });
             rootRule.append(themeDecls);
             root.prepend(rootRule);
+        }
+
+        if (opts.theme.fonts) {
+            if (opts.theme.fonts.google && Array.isArray(opts.theme.fonts.google)) {
+                // Reverse order so they end up in correct order when prepended
+                [...opts.theme.fonts.google].reverse().forEach((font: string) => {
+                    const url = `https://fonts.googleapis.com/css2?family=${font}&display=swap`;
+                    const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
+                    root.prepend(importRule);
+                });
+            }
         }
       }
       const vars: Record<string, string> = Object.create(null);
@@ -914,6 +930,61 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       });
 
+      function resolveValueForBp(input: string, targetBp: string): string {
+        const p = valueParser(input);
+        const nodes = p.nodes;
+        const newNodes: any[] = [];
+        
+        for (let i = 0; i < nodes.length; i++) {
+            const n = nodes[i] as any;
+            if (n.type === 'function' && bpNames.has(n.value)) {
+                // Start of a responsive group
+                const group: any[] = [n];
+                let j = i + 1;
+                while (j < nodes.length) {
+                    const next = nodes[j] as any;
+                    if (next.type === 'space') {
+                        j++;
+                        continue;
+                    }
+                    if (next.type === 'function' && bpNames.has(next.value)) {
+                        group.push(next);
+                        j++;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Process group
+                // Find best match for targetBp
+                const targetPx = bps[targetBp];
+                let best: any = null;
+                let bestPx = -1;
+                
+                for (const g of group) {
+                    const gPx = bps[g.value];
+                    if (gPx <= targetPx && gPx > bestPx) {
+                        best = g;
+                        bestPx = gPx;
+                    }
+                }
+                
+                if (best) {
+                    const inner = valueParser.stringify(best.nodes).trim();
+                    const resolved = resolveValueForBp(inner, targetBp);
+                    newNodes.push({ type: 'word', value: resolved });
+                }
+                
+                // Skip processed nodes
+                i = j - 1;
+            } else {
+                newNodes.push(n);
+            }
+        }
+        
+        return valueParser.stringify(newNodes).trim();
+      }
+
       function rewriteFuncs(input: string, _forProp?: string): string {
         const p = valueParser(input);
         p.walk((node: any) => {
@@ -1183,7 +1254,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const bp = n.value as string;
             // Ensure functions inside the responsive value are also normalized
             const raw = valueParser.stringify(n.nodes).trim();
-            const valueString = rewriteFuncs(raw, (decl as any).prop);
+            const resolvedRaw = resolveValueForBp(raw, bp);
+            const valueString = rewriteFuncs(resolvedRaw, (decl as any).prop);
             bpValues.push({ bp, text: valueString });
             n.type = "word";
             n.value = "";
@@ -1257,10 +1329,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const cloned = parentRule.clone({ nodes: [] });
             at.append(cloned);
             const lastInserted = lastMediaByRule.get(parentRule);
+            const parentContainer = parentRule.parent || rootNode;
+            
             if (lastInserted) {
-              (rootNode as Root).insertAfter(lastInserted, at);
+              parentContainer.insertAfter(lastInserted, at);
             } else {
-              (rootNode as Root).insertAfter(parentRule, at);
+              parentContainer.insertAfter(parentRule, at);
             }
             lastMediaByRule.set(parentRule, at);
             bucket.set(bp, cloned);

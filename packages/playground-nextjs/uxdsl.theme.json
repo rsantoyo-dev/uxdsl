@@ -1,4 +1,13 @@
 {
+  "fonts": {
+    "google": [
+      "Inter:wght@400;500;600;700"
+    ],
+    "families": {
+      "ui": "Inter, sans-serif",
+      "code": "monospace"
+    }
+  },
   "palette": {
     "primary-main": "#15803D",
     "primary-light": "#66BB6A",

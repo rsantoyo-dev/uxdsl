@@ -22,4 +22,5 @@
 @import '../components/CardDemo.uxdsl';
 @import '../components/DemoColors.uxdsl';
 @import '../components/DemoSpacing.uxdsl';
+@import '../components/DemoTypography.uxdsl';
 @import '../components/SideNav.uxdsl';

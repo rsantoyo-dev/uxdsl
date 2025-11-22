@@ -1,0 +1,53 @@
+/* DemoTypography styles */
+
+.typo-section { display: flex; flex-direction: column; gap: density(2); }
+.typo-header { display: flex; flex-direction: column; gap: density(2); }
+.demo-title { @ds-typo (h4); margin: 0; }
+.demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
+
+.typo-stack { display: flex; flex-direction: column; gap: density(2); }
+
+.typo-card { 
+  @ds-surface (contained surface); 
+  display: flex; 
+  flex-direction: column; 
+  gap: density(2); 
+  padding: density(3);
+}
+
+.typo-card__header { 
+  display: flex; 
+  justify-content: space-between; 
+  align-items: baseline; 
+  border-bottom: 1px solid palette(neutral-light);
+  padding-bottom: density(1);
+  margin-bottom: density(1);
+}
+
+.typo-card__tag { 
+  @ds-typo (caption); 
+  font-weight: bold; 
+  text-transform: uppercase; 
+  opacity: 0.6; 
+}
+
+.typo-card__bp { 
+  @ds-typo (tag); 
+  background: palette(neutral-light);
+  padding: 2px 6px;
+  border-radius: radius(1);
+}
+
+/* Typography samples */
+.sample-h1 { @ds-typo(h1); margin: 0; }
+.sample-h2 { @ds-typo(h2); margin: 0; }
+.sample-h3 { @ds-typo(h3); margin: 0; }
+.sample-h4 { @ds-typo(h4); margin: 0; }
+.sample-h5 { @ds-typo(h5); margin: 0; }
+.sample-h6 { @ds-typo(h6); margin: 0; }
+.sample-p { @ds-typo(p); margin: 0; }
+.sample-span { @ds-typo(span); }
+.sample-body { @ds-typo(body); margin: 0; }
+.sample-caption { @ds-typo(caption); margin: 0; }
+.sample-small { @ds-typo(small); margin: 0; }
+.sample-pre { @ds-typo(pre); margin: 0; background: palette(surface-dark, 0.05); padding: density(2); border-radius: radius(1); }
