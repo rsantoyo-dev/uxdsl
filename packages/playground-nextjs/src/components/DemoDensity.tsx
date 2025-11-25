@@ -252,7 +252,6 @@ function getActiveDefinition(def: string, currentBp: string) {
 
 export default function DemoDensity() {
   const [dollLevels, setDollLevels] = useState(5)
-  const [computedValues, setComputedValues] = useState<Record<number, string>>({})
   const [densityDefinitions, setDensityDefinitions] = useState(defaultDensities)
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const currentBp = useBreakpoint()
@@ -267,37 +266,6 @@ export default function DemoDensity() {
     }
     styleEl.textContent = generateCss(densityDefinitions)
   }, [densityDefinitions])
-
-  useEffect(() => {
-    const updateComputedValues = () => {
-      const getComputedPadding = (level: number) => {
-        // Use the hidden probe element to get the actual computed padding
-        const el = document.querySelector(
-          `.density-section .density-probe--${level}`,
-        ) as HTMLElement | null
-        if (!el) return ''
-        return getComputedStyle(el).padding
-      }
-
-      const values: Record<number, string> = {}
-      densities.forEach((s) => {
-        values[s] = getComputedPadding(s)
-      })
-      setComputedValues(values)
-    }
-
-    // Use requestAnimationFrame to ensure styles are applied before measuring
-    // Double rAF is a common trick to wait for the next paint
-    requestAnimationFrame(() => {
-      requestAnimationFrame(updateComputedValues)
-    })
-    
-    window.addEventListener('resize', updateComputedValues)
-
-    return () => {
-      window.removeEventListener('resize', updateComputedValues)
-    }
-  }, [densityDefinitions]) // Re-run when definitions change
 
   const handleSaveDefinition = (def: string) => {
     if (editingLevel !== null) {
@@ -356,7 +324,6 @@ export default function DemoDensity() {
               return BP_ORDER.indexOf(a) - BP_ORDER.indexOf(b)
             })
 
-            const computedPx = computedValues[s] || ''
             const activeDef = getActiveDefinition(densityDefinitions[s], currentBp)
 
             // Determine active breakpoint key
@@ -370,9 +337,6 @@ export default function DemoDensity() {
 
             return (
               <div key={s} className="density-card">
-                {/* Hidden probe for measuring computed styles */}
-                <div className={`density-probe--${s} density-doll-layer--${s}`} style={{ display: 'none' }} />
-
                                 <div className="density-card__header">
                   {/* Col 1: Token & Active Rule */}
                   <div className="density-card__header-col density-card__header-col--main">
