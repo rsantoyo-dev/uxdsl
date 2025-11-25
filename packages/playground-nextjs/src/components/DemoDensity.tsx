@@ -357,7 +357,6 @@ export default function DemoDensity() {
             })
 
             const computedPx = computedValues[s] || ''
-            const computedRem = computedPx ? `${parseFloat(computedPx) / 16}rem` : ''
             const activeDef = getActiveDefinition(densityDefinitions[s], currentBp)
 
             // Determine active breakpoint key
