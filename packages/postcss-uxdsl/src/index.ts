@@ -170,7 +170,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         if (themeDecls.length > 0) {
             const rootRule = postcss.rule({ selector: ':root' });
             rootRule.append(themeDecls);
-            root.prepend(rootRule);
+            root.append(rootRule);
         }
 
         if (opts.theme.fonts) {

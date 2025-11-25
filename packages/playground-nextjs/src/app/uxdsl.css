@@ -16,40 +16,6 @@
   --density-15: var(--space-15);
 }
 :root {
-  --ds__palette__primary-main: #2C415C;
-  --ds__palette__primary-contrast: #ffffff;
-  --ds__palette__primary-light: #486581;
-  --ds__palette__primary-dark: #102A43;
-  --ds__palette__secondary-main: #475569;
-  --ds__palette__secondary-contrast: #ffffff;
-  --ds__palette__secondary-light: #94a3b8;
-  --ds__palette__secondary-dark: #334155;
-  --ds__palette__surface-main: #ffffff;
-  --ds__palette__surface-contrast: #102A43;
-  --ds__palette__surface-light: #F5F8FA;
-  --ds__palette__surface-dark: #DDE5EB;
-  --ds__palette__neutral-main: #64748b;
-  --ds__palette__neutral-light: #e2e8f0;
-  --ds__palette__neutral-dark: #1e293b;
-  --ds__palette__info-main: #0D9488;
-  --ds__palette__info-contrast: #ffffff;
-  --ds__palette__info-light: #14B8A6;
-  --ds__palette__info-dark: #0F766E;
-  --1: 0.25rem;
-  --2: 0.5rem;
-  --3: 0.75rem;
-  --4: 1rem;
-  --5: 1.25rem;
-  --6: 1.5rem;
-  --8: 2rem;
-  --10: 2.5rem;
-  --12: 3rem;
-  --13: 3.5rem;
-  --14: 4rem;
-  --15: 4.5rem;
-  --16: 5rem;
-}
-:root {
   /* Blue */
   --ds__color__blue-50: #E3F2FD;
   --ds__color__blue-100: #BBDEFB;
@@ -10765,6 +10731,40 @@ body {
 }
 .prod-input::placeholder {
   color: var(--ds__color__neutral-dark);
+}
+:root {
+  --ds__palette__primary-main: #2C415C;
+  --ds__palette__primary-contrast: #ffffff;
+  --ds__palette__primary-light: #486581;
+  --ds__palette__primary-dark: #102A43;
+  --ds__palette__secondary-main: #475569;
+  --ds__palette__secondary-contrast: #ffffff;
+  --ds__palette__secondary-light: #94a3b8;
+  --ds__palette__secondary-dark: #334155;
+  --ds__palette__surface-main: #ffffff;
+  --ds__palette__surface-contrast: #102A43;
+  --ds__palette__surface-light: #F5F8FA;
+  --ds__palette__surface-dark: #DDE5EB;
+  --ds__palette__neutral-main: #64748b;
+  --ds__palette__neutral-light: #e2e8f0;
+  --ds__palette__neutral-dark: #1e293b;
+  --ds__palette__info-main: #0D9488;
+  --ds__palette__info-contrast: #ffffff;
+  --ds__palette__info-light: #14B8A6;
+  --ds__palette__info-dark: #0F766E;
+  --1: 0.25rem;
+  --2: 0.5rem;
+  --3: 0.75rem;
+  --4: 1rem;
+  --5: 1.25rem;
+  --6: 1.5rem;
+  --8: 2rem;
+  --10: 2.5rem;
+  --12: 3rem;
+  --13: 3.5rem;
+  --14: 4rem;
+  --15: 4.5rem;
+  --16: 5rem;
 }
 @media (min-width: 1024px) {
   :root {
