@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "private": true,
   "scripts": {
+    "local-deps": "npm install --prefix ../uxdsl-cli && npm install --prefix ../postcss-uxdsl",
     "uxdsl:build": "uxdsl build",
     "uxdsl:watch": "uxdsl build --watch",
-    "dev": "npm run uxdsl:build && concurrently \"next dev\"",
-    "build": "npm run uxdsl:build && next build",
+    "dev": "npm run local-deps && npm run uxdsl:build && concurrently \"next dev\"",
+    "build": "npm run local-deps && npm run uxdsl:build && next build",
     "start": "next start",
     "lint": "next lint",
     "stylelint": "stylelint \"src/**/*.uxdsl\" --allow-empty-input",
