@@ -1,0 +1,10 @@
+.back-link {
+  @ds-typo(body-sm);
+  color: palette(primary-main);
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}

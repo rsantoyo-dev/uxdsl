@@ -5,17 +5,17 @@ import { useState, useEffect } from 'react'
 const MAX_LAYERS = 8
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
 
-function RussianDoll({ level, max }: { level: number, max: number }) {
-  if (level > max) return (
+function RussianDoll({ spaceIndex }: { spaceIndex: number }) {
+  if (spaceIndex < 1) return (
     <div className="doll-center">
       <span className="doll-label">Content</span>
     </div>
   )
 
   return (
-    <div className={`doll-layer doll-layer--${level}`}>
-      <div className="doll-label-corner">space({level})</div>
-      <RussianDoll level={level + 1} max={max} />
+    <div className={`doll-layer doll-layer--${spaceIndex}`}>
+      <div className="doll-label-corner">space({spaceIndex})</div>
+      <RussianDoll spaceIndex={spaceIndex - 1} />
     </div>
   )
 }
@@ -63,7 +63,7 @@ export default function DemoSpacing() {
            </label>
         </div>
         <div className="doll-wrapper">
-          <RussianDoll level={1} max={dollLevels} />
+          <RussianDoll spaceIndex={dollLevels} />
         </div>
       </div>
 
@@ -72,16 +72,20 @@ export default function DemoSpacing() {
          <div className="spacing-grid">
             {spaces.map(s => (
               <div key={s} className="spacing-card">
+                <div className="spacing-card__token">space({s})</div>
+                
+                <div className="spacing-card__definition">
+                  <input 
+                    className="spacing-card__input"
+                    value={computedValues[s] || ''}
+                    onChange={(e) => handleSpaceChange(s, e.target.value)}
+                    placeholder="e.g. 1rem"
+                  />
+                </div>
+
                 <div className="spacing-card__preview">
                   <div className={`spacing-box spacing-box--${s}`} />
                 </div>
-                <div className="spacing-card__label">space({s})</div>
-                <input 
-                  className="spacing-card__input"
-                  value={computedValues[s] || ''}
-                  onChange={(e) => handleSpaceChange(s, e.target.value)}
-                  placeholder="e.g. 1rem"
-                />
               </div>
             ))}
          </div>

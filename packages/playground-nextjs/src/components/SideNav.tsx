@@ -15,6 +15,7 @@ const links = [
   { href: '/surfaces', label: 'Surfaces' },
   { href: '/buttons', label: 'Buttons' },
   { href: '/inputs', label: 'Inputs' },
+  { href: '/productivity', label: 'Productivity' },
 ]
 
 export default function SideNav() {

@@ -1,11 +1,20 @@
 /* Default density tokens. Users can override in their app theme. */
 @theme {
   /* Generic densities */
-  density-1: xs(space(1)) md(space(3));
-  density-2: xs(space(3)) md(space(6));
-  density-3: xs(space(4)) md(space(8));
-  density-4: xs(space(6)) md(space(12));
-  density-5: xs(space(8)) md(space(16));
-
+  density-1: xs(space(1)) md(space(2)) xl(space(3));
+  density-2: xs(space(2)) md(space(3)) xl(space(4));
+  density-3: xs(space(3)) md(space(4)) xl(space(5));
+  density-4: xs(space(4)) md(space(5)) xl(space(6));
+  density-5: xs(space(5)) md(space(6)) xl(space(7));   
+  density-6: xs(space(6)) md(space(7)) xl(space(8));
+  density-7: xs(space(7)) md(space(8)) xl(space(9));
+  density-8: xs(space(8)) md(space(9)) xl(space(10));
+  density-9: xs(space(9)) md(space(10)) xl(space(11));
+  density-10: xs(space(10)) md(space(11)) xl(space(12));
+  density-11: xs(space(11)) md(space(12)) xl(space(13));
+  density-12: xs(space(12)) md(space(13)) xl(space(14));
+  density-13: xs(space(13)) md(space(14)) xl(space(15));
+  density-14: xs(space(14)) md(space(15)) xl(space(16));
+  density-15: xs(space(15)) md(space(16)) xl(space(17));
   /* Families removed for now to keep density generic */
 }

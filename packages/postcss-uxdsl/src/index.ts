@@ -122,7 +122,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
   (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
 
-  const { map: bps } = normalizeBreakpoints(opts.breakpoints);
+  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints);
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
@@ -581,6 +581,42 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         at.remove();
       });
 
+      // Generate CSS variables for density tokens
+      const densityRoot = postcss.rule({ selector: ":root" });
+      const densityMediaRules: Record<string, Rule> = {};
+
+      Object.keys(GLOBAL_DENSITY_TOKENS).forEach((key) => {
+        const val = GLOBAL_DENSITY_TOKENS[key];
+        // Resolve for base (xs)
+        const baseVal = rewriteFuncs(resolveValueForBp(val, ordered[0].name));
+        densityRoot.append({ prop: `--density-${key}`, value: baseVal });
+        
+        let lastVal = baseVal;
+        
+        for (let i = 1; i < ordered.length; i++) {
+            const bp = ordered[i];
+            const currVal = rewriteFuncs(resolveValueForBp(val, bp.name));
+            if (currVal !== lastVal) {
+                if (!densityMediaRules[bp.name]) {
+                    const mediaAt = postcss.atRule({ 
+                        name: 'media', 
+                        params: `(min-width: ${bp.px}px)` 
+                    });
+                    const rootRule = postcss.rule({ selector: ":root" });
+                    mediaAt.append(rootRule);
+                    densityMediaRules[bp.name] = rootRule;
+                    root.append(mediaAt);
+                }
+                densityMediaRules[bp.name].append({ prop: `--density-${key}`, value: currVal });
+                lastVal = currVal;
+            }
+        }
+      });
+      
+      if (densityRoot.nodes.length > 0) {
+          root.prepend(densityRoot);
+      }
+
       // Helper to compute surface base props for a given variant/tone/size
       function computeSurfaceBase(
         packsObj: any,
@@ -1009,19 +1045,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                 idx = idx.slice(1, -1);
               const base = parseInt(idx.trim(), 10);
               if (!Number.isNaN(base) && ordered.length > 0) {
-                const token =
-                  densityTokens[String(base)] ||
-                  GLOBAL_DENSITY_TOKENS[String(base)];
-                if (token) {
-                  node.type = "word";
-                  node.value = token;
-                  return;
-                }
-                const parts = ordered.map(
-                  (bp, i) => `${bp.name}(space(${base + i}))`
-                );
+                // Use CSS variable for density
                 node.type = "word";
-                node.value = parts.join(" ");
+                node.value = `var(--density-${base})`;
                 return;
               }
             } else {

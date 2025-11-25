@@ -70,6 +70,16 @@ export default function Home() {
           <CardDemo />
         </section>
 
+        <section id="productivity" className="section">
+          <h2 className="section-title">Productivity Challenge</h2>
+          <p style={{ marginBottom: '1rem' }}>
+            Compare UXDSL against Tailwind CSS and see how much code you can save.
+          </p>
+          <a href="/productivity" className="prod-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>
+            View Comparison Demo
+          </a>
+        </section>
+
         <section id="getting-started" className="section">
           <h2 className="section-title">Getting Started</h2>
           <p>To use UXDSL in your project:</p>

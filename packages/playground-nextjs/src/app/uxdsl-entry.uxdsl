@@ -14,13 +14,18 @@
 @import './layout.uxdsl';
 @import './app.uxdsl';
 @import './theming/page.uxdsl';
+@import './productivity/page.uxdsl';
 
 @import '../components/DemoPalette.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
+@import '../components/DemoDensity.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';
 @import '../components/DemoColors.uxdsl';
 @import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoTypography.uxdsl';
 @import '../components/SideNav.uxdsl';
+@import '../components/DemoProductivity.uxdsl';
+
+// Trigger rebuild
