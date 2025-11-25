@@ -20,8 +20,13 @@ export default function ThemeScript({ theme }: { theme: Theme }) {
     
     if (theme.palette) {
       Object.entries(theme.palette).forEach(([key, val]) => {
-        cssVars.push(`--${key}: ${val}`)
-        cssVars.push(`--ds__palette__${key}: ${val}`)
+        if (typeof val === 'object' && val !== null) {
+          Object.entries(val).forEach(([subKey, subVal]) => {
+            cssVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
+          })
+        } else {
+          cssVars.push(`--ds__palette__${key}: ${val}`)
+        }
       })
     }
     if (theme.spacing) {
