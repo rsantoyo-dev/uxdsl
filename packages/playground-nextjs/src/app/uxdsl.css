@@ -662,67 +662,7 @@ body {
   min-width: 0;
 }
 /* Minimal app styles using only DS tokens + packs */
-/* Global document scaffolding */
-/*
-body {
-	font-family: var(--font-ui), system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-	background: palette(surface-main);
-	color: palette(surface-contrast);
-	margin: 0;
-}
-*/
-/* Page wrapper */
-/* .app { min-height: 100vh; } */
-/* Header */
-/*
-.app-header { @ds-surface (contained primary); padding: space(3) space(4); }
-.app-header__inner { max-width: 1200px; margin: 0 auto; }
-.app-header__title { @ds-typo (h3); margin: 0; }
-*/
-/* Two-column layout */
-/*
-.layout { display: grid; grid-template-columns: 240px 1fr; gap: space(6); padding: space(4); margin: 0; }
-.layout__nav { align-self: start; }
-.layout__content .main { max-width: 100%; margin: 0; }
-*/
-/* Side navigation */
-/*
-.side-nav { @ds-surface (flat); border: border(1, palette(neutral-dark, 0.15)); border-radius: radius(2); padding: space(3); }
-.side-nav__section + .side-nav__section { margin-top: space(4); }
-.side-nav__section-title { @ds-typo (h5); margin: 0 0 space(2) 0; }
-.side-nav__list { list-style: none; margin: 0; padding: 0; display: grid; gap: space(1); }
-.side-nav__link { @ds-typo (body); text-decoration: none; color: palette(surface-contrast, 0.8); padding: space(1) space(2); border-radius: radius(1); display: block; }
-.side-nav__link:hover { background: palette(primary-light); opacity: 0.15; color: palette(primary-dark); }
-.side-nav__link[aria-current="page"] { background: palette(primary-light); opacity: 0.25; color: palette(primary-dark); }
-*/
-/* @media (max-width: 768px) { .layout { grid-template-columns: 1fr; padding: space(2); } } */
 /* Component demo styles have been moved to colocated .uxdsl files */
-/* Surface tone variants */
-/*
-.surface--primary { @ds-surface (contained primary); }
-.surface--secondary { @ds-surface (contained secondary); }
-.surface--success { @ds-surface (contained success); }
-.surface--info { @ds-surface (contained info); }
-.surface--warning { @ds-surface (contained warning); }
-.surface--error { @ds-surface (contained error); }
-.surface--dark { @ds-surface (contained dark); }
-.surface--neutral { @ds-surface (contained neutral); }
-.surface--light { @ds-surface (contained light); }
-*/
-/* Densities (demo) */
-/*
-.density-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: space(3); }
-.density-box { @ds-surface (outlined); border: border(1, palette(neutral-dark, 0.2)); border-radius: radius(2); }
-*/
-// .density-box__title { @ds-typo (h5); margin: 0 0 space(2) 0; }
-// .density-box__content { @ds-typo (body); opacity: 0.8; }
-// .density-box--1 { padding: density(1); }
-// .density-box--2 { padding: density(2); }
-// .density-box--3 { padding: density(3); }
-// .density-box--4 { padding: density(4); }
-// .density-box--5 { padding: density(5); }
-// .density-box--6 { padding: density(6); }
-/* Spacing demo moved to src/components/DemoSpacing.uxdsl */
 /* Theming page styles (UXDSL) */
 /* Reuse the same palette grid/swatches styling as DemoPalette */
 .palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); }
@@ -10826,7 +10766,6 @@ body {
 .prod-input::placeholder {
   color: var(--ds__color__neutral-dark);
 }
-// Trigger rebuild
 @media (min-width: 1024px) {
   :root {
     --density-1: var(--space-2);
@@ -10863,3 +10802,5 @@ body {
     --density-15: var(--space-17);
   }
 }
+
+

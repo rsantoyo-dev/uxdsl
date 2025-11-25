@@ -11,7 +11,8 @@
     "start": "next start",
     "lint": "next lint",
     "stylelint": "stylelint \"src/**/*.uxdsl\" --allow-empty-input",
-    "stylelint:fix": "stylelint \"src/**/*.uxdsl\" --fix --allow-empty-input"
+    "stylelint:fix": "stylelint \"src/**/*.uxdsl\" --fix --allow-empty-input",
+    "postinstall": "npm run local-deps"
   },
   "dependencies": {
     "lucide-react": "^0.554.0",
