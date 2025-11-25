@@ -15,47 +15,80 @@
 }
 
 .density-doll-container { display: flex; flex-direction: column; gap: density(2); }
-.doll-controls { display: flex; gap: density(2); align-items: center; }
+.density-doll-controls { 
+  display: flex; 
+  gap: density(2); 
+  align-items: center;
+  position: relative;
+  z-index: 10; /* Ensure controls stay above expanding rings */
+}
 
-.doll-wrapper {
+.density-slider {
+  -webkit-appearance: none;
+  width: 200px;
+  height: 6px;
+  background: palette(neutral-light);
+  border-radius: 3px;
+  outline: none;
+}
+
+.density-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: palette(primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out;
+}
+
+.density-slider::-webkit-slider-thumb:hover {
+  background: palette(primary-light);
+}
+
+.density-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: 0;
+  border-radius: 50%;
+  background: palette(primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out;
+}
+
+.density-slider::-moz-range-thumb:hover {
+  background: palette(primary-light);
+}
+
+.density-doll-wrapper {
   display: flex;
   justify-content: center;
+  align-items: center;
   width: 100%;
-  overflow: auto;
-  padding: density(2);
+  height: auto;
+  overflow-x: auto; /* Enable horizontal scroll */
+  overflow-y: hidden;
+  padding: density(4);
   background: palette(surface-light);
   border-radius: radius(2);
   border: 1px solid palette(neutral-light);
-}
-
-.density-doll-layer {
-  border: 1px solid palette(secondary-main, 0.3);
-  background: palette(secondary-main, 0.05);
-  border-radius: radius(1);
   position: relative;
-  transition: all 0.3s ease;
+  z-index: 0;
+}
+
+/* Reuse concentric styles from spacing demo but scoped if needed, 
+   or just duplicate for isolation */
+.concentric-wrapper {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.density-doll-layer:hover {
-  background: palette(secondary-main, 0.1);
-  border-color: palette(secondary-main, 0.8);
-  box-shadow: shadow(1);
-}
-
-.doll-label-corner {
-  position: absolute;
-  top: 0;
-  left: 2px;
-  @ds-typo(tag);
-  font-size: 0.6rem;
-  opacity: 0.6;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.doll-center {
+.concentric-content {
+  position: relative;
+  z-index: 100;
   background: palette(surface-main);
   padding: density(2);
   border-radius: radius(1);
@@ -64,15 +97,55 @@
   justify-content: center;
   min-width: 80px;
   min-height: 40px;
-  box-shadow: shadow(1);
+  box-shadow: shadow(2);
   @ds-typo(caption);
   font-weight: bold;
-  color: palette(secondary-dark);
+  color: palette(primary-dark);
+  border: 1px solid palette(neutral-light);
 }
 
-@for $i from 1 through 8 {
-  .density-doll-layer--#{$i} {
-    padding: density($i);
+.concentric-ring {
+  position: absolute;
+  border-radius: radius(2);
+  border: 1px solid palette(primary-main, 0.2);
+  background: palette(primary-main, 0.03);
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.concentric-ring:hover,
+.concentric-ring.is-hovered {
+  border-color: palette(secondary-main);
+  background: palette(secondary-main, 0.1);
+  box-shadow: 0 0 0 1px palette(secondary-main);
+}
+
+.ring-label {
+  background: palette(secondary-main);
+  color: palette(secondary-contrast);
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: -1px;
+}
+
+.concentric-ring:hover .ring-label,
+.concentric-ring.is-hovered .ring-label {
+  opacity: 1;
+}
+
+/* Generate inset classes for density rings */
+@for $i from 1 through 16 {
+  .concentric-ring--density-#{$i} {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-#{$i}) * -1);
+    z-index: calc(20 - #{$i});
   }
 }
 
@@ -85,55 +158,75 @@
 .density-grid {
   display: flex;
   flex-direction: column;
-  gap: density(1);
+  gap: density(2);
 }
 
 .density-card {
   @ds-surface(outlined);
   padding: density(2);
-  display: grid;
-  /* Mobile layout: Stacked */
-  grid-template-columns: 1fr;
-  gap: density(2);
-  border-radius: radius(1);
-  align-items: start;
-}
-
-/* Desktop layout */
-@media (min-width: 768px) {
-  .density-card {
-    /* 3 Columns: Defs | Metrics | Viz */
-    grid-template-columns: 1.5fr 1fr 1.5fr;
-    align-items: stretch; /* Stretch to match height */
-  }
-}
-
-/* Column 1: Definitions */
-.density-card__col-def {
   display: flex;
   flex-direction: column;
-  gap: density(1);
+  gap: density(2);
+  border-radius: radius(1);
+  height: auto;
+  overflow-x: auto; /* Allow horizontal scroll if header content is too wide */
 }
 
-@media (max-width: 767px) {
-  .density-card__col-def {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 1rem;
-    width: 100%;
+/* Desktop layout removed to keep stacked view */
+/* 
+@media (min-width: 768px) {
+  .density-card {
+    grid-template-columns: 1.5fr 1fr 1.5fr;
+    align-items: stretch;
   }
+} 
+*/
 
-  .density-def-list {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-    justify-content: center;
-  }
+.density-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: density(2);
+  border-bottom: 1px solid palette(neutral-light, 0.5);
+}
 
-  .density-card__edit-btn {
-    margin-top: 0;
-  }
+.density-card__header-col {
+  display: flex;
+  flex-direction: column;
+  gap: density(0.5);
+}
+
+.density-card__header-col--main {
+  /* Token & Active Rule */
+  justify-content: center;
+}
+
+.density-card__header-col--bps {
+  /* Breakpoints list */
+  justify-content: center;
+}
+
+.density-card__header-col--right {
+  /* Values & Edit button */
+  flex-direction: row;
+  align-items: center;
+  gap: density(2);
+  justify-content: flex-end;
+}
+
+.density-metric-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.density-card__viz {
+  padding-top: density(2);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 120px;
 }
 
 .density-card__token {
@@ -150,20 +243,30 @@
 .density-def-list {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 2px; /* Smaller gap */
 }
 
 .density-def-item {
   display: flex;
-  gap: 0.5rem;
+  gap: 4px;
   font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  background: palette(neutral-light, 0.3);
+  padding: 2px 4px;
+  border-radius: 2px;
+  transition: all 0.2s ease;
+}
+
+.density-def-item--active {
+  background: palette(primary-main, 0.15);
+  color: palette(primary-dark);
+  font-weight: bold;
+  box-shadow: 0 0 0 1px palette(primary-main, 0.3);
 }
 
 .density-def-bp {
   font-weight: bold;
   opacity: 0.7;
-  width: 24px;
 }
 
 .density-def-val {
@@ -171,63 +274,36 @@
 }
 
 .density-card__edit-btn {
-  padding: 2px 8px;
-  font-size: 0.75rem;
+  padding: 4px 12px;
+  font-size: 0.8rem;
   cursor: pointer;
   background: palette(surface-light);
   border: 1px solid palette(neutral-light);
   border-radius: radius(1);
   white-space: nowrap;
-  width: fit-content;
-  margin-top: 4px;
+  transition: all 0.2s ease;
 }
 
-/* Column 2: Metrics */
-.density-card__col-metrics {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 density(2);
-  border-left: 1px solid palette(neutral-light, 0.5);
-  border-right: 1px solid palette(neutral-light, 0.5);
-  justify-content: center;
-}
-
-@media (max-width: 767px) {
-  .density-card__col-metrics {
-    border: none;
-    padding: density(2) 0;
-    border-top: 1px solid palette(neutral-light, 0.3);
-    border-bottom: 1px solid palette(neutral-light, 0.3);
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 0.5rem;
-    width: 100%;
-    box-sizing: border-box;
-  }
-  
-  .density-card__col-viz {
-    width: 100%;
-    padding: density(2) 0;
-    box-sizing: border-box;
-  }
+.density-card__edit-btn:hover {
+  border-color: palette(primary-main);
+  color: palette(primary-main);
 }
 
 .density-metric-item {
   display: flex;
-  flex-direction: column;
+  align-items: baseline;
+  gap: 4px;
+  font-family: monospace;
+  font-size: 0.9rem;
 }
 
 .density-metric-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
+  font-size: 0.75rem;
   opacity: 0.6;
-  font-weight: bold;
 }
 
 .density-metric-value {
-  font-family: monospace;
-  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .density-metric-value--highlight {
@@ -235,23 +311,13 @@
   font-weight: bold;
 }
 
-/* Column 3: Visualization */
-.density-card__col-viz {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 120px; /* Ensure minimum height */
-  padding: density(1);
-}
-
 .density-concentric-viz {
   position: relative;
   width: 100%;
-  height: 100%;
+  height: auto; /* Allow height to grow */
   min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid; /* Use Grid for stacking */
+  place-items: center;
 }
 
 .density-concentric-center {
@@ -259,15 +325,15 @@
   height: 4px;
   background: palette(primary-dark);
   border-radius: 50%;
-  position: absolute;
+  position: relative; /* Changed from absolute */
+  grid-area: 1 / 1; /* Stack in center */
   z-index: 10;
 }
 
 .density-concentric-box {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  position: relative; /* Changed from absolute */
+  grid-area: 1 / 1; /* Stack in center */
+  /* Removed top/left/transform centering as Grid handles it */
   border: 1px dashed;
   display: flex;
   align-items: center;

@@ -142,7 +142,8 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
       if (!linkedToken) {
         // Try to find link based on DEFAULT value from theme
         // This ensures we link correctly even if the current color is overridden
-        const defaultHex = (theme.palette as Record<string, string>)[`${tone}-${variant}`]
+        // @ts-expect-error - theme structure is dynamic
+        const defaultHex = theme.palette?.[tone]?.[variant]
         const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
         if (tokenName) {

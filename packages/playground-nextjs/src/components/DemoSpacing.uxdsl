@@ -4,46 +4,31 @@
 .spacing-header { display: flex; flex-direction: column; gap: density(2); }
 
 .spacing-doll-container { display: flex; flex-direction: column; gap: density(2); }
-.doll-controls { display: flex; gap: density(2); align-items: center; }
-.doll-wrapper { 
+.spacing-doll-controls { display: flex; gap: density(2); align-items: center; }
+.spacing-doll-wrapper { 
   display: flex; 
   justify-content: center; 
-  width: 100%; 
+  align-items: center;
+  /* min-height removed to adapt to content */
   overflow: auto; 
-  padding: density(2);
+  padding: density(4);
   background: palette(surface-light);
   border-radius: radius(2);
   border: 1px solid palette(neutral-light);
-}
-
-.doll-layer {
-  border: 1px solid palette(primary-main, 0.3);
-  background: palette(primary-main, 0.05);
-  border-radius: radius(1);
   position: relative;
-  transition: all 0.3s ease;
+  transition: all 0.3s ease; /* Smooth transition when resizing */
+}
+
+.concentric-wrapper {
+  position: relative;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-.doll-layer:hover {
-  background: palette(primary-main, 0.1);
-  border-color: palette(primary-main, 0.8);
-  box-shadow: shadow(1);
-}
-
-.doll-label-corner {
-  position: absolute;
-  top: 0;
-  left: 2px;
-  @ds-typo(tag);
-  font-size: 0.6rem;
-  opacity: 0.6;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.doll-center {
+.concentric-content {
+  position: relative;
+  z-index: 100;
   background: palette(surface-main);
   padding: density(2);
   border-radius: radius(1);
@@ -52,16 +37,57 @@
   justify-content: center;
   min-width: 80px;
   min-height: 40px;
-  box-shadow: shadow(1);
+  box-shadow: shadow(2);
   @ds-typo(caption);
   font-weight: bold;
   color: palette(primary-dark);
+  border: 1px solid palette(neutral-light);
 }
 
-/* Generate padding classes for doll layers */
-@for $i from 1 through 8 {
-  .doll-layer--#{$i} {
-    padding: space($i);
+.concentric-ring {
+  position: absolute;
+  border-radius: radius(2);
+  border: 1px solid palette(primary-main, 0.2);
+  background: palette(primary-main, 0.03); /* Very subtle fill */
+  pointer-events: auto; /* Allow hovering */
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start; /* Label at top */
+  cursor: pointer;
+}
+
+.concentric-ring:hover,
+.concentric-ring.is-hovered {
+  border-color: palette(secondary-main);
+  background: palette(secondary-main, 0.1);
+  /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
+  /* z-index: 50 !important; */
+  box-shadow: 0 0 0 1px palette(secondary-main);
+}
+
+.ring-label {
+  background: palette(secondary-main);
+  color: palette(secondary-contrast);
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: -1px; /* Attach to border */
+}
+
+.concentric-ring:hover .ring-label,
+.concentric-ring.is-hovered .ring-label {
+  opacity: 1;
+}
+
+/* Generate inset classes for rings */
+@for $i from 1 through 16 {
+  .concentric-ring--#{$i} {
+    /* Negative inset expands from the center content */
+    inset: calc(space($i) * -1);
+    z-index: calc(20 - #{$i}); /* Smaller rings on top of larger rings */
   }
 }
 
@@ -75,107 +101,118 @@
   @ds-surface(outlined);
   padding: density(2);
   display: grid;
-  /* Mobile: Stacked */
-  grid-template-columns: 1fr;
   gap: density(2);
-  border-radius: radius(1);
+  border-radius: radius(2);
+  transition: all 0.2s ease;
   align-items: center;
-  transition: transform 0.2s ease;
+  
+  /* Mobile Layout: 2 Rows */
+  grid-template-columns: auto 1fr;
+  grid-template-areas: 
+    "token input"
+    "sep sep"
+    "preview preview";
 }
 
-/* Desktop */
+/* Desktop Layout: 3 Columns */
 @media (min-width: 768px) {
   .spacing-card {
-    grid-template-columns: 120px 1fr auto; /* Token | Input | Preview */
+    grid-template-columns: 120px 1fr auto;
+    grid-template-areas: "token input preview";
+    padding: density(1) density(3); /* More compact vertical padding on desktop */
   }
 }
 
-.spacing-card__token {
-  @ds-typo(body);
-  font-weight: bold;
-  font-family: monospace;
-  color: palette(secondary-main);
-  background: palette(secondary-main, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  width: fit-content;
+.spacing-card:hover {
+  border-color: palette(primary-main);
+  box-shadow: shadow(1);
 }
 
-.spacing-card__definition {
+.spacing-card__token {
+  grid-area: token;
+  @ds-typo(subtitle2);
+  font-family: monospace;
+  font-weight: bold;
+  color: palette(primary-dark);
+}
+
+.spacing-card__input-wrapper {
+  grid-area: input;
   display: flex;
-  align-items: center;
+  justify-content: flex-end;
 }
 
 .spacing-card__input {
   width: 100%;
-  padding: 4px 8px;
+  max-width: 120px;
+  padding: density(0.5) density(1);
   border: 1px solid palette(neutral-light);
   border-radius: radius(1);
   font-family: monospace;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
+  text-align: right;
+  color: palette(neutral-dark);
+}
+
+@media (min-width: 768px) {
+  .spacing-card__input-wrapper {
+    justify-content: flex-start;
+  }
+  
+  .spacing-card__input {
+    text-align: left;
+    max-width: 200px;
+  }
+}
+
+.spacing-card__input:focus {
+  border-color: palette(primary-main);
+  outline: none;
+}
+
+.spacing-card__separator {
+  grid-area: sep;
+  height: 1px;
+  background: palette(neutral-light, 0.5);
+  width: 100%;
+  margin: density(0.5) 0;
+}
+
+@media (min-width: 768px) {
+  .spacing-card__separator {
+    display: none;
+  }
 }
 
 .spacing-card__preview {
+  grid-area: preview;
   display: flex;
-  justify-content: flex-start;
+  justify-content: center;
   align-items: center;
-  /* Allow height to grow */
+  padding: density(1) 0;
+  /* Ensure it takes space but allows growth */
   min-height: 40px;
-  width: 100%;
 }
 
 @media (min-width: 768px) {
   .spacing-card__preview {
     justify-content: flex-end;
-    width: auto;
+    padding: 0;
+    min-width: 60px; /* Minimum width for small squares */
   }
 }
 
 .spacing-box {
   background: palette(primary-main);
-  opacity: 0.5;
-}
-
-@for $i from 1 through 8 {
-  .spacing-box--#{$i} {
-    width: space($i);
-    height: space($i);
-  }
-}
-
-/* Visualizing the space as a square */
-.spacing-box {
-  background: palette(secondary-main);
   border-radius: 2px;
-  position: relative;
+  /* Box shadow to make it visible if white */
+  box-shadow: 0 0 0 1px palette(primary-main, 0.2);
 }
 
-/* Generate size classes for grid boxes */
-@for $i from 1 through 8 {
+/* Generate size classes for all 16 levels */
+@for $i from 1 through 16 {
   .spacing-box--#{$i} {
     width: space($i);
     height: space($i);
   }
-}
-
-.spacing-card__label {
-  @ds-typo(caption);
-  font-family: monospace;
-  font-weight: bold;
-}
-
-.spacing-card__value {
-  @ds-typo(tag);
-  opacity: 0.7;
-}
-
-.spacing-card__input {
-  @ds-input(contained small);
-  width: 100%;
-  text-align: center;
-  font-family: monospace;
-  font-size: 0.8rem;
-  position: relative;
-  z-index: 10;
-  cursor: text;
 }

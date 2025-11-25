@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 
-const MAX_LAYERS = 8
+const MAX_LAYERS = 14
 const densities = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
 
 const defaultDensities: Record<number, string> = {
@@ -14,6 +14,12 @@ const defaultDensities: Record<number, string> = {
   6: 'xs(space(6)) md(space(7)) xl(space(8))',
   7: 'xs(space(7)) md(space(8)) xl(space(9))',
   8: 'xs(space(8)) md(space(9)) xl(space(10))',
+  9: 'xs(space(9)) md(space(10)) xl(space(11))',
+  10: 'xs(space(10)) md(space(11)) xl(space(12))',
+  11: 'xs(space(11)) md(space(12)) xl(space(13))',
+  12: 'xs(space(12)) md(space(13)) xl(space(14))',
+  13: 'xs(space(13)) md(space(14)) xl(space(15))',
+  14: 'xs(space(14)) md(space(15)) xl(space(16))',
 }
 
 const breakpoints: Record<string, number> = {
@@ -25,7 +31,6 @@ const breakpoints: Record<string, number> = {
 }
 
 const BREAKPOINT_KEYS = ['xs', 'sm', 'md', 'lg', 'xl']
-type UnitType = 'space' | 'px' | 'rem'
 
 function EditDensityDialog({
   level,
@@ -38,13 +43,11 @@ function EditDensityDialog({
   onSave: (def: string) => void
   onClose: () => void
 }) {
-  const [unitType, setUnitType] = useState<UnitType>('space')
   const [breakpointValues, setBreakpointValues] = useState<Record<string, string>>({})
 
   useEffect(() => {
     // Parse initial definition
     const values: Record<string, string> = {}
-    let detectedUnit: UnitType = 'px' // Default fallback
 
     // Simple parser for "xs(val) sm(val)..."
     const parts = initialDefinition.split(/\s+(?![^(]*\))/g).filter(Boolean)
@@ -53,24 +56,10 @@ function EditDensityDialog({
       const match = part.match(/^(\w+)\((.+)\)$/)
       if (match) {
         const [, bp, val] = match
-        
-        if (val.startsWith('space(')) {
-          detectedUnit = 'space'
-          values[bp] = val.replace(/^space\(|\)$/g, '')
-        } else if (val.endsWith('rem')) {
-          detectedUnit = 'rem'
-          values[bp] = val.replace('rem', '')
-        } else if (val.endsWith('px')) {
-          detectedUnit = 'px'
-          values[bp] = val.replace('px', '')
-        } else {
-          // Fallback or raw value
-          values[bp] = val
-        }
+        values[bp] = val
       }
     })
 
-    setUnitType(detectedUnit)
     setBreakpointValues(values)
   }, [initialDefinition])
 
@@ -81,16 +70,7 @@ function EditDensityDialog({
       const rawVal = breakpointValues[bp]
       if (!rawVal || !rawVal.trim()) return
 
-      let finalVal = rawVal.trim()
-      if (unitType === 'space') {
-        finalVal = `space(${finalVal})`
-      } else if (unitType === 'px') {
-        finalVal = `${finalVal}px`
-      } else if (unitType === 'rem') {
-        finalVal = `${finalVal}rem`
-      }
-
-      parts.push(`${bp}(${finalVal})`)
+      parts.push(`${bp}(${rawVal.trim()})`)
     })
 
     onSave(parts.join(' '))
@@ -107,38 +87,17 @@ function EditDensityDialog({
       }} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Edit Density {level}</h3>
         
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Unit Type</label>
-          <div style={{ display: 'flex', gap: '1rem' }}>
-            {(['space', 'px', 'rem'] as const).map(type => (
-              <label key={type} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', cursor: 'pointer' }}>
-                <input 
-                  type="radio" 
-                  name="unitType" 
-                  value={type} 
-                  checked={unitType === type}
-                  onChange={() => setUnitType(type)}
-                />
-                {type === 'space' ? 'Space System' : type.toUpperCase()}
-              </label>
-            ))}
-          </div>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {BREAKPOINT_KEYS.map(bp => (
             <label key={bp} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ width: '30px', fontWeight: 'bold', opacity: 0.7 }}>{bp}</span>
               <input 
-                type={unitType === 'space' ? 'number' : 'text'}
+                type="text"
                 value={breakpointValues[bp] || ''}
                 onChange={e => setBreakpointValues(prev => ({ ...prev, [bp]: e.target.value }))}
-                placeholder={unitType === 'space' ? 'Index (1-8)' : 'Value'}
+                placeholder="e.g. space(2), 16px"
                 style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
               />
-              <span style={{ fontSize: '0.8rem', opacity: 0.5, width: '40px' }}>
-                {unitType === 'space' ? '' : unitType}
-              </span>
             </label>
           ))}
         </div>
@@ -204,19 +163,34 @@ function generateCss(definitions: Record<number, string>) {
   return css
 }
 
-function RussianDoll({ densityIndex }: { densityIndex: number }) {
-  if (densityIndex < 1) {
-    return (
-      <div className="doll-center">
-        <span className="doll-label">Content</span>
-      </div>
-    )
-  }
+function RussianDoll({ densityIndex, onLayerClick }: { densityIndex: number, onLayerClick: (level: number) => void }) {
+  const [hoveredLevel, setHoveredLevel] = useState<number | null>(null)
+
+  // Use CSS variable for padding to ensure perfect sync with the rings
+  // The largest ring has inset: -density(densityIndex)
+  // So we need padding equal to that density on the wrapper to prevent overflow
+  const paddingStyle = { padding: `var(--density-${densityIndex})` }
 
   return (
-    <div className={`density-doll-layer density-doll-layer--${densityIndex}`}>
-      <div className="doll-label-corner">density({densityIndex})</div>
-      <RussianDoll densityIndex={densityIndex - 1} />
+    <div className="concentric-wrapper" style={paddingStyle}>
+      <div className="concentric-content">
+        <span className="concentric-label">Content</span>
+        
+        {Array.from({ length: Math.max(0, densityIndex) }, (_, i) => i + 1).map(level => (
+          <div 
+            key={level}
+            className={`concentric-ring concentric-ring--density-${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
+            onMouseEnter={() => setHoveredLevel(level)}
+            onMouseLeave={() => setHoveredLevel(null)}
+            onClick={(e) => {
+              e.stopPropagation()
+              onLayerClick(level)
+            }}
+          >
+            <span className="ring-label">density({level})</span>
+          </div>
+        ))}
+      </div>
     </div>
   )
 }
@@ -348,7 +322,7 @@ export default function DemoDensity() {
 
       <div className="density-doll-container">
         <h4 className="demo-subtitle">Russian Doll Visualization</h4>
-        <div className="doll-controls">
+        <div className="density-doll-controls">
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             Layers:
             <input
@@ -357,12 +331,16 @@ export default function DemoDensity() {
               max={MAX_LAYERS}
               value={dollLevels}
               onChange={(e) => setDollLevels(Number(e.target.value))}
+              className="density-slider"
             />
             <span>{dollLevels}</span>
           </label>
         </div>
-        <div className="doll-wrapper">
-          <RussianDoll densityIndex={dollLevels} />
+        <div className="density-doll-wrapper">
+          <RussianDoll 
+            densityIndex={dollLevels} 
+            onLayerClick={(level) => setEditingLevel(level)}
+          />
         </div>
       </div>
 
@@ -370,7 +348,9 @@ export default function DemoDensity() {
         <h4 className="demo-subtitle">Token Reference</h4>
         <div className="density-grid">
           {densities.map((s) => {
-            const parsedDef = parseDefinitionForDisplay(densityDefinitions[s])
+            const def = densityDefinitions[s]
+            if (!def) return null
+            const parsedDef = parseDefinitionForDisplay(def)
             // Sort breakpoints for consistent rendering order
             const sortedBps = Object.keys(parsedDef).sort((a, b) => {
               return BP_ORDER.indexOf(a) - BP_ORDER.indexOf(b)
@@ -394,45 +374,41 @@ export default function DemoDensity() {
                 {/* Hidden probe for measuring computed styles */}
                 <div className={`density-probe--${s} density-doll-layer--${s}`} style={{ display: 'none' }} />
 
-                {/* Column 1: Token & Definitions */}
-                <div className="density-card__col-def">
-                  <div className="density-card__token">density({s})</div>
-                  
-                  <div className="density-def-list">
-                    {sortedBps.map((bp) => (
-                      <div key={bp} className="density-def-item">
-                        <span className="density-def-bp">{bp}:</span>
-                        <span className="density-def-val">{parsedDef[bp]}</span>
-                      </div>
-                    ))}
+                                <div className="density-card__header">
+                  {/* Col 1: Token & Active Rule */}
+                  <div className="density-card__header-col density-card__header-col--main">
+                    <div className="density-card__token">density({s})</div>
+                    <div className="density-metric-value density-metric-value--highlight">{activeDef}</div>
                   </div>
-                  
-                  <button
-                    className="density-card__edit-btn"
-                    onClick={() => setEditingLevel(s)}
-                  >
-                    Edit
-                  </button>
-                </div>
 
-                {/* Column 2: Computed Values */}
-                <div className="density-card__col-metrics">
-                  <div className="density-metric-item">
-                    <span className="density-metric-label">Active Rule</span>
-                    <span className="density-metric-value density-metric-value--highlight">{activeDef}</span>
+                  {/* Col 2: Breakpoints (Stacked) */}
+                  <div className="density-card__header-col density-card__header-col--bps">
+                    <div className="density-def-list">
+                      {sortedBps.map((bp) => (
+                        <div 
+                          key={bp} 
+                          className={`density-def-item ${bp === activeBpKey ? 'density-def-item--active' : ''}`}
+                        >
+                          <span className="density-def-bp">{bp}:</span>
+                          <span className="density-def-val">{parsedDef[bp]}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="density-metric-item">
-                    <span className="density-metric-label">Rem</span>
-                    <span className="density-metric-value">{computedRem}</span>
-                  </div>
-                  <div className="density-metric-item">
-                    <span className="density-metric-label">Px</span>
-                    <span className="density-metric-value">{computedPx}</span>
+
+                  {/* Col 3: Edit (Flex) */}
+                  <div className="density-card__header-col density-card__header-col--right">
+                    <button
+                      className="density-card__edit-btn"
+                      onClick={() => setEditingLevel(s)}
+                    >
+                      Edit
+                    </button>
                   </div>
                 </div>
 
-                {/* Column 3: Visualization */}
-                <div className="density-card__col-viz">
+                {/* Visualization Row */}
+                <div className="density-card__viz">
                   <div className="density-concentric-viz">
                     {/* Center anchor */}
                     <div className="density-concentric-center" />

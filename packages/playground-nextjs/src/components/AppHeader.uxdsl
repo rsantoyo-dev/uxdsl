@@ -1,16 +1,58 @@
 .app-header {
-  @ds-surface(primary, 1);
+  background: palette(primary-main);
   padding: density(2) density(4);
   color: palette(primary-contrast);
   border-bottom: border(1) solid palette(primary-dark);
+  /* Remove top rounded corners, keep bottom square or slightly rounded if desired, but user asked to remove rounder from top */
+  border-radius: 0; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .app-header__inner {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  gap: density(1);
 }
 
 .app-header__title {
   @ds-typo(h4);
   margin: 0;
+  font-weight: 800;
+  letter-spacing: -0.5px;
 }
+
+.app-header__subtitle {
+  @ds-typo(caption);
+  opacity: 0.8;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.app-header__actions {
+  display: flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.theme-toggle {
+  background: palette(primary-dark);
+  border: 1px solid palette(primary-light);
+  color: palette(primary-contrast);
+  padding: density(1.5);
+  border-radius: radius(full); /* Circle button looks nice for icons */
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0; /* Fix for icon vertical alignment */
+}
+
+.theme-toggle:hover {
+  background: palette(primary-light);
+}
+

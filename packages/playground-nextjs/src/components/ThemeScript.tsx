@@ -2,7 +2,17 @@
 
 import { useServerInsertedHTML } from 'next/navigation'
 
-export default function ThemeScript({ theme }: { theme: any }) {
+interface Theme {
+  modes?: {
+    dark?: {
+      palette?: Record<string, string>
+    }
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  [key: string]: any
+}
+
+export default function ThemeScript({ theme }: { theme: Theme }) {
   useServerInsertedHTML(() => {
     if (!theme) return null
     

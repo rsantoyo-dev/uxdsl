@@ -6,7 +6,7 @@ export default function InlineStyles() {
   let css = ''
   try {
     css = fs.readFileSync(file, 'utf8')
-  } catch (e) {
+  } catch {
     // In dev, ensure prebuild ran. Fallback to empty to avoid crashing.
     css = ''
   }

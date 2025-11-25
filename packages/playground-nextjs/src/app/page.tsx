@@ -1,6 +1,7 @@
 import ButtonDemo from '@/components/ButtonDemo'
 import CardDemo from '@/components/CardDemo'
 import DemoPalette from '@/components/DemoPalette'
+import DemoSurfaces from '@/components/DemoSurfaces'
 import DemoColors from '@/components/DemoColors'
 import DemoTypography from '@/components/DemoTypography'
 import DemoSpacing from '@/components/DemoSpacing'
@@ -43,6 +44,11 @@ export default function Home() {
         <section id="palette" className="section">
           <h2 className="section-title">Palette</h2>
           <DemoPalette />
+        </section>
+
+        <section id="surfaces" className="section">
+          <h2 className="section-title">Surfaces</h2>
+          <DemoSurfaces />
         </section>
 
         <section id="typography" className="section">

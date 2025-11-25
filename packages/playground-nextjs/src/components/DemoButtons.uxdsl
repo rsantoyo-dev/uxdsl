@@ -1,0 +1,170 @@
+/* DemoButtons styles */
+
+.buttons-section {
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+}
+
+.buttons-header {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.buttons-playground-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.buttons-playground {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  @ds-surface(outlined);
+  padding: density(3);
+  background: palette(surface-light, 0.3);
+}
+
+@media (min-width: 768px) {
+  .buttons-playground {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.buttons-playground__controls {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  min-width: 250px;
+}
+
+.buttons-playground__controls label {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.buttons-playground__controls select,
+.buttons-playground__controls input[type="range"] {
+  padding: density(1);
+  border: 1px solid palette(neutral-light);
+  border-radius: radius(1);
+  background: palette(surface-main);
+}
+
+.buttons-playground__preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: palette(neutral-light, 0.1);
+  border-radius: radius(2);
+  padding: density(4);
+  min-height: 300px;
+}
+
+.buttons-playground__element {
+  /* Base styles for the preview element if needed, but mixin handles most */
+  cursor: pointer;
+}
+
+.buttons-doc-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.buttons-doc-card {
+  @ds-surface(outlined);
+  padding: density(3);
+  background: palette(surface-light, 0.3);
+}
+
+.buttons-doc-intro {
+  margin-bottom: density(2);
+  line-height: 1.5;
+}
+
+.buttons-doc-subtitle {
+  font-weight: bold;
+  margin-bottom: density(1);
+  color: palette(primary-dark);
+}
+
+.buttons-doc-list {
+  list-style: disc;
+  padding-left: density(3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: density(1);
+}
+
+.buttons-doc-list li {
+  font-size: 0.9rem;
+}
+
+/* Generated classes for Playground */
+$variants: contained, outlined, flat;
+$tones: primary, secondary, success, info, warning, error, neutral;
+
+@each $variant in $variants {
+  @each $tone in $tones {
+    @for $size from 0 through 5 {
+      .buttons-playground__element--#{$variant}-#{$tone}-#{$size} {
+        @ds-button $variant $tone $size;
+      }
+    }
+  }
+  /* Handle 'none' tone */
+  @for $size from 0 through 5 {
+    .buttons-playground__element--#{$variant}-none-#{$size} {
+      @ds-button $variant $size;
+    }
+  }
+}
+
+/* Grid of examples */
+.buttons-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: density(3);
+}
+
+.button-card {
+  @ds-surface(outlined);
+  padding: density(3);
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  align-items: center;
+}
+
+.button-card__label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+/* Example classes for the grid */
+.btn-example-primary-contained { @ds-button contained primary; }
+.btn-example-primary-outlined { @ds-button outlined primary; }
+.btn-example-primary-flat { @ds-button flat primary; }
+
+.btn-example-secondary-contained { @ds-button contained secondary; }
+.btn-example-secondary-outlined { @ds-button outlined secondary; }
+.btn-example-secondary-flat { @ds-button flat secondary; }
+
+.btn-example-success-contained { @ds-button contained success; }
+.btn-example-error-contained { @ds-button contained error; }

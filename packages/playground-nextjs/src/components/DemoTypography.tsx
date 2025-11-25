@@ -38,7 +38,6 @@ function useBreakpoint() {
     const getBp = () => {
       const width = window.innerWidth
       // Try to get from runtime, fallback to defaults
-      // @ts-ignore
       const breakpoints = runtime.getBreakpoints() as Record<string, number>
       const activeBps = (breakpoints && Object.keys(breakpoints).length > 0) ? breakpoints : defaults
       

@@ -1,11 +1,10 @@
-import ButtonDemo from '@/components/ButtonDemo'
+import DemoButtons from '@/components/DemoButtons'
 
 export default function ButtonsPage() {
   return (
     <main className="main">
       <div className="container">
-        <h1 className="section-title">Buttons</h1>
-        <ButtonDemo />
+        <DemoButtons />
       </div>
     </main>
   )

@@ -103,17 +103,17 @@
   --ds__color__green-900: #1B5E20;
   --ds__color__green-contrast: #FFFFFF;
 
-  /* Teal */
-  --ds__color__teal-50: #E0F2F1;
-  --ds__color__teal-100: #B2DFDB;
-  --ds__color__teal-200: #80CBC4;
-  --ds__color__teal-300: #8AA7BA;
-  --ds__color__teal-400: #26A69A;
-  --ds__color__teal-500: #2C415C;
-  --ds__color__teal-600: #25374E;
-  --ds__color__teal-700: #00796B;
-  --ds__color__teal-800: #00695C;
-  --ds__color__teal-900: #004D40;
+  /* Teal (Modern, Professional) */
+  --ds__color__teal-50: #F0FDFA;
+  --ds__color__teal-100: #CCFBF1;
+  --ds__color__teal-200: #99F6E4;
+  --ds__color__teal-300: #5EEAD4;
+  --ds__color__teal-400: #2DD4BF;
+  --ds__color__teal-500: #14B8A6;
+  --ds__color__teal-600: #0D9488;
+  --ds__color__teal-700: #0F766E;
+  --ds__color__teal-800: #115E59;
+  --ds__color__teal-900: #134E4A;
   --ds__color__teal-contrast: #FFFFFF;
 
   /* Cyan */
@@ -145,4 +145,17 @@
   /* Monochrome */
   --ds__color__black: #000000;
   --ds__color__white: #FFFFFF;
+
+  /* Slate (Sober Blue-Grey based on #2C415C) */
+  --ds__color__slate-50: #F5F8FA;
+  --ds__color__slate-100: #DDE5EB;
+  --ds__color__slate-200: #BCCCDC;
+  --ds__color__slate-300: #9FB3C8;
+  --ds__color__slate-400: #829AB1;
+  --ds__color__slate-500: #627D98;
+  --ds__color__slate-600: #486581;
+  --ds__color__slate-700: #334E68;
+  --ds__color__slate-800: #2C415C;
+  --ds__color__slate-900: #102A43;
+  --ds__color__slate-contrast: #FFFFFF;
 }

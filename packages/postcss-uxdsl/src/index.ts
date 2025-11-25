@@ -143,8 +143,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         };
         if (opts.theme.palette) {
             Object.entries(opts.theme.palette).forEach(([key, val]) => {
-                addVar(key, String(val));
-                addVar(`ds__palette__${key}`, String(val));
+                if (typeof val === 'object' && val !== null) {
+                    Object.entries(val).forEach(([subKey, subVal]) => {
+                        addVar(`ds__palette__${key}-${subKey}`, String(subVal));
+                    });
+                } else {
+                    addVar(`ds__palette__${key}`, String(val));
+                }
             });
         }
         if (opts.theme.spacing) {

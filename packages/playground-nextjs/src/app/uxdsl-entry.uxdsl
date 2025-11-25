@@ -17,8 +17,10 @@
 @import './productivity/page.uxdsl';
 
 @import '../components/DemoPalette.uxdsl';
+@import '../components/DemoSurfaces.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
+@import '../components/DemoButtons.uxdsl';
 @import '../components/DemoDensity.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';
