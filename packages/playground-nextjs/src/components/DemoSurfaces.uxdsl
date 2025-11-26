@@ -1,6 +1,12 @@
 /* DemoSurfaces styles */
 
-.surfaces-section { display: flex; flex-direction: column; gap: density(4); }
+.surfaces-section { 
+  display: flex; 
+  flex-direction: column; 
+  gap: density(4);
+  /* Polyfill for missing 0 space token in some builds */
+  --space-0: 0px; 
+}
 .surfaces-header { display: flex; flex-direction: column; gap: density(2); }
 
 .surfaces-viz-container { display: flex; flex-direction: column; gap: density(2); }
@@ -256,11 +262,8 @@
 }
 
 .surface-playground__box {
-  min-width: 200px;
-  min-height: 120px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
   text-align: center;
   padding: density(2);
@@ -269,18 +272,41 @@
 $variants: contained, outlined, flat;
 $tones: primary, secondary, success, info, warning, error, neutral;
 
+/* Base Surface Classes (Variant + Tone + Density) */
 @each $variant in $variants {
   @each $tone in $tones {
-    @for $size from 0 through 5 {
-      .surface-playground__box--#{$variant}-#{$tone}-#{$size} {
-        @ds-surface $variant $tone $size;
+    @for $density from 0 through 5 {
+      .surface-playground__box--#{$variant}-#{$tone}-#{$density} {
+        @ds-surface $variant $tone $density;
       }
     }
   }
   /* Handle 'none' tone */
-  @for $size from 0 through 5 {
-    .surface-playground__box--#{$variant}-none-#{$size} {
-      @ds-surface $variant $size;
+  @for $density from 0 through 5 {
+    .surface-playground__box--#{$variant}-none-#{$density} {
+      @ds-surface $variant $density;
+    }
+  }
+}
+
+/* Radius Utility Classes */
+@for $i from 0 through 5 {
+  .demo-radius-#{$i} {
+    @if $i == 0 {
+      border-radius: 0 !important;
+    } @else {
+      border-radius: radius($i) !important;
+    }
+  }
+}
+
+/* Shadow Utility Classes */
+@for $i from 0 through 5 {
+  .demo-shadow-#{$i} {
+    @if $i == 0 {
+      box-shadow: none !important;
+    } @else {
+      box-shadow: shadow($i) !important;
     }
   }
 }

@@ -70,8 +70,14 @@
 }
 
 .buttons-playground__element {
-  /* Base styles for the preview element if needed, but mixin handles most */
+  /* Base styles for the preview element */
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    filter: brightness(1.2) saturate(1.1);
+    transform: translateY(-1px);
+  }
 }
 
 .buttons-doc-container {
@@ -113,20 +119,62 @@
 $variants: contained, outlined, flat;
 $tones: primary, secondary, success, info, warning, error, neutral;
 
+/* Base Button Classes (Variant + Tone + Density) */
 @each $variant in $variants {
   @each $tone in $tones {
-    @for $size from 0 through 5 {
-      .buttons-playground__element--#{$variant}-#{$tone}-#{$size} {
-        @ds-button $variant $tone $size;
+    @for $density from 0 through 5 {
+      .buttons-playground__element--#{$variant}-#{$tone}-#{$density} {
+        @ds-button $variant $tone $density;
       }
     }
   }
   /* Handle 'none' tone */
-  @for $size from 0 through 5 {
-    .buttons-playground__element--#{$variant}-none-#{$size} {
-      @ds-button $variant $size;
+  @for $density from 0 through 5 {
+    .buttons-playground__element--#{$variant}-none-#{$density} {
+      @ds-button $variant $density;
     }
   }
+}
+
+/* Radius Utility Classes */
+@for $i from 0 through 5 {
+  .demo-radius-#{$i} {
+    @if $i == 0 {
+      border-radius: 0 !important;
+    } @else {
+      border-radius: radius($i) !important;
+    }
+  }
+}
+
+/* Shadow Utility Classes */
+@for $i from 0 through 5 {
+  .demo-shadow-#{$i} {
+    @if $i == 0 {
+      box-shadow: none !important;
+    } @else {
+      box-shadow: shadow($i) !important;
+    }
+  }
+}
+
+/* Pseudo-Hover Utility */
+.force-hover {
+  filter: brightness(1.2) saturate(1.1); /* Stronger "light" effect */
+  transform: translateY(-1px); /* Very subtle lift */
+  cursor: pointer;
+}
+
+/* Pseudo-Active Utility */
+.force-active {
+  transform: scale(0.98);
+  filter: brightness(0.95);
+}
+
+/* Pseudo-Selected Utility */
+.force-selected {
+  box-shadow: inset 0 0 0 2px currentColor !important;
+  font-weight: bold;
 }
 
 /* Grid of examples */

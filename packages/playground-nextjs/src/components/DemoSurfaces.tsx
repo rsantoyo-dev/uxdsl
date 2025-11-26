@@ -51,7 +51,7 @@ function resolveValue(val: string) {
       return `var(--ds__palette__${token})`
     })
     .replace(/density\(([^)]+)\)/g, 'var(--density-$1)')
-    .replace(/radius\(([^)]+)\)/g, 'var(--radius-$1)')
+    .replace(/radius\(([^)]+)\)/g, 'var(--space-$1)')
     .replace(/shadow\(([^)]+)\)/g, 'var(--shadow-$1)')
     .replace(/border\(([^)]+)\)/g, 'var(--border-$1)') // Assuming border mixin exists or just raw
 }
@@ -145,20 +145,30 @@ export default function DemoSurfaces() {
 
   const [playgroundVariant, setPlaygroundVariant] = useState<'contained' | 'outlined' | 'flat'>('contained')
   const [playgroundTone, setPlaygroundTone] = useState<string>('primary')
-  const [playgroundSize, setPlaygroundSize] = useState<number>(2)
+  const [playgroundDensity, setPlaygroundDensity] = useState<number>(2)
+  const [playgroundRadius, setPlaygroundRadius] = useState<number>(2)
+  const [playgroundShadow, setPlaygroundShadow] = useState<number>(1)
 
-  // Compute playground class based on mixin logic
-  const playgroundClass = `surface-playground__box--${playgroundVariant}-${playgroundTone}-${playgroundSize}`
+  // Auto-update defaults when variant changes
+  useEffect(() => {
+    if (playgroundVariant === 'contained') {
+      setPlaygroundShadow(1)
+    } else {
+      setPlaygroundShadow(0)
+    }
+  }, [playgroundVariant])
 
-  const mixinCode = `@ds-surface(${playgroundVariant} ${playgroundTone !== 'none' ? playgroundTone : ''} ${playgroundSize})`
+  // Compute playground class based on mixin logic + utility classes
+  const baseClass = `surface-playground__box--${playgroundVariant}-${playgroundTone}-${playgroundDensity}`
+  const playgroundClass = `${baseClass} demo-radius-${playgroundRadius} demo-shadow-${playgroundShadow}`
 
   return (
     <section className="surfaces-section demo-section">
       <div className="surfaces-header">
         <h3 className="demo-title">Surfaces</h3>
         <p className="demo-subtitle">
-          Surfaces are composite tokens that define background, border, shadow, and spacing properties.
-          They provide consistent container styles across the application.
+          Surfaces are intelligent, composite containers that manage background, border, shadow, and spacing.
+          They use a flexible "Smart Mixin" syntax to apply responsive defaults while allowing granular control over density, radius, and depth.
         </p>
         <div className="density-code-snippet">
           .card &#123; @ds-surface(contained) &#125;
@@ -199,15 +209,39 @@ export default function DemoSurfaces() {
             </label>
 
             <label>
-              <span>Size (Density/Radius)</span>
+              <span>Density (Padding)</span>
               <input 
                 type="range" 
                 min="0" 
                 max="5" 
-                value={playgroundSize} 
-                onChange={e => setPlaygroundSize(Number(e.target.value))} 
+                value={playgroundDensity} 
+                onChange={e => setPlaygroundDensity(Number(e.target.value))} 
               />
-              <span>{playgroundSize}</span>
+              <span>{playgroundDensity}</span>
+            </label>
+
+            <label>
+              <span>Radius</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="5" 
+                value={playgroundRadius} 
+                onChange={e => setPlaygroundRadius(Number(e.target.value))} 
+              />
+              <span>{playgroundRadius}</span>
+            </label>
+
+            <label>
+              <span>Shadow</span>
+              <input 
+                type="range" 
+                min="0" 
+                max="5" 
+                value={playgroundShadow} 
+                onChange={e => setPlaygroundShadow(Number(e.target.value))} 
+              />
+              <span>{playgroundShadow}</span>
             </label>
           </div>
 
@@ -218,10 +252,80 @@ export default function DemoSurfaces() {
                 Adjust controls to see how parameters affect the surface.
               </div>
             </div>
-            <div className="density-code-snippet" style={{ marginTop: '1rem', width: '100%' }}>
-              .my-element &#123; {mixinCode} &#125;
+            <div className="density-code-snippet" style={{ marginTop: '1rem', width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
+              <div><span style={{ color: '#d4d4d4' }}>.my-element</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
+              
+              {/* Mixin Call */}
+              <div style={{ paddingLeft: '1rem' }}>
+                <span style={{ color: '#c586c0' }}>@ds-surface</span>
+                <span style={{ color: '#d4d4d4' }}>(</span>
+                <span style={{ color: '#9cdcfe' }}>{playgroundVariant}</span>
+                {playgroundTone !== 'none' && <span style={{ color: '#9cdcfe' }}> {playgroundTone}</span>}
+                <span style={{ color: '#b5cea8' }}> density</span>(<span style={{ color: '#ce9178' }}>{playgroundDensity}</span>)
+                <span style={{ color: '#b5cea8' }}> radius</span>(<span style={{ color: '#ce9178' }}>{playgroundRadius}</span>)
+                {playgroundShadow !== 0 && (
+                  <span><span style={{ color: '#b5cea8' }}> shadow</span>(<span style={{ color: '#ce9178' }}>{playgroundShadow}</span>)</span>
+                )}
+                <span style={{ color: '#d4d4d4' }}>);</span>
+              </div>
+              
+              <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* New Resolved Values Code Card */}
+      <div className="surfaces-resolved-output-container" style={{ marginTop: '2rem' }}>
+        <h4 className="demo-subtitle">Resolved CSS Output for .my-element</h4>
+        <div className="density-code-snippet" style={{ fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
+          <div><span style={{ color: '#d4d4d4' }}>.my-element</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
+          
+          {/* Background and Color */}
+          <div style={{ paddingLeft: '1rem' }}>
+            <span style={{ color: '#9cdcfe' }}>background-color</span>: 
+            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
+              {playgroundVariant === 'contained' 
+                ? (playgroundTone === 'none' ? 'surface-main' : `${playgroundTone}-main`)
+                : 'transparent'
+              }
+            </span>);
+          </div>
+          <div style={{ paddingLeft: '1rem' }}>
+            <span style={{ color: '#9cdcfe' }}>color</span>: 
+            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
+              {playgroundVariant === 'contained'
+                ? (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-contrast`)
+                : (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-main`)
+              }
+            </span>);
+          </div>
+
+          {/* Padding */}
+          <div style={{ paddingLeft: '1rem' }}>
+            <span style={{ color: '#9cdcfe' }}>padding</span>: 
+            <span style={{ color: '#ce9178' }}> density</span>(<span style={{ color: '#b5cea8' }}>{playgroundDensity}</span>);
+          </div>
+
+          {/* Radius */}
+          <div style={{ paddingLeft: '1rem' }}>
+            <span style={{ color: '#9cdcfe' }}>border-radius</span>: 
+            <span style={{ color: '#ce9178' }}> radius</span>(<span style={{ color: '#b5cea8' }}>{playgroundRadius}</span>);
+          </div>
+
+          {/* Shadow */}
+          {(playgroundShadow > 0 || playgroundVariant === 'contained') && (
+            <div style={{ paddingLeft: '1rem' }}>
+              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
+              {playgroundShadow === 0 ? (
+                 <span style={{ color: '#569cd6' }}>none;</span>
+              ) : (
+                 <span><span style={{ color: '#ce9178' }}> shadow</span>(<span style={{ color: '#b5cea8' }}>{playgroundShadow}</span>);</span>
+              )}
+            </div>
+          )}
+          
+          <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
         </div>
       </div>
 
@@ -229,18 +333,18 @@ export default function DemoSurfaces() {
         <h4 className="demo-subtitle">Mixin Documentation</h4>
         <div className="surface-doc-card">
           <p className="surface-doc-intro">
-            The <code>@ds-surface</code> mixin applies a preset combination of properties to an element.
-            It ensures consistency across all containers in your application.
+            The <code>@ds-surface</code> mixin is the primary primitive for building containers. 
+            It accepts a <strong>Variant</strong> (structure) and <strong>Tone</strong> (color), followed by optional granular tokens 
+            for <strong>Density</strong> (padding), <strong>Radius</strong>, and <strong>Shadow</strong>.
           </p>
           <div className="surface-doc-params">
-            <h5 className="surface-doc-subtitle">Configurable Properties:</h5>
+            <h5 className="surface-doc-subtitle">Smart Parameters:</h5>
             <ul className="surface-doc-list">
-              <li><strong>padding</strong>: Internal spacing (usually density tokens)</li>
-              <li><strong>radius</strong>: Border radius (radius tokens)</li>
-              <li><strong>bg</strong>: Background color (palette tokens)</li>
-              <li><strong>color</strong>: Text color (palette tokens)</li>
-              <li><strong>border</strong>: Border style (border tokens or raw CSS)</li>
-              <li><strong>shadow</strong>: Box shadow (shadow tokens)</li>
+              <li><strong>variant</strong>: Base style (contained, outlined, flat). Determines default borders/shadows.</li>
+              <li><strong>tone</strong>: Applies semantic color palette (bg/text/border) automatically.</li>
+              <li><strong>density(N)</strong>: Sets responsive padding. Scales automatically across breakpoints.</li>
+              <li><strong>radius(N)</strong>: Sets border-radius. Defaults to system standard (usually 2).</li>
+              <li><strong>shadow(N)</strong>: Sets box-shadow depth. Defaults based on variant (1 for contained, 0 for others).</li>
             </ul>
           </div>
         </div>

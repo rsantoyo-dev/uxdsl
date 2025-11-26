@@ -1,10 +1,211 @@
-/* InputDemo component styles */
+/* InputDemo styles */
 
-.input, .input--contained { @ds-input (contained); }
-.input--outlined { @ds-input (outlined primary); }
-.input--underline { @ds-input (underline primary); }
+.inputs-section {
+  display: flex;
+  flex-direction: column;
+  gap: density(4);
+}
 
-.input--sm { @ds-input (contained primary 1); }
-.input--md { @ds-input (contained primary 2); }
-.input--lg { @ds-input (contained primary 3); }
+.inputs-header {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
 
+.inputs-playground-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.inputs-playground {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  @ds-surface(outlined);
+  padding: density(3);
+  background: palette(surface-light, 0.3);
+}
+
+@media (min-width: 768px) {
+  .inputs-playground {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.inputs-playground__controls {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  min-width: 250px;
+}
+
+.inputs-playground__controls label {
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.inputs-playground__controls select,
+.inputs-playground__controls input[type="range"] {
+  padding: density(1);
+  border: 1px solid palette(neutral-light);
+  border-radius: radius(1);
+  background: palette(surface-main);
+}
+
+.inputs-playground__preview {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: palette(neutral-light, 0.1);
+  border-radius: radius(2);
+  padding: density(4);
+  min-height: 300px;
+}
+
+.inputs-playground__element {
+  width: 100%;
+  max-width: 300px;
+  transition: all 0.2s ease;
+  /* Ensure native focus visual matches pseudo if desired, but usually native is fine */
+}
+
+/* Documentation Styles */
+.inputs-doc-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.inputs-doc-card {
+  @ds-surface(outlined);
+  padding: density(3);
+  background: palette(surface-light, 0.3);
+}
+
+.inputs-doc-intro {
+  margin-bottom: density(2);
+  line-height: 1.5;
+}
+
+.inputs-doc-subtitle {
+  font-weight: bold;
+  margin-bottom: density(1);
+  color: palette(primary-dark);
+}
+
+.inputs-doc-list {
+  list-style: disc;
+  padding-left: density(3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: density(1);
+}
+
+.inputs-doc-list li {
+  font-size: 0.9rem;
+}
+
+/* Example Grid Styles */
+.inputs-grid-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+}
+
+.inputs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: density(3);
+}
+
+.input-card {
+  @ds-surface(outlined);
+  padding: density(3);
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  align-items: center;
+}
+
+.input-card__label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+  font-family: monospace;
+}
+
+/* Generated classes for Playground */
+$variants: contained, outlined, underline;
+$tones: neutral, primary, success, warning, error;
+
+/* Base Input Classes (Variant + Tone + Density) */
+@each $variant in $variants {
+  @each $tone in $tones {
+    @for $density from 0 through 5 {
+      .inputs-playground__element--#{$variant}-#{$tone}-#{$density} {
+        @ds-input $variant $tone $density;
+      }
+    }
+  }
+  /* Handle 'none' tone? Inputs usually need a tone. Default to neutral if none */
+  @for $density from 0 through 5 {
+    .inputs-playground__element--#{$variant}-none-#{$density} {
+      @ds-input $variant neutral $density;
+    }
+  }
+}
+
+/* Radius Utility Classes */
+@for $i from 0 through 5 {
+  .demo-radius-#{$i} {
+    @if $i == 0 {
+      border-radius: 0 !important;
+    } @else {
+      border-radius: radius($i) !important;
+    }
+  }
+}
+
+/* Shadow Utility Classes */
+@for $i from 0 through 5 {
+  .demo-shadow-#{$i} {
+    @if $i == 0 {
+      box-shadow: none !important;
+    } @else {
+      box-shadow: shadow($i) !important;
+    }
+  }
+}
+
+/* Pseudo-State Utilities */
+.force-hover {
+  border-color: palette(primary-light); /* Simulate hover border */
+}
+
+.force-focus {
+  border-color: palette(primary-main) !important;
+  box-shadow: 0 0 0 2px palette(primary-main, 0.2) !important; /* Ring effect */
+  outline: none;
+}
+
+.inputs-playground__element:hover {
+  border-color: palette(primary-light);
+}
+
+.inputs-playground__element:focus {
+  border-color: palette(primary-main);
+  box-shadow: 0 0 0 2px palette(primary-main, 0.2);
+}
+
+/* Example classes for grid */
+.input-ex-contained-primary { @ds-input contained primary; }
+.input-ex-outlined-primary { @ds-input outlined primary; }
+.input-ex-underline-primary { @ds-input underline primary; }
+.input-ex-outlined-error { @ds-input outlined error; }
+.input-ex-outlined-success { @ds-input outlined success; }

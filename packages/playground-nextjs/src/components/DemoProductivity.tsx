@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 
 export default function DemoProductivity() {
-  const [activeTab, setActiveTab] = useState<'uxdsl' | 'tailwind' | 'scss'>('uxdsl')
+  const [activeTab, setActiveTab] = useState<'uxdsl' | 'scss'>('uxdsl')
 
   return (
     <section className="demo-section">
@@ -21,12 +21,6 @@ export default function DemoProductivity() {
           onClick={() => setActiveTab('uxdsl')}
         >
           UXDSL
-        </button>
-        <button 
-          className={`prod-tab-btn ${activeTab === 'tailwind' ? 'active' : ''}`}
-          onClick={() => setActiveTab('tailwind')}
-        >
-          Tailwind
         </button>
         <button 
           className={`prod-tab-btn ${activeTab === 'scss' ? 'active' : ''}`}
@@ -78,135 +72,67 @@ export default function DemoProductivity() {
                 <span className="code-lang">HeroCard.uxdsl</span>
               </div>
               <pre>
-                <code>{`.prod-card {
-  @ds-surface(contained);
+                <code><span style={{ color: '#9cdcfe' }}>.prod-card</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#c586c0' }}>@ds-surface</span>(<span style={{ color: '#9cdcfe' }}>contained</span>);
   
-  /* Responsive Layout */
-  display: flex;
-  flex-direction: column;
-  width: xs(100%) md(480px);
-  padding: xs(density(3)) md(density(5));
-  gap: density(4);
-  margin: 0 auto;
-}
+  <span style={{ color: '#6a9955' }}>/* Responsive Layout */</span>
+  <span style={{ color: '#9cdcfe' }}>display</span>: <span style={{ color: '#569cd6' }}>flex</span>;
+  <span style={{ color: '#9cdcfe' }}>flex-direction</span>: <span style={{ color: '#569cd6' }}>column</span>;
+  <span style={{ color: '#9cdcfe' }}>width</span>: <span style={{ color: '#ce9178' }}>xs</span>(<span style={{ color: '#b5cea8' }}>100%</span>) <span style={{ color: '#ce9178' }}>md</span>(<span style={{ color: '#b5cea8' }}>480px</span>);
+  <span style={{ color: '#9cdcfe' }}>padding</span>: <span style={{ color: '#ce9178' }}>xs</span>(<span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>3</span>)) <span style={{ color: '#ce9178' }}>md</span>(<span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>5</span>));
+  <span style={{ color: '#9cdcfe' }}>gap</span>: <span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>4</span>);
+  <span style={{ color: '#9cdcfe' }}>margin</span>: <span style={{ color: '#b5cea8' }}>0 auto</span>;
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-.prod-header {
-  display: flex;
-  flex-direction: xs(column) sm(row);
-  align-items: center;
-  text-align: xs(center) sm(left);
-  gap: density(3);
-}
+<span style={{ color: '#9cdcfe' }}>.prod-header</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>display</span>: <span style={{ color: '#569cd6' }}>flex</span>;
+  <span style={{ color: '#9cdcfe' }}>flex-direction</span>: <span style={{ color: '#ce9178' }}>xs</span>(<span style={{ color: '#569cd6' }}>column</span>) <span style={{ color: '#ce9178' }}>sm</span>(<span style={{ color: '#569cd6' }}>row</span>);
+  <span style={{ color: '#9cdcfe' }}>align-items</span>: <span style={{ color: '#569cd6' }}>center</span>;
+  <span style={{ color: '#9cdcfe' }}>text-align</span>: <span style={{ color: '#ce9178' }}>xs</span>(<span style={{ color: '#569cd6' }}>center</span>) <span style={{ color: '#ce9178' }}>sm</span>(<span style={{ color: '#569cd6' }}>left</span>);
+  <span style={{ color: '#9cdcfe' }}>gap</span>: <span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>3</span>);
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-.prod-avatar {
-  width: 80px;
-  height: 80px;
-  border-radius: radius(full);
-  background: palette(primary-main);
-  color: palette(primary-contrast);
-  /* ...flex centering... */
-}
+<span style={{ color: '#9cdcfe' }}>.prod-avatar</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>width</span>: <span style={{ color: '#b5cea8' }}>80px</span>;
+  <span style={{ color: '#9cdcfe' }}>height</span>: <span style={{ color: '#b5cea8' }}>80px</span>;
+  <span style={{ color: '#9cdcfe' }}>border-radius</span>: <span style={{ color: '#ce9178' }}>radius</span>(<span style={{ color: '#9cdcfe' }}>full</span>);
+  <span style={{ color: '#9cdcfe' }}>background</span>: <span style={{ color: '#ce9178' }}>palette</span>(<span style={{ color: '#9cdcfe' }}>primary-main</span>);
+  <span style={{ color: '#9cdcfe' }}>color</span>: <span style={{ color: '#ce9178' }}>palette</span>(<span style={{ color: '#9cdcfe' }}>primary-contrast</span>);
+  <span style={{ color: '#6a9955' }}>/* ...flex centering... */</span>
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-.prod-stats {
-  display: flex;
-  justify-content: space-around;
-  padding: density(3) 0;
-  background: palette(surface-subtle);
-  border-radius: radius(2);
-}
+<span style={{ color: '#9cdcfe' }}>.prod-stats</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>display</span>: <span style={{ color: '#569cd6' }}>flex</span>;
+  <span style={{ color: '#9cdcfe' }}>justify-content</span>: <span style={{ color: '#569cd6' }}>space-around</span>;
+  <span style={{ color: '#9cdcfe' }}>padding</span>: <span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>3</span>) <span style={{ color: '#b5cea8' }}>0</span>;
+  <span style={{ color: '#9cdcfe' }}>background</span>: <span style={{ color: '#ce9178' }}>palette</span>(<span style={{ color: '#9cdcfe' }}>surface-subtle</span>);
+  <span style={{ color: '#9cdcfe' }}>border-radius</span>: <span style={{ color: '#ce9178' }}>radius</span>(<span style={{ color: '#b5cea8' }}>2</span>);
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-.prod-btn-primary {
-  @ds-button(contained primary);
-  flex: 1;
-  padding: density(3);
-}`}</code>
+<span style={{ color: '#9cdcfe' }}>.prod-btn-primary</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#c586c0' }}>@ds-button</span>(<span style={{ color: '#9cdcfe' }}>contained primary</span>);
+  <span style={{ color: '#9cdcfe' }}>flex</span>: <span style={{ color: '#b5cea8' }}>1</span>;
+  <span style={{ color: '#9cdcfe' }}>padding</span>: <span style={{ color: '#ce9178' }}>density</span>(<span style={{ color: '#b5cea8' }}>3</span>);
+<span style={{ color: '#d4d4d4' }}>&#125;</span>`}</code>
               </pre>
               <div className="code-header" style={{ borderTop: '1px solid #333' }}>
                 <span className="code-lang">HeroCard.tsx</span>
               </div>
               <pre>
-                <code>{`export function HeroCard() {
-  return (
-    <div className="prod-card">
-      <div className="prod-header">
-        <div className="prod-avatar">JD</div>
-        <div className="prod-info">
-          <h3 className="prod-title">Jane Doe</h3>
-          <p className="prod-subtitle">Senior UX Engineer</p>
-        </div>
-      </div>
-      {/* ...stats & actions... */}
-    </div>
+                <code><span style={{ color: '#9cdcfe' }}>export</span> <span style={{ color: '#9cdcfe' }}>function</span> <span style={{ color: '#dcdcaa' }}>HeroCard</span>() <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>return</span> (
+    <span style={{ color: '#569cd6' }}>&lt;div</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-card"</span><span style={{ color: '#569cd6' }}>&gt;</span>
+      <span style={{ color: '#569cd6' }}>&lt;div</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-header"</span><span style={{ color: '#569cd6' }}>&gt;</span>
+        <span style={{ color: '#569cd6' }}>&lt;div</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-avatar"</span><span style={{ color: '#569cd6' }}>&gt;</span>JD<span style={{ color: '#569cd6' }}>&lt;/div&gt;</span>
+        <span style={{ color: '#569cd6' }}>&lt;div</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-info"</span><span style={{ color: '#569cd6' }}>&gt;</span>
+          <span style={{ color: '#569cd6' }}>&lt;h3</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-title"</span><span style={{ color: '#569cd6' }}>&gt;</span>Jane Doe<span style={{ color: '#569cd6' }}>&lt;/h3&gt;</span>
+          <span style={{ color: '#569cd6' }}>&lt;p</span> <span style={{ color: '#9cdcfe' }}>className</span>=<span style={{ color: '#ce9178' }}>"prod-subtitle"</span><span style={{ color: '#569cd6' }}>&gt;</span>Senior UX Engineer<span style={{ color: '#569cd6' }}>&lt;/p&gt;</span>
+        <span style={{ color: '#569cd6' }}>&lt;/div&gt;</span>
+      <span style={{ color: '#569cd6' }}>&lt;/div&gt;</span>
+      {<span style={{ color: '#6a9955' }}>/* ...stats &amp; actions... */</span>}
+    <span style={{ color: '#569cd6' }}>&lt;/div&gt;</span>
   );
-}`}</code>
-              </pre>
-            </>
-          )}
-
-          {activeTab === 'tailwind' && (
-            <>
-              <div className="code-header">
-                <span className="code-lang">HeroCard (Tailwind)</span>
-              </div>
-              <div style={{ padding: '1rem', color: '#aaa', fontSize: '0.9rem', borderBottom: '1px solid #333' }}>
-                {`/* Real-world comparison: UXDSL tokens are responsive by default.
-   Matching that behavior in Tailwind requires 3x the utility classes. */`}
-              </div>
-              <pre>
-                <code>{`<div class="
-  flex flex-col mx-auto
-  w-full md:w-[480px]
-  
-  /* Responsive Spacing (matching density tokens) */
-  gap-4 md:gap-5 xl:gap-6
-  p-3 md:p-6 xl:p-7
-  
-  /* Theming & Dark Mode */
-  bg-white dark:bg-slate-900
-  rounded-xl shadow-md
-  border border-gray-200 dark:border-gray-700
-">
-  <div class="
-    flex flex-col sm:flex-row 
-    items-center text-center sm:text-left 
-    gap-3 md:gap-4 xl:gap-5
-  ">
-    <div class="
-      w-20 h-20 rounded-full 
-      bg-blue-600 text-white 
-      flex items-center justify-center 
-      text-2xl font-bold shadow-lg 
-      border-4 border-white dark:border-slate-900
-    ">JD</div>
-    
-    <div class="flex flex-col gap-2">
-      <h3 class="text-xl font-bold text-gray-900 dark:text-white">
-        Jane Doe
-      </h3>
-      <p class="text-sm uppercase tracking-wider font-semibold text-gray-500">
-        Senior UX Engineer
-      </p>
-    </div>
-  </div>
-
-  <div class="
-    flex justify-around 
-    py-3 md:py-4 xl:py-5
-    bg-gray-50 dark:bg-slate-800 
-    rounded-lg border-y border-gray-200
-  ">
-    <!-- Stats... -->
-  </div>
-
-  <div class="flex flex-col sm:flex-row gap-4">
-    <button class="
-      flex-1 
-      p-3 md:p-4 xl:p-5
-      bg-blue-600 hover:bg-blue-700 
-      text-white rounded-lg font-medium
-    ">Follow</button>
-  </div>
-</div>`}</code>
+<span style={{ color: '#d4d4d4' }}>&#125;</span>`}</code>
               </pre>
             </>
           )}
