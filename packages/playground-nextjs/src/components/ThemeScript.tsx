@@ -5,7 +5,7 @@ import { useServerInsertedHTML } from 'next/navigation'
 interface Theme {
   modes?: {
     dark?: {
-      palette?: Record<string, string>
+      palette?: Record<string, string | Record<string, string>>
     }
   }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
