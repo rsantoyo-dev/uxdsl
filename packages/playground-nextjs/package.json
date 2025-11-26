@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-playground-nextjs",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "private": true,
   "scripts": {
     "local-deps": "npm install --prefix ../uxdsl-cli && npm install --prefix ../postcss-uxdsl && npm run build --prefix ../postcss-uxdsl",
