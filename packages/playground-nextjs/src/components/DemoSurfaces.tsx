@@ -168,7 +168,7 @@ export default function DemoSurfaces() {
         <h3 className="demo-title">Surfaces</h3>
         <p className="demo-subtitle">
           Surfaces are intelligent, composite containers that manage background, border, shadow, and spacing.
-          They use a flexible "Smart Mixin" syntax to apply responsive defaults while allowing granular control over density, radius, and depth.
+          They use a flexible &quot;Smart Mixin&quot; syntax to apply responsive defaults while allowing granular control over density, radius, and depth.
         </p>
         <div className="density-code-snippet">
           .card &#123; @ds-surface(contained) &#125;

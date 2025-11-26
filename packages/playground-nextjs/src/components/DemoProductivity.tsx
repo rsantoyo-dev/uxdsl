@@ -146,46 +146,46 @@ export default function DemoProductivity() {
                 {`/* Standard SCSS requires manual media queries and theme maps */`}
               </div>
               <pre>
-                <code>{`.prod-card {
-  display: flex;
-  flex-direction: column;
-  gap: $spacing-4;
-  margin: 0 auto;
+                <code><span style={{ color: '#9cdcfe' }}>.prod-card</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>display</span>: <span style={{ color: '#569cd6' }}>flex</span>;
+  <span style={{ color: '#9cdcfe' }}>flex-direction</span>: <span style={{ color: '#569cd6' }}>column</span>;
+  <span style={{ color: '#9cdcfe' }}>gap</span>: <span style={{ color: '#4fc1ff' }}>$spacing-4</span>;
+  <span style={{ color: '#9cdcfe' }}>margin</span>: <span style={{ color: '#b5cea8' }}>0 auto</span>;
   
-  // Responsive width & padding
-  width: 100%;
-  padding: $spacing-3;
+  <span style={{ color: '#6a9955' }}>// Responsive width & padding</span>
+  <span style={{ color: '#9cdcfe' }}>width</span>: <span style={{ color: '#b5cea8' }}>100%</span>;
+  <span style={{ color: '#9cdcfe' }}>padding</span>: <span style={{ color: '#4fc1ff' }}>$spacing-3</span>;
   
-  @media (min-width: 768px) {
-    width: 480px;
-    padding: $spacing-5;
-  }
+  <span style={{ color: '#c586c0' }}>@media</span> (<span style={{ color: '#9cdcfe' }}>min-width</span>: <span style={{ color: '#b5cea8' }}>768px</span>) <span style={{ color: '#d4d4d4' }}>&#123;</span>
+    <span style={{ color: '#9cdcfe' }}>width</span>: <span style={{ color: '#b5cea8' }}>480px</span>;
+    <span style={{ color: '#9cdcfe' }}>padding</span>: <span style={{ color: '#4fc1ff' }}>$spacing-5</span>;
+  <span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-  // Theming
-  background-color: map-get($colors, surface-main);
-  border-radius: $radius-3;
-  box-shadow: $shadow-2;
+  <span style={{ color: '#6a9955' }}>// Theming</span>
+  <span style={{ color: '#9cdcfe' }}>background-color</span>: <span style={{ color: '#dcdcaa' }}>map-get</span>(<span style={{ color: '#4fc1ff' }}>$colors</span>, <span style={{ color: '#ce9178' }}>surface-main</span>);
+  <span style={{ color: '#9cdcfe' }}>border-radius</span>: <span style={{ color: '#4fc1ff' }}>$radius-3</span>;
+  <span style={{ color: '#9cdcfe' }}>box-shadow</span>: <span style={{ color: '#4fc1ff' }}>$shadow-2</span>;
   
-  @media (prefers-color-scheme: dark) {
-    background-color: map-get($colors, surface-dark);
-    border-color: map-get($colors, border-dark);
-  }
-}
+  <span style={{ color: '#c586c0' }}>@media</span> (<span style={{ color: '#9cdcfe' }}>prefers-color-scheme</span>: <span style={{ color: '#ce9178' }}>dark</span>) <span style={{ color: '#d4d4d4' }}>&#123;</span>
+    <span style={{ color: '#9cdcfe' }}>background-color</span>: <span style={{ color: '#dcdcaa' }}>map-get</span>(<span style={{ color: '#4fc1ff' }}>$colors</span>, <span style={{ color: '#ce9178' }}>surface-dark</span>);
+    <span style={{ color: '#9cdcfe' }}>border-color</span>: <span style={{ color: '#dcdcaa' }}>map-get</span>(<span style={{ color: '#4fc1ff' }}>$colors</span>, <span style={{ color: '#ce9178' }}>border-dark</span>);
+  <span style={{ color: '#d4d4d4' }}>&#125;</span>
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-.prod-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: $spacing-3;
+<span style={{ color: '#9cdcfe' }}>.prod-header</span> <span style={{ color: '#d4d4d4' }}>&#123;</span>
+  <span style={{ color: '#9cdcfe' }}>display</span>: <span style={{ color: '#569cd6' }}>flex</span>;
+  <span style={{ color: '#9cdcfe' }}>flex-direction</span>: <span style={{ color: '#569cd6' }}>column</span>;
+  <span style={{ color: '#9cdcfe' }}>align-items</span>: <span style={{ color: '#569cd6' }}>center</span>;
+  <span style={{ color: '#9cdcfe' }}>text-align</span>: <span style={{ color: '#569cd6' }}>center</span>;
+  <span style={{ color: '#9cdcfe' }}>gap</span>: <span style={{ color: '#4fc1ff' }}>$spacing-3</span>;
 
-  @media (min-width: 640px) {
-    flex-direction: row;
-    text-align: left;
-  }
-}
+  <span style={{ color: '#c586c0' }}>@media</span> (<span style={{ color: '#9cdcfe' }}>min-width</span>: <span style={{ color: '#b5cea8' }}>640px</span>) <span style={{ color: '#d4d4d4' }}>&#123;</span>
+    <span style={{ color: '#9cdcfe' }}>flex-direction</span>: <span style={{ color: '#569cd6' }}>row</span>;
+    <span style={{ color: '#9cdcfe' }}>text-align</span>: <span style={{ color: '#569cd6' }}>left</span>;
+  <span style={{ color: '#d4d4d4' }}>&#125;</span>
+<span style={{ color: '#d4d4d4' }}>&#125;</span>
 
-// ... 50+ more lines for stats, buttons, typography ...`}</code>
+<span style={{ color: '#6a9955' }}>// ... 50+ more lines for stats, buttons, typography ...</span>`}</code>
               </pre>
             </>
           )}

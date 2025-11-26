@@ -31,7 +31,7 @@ export default function DemoButtons() {
         <h3 className="demo-title">Buttons</h3>
         <p className="demo-subtitle">
           Buttons are intelligent, interactive elements styled with the <code>@ds-button</code> mixin.
-          They use the same "Smart Mixin" syntax as surfaces, allowing responsive control over density, radius, and depth, with built-in state management.
+          They use the same &quot;Smart Mixin&quot; syntax as surfaces, allowing responsive control over density, radius, and depth, with built-in state management.
         </p>
         <div className="density-code-snippet">
           .btn &#123; @ds-button(contained primary) &#125;
