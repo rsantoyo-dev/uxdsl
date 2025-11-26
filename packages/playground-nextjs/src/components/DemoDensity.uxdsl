@@ -65,7 +65,6 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;
   height: auto;
   overflow-x: auto; /* Enable horizontal scroll */
   overflow-y: hidden;
