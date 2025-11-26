@@ -229,22 +229,94 @@
 }
 
 /* Layout Styles for the Demo */
-.prod-comparison-grid {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.demo-grid-hero {
+  display: grid;
+  grid-template-columns: 1fr;
   gap: density(4);
-  width: 100%;
+  margin-top: density(4);
+}
+
+@media (min-width: 1024px) {
+  .demo-grid-hero {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
 }
 
 .demo-preview {
-  width: 100%;
   display: flex;
   justify-content: center;
   padding: density(4);
   background: palette(surface-subtle);
   border-radius: radius(3);
   border: 1px solid palette(neutral-light);
+}
+
+/* Removed duplicate .demo-code block since it's now defined below with max-width */
+
+.code-header {
+  background: #252526;
+  padding: density(2) density(3);
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+}
+
+.code-lang {
+  font-size: 0.8rem;
+  color: #9cdcfe;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.demo-code pre {
+  margin: 0;
+  padding: density(3);
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.demo-code code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+/* Tabbed Interface Styles */
+.prod-tabs {
+  display: flex;
+  gap: density(2);
+  margin-bottom: density(4);
+  border-bottom: 1px solid palette(neutral-light);
+  padding-bottom: density(2);
+}
+
+.prod-tab-btn {
+  background: none;
+  border: none;
+  padding: density(2) density(4);
+  font-size: 1rem;
+  font-weight: 600;
+  color: palette(text-secondary);
+  cursor: pointer;
+  border-radius: radius(2);
+  transition: all 0.2s ease;
+}
+
+.prod-tab-btn:hover {
+  background: palette(surface-subtle);
+  color: palette(text-primary);
+}
+
+.prod-tab-btn.active {
+  background: palette(primary-light);
+  color: palette(primary-dark);
+}
+
+.prod-comparison-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(4);
 }
 
 .demo-code {
@@ -257,14 +329,5 @@
   border: 1px solid palette(neutral-light);
   box-shadow: shadow(2);
   width: 100%;
-  max-width: 100%; /* Full width for readability */
-}
-
-.demo-code pre {
-  margin: 0;
-  padding: density(3);
-  overflow-x: auto;
-  line-height: 1.5;
-  white-space: pre-wrap; /* Allow long lines to wrap */
-  word-break: break-all; /* Break words if necessary */
+  max-width: 600px; /* Thinner code block */
 }
