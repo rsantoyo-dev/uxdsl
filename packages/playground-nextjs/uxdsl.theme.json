@@ -20,7 +20,8 @@
   "modes": {
     "dark": {
       "palette": {
-        "secondary": { "main": "#ffffff" }
+        "secondary": { "main": "#ffffff" },
+        "neutral": { "main": "#94A3B8", "contrast": "#0F172A" }
       }
     }
   }

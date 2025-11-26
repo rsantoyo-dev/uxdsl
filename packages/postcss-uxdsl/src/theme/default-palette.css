@@ -88,11 +88,11 @@ html { color-scheme: light dark; }
     --ds__palette__secondary-main: var(--ds__color__gray-400);
     --ds__palette__secondary-contrast: var(--ds__color__gray-900);
 
-    /* Neutral: Dark Grays */
-    --ds__palette__neutral-main: var(--ds__color__gray-700);
-    --ds__palette__neutral-light: var(--ds__color__gray-800);
-    --ds__palette__neutral-dark: var(--ds__color__gray-600);
-    --ds__palette__neutral-contrast: var(--ds__color__gray-100);
+    /* Neutral: Light Gray for visibility */
+    --ds__palette__neutral-main: var(--ds__color__gray-400);
+    --ds__palette__neutral-light: var(--ds__color__gray-300);
+    --ds__palette__neutral-dark: var(--ds__color__gray-500);
+    --ds__palette__neutral-contrast: var(--ds__color__gray-900);
 
     --ds__palette__light-main: var(--ds__color__slate-800);
     --ds__palette__light-contrast: var(--ds__color__white);
@@ -116,11 +116,11 @@ html { color-scheme: light dark; }
     --ds__palette__secondary-main: var(--ds__color__gray-400);
     --ds__palette__secondary-contrast: var(--ds__color__gray-900);
 
-    /* Neutral: Dark Grays */
-    --ds__palette__neutral-main: var(--ds__color__gray-700);
-    --ds__palette__neutral-light: var(--ds__color__gray-800);
-    --ds__palette__neutral-dark: var(--ds__color__gray-600);
-    --ds__palette__neutral-contrast: var(--ds__color__gray-100);
+    /* Neutral: Light Gray for visibility */
+    --ds__palette__neutral-main: var(--ds__color__gray-400);
+    --ds__palette__neutral-light: var(--ds__color__gray-300);
+    --ds__palette__neutral-dark: var(--ds__color__gray-500);
+    --ds__palette__neutral-contrast: var(--ds__color__gray-900);
 
     --ds__palette__light-main: var(--ds__color__slate-800);
     --ds__palette__light-contrast: var(--ds__color__white);
