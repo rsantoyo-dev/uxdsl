@@ -273,19 +273,8 @@
 }
 
 .density-card__edit-btn {
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-  background: palette(surface-light);
-  border: 1px solid palette(neutral-light);
-  border-radius: radius(1);
+  @ds-button (outlined secondary 1);
   white-space: nowrap;
-  transition: all 0.2s ease;
-}
-
-.density-card__edit-btn:hover {
-  border-color: palette(primary-main);
-  color: palette(primary-main);
 }
 
 .density-metric-item {

@@ -95,7 +95,6 @@
   --h6-font-family: var(--font-ui-2, var(--font-ui));
   */
 
-
   /* =============================
      Custom spacing scale (1–12)
      ============================= */
@@ -114,6 +113,9 @@
   --space-11: 4.25rem;
   --space-12: 5rem;
   */
+
+  /* Radius overrides */
+  --radius-full: 9999px;
 }
 
 /* =============================

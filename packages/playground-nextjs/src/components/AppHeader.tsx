@@ -25,14 +25,16 @@ export default function AppHeader() {
 
   return (
     <header className="app-header">
-      <div className="app-header__inner">
-        <h1 className="app-header__title">UXDSL</h1>
-        <span className="app-header__subtitle">UX - design system language</span>
-      </div>
-      <div className="app-header__actions">
-        <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
-          {isDark ? <Moon size={18} /> : <Sun size={18} />}
-        </button>
+      <div className="app-header__container">
+        <div className="app-header__inner">
+          <h1 className="app-header__title">UXDSL</h1>
+          <span className="app-header__subtitle">UX - design system language</span>
+        </div>
+        <div className="app-header__actions">
+          <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+            {isDark ? <Moon size={18} /> : <Sun size={18} />}
+          </button>
+        </div>
       </div>
     </header>
   )

@@ -11,46 +11,50 @@
 }
 
 .prod-card {
-  /* 1. Responsive Layout & Spacing */
+  /* Complex Hero Card */
+  @ds-surface(contained);
+  
   display: flex;
   flex-direction: column;
-  gap: density(2);
-  padding: density(3);
-
-  /* 2. Theming */
-  background: palette(surface-main);
-  border: 1px solid palette(neutral-light);
-  border-radius: radius(2);
-  box-shadow: shadow(1);
+  gap: density(4);
+  
+  /* Responsive Sizing & Spacing */
+  width: xs(100%) md(480px);
+  padding: xs(density(3)) md(density(5));
+  margin: 0 auto;
 }
 
 .prod-header {
   display: flex;
+  flex-direction: xs(column) sm(row);
   align-items: center;
-  gap: density(2);
+  text-align: xs(center) sm(left);
+  gap: density(3);
 }
 
 .prod-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: rounded(full);
+  width: 80px;
+  height: 80px;
+  border-radius: radius(full);
   background: palette(primary-main);
   color: palette(primary-contrast);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  font-size: 1.2rem;
+  font-size: 2rem;
+  box-shadow: shadow(2);
+  border: 4px solid palette(surface-main);
 }
 
-.prod-content {
+.prod-info {
   display: flex;
   flex-direction: column;
   gap: density(1);
 }
 
 .prod-title {
-  @ds-typo(h6);
+  @ds-typo(h4);
   color: palette(text-primary);
   margin: 0;
 }
@@ -59,28 +63,59 @@
   @ds-typo(body-sm);
   color: palette(text-secondary);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 600;
 }
 
-.prod-text {
-  @ds-typo(body);
-  color: palette(text-secondary);
+.prod-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: density(3) 0;
+  border-top: 1px solid palette(neutral-light);
+  border-bottom: 1px solid palette(neutral-light);
+  background: palette(surface-subtle);
+  border-radius: radius(2);
+}
+
+.prod-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(1);
+}
+
+.prod-stat-val {
+  @ds-typo(h5);
+  color: palette(primary-main);
   margin: 0;
+  line-height: 1;
+}
+
+.prod-stat-label {
+  @ds-typo(caption);
+  color: palette(text-secondary);
+  font-weight: 600;
 }
 
 .prod-actions {
   display: flex;
-  gap: density(1);
-  margin-top: density(1);
+  flex-direction: xs(column) sm(row);
+  gap: density(2);
 }
 
 .prod-btn-primary {
   @ds-button(contained primary);
-  width: 100%;
+  flex: 1;
+  justify-content: center;
+  padding: density(3);
 }
 
 .prod-btn-secondary {
-  @ds-button(outlined neutral);
-  width: 100%;
+  @ds-button(outlined secondary);
+  flex: 1;
+  justify-content: center;
+  padding: density(3);
 }
 
 .prod-code-block {
@@ -112,21 +147,31 @@
 .prod-tabs {
   display: flex;
   gap: density(2);
-  margin-bottom: density(2);
+  margin-bottom: density(4);
   border-bottom: 1px solid palette(neutral-light);
-  padding-bottom: density(1);
+  padding-bottom: density(2);
 }
 
 .prod-tab-btn {
-  @ds-button (flat neutral);
-  border-bottom: 2px solid transparent;
-  border-radius: radius(1) radius(1) 0 0;
+  background: none;
+  border: none;
+  padding: density(2) density(4);
+  font-size: 1rem;
+  font-weight: 600;
+  color: palette(text-secondary);
+  cursor: pointer;
+  border-radius: radius(2);
+  transition: all 0.2s ease;
+}
+
+.prod-tab-btn:hover {
+  background: palette(surface-subtle);
+  color: palette(text-primary);
 }
 
 .prod-tab-btn.active {
-  @ds-button (flat primary);
-  border-bottom-color: palette(primary-main);
-  background: palette(primary-main, 0.1);
+  background: palette(primary-light);
+  color: palette(primary-dark);
 }
 
 .prod-code-section {
@@ -181,4 +226,108 @@
   @ds-input(outlined neutral);
   /* Responsive font size explicitly */
   font-size: xs(0.875rem) md(1rem);
+}
+
+/* Layout Styles for the Demo */
+.demo-grid-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: density(4);
+  margin-top: density(4);
+}
+
+@media (min-width: 1024px) {
+  .demo-grid-hero {
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+}
+
+.demo-preview {
+  display: flex;
+  justify-content: center;
+  padding: density(4);
+  background: palette(surface-subtle);
+  border-radius: radius(3);
+  border: 1px solid palette(neutral-light);
+}
+
+/* Removed duplicate .demo-code block since it's now defined below with max-width */
+
+.code-header {
+  background: #252526;
+  padding: density(2) density(3);
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+}
+
+.code-lang {
+  font-size: 0.8rem;
+  color: #9cdcfe;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.demo-code pre {
+  margin: 0;
+  padding: density(3);
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+.demo-code code {
+  font-family: 'Fira Code', 'Consolas', monospace;
+}
+
+/* Tabbed Interface Styles */
+.prod-tabs {
+  display: flex;
+  gap: density(2);
+  margin-bottom: density(4);
+  border-bottom: 1px solid palette(neutral-light);
+  padding-bottom: density(2);
+}
+
+.prod-tab-btn {
+  background: none;
+  border: none;
+  padding: density(2) density(4);
+  font-size: 1rem;
+  font-weight: 600;
+  color: palette(text-secondary);
+  cursor: pointer;
+  border-radius: radius(2);
+  transition: all 0.2s ease;
+}
+
+.prod-tab-btn:hover {
+  background: palette(surface-subtle);
+  color: palette(text-primary);
+}
+
+.prod-tab-btn.active {
+  background: palette(primary-light);
+  color: palette(primary-dark);
+}
+
+.prod-comparison-grid {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(4);
+}
+
+.demo-code {
+  background: #1e1e1e;
+  border-radius: radius(3);
+  overflow: hidden;
+  color: #d4d4d4;
+  font-family: monospace;
+  font-size: 0.9rem;
+  border: 1px solid palette(neutral-light);
+  box-shadow: shadow(2);
+  width: 100%;
+  max-width: 600px; /* Thinner code block */
 }

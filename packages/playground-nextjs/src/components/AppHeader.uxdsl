@@ -1,13 +1,20 @@
 .app-header {
   background: palette(primary-main);
-  padding: density(2) density(4);
+  padding: density(2) 0;
   color: palette(primary-contrast);
   border-bottom: border(1) solid palette(primary-dark);
   /* Remove top rounded corners, keep bottom square or slightly rounded if desired, but user asked to remove rounder from top */
   border-radius: 0; 
+}
+
+.app-header__container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 xs(space(2)) md(space(4));
   display: flex;
   justify-content: space-between;
   align-items: center;
+  width: 100%;
 }
 
 .app-header__inner {
@@ -17,7 +24,7 @@
 }
 
 .app-header__title {
-  @ds-typo(h4);
+  @ds-typo (h4);
   margin: 0;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -42,7 +49,7 @@
   background: palette(primary-dark);
   border: 1px solid palette(primary-light);
   color: palette(primary-contrast);
-  padding: density(1.5);
+  padding: density(2);
   border-radius: radius(full); /* Circle button looks nice for icons */
   cursor: pointer;
   transition: all 0.2s ease;

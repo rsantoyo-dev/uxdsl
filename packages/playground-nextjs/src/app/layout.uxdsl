@@ -1,5 +1,7 @@
 /* Global layout primitives for Next.js app */
 
+*, *::before, *::after { box-sizing: border-box; }
+
 html, body { min-height: 100%; }
 body {
   margin: 0;

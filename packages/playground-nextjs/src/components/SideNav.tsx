@@ -11,7 +11,6 @@ const links = [
   { href: '/typography', label: 'Typography' },
   { href: '/spacing', label: 'Spacing' },
   { href: '/densities', label: 'Densities' },
-  { href: '/theming', label: 'Theming' },
   { href: '/surfaces', label: 'Surfaces' },
   { href: '/buttons', label: 'Buttons' },
   { href: '/inputs', label: 'Inputs' },

@@ -1,19 +1,21 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 
 export default function DemoProductivity() {
-  const [activeTab, setActiveTab] = useState<'demo' | 'uxdsl' | 'tailwind' | 'scss'>('demo')
+  const [activeTab, setActiveTab] = useState<'uxdsl' | 'tailwind' | 'scss'>('uxdsl')
 
   return (
-    <div className="prod-container" style={{ display: 'block' }}>
-      <div className="prod-tabs">
-        <button 
-          className={`prod-tab-btn ${activeTab === 'demo' ? 'active' : ''}`}
-          onClick={() => setActiveTab('demo')}
-        >
-          Live Demo
-        </button>
+    <section className="demo-section">
+      <div className="demo-header">
+        <h2>Developer Productivity</h2>
+        <p>
+          Write less, achieve more. UXDSL condenses complex styling patterns into semantic, readable macros.
+          The example below demonstrates a complete &quot;Hero Profile Card&quot; with responsive spacing, theming, and typography.
+        </p>
+      </div>
+
+      <div className="prod-tabs" style={{ justifyContent: 'center' }}>
         <button 
           className={`prod-tab-btn ${activeTab === 'uxdsl' ? 'active' : ''}`}
           onClick={() => setActiveTab('uxdsl')}
@@ -34,274 +36,235 @@ export default function DemoProductivity() {
         </button>
       </div>
 
-      {/* Tab Content */}
-      <div className="prod-tab-content">
-      {activeTab === 'demo' && (
-        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+      <div className="prod-comparison-grid">
+        {/* Live Preview (Always Visible) */}
+        <div className="demo-preview">
           <div className="prod-card">
             <div className="prod-header">
               <div className="prod-avatar">JD</div>
-              <div>
-                <h4 className="prod-title">Jane Doe</h4>
-                <p className="prod-subtitle">Senior Engineer</p>
+              <div className="prod-info">
+                <h3 className="prod-title">Jane Doe</h3>
+                <p className="prod-subtitle">Senior UX Engineer</p>
               </div>
             </div>
-            <div className="prod-content">
-              <p className="prod-text">
-                Passionate about design systems and productivity. 
-                Building the future of UI development.
-              </p>
+
+            <div className="prod-stats">
+              <div className="prod-stat">
+                <span className="prod-stat-val">128</span>
+                <span className="prod-stat-label">Projects</span>
+              </div>
+              <div className="prod-stat">
+                <span className="prod-stat-val">4.9</span>
+                <span className="prod-stat-label">Rating</span>
+              </div>
+              <div className="prod-stat">
+                <span className="prod-stat-val">12k</span>
+                <span className="prod-stat-label">Views</span>
+              </div>
             </div>
+
             <div className="prod-actions">
-              <button className="prod-btn-primary">Connect</button>
+              <button className="prod-btn-primary">Follow</button>
               <button className="prod-btn-secondary">Message</button>
             </div>
           </div>
-          <p style={{ textAlign: 'center', marginTop: '1rem', opacity: 0.7, fontSize: '0.9rem' }}>
-            Resize the window to see the card adapt (padding, gaps, font-size) automatically.
-          </p>
-
-          {/* New Responsive Form Demo */}
-          <div className="prod-form">
-            <h4 className="prod-form-title">Responsive Form</h4>
-            <div className="prod-form-row">
-              <div className="prod-input-group">
-                <label className="prod-label">First Name</label>
-                <input className="prod-input" placeholder="John" />
-              </div>
-              <div className="prod-input-group">
-                <label className="prod-label">Last Name</label>
-                <input className="prod-input" placeholder="Doe" />
-              </div>
-            </div>
-            <div className="prod-input-group">
-              <label className="prod-label">Email</label>
-              <input className="prod-input" placeholder="john@example.com" />
-            </div>
-          </div>
         </div>
-      )}
 
-      {activeTab === 'uxdsl' && (
-        <div className="prod-code-section">
-          <div className="prod-code-block">
-            <span className="prod-code-title">Component (JSX)</span>
-            <pre>{`export function UserCard() {
+        {/* Code Snippet (Tabbed) */}
+        <div className="demo-code">
+          {activeTab === 'uxdsl' && (
+            <>
+              <div className="code-header">
+                <span className="code-lang">HeroCard.uxdsl</span>
+              </div>
+              <pre>
+                <code>{`.prod-card {
+  @ds-surface(contained);
+  
+  /* Responsive Layout */
+  display: flex;
+  flex-direction: column;
+  width: xs(100%) md(480px);
+  padding: xs(density(3)) md(density(5));
+  gap: density(4);
+  margin: 0 auto;
+}
+
+.prod-header {
+  display: flex;
+  flex-direction: xs(column) sm(row);
+  align-items: center;
+  text-align: xs(center) sm(left);
+  gap: density(3);
+}
+
+.prod-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: radius(full);
+  background: palette(primary-main);
+  color: palette(primary-contrast);
+  /* ...flex centering... */
+}
+
+.prod-stats {
+  display: flex;
+  justify-content: space-around;
+  padding: density(3) 0;
+  background: palette(surface-subtle);
+  border-radius: radius(2);
+}
+
+.prod-btn-primary {
+  @ds-button(contained primary);
+  flex: 1;
+  padding: density(3);
+}`}</code>
+              </pre>
+              <div className="code-header" style={{ borderTop: '1px solid #333' }}>
+                <span className="code-lang">HeroCard.tsx</span>
+              </div>
+              <pre>
+                <code>{`export function HeroCard() {
   return (
     <div className="prod-card">
-      ...
-    </div>
-  )
-}
-
-export function ResponsiveForm() {
-  return (
-    <div className="prod-form">
-      <div className="prod-form-row">
-        <input className="prod-input" />
-        <input className="prod-input" />
+      <div className="prod-header">
+        <div className="prod-avatar">JD</div>
+        <div className="prod-info">
+          <h3 className="prod-title">Jane Doe</h3>
+          <p className="prod-subtitle">Senior UX Engineer</p>
+        </div>
       </div>
+      {/* ...stats & actions... */}
     </div>
-  )
-}`}</pre>
-          </div>
-          
-          <div className="prod-code-block">
-            <span className="prod-code-title">Styles (.uxdsl)</span>
-            <div className="prod-comment">
-              {`/* 
-  @ds-card & @ds-input: Encapsulate 30+ lines of styles (theming, states, dark mode).
-  density(): Consistent spacing system.
-  xs() md(): Concise responsive syntax.
-  @ds-font: Typography system integration.
-*/`}
-            </div>
-            <pre>{`.prod-card {
-  @ds-card;
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
+  );
+}`}</code>
+              </pre>
+            </>
+          )}
 
-.prod-form {
-  @ds-surface(subtle);
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
-
-.prod-row {
-  display: flex;
-  flex-direction: xs(column) md(row);
-  gap: density(2);
-}
-
-.prod-input {
-  @ds-input(outlined);
-  @ds-font(body-1);
-  width: 100%;
-}`}</pre>
-          </div>
-        </div>
-      )}
-
-      {activeTab === 'tailwind' && (
-        <div className="prod-code-block">
-          <span className="prod-code-title">Tailwind Implementation (HTML)</span>
-          <div className="prod-comment">
-            {`<!-- 
-  "Pro" Tailwind:
-  Functionally identical to the UXDSL example.
-  Requires 40+ utility classes to match 4 UXDSL mixins.
-  Harder to read "at a glance".
--->`}
-          </div>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>
-{`<!-- .prod-card equivalent -->
-<div class="
-  flex flex-col gap-4 
-  p-6 
-  bg-white dark:bg-slate-900 
-  border border-gray-200 dark:border-gray-700 
-  rounded-lg shadow-sm
-">
-  <!-- Content... -->
-</div>
-
-<!-- .prod-form equivalent -->
-<div class="
-  flex flex-col gap-4 
-  p-6 
-  bg-gray-50 dark:bg-slate-800 
-  border border-gray-200 dark:border-gray-700 
-  rounded-lg
-">
+          {activeTab === 'tailwind' && (
+            <>
+              <div className="code-header">
+                <span className="code-lang">HeroCard (Tailwind)</span>
+              </div>
+              <div style={{ padding: '1rem', color: '#aaa', fontSize: '0.9rem', borderBottom: '1px solid #333' }}>
+                {`/* Real-world comparison: UXDSL tokens are responsive by default.
+   Matching that behavior in Tailwind requires 3x the utility classes. */`}
+              </div>
+              <pre>
+                <code>{`<div class="
+  flex flex-col mx-auto
+  w-full md:w-[480px]
   
-  <!-- .prod-row equivalent -->
-  <div class="flex flex-col md:flex-row gap-4">
+  /* Responsive Spacing (matching density tokens) */
+  gap-4 md:gap-5 xl:gap-6
+  p-3 md:p-6 xl:p-7
+  
+  /* Theming & Dark Mode */
+  bg-white dark:bg-slate-900
+  rounded-xl shadow-md
+  border border-gray-200 dark:border-gray-700
+">
+  <div class="
+    flex flex-col sm:flex-row 
+    items-center text-center sm:text-left 
+    gap-3 md:gap-4 xl:gap-5
+  ">
+    <div class="
+      w-20 h-20 rounded-full 
+      bg-blue-600 text-white 
+      flex items-center justify-center 
+      text-2xl font-bold shadow-lg 
+      border-4 border-white dark:border-slate-900
+    ">JD</div>
     
-    <!-- .prod-input equivalent (x2) -->
-    <input class="
-      w-full 
-      px-3 py-2 
-      text-base 
-      bg-white dark:bg-slate-900 
-      text-gray-900 dark:text-white 
-      border border-gray-300 dark:border-gray-600 
-      rounded-md 
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-      transition-colors
-    " />
-    
-    <input class="
-      w-full 
-      px-3 py-2 
-      text-base 
-      bg-white dark:bg-slate-900 
-      text-gray-900 dark:text-white 
-      border border-gray-300 dark:border-gray-600 
-      rounded-md 
-      focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
-      transition-colors
-    " />
-    
+    <div class="flex flex-col gap-2">
+      <h3 class="text-xl font-bold text-gray-900 dark:text-white">
+        Jane Doe
+      </h3>
+      <p class="text-sm uppercase tracking-wider font-semibold text-gray-500">
+        Senior UX Engineer
+      </p>
+    </div>
   </div>
-</div>`}
-          </pre>
-        </div>
-      )}
 
-      {activeTab === 'scss' && (
-        <div className="prod-code-block">
-          <span className="prod-code-title">SCSS / BEM Implementation</span>
-          <div className="prod-comment">
-            {`/* 
-  Standard SCSS approach.
-  Requires manual media queries and variable management.
-*/`}
-          </div>
-          <pre style={{ whiteSpace: 'pre-wrap' }}>
-{`.prod-card {
+  <div class="
+    flex justify-around 
+    py-3 md:py-4 xl:py-5
+    bg-gray-50 dark:bg-slate-800 
+    rounded-lg border-y border-gray-200
+  ">
+    <!-- Stats... -->
+  </div>
+
+  <div class="flex flex-col sm:flex-row gap-4">
+    <button class="
+      flex-1 
+      p-3 md:p-4 xl:p-5
+      bg-blue-600 hover:bg-blue-700 
+      text-white rounded-lg font-medium
+    ">Follow</button>
+  </div>
+</div>`}</code>
+              </pre>
+            </>
+          )}
+
+          {activeTab === 'scss' && (
+            <>
+              <div className="code-header">
+                <span className="code-lang">HeroCard.scss</span>
+              </div>
+              <div style={{ padding: '1rem', color: '#aaa', fontSize: '0.9rem', borderBottom: '1px solid #333' }}>
+                {`/* Standard SCSS requires manual media queries and theme maps */`}
+              </div>
+              <pre>
+                <code>{`.prod-card {
   display: flex;
   flex-direction: column;
+  gap: $spacing-4;
+  margin: 0 auto;
   
-  // Manual responsive spacing
-  padding: $spacing-4;
-  gap: $spacing-3;
+  // Responsive width & padding
+  width: 100%;
+  padding: $spacing-3;
   
   @media (min-width: 768px) {
-    padding: $spacing-6;
-    gap: $spacing-4;
-  }
-  
-  @media (min-width: 1280px) {
-    padding: $spacing-8;
-    gap: $spacing-5;
+    width: 480px;
+    padding: $spacing-5;
   }
 
   // Theming
-  background: $color-surface-main;
-  border: 1px solid $color-neutral-light;
-  border-radius: $radius-lg;
-  box-shadow: $shadow-sm;
+  background-color: map-get($colors, surface-main);
+  border-radius: $radius-3;
+  box-shadow: $shadow-2;
   
-  // Dark mode handling
   @media (prefers-color-scheme: dark) {
-    background: $color-surface-dark-main;
-    border-color: $color-neutral-dark-light;
+    background-color: map-get($colors, surface-dark);
+    border-color: map-get($colors, border-dark);
   }
 }
 
-.prod-form {
+.prod-header {
   display: flex;
   flex-direction: column;
-  margin-top: $spacing-6;
-  padding: $spacing-6;
-  border: 1px solid $color-neutral-light;
-  border-radius: $radius-lg;
-  background: $color-surface-light;
-  
-  // Manual responsive gap
-  gap: $spacing-2;
-  @media (min-width: 768px) {
-    gap: $spacing-4;
-  }
-}
+  align-items: center;
+  text-align: center;
+  gap: $spacing-3;
 
-.prod-form-row {
-  display: flex;
-  // Manual responsive direction
-  flex-direction: column;
-  gap: $spacing-4;
-  
-  @media (min-width: 768px) {
+  @media (min-width: 640px) {
     flex-direction: row;
+    text-align: left;
   }
 }
 
-.prod-input {
-  width: 100%;
-  border: 1px solid $color-neutral;
-  border-radius: $radius-md;
-  padding: $spacing-2 $spacing-3;
-  background: transparent;
-  
-  // Manual responsive font size
-  font-size: 0.875rem;
-  @media (min-width: 768px) {
-    font-size: 1rem;
-  }
-  
-  &:focus {
-    outline: none;
-    border-color: $color-primary;
-    box-shadow: 0 0 0 2px $color-primary-light;
-  }
-}`}
-          </pre>
+// ... 50+ more lines for stats, buttons, typography ...`}</code>
+              </pre>
+            </>
+          )}
         </div>
-      )}
       </div>
-    </div>
+    </section>
   )
 }
