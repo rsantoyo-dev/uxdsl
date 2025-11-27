@@ -3984,7 +3984,7 @@ body {
     padding: var(--space-4);
 }
 }
-/* Logo Container - 100px Centered */
+/* Logo Container - 120px Centered */
 .app-header__inner {
   padding: var(--density-2);
   border-radius: var(--space-2);
@@ -3997,7 +3997,7 @@ body {
   flex-direction: column;
   align-items: center;
   text-align: center;
-  width: 100px;
+  width: 120px;
   gap: 2px;
 }
 @media (min-width: 1024px) {
@@ -4020,6 +4020,7 @@ body {
   line-height: 1;
   letter-spacing: -0.5px;
   color: var(--ds__color__gray-50);
+  white-space: nowrap;
 }
 .app-header__subtitle-text {
   margin-block-start: auto;
@@ -14718,10 +14719,10 @@ body {
   /* Desktop Overrides (Sidebar) */
   padding: var(--density-2);
   border-radius: var(--space-2);
-  background: transparent;
+  background: var(--ds__palette__surface-main);
   color: var(--ds__palette__surface-contrast);
-  border: none;
-  box-shadow: none;
+  border: var(--ds__palette__surface-dark);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
   .side-nav--desktop & {
     position: static;
     width: auto;
@@ -14732,7 +14733,6 @@ body {
     padding: var(--density-3);
     height: auto;
     overflow-y: visible;
-    background: var(--ds__palette__surface-main); /* Ensure opaque */
     
     border: 1px solid var(--ds__color__gray-300);
     border-radius: var(--space-2);

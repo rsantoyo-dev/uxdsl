@@ -77,8 +77,7 @@
     height: auto;
     overflow-y: visible;
     
-    @ds-surface(flat);
-    background: palette(surface-main); /* Ensure opaque */
+    @ds-surface(contained);
     
     border: border(1);
     border-radius: radius(2);
