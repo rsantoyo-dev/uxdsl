@@ -30,5 +30,7 @@
 @import '../components/SideNav.uxdsl';
 @import '../components/DemoProductivity.uxdsl';
 @import '../components/DemoBreakpoints.uxdsl';
+@import '../components/UXDSLCardDemo.uxdsl';
+@import './page.uxdsl';
 
 

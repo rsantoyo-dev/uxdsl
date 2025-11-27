@@ -1,5 +1,5 @@
 .app-header {
-  background: palette(primary-main); /* Revert to primary-main for more vibrant header */
+  background: palette(primary-main);
   padding: 0;
   color: palette(primary-contrast);
   position: relative;
@@ -11,33 +11,44 @@
   margin: 0 auto;
   padding: density(2) xs(space(2)) md(space(4));
   display: flex;
-  flex-direction: row; /* Horizontal layout for top row */
+  flex-direction: row;
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 
-.app-header__inner { /* This was app-header__top-row before */
+/* Logo Container - 100px Centered */
+.app-header__inner {
   display: flex;
   flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100px;
   gap: 2px;
 }
 
-.app-header__title {
-  @ds-typo (h4);
-  margin: 0;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  line-height: 1;
+.app-header__logo-img {
+  display: block;
+  /* Dimensions handled by HTML attr */
 }
 
-.app-header__subtitle {
+.app-header__title-text {
+  @ds-typo (h6);
+  font-weight: 800;
+  margin: 0;
+  line-height: 1;
+  letter-spacing: -0.5px;
+}
+
+.app-header__subtitle-text {
   @ds-typo(caption);
   opacity: 0.8;
   font-weight: 500;
-  letter-spacing: 1px;
+  font-size: 0.5rem; /* Super small */
+  line-height: 1.1;
   text-transform: uppercase;
-  font-size: 0.65rem;
+  letter-spacing: 0.5px;
+  white-space: nowrap; /* Ensure it fits or scales */
 }
 
 .app-header__actions {
@@ -51,21 +62,19 @@
   display: flex;
   align-items: center;
   gap: density(1);
-  background: rgba(255,255,255,0.1); /* Subtle background for visibility */
-  color: palette(primary-contrast); /* Text color from primary palette */
+  background: rgba(255,255,255,0.1);
+  color: palette(primary-contrast);
   padding: 4px 10px;
   border-radius: radius(1);
   font-size: 0.75rem;
   font-family: monospace;
-  /* border: none; Removed border */
   height: 30px;
   width: fit-content;
-  /* margin-top: 0; Removed margin-top */
 }
 
 .bp-monitor__label {
   font-weight: bold;
-  color: palette(primary-contrast); /* Keep contrast */
+  color: palette(primary-contrast);
 }
 
 .bp-monitor__val {

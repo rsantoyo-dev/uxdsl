@@ -1,0 +1,104 @@
+.home-demo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(6);
+  margin-top: density(6);
+}
+
+.home-code {
+  background: #1e1e1e;
+  border-radius: radius(3);
+  overflow: hidden;
+  color: #d4d4d4;
+  font-family: monospace;
+  font-size: 0.85rem;
+  border: 1px solid palette(neutral-light);
+  box-shadow: shadow(2);
+  width: 100%;
+  max-width: 500px;
+}
+
+.code-header {
+  background: #252526;
+  padding: density(2) density(3);
+  border-bottom: 1px solid #333;
+  display: flex;
+  align-items: center;
+}
+
+.code-lang {
+  font-size: 0.75rem;
+  color: #9cdcfe;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.home-code pre {
+  margin: 0;
+  padding: density(3);
+  overflow-x: auto;
+  line-height: 1.5;
+}
+
+/* Mind-Blowing Demo Component Styles */
+.mb-card {
+  /* 1. Theming & Responsive Layout (The Magic) */
+  @ds-surface(contained);
+  width: xs(100%) md(420px);
+  padding: xs(density(3)) md(density(5));
+  gap: density(4);
+  display: flex; flex-direction: column;
+  
+  /* 2. Nested SCSS for Structure */
+  .mb-header { 
+    display: flex; justify-content: space-between; align-items: center;
+    h3 { @ds-typo(h5); margin: 0; }
+  }
+  
+  .mb-badge {
+    @ds-typo(caption);
+    background: palette(success-light, 0.2);
+    color: palette(success-dark);
+    padding: density(1) density(2);
+    border-radius: radius(full);
+    font-weight: 700;
+    margin-left: density(2);
+  }
+
+  .mb-title-group { display: flex; align-items: center; }
+  
+  .mb-status-dot {
+    width: 12px; height: 12px;
+    background: palette(success-main);
+    border-radius: radius(full);
+    box-shadow: 0 0 0 4px palette(success-light, 0.2);
+    animation: pulse 2s infinite;
+  }
+
+  .mb-stat {
+    display: flex; flex-direction: column; gap: density(1); margin-bottom: density(3);
+    .mb-stat-header { display: flex; justify-content: space-between; @ds-typo(caption); font-weight: 600; }
+  }
+
+  .mb-bar {
+    height: 8px;
+    background: palette(neutral-light);
+    border-radius: radius(full);
+    overflow: hidden;
+    div { height: 100%; background: palette(primary-main); border-radius: radius(full); }
+  }
+
+  .mb-action {
+    @ds-button(contained primary);
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@keyframes pulse {
+  0% { box-shadow: 0 0 0 0 palette(success-light, 0.4); }
+  70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); }
+  100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
+}

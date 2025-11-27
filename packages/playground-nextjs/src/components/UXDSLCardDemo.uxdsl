@@ -1,0 +1,111 @@
+.demo-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(6);
+  width: 100%;
+  margin-top: density(4);
+}
+
+.uxdsl-card {
+  @ds-surface (contained);
+  width: xs(100%) md(450px);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-radius: radius(3);
+}
+
+.card-header {
+  background: palette(primary-main);
+  padding: density(6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-size: density(8) density(8);
+}
+
+.logo-circle {
+  @ds-surface (contained);
+  width: density(11);
+  height: density(11);
+  border-radius: radius(full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: color(gray-800)
+
+}
+
+.card-body {
+  padding: density(5);
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  text-align: center;
+}
+
+.card-title {
+  @ds-typo (h4);
+  color: palette(text-primary);
+}
+
+.card-desc {
+  @ds-typo (body);
+  color: palette(text-secondary);
+}
+
+.card-actions {
+  padding: density(4);
+  background: palette(surface-light);
+  border-top: border(1);
+  display: flex;
+  gap: density(2);
+  flex-direction: xs(column) sm(row);
+}
+
+.btn-primary {
+  @ds-button (contained primary);
+  flex: 1;
+  justify-content: center;
+}
+
+.btn-secondary {
+  @ds-button (outlined neutral);
+  flex: 1;
+  justify-content: center;
+  background: palette(surface-main);
+}
+
+.demo-code-block {
+  width: 100%;
+  max-width: 500px;
+  background: #1e1e1e;
+  border-radius: radius(2);
+  overflow: hidden;
+  border: border(1);
+  box-shadow: shadow(2);
+}
+
+.code-header {
+  background: #252526;
+  padding: density(2) density(3);
+  border-bottom: border(1);
+  display: flex;
+  align-items: center;
+}
+
+.code-file {
+  font-family: monospace;
+  font-size: 0.8rem;
+  color: palette(neutral-light);
+  font-weight: bold;
+}
+
+.code-content {
+@ds-typo (pre);
+  padding: density(4);
+  overflow-x: auto;
+  color: palette(neutral-light);
+}

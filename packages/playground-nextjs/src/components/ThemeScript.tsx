@@ -1,6 +1,4 @@
-'use client'
-
-import { useServerInsertedHTML } from 'next/navigation'
+import React from 'react'
 
 interface Theme {
   modes?: {
@@ -13,57 +11,53 @@ interface Theme {
 }
 
 export default function ThemeScript({ theme }: { theme: Theme }) {
-  useServerInsertedHTML(() => {
-    if (!theme) return null
-    
-    const cssVars: string[] = []
-    
-    if (theme.palette) {
-      Object.entries(theme.palette).forEach(([key, val]) => {
-        if (typeof val === 'object' && val !== null) {
-          Object.entries(val).forEach(([subKey, subVal]) => {
-            cssVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
-          })
-        } else {
-          cssVars.push(`--ds__palette__${key}: ${val}`)
-        }
-      })
-    }
-    if (theme.spacing) {
-      Object.entries(theme.spacing).forEach(([key, val]) => {
-        cssVars.push(`--${key}: ${val}`)
-      })
-    }
-    if (theme.typography) {
-      Object.entries(theme.typography).forEach(([key, val]) => {
-        cssVars.push(`--${key}: ${val}`)
-      })
-    }
+  if (!theme) return null
+  
+  const cssVars: string[] = []
+  
+  if (theme.palette) {
+    Object.entries(theme.palette).forEach(([key, val]) => {
+      if (typeof val === 'object' && val !== null) {
+        Object.entries(val).forEach(([subKey, subVal]) => {
+          cssVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
+        })
+      } else {
+        cssVars.push(`--ds__palette__${key}: ${val}`)
+      }
+    })
+  }
+  if (theme.spacing) {
+    Object.entries(theme.spacing).forEach(([key, val]) => {
+      cssVars.push(`--${key}: ${val}`)
+    })
+  }
+  if (theme.typography) {
+    Object.entries(theme.typography).forEach(([key, val]) => {
+      cssVars.push(`--${key}: ${val}`)
+    })
+  }
 
-    let cssContent = `:root { ${cssVars.join('; ')} }`
+  let cssContent = `:root { ${cssVars.join('; ')} }`
 
-    if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {
-      const darkVars: string[] = []
-      Object.entries(theme.modes.dark.palette).forEach(([key, val]) => {
-        if (typeof val === 'object' && val !== null) {
-          Object.entries(val).forEach(([subKey, subVal]) => {
-            darkVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
-          })
-        } else {
-          darkVars.push(`--ds__palette__${key}: ${val}`)
-        }
-      })
-      cssContent += ` @media (prefers-color-scheme: dark) { :root { ${darkVars.join('; ')} } }`
-      cssContent += ` :root[data-theme='dark'] { ${darkVars.join('; ')} }`
-    }
+  if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {
+    const darkVars: string[] = []
+    Object.entries(theme.modes.dark.palette).forEach(([key, val]) => {
+      if (typeof val === 'object' && val !== null) {
+        Object.entries(val).forEach(([subKey, subVal]) => {
+          darkVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
+        })
+      } else {
+        darkVars.push(`--ds__palette__${key}: ${val}`)
+      }
+    })
+    cssContent += ` @media (prefers-color-scheme: dark) { :root { ${darkVars.join('; ')} } }`
+    cssContent += ` :root[data-theme='dark'] { ${darkVars.join('; ')} }`
+  }
 
-    return (
-      <style
-        id="uxdsl-ssr-theme"
-        dangerouslySetInnerHTML={{ __html: cssContent }}
-      />
-    )
-  })
-
-  return null
+  return (
+    <style
+      id="uxdsl-ssr-theme"
+      dangerouslySetInnerHTML={{ __html: cssContent }}
+    />
+  )
 }

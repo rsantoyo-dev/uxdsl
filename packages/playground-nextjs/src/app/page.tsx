@@ -1,100 +1,37 @@
-import ButtonDemo from '@/components/ButtonDemo'
-import CardDemo from '@/components/CardDemo'
-import DemoPalette from '@/components/DemoPalette'
-import DemoSurfaces from '@/components/DemoSurfaces'
-import DemoColors from '@/components/DemoColors'
-import DemoTypography from '@/components/DemoTypography'
-import DemoSpacing from '@/components/DemoSpacing'
-import InputDemo from '@/components/InputDemo'
+import UXDSLCardDemo from '../components/UXDSLCardDemo'
+
+export const dynamic = 'force-dynamic'
 
 export default function Home() {
   return (
     <main className="main">
       <div className="container">
         <header className="header">
-          <h1 className="title">UXDSL Next.js Playground</h1>
+          <h1 className="title">UX-DSL</h1>
           <p className="subtitle">
-            UXDSL styling in Next.js with SSR support - No Tailwind, pure design system
+            Design System Language
+            <br />
+            <span style={{ opacity: 0.7, fontSize: '0.9em' }}>Next.js Live Demo</span>
           </p>
         </header>
 
         <section id="welcome" className="section">
-          <h2 className="section-title">Welcome to UXDSL</h2>
-          <p>This playground demonstrates UXDSL working in Next.js with full SSR support.</p>
-          <p>UXDSL is a lightweight CSS DSL that provides design system features, runtime theming, and responsive utilities without requiring Tailwind or other CSS frameworks.</p>
+          <div className="welcome-card">
+            <p className="welcome-text">
+              <strong>UX-DSL</strong> is a PostCSS-based design system language that supercharges your productivity by embedding responsive and theme-aware tokens directly into your workflow.
+            </p>
+            <p className="welcome-text">
+              By combining a pleasant, CSS-like syntax with the raw power of SCSS, it delivers a developer experience that is both intuitive and robust. UX-DSL compiles at build time for lightning-fast, zero-runtime-overhead performance, while a dedicated runtime plugin enables instant token updates for dynamic theming.
+            </p>
+            <p className="welcome-text">
+              It ensures consistent design constraints where you need them—handling typography, spacing, and surfaces automatically—without sacrificing the creative liberty and advanced features that SCSS offers.
+            </p>
+          </div>
         </section>
 
-        <section id="features" className="section">
-          <h2 className="section-title">Features</h2>
-          <ul>
-            <li>🎨 Design system tokens and variables</li>
-            <li>📱 Responsive breakpoints and utilities</li>
-            <li>🎯 Component-based styling with @ds-button, @ds-surface, @ds-typo</li>
-            <li>⚡ Optimized PostCSS processing</li>
-            <li>🔧 TypeScript support</li>
-            <li>🚀 SSR-compatible with Next.js</li>
-          </ul>
-        </section>
-
-        <section id="colors" className="section">
-          <h2 className="section-title">Colors</h2>
-          <DemoColors />
-        </section>
-
-        <section id="palette" className="section">
-          <h2 className="section-title">Palette</h2>
-          <DemoPalette />
-        </section>
-
-        <section id="surfaces" className="section">
-          <h2 className="section-title">Surfaces</h2>
-          <DemoSurfaces />
-        </section>
-
-        <section id="typography" className="section">
-          <h2 className="section-title">Typography</h2>
-          <DemoTypography />
-        </section>
-
-        <section id="spacing" className="section">
-          <h2 className="section-title">Spacing</h2>
-          <DemoSpacing />
-        </section>
-
-        <section id="buttons" className="section">
-          <h2 className="section-title">Buttons</h2>
-          <ButtonDemo />
-        </section>
-
-        <section id="inputs" className="section">
-          <h2 className="section-title">Inputs</h2>
-          <InputDemo />
-        </section>
-
-        <section id="cards" className="section">
-          <h2 className="section-title">Cards</h2>
-          <CardDemo />
-        </section>
-
-        <section id="productivity" className="section">
-          <h2 className="section-title">Productivity Challenge</h2>
-          <p style={{ marginBottom: '1rem' }}>
-            Compare UXDSL against Tailwind CSS and see how much code you can save.
-          </p>
-          <a href="/productivity" className="prod-btn-primary" style={{ display: 'inline-block', width: 'auto', textDecoration: 'none' }}>
-            View Comparison Demo
-          </a>
-        </section>
-
-        <section id="getting-started" className="section">
-          <h2 className="section-title">Getting Started</h2>
-          <p>To use UXDSL in your project:</p>
-          <ol>
-            <li>Install the postcss-uxdsl plugin</li>
-            <li>Configure PostCSS to use the plugin</li>
-            <li>Import your .uxdsl style files</li>
-            <li>Use @ds-* at-rules for components and utilities</li>
-          </ol>
+        <section className="section">
+          <h2 style={{ textAlign: 'center', marginBottom: '2rem', opacity: 0.9 }}>See it in Action</h2>
+          <UXDSLCardDemo />
         </section>
       </div>
     </main>

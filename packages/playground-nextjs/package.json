@@ -21,12 +21,14 @@
     "postcss-uxdsl": "file:../postcss-uxdsl",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-syntax-highlighter": "^16.1.0",
     "sass": "^1.94.0"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
+    "@types/react-syntax-highlighter": "^15.5.13",
     "concurrently": "^8.2.2",
     "css-loader": "^7.1.2",
     "eslint": "^8.0.0",

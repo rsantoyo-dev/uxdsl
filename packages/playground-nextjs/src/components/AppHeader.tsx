@@ -52,8 +52,14 @@ export default function AppHeader() {
     <header className="app-header">
       <div className="app-header__container">
         <div className="app-header__inner">
-          <h1 className="app-header__title">UXDSL</h1>
-          <span className="app-header__subtitle">UX - design system language</span>
+          <img 
+            src="/logo-uxdsl.png" 
+            alt="UXDSL Logo" 
+            className="app-header__logo-img"
+            width={60}
+            height={60}
+          />
+          <div className="app-header__title-text">UX-DSL</div>
         </div>
         
         <div className="app-header__actions">
