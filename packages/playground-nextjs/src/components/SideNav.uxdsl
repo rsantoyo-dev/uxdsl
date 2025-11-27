@@ -1,77 +1,108 @@
-/* Burger Button (Mobile Only) */
+/* SideNav Styles - JS Driven Responsiveness */
+
+/* Burger Button */
 .side-nav__burger {
-  /* Use library button style */
   @ds-button(outlined);
   
-  display: xs(flex) md(none);
+  display: flex; /* Mobile default */
   align-items: center;
   justify-content: center;
-  padding: density(2); /* Faster/tighter padding */
+  padding: density(2);
   margin-bottom: space(2);
   width: fit-content;
+
+  /* Hide on desktop */
+  .side-nav--desktop & {
+    display: none;
+  }
 }
 
-/* Backdrop (Mobile Only) */
+/* Backdrop */
 .side-nav__backdrop {
-  display: xs(block) md(none);
+  display: block; /* Mobile default */
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.5);
   z-index: 99;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.15s ease; /* Faster animation */
-}
-.side-nav__backdrop.is-open {
-  opacity: 1;
-  pointer-events: auto;
+  transition: opacity 0.15s ease;
+
+  &.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* Hide on desktop */
+  .side-nav--desktop & {
+    display: none;
+  }
 }
 
 /* Menu Container */
 .side-nav__menu {
-  /* Mobile: Fixed Drawer */
-  position: xs(fixed) md(static);
-  top: xs(0) md(auto);
-  left: xs(0) md(auto);
-  bottom: xs(0) md(auto);
-  width: xs(280px) md(auto);
-  z-index: xs(100) md(auto);
+  /* Mobile Defaults (Drawer) */
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 280px;
+  z-index: 100;
+  transform: translateX(-100%);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
   
-  /* Mobile: Off-canvas transition */
-  transform: xs(translateX(-100%)) md(none);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1); /* Faster animation */
-
-  /* Desktop: Reset styles & Sidebar look */
-  padding: xs(space(4)) md(space(3));
-  height: xs(100%) md(auto);
+  /* Shared Styles */
+  background: palette(surface-main);
+  
+  /* Mobile Styles */
+  border-right: border(1, palette(neutral-dark, 0.1));
+  box-shadow: shadow(3);
+  padding: space(4);
+  height: 100%;
   overflow-y: auto;
 
-  @ds-surface(flat);
-  
-  /* Ensure background is opaque on mobile (overrides flat's transparent) */
-  background: palette(surface-main);
+  &.is-open {
+    transform: translateX(0);
+  }
 
-  border: xs(none) md(border(1, palette(neutral-dark, 0.15)));
-  border-right: xs(border(1, palette(neutral-dark, 0.1))) md(border(1, palette(neutral-dark, 0.15)));
-  border-radius: xs(0) md(radius(2));
-  box-shadow: xs(shadow(3)) md(none);
+  /* Desktop Overrides (Sidebar) */
+  .side-nav--desktop & {
+    position: static;
+    width: auto;
+    z-index: auto;
+    transform: none;
+    
+    /* Desktop Styles */
+    padding: space(3);
+    height: auto;
+    overflow-y: visible;
+    
+    @ds-surface(flat);
+    background: palette(surface-main); /* Ensure opaque */
+    
+    border: border(1, palette(neutral-dark, 0.15));
+    border-radius: radius(2);
+    box-shadow: none;
+  }
 }
 
-.side-nav__menu.is-open {
-  transform: translateX(0);
-}
-
-/* Mobile Header (Title + Close) */
+/* Header (Mobile Only) */
 .side-nav__header {
-  display: xs(flex) md(none);
+  display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: space(4);
+
+  .side-nav--desktop & {
+    display: none;
+  }
 }
+
 .side-nav__title {
   @ds-typo(h5);
   margin: 0;
 }
+
 .side-nav__close {
   background: transparent;
   border: none;
@@ -81,13 +112,13 @@
   padding: space(1);
 }
 
-/* Section & List Styles */
+/* List Styles */
 .side-nav__section + .side-nav__section {
   margin-top: space(4);
 }
 
 .side-nav__section-title {
-  @ds-typo (h5);
+  @ds-typo(h5);
   margin: 0 0 space(2) 0;
 }
 
@@ -100,7 +131,7 @@
 }
 
 .side-nav__link {
-  @ds-typo (body);
+  @ds-typo(body);
   text-decoration: none;
   color: palette(surface-contrast, 0.8);
   padding: space(1) space(2);

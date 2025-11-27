@@ -4,6 +4,7 @@ import AppHeader from '@/components/AppHeader'
 import SideNav from '@/components/SideNav'
 import ThemeProvider from '@/components/ThemeProvider'
 import ThemeScript from '@/components/ThemeScript'
+import { BreakpointsProvider } from '@/components/BreakpointsProvider'
 import theme from '../../uxdsl.theme.json'
 
 export const dynamic = 'force-dynamic'
@@ -28,15 +29,17 @@ export default function RootLayout({
         <ThemeProvider
           persist={false}
         >
-          <AppHeader />
-          <div className="layout">
-            <aside className="layout__nav">
-              <SideNav />
-            </aside>
-            <div className="layout__content">
-              {children}
+          <BreakpointsProvider>
+            <AppHeader />
+            <div className="layout">
+              <aside className="layout__nav">
+                <SideNav />
+              </aside>
+              <div className="layout__content">
+                {children}
+              </div>
             </div>
-          </div>
+          </BreakpointsProvider>
         </ThemeProvider>
       </body>
     </html>

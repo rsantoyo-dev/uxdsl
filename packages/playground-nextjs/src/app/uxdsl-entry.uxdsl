@@ -29,5 +29,6 @@
 @import '../components/DemoTypography.uxdsl';
 @import '../components/SideNav.uxdsl';
 @import '../components/DemoProductivity.uxdsl';
+@import '../components/DemoBreakpoints.uxdsl';
 
 

@@ -1,26 +1,26 @@
 .app-header {
-  background: palette(primary-main);
-  padding: density(2) 0;
+  background: palette(primary-main); /* Revert to primary-main for more vibrant header */
+  padding: 0;
   color: palette(primary-contrast);
-  border-bottom: border(1) solid palette(primary-dark);
-  /* Remove top rounded corners, keep bottom square or slightly rounded if desired, but user asked to remove rounder from top */
-  border-radius: 0; 
+  position: relative;
+  box-shadow: shadow(1);
 }
 
 .app-header__container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 0 xs(space(2)) md(space(4));
+  padding: density(2) xs(space(2)) md(space(4));
   display: flex;
+  flex-direction: row; /* Horizontal layout for top row */
   justify-content: space-between;
   align-items: center;
   width: 100%;
 }
 
-.app-header__inner {
+.app-header__inner { /* This was app-header__top-row before */
   display: flex;
   flex-direction: column;
-  gap: density(1);
+  gap: 2px;
 }
 
 .app-header__title {
@@ -28,6 +28,7 @@
   margin: 0;
   font-weight: 800;
   letter-spacing: -0.5px;
+  line-height: 1;
 }
 
 .app-header__subtitle {
@@ -36,7 +37,7 @@
   font-weight: 500;
   letter-spacing: 1px;
   text-transform: uppercase;
-  font-size: 0.7rem;
+  font-size: 0.65rem;
 }
 
 .app-header__actions {
@@ -45,21 +46,50 @@
   gap: density(2);
 }
 
+/* Breakpoint Monitor Badge */
+.bp-monitor {
+  display: flex;
+  align-items: center;
+  gap: density(1);
+  background: rgba(255,255,255,0.1); /* Subtle background for visibility */
+  color: palette(primary-contrast); /* Text color from primary palette */
+  padding: 4px 10px;
+  border-radius: radius(1);
+  font-size: 0.75rem;
+  font-family: monospace;
+  /* border: none; Removed border */
+  height: 30px;
+  width: fit-content;
+  /* margin-top: 0; Removed margin-top */
+}
+
+.bp-monitor__label {
+  font-weight: bold;
+  color: palette(primary-contrast); /* Keep contrast */
+}
+
+.bp-monitor__val {
+  opacity: 0.7;
+  border-left: 1px solid rgba(255,255,255,0.2);
+  padding-left: density(1);
+}
+
 .theme-toggle {
-  background: palette(primary-dark);
-  border: 1px solid palette(primary-light);
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
   color: palette(primary-contrast);
   padding: density(2);
-  border-radius: radius(full); /* Circle button looks nice for icons */
+  border-radius: radius(full);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
-  line-height: 0; /* Fix for icon vertical alignment */
+  width: 36px;
+  height: 36px;
 }
 
 .theme-toggle:hover {
-  background: palette(primary-light);
+  background: rgba(255,255,255,0.2);
+  transform: scale(1.05);
 }
-

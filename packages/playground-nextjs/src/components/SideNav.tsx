@@ -2,10 +2,12 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useBreakpoints } from '@/components/BreakpointsProvider'
 
 const links = [
   { href: '/', label: 'Home' },
+  { href: '/breakpoints', label: 'Breakpoints' },
   { href: '/colors', label: 'Colors' },
   { href: '/palette', label: 'Palette' },
   { href: '/typography', label: 'Typography' },
@@ -20,9 +22,26 @@ const links = [
 export default function SideNav() {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
+  const { breakpoints } = useBreakpoints()
+  const [isDesktop, setIsDesktop] = useState(true)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const handleResize = () => {
+      setIsDesktop(window.innerWidth >= breakpoints.md)
+    }
+    handleResize() // Initial check
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [breakpoints.md]) // Re-run if md breakpoint changes
+
+  // Prevent hydration mismatch by rendering simple shell or default until mounted
+  // Or just accept the class swap.
+  const modeClass = mounted ? (isDesktop ? 'side-nav--desktop' : 'side-nav--mobile') : 'side-nav--desktop'
 
   return (
-    <nav className="side-nav" aria-label="Sections">
+    <nav className={`side-nav ${modeClass}`} aria-label="Sections">
       {/* Mobile Burger */}
       <button
         className="side-nav__burger"

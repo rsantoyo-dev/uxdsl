@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 
 const MAX_LAYERS = 14
 const densities = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -22,15 +23,8 @@ const defaultDensities: Record<number, string> = {
   14: 'xs(space(14)) md(space(15)) xl(space(16))',
 }
 
-const breakpoints: Record<string, number> = {
-  xs: 0,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-}
-
-const BREAKPOINT_KEYS = ['xs', 'sm', 'md', 'lg', 'xl']
+// Order for display and logic
+const BP_ORDER: BreakpointKey[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
 function EditDensityDialog({
   level,
@@ -46,16 +40,16 @@ function EditDensityDialog({
   const [breakpointValues, setBreakpointValues] = useState<Record<string, string>>({})
 
   useEffect(() => {
-    // Parse initial definition
     const values: Record<string, string> = {}
-
-    // Simple parser for "xs(val) sm(val)..."
     const parts = initialDefinition.split(/\s+(?![^(]*\))/g).filter(Boolean)
     
     parts.forEach(part => {
-      const match = part.match(/^(\w+)\((.+)\)$/)
-      if (match) {
-        const [, bp, val] = match
+      const openParen = part.indexOf('(')
+      const closeParen = part.lastIndexOf(')')
+      
+      if (openParen > 0 && closeParen === part.length - 1) {
+        const bp = part.substring(0, openParen)
+        const val = part.substring(openParen + 1, closeParen)
         values[bp] = val
       }
     })
@@ -66,10 +60,9 @@ function EditDensityDialog({
   const handleSave = () => {
     const parts: string[] = []
     
-    BREAKPOINT_KEYS.forEach(bp => {
+    BP_ORDER.forEach(bp => {
       const rawVal = breakpointValues[bp]
       if (!rawVal || !rawVal.trim()) return
-
       parts.push(`${bp}(${rawVal.trim()})`)
     })
 
@@ -88,7 +81,7 @@ function EditDensityDialog({
         <h3 style={{ marginTop: 0 }}>Edit Density {level}</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {BREAKPOINT_KEYS.map(bp => (
+          {BP_ORDER.map(bp => (
             <label key={bp} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ width: '30px', fontWeight: 'bold', opacity: 0.7 }}>{bp}</span>
               <input 
@@ -115,7 +108,6 @@ function EditDensityDialog({
 }
 
 function parseDensityValue(value: string) {
-  // Handle space() function
   if (value.startsWith('space(') && value.endsWith(')')) {
     const spaceVal = value.slice(6, -1)
     return `var(--space-${spaceVal})`
@@ -123,39 +115,37 @@ function parseDensityValue(value: string) {
   return value
 }
 
-function generateCss(definitions: Record<number, string>) {
+function generateCss(definitions: Record<number, string>, breakpoints: Record<string, number>) {
   let css = ''
   
   Object.entries(definitions).forEach(([level, def]) => {
-    const parts = def.split(/\s+(?![^(]*\))/g).filter(Boolean) // Split by space but ignore spaces inside parens
+    const parts = def.split(/\s+(?![^(]*\))/g).filter(Boolean)
     
     const rules: Record<string, string> = {}
     
     parts.forEach(part => {
-      const match = part.match(/^(\w+)\((.+)\)$/)
-      if (match) {
-        const [, bp, val] = match
-        rules[bp] = parseDensityValue(val)
-      } else {
-        // Assume xs/default if no breakpoint wrapper, or handle plain values
-        rules['xs'] = parseDensityValue(part)
+      const openParen = part.indexOf('(')
+      const closeParen = part.lastIndexOf(')')
+      
+      if (openParen > 0 && closeParen === part.length - 1) {
+        const bp = part.substring(0, openParen)
+        const val = part.substring(openParen + 1, closeParen)
+        
+        if (val) {
+          rules[bp] = parseDensityValue(val)
+        }
       }
     })
 
-    // Generate CSS for this level
-    // Base (xs)
     if (rules['xs']) {
       css += `:root { --density-${level}: ${rules['xs']}; }\n`
     }
 
-    // Media queries
     Object.entries(rules).forEach(([bp, val]) => {
       if (bp === 'xs') return
       const width = breakpoints[bp]
       if (width) {
-        css += `@media (min-width: ${width}px) {
-          :root { --density-${level}: ${val}; }
-        }\n`
+        css += `@media (min-width: ${width}px) {\n          :root { --density-${level}: ${val}; }\n        }\n`
       }
     })
   })
@@ -165,10 +155,6 @@ function generateCss(definitions: Record<number, string>) {
 
 function RussianDoll({ densityIndex, onLayerClick }: { densityIndex: number, onLayerClick: (level: number) => void }) {
   const [hoveredLevel, setHoveredLevel] = useState<number | null>(null)
-
-  // Use CSS variable for padding to ensure perfect sync with the rings
-  // The largest ring has inset: -density(densityIndex)
-  // So we need padding equal to that density on the wrapper to prevent overflow
   const paddingStyle = { padding: `var(--density-${densityIndex})` }
 
   return (
@@ -199,18 +185,19 @@ function parseDefinitionForDisplay(def: string) {
   const parts = def.split(/\s+(?![^(]*\))/g).filter(Boolean)
   const result: Record<string, string> = {}
   parts.forEach(part => {
-    const match = part.match(/^(\w+)\((.+)\)$/)
-    if (match) {
-      const [, bp, val] = match
+    const openParen = part.indexOf('(')
+    const closeParen = part.lastIndexOf(')')
+    
+    if (openParen > 0 && closeParen === part.length - 1) {
+      const bp = part.substring(0, openParen)
+      const val = part.substring(openParen + 1, closeParen)
       result[bp] = val
     }
   })
   return result
 }
 
-const BP_ORDER = ['xs', 'sm', 'md', 'lg', 'xl', '2xl']
-
-function useBreakpoint() {
+function useBreakpoint(breakpoints: Record<string, number>) {
   const [bp, setBp] = useState('')
 
   useEffect(() => {
@@ -228,7 +215,7 @@ function useBreakpoint() {
     handleResize()
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [])
+  }, [breakpoints])
 
   return bp
 }
@@ -237,8 +224,7 @@ function getActiveDefinition(def: string, currentBp: string) {
   const parsed = parseDefinitionForDisplay(def)
   let activeVal = parsed['xs'] || ''
   
-  // Find the largest breakpoint <= currentBp that has a definition
-  const currentBpIndex = BP_ORDER.indexOf(currentBp)
+  const currentBpIndex = BP_ORDER.indexOf(currentBp as BreakpointKey)
   
   for (let i = 0; i <= currentBpIndex; i++) {
     const bp = BP_ORDER[i]
@@ -251,10 +237,11 @@ function getActiveDefinition(def: string, currentBp: string) {
 }
 
 export default function DemoDensity() {
+  const { breakpoints } = useBreakpoints()
   const [dollLevels, setDollLevels] = useState(5)
   const [densityDefinitions, setDensityDefinitions] = useState(defaultDensities)
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
-  const currentBp = useBreakpoint()
+  const currentBp = useBreakpoint(breakpoints)
 
   useEffect(() => {
     const styleId = 'demo-density-styles'
@@ -264,8 +251,8 @@ export default function DemoDensity() {
       styleEl.id = styleId
       document.head.appendChild(styleEl)
     }
-    styleEl.textContent = generateCss(densityDefinitions)
-  }, [densityDefinitions])
+    styleEl.textContent = generateCss(densityDefinitions, breakpoints)
+  }, [densityDefinitions, breakpoints])
 
   const handleSaveDefinition = (def: string) => {
     if (editingLevel !== null) {
@@ -321,16 +308,16 @@ export default function DemoDensity() {
             const parsedDef = parseDefinitionForDisplay(def)
             // Sort breakpoints for consistent rendering order
             const sortedBps = Object.keys(parsedDef).sort((a, b) => {
-              return BP_ORDER.indexOf(a) - BP_ORDER.indexOf(b)
+              return BP_ORDER.indexOf(a as BreakpointKey) - BP_ORDER.indexOf(b as BreakpointKey)
             })
 
             const activeDef = getActiveDefinition(densityDefinitions[s], currentBp)
 
             // Determine active breakpoint key
-            const currentBpIndex = BP_ORDER.indexOf(currentBp)
+            const currentBpIndex = BP_ORDER.indexOf(currentBp as BreakpointKey)
             let activeBpKey = 'xs'
             for (const bp of sortedBps) {
-              if (BP_ORDER.indexOf(bp) <= currentBpIndex) {
+              if (BP_ORDER.indexOf(bp as BreakpointKey) <= currentBpIndex) {
                 activeBpKey = bp
               }
             }
