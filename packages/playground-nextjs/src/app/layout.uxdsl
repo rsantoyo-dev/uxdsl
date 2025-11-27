@@ -29,7 +29,7 @@ body {
 .layout {
   display: grid;
   /* Mobile: Stacked (Nav is just a button), Desktop: Sidebar + Content */
-  grid-template-columns: xs(100%) md(240px 1fr);
+  grid-template-columns: xs(100%) lg(max-content 1fr);
   gap: xs(space(4)) md(space(6));
   padding: xs(space(2)) md(space(4));
   margin: 0 auto;

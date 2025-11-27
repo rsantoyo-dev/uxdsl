@@ -73,14 +73,14 @@
     transform: none;
     
     /* Desktop Styles */
-    padding: space(3);
+    padding: density(3);
     height: auto;
     overflow-y: visible;
     
     @ds-surface(flat);
     background: palette(surface-main); /* Ensure opaque */
     
-    border: border(1, palette(neutral-dark, 0.15));
+    border: border(1);
     border-radius: radius(2);
     box-shadow: none;
   }
@@ -114,12 +114,12 @@
 
 /* List Styles */
 .side-nav__section + .side-nav__section {
-  margin-top: space(4);
+  margin-top: density(4);
 }
 
 .side-nav__section-title {
   @ds-typo(h5);
-  margin: 0 0 space(2) 0;
+  margin: 0 0 density(2) 0;
 }
 
 .side-nav__list {
@@ -127,14 +127,13 @@
   margin: 0;
   padding: 0;
   display: grid;
-  gap: space(1);
+  gap: density(1);
 }
 
 .side-nav__link {
   @ds-typo(body);
   text-decoration: none;
-  color: palette(surface-contrast, 0.8);
-  padding: space(1) space(2);
+  padding: density(1);
   border-radius: radius(1);
   display: block;
   transition: all 0.2s ease;

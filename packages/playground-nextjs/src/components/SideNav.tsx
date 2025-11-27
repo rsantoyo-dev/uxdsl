@@ -29,12 +29,12 @@ export default function SideNav() {
   useEffect(() => {
     setMounted(true)
     const handleResize = () => {
-      setIsDesktop(window.innerWidth >= breakpoints.md)
+      setIsDesktop(window.innerWidth >= breakpoints.lg)
     }
     handleResize() // Initial check
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
-  }, [breakpoints.md]) // Re-run if md breakpoint changes
+  }, [breakpoints.lg]) // Re-run if lg breakpoint changes
 
   // Prevent hydration mismatch by rendering simple shell or default until mounted
   // Or just accept the class swap.
