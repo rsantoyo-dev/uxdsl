@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import runtime from 'postcss-uxdsl/runtime'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const families = [
   'blue','indigo','purple','pink','red','orange','yellow','green','teal','cyan','gray'
@@ -105,14 +107,89 @@ function ColorScaleToken({ family, shade }: { family: string; shade: string }) {
 }
 
 export default function DemoColors() {
+  const [bgFamily, setBgFamily] = useState('blue')
+  const [bgShade, setBgShade] = useState('600')
+  const [textFamily, setTextFamily] = useState('gray')
+  const [textShade, setTextShade] = useState('50')
+
   return (
     <section className="demo-section">
       <div className="demo-header">
-        <h3 className="demo-title">Color Scales</h3>
         <p className="demo-subtitle">
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.
           <br />
           Usage example: <code>background: color(blue-500)</code>
+        </p>
+      </div>
+
+      <div className="surfaces-playground-container">
+        <h4 className="demo-subtitle">Interactive Playground</h4>
+        <div className="surface-playground">
+           <div className="surface-playground__controls">
+             <label>
+               <span>Background Family</span>
+               <select value={bgFamily} onChange={e => setBgFamily(e.target.value)}>
+                 {families.map(f => <option key={f} value={f}>{f}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Background Shade</span>
+               <select value={bgShade} onChange={e => setBgShade(e.target.value)}>
+                 {shades.map(s => <option key={s} value={s}>{s}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Text Family</span>
+               <select value={textFamily} onChange={e => setTextFamily(e.target.value)}>
+                 {families.map(f => <option key={f} value={f}>{f}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Text Shade</span>
+               <select value={textShade} onChange={e => setTextShade(e.target.value)}>
+                 {shades.map(s => <option key={s} value={s}>{s}</option>)}
+               </select>
+             </label>
+           </div>
+
+           <div className="surface-playground__preview">
+             <div style={{
+               backgroundColor: `var(--ds__color__${bgFamily}-${bgShade})`,
+               color: `var(--ds__color__${textFamily}-${textShade})`,
+               padding: 'var(--space-4)',
+               borderRadius: 'var(--space-2)',
+               textAlign: 'center',
+               fontWeight: 'bold',
+               fontSize: '1.2rem',
+               transition: 'all 0.2s ease'
+             }}>
+               Live Color Preview
+             </div>
+             
+             <div className="demo-code-block" >
+               <div className="code-header">
+                 <span className="code-file">ColorUsage.uxdsl</span>
+               </div>
+               <SyntaxHighlighter 
+                 language="scss" 
+                 style={vscDarkPlus}
+                 customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
+                 wrapLines={true}
+               >
+{`.my-element {
+  background-color: color(${bgFamily}-${bgShade});
+  color: color(${textFamily}-${textShade});
+}`}
+               </SyntaxHighlighter>
+             </div>
+           </div>
+        </div>
+      </div>
+
+      <div className="demo-header">
+        <h3 className="demo-title">Global Palette</h3>
+        <p className="demo-subtitle">
+          Click on any color swatch to update the UX-DSL token.
         </p>
       </div>
 

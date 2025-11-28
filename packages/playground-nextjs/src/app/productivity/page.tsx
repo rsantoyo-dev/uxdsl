@@ -2,6 +2,7 @@
 
 import DemoProductivity from '@/components/DemoProductivity'
 import Link from 'next/link'
+import { PageTitle } from '@/components/PageTitle'
 
 export default function ProductivityPage() {
   return (
@@ -11,10 +12,10 @@ export default function ProductivityPage() {
           <div style={{ marginBottom: '1rem' }}>
             <Link href="/" className="back-link">← Back to Playground</Link>
           </div>
-          <h1 className="title">Productivity Challenge</h1>
-          <p className="subtitle">
-            See how UXDSL reduces code volume and maintenance overhead compared to utility-first frameworks.
-          </p>
+          <PageTitle 
+            title="Productivity Challenge"
+            subtitle="See how UXDSL reduces code volume and maintenance overhead compared to utility-first frameworks."
+          />
         </header>
 
         <section className="section">

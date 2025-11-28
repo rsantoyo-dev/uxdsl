@@ -27,7 +27,6 @@ export default function InputDemo() {
   return (
     <section className="inputs-section demo-section">
       <div className="inputs-header">
-        <h3 className="demo-title">Inputs</h3>
         <p className="demo-subtitle">
           Inputs are form controls styled with the <code>@ds-input</code> mixin.
           They follow the &quot;Smart Mixin&quot; pattern, providing responsive sizing and consistent state management for focus, hover, and validation states.

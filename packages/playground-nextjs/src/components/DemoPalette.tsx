@@ -3,6 +3,8 @@
 import { useEffect, useRef, useState } from 'react'
 import runtime from 'postcss-uxdsl/runtime'
 import theme from '../../uxdsl.theme.json'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
@@ -274,17 +276,91 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
 
 export default function DemoPalette() {
   const colorMap = useColorMap()
+  const [bgTone, setBgTone] = useState('primary')
+  const [bgVariant, setBgVariant] = useState('main')
+  const [textTone, setTextTone] = useState('primary')
+  const [textVariant, setTextVariant] = useState('contrast')
 
   return (
     <section className="palette-section demo-section">
       <div className="palette-header">
         <div>
-          <h3 className="demo-title">Palette helpers</h3>
           <p className="demo-subtitle">
             Each card relies purely on <code>palette(tone-variant)</code> helpers.
             Values are computed at runtime from the applied CSS variables.
           </p>
         </div>
+      </div>
+
+      <div className="surfaces-playground-container" style={{ marginBottom: '3rem' }}>
+        <h4 className="demo-subtitle">Interactive Playground</h4>
+        <div className="surface-playground">
+           <div className="surface-playground__controls">
+             <label>
+               <span>Background Tone</span>
+               <select value={bgTone} onChange={e => setBgTone(e.target.value)}>
+                 {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Background Variant</span>
+               <select value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
+                 {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Text Tone</span>
+               <select value={textTone} onChange={e => setTextTone(e.target.value)}>
+                 {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+               </select>
+             </label>
+             <label>
+               <span>Text Variant</span>
+               <select value={textVariant} onChange={e => setTextVariant(e.target.value)}>
+                 {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
+               </select>
+             </label>
+           </div>
+
+           <div className="surface-playground__preview">
+             <div style={{
+               backgroundColor: `var(--ds__palette__${bgTone}-${bgVariant})`,
+               color: `var(--ds__palette__${textTone}-${textVariant})`,
+               padding: 'var(--space-4)',
+               borderRadius: 'var(--space-2)',
+               textAlign: 'center',
+               fontWeight: 'bold',
+               fontSize: '1.2rem',
+               transition: 'all 0.2s ease'
+             }}>
+               Live Palette Preview
+             </div>
+             
+             <div className="demo-code-block" style={{ marginTop: '1rem', width: '100%' }}>
+               <div className="code-header">
+                 <span className="code-file">PaletteUsage.uxdsl</span>
+               </div>
+               <SyntaxHighlighter 
+                 language="scss" 
+                 style={vscDarkPlus}
+                 customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
+                 wrapLines={true}
+               >
+{`.my-element {
+  background-color: palette(${bgTone}-${bgVariant});
+  color: palette(${textTone}-${textVariant});
+}`}
+               </SyntaxHighlighter>
+             </div>
+           </div>
+        </div>
+      </div>
+
+      <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
+        <h3 className="demo-title">Global Palette</h3>
+        <p className="demo-subtitle">
+          Click on any color swatch to update the UX-DSL token.
+        </p>
       </div>
 
       <div className="palette-stack">

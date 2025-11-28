@@ -8,7 +8,6 @@ export default function DemoProductivity() {
   return (
     <section className="demo-section">
       <div className="demo-header">
-        <h2>Developer Productivity</h2>
         <p>
           Write less, achieve more. UXDSL condenses complex styling patterns into semantic, readable macros.
           The example below demonstrates a complete &quot;Hero Profile Card&quot; with responsive spacing, theming, and typography.

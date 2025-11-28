@@ -7,8 +7,6 @@ export default function ButtonDemo() {
 
   return (
     <div className="demo-section">
-      <h3 className="demo-title">Button Variants</h3>
-
       <div className="demo-grid demo-grid--3col">
         {/* Primary buttons */}
         <div>

@@ -253,7 +253,6 @@ export default function DemoTypography() {
   return (
     <section className="typo-section demo-section">
       <div className="typo-header">
-        <h3 className="demo-title">Typography Scale</h3>
         <p className="demo-subtitle">
           Responsive typography scale. Click any card to edit its properties.
         </p>

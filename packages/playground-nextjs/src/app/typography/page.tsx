@@ -1,10 +1,14 @@
 import DemoTypography from '../../components/DemoTypography'
+import { PageTitle } from '@/components/PageTitle'
 
 export default function TypographyPage() {
   return (
     <main className="main">
       <div className="container">
-        <h1 className="section-title">Typography</h1>
+        <PageTitle 
+          title="Typography" 
+          subtitle="Type scale, font families, and text styles."
+        />
         <DemoTypography />
       </div>
     </main>

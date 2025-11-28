@@ -66,7 +66,6 @@ export default function DemoBreakpoints() {
   return (
     <section className="breakpoints-section demo-section">
       <div className="breakpoints-header">
-        <h3 className="demo-title">Breakpoints</h3>
         <p className="demo-subtitle">
           Define the responsive tiers of your design system. 
           Adjusting these sliders updates the theme configuration globally.

@@ -165,7 +165,6 @@ export default function DemoSurfaces() {
   return (
     <section className="surfaces-section demo-section">
       <div className="surfaces-header">
-        <h3 className="demo-title">Surfaces</h3>
         <p className="demo-subtitle">
           Surfaces are intelligent, composite containers that manage background, border, shadow, and spacing.
           They use a flexible &quot;Smart Mixin&quot; syntax to apply responsive defaults while allowing granular control over density, radius, and depth.

@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -98,7 +100,7 @@ function ConcentricSpacing({
 }
 
 export default function DemoSpacing() {
-  const [dollLevels, setDollLevels] = useState(16)
+  const [dollLevels, setDollLevels] = useState(15)
   const [computedValues, setComputedValues] = useState<Record<number, string>>({})
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
 
@@ -126,7 +128,6 @@ export default function DemoSpacing() {
   return (
     <section className="spacing-section demo-section">
       <div className="spacing-header">
-        <h3 className="demo-title">Spacing Scale</h3>
         <p className="demo-subtitle">
           Consistent spacing tokens for padding, margin, and layout gaps.
         </p>
@@ -154,10 +155,32 @@ export default function DemoSpacing() {
             onLayerClick={(level) => setEditingLevel(level)}
           />
         </div>
+
+        <div className="demo-code-block" style={{ marginTop: '2rem', width: '100%', maxWidth: '600px', margin: '2rem auto 0' }}>
+          <div className="code-header">
+            <span className="code-file">SpacingUsage.uxdsl</span>
+          </div>
+          <SyntaxHighlighter 
+            language="scss" 
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
+            wrapLines={true}
+          >
+{`.any-class {
+  padding: space(${dollLevels});
+}`}
+          </SyntaxHighlighter>
+        </div>
+      </div>
+
+      <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
+        <h3 className="demo-title">Global Spacing Tokens</h3>
+        <p className="demo-subtitle">
+          Update the tokens below to reflect changes in the UI.
+        </p>
       </div>
 
       <div className="spacing-grid-container">
-         <h4 className="demo-subtitle">Token Reference (Editable)</h4>
          <div className="spacing-grid">
             {spaces.map(s => (
               <div key={s} className="spacing-card">

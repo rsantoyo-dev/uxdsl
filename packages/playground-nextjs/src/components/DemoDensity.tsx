@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 const MAX_LAYERS = 14
 const densities = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -264,15 +266,11 @@ export default function DemoDensity() {
   return (
     <section className="density-section demo-section">
       <div className="density-header">
-        <h3 className="demo-title">Density Scale</h3>
         <p className="demo-subtitle">
           Density is a responsive unit linked to UXDSL spacing (or custom pixel values). 
           Using a single token like <code>density(1)</code> automatically adapts across breakpoints, 
-          eliminating manual media queries and reducing coding effort by 3x.
+          eliminating manual media queries reducing coding efforts
         </p>
-        <div className="density-code-snippet">
-          .any-class &#123; padding: density(1) &#125;
-        </div>
       </div>
 
       <div className="density-doll-container">
@@ -297,10 +295,32 @@ export default function DemoDensity() {
             onLayerClick={(level) => setEditingLevel(level)}
           />
         </div>
+
+        <div className="demo-code-block" style={{ marginTop: '2rem', width: '100%', maxWidth: '600px', margin: '2rem auto 0' }}>
+          <div className="code-header">
+            <span className="code-file">DensityUsage.uxdsl</span>
+          </div>
+          <SyntaxHighlighter 
+            language="scss" 
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
+            wrapLines={true}
+          >
+{`.any-class {
+  padding: density(${dollLevels});
+}`}
+          </SyntaxHighlighter>
+        </div>
+      </div>
+
+      <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
+        <h3 className="demo-title">Global Density Tokens</h3>
+        <p className="demo-subtitle">
+          Update the tokens below to reflect changes in the UI.
+        </p>
       </div>
 
       <div className="density-grid-container">
-        <h4 className="demo-subtitle">Token Reference</h4>
         <div className="density-grid">
           {densities.map((s) => {
             const def = densityDefinitions[s]

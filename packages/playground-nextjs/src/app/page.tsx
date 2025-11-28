@@ -1,4 +1,5 @@
 import UXDSLCardDemo from '../components/UXDSLCardDemo'
+import { PageTitle } from '@/components/PageTitle'
 
 export const dynamic = 'force-dynamic'
 
@@ -6,14 +7,11 @@ export default function Home() {
   return (
     <main className="main">
       <div className="container">
-        <header className="header">
-          <h1 className="title">UX-DSL</h1>
-          <p className="subtitle">
-            Design System Language
-            <br />
-            <span style={{ opacity: 0.7, fontSize: '0.9em' }}>Next.js Live Demo</span>
-          </p>
-        </header>
+        <PageTitle 
+          title="UX-DSL"
+          subtitle="Design System Language"
+          subtext="Next.js Live Demo"
+        />
 
         <section id="welcome" className="section">
           <div className="welcome-card">

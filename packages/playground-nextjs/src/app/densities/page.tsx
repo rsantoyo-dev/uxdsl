@@ -1,13 +1,14 @@
 import DemoDensity from '@/components/DemoDensity'
+import { PageTitle } from '@/components/PageTitle'
 
 export default function DensitiesPage() {
   return (
     <main className="main">
       <div className="container">
-        <h1 className="section-title">Densities</h1>
-        <p>
-          Padding set via <code>density(N)</code> → <code>var(--density-N)</code>.
-        </p>
+        <PageTitle 
+          title="Densities" 
+          subtitle="Compact spacing tokens for component internals."
+        />
         <DemoDensity />
       </div>
     </main>

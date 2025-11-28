@@ -1,10 +1,14 @@
 import DemoColors from '@/components/DemoColors'
+import { PageTitle } from '@/components/PageTitle'
 
 export default function ColorsPage() {
   return (
     <main className="main">
       <div className="container">
-        <h1 className="section-title">Colors</h1>
+        <PageTitle 
+          title="Colors" 
+          subtitle="Global color palette definitions and swatches."
+        />
         <DemoColors />
       </div>
     </main>

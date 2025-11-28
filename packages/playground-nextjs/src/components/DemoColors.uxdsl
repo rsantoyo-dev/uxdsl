@@ -1,9 +1,9 @@
 /* DemoColors styles */
 
-.demo-section { display: flex; flex-direction: column; gap: density(2); }
+.demo-section { display: flex; flex-direction: column; gap: density(3); }
 .demo-header { display: flex; flex-direction: column; gap: density(2); }
 .demo-title { @ds-typo (h4); margin: 0; }
-.demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
+.demo-subtitle { @ds-typo (body); max-width: 720px; }
 
 .colors-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: density(4); }
 .color-family { display: flex; flex-direction: column; gap: density(2); }

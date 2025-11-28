@@ -14,6 +14,7 @@ const links = [
   { href: '/spacing', label: 'Spacing' },
   { href: '/densities', label: 'Densities' },
   { href: '/surfaces', label: 'Surfaces' },
+  { href: '/borders', label: 'Borders' },
   { href: '/buttons', label: 'Buttons' },
   { href: '/inputs', label: 'Inputs' },
   { href: '/productivity', label: 'Productivity' },
