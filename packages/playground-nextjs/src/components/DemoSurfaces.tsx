@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 // Default definitions based on default-surfaces.uxdsl
 const defaultSurfaces = {
@@ -169,8 +171,14 @@ export default function DemoSurfaces() {
           Surfaces are intelligent, composite containers that manage background, border, shadow, and spacing.
           They use a flexible &quot;Smart Mixin&quot; syntax to apply responsive defaults while allowing granular control over density, radius, and depth.
         </p>
-        <div className="density-code-snippet">
-          .card &#123; @ds-surface(contained) &#125;
+        <div className="demo-code-block" style={{ marginTop: '1rem' }}>
+          <SyntaxHighlighter
+            language="scss"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+            {'.card { @ds-surface(contained) }'}
+          </SyntaxHighlighter>
         </div>
       </div>
 
@@ -251,24 +259,16 @@ export default function DemoSurfaces() {
                 Adjust controls to see how parameters affect the surface.
               </div>
             </div>
-            <div className="density-code-snippet" style={{ marginTop: '1rem', width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-              <div><span style={{ color: '#d4d4d4' }}>.my-element</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-              
-              {/* Mixin Call */}
-              <div style={{ paddingLeft: '1rem' }}>
-                <span style={{ color: '#c586c0' }}>@ds-surface</span>
-                <span style={{ color: '#d4d4d4' }}>(</span>
-                <span style={{ color: '#9cdcfe' }}>{playgroundVariant}</span>
-                {playgroundTone !== 'none' && <span style={{ color: '#9cdcfe' }}> {playgroundTone}</span>}
-                <span style={{ color: '#b5cea8' }}> density</span>(<span style={{ color: '#ce9178' }}>{playgroundDensity}</span>)
-                <span style={{ color: '#b5cea8' }}> radius</span>(<span style={{ color: '#ce9178' }}>{playgroundRadius}</span>)
-                {playgroundShadow !== 0 && (
-                  <span><span style={{ color: '#b5cea8' }}> shadow</span>(<span style={{ color: '#ce9178' }}>{playgroundShadow}</span>)</span>
-                )}
-                <span style={{ color: '#d4d4d4' }}>);</span>
-              </div>
-              
-              <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+            <div className="demo-code-block" style={{ marginTop: '1rem', width: '100%' }}>
+              <SyntaxHighlighter
+                language="scss"
+                style={vscDarkPlus}
+                customStyle={{ margin: 0, borderRadius: '4px' }}
+              >
+{`.my-element {
+  @ds-surface(${playgroundVariant}${playgroundTone !== 'none' ? ' ' + playgroundTone : ''} density(${playgroundDensity}) radius(${playgroundRadius})${playgroundShadow !== 0 ? ' shadow(' + playgroundShadow + ')' : ''});
+}`}
+              </SyntaxHighlighter>
             </div>
           </div>
         </div>
@@ -277,54 +277,31 @@ export default function DemoSurfaces() {
       {/* New Resolved Values Code Card */}
       <div className="surfaces-resolved-output-container" style={{ marginTop: '2rem' }}>
         <h4 className="demo-subtitle">Resolved CSS Output for .my-element</h4>
-        <div className="density-code-snippet" style={{ fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-          <div><span style={{ color: '#d4d4d4' }}>.my-element</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-          
-          {/* Background and Color */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>background-color</span>: 
-            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-              {playgroundVariant === 'contained' 
-                ? (playgroundTone === 'none' ? 'surface-main' : `${playgroundTone}-main`)
-                : 'transparent'
-              }
-            </span>);
-          </div>
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>color</span>: 
-            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-              {playgroundVariant === 'contained'
-                ? (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-contrast`)
-                : (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-main`)
-              }
-            </span>);
-          </div>
-
-          {/* Padding */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>padding</span>: 
-            <span style={{ color: '#ce9178' }}> density</span>(<span style={{ color: '#b5cea8' }}>{playgroundDensity}</span>);
-          </div>
-
-          {/* Radius */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>border-radius</span>: 
-            <span style={{ color: '#ce9178' }}> radius</span>(<span style={{ color: '#b5cea8' }}>{playgroundRadius}</span>);
-          </div>
-
-          {/* Shadow */}
-          {(playgroundShadow > 0 || playgroundVariant === 'contained') && (
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
-              {playgroundShadow === 0 ? (
-                 <span style={{ color: '#569cd6' }}>none;</span>
-              ) : (
-                 <span><span style={{ color: '#ce9178' }}> shadow</span>(<span style={{ color: '#b5cea8' }}>{playgroundShadow}</span>);</span>
-              )}
-            </div>
-          )}
-          
-          <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+        <div className="demo-code-block">
+          <SyntaxHighlighter
+            language="css"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+{`.my-element {
+  background-color: palette(${
+    playgroundVariant === 'contained' 
+      ? (playgroundTone === 'none' ? 'surface-main' : `${playgroundTone}-main`)
+      : 'transparent'
+  });
+  color: palette(${
+    playgroundVariant === 'contained'
+      ? (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-contrast`)
+      : (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-main`)
+  });
+  padding: density(${playgroundDensity});
+  border-radius: radius(${playgroundRadius});
+  ${playgroundVariant === 'outlined' 
+    ? `border: 1px solid palette(${playgroundTone === 'none' ? 'neutral-main' : `${playgroundTone}-main`});` 
+    : 'border: none;'}
+  ${playgroundShadow !== 0 ? `box-shadow: shadow(${playgroundShadow});` : ''}
+}`}
+          </SyntaxHighlighter>
         </div>
       </div>
 

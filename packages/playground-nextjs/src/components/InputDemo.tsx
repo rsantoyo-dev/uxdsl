@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export default function InputDemo() {
   const [playgroundVariant, setPlaygroundVariant] = useState<'contained' | 'outlined' | 'underline'>('outlined')
@@ -31,8 +33,14 @@ export default function InputDemo() {
           Inputs are form controls styled with the <code>@ds-input</code> mixin.
           They follow the &quot;Smart Mixin&quot; pattern, providing responsive sizing and consistent state management for focus, hover, and validation states.
         </p>
-        <div className="density-code-snippet">
-          .input &#123; @ds-input(outlined neutral) &#125;
+        <div className="demo-code-block">
+          <SyntaxHighlighter
+            language="scss"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+            {`.input { @ds-input(outlined neutral) }`}
+          </SyntaxHighlighter>
         </div>
       </div>
 
@@ -129,24 +137,16 @@ export default function InputDemo() {
               readOnly={false}
             />
             
-            <div className="density-code-snippet" style={{ marginTop: '1rem', width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-              <div><span style={{ color: '#d4d4d4' }}>.my-input</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-              
-              {/* Mixin Call */}
-              <div style={{ paddingLeft: '1rem' }}>
-                <span style={{ color: '#c586c0' }}>@ds-input</span>
-                <span style={{ color: '#d4d4d4' }}>(</span>
-                <span style={{ color: '#9cdcfe' }}>{playgroundVariant}</span>
-                <span style={{ color: '#9cdcfe' }}> {playgroundTone}</span>
-                <span style={{ color: '#b5cea8' }}> density</span>(<span style={{ color: '#ce9178' }}>{playgroundDensity}</span>)
-                <span style={{ color: '#b5cea8' }}> radius</span>(<span style={{ color: '#ce9178' }}>{playgroundRadius}</span>)
-                {playgroundShadow !== 0 && (
-                  <span><span style={{ color: '#b5cea8' }}> shadow</span>(<span style={{ color: '#ce9178' }}>{playgroundShadow}</span>)</span>
-                )}
-                <span style={{ color: '#d4d4d4' }}>);</span>
-              </div>
-              
-              <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+            <div className="demo-code-block" style={{ marginTop: '1rem', width: '100%' }}>
+              <SyntaxHighlighter
+                language="scss"
+                style={vscDarkPlus}
+                customStyle={{ margin: 0, borderRadius: '4px' }}
+              >
+{`.my-input {
+  @ds-input(${playgroundVariant} ${playgroundTone} density(${playgroundDensity}) radius(${playgroundRadius})${playgroundShadow !== 0 ? ' shadow(' + playgroundShadow + ')' : ''});
+}`}
+              </SyntaxHighlighter>
             </div>
           </div>
         </div>
@@ -155,64 +155,27 @@ export default function InputDemo() {
       {/* Resolved Values Code Card */}
       <div className="inputs-resolved-output-container" style={{ marginTop: '2rem' }}>
         <h4 className="demo-subtitle">Resolved CSS Output for .my-input</h4>
-        <div className="density-code-snippet" style={{ fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-          <div><span style={{ color: '#d4d4d4' }}>.my-input</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-          
-          {/* Background and Border */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>border</span>: 
-            <span style={{ color: '#ce9178' }}> 1px solid palette</span>(<span style={{ color: '#b5cea8' }}>
-              {playgroundVariant === 'underline' ? 'transparent' : `${playgroundTone}-main`}
-            </span>);
-          </div>
-          {playgroundVariant === 'underline' && (
-             <div style={{ paddingLeft: '1rem' }}>
-               <span style={{ color: '#9cdcfe' }}>border-bottom</span>: 
-               <span style={{ color: '#ce9178' }}> 1px solid palette</span>(<span style={{ color: '#b5cea8' }}>{playgroundTone}-main</span>);
-             </div>
-          )}
+        <div className="demo-code-block">
+          <SyntaxHighlighter
+            language="css"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+{`.my-input {
+  border: 1px solid palette(${playgroundVariant === 'underline' ? 'transparent' : `${playgroundTone}-main`});
+  ${playgroundVariant === 'underline' ? `border-bottom: 1px solid palette(${playgroundTone}-main);` : ''}
+  padding: density(${playgroundDensity});
+  border-radius: radius(${playgroundRadius});
+  ${playgroundShadow !== 0 || playgroundVariant === 'contained' 
+    ? `box-shadow: ${playgroundShadow === 0 ? 'none' : `shadow(${playgroundShadow})`};` 
+    : ''}
 
-          {/* Padding */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>padding</span>: 
-            <span style={{ color: '#ce9178' }}> density</span>(<span style={{ color: '#b5cea8' }}>{playgroundDensity}</span>);
-          </div>
-
-          {/* Radius */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>border-radius</span>: 
-            <span style={{ color: '#ce9178' }}> radius</span>(<span style={{ color: '#b5cea8' }}>{playgroundRadius}</span>);
-          </div>
-
-          {/* Shadow */}
-          {(playgroundShadow > 0 || playgroundVariant === 'contained') && (
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
-              {playgroundShadow === 0 ? (
-                 <span style={{ color: '#569cd6' }}>none;</span>
-              ) : (
-                 <span><span style={{ color: '#ce9178' }}> shadow</span>(<span style={{ color: '#b5cea8' }}>{playgroundShadow}</span>);</span>
-              )}
-            </div>
-          )}
-
-          {/* State Styles */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <div><span style={{ color: '#d4d4d4' }}>&amp;:focus</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>border-color</span>: 
-              <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-                {playgroundTone === 'neutral' ? 'primary-main' : `${playgroundTone}-main`}
-              </span>);
-            </div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
-              <span style={{ color: '#ce9178' }}> ring</span>(<span style={{ color: '#b5cea8' }}>2</span>);
-            </div>
-            <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
-          </div>
-          
-          <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+  &:focus {
+    border-color: palette(${playgroundTone === 'neutral' ? 'primary-main' : `${playgroundTone}-main`});
+    box-shadow: ring(2);
+  }
+}`}
+          </SyntaxHighlighter>
         </div>
       </div>
 

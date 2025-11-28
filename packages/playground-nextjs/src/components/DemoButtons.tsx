@@ -1,6 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export default function DemoButtons() {
   const [playgroundVariant, setPlaygroundVariant] = useState<'contained' | 'outlined' | 'flat'>('contained')
@@ -32,8 +34,14 @@ export default function DemoButtons() {
           Buttons are intelligent, interactive elements styled with the <code>@ds-button</code> mixin.
           They use the same &quot;Smart Mixin&quot; syntax as surfaces, allowing responsive control over density, radius, and depth, with built-in state management.
         </p>
-        <div className="density-code-snippet">
-          .btn &#123; @ds-button(contained primary) &#125;
+        <div className="demo-code-block" style={{ marginTop: '1rem' }}>
+          <SyntaxHighlighter
+            language="scss"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+            {'.btn { @ds-button(contained primary) }'}
+          </SyntaxHighlighter>
         </div>
       </div>
 
@@ -139,24 +147,16 @@ export default function DemoButtons() {
               Interactive Button
             </button>
             
-            <div className="density-code-snippet" style={{ marginTop: '1rem', width: '100%', fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-              <div><span style={{ color: '#d4d4d4' }}>.my-button</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-              
-              {/* Mixin Call */}
-              <div style={{ paddingLeft: '1rem' }}>
-                <span style={{ color: '#c586c0' }}>@ds-button</span>
-                <span style={{ color: '#d4d4d4' }}>(</span>
-                <span style={{ color: '#9cdcfe' }}>{playgroundVariant}</span>
-                {playgroundTone !== 'none' && <span style={{ color: '#9cdcfe' }}> {playgroundTone}</span>}
-                <span style={{ color: '#b5cea8' }}> density</span>(<span style={{ color: '#ce9178' }}>{playgroundDensity}</span>)
-                <span style={{ color: '#b5cea8' }}> radius</span>(<span style={{ color: '#ce9178' }}>{playgroundRadius}</span>)
-                {playgroundShadow !== 0 && (
-                  <span><span style={{ color: '#b5cea8' }}> shadow</span>(<span style={{ color: '#ce9178' }}>{playgroundShadow}</span>)</span>
-                )}
-                <span style={{ color: '#d4d4d4' }}>);</span>
-              </div>
-              
-              <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+            <div className="demo-code-block" style={{ marginTop: '1rem', width: '100%' }}>
+              <SyntaxHighlighter
+                language="scss"
+                style={vscDarkPlus}
+                customStyle={{ margin: 0, borderRadius: '4px' }}
+              >
+{`.my-button {
+  @ds-button(${playgroundVariant}${playgroundTone !== 'none' ? ' ' + playgroundTone : ''} density(${playgroundDensity}) radius(${playgroundRadius})${playgroundShadow !== 0 ? ' shadow(' + playgroundShadow + ')' : ''});
+}`}
+              </SyntaxHighlighter>
             </div>
           </div>
         </div>
@@ -165,88 +165,44 @@ export default function DemoButtons() {
       {/* Resolved Values Code Card */}
       <div className="buttons-resolved-output-container" style={{ marginTop: '2rem' }}>
         <h4 className="demo-subtitle">Resolved CSS Output for .my-button</h4>
-        <div className="density-code-snippet" style={{ fontFamily: 'monospace', fontSize: '0.85rem', lineHeight: 1.6 }}>
-          <div><span style={{ color: '#d4d4d4' }}>.my-button</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-          
-          {/* Background and Color */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>background-color</span>: 
-            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-              {playgroundVariant === 'contained' 
-                ? (playgroundTone === 'none' ? 'surface-main' : `${playgroundTone}-main`)
-                : 'transparent'
-              }
-            </span>);
-          </div>
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>color</span>: 
-            <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-              {playgroundVariant === 'contained'
-                ? (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-contrast`)
-                : (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-main`)
-              }
-            </span>);
-          </div>
+        <div className="demo-code-block">
+          <SyntaxHighlighter
+            language="css"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '4px' }}
+          >
+{`.my-button {
+  background-color: palette(${
+    playgroundVariant === 'contained' 
+      ? (playgroundTone === 'none' ? 'surface-main' : `${playgroundTone}-main`)
+      : 'transparent'
+  });
+  color: palette(${
+    playgroundVariant === 'contained'
+      ? (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-contrast`)
+      : (playgroundTone === 'none' ? 'surface-contrast' : `${playgroundTone}-main`)
+  });
+  padding: density(${playgroundDensity});
+  border-radius: radius(${playgroundRadius});
+  ${playgroundVariant === 'outlined' 
+    ? `border: 1px solid palette(${playgroundTone === 'none' ? 'neutral-main' : `${playgroundTone}-main`});` 
+    : 'border: none;'}
+  ${playgroundShadow !== 0 ? `box-shadow: shadow(${playgroundShadow});` : ''}
 
-          {/* Padding */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>padding</span>: 
-            <span style={{ color: '#ce9178' }}> density</span>(<span style={{ color: '#b5cea8' }}>{playgroundDensity}</span>);
-          </div>
+  &:hover {
+    background-color: palette(${playgroundTone !== 'none' ? `${playgroundTone}-light` : 'surface-dark'});
+  }
 
-          {/* Radius */}
-          <div style={{ paddingLeft: '1rem' }}>
-            <span style={{ color: '#9cdcfe' }}>border-radius</span>: 
-            <span style={{ color: '#ce9178' }}> radius</span>(<span style={{ color: '#b5cea8' }}>{playgroundRadius}</span>);
-          </div>
+  &:active {
+    transform: scale(0.98);
+  }
 
-          {/* Shadow */}
-          {(playgroundShadow > 0 || playgroundVariant === 'contained') && (
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
-              {playgroundShadow === 0 ? (
-                 <span style={{ color: '#569cd6' }}>none;</span>
-              ) : (
-                 <span><span style={{ color: '#ce9178' }}> shadow</span>(<span style={{ color: '#b5cea8' }}>{playgroundShadow}</span>);</span>
-              )}
-            </div>
-          )}
-
-          {/* State Styles */}
-          <div style={{ marginTop: '0.5rem' }}>
-            <div><span style={{ color: '#d4d4d4' }}>&amp;:hover</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>background-color</span>: 
-              <span style={{ color: '#ce9178' }}> palette</span>(<span style={{ color: '#b5cea8' }}>
-                {playgroundTone !== 'none' ? `${playgroundTone}-light` : 'surface-dark'}
-              </span>);
-            </div>
-            <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
-          </div>
-
-          <div style={{ marginTop: '0.5rem' }}>
-            <div><span style={{ color: '#d4d4d4' }}>&amp;:active</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>transform</span>: 
-              <span style={{ color: '#b5cea8' }}> scale</span>(<span style={{ color: '#ce9178' }}>0.98</span>);
-            </div>
-            <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
-          </div>
-
-          <div style={{ marginTop: '0.5rem' }}>
-            <div><span style={{ color: '#d4d4d4' }}>&amp;.selected</span> <span style={{ color: '#d4d4d4' }}>&#123;</span></div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>box-shadow</span>: 
-              <span style={{ color: '#ce9178' }}> inset 0 0 0 2px currentColor;</span>
-            </div>
-            <div style={{ paddingLeft: '1rem' }}>
-              <span style={{ color: '#9cdcfe' }}>font-weight</span>: 
-              <span style={{ color: '#ce9178' }}> bold;</span>
-            </div>
-            <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
-          </div>
-          
-          <div><span style={{ color: '#d4d4d4' }}>&#125;</span></div>
+  &.selected {
+    box-shadow: inset 0 0 0 2px currentColor;
+    font-weight: bold;
+  }
+}`}
+          </SyntaxHighlighter>
         </div>
       </div>
 

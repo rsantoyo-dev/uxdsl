@@ -231,16 +231,10 @@
 /* Layout Styles for the Demo */
 .demo-grid-hero {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: xs(1fr) lg(1fr 1fr);
+  align-items: start;
   gap: density(4);
   margin-top: density(4);
-}
-
-@media (min-width: 1024px) {
-  .demo-grid-hero {
-    grid-template-columns: 1fr 1fr;
-    align-items: start;
-  }
 }
 
 .demo-preview {
