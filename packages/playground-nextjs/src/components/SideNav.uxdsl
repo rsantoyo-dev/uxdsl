@@ -136,16 +136,19 @@
   border-radius: radius(1);
   display: block;
   transition: all 0.2s ease;
+  color: palette(surface-contrast);
+  opacity: 0.7;
 }
 
 .side-nav__link:hover {
-  background: palette(primary-light);
-  color: palette(primary-dark);
-  opacity: 0.8;
+  background: palette(neutral-light);
+  color: palette(neutral-contrast);
+  opacity: 1;
 }
 
 .side-nav__link[aria-current="page"] {
-  background: palette(primary-light);
-  color: palette(primary-dark);
+  background: palette(primary-main, 0.1);
+  color: palette(primary-main);
   font-weight: 600;
+  opacity: 1;
 }

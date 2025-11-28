@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Sun, Moon, Monitor } from 'lucide-react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
+import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 export default function AppHeader() {
   const [isDark, setIsDark] = useState(false)
@@ -52,13 +53,7 @@ export default function AppHeader() {
     <header className="app-header">
       <div className="app-header__container">
         <div className="app-header__inner">
-          <img 
-            src="/logo-uxdsl.png" 
-            alt="UXDSL Logo" 
-            className="app-header__logo-img"
-            width={60}
-            height={60}
-          />
+          <UXDSLLogo className="app-header__logo-img" />
           <div className="app-header__title-text">UX-DSL</div>
         </div>
         
