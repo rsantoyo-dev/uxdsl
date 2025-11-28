@@ -4,7 +4,7 @@ import AppHeader from '@/components/AppHeader'
 import SideNav from '@/components/SideNav'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
-import theme from '../../uxdsl.theme.json'
+import theme from '../../uxdsl.theme.green.json'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
