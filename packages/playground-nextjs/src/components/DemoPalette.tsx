@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import runtime from 'postcss-uxdsl/runtime'
+import runtime from 'postcss-uxdsl/ds-runtime'
 import theme from '../../uxdsl.theme.json'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'

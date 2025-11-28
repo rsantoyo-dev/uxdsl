@@ -34,10 +34,10 @@
       "import": "./dist/index.js",
       "types": "./dist/index.d.ts"
     },
-    "./runtime": {
-      "require": "./dist/runtime.js",
-      "import": "./dist/runtime.js",
-      "types": "./dist/runtime.d.ts"
+    "./ds-runtime": {
+      "require": "./dist/ds-runtime.js",
+      "import": "./dist/ds-runtime.js",
+      "types": "./dist/ds-runtime.d.ts"
     },
     "./theme/*": "./src/theme/*"
   },

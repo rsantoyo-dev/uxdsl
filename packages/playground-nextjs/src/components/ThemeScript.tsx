@@ -1,4 +1,5 @@
 import React from 'react'
+import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
 
 interface Theme {
   modes?: {
@@ -13,46 +14,7 @@ interface Theme {
 export default function ThemeScript({ theme }: { theme: Theme }) {
   if (!theme) return null
   
-  const cssVars: string[] = []
-  
-  if (theme.palette) {
-    Object.entries(theme.palette).forEach(([key, val]) => {
-      if (typeof val === 'object' && val !== null) {
-        Object.entries(val).forEach(([subKey, subVal]) => {
-          cssVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
-        })
-      } else {
-        cssVars.push(`--ds__palette__${key}: ${val}`)
-      }
-    })
-  }
-  if (theme.spacing) {
-    Object.entries(theme.spacing).forEach(([key, val]) => {
-      cssVars.push(`--${key}: ${val}`)
-    })
-  }
-  if (theme.typography) {
-    Object.entries(theme.typography).forEach(([key, val]) => {
-      cssVars.push(`--${key}: ${val}`)
-    })
-  }
-
-  let cssContent = `:root { ${cssVars.join('; ')} }`
-
-  if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {
-    const darkVars: string[] = []
-    Object.entries(theme.modes.dark.palette).forEach(([key, val]) => {
-      if (typeof val === 'object' && val !== null) {
-        Object.entries(val).forEach(([subKey, subVal]) => {
-          darkVars.push(`--ds__palette__${key}-${subKey}: ${subVal}`)
-        })
-      } else {
-        darkVars.push(`--ds__palette__${key}: ${val}`)
-      }
-    })
-    cssContent += ` @media (prefers-color-scheme: dark) { :root { ${darkVars.join('; ')} } }`
-    cssContent += ` :root[data-theme='dark'] { ${darkVars.join('; ')} }`
-  }
+  const cssContent = generateThemeCss(theme)
 
   return (
     <style

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import runtime from 'postcss-uxdsl/runtime'
+import runtime from 'postcss-uxdsl/ds-runtime'
 
 const typographyItems = [
   { tag: 'h1', label: 'H1', text: 'UXDSL: The Design System Language', className: 'sample-h1' },

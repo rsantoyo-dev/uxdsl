@@ -1,6 +1,8 @@
 'use client'
 
 import React from 'react'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export default function HomeDemo() {
   return (
@@ -46,8 +48,13 @@ export default function HomeDemo() {
         <div className="code-header">
           <span className="code-lang">SystemStatus.uxdsl</span>
         </div>
-        <pre>
-          <code>{`.mb-card {
+        <div className="demo-code-block">
+          <SyntaxHighlighter
+            language="scss"
+            style={vscDarkPlus}
+            customStyle={{ margin: 0, borderRadius: '0 0 4px 4px' }}
+          >
+{`.mb-card {
   @ds-surface(contained);
   width: xs(100%) md(420px);
   padding: xs(density(3)) md(density(5));
@@ -76,8 +83,9 @@ export default function HomeDemo() {
     @ds-button(contained primary);
     width: 100%;
   }
-}`}</code>
-        </pre>
+}`}
+          </SyntaxHighlighter>
+        </div>
       </div>
     </div>
   )

@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { applyPalette, loadPersisted, resetPalette } from 'postcss-uxdsl/runtime'
+import { applyPalette, loadPersisted, resetPalette } from 'postcss-uxdsl/ds-runtime'
 
 type Palette = Record<string, string>
 
