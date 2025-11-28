@@ -15609,14 +15609,15 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: var(--ds__color__gray-800)
-
 }
 @media (min-width: 1024px) {
 .logo-circle {
-    border-radius: var(--space-3)
-
+    border-radius: var(--space-3);
 }
+}
+.card-logo {
+  width: 60%;
+  height: auto;
 }
 .card-body {
   padding: var(--density-5);
@@ -15841,6 +15842,12 @@ font-size: var(--pre-size);
     color: palette (primary-dark);
     font-weight: 700;
   }
+}
+.section-title {
+  text-align: center;
+  padding: var(--density-4);
+  margin-bottom: var(--density-4);
+  opacity: 0.9;
 }
 :root {
   --ds__palette__primary-main: #2C415C;

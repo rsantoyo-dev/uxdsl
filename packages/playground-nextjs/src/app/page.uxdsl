@@ -7,7 +7,6 @@
 
 .container {
   max-width: 800px;
-  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: density(6);
@@ -44,4 +43,11 @@
     color: palette (primary-dark);
     font-weight: 700;
   }
+}
+
+.section-title {
+  text-align: center;
+  padding: density(2);
+  margin-bottom: density(4);
+  opacity: 0.9;
 }

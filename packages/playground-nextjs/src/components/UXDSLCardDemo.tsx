@@ -1,9 +1,9 @@
 'use client'
 import React from 'react'
-import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 const DEMO_CODE = `.uxdsl-card {
   @ds-surface (contained);
@@ -25,14 +25,18 @@ const DEMO_CODE = `.uxdsl-card {
 }
 
 .logo-circle {
-  @ds-surface (contained);
+  @ds-surface (contained light);
   width: density(11);
   height: density(11);
-  border-radius: radius(full);
+  border-radius: xs(radius(full)) md(radius(4));
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color(gray-800);
+}
+
+.card-logo {
+  width: 60%;
+  height: auto;
 }
 
 .card-body {
@@ -81,12 +85,7 @@ export default function UXDSLCardDemo() {
       <div className="uxdsl-card">
         <div className="card-header">
           <div className="logo-circle">
-            <Image 
-              src="/logo-uxdsl.png" 
-              alt="UXDSL Logo" 
-              width={50}
-              height={50}
-            />
+            <UXDSLLogo className="card-logo" />
           </div>
         </div>
         <div className="card-body">

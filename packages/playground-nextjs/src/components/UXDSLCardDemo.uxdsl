@@ -27,15 +27,18 @@
 }
 
 .logo-circle {
-  @ds-surface (contained);
+  @ds-surface (contained light);
   width: density(11);
   height: density(11);
-  border-radius: radius(full);
+  border-radius: xs(radius(full)) md(radius(4));
   display: flex;
   align-items: center;
   justify-content: center;
-  background-color: color(gray-800)
+}
 
+.card-logo {
+  width: 60%;
+  height: auto;
 }
 
 .card-body {

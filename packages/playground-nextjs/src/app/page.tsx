@@ -28,7 +28,7 @@ export default function Home() {
         </section>
 
         <section className="section">
-          <h2 style={{ textAlign: 'center', marginBottom: '2rem', opacity: 0.9 }}>See it in Action</h2>
+          <h2 className="section-title">See it in Action</h2>
           <UXDSLCardDemo />
         </section>
       </div>
