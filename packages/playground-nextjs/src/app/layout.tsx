@@ -5,6 +5,7 @@ import SideNav from '@/components/SideNav'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
 import theme from '../../uxdsl.theme.green.json'
+import { getDocsLinks } from '@/lib/docs'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -19,6 +20,8 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const docsLinks = getDocsLinks()
+
   return (
     <html lang="en">
       <head>
@@ -29,7 +32,7 @@ export default function RootLayout({
           <AppHeader />
           <div className="layout">
             <aside className="layout__nav">
-              <SideNav />
+              <SideNav docsLinks={docsLinks} />
             </aside>
             <div className="layout__content">
               {children}

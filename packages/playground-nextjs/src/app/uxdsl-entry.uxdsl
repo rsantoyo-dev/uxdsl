@@ -18,6 +18,7 @@
 
 @import '../components/DemoPalette.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
+@import '../components/DemoBreakpointsCards.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
 @import '../components/DemoButtons.uxdsl';

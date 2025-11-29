@@ -1,0 +1,40 @@
+import DemoBorders from '@/components/DemoBorders'
+import { PageTitle } from '@/components/PageTitle'
+
+<PageTitle 
+  title="Borders & Radii" 
+  subtitle="Responsive border and radius tokens."
+/>
+
+Borders and radii in UXDSL are defined in the theme using a responsive syntax. This ensures consistency across your application while allowing for device-specific adjustments.
+
+## Theme Definition
+
+Here is how borders are typically defined in your theme:
+
+```scss
+border-1: xs(1px solid color(gray.300));
+border-2: xs(space(1) solid color(gray.300));
+border-3: xs(density(2) solid color(gray.400));
+border-4: xs(density(3) solid color(gray.500));
+border-5: xs(density(4) solid color(gray.600));
+```
+
+And here is how radii are defined:
+
+```scss
+/* Default responsive radius tokens. Apps can override in their @theme. */
+@theme {
+  radius-1: xs(space(1)) lg(space(2));
+  radius-2: xs(space(2)) lg(space(3));
+  radius-3: xs(space(3)) lg(space(4));
+  radius-4: xs(space(4)) lg(space(6));
+  radius-5: xs(space(6)) lg(space(8));
+}
+```
+
+## Interactive Demo
+
+Experiment with the border and radius tokens below:
+
+<DemoBorders />

@@ -65,14 +65,7 @@ export default function DemoBreakpoints() {
 
   return (
     <section className="breakpoints-section demo-section">
-      <div className="breakpoints-header">
-        <p className="demo-subtitle">
-          Define the responsive tiers of your design system. 
-          Adjusting these sliders updates the theme configuration globally.
-          <br/>
-          <small style={{ opacity: 0.7 }}>(Note: CSS variables are updated at runtime. Static media queries require a rebuild, but JS-driven components adapt instantly.)</small>
-        </p>
-      </div>
+      <h2 className="section-title">Interactive Playground</h2>
 
       {/* Live Monitor Bar */}
       <div style={{ 
@@ -84,7 +77,8 @@ export default function DemoBreakpoints() {
         justifyContent: 'space-between',
         alignItems: 'center',
         fontFamily: 'monospace',
-        border: '1px solid var(--ds__palette__primary-main)'
+        border: '1px solid var(--ds__palette__primary-main)',
+        marginBottom: '2rem'
       }}>
         <div>
           Window Width: <strong style={{ color: 'var(--ds__palette__primary-light)' }}>{windowWidth}px</strong>
@@ -94,7 +88,7 @@ export default function DemoBreakpoints() {
         </div>
       </div>
 
-      <div className="breakpoints-viz-container">
+      <div className="breakpoints-viz-container" style={{ marginBottom: '2rem' }}>
         <div className="breakpoints-bar-wrapper">
           <div className="breakpoints-bar">
             {keys.map(key => (
@@ -113,10 +107,9 @@ export default function DemoBreakpoints() {
       </div>
 
       <div className="breakpoints-controls">
-        <h4>Editor</h4>
         {keys.map(key => (
-          <div key={key} className="breakpoints-control-row">
-            <span className="breakpoints-control-label">{key}</span>
+          <div key={key} className="breakpoints-control-row" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+            <div style={{ width: '40px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.9rem' }}>{key}</div>
             <input
               type="range"
               min="0"
@@ -125,15 +118,26 @@ export default function DemoBreakpoints() {
               onChange={(e) => handleUpdate(key, Number(e.target.value))}
               disabled={key === 'xs'} // xs is locked
               className="breakpoints-slider"
+              style={{ flex: 1, cursor: key === 'xs' ? 'not-allowed' : 'pointer' }}
             />
-            <input
-              type="number"
-              value={breakpoints[key]}
-              onChange={(e) => handleUpdate(key, Number(e.target.value))}
-              disabled={key === 'xs'}
-              className="breakpoints-input-val"
-            />
-            <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>px</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <input
+                type="number"
+                value={breakpoints[key]}
+                onChange={(e) => handleUpdate(key, Number(e.target.value))}
+                disabled={key === 'xs'}
+                className="breakpoints-input-val"
+                style={{ 
+                  width: '70px', 
+                  padding: '0.5rem', 
+                  borderRadius: '4px', 
+                  border: '1px solid var(--ds__palette__tertiary-light)',
+                  background: 'var(--ds__palette__surface-main)',
+                  color: 'var(--ds__palette__surface-contrast)'
+                }}
+              />
+              <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>px</span>
+            </div>
           </div>
         ))}
       </div>

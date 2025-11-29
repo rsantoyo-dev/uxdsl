@@ -5,23 +5,13 @@ import { usePathname } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { useBreakpoints } from '@/components/BreakpointsProvider'
 
-const links = [
-  { href: '/', label: 'Home' },
-  { href: '/breakpoints', label: 'Breakpoints' },
-  { href: '/colors', label: 'Colors' },
-  { href: '/palette', label: 'Palette' },
-  { href: '/spacing', label: 'Spacing' },
-  { href: '/densities', label: 'Densities' },
-  { href: '/typography', label: 'Typography' },
-  { href: '/borders', label: 'Borders' },
-  { href: '/shadows', label: 'Shadows' },
-  { href: '/surfaces', label: 'Surfaces' },
-  { href: '/buttons', label: 'Buttons' },
-  { href: '/inputs', label: 'Inputs' },
-  { href: '/productivity', label: 'Productivity' },
-]
+const staticLinks: { href: string; label: string }[] = []
 
-export default function SideNav() {
+interface SideNavProps {
+  docsLinks?: Array<{ href: string; label: string }>
+}
+
+export default function SideNav({ docsLinks = [] }: SideNavProps) {
   const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
   const { breakpoints } = useBreakpoints()
@@ -41,6 +31,22 @@ export default function SideNav() {
   // Prevent hydration mismatch by rendering simple shell or default until mounted
   // Or just accept the class swap.
   const modeClass = mounted ? (isDesktop ? 'side-nav--desktop' : 'side-nav--mobile') : 'side-nav--desktop'
+
+  const renderLink = (l: { href: string; label: string }) => {
+    const active = pathname === l.href
+    return (
+      <li key={l.href} className="side-nav__item">
+        <Link
+          href={l.href}
+          className="side-nav__link"
+          aria-current={active ? 'page' : undefined}
+          onClick={() => setIsOpen(false)}
+        >
+          {l.label}
+        </Link>
+      </li>
+    )
+  }
 
   return (
     <nav className={`side-nav ${modeClass}`} aria-label="Sections">
@@ -70,26 +76,23 @@ export default function SideNav() {
           </button>
         </div>
 
-        <div className="side-nav__section">
-          <div className="side-nav__section-title">Docs</div>
-          <ul className="side-nav__list">
-            {links.map((l) => {
-              const active = pathname === l.href
-              return (
-                <li key={l.href} className="side-nav__item">
-                  <Link
-                    href={l.href}
-                    className="side-nav__link"
-                    aria-current={active ? 'page' : undefined}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    {l.label}
-                  </Link>
-                </li>
-              )
-            })}
-          </ul>
-        </div>
+        {staticLinks.length > 0 && (
+          <div className="side-nav__section">
+            <div className="side-nav__section-title">Playground</div>
+            <ul className="side-nav__list">
+              {staticLinks.map(renderLink)}
+            </ul>
+          </div>
+        )}
+
+        {docsLinks.length > 0 && (
+          <div className="side-nav__section">
+            <div className="side-nav__section-title">Documentation</div>
+            <ul className="side-nav__list">
+              {docsLinks.map(renderLink)}
+            </ul>
+          </div>
+        )}
       </div>
     </nav>
   )

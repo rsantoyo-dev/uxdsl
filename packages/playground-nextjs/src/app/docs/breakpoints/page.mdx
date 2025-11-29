@@ -1,0 +1,123 @@
+import DemoBreakpoints from '@/components/DemoBreakpoints'
+import DemoBreakpointsCards from '@/components/DemoBreakpointsCards'
+import { PageTitle } from '@/components/PageTitle'
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
+<PageTitle 
+  title="Breakpoints" 
+  subtitle="Responsive design breakpoints configuration and active state monitoring."
+/>
+
+<DemoBreakpoints />
+
+## Usage
+
+UXDSL allows you to apply responsive styles using a function-like syntax for each breakpoint. This works on **any CSS property**.
+
+### Syntax
+
+```scss
+property: xs(value) sm(value) md(value) lg(value) xl(value);
+```
+
+### Examples
+
+**Responsive Flex Direction:**
+
+Switch from a column layout on mobile to a row layout on tablets and desktops.
+
+<SyntaxHighlighter
+    language="scss"
+    style={vscDarkPlus}
+    customStyle={{ margin: 0, padding: "1.5rem" }}
+  >
+    {`/* UXDSL Code for the cards above */
+.container {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: space(4);
+}
+`}
+  </SyntaxHighlighter>
+
+<DemoBreakpointsCards />
+
+**Responsive Typography:**
+
+Adjust font size based on screen width.
+
+<SyntaxHighlighter
+    language="scss"
+    style={vscDarkPlus}
+    customStyle={{ margin: 0, padding: "1.5rem" }}
+  >
+    {`/* UXDSL Code for the cards above */
+.title {
+  font-size: xs(1rem) sm(1.25rem) md(1.5rem) lg(2rem);
+}
+`}
+  </SyntaxHighlighter>
+
+
+**Responsive Spacing:**
+
+Change padding dynamically.
+
+<SyntaxHighlighter
+    language="scss"
+    style={vscDarkPlus}
+    customStyle={{ margin: 0, padding: "1.5rem" }}
+  >
+    {`/* UXDSL Code for the cards above */
+.card {
+  padding: xs(space(2)) md(space(4));
+}
+`}
+  </SyntaxHighlighter>
+
+<div
+  className="demo-card"
+  style={{
+    background: "var(--uxdsl-color-surface-light)",
+    border: "1px solid var(--uxdsl-color-surface-contrast)",
+    borderRadius: "var(--uxdsl-radius-2)",
+    marginBottom: "2rem",
+    transition: "padding 0.3s ease",
+  }}
+>
+  <style>{`
+    .demo-card {
+      padding: var(--uxdsl-space-2);
+    }
+    @media (min-width: 768px) {
+      .demo-card {
+        padding: var(--uxdsl-space-4) !important;
+      }
+    }
+  `}</style>
+  <div
+    style={{
+      background: "var(--uxdsl-color-surface-main)",
+      padding: "1rem",
+      borderRadius: "4px",
+    }}
+  >
+    Resize the window to see the padding change from space(2) to space(4).
+  </div>
+</div>
+
+**Hiding Elements:**
+
+Conditionally display elements.
+
+```scss
+.sidebar {
+  display: xs(none) lg(block);
+}
+```
+
+## Active Breakpoints Demo
+
+Resize your window to see the active breakpoint change in real-time:
+
