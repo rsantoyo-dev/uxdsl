@@ -75,7 +75,7 @@ export function generateThemeCss(theme: Record<string, any>): string {
     
     if (darkVars.length > 0) {
       const darkCss = darkVars.join('; ');
-      cssContent += ` @media (prefers-color-scheme: dark) { :root { ${darkCss} } }`;
+      cssContent += ` @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { ${darkCss} } }`;
       cssContent += ` :root[data-theme='dark'] { ${darkCss} }`;
     }
   }

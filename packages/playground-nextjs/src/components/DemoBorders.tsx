@@ -226,6 +226,36 @@ export default function DemoBorders() {
 
   return (
     <div className="demo-borders">
+      <section className="section">
+        <h2 className="section-title">Understanding Borders & Radii</h2>
+        <p style={{ lineHeight: 1.6, color: 'var(--ds__palette__neutral-dark)', marginBottom: '1.5rem' }}>
+          Borders and radii in UXDSL are defined in the theme using a responsive syntax. 
+          For example, a border definition might look like:
+        </p>
+        <div style={{ background: 'var(--ds__palette__surface-light)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+          border-1: xs(1px solid color(gray.300));<br/>
+          border-2: xs(space(1) solid color(gray.300));<br/>
+          border-3: xs(density(2) solid color(gray.400));<br/>
+          border-4: xs(density(3) solid color(gray.500));<br/>
+          border-5: xs(density(4) solid color(gray.600));
+        </div>
+        <p style={{ lineHeight: 1.6, color: 'var(--ds__palette__neutral-dark)', marginBottom: '1.5rem' }}>
+          This means they are defined in the theme and can be responsive using UXDSL breakpoints like <code>xs</code>, <code>md</code>, etc. 
+          You can also use other tokens like <code>space()</code> or <code>density()</code> within these definitions.
+          The same principle applies to radii:
+        </p>
+        <div style={{ background: 'var(--ds__palette__surface-light)', padding: '1rem', borderRadius: '8px', marginBottom: '1.5rem', fontFamily: 'monospace', fontSize: '0.9rem' }}>
+          {`/* Default responsive radius tokens. Apps can override in their @theme. */`}<br/>
+          @theme &#123;<br/>
+          &nbsp;&nbsp;radius-1: xs(space(1)) lg(space(2));<br/>
+          &nbsp;&nbsp;radius-2: xs(space(2)) lg(space(3));<br/>
+          &nbsp;&nbsp;radius-3: xs(space(3)) lg(space(4));<br/>
+          &nbsp;&nbsp;radius-4: xs(space(4)) lg(space(6));<br/>
+          &nbsp;&nbsp;radius-5: xs(space(6)) lg(space(8));<br/>
+          &#125;
+        </div>
+      </section>
+
       {/* Interactive Playground */}
       <section className="section">
         <h2 className="section-title">Interactive Playground</h2>
