@@ -49,8 +49,7 @@
   font-weight: 500;
 }
 
-.inputs-playground__controls select,
-.inputs-playground__controls input[type="range"] {
+.inputs-playground__controls select {
   padding: density(1);
   border: 1px solid palette(neutral-light);
   border-radius: radius(1);

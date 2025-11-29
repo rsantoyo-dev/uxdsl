@@ -241,8 +241,7 @@
   font-weight: 500;
 }
 
-.surface-playground__controls select,
-.surface-playground__controls input[type="range"] {
+.surface-playground__controls select {
   padding: density(1);
   border: 1px solid palette(neutral-light);
   border-radius: radius(1);

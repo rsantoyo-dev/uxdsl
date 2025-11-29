@@ -1,3 +1,56 @@
 /* Minimal app styles using only DS tokens + packs */
 
 /* Component demo styles have been moved to colocated .uxdsl files */
+
+/* Global Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: palette(neutral-light);
+  border-radius: radius(round);
+  outline: none;
+  opacity: 0.8;
+  transition: opacity .2s;
+  cursor: pointer;
+  margin: density(1) 0;
+}
+
+input[type="range"]:hover {
+  opacity: 1;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: radius(round);
+  background: palette(primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out, transform .1s;
+  border: 2px solid palette(surface-main);
+  box-shadow: shadow(1);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: palette(primary-light);
+  transform: scale(1.1);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: radius(round);
+  background: palette(primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out, transform .1s;
+  border: 2px solid palette(surface-main);
+  box-shadow: shadow(1);
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: palette(primary-light);
+  transform: scale(1.1);
+}

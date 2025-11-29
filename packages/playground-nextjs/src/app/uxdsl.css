@@ -637,6 +637,53 @@ body {
 }
 /* Minimal app styles using only DS tokens + packs */
 /* Component demo styles have been moved to colocated .uxdsl files */
+/* Global Slider Styles */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--ds__palette__neutral-light);
+  border-radius: radius(round);
+  outline: none;
+  opacity: 0.8;
+  transition: opacity .2s;
+  cursor: pointer;
+  margin: var(--density-1) 0;
+}
+input[type="range"]:hover {
+  opacity: 1;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: radius(round);
+  background: var(--ds__palette__primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out, transform .1s;
+  border: 2px solid var(--ds__palette__surface-main);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--ds__palette__primary-light);
+  transform: scale(1.1);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: radius(round);
+  background: var(--ds__palette__primary-main);
+  cursor: pointer;
+  transition: background .15s ease-in-out, transform .1s;
+  border: 2px solid var(--ds__palette__surface-main);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+input[type="range"]::-moz-range-thumb:hover {
+  background: var(--ds__palette__primary-light);
+  transform: scale(1.1);
+}
 /* Theming page styles (UXDSL) */
 /* Reuse the same palette grid/swatches styling as DemoPalette */
 .palette-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: var(--space-3); }
@@ -1628,16 +1675,14 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
 }
-.surface-playground__controls select,
-.surface-playground__controls input[type="range"] {
+.surface-playground__controls select {
   padding: var(--density-1);
   border: 1px solid var(--ds__palette__neutral-light);
   border-radius: var(--space-1);
   background: var(--ds__palette__surface-main);
 }
 @media (min-width: 1024px) {
-.surface-playground__controls select,
-.surface-playground__controls input[type="range"] {
+.surface-playground__controls select {
     border-radius: var(--space-2);
 }
 }
@@ -4388,16 +4433,14 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
 }
-.buttons-playground__controls select,
-.buttons-playground__controls input[type="range"] {
+.buttons-playground__controls select {
   padding: var(--density-1);
   border: 1px solid var(--ds__palette__neutral-light);
   border-radius: var(--space-1);
   background: var(--ds__palette__surface-main);
 }
 @media (min-width: 1024px) {
-.buttons-playground__controls select,
-.buttons-playground__controls input[type="range"] {
+.buttons-playground__controls select {
     border-radius: var(--space-2);
 }
 }
@@ -9122,37 +9165,7 @@ body {
   z-index: 10; /* Ensure controls stay above expanding rings */
 }
 .density-slider {
-  -webkit-appearance: none;
   width: 200px;
-  height: 6px;
-  background: var(--ds__palette__neutral-light);
-  border-radius: 3px;
-  outline: none;
-}
-.density-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: var(--ds__palette__primary-main);
-  cursor: pointer;
-  transition: background .15s ease-in-out;
-}
-.density-slider::-webkit-slider-thumb:hover {
-  background: var(--ds__palette__primary-light);
-}
-.density-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border: 0;
-  border-radius: 50%;
-  background: var(--ds__palette__primary-main);
-  cursor: pointer;
-  transition: background .15s ease-in-out;
-}
-.density-slider::-moz-range-thumb:hover {
-  background: var(--ds__palette__primary-light);
 }
 .density-doll-wrapper {
   display: flex;
@@ -9615,16 +9628,14 @@ body {
   font-size: 0.9rem;
   font-weight: 500;
 }
-.inputs-playground__controls select,
-.inputs-playground__controls input[type="range"] {
+.inputs-playground__controls select {
   padding: var(--density-1);
   border: 1px solid var(--ds__palette__neutral-light);
   border-radius: var(--space-1);
   background: var(--ds__palette__surface-main);
 }
 @media (min-width: 1024px) {
-.inputs-playground__controls select,
-.inputs-playground__controls input[type="range"] {
+.inputs-playground__controls select {
     border-radius: var(--space-2);
 }
 }

@@ -240,7 +240,7 @@ function getActiveDefinition(def: string, currentBp: string) {
 
 export default function DemoDensity() {
   const { breakpoints } = useBreakpoints()
-  const [dollLevels, setDollLevels] = useState(5)
+  const [dollLevels, setDollLevels] = useState(14)
   const [densityDefinitions, setDensityDefinitions] = useState(defaultDensities)
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const currentBp = useBreakpoint(breakpoints)

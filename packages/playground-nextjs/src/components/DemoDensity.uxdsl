@@ -24,42 +24,10 @@
 }
 
 .density-slider {
-  -webkit-appearance: none;
   width: 200px;
-  height: 6px;
-  background: palette(neutral-light);
-  border-radius: 3px;
-  outline: none;
 }
 
-.density-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  appearance: none;
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: palette(primary-main);
-  cursor: pointer;
-  transition: background .15s ease-in-out;
-}
 
-.density-slider::-webkit-slider-thumb:hover {
-  background: palette(primary-light);
-}
-
-.density-slider::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
-  border: 0;
-  border-radius: 50%;
-  background: palette(primary-main);
-  cursor: pointer;
-  transition: background .15s ease-in-out;
-}
-
-.density-slider::-moz-range-thumb:hover {
-  background: palette(primary-light);
-}
 
 .density-doll-wrapper {
   display: flex;
