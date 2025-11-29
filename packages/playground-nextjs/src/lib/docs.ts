@@ -74,5 +74,5 @@ export function getDocsLinks(): NavLink[] {
       return a.label.localeCompare(b.label)
     })
 
-  return links.map(({ key, ...link }) => link)
+  return links.map(({ key: _key, ...link }) => link)
 }
