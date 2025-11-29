@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-// @ts-ignore
 import { breakpoints as runtimeBreakpoints } from 'postcss-uxdsl/ds-runtime'
 
 const defaultBreakpoints = {
