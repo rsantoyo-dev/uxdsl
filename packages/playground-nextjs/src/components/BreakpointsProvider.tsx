@@ -1,6 +1,8 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+// @ts-ignore
+import { breakpoints as runtimeBreakpoints } from 'postcss-uxdsl/ds-runtime'
 
 const defaultBreakpoints = {
   xs: 0,
@@ -22,28 +24,42 @@ const BreakpointsContext = createContext<{
 })
 
 export function BreakpointsProvider({ children }: { children: ReactNode }) {
-  const [breakpoints, setBreakpoints] = useState(defaultBreakpoints)
+  const [breakpoints, setBreakpointsState] = useState(defaultBreakpoints)
 
-  // Runtime CSS Injection
   useEffect(() => {
-    const styleId = 'uxdsl-breakpoints-runtime'
-    let styleEl = document.getElementById(styleId)
-    if (!styleEl) {
-      styleEl = document.createElement('style')
-      styleEl.id = styleId
-      document.head.appendChild(styleEl)
-    }
+    // Sync with runtime on mount
+    // Force a read to trigger potential <link> conversion
+    runtimeBreakpoints.get()
     
-    // Use template literal for multi-line string to avoid syntax errors
-    let css = `:root {
-`
-    Object.entries(breakpoints).forEach(([key, val]) => {
-      css += `  --breakpoint-${key}: ${val}px;
-`
+    // Small delay to allow <link> conversion to happen if needed
+    setTimeout(() => {
+      const current = runtimeBreakpoints.get()
+      if (current && Object.keys(current).length > 0) {
+        setBreakpointsState(prev => ({ ...prev, ...current }))
+      }
+    }, 100)
+
+    // Subscribe to runtime changes
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const unsubscribe = runtimeBreakpoints.subscribe((event: any) => {
+      if (event.type === 'breakpoint') {
+        const updated = runtimeBreakpoints.get()
+        setBreakpointsState(prev => ({ ...prev, ...updated }))
+      }
     })
-    css += '}'
-    styleEl.textContent = css
-  }, [breakpoints])
+
+    return () => {
+      unsubscribe()
+    }
+  }, [])
+
+  const setBreakpoints: React.Dispatch<React.SetStateAction<Breakpoints>> = (value) => {
+    setBreakpointsState((prev) => {
+      const next = typeof value === 'function' ? value(prev) : value
+      runtimeBreakpoints.set(next)
+      return next
+    })
+  }
 
   return (
     <BreakpointsContext.Provider value={{ breakpoints, setBreakpoints }}>

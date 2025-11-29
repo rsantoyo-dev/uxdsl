@@ -177,6 +177,30 @@ async function loadConfig(argv) {
   return resolvedConfig;
 }
 
+function normalizeBpMap(input) {
+  const DEFAULT_BPS = { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
+  if (!input) return { ...DEFAULT_BPS };
+  if (Array.isArray(input)) {
+    const map = {};
+    input.forEach((it) => {
+      if (Array.isArray(it)) {
+        map[String(it[0])] = Number(it[1]);
+      } else if (it && typeof it === 'object') {
+        const name = String(it.name || '').trim();
+        const px = Number(it.min ?? it.px);
+        if (name && !Number.isNaN(px)) map[name] = px;
+      }
+    });
+    return map;
+  }
+  const map = {};
+  Object.keys(input || {}).forEach((k) => {
+    const v = input[k];
+    if (typeof v === 'number' && !Number.isNaN(v)) map[k] = v;
+  });
+  return map;
+}
+
 async function buildOnce(config) {
   if (config.theme) console.log('[uxdsl] Theme config detected');
   const source = fs.readFileSync(config.entry, 'utf8');
@@ -193,10 +217,19 @@ async function buildOnce(config) {
     to: config.outFile,
     syntax: postcssScss,
   });
+
+  // Inject breakpoint metadata for runtime
+  const bpMap = normalizeBpMap(config.breakpoints || DEFAULT_BREAKPOINTS);
+  const bpJson = JSON.stringify(bpMap);
+  const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
+  // Also inject a marker rule for CSSOM detection
+  const bpMarker = `#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
+  const finalCss = result.css + '\n' + bpMeta + '\n' + bpMarker;
+
   fs.mkdirSync(path.dirname(config.outFile), { recursive: true });
-  fs.writeFileSync(config.outFile, result.css, 'utf8');
+  fs.writeFileSync(config.outFile, finalCss, 'utf8');
   console.log(
-    `[uxdsl] built ${path.relative(process.cwd(), config.outFile)} (${result.css.length} bytes)`
+    `[uxdsl] built ${path.relative(process.cwd(), config.outFile)} (${finalCss.length} bytes)`
   );
 }
 

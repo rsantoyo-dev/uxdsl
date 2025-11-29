@@ -140,4 +140,92 @@ Conditionally display elements.
 }`}
 </SyntaxHighlighter>
 
+## Configuration
+
+To customize the default breakpoints for your project, update the `breakpoints` object in your `uxdsl.config.js` file.
+
+<SyntaxHighlighter
+  language="javascript"
+  style={vscDarkPlus}
+  customStyle={{ margin: 0, padding: "1.5rem" }}
+>
+{`// uxdsl.config.js
+module.exports = {
+  // ...
+  breakpoints: {
+    xs: 0,
+    sm: 640,
+    md: 768,
+    lg: 1024,
+    xl: 1280
+  }
+}`}
+</SyntaxHighlighter>
+
+## Runtime Updates
+
+You can update breakpoints dynamically in the browser using the `ds-runtime` module. This allows for building live theme editors or testing responsiveness instantly.
+
+### API Usage
+
+<SyntaxHighlighter
+  language="typescript"
+  style={vscDarkPlus}
+  customStyle={{ margin: 0, padding: "1.5rem" }}
+>
+{`import { breakpoints } from 'postcss-uxdsl/ds-runtime'
+
+// Get current values
+const current = breakpoints.get()
+
+// Update 'md' breakpoint to 800px live
+breakpoints.update('md', 800)
+
+// Reset all breakpoints to initial config
+breakpoints.reset()
+`}
+</SyntaxHighlighter>
+
+### Reacting to Changes
+
+You can subscribe to breakpoint changes to keep your application state in sync. This is useful if you need to display the current values in your UI or perform logic based on the active configuration.
+
+<SyntaxHighlighter
+  language="typescript"
+  style={vscDarkPlus}
+  customStyle={{ margin: 0, padding: "1.5rem" }}
+>
+{`import { useEffect, useState } from 'react'
+import { breakpoints } from 'postcss-uxdsl/ds-runtime'
+
+export function useBreakpoints() {
+  const [values, setValues] = useState(breakpoints.get())
+
+  useEffect(() => {
+    // Ensure runtime is initialized (handles <link> tag conversion if needed)
+    breakpoints.get()
+    
+    // Sync after a short delay to catch any async initialization
+    const timer = setTimeout(() => {
+      setValues(breakpoints.get())
+    }, 100)
+
+    // Subscribe to updates
+    const unsubscribe = breakpoints.subscribe((event) => {
+      if (event.type === 'breakpoint') {
+        setValues(breakpoints.get())
+      }
+    })
+    
+    return () => {
+      clearTimeout(timer)
+      unsubscribe()
+    }
+  }, [])
+
+  return values
+}`}
+</SyntaxHighlighter>
+
+
 

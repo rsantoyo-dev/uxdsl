@@ -31,6 +31,19 @@ type LoadOptions = {
   scope?: ScopeOption;
 };
 
+// Event Listener System
+type Listener = (event: { type: 'palette' | 'breakpoint'; detail: any }) => void;
+const listeners: Set<Listener> = new Set();
+
+export function subscribe(listener: Listener): () => void {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function notify(type: 'palette' | 'breakpoint', detail: any) {
+  listeners.forEach(l => l({ type, detail }));
+}
+
 function normalize(token: string): string {
   let s = String(token).trim();
   if (
@@ -113,6 +126,8 @@ export function updatePalette(
       /* ignore persistence errors */
     }
   }
+  
+  notify('palette', { token: normToken, value });
 }
 
 export function updateColor(
@@ -138,6 +153,8 @@ export function updateColor(
   
   // We don't currently persist color token updates in the default palette store
   // If needed, we could add a separate store or mix them in.
+  
+  notify('palette', { token: normToken, value, isColor: true });
 }
 
 export function applyPalette(
@@ -218,6 +235,7 @@ const runtime = {
   updateBreakpoint,
   resetBreakpoints,
   loadPersistedBreakpoints,
+  subscribe,
 };
 
 export default runtime;
@@ -273,7 +291,63 @@ function rewriteMediaQueries(css: string, fromMap: BreakpointMap, toMap: Breakpo
 
 function allUxdslStyleTags(): any[] {
   if (typeof document === 'undefined') return [] as any;
-  return Array.from(document.querySelectorAll('style[data-uxdsl]')) as any[];
+  const tagged = Array.from(document.querySelectorAll('style[data-uxdsl]'));
+  if (tagged.length > 0) return tagged as any[];
+
+  // Fallback 1: search all style tags for the marker (e.g. Next.js dev mode)
+  const allStyles = Array.from(document.querySelectorAll('style'));
+  const foundStyles = allStyles.filter(s => s.textContent && s.textContent.includes('/*@uxdsl-bp'));
+  if (foundStyles.length > 0) return foundStyles as any[];
+
+  // Fallback 2: Search document.styleSheets for the marker rule and convert <link> to <style>
+  // This handles Next.js production/dev builds that use <link rel="stylesheet">
+  try {
+    for (let i = 0; i < document.styleSheets.length; i++) {
+      const sheet = document.styleSheets[i];
+      try {
+        // Check for the marker rule: #uxdsl-bp-meta
+        // We iterate rules safely
+        const rules = sheet.cssRules;
+        for (let j = 0; j < rules.length; j++) {
+          const rule = rules[j];
+          if (rule instanceof CSSStyleRule && rule.selectorText === '#uxdsl-bp-meta') {
+            // Found it!
+            const owner = sheet.ownerNode;
+            if (owner && owner.nodeName === 'LINK') {
+              const href = (owner as HTMLLinkElement).href;
+              // We need to fetch the content and replace the link with a style tag
+              // We can't do this synchronously easily, but we can try to fetch and replace.
+              // However, this function is synchronous.
+              // We'll trigger the fetch and return empty for now, but the NEXT call will succeed.
+              // Or better: we can't return it yet.
+              // But wait, if we can't return it, the current update will fail.
+              // Let's try to fetch it immediately if possible or just log a warning.
+              
+              // Actually, we can't block. But we can start the process.
+              if (!(owner as any).__uxdsl_fetching) {
+                (owner as any).__uxdsl_fetching = true;
+                fetch(href).then(r => r.text()).then(css => {
+                  const style = document.createElement('style');
+                  style.setAttribute('data-uxdsl', 'converted-link');
+                  style.textContent = css;
+                  owner.parentNode?.replaceChild(style, owner);
+                  // Trigger a re-apply if possible? 
+                  // We can't easily re-trigger the caller.
+                  // But the next update will work.
+                  console.log('[uxdsl] Converted <link> to <style> for runtime updates.');
+                }).catch(e => console.error('[uxdsl] Failed to convert link', e));
+              }
+            }
+            break; 
+          }
+        }
+      } catch (e) {
+        // CORS or other access error, ignore this sheet
+      }
+    }
+  } catch (e) {}
+
+  return [] as any[];
 }
 
 let __initialBp: BreakpointMap | null = null;
@@ -316,6 +390,7 @@ export function applyBreakpoints(map: BreakpointMap, opts: { persist?: boolean }
   if (opts.persist) {
     try { localStorage.setItem(STORE_BP_KEY, JSON.stringify(__currentBp)); } catch {}
   }
+  notify('breakpoint', { map: toMap });
 }
 
 export function updateBreakpoint(name: string, px: number, opts: { persist?: boolean } = {}): void {
@@ -342,6 +417,7 @@ export function resetBreakpoints(names?: string[] | string, opts: { clearPersist
   if (opts.clearPersist) {
     try { localStorage.removeItem(STORE_BP_KEY); } catch {}
   }
+  notify('breakpoint', { reset: true, names });
 }
 
 export function loadPersistedBreakpoints(): void {
@@ -361,4 +437,5 @@ export const breakpoints = {
   update: updateBreakpoint,
   reset: resetBreakpoints,
   load: loadPersistedBreakpoints,
+  subscribe,
 };

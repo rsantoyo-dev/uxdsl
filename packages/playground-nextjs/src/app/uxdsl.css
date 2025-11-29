@@ -15515,9 +15515,9 @@ input[type="range"]::-moz-range-thumb:hover {
 /* Segment Colors - Using requested palette */
 .breakpoints-segment--xs { background: var(--ds__palette__tertiary-light); color: var(--ds__palette__tertiary-dark); }
 .breakpoints-segment--sm { background: var(--ds__palette__secondary-light); color: var(--ds__palette__secondary-dark); }
-.breakpoints-segment--md { background: var(--ds__palette__primary-light); color: var(--ds__palette__primary-contrast); }
-.breakpoints-segment--lg { background: var(--ds__palette__info-light); color: var(--ds__palette__info-contrast); }
-.breakpoints-segment--xl { background: var(--ds__palette__error-light); color: var(--ds__palette__error-contrast); }
+.breakpoints-segment--md { background: var(--ds__palette__primary-light); color: var(--ds__palette__primary-dark); }
+.breakpoints-segment--lg { background: var(--ds__palette__info-light); color: var(--ds__palette__info-dark); }
+.breakpoints-segment--xl { background: var(--ds__palette__error-light); color: var(--ds__palette__error-dark); }
 /* Grid Layout */
 .breakpoints-grid {
   display: grid;
@@ -16339,3 +16339,6 @@ font-size: var(--pre-size);
 }
 
 
+
+/*@uxdsl-bp {"xs":0,"sm":480,"md":768,"lg":1024,"xl":1280}*/
+#uxdsl-bp-meta { --bp: '{"xs":0,"sm":480,"md":768,"lg":1024,"xl":1280}'; display: none; }

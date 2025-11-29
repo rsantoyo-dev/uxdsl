@@ -8,8 +8,14 @@ const keys: BreakpointKey[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
 export default function DemoBreakpoints() {
   const { breakpoints, setBreakpoints } = useBreakpoints()
+  const [localBreakpoints, setLocalBreakpoints] = useState(breakpoints)
   const [windowWidth, setWindowWidth] = useState(0)
   const [activeBp, setActiveBp] = useState<BreakpointKey>('xs')
+
+  // Sync local state when global breakpoints change (e.g. from reset or initial load)
+  useEffect(() => {
+    setLocalBreakpoints(breakpoints)
+  }, [breakpoints])
 
   useEffect(() => {
     const handleResize = () => {
@@ -31,7 +37,7 @@ export default function DemoBreakpoints() {
     return () => window.removeEventListener('resize', handleResize)
   }, [breakpoints])
 
-  const handleUpdate = (key: BreakpointKey, value: number) => {
+  const handleLocalUpdate = (key: BreakpointKey, value: number) => {
     const index = keys.indexOf(key)
     if (index === 0) return // xs is always 0
 
@@ -41,16 +47,21 @@ export default function DemoBreakpoints() {
     let newVal = value
     
     // Constraint: Must be > prev + 10
-    if (newVal <= breakpoints[prevKey] + 10) {
-      newVal = breakpoints[prevKey] + 10
+    // Use localBreakpoints for constraints to ensure consistency while dragging
+    if (newVal <= localBreakpoints[prevKey] + 10) {
+      newVal = localBreakpoints[prevKey] + 10
     }
 
     // Constraint: Must be < next - 10 (if next exists)
-    if (nextKey && newVal >= breakpoints[nextKey] - 10) {
-      newVal = breakpoints[nextKey] - 10
+    if (nextKey && newVal >= localBreakpoints[nextKey] - 10) {
+      newVal = localBreakpoints[nextKey] - 10
     }
 
-    setBreakpoints(prev => ({ ...prev, [key]: newVal }))
+    setLocalBreakpoints(prev => ({ ...prev, [key]: newVal }))
+  }
+
+  const commitUpdate = () => {
+    setBreakpoints(localBreakpoints)
   }
 
   // Calculate widths for visualization
@@ -58,9 +69,9 @@ export default function DemoBreakpoints() {
   
   const getSegmentWidth = (key: BreakpointKey) => {
     const index = keys.indexOf(key)
-    const start = breakpoints[key]
+    const start = localBreakpoints[key]
     const nextKey = keys[index + 1] as BreakpointKey | undefined
-    const end = nextKey ? breakpoints[nextKey] : maxVizWidth
+    const end = nextKey ? localBreakpoints[nextKey] : maxVizWidth
     return ((end - start) / maxVizWidth) * 100 + '%'
   }
 
@@ -79,10 +90,10 @@ export default function DemoBreakpoints() {
                     key={key} 
                     className={`breakpoints-segment breakpoints-segment--${key} ${activeBp === key ? 'is-active' : ''}`}
                     style={{ width: getSegmentWidth(key) }}
-                    title={`${key}: ${breakpoints[key]}px`}
+                    title={`${key}: ${localBreakpoints[key]}px`}
                   >
                     <span className="breakpoints-segment-label">{key}</span>
-                    <span className="breakpoints-segment-val">≥ {breakpoints[key]}px</span>
+                    <span className="breakpoints-segment-val">≥ {localBreakpoints[key]}px</span>
                   </div>
                 ))}
               </div>
@@ -101,16 +112,20 @@ export default function DemoBreakpoints() {
                     type="range"
                     min="0"
                     max="1600"
-                    value={breakpoints[key]}
-                    onChange={(e) => handleUpdate(key, Number(e.target.value))}
+                    value={localBreakpoints[key]}
+                    onChange={(e) => handleLocalUpdate(key, Number(e.target.value))}
+                    onMouseUp={commitUpdate}
+                    onTouchEnd={commitUpdate}
                     disabled={key === 'xs'}
                     className="breakpoints-slider"
                   />
                   <div className="breakpoints-input-wrapper">
                     <input
                       type="number"
-                      value={breakpoints[key]}
-                      onChange={(e) => handleUpdate(key, Number(e.target.value))}
+                      value={localBreakpoints[key]}
+                      onChange={(e) => handleLocalUpdate(key, Number(e.target.value))}
+                      onBlur={commitUpdate}
+                      onKeyDown={(e) => e.key === 'Enter' && commitUpdate()}
                       disabled={key === 'xs'}
                       className="breakpoints-input-val"
                     />
