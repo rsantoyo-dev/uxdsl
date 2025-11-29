@@ -74,5 +74,6 @@ export function getDocsLinks(): NavLink[] {
       return a.label.localeCompare(b.label)
     })
 
-  return links.map(({ key: _key, ...link }) => link)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  return links.map(({ key, ...link }) => link)
 }
