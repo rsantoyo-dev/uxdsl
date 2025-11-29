@@ -35,5 +35,6 @@
 @import '../components/UXDSLCardDemo.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import './page.uxdsl';
+@import './docs/breakpoints/breakpoints.uxdsl';
 
 

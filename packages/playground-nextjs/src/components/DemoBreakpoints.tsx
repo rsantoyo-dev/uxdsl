@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
+import { Monitor } from 'lucide-react'
 
 const keys: BreakpointKey[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
@@ -65,81 +66,79 @@ export default function DemoBreakpoints() {
 
   return (
     <section className="breakpoints-section demo-section">
-      <h2 className="section-title">Interactive Playground</h2>
-
-      {/* Live Monitor Bar */}
-      <div style={{ 
-        background: 'var(--ds__palette__surface-dark)', 
-        color: 'var(--ds__palette__surface-contrast)',
-        padding: '1rem', 
-        borderRadius: '8px', 
-        display: 'flex', 
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        fontFamily: 'monospace',
-        border: '1px solid var(--ds__palette__primary-main)',
-        marginBottom: '2rem'
-      }}>
-        <div>
-          Window Width: <strong style={{ color: 'var(--ds__palette__primary-light)' }}>{windowWidth}px</strong>
-        </div>
-        <div>
-          Active Token: <strong style={{ color: 'var(--ds__palette__secondary-light)', fontSize: '1.2rem' }}>{activeBp.toUpperCase()}</strong>
-        </div>
-      </div>
-
-      <div className="breakpoints-viz-container" style={{ marginBottom: '2rem' }}>
-        <div className="breakpoints-bar-wrapper">
-          <div className="breakpoints-bar">
-            {keys.map(key => (
-              <div 
-                key={key} 
-                className={`breakpoints-segment breakpoints-segment--${key}`}
-                style={{ width: getSegmentWidth(key) }}
-                title={`${key}: ${breakpoints[key]}px`}
-              >
-                <span className="breakpoints-segment-label">{key}</span>
-                <span className="breakpoints-segment-val">≥ {breakpoints[key]}px</span>
+      <div className="breakpoints-playground-wrapper">
+        <h4 className="demo-subtitle">Interactive Playground</h4>
+        
+        <div className="breakpoints-playground-container">
+          {/* Top: Visualization Bar */}
+          <div className="breakpoints-viz-container">
+            <div className="breakpoints-bar-wrapper">
+              <div className="breakpoints-bar">
+                {keys.map(key => (
+                  <div 
+                    key={key} 
+                    className={`breakpoints-segment breakpoints-segment--${key} ${activeBp === key ? 'is-active' : ''}`}
+                    style={{ width: getSegmentWidth(key) }}
+                    title={`${key}: ${breakpoints[key]}px`}
+                  >
+                    <span className="breakpoints-segment-label">{key}</span>
+                    <span className="breakpoints-segment-val">≥ {breakpoints[key]}px</span>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="breakpoints-controls">
-        {keys.map(key => (
-          <div key={key} className="breakpoints-control-row" style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-            <div style={{ width: '40px', fontWeight: 'bold', textTransform: 'uppercase', fontSize: '0.9rem' }}>{key}</div>
-            <input
-              type="range"
-              min="0"
-              max="1600"
-              value={breakpoints[key]}
-              onChange={(e) => handleUpdate(key, Number(e.target.value))}
-              disabled={key === 'xs'} // xs is locked
-              className="breakpoints-slider"
-              style={{ flex: 1, cursor: key === 'xs' ? 'not-allowed' : 'pointer' }}
-            />
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <input
-                type="number"
-                value={breakpoints[key]}
-                onChange={(e) => handleUpdate(key, Number(e.target.value))}
-                disabled={key === 'xs'}
-                className="breakpoints-input-val"
-                style={{ 
-                  width: '70px', 
-                  padding: '0.5rem', 
-                  borderRadius: '4px', 
-                  border: '1px solid var(--ds__palette__tertiary-light)',
-                  background: 'var(--ds__palette__surface-main)',
-                  color: 'var(--ds__palette__surface-contrast)'
-                }}
-              />
-              <span style={{ fontSize: '0.8rem', opacity: 0.6 }}>px</span>
             </div>
           </div>
-        ))}
+
+          {/* Bottom: Grid Layout */}
+          <div className="breakpoints-grid">
+            {/* Left: Controls */}
+            <div className="breakpoints-controls">
+              <h3 className="breakpoints-subtitle">Adjust Breakpoints</h3>
+              {keys.map(key => (
+                <div key={key} className="breakpoints-control-row">
+                  <div className="breakpoints-control-label">{key}</div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1600"
+                    value={breakpoints[key]}
+                    onChange={(e) => handleUpdate(key, Number(e.target.value))}
+                    disabled={key === 'xs'}
+                    className="breakpoints-slider"
+                  />
+                  <div className="breakpoints-input-wrapper">
+                    <input
+                      type="number"
+                      value={breakpoints[key]}
+                      onChange={(e) => handleUpdate(key, Number(e.target.value))}
+                      disabled={key === 'xs'}
+                      className="breakpoints-input-val"
+                    />
+                    <span className="breakpoints-unit">px</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Right: Info Panel */}
+            <div className="breakpoints-info-panel">
+              <div className="breakpoints-info-card is-compact">
+                <Monitor size={20} className="breakpoints-icon" />
+                <div className="breakpoints-info-content">
+                  <span className="breakpoints-info-label">Window Width</span>
+                  <strong className="breakpoints-info-value">{windowWidth}px</strong>
+                </div>
+              </div>
+              <div className="breakpoints-info-card is-highlighted">
+                <span className="breakpoints-info-label">Active Token</span>
+                <strong className="breakpoints-info-value is-large">{activeBp.toUpperCase()}</strong>
+              </div>
+              <p className="breakpoints-info-desc">
+                Resize your browser window to see the active token change in real-time.
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   )

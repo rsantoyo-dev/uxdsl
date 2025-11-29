@@ -50,10 +50,8 @@
 }
 
 .buttons-playground__controls select {
+  @ds-input(outlined neutral);
   padding: density(1);
-  border: 1px solid palette(neutral-light);
-  border-radius: radius(1);
-  background: palette(surface-main);
 }
 
 .buttons-playground__preview {

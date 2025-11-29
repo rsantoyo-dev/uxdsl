@@ -6,18 +6,26 @@
   gap: density(4);
 }
 
-.breakpoints-header {
+.breakpoints-playground-wrapper {
   display: flex;
   flex-direction: column;
   gap: density(2);
 }
 
-.breakpoints-viz-container {
-  @ds-surface(contained);
+.breakpoints-playground-container {
+  @ds-surface(outlined);
   padding: density(4);
+  border-radius: radius(3);
   display: flex;
   flex-direction: column;
-  gap: density(4);
+  gap: density(6);
+  background: palette(surface-light);
+}
+
+.breakpoints-viz-container {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
 }
 
 .breakpoints-bar-wrapper {
@@ -28,9 +36,9 @@
 
 .breakpoints-bar {
   display: flex;
-  height: 80px;
+  height: 60px;
   width: 100%;
-  min-width: 800px; /* Minimum width to visualize scales */
+  min-width: 600px;
   border-radius: radius(2);
   overflow: hidden;
   box-shadow: shadow(1);
@@ -44,63 +52,193 @@
   justify-content: center;
   font-size: 0.85rem;
   font-weight: bold;
-  transition: width 0.2s ease, background-color 0.2s ease;
+  transition: all 0.3s ease;
   position: relative;
   padding: 0 density(1);
   overflow: hidden;
   white-space: nowrap;
 }
 
+.breakpoints-segment.is-active {
+  box-shadow: inset 0 0 0 2px palette(surface-main);
+  z-index: 1;
+}
+
 .breakpoints-segment-label {
-  opacity: 0.9;
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
 }
 
 .breakpoints-segment-val {
-  font-size: 0.75rem;
-  opacity: 0.7;
-  font-family: monospace;
-  margin-top: 4px;
+  font-size: 0.7rem;
+  opacity: 0.9;
+  font-family: font(code);
+  margin-top: 2px;
 }
 
-/* Segment Colors - Backgrounds from palette, Text standardized for contrast */
-.breakpoints-segment--xs { background: palette(neutral-light); color: palette(neutral-dark); }
-.breakpoints-segment--sm { background: palette(info-light); color: palette(neutral-dark); }
-.breakpoints-segment--md { background: palette(success-light); color: palette(primary-contrast); } /* White text for green */
-.breakpoints-segment--lg { background: palette(warning-light); color: palette(neutral-dark); }
-.breakpoints-segment--xl { background: palette(error-light); color: palette(primary-contrast); } /* White text for red */
+/* Segment Colors - Using requested palette */
+.breakpoints-segment--xs { background: palette(tertiary-light); color: palette(tertiary-dark); }
+.breakpoints-segment--sm { background: palette(secondary-light); color: palette(secondary-dark); }
+.breakpoints-segment--md { background: palette(primary-light); color: palette(primary-dark); }
+.breakpoints-segment--lg { background: palette(info-light); color: palette(info-dark); }
+.breakpoints-segment--xl { background: palette(error-light); color: palette(error-dark); }
 
+/* Grid Layout */
+.breakpoints-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: density(6);
+}
+
+@media (min-width: 768px) {
+  .breakpoints-grid {
+    grid-template-columns: 2fr 1fr;
+    align-items: start;
+  }
+}
+
+/* Controls Column */
 .breakpoints-controls {
-  @ds-surface(outlined);
-  padding: density(3);
   display: flex;
   flex-direction: column;
-  gap: density(2);
-  max-width: 600px;
+  gap: density(3);
+}
+
+.breakpoints-subtitle {
+  font-size: 1rem;
+  font-weight: 600;
+  color: palette(text-secondary);
+  margin-bottom: density(1);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .breakpoints-control-row {
   display: flex;
   align-items: center;
-  gap: density(2);
+  gap: density(3);
+  padding: density(2);
+  background: palette(surface-main);
+  border-radius: radius(2);
+  border: 1px solid palette(neutral-light);
+  transition: border-color 0.2s;
+}
+
+.breakpoints-control-row:hover {
+  border-color: palette(primary-light);
 }
 
 .breakpoints-control-label {
-  width: 40px;
-  font-weight: bold;
+  width: 30px;
+  font-weight: 700;
   text-transform: uppercase;
-  font-size: 0.8rem;
+  font-size: 0.85rem;
+  color: palette(text-secondary);
 }
 
 .breakpoints-slider {
   flex: 1;
   cursor: pointer;
+  margin: 0 density(2);
+}
+
+.breakpoints-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: density(1);
 }
 
 .breakpoints-input-val {
-  width: 70px;
+  width: 80px;
   padding: 4px 8px;
   border: 1px solid palette(neutral-light);
   border-radius: radius(1);
-  font-family: monospace;
+  font-family: font(code);
   text-align: right;
+  font-size: 0.9rem;
+  color: palette(text-main);
+  background: transparent;
+}
+
+.breakpoints-unit {
+  font-size: 0.8rem;
+  color: palette(text-secondary);
+}
+
+/* Info Panel Column */
+.breakpoints-info-panel {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  padding: density(4);
+  background: palette(surface-main);
+  border-radius: radius(2);
+  border: 1px solid palette(neutral-light);
+  height: 100%;
+}
+
+.breakpoints-info-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: density(3);
+  border-radius: radius(2);
+  background: palette(surface-light);
+  border: 1px solid palette(neutral-light);
+  text-align: center;
+}
+
+.breakpoints-info-card.is-compact {
+  flex-direction: row;
+  gap: density(3);
+  padding: density(2) density(3);
+}
+
+.breakpoints-icon {
+  color: palette(text-secondary);
+}
+
+.breakpoints-info-content {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.breakpoints-info-card.is-highlighted {
+  background: palette(primary-light);
+  border-color: palette(primary-main);
+  color: palette(primary-contrast);
+}
+
+.breakpoints-info-card.is-highlighted .breakpoints-info-label {
+  color: palette(primary-contrast);
+  opacity: 0.9;
+}
+
+.breakpoints-info-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: palette(text-secondary);
+  margin-bottom: 2px;
+}
+
+.breakpoints-info-value {
+  font-family: font(code);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.breakpoints-info-value.is-large {
+  font-size: 2rem;
+}
+
+.breakpoints-info-desc {
+  font-size: 0.85rem;
+  color: palette(text-secondary);
+  text-align: center;
+  line-height: 1.5;
+  margin-top: auto;
 }

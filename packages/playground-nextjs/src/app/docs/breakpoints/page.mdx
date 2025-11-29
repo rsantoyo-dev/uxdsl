@@ -11,39 +11,83 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 <DemoBreakpoints />
 
-## Usage
+<div className="demo-section">
+  <h4 className="demo-subtitle">Fluid Layout Example</h4>
+  <p className="demo-description">This component switches from a single-column layout to a row layout when the viewport width exceeds the <strong>md</strong> breakpoint. Try adjusting the <strong>md</strong> slider above to see it adapt in real-time without resizing your browser.</p>
+  <div className="demo-card">
+    <DemoBreakpointsCards />
+  </div>
+</div>
+
+<div className="demo-section">
+  <h4 className="demo-subtitle">Developer Guide</h4>
+  <div className="demo-grid-2">
+    <div className="demo-card">
+      <h5 className="demo-card-title">UXDSL Syntax</h5>
+      <p className="demo-text">UXDSL uses a concise function-like syntax for responsive values. This works on <strong>any CSS property</strong>.</p>
+      <SyntaxHighlighter
+        language="scss"
+        style={vscDarkPlus}
+        customStyle={{ margin: 0, padding: "1.5rem" }}
+      >
+{`.my-component {
+  /* property: xs(val) md(val) lg(val); */
+  
+  /* Example: Flex Direction */
+  flex-direction: xs(column) md(row);
+
+  /* Example: Spacing */
+  padding: xs(space(2)) md(space(4));
+}`}
+      </SyntaxHighlighter>
+    </div>
+    <div className="demo-card">
+      <h5 className="demo-card-title">Default Values</h5>
+      <table className="demo-table">
+        <thead>
+          <tr>
+            <th>Token</th>
+            <th>Value</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>xs</code></td>
+            <td>0px</td>
+            <td>Mobile Portrait</td>
+          </tr>
+          <tr>
+            <td><code>sm</code></td>
+            <td>640px</td>
+            <td>Mobile Landscape</td>
+          </tr>
+          <tr>
+            <td><code>md</code></td>
+            <td>768px</td>
+            <td>Tablet Portrait</td>
+          </tr>
+          <tr>
+            <td><code>lg</code></td>
+            <td>1024px</td>
+            <td>Tablet Landscape / Laptop</td>
+          </tr>
+          <tr>
+            <td><code>xl</code></td>
+            <td>1280px</td>
+            <td>Desktop</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+## Syntax Examples
 
 UXDSL allows you to apply responsive styles using a function-like syntax for each breakpoint. This works on **any CSS property**.
 
-### Syntax
-
-```scss
-property: xs(value) sm(value) md(value) lg(value) xl(value);
-```
-
-### Examples
-
-**Responsive Flex Direction:**
-
-Switch from a column layout on mobile to a row layout on tablets and desktops.
-
-<SyntaxHighlighter
-    language="scss"
-    style={vscDarkPlus}
-    customStyle={{ margin: 0, padding: "1.5rem" }}
-  >
-    {`/* UXDSL Code for the cards above */
-.container {
-  display: flex;
-  flex-direction: xs(column) md(row);
-  gap: space(4);
-}
-`}
-  </SyntaxHighlighter>
-
-<DemoBreakpointsCards />
-
-**Responsive Typography:**
+### Responsive Typography
 
 Adjust font size based on screen width.
 
@@ -52,7 +96,7 @@ Adjust font size based on screen width.
     style={vscDarkPlus}
     customStyle={{ margin: 0, padding: "1.5rem" }}
   >
-    {`/* UXDSL Code for the cards above */
+    {`/* UXDSL Code */
 .title {
   font-size: xs(1rem) sm(1.25rem) md(1.5rem) lg(2rem);
 }
@@ -60,7 +104,7 @@ Adjust font size based on screen width.
   </SyntaxHighlighter>
 
 
-**Responsive Spacing:**
+### Responsive Spacing
 
 Change padding dynamically.
 
@@ -69,55 +113,31 @@ Change padding dynamically.
     style={vscDarkPlus}
     customStyle={{ margin: 0, padding: "1.5rem" }}
   >
-    {`/* UXDSL Code for the cards above */
+    {`/* UXDSL Code */
 .card {
   padding: xs(space(2)) md(space(4));
 }
 `}
   </SyntaxHighlighter>
 
-<div
-  className="demo-card"
-  style={{
-    background: "var(--uxdsl-color-surface-light)",
-    border: "1px solid var(--uxdsl-color-surface-contrast)",
-    borderRadius: "var(--uxdsl-radius-2)",
-    marginBottom: "2rem",
-    transition: "padding 0.3s ease",
-  }}
->
-  <style>{`
-    .demo-card {
-      padding: var(--uxdsl-space-2);
-    }
-    @media (min-width: 768px) {
-      .demo-card {
-        padding: var(--uxdsl-space-4) !important;
-      }
-    }
-  `}</style>
-  <div
-    style={{
-      background: "var(--uxdsl-color-surface-main)",
-      padding: "1rem",
-      borderRadius: "4px",
-    }}
-  >
+<div className="demo-card">
+  <div style={{ padding: 'var(--density-2)', border: '1px dashed currentColor' }}>
     Resize the window to see the padding change from space(2) to space(4).
   </div>
 </div>
 
-**Hiding Elements:**
+### Hiding Elements
 
 Conditionally display elements.
 
-```scss
-.sidebar {
+<SyntaxHighlighter
+    language="scss"
+    style={vscDarkPlus}
+    customStyle={{ margin: 0, padding: "1.5rem" }}
+  >
+{`.sidebar {
   display: xs(none) lg(block);
-}
-```
+}`}
+</SyntaxHighlighter>
 
-## Active Breakpoints Demo
-
-Resize your window to see the active breakpoint change in real-time:
 

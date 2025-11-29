@@ -12,14 +12,14 @@
   "palette": {
     "primary": {
       "main": "#2C415C",
-      "light": "#486581",
-      "dark": "#102A43",
+      "light": "#6B8CAE",
+      "dark": "#081828",
       "contrast": "#FFFFFF"
     },
     "secondary": {
       "main": "#475569",
-      "light": "#94A3B8",
-      "dark": "#334155",
+      "light": "#CBD5E1",
+      "dark": "#1E293B",
       "contrast": "#FFFFFF"
     },
     "surface": {

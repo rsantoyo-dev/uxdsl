@@ -1,0 +1,94 @@
+/* Breakpoints Page Styles */
+
+.demo-section {
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+  margin-bottom: density(6);
+}
+
+.demo-subtitle {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: palette(neutral-dark);
+  margin-bottom: density(2);
+}
+
+.demo-description {
+  font-size: 1rem;
+  color: palette(neutral-main);
+  line-height: 1.6;
+  max-width: 800px;
+  margin-bottom: density(3);
+}
+
+.demo-card {
+  @ds-surface(outlined);
+  padding: density(4);
+  border-radius: radius(3);
+  background: palette(surface-main);
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.demo-card-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: palette(neutral-dark);
+  margin-bottom: density(2);
+  border-bottom: 1px solid palette(neutral-light);
+  padding-bottom: density(2);
+}
+
+.demo-grid-2 {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: density(4);
+}
+
+@media (min-width: 768px) {
+  .demo-grid-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.demo-code {
+  background: palette(neutral-light);
+  padding: density(3);
+  border-radius: radius(2);
+  font-family: font(code);
+  font-size: 0.9rem;
+  color: palette(neutral-dark);
+  overflow-x: auto;
+  border: 1px solid palette(neutral-main);
+}
+
+.demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.demo-table th {
+  text-align: left;
+  padding: density(2);
+  border-bottom: 2px solid palette(neutral-light);
+  color: palette(neutral-dark);
+  font-weight: 600;
+}
+
+.demo-table td {
+  padding: density(2);
+  border-bottom: 1px solid palette(neutral-light);
+  color: palette(neutral-main);
+}
+
+.demo-table code {
+  background: palette(neutral-light);
+  padding: 2px 6px;
+  border-radius: radius(1);
+  font-family: font(code);
+  font-size: 0.85em;
+  color: palette(primary-dark);
+}

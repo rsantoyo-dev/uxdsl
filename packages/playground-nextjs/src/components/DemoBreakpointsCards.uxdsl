@@ -32,3 +32,15 @@
   font-size: 0.875rem;
   color: palette(tertiary-dark);
 }
+
+.demo-breakpoints-card-icon--primary {
+  color: palette(primary-main);
+}
+
+.demo-breakpoints-card-icon--secondary {
+  color: palette(secondary-main);
+}
+
+.demo-breakpoints-card-icon--info {
+  color: palette(info-main);
+}

@@ -85,12 +85,8 @@
 }
 
 .select {
+  @ds-input(outlined neutral);
   padding: space(2);
-  border: border(1, palette(neutral-main));
-  border-radius: radius(1);
-  background: palette(surface-main);
-  color: palette(text-main);
-  font: font(body-md);
 }
 
 .preview-area {
