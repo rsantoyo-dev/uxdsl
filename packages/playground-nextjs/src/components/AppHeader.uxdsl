@@ -31,9 +31,9 @@
   @ds-surface(contained light);
   display: flex;
   flex-direction: row; /* Changed to row */
-  align-items: baseline; /* Changed to baseline for text alignment */
+  align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
-  background: palette(surface-light, 0.3); /* Added background with alpha */
+  background: palette(surface-light, 0.15); /* Reduced alpha */
 }
 
 #AppHeader .app-header__logo-img {
