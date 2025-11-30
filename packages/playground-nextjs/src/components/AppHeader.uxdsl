@@ -33,7 +33,7 @@
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
-  background: palette(surface-light, 0.15); /* Reduced alpha */
+  background: palette(surface-light, 0.15); /* Corrected alpha */
 }
 
 #AppHeader .app-header__logo-img {
@@ -66,6 +66,7 @@
   line-height: 1;
   letter-spacing: -0.5px;
   white-space: nowrap;
+  margin-bottom: -8px; /* Adjusted to align with logo bottom, using 8px as 'spacing 3' */
 }
 
 #AppHeader .app-header__subtitle-text {
