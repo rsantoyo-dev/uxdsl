@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "local-deps": "npm install --prefix ../uxdsl-cli && npm install --prefix ../postcss-uxdsl && npm run build --prefix ../postcss-uxdsl",
-    "uxdsl:build": "uxdsl build",
-    "uxdsl:watch": "uxdsl build --watch",
+    "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build",
+    "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && uxdsl build --watch",
     "dev": "npm run local-deps && npm run uxdsl:build && concurrently \"next dev\"",
     "build": "npm run local-deps && npm run uxdsl:build && next build",
     "start": "next start",
@@ -40,6 +40,7 @@
     "postcss-loader": "^8.2.0",
     "stylelint": "^16.25.0",
     "stylelint-config-standard-scss": "^13.0.0",
+    "stylelint-selector-bem-pattern": "^4.0.1",
     "typescript": "^5.0.0",
     "uxdsl-cli": "file:../uxdsl-cli"
   }

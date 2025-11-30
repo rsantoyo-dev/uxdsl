@@ -1,0 +1,66 @@
+import { PageTitle } from '@/components/PageTitle'
+import CodeBlock from '@/components/CodeBlock'
+import { Info } from 'lucide-react'
+
+<div id="QuickStartPage"><PageTitle 
+  title="Quick Start"
+  subtitle="Initialize your Design System infrastructure."
+  subtext="Zero-config setup for Next.js and Vite"
+/>
+
+<section className="section">
+  <div className="step-card">
+    <div className="step-header">
+      <span className="step-number">01</span>
+      <h3 className="step-title">Install Packages</h3>
+    </div>
+    <div className="step-desc">Add the core engine, CLI tooling, and PostCSS plugin to your development dependencies.</div>
+    <div className="code-wrapper">
+      <CodeBlock language="bash" code="npm install -D uxdsl-cli postcss-uxdsl uxdsl-core" />
+    </div>
+  </div>
+
+  <div className="step-card">
+    <div className="step-header">
+      <span className="step-number">02</span>
+      <h3 className="step-title">Initialize</h3>
+    </div>
+    <div className="step-desc">Run the auto-detection script. It identifies your framework (Next.js or Vite) and scaffolds the configuration.</div>
+    <div className="code-wrapper">
+      <CodeBlock language="bash" code="npx uxdsl init" />
+    </div>
+    
+    <div className="info-box">
+      <Info className="info-icon" size={18} />
+      <div className="info-text">
+        Generates <code>uxdsl.config.cjs</code>, <code>src/uxdsl-entry.uxdsl</code>, and configures PostCSS automatically.
+      </div>
+    </div>
+  </div>
+
+  <div className="step-card">
+    <div className="step-header">
+      <span className="step-number">03</span>
+      <h3 className="step-title">Create Components</h3>
+    </div>
+    <div className="step-desc">Define your first semantic style file. Co-locate it with your component.</div>
+    
+    <div className="code-wrapper">
+      <CodeBlock language="scss" code={`/* src/components/Button.uxdsl */
+#MyButton {
+  .btn {
+    /* Intent-based styling */
+    @ds-button(contained primary density(2));
+  }
+}`} />
+    </div>
+
+    <div className="step-desc" style={{marginTop: '1rem'}}>The CLI will automatically detect new <code>.uxdsl</code> files and update the entry point.</div>
+    
+    <div className="code-wrapper">
+      <CodeBlock language="bash" code="npx uxdsl generate-entry" />
+    </div>
+  </div>
+</section>
+
+</div>

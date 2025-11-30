@@ -282,7 +282,7 @@ export default function DemoPalette() {
   const [textVariant, setTextVariant] = useState('contrast')
 
   return (
-    <section className="palette-section demo-section">
+    <section id="DemoPalette" className="palette-section demo-section">
       <div className="palette-header">
         <div>
           <p className="demo-subtitle">

@@ -2,12 +2,15 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
-html, body { min-height: 100%; }
-body {
-  margin: 0;
+html, body { 
+  min-height: 100%; 
+  margin: 0 !important; 
+  padding: 0 !important; 
+  width: 100%;
   font-family: var(--font-ui, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   background: palette(surface-main);
   color: palette(surface-contrast);
+  overflow-x: hidden; /* Prevent horizontal scrollbars from full-width headers */
 }
 
 .main {
@@ -34,11 +37,22 @@ body {
   padding: xs(space(2)) md(space(4));
   margin: 0 auto;
   max-width: 1400px;
+  align-items: start; /* Ensure sidebar stays at top, not centered */
 }
 
 .layout__nav {
-  /* Ensure nav doesn't collapse */
-  min-width: 0;
+  /* Mobile: Remove from flow to prevent grid gap/spacing */
+  position: absolute;
+  width: 0;
+  height: 0;
+
+  /* Desktop: Restore to grid flow */
+  @media (min-width: 1024px) {
+    position: static;
+    width: auto;
+    height: auto;
+    min-width: 0;
+  }
 }
 
 .layout__content {

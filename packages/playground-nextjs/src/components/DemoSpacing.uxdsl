@@ -1,218 +1,219 @@
-/* DemoSpacing styles */
+/* DemoSpacing styles - Scoped */
+#DemoSpacing {
+  .spacing-section { display: flex; flex-direction: column; gap: density(4); }
+  .spacing-header { display: flex; flex-direction: column; gap: density(2); }
 
-.spacing-section { display: flex; flex-direction: column; gap: density(4); }
-.spacing-header { display: flex; flex-direction: column; gap: density(2); }
-
-.spacing-doll-container { display: flex; flex-direction: column; gap: density(2); }
-.spacing-doll-controls { display: flex; gap: density(2); align-items: center; }
-.spacing-doll-wrapper { 
-  display: flex; 
-  justify-content: center; 
-  align-items: center;
-  /* min-height removed to adapt to content */
-  overflow: auto; 
-  padding: density(4);
-  background: palette(surface-light);
-  border-radius: radius(2);
-  border: 1px solid palette(neutral-light);
-  position: relative;
-  transition: all 0.3s ease; /* Smooth transition when resizing */
-}
-
-.concentric-wrapper {
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.concentric-content {
-  position: relative;
-  z-index: 100;
-  background: palette(surface-main);
-  padding: density(2);
-  border-radius: radius(1);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 80px;
-  min-height: 40px;
-  box-shadow: shadow(2);
-  @ds-typo(caption);
-  font-weight: bold;
-  color: palette(primary-dark);
-  border: 1px solid palette(neutral-light);
-}
-
-.concentric-ring {
-  position: absolute;
-  border-radius: radius(2);
-  border: 1px solid palette(primary-main, 0.2);
-  background: palette(primary-main, 0.03); /* Very subtle fill */
-  pointer-events: auto; /* Allow hovering */
-  transition: all 0.2s ease;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start; /* Label at top */
-  cursor: pointer;
-}
-
-.concentric-ring:hover,
-.concentric-ring.is-hovered {
-  border-color: palette(secondary-main);
-  background: palette(secondary-main, 0.1);
-  /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
-  /* z-index: 50 !important; */
-  box-shadow: 0 0 0 1px palette(secondary-main);
-}
-
-.ring-label {
-  background: palette(secondary-main);
-  color: palette(secondary-contrast);
-  font-size: 0.6rem;
-  padding: 1px 4px;
-  border-radius: 0 0 4px 4px;
-  opacity: 0;
-  transition: opacity 0.2s;
-  margin-top: -1px; /* Attach to border */
-}
-
-.concentric-ring:hover .ring-label,
-.concentric-ring.is-hovered .ring-label {
-  opacity: 1;
-}
-
-/* Generate inset classes for rings */
-@for $i from 1 through 16 {
-  .concentric-ring--#{$i} {
-    /* Negative inset expands from the center content */
-    inset: calc(space($i) * -1);
-    z-index: calc(20 - #{$i}); /* Smaller rings on top of larger rings */
+  .spacing-doll-container { display: flex; flex-direction: column; gap: density(2); }
+  .spacing-doll-controls { display: flex; gap: density(2); align-items: center; }
+  .spacing-doll-wrapper { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    /* min-height removed to adapt to content */
+    overflow: auto; 
+    padding: density(4);
+    background: palette(surface-light);
+    border-radius: radius(2);
+    border: 1px solid palette(neutral-light);
+    position: relative;
+    transition: all 0.3s ease; /* Smooth transition when resizing */
   }
-}
 
-.spacing-grid {
-  display: flex;
-  flex-direction: column;
-  gap: density(1);
-}
+  .concentric-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
 
-.spacing-card {
-  @ds-surface(outlined);
-  padding: density(2);
-  display: grid;
-  gap: density(2);
-  border-radius: radius(2);
-  transition: all 0.2s ease;
-  align-items: center;
-  
-  /* Mobile Layout: 2 Rows */
-  grid-template-columns: auto 1fr;
-  grid-template-areas: 
-    "token input"
-    "sep sep"
-    "preview preview";
-}
+  .concentric-content {
+    position: relative;
+    z-index: 100;
+    background: palette(surface-main);
+    padding: density(2);
+    border-radius: radius(1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    min-height: 40px;
+    box-shadow: shadow(2);
+    @ds-typo(caption);
+    font-weight: bold;
+    color: palette(primary-dark);
+    border: 1px solid palette(neutral-light);
+  }
 
-/* Desktop Layout: 3 Columns */
-@media (min-width: 768px) {
+  .concentric-ring {
+    position: absolute;
+    border-radius: radius(2);
+    border: 1px solid palette(primary-main, 0.2);
+    background: palette(primary-main, 0.03); /* Very subtle fill */
+    pointer-events: auto; /* Allow hovering */
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Label at top */
+    cursor: pointer;
+  }
+
+  .concentric-ring:hover,
+  .concentric-ring.is-hovered {
+    border-color: palette(secondary-main);
+    background: palette(secondary-main, 0.1);
+    /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
+    /* z-index: 50 !important; */
+    box-shadow: 0 0 0 1px palette(secondary-main);
+  }
+
+  .ring-label {
+    background: palette(secondary-main);
+    color: palette(secondary-contrast);
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 0 0 4px 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: -1px; /* Attach to border */
+  }
+
+  .concentric-ring:hover .ring-label,
+  .concentric-ring.is-hovered .ring-label {
+    opacity: 1;
+  }
+
+  /* Generate inset classes for rings */
+  @for $i from 1 through 16 {
+    .concentric-ring--#{$i} {
+      /* Negative inset expands from the center content */
+      inset: calc(space($i) * -1);
+      z-index: calc(20 - #{$i}); /* Smaller rings on top of larger rings */
+    }
+  }
+
+  .spacing-grid {
+    display: flex;
+    flex-direction: column;
+    gap: density(1);
+  }
+
   .spacing-card {
-    grid-template-columns: 120px 1fr auto;
-    grid-template-areas: "token input preview";
-    padding: density(1) density(3); /* More compact vertical padding on desktop */
+    @ds-surface(outlined);
+    padding: density(2);
+    display: grid;
+    gap: density(2);
+    border-radius: radius(2);
+    transition: all 0.2s ease;
+    align-items: center;
+    
+    /* Mobile Layout: 2 Rows */
+    grid-template-columns: auto 1fr;
+    grid-template-areas: 
+      "token input"
+      "sep sep"
+      "preview preview";
   }
-}
 
-.spacing-card:hover {
-  border-color: palette(primary-main);
-  box-shadow: shadow(1);
-}
+  /* Desktop Layout: 3 Columns */
+  @media (min-width: 768px) {
+    .spacing-card {
+      grid-template-columns: 120px 1fr auto;
+      grid-template-areas: "token input preview";
+      padding: density(1) density(3); /* More compact vertical padding on desktop */
+    }
+  }
 
-.spacing-card__token {
-  grid-area: token;
-  @ds-typo(subtitle2);
-  font-family: monospace;
-  font-weight: bold;
-  color: palette(primary-dark);
-}
+  .spacing-card:hover {
+    border-color: palette(primary-main);
+    box-shadow: shadow(1);
+  }
 
-.spacing-card__input-wrapper {
-  grid-area: input;
-  display: flex;
-  justify-content: flex-end;
-}
+  .spacing-card__token {
+    grid-area: token;
+    @ds-typo(subtitle2);
+    font-family: monospace;
+    font-weight: bold;
+    color: palette(primary-dark);
+  }
 
-.spacing-card__input {
-  width: 100%;
-  max-width: 120px;
-  padding: density(0.5) density(1);
-  border: 1px solid palette(neutral-light);
-  border-radius: radius(1);
-  font-family: monospace;
-  font-size: 0.85rem;
-  text-align: right;
-  color: palette(neutral-dark);
-}
-
-@media (min-width: 768px) {
   .spacing-card__input-wrapper {
-    justify-content: flex-start;
-  }
-  
-  .spacing-card__input {
-    text-align: left;
-    max-width: 200px;
-  }
-}
-
-.spacing-card__input:focus {
-  border-color: palette(primary-main);
-  outline: none;
-}
-
-.spacing-card__separator {
-  grid-area: sep;
-  height: 1px;
-  background: palette(neutral-light, 0.5);
-  width: 100%;
-  margin: density(0.5) 0;
-}
-
-@media (min-width: 768px) {
-  .spacing-card__separator {
-    display: none;
-  }
-}
-
-.spacing-card__preview {
-  grid-area: preview;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: density(1) 0;
-  /* Ensure it takes space but allows growth */
-  min-height: 40px;
-}
-
-@media (min-width: 768px) {
-  .spacing-card__preview {
+    grid-area: input;
+    display: flex;
     justify-content: flex-end;
-    padding: 0;
-    min-width: 60px; /* Minimum width for small squares */
   }
-}
 
-.spacing-box {
-  background: palette(primary-main);
-  border-radius: 2px;
-  /* Box shadow to make it visible if white */
-  box-shadow: 0 0 0 1px palette(primary-main, 0.2);
-}
+  .spacing-card__input {
+    width: 100%;
+    max-width: 120px;
+    padding: density(0.5) density(1);
+    border: 1px solid palette(neutral-light);
+    border-radius: radius(1);
+    font-family: monospace;
+    font-size: 0.85rem;
+    text-align: right;
+    color: palette(neutral-dark);
+  }
 
-/* Generate size classes for all 16 levels */
-@for $i from 1 through 16 {
-  .spacing-box--#{$i} {
-    width: space($i);
-    height: space($i);
+  @media (min-width: 768px) {
+    .spacing-card__input-wrapper {
+      justify-content: flex-start;
+    }
+    
+    .spacing-card__input {
+      text-align: left;
+      max-width: 200px;
+    }
+  }
+
+  .spacing-card__input:focus {
+    border-color: palette(primary-main);
+    outline: none;
+  }
+
+  .spacing-card__separator {
+    grid-area: sep;
+    height: 1px;
+    background: palette(neutral-light, 0.5);
+    width: 100%;
+    margin: density(0.5) 0;
+  }
+
+  @media (min-width: 768px) {
+    .spacing-card__separator {
+      display: none;
+    }
+  }
+
+  .spacing-card__preview {
+    grid-area: preview;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: density(1) 0;
+    /* Ensure it takes space but allows growth */
+    min-height: 40px;
+  }
+
+  @media (min-width: 768px) {
+    .spacing-card__preview {
+      justify-content: flex-end;
+      padding: 0;
+      min-width: 60px; /* Minimum width for small squares */
+    }
+  }
+
+  .spacing-box {
+    background: palette(primary-main);
+    border-radius: 2px;
+    /* Box shadow to make it visible if white */
+    box-shadow: 0 0 0 1px palette(primary-main, 0.2);
+  }
+
+  /* Generate size classes for all 16 levels */
+  @for $i from 1 through 16 {
+    .spacing-box--#{$i} {
+      width: space($i);
+      height: space($i);
+    }
   }
 }

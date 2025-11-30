@@ -6,7 +6,7 @@ export default function ButtonDemo() {
   const [selected, setSelected] = useState<string | null>(null);
 
   return (
-    <div className="demo-section">
+    <div id="ButtonDemo" className="demo-section">
       <div className="demo-grid demo-grid--3col">
         {/* Primary buttons */}
         <div>

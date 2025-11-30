@@ -33,7 +33,7 @@
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
-  background: palette(surface-light, 0.15); /* Corrected alpha */
+  background: palette(surface-light, 0.85); /* Corrected alpha */
 }
 
 #AppHeader .app-header__logo-img {
@@ -49,7 +49,7 @@
   line-height: 1;
   letter-spacing: -0.5px;
   white-space: nowrap;
-  margin-bottom: -8px; /* Adjusted to align with logo bottom, using 8px as 'spacing 3' */
+  margin-bottom: space(1); /* Adjusted to align with logo bottom, using 8px as 'spacing 3' */
 }
 
 #AppHeader .app-header__subtitle-text {
@@ -69,48 +69,58 @@
   gap: density(2);
 }
 
-/* Breakpoint Monitor Badge */
-#AppHeader .bp-monitor {
+#AppHeader .app-header__settings {
   display: flex;
   align-items: center;
-  gap: density(1);
-  background: rgba(255,255,255,0.1);
-  color: palette(primary-contrast);
-  padding: 4px 10px;
-  border-radius: radius(1);
-  font-size: 0.75rem;
-  font-family: monospace;
-  height: 30px;
-  width: fit-content;
+  gap: density(2);
 }
 
-#AppHeader .bp-monitor__label {
-  font-weight: bold;
-  color: palette(primary-contrast);
+#AppHeader .theme-color-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 3px solid var(--theme-color);
+  background: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-#AppHeader .bp-monitor__val {
-  opacity: 0.7;
-  border-left: 1px solid rgba(255,255,255,0.2);
-  padding-left: density(1);
+#AppHeader .theme-color-btn:hover {
+  transform: scale(1.1);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+#AppHeader .theme-color-btn.is-active {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+#AppHeader .divider-vertical {
+  width: 1px;
+  height: 20px;
+  background-color: rgba(255, 255, 255, 0.2);
+  margin: 0 density(1);
 }
 
 #AppHeader .theme-toggle {
-  background: rgba(255,255,255,0.1);
-  border: 1px solid rgba(255,255,255,0.2);
-  color: palette(primary-contrast);
-  padding: density(2);
-  border-radius: radius(full);
-  cursor: pointer;
-  transition: all 0.2s ease;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 #AppHeader .theme-toggle:hover {
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   transform: scale(1.05);
 }

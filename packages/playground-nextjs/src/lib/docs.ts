@@ -6,6 +6,7 @@ export type NavLink = {
 export function getDocsLinks(): NavLink[] {
   const pages = [
     'home',
+    'quick-start',
     'breakpoints',
     'colors',
     'palette',

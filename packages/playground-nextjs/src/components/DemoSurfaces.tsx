@@ -165,7 +165,7 @@ export default function DemoSurfaces() {
   const playgroundClass = `${baseClass} demo-radius-${playgroundRadius} demo-shadow-${playgroundShadow}`
 
   return (
-    <section className="surfaces-section demo-section">
+    <section id="DemoSurfaces" className="surfaces-section demo-section">
       <div className="surfaces-header">
         <p className="demo-subtitle">
           Surfaces are intelligent, composite containers that manage background, border, shadow, and spacing.

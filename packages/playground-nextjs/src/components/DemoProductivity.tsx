@@ -65,7 +65,7 @@ export default function DemoProductivity() {
   `
 
   return (
-    <section className="demo-section">
+    <section id="DemoProductivity" className="demo-section">
       <style>{cssOutput}</style>
       <div className="demo-header">
         <p className="demo-subtitle">

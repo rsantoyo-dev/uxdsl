@@ -1,154 +1,148 @@
-/* SideNav Styles - JS Driven Responsiveness */
-
-/* Burger Button */
-.side-nav__burger {
-  @ds-button(outlined);
+/* SideNav Styles - CSS Driven Responsiveness - Scoped */
+#SideNav {
+  /* --- Base Styles (Mobile Default) --- */
+  /* Container is always present but children control visibility */
   
-  display: flex; /* Mobile default */
-  align-items: center;
-  justify-content: center;
-  padding: density(2);
-  margin-bottom: space(2);
-  width: fit-content;
-
-  /* Hide on desktop */
-  .side-nav--desktop & {
+  /* Backdrop - Only visible on mobile when open */
+  .side-nav__backdrop {
     display: none;
-  }
-}
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1100; /* Above AppHeader (1000) */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
 
-/* Backdrop */
-.side-nav__backdrop {
-  display: block; /* Mobile default */
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  z-index: 99;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease;
-
-  &.is-open {
-    opacity: 1;
-    pointer-events: auto;
+    &.is-open {
+      display: block;
+      opacity: 1;
+      pointer-events: auto;
+    }
   }
 
-  /* Hide on desktop */
-  .side-nav--desktop & {
+  /* Menu Container - Mobile Drawer Styles */
+  .side-nav__menu {
     display: none;
-  }
-}
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 280px;
+    z-index: 1200; /* Above Backdrop */
+    transform: translateX(-100%);
+    transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    
+    background: palette(surface-main);
+    box-shadow: shadow(1);
+    border: none;
+    padding: space(4);
+    height: 100%;
+    overflow-y: auto;
 
-/* Menu Container */
-.side-nav__menu {
-  /* Mobile Defaults (Drawer) */
-  position: fixed;
-  top: 0;
-  left: 0;
-  bottom: 0;
-  width: 280px;
-  z-index: 100;
-  transform: translateX(-100%);
-  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-  
-  /* Shared Styles */
-  background: palette(surface-main);
-  
-  /* Mobile Styles */
-  border-right: border(1, palette(neutral-dark, 0.1));
-  box-shadow: shadow(3);
-  padding: space(4);
-  height: 100%;
-  overflow-y: auto;
-
-  &.is-open {
-    transform: translateX(0);
+    &.is-open {
+      display: block;
+      transform: translateX(0);
+    }
   }
 
-  /* Desktop Overrides (Sidebar) */
-  .side-nav--desktop & {
-    position: static;
+  /* Header - Only visible on mobile */
+  .side-nav__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: space(4);
+  }
+
+  /* --- Shared Content Styles --- */
+  .side-nav__title {
+    @ds-typo(h5);
+    margin: 0;
+  }
+
+  .side-nav__close {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: palette(surface-contrast, 0.7);
+    padding: space(1);
+  }
+
+  .side-nav__section + .side-nav__section {
+    margin-top: density(4);
+  }
+
+  .side-nav__section-title {
+    @ds-typo(span);
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin: 0 0 density(1) 0;
+    padding-left: density(1);
+  }
+
+  .side-nav__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: density(1);
+  }
+
+  .side-nav__link {
+    @ds-typo(span);
+    text-decoration: none;
+    padding: density(1) density(2);
+    border-radius: radius(1);
+    display: block;
+    transition: all 0.1s ease;
+    color: palette(surface-contrast, 0.8);
+
+    &:hover {
+      background: palette(neutral-light);
+      color: palette(neutral-contrast);
+    }
+
+    &[aria-current="page"] {
+      background: palette(primary-main, 0.1);
+      color: palette(primary-main);
+    }
+  }
+
+  /* --- Desktop Overrides (Media Query) --- */
+  @media (min-width: 1024px) {
+    /* Restore to visible and in flow on desktop */
+    display: block;
+    --side-nav-sticky-top: calc(space(12) + space(7)); /* Keep aligned with header + toolbar */
+    position: sticky;
+    top: var(--side-nav-sticky-top);
     width: auto;
-    z-index: auto;
-    transform: none;
-    
-    /* Desktop Styles */
-    padding: density(3);
     height: auto;
-    overflow-y: visible;
-    
-    @ds-surface(contained);
-    
-    border: border(1);
-    border-radius: radius(2);
-    box-shadow: none;
+    align-self: start;
+    margin: 0;
+    max-height: calc(100vh - var(--side-nav-sticky-top) - space(3));
+    overflow-y: auto;
+
+    .side-nav__burger,
+    .side-nav__backdrop,
+    .side-nav__header {
+      display: none;
+    }
+
+    .side-nav__menu {
+      display: block;
+      position: static;
+      width: auto;
+      z-index: auto;
+      transform: none;
+      
+      padding: density(3);
+      height: auto;
+      overflow-y: visible;
+      
+      @ds-surface(flat);
+      box-shadow: shadow(1);
+      border-radius: radius(2);
+    }
   }
-}
-
-/* Header (Mobile Only) */
-.side-nav__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: space(4);
-
-  .side-nav--desktop & {
-    display: none;
-  }
-}
-
-.side-nav__title {
-  @ds-typo(h5);
-  margin: 0;
-}
-
-.side-nav__close {
-  background: transparent;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: palette(surface-contrast, 0.7);
-  padding: space(1);
-}
-
-/* List Styles */
-.side-nav__section + .side-nav__section {
-  margin-top: density(4);
-}
-
-.side-nav__section-title {
-  @ds-typo(h5);
-  margin: 0 0 density(2) 0;
-}
-
-.side-nav__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: density(1);
-}
-
-.side-nav__link {
-  @ds-typo(body);
-  text-decoration: none;
-  padding: density(1);
-  border-radius: radius(1);
-  display: block;
-  transition: all 0.2s ease;
-  color: palette(surface-contrast);
-  opacity: 0.7;
-}
-
-.side-nav__link:hover {
-  background: palette(neutral-light);
-  color: palette(neutral-contrast);
-  opacity: 1;
-}
-
-.side-nav__link[aria-current="page"] {
-  background: palette(primary-main, 0.1);
-  color: palette(primary-main);
-  font-weight: 600;
-  opacity: 1;
 }

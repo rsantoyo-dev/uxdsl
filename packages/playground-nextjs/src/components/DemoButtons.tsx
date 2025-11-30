@@ -28,7 +28,7 @@ export default function DemoButtons() {
   const playgroundClass = `${baseClass} demo-radius-${playgroundRadius} demo-shadow-${playgroundShadow} ${playgroundHover ? 'force-hover' : ''} ${playgroundActive ? 'force-active' : ''} ${playgroundSelected ? 'force-selected' : ''}`
 
   return (
-    <section className="buttons-section demo-section">
+    <section id="DemoButtons" className="buttons-section demo-section">
       <div className="buttons-header">
         <p className="demo-subtitle">
           Buttons are intelligent, interactive elements styled with the <code>@ds-button</code> mixin.

@@ -1,11 +1,10 @@
 import type { Metadata } from 'next'
 import './uxdsl.css'
 import AppHeader from '@/components/AppHeader'
-import SideNav from '@/components/SideNav'
+import PageToolbar from '@/components/PageToolbar'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
 import theme from '../../uxdsl.theme.default.json'
-import { getDocsLinks } from '@/lib/docs'
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -20,8 +19,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const docsLinks = getDocsLinks()
-
   return (
     <html lang="en">
       <head>
@@ -30,14 +27,8 @@ export default function RootLayout({
       <body>
         <Providers>
           <AppHeader />
-          <div className="layout">
-            <aside className="layout__nav">
-              <SideNav docsLinks={docsLinks} />
-            </aside>
-            <div className="layout__content">
-              {children}
-            </div>
-          </div>
+          <PageToolbar />
+          {children}
         </Providers>
       </body>
     </html>

@@ -1,6 +1,16 @@
 {
   "extends": ["stylelint-config-standard-scss"],
+  "plugins": ["stylelint-selector-bem-pattern"],
   "rules": {
+    "plugin/selector-bem-pattern": {
+      "preset": "bem",
+      "componentName": "[A-Z]+",
+      "componentSelectors": {
+        "initial": "^\\\.{componentName}(?:-[a-z]+)?$",
+        "combined": "^\\\.combined-{componentName}-[a-z]+$"
+      }
+    },
+    "selector-class-pattern": null, 
     "scss/at-rule-no-unknown": [
       true,
       {

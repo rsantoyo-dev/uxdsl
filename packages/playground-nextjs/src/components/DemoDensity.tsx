@@ -264,7 +264,7 @@ export default function DemoDensity() {
   }
 
   return (
-    <section className="density-section demo-section">
+    <section id="DemoDensity" className="density-section demo-section">
       <div className="density-header">
         <p className="demo-subtitle">
           Density is a responsive unit linked to UXDSL spacing (or custom pixel values). 

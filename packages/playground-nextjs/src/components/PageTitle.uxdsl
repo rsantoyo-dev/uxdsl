@@ -1,32 +1,37 @@
-.page-title {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  padding: density(6) 0 density(4);
-}
+/* PageTitle styles - Scoped */
+#PageTitle {
+  .page-title {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+    padding: density(6) 0 density(4);
+  }
 
-.page-title__text {
-  @ds-typo(h1);
-  margin: 0;
-  font-weight: 900;
-  letter-spacing: -2px;
-  /* Gradient Text Effect */
-  background: linear-gradient(135deg, palette(primary-main) 0%, palette(primary-light) 50%, palette(secondary-main) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  color: palette(primary-main);
-}
+  .page-title__text {
+    @ds-typo(h1);
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: -2px;
+    /* Gradient Text Effect */
+    background: linear-gradient(135deg, palette(primary-main) 0%, palette(primary-light) 50%, palette(secondary-main) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: palette(primary-main);
+  }
 
-.page-title__subtitle {
-  @ds-typo(h4);
-  color: palette(neutral-dark);
-  font-weight: 300;
-  margin: 0;
-  line-height: 1.4;
-}
+  .page-title__subtitle {
+    @ds-typo(h4);
+    color: palette(surface-contrast); /* Maximum contrast */
+    margin: 0;
+    line-height: 1.4;
+    font-weight: 400; /* Ensure regular weight, not bold, not light */
+  }
 
-.page-title__subtext {
-  opacity: 0.7;
-  font-size: 0.9em;
+  .page-title__subtext {
+    @ds-typo(body);
+    color: palette(surface-contrast, 0.85); /* High contrast, slight hierarchy */
+    margin-top: density(1);
+    display: block; /* Ensure it breaks to new line properly if inline wasn't doing it */
+  }
 }

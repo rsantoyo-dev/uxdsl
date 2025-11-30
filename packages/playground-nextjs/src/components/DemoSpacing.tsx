@@ -126,7 +126,7 @@ export default function DemoSpacing() {
   }
 
   return (
-    <section className="spacing-section demo-section">
+    <section id="DemoSpacing" className="spacing-section demo-section">
       <div className="spacing-header">
         <p className="demo-subtitle">
           Consistent spacing tokens for padding, margin, and layout gaps.

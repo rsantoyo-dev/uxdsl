@@ -113,7 +113,7 @@ export default function DemoColors() {
   const [textShade, setTextShade] = useState('50')
 
   return (
-    <section className="demo-section">
+    <section id="DemoColors" className="demo-section">
       <div className="demo-header">
         <p className="demo-subtitle">
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.

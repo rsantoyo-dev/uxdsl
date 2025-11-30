@@ -1,6 +1,6 @@
 export default function CardDemo() {
   return (
-    <div className="demo-section">
+    <div id="CardDemo" className="demo-section">
       <div className="demo-grid demo-grid--2col">
         <div className="card">
           <h4 className="card__title">UXDSL Design System</h4>

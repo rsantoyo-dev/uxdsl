@@ -1,16 +1,16 @@
-/* ButtonDemo component styles */
+/* ButtonDemo component styles - Scoped */
+#ButtonDemo {
+  .btn { @ds-button (contained); @ds-typo (body); cursor: pointer; transition: all 0.2s ease; }
+  .btn:hover { transform: translateY(-1px); }
 
-.btn { @ds-button (contained); @ds-typo (body); cursor: pointer; transition: all 0.2s ease; }
-.btn:hover { transform: translateY(-1px); }
+  .btn--outlined { @ds-button (outlined primary); }
+  .btn--flat { @ds-button (flat primary); }
 
-.btn--outlined { @ds-button (outlined primary); }
-.btn--flat { @ds-button (flat primary); }
+  .btn--secondary { @ds-button (contained secondary); }
+  .btn--outlined.btn--secondary { @ds-button (outlined secondary); }
+  .btn--flat.btn--secondary { @ds-button (flat secondary); }
 
-.btn--secondary { @ds-button (contained secondary); }
-.btn--outlined.btn--secondary { @ds-button (outlined secondary); }
-.btn--flat.btn--secondary { @ds-button (flat secondary); }
-
-.btn--sm { @ds-button (contained primary 1); }
-.btn--md { @ds-button (contained primary 2); }
-.btn--lg { @ds-button (contained primary 3); }
-
+  .btn--sm { @ds-button (contained primary 1); }
+  .btn--md { @ds-button (contained primary 2); }
+  .btn--lg { @ds-button (contained primary 3); }
+}

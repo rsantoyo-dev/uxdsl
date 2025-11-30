@@ -251,7 +251,7 @@ export default function DemoTypography() {
   const [editingItem, setEditingItem] = useState<typeof typographyItems[0] | null>(null)
 
   return (
-    <section className="typo-section demo-section">
+    <section id="DemoTypography" className="typo-section demo-section">
       <div className="typo-header">
         <p className="demo-subtitle">
           Responsive typography scale. Click any card to edit its properties.

@@ -225,7 +225,7 @@ export default function DemoBorders() {
   }
 
   return (
-    <div className="demo-borders">
+    <div id="DemoBorders" className="demo-borders">
       {/* Interactive Playground */}
       <section className="section">
         <h2 className="section-title">Interactive Playground</h2>

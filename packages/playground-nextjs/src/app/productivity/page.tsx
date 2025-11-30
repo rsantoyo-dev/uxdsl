@@ -6,7 +6,7 @@ import { PageTitle } from '@/components/PageTitle'
 
 export default function ProductivityPage() {
   return (
-    <main className="main">
+    <main id="ProductivityPage" className="main">
       <div className="container">
         <header className="header">
           <div style={{ marginBottom: '1rem' }}>

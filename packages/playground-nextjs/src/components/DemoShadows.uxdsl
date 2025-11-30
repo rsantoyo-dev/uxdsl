@@ -1,127 +1,130 @@
-.demo-shadows {
-  display: flex;
-  flex-direction: column;
-  gap: space(8);
-  padding: space(4);
-}
-
-.section {
-  display: flex;
-  flex-direction: column;
-  gap: space(4);
-}
-
-.section-title {
-  font: font(h4);
-  color: palette(text-main);
-  margin-bottom: space(2);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: space(4);
-}
-
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: space(2);
-  padding: space(4);
-  background: palette(surface-main);
-  border: border(1, palette(neutral-main));
-  border-radius: radius(2);
-}
-
-.preview-box {
-  width: 100%;
-  height: 100px;
-  background: palette(surface-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: palette(text-secondary);
-  font: font(body-sm);
-}
-
-.label {
-  font: font(body-sm);
-  color: palette(text-secondary);
-  font-family: monospace;
-}
-
-.playground {
-  display: flex;
-  flex-direction: column;
-  background: palette(surface-main);
-  padding: space(6);
-  border-radius: radius(3);
-  border: border(1, palette(neutral-main));
-}
-
-@media (min-width: 768px) {
-  .playground {
-    display: grid;
-    grid-template-columns: 300px 1fr;
+/* DemoShadows styles - Scoped */
+#DemoShadows {
+  .demo-shadows {
+    display: flex;
+    flex-direction: column;
+    gap: space(8);
+    padding: space(4);
   }
-}
 
-.controls {
-  display: flex;
-  flex-direction: column;
-  gap: space(4);
-  padding: density(2);
-}
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: space(4);
+  }
 
-.control-group {
-  display: flex;
-  flex-direction: column;
-  gap: space(2);
-}
+  .section-title {
+    font: font(h4);
+    color: palette(text-main);
+    margin-bottom: space(2);
+  }
 
-.control-label {
-  font: font(label);
-  color: palette(text-secondary);
-}
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: space(4);
+  }
 
-.select {
-  @ds-input(outlined neutral);
-  padding: space(2);
-}
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: space(2);
+    padding: space(4);
+    background: palette(surface-main);
+    border: border(1, palette(neutral-main));
+    border-radius: radius(2);
+  }
 
-.preview-area {
-  display: flex;
-  flex-direction: column;
-  gap: space(4);
-  min-width: 0;
-  padding: density(2);
-}
+  .preview-box {
+    width: 100%;
+    height: 100px;
+    background: palette(surface-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: palette(text-secondary);
+    font: font(body-sm);
+  }
 
-.live-preview {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: palette(surface-light);
-  border-radius: radius(2);
-  min-height: 300px;
-  padding: space(8);
-}
+  .label {
+    font: font(body-sm);
+    color: palette(text-secondary);
+    font-family: monospace;
+  }
 
-.demo-element {
-  width: 200px;
-  height: 200px;
-  background: palette(surface-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: palette(text-main);
-  font-weight: bold;
-  transition: all 0.3s ease;
-}
+  .playground {
+    display: flex;
+    flex-direction: column;
+    background: palette(surface-main);
+    padding: space(6);
+    border-radius: radius(3);
+    border: border(1, palette(neutral-main));
+  }
 
-.demo-code-block {
-  border-radius: radius(2);
-  overflow: hidden;
-  border: border(1, palette(neutral-main));
+  @media (min-width: 768px) {
+    .playground {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+    }
+  }
+
+  .controls {
+    display: flex;
+    flex-direction: column;
+    gap: space(4);
+    padding: density(2);
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: space(2);
+  }
+
+  .control-label {
+    font: font(label);
+    color: palette(text-secondary);
+  }
+
+  .select {
+    @ds-input(outlined neutral);
+    padding: space(2);
+  }
+
+  .preview-area {
+    display: flex;
+    flex-direction: column;
+    gap: space(4);
+    min-width: 0;
+    padding: density(2);
+  }
+
+  .live-preview {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: palette(surface-light);
+    border-radius: radius(2);
+    min-height: 300px;
+    padding: space(8);
+  }
+
+  .demo-element {
+    width: 200px;
+    height: 200px;
+    background: palette(surface-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: palette(text-main);
+    font-weight: bold;
+    transition: all 0.3s ease;
+  }
+
+  .demo-code-block {
+    border-radius: radius(2);
+    overflow: hidden;
+    border: border(1, palette(neutral-main));
+  }
 }

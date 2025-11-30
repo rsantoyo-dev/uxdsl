@@ -1,6 +1,6 @@
 export default function ThemingPage() {
   return (
-    <main className="main">
+    <main id="ThemingPage" className="main">
       <div className="container">
         <h1 className="section-title">Theming</h1>
         <p>

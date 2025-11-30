@@ -9,10 +9,10 @@ interface PageTitleProps {
 
 export const PageTitle = ({ title, subtitle, subtext, className = '' }: PageTitleProps) => {
   return (
-    <div className={`page-title ${className}`}>
+    <div id="PageTitle" className={`page-title ${className}`}>
       <h1 className="page-title__text">{title}</h1>
       {subtitle && (
-        <p className="page-title__subtitle">
+        <div className="page-title__subtitle">
           {subtitle}
           {subtext && (
             <>
@@ -20,7 +20,7 @@ export const PageTitle = ({ title, subtitle, subtext, className = '' }: PageTitl
               <span className="page-title__subtext">{subtext}</span>
             </>
           )}
-        </p>
+        </div>
       )}
     </div>
   )

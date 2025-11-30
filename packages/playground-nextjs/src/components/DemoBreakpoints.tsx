@@ -76,7 +76,7 @@ export default function DemoBreakpoints() {
   }
 
   return (
-    <section className="breakpoints-section demo-section">
+    <section id="DemoBreakpoints" className="breakpoints-section demo-section">
       <div className="breakpoints-playground-wrapper">
         <h4 className="demo-subtitle">Interactive Playground</h4>
         

@@ -207,7 +207,7 @@ export default function DemoShadows() {
   }
 
   return (
-    <div className="demo-shadows">
+    <div id="DemoShadows" className="demo-shadows">
       {/* Interactive Playground */}
       <section className="section">
         <h2 className="section-title">Interactive Playground</h2>

@@ -81,7 +81,7 @@ const DEMO_CODE = `.uxdsl-card {
 
 export default function UXDSLCardDemo() {
   return (
-    <div className="demo-container">
+    <div id="UXDSLCardDemo" className="demo-container">
       <div className="uxdsl-card">
         <div className="card-header">
           <div className="logo-circle">

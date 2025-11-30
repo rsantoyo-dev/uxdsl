@@ -1,215 +1,219 @@
-/* DemoButtons styles */
+/* DemoButtons styles - Scoped */
+#DemoButtons {
+  /* Reset any leaked mixin styles */
+  background: transparent;
+  
+  .buttons-section {
+    display: flex;
+    flex-direction: column;
+    gap: density(4);
+  }
 
-.buttons-section {
-  display: flex;
-  flex-direction: column;
-  gap: density(4);
-}
+  .buttons-header {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
 
-.buttons-header {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
+  .buttons-playground-container {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
 
-.buttons-playground-container {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
-
-.buttons-playground {
-  display: flex;
-  flex-direction: column;
-  gap: density(3);
-  @ds-surface(outlined);
-  padding: density(3);
-  background: palette(surface-light, 0.3);
-}
-
-@media (min-width: 768px) {
   .buttons-playground {
-    flex-direction: row;
-    align-items: flex-start;
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+    @ds-surface(outlined);
+    padding: density(3);
+    background: palette(surface-light, 0.3);
   }
-}
 
-.buttons-playground__controls {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  min-width: 250px;
-}
-
-.buttons-playground__controls label {
-  display: flex;
-  flex-direction: column;
-  gap: density(1);
-  font-size: 0.9rem;
-  font-weight: 500;
-}
-
-.buttons-playground__controls select {
-  @ds-input(outlined neutral);
-  padding: density(1);
-}
-
-.buttons-playground__preview {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: palette(neutral-light, 0.1);
-  border-radius: radius(2);
-  padding: density(4);
-  min-height: 300px;
-}
-
-.buttons-playground__element {
-  /* Base styles for the preview element */
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    filter: brightness(1.2) saturate(1.1);
-    transform: translateY(-1px);
+  @media (min-width: 768px) {
+    .buttons-playground {
+      flex-direction: row;
+      align-items: flex-start;
+    }
   }
-}
 
-.buttons-doc-container {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
+  .buttons-playground__controls {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+    min-width: 250px;
+  }
 
-.buttons-doc-card {
-  @ds-surface(outlined);
-  padding: density(3);
-  background: palette(surface-light, 0.3);
-}
+  .buttons-playground__controls label {
+    display: flex;
+    flex-direction: column;
+    gap: density(1);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
 
-.buttons-doc-intro {
-  margin-bottom: density(2);
-  line-height: 1.5;
-}
+  .buttons-playground__controls select {
+    @ds-input(outlined neutral);
+    padding: density(1);
+  }
 
-.buttons-doc-subtitle {
-  font-weight: bold;
-  margin-bottom: density(1);
-  color: palette(primary-dark);
-}
+  .buttons-playground__preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: palette(neutral-light, 0.1);
+    border-radius: radius(2);
+    padding: density(4);
+    min-height: 300px;
+  }
 
-.buttons-doc-list {
-  list-style: disc;
-  padding-left: density(3);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: density(1);
-}
+  .buttons-playground__element {
+    /* Base styles for the preview element */
+    cursor: pointer;
+    transition: all 0.2s ease;
 
-.buttons-doc-list li {
-  font-size: 0.9rem;
-}
+    &:hover {
+      filter: brightness(1.2) saturate(1.1);
+      transform: translateY(-1px);
+    }
+  }
 
-/* Generated classes for Playground */
-$variants: contained, outlined, flat;
-$tones: primary, secondary, success, info, warning, error, neutral;
+  .buttons-doc-container {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
 
-/* Base Button Classes (Variant + Tone + Density) */
-@each $variant in $variants {
-  @each $tone in $tones {
+  .buttons-doc-card {
+    @ds-surface(outlined);
+    padding: density(3);
+    background: palette(surface-light, 0.3);
+  }
+
+  .buttons-doc-intro {
+    margin-bottom: density(2);
+    line-height: 1.5;
+  }
+
+  .buttons-doc-subtitle {
+    font-weight: bold;
+    margin-bottom: density(1);
+    color: palette(primary-dark);
+  }
+
+  .buttons-doc-list {
+    list-style: disc;
+    padding-left: density(3);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: density(1);
+  }
+
+  .buttons-doc-list li {
+    font-size: 0.9rem;
+  }
+
+  /* Generated classes for Playground */
+  $variants: contained, outlined, flat;
+  $tones: primary, secondary, success, info, warning, error, neutral;
+
+  /* Base Button Classes (Variant + Tone + Density) */
+  @each $variant in $variants {
+    @each $tone in $tones {
+      @for $density from 0 through 5 {
+        .buttons-playground__element--#{$variant}-#{$tone}-#{$density} {
+          @ds-button $variant $tone $density;
+        }
+      }
+    }
+    /* Handle 'none' tone */
     @for $density from 0 through 5 {
-      .buttons-playground__element--#{$variant}-#{$tone}-#{$density} {
-        @ds-button $variant $tone $density;
+      .buttons-playground__element--#{$variant}-none-#{$density} {
+        @ds-button $variant $density;
       }
     }
   }
-  /* Handle 'none' tone */
-  @for $density from 0 through 5 {
-    .buttons-playground__element--#{$variant}-none-#{$density} {
-      @ds-button $variant $density;
+
+  /* Radius Utility Classes */
+  @for $i from 0 through 5 {
+    .demo-radius-#{$i} {
+      @if $i == 0 {
+        border-radius: 0 !important;
+      } @else {
+        border-radius: radius($i) !important;
+      }
     }
   }
-}
 
-/* Radius Utility Classes */
-@for $i from 0 through 5 {
-  .demo-radius-#{$i} {
-    @if $i == 0 {
-      border-radius: 0 !important;
-    } @else {
-      border-radius: radius($i) !important;
+  /* Shadow Utility Classes */
+  @for $i from 0 through 5 {
+    .demo-shadow-#{$i} {
+      @if $i == 0 {
+        box-shadow: none !important;
+      } @else {
+        box-shadow: shadow($i) !important;
+      }
     }
   }
-}
 
-/* Shadow Utility Classes */
-@for $i from 0 through 5 {
-  .demo-shadow-#{$i} {
-    @if $i == 0 {
-      box-shadow: none !important;
-    } @else {
-      box-shadow: shadow($i) !important;
-    }
+  /* Pseudo-Hover Utility */
+  .force-hover {
+    filter: brightness(1.2) saturate(1.1); /* Stronger "light" effect */
+    transform: translateY(-1px); /* Very subtle lift */
+    cursor: pointer;
   }
+
+  /* Pseudo-Active Utility */
+  .force-active {
+    transform: scale(0.98);
+    filter: brightness(0.95);
+  }
+
+  /* Pseudo-Selected Utility */
+  .force-selected {
+    box-shadow: inset 0 0 0 2px currentColor !important;
+    font-weight: bold;
+  }
+
+  /* Grid of examples */
+  .buttons-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
+
+  .buttons-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: density(3);
+  }
+
+  .button-card {
+    @ds-surface(outlined);
+    padding: density(3);
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+    align-items: center;
+  }
+
+  .button-card__label {
+    font-size: 0.8rem;
+    opacity: 0.7;
+    font-family: monospace;
+  }
+
+  /* Example classes for the grid */
+  .btn-example-primary-contained { @ds-button contained primary; }
+  .btn-example-primary-outlined { @ds-button outlined primary; }
+  .btn-example-primary-flat { @ds-button flat primary; }
+
+  .btn-example-secondary-contained { @ds-button contained secondary; }
+  .btn-example-secondary-outlined { @ds-button outlined secondary; }
+  .btn-example-secondary-flat { @ds-button flat secondary; }
+
+  .btn-example-success-contained { @ds-button contained success; }
+  .btn-example-error-contained { @ds-button contained error; }
 }
-
-/* Pseudo-Hover Utility */
-.force-hover {
-  filter: brightness(1.2) saturate(1.1); /* Stronger "light" effect */
-  transform: translateY(-1px); /* Very subtle lift */
-  cursor: pointer;
-}
-
-/* Pseudo-Active Utility */
-.force-active {
-  transform: scale(0.98);
-  filter: brightness(0.95);
-}
-
-/* Pseudo-Selected Utility */
-.force-selected {
-  box-shadow: inset 0 0 0 2px currentColor !important;
-  font-weight: bold;
-}
-
-/* Grid of examples */
-.buttons-grid-container {
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-}
-
-.buttons-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: density(3);
-}
-
-.button-card {
-  @ds-surface(outlined);
-  padding: density(3);
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  align-items: center;
-}
-
-.button-card__label {
-  font-size: 0.8rem;
-  opacity: 0.7;
-  font-family: monospace;
-}
-
-/* Example classes for the grid */
-.btn-example-primary-contained { @ds-button contained primary; }
-.btn-example-primary-outlined { @ds-button outlined primary; }
-.btn-example-primary-flat { @ds-button flat primary; }
-
-.btn-example-secondary-contained { @ds-button contained secondary; }
-.btn-example-secondary-outlined { @ds-button outlined secondary; }
-.btn-example-secondary-flat { @ds-button flat secondary; }
-
-.btn-example-success-contained { @ds-button contained success; }
-.btn-example-error-contained { @ds-button contained error; }

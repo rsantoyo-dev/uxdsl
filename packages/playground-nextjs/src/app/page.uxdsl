@@ -1,53 +1,54 @@
-/* Homepage Styles */
-
-.main {
-  padding: density(4);
-  min-height: 80vh;
-}
-
-.container {
-  max-width: 800px;
-  display: flex;
-  flex-direction: column;
-  gap: density(6);
-}
-
-.header {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  gap: density(2);
-  padding: density(6) 0 density(4);
-}
-
-.welcome-card {
-  @ds-surface (outlined);
-  padding: density(5);
-  background: palette (surface-light, 0.5);
-  display: flex;
-  flex-direction: column;
-  gap: density(3);
-  border-left: 4px solid palette (primary-main);
-  border-radius: radius(2);
-  box-shadow: shadow(2);
-}
-
-.welcome-text {
-  @ds-typo (body);
-  font-size: 1.1rem; /* Slightly larger for intro text */
-  color: palette (text-primary);
-  line-height: 1.7;
-  margin: 0;
-  
-  strong {
-    color: palette (primary-dark);
-    font-weight: 700;
+/* Homepage Styles - Scoped */
+#DocsHomePage {
+  .main {
+    padding: density(4);
+    min-height: 80vh;
   }
-}
 
-.section-title {
-  text-align: center;
-  padding: density(2);
-  margin-bottom: density(4);
-  opacity: 0.9;
+  .container {
+    max-width: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: density(6);
+  }
+
+  .header {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+    padding: density(6) 0 density(4);
+  }
+
+  .welcome-card {
+    @ds-surface (outlined);
+    padding: density(5);
+    background: palette (surface-light, 0.5);
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+    border-left: 4px solid palette (primary-main);
+    border-radius: radius(2);
+    box-shadow: shadow(2);
+  }
+
+  .welcome-text {
+    @ds-typo (body);
+    font-size: 1.1rem; /* Slightly larger for intro text */
+    color: palette (text-primary);
+    line-height: 1.7;
+    margin: 0;
+    
+    strong {
+      color: palette (primary-dark);
+      font-weight: 700;
+    }
+  }
+
+  .section-title {
+    text-align: center;
+    padding: density(2);
+    margin-bottom: density(4);
+    opacity: 0.9;
+  }
 }

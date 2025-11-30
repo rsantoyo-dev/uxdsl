@@ -27,7 +27,7 @@ export default function InputDemo() {
   const playgroundClass = `${baseClass} demo-radius-${playgroundRadius} demo-shadow-${playgroundShadow} ${playgroundHover ? 'force-hover' : ''} ${playgroundFocus ? 'force-focus' : ''}`
 
   return (
-    <section className="inputs-section demo-section">
+    <section id="InputDemo" className="inputs-section demo-section">
       <div className="inputs-header">
         <p className="demo-subtitle">
           Inputs are form controls styled with the <code>@ds-input</code> mixin.

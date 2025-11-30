@@ -1,0 +1,87 @@
+/* QuickStart styles - Scoped - Sober & Futuristic */
+#QuickStartPage {
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: density(6);
+    margin-bottom: density(6);
+    margin-top: density(4);
+  }
+
+  .step-card {
+    /* Minimalist container */
+    @ds-surface(flat);
+    padding: density(0);
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+    position: relative;
+    
+    /* Futuristic left border marker */
+    border-left: 2px solid palette(neutral-light);
+    padding-left: density(4);
+    transition: all 0.3s ease;
+  }
+
+  .step-card:hover {
+    border-left-color: palette(primary-main);
+  }
+
+  .step-header {
+    display: flex;
+    align-items: baseline;
+    gap: density(4);
+  }
+
+  .step-number {
+    /* Sober typographic number */
+    @ds-typo(h6);
+    color: palette(secondary-main); /* Secondary accent */
+    font-family: font(code);
+    font-weight: 700; 
+    line-height: 1;
+  }
+
+  .step-title {
+    @ds-typo(h5);
+    margin: 0;
+    font-weight: 600;
+    color: palette(surface-contrast);
+    letter-spacing: -0.5px;
+  }
+
+  .step-desc {
+    @ds-typo(body);
+    color: palette(surface-contrast); /* Full contrast */
+    font-weight: 400; /* Ensure it's not bold, standard body text */
+    max-width: 60ch;
+    margin: 0;
+  }
+
+  .info-box {
+    @ds-surface(outlined neutral);
+    padding: density(3);
+    border-radius: radius(1);
+    display: flex;
+    gap: density(2);
+    align-items: flex-start;
+    background: palette(surface-light, 0.5);
+    border: 1px dashed palette(neutral-main);
+  }
+
+  .info-icon {
+    color: palette(primary-main);
+    margin-top: 2px;
+  }
+
+  .info-text {
+    @ds-typo(body-sm);
+    margin: 0;
+    color: palette(surface-contrast, 0.8);
+  }
+  
+  .code-wrapper {
+    margin-top: density(4);
+    box-shadow: shadow(2);
+  }
+}

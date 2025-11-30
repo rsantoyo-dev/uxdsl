@@ -1,47 +1,118 @@
-/* Simplified DemoPalette styles */
+/* Simplified DemoPalette styles - Scoped */
+#DemoPalette {
+  .palette-section { display: flex; flex-direction: column; gap: density(2); }
+  .palette-header { display: flex; flex-direction: column; gap: density(2); }
+  .demo-title { @ds-typo (h4); margin: 0; }
+  .demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
 
-.palette-section { display: flex; flex-direction: column; gap: density(2); }
-.palette-header { display: flex; flex-direction: column; gap: density(2); }
-.demo-title { @ds-typo (h4); margin: 0; }
-.demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
+  .palette-stack { display: flex; flex-direction: column; gap: density(2); }
+  .palette-card { @ds-surface (contained surface); display: flex; flex-direction: column; gap: density(1); }
+  .palette-card__header { display: flex; flex-direction: column; gap: density(2); }
+  .palette-card__title { @ds-typo (h5); margin: 0; }
+  .palette-card__detail { @ds-typo (body); margin: 0; opacity: 0.85; }
 
-.palette-stack { display: flex; flex-direction: column; gap: density(2); }
-.palette-card { @ds-surface (contained surface); display: flex; flex-direction: column; gap: density(1); }
-.palette-card__header { display: flex; flex-direction: column; gap: density(2); }
-.palette-card__title { @ds-typo (h5); margin: 0; }
-.palette-card__detail { @ds-typo (body); margin: 0; opacity: 0.85; }
+  .palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: density(2); }
+  .palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: density(11); min-width: 0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  /* Force rebuild */
+  .palette-token:hover { transform: scale(1.02); z-index: 1; box-shadow: shadow(2); }
+  .palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: density(2); gap: density(1); }
+  .palette-token:last-child .token-values { position: static; align-items: flex-start; }
+  .token-name { @ds-typo (caption); opacity: 0.8; }
+  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: density(1); right: density(1); }
+  .token-hex { @ds-typo (caption); font-family: monospace; opacity: 0.8; }
+  .token-rgb { @ds-typo (tag); font-family: monospace; opacity: 0.7; font-size: 0.7em; }
 
-.palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: density(2); }
-.palette-token { border-radius: radius(1); padding: density(1); background: palette(surface-main, 0.2); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: density(11); min-width: 0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
-/* Force rebuild */
-.palette-token:hover { transform: scale(1.02); z-index: 1; box-shadow: shadow(2); }
-.palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: density(2); gap: density(1); }
-.palette-token:last-child .token-values { position: static; align-items: flex-start; }
-.token-name { @ds-typo (caption); opacity: 0.8; }
-.token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: density(1); right: density(1); }
-.token-hex { @ds-typo (caption); font-family: monospace; opacity: 0.8; }
-.token-rgb { @ds-typo (tag); font-family: monospace; opacity: 0.7; font-size: 0.7em; }
+  /* Interactive Playground */
+  .surfaces-playground-container {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
 
-@mixin palette-card($tone, $variant, $set-text: false) {
-  .palette-card-#{$tone}-#{$variant} {
-    @ds-surface($tone, 1);
-    background: palette(#{$tone}-#{$variant});
-    box-shadow: shadow(1);
+  .surface-playground {
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+    @ds-surface(outlined);
+    padding: density(3);
+    background: palette(surface-light, 0.3);
+  }
 
-    @if $set-text == true {
-      color: palette(#{$tone}-dark);
+  @media (min-width: 768px) {
+    .surface-playground {
+      flex-direction: row;
+      align-items: flex-start;
     }
   }
-}
-$tones: primary, secondary, tertiary, success, info, warning, error, dark, neutral, light, surface;
-$variants: main, light, dark;
 
-/* MAIN + LIGHT + DARK */
-@each $tone in $tones {
-  @each $variant in $variants {
-    @include palette-card($tone, $variant);
+  .surface-playground__controls {
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+    min-width: 250px;
   }
 
-  /* CONTRAST variant (with text color) */
-  @include palette-card($tone, contrast, true);
+  .surface-playground__controls label {
+    display: flex;
+    flex-direction: column;
+    gap: density(1);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .surface-playground__controls select {
+    @ds-input(outlined neutral);
+    padding: density(1);
+  }
+
+  .surface-playground__preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: density(2);
+  }
+
+  .demo-code-block {
+    @ds-surface(outlined);
+    border-radius: radius(2);
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: density(1) density(2);
+    background: palette(neutral-dark);
+    color: palette(neutral-contrast);
+  }
+
+  .code-file {
+    @ds-typo(caption);
+    opacity: 0.8;
+  }
+
+  @mixin palette-card($tone, $variant, $set-text: false) {
+    .palette-card-#{$tone}-#{$variant} {
+      @ds-surface($tone, 1);
+      background: palette(#{$tone}-#{$variant});
+      box-shadow: shadow(1);
+
+      @if $set-text == true {
+        color: palette(#{$tone}-dark);
+      }
+    }
+  }
+  $tones: primary, secondary, tertiary, success, info, warning, error, dark, neutral, light, surface;
+  $variants: main, light, dark;
+
+  /* MAIN + LIGHT + DARK */
+  @each $tone in $tones {
+    @each $variant in $variants {
+      @include palette-card($tone, $variant);
+    }
+
+    /* CONTRAST variant (with text color) */
+    @include palette-card($tone, contrast, true);
+  }
 }

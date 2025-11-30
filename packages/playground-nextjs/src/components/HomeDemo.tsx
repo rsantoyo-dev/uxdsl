@@ -6,7 +6,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 export default function HomeDemo() {
   return (
-    <div className="home-demo">
+    <div id="HomeDemo" className="home-demo">
       {/* Preview */}
       <div className="mb-card">
         <div className="mb-header">

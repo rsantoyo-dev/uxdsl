@@ -1,7 +1,7 @@
-/* CardDemo component styles */
-
-.card { @ds-surface (contained); padding: space(4); border-radius: radius(2); transition: all 0.3s ease; }
-.card:hover { transform: translateY(-2px); box-shadow: shadow(3); }
-.card__title { @ds-typo (h3); margin: 0 0 space(2) 0; }
-.card__content { @ds-typo (body); margin: 0; color: palette(surface-contrast, 0.8); }
-
+/* CardDemo component styles - Scoped */
+#CardDemo {
+  .card { @ds-surface (contained); padding: space(4); border-radius: radius(2); transition: all 0.3s ease; }
+  .card:hover { transform: translateY(-2px); box-shadow: shadow(3); }
+  .card__title { @ds-typo (h3); margin: 0 0 space(2) 0; }
+  .card__content { @ds-typo (body); margin: 0; color: palette(surface-contrast, 0.8); }
+}
