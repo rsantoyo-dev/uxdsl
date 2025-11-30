@@ -1,12 +1,21 @@
-.app-header {
-  background: palette(primary-main);
+/* AppHeader styles - Scoped - Flattened to avoid compiler nesting bugs */
+
+#AppHeader {
+  width: 100%;
+  margin: 0;
   padding: 0;
+  background: linear-gradient(135deg, palette(primary-dark) 0%, palette(primary-main) 100%);
+  /* Fallback if gradient fails */
+  background-color: palette(primary-main);
   color: palette(primary-contrast);
-  position: relative;
-  box-shadow: shadow(1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: shadow(2);
+  border-bottom: 1px solid palette(primary-light, 0.3);
 }
 
-.app-header__container {
+#AppHeader .app-header__container {
   max-width: 1400px;
   margin: 0 auto;
   padding: density(2) xs(space(2)) md(space(4));
@@ -18,25 +27,22 @@
 }
 
 /* Logo Container - 120px Centered */
-.app-header__inner {
-  @ds-surface (contained light);
-
+#AppHeader .app-header__inner {
+  @ds-surface(contained light);
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  width: 120px;
-  gap: 2px;
+  flex-direction: row; /* Changed to row */
+  align-items: baseline; /* Changed to baseline for text alignment */
+  gap: 8px; /* Adjusted gap for row layout */
 }
 
-.app-header__logo-img {
+#AppHeader .app-header__logo-img {
   display: block;
   width: 60px;
   height: 60px;
 }
 
-.app-header__title-text {
-  @ds-typo (h6);
+#AppHeader .app-header__title-text {
+  @ds-typo(h6);
   font-weight: 800;
   margin: 0;
   line-height: 1;
@@ -44,7 +50,7 @@
   white-space: nowrap;
 }
 
-.app-header__subtitle-text {
+#AppHeader .app-header__subtitle-text {
   @ds-typo(caption);
   opacity: 0.8;
   font-weight: 500;
@@ -55,14 +61,14 @@
   white-space: nowrap; /* Ensure it fits or scales */
 }
 
-.app-header__actions {
+#AppHeader .app-header__actions {
   display: flex;
   align-items: center;
   gap: density(2);
 }
 
 /* Breakpoint Monitor Badge */
-.bp-monitor {
+#AppHeader .bp-monitor {
   display: flex;
   align-items: center;
   gap: density(1);
@@ -76,18 +82,18 @@
   width: fit-content;
 }
 
-.bp-monitor__label {
+#AppHeader .bp-monitor__label {
   font-weight: bold;
   color: palette(primary-contrast);
 }
 
-.bp-monitor__val {
+#AppHeader .bp-monitor__val {
   opacity: 0.7;
   border-left: 1px solid rgba(255,255,255,0.2);
   padding-left: density(1);
 }
 
-.theme-toggle {
+#AppHeader .theme-toggle {
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.2);
   color: palette(primary-contrast);
@@ -102,7 +108,7 @@
   height: 36px;
 }
 
-.theme-toggle:hover {
+#AppHeader .theme-toggle:hover {
   background: rgba(255,255,255,0.2);
   transform: scale(1.05);
 }

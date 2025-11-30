@@ -1,0 +1,77 @@
+/* PageToolbar styles - Scoped */
+#PageToolbar {
+  width: 100%;
+  background: palette(surface-light);
+  border-bottom: 1px solid palette(neutral-light);
+  position: sticky;
+  top: 60px; /* Height of AppHeader approx */
+  z-index: 900;
+}
+
+#PageToolbar .page-toolbar {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: space(1) space(2);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 32px;
+}
+
+#PageToolbar .page-toolbar__title {
+  @ds-typo(body-sm);
+  color: palette(text-secondary);
+  font-weight: 400; /* Not bold */
+  text-transform: capitalize;
+  font-size: 0.85rem;
+}
+
+#PageToolbar .page-toolbar__left {
+  display: flex;
+  align-items: center;
+  gap: density(1); /* Reduced gap */
+}
+
+#PageToolbar .page-toolbar__burger {
+  background: transparent;
+  border: none;
+  color: palette(secondary-main);
+  cursor: pointer;
+  padding: 0; /* No padding */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Removed border-radius */
+  /* Removed transition */
+}
+
+#PageToolbar .page-toolbar__burger:hover {
+  color: palette(secondary-dark); /* Only change color on hover */
+  background: transparent;
+}
+
+@media (min-width: 1024px) {
+  #PageToolbar .page-toolbar__burger {
+    display: none;
+  }
+}
+
+#PageToolbar .page-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  @ds-typo(caption);
+}
+
+#PageToolbar .page-toolbar__bp {
+  @ds-typo(caption);
+
+  background: palette(secondary-light, 0.1);
+  padding: density(2) density(3);
+  border-radius: radius(1);
+}
+
+#PageToolbar .page-toolbar__width {
+  @ds-typo(caption);
+  opacity: 0.7;
+}
