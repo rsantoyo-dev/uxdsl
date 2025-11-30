@@ -33,7 +33,7 @@
   flex-direction: row; /* Changed to row */
   align-items: baseline; /* Changed to baseline for text alignment */
   gap: 8px; /* Adjusted gap for row layout */
-  background: palette(primary-main, 0.3); /* Added background with alpha */
+  background: palette(surface-light, 0.3); /* Added background with alpha */
 }
 
 #AppHeader .app-header__logo-img {
