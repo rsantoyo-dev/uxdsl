@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sun, Moon, Monitor } from 'lucide-react'
+import { Sun, Moon } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
 import greenTheme from '../../uxdsl.theme.green.json'
