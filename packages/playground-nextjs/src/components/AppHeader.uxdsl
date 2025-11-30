@@ -33,12 +33,30 @@
   flex-direction: row; /* Changed to row */
   align-items: baseline; /* Changed to baseline for text alignment */
   gap: 8px; /* Adjusted gap for row layout */
+  background: palette(primary-main, 0.3); /* Added background with alpha */
 }
 
 #AppHeader .app-header__logo-img {
   display: block;
+  /* Default size for larger screens (md and above) */
   width: 60px;
   height: 60px;
+}
+
+/* For extra small screens (xs) */
+@media (max-width: 479px) {
+  #AppHeader .app-header__logo-img {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+/* For small screens (sm) */
+@media (min-width: 480px) and (max-width: 767px) {
+  #AppHeader .app-header__logo-img {
+    width: 50px;
+    height: 50px;
+  }
 }
 
 #AppHeader .app-header__title-text {
