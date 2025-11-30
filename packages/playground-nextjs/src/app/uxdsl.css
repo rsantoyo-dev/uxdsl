@@ -1586,33 +1586,20 @@ html, body {
 }
 /* DemoBreakpointsCards styles - Scoped */
 #DemoBreakpointsCards {
-  .demo-breakpoints-cards {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-    padding: var(--space-6);
-    border: 1px solid var(--ds__palette__surface-contrast);
-    border-radius: var(--space-3);
-    margin-bottom: var(--space-8);
-  }
-  @media (min-width: 768px) {
-  .demo-breakpoints-cards {
-      flex-direction: row;
-  }
-  }
-  @media (min-width: 1024px) {
-  .demo-breakpoints-cards {
-      border-radius: var(--space-4);
-  }
-  }
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  padding: var(--density-2);
+  border-radius: var(--space-2);
+  background: var(--ds__palette__light-main);
+  color: var(--ds__palette__light-contrast);
+  border: var(--ds__palette__surface-dark);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--ds__palette__surface-contrast);
+  border-radius: var(--space-3);
 
   .demo-breakpoints-card-item {
-    padding: var(--density-2);
-    border-radius: var(--space-2);
-    background: var(--ds__palette__surface-main);
-    color: var(--ds__palette__surface-contrast);
-    border: var(--ds__palette__surface-dark);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
     flex: 1;
     padding: var(--space-6);
     display: flex;
@@ -1628,7 +1615,6 @@ html, body {
   @media (min-width: 1024px) {
 
   .demo-breakpoints-card-item {
-      border-radius: var(--space-3);
       border-radius: var(--space-3);
   }
   }
@@ -1652,8 +1638,8 @@ html, body {
   }
   padding: var(--density-2);
   border-radius: var(--space-2);
-  background: var(--ds__palette__light-main);
-  color: var(--ds__palette__light-contrast);
+  background: var(--ds__palette__surface-main);
+  color: var(--ds__palette__surface-contrast);
   border: var(--ds__palette__surface-dark);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
 
@@ -1661,8 +1647,17 @@ html, body {
     color: var(--ds__palette__info-main);
   }
 }
+@media (min-width: 768px) {
+#DemoBreakpointsCards {
+    flex-direction: row;
+    gap: var(--space-4);
+    padding: var(--space-6)
+}
+}
 @media (min-width: 1024px) {
 #DemoBreakpointsCards {
+    border-radius: var(--space-3);
+    border-radius: var(--space-4);
     border-radius: var(--space-3)
 }
 }
@@ -16440,14 +16435,12 @@ html, body {
 }
 /* UXDSLCardDemo styles - Scoped */
 #UXDSLCardDemo {
-  .demo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--density-6);
-    width: 100%;
-    margin-top: var(--density-4);
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--density-6);
+  width: 100%;
+  margin-top: var(--density-4);
 
   .uxdsl-card {
     width: 100%;
@@ -16455,12 +16448,13 @@ html, body {
     display: flex;
     flex-direction: column;
     border-radius: var(--space-3);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14);
   }
 
   @media (min-width: 768px) {
 
   .uxdsl-card {
-      width: 450px;
+      width: 400px;
   }
   }
 
@@ -16478,7 +16472,6 @@ html, body {
     align-items: center;
     justify-content: center;
     position: relative;
-    background-size: var(--density-8) var(--density-8);
   }
 
   .logo-circle {
@@ -16597,7 +16590,7 @@ html, body {
 
   .demo-code-block {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     background: #1e1e1e;
     border-radius: var(--space-2);
     overflow: hidden;

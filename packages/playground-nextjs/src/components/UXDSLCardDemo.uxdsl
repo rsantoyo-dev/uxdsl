@@ -1,21 +1,20 @@
 /* UXDSLCardDemo styles - Scoped */
 #UXDSLCardDemo {
-  .demo-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: density(6);
-    width: 100%;
-    margin-top: density(4);
-  }
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: density(6);
+  width: 100%;
+  margin-top: density(4);
 
   .uxdsl-card {
     @ds-surface (contained);
-    width: xs(100%) md(450px);
+    width: xs(100%) md(400px);
     overflow: hidden;
     display: flex;
     flex-direction: column;
     border-radius: radius(3);
+    box-shadow: shadow(3);
   }
 
   .card-header {
@@ -25,7 +24,6 @@
     align-items: center;
     justify-content: center;
     position: relative;
-    background-size: density(8) density(8);
   }
 
   .logo-circle {
@@ -85,7 +83,7 @@
 
   .demo-code-block {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     background: #1e1e1e;
     border-radius: radius(2);
     overflow: hidden;

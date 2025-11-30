@@ -13,7 +13,25 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
 <div className="demo-section">
   <h4 className="demo-subtitle">Fluid Layout Example</h4>
-  <p className="demo-description">This component switches from a single-column layout to a row layout when the viewport width exceeds the <strong>md</strong> breakpoint. Try adjusting the <strong>md</strong> slider above to see it adapt in real-time without resizing your browser.</p>
+  <div className="demo-description">
+    This component uses UXDSL's responsive syntax to switch from a <strong>single-column</strong> layout (flex-direction: column) 
+    to a <strong>row layout</strong> (flex-direction: row) when the viewport exceeds the <strong>md</strong> breakpoint.
+  </div>
+  <SyntaxHighlighter
+    language="scss"
+    style={vscDarkPlus}
+    customStyle={{ margin: 0, marginBottom: "1rem", padding: "1rem", borderRadius: "8px" }}
+  >
+{`#DemoBreakpointsCards {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: xs(space(2)) md(space(4));
+  padding: xs(space(3)) md(space(6));
+}`}
+  </SyntaxHighlighter>
+  <div className="demo-description" style={{ marginBottom: "1rem" }}>
+    <strong>Try it:</strong> Adjust the <strong>md</strong> slider above to see the cards below switch between column and row layout in real-time.
+  </div>
   <div className="demo-card">
     <DemoBreakpointsCards />
   </div>
