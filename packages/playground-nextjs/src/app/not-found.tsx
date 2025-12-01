@@ -9,7 +9,7 @@ export default function NotFound() {
       <div className="title-group">
         <h2 className="title">Page Not Found</h2>
         <p className="subtitle">
-          We couldn't find the page you were looking for. It might have been moved, deleted, or perhaps it never existed.
+          We couldn&apos;t find the page you were looking for. It might have been moved, deleted, or perhaps it never existed.
         </p>
       </div>
 

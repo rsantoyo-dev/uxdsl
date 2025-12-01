@@ -1,0 +1,96 @@
+/* NavigationCardLink Styles */
+.navigation-card-link {
+  @ds-surface (contained);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: density(4);
+  gap: density(4);
+  border-radius: radius(2);
+  text-decoration: none;
+  color: inherit;
+  transition: all 0.2s ease-in-out;
+  border: 1px solid transparent;
+  background: palette(surface-main);
+
+  /* Hover State */
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: shadow(3);
+    border-color: palette(primary-light, 0.3);
+
+    .nav-card-arrow {
+      transform: translateX(4px);
+      color: palette(primary-main);
+    }
+  }
+
+  /* Content Layout */
+  .nav-card-content {
+    display: flex;
+    align-items: center;
+    gap: density(4);
+    flex: 1;
+  }
+
+  /* Icon Styles */
+  .nav-card-icon {
+    display: grid;
+    place-items: center;
+    width: density(10);
+    height: density(10);
+    border-radius: radius(2);
+    flex-shrink: 0;
+
+    &.primary {
+      background: palette(primary-light, 0.1);
+      color: palette(primary-main);
+    }
+
+    &.secondary {
+      background: transparent;
+      border: 1px solid palette(secondary-main, 0.3);
+      color: palette(secondary-main);
+    }
+  }
+
+  /* Text Styles */
+  .nav-card-text {
+    display: flex;
+    flex-direction: column;
+    gap: density(1);
+  }
+
+  .nav-card-title {
+    @ds-typo (h6);
+    margin: 0;
+    color: palette(surface-contrast);
+    font-weight: 600;
+  }
+
+  .nav-card-desc {
+    @ds-typo (body);
+    margin: 0;
+    color: palette(secondary-main);
+    font-size: 0.875rem;
+  }
+
+  /* Arrow Indicator */
+  .nav-card-arrow {
+    color: palette(secondary-light);
+    transition: all 0.2s;
+  }
+
+  /* Variant Overrides */
+  &.variant-secondary {
+    background: transparent;
+    border: border(1);
+    box-shadow: none;
+
+    &:hover {
+      background: palette(surface-light, 0.5);
+      border-color: palette(primary-main);
+      box-shadow: shadow(2);
+    }
+  }
+}

@@ -35,6 +35,7 @@
 @import '../components/DemoTypography.uxdsl';
 @import '../components/HomeDemo.uxdsl';
 @import '../components/InputDemo.uxdsl';
+@import '../components/NavigationCardLink.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import '../components/PageToolbar.uxdsl';
 @import '../components/SideNav.uxdsl';
