@@ -12,6 +12,7 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
   const containerRef = useRef<HTMLDivElement>(null)
   const blob1Ref = useRef<HTMLDivElement>(null)
   const blob2Ref = useRef<HTMLDivElement>(null)
+  const blobDarkRef = useRef<HTMLDivElement>(null)
   
   // Use refs for positions to avoid re-renders
   const pos1 = useRef({ x: 0, y: 0 })
@@ -20,6 +21,7 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
   const time = useRef(0)
   const activity = useRef(0)
   const pressure = useRef(0)
+  const shockwave = useRef(0)
 
   useEffect(() => {
     if (mouseX !== null && mouseY !== null) {
@@ -30,7 +32,8 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
   // Trigger impulse on click
   useEffect(() => {
     if (isPressed) {
-      pressure.current = 1.5 // Initial splash intensity
+      pressure.current = 1.5 // Initial splash intensity for turbulence
+      shockwave.current = 0.01 // Start shockwave animation
     }
   }, [isPressed])
 
@@ -46,6 +49,17 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
       
       // Decay pressure (impulse effect)
       pressure.current = Math.max(0, pressure.current * 0.92)
+
+      // Handle shockwave expansion (0 -> PI)
+      let expansion = 0
+      if (shockwave.current > 0) {
+        shockwave.current += 0.04 // Slower expansion (was 0.15)
+        if (shockwave.current >= Math.PI) {
+          shockwave.current = 0
+        } else {
+          expansion = Math.sin(shockwave.current) * 0.5 // Scale up by 50% at peak
+        }
+      }
 
       // Increase time based on activity and pressure (faster waves when moving or pressed)
       time.current += 0.02 + (activity.current * 0.05) + (pressure.current * 0.3)
@@ -72,7 +86,7 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
           const y = pos1.current.y - rect.top
           // Add wave effect (scale) - Pressure increases amplitude
           const waveAmp = 0.1 + (pressure.current * 0.1)
-          const scale = 1 + Math.sin(time.current) * waveAmp
+          const scale = 1 + expansion + Math.sin(time.current) * waveAmp
           blob1Ref.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`
         }
 
@@ -81,8 +95,20 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
           const y = pos2.current.y - rect.top
           // Add wave effect (scale, offset phase)
           const waveAmp = 0.15 + (pressure.current * 0.1)
-          const scale = 1 + Math.sin(time.current + 2) * waveAmp
+          const scale = 1 + expansion + Math.sin(time.current + 2) * waveAmp
           blob2Ref.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${scale})`
+        }
+
+        if (blobDarkRef.current) {
+          const x = pos1.current.x - rect.left
+          const y = pos1.current.y - rect.top
+          // Dark blob scales with shockwave and pressure
+          // Only visible when there is pressure/shockwave
+          const darkScale = 0.5 + expansion * 1.5 // Starts small, grows big with shockwave
+          const darkOpacity = Math.min(pressure.current * 0.5 + expansion * 0.5, 0.8)
+          
+          blobDarkRef.current.style.transform = `translate(${x}px, ${y}px) translate(-50%, -50%) scale(${darkScale})`
+          blobDarkRef.current.style.opacity = darkOpacity.toFixed(3)
         }
       }
       
@@ -108,6 +134,12 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
       <div 
         ref={blob1Ref}
         className="hero-background__blob hero-background__blob--primary"
+      />
+
+      {/* Dark Center Blob (Click Effect) */}
+      <div 
+        ref={blobDarkRef}
+        className="hero-background__blob hero-background__blob--dark"
       />
       
       {/* Overlay for texture/noise if desired, or just to smooth things out */}

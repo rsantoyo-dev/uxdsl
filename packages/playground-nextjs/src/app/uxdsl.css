@@ -781,7 +781,7 @@ html, body {
   font-size: var(--h6-size);
   font-weight: var(--h6-weight, 600);
   font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
-  color: var(--ds__palette__surface-contrast);
+  color: var(--ds__palette__primary-dark);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
@@ -12211,6 +12211,14 @@ html, body {
   background: radial-gradient(circle, var(--ds__palette__primary-main) 0%, transparent 60%);
   opacity: var(--blob-opacity, 0.08);
   filter: blur(60px);
+}
+.hero-background__blob--dark {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, var(--ds__palette__primary-dark) 0%, transparent 70%);
+  opacity: 0; /* Controlled by JS */
+  filter: blur(40px);
+  mix-blend-mode: multiply;
 }
 .hero-background__overlay {
   position: absolute;

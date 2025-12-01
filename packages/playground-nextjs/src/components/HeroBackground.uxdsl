@@ -31,6 +31,15 @@
   filter: blur(60px);
 }
 
+.hero-background__blob--dark {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, palette(primary-dark) 0%, transparent 70%);
+  opacity: 0; /* Controlled by JS */
+  filter: blur(40px);
+  mix-blend-mode: multiply;
+}
+
 .hero-background__overlay {
   position: absolute;
   inset: 0;

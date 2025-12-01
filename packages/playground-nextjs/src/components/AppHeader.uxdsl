@@ -52,7 +52,7 @@
 
 #AppHeader .app-header__title-text {
   @ds-typo (h6);
-  color: palette(surface-contrast);
+  color: palette(primary-dark);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
