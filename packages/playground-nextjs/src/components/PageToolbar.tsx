@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
-import { UXDSLLogo } from '@/components/UXDSLLogo'
+
 
 export default function PageToolbar() {
   const { toggle } = useNav()
@@ -55,7 +55,6 @@ export default function PageToolbar() {
           )}
           <div className="page-toolbar__title">
             <Link href="/" className="breadcrumb-link-brand">
-              <UXDSLLogo className="page-toolbar__logo" />
               <span className="page-toolbar__brand-text">UX-DSL</span>
             </Link>
             {segments.map((segment, index) => {

@@ -25,13 +25,6 @@
   gap: density(2); /* Increased gap for better spacing */
 }
 
-#PageToolbar .page-toolbar__logo {
-  width: 24px; /* Smaller as requested */
-  height: 24px; /* Smaller as requested */
-  display: block;
-  flex-shrink: 0;
-}
-
 #PageToolbar .page-toolbar__title {
   @ds-typo(body-sm);
   color: palette(text-secondary);
@@ -43,9 +36,6 @@
 }
 
 #PageToolbar .breadcrumb-link-brand {
-  display: flex;
-  align-items: center;
-  gap: density(1);
   text-decoration: none;
   color: inherit; /* Inherit color from parent for brand consistency */
   font-weight: 800; /* Bold as requested */
