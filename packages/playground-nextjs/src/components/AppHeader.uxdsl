@@ -33,7 +33,7 @@
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
-  background: palette(surface-light, 0.85); /* Corrected alpha */
+  background: palette(surface-light, 0.9); /* Corrected alpha */
 }
 
 #AppHeader .app-header__logo-img {
@@ -45,7 +45,6 @@
 #AppHeader .app-header__title-text {
   @ds-typo(h6);
   font-weight: 800;
-  margin: 0;
   line-height: 1;
   letter-spacing: -0.5px;
   white-space: nowrap;
