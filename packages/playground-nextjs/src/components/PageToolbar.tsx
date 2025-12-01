@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
+import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 export default function PageToolbar() {
   const { toggle } = useNav()
@@ -43,6 +44,9 @@ export default function PageToolbar() {
     <div id="PageToolbar">
       <div className="page-toolbar">
         <div className="page-toolbar__left">
+          <Link href="/" className="page-toolbar__logo-link" aria-label="Home">
+             <UXDSLLogo className="page-toolbar__logo" />
+          </Link>
           {isDocs && (
             <button 
               className="page-toolbar__burger" 

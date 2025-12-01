@@ -16,7 +16,25 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 32px;
+  min-height: 40px; /* Increased slightly from 32px to accommodate 30px logo + padding */
+}
+
+#PageToolbar .page-toolbar__logo-link {
+  display: flex;
+  align-items: center;
+  margin-right: density(3);
+  text-decoration: none;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+#PageToolbar .page-toolbar__logo {
+  width: 30px;
+  height: 30px;
+  display: block;
 }
 
 #PageToolbar .page-toolbar__title {
