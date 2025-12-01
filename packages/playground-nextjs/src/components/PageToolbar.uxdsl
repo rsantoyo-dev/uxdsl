@@ -12,11 +12,11 @@
 #PageToolbar .page-toolbar {
   max-width: 1400px;
   margin: 0 auto;
-  padding: space(1) space(2);
+  padding: density(1) density(4); /* Thinner padding, strictly density */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 48px; /* Increased to accommodate stacked rows */
+  min-height: density(10); /* Thinner height (approx 40px) */
 }
 
 #PageToolbar .page-toolbar__left {
@@ -44,6 +44,7 @@
   transition: transform 0.2s;
   display: flex;
   align-items: center;
+  gap: density(1); /* Ensure gap uses density if flex is active */
 
   &:hover {
     transform: translateY(-1px);
@@ -97,16 +98,16 @@
 /* Right Side - Row Layout */
 #PageToolbar .page-toolbar__right {
   display: flex;
-  flex-direction: row; /* Changed from column to row */
+  flex-direction: row;
   align-items: center;
-  gap: density(4); /* Increased gap between theme controls and bp info */
+  gap: density(4);
   @ds-typo(caption);
 }
 
 #PageToolbar .page-toolbar__info-row {
   display: flex;
   align-items: center;
-  gap: space(2);
+  gap: density(4); /* Replaced space(2) with density(4) */
 }
 
 #PageToolbar .page-toolbar__theme-row {
