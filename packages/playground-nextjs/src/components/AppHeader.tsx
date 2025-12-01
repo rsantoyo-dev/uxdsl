@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import { Sun, Moon } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
@@ -48,10 +49,10 @@ export default function AppHeader() {
   return (
     <header id="AppHeader">
       <div className="app-header__container">
-        <div className="app-header__inner">
+        <Link href="/" className="app-header__inner">
           <UXDSLLogo className="app-header__logo-img" />
           <div className="app-header__title-text">UX-DSL</div>
-        </div>
+        </Link>
         
         <div className="app-header__actions">
           <div className="app-header__settings">

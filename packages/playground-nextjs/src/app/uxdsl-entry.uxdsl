@@ -41,6 +41,7 @@
 @import '../components/UXDSLCardDemo.uxdsl';
 @import './docs/breakpoints/breakpoints.uxdsl';
 @import './docs/quick-start/quick-start.uxdsl';
+@import './not-found.uxdsl';
 @import './page.uxdsl';
 @import './productivity/page.uxdsl';
 @import './theming/page.uxdsl';

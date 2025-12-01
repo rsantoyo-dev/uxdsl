@@ -34,6 +34,14 @@
   align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
   background: palette(surface-light, 0.9); /* Corrected alpha */
+  text-decoration: none;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 
 #AppHeader .app-header__logo-img {

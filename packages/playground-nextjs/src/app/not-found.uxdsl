@@ -1,0 +1,114 @@
+/* NotFound styles - Scoped */
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: density(6);
+  padding: density(4);
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.error-code {
+  font-size: 8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: palette(primary-light, 0.15);
+  margin: 0;
+  user-select: none;
+}
+
+.title-group {
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  align-items: center;
+  margin-top: -4.5rem; /* Overlap the big 404 slightly for depth */
+  position: relative;
+  z-index: 1;
+}
+
+.title {
+  @ds-typo(h2);
+  color: palette(text-primary);
+}
+
+.subtitle {
+  @ds-typo(body);
+  color: palette(text-secondary);
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: density(3);
+  width: 100%;
+  max-width: 700px;
+  margin-top: density(4);
+}
+
+@media (min-width: 600px) {
+  .nav-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.nav-card {
+  @ds-surface(contained);
+  padding: density(4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: density(2);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: shadow(3);
+    border-color: palette(primary-light, 0.3);
+    
+    .nav-card-icon {
+      background: palette(primary-main);
+      color: palette(primary-contrast);
+    }
+  }
+}
+
+.nav-card-icon {
+  width: 40px;
+  height: 40px;
+  background: palette(surface-dark, 0.5);
+  border-radius: radius(full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: palette(text-primary);
+  transition: all 0.2s ease;
+}
+
+.nav-card-title {
+  @ds-typo(h6);
+  color: palette(text-primary);
+  margin: 0;
+}
+
+.nav-card-desc {
+  @ds-typo(caption);
+  color: palette(text-secondary);
+  text-align: left;
+  margin: 0;
+  line-height: 1.5;
+}

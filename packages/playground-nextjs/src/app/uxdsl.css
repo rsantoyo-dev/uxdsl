@@ -744,10 +744,18 @@ html, body {
   align-items: flex-end; /* Align text with bottom of logo */
   gap: 8px; /* Adjusted gap for row layout */
   background: color-mix(in srgb, var(--ds__palette__surface-light) 90%, transparent); /* Corrected alpha */
+  text-decoration: none;
+  cursor: pointer;
+  color: inherit;
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+  }
 }
 @media (min-width: 1024px) {
 #AppHeader .app-header__inner {
-    border-radius: var(--space-3);
+    border-radius: var(--space-3)
 }
 }
 #AppHeader .app-header__logo-img {
@@ -17461,6 +17469,135 @@ html, body {
     margin-top: var(--density-4);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12);
   }
+}
+/* NotFound styles - Scoped */
+.not-found-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: var(--density-6);
+  padding: var(--density-4);
+  text-align: center;
+  animation: fadeIn 0.5s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.error-code {
+  font-size: 8rem;
+  font-weight: 800;
+  line-height: 1;
+  color: color-mix(in srgb, var(--ds__palette__primary-light) 15%, transparent);
+  margin: 0;
+  user-select: none;
+}
+.title-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--density-2);
+  align-items: center;
+  margin-top: -4.5rem; /* Overlap the big 404 slightly for depth */
+  position: relative;
+  z-index: 1;
+}
+.title {
+  margin-block-start: 0;
+  margin-block-end: 0;
+  font-size: var(--h2-size);
+  font-weight: var(--h2-weight, 700);
+  font-family: var(--h2-font-family, var(--font-ui));
+  color: var(--ds__palette__text-primary);
+}
+.subtitle {
+  margin-block-start: 0;
+  margin-block-end: 0;
+  font-size: var(--body-size);
+  font-weight: var(--body-weight, 400);
+  font-family: var(--body-font-family, var(--font-ui));
+  color: var(--ds__palette__text-secondary);
+  max-width: 500px;
+  line-height: 1.6;
+}
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--density-3);
+  width: 100%;
+  max-width: 700px;
+  margin-top: var(--density-4);
+}
+@media (min-width: 600px) {
+  .nav-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.nav-card {
+  padding: var(--density-2);
+  border-radius: var(--space-2);
+  background: var(--ds__palette__surface-main);
+  color: var(--ds__palette__surface-contrast);
+  border: var(--ds__palette__surface-dark);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  padding: var(--density-4);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--density-2);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14);
+    border-color: color-mix(in srgb, var(--ds__palette__primary-light) 30%, transparent);
+    
+    .nav-card-icon {
+      background: var(--ds__palette__primary-main);
+      color: var(--ds__palette__primary-contrast);
+    }
+  }
+}
+@media (min-width: 1024px) {
+.nav-card {
+    border-radius: var(--space-3)
+}
+}
+.nav-card-icon {
+  width: 40px;
+  height: 40px;
+  background: color-mix(in srgb, var(--ds__palette__surface-dark) 50%, transparent);
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ds__palette__text-primary);
+  transition: all 0.2s ease;
+}
+.nav-card-title {
+  margin-block-start: 0;
+  margin-block-end: 0;
+  font-size: var(--h6-size);
+  font-weight: var(--h6-weight, 600);
+  font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
+  color: var(--ds__palette__text-primary);
+  margin: 0;
+}
+.nav-card-desc {
+  margin-block-start: 0;
+  margin-block-end: 0;
+  font-size: var(--caption-size);
+  opacity: var(--caption-opacity, 0.8);
+  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
+  color: var(--ds__palette__text-secondary);
+  text-align: left;
+  margin: 0;
+  line-height: 1.5;
 }
 /* Welcome Page Styles */
 #WelcomePage {
