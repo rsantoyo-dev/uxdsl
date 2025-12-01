@@ -1,19 +1,52 @@
 'use client'
 
+import { useState, useRef } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Grid3X3, Smartphone } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
+import { InteractiveLogo } from '@/components/InteractiveLogo'
+import { HeroBackground } from '@/components/HeroBackground'
 import { PageTitle } from '@/components/PageTitle'
 import UXDSLCardDemo from '@/components/UXDSLCardDemo'
 import NavigationCardLink from '@/components/NavigationCardLink'
 
 export default function Home() {
+  const [mousePos, setMousePos] = useState<{x: number | null, y: number | null}>({ x: null, y: null })
+  const [isPressed, setIsPressed] = useState(false)
+  
+  const handleMouseMove = (e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY })
+  }
+
+  const handleMouseLeave = () => {
+    setMousePos({ x: null, y: null })
+    setIsPressed(false)
+  }
+
+  const handleMouseDown = () => setIsPressed(true)
+  const handleMouseUp = () => setIsPressed(false)
+
   return (
     <main id="WelcomePage">
-      <div className="hero-surface">
-        <div className="hero-content">
+      <div 
+        className="hero-surface"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        onMouseDown={handleMouseDown}
+        onMouseUp={handleMouseUp}
+        onTouchStart={handleMouseDown}
+        onTouchEnd={handleMouseUp}
+        style={{ position: 'relative', overflow: 'hidden' }}
+      >
+        <HeroBackground mouseX={mousePos.x} mouseY={mousePos.y} isPressed={isPressed} />
+        
+        <div className="hero-content" style={{ position: 'relative', zIndex: 1 }}>
           <div className="logo-container">
-            <UXDSLLogo className="hero-logo" />
+            <InteractiveLogo 
+              className="hero-logo" 
+              mouseX={mousePos.x}
+              mouseY={mousePos.y}
+            />
           </div>
           <PageTitle 
             title="UX-DSL" 

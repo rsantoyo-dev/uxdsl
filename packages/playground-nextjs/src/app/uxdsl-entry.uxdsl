@@ -33,6 +33,7 @@
 @import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
 @import '../components/DemoTypography.uxdsl';
+@import '../components/HeroBackground.uxdsl';
 @import '../components/HomeDemo.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/NavigationCardLink.uxdsl';

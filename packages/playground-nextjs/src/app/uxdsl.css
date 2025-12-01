@@ -12183,6 +12183,41 @@ html, body {
       border-radius: var(--space-2); }
   }
 }
+.hero-background {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+.hero-background__blob {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  will-change: transform;
+}
+.hero-background__blob--secondary {
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, var(--ds__palette__secondary-main) 0%, transparent 60%);
+  opacity: var(--blob-opacity, 0.05);
+  filter: blur(80px);
+}
+.hero-background__blob--primary {
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, var(--ds__palette__primary-main) 0%, transparent 60%);
+  opacity: var(--blob-opacity, 0.08);
+  filter: blur(60px);
+}
+.hero-background__overlay {
+  position: absolute;
+  inset: 0;
+  backdrop-filter: blur(20px);
+  opacity: 0.5;
+}
 /* HomeDemo styles - Scoped */
 #HomeDemo {
   .home-demo {
