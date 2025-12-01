@@ -55,10 +55,7 @@
     margin-bottom: 0;
     
     .page-title__text {
-      font-size: 5rem;
-      line-height: 1.1;
-      font-weight: 900;
-      letter-spacing: -0.03em;
+      @ds-typo (h6)
       background: linear-gradient(135deg, palette(primary-dark), palette(primary-main));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;

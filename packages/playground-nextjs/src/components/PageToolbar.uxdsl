@@ -12,17 +12,21 @@
 #PageToolbar .page-toolbar {
   max-width: 1400px;
   margin: 0 auto;
-  padding: density(1) density(4); /* Thinner padding, strictly density */
+  padding: density(1) density(4);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: density(10); /* Thinner height (approx 40px) */
+  min-height: density(10);
+  flex-wrap: nowrap; /* Prevent wrapping */
 }
 
 #PageToolbar .page-toolbar__left {
   display: flex;
   align-items: center;
   gap: density(2);
+  flex: 1; /* Take available space */
+  min-width: 0; /* Allow shrinking for text overflow */
+  overflow: hidden;
 }
 
 #PageToolbar .page-toolbar__title {
@@ -33,6 +37,9 @@
   display: flex;
   align-items: center;
   gap: density(1);
+  white-space: nowrap; /* Keep on one line */
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #PageToolbar .breadcrumb-link-brand {
@@ -44,7 +51,8 @@
   transition: transform 0.2s;
   display: flex;
   align-items: center;
-  gap: density(1); /* Ensure gap uses density if flex is active */
+  gap: density(1);
+  flex-shrink: 0; /* Don't shrink the brand */
 
   &:hover {
     transform: translateY(-1px);
@@ -82,6 +90,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 #PageToolbar .page-toolbar__burger:hover {
@@ -101,13 +110,15 @@
   flex-direction: row;
   align-items: center;
   gap: density(4);
+  margin-left: density(2); /* Separation from title */
+  flex-shrink: 0; /* Prevent right side from shrinking */
   @ds-typo(caption);
 }
 
 #PageToolbar .page-toolbar__info-row {
   display: flex;
   align-items: center;
-  gap: density(4); /* Replaced space(2) with density(4) */
+  gap: density(4);
 }
 
 #PageToolbar .page-toolbar__theme-row {
@@ -140,6 +151,11 @@
   @ds-typo(caption);
   opacity: 0.7;
   line-height: 1;
+  display: none; /* Hide on small screens */
+
+  @media (min-width: 768px) {
+    display: block; /* Show on md and up */
+  }
 }
 
 /* Mini Theme Buttons */
