@@ -51,7 +51,8 @@
 }
 
 #AppHeader .app-header__title-text {
-  @ds-typo(h6);
+  @ds-typo (h6);
+  color: palette(surface-contrast);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;

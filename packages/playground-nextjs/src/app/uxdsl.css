@@ -781,6 +781,7 @@ html, body {
   font-size: var(--h6-size);
   font-weight: var(--h6-weight, 600);
   font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
+  color: var(--ds__palette__surface-contrast);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
