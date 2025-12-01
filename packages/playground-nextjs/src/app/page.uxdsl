@@ -105,6 +105,22 @@
     text-align: center;
   }
 
+  .nav-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: density(4);
+    width: 100%;
+    max-width: 900px;
+    margin-top: density(6);
+    margin-bottom: density(2);
+    padding-left: density(2);
+    padding-right: density(2);
+
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
   .demo-section {
     width: 100%;
     max-width: 900px;

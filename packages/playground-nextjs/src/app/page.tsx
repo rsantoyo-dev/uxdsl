@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Github, Mail, Package } from 'lucide-react'
+import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { PageTitle } from '@/components/PageTitle'
 import UXDSLCardDemo from '@/components/UXDSLCardDemo'
+import NavigationCardLink from '@/components/NavigationCardLink'
 
 export default function Home() {
   return (
@@ -35,6 +36,37 @@ export default function Home() {
             design tokens and CSS implementation. Write expressive, token-aware styles 
             that compile to optimized CSS.
           </p>
+        </div>
+
+        <div className="nav-grid">
+          <NavigationCardLink
+            href="/docs/quick-start"
+            title="Quick Start"
+            description="Get up and running with UXDSL in minutes."
+            icon={<Rocket size={24} />}
+            variant="primary"
+          />
+          <NavigationCardLink
+            href="/docs/home"
+            title="Documentation"
+            description="Explore the comprehensive guides and API references."
+            icon={<BookOpen size={24} />}
+            variant="secondary"
+          />
+          <NavigationCardLink
+            href="/theming"
+            title="Theming"
+            description="Learn how to customize and extend your design system."
+            icon={<Palette size={24} />}
+            variant="secondary"
+          />
+           <NavigationCardLink
+            href="/typography"
+            title="Typography"
+            description="Master the fluid typography system."
+            icon={<Type size={24} />}
+            variant="secondary"
+          />
         </div>
 
         <div className="demo-section">
