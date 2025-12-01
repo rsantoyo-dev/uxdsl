@@ -431,10 +431,9 @@ html { color-scheme: light dark; }
 .ds-typo {
   font-family: var(--font-ui), sans-serif;
   color: inherit;
-  margin-block-start: 0;
-  margin-block-end: 0;
-  margin-inline-start: 0;
-  margin-inline-end: 0;
+  margin-block-start: auto;
+  margin-block-end: auto;
+
 }
 /* Element-aware rules (low specificity via :where) */
 :where(h1).ds-typo { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); }
@@ -769,8 +768,8 @@ html, body {
 }
 }
 #AppHeader .app-header__title-text {
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: var(--h6-size);
   font-weight: var(--h6-weight, 600);
   font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
@@ -782,8 +781,8 @@ html, body {
   margin-bottom: var(--space-1); /* Adjusted to align with logo bottom, using 8px as 'spacing 3' */
 }
 #AppHeader .app-header__subtitle-text {
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: var(--caption-size);
   opacity: var(--caption-opacity, 0.8);
   font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
@@ -851,7 +850,7 @@ html, body {
 }
 /* ButtonDemo component styles - Scoped */
 #ButtonDemo {
-  .btn { padding: var(--density-2); border-radius: var(--space-2); background: var(--ds__palette__surface-main); color: var(--ds__palette__surface-contrast); border: var(--ds__palette__surface-dark); cursor: pointer; transition: all 0.2s ease; }
+  .btn { padding: var(--density-2); border-radius: var(--space-2); background: var(--ds__palette__surface-main); color: var(--ds__palette__surface-contrast); border: var(--ds__palette__surface-dark); margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); cursor: pointer; transition: all 0.2s ease; }
   @media (min-width: 1024px) {
   .btn {
       border-radius: var(--space-3); }
@@ -1039,8 +1038,6 @@ html, body {
     color: var(--ds__palette__primary-contrast);
     background: var(--ds__palette__primary-dark);
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
   .btn--lg { padding: var(--density-3); border-radius: var(--space-3); background: var(--ds__palette__primary-main); color: var(--ds__palette__primary-contrast); border: var(--ds__palette__surface-dark); }
   @media (min-width: 1024px) {
   .btn--lg {
@@ -1072,15 +1069,8 @@ html, body {
       border-radius: var(--space-3); }
   }
   .card:hover { transform: translateY(-2px); box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14); }
-  .card__title { margin: 0 0 var(--space-2) 0; }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h3-size);
-  font-weight: var(--h3-weight, 600);
-  font-family: var(--h3-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  .card__content { margin: 0; color: color-mix(in srgb, var(--ds__palette__surface-contrast) 80%, transparent); }
+  .card__title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); margin: 0 0 var(--space-2) 0; }
+  .card__content { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); margin: 0; color: color-mix(in srgb, var(--ds__palette__surface-contrast) 80%, transparent); }
 }
 /* DemoBorders styles - Scoped */
 #DemoBorders {
@@ -6473,12 +6463,12 @@ html, body {
 #DemoColors {
   .demo-section { display: flex; flex-direction: column; gap: var(--density-3); }
   .demo-header { display: flex; flex-direction: column; gap: var(--density-2); }
-  .demo-title { margin: 0; }
-  .demo-subtitle { margin-block-start: auto; margin-block-end: auto; max-width: 720px; }
+  .demo-title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); margin: 0; }
+  .demo-subtitle { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); max-width: 720px; }
 
   .colors-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: var(--density-4); }
   .color-family { display: flex; flex-direction: column; gap: var(--density-2); }
-  .family-title { margin-block-start: auto; margin-block-end: auto; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; text-transform: capitalize; }
+  .family-title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; text-transform: capitalize; }
 
   .family-grid { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: var(--density-1); }
 
@@ -6505,10 +6495,10 @@ html, body {
 
   .color-token:hover { transform: scale(1.05); z-index: 1; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12); }
 
-  .token-shade { font-weight: bold; opacity: 0.9; pointer-events: none; }
+  .token-shade { margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-weight: bold; opacity: 0.9; pointer-events: none; }
   .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: var(--density-1); right: var(--density-1); pointer-events: none; }
-  .token-hex { margin-block-start: auto; margin-block-end: auto; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-family: monospace; font-weight: bold; font-size: 0.75em; }
-  .token-rgb { margin-block-start: auto; margin-block-end: auto; font-family: monospace; opacity: 0.7; font-size: 0.65em; }
+  .token-hex { margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-family: monospace; font-weight: bold; font-size: 0.75em; }
+  .token-rgb { margin-block-start: 0; margin-block-end: 0; font-family: monospace; opacity: 0.7; font-size: 0.65em; }
 
   /* Interactive Playground */
   .surfaces-playground-container {
@@ -6600,6 +6590,11 @@ html, body {
   }
 
   .code-file {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--caption-size);
+    opacity: var(--caption-opacity, 0.8);
+    font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
     opacity: 0.8;
   }
       .chip--blue-50 {
@@ -6929,21 +6924,6 @@ html, body {
       .chip--gray-800 {
         background: var(--ds__color__gray-800);
       }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h4-size);
-  font-weight: var(--h4-weight, 600);
-  font-family: var(--h4-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
   box-sizing: border-box;
   outline: none;
   appearance: none;
@@ -7055,6 +7035,11 @@ html, body {
     min-width: 80px;
     min-height: 40px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12);
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--caption-size);
+    opacity: var(--caption-opacity, 0.8);
+    font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
     font-weight: bold;
     color: var(--ds__palette__primary-dark);
     border: 1px solid var(--ds__palette__neutral-light);
@@ -7276,6 +7261,11 @@ html, body {
   }
 
   .density-card__token {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     font-weight: bold;
     font-family: monospace;
     color: var(--ds__palette__primary-main);
@@ -7446,13 +7436,6 @@ html, body {
     color: var(--ds__palette__primary-dark);
     z-index: 1;
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
 
   .density-concentric-box--active {
     border-style: solid;
@@ -7467,8 +7450,8 @@ html, body {
 #DemoPalette {
   .palette-section { display: flex; flex-direction: column; gap: var(--density-2); }
   .palette-header { display: flex; flex-direction: column; gap: var(--density-2); }
-  .demo-title { margin: 0; }
-  .demo-subtitle { margin-block-start: auto; margin-block-end: auto; opacity: 0.75; margin: 0; max-width: 720px; }
+  .demo-title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); margin: 0; }
+  .demo-subtitle { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); opacity: 0.75; margin: 0; max-width: 720px; }
 
   .palette-stack { display: flex; flex-direction: column; gap: var(--density-2); }
   .palette-card { padding: var(--density-2); border-radius: var(--space-2); background: var(--ds__palette__surface-main); color: var(--ds__palette__surface-contrast); border: var(--ds__palette__surface-dark); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column; gap: var(--density-1); }
@@ -7477,8 +7460,8 @@ html, body {
       border-radius: var(--space-3); }
   }
   .palette-card__header { display: flex; flex-direction: column; gap: var(--density-2); }
-  .palette-card__title { margin-block-start: auto; margin-block-end: auto; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
-  .palette-card__detail { margin: 0; opacity: 0.85; }
+  .palette-card__title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
+  .palette-card__detail { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); margin: 0; opacity: 0.85; }
 
   .palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--density-2); }
   .palette-token { border-radius: var(--space-1); padding: var(--density-1); background: color-mix(in srgb, var(--ds__palette__surface-main) 20%, transparent); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: var(--density-11); min-width: 0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
@@ -7490,10 +7473,10 @@ html, body {
   .palette-token:hover { transform: scale(1.02); z-index: 1; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12); }
   .palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--density-2); gap: var(--density-1); }
   .palette-token:last-child .token-values { position: static; align-items: flex-start; }
-  .token-name { opacity: 0.8; }
+  .token-name { margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); opacity: 0.8; }
   .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: var(--density-1); right: var(--density-1); }
-  .token-hex { margin-block-start: auto; margin-block-end: auto; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-family: monospace; opacity: 0.8; }
-  .token-rgb { margin-block-start: auto; margin-block-end: auto; font-family: monospace; opacity: 0.7; font-size: 0.7em; }
+  .token-hex { margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-family: monospace; opacity: 0.8; }
+  .token-rgb { margin-block-start: 0; margin-block-end: 0; font-family: monospace; opacity: 0.7; font-size: 0.7em; }
 
   /* Interactive Playground */
   .surfaces-playground-container {
@@ -7585,6 +7568,11 @@ html, body {
   }
 
   .code-file {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--caption-size);
+    opacity: var(--caption-opacity, 0.8);
+    font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
     opacity: 0.8;
   }
 
@@ -8266,23 +8254,6 @@ html, body {
   }
 
     /* CONTRAST variant (with text color) */
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h4-size);
-  font-weight: var(--h4-weight, 600);
-  font-family: var(--h4-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
   box-sizing: border-box;
   outline: none;
   appearance: none;
@@ -8414,13 +8385,18 @@ html, body {
   }
 
   .prod-title {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h4-size);
+    font-weight: var(--h4-weight, 600);
+    font-family: var(--h4-font-family, var(--font-ui));
     color: var(--ds__palette__text-primary);
     margin: 0;
   }
 
   .prod-subtitle {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     color: var(--ds__palette__text-secondary);
     margin: 0;
     text-transform: uppercase;
@@ -8453,8 +8429,8 @@ html, body {
   }
 
   .prod-stat-val {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--h5-size);
     font-weight: var(--h5-weight, 600);
     font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
@@ -8464,8 +8440,8 @@ html, body {
   }
 
   .prod-stat-label {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--caption-size);
     opacity: var(--caption-opacity, 0.8);
     font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
@@ -8672,6 +8648,11 @@ html, body {
   }
 
   .prod-form-title {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h6-size);
+    font-weight: var(--h6-weight, 600);
+    font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
     margin: 0;
     color: var(--ds__palette__text-primary);
   }
@@ -8698,8 +8679,8 @@ html, body {
   }
 
   .prod-label {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--caption-size);
     opacity: var(--caption-opacity, 0.8);
     font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
@@ -8822,16 +8803,6 @@ html, body {
     align-items: center;
     gap: var(--density-4);
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h4-size);
-  font-weight: var(--h4-weight, 600);
-  font-family: var(--h4-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h6-size);
-  font-weight: var(--h6-weight, 600);
-  font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
   box-sizing: border-box;
   outline: none;
   appearance: none;
@@ -9111,6 +9082,11 @@ html, body {
     min-width: 80px;
     min-height: 40px;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12);
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--caption-size);
+    opacity: var(--caption-opacity, 0.8);
+    font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
     font-weight: bold;
     color: var(--ds__palette__primary-dark);
     border: 1px solid var(--ds__palette__neutral-light);
@@ -9300,6 +9276,8 @@ html, body {
 
   .spacing-card__token {
     grid-area: token;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-family: monospace;
     font-weight: bold;
     color: var(--ds__palette__primary-dark);
@@ -9446,13 +9424,6 @@ html, body {
       width: var(--space-15);
       height: var(--space-15);
     }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
     .spacing-box--16 {
       width: var(--space-16);
       height: var(--space-16);
@@ -9583,6 +9554,11 @@ html, body {
   }
 
   .surface-card__token {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     font-weight: bold;
     font-family: monospace;
     color: var(--ds__palette__primary-main);
@@ -12085,8 +12061,6 @@ html, body {
     .demo-shadow-4 {
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.08), 0 10px 15px rgba(0, 0, 0, 0.16) !important
     }
-  margin-block-start: auto;
-  margin-block-end: auto;
   box-sizing: border-box;
   outline: none;
   appearance: none;
@@ -12123,8 +12097,8 @@ html, body {
 #DemoTypography {
   .typo-section { display: flex; flex-direction: column; gap: var(--density-2); }
   .typo-header { display: flex; flex-direction: column; gap: var(--density-2); }
-  .demo-title { margin: 0; }
-  .demo-subtitle { margin-block-start: auto; margin-block-end: auto; opacity: 0.75; margin: 0; max-width: 720px; }
+  .demo-title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); margin: 0; }
+  .demo-subtitle { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); opacity: 0.75; margin: 0; max-width: 720px; }
 
   .typo-stack { display: flex; flex-direction: column; gap: var(--density-2); }
 
@@ -12158,8 +12132,8 @@ html, body {
   }
 
   .typo-card__tag { 
-    margin-block-start: auto; 
-    margin-block-end: auto; 
+    margin-block-start: 0; 
+    margin-block-end: 0; 
     font-size: var(--caption-size); 
     opacity: var(--caption-opacity, 0.8); 
     font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); 
@@ -12169,6 +12143,8 @@ html, body {
   }
 
   .typo-card__bp { 
+    margin-block-start: 0; 
+    margin-block-end: 0; 
     background: var(--ds__palette__neutral-light);
     padding: 2px 6px;
     border-radius: var(--space-1);
@@ -12182,39 +12158,18 @@ html, body {
   }
 
   /* Typography samples */
-  .sample-h1 { margin-block-start: auto; margin-block-end: auto; font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); margin: 0; }
-  .sample-h2 { margin: 0; }
-  .sample-h3 { margin-block-start: auto; margin-block-end: auto; font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); margin: 0; }
-  .sample-h4 { margin-block-start: auto; margin-block-end: auto; font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); margin: 0; }
-  .sample-h5 { margin-block-start: auto; margin-block-end: auto; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
-  .sample-h6 { margin-block-start: auto; margin-block-end: auto; font-size: var(--h6-size); font-weight: var(--h6-weight, 600); font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
-  .sample-p { margin-block-start: auto; margin-block-end: auto; font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); font-family: var(--p-font-family, var(--font-ui)); margin: 0; }
-  .sample-span { }
-  .sample-body { margin-block-start: auto; margin-block-end: auto; margin: 0; }
-  .sample-caption { margin-block-start: auto; margin-block-end: auto; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
-  .sample-small { margin-block-start: auto; margin-block-end: auto; font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h4-size);
-  font-weight: var(--h4-weight, 600);
-  font-family: var(--h4-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h2-size);
-  font-weight: var(--h2-weight, 700);
-  font-family: var(--h2-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--span-size);
-  font-weight: var(--span-weight, 400);
-  font-family: var(--span-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-family: var(--pre-font-family, var(--font-code)), monospace;
-  font-size: var(--pre-size);
-  .sample-pre { margin: 0; background: color-mix(in srgb, var(--ds__palette__surface-dark) 5%, transparent); padding: var(--density-2); border-radius: var(--space-1); }
+  .sample-h1 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); margin: 0; }
+  .sample-h2 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h2-size); font-weight: var(--h2-weight, 700); font-family: var(--h2-font-family, var(--font-ui)); margin: 0; }
+  .sample-h3 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); margin: 0; }
+  .sample-h4 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); margin: 0; }
+  .sample-h5 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
+  .sample-h6 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h6-size); font-weight: var(--h6-weight, 600); font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
+  .sample-p { margin-block-start: 0; margin-block-end: 0; font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); font-family: var(--p-font-family, var(--font-ui)); margin: 0; }
+  .sample-span { margin-block-start: 0; margin-block-end: 0; font-size: var(--span-size); font-weight: var(--span-weight, 400); font-family: var(--span-font-family, var(--font-ui)); }
+  .sample-body { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); margin: 0; }
+  .sample-caption { margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
+  .sample-small { margin-block-start: 0; margin-block-end: 0; font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
+  .sample-pre { margin-block-start: 0; margin-block-end: 0; font-family: var(--pre-font-family, var(--font-code)), monospace; font-size: var(--pre-size); margin: 0; background: color-mix(in srgb, var(--ds__palette__surface-dark) 5%, transparent); padding: var(--density-2); border-radius: var(--space-1); }
   @media (min-width: 1024px) {
   .sample-pre {
       border-radius: var(--space-2); }
@@ -12290,10 +12245,15 @@ html, body {
     /* 2. Nested SCSS for Structure */
     .mb-header { 
       display: flex; justify-content: space-between; align-items: center;
-      h3 { margin: 0; }
+      h3 { margin-block-start: 0; margin-block-end: 0; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0; }
     }
     
     .mb-badge {
+      margin-block-start: 0;
+      margin-block-end: 0;
+      font-size: var(--caption-size);
+      opacity: var(--caption-opacity, 0.8);
+      font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
       background: color-mix(in srgb, var(--ds__palette__success-light) 20%, transparent);
       color: var(--ds__palette__success-dark);
       padding: var(--density-1) var(--density-2);
@@ -12314,7 +12274,7 @@ html, body {
 
     .mb-stat {
       display: flex; flex-direction: column; gap: var(--density-1); margin-bottom: var(--density-3);
-      .mb-stat-header { display: flex; justify-content: space-between; font-weight: 600; }
+      .mb-stat-header { display: flex; justify-content: space-between; margin-block-start: 0; margin-block-end: 0; font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); font-weight: 600; }
     }
 
     .mb-bar {
@@ -12373,21 +12333,6 @@ html, body {
       padding: var(--density-5)
   }
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h5-size);
-  font-weight: var(--h5-weight, 600);
-  font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--caption-size);
-  opacity: var(--caption-opacity, 0.8);
-  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
 
   @keyframes pulse {
     0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--ds__palette__success-light) 40%, transparent); }
@@ -16738,6 +16683,11 @@ html, body {
   }
 
   .page-title__text {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h1-size);
+    font-weight: var(--h1-weight, 700);
+    font-family: var(--h1-font-family, var(--font-ui));
     margin: 0;
     font-weight: 900;
     letter-spacing: -2px;
@@ -16749,8 +16699,8 @@ html, body {
   }
 
   .page-title__subtitle {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--h4-size);
     font-weight: var(--h4-weight, 600);
     font-family: var(--h4-font-family, var(--font-ui));
@@ -16759,15 +16709,13 @@ html, body {
     line-height: 1.4;
     font-weight: 400; /* Ensure regular weight, not bold, not light */
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h1-size);
-  font-weight: var(--h1-weight, 700);
-  font-family: var(--h1-font-family, var(--font-ui));
-  margin-block-start: auto;
-  margin-block-end: auto;
 
   .page-title__subtext {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     color: color-mix(in srgb, var(--ds__palette__surface-contrast) 85%, transparent); /* High contrast, slight hierarchy */
     margin-top: var(--density-1);
     display: block; /* Ensure it breaks to new line properly if inline wasn't doing it */
@@ -16792,8 +16740,8 @@ html, body {
   min-height: 32px;
 }
 #PageToolbar .page-toolbar__title {
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   color: var(--ds__palette__text-secondary);
   font-weight: 400; /* Not bold */
   text-transform: capitalize;
@@ -16829,15 +16777,15 @@ html, body {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: var(--caption-size);
   opacity: var(--caption-opacity, 0.8);
   font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
 }
 #PageToolbar .page-toolbar__bp {
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: var(--caption-size);
   opacity: var(--caption-opacity, 0.8);
   font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
@@ -16852,8 +16800,8 @@ html, body {
 }
 }
 #PageToolbar .page-toolbar__width {
-  margin-block-start: auto;
-  margin-block-end: auto;
+  margin-block-start: 0;
+  margin-block-end: 0;
   font-size: var(--caption-size);
   opacity: var(--caption-opacity, 0.8);
   font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
@@ -16917,6 +16865,11 @@ html, body {
 
   /* --- Shared Content Styles --- */
   .side-nav__title {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h5-size);
+    font-weight: var(--h5-weight, 600);
+    font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
     margin: 0;
   }
 
@@ -16934,8 +16887,8 @@ html, body {
   }
 
   .side-nav__section-title {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--span-size);
     font-weight: var(--span-weight, 400);
     font-family: var(--span-font-family, var(--font-ui));
@@ -16954,8 +16907,8 @@ html, body {
   }
 
   .side-nav__link {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--span-size);
     font-weight: var(--span-weight, 400);
     font-family: var(--span-font-family, var(--font-ui));
@@ -16985,11 +16938,6 @@ html, body {
   }
 
   /* --- Desktop Overrides (Media Query) --- */
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h5-size);
-  font-weight: var(--h5-weight, 600);
-  font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
   @media (min-width: 1024px) {
     /* Restore to visible and in flow on desktop */
     display: block;
@@ -17052,7 +17000,6 @@ html, body {
   gap: var(--density-6);
   width: 100%;
   margin-top: var(--density-4);
-  background: transparent;
 
   .uxdsl-card {
     padding: var(--density-2);
@@ -17062,11 +17009,10 @@ html, body {
     border: var(--ds__palette__surface-dark);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
     width: 100%;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
     border-radius: var(--space-3);
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14);
+    transition: all 0.2s;
+    overflow: hidden;
   }
 
   @media (min-width: 1024px) {
@@ -17085,12 +17031,10 @@ html, body {
   }
 
   .card-header {
-    background: var(--ds__palette__primary-main);
+    background: linear-gradient(135deg, var(--ds__palette__primary-main), var(--ds__palette__primary-dark));
     padding: var(--density-6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
+    display: grid;
+    place-items: center;
   }
 
   .logo-circle {
@@ -17100,12 +17044,11 @@ html, body {
     color: var(--ds__palette__light-contrast);
     border: var(--ds__palette__surface-dark);
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
-    width: var(--density-11);
-    height: var(--density-11);
+    width: var(--density-10);
+    height: var(--density-10);
     border-radius: 9999px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12);
   }
 
@@ -17116,13 +17059,6 @@ html, body {
   }
   }
 
-  @media (min-width: 768px) {
-
-  .logo-circle {
-      border-radius: var(--space-4);
-  }
-  }
-
   .card-logo {
     width: 60%;
     height: auto;
@@ -17130,39 +17066,35 @@ html, body {
 
   .card-body {
     padding: var(--density-5);
+    text-align: center;
     display: flex;
     flex-direction: column;
     gap: var(--density-3);
-    text-align: center;
   }
 
   .card-title {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h5-size);
+    font-weight: var(--h5-weight, 600);
+    font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
     color: var(--ds__palette__text-primary);
   }
 
   .card-desc {
-    margin-block-start: auto;
-    margin-block-end: auto;
-    font-size: var(--span-size);
-    font-weight: var(--span-weight, 400);
-    font-family: var(--span-font-family, var(--font-ui));
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     color: var(--ds__palette__text-secondary);
   }
 
   .card-actions {
     padding: var(--density-4);
-    background: var(--ds__palette__surface-light);
     border-top: 1px solid var(--ds__color__gray-300);
     display: flex;
     gap: var(--density-2);
-    flex-direction: column;
-  }
-
-  @media (min-width: 480px) {
-
-  .card-actions {
-      flex-direction: row;
-  }
   }
 
   .btn-primary {
@@ -17171,7 +17103,7 @@ html, body {
     background: var(--ds__palette__primary-main);
     color: var(--ds__palette__primary-contrast);
     border: var(--ds__palette__surface-dark);
-    flex: 1;
+    width: 100%;
     justify-content: center;
   }
 
@@ -17208,9 +17140,8 @@ html, body {
     background: transparent;
     color: var(--ds__palette__neutral-main);
     border: 1px solid var(--ds__palette__neutral-main);
-    flex: 1;
+    width: 100%;
     justify-content: center;
-    background: var(--ds__palette__surface-main);
   }
 
   @media (min-width: 1024px) {
@@ -17261,7 +17192,7 @@ html, body {
   }
 
   .code-header {
-    background: #252526;
+    background: var(--ds__palette__primary-main);
     padding: var(--density-2) var(--density-3);
     border-bottom: 1px solid var(--ds__color__gray-300);
     display: flex;
@@ -17274,17 +17205,12 @@ html, body {
     color: var(--ds__palette__neutral-light);
     font-weight: bold;
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h5-size);
-  font-weight: var(--h5-weight, 600);
-  font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-family: var(--pre-font-family, var(--font-code)), monospace;
-  font-size: var(--pre-size);
 
   .code-content {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-family: var(--pre-font-family, var(--font-code)), monospace;
+    font-size: var(--pre-size);
     padding: var(--density-4);
     overflow-x: auto;
     color: var(--ds__palette__neutral-light);
@@ -17461,6 +17387,11 @@ html, body {
 
   .step-number {
     /* Sober typographic number */
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--h6-size);
+    font-weight: var(--h6-weight, 600);
+    font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
     color: var(--ds__palette__secondary-main); /* Secondary accent */
     font-family: font(code);
     font-weight: 700; 
@@ -17468,8 +17399,8 @@ html, body {
   }
 
   .step-title {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     font-size: var(--h5-size);
     font-weight: var(--h5-weight, 600);
     font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
@@ -17480,8 +17411,11 @@ html, body {
   }
 
   .step-desc {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     color: var(--ds__palette__surface-contrast); /* Full contrast */
     font-weight: 400; /* Ensure it's not bold, standard body text */
     max-width: 60ch;
@@ -17518,16 +17452,11 @@ html, body {
   }
 
   .info-text {
-    margin-block-start: auto;
-    margin-block-end: auto;
+    margin-block-start: 0;
+    margin-block-end: 0;
     margin: 0;
     color: color-mix(in srgb, var(--ds__palette__surface-contrast) 80%, transparent);
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h6-size);
-  font-weight: var(--h6-weight, 600);
-  font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui)));
   
   .code-wrapper {
     margin-top: var(--density-4);
@@ -17582,6 +17511,11 @@ html, body {
   }
 
   .welcome-text {
+    margin-block-start: 0;
+    margin-block-end: 0;
+    font-size: var(--body-size);
+    font-weight: var(--body-weight, 400);
+    font-family: var(--body-font-family, var(--font-ui));
     font-size: 1.1rem; /* Slightly larger for intro text */
     color: palette (text-primary);
     line-height: 1.7;
@@ -17592,8 +17526,6 @@ html, body {
       font-weight: 700;
     }
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
 
   .section-title {
     text-align: center;
@@ -17605,12 +17537,12 @@ html, body {
 /* Productivity Page styles - Scoped */
 #ProductivityPage {
   .back-link {
+    margin-block-start: 0;
+    margin-block-end: 0;
     color: var(--ds__palette__primary-main);
     text-decoration: none;
     font-weight: bold;
   }
-  margin-block-start: auto;
-  margin-block-end: auto;
 
   .back-link:hover {
     text-decoration: underline;
@@ -17629,18 +17561,11 @@ html, body {
       border-radius: var(--space-3);
       border-radius: var(--space-3); }
   }
-  .palette-swatch__title { margin: 0 0 var(--space-2) 0; text-transform: capitalize; }
+  .palette-swatch__title { margin-block-start: 0; margin-block-end: 0; font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); margin: 0 0 var(--space-2) 0; text-transform: capitalize; }
   .palette-swatch__rows { display: grid; gap: var(--space-1); }
   .palette-swatch .row { display: flex; align-items: baseline; justify-content: space-between; }
-  .palette-swatch .label { margin-block-start: auto; margin-block-end: auto; font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); opacity: 0.75; }
-  margin-block-start: auto;
-  margin-block-end: auto;
-  font-size: var(--h5-size);
-  font-weight: var(--h5-weight, 600);
-  font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui)));
-  margin-block-start: auto;
-  margin-block-end: auto;
-  .palette-swatch .value { }
+  .palette-swatch .label { margin-block-start: 0; margin-block-end: 0; font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); opacity: 0.75; }
+  .palette-swatch .value { margin-block-start: 0; margin-block-end: 0; font-size: var(--body-size); font-weight: var(--body-weight, 400); font-family: var(--body-font-family, var(--font-ui)); }
 }
 :root {
   --ds__palette__primary-main: #15803D;

@@ -203,12 +203,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           }
           tag = tag.toLowerCase();
           const insert = (prop: string, value: string) => {
-            (rule as any).insertBefore(at, { prop, value });
+            at.parent.insertBefore(at, { prop, value });
           };
           // Default block margin behavior for typographic elements
           // Use 'auto' per request (computes to 0 for top/bottom in most cases)
-          insert("margin-block-start", "auto");
-          insert("margin-block-end", "auto");
+          insert("margin-block-start", "0");
+          insert("margin-block-end", "0");
           switch (tag) {
             case "h1":
               insert("font-size", "var(--h1-size)");
@@ -256,6 +256,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               insert("font-size", "var(--span-size)");
               insert("font-weight", "var(--span-weight, 400)");
               insert("font-family", "var(--span-font-family, var(--font-ui))");
+              break;
+            case "body":
+              insert("font-size", "var(--body-size)");
+              insert("font-weight", "var(--body-weight, 400)");
+              insert("font-family", "var(--body-font-family, var(--font-ui))");
               break;
             case "small":
               insert("font-size", "var(--small-size)");

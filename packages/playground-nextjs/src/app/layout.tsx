@@ -5,6 +5,7 @@ import PageToolbar from '@/components/PageToolbar'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
 import theme from '../../uxdsl.theme.default.json'
+import { Analytics } from "@vercel/analytics/next";
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -30,6 +31,7 @@ export default function RootLayout({
           <PageToolbar />
           {children}
         </Providers>
+        <Analytics />
       </body>
     </html>
   )

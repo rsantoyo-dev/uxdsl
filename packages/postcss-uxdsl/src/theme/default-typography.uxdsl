@@ -59,10 +59,9 @@
 .ds-typo {
   font-family: var(--font-ui), sans-serif;
   color: inherit;
-  margin-block-start: 0;
-  margin-block-end: 0;
-  margin-inline-start: 0;
-  margin-inline-end: 0;
+  margin-block-start: auto;
+  margin-block-end: auto;
+
 }
 
 /* Element-aware rules (low specificity via :where) */

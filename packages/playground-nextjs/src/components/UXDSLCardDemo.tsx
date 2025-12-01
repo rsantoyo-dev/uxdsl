@@ -1,90 +1,78 @@
 'use client'
 import React from 'react'
+import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 const DEMO_CODE = `.uxdsl-card {
-  @ds-surface (contained);
-  width: xs(100%) md(400px);
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  border-radius: radius(3);
-  box-shadow: shadow(3);
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: shadow(4);
+    @ds-surface (contained);
+    width: xs(100%) md(400px);
+    border-radius: radius(3);
+    box-shadow: shadow(3);
+    transition: all 0.2s;
+    overflow: hidden;
   }
-}
 
-.card-header {
-  background: palette(primary-main);
-  padding: density(6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
+  .card-header {
+    background: linear-gradient(135deg, palette(primary-main), palette(primary-dark));
+    padding: density(6);
+    display: grid;
+    place-items: center;
+  }
 
-.logo-circle {
-  @ds-surface (contained light);
-  width: density(11);
-  height: density(11);
-  border-radius: xs(radius(full)) md(radius(4));
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: shadow(2);
-}
+  .logo-circle {
+    @ds-surface (contained light);
+    width: density(10);
+    height: density(10);
+    border-radius: radius(full);
+    display: grid;
+    place-items: center;
+    box-shadow: shadow(2);
+  }
 
-.card-logo {
-  width: 60%;
-  height: auto;
-}
+  .card-logo {
+    width: 60%;
+    height: auto;
+  }
 
-.card-body {
-  padding: density(5);
-  display: flex;
-  flex-direction: column;
-  gap: density(3);
-  text-align: center;
-}
+  .card-body {
+    padding: density(5);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+  }
 
-.card-title {
-  @ds-typo (h5);
-  color: palette(text-primary);
-}
+  .card-title {
+    @ds-typo (h5);
+    color: palette(text-primary);
+  }
 
-.card-desc {
-  @ds-typo (body);
-  color: palette(text-secondary);
-}
+  .card-desc {
+    @ds-typo (body);
+    color: palette(text-secondary);
+  }
 
-.card-actions {
-  padding: density(4);
-  background: palette(surface-light);
-  border-top: border(1);
-  display: flex;
-  gap: density(2);
-  flex-direction: xs(column) sm(row);
-}
+  .card-actions {
+    padding: density(4);
+    border-top: border(1);
+    display: flex;
+    gap: density(2);
+  }
 
-.btn-primary {
-  @ds-button (contained primary);
-  flex: 1;
-  justify-content: center;
-}
+  .btn-primary {
+    @ds-button (contained primary);
+    width: 100%;
+    justify-content: center;
+  }
 
-.btn-secondary {
-  @ds-button (outlined neutral);
-  flex: 1;
-  justify-content: center;
-  background: palette(surface-main);
-}`
+  .btn-secondary {
+    @ds-button (outlined neutral);
+    width: 100%;
+    justify-content: center;
+  }`;
 
 export default function UXDSLCardDemo() {
   return (
@@ -96,34 +84,40 @@ export default function UXDSLCardDemo() {
           </div>
         </div>
         <div className="card-body">
-          <h5 className="card-title">UX-DSL System</h5>
+          <h5 className="card-title">UX-DSL</h5>
           <p className="card-desc">
-            A type-safe, compile-time design system language that bridges the gap between design tokens and CSS implementation.
+            A type-safe, compile-time design system language that bridges the
+            gap between design tokens and CSS implementation.
           </p>
         </div>
         <div className="card-actions">
-          <button className="btn-secondary">
+          <Link href="/docs/quick-start" className="btn-secondary">
             Documentation
-          </button>
-          <button className="btn-primary">
+          </Link>
+          <Link href="/docs/quick-start" className="btn-primary">
             Get Started <ArrowRight size={16} style={{ marginLeft: 8 }} />
-          </button>
+          </Link>
         </div>
       </div>
 
       <div className="demo-code-block">
-         <div className="code-header">
-           <span className="code-file">CardComponent.uxdsl</span>
-         </div>
-         <SyntaxHighlighter 
-            language="scss" 
-            style={vscDarkPlus}
-            customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
-            wrapLines={true}
-          >
-           {DEMO_CODE}
-         </SyntaxHighlighter>
-       </div>
+        <div className="code-header">
+          <span className="code-file">CardComponent.uxdsl</span>
+        </div>
+        <SyntaxHighlighter
+          language="scss"
+          style={vscDarkPlus}
+          customStyle={{
+            margin: 0,
+            padding: "1rem",
+            background: "transparent",
+            fontSize: "0.9rem",
+          }}
+          wrapLines={true}
+        >
+          {DEMO_CODE}
+        </SyntaxHighlighter>
+      </div>
     </div>
-  )
+  );
 }
