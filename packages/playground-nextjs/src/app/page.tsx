@@ -74,7 +74,7 @@ export default function Home() {
           <NavigationCardLink
             href="/docs/quick-start"
             title="Quick Start"
-            description="Get up and running with UXDSL in minutes."
+            description="Get up and running with UX-DSL in minutes."
             icon={<Rocket size={24} />}
             variant="primary"
           />

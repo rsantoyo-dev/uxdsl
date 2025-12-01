@@ -18,15 +18,27 @@
 
   .hero-content {
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* Default to column on mobile */
     align-items: center;
     gap: density(4);
     text-align: center;
+
+    @media (min-width: 768px) { /* On larger screens, switch to row */
+      flex-direction: row;
+      justify-content: center; /* Center the row content */
+      text-align: left; /* Align text within the content to the left */
+      
+      .welcome-page-title {
+        .page-title__text {
+          margin-bottom: 0; /* Remove bottom margin when in row layout */
+        }
+      }
+    }
   }
 
   .logo-container {
-    width: density(32);
-    height: density(32);
+    width: density(30); /* Changed from density(32) to density(30) */
+    height: density(30); /* Changed from density(32) to density(30) */
     display: grid;
     place-items: center;
     

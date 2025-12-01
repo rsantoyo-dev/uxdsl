@@ -3,9 +3,10 @@
   width: 100%;
   background: palette(surface-light);
   border-bottom: 1px solid palette(neutral-light);
+  position: -webkit-sticky; /* Safari */
   position: sticky;
-  top: 60px; /* Height of AppHeader approx */
-  z-index: 900;
+  top: 0;
+  z-index: 1100; /* Higher than AppHeader (1000) to sit on top when stuck */
 }
 
 #PageToolbar .page-toolbar {
@@ -22,8 +23,26 @@
   @ds-typo(body-sm);
   color: palette(text-secondary);
   font-weight: 400; /* Not bold */
-  text-transform: capitalize;
   font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: density(1);
+}
+
+#PageToolbar .breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 0.2s;
+  
+  &:hover {
+    color: palette(primary-main);
+    text-decoration: underline;
+  }
+}
+
+#PageToolbar .breadcrumb-separator {
+  color: palette(neutral-dark);
+  opacity: 0.5;
 }
 
 #PageToolbar .page-toolbar__left {

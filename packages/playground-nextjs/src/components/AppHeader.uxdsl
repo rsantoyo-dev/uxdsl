@@ -8,8 +8,7 @@
   /* Fallback if gradient fails */
   background-color: palette(primary-main);
   color: palette(primary-contrast);
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 1000;
   box-shadow: shadow(2);
   border-bottom: 1px solid palette(primary-light, 0.3);

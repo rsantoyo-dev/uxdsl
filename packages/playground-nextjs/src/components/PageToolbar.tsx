@@ -4,7 +4,8 @@ import { useNav } from '@/components/NavContext'
 import { Menu } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Fragment } from 'react'
+import Link from 'next/link'
 
 export default function PageToolbar() {
   const { toggle } = useNav()
@@ -35,9 +36,8 @@ export default function PageToolbar() {
     return () => window.removeEventListener('resize', handleResize)
   }, [breakpoints])
 
-  // Format pathname for display (e.g. "/docs/home" -> "Docs / Home")
-  const pageTitle = pathname === '/' ? 'Home' : pathname.split('/').filter(Boolean).map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' / ')
   const isDocs = pathname.startsWith('/docs')
+  const segments = pathname.split('/').filter(Boolean)
 
   return (
     <div id="PageToolbar">
@@ -53,7 +53,21 @@ export default function PageToolbar() {
             </button>
           )}
           <div className="page-toolbar__title">
-            {pageTitle}
+            <Link href="/" className="breadcrumb-link">uxdsl</Link>
+            {segments.map((segment, index) => {
+              const href = '/' + segments.slice(0, index + 1).join('/')
+              // If segment is 'docs', point to /docs/home to be safe, or keep as is if /docs redirects
+              const targetHref = segment === 'docs' ? '/docs/home' : href
+              
+              return (
+                <Fragment key={segment}>
+                  <span className="breadcrumb-separator">/</span>
+                  <Link href={targetHref} className="breadcrumb-link">
+                    {segment}
+                  </Link>
+                </Fragment>
+              )
+            })}
           </div>
         </div>
 
