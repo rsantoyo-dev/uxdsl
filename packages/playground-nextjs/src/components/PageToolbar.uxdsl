@@ -16,25 +16,20 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 40px; /* Increased slightly from 32px to accommodate 30px logo + padding */
+  min-height: 40px; 
 }
 
-#PageToolbar .page-toolbar__logo-link {
+#PageToolbar .page-toolbar__left {
   display: flex;
   align-items: center;
-  margin-right: density(3);
-  text-decoration: none;
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: scale(1.1);
-  }
+  gap: density(2); /* Increased gap for better spacing */
 }
 
 #PageToolbar .page-toolbar__logo {
-  width: 30px;
-  height: 30px;
+  width: 24px; /* Smaller as requested */
+  height: 24px; /* Smaller as requested */
   display: block;
+  flex-shrink: 0;
 }
 
 #PageToolbar .page-toolbar__title {
@@ -45,6 +40,28 @@
   display: flex;
   align-items: center;
   gap: density(1);
+}
+
+#PageToolbar .breadcrumb-link-brand {
+  display: flex;
+  align-items: center;
+  gap: density(1);
+  text-decoration: none;
+  color: inherit; /* Inherit color from parent for brand consistency */
+  font-weight: 800; /* Bold as requested */
+  text-transform: uppercase; /* Uppercase as requested */
+  letter-spacing: 0.5px; /* Slight letter spacing for branding */
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-1px);
+    color: palette(primary-main);
+  }
+}
+
+#PageToolbar .page-toolbar__brand-text {
+  color: palette(primary-main); /* Branded color */
+  font-weight: 800; /* Ensure bold */
 }
 
 #PageToolbar .breadcrumb-link {

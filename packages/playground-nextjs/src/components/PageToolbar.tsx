@@ -44,9 +44,6 @@ export default function PageToolbar() {
     <div id="PageToolbar">
       <div className="page-toolbar">
         <div className="page-toolbar__left">
-          <Link href="/" className="page-toolbar__logo-link" aria-label="Home">
-             <UXDSLLogo className="page-toolbar__logo" />
-          </Link>
           {isDocs && (
             <button 
               className="page-toolbar__burger" 
@@ -57,7 +54,10 @@ export default function PageToolbar() {
             </button>
           )}
           <div className="page-toolbar__title">
-            <Link href="/" className="breadcrumb-link">uxdsl</Link>
+            <Link href="/" className="breadcrumb-link-brand">
+              <UXDSLLogo className="page-toolbar__logo" />
+              <span className="page-toolbar__brand-text">UX-DSL</span>
+            </Link>
             {segments.map((segment, index) => {
               const href = '/' + segments.slice(0, index + 1).join('/')
               // If segment is 'docs', point to /docs/home to be safe, or keep as is if /docs redirects
