@@ -1,0 +1,2 @@
+echo "Running pre-commit build check for playground-nextjs..."
+cd packages/playground-nextjs && npm run build
