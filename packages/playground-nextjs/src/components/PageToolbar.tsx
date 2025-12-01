@@ -15,6 +15,7 @@ export default function PageToolbar() {
   const { breakpoints } = useBreakpoints()
   const [activeBp, setActiveBp] = useState<string>('xs')
   const [windowWidth, setWindowWidth] = useState(0)
+  const [showControls, setShowControls] = useState(false)
   
   const { isDark, currentTheme, switchTheme, toggleDarkMode } = useTheme()
 
@@ -39,6 +40,22 @@ export default function PageToolbar() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [breakpoints])
+
+  useEffect(() => {
+    const header = document.getElementById('AppHeader')
+    if (!header) return
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Show controls when header is NOT visible (scrolled out)
+        setShowControls(!entry.isIntersecting)
+      },
+      { threshold: 0 }
+    )
+
+    observer.observe(header)
+    return () => observer.disconnect()
+  }, [])
 
   const isDocs = pathname.startsWith('/docs')
   const segments = pathname.split('/').filter(Boolean)
@@ -78,11 +95,7 @@ export default function PageToolbar() {
         </div>
 
         <div className="page-toolbar__right">
-          <div className="page-toolbar__info-row">
-            <span className="page-toolbar__bp">{activeBp.toUpperCase()}</span>
-            <span className="page-toolbar__width">{windowWidth}px</span>
-          </div>
-          <div className="page-toolbar__theme-row">
+          <div className={`page-toolbar__theme-row ${showControls ? 'visible' : ''}`}>
             <button 
               onClick={() => switchTheme('default')} 
               className={`mini-theme-btn default ${currentTheme === 'default' ? 'active' : ''}`} 
@@ -101,6 +114,10 @@ export default function PageToolbar() {
             <button onClick={toggleDarkMode} className="mini-theme-toggle" title="Toggle Dark Mode">
               {isDark ? <Moon size={12} /> : <Sun size={12} />}
             </button>
+          </div>
+          <div className="page-toolbar__info-row">
+            <span className="page-toolbar__bp">{activeBp.toUpperCase()}</span>
+            <span className="page-toolbar__width">{windowWidth}px</span>
           </div>
         </div>
       </div>

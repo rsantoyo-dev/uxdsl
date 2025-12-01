@@ -94,12 +94,12 @@
   }
 }
 
-/* Right Side - Stacked Layout */
+/* Right Side - Row Layout */
 #PageToolbar .page-toolbar__right {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: density(1);
+  flex-direction: row; /* Changed from column to row */
+  align-items: center;
+  gap: density(4); /* Increased gap between theme controls and bp info */
   @ds-typo(caption);
 }
 
@@ -112,7 +112,19 @@
 #PageToolbar .page-toolbar__theme-row {
   display: flex;
   align-items: center;
-  gap: density(1);
+  gap: density(2);
+  
+  /* Transition State */
+  opacity: 0;
+  transform: translateX(10px);
+  pointer-events: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &.visible {
+    opacity: 1;
+    transform: translateX(0);
+    pointer-events: auto;
+  }
 }
 
 #PageToolbar .page-toolbar__bp {
