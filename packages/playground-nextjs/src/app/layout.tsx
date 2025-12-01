@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     template: '%s | UX-DSL',
   },
   description: 'A type-safe, compile-time design system language that bridges the gap between design tokens and CSS implementation. Write expressive, token-aware styles that compile to optimized CSS.',
-  keywords: ['Design System', 'CSS', 'TypeScript', 'UX', 'Design Tokens', 'Compiler', 'Style', 'Theme'],
+  keywords: ['Design System', 'CSS', 'TypeScript', 'UX', 'Design Tokens', 'Compiler', 'Style', 'Theme', 'UX Design System Language', 'UI/UX', 'Post-CSS', 'SCSS', 'Clean Code', 'Separation of Concerns'],
   openGraph: {
     title: 'UX-DSL',
     description: 'Type-safe, compile-time design system language.',
