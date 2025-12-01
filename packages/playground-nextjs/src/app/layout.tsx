@@ -12,8 +12,40 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 export const metadata: Metadata = {
-  title: 'UXDSL Next.js Playground',
-  description: 'Next.js playground with UXDSL styling',
+  metadataBase: new URL('https://uxdsl.vercel.app'),
+  title: {
+    default: 'UX-DSL - Type-safe Design System Language',
+    template: '%s | UX-DSL',
+  },
+  description: 'A type-safe, compile-time design system language that bridges the gap between design tokens and CSS implementation. Write expressive, token-aware styles that compile to optimized CSS.',
+  keywords: ['Design System', 'CSS', 'TypeScript', 'UX', 'Design Tokens', 'Compiler', 'Style', 'Theme'],
+  openGraph: {
+    title: 'UX-DSL',
+    description: 'Type-safe, compile-time design system language.',
+    url: 'https://uxdsl.vercel.app',
+    siteName: 'UX-DSL',
+    locale: 'en_US',
+    type: 'website',
+    images: [
+      {
+        url: '/uxdsl-alpha.png',
+        width: 1200,
+        height: 630,
+        alt: 'UX-DSL Preview',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'UX-DSL',
+    description: 'Type-safe, compile-time design system language.',
+    images: ['/uxdsl-alpha.png'],
+    creator: '@rsantoyo', 
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 }
 
 export default function RootLayout({
