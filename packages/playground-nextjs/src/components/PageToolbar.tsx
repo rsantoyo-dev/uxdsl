@@ -1,11 +1,12 @@
 'use client'
 
 import { useNav } from '@/components/NavContext'
-import { Menu } from 'lucide-react'
+import { Menu, Sun, Moon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
+import { useTheme } from '@/components/ThemeContext'
 
 
 export default function PageToolbar() {
@@ -14,6 +15,8 @@ export default function PageToolbar() {
   const { breakpoints } = useBreakpoints()
   const [activeBp, setActiveBp] = useState<string>('xs')
   const [windowWidth, setWindowWidth] = useState(0)
+  
+  const { isDark, currentTheme, switchTheme, toggleDarkMode } = useTheme()
 
   useEffect(() => {
     const handleResize = () => {
@@ -75,8 +78,30 @@ export default function PageToolbar() {
         </div>
 
         <div className="page-toolbar__right">
-          <span className="page-toolbar__bp">{activeBp.toUpperCase()}</span>
-          <span className="page-toolbar__width">{windowWidth}px</span>
+          <div className="page-toolbar__info-row">
+            <span className="page-toolbar__bp">{activeBp.toUpperCase()}</span>
+            <span className="page-toolbar__width">{windowWidth}px</span>
+          </div>
+          <div className="page-toolbar__theme-row">
+            <button 
+              onClick={() => switchTheme('default')} 
+              className={`mini-theme-btn default ${currentTheme === 'default' ? 'active' : ''}`} 
+              title="Default Theme"
+            />
+            <button 
+              onClick={() => switchTheme('green')} 
+              className={`mini-theme-btn green ${currentTheme === 'green' ? 'active' : ''}`} 
+              title="Green Theme"
+            />
+            <button 
+              onClick={() => switchTheme('purple')} 
+              className={`mini-theme-btn purple ${currentTheme === 'purple' ? 'active' : ''}`} 
+              title="Purple Theme"
+            />
+            <button onClick={toggleDarkMode} className="mini-theme-toggle" title="Toggle Dark Mode">
+              {isDark ? <Moon size={12} /> : <Sun size={12} />}
+            </button>
+          </div>
         </div>
       </div>
     </div>

@@ -16,19 +16,19 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: 40px; 
+  min-height: 48px; /* Increased to accommodate stacked rows */
 }
 
 #PageToolbar .page-toolbar__left {
   display: flex;
   align-items: center;
-  gap: density(2); /* Increased gap for better spacing */
+  gap: density(2);
 }
 
 #PageToolbar .page-toolbar__title {
   @ds-typo(body-sm);
   color: palette(text-secondary);
-  font-weight: 400; /* Not bold */
+  font-weight: 400;
   font-size: 0.85rem;
   display: flex;
   align-items: center;
@@ -37,11 +37,13 @@
 
 #PageToolbar .breadcrumb-link-brand {
   text-decoration: none;
-  color: inherit; /* Inherit color from parent for brand consistency */
-  font-weight: 800; /* Bold as requested */
-  text-transform: uppercase; /* Uppercase as requested */
-  letter-spacing: 0.5px; /* Slight letter spacing for branding */
+  color: inherit;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   transition: transform 0.2s;
+  display: flex;
+  align-items: center;
 
   &:hover {
     transform: translateY(-1px);
@@ -50,8 +52,8 @@
 }
 
 #PageToolbar .page-toolbar__brand-text {
-  color: palette(primary-main); /* Branded color */
-  font-weight: 800; /* Ensure bold */
+  color: palette(primary-main);
+  font-weight: 800;
 }
 
 #PageToolbar .breadcrumb-link {
@@ -70,27 +72,19 @@
   opacity: 0.5;
 }
 
-#PageToolbar .page-toolbar__left {
-  display: flex;
-  align-items: center;
-  gap: density(1); /* Reduced gap */
-}
-
 #PageToolbar .page-toolbar__burger {
   background: transparent;
   border: none;
   color: palette(secondary-main);
   cursor: pointer;
-  padding: 0; /* No padding */
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  /* Removed border-radius */
-  /* Removed transition */
 }
 
 #PageToolbar .page-toolbar__burger:hover {
-  color: palette(secondary-dark); /* Only change color on hover */
+  color: palette(secondary-dark);
   background: transparent;
 }
 
@@ -100,22 +94,79 @@
   }
 }
 
+/* Right Side - Stacked Layout */
 #PageToolbar .page-toolbar__right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: density(1);
+  @ds-typo(caption);
+}
+
+#PageToolbar .page-toolbar__info-row {
   display: flex;
   align-items: center;
   gap: space(2);
-  @ds-typo(caption);
+}
+
+#PageToolbar .page-toolbar__theme-row {
+  display: flex;
+  align-items: center;
+  gap: density(1);
 }
 
 #PageToolbar .page-toolbar__bp {
   @ds-typo(caption);
-
   background: palette(secondary-light, 0.1);
-  padding: density(2) density(3);
+  padding: density(1) density(2);
   border-radius: radius(1);
+  line-height: 1;
 }
 
 #PageToolbar .page-toolbar__width {
   @ds-typo(caption);
   opacity: 0.7;
+  line-height: 1;
+}
+
+/* Mini Theme Buttons */
+#PageToolbar .mini-theme-btn {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,0.1); /* Subtle border for light mode */
+  padding: 0;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: all 0.2s;
+
+  &:hover, &.active {
+    opacity: 1;
+    transform: scale(1.2);
+    border-color: palette(surface-contrast, 0.5);
+  }
+
+  &.default { background: #2C415C; }
+  &.green { background: #15803D; }
+  &.purple { background: #7b1fa2; }
+}
+
+#PageToolbar .mini-theme-toggle {
+  width: 12px;
+  height: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: palette(text-secondary);
+  opacity: 0.7;
+  transition: color 0.2s;
+
+  &:hover {
+    opacity: 1;
+    color: palette(primary-main);
+  }
 }

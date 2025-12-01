@@ -1,17 +1,17 @@
 'use client'
 
-import ThemeProvider from '@/components/ThemeProvider'
+import { ThemeContextProvider } from '@/components/ThemeContext'
 import { BreakpointsProvider } from '@/components/BreakpointsProvider'
 import { NavProvider } from '@/components/NavContext'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider persist={false}>
+    <ThemeContextProvider>
       <BreakpointsProvider>
         <NavProvider>
           {children}
         </NavProvider>
       </BreakpointsProvider>
-    </ThemeProvider>
+    </ThemeContextProvider>
   )
 }

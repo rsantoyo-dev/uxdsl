@@ -1,50 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Sun, Moon } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
-import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
-import greenTheme from '../../uxdsl.theme.green.json'
-import purpleTheme from '../../uxdsl.theme.purple.json'
-import defaultTheme from '../../uxdsl.theme.default.json'
+import { useTheme } from '@/components/ThemeContext'
 
 export default function AppHeader() {
-  const [isDark, setIsDark] = useState(false)
-  const [currentTheme, setCurrentTheme] = useState<'default' | 'green' | 'purple'>('default')
-
-  useEffect(() => {
-    // Check initial preference
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
-                       (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
-    setIsDark(isDarkMode)
-  }, [])
-
-  const switchTheme = (themeName: 'default' | 'green' | 'purple') => {
-    let theme;
-    switch (themeName) {
-      case 'purple': theme = purpleTheme; break;
-      case 'green': theme = greenTheme; break;
-      case 'default': default: theme = defaultTheme; break;
-    }
-    
-    const css = generateThemeCss(theme)
-    const styleTag = document.getElementById('uxdsl-ssr-theme')
-    if (styleTag) {
-      styleTag.innerHTML = css
-    }
-    setCurrentTheme(themeName)
-  }
-
-  const toggleTheme = () => {
-    const newIsDark = !isDark
-    setIsDark(newIsDark)
-    if (newIsDark) {
-      document.documentElement.setAttribute('data-theme', 'dark')
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light')
-    }
-  }
+  const { isDark, currentTheme, switchTheme, toggleDarkMode } = useTheme()
 
   return (
     <header id="AppHeader">
@@ -77,7 +39,7 @@ export default function AppHeader() {
 
             <div className="divider-vertical" />
 
-            <button className="theme-toggle" onClick={toggleTheme} aria-label="Toggle theme">
+            <button className="theme-toggle" onClick={toggleDarkMode} aria-label="Toggle theme">
               {isDark ? <Moon size={18} /> : <Sun size={18} />}
             </button>
           </div>
