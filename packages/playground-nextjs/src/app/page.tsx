@@ -1,9 +1,8 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Grid3X3, Smartphone } from 'lucide-react'
-import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { InteractiveLogo } from '@/components/InteractiveLogo'
 import { HeroBackground } from '@/components/HeroBackground'
 import { PageTitle } from '@/components/PageTitle'
