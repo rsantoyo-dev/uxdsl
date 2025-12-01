@@ -10,7 +10,7 @@ import defaultTheme from '../../uxdsl.theme.default.json'
 
 export default function AppHeader() {
   const [isDark, setIsDark] = useState(false)
-  const [currentTheme, setCurrentTheme] = useState<'default' | 'green' | 'purple'>('green')
+  const [currentTheme, setCurrentTheme] = useState<'default' | 'green' | 'purple'>('default')
 
   useEffect(() => {
     // Check initial preference
@@ -23,8 +23,8 @@ export default function AppHeader() {
     let theme;
     switch (themeName) {
       case 'purple': theme = purpleTheme; break;
-      case 'default': theme = defaultTheme; break;
-      case 'green': default: theme = greenTheme; break;
+      case 'green': theme = greenTheme; break;
+      case 'default': default: theme = defaultTheme; break;
     }
     
     const css = generateThemeCss(theme)

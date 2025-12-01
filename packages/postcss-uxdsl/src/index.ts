@@ -796,6 +796,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         });
         // @ds-surface(variant [tone])
         rule.walkAtRules("ds-surface", (at) => {
+          if (at.parent !== rule) return;
           let inner = String((at.params || "").trim());
           if (
             (inner.startsWith('"') && inner.endsWith('"')) ||
@@ -842,6 +843,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
         // @ds-button(variant?) using packs
         rule.walkAtRules("ds-button", (at) => {
+          if (at.parent !== rule) return;
           const rawIn = String((at.params || "").trim());
           let inner = rawIn;
           if (
@@ -944,7 +946,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                 Object.keys(stateProps).forEach((prop) => {
                   const value = stateProps[prop];
                   if (value) {
-                    newRule.insertBefore(at, { prop, value });
+                    let cssProp = prop;
+                    if (prop === "bg") cssProp = "background";
+                    else if (prop === "radius") cssProp = "border-radius";
+                    else if (prop === "shadow") cssProp = "box-shadow";
+                    
+                    newRule.insertBefore(at, { prop: cssProp, value });
                   }
                 });
 

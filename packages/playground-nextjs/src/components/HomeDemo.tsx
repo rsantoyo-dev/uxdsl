@@ -55,7 +55,7 @@ export default function HomeDemo() {
             customStyle={{ margin: 0, borderRadius: '0 0 4px 4px' }}
           >
 {`.mb-card {
-  @ds-surface(contained);
+  @ds-surface(bg);
   width: xs(100%) md(420px);
   padding: xs(density(3)) md(density(5));
   gap: density(4);

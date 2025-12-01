@@ -7,11 +7,18 @@ import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 const DEMO_CODE = `.uxdsl-card {
   @ds-surface (contained);
-  width: xs(100%) md(450px);
+  width: xs(100%) md(400px);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   border-radius: radius(3);
+  box-shadow: shadow(3);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: shadow(4);
+  }
 }
 
 .card-header {
@@ -21,7 +28,6 @@ const DEMO_CODE = `.uxdsl-card {
   align-items: center;
   justify-content: center;
   position: relative;
-  background-size: density(8) density(8);
 }
 
 .logo-circle {
@@ -32,6 +38,7 @@ const DEMO_CODE = `.uxdsl-card {
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: shadow(2);
 }
 
 .card-logo {
@@ -48,7 +55,7 @@ const DEMO_CODE = `.uxdsl-card {
 }
 
 .card-title {
-  @ds-typo (h4);
+  @ds-typo (h5);
   color: palette(text-primary);
 }
 
@@ -81,7 +88,7 @@ const DEMO_CODE = `.uxdsl-card {
 
 export default function UXDSLCardDemo() {
   return (
-    <div id="UXDSLCardDemo">
+    <div className="uxdsl-demo-wrapper">
       <div className="uxdsl-card">
         <div className="card-header">
           <div className="logo-circle">
@@ -89,7 +96,7 @@ export default function UXDSLCardDemo() {
           </div>
         </div>
         <div className="card-body">
-          <h3 className="card-title">UX-DSL System</h3>
+          <h5 className="card-title">UX-DSL System</h5>
           <p className="card-desc">
             A type-safe, compile-time design system language that bridges the gap between design tokens and CSS implementation.
           </p>
