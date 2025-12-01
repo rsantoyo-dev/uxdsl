@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type } from 'lucide-react'
+import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Grid3X3, Smartphone } from 'lucide-react'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { PageTitle } from '@/components/PageTitle'
 import UXDSLCardDemo from '@/components/UXDSLCardDemo'
@@ -54,17 +54,31 @@ export default function Home() {
             variant="secondary"
           />
           <NavigationCardLink
-            href="/theming"
-            title="Theming"
-            description="Learn how to customize and extend your design system."
+            href="/docs/palette"
+            title="Palette"
+            description="Explore the color system and semantic tokens."
             icon={<Palette size={24} />}
             variant="secondary"
           />
-           <NavigationCardLink
-            href="/typography"
+          <NavigationCardLink
+            href="/docs/typography"
             title="Typography"
             description="Master the fluid typography system."
             icon={<Type size={24} />}
+            variant="secondary"
+          />
+          <NavigationCardLink
+            href="/docs/densities"
+            title="Densities"
+            description="Manage spacing and sizing across different contexts."
+            icon={<Grid3X3 size={24} />}
+            variant="secondary"
+          />
+          <NavigationCardLink
+            href="/docs/breakpoints"
+            title="Breakpoints"
+            description="Responsive design breakpoints and layout rules."
+            icon={<Smartphone size={24} />}
             variant="secondary"
           />
         </div>
