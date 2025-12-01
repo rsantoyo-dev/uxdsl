@@ -6,6 +6,7 @@ import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
 import theme from '../../uxdsl.theme.default.json'
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
@@ -32,6 +33,7 @@ export default function RootLayout({
           {children}
         </Providers>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
