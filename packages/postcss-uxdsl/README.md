@@ -203,25 +203,6 @@ Creates container styles (cards, panels, modals) with consistent background, bor
 
 ---
 
-## Custom Mixins
-
-You can also define your own reusable mixins.
-
-```css
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.hero {
-  @include flex-center;
-  height: 100vh;
-}
-```
-
----
-
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)
