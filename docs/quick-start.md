@@ -2,6 +2,17 @@
 
 Welcome to **UXDSL**! This guide will help you get up and running with UXDSL in your project. We recommend using **Vite** for the best development experience.
 
+## Starter Template
+
+The fastest way to get started is using our official React starter template:
+
+```bash
+git clone https://github.com/rsantoyo-dev/uxdsl-react-starter.git my-uxdsl-app
+cd my-uxdsl-app
+npm install
+npm run dev
+```
+
 ## 1. Installation
 
 First, install the necessary packages. You'll need the Vite plugin and the core library.
@@ -35,9 +46,21 @@ export default defineConfig({
 });
 ```
 
+### TypeScript Support
+
+If you are using TypeScript, you may see an error like `Cannot find module './App.uxdsl'`. To fix this, create a declaration file (e.g., `src/uxdsl-env.d.ts`) with the following content:
+
+```typescript
+// src/uxdsl-env.d.ts
+declare module '*.uxdsl' {
+  const content: string;
+  export default content;
+}
+```
+
 ## 3. Create a Theme (Optional but Recommended)
 
-UXDSL shines when you define a design system. Create a file named `theme.uxdsl` (or include it in your main entry) to define your tokens.
+UXDSL shines when you define a design system. Create a file named `src/theme.uxdsl` to define your tokens.
 
 ```css
 /* src/theme.uxdsl */
@@ -68,6 +91,22 @@ UXDSL shines when you define a design system. Create a file named `theme.uxdsl` 
 }
 ```
 
+Then, import this file in your application's entry point (usually `src/main.tsx`, `src/main.jsx`, or `src/App.tsx`).
+
+```javascript
+// src/main.tsx or src/App.tsx
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './theme.uxdsl'; // <--- Import your theme here
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>,
+);
+```
+
 ## 4. Write Your Styles
 
 Now, create a component style file, e.g., `Button.uxdsl`. You can use the variables and mixins defined in your theme.
@@ -93,7 +132,7 @@ Finally, import the `.uxdsl` files in your JavaScript/TypeScript components.
 // src/components/Button.jsx
 import './Button.uxdsl';
 
-export function Button() {
+export function Button() {V
   return <button className="btn">Click Me</button>;
 }
 ```
@@ -103,3 +142,18 @@ export function Button() {
 - Explore **[Smart Mixins](./smart-mixins.md)** to learn how to build complex interactive components.
 - Learn about **[Responsive Functions](./responsiveness.md)** for inline media queries.
 - Check out the **[Playground](https://uxdsl.vercel.app/)** to experiment live.
+
+## Troubleshooting
+
+### "Cannot find module" Error
+
+If you see `Cannot find module './file.uxdsl'`, ensure you have added the `src/uxdsl-env.d.ts` file as described in the **Configuration** section.
+
+### Styles Not Applying
+
+If your styles are not rendering:
+
+1. **Restart the Dev Server**: Changes to `vite.config.js` require a restart.
+2. **Check Imports**: Ensure you are importing the `.uxdsl` file in your component or entry file.
+3. **Check Console**: Look for any build errors in the terminal.
+
