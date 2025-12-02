@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-webpack-loader",
-  "version": "0.1.3",
+  "version": "0.1.5",
   "description": "Webpack loader for UXDSL files - process .uxdsl to CSS",
   "main": "index.js",
   "keywords": [
@@ -36,7 +36,7 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "dependencies": {
-    "uxdsl-core": "^0.1.3"
+    "uxdsl-core": "^0.1.5"
   },
   "peerDependencies": {
     "webpack": "^5.0.0"
