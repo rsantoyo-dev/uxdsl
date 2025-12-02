@@ -72,7 +72,11 @@ import './app.uxdsl';
 
 ### 3. TypeScript Support
 
-If you are using TypeScript, you may encounter a `Cannot find module...` error (TS2307) when importing `.uxdsl` files. To fix this, add the following declaration to your `vite-env.d.ts` (or any `.d.ts` file in your source):
+If you are using TypeScript, you may encounter a `Cannot find module...` error (TS2307) when importing `.uxdsl` files. To fix this, you need to provide a type declaration.
+
+**If `vite-env.d.ts` exists:** Add the following to your `vite-env.d.ts` file:
+
+**If `vite-env.d.ts` does not exist:** Create a new file (e.g., `src/uxdsl-env.d.ts` or `uxdsl-env.d.ts` at your project root) and add the following content:
 
 ```typescript
 /// <reference types="vite/client" />
@@ -82,6 +86,8 @@ declare module '*.uxdsl' {
   export default content;
 }
 ```
+
+Ensure your `tsconfig.json`'s `include` array covers this new file (e.g., `"include": ["src/**/*.ts", "src/**/*.d.ts"]`).
 
 ## Options
 
