@@ -1,66 +1,137 @@
 import { PageTitle } from '@/components/PageTitle'
 import CodeBlock from '@/components/CodeBlock'
-import { Info } from 'lucide-react'
+import { Info, Star, Layers, Package } from 'lucide-react'
 
-<div id="QuickStartPage"><PageTitle 
-  title="Quick Start"
-  subtitle="Initialize your Design System infrastructure."
-  subtext="Zero-config setup for Next.js and Vite"
-/>
+<div id="QuickStartPage">
+  <PageTitle 
+    title="Quick Start"
+    subtitle="Initialize your Design System infrastructure."
+    subtext="Choose your preferred integration path below."
+  />
 
-<section className="section">
-  <div className="step-card">
-    <div className="step-header">
-      <span className="step-number">01</span>
-      <h3 className="step-title">Install Packages</h3>
-    </div>
-    <div className="step-desc">Add the core engine, CLI tooling, and PostCSS plugin to your development dependencies.</div>
-    <div className="code-wrapper">
-      <CodeBlock language="bash" code="npm install -D uxdsl-cli postcss-uxdsl uxdsl-core" />
-    </div>
-  </div>
-
-  <div className="step-card">
-    <div className="step-header">
-      <span className="step-number">02</span>
-      <h3 className="step-title">Initialize</h3>
-    </div>
-    <div className="step-desc">Run the auto-detection script. It identifies your framework (Next.js or Vite) and scaffolds the configuration.</div>
-    <div className="code-wrapper">
-      <CodeBlock language="bash" code="npx uxdsl init" />
-    </div>
-    
+  <section className="section">
     <div className="info-box">
       <Info className="info-icon" size={18} />
       <div className="info-text">
-        Generates <code>uxdsl.config.cjs</code>, <code>src/uxdsl-entry.uxdsl</code>, and configures PostCSS automatically.
+        UX-DSL is framework-agnostic but offers first-class support for modern build tools.
       </div>
     </div>
-  </div>
 
-  <div className="step-card">
-    <div className="step-header">
-      <span className="step-number">03</span>
-      <h3 className="step-title">Create Components</h3>
+    <h3 className="step-title" style={{marginTop: '2rem', marginBottom: '1rem'}}>Supported Integrations</h3>
+    <div style={{display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '3rem'}}>
+      <div className="step-card" style={{borderLeftColor: '#646cff'}}> {/* Vite Color */}
+        <div className="step-header">
+          <Star className="info-icon" size={24} />
+          <h4 className="step-title">Vite</h4>
+        </div>
+        <p className="step-desc"><strong>Recommended.</strong> Best for React, Vue, Svelte. Supports HMR and optimized builds.</p>
+      </div>
+      <div className="step-card">
+        <div className="step-header">
+          <Layers className="info-icon" size={24} />
+          <h4 className="step-title">Next.js</h4>
+        </div>
+        <p className="step-desc">Supported via PostCSS or Webpack loader. Good for App Router projects.</p>
+      </div>
+      <div className="step-card">
+        <div className="step-header">
+          <Package className="info-icon" size={24} />
+          <h4 className="step-title">Webpack / CLI</h4>
+        </div>
+        <p className="step-desc">Universal fallback for any other environment (Angular, Static Sites).</p>
+      </div>
     </div>
-    <div className="step-desc">Define your first semantic style file. Co-locate it with your component.</div>
+
+    <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '2rem 0'}} />
+
+    <h2 className="step-title">Option 1: Vite (Recommended)</h2>
     
-    <div className="code-wrapper">
-      <CodeBlock language="scss" code={`/* src/components/Button.uxdsl */
-#MyButton {
-  .btn {
-    /* Intent-based styling */
-    @ds-button(contained primary density(2));
-  }
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">01</span>
+        <h3 className="step-title">Install Plugin</h3>
+      </div>
+      <div className="step-desc">Add the Vite plugin and core engine.</div>
+      <div className="code-wrapper">
+        <CodeBlock language="bash" code="npm install -D vite-plugin-uxdsl uxdsl-core" />
+      </div>
+    </div>
+
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">02</span>
+        <h3 className="step-title">Configure Vite</h3>
+      </div>
+      <div className="step-desc">Add the plugin to your <code>vite.config.ts</code>.</div>
+      <div className="code-wrapper">
+        <CodeBlock language="typescript" code={`import { defineConfig } from 'vite';
+import vitePluginUxdsl from 'vite-plugin-uxdsl';
+
+export default defineConfig({
+  plugins: [
+    vitePluginUxdsl()
+  ]
+});`} />
+      </div>
+    </div>
+
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">03</span>
+        <h3 className="step-title">Import & Style</h3>
+      </div>
+      <div className="step-desc">Import your <code>.uxdsl</code> file directly in your app entry point.</div>
+      <div className="code-wrapper">
+        <CodeBlock language="typescript" code={`// main.tsx
+import './styles.uxdsl';`} />
+      </div>
+    </div>
+
+    <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
+
+    <h2 className="step-title">Option 2: Next.js / PostCSS</h2>
+
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">01</span>
+        <h3 className="step-title">Install Packages</h3>
+      </div>
+      <div className="step-desc">You'll need the PostCSS plugin and CLI.</div>
+      <div className="code-wrapper">
+        <CodeBlock language="bash" code="npm install -D postcss-uxdsl uxdsl-cli" />
+      </div>
+    </div>
+
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">02</span>
+        <h3 className="step-title">Configure PostCSS</h3>
+      </div>
+      <div className="step-desc">Add <code>postcss-uxdsl</code> to your <code>postcss.config.js</code>.</div>
+      <div className="code-wrapper">
+        <CodeBlock language="javascript" code={`module.exports = {
+  plugins: {
+    'postcss-uxdsl': {},
+    tailwindcss: {}, // Compatible with Tailwind
+    autoprefixer: {},
+  },
 }`} />
+      </div>
     </div>
 
-    <div className="step-desc" style={{marginTop: '1rem'}}>The CLI will automatically detect new <code>.uxdsl</code> files and update the entry point.</div>
-    
-    <div className="code-wrapper">
-      <CodeBlock language="bash" code="npx uxdsl generate-entry" />
-    </div>
-  </div>
-</section>
+    <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
 
+    <h2 className="step-title">Option 3: Webpack / CLI</h2>
+    <div className="step-desc">For custom webpack setups or static sites.</div>
+
+    <div className="code-wrapper" style={{marginTop: '1rem'}}>
+        <CodeBlock language="bash" code="# For Webpack
+npm install -D uxdsl-webpack-loader
+
+# For CLI (Static Sites)
+npm install -D uxdsl-cli
+npx uxdsl build --watch" />
+      </div>
+
+  </section>
 </div>

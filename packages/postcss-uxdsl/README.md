@@ -1,5 +1,9 @@
 # postcss-uxdsl
 
+<p align="center">
+  <img src="./assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
+</p>
+
 > A PostCSS plugin for **UXDSL** — a lightweight, type-safe CSS DSL designed for modern design systems.
 
 [![npm version](https://img.shields.io/npm/v/postcss-uxdsl.svg)](https://www.npmjs.com/package/postcss-uxdsl)
