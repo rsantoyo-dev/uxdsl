@@ -133,14 +133,14 @@ Define the look and feel of your components (Buttons, Inputs, Surfaces) for diff
 @theme {
   /* Define a 'primary' button variant */
   button-primary: {
-    bg: palette(blue.600);
-    color: white;
+    bg: palette(primary-main);
+    color: palette(primary-contrast);
     radius: radius(md);
     padding: space(2) space(4);
     
     /* State styles */
     :hover {
-      bg: palette(blue.700);
+      bg: palette(primary-dark);
     }
     :active {
       transform: translateY(1px);
@@ -149,13 +149,13 @@ Define the look and feel of your components (Buttons, Inputs, Surfaces) for diff
 
   /* Define an 'outlined' input variant */
   input-outlined: {
-    border: 1px solid palette(gray.300);
+    border: 1px solid palette(neutral-main);
     bg: transparent;
     radius: radius(sm);
     
     :focus {
-      border-color: palette(blue.500);
-      shadow: 0 0 0 3px palette(blue.100);
+      border-color: palette(primary-main);
+      shadow: 0 0 0 3px palette(primary-light, 0.3);
     }
   }
 }
