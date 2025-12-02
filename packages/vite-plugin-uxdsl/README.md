@@ -1,5 +1,9 @@
 # vite-plugin-uxdsl
 
+<p align="center">
+  <img src="./assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
+</p>
+
 > The official **Vite** plugin for **UXDSL** — seamlessly integrating `.uxdsl` files into your Vite projects.
 
 [![npm version](https://img.shields.io/npm/v/vite-plugin-uxdsl.svg)](https://www.npmjs.com/package/vite-plugin-uxdsl)
