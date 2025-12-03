@@ -137,6 +137,24 @@ export function Button() {V
 }
 ```
 
+## Editor Support
+
+To get syntax highlighting for `.uxdsl` files in VS Code, we recommend treating them as SCSS.
+
+1. Create a `.vscode/settings.json` file in your project root.
+2. Add the following configuration:
+
+```json
+{
+  "files.associations": {
+    "*.uxdsl": "scss"
+  },
+  "scss.lint.unknownAtRules": "ignore"
+}
+```
+
+This enables syntax highlighting and prevents VS Code from flagging UXDSL-specific rules (like `@theme` or `@ds-surface`) as errors.
+
 ## Next Steps
 
 - Explore **[Smart Mixins](./smart-mixins.md)** to learn how to build complex interactive components.
