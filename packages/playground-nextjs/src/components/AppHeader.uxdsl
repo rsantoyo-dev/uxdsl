@@ -27,7 +27,7 @@
 
 /* Logo Container - 120px Centered */
 #AppHeader .app-header__inner {
-  @ds-surface(contained light);
+  @ds-surface (contained light);
   display: flex;
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */

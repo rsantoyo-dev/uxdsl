@@ -705,8 +705,6 @@ html, body {
   margin-top: var(--space-4);
   width: 100%;
   max-width: 600px;
-  margin-left: auto;
-  margin-right: auto;
   background: transparent;
   position: relative;
   z-index: 10;
@@ -746,13 +744,41 @@ html, body {
     color: var(--ds__palette__text-secondary);
   }
 }
-@ds-button ai-submit-btn {
- @ds-button (outlined primary);
+.ai-submit-btn {
+ padding: var(--density-2);
+ border-radius: var(--space-2);
+ background: transparent;
+ color: var(--ds__palette__primary-main);
+ border: 1px solid var(--ds__palette__primary-main);
   
   &:disabled {
     color: var(--ds__palette__action-disabled);
     border-color: var(--ds__palette__action-disabled);
   }
+}
+@media (min-width: 1024px) {
+.ai-submit-btn {
+    border-radius: var(--space-3)
+}
+}
+.ai-submit-btn[aria-selected="true"] {
+  color: var(--ds__palette__primary-contrast);
+  border: 1px solid var(--ds__color__gray-300);
+  background: var(--ds__palette__primary-main);
+}
+.ai-submit-btn[aria-pressed="true"] {
+  color: var(--ds__palette__primary-contrast);
+  border: 1px solid var(--ds__color__gray-300);
+  background: var(--ds__palette__primary-main);
+}
+.ai-submit-btn.is-selected {
+  color: var(--ds__palette__primary-contrast);
+  border: 1px solid var(--ds__color__gray-300);
+  background: var(--ds__palette__primary-main);
+}
+.ai-submit-btn:hover {
+  border: 1px solid var(--ds__color__gray-300);
+  color: var(--ds__palette__primary-dark);
 }
 @ds-surface ai-response {
   margin-top: var(--space-4);

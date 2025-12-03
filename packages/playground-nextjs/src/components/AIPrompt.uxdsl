@@ -46,8 +46,8 @@
   }
 }
 
-@ds-button ai-submit-btn {
- @ds-button (outlined primary);
+.ai-submit-btn {
+ @ds-button (flat primary);
   
   &:disabled {
     color: palette(action-disabled);
