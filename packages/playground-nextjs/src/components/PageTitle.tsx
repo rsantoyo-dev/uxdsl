@@ -23,5 +23,5 @@ export const PageTitle = ({ title, subtitle, subtext, className = '' }: PageTitl
         </div>
       )}
     </div>
-  )
+  );
 }

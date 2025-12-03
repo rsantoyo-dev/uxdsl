@@ -15,6 +15,7 @@
     "postinstall": "npm run local-deps"
   },
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@mdx-js/loader": "^3.1.1",
     "@mdx-js/react": "^3.1.1",
     "@next/mdx": "^16.0.5",

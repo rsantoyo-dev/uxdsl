@@ -1,0 +1,63 @@
+{
+  "version": 1.1,
+  "functions": [
+    {
+      "name": "palette",
+      "description": "Retrieves a color from the UXDSL theme palette.\n\nExample: `color: palette(primary-main);`"
+    },
+    {
+      "name": "space",
+      "description": "Retrieves a spacing value from the UXDSL theme.\n\nExample: `padding: space(4);`"
+    },
+    {
+      "name": "density",
+      "description": "Retrieves a density-aware spacing value.\n\nExample: `margin: density(4);` may resolve, according to thme def. to `margin: xs(space(4) md(space(5) lg(space(6)));`"
+    },
+    {
+      "name": "radius",
+      "description": "Retrieves a border-radius value from the UXDSL theme.\n\nExample: `border-radius: radius(md);`"
+    },
+    {
+      "name": "typography",
+      "description": "Applies a responsive typography variant's styles.\n\nExample: `font: typography(h1);` may resolve to `font-size: xs(1.5rem) md(2rem);` according to the theme definition."
+    },
+    {
+      "name": "xs",
+      "description": "Applies styles only at the 'xs' breakpoint and up.\n\nExample: `width: xs(100%);`"
+    },
+    {
+      "name": "sm",
+      "description": "Applies styles only at the 'sm' breakpoint and up.\n\nExample: `width: sm(50%);`"
+    },
+    {
+      "name": "md",
+      "description": "Applies styles only at the 'md' breakpoint and up.\n\nExample: `width: md(33%);`"
+    },
+    {
+      "name": "lg",
+      "description": "Applies styles only at the 'lg' breakpoint and up.\n\nExample: `width: lg(25%);`"
+    },
+    {
+      "name": "xl",
+      "description": "Applies styles only at the 'xl' breakpoint and up.\n\nExample: `width: xl(20%);`"
+    }
+  ],
+  "atDirectives": [
+    {
+      "name": "@theme",
+      "description": "Defines the UXDSL theme configuration."
+    },
+    {
+      "name": "@ds-surface",
+      "description": "Defines a design system surface component. Automatically applies the background color and resolves the optimal contrast text color."
+    },
+    {
+      "name": "@ds-button",
+      "description": "Defines a design system button component."
+    },
+    {
+      "name": "@ds-typography",
+      "description": "Defines a design system typography component."
+    }
+  ]
+}

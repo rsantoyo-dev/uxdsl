@@ -11,6 +11,7 @@
     flex: 1;
     display: grid;
     place-items: center;
+    gap: density(8);
     background: palette(surface-light);
     border-bottom: border(1);
     padding: density(8);

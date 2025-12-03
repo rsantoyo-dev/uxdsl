@@ -1,0 +1,116 @@
+@ds-surface ai-prompt-container {
+  margin-top: space(4);
+  width: 100%;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+  background: transparent;
+}
+
+.ai-prompt-form {
+  width: 100%;
+}
+
+@ds-surface input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: space(2);
+  border-radius: radius(full);
+  background: palette(surface-paper);
+  border: 1px solid palette(divider);
+  transition: border-color 0.2s ease;
+
+  &:focus-within {
+    border-color: palette(primary-main);
+    box-shadow: 0 0 0 2px palette(primary-light);
+  }
+}
+
+.ai-icon {
+  color: palette(primary-main);
+  margin-right: space(2);
+}
+
+.ai-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: palette(text-primary);
+  font-size: 1rem;
+  outline: none;
+
+  &::placeholder {
+    color: palette(text-secondary);
+  }
+}
+
+@ds-button ai-submit-btn {
+  variant: icon;
+  color: palette(primary-main);
+  padding: space(1);
+  background: transparent;
+  
+  &:disabled {
+    color: palette(action-disabled);
+  }
+}
+
+@ds-surface ai-response {
+  margin-top: space(4);
+  padding: space(4);
+  border-radius: radius(lg);
+  background: palette(surface-paper);
+  border: 1px solid palette(divider);
+  color: palette(text-primary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.theme-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: space(4);
+  color: #ffffff;
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: palette(primary-light);
+}
+
+.loading-text {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: #ffffff;
+  text-align: center;
+}
+
+.loading-theme-name {
+  font-family: monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: space(1) space(2);
+  border-radius: radius(md);
+  color: palette(primary-light);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

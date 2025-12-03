@@ -6,6 +6,7 @@ import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Gri
 import { InteractiveLogo } from '@/components/InteractiveLogo'
 import { HeroBackground } from '@/components/HeroBackground'
 import { PageTitle } from '@/components/PageTitle'
+import { AIPrompt } from '@/components/AIPrompt'
 import UXDSLCardDemo from '@/components/UXDSLCardDemo'
 import NavigationCardLink from '@/components/NavigationCardLink'
 
@@ -27,7 +28,7 @@ export default function Home() {
 
   return (
     <main id="WelcomePage">
-      <div 
+      <div
         className="hero-surface"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
@@ -35,26 +36,34 @@ export default function Home() {
         onMouseUp={handleMouseUp}
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
-        style={{ position: 'relative', overflow: 'hidden' }}
+        style={{ position: "relative", overflow: "hidden" }}
       >
-        <HeroBackground mouseX={mousePos.x} mouseY={mousePos.y} isPressed={isPressed} />
-        
-        <div className="hero-content" style={{ position: 'relative', zIndex: 1 }}>
+        <HeroBackground
+          mouseX={mousePos.x}
+          mouseY={mousePos.y}
+          isPressed={isPressed}
+        />
+
+        <div
+          className="hero-content"
+          style={{ position: "relative", zIndex: 1 }}
+        >
           <div className="logo-container">
-            <InteractiveLogo 
-              className="hero-logo" 
+            <InteractiveLogo
+              className="hero-logo"
               mouseX={mousePos.x}
               mouseY={mousePos.y}
             />
           </div>
-          <PageTitle 
-            title="UX-DSL" 
+          <PageTitle
+            title="UX-DSL"
             subtitle="UX Design System Language"
             className="welcome-page-title"
           />
         </div>
+        <AIPrompt />
       </div>
-      
+
       <div className="content-container">
         <div className="actions">
           <Link href="/docs/home" className="get-started-btn">
@@ -64,9 +73,9 @@ export default function Home() {
 
         <div className="intro-section">
           <p className="intro-text">
-            A type-safe, compile-time design system language that bridges the gap between 
-            design tokens and CSS implementation. Write expressive, token-aware styles 
-            that compile to optimized CSS.
+            A type-safe, compile-time design system language that bridges the
+            gap between design tokens and CSS implementation. Write expressive,
+            token-aware styles that compile to optimized CSS.
           </p>
         </div>
 
@@ -125,11 +134,21 @@ export default function Home() {
 
       <footer className="welcome-footer">
         <div className="footer-links">
-          <a href="https://github.com/rsantoyo-dev/uxdsl" target="_blank" rel="noopener noreferrer" className="footer-link">
+          <a
+            href="https://github.com/rsantoyo-dev/uxdsl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
             <Github size={20} />
             <span>GitHub</span>
           </a>
-          <a href="https://www.npmjs.com/search?q=uxdsl" target="_blank" rel="noopener noreferrer" className="footer-link">
+          <a
+            href="https://www.npmjs.com/search?q=uxdsl"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="footer-link"
+          >
             <Package size={20} />
             <span>Packages</span>
           </a>
@@ -143,5 +162,5 @@ export default function Home() {
         </div>
       </footer>
     </main>
-  )
+  );
 }

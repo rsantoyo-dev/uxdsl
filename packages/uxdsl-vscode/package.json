@@ -1,0 +1,66 @@
+{
+  "name": "uxdsl-vscode",
+  "publisher": "rsantoyo-dev",
+  "displayName": "UXDSL Support",
+  "description": "Language support for UXDSL (User Experience Design System Language)",
+  "version": "0.0.1",
+  "homepage": "https://uxdsl.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rsantoyo-dev/uxdsl/issues"
+  },
+  "author": {
+    "name": "Ricardo Santoyo",
+    "url": "https://rsantoyo.dev"
+  },
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onLanguage:uxdsl"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "css": {
+      "customData": [
+        "./uxdsl.custom-data.json"
+      ]
+    },
+    "languages": [
+      {
+        "id": "uxdsl",
+        "aliases": [
+          "UXDSL",
+          "uxdsl"
+        ],
+        "extensions": [
+          ".uxdsl"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "uxdsl",
+        "scopeName": "source.uxdsl",
+        "path": "./syntaxes/uxdsl.tmLanguage.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.80.0",
+    "@types/node": "18.x",
+    "typescript": "^5.0.0"
+  }
+}

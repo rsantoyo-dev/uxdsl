@@ -18,6 +18,7 @@
 @import './app.uxdsl';
 @import './layout.uxdsl';
 @import './theme-def.uxdsl';
+@import '../components/AIPrompt.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';

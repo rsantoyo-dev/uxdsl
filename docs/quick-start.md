@@ -139,21 +139,20 @@ export function Button() {V
 
 ## Editor Support
 
-To get syntax highlighting for `.uxdsl` files in VS Code, we recommend treating them as SCSS.
+For the best development experience, install the official **UXDSL VS Code Extension**.
 
-1. Create a `.vscode/settings.json` file in your project root.
-2. Add the following configuration:
+1. Open VS Code.
+2. Go to the Extensions view (`Cmd+Shift+X` or `Ctrl+Shift+X`).
+3. Search for **"UXDSL Support"**.
+4. Click **Install**.
 
-```json
-{
-  "files.associations": {
-    "*.uxdsl": "scss"
-  },
-  "scss.lint.unknownAtRules": "ignore"
-}
-```
+This extension provides:
 
-This enables syntax highlighting and prevents VS Code from flagging UXDSL-specific rules (like `@theme` or `@ds-surface`) as errors.
+- Syntax highlighting for `.uxdsl` files.
+- Autocomplete for directives like `@theme` and `@ds-button`.
+- Support for UXDSL functions like `palette()`, `space()`, and responsive modifiers.
+
+*(Note: If the extension is not yet available in the marketplace, you can temporarily enable syntax highlighting by associating `.uxdsl` files with SCSS in your settings.)*
 
 ## Next Steps
 

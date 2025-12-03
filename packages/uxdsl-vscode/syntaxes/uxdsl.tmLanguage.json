@@ -1,0 +1,46 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "UXDSL",
+  "scopeName": "source.uxdsl",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#directives"
+    },
+    {
+      "include": "#functions"
+    },
+    {
+      "include": "source.css"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.block.uxdsl",
+          "begin": "/\*",
+          "end": "\*/"
+        }
+      ]
+    },
+    "directives": {
+      "patterns": [
+        {
+          "name": "keyword.control.at-rule.uxdsl",
+          "match": "@(theme|ds-[a-zA-Z0-9-]+)\b"
+        }
+      ]
+    },
+    "functions": {
+      "patterns": [
+        {
+          "match": "\b(palette|radius|density|shadow|space|xs|sm|md|lg|xl)\s*(?=\()",
+          "name": "support.function.uxdsl"
+        }
+      ]
+    }
+  }
+}
