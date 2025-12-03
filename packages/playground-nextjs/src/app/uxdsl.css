@@ -743,13 +743,11 @@ html, body {
   }
 }
 @ds-button ai-submit-btn {
-  variant: icon;
-  color: var(--ds__palette__primary-main);
-  padding: var(--space-1);
-  background: transparent;
+ @ds-button (outlined primary);
   
   &:disabled {
     color: var(--ds__palette__action-disabled);
+    border-color: var(--ds__palette__action-disabled);
   }
 }
 @ds-surface ai-response {

@@ -45,13 +45,11 @@
 }
 
 @ds-button ai-submit-btn {
-  variant: icon;
-  color: palette(primary-main);
-  padding: space(1);
-  background: transparent;
+ @ds-button (outlined primary);
   
   &:disabled {
     color: palette(action-disabled);
+    border-color: palette(action-disabled);
   }
 }
 

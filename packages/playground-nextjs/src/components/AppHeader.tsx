@@ -6,7 +6,7 @@ import { UXDSLLogo } from '@/components/UXDSLLogo'
 import { useTheme } from '@/components/ThemeContext'
 
 export default function AppHeader() {
-  const { isDark, currentTheme, switchTheme, toggleDarkMode } = useTheme()
+  const { isDark, currentTheme, customThemeName, switchTheme, toggleDarkMode } = useTheme()
 
   return (
     <header id="AppHeader">
@@ -36,6 +36,19 @@ export default function AppHeader() {
               className={`theme-color-btn ${currentTheme === 'purple' ? 'is-active' : ''}`}
               style={{ '--theme-color': '#7b1fa2' } as React.CSSProperties}
             />
+
+            {customThemeName && (
+              <button 
+                onClick={() => switchTheme('custom')}
+                title={`Custom: ${customThemeName}`}
+                className={`theme-color-btn ${currentTheme === 'custom' ? 'is-active' : ''}`}
+                style={{ 
+                  '--theme-color': 'transparent',
+                  background: 'linear-gradient(135deg, #FF0080, #7928CA)',
+                  border: 'none' 
+                } as React.CSSProperties}
+              />
+            )}
 
             <div className="divider-vertical" />
 

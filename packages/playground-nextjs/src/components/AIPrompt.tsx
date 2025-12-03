@@ -2,83 +2,18 @@
 
 import { useState } from 'react';
 import { Sparkles, Brush, Loader2 } from 'lucide-react';
+import { useTheme } from '@/components/ThemeContext';
 
 export function AIPrompt() {
   const [prompt, setPrompt] = useState('');
-  const [currentThemeName, setCurrentThemeName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applyTheme = (themeData: any) => {
-    const root = document.documentElement;
-
-    // Apply Palette Colors
-    if (themeData.palette) {
-      for (const colorType in themeData.palette) {
-        const colorVariants = themeData.palette[colorType];
-        for (const variant in colorVariants) {
-          const cssVarName = `--ds__palette__${colorType}-${variant}`;
-          root.style.setProperty(cssVarName, colorVariants[variant]);
-        }
-      }
-    }
-
-    // Apply Spacing
-    if (themeData.spacing) {
-      for (const spaceKey in themeData.spacing) {
-        const cssVarName = `--space-${spaceKey}`;
-        root.style.setProperty(cssVarName, themeData.spacing[spaceKey]);
-      }
-    }
-
-    // Apply Typography
-    if (themeData.typography) {
-      for (const typoKey in themeData.typography) {
-        const cssVarName = `--${typoKey}`; // e.g., --font-code
-        root.style.setProperty(cssVarName, themeData.typography[typoKey]);
-      }
-    }
-
-    // Load Google Fonts dynamically
-    if (themeData.fonts?.google && Array.isArray(themeData.fonts.google)) {
-      const existingLink = document.getElementById('uxdsl-google-fonts');
-      if (existingLink) {
-        existingLink.remove();
-      }
-
-      const fontFamilies = themeData.fonts.google.map((font: string) => font.replace(/ /g, '+')).join('&family=');
-      if (fontFamilies) {
-        const link = document.createElement('link');
-        link.id = 'uxdsl-google-fonts';
-        link.rel = 'stylesheet';
-        link.href = `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`;
-        document.head.appendChild(link);
-      }
-    }
-
-    // Apply Font Families
-    if (themeData.fonts?.families) {
-      for (const fontKey in themeData.fonts.families) {
-        const cssVarName = `--font-${fontKey}`; // e.g., --font-ui
-        root.style.setProperty(cssVarName, themeData.fonts.families[fontKey]);
-      }
-    }
-
-    // Log breakpoints and modes but do not apply them directly to CSS variables
-    if (themeData.breakpoints) {
-      console.log("Breakpoints received:", themeData.breakpoints);
-    }
-    if (themeData.modes) {
-      console.log("Modes received:", themeData.modes);
-    }
-  };
+  const { setCustomTheme, customThemeName, currentTheme } = useTheme();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
     setIsLoading(true);
-    setCurrentThemeName(''); // Reset current theme name display
     
     try {
       const res = await fetch('/api/generate', {
@@ -96,28 +31,30 @@ export function AIPrompt() {
       
       if (data.error) {
         console.error(data.error);
-        setCurrentThemeName('Error: ' + data.error);
+        alert('Error: ' + data.error); // Simple alert for error for now
       } else {
         try {
           const themeData = JSON.parse(data.text);
           console.log("Applying UI theme response:", themeData);
           
-          applyTheme(themeData);
-          
           // Use the AI-corrected name if available, otherwise fallback to prompt
           const displayThemeName = themeData.name || prompt;
-          setCurrentThemeName(displayThemeName);
+          
+          // Delegate theme application to the centralized context
+          setCustomTheme(displayThemeName, themeData);
           
         } catch (parseError) {
           console.error('Failed to parse theme JSON:', parseError);
-          setCurrentThemeName('Failed to apply theme');
+          alert('Received response, but failed to apply theme.');
         }
       }
     } catch (error) {
       console.error('Failed to generate:', error);
-      setCurrentThemeName('Error generating theme');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      alert(`Failed to generate response: ${errorMessage}`);
     } finally {
       setIsLoading(false);
+      setPrompt(''); // Clear the prompt after submission
     }
   };
 
@@ -153,9 +90,9 @@ export function AIPrompt() {
           </div>
         </form>
         
-        {currentThemeName && !isLoading && (
+        {currentTheme === 'custom' && customThemeName && !isLoading && (
           <div className="ai-response">
-             <p>Active Theme: <strong>{currentThemeName}</strong></p>
+             <p>Active Theme: <strong>{customThemeName}</strong></p>
           </div>
         )}
       </div>
