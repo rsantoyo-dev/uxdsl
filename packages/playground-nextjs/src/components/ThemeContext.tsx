@@ -12,6 +12,7 @@ interface ThemeContextType {
   isDark: boolean
   currentTheme: ThemeName
   customThemeName: string | null
+  backgroundImage: string | null
   switchTheme: (theme: ThemeName) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setCustomTheme: (name: string, themeData: any) => void
@@ -26,6 +27,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [customThemeData, setCustomThemeData] = useState<any>(null)
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
+  const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract geometric shapes')
 
   useEffect(() => {
     // Check initial preference
@@ -81,10 +83,26 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const switchTheme = (themeName: ThemeName) => {
     let themeToApply;
     switch (themeName) {
-      case 'purple': themeToApply = purpleTheme; break;
-      case 'green': themeToApply = greenTheme; break;
-      case 'custom': themeToApply = customThemeData; break;
-      case 'default': default: themeToApply = defaultTheme; break;
+      case 'purple': 
+        themeToApply = purpleTheme; 
+        setBackgroundImage('abstract purple curves');
+        break;
+      case 'green': 
+        themeToApply = greenTheme; 
+        setBackgroundImage('nature forest texture');
+        break;
+      case 'custom': 
+        themeToApply = customThemeData;
+        // Background image for custom is already set in setCustomTheme
+        // But if we are switching back to custom, we need to restore it
+        if (customThemeData?.backgroundImage) {
+          setBackgroundImage(customThemeData.backgroundImage);
+        }
+        break;
+      case 'default': default: 
+        themeToApply = defaultTheme; 
+        setBackgroundImage('abstract geometric shapes');
+        break;
     }
     
     if (themeToApply) {
@@ -97,6 +115,11 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const setCustomTheme = (name: string, themeData: any) => {
     setCustomThemeData(themeData)
     setCustomThemeName(name)
+    
+    if (themeData.backgroundImage) {
+      setBackgroundImage(themeData.backgroundImage)
+    }
+
     // Automatically switch to it
     applyThemeEffects(themeData)
     setCurrentTheme('custom')
@@ -113,7 +136,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   }
 
   return (
-    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, switchTheme, setCustomTheme, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, backgroundImage, switchTheme, setCustomTheme, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   )

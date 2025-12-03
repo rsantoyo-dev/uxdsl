@@ -12,7 +12,7 @@
     display: grid;
     place-items: center;
     gap: density(8);
-    background: palette(surface-light);
+    background: transparent;
     border-bottom: border(1);
     padding: density(8);
   }

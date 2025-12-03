@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Grid3X3, Smartphone } from 'lucide-react'
 import { InteractiveLogo } from '@/components/InteractiveLogo'
 import { HeroBackground } from '@/components/HeroBackground'
+import { ThemeBackground } from '@/components/ThemeBackground'
 import { PageTitle } from '@/components/PageTitle'
 import { AIPrompt } from '@/components/AIPrompt'
 import UXDSLCardDemo from '@/components/UXDSLCardDemo'
@@ -38,6 +39,7 @@ export default function Home() {
         onTouchEnd={handleMouseUp}
         style={{ position: "relative", overflow: "hidden" }}
       >
+        <ThemeBackground />
         <HeroBackground
           mouseX={mousePos.x}
           mouseY={mousePos.y}
@@ -61,7 +63,9 @@ export default function Home() {
             className="welcome-page-title"
           />
         </div>
-        <AIPrompt />
+        <div style={{ position: 'relative', zIndex: 20, width: '100%', display: 'flex', justifyContent: 'center' }}>
+          <AIPrompt />
+        </div>
       </div>
 
       <div className="content-container">

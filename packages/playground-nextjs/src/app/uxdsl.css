@@ -708,6 +708,8 @@ html, body {
   margin-left: auto;
   margin-right: auto;
   background: transparent;
+  position: relative;
+  z-index: 10;
 }
 .ai-prompt-form {
   width: 100%;
@@ -720,6 +722,8 @@ html, body {
   background: var(--ds__palette__surface-paper);
   border: 1px solid var(--ds__palette__divider-main);
   transition: border-color 0.2s ease;
+  position: relative;
+  z-index: 1;
 
   &:focus-within {
     border-color: var(--ds__palette__primary-main);
@@ -17380,6 +17384,38 @@ html, body {
     }
   }
 }
+.theme-background-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Behind content but check parent context */
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--ds__palette__surface-main);
+}
+.theme-background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.4; /* Increased visibility */
+  filter: saturate(1.1);
+  transition: opacity 1s ease, transform 1s ease;
+}
+.theme-background-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--ds__palette__primary-main);
+  opacity: 0.3;
+  mix-blend-mode: color;
+  z-index: 1;
+}
+.theme-background-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient( to bottom, color-mix(in srgb, var(--ds__palette__surface-light) 95%, transparent) 0%, color-mix(in srgb, var(--ds__palette__surface-main) 40%, transparent) 40%, color-mix(in srgb, var(--ds__palette__surface-main) 90%, transparent) 100% );
+  z-index: 2;
+}
 /* UXDSLCardDemo styles - Scoped */
 .uxdsl-demo-wrapper {
   display: flex;
@@ -17999,7 +18035,7 @@ html, body {
     display: grid;
     place-items: center;
     gap: var(--density-8);
-    background: var(--ds__palette__surface-light);
+    background: transparent;
     border-bottom: 1px solid var(--ds__color__gray-300);
     padding: var(--density-8);
   }

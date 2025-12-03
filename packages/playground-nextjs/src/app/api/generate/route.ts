@@ -43,6 +43,7 @@ export async function POST(req: Request) {
     JSON Structure:
     {
       "name": "string", // A creative name for this theme
+      "backgroundImage": "string", // A short, descriptive English prompt for a background image matching the theme (e.g. "neon cyberpunk city", "calm misty forest")
       "fonts": {
         "google": [
           "string" // e.g., "Inter:wght@400;500;600;700"
