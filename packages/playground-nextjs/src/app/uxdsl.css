@@ -749,7 +749,7 @@ html, body {
  border-radius: var(--space-2);
  background: transparent;
  color: var(--ds__palette__primary-main);
- border: 1px solid var(--ds__palette__primary-main);
+ border: none;
   
   &:disabled {
     color: var(--ds__palette__action-disabled);
@@ -762,22 +762,15 @@ html, body {
 }
 }
 .ai-submit-btn[aria-selected="true"] {
-  color: var(--ds__palette__primary-contrast);
-  border: 1px solid var(--ds__color__gray-300);
-  background: var(--ds__palette__primary-main);
+  color: var(--ds__palette__primary-dark);
 }
 .ai-submit-btn[aria-pressed="true"] {
-  color: var(--ds__palette__primary-contrast);
-  border: 1px solid var(--ds__color__gray-300);
-  background: var(--ds__palette__primary-main);
+  color: var(--ds__palette__primary-dark);
 }
 .ai-submit-btn.is-selected {
-  color: var(--ds__palette__primary-contrast);
-  border: 1px solid var(--ds__color__gray-300);
-  background: var(--ds__palette__primary-main);
+  color: var(--ds__palette__primary-dark);
 }
 .ai-submit-btn:hover {
-  border: 1px solid var(--ds__color__gray-300);
   color: var(--ds__palette__primary-dark);
 }
 @ds-surface ai-response {
@@ -17424,9 +17417,23 @@ html, body {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  opacity: 0.4; /* Increased visibility */
+  /* Opacity is controlled by inline style in component for fade-in */
   filter: saturate(1.1);
-  transition: opacity 1s ease, transform 1s ease;
+  transition: opacity 1s ease-in-out, transform 1s ease;
+}
+.theme-background-loading {
+  position: absolute;
+  top: 65%; /* Adjusted vertical position */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-code, monospace);
+  font-size: 0.75rem;
+  color: var(--ds__palette__text-secondary);
+  z-index: 1;
+  opacity: 0.8;
+  animation: pulse 1.5s ease-in-out infinite;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 .theme-background-tint {
   position: absolute;
@@ -17434,13 +17441,17 @@ html, body {
   background: var(--ds__palette__primary-main);
   opacity: 0.3;
   mix-blend-mode: color;
-  z-index: 1;
+  z-index: 2;
 }
 .theme-background-overlay {
   position: absolute;
   inset: 0;
   background: linear-gradient( to bottom, color-mix(in srgb, var(--ds__palette__surface-light) 95%, transparent) 0%, color-mix(in srgb, var(--ds__palette__surface-main) 40%, transparent) 40%, color-mix(in srgb, var(--ds__palette__surface-main) 90%, transparent) 100% );
-  z-index: 2;
+  z-index: 3;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
 }
 /* UXDSLCardDemo styles - Scoped */
 .uxdsl-demo-wrapper {

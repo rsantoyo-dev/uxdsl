@@ -9,6 +9,26 @@ import { Info, Star, Layers, Package } from 'lucide-react'
     subtext="Choose your preferred integration path below."
   />
 
+  {/* Warning Card */}
+  <blockquote style={{ 
+    borderLeft: '4px solid var(--ds__palette__warning-main)', 
+    backgroundColor: 'var(--ds__palette__warning-light, rgba(251, 191, 36, 0.1))', 
+    padding: '1rem', 
+    borderRadius: '4px', 
+    color: 'var(--ds__palette__text-primary)', 
+    marginBottom: '2rem' 
+  }}>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontWeight: 600 }}>
+      <Info size={20} color="var(--ds__palette__warning-dark)" /> 
+      Experimental Library - Not Production Ready
+    </div>
+    <div style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem' }}>
+      UXDSL is currently under active development and should be considered experimental.
+      It is not yet recommended for production environments. APIs and features may
+      change without prior notice. Use at your own discretion.
+    </div>
+  </blockquote>
+
   <section className="section">
     <div className="info-box">
       <Info className="info-icon" size={18} />
@@ -99,48 +119,56 @@ import './styles.uxdsl';`} />
 
     <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
 
-    <h2 className="step-title">Option 2: Next.js / PostCSS</h2>
+    <h2 className="step-title">Option 2: Next.js (App Router)</h2>
 
     <div className="step-card">
       <div className="step-header">
         <span className="step-number">01</span>
         <h3 className="step-title">Install Packages</h3>
       </div>
-      <div className="step-desc">You'll need the PostCSS plugin and CLI.</div>
+      <div className="step-desc">Install the CLI, PostCSS plugin, and concurrently (for running scripts together).</div>
       <div className="code-wrapper">
-        <CodeBlock language="bash" code="npm install -D postcss-uxdsl uxdsl-cli" />
+        <CodeBlock language="bash" code="npm install -D postcss-uxdsl uxdsl-cli concurrently" />
       </div>
     </div>
 
     <div className="step-card">
       <div className="step-header">
         <span className="step-number">02</span>
-        <h3 className="step-title">Configure PostCSS</h3>
+        <h3 className="step-title">Initialize</h3>
       </div>
-      <div className="step-desc">Add <code>postcss-uxdsl</code> to your <code>postcss.config.js</code>.</div>
+      <div className="step-desc">Scaffold configuration and entry file.</div>
       <div className="code-wrapper">
-        <CodeBlock language="javascript" code={`module.exports = {
-  plugins: {
-    'postcss-uxdsl': {},
-    autoprefixer: {},
-  },
+        <CodeBlock language="bash" code="npx uxdsl init" />
+      </div>
+    </div>
+
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">03</span>
+        <h3 className="step-title">Connect & Run</h3>
+      </div>
+      <div className="step-desc">
+        1. Import <code>./src/uxdsl.css</code> in your root <code>layout.tsx</code>.<br/>
+        2. Update your <code>package.json</code> dev script:
+      </div>
+      <div className="code-wrapper">
+        <CodeBlock language="json" code={`"scripts": {
+  "dev": "concurrently \\"npx uxdsl build --watch\\" \\"next dev\\""
 }`} />
       </div>
     </div>
 
-    <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
-
-    <h2 className="step-title">Option 3: Webpack / CLI</h2>
-    <div className="step-desc">For custom webpack setups or static sites.</div>
-
-    <div className="code-wrapper" style={{marginTop: '1rem'}}>
-        <CodeBlock language="bash" code="# For Webpack
-npm install -D uxdsl-webpack-loader
-
-# For CLI (Static Sites)
-npm install -D uxdsl-cli
-npx uxdsl build --watch" />
+    <div className="step-card">
+      <div className="step-header">
+        <span className="step-number">04</span>
+        <h3 className="step-title">Workflow</h3>
       </div>
+      <div className="step-desc">When you add new <code>.uxdsl</code> files, register them automatically:</div>
+      <div className="code-wrapper">
+        <CodeBlock language="bash" code="npx uxdsl generate-entry" />
+      </div>
+    </div>
 
   </section>
 </div>

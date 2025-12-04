@@ -11,7 +11,7 @@ export const ThemeBackground = () => {
 
   useEffect(() => {
     if (backgroundImage) {
-      setImageLoaded(false); // Hide previous image
+      setImageLoaded(false); // Reset loaded state when image changes
       // Encode the description for the URL
       const encodedPrompt = encodeURIComponent(backgroundImage);
       // Use Pollinations.ai for better relevance
@@ -27,13 +27,20 @@ export const ThemeBackground = () => {
 
   return (
     <div className="theme-background-container">
+      {/* Loading Text - Visible only when image is loading */}
+      {!imageLoaded && (
+        <div className="theme-background-loading">
+          Creating background art...
+        </div>
+      )}
+
       <Image
         src={imageUrl}
         alt="Theme Background"
         fill
         priority
         className="theme-background-image"
-        style={{ opacity: imageLoaded ? 0.4 : 0 }} // Fade in to 0.4 opacity
+        style={{ opacity: imageLoaded ? 0.7 : 0 }} // Fade in to 0.7 opacity
         onLoadingComplete={() => setImageLoaded(true)}
       />
       <div className="theme-background-tint" />
