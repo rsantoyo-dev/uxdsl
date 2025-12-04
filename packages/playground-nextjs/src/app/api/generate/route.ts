@@ -35,10 +35,20 @@ export async function POST(req: Request) {
       );
     }
 
+    // Pre-selected list of 20 high-quality Google Fonts covering various styles
+    const AVAILABLE_FONTS = [
+      "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans",
+      "Merriweather", "Playfair Display", "Lora", "PT Serif", "Roboto Slab",
+      "Roboto Mono", "Source Code Pro", "JetBrains Mono", "Fira Code",
+      "Oswald", "Quicksand", "Dancing Script"
+    ];
+
     const SYSTEM_PROMPT = `
     You are a UX Design System expert. Your goal is to generate a UXDSL theme based on the user's description (e.g., "funky", "elegant", "dark", "nature", "cyberpunk").
-    Return ONLY a raw JSON object (no markdown formatting) with the following structure. All fields must be present, even if empty or null where appropriate for the prompt.
-    Generate cohesive values for colors, spacing, and typography. Use hex codes for colors and 'rem' or 'px' for spacing.
+    Return ONLY a raw JSON object (no markdown formatting) with the following structure. All fields must be present.
+    
+    IMPORTANT: For fonts, you MUST choose from the following available Google Fonts list. Select the best match for the requested style.
+    Available Fonts: ${AVAILABLE_FONTS.join(", ")}
 
     JSON Structure:
     {
@@ -46,11 +56,11 @@ export async function POST(req: Request) {
       "backgroundImage": "string", // A short, descriptive English prompt for a background image matching the theme (e.g. "neon cyberpunk city", "calm misty forest")
       "fonts": {
         "google": [
-          "string" // e.g., "Inter:wght@400;500;600;700"
+          "string" // The Google Font import string, e.g., "Inter:wght@400;500;600;700" or "Playfair Display:wght@400;700"
         ],
         "families": {
-          "ui": "string", // e.g., "Inter, sans-serif"
-          "code": "string" // e.g., "monospace"
+          "ui": "string", // The font family name from the list above, e.g., "Inter, sans-serif"
+          "code": "string" // A monospace font from the list or generic, e.g., "JetBrains Mono, monospace"
         }
       },
       "breakpoints": { // Standard breakpoint values (px)

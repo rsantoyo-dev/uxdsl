@@ -17439,14 +17439,14 @@ html, body {
   position: absolute;
   inset: 0;
   background: var(--ds__palette__primary-main);
-  opacity: 0.3;
+  opacity: 0.15; /* Reduced tint opacity */
   mix-blend-mode: color;
   z-index: 2;
 }
 .theme-background-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient( to bottom, color-mix(in srgb, var(--ds__palette__surface-light) 95%, transparent) 0%, color-mix(in srgb, var(--ds__palette__surface-main) 40%, transparent) 40%, color-mix(in srgb, var(--ds__palette__surface-main) 90%, transparent) 100% );
+  background: linear-gradient( to bottom, color-mix(in srgb, var(--ds__palette__surface-light) 60%, transparent) 0%, color-mix(in srgb, var(--ds__palette__surface-main) 10%, transparent) 50%, color-mix(in srgb, var(--ds__palette__surface-main) 60%, transparent) 100% );
   z-index: 3;
 }
 @keyframes pulse {
