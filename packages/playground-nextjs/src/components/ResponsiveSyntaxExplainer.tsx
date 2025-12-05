@@ -3,10 +3,105 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo } from './TypographyDemoContext';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Monitor } from 'lucide-react';
 import { BreakpointEditor } from './BreakpointEditor';
+import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 
 const TAGS = ['default', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
+const BPS = [
+  { label: 'XS', width: 30 },
+  { label: 'SM', width: 45 },
+  { label: 'MD', width: 65 },
+  { label: 'LG', width: 86 },
+  { label: 'XL', width: 100 },
+  { label: 'Default', width: 100 }
+];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, themeBreakpoints, baseColor }: { value: string, widthPercent: number, isAutoMode?: boolean, windowWidth?: number, themeBreakpoints?: any, baseColor?: string }) => {
+  const color = baseColor || 'var(--ds__palette__info-main)';
+  if (!value) return <span style={{ color }}>&quot;&quot;</span>;
+
+  // Determine active breakpoint
+  const getActiveBreakpoint = () => {
+    let effectivePx;
+    
+    if (isAutoMode && windowWidth !== undefined && windowWidth > 0) {
+      effectivePx = windowWidth;
+    } else {
+      const px = (widthPercent / 100) * 1200; 
+      effectivePx = widthPercent === 100 ? 1280 : px;
+    }
+    
+    const breakpoints: Record<string, boolean> = {};
+    const regex = /(xs|sm|md|lg|xl)\(/g;
+    let match;
+    while ((match = regex.exec(value)) !== null) {
+      breakpoints[match[1]] = true;
+    }
+    
+    if (Object.keys(breakpoints).length === 0) return 'static';
+
+    const bpValues = themeBreakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 };
+
+    if (effectivePx >= bpValues.xl && breakpoints.xl) return 'xl';
+    if (effectivePx >= bpValues.lg && breakpoints.lg) return 'lg';
+    if (effectivePx >= bpValues.md && breakpoints.md) return 'md';
+    if (effectivePx >= bpValues.sm && breakpoints.sm) return 'sm';
+    if (breakpoints.xs) return 'xs';
+    if (breakpoints.sm) return 'sm';
+    return 'static';
+  };
+
+  const activeBp = getActiveBreakpoint();
+
+  if (activeBp === 'static') {
+    return <span style={{ color }}>&quot;{value}&quot;</span>;
+  }
+
+  // Parse string into segments
+  const parts: { text: string, type: 'text' | 'bp', bp?: string }[] = [];
+  const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
+  let lastIndex = 0;
+  let match;
+
+  while ((match = regex.exec(value)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push({ text: value.slice(lastIndex, match.index), type: 'text' });
+    }
+    parts.push({ text: match[0], type: 'bp', bp: match[1] });
+    lastIndex = regex.lastIndex;
+  }
+  
+  if (lastIndex < value.length) {
+    parts.push({ text: value.slice(lastIndex), type: 'text' });
+  }
+
+  return (
+    <span style={{ color }}>
+      &quot;
+      {parts.map((part, i) => {
+        if (part.type === 'bp') {
+          const isActive = part.bp === activeBp;
+          return (
+            <span 
+              key={i} 
+              style={isActive ? { 
+                color: '#ff4d4d', 
+                textShadow: '0 0 8px rgba(255, 77, 77, 0.4)',
+                fontWeight: 600
+              } : {}}
+            >
+              {part.text}
+            </span>
+          );
+        }
+        return <span key={i}>{part.text}</span>;
+      })}
+      &quot;
+    </span>
+  );
+};
 
 export function ResponsiveSyntaxExplainer() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme();
@@ -17,8 +112,51 @@ export function ResponsiveSyntaxExplainer() {
   const [isFontWeightEditorOpen, setIsFontWeightEditorOpen] = useState(false);
   const [isLineHeightEditorOpen, setIsLineHeightEditorOpen] = useState(false);
   const [isLetterSpacingEditorOpen, setIsLetterSpacingEditorOpen] = useState(false);
+  const [previewWidth, setPreviewWidth] = useState(100); // Percentage
+  const [isAutoMode, setIsAutoMode] = useState(true);
+  const [windowWidth, setWindowWidth] = useState(0);
   const editableRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const previewBoxRef = useRef<HTMLDivElement>(null);
+
+  // Track window width for auto mode
+  useEffect(() => {
+    // Initialize immediately on mount
+    setWindowWidth(window.innerWidth);
+    
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Helper to resolve responsive value based on width
+  const resolveResponsiveValue = (val: string, widthPercent: number) => {
+    if (!val) return '';
+    // Approximate width in pixels based on a standard 1200px container
+    const px = (widthPercent / 100) * 1200; 
+    // Hack for demo: if width is 100%, treat as XL (1280+) to ensure XL breakpoint is reachable
+    const effectivePx = widthPercent === 100 ? 1280 : px;
+    
+    // Parse breakpoints
+    const breakpoints: Record<string, string> = {};
+    const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
+    let match;
+    let hasMatches = false;
+    
+    while ((match = regex.exec(val)) !== null) {
+      hasMatches = true;
+      breakpoints[match[1]] = match[2];
+    }
+    
+    if (!hasMatches) return val; // Static value
+
+    // Resolve based on breakpoints (xs:0, sm:480, md:768, lg:1024, xl:1280)
+    if (effectivePx >= 1280 && breakpoints.xl) return breakpoints.xl;
+    if (effectivePx >= 1024 && breakpoints.lg) return breakpoints.lg;
+    if (effectivePx >= 768 && breakpoints.md) return breakpoints.md;
+    if (effectivePx >= 480 && breakpoints.sm) return breakpoints.sm;
+    return breakpoints.xs || breakpoints.sm || val;
+  };
 
   // Sync with external edit requests (from the list below)
   useEffect(() => {
@@ -119,62 +257,103 @@ export function ResponsiveSyntaxExplainer() {
   };
 
   return (
-    <div 
-      ref={containerRef}
-      style={{
-      background: 'var(--ds__palette__surface-light)',
-      padding: '1.5rem',
-      borderRadius: '8px',
-      border: '1px solid var(--ds__palette__neutral-light)',
-      marginBottom: '3rem'
-    }}>
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center',
-        marginBottom: '1.5rem'
-      }}>
-        <div style={{ 
-          fontSize: '0.75rem', 
-          fontWeight: 700, 
-          letterSpacing: '0.05em', 
-          color: 'var(--ds__palette__text-secondary)',
-          textTransform: 'uppercase'
-        }}>
-          Interactive Demo
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <label htmlFor="tag-select" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Element:</label>
-          <select 
-            id="tag-select"
-            value={selectedTag}
-            onChange={(e) => {
-              setSelectedTag(e.target.value);
-              if (editingTag) setEditingTag(null);
-            }}
-            style={{ 
-              padding: '0.25rem 0.5rem',  
-              borderRadius: '4px', 
-              border: '1px solid var(--ds__palette__neutral-main)',
-              background: 'var(--ds__palette__surface-main)',
-              fontSize: '0.85rem',
-              cursor: 'pointer'
-            }}
-          >
-            {TAGS.map(tag => <option key={tag} value={tag}>{tag.toUpperCase()}</option>)}
-          </select>
-        </div>
-      </div>
+    <div ref={containerRef}>
+      <InteractiveDemoContainer
+        title="Interactive Demo"
+        toolbar={
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--ds__palette__surface-main)', padding: '2px', borderRadius: '6px', border: '1px solid var(--ds__palette__neutral-main)' }}>
+              {BPS.map((bp) => {
+                const isDefault = bp.label === 'Default';
+                const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bp.width);
+                
+                return (
+                  <button
+                    key={bp.label}
+                    onClick={() => {
+                      if (isDefault) {
+                        setIsAutoMode(true);
+                        setPreviewWidth(100);
+                      } else {
+                        setIsAutoMode(false);
+                        setPreviewWidth(bp.width);
+                      }
+                    }}
+                    title={isDefault ? "Current Screen Size" : `${bp.label} View`}
+                    style={{
+                      padding: isDefault ? '4px 8px' : '4px 12px',
+                      background: isActive ? 'var(--ds__palette__primary-light)' : 'transparent',
+                      color: isActive ? 'var(--ds__palette__primary-contrast)' : 'var(--ds__palette__text-secondary)',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontSize: '0.8rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    {isDefault ? <Monitor size={14} /> : bp.label}
+                  </button>
+                );
+              })}
+            </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <label htmlFor="tag-select" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Element:</label>
+              <select 
+                id="tag-select"
+                value={selectedTag}
+                onChange={(e) => {
+                  setSelectedTag(e.target.value);
+                  if (editingTag) setEditingTag(null);
+                }}
+                style={{ 
+                  padding: '0.25rem 0.5rem',  
+                  borderRadius: '4px', 
+                  border: '1px solid var(--ds__palette__neutral-main)',
+                  background: 'var(--ds__palette__surface-main)',
+                  fontSize: '0.85rem',
+                  cursor: 'pointer'
+                }}
+              >
+                {TAGS.map(tag => <option key={tag} value={tag}>{tag.toUpperCase()}</option>)}
+              </select>
+            </div>
+          </>
+        }
+      >
       {/* Live Preview Section */}
       <div style={{ 
         marginBottom: '1.5rem', 
         paddingBottom: '1.5rem', 
-        borderBottom: '1px solid var(--ds__palette__neutral-light)' 
+        borderBottom: '1px solid var(--ds__palette__neutral-light)',
+        display: 'flex',
+        justifyContent: 'center',
+        background: 'var(--ds__palette__surface-dark)', // Darker background to simulate "void"
+        borderRadius: '8px',
+        padding: '2rem 1rem',
+        overflow: 'hidden'
       }}>
         
-        <div className="live-preview-box">
+        <div 
+          className="live-preview-box" 
+          ref={previewBoxRef}
+          style={{ 
+            width: `${previewWidth}%`, 
+            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
+            margin: '0 auto',
+            background: 'var(--ds__palette__surface-main)',
+            border: '1px dashed var(--ds__palette__neutral-dark)', // Simple dotted border
+            borderRadius: '4px',
+            padding: '1rem',
+            minHeight: '120px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            textAlign: 'center'
+          }}
+        >
           <div className="top-right-corner" />
           <div className="bottom-left-corner" />
           {React.createElement(
@@ -193,9 +372,12 @@ export function ResponsiveSyntaxExplainer() {
                 outline: 'none', 
                 minWidth: '10px',
                 cursor: 'text',
-                border: '1px dashed rgba(0,0,0,0.1)',
+                textAlign: 'center', // Center text as requested
+                width: '100%',
                 // Explicitly bind to CSS variables to ensure 'default' tag works and updates live
-                fontSize: `var(--${selectedTag}-size)`,
+                // If in Auto Mode (Default), use the CSS variable so it responds to the viewport media queries
+                // If in Manual Mode (XS-XL), use the simulated value based on the preview container width
+                fontSize: isAutoMode ? `var(--${selectedTag}-size)` : resolveResponsiveValue(fontSizeString, previewWidth),
                 fontFamily: `var(--${selectedTag}-font-family)`,
                 fontWeight: `var(--${selectedTag}-weight)`,
                 lineHeight: `var(--${selectedTag}-line)`,
@@ -224,7 +406,7 @@ export function ResponsiveSyntaxExplainer() {
         
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontSize&quot;</span>: <span style={{ color: 'var(--ds__palette__info-main)' }}>&quot;{fontSizeString}&quot;</span>,
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />,
           </div>
           <button 
             onClick={() => setIsEditorOpen(true)}
@@ -256,7 +438,7 @@ export function ResponsiveSyntaxExplainer() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontFamily&quot;</span>: <span style={{ color: isFontFamilyInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{fontFamilyString}&quot;</span>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
             {isFontFamilyInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
           </div>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -312,7 +494,7 @@ export function ResponsiveSyntaxExplainer() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontWeight&quot;</span>: <span style={{ color: isFontWeightInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{fontWeightString}&quot;</span>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
             {isFontWeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
           </div>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -368,7 +550,7 @@ export function ResponsiveSyntaxExplainer() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;lineHeight&quot;</span>: <span style={{ color: isLineHeightInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{lineHeightString}&quot;</span>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
             {isLineHeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
           </div>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -424,7 +606,7 @@ export function ResponsiveSyntaxExplainer() {
 
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;letterSpacing&quot;</span>: <span style={{ color: isLetterSpacingInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{letterSpacingString}&quot;</span>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
             {isLetterSpacingInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
           </div>
           <div style={{ display: 'flex', gap: '0.25rem' }}>
@@ -480,6 +662,7 @@ export function ResponsiveSyntaxExplainer() {
         
         <div>{'}'}</div>
       </div>
+      </InteractiveDemoContainer>
 
       <BreakpointEditor 
         isOpen={isEditorOpen}

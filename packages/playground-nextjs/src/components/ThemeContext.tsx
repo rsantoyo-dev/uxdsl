@@ -178,6 +178,13 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     }
   }
 
+  // Apply theme effects whenever activeThemeData changes
+  useEffect(() => {
+    if (activeThemeData) {
+      applyThemeEffects(activeThemeData);
+    }
+  }, [activeThemeData]);
+
   const switchTheme = (themeName: ThemeName) => {
     let themeToApply;
     switch (themeName) {
@@ -204,7 +211,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     }
     
     if (themeToApply) {
-      applyThemeEffects(themeToApply)
       setCurrentTheme(themeName)
     }
   }
@@ -219,7 +225,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     }
 
     // Automatically switch to it
-    applyThemeEffects(themeData)
     setCurrentTheme('custom')
   }
 
