@@ -4,6 +4,7 @@ import React, { createContext, useContext, useState } from 'react';
 
 // Initial Data
 export const initialTypographyItems = [
+  { tag: 'default', label: 'Default', text: 'The quick brown fox jumps over the lazy dog.', className: 'sample-default' },
   { tag: 'h1', label: 'H1', text: 'UXDSL: The Design System Language', className: 'sample-h1' },
   { tag: 'h2', label: 'H2', text: 'The Evolution of Styling', className: 'sample-h2' },
   { tag: 'h3', label: 'H3', text: 'Atomic vs Semantic', className: 'sample-h3' },

@@ -106,12 +106,18 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         return breakpoints;
       };
 
+      const defaultDetails = theme.typography_details.default || {};
+
       for (const tag in theme.typography_details) {
         const details = theme.typography_details[tag]
+        const isDefaultTag = tag === 'default';
         
         const processProp = (propName: string, cssVarSuffix: string) => {
-          if (details[propName]) {
-            const parsed = parseResponsiveValue(details[propName]);
+          // Use explicit value OR fallback to default (if not default tag)
+          const value = details[propName] || (!isDefaultTag ? defaultDetails[propName] : undefined);
+
+          if (value) {
+            const parsed = parseResponsiveValue(value);
             Object.entries(parsed).forEach(([bp, val]) => {
                if (responsiveVars[bp]) {
                  responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${val}`);

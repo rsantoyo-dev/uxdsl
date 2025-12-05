@@ -3,23 +3,62 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo } from './TypographyDemoContext';
-import { Edit2 } from 'lucide-react';
+import { Edit2, Trash2 } from 'lucide-react';
 import { BreakpointEditor } from './BreakpointEditor';
 
-const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
+const TAGS = ['default', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
 
 export function ResponsiveSyntaxExplainer() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme();
-  const { textMap, updateText } = useTypographyDemo();
-  const [selectedTag, setSelectedTag] = useState('h1');
+  const { textMap, updateText, editingTag, setEditingTag } = useTypographyDemo();
+  const [selectedTag, setSelectedTag] = useState('default');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isFontFamilyEditorOpen, setIsFontFamilyEditorOpen] = useState(false);
+  const [isFontWeightEditorOpen, setIsFontWeightEditorOpen] = useState(false);
+  const [isLineHeightEditorOpen, setIsLineHeightEditorOpen] = useState(false);
+  const [isLetterSpacingEditorOpen, setIsLetterSpacingEditorOpen] = useState(false);
   const editableRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Sync with external edit requests (from the list below)
+  useEffect(() => {
+    if (editingTag && TAGS.includes(editingTag)) {
+      setSelectedTag(editingTag);
+      // Scroll to editor when triggered from outside
+      if (containerRef.current) {
+        containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }
+  }, [editingTag]);
 
   // Safe access to the typography details
-  const details = activeThemeData?.typography_details?.[selectedTag] || {};
-  const fontSizeString = details.fontSize || 'xs(16px)'; // Fallback
-  const fontFamilyString = details.fontFamily || 'xs(Inter)'; // Fallback
+  const defaultDetails = activeThemeData?.typography_details?.default || {
+    fontSize: 'xs(16px)',
+    fontFamily: 'Inter',
+    fontWeight: '400',
+    lineHeight: '1.5',
+    letterSpacing: 'normal'
+  };
+  
+  const tagDetails = activeThemeData?.typography_details?.[selectedTag] || {};
+  
+  // Resolve values (Inheritance logic)
+  const isDefault = selectedTag === 'default';
+  
+  const fontSizeString = isDefault 
+    ? (tagDetails.fontSize || defaultDetails.fontSize) 
+    : (tagDetails.fontSize || defaultDetails.fontSize); // Font size usually specific, but fallback to default if missing
+
+  const fontFamilyString = tagDetails.fontFamily || defaultDetails.fontFamily || 'Inter';
+  const fontWeightString = tagDetails.fontWeight || defaultDetails.fontWeight || '400';
+  const lineHeightString = tagDetails.lineHeight || defaultDetails.lineHeight || '1.5';
+  const letterSpacingString = tagDetails.letterSpacing || defaultDetails.letterSpacing || 'normal';
+
+  // Check inheritance status
+  const isFontFamilyInherited = !isDefault && !tagDetails.fontFamily;
+  const isFontWeightInherited = !isDefault && !tagDetails.fontWeight;
+  const isLineHeightInherited = !isDefault && !tagDetails.lineHeight;
+  const isLetterSpacingInherited = !isDefault && !tagDetails.letterSpacing;
 
   // Sync ref content when tag changes (or text updates externally)
   useEffect(() => {
@@ -28,43 +67,15 @@ export function ResponsiveSyntaxExplainer() {
     }
   }, [selectedTag, textMap]);
 
-  // Simple parser for the responsive syntax (Non-Regex version to avoid escaping issues)
-  const parseValue = (str: string, prefix: string) => {
-    if (!str) return null;
-    const token = `${prefix}(`;
-    const start = str.indexOf(token);
-    if (start === -1) return null;
-    
-    const valueStart = start + token.length;
-    const end = str.indexOf(')', valueStart);
-    if (end === -1) return null;
-    
-    return str.substring(valueStart, end);
-  };
-
-  // Extract values for key breakpoints
-  const mobileVal = parseValue(fontSizeString, 'xs') || parseValue(fontSizeString, 'sm') || fontSizeString;
-  const tabletVal = parseValue(fontSizeString, 'md') || mobileVal;
-  const desktopVal = parseValue(fontSizeString, 'xl') || parseValue(fontSizeString, 'lg') || tabletVal;
-
-  const isResponsive = fontSizeString.includes('(');
-
   const handleInput = (e: React.FormEvent<HTMLElement>) => {
     updateText(selectedTag, e.currentTarget.innerText);
   };
 
   const handleSave = (newValue: string) => {
-    // Clone current theme data to avoid mutating state directly
     const newTheme = JSON.parse(JSON.stringify(activeThemeData));
-    
-    // Ensure structure exists
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
-    
-    // Update value
     newTheme.typography_details[selectedTag].fontSize = newValue;
-    
-    // Update theme context
     setCustomTheme(customThemeName || 'Custom Theme', newTheme);
   };
 
@@ -74,19 +85,15 @@ export function ResponsiveSyntaxExplainer() {
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
     newTheme.typography_details[selectedTag].fontFamily = newValue;
 
-    // Add to Google Fonts list if it's likely a Google Font (not a system font)
+    // Add to Google Fonts list logic...
     const systemFonts = ["System UI", "Monospace", "Serif", "Sans-Serif", "Arial", "Helvetica", "Times New Roman", "Courier New"];
-    // Extract the primary font family name (before comma)
     const primaryFont = newValue.split(',')[0].replace(/['"]/g, '').trim();
     
     if (!systemFonts.includes(primaryFont) && primaryFont) {
       if (!newTheme.fonts) newTheme.fonts = {};
       if (!newTheme.fonts.google) newTheme.fonts.google = [];
-      
-      // Check if already exists (ignoring weights for simplicity check)
       const exists = newTheme.fonts.google.some((f: string) => f.startsWith(primaryFont));
       if (!exists) {
-        // Add with default weights
         newTheme.fonts.google.push(`${primaryFont}:wght@400;500;600;700`);
       }
     }
@@ -94,8 +101,27 @@ export function ResponsiveSyntaxExplainer() {
     setCustomTheme(customThemeName || 'Custom Theme', newTheme);
   };
 
+  const handleSaveProperty = (property: string, newValue: string) => {
+    const newTheme = JSON.parse(JSON.stringify(activeThemeData));
+    if (!newTheme.typography_details) newTheme.typography_details = {};
+    if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
+    newTheme.typography_details[selectedTag][property] = newValue;
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+  };
+
+  const handleRemoveProperty = (property: string) => {
+    if (isDefault) return; // Cannot remove from default
+    const newTheme = JSON.parse(JSON.stringify(activeThemeData));
+    if (newTheme.typography_details?.[selectedTag]) {
+      delete newTheme.typography_details[selectedTag][property];
+      setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    }
+  };
+
   return (
-    <div style={{
+    <div 
+      ref={containerRef}
+      style={{
       background: 'var(--ds__palette__surface-light)',
       padding: '1.5rem',
       borderRadius: '8px',
@@ -123,9 +149,12 @@ export function ResponsiveSyntaxExplainer() {
           <select 
             id="tag-select"
             value={selectedTag}
-            onChange={(e) => setSelectedTag(e.target.value)}
+            onChange={(e) => {
+              setSelectedTag(e.target.value);
+              if (editingTag) setEditingTag(null);
+            }}
             style={{ 
-              padding: '0.25rem 0.5rem', 
+              padding: '0.25rem 0.5rem',  
               borderRadius: '4px', 
               border: '1px solid var(--ds__palette__neutral-main)',
               background: 'var(--ds__palette__surface-main)',
@@ -144,25 +173,12 @@ export function ResponsiveSyntaxExplainer() {
         paddingBottom: '1.5rem', 
         borderBottom: '1px solid var(--ds__palette__neutral-light)' 
       }}>
-        <div style={{ 
-          fontSize: '0.65rem', 
-          textTransform: 'uppercase', 
-          opacity: 0.6, 
-          marginBottom: '0.75rem',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          display: 'flex',
-          justifyContent: 'space-between'
-        }}>
-          <span>Live Preview</span>
-          <span style={{ opacity: 0.5, fontWeight: 400 }}>Click to edit</span>
-        </div>
         
         <div className="live-preview-box">
           <div className="top-right-corner" />
           <div className="bottom-left-corner" />
           {React.createElement(
-            selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' ? 'p' : selectedTag,
+            selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' || selectedTag === 'default' ? 'p' : selectedTag,
             { 
               className: `ds-typo ${selectedTag}`,
               'data-typo': selectedTag,
@@ -176,7 +192,14 @@ export function ResponsiveSyntaxExplainer() {
                 transition: 'all 0.2s ease', 
                 outline: 'none', 
                 minWidth: '10px',
-                cursor: 'text'
+                cursor: 'text',
+                border: '1px dashed rgba(0,0,0,0.1)',
+                // Explicitly bind to CSS variables to ensure 'default' tag works and updates live
+                fontSize: `var(--${selectedTag}-size)`,
+                fontFamily: `var(--${selectedTag}-font-family)`,
+                fontWeight: `var(--${selectedTag}-weight)`,
+                lineHeight: `var(--${selectedTag}-line)`,
+                letterSpacing: `var(--${selectedTag}-spacing)`
               } 
             }
           )}
@@ -195,11 +218,13 @@ export function ResponsiveSyntaxExplainer() {
         overflowX: 'auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: '0.5rem'
+        gap: '0.25rem'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+        <div>{selectedTag}: {'{'}</div>
+        
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
           <div>
-            {selectedTag}: {'{'} <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontSize&quot;</span>: <span style={{ color: 'var(--ds__palette__info-main)' }}>&quot;{fontSizeString}&quot;</span>,
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontSize&quot;</span>: <span style={{ color: 'var(--ds__palette__info-main)' }}>&quot;{fontSizeString}&quot;</span>,
           </div>
           <button 
             onClick={() => setIsEditorOpen(true)}
@@ -229,37 +254,231 @@ export function ResponsiveSyntaxExplainer() {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-          <div style={{ paddingLeft: '2ch' }}>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontFamily&quot;</span>: <span style={{ color: 'var(--ds__palette__info-main)' }}>&quot;{fontFamilyString}&quot;</span> {'}'}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontFamily&quot;</span>: <span style={{ color: isFontFamilyInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{fontFamilyString}&quot;</span>
+            {isFontFamilyInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
           </div>
-          <button 
-            onClick={() => setIsFontFamilyEditorOpen(true)}
-            title="Edit Font Family"
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--ds__palette__divider)',
-              borderRadius: '4px',
-              padding: '4px',
-              cursor: 'pointer',
-              color: 'var(--ds__palette__text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-              e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-              e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-            }}
-          >
-            <Edit2 size={16} />
-          </button>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isFontFamilyInherited && (
+              <button
+                onClick={() => handleRemoveProperty('fontFamily')}
+                title="Reset to Default"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--ds__palette__text-disabled)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+            <button 
+              onClick={() => setIsFontFamilyEditorOpen(true)}
+              title="Edit Font Family"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--ds__palette__divider)',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                color: 'var(--ds__palette__text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
+              }}
+            >
+              <Edit2 size={16} />
+            </button>
+          </div>
         </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontWeight&quot;</span>: <span style={{ color: isFontWeightInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{fontWeightString}&quot;</span>
+            {isFontWeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isFontWeightInherited && (
+              <button
+                onClick={() => handleRemoveProperty('fontWeight')}
+                title="Reset to Default"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--ds__palette__text-disabled)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+            <button 
+              onClick={() => setIsFontWeightEditorOpen(true)}
+              title="Edit Font Weight"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--ds__palette__divider)',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                color: 'var(--ds__palette__text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
+              }}
+            >
+              <Edit2 size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;lineHeight&quot;</span>: <span style={{ color: isLineHeightInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{lineHeightString}&quot;</span>
+            {isLineHeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isLineHeightInherited && (
+              <button
+                onClick={() => handleRemoveProperty('lineHeight')}
+                title="Reset to Default"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--ds__palette__text-disabled)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+            <button 
+              onClick={() => setIsLineHeightEditorOpen(true)}
+              title="Edit Line Height"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--ds__palette__divider)',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                color: 'var(--ds__palette__text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
+              }}
+            >
+              <Edit2 size={16} />
+            </button>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;letterSpacing&quot;</span>: <span style={{ color: isLetterSpacingInherited ? 'var(--ds__palette__text-disabled)' : 'var(--ds__palette__info-main)' }}>&quot;{letterSpacingString}&quot;</span>
+            {isLetterSpacingInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isLetterSpacingInherited && (
+              <button
+                onClick={() => handleRemoveProperty('letterSpacing')}
+                title="Reset to Default"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  padding: '4px',
+                  cursor: 'pointer',
+                  color: 'var(--ds__palette__text-disabled)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+              >
+                <Trash2 size={14} />
+              </button>
+            )}
+            <button 
+              onClick={() => setIsLetterSpacingEditorOpen(true)}
+              title="Edit Letter Spacing"
+              style={{
+                background: 'transparent',
+                border: '1px solid var(--ds__palette__divider)',
+                borderRadius: '4px',
+                padding: '4px',
+                cursor: 'pointer',
+                color: 'var(--ds__palette__text-secondary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
+                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
+              }}
+            >
+              <Edit2 size={16} />
+            </button>
+          </div>
+        </div>
+        
+        <div>{'}'}</div>
       </div>
 
       <BreakpointEditor 
@@ -280,46 +499,32 @@ export function ResponsiveSyntaxExplainer() {
         editorType="font"
       />
 
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: '1rem', 
-        fontSize: '0.875rem', 
-        color: 'var(--ds__palette__text-secondary)' 
-      }}>
-        <div style={{ opacity: isResponsive ? 1 : 0.5 }}>
-          <strong style={{ display: 'block', color: 'var(--ds__palette__text-primary)', marginBottom: '0.25rem' }}>
-            📱 Mobile First {isResponsive && '(xs)'}
-          </strong>
-          <div style={{ fontSize: '1.2rem', fontWeight: 500 }}>{mobileVal}</div>
-          <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Base size on small screens</div>
-        </div>
-        
-        {isResponsive && (
-          <>
-            <div>
-              <strong style={{ display: 'block', color: 'var(--ds__palette__text-primary)', marginBottom: '0.25rem' }}>
-                📖 Tablet (md)
-              </strong>
-              <div style={{ fontSize: '1.2rem', fontWeight: 500 }}>{tabletVal}</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Updates at 768px</div>
-            </div>
-            <div>
-              <strong style={{ display: 'block', color: 'var(--ds__palette__text-primary)', marginBottom: '0.25rem' }}>
-                🖥️ Desktop (xl)
-              </strong>
-              <div style={{ fontSize: '1.2rem', fontWeight: 500 }}>{desktopVal}</div>
-              <div style={{ fontSize: '0.8rem', opacity: 0.7 }}>Max scale at 1280px</div>
-            </div>
-          </>
-        )}
+      <BreakpointEditor 
+        isOpen={isFontWeightEditorOpen}
+        onClose={() => setIsFontWeightEditorOpen(false)}
+        initialValue={fontWeightString}
+        onSave={(val) => handleSaveProperty('fontWeight', val)}
+        tagName={selectedTag}
+        editorType="text"
+      />
 
-        {!isResponsive && (
-          <div style={{ gridColumn: 'span 2', display: 'flex', alignItems: 'center', opacity: 0.7 }}>
-            <em>Fixed size. Use <code>xs() md()</code> syntax to make it responsive.</em>
-          </div>
-        )}
-      </div>
+      <BreakpointEditor 
+        isOpen={isLineHeightEditorOpen}
+        onClose={() => setIsLineHeightEditorOpen(false)}
+        initialValue={lineHeightString}
+        onSave={(val) => handleSaveProperty('lineHeight', val)}
+        tagName={selectedTag}
+        editorType="text"
+      />
+
+      <BreakpointEditor 
+        isOpen={isLetterSpacingEditorOpen}
+        onClose={() => setIsLetterSpacingEditorOpen(false)}
+        initialValue={letterSpacingString}
+        onSave={(val) => handleSaveProperty('letterSpacing', val)}
+        tagName={selectedTag}
+        editorType="text"
+      />
     </div>
   );
 }
