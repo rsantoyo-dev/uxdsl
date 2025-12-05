@@ -56,7 +56,7 @@
     margin-bottom: 0;
     
     .page-title__text {
-      @ds-typo (h6)
+      @ds-typo (h6);
       background: linear-gradient(135deg, palette(primary-dark), palette(primary-main));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;

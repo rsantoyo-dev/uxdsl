@@ -40,7 +40,7 @@ export const ThemeBackground = () => {
         fill
         priority
         className="theme-background-image"
-        style={{ opacity: imageLoaded ? 0.7 : 0 }} // Fade in to 0.7 opacity
+        style={{ opacity: imageLoaded ? 0.35 : 0 }} // Fade in to 0.15 opacity
         onLoadingComplete={() => setImageLoaded(true)}
       />
       <div className="theme-background-tint" />

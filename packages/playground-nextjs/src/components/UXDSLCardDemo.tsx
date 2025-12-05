@@ -47,12 +47,12 @@ const DEMO_CODE = `.uxdsl-card {
 
   .card-title {
     @ds-typo (h5);
-    color: palette(text-primary);
+    color: palette(primary-main);
   }
 
   .card-desc {
     @ds-typo (body);
-    color: palette(text-secondary);
+    color: palette(primary-main);
   }
 
   .card-actions {

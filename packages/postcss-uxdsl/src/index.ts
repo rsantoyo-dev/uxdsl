@@ -190,105 +190,76 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkRules((rule) => {
         const applyTypo = (at: any, variantRaw: string) => {
           let tag = String(variantRaw || "").trim();
-          // Strip optional wrapping quotes
           if (
             (tag.startsWith('"') && tag.endsWith('"')) ||
             (tag.startsWith("'") && tag.endsWith("'"))
           ) {
             tag = tag.slice(1, -1);
           }
-          // Strip optional parentheses, e.g. "(h1)"
           if (tag.startsWith("(") && tag.endsWith(")")) {
             tag = tag.slice(1, -1).trim();
           }
           tag = tag.toLowerCase();
+
           const insert = (prop: string, value: string) => {
             at.parent.insertBefore(at, { prop, value });
           };
-          // Default block margin behavior for typographic elements
-          // Use 'auto' per request (computes to 0 for top/bottom in most cases)
+
           insert("margin-block-start", "0");
           insert("margin-block-end", "0");
-          switch (tag) {
-            case "h1":
-              insert("font-size", "var(--h1-size)");
-              insert("font-weight", "var(--h1-weight, 700)");
-              insert("font-family", "var(--h1-font-family, var(--font-ui))");
-              break;
-            case "h2":
-              insert("font-size", "var(--h2-size)");
-              insert("font-weight", "var(--h2-weight, 700)");
-              insert("font-family", "var(--h2-font-family, var(--font-ui))");
-              break;
-            case "h3":
-              insert("font-size", "var(--h3-size)");
-              insert("font-weight", "var(--h3-weight, 600)");
-              insert("font-family", "var(--h3-font-family, var(--font-ui))");
-              break;
-            case "h4":
-              insert("font-size", "var(--h4-size)");
-              insert("font-weight", "var(--h4-weight, 600)");
-              insert("font-family", "var(--h4-font-family, var(--font-ui))");
-              break;
-            case "h5":
-              insert("font-size", "var(--h5-size)");
-              insert("font-weight", "var(--h5-weight, 600)");
-              insert(
-                "font-family",
-                "var(--h5-font-family, var(--font-ui-2, var(--font-ui)))"
-              );
-              break;
-            case "h6":
-              insert("font-size", "var(--h6-size)");
-              insert("font-weight", "var(--h6-weight, 600)");
-              insert(
-                "font-family",
-                "var(--h6-font-family, var(--font-ui-2, var(--font-ui)))"
-              );
-              break;
-            case "p":
-              insert("font-size", "var(--p-size)");
-              insert("line-height", "var(--p-line, normal)");
-              insert("font-weight", "var(--p-weight, 400)");
-              insert("font-family", "var(--p-font-family, var(--font-ui))");
-              break;
-            case "span":
-              insert("font-size", "var(--span-size)");
-              insert("font-weight", "var(--span-weight, 400)");
-              insert("font-family", "var(--span-font-family, var(--font-ui))");
-              break;
-            case "body":
-              insert("font-size", "var(--body-size)");
-              insert("font-weight", "var(--body-weight, 400)");
-              insert("font-family", "var(--body-font-family, var(--font-ui))");
-              break;
-            case "small":
-              insert("font-size", "var(--small-size)");
-              insert("opacity", "var(--caption-opacity, 0.8)");
-              insert(
-                "font-family",
-                "var(--small-font-family, var(--font-ui-2, var(--font-ui)))"
-              );
-              break;
-            case "caption":
-              insert("font-size", "var(--caption-size)");
-              insert("opacity", "var(--caption-opacity, 0.8)");
-              insert(
-                "font-family",
-                "var(--caption-font-family, var(--font-ui-2, var(--font-ui)))"
-              );
-              break;
-            case "pre":
-            case "code":
-              insert(
-                "font-family",
-                "var(--pre-font-family, var(--font-code)), monospace"
-              );
-              insert("font-size", "var(--pre-size)");
-              break;
-            default:
-              break;
+
+          // Typography Configuration Data
+          // Defines defaults for each known variant. 
+          // If a variant isn't here, we can still attempt to generate generic vars for it (future proofing).
+          const defaults: Record<string, any> = {
+            h1: { weight: "700", family: "ui", line: "1.1", spacing: "-0.02em" },
+            h2: { weight: "700", family: "ui", line: "1.2", spacing: "-0.01em" },
+            h3: { weight: "600", family: "ui", line: "1.3", spacing: "normal" },
+            h4: { weight: "600", family: "ui", line: "1.4", spacing: "normal" },
+            h5: { weight: "600", family: "ui-2", line: "1.4", spacing: "normal" },
+            h6: { weight: "600", family: "ui-2", line: "1.4", spacing: "normal" },
+            p: { weight: "400", family: "ui", line: "1.6", spacing: "normal" },
+            span: { weight: "400", family: "ui", line: "1.5", spacing: "normal" },
+            body: { weight: "400", family: "ui", line: "1.6", spacing: "normal" },
+            small: { opacity: "0.8", family: "ui-2", line: "1.4", spacing: "normal" },
+            caption: { opacity: "0.8", family: "ui-2", line: "1.4", spacing: "normal" },
+            pre: { family: "code", line: "1.5" },
+            code: { family: "code", line: "1.5" }
+          };
+
+          const config = defaults[tag] || { weight: "400", family: "ui", line: "1.5", spacing: "normal" };
+          const isCode = tag === "pre" || tag === "code";
+
+          // 1. Font Family
+          // Logic: var(--tag-font-family, var(--font-configFamily))
+          const fontRef = config.family === "code" ? "var(--font-code)" : (config.family === "ui-2" ? "var(--font-ui-2, var(--font-ui))" : "var(--font-ui)");
+          // Special case: code/pre often append 'monospace' directly in fallback
+          const familyFallback = isCode ? `${fontRef}, monospace` : fontRef;
+          insert("font-family", `var(--${tag}-font-family, ${familyFallback})`);
+
+          // 2. Font Size
+          insert("font-size", `var(--${tag}-size)`);
+
+          // 3. Line Height
+          if (config.line) {
+             insert("line-height", `var(--${tag}-line, ${config.line})`);
           }
+
+          // 4. Font Weight (Skip for code usually, but consistent to add)
+          if (config.weight) {
+             insert("font-weight", `var(--${tag}-weight, ${config.weight})`);
+          }
+
+          // 5. Letter Spacing
+          if (config.spacing) {
+             insert("letter-spacing", `var(--${tag}-spacing, ${config.spacing})`);
+          }
+
+          // 6. Opacity (Special for caption/small)
+          if (config.opacity) {
+             insert("opacity", `var(--${tag}-opacity, ${config.opacity})`);
+          }
+
           at.remove();
         };
 

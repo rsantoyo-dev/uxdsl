@@ -40,6 +40,7 @@
 @import '../components/NavigationCardLink.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import '../components/PageToolbar.uxdsl';
+@import '../components/ResponsiveSyntaxExplainer.uxdsl';
 @import '../components/SideNav.uxdsl';
 @import '../components/ThemeBackground.uxdsl';
 @import '../components/UXDSLCardDemo.uxdsl';

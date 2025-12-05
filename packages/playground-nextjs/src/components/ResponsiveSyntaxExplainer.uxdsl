@@ -1,0 +1,57 @@
+.live-preview-box {
+  background: palette(surface-dark, 0.05);
+  border-radius: radius(1);
+  position: relative;
+  overflow: hidden;
+  display: flex; /* For centering content vertically if needed */
+  align-items: center; /* For vertical centering */
+  justify-content: center; /* For horizontal centering of text block */
+
+  /* Subtle top/bottom dashed lines to define line-height visually */
+  border-top: 1px dashed palette(neutral-light, 0.5);
+  border-bottom: 1px dashed palette(neutral-light, 0.5);
+  
+  /* Architectonic Corner Marks */
+  &::before, &::after, .top-right-corner::before, .bottom-left-corner::after {
+    content: '';
+    position: absolute;
+    width: 10px; /* Small corner piece */
+    height: 10px;
+    border-color: palette(neutral-main, 0.3);
+    border-style: solid;
+    z-index: 1; /* Above text */
+  }
+
+  &::before { /* Top-left corner */
+    top: 0;
+    left: 0;
+    border-width: 1px 0 0 1px;
+  }
+  &::after { /* Bottom-right corner */
+    bottom: 0;
+    right: 0;
+    border-width: 0 1px 1px 0;
+  }
+
+  /* Optional additional corners for more explicit bounding box */
+  .top-right-corner::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 10px; height: 10px;
+    border-color: palette(neutral-main, 0.3);
+    border-style: solid;
+    border-width: 1px 1px 0 0;
+    z-index: 1;
+  }
+  .bottom-left-corner::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 10px; height: 10px;
+    border-color: palette(neutral-main, 0.3);
+    border-style: solid;
+    border-width: 0 0 1px 1px;
+    z-index: 1;
+  }
+}

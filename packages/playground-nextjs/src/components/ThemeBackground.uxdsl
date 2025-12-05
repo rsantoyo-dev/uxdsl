@@ -47,9 +47,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    palette(surface-light, 0.6) 0%, /* Reduced top opacity */
-    palette(surface-main, 0.1) 50%, /* Much lower middle opacity */
-    palette(surface-main, 0.6) 100% /* Reduced bottom opacity */
+    palette(surface-light, 0.5) 0%, /* Reduced top opacity */
+    palette(surface-main, 0.05) 50%, /* Much lower middle opacity */
+    palette(surface-main, 0.5) 100% /* Reduced bottom opacity */
   );
   z-index: 3;
 }

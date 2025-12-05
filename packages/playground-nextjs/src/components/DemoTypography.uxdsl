@@ -5,42 +5,74 @@
   .demo-title { @ds-typo (h4); margin: 0; }
   .demo-subtitle { @ds-typo (body); opacity: 0.75; margin: 0; max-width: 720px; }
 
-  .typo-stack { display: flex; flex-direction: column; gap: density(2); }
+  .typo-stack { display: flex; flex-direction: column; gap: 0; } /* Removed gap for tighter table look */
 
-  .typo-card { 
-    @ds-surface (contained surface); 
-    display: flex; 
-    flex-direction: column; 
-    gap: density(2); 
-    padding: density(3);
+  .typo-row {
+    display: flex;
+    align-items: flex-start;
+    gap: density(4);
+    padding: density(3) 0;
+    border-bottom: 1px solid palette(surface-dark);
+    
+    &:last-child {
+      border-bottom: none;
+    }
   }
 
-  .typo-card__header { 
-    display: flex; 
-    justify-content: space-between; 
-    align-items: baseline; 
-    border-bottom: 1px solid palette(neutral-light);
-    padding-bottom: density(1);
-    margin-bottom: density(1);
+  .typo-row__meta {
+    width: 50px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: density(0.5); /* Tighter gap */
+    border-right: 1px solid palette(surface-dark);
+    padding-right: density(1); /* Reduced padding */
   }
 
-  .typo-card__tag { 
-    @ds-typo (caption); 
-    font-weight: bold; 
-    text-transform: uppercase; 
-    opacity: 0.6; 
+  .typo-row__label {
+    @ds-typo (caption); /* Base caption style */
+    font-size: 0.6rem;
+    font-weight: 400;
+    color: palette(text-secondary);
+    opacity: 0.6;
+    line-height: 1.2;
+    text-transform: none; /* Ensure lowercase/normal */
   }
 
-  .typo-card__bp { 
-    @ds-typo (tag); 
-    background: palette(neutral-light);
-    padding: 2px 6px;
-    border-radius: radius(1);
+  .typo-row__edit {
+    background: transparent;
+    border: none; /* No border */
+    cursor: pointer;
+    padding: 0; /* No padding */
+    color: palette(secondary-main);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.6;
+    transition: all 0.2s;
+    margin-top: space(2); /* Corrected from density(0.5) */
+    
+    &:hover {
+      opacity: 1;
+      border-color: palette(secondary-main);
+      background: palette(surface-dark, 0.1);
+    }
+  }
+
+  .typo-row__content {
+    flex: 1;
+    /* Allow font to flow naturally */
   }
 
   /* Typography samples */
   .sample-h1 { @ds-typo(h1); margin: 0; }
-  .sample-h2 { @ds-typo(h2); margin: 0; }
+  .sample-h2 { 
+    @ds-typo(h2); 
+    margin: 0; 
+    font-size: var(--h3-size); /* Use H3 size for a smaller look */
+    font-weight: var(--p-weight); /* Use paragraph weight for not bold */
+  }
   .sample-h3 { @ds-typo(h3); margin: 0; }
   .sample-h4 { @ds-typo(h4); margin: 0; }
   .sample-h5 { @ds-typo(h5); margin: 0; }

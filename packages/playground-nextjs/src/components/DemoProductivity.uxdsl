@@ -300,7 +300,7 @@
 
   .prod-tab-btn:hover {
     background: palette(surface-subtle);
-    color: palette(text-primary);
+    color: palette(primary-main);
   }
 
   .prod-tab-btn.active {

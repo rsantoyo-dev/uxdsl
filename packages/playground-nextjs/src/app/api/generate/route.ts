@@ -63,6 +63,20 @@ export async function POST(req: Request) {
           "code": "string" // A monospace font from the list or generic, e.g., "JetBrains Mono, monospace"
         }
       },
+      "typography_details": {
+        // Define line-height and letter-spacing for key elements.
+        // Headings (h1-h6) usually have tighter line-height (1.1-1.3) and tracking (-0.02em).
+        // Body text (p) usually has looser line-height (1.5-1.7).
+        "h1": { "lineHeight": "string", "letterSpacing": "string" },
+        "h2": { "lineHeight": "string", "letterSpacing": "string" },
+        "h3": { "lineHeight": "string", "letterSpacing": "string" },
+        "h4": { "lineHeight": "string", "letterSpacing": "string" },
+        "h5": { "lineHeight": "string", "letterSpacing": "string" },
+        "h6": { "lineHeight": "string", "letterSpacing": "string" },
+        "p": { "lineHeight": "string", "letterSpacing": "string" },
+        "body": { "lineHeight": "string", "letterSpacing": "string" },
+        "caption": { "lineHeight": "string", "letterSpacing": "string" }
+      },
       "breakpoints": { // Standard breakpoint values (px)
         "xs": 0,
         "sm": 480,

@@ -13,6 +13,8 @@ interface ThemeContextType {
   currentTheme: ThemeName
   customThemeName: string | null
   backgroundImage: string | null
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  activeThemeData: any
   switchTheme: (theme: ThemeName) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setCustomTheme: (name: string, themeData: any) => void
@@ -29,6 +31,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract geometric shapes')
 
+  const activeThemeData = React.useMemo(() => {
+    switch (currentTheme) {
+      case 'purple': return purpleTheme;
+      case 'green': return greenTheme;
+      case 'custom': return customThemeData || defaultTheme;
+      case 'default': default: return defaultTheme;
+    }
+  }, [currentTheme, customThemeData]);
+
   useEffect(() => {
     // Check initial preference
     const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
@@ -39,6 +50,22 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyThemeEffects = (theme: any) => {
     if (!theme) return
+
+    // Clear any manual overrides from the Typography Playground
+    const root = document.documentElement;
+    const tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre'];
+    const props = ['font-family', 'weight', 'size', 'line', 'spacing', 'opacity'];
+    
+    tags.forEach(tag => {
+      props.forEach(prop => {
+        root.style.removeProperty(`--${tag}-${prop}`);
+      });
+    });
+    
+    // Also clear global font families just in case
+    root.style.removeProperty('--font-ui');
+    root.style.removeProperty('--font-ui-2');
+    root.style.removeProperty('--font-code');
 
     // 1. Generate Base CSS from tokens
     let css = generateThemeCss(theme)
@@ -54,6 +81,71 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         // effectively we just append another :root block
         css += ` :root { ${fontVars.join('; ')} }`
       }
+    }
+
+    // 2.5 Handle Typography Details (line-height, letter-spacing, size, weight)
+    if (theme.typography_details) {
+      const responsiveVars: Record<string, string[]> = {
+        xs: [], sm: [], md: [], lg: [], xl: []
+      };
+
+      const parseResponsiveValue = (value: string) => {
+        const breakpoints: Record<string, string> = {};
+        const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
+        let match;
+        let hasMatches = false;
+        
+        while ((match = regex.exec(value)) !== null) {
+          hasMatches = true;
+          breakpoints[match[1]] = match[2];
+        }
+        
+        if (!hasMatches) {
+          return { xs: value }; // Treat as base value if no responsive syntax
+        }
+        return breakpoints;
+      };
+
+      for (const tag in theme.typography_details) {
+        const details = theme.typography_details[tag]
+        
+        const processProp = (propName: string, cssVarSuffix: string) => {
+          if (details[propName]) {
+            const parsed = parseResponsiveValue(details[propName]);
+            Object.entries(parsed).forEach(([bp, val]) => {
+               if (responsiveVars[bp]) {
+                 responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${val}`);
+               }
+            });
+          }
+        };
+
+        processProp('lineHeight', 'line');
+        processProp('letterSpacing', 'spacing');
+        processProp('fontSize', 'size');
+        processProp('fontWeight', 'weight');
+        processProp('fontFamily', 'font-family');
+      }
+
+      // Generate CSS for each breakpoint
+      // Base (xs)
+      if (responsiveVars.xs.length > 0) {
+        css += ` :root { ${responsiveVars.xs.join('; ')} }`;
+      }
+
+      // Media queries
+      const bpValues = theme.breakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 };
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const typedBpValues = bpValues as any;
+
+      ['sm', 'md', 'lg', 'xl'].forEach(bp => {
+        if (responsiveVars[bp] && responsiveVars[bp].length > 0) {
+           const minWidth = typedBpValues[bp];
+           if (minWidth) {
+             css += ` @media (min-width: ${minWidth}px) { :root { ${responsiveVars[bp].join('; ')} } }`;
+           }
+        }
+      });
     }
 
     // 3. Inject CSS
@@ -136,7 +228,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   }
 
   return (
-    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, backgroundImage, switchTheme, setCustomTheme, toggleDarkMode }}>
+    <ThemeContext.Provider value={{ isDark, currentTheme, customThemeName, backgroundImage, activeThemeData, switchTheme, setCustomTheme, toggleDarkMode }}>
       {children}
     </ThemeContext.Provider>
   )

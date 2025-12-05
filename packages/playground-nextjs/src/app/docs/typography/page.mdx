@@ -1,9 +1,78 @@
-import DemoTypography from '@/components/DemoTypography'
+import { TypographyDemos } from '@/components/TypographyDemos'
 import { PageTitle } from '@/components/PageTitle'
+import CodeBlock from '@/components/CodeBlock'
 
-<PageTitle 
-  title="Typography" 
-  subtitle="Type scale, font families, and text styles."
-/>
+<div id="TypographyPage">
+  <PageTitle 
+    title="Typography" 
+    subtitle="Type scale, font families, and text styles."
+    subtext="A comprehensive, theme-aware typography system that scales from mobile to desktop automatically."
+  />
 
-<DemoTypography />
+  <TypographyDemos />
+
+  <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
+
+  <section className="doc-content">
+    <h2>The Power of Semantic Typography</h2>
+    <div style={{ marginBottom: '1rem' }}>
+      UXDSL decouples visual style from HTML tags. While you can write standard HTML, the real power comes from the <code>@ds-typo</code> mixin. 
+      This allows you to apply the visual properties of a "Heading 1" to <em>any</em> element, while maintaining semantic correctness.
+    </div>
+    <div style={{ marginBottom: '1rem' }}>
+      Because these mixins are backed by CSS variables, <strong>changing the theme instantly updates every instance</strong> of that typography style across your entire application—spacing, weight, size, and line-height included.
+    </div>
+
+    <h3>Usage Example</h3>
+    <div className="code-wrapper">
+      <CodeBlock language="css" code={`/* Apply H1 visuals to a div */
+.hero-title {
+  @ds-typo (h1);
+  color: palette(primary-dark);
+}
+
+/* Apply Body visuals to a span */
+.description {
+  @ds-typo (body);
+  opacity: 0.8;
+}`} />
+    </div>
+
+    <h3>Available Variants</h3>
+    <ul>
+      <li><strong>Headings:</strong> <code>h1</code> through <code>h6</code> (Responsive sizes, tighter line-heights)</li>
+      <li><strong>Body:</strong> <code>body</code>, <code>p</code> (Optimized for reading)</li>
+      <li><strong>Utility:</strong> <code>span</code>, <code>small</code>, <code>caption</code> (Subtle styles)</li>
+      <li><strong>Code:</strong> <code>pre</code>, <code>code</code> (Monospace family)</li>
+    </ul>
+
+    <hr style={{borderColor: 'var(--ds__palette__neutral-main)', opacity: 0.3, margin: '3rem 0'}} />
+
+    <h2>Customizing Typography</h2>
+    <div style={{ marginBottom: '1rem' }}>
+      You can override the default type scale by adding a <code>typography_details</code> section to your <code>uxdsl.theme.json</code> file. 
+      This allows you to fine-tune sizes, weights, and line-heights for every semantic tag.
+    </div>
+    <div style={{ marginBottom: '1rem' }}>
+      The <code>fontSize</code> property supports UXDSL's responsive syntax, allowing you to define fluid scaling from mobile to desktop in a single line.
+    </div>
+  
+    <div className="code-wrapper">
+      <CodeBlock language="json" code={`// uxdsl.theme.json
+{
+  "typography_details": {
+    "h1": {
+      "fontSize": "xs(32px) md(48px) xl(64px)",
+      "fontWeight": "800",
+      "lineHeight": "1.1",
+      "letterSpacing": "-0.03em"
+    },
+    "p": {
+      "fontSize": "xs(16px) lg(18px)",
+      "lineHeight": "1.6"
+    }
+  }
+}`} />
+    </div>
+  </section>
+</div>
