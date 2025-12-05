@@ -32,7 +32,10 @@ export default function DemoTypography() {
             </div>
             
             <div className="typo-row__content">
-              <div className={item.className}>
+              <div 
+                className={`${item.className} ds-typo`}
+                data-typo={item.tag}
+              >
                 {textMap[item.tag] || item.text}
               </div>
             </div>

@@ -11,8 +11,6 @@
   .page-title__text {
     @ds-typo(h1);
     margin: 0;
-    font-weight: 900;
-    letter-spacing: -2px;
     /* Gradient Text Effect */
     background: linear-gradient(135deg, palette(primary-main) 0%, palette(primary-light) 50%, palette(secondary-main) 100%);
     -webkit-background-clip: text;

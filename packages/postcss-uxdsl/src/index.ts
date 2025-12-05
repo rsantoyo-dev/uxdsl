@@ -205,9 +205,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             at.parent.insertBefore(at, { prop, value });
           };
 
-          insert("margin-block-start", "0");
-          insert("margin-block-end", "0");
-
           // Typography Configuration Data
           // Defines defaults for each known variant. 
           // If a variant isn't here, we can still attempt to generate generic vars for it (future proofing).
@@ -255,7 +252,22 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
              insert("letter-spacing", `var(--${tag}-spacing, ${config.spacing})`);
           }
 
-          // 6. Opacity (Special for caption/small)
+          // 6. Text Transform
+          insert("text-transform", `var(--${tag}-transform, none)`);
+
+          // 7. Text Decoration
+          insert("text-decoration", `var(--${tag}-decoration, none)`);
+
+          // 8. Font Style
+          insert("font-style", `var(--${tag}-style, normal)`);
+
+          // 9. Margin Block Start
+          insert("margin-block-start", `var(--${tag}-margin-block-start, auto)`);
+
+          // 10. Margin Block End
+          insert("margin-block-end", `var(--${tag}-margin-block-end, auto)`);
+
+          // 11. Opacity (Special for caption/small)
           if (config.opacity) {
              insert("opacity", `var(--${tag}-opacity, ${config.opacity})`);
           }

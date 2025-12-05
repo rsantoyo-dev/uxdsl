@@ -63,17 +63,15 @@
   }
 
   .nav-card-title {
-    @ds-typo (h6);
+    @ds-typo (h3);
     margin: 0;
     color: palette(surface-contrast);
-    font-weight: 600;
   }
 
   .nav-card-desc {
     @ds-typo (body);
     margin: 0;
     color: palette(secondary-main);
-    font-size: 0.875rem;
   }
 
   /* Arrow Indicator */

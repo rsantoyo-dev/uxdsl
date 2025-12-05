@@ -112,6 +112,11 @@ export function ResponsiveSyntaxExplainer() {
   const [isFontWeightEditorOpen, setIsFontWeightEditorOpen] = useState(false);
   const [isLineHeightEditorOpen, setIsLineHeightEditorOpen] = useState(false);
   const [isLetterSpacingEditorOpen, setIsLetterSpacingEditorOpen] = useState(false);
+  const [isTextTransformEditorOpen, setIsTextTransformEditorOpen] = useState(false);
+  const [isTextDecorationEditorOpen, setIsTextDecorationEditorOpen] = useState(false);
+  const [isFontStyleEditorOpen, setIsFontStyleEditorOpen] = useState(false);
+  const [isMarginBlockStartEditorOpen, setIsMarginBlockStartEditorOpen] = useState(false);
+  const [isMarginBlockEndEditorOpen, setIsMarginBlockEndEditorOpen] = useState(false);
   const [previewWidth, setPreviewWidth] = useState(100); // Percentage
   const [isAutoMode, setIsAutoMode] = useState(true);
   const [windowWidth, setWindowWidth] = useState(0);
@@ -191,12 +196,22 @@ export function ResponsiveSyntaxExplainer() {
   const fontWeightString = tagDetails.fontWeight || defaultDetails.fontWeight || '400';
   const lineHeightString = tagDetails.lineHeight || defaultDetails.lineHeight || '1.5';
   const letterSpacingString = tagDetails.letterSpacing || defaultDetails.letterSpacing || 'normal';
+  const textTransformString = tagDetails.textTransform || defaultDetails.textTransform || 'none';
+  const textDecorationString = tagDetails.textDecoration || defaultDetails.textDecoration || 'none';
+  const fontStyleString = tagDetails.fontStyle || defaultDetails.fontStyle || 'normal';
+  const marginBlockStartString = tagDetails.marginBlockStart || defaultDetails.marginBlockStart || 'auto';
+  const marginBlockEndString = tagDetails.marginBlockEnd || defaultDetails.marginBlockEnd || 'auto';
 
   // Check inheritance status
   const isFontFamilyInherited = !isDefault && !tagDetails.fontFamily;
   const isFontWeightInherited = !isDefault && !tagDetails.fontWeight;
   const isLineHeightInherited = !isDefault && !tagDetails.lineHeight;
   const isLetterSpacingInherited = !isDefault && !tagDetails.letterSpacing;
+  const isTextTransformInherited = !isDefault && !tagDetails.textTransform;
+  const isTextDecorationInherited = !isDefault && !tagDetails.textDecoration;
+  const isFontStyleInherited = !isDefault && !tagDetails.fontStyle;
+  const isMarginBlockStartInherited = !isDefault && !tagDetails.marginBlockStart;
+  const isMarginBlockEndInherited = !isDefault && !tagDetails.marginBlockEnd;
 
   // Sync ref content when tag changes (or text updates externally)
   useEffect(() => {
@@ -225,6 +240,7 @@ export function ResponsiveSyntaxExplainer() {
 
     // Add to Google Fonts list logic...
     const systemFonts = ["System UI", "Monospace", "Serif", "Sans-Serif", "Arial", "Helvetica", "Times New Roman", "Courier New"];
+    const singleWeightFonts = ["Pacifico", "Creepster", "Rye", "Spirax", "Lobster", "Abril Fatface", "Fredoka One"];
     const primaryFont = newValue.split(',')[0].replace(/['"]/g, '').trim();
     
     if (!systemFonts.includes(primaryFont) && primaryFont) {
@@ -232,7 +248,8 @@ export function ResponsiveSyntaxExplainer() {
       if (!newTheme.fonts.google) newTheme.fonts.google = [];
       const exists = newTheme.fonts.google.some((f: string) => f.startsWith(primaryFont));
       if (!exists) {
-        newTheme.fonts.google.push(`${primaryFont}:wght@400;500;600;700`);
+        const weights = singleWeightFonts.includes(primaryFont) ? '400' : '400;500;600;700';
+        newTheme.fonts.google.push(`${primaryFont}:wght@${weights}`);
       }
     }
 
@@ -343,48 +360,80 @@ export function ResponsiveSyntaxExplainer() {
             width: `${previewWidth}%`, 
             transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
             margin: '0 auto',
-            background: 'var(--ds__palette__surface-main)',
-            border: '1px dashed var(--ds__palette__neutral-dark)', // Simple dotted border
-            borderRadius: '4px',
-            padding: '1rem',
+            background: 'transparent',
+            borderLeft: '1px solid var(--ds__palette__divider)',
+            borderRight: '1px solid var(--ds__palette__divider)',
             minHeight: '120px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            textAlign: 'center'
+            position: 'relative',
+            padding: 0
           }}
         >
-          <div className="top-right-corner" />
-          <div className="bottom-left-corner" />
-          {React.createElement(
-            selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' || selectedTag === 'default' ? 'p' : selectedTag,
-            { 
-              className: `ds-typo ${selectedTag}`,
-              'data-typo': selectedTag,
-              ref: editableRef,
-              contentEditable: true,
-              suppressContentEditableWarning: true,
-              spellCheck: false,
-              onInput: handleInput,
-              style: { 
-                margin: 0, 
-                transition: 'all 0.2s ease', 
-                outline: 'none', 
-                minWidth: '10px',
-                cursor: 'text',
-                textAlign: 'center', // Center text as requested
-                width: '100%',
-                // Explicitly bind to CSS variables to ensure 'default' tag works and updates live
-                // If in Auto Mode (Default), use the CSS variable so it responds to the viewport media queries
-                // If in Manual Mode (XS-XL), use the simulated value based on the preview container width
-                fontSize: isAutoMode ? `var(--${selectedTag}-size)` : resolveResponsiveValue(fontSizeString, previewWidth),
-                fontFamily: `var(--${selectedTag}-font-family)`,
-                fontWeight: `var(--${selectedTag}-weight)`,
-                lineHeight: `var(--${selectedTag}-line)`,
-                letterSpacing: `var(--${selectedTag}-spacing)`
-              } 
-            }
-          )}
+          {/* Architectural Guides */}
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: '1px', background: 'var(--ds__palette__divider)', opacity: 0.1, pointerEvents: 'none' }} />
+          
+          {/* Text Container with Architectural Bounds */}
+          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+            
+            {/* Line Height Indicator (Left) */}
+            <div style={{ 
+              position: 'absolute', 
+              left: '-8px', 
+              top: 0, 
+              bottom: 0, 
+              width: '4px', 
+              borderLeft: '1px solid var(--ds__palette__primary-main)',
+              borderTop: '1px solid var(--ds__palette__primary-main)',
+              borderBottom: '1px solid var(--ds__palette__primary-main)',
+              opacity: 0.3,
+              pointerEvents: 'none'
+            }} />
+
+            {/* Content Bounds (Dashed Box) */}
+            <div style={{
+              position: 'absolute',
+              top: 0, left: 0, right: 0, bottom: 0,
+              border: '1px dashed var(--ds__palette__primary-light)',
+              opacity: 0.15,
+              pointerEvents: 'none'
+            }} />
+
+            {React.createElement(
+              selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' || selectedTag === 'default' ? 'p' : selectedTag,
+              { 
+                className: `ds-typo ${selectedTag}`,
+                'data-typo': selectedTag,
+                ref: editableRef,
+                contentEditable: true,
+                suppressContentEditableWarning: true,
+                spellCheck: false,
+                onInput: handleInput,
+                style: { 
+                  margin: 0, 
+                  transition: 'all 0.2s ease', 
+                  outline: 'none', 
+                  minWidth: '10px',
+                  cursor: 'text',
+                  textAlign: 'center',
+                  width: '100%',
+                  position: 'relative',
+                  zIndex: 2,
+                  fontSize: isAutoMode ? `var(--${selectedTag}-size)` : resolveResponsiveValue(fontSizeString, previewWidth),
+                  fontFamily: `var(--${selectedTag}-font-family)`,
+                  fontWeight: `var(--${selectedTag}-weight)`,
+                  lineHeight: `var(--${selectedTag}-line)`,
+                  letterSpacing: `var(--${selectedTag}-spacing)`,
+                  textTransform: `var(--${selectedTag}-transform)` as React.CSSProperties['textTransform'],
+                  textDecoration: `var(--${selectedTag}-decoration)`,
+                  fontStyle: `var(--${selectedTag}-style)`,
+                  marginBlockStart: `var(--${selectedTag}-margin-block-start)`,
+                  marginBlockEnd: `var(--${selectedTag}-margin-block-end)`
+                } 
+              }
+            )}
+          </div>
         </div>
       </div>
 
@@ -659,6 +708,76 @@ export function ResponsiveSyntaxExplainer() {
             </button>
           </div>
         </div>
+
+        {/* Text Transform */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isTextTransformInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isTextTransformInherited && (
+              <button onClick={() => handleRemoveProperty('textTransform')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+            )}
+            <button onClick={() => setIsTextTransformEditorOpen(true)} title="Edit Text Transform" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+          </div>
+        </div>
+
+        {/* Text Decoration */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isTextDecorationInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isTextDecorationInherited && (
+              <button onClick={() => handleRemoveProperty('textDecoration')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+            )}
+            <button onClick={() => setIsTextDecorationEditorOpen(true)} title="Edit Text Decoration" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+          </div>
+        </div>
+
+        {/* Font Style */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isFontStyleInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isFontStyleInherited && (
+              <button onClick={() => handleRemoveProperty('fontStyle')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+            )}
+            <button onClick={() => setIsFontStyleEditorOpen(true)} title="Edit Font Style" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+          </div>
+        </div>
+
+        {/* Margin Block Start */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isMarginBlockStartInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isMarginBlockStartInherited && (
+              <button onClick={() => handleRemoveProperty('marginBlockStart')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+            )}
+            <button onClick={() => setIsMarginBlockStartEditorOpen(true)} title="Edit Margin Block Start" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+          </div>
+        </div>
+
+        {/* Margin Block End */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+          <div>
+            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isMarginBlockEndInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+          </div>
+          <div style={{ display: 'flex', gap: '0.25rem' }}>
+            {!isDefault && !isMarginBlockEndInherited && (
+              <button onClick={() => handleRemoveProperty('marginBlockEnd')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+            )}
+            <button onClick={() => setIsMarginBlockEndEditorOpen(true)} title="Edit Margin Block End" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+          </div>
+        </div>
         
         <div>{'}'}</div>
       </div>
@@ -707,6 +826,54 @@ export function ResponsiveSyntaxExplainer() {
         onSave={(val) => handleSaveProperty('letterSpacing', val)}
         tagName={selectedTag}
         editorType="text"
+      />
+
+      <BreakpointEditor 
+        isOpen={isTextTransformEditorOpen}
+        onClose={() => setIsTextTransformEditorOpen(false)}
+        initialValue={textTransformString}
+        onSave={(val) => handleSaveProperty('textTransform', val)}
+        tagName={selectedTag}
+        editorType="select"
+        options={['none', 'capitalize', 'uppercase', 'lowercase']}
+      />
+
+      <BreakpointEditor 
+        isOpen={isTextDecorationEditorOpen}
+        onClose={() => setIsTextDecorationEditorOpen(false)}
+        initialValue={textDecorationString}
+        onSave={(val) => handleSaveProperty('textDecoration', val)}
+        tagName={selectedTag}
+        editorType="select"
+        options={['none', 'underline', 'line-through', 'overline']}
+      />
+
+      <BreakpointEditor 
+        isOpen={isFontStyleEditorOpen}
+        onClose={() => setIsFontStyleEditorOpen(false)}
+        initialValue={fontStyleString}
+        onSave={(val) => handleSaveProperty('fontStyle', val)}
+        tagName={selectedTag}
+        editorType="text"
+        options={['normal', 'italic', 'oblique']}
+      />
+
+      <BreakpointEditor 
+        isOpen={isMarginBlockStartEditorOpen}
+        onClose={() => setIsMarginBlockStartEditorOpen(false)}
+        initialValue={marginBlockStartString}
+        onSave={(val) => handleSaveProperty('marginBlockStart', val)}
+        tagName={selectedTag}
+        editorType="numeric"
+      />
+
+      <BreakpointEditor 
+        isOpen={isMarginBlockEndEditorOpen}
+        onClose={() => setIsMarginBlockEndEditorOpen(false)}
+        initialValue={marginBlockEndString}
+        onSave={(val) => handleSaveProperty('marginBlockEnd', val)}
+        tagName={selectedTag}
+        editorType="numeric"
       />
     </div>
   );

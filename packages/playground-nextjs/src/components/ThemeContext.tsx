@@ -131,6 +131,11 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         processProp('fontSize', 'size');
         processProp('fontWeight', 'weight');
         processProp('fontFamily', 'font-family');
+        processProp('textTransform', 'transform');
+        processProp('textDecoration', 'decoration');
+        processProp('fontStyle', 'style');
+        processProp('marginBlockStart', 'margin-block-start');
+        processProp('marginBlockEnd', 'margin-block-end');
       }
 
       // Generate CSS for each breakpoint
@@ -153,6 +158,43 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         }
       });
     }
+
+    // 2.6 Inject Global Consumption Rules for New Properties
+    // We generate specific, high-specificity rules ONLY for properties that are explicitly defined in the theme.
+    // This ensures we override component styles (like margin: 0) when the user wants to, 
+    // but leave them alone if the user hasn't set a value.
+    const consumptionTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre'];
+    let overrideCss = '';
+
+    consumptionTags.forEach(tag => {
+      const details = theme.typography_details?.[tag];
+      const defaultDetails = theme.typography_details?.default || {};
+      
+      const getValue = (prop: string) => details?.[prop] || (tag !== 'default' ? defaultDetails?.[prop] : undefined);
+
+      const propsMap = [
+        { js: 'textTransform', css: 'text-transform', varSuffix: 'transform' },
+        { js: 'textDecoration', css: 'text-decoration', varSuffix: 'decoration' },
+        { js: 'fontStyle', css: 'font-style', varSuffix: 'style' },
+        { js: 'marginBlockStart', css: 'margin-block-start', varSuffix: 'margin-block-start' },
+        { js: 'marginBlockEnd', css: 'margin-block-end', varSuffix: 'margin-block-end' },
+      ];
+
+      const rules: string[] = [];
+      propsMap.forEach(({ js, css, varSuffix }) => {
+        if (getValue(js)) {
+          // Use !important to ensure theme wins over component styles
+          rules.push(`${css}: var(--${tag}-${varSuffix}) !important;`);
+        }
+      });
+
+      if (rules.length > 0) {
+        // Use :root prefix to boost specificity over simple classes
+        overrideCss += `:root ${tag}, .ds-typo[data-typo="${tag}"] { ${rules.join(' ')} }\n`;
+      }
+    });
+    
+    css += `\n/* Global Typography Overrides */\n${overrideCss}`;
 
     // 3. Inject CSS
     const styleTag = document.getElementById('uxdsl-ssr-theme')

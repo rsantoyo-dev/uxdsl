@@ -9,7 +9,8 @@ interface BreakpointEditorProps {
   initialValue: string;
   onSave: (newValue: string) => void;
   tagName: string;
-  editorType?: 'numeric' | 'text' | 'font';
+  editorType?: 'numeric' | 'text' | 'font' | 'select';
+  options?: string[];
 }
 
 const BREAKPOINTS = ['xs', 'sm', 'md', 'lg', 'xl'];
@@ -18,10 +19,12 @@ const FONTS = [
   "Oswald", "Raleway", "Merriweather", "Nunito", "Poppins",
   "Playfair Display", "Ubuntu", "PT Sans", "Droid Sans", "Lora",
   "Work Sans", "Fira Sans", "Quicksand", "Barlow", "Mulish",
+  "Pacifico", "Dancing Script", "Creepster", "Rye", "Spirax",
+  "Comic Neue", "Fredoka One", "Lobster", "Abril Fatface",
   "System UI", "Monospace", "Serif", "Sans-Serif"
 ];
 
-type Unit = 'px' | 'rem';
+type Unit = 'px' | 'rem' | '%' | 'auto';
 
 interface BreakpointState {
   value: string | number;
@@ -29,7 +32,7 @@ interface BreakpointState {
   enabled: boolean;
 }
 
-export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagName, editorType = 'numeric' }: BreakpointEditorProps) {
+export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagName, editorType = 'numeric', options = [] }: BreakpointEditorProps) {
   const [states, setStates] = useState<Record<string, BreakpointState>>({});
   const [singleValue, setSingleValue] = useState<string>('');
 
@@ -37,6 +40,8 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
   useEffect(() => {
     if (editorType === 'font' && singleValue) {
       const systemFonts = ["System UI", "Monospace", "Serif", "Sans-Serif", "Arial", "Helvetica", "Times New Roman", "Courier New"];
+      const singleWeightFonts = ["Pacifico", "Creepster", "Rye", "Spirax", "Lobster", "Abril Fatface", "Fredoka One"];
+
       if (!systemFonts.includes(singleValue)) {
         const linkId = 'uxdsl-editor-preview-font';
         let link = document.getElementById(linkId) as HTMLLinkElement;
@@ -48,7 +53,8 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
           document.head.appendChild(link);
         }
         
-        link.href = `https://fonts.googleapis.com/css2?family=${singleValue.replace(/ /g, '+')}:wght@400;700&display=swap`;
+        const weights = singleWeightFonts.includes(singleValue) ? '400' : '400;700';
+        link.href = `https://fonts.googleapis.com/css2?family=${singleValue.replace(/ /g, '+')}:wght@${weights}&display=swap`;
       }
     }
   }, [singleValue, editorType]);
@@ -87,21 +93,29 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
 
       const parseVal = (val: string, bp: string) => {
         if (editorType === 'numeric') {
-          const match = val.match(/^([\d.]+)(px|rem)$/);
-          if (match) {
+          if (val === 'auto') {
             newStates[bp] = {
-              value: parseFloat(match[1]),
-              unit: match[2] as Unit,
+              value: 'auto',
+              unit: 'auto',
               enabled: true
             };
           } else {
-            const num = parseFloat(val);
-            if (!isNaN(num)) {
-               newStates[bp] = {
-                 value: num,
-                 unit: val.includes('rem') ? 'rem' : 'px',
-                 enabled: true
-               };
+            const match = val.match(/^([\d.]+)(px|rem|%)$/);
+            if (match) {
+              newStates[bp] = {
+                value: parseFloat(match[1]),
+                unit: match[2] as Unit,
+                enabled: true
+              };
+            } else {
+              const num = parseFloat(val);
+              if (!isNaN(num)) {
+                 newStates[bp] = {
+                   value: num,
+                   unit: val.includes('rem') ? 'rem' : (val.includes('%') ? '%' : 'px'),
+                   enabled: true
+                 };
+              }
             }
           }
         } else {
@@ -141,7 +155,11 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
       const state = states[bp];
       if (state && state.enabled) {
         if (editorType === 'numeric') {
-          parts.push(`${bp}(${state.value}${state.unit})`);
+          if (state.unit === 'auto') {
+            parts.push(`${bp}(auto)`);
+          } else {
+            parts.push(`${bp}(${state.value}${state.unit})`);
+          }
         } else {
           parts.push(`${bp}(${state.value})`);
         }
@@ -272,37 +290,67 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
 
                 {state.enabled ? (
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <div style={{ position: 'relative', flex: 1 }}>
-                      <input
-                        type={editorType === 'numeric' ? "number" : "text"}
+                    {editorType === 'select' ? (
+                      <select
                         value={state.value}
-                        step={editorType === 'numeric' && state.unit === 'rem' ? 0.125 : 1}
-                        onChange={(e) => updateState(bp, { value: editorType === 'numeric' ? parseFloat(e.target.value) : e.target.value })}
+                        onChange={(e) => updateState(bp, { value: e.target.value })}
                         style={{
                           padding: '0.5rem',
-                          paddingRight: editorType === 'numeric' ? '2rem' : '0.5rem',
                           borderRadius: '6px',
                           border: '1px solid var(--ds__palette__divider)',
                           background: 'var(--ds__palette__surface-light)',
                           color: 'var(--ds__palette__text-primary)',
-                          fontFamily: 'var(--font-code)',
-                          width: '100%'
+                          width: '100%',
+                          cursor: 'pointer'
                         }}
-                      />
-                      {editorType === 'numeric' && (
-                        <div style={{ 
-                          position: 'absolute', 
-                          right: '4px', 
-                          top: '50%', 
-                          transform: 'translateY(-50%)',
-                          display: 'flex',
-                          flexDirection: 'column'
-                        }}>
-                          {/* Custom spinners could go here, but native ones appear on hover usually. 
-                              User asked for arrows, native input type=number provides them. */}
-                        </div>
-                      )}
-                    </div>
+                      >
+                        {options.map(opt => (
+                          <option key={opt} value={opt}>{opt}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div style={{ position: 'relative', flex: 1 }}>
+                        <input
+                          type={editorType === 'numeric' ? "number" : "text"}
+                          list={editorType === 'text' && options.length > 0 ? `datalist-${tagName}-${bp}` : undefined}
+                          value={state.value}
+                          disabled={editorType === 'numeric' && state.unit === 'auto'}
+                          step={editorType === 'numeric' && state.unit === 'rem' ? 0.125 : 1}
+                          onChange={(e) => updateState(bp, { value: editorType === 'numeric' ? parseFloat(e.target.value) : e.target.value })}
+                          style={{
+                            padding: '0.5rem',
+                            paddingRight: editorType === 'numeric' ? '2rem' : '0.5rem',
+                            borderRadius: '6px',
+                            border: '1px solid var(--ds__palette__divider)',
+                            background: editorType === 'numeric' && state.unit === 'auto' ? 'var(--ds__palette__surface-dark)' : 'var(--ds__palette__surface-light)',
+                            color: 'var(--ds__palette__text-primary)',
+                            fontFamily: 'var(--font-code)',
+                            width: '100%',
+                            opacity: editorType === 'numeric' && state.unit === 'auto' ? 0.5 : 1
+                          }}
+                        />
+                        {editorType === 'text' && options.length > 0 && (
+                          <datalist id={`datalist-${tagName}-${bp}`}>
+                            {options.map(opt => (
+                              <option key={opt} value={opt} />
+                            ))}
+                          </datalist>
+                        )}
+                        {editorType === 'numeric' && state.unit !== 'auto' && (
+                          <div style={{ 
+                            position: 'absolute', 
+                            right: '4px', 
+                            top: '50%', 
+                            transform: 'translateY(-50%)',
+                            display: 'flex',
+                            flexDirection: 'column'
+                          }}>
+                            {/* Custom spinners could go here, but native ones appear on hover usually. 
+                                User asked for arrows, native input type=number provides them. */}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     {editorType === 'numeric' && (
                       <select
@@ -319,6 +367,8 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
                       >
                         <option value="px">px</option>
                         <option value="rem">rem</option>
+                        <option value="%">%</option>
+                        <option value="auto">auto</option>
                       </select>
                     )}
                   </div>

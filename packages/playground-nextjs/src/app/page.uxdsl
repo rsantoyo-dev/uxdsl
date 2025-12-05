@@ -56,7 +56,7 @@
     margin-bottom: 0;
     
     .page-title__text {
-      @ds-typo (h6);
+      @ds-typo (h1);
       background: linear-gradient(135deg, palette(primary-dark), palette(primary-main));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -64,9 +64,8 @@
     }
 
     .page-title__subtitle {
-      font-size: 1.5rem;
+      @ds-typo(h3);
       color: palette(text-secondary);
-      font-weight: 500;
     }
   }
 
@@ -109,8 +108,6 @@
 
   .intro-text {
     @ds-typo (body);
-    font-size: 1.125rem;
-    line-height: 1.6;
     color: palette(text-secondary);
     text-align: center;
   }
@@ -146,7 +143,6 @@
     color: palette(text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    font-size: 0.875rem;
   }
 
   .demo-wrapper-scale {
