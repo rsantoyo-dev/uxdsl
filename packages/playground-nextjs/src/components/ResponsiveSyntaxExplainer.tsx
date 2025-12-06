@@ -3,9 +3,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo } from './TypographyDemoContext';
-import { Edit2, Trash2, Monitor } from 'lucide-react';
+import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
+// import { optimizeTypography } from '../utils/typographyOptimizer';
 
 const TAGS = ['default', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
 const BPS = [
@@ -120,6 +121,8 @@ export function ResponsiveSyntaxExplainer() {
   const [previewWidth, setPreviewWidth] = useState(100); // Percentage
   const [isAutoMode, setIsAutoMode] = useState(true);
   const [windowWidth, setWindowWidth] = useState(0);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
   const editableRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previewBoxRef = useRef<HTMLDivElement>(null);
@@ -273,12 +276,187 @@ export function ResponsiveSyntaxExplainer() {
     }
   };
 
+  const handleOptimize = async (mode: 'single' | 'all') => {
+    setIsOptimizing(true);
+
+    const availableFonts = [
+      // Sans Serif
+      "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans", "Oswald", "Quicksand",
+      // Serif
+      "Merriweather", "Playfair Display", "Lora", "PT Serif", "Roboto Slab", "Cinzel", "Cormorant Garamond",
+      // Monospace
+      "Roboto Mono", "Source Code Pro", "JetBrains Mono", "Fira Code", "Space Mono",
+      // Display / Handwriting / Creative
+      "Dancing Script", "Pacifico", "Lobster", "Abril Fatface", "Righteous", "Fredoka One", "Press Start 2P", "Creepster", "Rye", "Spirax", "Bangers", "Permanent Marker"
+    ].join(", ");
+
+    const userInstruction = aiPrompt.trim() 
+      ? `USER INSTRUCTION: ${aiPrompt}` 
+      : `Generate a UXDSL theme named "${customThemeName || 'Modern'}". The style should be "${customThemeName || 'Modern Professional'}".`;
+
+    const prompt = `${userInstruction}
+    
+    SYSTEM CONTEXT & RULES:
+    1. The system uses a specific JSON structure. Here is the GOLD STANDARD example of how the output should look:
+    {
+      "typography": {
+        "font-code": "\\"JetBrains Mono\\", \\"SF Mono\\", Menlo, monospace"
+      },
+      "typography_details": {
+        "h1": { "fontSize": "xs(32px) sm(36px) md(44px) lg(52px) xl(60px)", "fontWeight": "700", "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontFamily": "Inter", "textTransform": "none" },
+        "h2": { "fontSize": "xs(28px) sm(30px) md(36px) lg(44px) xl(52px)", "fontWeight": "700", "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontFamily": "Inter" },
+        "h3": { "fontSize": "xs(24px) sm(26px) md(30px) lg(34px) xl(38px)", "fontWeight": "600", "lineHeight": "1.3", "letterSpacing": "normal" },
+        "p": { "fontSize": "xs(15px) md(16px)", "fontWeight": "400", "lineHeight": "1.6", "letterSpacing": "normal" }
+      }
+    }
+
+    2. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
+    3. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. Tighter line heights for headings (1.1-1.3), looser for body (1.5-1.6).
+    4. Available Fonts: ${availableFonts}. 
+    
+    CRITICAL INSTRUCTION:
+    You are an expert typographer. Based on the USER INSTRUCTION (e.g., "crazy", "elegant", "brutal", "minimal"), you MUST:
+    - Choose the most appropriate font from the Available Fonts list.
+    - Adjust 'fontWeight' (100-900).
+    - Adjust 'letterSpacing' (e.g., -0.05em for tight display, 0.2em for elegant caps).
+    - Adjust 'textTransform' (uppercase, lowercase, none).
+    - Adjust 'fontStyle' (italic, normal).
+    - Adjust 'textDecoration' (underline, line-through, none).
+    
+    If the user asks for a "crazy" font, pick something like Creepster, Rye, or Bangers.
+    If the user asks for "elegant", pick Playfair Display, Cinzel, or Cormorant Garamond.
+    
+    TASK:
+    ${mode === 'single' 
+      ? `Optimize ONLY the '${selectedTag}' element. Consider the context of the other tags but only return the update for '${selectedTag}'.` 
+      : 'Optimize ALL typography elements (h1-h6, p, body, caption). Return the full typography_details object.'}
+
+    CURRENT CONTEXT (Use as baseline):
+    ${JSON.stringify(activeThemeData?.typography_details || {}, null, 2)}
+
+    Return ONLY valid JSON.`;
+
+    console.log("Sending Prompt to API:", prompt);
+
+    try {
+      const res = await fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ prompt })
+      });
+
+      const data = await res.json();
+      console.log("API Response:", data);
+
+      if (data.error) {
+        console.error("API Error:", data.error);
+        alert("AI Optimization failed: " + data.error);
+        return;
+      }
+
+      if (data.text) {
+        try {
+          const generatedTheme = JSON.parse(data.text);
+          const newTheme = JSON.parse(JSON.stringify(activeThemeData));
+          
+          if (!newTheme.typography_details) newTheme.typography_details = {};
+
+          if (mode === 'all') {
+            // Apply all typography from response
+            if (generatedTheme.typography_details) {
+              Object.assign(newTheme.typography_details, generatedTheme.typography_details);
+            }
+          } else {
+            // Apply only selected tag
+            if (generatedTheme.typography_details && generatedTheme.typography_details[selectedTag]) {
+              if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
+              Object.assign(newTheme.typography_details[selectedTag], generatedTheme.typography_details[selectedTag]);
+            }
+          }
+          
+          setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+        } catch (parseError) {
+          console.error("Failed to parse AI response:", parseError);
+          alert("Failed to apply AI changes.");
+        }
+      }
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Network error during AI optimization.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  };
+
   return (
     <div ref={containerRef}>
       <InteractiveDemoContainer
         title="Interactive Demo"
         toolbar={
           <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, marginRight: '1rem' }}>
+               <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                 <Sparkles size={14} style={{ position: 'absolute', left: '8px', color: 'var(--ds__palette__text-secondary)', opacity: 0.5 }} />
+                 <input 
+                   type="text" 
+                   value={aiPrompt}
+                   onChange={(e) => setAiPrompt(e.target.value)}
+                   placeholder="Describe typography style..."
+                   style={{
+                     width: '100%',
+                     padding: '4px 8px 4px 28px',
+                     borderRadius: '6px',
+                     border: '1px solid var(--ds__palette__neutral-main)',
+                     background: 'var(--ds__palette__surface-main)',
+                     fontSize: '0.8rem',
+                     color: 'var(--ds__palette__text-primary)'
+                   }}
+                 />
+               </div>
+
+               {isOptimizing ? (
+                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ds__palette__primary-main)', fontSize: '0.8rem' }}>
+                   <Loader2 className="animate-spin" size={16} />
+                 </div>
+               ) : (
+                 <div style={{ display: 'flex', gap: '0.25rem' }}>
+                   <button
+                     onClick={() => handleOptimize('single')}
+                     title={`AI Fix ${selectedTag.toUpperCase()}`}
+                     style={{
+                       background: 'var(--ds__palette__primary-main)',
+                       color: 'var(--ds__palette__primary-contrast)',
+                       border: 'none',
+                       borderRadius: '6px',
+                       padding: '4px 8px',
+                       cursor: 'pointer',
+                       fontSize: '0.75rem',
+                       fontWeight: 600,
+                       whiteSpace: 'nowrap'
+                     }}
+                   >
+                     Fix {selectedTag.toUpperCase()}
+                   </button>
+                   <button
+                     onClick={() => handleOptimize('all')}
+                     title="AI Fix All"
+                     style={{
+                       background: 'transparent',
+                       color: 'var(--ds__palette__primary-main)',
+                       border: '1px solid var(--ds__palette__primary-main)',
+                       borderRadius: '6px',
+                       padding: '4px 8px',
+                       cursor: 'pointer',
+                       fontSize: '0.75rem',
+                       fontWeight: 600,
+                       whiteSpace: 'nowrap'
+                     }}
+                   >
+                     Fix All
+                   </button>
+                 </div>
+               )}
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--ds__palette__surface-main)', padding: '2px', borderRadius: '6px', border: '1px solid var(--ds__palette__neutral-main)' }}>
               {BPS.map((bp) => {
                 const isDefault = bp.label === 'Default';

@@ -37,10 +37,14 @@ export async function POST(req: Request) {
 
     // Pre-selected list of 20 high-quality Google Fonts covering various styles
     const AVAILABLE_FONTS = [
-      "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans",
-      "Merriweather", "Playfair Display", "Lora", "PT Serif", "Roboto Slab",
-      "Roboto Mono", "Source Code Pro", "JetBrains Mono", "Fira Code",
-      "Oswald", "Quicksand", "Dancing Script"
+      // Sans Serif
+      "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans", "Oswald", "Quicksand",
+      // Serif
+      "Merriweather", "Playfair Display", "Lora", "PT Serif", "Roboto Slab", "Cinzel", "Cormorant Garamond",
+      // Monospace
+      "Roboto Mono", "Source Code Pro", "JetBrains Mono", "Fira Code", "Space Mono",
+      // Display / Handwriting / Creative
+      "Dancing Script", "Pacifico", "Lobster", "Abril Fatface", "Righteous", "Fredoka One", "Press Start 2P", "Creepster", "Rye", "Spirax", "Bangers", "Permanent Marker"
     ];
 
     const SYSTEM_PROMPT = `
@@ -49,6 +53,11 @@ export async function POST(req: Request) {
     
     IMPORTANT: For fonts, you MUST choose from the following available Google Fonts list. Select the best match for the requested style.
     Available Fonts: ${AVAILABLE_FONTS.join(", ")}
+
+    CRITICAL TYPOGRAPHY RULES:
+    1. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
+    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. Tighter line heights for headings (1.1-1.3), looser for body (1.5-1.6).
+    3. Adjust 'fontWeight' (100-900), 'letterSpacing' (e.g., -0.05em for tight display), 'textTransform', 'fontStyle', and 'textDecoration' to match the theme.
 
     JSON Structure:
     {
@@ -64,18 +73,16 @@ export async function POST(req: Request) {
         }
       },
       "typography_details": {
-        // Define line-height and letter-spacing for key elements.
-        // Headings (h1-h6) usually have tighter line-height (1.1-1.3) and tracking (-0.02em).
-        // Body text (p) usually has looser line-height (1.5-1.7).
-        "h1": { "lineHeight": "string", "letterSpacing": "string" },
-        "h2": { "lineHeight": "string", "letterSpacing": "string" },
-        "h3": { "lineHeight": "string", "letterSpacing": "string" },
-        "h4": { "lineHeight": "string", "letterSpacing": "string" },
-        "h5": { "lineHeight": "string", "letterSpacing": "string" },
-        "h6": { "lineHeight": "string", "letterSpacing": "string" },
-        "p": { "lineHeight": "string", "letterSpacing": "string" },
-        "body": { "lineHeight": "string", "letterSpacing": "string" },
-        "caption": { "lineHeight": "string", "letterSpacing": "string" }
+        // Define detailed typography settings for key elements.
+        "h1": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "h2": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "h3": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "h4": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "h5": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "h6": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "p": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "body": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" },
+        "caption": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string" }
       },
       "breakpoints": { // Standard breakpoint values (px)
         "xs": 0,
