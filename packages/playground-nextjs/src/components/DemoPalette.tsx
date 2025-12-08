@@ -4,8 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
 import PalettePlayground from './PalettePlayground'
 import runtime from 'postcss-uxdsl/ds-runtime'
-import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
-import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+
 
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
@@ -146,7 +145,7 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
       if (!linkedToken) {
         // Try to find link based on DEFAULT value from theme
         // This ensures we link correctly even if the current color is overridden
-        // @ts-expect-error - theme structure is dynamic
+
         const defaultHex = activeTheme?.palette?.[tone]?.[variant]
         const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
@@ -179,7 +178,7 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
         }
       }
     }
-  }, [tone, variant, colorMap, linkedToken])
+  }, [tone, variant, colorMap, linkedToken, activeTheme])
 
   // Listen for color changes to update OUR color if we are linked
   useEffect(() => {
