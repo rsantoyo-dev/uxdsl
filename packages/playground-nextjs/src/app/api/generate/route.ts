@@ -56,7 +56,8 @@ export async function POST(req: Request) {
 
     CRITICAL TYPOGRAPHY RULES:
     1. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
-    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. Tighter line heights for headings (1.1-1.3), looser for body (1.5-1.6).
+    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. 
+       IMPORTANT: Ensure line height accommodates the font's ascenders/descenders. Script/Display fonts need more space (1.3-1.5) to avoid clipping. Sans-serifs can be tighter (1.1-1.2).
     3. Adjust 'fontWeight' (100-900), 'letterSpacing' (e.g., -0.05em for tight display), 'textTransform', 'fontStyle', and 'textDecoration' to match the theme.
 
     JSON Structure:

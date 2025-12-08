@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-cli",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "CLI tool for processing UXDSL files to CSS",
   "bin": {
     "uxdsl": "./bin/uxdsl.js"

@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-core",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Core processing engine for UXDSL - a lightweight CSS DSL for design systems",
   "main": "index.js",
   "types": "dist/index.d.ts",
@@ -45,6 +45,6 @@
   "dependencies": {
     "postcss": "^8.5.6",
     "postcss-value-parser": "^4.2.0",
-    "postcss-uxdsl": "^0.1.7"
+    "postcss-uxdsl": "^0.1.8"
   }
 }

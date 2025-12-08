@@ -322,6 +322,7 @@ export function ResponsiveSyntaxExplainer() {
     - Adjust 'textTransform' (uppercase, lowercase, none).
     - Adjust 'fontStyle' (italic, normal).
     - Adjust 'textDecoration' (underline, line-through, none).
+    - Adjust 'lineHeight'. CRITICAL: Ensure line height is sufficient to prevent clipping. Script/Display fonts (like Pacifico, Lobster) often need larger line heights (1.3-1.5) even for headings to accommodate ascenders/descenders. Standard fonts can be tighter (1.1-1.2).
     
     If the user asks for a "crazy" font, pick something like Creepster, Rye, or Bangers.
     If the user asks for "elegant", pick Playfair Display, Cinzel, or Cormorant Garamond.
