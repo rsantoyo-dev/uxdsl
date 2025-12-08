@@ -160,8 +160,57 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
                      <strong style={{ color: 'var(--ds__palette__text-primary)' }}>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
                  </p>
              </div>
+             </div>
+
+             {/* Mini Palette Reference */}
+             <div style={{ marginTop: '2rem', borderTop: '1px solid var(--ds__palette__neutral-light)', paddingTop: '1rem' }}>
+                 <h4 style={{ 
+                     fontSize: '0.7rem', 
+                     color: 'var(--ds__palette__text-secondary)',
+                     fontWeight: 600,
+                     textTransform: 'uppercase',
+                     letterSpacing: '0.05em',
+                     marginBottom: '0.75rem'
+                 }}>
+                     Available Tones
+                 </h4>
+                 <div style={{ 
+                     display: 'grid', 
+                     gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
+                     gap: '0.75rem' 
+                 }}>
+                     {paletteCards.map(tone => (
+                         <div key={tone.id} style={{ 
+                             display: 'flex', 
+                             alignItems: 'center',
+                             justifyContent: 'space-between',
+                             gap: '1rem',
+                             background: 'var(--ds__palette__surface-light)',
+                             border: '1px solid var(--ds__palette__neutral-light)',
+                             borderRadius: '6px',
+                             padding: '0.5rem 0.75rem'
+                         }}>
+                             <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ds__palette__text-primary)' }}>{tone.title}</span>
+                             <div style={{ display: 'flex', gap: '2px', width: '100px' }}>
+                                 {variants.map(variant => (
+                                     <div key={variant.id} 
+                                          title={`${tone.id}-${variant.id}`}
+                                          style={{ 
+                                             flex: 1,
+                                             height: '18px', 
+                                             background: `var(--ds__palette__${tone.id}-${variant.id})`,
+                                             borderRadius: '2px',
+                                             border: '1px solid rgba(0,0,0,0.05)',
+                                             cursor: 'help'
+                                          }} 
+                                     />
+                                 ))}
+                             </div>
+                         </div>
+                     ))}
+                 </div>
+             </div>
            </div>
-        </div>
       </InteractiveDemoContainer>
     </div>
   )
