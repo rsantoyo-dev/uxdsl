@@ -8,7 +8,7 @@ import { HeroBackground } from '@/components/HeroBackground'
 import { ThemeBackground } from '@/components/ThemeBackground'
 import { PageTitle } from '@/components/PageTitle'
 import { AIPrompt } from '@/components/AIPrompt'
-import UXDSLCardDemo from '@/components/UXDSLCardDemo'
+import HomeInteractiveDemos from '@/components/HomeInteractiveDemos'
 import NavigationCardLink from '@/components/NavigationCardLink'
 
 export default function Home() {
@@ -68,7 +68,7 @@ export default function Home() {
         </div>
       </div>
 
-      <div className="content-container">
+      <div className="home-container">
         <div className="actions">
           <Link href="/docs/home" className="get-started-btn">
             Get Started <ArrowRight size={20} />
@@ -131,7 +131,7 @@ export default function Home() {
         <div className="demo-section">
           <h3 className="section-label">See it in action</h3>
           <div className="demo-wrapper-scale">
-            <UXDSLCardDemo />
+            <HomeInteractiveDemos />
           </div>
         </div>
       </div>

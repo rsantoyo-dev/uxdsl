@@ -5,8 +5,9 @@ import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
 import greenTheme from '../../uxdsl.theme.green.json'
 import purpleTheme from '../../uxdsl.theme.purple.json'
 import defaultTheme from '../../uxdsl.theme.default.json'
+import slateTheme from '../../uxdsl.theme.slate.json'
 
-export type ThemeName = 'default' | 'green' | 'purple' | 'custom'
+export type ThemeName = 'default' | 'green' | 'purple' | 'slate' | 'custom'
 
 interface ThemeContextType {
   isDark: boolean
@@ -29,12 +30,13 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [customThemeData, setCustomThemeData] = useState<any>(null)
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
-  const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract geometric shapes')
+  const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract purple curves')
 
   const activeThemeData = React.useMemo(() => {
     switch (currentTheme) {
-      case 'purple': return purpleTheme;
+      case 'purple': return purpleTheme; // Same as default now (optional redundancy)
       case 'green': return greenTheme;
+      case 'slate': return slateTheme;
       case 'custom': return customThemeData || defaultTheme;
       case 'default': default: return defaultTheme;
     }
@@ -238,6 +240,14 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         themeToApply = greenTheme; 
         setBackgroundImage('nature forest texture');
         break;
+      case 'slate':
+        themeToApply = slateTheme;
+        setBackgroundImage('abstract geometric shapes');
+        break;
+      case 'purple':
+        themeToApply = purpleTheme;
+        setBackgroundImage('abstract purple curves');
+        break;
       case 'custom': 
         themeToApply = customThemeData;
         // Background image for custom is already set in setCustomTheme
@@ -248,7 +258,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
         break;
       case 'default': default: 
         themeToApply = defaultTheme; 
-        setBackgroundImage('abstract geometric shapes');
+        setBackgroundImage('abstract purple curves'); // Default is now Purple-like
         break;
     }
     

@@ -1,6 +1,8 @@
 /* NavigationCardLink Styles */
 .navigation-card-link {
   @ds-surface (contained);
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;

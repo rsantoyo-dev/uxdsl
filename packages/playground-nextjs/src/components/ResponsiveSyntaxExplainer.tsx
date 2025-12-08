@@ -104,7 +104,7 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
   );
 };
 
-export function ResponsiveSyntaxExplainer() {
+export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode }) {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme();
   const { textMap, updateText, editingTag, setEditingTag } = useTypographyDemo();
   const [selectedTag, setSelectedTag] = useState('default');
@@ -390,9 +390,10 @@ export function ResponsiveSyntaxExplainer() {
   };
 
   return (
-    <div ref={containerRef}>
+    <div ref={containerRef} style={{ height: '100%' }}>
       <InteractiveDemoContainer
-        title="Interactive Demo"
+        title="Interactive Demo: Typography"
+        action={action}
         toolbar={
           <>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, marginRight: '1rem' }}>
@@ -509,6 +510,7 @@ export function ResponsiveSyntaxExplainer() {
                   borderRadius: '4px', 
                   border: '1px solid var(--ds__palette__neutral-main)',
                   background: 'var(--ds__palette__surface-main)',
+                  color: 'var(--ds__palette__surface-contrast)',
                   fontSize: '0.85rem',
                   cursor: 'pointer'
                 }}
@@ -614,6 +616,56 @@ export function ResponsiveSyntaxExplainer() {
             )}
           </div>
         </div>
+      </div>
+
+      <div style={{
+          marginBottom: '1.5rem',
+          padding: '1rem',
+          background: 'var(--ds__palette__surface-light)',
+          border: '1px solid var(--ds__palette__neutral-light)',
+          borderRadius: '6px'
+      }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+            <span style={{ 
+                fontSize: '0.8rem', 
+                color: 'var(--ds__palette__text-secondary)',
+                fontWeight: 600,
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+            }}>
+                CSS Usage
+            </span>
+          </div>
+          <div style={{
+              background: 'var(--ds__palette__surface-dark)',
+              padding: '0.75rem',
+              borderRadius: '6px',
+              fontFamily: 'var(--font-code)',
+              fontSize: '0.85rem',
+              color: 'var(--ds__palette__text-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              overflowX: 'auto',
+              border: '1px solid var(--ds__palette__neutral-dark)'
+          }}>
+              <span style={{ color: 'var(--ds__palette__secondary-light)' }}>.any-class</span>
+              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-disabled)' }}>{`{`}</span>
+              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__primary-light)' }}>@ds-typo</span>
+              <span style={{ color: 'var(--ds__palette__text-primary)' }}>(</span>
+              <span style={{ color: 'var(--ds__palette__warning-light)' }}>{selectedTag}</span>
+              <span style={{ color: 'var(--ds__palette__text-primary)' }}>)</span>
+              <span style={{ color: 'var(--ds__palette__text-disabled)' }}>;</span>
+              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-disabled)' }}>{`}`}</span>
+          </div>
+          <p style={{ 
+              marginTop: '0.75rem', 
+              fontSize: '0.8rem', 
+              color: 'var(--ds__palette__text-secondary)',
+              lineHeight: 1.5
+          }}>
+              <strong style={{ color: 'var(--ds__palette__text-primary)' }}>Theme Configuration:</strong> The settings below define your JSON theme. 
+              Once configured in <code>uxdsl.theme.json</code>, the mixin above applies these responsive rules automatically.
+          </p>
       </div>
 
       <div style={{

@@ -1,8 +1,8 @@
 :root {
-  /* Primary - Sober, Elegant, Driver Color */
-  --ds__palette__primary-main: var(--ds__color__slate-800);
-  --ds__palette__primary-light: var(--ds__color__slate-600);
-  --ds__palette__primary-dark: var(--ds__color__slate-900);
+  /* Primary - Purple (New Default) */
+  --ds__palette__primary-main: var(--ds__color__purple-600);
+  --ds__palette__primary-light: var(--ds__color__purple-400);
+  --ds__palette__primary-dark: var(--ds__color__purple-800);
   --ds__palette__primary-contrast: var(--ds__color__white);
 
   /* Surfaces (app background + text) */
@@ -11,10 +11,10 @@
   --ds__palette__surface-dark: var(--ds__color__slate-100);
   --ds__palette__surface-contrast: var(--ds__color__slate-900);
 
-  /* Secondary - Neutral/Cool Gray to complement the Slate */
-  --ds__palette__secondary-main: var(--ds__color__gray-600);
-  --ds__palette__secondary-light: var(--ds__color__gray-400);
-  --ds__palette__secondary-dark: var(--ds__color__gray-700);
+  /* Secondary - Pink/Rose (Matching Purple Theme) */
+  --ds__palette__secondary-main: var(--ds__color__pink-600);
+  --ds__palette__secondary-light: var(--ds__color__pink-400);
+  --ds__palette__secondary-dark: var(--ds__color__pink-700);
   --ds__palette__secondary-contrast: var(--ds__color__white);
 
   /* Tertiary - Lighter Slate */

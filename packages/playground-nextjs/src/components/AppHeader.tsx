@@ -20,9 +20,9 @@ export default function AppHeader() {
           <div className="app-header__settings">
             <button 
               onClick={() => switchTheme('default')}
-              title="Default (Slate) Theme"
+              title="Default (Purple) Theme"
               className={`theme-color-btn ${currentTheme === 'default' ? 'is-active' : ''}`}
-              style={{ '--theme-color': '#2C415C' } as React.CSSProperties}
+              style={{ '--theme-color': '#7e22ce' } as React.CSSProperties}
             />
             <button 
               onClick={() => switchTheme('green')}
@@ -31,10 +31,10 @@ export default function AppHeader() {
               style={{ '--theme-color': '#15803D' } as React.CSSProperties}
             />
             <button 
-              onClick={() => switchTheme('purple')}
-              title="Purple Theme"
-              className={`theme-color-btn ${currentTheme === 'purple' ? 'is-active' : ''}`}
-              style={{ '--theme-color': '#7b1fa2' } as React.CSSProperties}
+              onClick={() => switchTheme('slate')}
+              title="Slate Theme (Classic)"
+              className={`theme-color-btn ${currentTheme === 'slate' ? 'is-active' : ''}`}
+              style={{ '--theme-color': '#2C415C' } as React.CSSProperties}
             />
 
             {customThemeName && (

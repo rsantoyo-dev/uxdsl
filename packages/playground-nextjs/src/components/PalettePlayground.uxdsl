@@ -1,0 +1,92 @@
+/* Palette Playground Scoped Styles */
+#PalettePlayground {
+    .playground-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: density(3);
+    }
+    
+    .playground-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: density(2);
+        align-items: center;
+        width: 100%;
+    }
+
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: density(1);
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .control-label {
+        @ds-typo(caption);
+        color: palette(neutral-dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .control-select {
+        padding: density(1) density(2);
+        border: 1px solid palette(neutral-light);
+        border-radius: radius(1);
+        background: palette(surface-main);
+        color: palette(surface-contrast);
+        font-size: 0.9rem;
+        cursor: pointer;
+        width: 100%;
+        
+        &:hover {
+            border-color: palette(primary-main);
+        }
+        
+        &:focus {
+            outline: none;
+            border-color: palette(primary-main);
+            box-shadow: 0 0 0 2px palette(primary-main, 0.2);
+        }
+    }
+
+    .preview-container {
+        display: flex;
+        flex-direction: column;
+        gap: density(3);
+        background: palette(surface-light);
+        padding: density(3);
+        border: 1px dashed palette(neutral-light);
+        border-radius: radius(2);
+    }
+
+    .live-preview {
+        /* These will be set inline by React, but we provide defaults */
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        border-radius: radius(2);
+        box-shadow: shadow(1);
+        transition: all 0.3s ease;
+    }
+
+    .code-block {
+        @ds-surface(contained);
+        background: palette(neutral-dark); /* Force dark background for code */
+        border-radius: radius(2);
+        overflow: hidden;
+    }
+    
+    .code-header {
+         background: palette(neutral-dark, 0.5); /* Slightly lighter than main bg */
+         padding: density(1) density(2);
+         border-bottom: 1px solid palette(neutral-main, 0.1);
+    }
+    
+    .code-filename {
+        @ds-typo(caption);
+        font-family: monospace;
+        color: palette(neutral-light);
+    }
+}

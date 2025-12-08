@@ -146,12 +146,13 @@
     width: 100%;
     max-width: 120px;
     padding: density(0.5) density(1);
-    border: 1px solid palette(neutral-light);
+    background: transparent;
+    border: 1px solid palette(neutral-main);
     border-radius: radius(1);
     font-family: monospace;
     font-size: 0.85rem;
     text-align: right;
-    color: palette(neutral-dark);
+    color: palette(surface-contrast);
   }
 
   @media (min-width: 768px) {

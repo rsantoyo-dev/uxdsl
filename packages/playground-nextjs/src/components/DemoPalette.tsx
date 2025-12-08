@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useTheme } from './ThemeContext'
+import PalettePlayground from './PalettePlayground'
 import runtime from 'postcss-uxdsl/ds-runtime'
-import theme from '../../uxdsl.theme.green.json'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 
@@ -120,7 +121,8 @@ function hexToRgbString(hex: string) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string, colorMap: Record<string, string> }) {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, variant: string, colorMap: Record<string, string>, activeTheme: any }) {
   const ref = useRef<HTMLLIElement>(null)
   const [colorValues, setColorValues] = useState({ hex: '', rgb: '', textColor: 'inherit' })
   // Keep track of which token we are currently linked to
@@ -145,7 +147,7 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
         // Try to find link based on DEFAULT value from theme
         // This ensures we link correctly even if the current color is overridden
         // @ts-expect-error - theme structure is dynamic
-        const defaultHex = theme.palette?.[tone]?.[variant]
+        const defaultHex = activeTheme?.palette?.[tone]?.[variant]
         const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
         if (tokenName) {
@@ -275,85 +277,12 @@ function ColorToken({ tone, variant, colorMap }: { tone: string, variant: string
 }
 
 export default function DemoPalette() {
+  const { activeThemeData } = useTheme()
   const colorMap = useColorMap()
-  const [bgTone, setBgTone] = useState('primary')
-  const [bgVariant, setBgVariant] = useState('main')
-  const [textTone, setTextTone] = useState('primary')
-  const [textVariant, setTextVariant] = useState('contrast')
-
   return (
     <section id="DemoPalette" className="palette-section demo-section">
-      <div className="palette-header">
-        <div>
-          <p className="demo-subtitle">
-            Each card relies purely on <code>palette(tone-variant)</code> helpers.
-            Values are computed at runtime from the applied CSS variables.
-          </p>
-        </div>
-      </div>
-
-      <div className="surfaces-playground-container" style={{ marginBottom: '3rem' }}>
-        <h4 className="demo-subtitle">Interactive Playground</h4>
-        <div className="surface-playground">
-           <div className="surface-playground__controls">
-             <label>
-               <span>Background Tone</span>
-               <select value={bgTone} onChange={e => setBgTone(e.target.value)}>
-                 {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-               </select>
-             </label>
-             <label>
-               <span>Background Variant</span>
-               <select value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
-                 {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
-               </select>
-             </label>
-             <label>
-               <span>Text Tone</span>
-               <select value={textTone} onChange={e => setTextTone(e.target.value)}>
-                 {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
-               </select>
-             </label>
-             <label>
-               <span>Text Variant</span>
-               <select value={textVariant} onChange={e => setTextVariant(e.target.value)}>
-                 {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
-               </select>
-             </label>
-           </div>
-
-           <div className="surface-playground__preview">
-             <div style={{
-               backgroundColor: `var(--ds__palette__${bgTone}-${bgVariant})`,
-               color: `var(--ds__palette__${textTone}-${textVariant})`,
-               padding: 'var(--space-4)',
-               borderRadius: 'var(--space-2)',
-               textAlign: 'center',
-               fontWeight: 'bold',
-               fontSize: '1.2rem',
-               transition: 'all 0.2s ease'
-             }}>
-               Live Palette Preview
-             </div>
-             
-             <div className="demo-code-block" style={{ marginTop: '1rem', width: '100%' }}>
-               <div className="code-header">
-                 <span className="code-file">PaletteUsage.uxdsl</span>
-               </div>
-               <SyntaxHighlighter 
-                 language="scss" 
-                 style={vscDarkPlus}
-                 customStyle={{ margin: 0, padding: '1rem', background: 'transparent', fontSize: '0.9rem' }}
-                 wrapLines={true}
-               >
-{`.my-element {
-  background-color: palette(${bgTone}-${bgVariant});
-  color: palette(${textTone}-${textVariant});
-}`}
-               </SyntaxHighlighter>
-             </div>
-           </div>
-        </div>
+      <div style={{ marginBottom: '3rem' }}>
+        <PalettePlayground />
       </div>
 
       <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
@@ -373,7 +302,13 @@ export default function DemoPalette() {
 
             <ul className="palette-token-list">
               {variants.map((variant) => (
-                <ColorToken key={variant.id} tone={tone.id} variant={variant.id} colorMap={colorMap} />
+                <ColorToken 
+                  key={variant.id} 
+                  tone={tone.id} 
+                  variant={variant.id} 
+                  colorMap={colorMap} 
+                  activeTheme={activeThemeData}
+                />
               ))}
             </ul>
           </article>

@@ -69,31 +69,38 @@
     }
   }
 
-  .content-container {
-    padding: density(6) density(4) density(10);
-    text-align: center;
+  .home-container {
+    box-sizing: border-box;
+    max-width: 90vw;
+    width: 100%;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: density(4);
-    background: palette(surface-main);
-    flex: 0 0 auto;
+    text-align: center;
+    gap: density(6); /* Increased gap for better rhythm than density(2) for main sections */
+    padding: density(8) density(4) density(10); /* Added top padding */
   }
 
   .actions {
     margin-top: 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .get-started-btn {
     @ds-button (contained primary large);
-    display: inline-flex;
+    display: flex;
     align-items: center;
+    justify-content: center;
     gap: density(2);
-    padding-left: density(6);
-    padding-right: density(6);
+    padding: density(4) density(6);
     font-weight: 600;
     border-radius: radius(full);
     transition: transform 0.2s;
+    width: 100%; 
+    /* Removed max-width to allow full width on all screens as requested */
 
     &:hover {
       transform: translateY(-2px);
@@ -102,8 +109,9 @@
   }
 
   .intro-section {
-    max-width: 600px;
-    margin: density(4) 0;
+    width: 100%;
+    /* max-width: 800px;  Optional: constrain text width for readability if needed, but user asked for full available */
+    margin: 0;
   }
 
   .intro-text {
@@ -117,20 +125,21 @@
     grid-template-columns: 1fr;
     gap: density(4);
     width: 100%;
-    max-width: 900px;
-    margin-top: density(6);
+    max-width: 100%;
+    margin-top: density(2);
     margin-bottom: density(2);
-    padding-left: density(2);
-    padding-right: density(2);
+    box-sizing: border-box;
 
     @media (min-width: 768px) {
       grid-template-columns: repeat(2, 1fr);
     }
+
+
   }
 
   .demo-section {
     width: 100%;
-    max-width: 900px;
+    max-width: 100%;
     display: flex;
     flex-direction: column;
     align-items: center;
