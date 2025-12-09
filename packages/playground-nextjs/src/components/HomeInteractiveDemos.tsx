@@ -4,6 +4,9 @@ import { TypographyDemoProvider } from './TypographyDemoContext'
 import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer'
 import PalettePlayground from './PalettePlayground'
 
+
+import PaletteThemeExplorer from './PaletteThemeExplorer'
+
 function DocsLink({ href }: { href: string }) {
   return (
     <Link 
@@ -27,7 +30,7 @@ export default function HomeInteractiveDemos() {
   return (
     <div style={{ 
       display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 600px), 1fr))', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', 
       gap: '2rem',
       width: '100%'
     }}>
@@ -38,9 +41,14 @@ export default function HomeInteractiveDemos() {
         </TypographyDemoProvider>
       </div>
       
-      {/* Palette Demo */}
+      {/* Palette Usage Demo */}
       <div style={{ minWidth: 0 }}>
         <PalettePlayground action={<DocsLink href="/docs/palette" />} />
+      </div>
+
+      {/* Palette Explorer Demo */}
+      <div style={{ minWidth: 0 }}>
+        <PaletteThemeExplorer action={<DocsLink href="/docs/palette" />} />
       </div>
     </div>
   )
