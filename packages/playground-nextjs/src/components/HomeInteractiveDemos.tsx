@@ -5,7 +5,9 @@ import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer'
 import PalettePlayground from './PalettePlayground'
 
 
+
 import PaletteThemeExplorer from './PaletteThemeExplorer'
+import DensityPlayground from './DensityPlayground'
 
 function DocsLink({ href }: { href: string }) {
   return (
@@ -43,12 +45,17 @@ export default function HomeInteractiveDemos() {
       
       {/* Palette Usage Demo */}
       <div style={{ minWidth: 0 }}>
-        <PalettePlayground action={<DocsLink href="/docs/palette" />} />
+        <PalettePlayground action={<DocsLink href="/docs/palette#usage" />} />
       </div>
 
       {/* Palette Explorer Demo */}
       <div style={{ minWidth: 0 }}>
-        <PaletteThemeExplorer action={<DocsLink href="/docs/palette" />} />
+        <PaletteThemeExplorer action={<DocsLink href="/docs/palette#explorer" />} />
+      </div>
+
+      {/* Density Demo */}
+      <div style={{ minWidth: 0 }}>
+        <DensityPlayground action={<DocsLink href="/docs/densities" />} />
       </div>
     </div>
   )

@@ -42,6 +42,7 @@
 @import '../components/PageToolbar.uxdsl';
 @import '../components/PalettePlayground.uxdsl';
 @import '../components/ResponsiveSyntaxExplainer.uxdsl';
+@import '../components/RussianDoll.uxdsl';
 @import '../components/SideNav.uxdsl';
 @import '../components/ThemeBackground.uxdsl';
 @import '../components/UXDSLCardDemo.uxdsl';

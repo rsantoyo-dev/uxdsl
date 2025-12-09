@@ -559,6 +559,162 @@ html { color-scheme: light dark; }
 /* Default input packs. Apps can override in their own @theme. */
 /* --- Application & Component Imports --- */
 /* Minimal app styles using only DS tokens + packs */
+/* Shared Russian Doll Visualization Styles */
+.concentric-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.concentric-content {
+  position: relative;
+  z-index: 100;
+  background: var(--ds__palette__surface-main);
+  padding: var(--density-2);
+  border-radius: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 40px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12);
+  font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui)));
+  font-size: var(--caption-size);
+  line-height: var(--caption-line, 1.4);
+  letter-spacing: var(--caption-spacing, normal);
+  text-transform: var(--caption-transform, none);
+  text-decoration: var(--caption-decoration, none);
+  font-style: var(--caption-style, normal);
+  margin-block-start: var(--caption-margin-block-start, auto);
+  margin-block-end: var(--caption-margin-block-end, auto);
+  opacity: var(--caption-opacity, 0.8);
+  font-weight: bold;
+  color: var(--ds__palette__primary-dark);
+  border: 1px solid var(--ds__palette__neutral-light);
+}
+@media (min-width: 1024px) {
+.concentric-content {
+    border-radius: var(--space-2);
+}
+}
+.concentric-ring {
+  position: absolute;
+  border-radius: var(--space-2);
+  border: 1px solid color-mix(in srgb, var(--ds__palette__primary-main) 20%, transparent);
+  background: color-mix(in srgb, var(--ds__palette__primary-main) 3%, transparent);
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: pointer;
+}
+@media (min-width: 1024px) {
+.concentric-ring {
+    border-radius: var(--space-3);
+}
+}
+.concentric-ring:hover,
+.concentric-ring.is-hovered {
+  border-color: var(--ds__palette__secondary-main);
+  background: color-mix(in srgb, var(--ds__palette__secondary-main) 10%, transparent);
+  box-shadow: 0 0 0 1px var(--ds__palette__secondary-main);
+}
+.ring-label {
+  background: var(--ds__palette__secondary-main);
+  color: var(--ds__palette__secondary-contrast);
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: -1px;
+}
+.concentric-ring:hover .ring-label,
+.concentric-ring.is-hovered .ring-label {
+  opacity: 1;
+}
+/* Generate inset classes for density rings */
+.concentric-ring--density-1 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-1) * -1);
+    z-index: calc(20 - 1);
+  }
+.concentric-ring--density-2 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-2) * -1);
+    z-index: calc(20 - 2);
+  }
+.concentric-ring--density-3 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-3) * -1);
+    z-index: calc(20 - 3);
+  }
+.concentric-ring--density-4 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-4) * -1);
+    z-index: calc(20 - 4);
+  }
+.concentric-ring--density-5 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-5) * -1);
+    z-index: calc(20 - 5);
+  }
+.concentric-ring--density-6 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-6) * -1);
+    z-index: calc(20 - 6);
+  }
+.concentric-ring--density-7 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-7) * -1);
+    z-index: calc(20 - 7);
+  }
+.concentric-ring--density-8 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-8) * -1);
+    z-index: calc(20 - 8);
+  }
+.concentric-ring--density-9 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-9) * -1);
+    z-index: calc(20 - 9);
+  }
+.concentric-ring--density-10 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-10) * -1);
+    z-index: calc(20 - 10);
+  }
+.concentric-ring--density-11 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-11) * -1);
+    z-index: calc(20 - 11);
+  }
+.concentric-ring--density-12 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-12) * -1);
+    z-index: calc(20 - 12);
+  }
+.concentric-ring--density-13 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-13) * -1);
+    z-index: calc(20 - 13);
+  }
+.concentric-ring--density-14 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-14) * -1);
+    z-index: calc(20 - 14);
+  }
+.concentric-ring--density-15 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-15) * -1);
+    z-index: calc(20 - 15);
+  }
+.concentric-ring--density-16 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-16) * -1);
+    z-index: calc(20 - 16);
+  }
 /* Component demo styles have been moved to colocated .uxdsl files */
 /* Global Slider Styles */
 input[type="range"] {

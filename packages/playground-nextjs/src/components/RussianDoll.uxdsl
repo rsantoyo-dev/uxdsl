@@ -1,0 +1,71 @@
+/* Shared Russian Doll Visualization Styles */
+
+.concentric-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.concentric-content {
+  position: relative;
+  z-index: 100;
+  background: palette(surface-main);
+  padding: density(2);
+  border-radius: radius(1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 40px;
+  box-shadow: shadow(2);
+  @ds-typo(caption);
+  font-weight: bold;
+  color: palette(primary-dark);
+  border: 1px solid palette(neutral-light);
+}
+
+.concentric-ring {
+  position: absolute;
+  border-radius: radius(2);
+  border: 1px solid palette(primary-main, 0.2);
+  background: palette(primary-main, 0.03);
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: pointer;
+}
+
+.concentric-ring:hover,
+.concentric-ring.is-hovered {
+  border-color: palette(secondary-main);
+  background: palette(secondary-main, 0.1);
+  box-shadow: 0 0 0 1px palette(secondary-main);
+}
+
+.ring-label {
+  background: palette(secondary-main);
+  color: palette(secondary-contrast);
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: -1px;
+}
+
+.concentric-ring:hover .ring-label,
+.concentric-ring.is-hovered .ring-label {
+  opacity: 1;
+}
+
+/* Generate inset classes for density rings */
+@for $i from 1 through 16 {
+  .concentric-ring--density-#{$i} {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--density-#{$i}) * -1);
+    z-index: calc(20 - #{$i});
+  }
+}
