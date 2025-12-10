@@ -29,7 +29,12 @@ export function parseDensityValue(value: string) {
   return value
 }
 
-export function generateDensityCss(definitions: Record<number, string>, breakpoints: Record<string, number>) {
+export function generateDensityCss(
+  definitions: Record<number, string>, 
+  breakpoints: Record<string, number>,
+  selector: string = ':root',
+  strategy: 'media' | 'container' = 'media'
+) {
   let css = ''
   
   Object.entries(definitions).forEach(([level, def]) => {
@@ -52,14 +57,18 @@ export function generateDensityCss(definitions: Record<number, string>, breakpoi
     })
 
     if (rules['xs']) {
-      css += `:root { --density-${level}: ${rules['xs']}; }\n`
+      css += `${selector} { --density-${level}: ${rules['xs']}; }\n`
     }
 
     Object.entries(rules).forEach(([bp, val]) => {
       if (bp === 'xs') return
       const width = breakpoints[bp]
       if (width) {
-        css += `@media (min-width: ${width}px) {\n          :root { --density-${level}: ${val}; }\n        }\n`
+        if (strategy === 'container') {
+          css += `@container (min-width: ${width}px) {\n          ${selector} { --density-${level}: ${val}; }\n        }\n`
+        } else {
+          css += `@media (min-width: ${width}px) {\n          ${selector} { --density-${level}: ${val}; }\n        }\n`
+        }
       }
     })
   })

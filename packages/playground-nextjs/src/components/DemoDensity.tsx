@@ -31,7 +31,13 @@ function EditDensityDialog({
 
   useEffect(() => {
     const values: Record<string, string> = {}
+    if (!initialDefinition) {
+      setBreakpointValues({})
+      return
+    }
+
     const parts = initialDefinition.split(/\s+(?![^(]*\))/g).filter(Boolean)
+    let hasMatches = false
     
     parts.forEach(part => {
       const openParen = part.indexOf('(')
@@ -39,10 +45,19 @@ function EditDensityDialog({
       
       if (openParen > 0 && closeParen === part.length - 1) {
         const bp = part.substring(0, openParen)
-        const val = part.substring(openParen + 1, closeParen)
-        values[bp] = val
+        // Check if it's a valid breakpoint to distinguish from things like calc() or space()
+        if (BP_ORDER.includes(bp as BreakpointKey)) {
+          const val = part.substring(openParen + 1, closeParen)
+          values[bp] = val
+          hasMatches = true
+        }
       }
     })
+
+    // If no responsive pattern found, treat the whole string as the 'xs' (base) value
+    if (!hasMatches && initialDefinition.trim()) {
+      values['xs'] = initialDefinition.trim()
+    }
 
     setBreakpointValues(values)
   }, [initialDefinition])
@@ -102,16 +117,26 @@ function EditDensityDialog({
 function parseDefinitionForDisplay(def: string) {
   const parts = def.split(/\s+(?![^(]*\))/g).filter(Boolean)
   const result: Record<string, string> = {}
+  let hasMatches = false
+
   parts.forEach(part => {
     const openParen = part.indexOf('(')
     const closeParen = part.lastIndexOf(')')
     
     if (openParen > 0 && closeParen === part.length - 1) {
       const bp = part.substring(0, openParen)
-      const val = part.substring(openParen + 1, closeParen)
-      result[bp] = val
+      if (BP_ORDER.includes(bp as BreakpointKey)) {
+        const val = part.substring(openParen + 1, closeParen)
+        result[bp] = val
+        hasMatches = true
+      }
     }
   })
+
+  if (!hasMatches && def.trim()) {
+    result['xs'] = def.trim()
+  }
+
   return result
 }
 

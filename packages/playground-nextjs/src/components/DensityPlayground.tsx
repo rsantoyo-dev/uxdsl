@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
-import { Monitor, Edit2 } from 'lucide-react'
+import { Edit2 } from 'lucide-react'
 import { BreakpointEditor } from './BreakpointEditor'
 import { 
   RussianDoll, 
@@ -15,31 +15,14 @@ const DEMO_BREAKPOINTS: Record<string, number> = {
   xs: 0, sm: 600, md: 900, lg: 1200, xl: 1536
 }
 
-const BPS = [
-  { label: 'XS', width: 30, bp: 'xs' },
-  { label: 'SM', width: 45, bp: 'sm' },
-  { label: 'MD', width: 65, bp: 'md' },
-  { label: 'LG', width: 86, bp: 'lg' },
-  { label: 'XL', width: 100, bp: 'xl' },
-  { label: 'Default', width: 100, bp: 'xl' }
-]
-
 // Highlight active segement of the responsive string
-const ResponsiveStringHighlighter = ({ value, widthPercent, isAutoMode, windowWidth }: { value: string, widthPercent: number, isAutoMode: boolean, windowWidth: number }) => {
+const ResponsiveStringHighlighter = ({ value, windowWidth }: { value: string, windowWidth: number }) => {
   const color = 'var(--ds__palette__info-main)'
   if (!value) return <span style={{ color }}>&quot;&quot;</span>
 
   // 1. Determine effective pixel width
-  let effectivePx
-  if (isAutoMode && windowWidth > 0) {
-    effectivePx = windowWidth
-  } else {
-    // scale 100% -> 1536px (approx XL) for demo purposes, or map strictly to breakpoints
-    // Actually, let's map widthPercent to our DEMO_BREAKPOINTS range
-    // 30% ~ xs, 100% ~ xl
-    // Let's just use a simple scalar for the demo visualization logic:
-    effectivePx = (widthPercent / 100) * 1536 
-  }
+  // Always use windowWidth since we are in auto mode
+  const effectivePx = windowWidth
 
   // 2. Parse string to find which breakpoints are present
   const presentBps: Record<string, boolean> = {}
@@ -146,8 +129,6 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
   const [isEditorOpen, setIsEditorOpen] = useState(false)
   
   // Simulation State
-  const [isAutoMode, setIsAutoMode] = useState(true)
-  const [previewWidth, setPreviewWidth] = useState(100)
   const [windowWidth, setWindowWidth] = useState(0)
 
   useEffect(() => {
@@ -165,7 +146,13 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
       styleEl.id = styleId
       document.head.appendChild(styleEl)
     }
-    styleEl.textContent = generateDensityCss(densityDefinitions, DEMO_BREAKPOINTS)
+    // Use container query strategy for the playground demo so it responds to the resizable wrapper
+    styleEl.textContent = generateDensityCss(
+      densityDefinitions, 
+      DEMO_BREAKPOINTS, 
+      '.density-playground-wrapper', 
+      'container'
+    )
   }, [densityDefinitions])
 
   const currentDefinition = densityDefinitions[dollLevels]
@@ -187,50 +174,13 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
       action={action}
       toolbar={
          <>
-            {/* Viewport Controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--ds__palette__surface-main)', padding: '2px', borderRadius: '6px', border: '1px solid var(--ds__palette__neutral-main)', marginRight: 'auto' }}>
-              {BPS.map((bpItem) => {
-                const isDefault = bpItem.label === 'Default'
-                const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bpItem.width)
-                
-                return (
-                  <button
-                    key={bpItem.label}
-                    onClick={() => {
-                      if (isDefault) {
-                        setIsAutoMode(true)
-                        setPreviewWidth(100)
-                      } else {
-                        setIsAutoMode(false)
-                        setPreviewWidth(bpItem.width)
-                      }
-                    }}
-                    title={isDefault ? "Current Screen Size" : `${bpItem.label} View`}
-                    style={{
-                      padding: isDefault ? '4px 8px' : '4px 12px',
-                      background: isActive ? 'var(--ds__palette__primary-light)' : 'transparent',
-                      color: isActive ? 'var(--ds__palette__primary-contrast)' : 'var(--ds__palette__text-secondary)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.8rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    {isDefault ? <Monitor size={14} /> : bpItem.label}
-                  </button>
-                )
-              })}
-            </div>
-
             {/* Level Controls */}
             <div style={{ 
                  display: 'flex', 
                  alignItems: 'center', 
                  gap: '1rem',
-                 padding: '0 0.5rem'
+                 padding: '0 0.5rem',
+                 marginLeft: 'auto'
              }}>
                 <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ds__palette__text-secondary)', textTransform: 'uppercase' }}>
                     Level
@@ -272,15 +222,18 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
                  overflow: 'hidden',
                  minHeight: '300px'
              }}>
-                 <div style={{
-                    width: isAutoMode ? '100%' : `${previewWidth}%`,
+                 <div 
+                    className="density-playground-wrapper"
+                    style={{
+                    width: '100%',
                     transition: 'width 0.3s ease',
                     borderLeft: '1px solid var(--ds__palette__divider)',
                     borderRight: '1px solid var(--ds__palette__divider)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    position: 'relative'
+                    position: 'relative',
+                    containerType: 'inline-size'
                  }}>
                      <span style={{ 
                          position: 'absolute', 
@@ -289,7 +242,7 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
                          color: 'var(--ds__palette__text-disabled)',
                          textTransform: 'uppercase'
                      }}>
-                        {isAutoMode ? 'Auto Width' : `${previewWidth}% Viewport`}
+                        Auto Width
                      </span>
                      <div className="density-doll-wrapper" style={{ border: 'none', background: 'transparent' }}>
                         <RussianDoll densityIndex={dollLevels} />
@@ -319,7 +272,7 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
                   <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                     <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;value&quot;</span>: <ResponsiveStringHighlighter value={currentDefinition} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} />
+                     <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;value&quot;</span>: <ResponsiveStringHighlighter value={currentDefinition} windowWidth={windowWidth} />
                   </div>
                   <button 
                     onClick={() => setIsEditorOpen(true)}
@@ -359,7 +312,8 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
             initialValue={currentDefinition}
             onSave={handleSaveDefinition}
             tagName={`density(${dollLevels})`}
-            editorType="numeric"
+            editorType="text"
+            options={Array.from({ length: 16 }, (_, i) => `space(${i + 1})`)}
         />
     </InteractiveDemoContainer>
   )

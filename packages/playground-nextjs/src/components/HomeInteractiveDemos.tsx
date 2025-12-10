@@ -32,7 +32,7 @@ export default function HomeInteractiveDemos() {
   return (
     <div style={{ 
       display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 450px), 1fr))', 
+      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 600px), 1fr))', 
       gap: '2rem',
       width: '100%'
     }}>

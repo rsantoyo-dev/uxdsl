@@ -132,10 +132,27 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
         // Single value applies to xs (base)
         parseVal(initialValue, 'xs');
       } else {
-        const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
-        let match;
-        while ((match = regex.exec(initialValue)) !== null) {
-          parseVal(match[2], match[1]);
+        // Use split logic to handle nested parentheses (e.g. xs(space(1))) correctly
+        const parts = initialValue.split(/\s+(?![^(]*\))/g).filter(Boolean);
+        let hasMatches = false;
+
+        parts.forEach(part => {
+          const openParen = part.indexOf('(');
+          const closeParen = part.lastIndexOf(')');
+          
+          if (openParen > 0 && closeParen === part.length - 1) {
+            const bp = part.substring(0, openParen);
+            if (BREAKPOINTS.includes(bp)) {
+              const val = part.substring(openParen + 1, closeParen);
+              parseVal(val, bp);
+              hasMatches = true;
+            }
+          }
+        });
+
+        if (!hasMatches) {
+          // It has parens (e.g. space(1) or calc(...)) but no breakpoint prefix
+          parseVal(initialValue, 'xs');
         }
       }
       setStates(newStates);
