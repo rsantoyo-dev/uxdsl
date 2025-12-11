@@ -107,7 +107,7 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
 export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode }) {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme();
   const { textMap, updateText, editingTag, setEditingTag } = useTypographyDemo();
-  const [selectedTag, setSelectedTag] = useState('default');
+  const [selectedTag, setSelectedTag] = useState('h1');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isFontFamilyEditorOpen, setIsFontFamilyEditorOpen] = useState(false);
   const [isFontWeightEditorOpen, setIsFontWeightEditorOpen] = useState(false);
@@ -524,7 +524,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       <div className="demo-layout-grid">
         <div className="demo-logic-column">
           {/* Live Preview Section */}
-          <div style={{ 
+          <div className="live-preview-section" style={{ 
             marginBottom: '1.5rem', 
             paddingBottom: '1.5rem', 
             borderBottom: '1px solid var(--ds__palette__neutral-light)',

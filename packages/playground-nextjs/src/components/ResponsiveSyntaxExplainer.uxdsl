@@ -60,33 +60,28 @@
   display: flex;
   flex-direction: column;
   gap: density(4);
-
-  @media (min-width: 1024px) {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: density(6);
-    align-items: start;
-  }
 }
 
 .demo-logic-column {
-  display: flex;
-  flex-direction: column;
-  /* gap handled by children margins */
+  display: grid;
+  grid-template-columns: xs(1fr) lg(1.5fr 1fr);
+  gap: xs(density(4)) lg(density(6));
+  align-items: start;
+}
+
+.live-preview-section {
+  grid-row: xs(auto) lg(span 2);
+  height: xs(auto) lg(100%);
 }
 
 .typography-showcase {
-  margin-top: density(6);
+  margin-top: xs(density(6)) lg(0);
   padding: density(4);
   background: palette(surface-main);
   border-radius: radius(2);
   border: 1px solid palette(divider);
-
-  @media (min-width: 1024px) {
-    margin-top: 0;
-    height: 100%;
-    overflow-y: auto;
-  }
+  height: xs(auto) lg(100%);
+  overflow-y: xs(visible) lg(auto);
 }
 
 .showcase-title {

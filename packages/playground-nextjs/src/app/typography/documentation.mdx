@@ -1,0 +1,42 @@
+
+## Using Typography in UXDSL
+
+UXDSL provides a powerful, responsive typography system that abstracts away complex media queries and ensures consistency across your application.
+
+### The `@ds-typo` Mixin
+
+The core of the system is the `@ds-typo` mixin. Instead of manually defining font sizes, line heights, and weights for every breakpoint, you simply apply the mixin to your CSS selectors.
+
+```css
+/* In your .uxdsl or .css file */
+.my-heading {
+  @ds-typo(h1);
+}
+
+.my-paragraph {
+  @ds-typo(p);
+}
+```
+
+### Configuration
+
+Typography is configured in your `uxdsl.theme.json` file. You can define responsive values using the `bp(value)` syntax.
+
+```json
+{
+  "typography_details": {
+    "h1": {
+      "fontSize": "xs(2rem) md(2.5rem) lg(3.5rem)",
+      "fontWeight": "700",
+      "lineHeight": "1.1"
+    }
+  }
+}
+```
+
+### Features
+
+- **Responsive by Default**: Define values for any breakpoint (xs, sm, md, lg, xl).
+- **Inheritance**: Properties not explicitly set inherit from the default configuration.
+- **Type Safety**: The compiler validates your theme configuration.
+- **Zero Runtime**: The mixins are compiled to standard CSS at build time.

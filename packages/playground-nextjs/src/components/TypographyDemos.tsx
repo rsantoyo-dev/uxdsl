@@ -2,7 +2,6 @@
 
 import { TypographyDemoProvider } from './TypographyDemoContext';
 import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer';
-import DemoTypography from './DemoTypography';
 
 import { EditDialog } from './EditTypographyDialog';
 import { initialTypographyItems, useTypographyDemo } from './TypographyDemoContext';
@@ -14,7 +13,6 @@ function TypographyDemosContent() {
   return (
     <>
       <ResponsiveSyntaxExplainer />
-      <DemoTypography />
       {editingItem && (
         <EditDialog 
           item={editingItem} 
