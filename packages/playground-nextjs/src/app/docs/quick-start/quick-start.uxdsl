@@ -84,4 +84,12 @@
     margin-top: density(4);
     box-shadow: shadow(2);
   }
+
+  .warning-blockquote {
+    @ds-surface(outlined, warning);
+    padding: density(4);
+    border-radius: radius(1);
+    margin-bottom: density(8);
+    color: palette(text-primary);
+  }
 }

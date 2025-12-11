@@ -1,0 +1,32 @@
+.inspector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: density(4);
+}
+
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: density(3);
+}
+
+.inspector-item {
+  display: flex;
+  align-items: center;
+  gap: density(4);
+  background: var(--ds__palette__surface-main);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--ds__palette__neutral-light);
+}
+
+.inspector-item-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector-item-meta {
+  display: flex;
+  gap: density(2);
+  align-items: center;
+}

@@ -45,11 +45,11 @@ function TokenInspectorItem({ tone, variant }: { tone: string, variant: string }
   }
 
   return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', background: 'var(--ds__palette__surface-main)', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--ds__palette__neutral-light)' }}>
+      <div className="inspector-item">
            <div ref={ref} style={{ width: '40px', height: '40px', borderRadius: '4px', background: `var(--ds__palette__${tone}-${variant})`, border: '1px solid rgba(0,0,0,0.1)' }} />
-           <div style={{ display: 'flex', flexDirection: 'column' }}>
+           <div className="inspector-item-details">
                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{variant}</span>
-               <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+               <div className="inspector-item-meta">
                    <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--ds__palette__text-secondary)' }}>{colorInfo.hex}</span>
                    <span style={{ fontSize: '0.6rem', color: 'var(--ds__palette__text-disabled)' }}>{colorInfo.rgb}</span>
                </div>
@@ -82,7 +82,7 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                         </span>
                      </div>
                      
-                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                     <div className="inspector-grid">
                          {variants.map(variant => (
                              <TokenInspectorItem key={variant.id} tone={inspectorTone} variant={variant.id} />
                          ))}
@@ -93,11 +93,7 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                  <h5 style={{ fontSize: '0.7rem', color: 'var(--ds__palette__text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                     Select Tone
                  </h5>
-                 <div style={{ 
-                         display: 'grid', 
-                         gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', 
-                         gap: '0.75rem'
-                     }}>
+                 <div className="selector-grid">
                          {paletteCards.map(tone => (
                              <div key={tone.id} 
                                 onClick={() => setInspectorTone(tone.id)}

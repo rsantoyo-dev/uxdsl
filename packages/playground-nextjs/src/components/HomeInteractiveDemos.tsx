@@ -3,11 +3,7 @@ import { ArrowRight } from 'lucide-react'
 import { TypographyDemoProvider } from './TypographyDemoContext'
 import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer'
 import PalettePlayground from './PalettePlayground'
-
-
-
 import PaletteThemeExplorer from './PaletteThemeExplorer'
-import DensityPlayground from './DensityPlayground'
 
 function DocsLink({ href }: { href: string }) {
   return (
@@ -30,32 +26,22 @@ function DocsLink({ href }: { href: string }) {
 
 export default function HomeInteractiveDemos() {
   return (
-    <div style={{ 
-      display: 'grid', 
-      gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 600px), 1fr))', 
-      gap: '2rem',
-      width: '100%'
-    }}>
+    <div className="demos-grid">
       {/* Typography Demo */}
-      <div style={{ minWidth: 0 }}>
+      <div className="demo-item">
         <TypographyDemoProvider>
           <ResponsiveSyntaxExplainer action={<DocsLink href="/docs/typography" />} />
         </TypographyDemoProvider>
       </div>
       
       {/* Palette Usage Demo */}
-      <div style={{ minWidth: 0 }}>
+      <div className="demo-item">
         <PalettePlayground action={<DocsLink href="/docs/palette#usage" />} />
       </div>
 
       {/* Palette Explorer Demo */}
-      <div style={{ minWidth: 0 }}>
+      <div className="demo-item">
         <PaletteThemeExplorer action={<DocsLink href="/docs/palette#explorer" />} />
-      </div>
-
-      {/* Density Demo */}
-      <div style={{ minWidth: 0 }}>
-        <DensityPlayground action={<DocsLink href="/docs/densities" />} />
       </div>
     </div>
   )

@@ -1,0 +1,168 @@
+/* Density Playground Styles */
+
+.level-controls {
+  display: flex;
+  align-items: center;
+  gap: density(4);
+  padding: 0 density(2);
+  margin-left: auto;
+}
+
+.level-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: palette(text-secondary);
+  text-transform: uppercase;
+}
+
+.level-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: density(2);
+}
+
+.level-value {
+  font-family: font(code);
+  font-size: 0.9rem;
+  font-weight: bold;
+  color: palette(primary-main);
+  min-width: 20px;
+  text-align: center;
+}
+
+.playground-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  gap: density(6);
+}
+
+.viz-container {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  background: palette(surface-dark);
+  border-radius: radius(2);
+  padding: density(8) density(4);
+  overflow: hidden;
+  min-height: 300px;
+}
+
+.density-playground-wrapper {
+  width: 100%;
+  transition: width 0.3s ease;
+  border-left: 1px solid palette(divider);
+  border-right: 1px solid palette(divider);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  container-type: inline-size;
+}
+
+.auto-width-label {
+  position: absolute;
+  top: -1.5rem;
+  font-size: 0.7rem;
+  color: palette(text-disabled);
+  text-transform: uppercase;
+}
+
+.density-doll-wrapper {
+  border: none;
+  background: transparent;
+}
+
+.json-editor {
+  background: palette(surface-main);
+  padding: density(4);
+  border-radius: radius(1);
+  border: 1px dashed palette(neutral-main);
+  font-family: font(code);
+  font-size: 0.9rem;
+  color: palette(primary-dark);
+  overflow-x: auto;
+  display: flex;
+  flex-direction: column;
+  gap: density(1);
+}
+
+.json-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.json-key {
+  font-weight: 600;
+}
+
+.json-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding-left: 2ch;
+}
+
+.json-value-wrapper {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.json-prop-key {
+  color: palette(secondary-main);
+}
+
+.edit-button {
+  background: transparent;
+  border: 1px solid palette(divider);
+  border-radius: radius(1);
+  padding: density(1);
+  cursor: pointer;
+  color: palette(text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+  margin-left: density(4);
+
+  &:hover {
+    color: palette(primary-main);
+    border-color: palette(primary-main);
+  }
+}
+
+.level-range-input {
+  width: 100px;
+  cursor: pointer;
+}
+
+.highlighter-base {
+  color: palette(info-main);
+}
+
+.highlighter-active {
+  color: palette(secondary-light);
+  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+.level-range-input {
+  width: 100px;
+  cursor: pointer;
+}
+
+.highlighter-base {
+  color: palette(info-main);
+}
+
+.highlighter-active {
+  color: palette(secondary-light);
+  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
+  font-weight: bold;
+  text-decoration: underline;
+}

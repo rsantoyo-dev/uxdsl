@@ -245,9 +245,9 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
           </button>
         </div>
 
-        <div style={{ padding: '1.5rem', display: 'grid', gap: '1rem', maxHeight: '60vh', overflowY: 'auto' }}>
+        <div className="editor-content">
           {editorType === 'font' ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div className="font-selector">
               <label style={{ fontWeight: 600, color: 'var(--ds__palette__text-secondary)' }}>
                 Select Font Family
               </label>

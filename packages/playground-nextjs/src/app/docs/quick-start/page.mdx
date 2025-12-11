@@ -10,14 +10,7 @@ import { Info, Star, Layers, Package } from 'lucide-react'
   />
 
   {/* Warning Card */}
-  <blockquote style={{ 
-    borderLeft: '4px solid var(--ds__palette__warning-main)', 
-    backgroundColor: 'var(--ds__palette__warning-light, rgba(251, 191, 36, 0.1))', 
-    padding: '1rem', 
-    borderRadius: '4px', 
-    color: 'var(--ds__palette__text-primary)', 
-    marginBottom: '2rem' 
-  }}>
+  <blockquote className="warning-blockquote">
     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0, fontWeight: 600 }}>
       <Info size={20} color="var(--ds__palette__warning-dark)" /> 
       Experimental Library - Not Production Ready

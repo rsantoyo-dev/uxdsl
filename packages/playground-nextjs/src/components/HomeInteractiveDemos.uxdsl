@@ -1,0 +1,10 @@
+.demos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 600px), 1fr));
+  gap: density(2);
+  width: 100%;
+}
+
+.demo-item {
+  min-width: 0;
+}

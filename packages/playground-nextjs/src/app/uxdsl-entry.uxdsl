@@ -20,6 +20,7 @@
 @import './theme-def.uxdsl';
 @import '../components/AIPrompt.uxdsl';
 @import '../components/AppHeader.uxdsl';
+@import '../components/BreakpointEditor.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';
 @import '../components/DemoBorders.uxdsl';
@@ -34,13 +35,16 @@
 @import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
 @import '../components/DemoTypography.uxdsl';
+@import '../components/DensityPlayground.uxdsl';
 @import '../components/HeroBackground.uxdsl';
 @import '../components/HomeDemo.uxdsl';
+@import '../components/HomeInteractiveDemos.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/NavigationCardLink.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import '../components/PageToolbar.uxdsl';
 @import '../components/PalettePlayground.uxdsl';
+@import '../components/PaletteThemeExplorer.uxdsl';
 @import '../components/ResponsiveSyntaxExplainer.uxdsl';
 @import '../components/RussianDoll.uxdsl';
 @import '../components/SideNav.uxdsl';

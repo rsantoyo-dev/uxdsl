@@ -1,5 +1,6 @@
 'use client'
 
+// Refactored to use .uxdsl styles
 import { useState, useEffect } from 'react'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { Edit2 } from 'lucide-react'
@@ -17,8 +18,7 @@ const DEMO_BREAKPOINTS: Record<string, number> = {
 
 // Highlight active segement of the responsive string
 const ResponsiveStringHighlighter = ({ value, windowWidth }: { value: string, windowWidth: number }) => {
-  const color = 'var(--ds__palette__info-main)'
-  if (!value) return <span style={{ color }}>&quot;&quot;</span>
+  if (!value) return <span className="highlighter-base">&quot;&quot;</span>
 
   // 1. Determine effective pixel width
   // Always use windowWidth since we are in auto mode
@@ -32,7 +32,7 @@ const ResponsiveStringHighlighter = ({ value, windowWidth }: { value: string, wi
     presentBps[match[1]] = true
   }
 
-  if (Object.keys(presentBps).length === 0) return <span style={{ color }}>&quot;{value}&quot;</span>
+  if (Object.keys(presentBps).length === 0) return <span className="highlighter-base">&quot;{value}&quot;</span>
 
   // 3. Determine active breakpoint based on width logic (desktop-first standard or mobile-first?)
   // UXDSL usually implies mobile-first (min-width). 
@@ -97,7 +97,7 @@ const ResponsiveStringHighlighter = ({ value, windowWidth }: { value: string, wi
   }
 
   return (
-    <span style={{ color }}>
+    <span className="highlighter-base">
       &quot;
       {parts.map((part, i) => {
         if (part.type === 'bp') {
@@ -105,12 +105,7 @@ const ResponsiveStringHighlighter = ({ value, windowWidth }: { value: string, wi
           return (
             <span 
               key={i} 
-              style={isActive ? { 
-                color: 'var(--ds__palette__secondary-light)', 
-                textShadow: '0 0 8px rgba(255, 77, 77, 0.4)',
-                fontWeight: 'bold',
-                textDecoration: 'underline'
-              } : {}}
+              className={isActive ? "highlighter-active" : ""}
             >
               {part.text}
             </span>
@@ -173,131 +168,56 @@ export default function DensityPlayground({ action }: { action?: React.ReactNode
       title="Density & Spacing" 
       action={action}
       toolbar={
-         <>
-            {/* Level Controls */}
-            <div style={{ 
-                 display: 'flex', 
-                 alignItems: 'center', 
-                 gap: '1rem',
-                 padding: '0 0.5rem',
-                 marginLeft: 'auto'
-             }}>
-                <label style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--ds__palette__text-secondary)', textTransform: 'uppercase' }}>
-                    Level
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <input
-                      type="range"
-                      min={1}
-                      max={MAX_LAYERS}
-                      value={dollLevels}
-                      onChange={(e) => setDollLevels(Number(e.target.value))}
-                      style={{ width: '100px', cursor: 'pointer' }}
-                    />
-                    <span style={{ 
-                        fontFamily: 'monospace', 
-                        fontSize: '0.9rem', 
-                        fontWeight: 'bold', 
-                        color: 'var(--ds__palette__primary-main)',
-                        minWidth: '20px',
-                        textAlign: 'center'
-                    }}>
-                        {dollLevels}
-                    </span>
-                </div>
+         <div className="level-controls">
+            <label className="level-label">
+                Level
+            </label>
+            <div className="level-input-wrapper">
+                <input
+                  type="range"
+                  min={1}
+                  max={MAX_LAYERS}
+                  value={dollLevels}
+                  onChange={(e) => setDollLevels(Number(e.target.value))}
+                  className="level-range-input"
+                />
+                <span className="level-value">
+                    {dollLevels}
+                </span>
             </div>
-         </>
+        </div>
       }
     >
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', gap: '1.5rem' }}>
+        <div className="playground-layout">
              
              {/* Visualization Container - Responsive wrapper */}
-             <div style={{ 
-                 flex: 1, 
-                 display: 'flex', 
-                 justifyContent: 'center',
-                 background: 'var(--ds__palette__surface-dark)',
-                 borderRadius: '8px',
-                 padding: '2rem 1rem',
-                 overflow: 'hidden',
-                 minHeight: '300px'
-             }}>
-                 <div 
-                    className="density-playground-wrapper"
-                    style={{
-                    width: '100%',
-                    transition: 'width 0.3s ease',
-                    borderLeft: '1px solid var(--ds__palette__divider)',
-                    borderRight: '1px solid var(--ds__palette__divider)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    position: 'relative',
-                    containerType: 'inline-size'
-                 }}>
-                     <span style={{ 
-                         position: 'absolute', 
-                         top: '-1.5rem', 
-                         fontSize: '0.7rem', 
-                         color: 'var(--ds__palette__text-disabled)',
-                         textTransform: 'uppercase'
-                     }}>
+             <div className="viz-container">
+                 <div className="density-playground-wrapper">
+                     <span className="auto-width-label">
                         Auto Width
                      </span>
-                     <div className="density-doll-wrapper" style={{ border: 'none', background: 'transparent' }}>
+                     <div className="density-doll-wrapper">
                         <RussianDoll densityIndex={dollLevels} />
                      </div>
                  </div>
              </div>
 
              {/* Editable JSON Section */}
-             <div style={{
-                background: 'var(--ds__palette__surface-main)',
-                padding: '1rem',
-                borderRadius: '6px',
-                border: '1px dashed var(--ds__palette__neutral-main)',
-                fontFamily: 'var(--font-code)',
-                fontSize: '0.9rem',
-                color: 'var(--ds__palette__primary-dark)',
-                overflowX: 'auto',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '0.25rem'
-             }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+             <div className="json-editor">
+                <div className="json-header">
                    <div>
-                       <span style={{ fontWeight: 600 }}>density({dollLevels})</span>: {'{'}
+                       <span className="json-key">density({dollLevels})</span>: {'{'}
                    </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
-                  <div style={{ flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                     <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;value&quot;</span>: <ResponsiveStringHighlighter value={currentDefinition} windowWidth={windowWidth} />
+                <div className="json-line">
+                  <div className="json-value-wrapper">
+                     <span className="json-prop-key">&quot;value&quot;</span>: <ResponsiveStringHighlighter value={currentDefinition} windowWidth={windowWidth} />
                   </div>
                   <button 
                     onClick={() => setIsEditorOpen(true)}
                     title="Edit Density"
-                    style={{
-                      background: 'transparent',
-                      border: '1px solid var(--ds__palette__divider)',
-                      borderRadius: '4px',
-                      padding: '4px',
-                      cursor: 'pointer',
-                      color: 'var(--ds__palette__text-secondary)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'all 0.2s',
-                      marginLeft: '1rem'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.color = 'var(--ds__palette__primary-main)'
-                      e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'
-                      e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'
-                    }}
+                    className="edit-button"
                   >
                     <Edit2 size={16} />
                   </button>
