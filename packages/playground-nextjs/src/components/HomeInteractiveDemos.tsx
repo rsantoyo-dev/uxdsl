@@ -28,7 +28,7 @@ export default function HomeInteractiveDemos() {
   return (
     <div className="demos-grid">
       {/* Typography Demo */}
-      <div className="demo-item">
+      <div className="demo-item demo-item-full">
         <TypographyDemoProvider>
           <ResponsiveSyntaxExplainer action={<DocsLink href="/docs/typography" />} />
         </TypographyDemoProvider>

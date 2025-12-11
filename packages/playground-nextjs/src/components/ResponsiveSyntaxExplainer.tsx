@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
-import { useTypographyDemo } from './TypographyDemoContext';
+import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
 import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
@@ -521,18 +521,20 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
           </>
         }
       >
-      {/* Live Preview Section */}
-      <div style={{ 
-        marginBottom: '1.5rem', 
-        paddingBottom: '1.5rem', 
-        borderBottom: '1px solid var(--ds__palette__neutral-light)',
-        display: 'flex',
-        justifyContent: 'center',
-        background: 'var(--ds__palette__surface-dark)', // Darker background to simulate "void"
-        borderRadius: '8px',
-        padding: '2rem 1rem',
-        overflow: 'hidden'
-      }}>
+      <div className="demo-layout-grid">
+        <div className="demo-logic-column">
+          {/* Live Preview Section */}
+          <div style={{ 
+            marginBottom: '1.5rem', 
+            paddingBottom: '1.5rem', 
+            borderBottom: '1px solid var(--ds__palette__neutral-light)',
+            display: 'flex',
+            justifyContent: 'center',
+            background: 'var(--ds__palette__surface-dark)', // Darker background to simulate "void"
+            borderRadius: '8px',
+            padding: '2rem 1rem',
+            overflow: 'hidden'
+          }}>
         
         <div 
           className="live-preview-box" 
@@ -1012,6 +1014,39 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         
         <div>{'}'}</div>
       </div>
+    </div>
+
+      {/* Typography Showcase */}
+      <div className="typography-showcase">
+        <div className="showcase-title">Typography Showcase</div>
+        <div className="showcase-grid">
+          {TAGS.filter(tag => tag !== 'default').map(tag => (
+            <div key={tag} className="showcase-item">
+              <span className="showcase-tag">{tag}</span>
+              {React.createElement(
+                tag === 'body' || tag === 'caption' ? 'p' : tag,
+                { 
+                  className: `showcase-text sample-${tag}`,
+                  style: {
+                    fontSize: `var(--${tag}-size)`,
+                    fontFamily: `var(--${tag}-font-family)`,
+                    fontWeight: `var(--${tag}-weight)`,
+                    lineHeight: `var(--${tag}-line)`,
+                    letterSpacing: `var(--${tag}-spacing)`,
+                    textTransform: `var(--${tag}-transform)` as React.CSSProperties['textTransform'],
+                    textDecoration: `var(--${tag}-decoration)`,
+                    fontStyle: `var(--${tag}-style)`,
+                    marginBlockStart: `var(--${tag}-margin-block-start)`,
+                    marginBlockEnd: `var(--${tag}-margin-block-end)`
+                  }
+                },
+                textMap[tag] || initialTypographyItems.find(i => i.tag === tag)?.text
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
       </InteractiveDemoContainer>
 
       <BreakpointEditor 

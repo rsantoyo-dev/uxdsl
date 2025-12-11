@@ -13049,12 +13049,21 @@ html, body {
 }
 .demos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 600px), 1fr));
-  gap: var(--density-2);
+  grid-template-columns: 1fr;
+  gap: var(--density-4);
   width: 100%;
+
+  @media (min-width: 1024px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 .demo-item {
   min-width: 0;
+}
+.demo-item-full {
+  @media (min-width: 1024px) {
+    grid-column: span 2;
+  }
 }
 /* InputDemo styles - Scoped */
 #InputDemo {
@@ -18039,6 +18048,87 @@ html, body {
 .live-preview-box {
     border-radius: var(--space-2)
 }
+}
+.demo-layout-grid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--density-4);
+
+  @media (min-width: 1024px) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--density-6);
+    align-items: start;
+  }
+}
+.demo-logic-column {
+  display: flex;
+  flex-direction: column;
+  /* gap handled by children margins */
+}
+.typography-showcase {
+  margin-top: var(--density-6);
+  padding: var(--density-4);
+  background: var(--ds__palette__surface-main);
+  border-radius: var(--space-2);
+  border: 1px solid var(--ds__palette__divider-main);
+
+  @media (min-width: 1024px) {
+    margin-top: 0;
+    height: 100%;
+    overflow-y: auto;
+  }
+}
+@media (min-width: 1024px) {
+.typography-showcase {
+    border-radius: var(--space-3)
+}
+}
+.showcase-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--ds__palette__text-secondary);
+  text-transform: uppercase;
+  margin-bottom: var(--density-4);
+  letter-spacing: 0.05em;
+}
+.showcase-grid {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+.showcase-item {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  align-items: center;
+  gap: var(--density-4);
+  padding: var(--density-2) 0;
+  border-bottom: 1px dashed var(--ds__palette__divider-main);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+.showcase-tag {
+  font-family: font(code);
+  font-size: 0.75rem;
+  color: var(--ds__palette__text-secondary);
+  text-align: right;
+  padding-right: var(--density-2);
+  border-right: 2px solid var(--ds__palette__primary-main);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+.showcase-text {
+  color: var(--ds__palette__text-primary);
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 1px solid color-mix(in srgb, var(--ds__palette__neutral-main) 20%, transparent);
+  background: var(--ds__palette__surface-main);
+  width: 100%;
+  text-align: left;
 }
 /* SideNav Styles - CSS Driven Responsiveness - Scoped */
 #SideNav {
