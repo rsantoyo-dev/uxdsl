@@ -6,8 +6,8 @@
       "preset": "bem",
       "componentName": "[A-Z]+",
       "componentSelectors": {
-        "initial": "^\\\.{componentName}(?:-[a-z]+)?$",
-        "combined": "^\\\.combined-{componentName}-[a-z]+$"
+        "initial": "^\\.{componentName}(?:-[a-z]+)?$",
+        "combined": "^\\.combined-{componentName}-[a-z]+$"
       }
     },
     "selector-class-pattern": null, 

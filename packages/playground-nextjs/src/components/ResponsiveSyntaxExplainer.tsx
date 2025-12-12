@@ -18,6 +18,14 @@ const BPS = [
   { label: 'Default', width: 100 }
 ];
 
+const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = [
+  { id: 'uxdsl', label: 'UXDSL — Responsive intelligent styles', text: 'UXDSL — Responsive intelligent styles' },
+  { id: 'lorem', label: 'Lorem ipsum', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
+  { id: 'quick-brown', label: 'The quick brown fox', text: 'The quick brown fox jumps over the lazy dog.' },
+  { id: 'pangram', label: 'Sphinx of black quartz', text: 'Sphinx of black quartz, judge my vow.' },
+  { id: 'numbers', label: 'Numbers & symbols', text: '0123456789 — $19.99 · 50% off · (123) 456-7890' }
+];
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, themeBreakpoints, baseColor }: { value: string, widthPercent: number, isAutoMode?: boolean, windowWidth?: number, themeBreakpoints?: any, baseColor?: string }) => {
   const color = baseColor || 'var(--ds__palette__info-main)';
@@ -126,6 +134,12 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   const editableRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const previewBoxRef = useRef<HTMLDivElement>(null);
+  const aiInputRef = useRef<HTMLInputElement>(null);
+
+  const getInitialTextForTag = (tag: string) => {
+    const fallback = initialTypographyItems.find((i) => i.tag === tag)?.text;
+    return fallback || '';
+  };
 
   // Track window width for auto mode
   useEffect(() => {
@@ -227,6 +241,10 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     updateText(selectedTag, e.currentTarget.innerText);
   };
 
+  const currentTagText = textMap[selectedTag] || '';
+  const currentSampleId =
+    SAMPLE_TEXT_PRESETS.find((p) => p.text === currentTagText)?.id || 'custom';
+
   const handleSave = (newValue: string) => {
     const newTheme = JSON.parse(JSON.stringify(activeThemeData));
     if (!newTheme.typography_details) newTheme.typography_details = {};
@@ -279,6 +297,147 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   const handleOptimize = async (mode: 'single' | 'all') => {
     setIsOptimizing(true);
 
+    type TypographyTagPatch = Record<string, unknown>;
+    type TypographyDetailsPatch = Record<string, TypographyTagPatch>;
+
+    const normalizePrimaryFontName = (fontFamily: string) => {
+      return (fontFamily || '')
+        .split(',')[0]
+        .replace(/['"]/g, '')
+        .trim();
+    };
+
+    const extractResponsiveValue = (value: string, bp: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => {
+      const regex = new RegExp(`${bp}\\(([^)]+)\\)`);
+      const match = value.match(regex);
+      return match?.[1]?.trim();
+    };
+
+    const parsePx = (raw: string | undefined) => {
+      if (!raw) return undefined;
+      const match = raw.trim().match(/^(-?\d+(?:\.\d+)?)px$/);
+      if (!match) return undefined;
+      return Number(match[1]);
+    };
+
+    const isResponsiveSyntaxValid = (value: string, requiredBps: Array<'xs' | 'md'>) => {
+      if (typeof value !== 'string' || value.trim().length === 0) return false;
+      return requiredBps.every((bp) => value.includes(`${bp}(`));
+    };
+
+    const getStringField = (obj: unknown, key: string) => {
+      if (!obj || typeof obj !== 'object') return undefined;
+      const record = obj as Record<string, unknown>;
+      return typeof record[key] === 'string' ? (record[key] as string) : undefined;
+    };
+
+    const validateTypographyDetailsPatch = (
+      detailsPatch: TypographyDetailsPatch,
+      validateMode: 'single' | 'all'
+    ): { ok: true } | { ok: false; reason: string } => {
+      if (!detailsPatch || typeof detailsPatch !== 'object') {
+        return { ok: false, reason: 'Missing typography_details object.' };
+      }
+
+      const requiredTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
+      if (validateMode === 'all') {
+        const missing = requiredTags.filter((t) => !detailsPatch[t]);
+        if (missing.length) return { ok: false, reason: `Missing tags: ${missing.join(', ')}` };
+      }
+
+      const tagsToValidate = validateMode === 'all' ? requiredTags : [selectedTag];
+      for (const tag of tagsToValidate) {
+        const tagValue = detailsPatch[tag];
+        if (!tagValue || typeof tagValue !== 'object') {
+          return { ok: false, reason: `Missing object for tag '${tag}'.` };
+        }
+
+        const requiredFields = ['fontSize', 'fontFamily', 'fontWeight', 'letterSpacing', 'lineHeight'];
+        for (const field of requiredFields) {
+          const v = getStringField(tagValue, field);
+          if (!v || v.trim().length === 0) {
+            return { ok: false, reason: `Missing '${field}' for tag '${tag}'.` };
+          }
+        }
+
+        const fontSize = getStringField(tagValue, 'fontSize') || '';
+        const lineHeight = getStringField(tagValue, 'lineHeight') || '';
+        const fontWeightStr = getStringField(tagValue, 'fontWeight') || '';
+
+        if (!isResponsiveSyntaxValid(fontSize, ['xs', 'md'])) {
+          return { ok: false, reason: `fontSize for '${tag}' must include at least xs(...) and md(...).` };
+        }
+
+        if (!isResponsiveSyntaxValid(lineHeight, ['xs', 'md'])) {
+          return { ok: false, reason: `lineHeight for '${tag}' must include at least xs(...) and md(...).` };
+        }
+
+        const fontWeight = Number(fontWeightStr);
+        if (!Number.isFinite(fontWeight) || fontWeight < 100 || fontWeight > 900) {
+          return { ok: false, reason: `fontWeight for '${tag}' must be a number 100-900 (string).` };
+        }
+      }
+
+      if (selectedTag === 'h1' && detailsPatch.h1 && activeThemeData?.typography_details?.h1?.fontSize) {
+        const prevXs = parsePx(extractResponsiveValue(activeThemeData.typography_details.h1.fontSize, 'xs') || '');
+        const nextFontSize = getStringField(detailsPatch.h1, 'fontSize') || '';
+        const nextXs = parsePx(extractResponsiveValue(nextFontSize, 'xs') || '');
+        if (prevXs !== undefined && nextXs !== undefined && nextXs < prevXs) {
+          return { ok: false, reason: `h1 xs fontSize should not shrink (prev ${prevXs}px, got ${nextXs}px).` };
+        }
+      }
+
+      if (validateMode === 'all') {
+        const pxAt = (tag: string, bp: 'xs' | 'md') => {
+          const fontSize = getStringField(detailsPatch[tag], 'fontSize') || '';
+          const raw = extractResponsiveValue(fontSize, bp);
+          return parsePx(raw);
+        };
+        const xs = {
+          h1: pxAt('h1', 'xs'),
+          h2: pxAt('h2', 'xs'),
+          h3: pxAt('h3', 'xs'),
+          h4: pxAt('h4', 'xs'),
+          h5: pxAt('h5', 'xs'),
+          h6: pxAt('h6', 'xs')
+        };
+        const pairs: Array<[keyof typeof xs, keyof typeof xs]> = [
+          ['h1', 'h2'],
+          ['h2', 'h3'],
+          ['h3', 'h4'],
+          ['h4', 'h5'],
+          ['h5', 'h6']
+        ];
+        for (const [a, b] of pairs) {
+          if (xs[a] !== undefined && xs[b] !== undefined && (xs[a] as number) < (xs[b] as number)) {
+            return { ok: false, reason: `Hierarchy violated at xs: ${String(a)} (${xs[a]}px) < ${String(b)} (${xs[b]}px).` };
+          }
+        }
+      }
+
+      // Validate chosen font is consistent with current theme fonts (or user prompt explicitly asks otherwise).
+      const currentUiFamily = activeThemeData?.fonts?.families?.ui || '';
+      const currentUiPrimary = normalizePrimaryFontName(currentUiFamily);
+      const allowedPrimaryFonts = new Set<string>([
+        currentUiPrimary,
+        normalizePrimaryFontName(activeThemeData?.fonts?.families?.code || ''),
+        ...((activeThemeData?.fonts?.google || [])
+          .map((g: string) => normalizePrimaryFontName(g.split(':')[0]))
+          .filter(Boolean))
+      ].filter(Boolean));
+
+      const primaryFromPatch = normalizePrimaryFontName(getStringField(detailsPatch[selectedTag], 'fontFamily') || '');
+      if (primaryFromPatch && allowedPrimaryFonts.size > 0 && !allowedPrimaryFonts.has(primaryFromPatch)) {
+        // Allow changing fonts if the user explicitly asked for it.
+        const userAskedForNewFont = /font|typeface|inter|roboto|serif|sans|mono/i.test(aiPrompt || '');
+        if (!userAskedForNewFont) {
+          return { ok: false, reason: `fontFamily '${primaryFromPatch}' is not in current theme fonts. Ask explicitly to change fonts if desired.` };
+        }
+      }
+
+      return { ok: true };
+    };
+
     const availableFonts = [
       // Sans Serif
       "Inter", "Roboto", "Poppins", "Open Sans", "Montserrat", "Lato", "Raleway", "Noto Sans", "Oswald", "Quicksand",
@@ -290,29 +449,39 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       "Dancing Script", "Pacifico", "Lobster", "Abril Fatface", "Righteous", "Fredoka One", "Press Start 2P", "Creepster", "Rye", "Spirax", "Bangers", "Permanent Marker"
     ].join(", ");
 
-    const userInstruction = aiPrompt.trim() 
-      ? `USER INSTRUCTION: ${aiPrompt}` 
-      : `Generate a UXDSL theme named "${customThemeName || 'Modern'}". The style should be "${customThemeName || 'Modern Professional'}".`;
+    const themeName = customThemeName || 'Custom Theme';
+    const currentFonts = activeThemeData?.fonts || {};
+    const currentTypographyDetails = activeThemeData?.typography_details || {};
+    const userInstruction = aiPrompt.trim()
+      ? aiPrompt.trim()
+      : `Improve typography for theme "${themeName}".`;
 
-    const prompt = `${userInstruction}
+    const prompt = `TYPOGRAPHY_PATCH MODE
+
+    THEME NAME: ${themeName}
+
+    USER INSTRUCTION:
+    ${userInstruction}
+
+    CURRENT THEME FONTS (use these unless user explicitly requests a different font):
+    ${JSON.stringify(currentFonts, null, 2)}
+
+    CURRENT typography_details (baseline to improve; preserve intent and only adjust what's needed):
+    ${JSON.stringify(currentTypographyDetails, null, 2)}
     
     SYSTEM CONTEXT & RULES:
-    1. The system uses a specific JSON structure. Here is the GOLD STANDARD example of how the output should look:
-    {
-      "typography": {
-        "font-code": "\\"JetBrains Mono\\", \\"SF Mono\\", Menlo, monospace"
-      },
-      "typography_details": {
-        "h1": { "fontSize": "xs(32px) sm(36px) md(44px) lg(52px) xl(60px)", "fontWeight": "700", "lineHeight": "1.1", "letterSpacing": "-0.02em", "fontFamily": "Inter", "textTransform": "none" },
-        "h2": { "fontSize": "xs(28px) sm(30px) md(36px) lg(44px) xl(52px)", "fontWeight": "700", "lineHeight": "1.2", "letterSpacing": "-0.01em", "fontFamily": "Inter" },
-        "h3": { "fontSize": "xs(24px) sm(26px) md(30px) lg(34px) xl(38px)", "fontWeight": "600", "lineHeight": "1.3", "letterSpacing": "normal" },
-        "p": { "fontSize": "xs(15px) md(16px)", "fontWeight": "400", "lineHeight": "1.6", "letterSpacing": "normal" }
-      }
-    }
-
-    2. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
-    3. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. Tighter line heights for headings (1.1-1.3), looser for body (1.5-1.6).
-    4. Available Fonts: ${availableFonts}. 
+    1. You MUST return ONLY JSON (no markdown).
+    2. Return a JSON object with this shape:
+       {
+         "typography_details": {
+           "h1": { ... }, ...
+         }
+       }
+    3. For every tag you modify, include ALL of these fields: fontSize, fontFamily, fontWeight, letterSpacing, lineHeight, textTransform, textDecoration, fontStyle, marginBlockStart, marginBlockEnd.
+    4. fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl too.
+    5. lineHeight MUST be responsive and include at least xs(...) and md(...).
+    6. Keep hierarchy sane (h1 >= h2 >= ... >= h6) and never shrink h1 unless explicitly asked.
+    7. Available Fonts: ${availableFonts}.
     
     CRITICAL INSTRUCTION:
     You are an expert typographer. Based on the USER INSTRUCTION (e.g., "crazy", "elegant", "brutal", "minimal"), you MUST:
@@ -329,11 +498,8 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     
     TASK:
     ${mode === 'single' 
-      ? `Optimize ONLY the '${selectedTag}' element. Consider the context of the other tags but only return the update for '${selectedTag}'.` 
+      ? `Optimize ONLY the '${selectedTag}' element. Return typography_details with ONLY '${selectedTag}'.`
       : 'Optimize ALL typography elements (h1-h6, p, body, caption). Return the full typography_details object.'}
-
-    CURRENT CONTEXT (Use as baseline):
-    ${JSON.stringify(activeThemeData?.typography_details || {}, null, 2)}
 
     Return ONLY valid JSON.`;
 
@@ -343,7 +509,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       const res = await fetch('/api/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt })
+        body: JSON.stringify({ prompt, mode: 'typography_patch' })
       });
 
       const data = await res.json();
@@ -362,17 +528,24 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
           
           if (!newTheme.typography_details) newTheme.typography_details = {};
 
+          const detailsPatch = generatedTheme?.typography_details || generatedTheme;
+          const validation = validateTypographyDetailsPatch(detailsPatch, mode);
+          if (!validation.ok) {
+            alert(`AI output rejected: ${validation.reason}`);
+            return;
+          }
+
           if (mode === 'all') {
             // Apply all typography from response
-            if (generatedTheme.typography_details) {
-              Object.assign(newTheme.typography_details, generatedTheme.typography_details);
-            }
+            Object.assign(newTheme.typography_details, detailsPatch);
           } else {
             // Apply only selected tag
-            if (generatedTheme.typography_details && generatedTheme.typography_details[selectedTag]) {
-              if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
-              Object.assign(newTheme.typography_details[selectedTag], generatedTheme.typography_details[selectedTag]);
+            if (!detailsPatch[selectedTag]) {
+              alert(`AI output rejected: missing '${selectedTag}' in typography_details.`);
+              return;
             }
+            if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
+            Object.assign(newTheme.typography_details[selectedTag], detailsPatch[selectedTag]);
           }
           
           setCustomTheme(customThemeName || 'Custom Theme', newTheme);
@@ -389,358 +562,197 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     }
   };
 
+  const aiToolbar = (
+    <div className="ai-prompt-group">
+      <div className="input-wrapper">
+        <button
+          className="ai-icon-btn"
+          type="button"
+          title="AI Assistant"
+          onClick={() => aiInputRef.current?.focus()}
+        >
+          <Sparkles size={14} />
+        </button>
+        <input
+          type="text"
+          ref={aiInputRef}
+          value={aiPrompt}
+          onChange={(e) => setAiPrompt(e.target.value)}
+          placeholder="Describe typography style..."
+        />
+      </div>
+
+      {isOptimizing ? (
+        <div className="loading">
+          <Loader2 className="animate-spin" size={16} />
+        </div>
+      ) : (
+        <div className="actions">
+          <button
+            onClick={() => handleOptimize('single')}
+            title={`AI Fix ${selectedTag.toUpperCase()}`}
+            className="fix-single"
+          >
+            AI {selectedTag.toUpperCase()}
+          </button>
+          <button onClick={() => handleOptimize('all')} title="AI Fix All" className="fix-all">
+            AI All
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <div ref={containerRef} style={{ height: '100%' }}>
       <InteractiveDemoContainer
         title="Interactive Demo: Typography"
         action={action}
-        toolbar={
-          <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1, marginRight: '1rem' }}>
-               <div style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                 <Sparkles size={14} style={{ position: 'absolute', left: '8px', color: 'var(--ds__palette__text-secondary)', opacity: 0.5 }} />
-                 <input 
-                   type="text" 
-                   value={aiPrompt}
-                   onChange={(e) => setAiPrompt(e.target.value)}
-                   placeholder="Describe typography style..."
-                   style={{
-                     width: '100%',
-                     padding: '4px 8px 4px 28px',
-                     borderRadius: '6px',
-                     border: '1px solid var(--ds__palette__neutral-main)',
-                     background: 'var(--ds__palette__surface-main)',
-                     fontSize: '0.8rem',
-                     color: 'var(--ds__palette__text-primary)'
-                   }}
-                 />
-               </div>
-
-               {isOptimizing ? (
-                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--ds__palette__primary-main)', fontSize: '0.8rem' }}>
-                   <Loader2 className="animate-spin" size={16} />
-                 </div>
-               ) : (
-                 <div style={{ display: 'flex', gap: '0.25rem' }}>
-                   <button
-                     onClick={() => handleOptimize('single')}
-                     title={`AI Fix ${selectedTag.toUpperCase()}`}
-                     style={{
-                       background: 'var(--ds__palette__primary-main)',
-                       color: 'var(--ds__palette__primary-contrast)',
-                       border: 'none',
-                       borderRadius: '6px',
-                       padding: '4px 8px',
-                       cursor: 'pointer',
-                       fontSize: '0.75rem',
-                       fontWeight: 600,
-                       whiteSpace: 'nowrap'
-                     }}
-                   >
-                     Fix {selectedTag.toUpperCase()}
-                   </button>
-                   <button
-                     onClick={() => handleOptimize('all')}
-                     title="AI Fix All"
-                     style={{
-                       background: 'transparent',
-                       color: 'var(--ds__palette__primary-main)',
-                       border: '1px solid var(--ds__palette__primary-main)',
-                       borderRadius: '6px',
-                       padding: '4px 8px',
-                       cursor: 'pointer',
-                       fontSize: '0.75rem',
-                       fontWeight: 600,
-                       whiteSpace: 'nowrap'
-                     }}
-                   >
-                     Fix All
-                   </button>
-                 </div>
-               )}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', background: 'var(--ds__palette__surface-main)', padding: '2px', borderRadius: '6px', border: '1px solid var(--ds__palette__neutral-main)' }}>
-              {BPS.map((bp) => {
-                const isDefault = bp.label === 'Default';
-                const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bp.width);
-                
-                return (
-                  <button
-                    key={bp.label}
-                    onClick={() => {
-                      if (isDefault) {
-                        setIsAutoMode(true);
-                        setPreviewWidth(100);
-                      } else {
-                        setIsAutoMode(false);
-                        setPreviewWidth(bp.width);
-                      }
-                    }}
-                    title={isDefault ? "Current Screen Size" : `${bp.label} View`}
-                    style={{
-                      padding: isDefault ? '4px 8px' : '4px 12px',
-                      background: isActive ? 'var(--ds__palette__primary-light)' : 'transparent',
-                      color: isActive ? 'var(--ds__palette__primary-contrast)' : 'var(--ds__palette__text-secondary)',
-                      border: 'none',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontSize: '0.8rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    {isDefault ? <Monitor size={14} /> : bp.label}
-                  </button>
-                );
-              })}
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label htmlFor="tag-select" style={{ fontSize: '0.8rem', opacity: 0.7 }}>Element:</label>
-              <select 
-                id="tag-select"
-                value={selectedTag}
-                onChange={(e) => {
-                  setSelectedTag(e.target.value);
-                  if (editingTag) setEditingTag(null);
-                }}
-                style={{ 
-                  padding: '0.25rem 0.5rem',  
-                  borderRadius: '4px', 
-                  border: '1px solid var(--ds__palette__neutral-main)',
-                  background: 'var(--ds__palette__surface-main)',
-                  color: 'var(--ds__palette__surface-contrast)',
-                  fontSize: '0.85rem',
-                  cursor: 'pointer'
-                }}
-              >
-                {TAGS.map(tag => <option key={tag} value={tag}>{tag.toUpperCase()}</option>)}
-              </select>
-            </div>
-          </>
-        }
+        toolbar={aiToolbar}
       >
-      <div className="demo-layout-grid">
-        <div className="demo-logic-column">
-          {/* Live Preview Section */}
-          <div className="live-preview-section" style={{ 
-            marginBottom: '1.5rem', 
-            paddingBottom: '1.5rem', 
-            borderBottom: '1px solid var(--ds__palette__neutral-light)',
-            display: 'flex',
-            justifyContent: 'center',
-            background: 'var(--ds__palette__surface-dark)', // Darker background to simulate "void"
-            borderRadius: '8px',
-            padding: '2rem 1rem',
-            overflow: 'hidden'
-          }}>
+        <div className="controls-section">
+            <div className="controls-row-bottom">
+              <div className="controls-group">
+                {BPS.map((bp) => {
+                  const isDefault = bp.label === 'Default';
+                  const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bp.width);
+                  
+                  return (
+                    <button
+                      key={bp.label}
+                      onClick={() => {
+                        if (isDefault) {
+                          setIsAutoMode(true);
+                          setPreviewWidth(100);
+                        } else {
+                          setIsAutoMode(false);
+                          setPreviewWidth(bp.width);
+                        }
+                      }}
+                      title={isDefault ? "Current Screen Size" : `${bp.label} View`}
+                      className={`control-button ${isActive ? 'active' : ''} ${isDefault ? 'is-default' : ''}`}
+                    >
+                      {isDefault ? <Monitor size={14} /> : bp.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="element-select-group">
+                <label htmlFor="tag-select">Element:</label>
+                <select 
+                  id="tag-select"
+                  value={selectedTag}
+                  onChange={(e) => {
+                    setSelectedTag(e.target.value);
+                    if (editingTag) setEditingTag(null);
+                  }}
+                >
+                  {TAGS.map(tag => <option key={tag} value={tag}>{tag.toUpperCase()}</option>)}
+                </select>
+              </div>
+
+              <div className="element-select-group">
+                <label htmlFor="sample-text-select">Text:</label>
+                <select
+                  id="sample-text-select"
+                  value={currentSampleId}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    if (next === 'custom') return;
+                    if (next === 'reset') {
+                      updateText(selectedTag, getInitialTextForTag(selectedTag));
+                      return;
+                    }
+                    const preset = SAMPLE_TEXT_PRESETS.find((p) => p.id === next);
+                    if (preset) updateText(selectedTag, preset.text);
+                  }}
+                  title="Choose sample text"
+                >
+                  <option value="custom">Custom (editable)</option>
+                  <option value="reset">Reset to default</option>
+                  {SAMPLE_TEXT_PRESETS.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+        </div>
+
+        {/* Live Preview Section */}
+        <div className="live-preview-section">
         
         <div 
           className="live-preview-box" 
           ref={previewBoxRef}
           style={{ 
-            width: `${previewWidth}%`, 
-            transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)', 
-            margin: '0 auto',
-            background: 'transparent',
-            borderLeft: '1px solid var(--ds__palette__divider)',
-            borderRight: '1px solid var(--ds__palette__divider)',
-            minHeight: '120px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            position: 'relative',
-            padding: 0
+            width: `${previewWidth}%`
           }}
         >
           {/* Architectural Guides */}
-          <div style={{ position: 'absolute', top: 0, bottom: 0, left: '50%', width: '1px', background: 'var(--ds__palette__divider)', opacity: 0.1, pointerEvents: 'none' }} />
+          <div className="architectural-guide-center" />
           
           {/* Text Container with Architectural Bounds */}
-          <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center' }}>
+          <div className="text-container-wrapper">
             
             {/* Line Height Indicator (Left) */}
-            <div style={{ 
-              position: 'absolute', 
-              left: '-8px', 
-              top: 0, 
-              bottom: 0, 
-              width: '4px', 
-              borderLeft: '1px solid var(--ds__palette__primary-main)',
-              borderTop: '1px solid var(--ds__palette__primary-main)',
-              borderBottom: '1px solid var(--ds__palette__primary-main)',
-              opacity: 0.3,
-              pointerEvents: 'none'
-            }} />
+            <div className="line-height-indicator" />
 
             {/* Content Bounds (Dashed Box) */}
-            <div style={{
-              position: 'absolute',
-              top: 0, left: 0, right: 0, bottom: 0,
-              border: '1px dashed var(--ds__palette__primary-light)',
-              opacity: 0.15,
-              pointerEvents: 'none'
-            }} />
+            <div className="content-bounds-indicator" />
 
             {React.createElement(
               selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' || selectedTag === 'default' ? 'p' : selectedTag,
               { 
-                className: `ds-typo ${selectedTag}`,
+                className: `ds-typo ${selectedTag} editable-typography-element`,
                 'data-typo': selectedTag,
                 ref: editableRef,
                 contentEditable: true,
                 suppressContentEditableWarning: true,
                 spellCheck: false,
                 onInput: handleInput,
-                style: { 
-                  margin: 0, 
-                  transition: 'all 0.2s ease', 
-                  outline: 'none', 
-                  minWidth: '10px',
-                  cursor: 'text',
-                  textAlign: 'center',
-                  width: '100%',
-                  position: 'relative',
-                  zIndex: 2,
-                  fontSize: isAutoMode ? `var(--${selectedTag}-size)` : resolveResponsiveValue(fontSizeString, previewWidth),
-                  fontFamily: `var(--${selectedTag}-font-family)`,
-                  fontWeight: `var(--${selectedTag}-weight)`,
-                  lineHeight: `var(--${selectedTag}-line)`,
-                  letterSpacing: `var(--${selectedTag}-spacing)`,
-                  textTransform: `var(--${selectedTag}-transform)` as React.CSSProperties['textTransform'],
-                  textDecoration: `var(--${selectedTag}-decoration)`,
-                  fontStyle: `var(--${selectedTag}-style)`,
-                  marginBlockStart: `var(--${selectedTag}-margin-block-start)`,
-                  marginBlockEnd: `var(--${selectedTag}-margin-block-end)`
-                } 
+                style: !isAutoMode ? { 
+                  fontSize: resolveResponsiveValue(fontSizeString, previewWidth)
+                } : undefined 
               }
             )}
           </div>
         </div>
       </div>
 
-      <div style={{
-          marginBottom: '1.5rem',
-          padding: '1rem',
-          background: 'var(--ds__palette__surface-light)',
-          border: '1px solid var(--ds__palette__neutral-light)',
-          borderRadius: '6px'
-      }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-            <span style={{ 
-                fontSize: '0.8rem', 
-                color: 'var(--ds__palette__text-secondary)',
-                fontWeight: 600,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em'
-            }}>
-                CSS Usage
-            </span>
-          </div>
-          <div style={{
-              background: 'var(--ds__palette__surface-dark)',
-              padding: '0.75rem',
-              borderRadius: '6px',
-              fontFamily: 'var(--font-code)',
-              fontSize: '0.85rem',
-              color: 'var(--ds__palette__text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              overflowX: 'auto',
-              border: '1px solid var(--ds__palette__neutral-dark)'
-          }}>
-              <span style={{ color: 'var(--ds__palette__secondary-light)' }}>.any-class</span>
-              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-disabled)' }}>{`{`}</span>
-              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__primary-light)' }}>@ds-typo</span>
-              <span style={{ color: 'var(--ds__palette__text-primary)' }}>(</span>
-              <span style={{ color: 'var(--ds__palette__warning-light)' }}>{selectedTag}</span>
-              <span style={{ color: 'var(--ds__palette__text-primary)' }}>)</span>
-              <span style={{ color: 'var(--ds__palette__text-disabled)' }}>;</span>
-              <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-disabled)' }}>{`}`}</span>
-          </div>
-          <p style={{ 
-              marginTop: '0.75rem', 
-              fontSize: '0.8rem', 
-              color: 'var(--ds__palette__text-secondary)',
-              lineHeight: 1.5
-          }}>
-              <strong style={{ color: 'var(--ds__palette__text-primary)' }}>Theme Configuration:</strong> The settings below define your JSON theme. 
-              Once configured in <code>uxdsl.theme.json</code>, the mixin above applies these responsive rules automatically.
-          </p>
-      </div>
+      <div className="demo-layout-grid">
+        <div className="demo-logic-column">
 
-      <div style={{
-        background: 'var(--ds__palette__surface-main)',
-        padding: '1rem',
-        borderRadius: '6px',
-        marginBottom: '1.5rem',
-        border: '1px dashed var(--ds__palette__neutral-main)',
-        fontFamily: 'var(--font-code)',
-        fontSize: '0.9rem',
-        color: 'var(--ds__palette__primary-dark)',
-        overflowX: 'auto',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '0.25rem'
-      }}>
+
+      <div className="json-preview-container">
         <div>{selectedTag}: {'{'}</div>
         
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />,
+            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />,
           </div>
           <button 
             onClick={() => setIsEditorOpen(true)}
             title="Edit Font Size"
-            style={{
-              background: 'transparent',
-              border: '1px solid var(--ds__palette__divider)',
-              borderRadius: '4px',
-              padding: '4px',
-              cursor: 'pointer',
-              color: 'var(--ds__palette__text-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'all 0.2s'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-              e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-              e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-            }}
+            className="json-action-button"
           >
             <Edit2 size={16} />
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isFontFamilyInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isFontFamilyInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isFontFamilyInherited && (
               <button
                 onClick={() => handleRemoveProperty('fontFamily')}
                 title="Reset to Default"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  color: 'var(--ds__palette__text-disabled)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+                className="json-action-button delete-button"
               >
                 <Trash2 size={14} />
               </button>
@@ -748,55 +760,24 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             <button 
               onClick={() => setIsFontFamilyEditorOpen(true)}
               title="Edit Font Family"
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--ds__palette__divider)',
-                borderRadius: '4px',
-                padding: '4px',
-                cursor: 'pointer',
-                color: 'var(--ds__palette__text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-              }}
+              className="json-action-button"
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isFontWeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isFontWeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isFontWeightInherited && (
               <button
                 onClick={() => handleRemoveProperty('fontWeight')}
                 title="Reset to Default"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  color: 'var(--ds__palette__text-disabled)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+                className="json-action-button delete-button"
               >
                 <Trash2 size={14} />
               </button>
@@ -804,55 +785,24 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             <button 
               onClick={() => setIsFontWeightEditorOpen(true)}
               title="Edit Font Weight"
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--ds__palette__divider)',
-                borderRadius: '4px',
-                padding: '4px',
-                cursor: 'pointer',
-                color: 'var(--ds__palette__text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-              }}
+              className="json-action-button"
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isLineHeightInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isLineHeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isLineHeightInherited && (
               <button
                 onClick={() => handleRemoveProperty('lineHeight')}
                 title="Reset to Default"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  color: 'var(--ds__palette__text-disabled)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+                className="json-action-button delete-button"
               >
                 <Trash2 size={14} />
               </button>
@@ -860,55 +810,24 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             <button 
               onClick={() => setIsLineHeightEditorOpen(true)}
               title="Edit Line Height"
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--ds__palette__divider)',
-                borderRadius: '4px',
-                padding: '4px',
-                cursor: 'pointer',
-                color: 'var(--ds__palette__text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-              }}
+              className="json-action-button"
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isLetterSpacingInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isLetterSpacingInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isLetterSpacingInherited && (
               <button
                 onClick={() => handleRemoveProperty('letterSpacing')}
                 title="Reset to Default"
-                style={{
-                  background: 'transparent',
-                  border: 'none',
-                  padding: '4px',
-                  cursor: 'pointer',
-                  color: 'var(--ds__palette__text-disabled)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  transition: 'all 0.2s'
-                }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}
+                className="json-action-button delete-button"
               >
                 <Trash2 size={14} />
               </button>
@@ -916,26 +835,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             <button 
               onClick={() => setIsLetterSpacingEditorOpen(true)}
               title="Edit Letter Spacing"
-              style={{
-                background: 'transparent',
-                border: '1px solid var(--ds__palette__divider)',
-                borderRadius: '4px',
-                padding: '4px',
-                cursor: 'pointer',
-                color: 'var(--ds__palette__text-secondary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__primary-main)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--ds__palette__text-secondary)';
-                e.currentTarget.style.borderColor = 'var(--ds__palette__divider)';
-              }}
+              className="json-action-button"
             >
               <Edit2 size={16} />
             </button>
@@ -943,78 +843,101 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         </div>
 
         {/* Text Transform */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isTextTransformInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isTextTransformInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isTextTransformInherited && (
-              <button onClick={() => handleRemoveProperty('textTransform')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('textTransform')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsTextTransformEditorOpen(true)} title="Edit Text Transform" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+            <button onClick={() => setIsTextTransformEditorOpen(true)} title="Edit Text Transform" className="json-action-button"><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Text Decoration */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isTextDecorationInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isTextDecorationInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isTextDecorationInherited && (
-              <button onClick={() => handleRemoveProperty('textDecoration')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('textDecoration')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsTextDecorationEditorOpen(true)} title="Edit Text Decoration" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+            <button onClick={() => setIsTextDecorationEditorOpen(true)} title="Edit Text Decoration" className="json-action-button"><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Font Style */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isFontStyleInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isFontStyleInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isFontStyleInherited && (
-              <button onClick={() => handleRemoveProperty('fontStyle')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('fontStyle')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsFontStyleEditorOpen(true)} title="Edit Font Style" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+            <button onClick={() => setIsFontStyleEditorOpen(true)} title="Edit Font Style" className="json-action-button"><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Margin Block Start */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isMarginBlockStartInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isMarginBlockStartInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isMarginBlockStartInherited && (
-              <button onClick={() => handleRemoveProperty('marginBlockStart')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('marginBlockStart')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsMarginBlockStartEditorOpen(true)} title="Edit Margin Block Start" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+            <button onClick={() => setIsMarginBlockStartEditorOpen(true)} title="Edit Margin Block Start" className="json-action-button"><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Margin Block End */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', paddingLeft: '2ch' }}>
+        <div className="json-property-row">
           <div>
-            <span style={{ color: 'var(--ds__palette__secondary-main)' }}>&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span style={{ color: 'var(--ds__palette__text-disabled)' }}>&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
-            {isMarginBlockEndInherited && <span style={{ fontSize: '0.75rem', color: 'var(--ds__palette__text-disabled)', marginLeft: '0.5rem' }}>{`// inherited`}</span>}
+            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            {isMarginBlockEndInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
-          <div style={{ display: 'flex', gap: '0.25rem' }}>
+          <div className="json-action-group">
             {!isDefault && !isMarginBlockEndInherited && (
-              <button onClick={() => handleRemoveProperty('marginBlockEnd')} title="Reset to Default" style={{ background: 'transparent', border: 'none', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-disabled)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => e.currentTarget.style.color = 'var(--ds__palette__error-main)'} onMouseLeave={(e) => e.currentTarget.style.color = 'var(--ds__palette__text-disabled)'}><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('marginBlockEnd')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsMarginBlockEndEditorOpen(true)} title="Edit Margin Block End" style={{ background: 'transparent', border: '1px solid var(--ds__palette__divider)', borderRadius: '4px', padding: '4px', cursor: 'pointer', color: 'var(--ds__palette__text-secondary)', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.2s' }} onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--ds__palette__primary-main)'; e.currentTarget.style.borderColor = 'var(--ds__palette__primary-main)'; }} onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--ds__palette__text-secondary)'; e.currentTarget.style.borderColor = 'var(--ds__palette__divider)'; }}><Edit2 size={16} /></button>
+            <button onClick={() => setIsMarginBlockEndEditorOpen(true)} title="Edit Margin Block End" className="json-action-button"><Edit2 size={16} /></button>
           </div>
         </div>
         
         <div>{'}'}</div>
       </div>
-    </div>
+
+      <div className="css-usage-container">
+          <div className="css-usage-header">
+            <span>
+                CSS Usage
+            </span>
+          </div>
+          <div className="css-code-block">
+              <span className="selector">.any-class</span>
+              <span className="bracket">{`{`}</span>
+              <span className="mixin">@ds-typo</span>
+              <span className="paren">(</span>
+              <span className="argument">{selectedTag}</span>
+              <span className="paren">)</span>
+              <span className="semicolon">;</span>
+              <span className="bracket">{`}`}</span>
+          </div>
+          <p className="css-usage-description">
+              <strong>Theme Configuration:</strong> The settings below define your JSON theme. 
+              Once configured in <code>uxdsl.theme.json</code>, the mixin above applies these responsive rules automatically.
+          </p>
+      </div>
+        </div>
+      </div>
 
       {/* Typography Showcase */}
       <div className="typography-showcase">
@@ -1026,19 +949,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
               {React.createElement(
                 tag === 'body' || tag === 'caption' ? 'p' : tag,
                 { 
-                  className: `showcase-text sample-${tag}`,
-                  style: {
-                    fontSize: `var(--${tag}-size)`,
-                    fontFamily: `var(--${tag}-font-family)`,
-                    fontWeight: `var(--${tag}-weight)`,
-                    lineHeight: `var(--${tag}-line)`,
-                    letterSpacing: `var(--${tag}-spacing)`,
-                    textTransform: `var(--${tag}-transform)` as React.CSSProperties['textTransform'],
-                    textDecoration: `var(--${tag}-decoration)`,
-                    fontStyle: `var(--${tag}-style)`,
-                    marginBlockStart: `var(--${tag}-margin-block-start)`,
-                    marginBlockEnd: `var(--${tag}-margin-block-end)`
-                  }
+                  className: `showcase-text sample-${tag}`
                 },
                 textMap[tag] || initialTypographyItems.find(i => i.tag === tag)?.text
               )}
@@ -1046,7 +957,6 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
           ))}
         </div>
       </div>
-    </div>
       </InteractiveDemoContainer>
 
       <BreakpointEditor 

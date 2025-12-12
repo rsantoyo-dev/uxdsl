@@ -26,7 +26,7 @@ export async function POST(req: Request) {
       }
     });
 
-    const { prompt } = await req.json();
+    const { prompt, mode } = await req.json();
 
     if (!prompt) {
       return NextResponse.json(
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       "Dancing Script", "Pacifico", "Lobster", "Abril Fatface", "Righteous", "Fredoka One", "Press Start 2P", "Creepster", "Rye", "Spirax", "Bangers", "Permanent Marker"
     ];
 
-    const SYSTEM_PROMPT = `
+    const THEME_SYSTEM_PROMPT = `
     You are a UX Design System expert. Your goal is to generate a UXDSL theme based on the user's description (e.g., "funky", "elegant", "dark", "nature", "cyberpunk").
     Return ONLY a raw JSON object (no markdown formatting) with the following structure. All fields must be present.
     
@@ -258,7 +258,32 @@ export async function POST(req: Request) {
     User Request:
     `;
 
-    const fullPrompt = SYSTEM_PROMPT + prompt; // Removed "\nUser Request: " from here as it's already in SYSTEM_PROMPT
+    const TYPOGRAPHY_PATCH_SYSTEM_PROMPT = `
+    You are a UX Design System typography expert.
+    Return ONLY a raw JSON object (no markdown formatting).
+
+    The user request is ALWAYS about patching an existing theme's typography.
+    Output shape must be:
+    {
+      "typography_details": {
+        "h1": { "fontSize": "string", "lineHeight": "string", "letterSpacing": "string", "fontWeight": "string", "fontFamily": "string", "textTransform": "string", "textDecoration": "string", "fontStyle": "string", "marginBlockStart": "string", "marginBlockEnd": "string" }
+      }
+    }
+
+    Rules:
+    - fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl.
+    - lineHeight MUST be responsive and include at least xs(...) and md(...).
+    - fontWeight must be a string number 100-900.
+    - fontFamily must respect the theme's current fonts unless the user explicitly requests a change.
+    - Keep hierarchy sane for headings when returning multiple tags.
+
+    Available Fonts: ${AVAILABLE_FONTS.join(", ")}
+
+    User Request:
+    `;
+
+  const systemPrompt = mode === 'typography_patch' ? TYPOGRAPHY_PATCH_SYSTEM_PROMPT : THEME_SYSTEM_PROMPT;
+  const fullPrompt = systemPrompt + prompt;
     const result = await model.generateContent(fullPrompt);
     const response = await result.response;
     const text = response.text();
