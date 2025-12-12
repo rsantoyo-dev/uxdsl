@@ -257,20 +257,47 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     const newTheme = JSON.parse(JSON.stringify(activeThemeData));
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
-    newTheme.typography_details[selectedTag].fontFamily = newValue;
+
+    const rawSelection = (newValue || '').trim();
+    const systemFontMap: Record<string, string> = {
+      'System UI': 'var(--font-ui)',
+      'Monospace': 'var(--font-code)',
+      'Serif': 'serif',
+      'Sans-Serif': 'sans-serif',
+      Arial: 'Arial, sans-serif',
+      Helvetica: 'Helvetica, Arial, sans-serif',
+      'Times New Roman': '"Times New Roman", Times, serif',
+      'Courier New': '"Courier New", Courier, monospace'
+    };
+
+    const normalizePrimaryFontName = (fontFamily: string) => {
+      return (fontFamily || '')
+        .split(',')[0]
+        .replace(/['"]/g, '')
+        .trim();
+    };
+
+    const primaryFont = normalizePrimaryFontName(rawSelection);
+    const cssFontFamily =
+      systemFontMap[rawSelection] ||
+      (primaryFont.includes(' ') ? `"${primaryFont}"` : primaryFont);
+
+    newTheme.typography_details[selectedTag].fontFamily = cssFontFamily;
 
     // Add to Google Fonts list logic...
     const systemFonts = ["System UI", "Monospace", "Serif", "Sans-Serif", "Arial", "Helvetica", "Times New Roman", "Courier New"];
     const singleWeightFonts = ["Pacifico", "Creepster", "Rye", "Spirax", "Lobster", "Abril Fatface", "Fredoka One"];
-    const primaryFont = newValue.split(',')[0].replace(/['"]/g, '').trim();
     
-    if (!systemFonts.includes(primaryFont) && primaryFont) {
+    if (!systemFonts.includes(rawSelection) && primaryFont) {
       if (!newTheme.fonts) newTheme.fonts = {};
       if (!newTheme.fonts.google) newTheme.fonts.google = [];
       const exists = newTheme.fonts.google.some((f: string) => f.startsWith(primaryFont));
       if (!exists) {
-        const weights = singleWeightFonts.includes(primaryFont) ? '400' : '400;500;600;700';
-        newTheme.fonts.google.push(`${primaryFont}:wght@${weights}`);
+        // Prefer loading italic + weights so fontStyle=italic works without synthetic italics.
+        const googleSpecifier = singleWeightFonts.includes(primaryFont)
+          ? `${primaryFont}:wght@400`
+          : `${primaryFont}:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700`;
+        newTheme.fonts.google.push(googleSpecifier);
       }
     }
 
@@ -1030,7 +1057,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         initialValue={fontStyleString}
         onSave={(val) => handleSaveProperty('fontStyle', val)}
         tagName={selectedTag}
-        editorType="text"
+        editorType="select"
         options={['normal', 'italic', 'oblique']}
       />
 
