@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
 import greenTheme from '../../uxdsl.theme.green.json'
 import purpleTheme from '../../uxdsl.theme.purple.json'
@@ -32,6 +32,10 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract purple curves')
 
+  const lastBaseSignatureRef = useRef<string | null>(null)
+  const lastTypographySignatureRef = useRef<string | null>(null)
+  const lastFontsHrefRef = useRef<string | null>(null)
+
   const activeThemeData = React.useMemo(() => {
     switch (currentTheme) {
       case 'purple': return purpleTheme; // Same as default now (optional redundancy)
@@ -53,172 +57,194 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const applyThemeEffects = (theme: any) => {
     if (!theme) return
 
-    // Clear any manual overrides from the Typography Playground
-    const root = document.documentElement;
-    const tags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre'];
-    const props = ['font-family', 'weight', 'size', 'line', 'spacing', 'opacity'];
-    
-    tags.forEach(tag => {
-      props.forEach(prop => {
-        root.style.removeProperty(`--${tag}-${prop}`);
-      });
-    });
-    
-    // Also clear global font families just in case
-    root.style.removeProperty('--font-ui');
-    root.style.removeProperty('--font-ui-2');
-    root.style.removeProperty('--font-code');
+    const ensureStyleTag = (id: string) => {
+      const existing = document.getElementById(id) as HTMLStyleElement | null
+      if (existing) return existing
+      const next = document.createElement('style')
+      next.id = id
+      document.head.appendChild(next)
+      return next
+    }
 
-    // 1. Generate Base CSS from tokens
-    let css = generateThemeCss(theme)
-
-    // 2. Handle Font Families (not covered by standard generator yet)
-    if (theme.fonts?.families) {
-      const fontVars = []
-      for (const fontKey in theme.fonts.families) {
-        fontVars.push(`--font-${fontKey}: ${theme.fonts.families[fontKey]}`)
-      }
-      if (fontVars.length > 0) {
-        // Append to :root block (hacky string injection, but works for now)
-        // effectively we just append another :root block
-        css += ` :root { ${fontVars.join('; ')} }`
+    const stableStringify = (value: unknown) => {
+      try {
+        return JSON.stringify(value)
+      } catch {
+        return null
       }
     }
 
-    // 2.5 Handle Typography Details (line-height, letter-spacing, size, weight)
-    if (theme.typography_details) {
-      const responsiveVars: Record<string, string[]> = {
-        xs: [], sm: [], md: [], lg: [], xl: []
-      };
+    const buildFontsHref = (googleFonts: unknown) => {
+      if (!Array.isArray(googleFonts)) return null
+      const families = (googleFonts as Array<unknown>)
+        .filter((f): f is string => typeof f === 'string' && f.trim().length > 0)
+        .map((font) => font.replace(/ /g, '+'))
+        .join('&family=')
+      if (!families) return null
+      return `https://fonts.googleapis.com/css2?family=${families}&display=swap`
+    }
 
-      const parseResponsiveValue = (value: string) => {
-        const breakpoints: Record<string, string> = {};
-        const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
-        let match;
-        let hasMatches = false;
-        
-        while ((match = regex.exec(value)) !== null) {
-          hasMatches = true;
-          breakpoints[match[1]] = match[2];
-        }
-        
-        if (!hasMatches) {
-          return { xs: value }; // Treat as base value if no responsive syntax
-        }
-        return breakpoints;
-      };
+    // 1) Base theme CSS (postcss-uxdsl runtime generator). Treat as relatively expensive.
+    const baseSignature = stableStringify({
+      // Exclude frequently-edited typography + fonts so edits don't force a full CSS rebuild.
+      ...theme,
+      typography_details: undefined,
+      fonts: undefined
+    })
 
-      const defaultDetails = theme.typography_details.default || {};
+    if (baseSignature && baseSignature !== lastBaseSignatureRef.current) {
+      const css = generateThemeCss(theme)
+      const baseStyleTag = ensureStyleTag('uxdsl-ssr-theme')
+      baseStyleTag.textContent = css
+      lastBaseSignatureRef.current = baseSignature
+    }
 
-      for (const tag in theme.typography_details) {
-        const details = theme.typography_details[tag]
-        const isDefaultTag = tag === 'default';
-        
-        const processProp = (propName: string, cssVarSuffix: string) => {
-          // Use explicit value OR fallback to default (if not default tag)
-          const value = details[propName] || (!isDefaultTag ? defaultDetails[propName] : undefined);
+    // 2) Typography + font-family vars as a small, separate stylesheet.
+    const typographySignature = stableStringify({
+      typography_details: theme.typography_details || null,
+      breakpoints: theme.breakpoints || null,
+      fontFamilies: theme.fonts?.families || null
+    })
 
-          if (value) {
-            const parsed = parseResponsiveValue(value);
-            Object.entries(parsed).forEach(([bp, val]) => {
-               if (responsiveVars[bp]) {
-                 responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${val}`);
-               }
-            });
+    if (typographySignature && typographySignature !== lastTypographySignatureRef.current) {
+      let typographyCss = ''
+
+      // 2.1 Font families as CSS vars
+      if (theme.fonts?.families && typeof theme.fonts.families === 'object') {
+        const fontVars: string[] = []
+        for (const fontKey in theme.fonts.families) {
+          const v = theme.fonts.families[fontKey]
+          if (typeof v === 'string' && v.trim().length > 0) {
+            fontVars.push(`--font-${fontKey}: ${v}`)
           }
-        };
-
-        processProp('lineHeight', 'line');
-        processProp('letterSpacing', 'spacing');
-        processProp('fontSize', 'size');
-        processProp('fontWeight', 'weight');
-        processProp('fontFamily', 'font-family');
-        processProp('textTransform', 'transform');
-        processProp('textDecoration', 'decoration');
-        processProp('fontStyle', 'style');
-        processProp('marginBlockStart', 'margin-block-start');
-        processProp('marginBlockEnd', 'margin-block-end');
-      }
-
-      // Generate CSS for each breakpoint
-      // Base (xs)
-      if (responsiveVars.xs.length > 0) {
-        css += ` :root { ${responsiveVars.xs.join('; ')} }`;
-      }
-
-      // Media queries
-      const bpValues = theme.breakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 };
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const typedBpValues = bpValues as any;
-
-      ['sm', 'md', 'lg', 'xl'].forEach(bp => {
-        if (responsiveVars[bp] && responsiveVars[bp].length > 0) {
-           const minWidth = typedBpValues[bp];
-           if (minWidth) {
-             css += ` @media (min-width: ${minWidth}px) { :root { ${responsiveVars[bp].join('; ')} } }`;
-           }
         }
-      });
+        if (fontVars.length > 0) {
+          typographyCss += `:root { ${fontVars.join('; ')} }\n`
+        }
+      }
+
+      // 2.2 Typography responsive vars
+      if (theme.typography_details && typeof theme.typography_details === 'object') {
+        const responsiveVars: Record<string, string[]> = { xs: [], sm: [], md: [], lg: [], xl: [] }
+
+        const parseResponsiveValue = (value: string) => {
+          const breakpoints: Record<string, string> = {}
+          const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g
+          let match
+          let hasMatches = false
+
+          while ((match = regex.exec(value)) !== null) {
+            hasMatches = true
+            breakpoints[match[1]] = match[2]
+          }
+
+          if (!hasMatches) return { xs: value }
+          return breakpoints
+        }
+
+        const defaultDetails = theme.typography_details.default || {}
+
+        for (const tag in theme.typography_details) {
+          const details = theme.typography_details[tag]
+          const isDefaultTag = tag === 'default'
+
+          const processProp = (propName: string, cssVarSuffix: string) => {
+            const rawValue = details?.[propName] || (!isDefaultTag ? defaultDetails?.[propName] : undefined)
+            if (typeof rawValue !== 'string' || rawValue.trim().length === 0) return
+
+            const parsed = parseResponsiveValue(rawValue)
+            Object.entries(parsed).forEach(([bp, val]) => {
+              if (responsiveVars[bp]) {
+                responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${String(val).trim()}`)
+              }
+            })
+          }
+
+          processProp('lineHeight', 'line')
+          processProp('letterSpacing', 'spacing')
+          processProp('fontSize', 'size')
+          processProp('fontWeight', 'weight')
+          processProp('fontFamily', 'font-family')
+          processProp('textTransform', 'transform')
+          processProp('textDecoration', 'decoration')
+          processProp('fontStyle', 'style')
+          processProp('marginBlockStart', 'margin-block-start')
+          processProp('marginBlockEnd', 'margin-block-end')
+        }
+
+        if (responsiveVars.xs.length > 0) {
+          typographyCss += `:root { ${responsiveVars.xs.join('; ')} }\n`
+        }
+
+        const bpValues = theme.breakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const typedBpValues = bpValues as any
+        ;['sm', 'md', 'lg', 'xl'].forEach((bp) => {
+          if (responsiveVars[bp] && responsiveVars[bp].length > 0) {
+            const minWidth = typedBpValues[bp]
+            if (minWidth) {
+              typographyCss += `@media (min-width: ${minWidth}px) { :root { ${responsiveVars[bp].join('; ')} } }\n`
+            }
+          }
+        })
+
+        // 2.3 Consumption overrides for properties that need higher specificity.
+        const consumptionTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre']
+        let overrideCss = ''
+
+        consumptionTags.forEach((tag) => {
+          const details = theme.typography_details?.[tag]
+          const fallbackDetails = theme.typography_details?.default || {}
+          const getValue = (prop: string) => details?.[prop] || (tag !== 'default' ? fallbackDetails?.[prop] : undefined)
+
+          const propsMap = [
+            { js: 'textTransform', css: 'text-transform', varSuffix: 'transform' },
+            { js: 'textDecoration', css: 'text-decoration', varSuffix: 'decoration' },
+            { js: 'fontStyle', css: 'font-style', varSuffix: 'style' },
+            { js: 'marginBlockStart', css: 'margin-block-start', varSuffix: 'margin-block-start' },
+            { js: 'marginBlockEnd', css: 'margin-block-end', varSuffix: 'margin-block-end' }
+          ]
+
+          const rules: string[] = []
+          propsMap.forEach(({ js, css, varSuffix }) => {
+            if (getValue(js)) {
+              rules.push(`${css}: var(--${tag}-${varSuffix}) !important;`)
+            }
+          })
+
+          if (rules.length > 0) {
+            overrideCss += `:root ${tag}, .ds-typo[data-typo="${tag}"] { ${rules.join(' ')} }\n`
+          }
+        })
+
+        if (overrideCss.trim().length > 0) {
+          typographyCss += `\n/* Global Typography Overrides */\n${overrideCss}`
+        }
+      }
+
+      const typographyStyleTag = ensureStyleTag('uxdsl-typography-theme')
+      typographyStyleTag.textContent = typographyCss
+      lastTypographySignatureRef.current = typographySignature
     }
 
-    // 2.6 Inject Global Consumption Rules for New Properties
-    // We generate specific, high-specificity rules ONLY for properties that are explicitly defined in the theme.
-    // This ensures we override component styles (like margin: 0) when the user wants to, 
-    // but leave them alone if the user hasn't set a value.
-    const consumptionTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre'];
-    let overrideCss = '';
-
-    consumptionTags.forEach(tag => {
-      const details = theme.typography_details?.[tag];
-      const defaultDetails = theme.typography_details?.default || {};
-      
-      const getValue = (prop: string) => details?.[prop] || (tag !== 'default' ? defaultDetails?.[prop] : undefined);
-
-      const propsMap = [
-        { js: 'textTransform', css: 'text-transform', varSuffix: 'transform' },
-        { js: 'textDecoration', css: 'text-decoration', varSuffix: 'decoration' },
-        { js: 'fontStyle', css: 'font-style', varSuffix: 'style' },
-        { js: 'marginBlockStart', css: 'margin-block-start', varSuffix: 'margin-block-start' },
-        { js: 'marginBlockEnd', css: 'margin-block-end', varSuffix: 'margin-block-end' },
-      ];
-
-      const rules: string[] = [];
-      propsMap.forEach(({ js, css, varSuffix }) => {
-        if (getValue(js)) {
-          // Use !important to ensure theme wins over component styles
-          rules.push(`${css}: var(--${tag}-${varSuffix}) !important;`);
+    // 3) Google fonts link - avoid churn if href is unchanged.
+    const nextFontsHref = buildFontsHref(theme.fonts?.google)
+    if (nextFontsHref !== lastFontsHrefRef.current) {
+      const existingLink = document.getElementById('uxdsl-google-fonts') as HTMLLinkElement | null
+      if (!nextFontsHref) {
+        if (existingLink) existingLink.remove()
+      } else {
+        if (existingLink) {
+          existingLink.href = nextFontsHref
+        } else {
+          const link = document.createElement('link')
+          link.id = 'uxdsl-google-fonts'
+          link.rel = 'stylesheet'
+          link.href = nextFontsHref
+          document.head.appendChild(link)
         }
-      });
-
-      if (rules.length > 0) {
-        // Use :root prefix to boost specificity over simple classes
-        overrideCss += `:root ${tag}, .ds-typo[data-typo="${tag}"] { ${rules.join(' ')} }\n`;
       }
-    });
-    
-    css += `\n/* Global Typography Overrides */\n${overrideCss}`;
-
-    // 3. Inject CSS
-    const styleTag = document.getElementById('uxdsl-ssr-theme')
-    if (styleTag) {
-      styleTag.innerHTML = css
-    }
-
-    // 4. Handle Google Fonts Link
-    if (theme.fonts?.google && Array.isArray(theme.fonts.google)) {
-      const existingLink = document.getElementById('uxdsl-google-fonts')
-      if (existingLink) {
-        existingLink.remove()
-      }
-
-      const fontFamilies = theme.fonts.google.map((font: string) => font.replace(/ /g, '+')).join('&family=')
-      if (fontFamilies) {
-        const link = document.createElement('link')
-        link.id = 'uxdsl-google-fonts'
-        link.rel = 'stylesheet'
-        link.href = `https://fonts.googleapis.com/css2?family=${fontFamilies}&display=swap`
-        document.head.appendChild(link)
-      }
+      lastFontsHrefRef.current = nextFontsHref
     }
   }
 
