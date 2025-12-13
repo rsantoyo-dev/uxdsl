@@ -8,7 +8,8 @@ import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 // import { optimizeTypography } from '../utils/typographyOptimizer';
 
-const TAGS = ['default', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
+// Size order (largest -> smallest-ish), HTML-first.
+const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre', 'default'];
 const BPS = [
   { label: 'XS', width: 30 },
   { label: 'SM', width: 45 },
@@ -116,6 +117,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme();
   const { textMap, updateText, editingTag, setEditingTag } = useTypographyDemo();
   const [selectedTag, setSelectedTag] = useState('h1');
+  const [textAlign, setTextAlign] = useState<'left' | 'center' | 'right' | 'justify'>('left');
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isFontFamilyEditorOpen, setIsFontFamilyEditorOpen] = useState(false);
   const [isFontWeightEditorOpen, setIsFontWeightEditorOpen] = useState(false);
@@ -366,7 +368,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         return { ok: false, reason: 'Missing typography_details object.' };
       }
 
-      const requiredTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'caption'];
+      const requiredTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre'];
       if (validateMode === 'all') {
         const missing = requiredTags.filter((t) => !detailsPatch[t]);
         if (missing.length) return { ok: false, reason: `Missing tags: ${missing.join(', ')}` };
@@ -505,6 +507,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
          }
        }
     3. For every tag you modify, include ALL of these fields: fontSize, fontFamily, fontWeight, letterSpacing, lineHeight, textTransform, textDecoration, fontStyle, marginBlockStart, marginBlockEnd.
+    3b. When asked to fix all, include these tags: h1, h2, h3, h4, h5, h6, p, body, span, caption, small, code, pre.
     4. fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl too.
     5. lineHeight MUST be responsive and include at least xs(...) and md(...).
     6. Keep hierarchy sane (h1 >= h2 >= ... >= h6) and never shrink h1 unless explicitly asked.
@@ -680,6 +683,36 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
               </div>
 
               <div className="element-select-group">
+                <label htmlFor="align-select">Align:</label>
+                <select
+                  id="align-select"
+                  value={textAlign}
+                  onChange={(e) => setTextAlign(e.target.value as typeof textAlign)}
+                  title="Preview text alignment"
+                >
+                  <option value="left">Left</option>
+                  <option value="center">Center</option>
+                  <option value="right">Right</option>
+                  <option value="justify">Justify</option>
+                </select>
+              </div>
+
+              <div className="element-select-group">
+                <label htmlFor="case-select">Case:</label>
+                <select
+                  id="case-select"
+                  value={textTransformString}
+                  onChange={(e) => handleSaveProperty('textTransform', e.target.value)}
+                  title="Text transform"
+                >
+                  <option value="none">None</option>
+                  <option value="uppercase">Uppercase</option>
+                  <option value="lowercase">Lowercase</option>
+                  <option value="capitalize">Capitalize</option>
+                </select>
+              </div>
+
+              <div className="element-select-group">
                 <label htmlFor="sample-text-select">Text:</label>
                 <select
                   id="sample-text-select"
@@ -731,7 +764,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             <div className="content-bounds-indicator" />
 
             {React.createElement(
-              selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'span' || selectedTag === 'small' || selectedTag === 'pre' || selectedTag === 'default' ? 'p' : selectedTag,
+              selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'default' ? 'p' : selectedTag,
               { 
                 className: `ds-typo ${selectedTag} editable-typography-element`,
                 'data-typo': selectedTag,
@@ -740,9 +773,13 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 suppressContentEditableWarning: true,
                 spellCheck: false,
                 onInput: handleInput,
-                style: !isAutoMode ? { 
-                  fontSize: resolveResponsiveValue(fontSizeString, previewWidth)
-                } : undefined 
+                style: !isAutoMode
+                  ? {
+                      textAlign,
+                      fontSize: resolveResponsiveValue(fontSizeString, previewWidth),
+                      lineHeight: resolveResponsiveValue(lineHeightString, previewWidth)
+                    }
+                  : { textAlign }
               }
             )}
           </div>
@@ -753,7 +790,10 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         <div className="demo-logic-column">
 
 
-      <div className="json-preview-container">
+      <div className="json-preview-container ds-typo pre" data-typo="pre">
+      <div className="json-preview-header">
+        <span>Theme Config (Live Typography)</span>
+      </div>
         <div>{selectedTag}: {'{'}</div>
         
         <div className="json-property-row">
@@ -948,7 +988,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 CSS Usage
             </span>
           </div>
-          <div className="css-code-block">
+          <div className="css-code-block ds-typo pre" data-typo="pre">
               <span className="selector">.any-class</span>
               <span className="bracket">{`{`}</span>
               <span className="mixin">@ds-typo</span>

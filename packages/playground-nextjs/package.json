@@ -6,6 +6,7 @@
     "local-deps": "npm install --prefix ../uxdsl-cli && npm install --prefix ../postcss-uxdsl && npm run build --prefix ../postcss-uxdsl",
     "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build",
     "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && uxdsl build --watch",
+    "theme:audit": "node scripts/audit-themes.mjs",
     "dev": "npm run local-deps && npm run uxdsl:build && concurrently \"next dev\"",
     "build": "npm run local-deps && npm run uxdsl:build && next build",
     "start": "next start",

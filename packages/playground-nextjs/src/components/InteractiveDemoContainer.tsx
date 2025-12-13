@@ -30,14 +30,17 @@ export function InteractiveDemoContainer({ title, children, toolbar, action }: I
         flexShrink: 0 // Prevent header crushing
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1, minWidth: 0 }}>
-          <div style={{ 
-            fontSize: '0.7rem', 
-            fontWeight: 700, 
-            letterSpacing: '0.05em', 
-            color: 'var(--ds__palette__text-secondary)',
-            textTransform: 'uppercase',
-            whiteSpace: 'nowrap'
-          }}>
+          <div
+            className="ds-typo caption"
+            data-typo="caption"
+            style={{
+              fontWeight: 700,
+              letterSpacing: '0.05em',
+              color: 'var(--ds__palette__text-secondary)',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap'
+            }}
+          >
             {title}
           </div>
           

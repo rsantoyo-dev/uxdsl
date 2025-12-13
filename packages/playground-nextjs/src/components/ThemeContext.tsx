@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+import { deepMergeTheme, generateThemeCss, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
 import greenTheme from '../../uxdsl.theme.green.json'
 import purpleTheme from '../../uxdsl.theme.purple.json'
 import defaultTheme from '../../uxdsl.theme.default.json'
@@ -35,6 +35,8 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const lastBaseSignatureRef = useRef<string | null>(null)
   const lastTypographySignatureRef = useRef<string | null>(null)
   const lastFontsHrefRef = useRef<string | null>(null)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const lastValidThemeRef = useRef<any>(null)
 
   const activeThemeData = React.useMemo(() => {
     switch (currentTheme) {
@@ -56,6 +58,31 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const applyThemeEffects = (theme: any) => {
     if (!theme) return
+
+    // Validate + normalize theme input so invalid JSON can't silently break styling.
+    const validated = validateAndNormalizeTheme(theme, { requireXsForResponsive: true })
+    if (!validated.ok) {
+      // Keep the last known good theme applied.
+      // eslint-disable-next-line no-console
+      console.error('UXDSL theme rejected (validation failed):', {
+        errors: validated.errors,
+        warnings: validated.warnings,
+      })
+
+      if (lastValidThemeRef.current) {
+        theme = lastValidThemeRef.current
+      } else {
+        return
+      }
+    } else {
+      theme = validated.theme
+      lastValidThemeRef.current = theme
+
+      if (validated.warnings.length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn('UXDSL theme warnings:', validated.warnings)
+      }
+    }
 
     const ensureStyleTag = (id: string) => {
       const existing = document.getElementById(id) as HTMLStyleElement | null
@@ -295,10 +322,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setCustomTheme = (name: string, themeData: any) => {
-    setCustomThemeData(themeData)
+    // Support partial overrides by merging them over the currently active theme.
+    // This keeps the system scalable as we add palette/spacing/etc.
+    const base = activeThemeData || defaultTheme
+    const merged = deepMergeTheme(base, themeData || {})
+
+    setCustomThemeData(merged)
     setCustomThemeName(name)
     
-    if (themeData.backgroundImage) {
+    if (themeData?.backgroundImage) {
       setBackgroundImage(themeData.backgroundImage)
     }
 

@@ -3,9 +3,9 @@
   border-radius: radius(1);
   position: relative;
   overflow: hidden;
-  display: flex; /* For centering content vertically if needed */
-  align-items: center; /* For vertical centering */
-  justify-content: center; /* For horizontal centering of text block */
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 
   /* Subtle top/bottom dashed lines to define line-height visually */
   border-top: 1px dashed palette(neutral-light, 0.5);
@@ -137,7 +137,7 @@
   padding-bottom: 1.5rem;
   border-bottom: 1px solid palette(neutral-light);
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   background: palette(surface-dark);
   border-radius: 8px;
   padding: 2rem 1rem;
@@ -168,9 +168,9 @@
 .text-container-wrapper {
   position: relative;
   width: 100%;
-  max-width: 65ch;
+  max-width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .line-height-indicator {
@@ -208,7 +208,8 @@
 .controls-row-bottom {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
+  flex-wrap: wrap;
   width: 100%;
   gap: 1rem;
 }
@@ -221,6 +222,8 @@
   padding: 2px;
   border-radius: 6px;
   border: 1px solid palette(neutral-main);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .control-button {
@@ -249,6 +252,8 @@
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  flex: 1 1 180px;
+  min-width: 0;
   
   label {
     font-size: 0.8rem;
@@ -264,6 +269,7 @@
     font-size: 0.85rem;
     cursor: pointer;
     min-width: 120px;
+    max-width: 100%;
   }
 }
 
@@ -373,13 +379,27 @@
   border-radius: 6px;
   margin-bottom: 1.5rem;
   border: 1px dashed palette(neutral-main);
-  font-family: var(--font-code);
-  font-size: 0.9rem;
   color: palette(primary-dark);
+  text-align: left;
   overflow-x: auto;
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+}
+
+.json-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+
+  span {
+    font-size: 0.8rem;
+    color: palette(text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
 }
 
 .css-usage-container {
@@ -409,8 +429,6 @@
   background: palette(surface-dark);
   padding: 0.75rem;
   border-radius: 6px;
-  font-family: var(--font-code);
-  font-size: 0.85rem;
   color: palette(text-primary);
   display: flex;
   align-items: center;
@@ -461,7 +479,7 @@
   outline: none;
   min-width: 10px;
   cursor: text;
-  text-align: center;
+  text-align: left;
   width: 100%;
   position: relative;
   z-index: 2;
@@ -482,6 +500,19 @@
       margin-block-end: var(--#{$tag}-margin-block-end);
     }
   }
+
+  &.code {
+    font-size: var(--pre-size);
+    font-family: var(--pre-font-family);
+    font-weight: var(--pre-weight);
+    line-height: var(--pre-line);
+    letter-spacing: var(--pre-spacing);
+    text-transform: var(--pre-transform);
+    text-decoration: var(--pre-decoration);
+    font-style: var(--pre-style);
+    margin-block-start: var(--pre-margin-block-start);
+    margin-block-end: var(--pre-margin-block-end);
+  }
 }
 
 .showcase-text {
@@ -500,6 +531,19 @@
       margin-block-start: var(--#{$tag}-margin-block-start);
       margin-block-end: var(--#{$tag}-margin-block-end);
     }
+  }
+
+  &.sample-code {
+    font-size: var(--pre-size);
+    font-family: var(--pre-font-family);
+    font-weight: var(--pre-weight);
+    line-height: var(--pre-line);
+    letter-spacing: var(--pre-spacing);
+    text-transform: var(--pre-transform);
+    text-decoration: var(--pre-decoration);
+    font-style: var(--pre-style);
+    margin-block-start: var(--pre-margin-block-start);
+    margin-block-end: var(--pre-margin-block-end);
   }
 }
 
@@ -564,7 +608,7 @@
   outline: none;
   min-width: 10px;
   cursor: text;
-  text-align: center;
+  text-align: left;
   width: 100%;
   position: relative;
   z-index: 2;
