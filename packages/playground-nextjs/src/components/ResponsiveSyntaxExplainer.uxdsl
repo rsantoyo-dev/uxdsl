@@ -261,12 +261,8 @@
   }
   
   select {
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    border: 1px solid palette(neutral-main);
-    background: palette(surface-main);
-    color: palette(surface-contrast);
-    font-size: 0.85rem;
+    @ds-input(outlined 2);
+    width: auto;
     cursor: pointer;
     min-width: 120px;
     max-width: 100%;
@@ -309,26 +305,10 @@
     }
     
     input {
-      width: 100%;
       min-width: 0;
+      @ds-input(outlined 2);
       height: 32px;
-      padding: 6px 10px 6px 30px;
-      border-radius: 6px;
-      border: 1px solid palette(neutral-main);
-      background: palette(surface-main);
-      font-size: 0.8rem;
-      color: palette(surface-contrast);
-
-      &::placeholder {
-        color: palette(text-secondary);
-        opacity: 0.85;
-      }
-
-      &:focus {
-        outline: none;
-        border-color: palette(primary-main);
-        box-shadow: 0 0 0 2px palette(primary-main, 0.2);
-      }
+      padding-left: 30px;
     }
   }
   

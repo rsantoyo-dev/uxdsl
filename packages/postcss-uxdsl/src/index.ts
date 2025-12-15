@@ -664,6 +664,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkRules((rule) => {
         // @ds-input(variant [tone] [size])
         rule.walkAtRules("ds-input", (at) => {
+          const parentRule = at.parent;
+          if (!parentRule || parentRule.type !== "rule") return;
+
           let inner = String((at.params || "").trim());
           if (
             (inner.startsWith('"') && inner.endsWith('"')) ||
@@ -708,10 +711,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             sizeToken
           );
           const insert = (prop: string, value: string) => {
-            (rule as any).insertBefore(at, { prop, value });
+            (parentRule as any).insertBefore(at, { prop, value });
           };
           // Normalize input element defaults
           insert("box-sizing", "border-box");
+          // Ensure form controls participate in the typography system (otherwise many browsers apply UA fonts).
+          insert("font", "inherit");
           insert("outline", "none");
           insert("appearance", "none");
           insert("width", "100%");
@@ -740,10 +745,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // placeholder creates ::placeholder rule
           if (base.placeholder) {
             const ph = postcss.rule({
-              selector: `${(rule as any).selector}::placeholder`,
+              selector: `${(parentRule as any).selector}::placeholder`,
             });
             ph.append({ prop: "color", value: base.placeholder });
-            (rule.parent as any).insertAfter(rule, ph);
+            (parentRule.parent as any).insertAfter(parentRule, ph);
           }
           // States
           const stateToSels: Record<string, string[]> = {
@@ -758,7 +763,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const pseudos = stateToSels[key] || [":" + key];
             pseudos.forEach((pz) => {
               const newRule = postcss.rule({
-                selector: `${(rule as any).selector}${pz}`,
+                selector: `${(parentRule as any).selector}${pz}`,
               });
               Object.keys(decls).forEach((dk) => {
                 const dv = decls[dk];
@@ -766,10 +771,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                   newRule.append({ prop: "caret-color", value: dv });
                 else if (dk === "placeholder") {
                   const phr = postcss.rule({
-                    selector: `${(rule as any).selector}${pz}::placeholder`,
+                    selector: `${(parentRule as any).selector}${pz}::placeholder`,
                   });
                   phr.append({ prop: "color", value: dv });
-                  (rule.parent as any).insertAfter(newRule, phr);
+                  (parentRule.parent as any).insertAfter(newRule, phr);
                 } else if (dk === "underline") {
                   newRule.append({ prop: "border", value: "none" });
                   newRule.append({ prop: "border-bottom", value: dv });
@@ -777,7 +782,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                   newRule.append({ prop: dk, value: dv });
                 }
               });
-              (rule.parent as any).insertAfter(rule, newRule);
+              (parentRule.parent as any).insertAfter(parentRule, newRule);
             });
           });
           at.remove();
