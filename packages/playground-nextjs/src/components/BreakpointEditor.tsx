@@ -6,7 +6,7 @@ import { X, Save, Eye, EyeOff } from 'lucide-react';
 interface BreakpointEditorProps {
   isOpen: boolean;
   onClose: () => void;
-  initialValue: string;
+  initialValue?: string;
   onSave: (newValue: string) => void;
   tagName: string;
   editorType?: 'numeric' | 'text' | 'font' | 'select';
@@ -32,7 +32,7 @@ interface BreakpointState {
   enabled: boolean;
 }
 
-export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagName, editorType = 'numeric', options = [] }: BreakpointEditorProps) {
+export function BreakpointEditor({ isOpen, onClose, initialValue = '', onSave, tagName, editorType = 'numeric', options = [] }: BreakpointEditorProps) {
   const [states, setStates] = useState<Record<string, BreakpointState>>({});
   const [singleValue, setSingleValue] = useState<string>('');
 
@@ -62,9 +62,11 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
   // Parse initial value string into state
   useEffect(() => {
     if (isOpen) {
+      const safeInitialValue = initialValue || '';
+
       if (editorType === 'font') {
         // Extract the first valid font name found, or use the whole string if no parens
-        let val = initialValue;
+        let val = safeInitialValue;
         if (val.includes('(')) {
           const match = val.match(/\(([^)]+)\)/);
           if (match) val = match[1];
@@ -128,12 +130,12 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
         }
       };
 
-      if (!initialValue.includes('(')) {
+      if (!safeInitialValue.includes('(')) {
         // Single value applies to xs (base)
-        parseVal(initialValue, 'xs');
+        parseVal(safeInitialValue, 'xs');
       } else {
         // Use split logic to handle nested parentheses (e.g. xs(space(1))) correctly
-        const parts = initialValue.split(/\s+(?![^(]*\))/g).filter(Boolean);
+        const parts = safeInitialValue.split(/\s+(?![^(]*\))/g).filter(Boolean);
         let hasMatches = false;
 
         parts.forEach(part => {
@@ -152,7 +154,7 @@ export function BreakpointEditor({ isOpen, onClose, initialValue, onSave, tagNam
 
         if (!hasMatches) {
           // It has parens (e.g. space(1) or calc(...)) but no breakpoint prefix
-          parseVal(initialValue, 'xs');
+          parseVal(safeInitialValue, 'xs');
         }
       }
       setStates(newStates);

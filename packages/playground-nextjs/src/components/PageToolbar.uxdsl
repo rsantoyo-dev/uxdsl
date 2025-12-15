@@ -30,10 +30,8 @@
 }
 
 #PageToolbar .page-toolbar__title {
-  @ds-typo(body-sm);
+  @ds-typo(body);
   color: palette(text-secondary);
-  font-weight: 400;
-  font-size: 0.85rem;
   display: flex;
   align-items: center;
   gap: density(1);
@@ -61,6 +59,7 @@
 }
 
 #PageToolbar .page-toolbar__brand-text {
+  @ds-typo (body);
   color: palette(primary-main);
   font-weight: 800;
 }

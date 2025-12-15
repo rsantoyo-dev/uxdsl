@@ -61,9 +61,9 @@
   }
 
   .side-nav__close {
+    @ds-typo(h4);
     background: transparent;
     border: none;
-    font-size: 1.5rem;
     cursor: pointer;
     color: palette(surface-contrast, 0.7);
     padding: space(1);

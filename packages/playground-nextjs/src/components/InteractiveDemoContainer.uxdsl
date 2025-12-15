@@ -1,0 +1,68 @@
+/* InteractiveDemoContainer styles - Scoped */
+.InteractiveDemoContainer {
+  @ds-surface(outlined);
+  @ds-typo(body);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border-radius: radius(2);
+}
+
+.InteractiveDemoContainer__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: density(4);
+  padding: density(3) density(4);
+  border-bottom: 1px solid palette(neutral-light);
+  background: palette(surface-main);
+  flex-shrink: 0;
+}
+
+.InteractiveDemoContainer__headerLeft {
+  display: flex;
+  align-items: center;
+  gap: density(4);
+  flex: 1;
+  min-width: 0;
+}
+
+.InteractiveDemoContainer__title {
+  @ds-typo(caption);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: palette(text-secondary);
+  text-transform: uppercase;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.InteractiveDemoContainer__action {
+  margin-left: density(4);
+  flex-shrink: 0;
+}
+
+.InteractiveDemoContainer__toolbar {
+  padding: density(3) density(4);
+  border-bottom: 1px solid palette(neutral-light);
+  background: palette(surface-light);
+  display: flex;
+  flex-direction: column;
+  gap: density(2);
+  flex-shrink: 0;
+}
+
+.InteractiveDemoContainer__bodyScroll {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.InteractiveDemoContainer__bodyInner {
+  padding: density(4);
+  flex: 1;
+}

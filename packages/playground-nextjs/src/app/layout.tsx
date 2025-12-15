@@ -58,7 +58,7 @@ export default function RootLayout({
       <head>
         <ThemeScript theme={theme} />
       </head>
-      <body>
+      <body className="ds-typo" data-typo="body">
         <Providers>
           <AppHeader />
           <PageToolbar />

@@ -40,6 +40,7 @@
 @import '../components/HomeDemo.uxdsl';
 @import '../components/HomeInteractiveDemos.uxdsl';
 @import '../components/InputDemo.uxdsl';
+@import '../components/InteractiveDemoContainer.uxdsl';
 @import '../components/NavigationCardLink.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import '../components/PageToolbar.uxdsl';
@@ -52,6 +53,7 @@
 @import '../components/UXDSLCardDemo.uxdsl';
 @import './docs/breakpoints/breakpoints.uxdsl';
 @import './docs/quick-start/quick-start.uxdsl';
+@import './docs/typography/typography.uxdsl';
 @import './not-found.uxdsl';
 @import './page.uxdsl';
 @import './productivity/page.uxdsl';

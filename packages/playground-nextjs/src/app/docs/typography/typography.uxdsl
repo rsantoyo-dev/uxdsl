@@ -1,0 +1,97 @@
+/* Typography Docs Page Styles - Scoped */
+#TypographyPage {
+  .doc-content {
+    display: flex;
+    flex-direction: column;
+    gap: density(3);
+  }
+
+  .doc-divider {
+    border: 0;
+    border-top: 1px solid palette(neutral-light);
+    opacity: 0.6;
+    margin: density(10) 0;
+  }
+
+  .doc-content h2.ds-typo {
+    @ds-typo(h2);
+    margin: 0;
+    color: palette(surface-contrast);
+  }
+
+  .doc-content h3.ds-typo {
+    @ds-typo(h3);
+    margin: density(4) 0 density(2);
+    color: palette(surface-contrast);
+  }
+
+  .doc-paragraph {
+    @ds-typo(p);
+    margin: 0;
+    color: palette(surface-contrast, 0.85);
+    max-width: 75ch;
+  }
+
+  .code-wrapper {
+    margin-top: density(3);
+    box-shadow: shadow(2);
+  }
+
+  .table-card {
+    @ds-surface(outlined);
+    padding: density(3);
+    border-radius: radius(2);
+    background: palette(surface-light, 0.35);
+    overflow-x: auto;
+  }
+
+  .doc-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .doc-table th {
+    @ds-typo(small);
+    text-align: left;
+    padding: density(2);
+    border-bottom: 2px solid palette(neutral-light);
+    color: palette(surface-contrast);
+    font-weight: 600;
+  }
+
+  .doc-table td {
+    @ds-typo(body);
+    padding: density(2);
+    border-bottom: 1px solid palette(neutral-light);
+    color: palette(surface-contrast, 0.85);
+    vertical-align: top;
+  }
+
+  .doc-table tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .doc-table code {
+    background: palette(neutral-light);
+    padding: 2px 6px;
+    border-radius: radius(1);
+    font-family: font(code);
+    font-size: 0.9em;
+    color: palette(primary-dark);
+  }
+
+  .info-box {
+    @ds-surface(outlined neutral);
+    padding: density(3);
+    border-radius: radius(2);
+    background: palette(surface-light, 0.35);
+    border: 1px dashed palette(neutral-main);
+  }
+
+  .info-text {
+    @ds-typo(small);
+    margin: 0;
+    color: palette(surface-contrast, 0.85);
+    max-width: 75ch;
+  }
+}

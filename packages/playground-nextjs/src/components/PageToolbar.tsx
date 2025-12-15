@@ -75,7 +75,7 @@ export default function PageToolbar() {
           )}
           <div className="page-toolbar__title">
             <Link href="/" className="breadcrumb-link-brand">
-              <span className="page-toolbar__brand-text">UX-DSL</span>
+              <span className="page-toolbar__brand-text" data-typo="span">UX-DSL</span>
             </Link>
             {segments.map((segment, index) => {
               const href = '/' + segments.slice(0, index + 1).join('/')
