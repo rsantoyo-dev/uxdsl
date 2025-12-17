@@ -155,18 +155,18 @@
     "font-code": "\"JetBrains Mono\", \"SF Mono\", Menlo, monospace"
   },
   "typography_details": {
-    "h1": { "fontSize": "xs(2rem) sm(2.25rem) md(2.75rem) lg(3.25rem) xl(3.75rem)", "fontWeight": "700", "lineHeight": "xs(1.1) md(1.2)", "letterSpacing": "-0.02em" },
-    "h2": { "fontSize": "xs(1.75rem) sm(1.875rem) md(2.25rem) lg(2.75rem) xl(3.25rem)", "fontWeight": "700", "lineHeight": "xs(1.2) md(1.3)", "letterSpacing": "-0.01em" },
-    "h3": { "fontSize": "xs(1.5rem) sm(1.625rem) md(1.875rem) lg(2.125rem) xl(2.375rem)", "fontWeight": "600", "lineHeight": "xs(1.3) md(1.4)", "letterSpacing": "normal" },
-    "h4": { "fontSize": "xs(1.25rem) sm(1.375rem) md(1.5rem) lg(1.75rem) xl(2rem)", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
-    "h5": { "fontSize": "xs(1.125rem) sm(1.1875rem) md(1.25rem) lg(1.375rem) xl(1.5rem)", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
-    "h6": { "fontSize": "xs(1rem) sm(1.0625rem) md(1.125rem) lg(1.25rem) xl(1.375rem)", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
-    "p": { "fontSize": "xs(0.9375rem) md(1rem)", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
-    "body": { "fontSize": "xs(0.875rem) md(1rem)", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
-    "span": { "fontSize": "xs(0.875rem) md(1rem)", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
-    "small": { "fontSize": "xs(0.75rem) md(0.8125rem)", "fontWeight": "400", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "0.01em" },
-    "code": { "fontSize": "xs(0.8125rem) md(0.875rem)", "fontWeight": "400", "lineHeight": "xs(1.55) md(1.6)", "letterSpacing": "normal" },
-    "pre": { "fontSize": "xs(0.8125rem) md(0.875rem)", "fontWeight": "400", "lineHeight": "xs(1.55) md(1.6)", "letterSpacing": "normal" },
-    "caption": { "fontSize": "xs(0.75rem) md(0.8125rem)", "fontWeight": "400", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "0.01em" }
+    "h1": { "fontSize": "xs(space(7)) md(space(8)) lg(space(9)) xl(space(10))", "fontWeight": "700", "lineHeight": "xs(1.1) md(1.2)", "letterSpacing": "-0.02em" },
+    "h2": { "fontSize": "xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9))", "fontWeight": "700", "lineHeight": "xs(1.2) md(1.3)", "letterSpacing": "-0.01em" },
+    "h3": { "fontSize": "xs(space(6)) md(space(7)) xl(space(8))", "fontWeight": "600", "lineHeight": "xs(1.3) md(1.4)", "letterSpacing": "normal" },
+    "h4": { "fontSize": "xs(space(5)) md(space(6)) xl(space(7))", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
+    "h5": { "fontSize": "xs(space(5)) xl(space(6))", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
+    "h6": { "fontSize": "xs(space(5))", "fontWeight": "600", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "normal" },
+    "p": { "fontSize": "xs(space(5))", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
+    "body": { "fontSize": "xs(space(5))", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
+    "span": { "fontSize": "xs(space(5))", "fontWeight": "400", "lineHeight": "xs(1.6) md(1.7)", "letterSpacing": "normal" },
+    "small": { "fontSize": "xs(space(4))", "fontWeight": "400", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "0.01em" },
+    "code": { "fontSize": "xs(space(4))", "fontWeight": "400", "lineHeight": "xs(1.55) md(1.6)", "letterSpacing": "normal" },
+    "pre": { "fontSize": "xs(space(4))", "fontWeight": "400", "lineHeight": "xs(1.55) md(1.6)", "letterSpacing": "normal" },
+    "caption": { "fontSize": "xs(space(4))", "fontWeight": "400", "lineHeight": "xs(1.4) md(1.5)", "letterSpacing": "0.01em" }
   }
 }

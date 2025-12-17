@@ -129,20 +129,20 @@ import CodeBlock from '@/components/CodeBlock'
   
     <div className="code-wrapper">
       <CodeBlock language="json" code={`// uxdsl.theme.json
-	{
-	  "typography_details": {
-	    "h1": {
-	      "fontSize": "xs(2rem) md(3rem) xl(4rem)",
-	      "fontWeight": "800",
-	      "lineHeight": "1.1",
-	      "letterSpacing": "-0.03em"
-	    },
-	    "p": {
-	      "fontSize": "xs(1rem) lg(1.125rem)",
-	      "lineHeight": "1.6"
-	    }
-	  }
-	}`} />
+		{
+		  "typography_details": {
+		    "h1": {
+		      "fontSize": "xs(space(7)) md(space(8)) lg(space(9)) xl(space(10))",
+		      "fontWeight": "800",
+		      "lineHeight": "1.1",
+		      "letterSpacing": "-0.03em"
+		    },
+		    "p": {
+		      "fontSize": "xs(space(5))",
+		      "lineHeight": "1.6"
+		    }
+		  }
+		}`} />
     </div>
 
     <hr className="doc-divider" />
@@ -155,12 +155,12 @@ import CodeBlock from '@/components/CodeBlock'
 
     <h3 className="ds-typo" data-typo="h3">Nearest-lower-breakpoint inheritance</h3>
     <div className="code-wrapper">
-	<CodeBlock language="json" code={`{
-	  "typography_details": {
-	    "h1": { "fontSize": "xs(2rem) md(2.75rem)" }
-	  }
-	}`} />
-    </div>
+		<CodeBlock language="json" code={`{
+		  "typography_details": {
+		    "h1": { "fontSize": "xs(space(7)) md(space(8))" }
+		  }
+		}`} />
+	    </div>
 
     <div className="info-box">
       <div className="info-text">Resolved result (example):</div>
@@ -174,15 +174,15 @@ import CodeBlock from '@/components/CodeBlock'
             <th>Value</th>
           </tr>
         </thead>
-	        <tbody>
-	          <tr><td>XS</td><td>2rem</td></tr>
-	          <tr><td>SM</td><td>2rem (inherits from XS)</td></tr>
-	          <tr><td>MD</td><td>2.75rem</td></tr>
-	          <tr><td>LG</td><td>2.75rem (inherits from MD)</td></tr>
-	          <tr><td>XL</td><td>2.75rem (inherits from MD)</td></tr>
-	        </tbody>
-	      </table>
-	    </div>
+		        <tbody>
+			          <tr><td>XS</td><td>2rem</td></tr>
+			          <tr><td>SM</td><td>2rem (inherits from XS)</td></tr>
+			          <tr><td>MD</td><td>2.5rem</td></tr>
+			          <tr><td>LG</td><td>2.5rem (inherits from MD)</td></tr>
+			          <tr><td>XL</td><td>2.5rem (inherits from MD)</td></tr>
+		        </tbody>
+		      </table>
+		    </div>
 
     <h3 className="ds-typo" data-typo="h3">Resolution rules (summary)</h3>
     <div className="table-card">
@@ -235,15 +235,15 @@ import CodeBlock from '@/components/CodeBlock'
             <th>LG</th>
             <th>XL</th>
           </tr>
-	        </thead>
-	        <tbody>
-	          <tr><td>H1</td><td>2rem</td><td>2.25rem</td><td>2.75rem</td><td>3.25rem</td><td>3.75rem</td></tr>
-	          <tr><td>H2</td><td>1.75rem</td><td>1.875rem</td><td>2.25rem</td><td>2.75rem</td><td>3.25rem</td></tr>
-	          <tr><td>Body</td><td>0.875rem</td><td>0.875rem</td><td>1rem</td><td>1rem</td><td>1rem</td></tr>
-	          <tr><td>Caption</td><td>0.75rem</td><td>0.75rem</td><td>0.8125rem</td><td>0.8125rem</td><td>0.8125rem</td></tr>
-	        </tbody>
-	      </table>
-	    </div>
+		        </thead>
+		        <tbody>
+		          <tr><td>H1</td><td>2rem</td><td>2rem</td><td>2.5rem</td><td>3.125rem</td><td>3.875rem</td></tr>
+		          <tr><td>H2</td><td>1.5rem</td><td>2rem</td><td>2rem</td><td>2.5rem</td><td>3.125rem</td></tr>
+		          <tr><td>Body</td><td>1rem</td><td>1rem</td><td>1rem</td><td>1rem</td><td>1rem</td></tr>
+		          <tr><td>Caption</td><td>0.75rem</td><td>0.75rem</td><td>0.75rem</td><td>0.75rem</td><td>0.75rem</td></tr>
+		        </tbody>
+		      </table>
+		    </div>
 
     <hr className="doc-divider" />
 
@@ -261,13 +261,13 @@ import CodeBlock from '@/components/CodeBlock'
             <th>Responsive syntax</th>
             <th>Typical</th>
           </tr>
-	        </thead>
-	        <tbody>
-	          <tr><td><code>fontSize</code></td><td>string</td><td>✅</td><td><code>xs(1rem) md(1.125rem)</code></td></tr>
-	          <tr><td><code>lineHeight</code></td><td>string</td><td>✅</td><td><code>xs(1.6) md(1.7)</code></td></tr>
-	          <tr><td><code>fontWeight</code></td><td>string</td><td>✅</td><td><code>"400"</code>, <code>"600"</code>, <code>"700"</code></td></tr>
-	          <tr><td><code>fontFamily</code></td><td>string</td><td>✅</td><td><code>"Inter"</code>, <code>var(--font-ui)</code></td></tr>
-          <tr><td><code>letterSpacing</code></td><td>string</td><td>✅</td><td><code>"-0.02em"</code></td></tr>
+		        </thead>
+		        <tbody>
+		          <tr><td><code>fontSize</code></td><td>string</td><td>✅</td><td><code>xs(space(5)) md(space(6))</code></td></tr>
+		          <tr><td><code>lineHeight</code></td><td>string</td><td>✅</td><td><code>xs(1.6) md(1.7)</code></td></tr>
+		          <tr><td><code>fontWeight</code></td><td>string</td><td>✅</td><td><code>"400"</code>, <code>"600"</code>, <code>"700"</code></td></tr>
+		          <tr><td><code>fontFamily</code></td><td>string</td><td>✅</td><td><code>"Inter"</code>, <code>var(--font-ui)</code></td></tr>
+	          <tr><td><code>letterSpacing</code></td><td>string</td><td>✅</td><td><code>"-0.02em"</code></td></tr>
           <tr><td><code>textTransform</code></td><td>string</td><td>✅</td><td><code>none</code>, <code>uppercase</code>, <code>lowercase</code>, <code>capitalize</code></td></tr>
           <tr><td><code>textDecoration</code></td><td>string</td><td>✅</td><td><code>none</code>, <code>underline</code>, <code>line-through</code>, <code>overline</code></td></tr>
           <tr><td><code>fontStyle</code></td><td>string</td><td>✅</td><td><code>normal</code>, <code>italic</code>, <code>oblique</code></td></tr>
@@ -416,12 +416,12 @@ import CodeBlock from '@/components/CodeBlock'
   margin-block-end: var(--h1-margin-block-end, auto);
 }
 
-	@media (min-width: 768px) {
-	  :root {
-	    --h1-size: 2.75rem;
-	  }
-	}`} />
-    </div>
+		@media (min-width: 768px) {
+		  :root {
+		    --h1-size: var(--space-8);
+		  }
+		}`} />
+	    </div>
 
     <hr className="doc-divider" />
 
@@ -432,25 +432,25 @@ import CodeBlock from '@/components/CodeBlock'
 
     <h3 className="ds-typo" data-typo="h3">Material-inspired</h3>
     <div className="code-wrapper">
-	<CodeBlock language="json" code={`{
-	  "typography_details": {
-	    "h1": { "fontSize": "xs(1.875rem) md(3rem)", "fontWeight": "700", "lineHeight": "xs(1.15) md(1.2)" },
-	    "h2": { "fontSize": "xs(1.5rem) md(2.125rem)", "fontWeight": "700", "lineHeight": "xs(1.2) md(1.25)" },
-	    "h3": { "fontSize": "xs(1.25rem) md(1.75rem)", "fontWeight": "600", "lineHeight": "xs(1.25) md(1.3)" },
-	    "body": { "fontSize": "xs(1rem) lg(1.125rem)", "lineHeight": "xs(1.6) md(1.7)" }
-	  }
-	}`} />
-    </div>
+		<CodeBlock language="json" code={`{
+		  "typography_details": {
+		    "h1": { "fontSize": "xs(space(7)) md(space(8)) lg(space(9)) xl(space(10))", "fontWeight": "700", "lineHeight": "xs(1.15) md(1.2)" },
+		    "h2": { "fontSize": "xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9))", "fontWeight": "700", "lineHeight": "xs(1.2) md(1.25)" },
+		    "h3": { "fontSize": "xs(space(6)) md(space(7)) xl(space(8))", "fontWeight": "600", "lineHeight": "xs(1.25) md(1.3)" },
+		    "body": { "fontSize": "xs(space(5))", "lineHeight": "xs(1.6) md(1.7)" }
+		  }
+		}`} />
+	    </div>
 
     <h3 className="ds-typo" data-typo="h3">Fluent-style compact UI</h3>
     <div className="code-wrapper">
-	<CodeBlock language="json" code={`{
-	  "typography_details": {
-	    "h1": { "fontSize": "xs(1.75rem) md(2.5rem) xl(3.5rem)", "fontWeight": "600", "lineHeight": "xs(1.15) md(1.2)" },
-	    "body": { "fontSize": "xs(0.875rem) md(0.9375rem)", "lineHeight": "xs(1.55) md(1.6)" },
-	    "caption": { "fontSize": "xs(0.75rem) md(0.75rem)", "lineHeight": "1.4" }
-	  }
-	}`} />
-    </div>
+		<CodeBlock language="json" code={`{
+		  "typography_details": {
+		    "h1": { "fontSize": "xs(space(6)) md(space(7)) xl(space(8))", "fontWeight": "600", "lineHeight": "xs(1.15) md(1.2)" },
+		    "body": { "fontSize": "xs(space(5))", "lineHeight": "xs(1.55) md(1.6)" },
+		    "caption": { "fontSize": "xs(space(4))", "lineHeight": "1.4" }
+		  }
+		}`} />
+	    </div>
   </section>
 </div>

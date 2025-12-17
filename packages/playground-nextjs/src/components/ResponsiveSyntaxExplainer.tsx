@@ -69,28 +69,27 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
     return <span style={{ color }}>&quot;{value}&quot;</span>;
   }
 
-  // Parse string into segments
-  const parts: { text: string, type: 'text' | 'bp', bp?: string }[] = [];
-  const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
-  let lastIndex = 0;
-  let match;
-
-  while ((match = regex.exec(value)) !== null) {
-    if (match.index > lastIndex) {
-      parts.push({ text: value.slice(lastIndex, match.index), type: 'text' });
-    }
-    parts.push({ text: match[0], type: 'bp', bp: match[1] });
-    lastIndex = regex.lastIndex;
-  }
-  
-  if (lastIndex < value.length) {
-    parts.push({ text: value.slice(lastIndex), type: 'text' });
-  }
+  // Parse string into segments (supports nested parentheses like xs(space(2))).
+  const parts: { text: string; type: 'text' | 'bp'; bp?: string }[] = value
+    .split(/\s+(?![^(]*\))/g)
+    .filter(Boolean)
+    .map((token) => {
+      const openParen = token.indexOf('(');
+      const closeParen = token.lastIndexOf(')');
+      if (openParen > 0 && closeParen === token.length - 1) {
+        const bp = token.substring(0, openParen);
+        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
+          return { text: token, type: 'bp', bp };
+        }
+      }
+      return { text: token, type: 'text' };
+    });
 
   return (
     <span style={{ color }}>
       &quot;
       {parts.map((part, i) => {
+        const prefix = i === 0 ? '' : ' ';
         if (part.type === 'bp') {
           const isActive = part.bp === activeBp;
           return (
@@ -102,11 +101,11 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
                 fontWeight: 600
               } : {}}
             >
-              {part.text}
+              {prefix}{part.text}
             </span>
           );
         }
-        return <span key={i}>{part.text}</span>;
+        return <span key={i}>{prefix}{part.text}</span>;
       })}
       &quot;
     </span>
@@ -161,25 +160,40 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     // Hack for demo: if width is 100%, treat as XL (1280+) to ensure XL breakpoint is reachable
     const effectivePx = widthPercent === 100 ? 1280 : px;
     
-    // Parse breakpoints
-    const breakpoints: Record<string, string> = {};
-    const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
-    let match;
-    let hasMatches = false;
-    
-    while ((match = regex.exec(val)) !== null) {
-      hasMatches = true;
-      breakpoints[match[1]] = match[2];
-    }
-    
-    if (!hasMatches) return val; // Static value
+    const toCssValue = (input: string) => {
+      const v = String(input || '').trim();
+      if (!v) return v;
+      return v
+        .replace(/\bspace\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--space-$1)')
+        .replace(/\bdensity\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--density-$1)');
+    };
 
-    // Resolve based on breakpoints (xs:0, sm:480, md:768, lg:1024, xl:1280)
-    if (effectivePx >= 1280 && breakpoints.xl) return breakpoints.xl;
-    if (effectivePx >= 1024 && breakpoints.lg) return breakpoints.lg;
-    if (effectivePx >= 768 && breakpoints.md) return breakpoints.md;
-    if (effectivePx >= 480 && breakpoints.sm) return breakpoints.sm;
-    return breakpoints.xs || breakpoints.sm || val;
+    // Parse breakpoints (supports nested parentheses like xs(space(2))).
+    const breakpoints: Record<string, string> = {};
+    const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
+    let hasMatches = false;
+    parts.forEach((part) => {
+      const openParen = part.indexOf('(');
+      const closeParen = part.lastIndexOf(')');
+      if (openParen > 0 && closeParen === part.length - 1) {
+        const bp = part.substring(0, openParen);
+        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
+          breakpoints[bp] = part.substring(openParen + 1, closeParen).trim();
+          hasMatches = true;
+        }
+      }
+    });
+
+    if (!hasMatches) return toCssValue(val); // Static value
+
+    const bpValues = activeThemeData?.breakpoints || { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
+
+    // Resolve based on breakpoints (min-width, mobile-first)
+    if (effectivePx >= bpValues.xl && breakpoints.xl) return toCssValue(breakpoints.xl);
+    if (effectivePx >= bpValues.lg && breakpoints.lg) return toCssValue(breakpoints.lg);
+    if (effectivePx >= bpValues.md && breakpoints.md) return toCssValue(breakpoints.md);
+    if (effectivePx >= bpValues.sm && breakpoints.sm) return toCssValue(breakpoints.sm);
+    return toCssValue(breakpoints.xs || breakpoints.sm || val);
   };
 
   // Sync with external edit requests (from the list below)
@@ -195,7 +209,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
   // Safe access to the typography details
   const defaultDetails = activeThemeData?.typography_details?.default || {
-    fontSize: 'xs(1rem)',
+    fontSize: 'xs(space(5))',
     fontFamily: 'Inter',
     fontWeight: '400',
     lineHeight: '1.5',
@@ -337,20 +351,92 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     };
 
     const extractResponsiveValue = (value: string, bp: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => {
-      const regex = new RegExp(`${bp}\\(([^)]+)\\)`);
-      const match = value.match(regex);
-      return match?.[1]?.trim();
+      const val = String(value || '').trim();
+      if (!val) return undefined;
+
+      const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
+      for (const part of parts) {
+        const openParen = part.indexOf('(');
+        const closeParen = part.lastIndexOf(')');
+        if (openParen > 0 && closeParen === part.length - 1) {
+          const key = part.substring(0, openParen);
+          if (key === bp) return part.substring(openParen + 1, closeParen).trim();
+        }
+      }
+      return undefined;
     };
 
-    const parseLengthToPx = (raw: string | undefined) => {
+    const parseLengthToPx = (raw: string | undefined): number | undefined => {
       if (!raw) return undefined;
-      const match = raw.trim().match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
+      const v = raw.trim();
+      if (!v) return undefined;
+
+      const rootFontSizePx = (() => {
+        if (typeof window === 'undefined') return 16;
+        const n = Number.parseFloat(getComputedStyle(document.documentElement).fontSize);
+        return Number.isFinite(n) ? n : 16;
+      })();
+
+      const readVar = (name: string) => {
+        if (typeof window === 'undefined') return '';
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      };
+
+      const spaceMatch = v.match(/^space\(\s*['"]?(\d{1,3})['"]?\s*\)$/);
+      if (spaceMatch) {
+        const token = readVar(`--space-${spaceMatch[1]}`);
+        return parseLengthToPx(token);
+      }
+
+      const densityMatch = v.match(/^density\(\s*['"]?(\d{1,3})['"]?\s*\)$/);
+      if (densityMatch) {
+        const token = readVar(`--density-${densityMatch[1]}`);
+        return parseLengthToPx(token);
+      }
+
+      const varMatch = v.match(/^var\(\s*(--[a-zA-Z0-9-_]+)\s*\)$/);
+      if (varMatch) {
+        const token = readVar(varMatch[1]);
+        return parseLengthToPx(token);
+      }
+
+      if (v.startsWith('calc(') && v.endsWith(')')) {
+        const inner = v.slice(5, -1).trim();
+        let depth = 0;
+        let splitAt = -1;
+        for (let i = 0; i < inner.length; i++) {
+          const ch = inner[i];
+          if (ch === '(') depth++;
+          else if (ch === ')') depth = Math.max(0, depth - 1);
+          else if (ch === '*' && depth === 0) {
+            splitAt = i;
+            break;
+          }
+        }
+        if (splitAt !== -1) {
+          const left = inner.slice(0, splitAt).trim();
+          const right = inner.slice(splitAt + 1).trim();
+          const leftNum = Number(left);
+          const rightNum = Number(right);
+          if (Number.isFinite(leftNum)) {
+            const rightPx = parseLengthToPx(right);
+            if (rightPx !== undefined) return leftNum * rightPx;
+          }
+          if (Number.isFinite(rightNum)) {
+            const leftPx = parseLengthToPx(left);
+            if (leftPx !== undefined) return rightNum * leftPx;
+          }
+        }
+        return undefined;
+      }
+
+      const match = v.match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
       if (!match) return undefined;
       const value = Number(match[1]);
       if (!Number.isFinite(value)) return undefined;
       const unit = match[2] || 'px';
       if (unit === 'px') return value;
-      if (unit === 'rem') return value * 16;
+      if (unit === 'rem') return value * rootFontSizePx;
       return undefined;
     };
 
@@ -1039,7 +1125,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         initialValue={fontSizeString}
         onSave={handleSave}
         tagName={selectedTag}
-        editorType="numeric"
+        editorType="text"
       />
 
       <BreakpointEditor 

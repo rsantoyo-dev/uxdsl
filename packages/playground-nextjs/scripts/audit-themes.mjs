@@ -101,14 +101,20 @@ function get(obj, dotted) {
 function parseResponsive(value) {
   const val = String(value || '').trim();
   if (!val) return { kind: 'missing' };
-
-  const re = /(xs|sm|md|lg|xl)\(([^)]+)\)/g;
++
   const map = {};
-  let m;
+  const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
   let has = false;
-  while ((m = re.exec(val)) !== null) {
-    has = true;
-    map[m[1]] = m[2].trim();
+  for (const part of parts) {
+    const openParen = part.indexOf('(');
+    const closeParen = part.lastIndexOf(')');
+    if (openParen > 0 && closeParen === part.length - 1) {
+      const bp = part.substring(0, openParen);
+      if (BPS_ORDER.includes(bp)) {
+        map[bp] = part.substring(openParen + 1, closeParen).trim();
+        has = true;
+      }
+    }
   }
   if (!has) return { kind: 'static', value: val };
   return { kind: 'responsive', map };
@@ -126,17 +132,70 @@ function resolveResponsive(parsed, bp) {
   return parsed.map.xs ?? parsed.map.sm ?? parsed.map.md ?? parsed.map.lg ?? parsed.map.xl;
 }
 
-function parsePx(value) {
+function parsePx(value, theme) {
   const v = String(value || '').trim();
   if (!v) return null;
-  const m = v.match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n)) return null;
-  const unit = m[2] || 'px';
-  if (unit === 'px') return n;
-  if (unit === 'rem') return n * 16;
-  return null;
+  const remToPx = (n) => n * 16;
+
+  const parseInner = (input) => {
+    const s = String(input || '').trim();
+    if (!s) return null;
+
+    const spaceMatch = s.match(/^space\(\s*['"]?(\d{1,3})['"]?\s*\)$/);
+    if (spaceMatch) {
+      const idx = spaceMatch[1];
+      const token = theme?.spacing?.[idx];
+      return parseInner(token);
+    }
+
+    const varMatch = s.match(/^var\(\s*--space-(\d{1,3})\s*\)$/);
+    if (varMatch) {
+      const idx = varMatch[1];
+      const token = theme?.spacing?.[idx];
+      return parseInner(token);
+    }
+
+    if (s.startsWith('calc(') && s.endsWith(')')) {
+      const expr = s.slice(5, -1).trim();
+      let depth = 0;
+      let splitAt = -1;
+      for (let i = 0; i < expr.length; i++) {
+        const ch = expr[i];
+        if (ch === '(') depth++;
+        else if (ch === ')') depth = Math.max(0, depth - 1);
+        else if (ch === '*' && depth === 0) {
+          splitAt = i;
+          break;
+        }
+      }
+      if (splitAt !== -1) {
+        const left = expr.slice(0, splitAt).trim();
+        const right = expr.slice(splitAt + 1).trim();
+        const leftNum = Number(left);
+        const rightNum = Number(right);
+        if (Number.isFinite(leftNum)) {
+          const rightPx = parseInner(right);
+          return rightPx === null ? null : leftNum * rightPx;
+        }
+        if (Number.isFinite(rightNum)) {
+          const leftPx = parseInner(left);
+          return leftPx === null ? null : rightNum * leftPx;
+        }
+      }
+      return null;
+    }
+
+    const m = s.match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
+    if (!m) return null;
+    const n = Number(m[1]);
+    if (!Number.isFinite(n)) return null;
+    const unit = m[2] || 'px';
+    if (unit === 'px') return n;
+    if (unit === 'rem') return remToPx(n);
+    return null;
+  };
+
+  return parseInner(v);
 }
 
 function fmt(r) {
@@ -203,13 +262,13 @@ function auditTypography(themeName, theme) {
     for (const bp of BPS_ORDER) {
       const sizeRaw = resolveResponsive(fontSize, bp);
       const lhRaw = resolveResponsive(lineHeight, bp);
-      const px = parsePx(sizeRaw);
+      const px = parsePx(sizeRaw, theme);
 
       if (!pxByTagBp[tag]) pxByTagBp[tag] = {};
       pxByTagBp[tag][bp] = px;
 
       if (sizeRaw !== undefined && px === null) {
-        warnings.push(`WARN typography: ${tag}.fontSize at ${bp} is not a px/rem length (${sizeRaw})`);
+        warnings.push(`WARN typography: ${tag}.fontSize at ${bp} is not a comparable length (${sizeRaw})`);
       }
 
       const lhNum = lhRaw !== undefined ? Number(String(lhRaw).trim()) : NaN;

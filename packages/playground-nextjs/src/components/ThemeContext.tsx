@@ -154,19 +154,36 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       if (theme.typography_details && typeof theme.typography_details === 'object') {
         const responsiveVars: Record<string, string[]> = { xs: [], sm: [], md: [], lg: [], xl: [] }
 
+        const toCssValue = (input: string) => {
+          const v = String(input || '').trim()
+          if (!v) return v
+          return v
+            .replace(/\bspace\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--space-$1)')
+            .replace(/\bdensity\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--density-$1)')
+        }
+
         const parseResponsiveValue = (value: string) => {
-          const breakpoints: Record<string, string> = {}
-          const regex = /(xs|sm|md|lg|xl)\(([^)]+)\)/g
-          let match
+          const val = String(value || '').trim()
+          if (!val) return { xs: val }
+
+          const out: Record<string, string> = {}
+          const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean)
           let hasMatches = false
 
-          while ((match = regex.exec(value)) !== null) {
-            hasMatches = true
-            breakpoints[match[1]] = match[2]
-          }
+          parts.forEach((part) => {
+            const openParen = part.indexOf('(')
+            const closeParen = part.lastIndexOf(')')
+            if (openParen > 0 && closeParen === part.length - 1) {
+              const bp = part.substring(0, openParen)
+              if (bp in responsiveVars) {
+                out[bp] = part.substring(openParen + 1, closeParen).trim()
+                hasMatches = true
+              }
+            }
+          })
 
-          if (!hasMatches) return { xs: value }
-          return breakpoints
+          if (!hasMatches) return { xs: val }
+          return out
         }
 
         const defaultDetails = theme.typography_details.default || {}
@@ -182,7 +199,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
             const parsed = parseResponsiveValue(rawValue)
             Object.entries(parsed).forEach(([bp, val]) => {
               if (responsiveVars[bp]) {
-                responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${String(val).trim()}`)
+                responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${toCssValue(String(val))}`)
               }
             })
           }

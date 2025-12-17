@@ -56,10 +56,10 @@ export async function POST(req: Request) {
 
 	    CRITICAL TYPOGRAPHY RULES:
 	    1. "fontSize" MUST use the responsive syntax 'xs(val) sm(val) md(val) lg(val) xl(val)'.
-	    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. 
-	       IMPORTANT: Ensure line height accommodates the font's ascenders/descenders. Script/Display fonts need more space (1.3-1.5) to avoid clipping. Sans-serifs can be tighter (1.1-1.2).
-	    3. Adjust 'fontWeight' (100-900), 'letterSpacing' (e.g., -0.05em for tight display), 'textTransform', 'fontStyle', and 'textDecoration' to match the theme.
-	    4. "fontSize" values MUST be in rem units (e.g. xs(1rem) md(1.125rem)). Do NOT use px.
+		    2. "lineHeight" can also be responsive (e.g., 'xs(1.4) md(1.2)') or static. 
+		       IMPORTANT: Ensure line height accommodates the font's ascenders/descenders. Script/Display fonts need more space (1.3-1.5) to avoid clipping. Sans-serifs can be tighter (1.1-1.2).
+		    3. Adjust 'fontWeight' (100-900), 'letterSpacing' (e.g., -0.05em for tight display), 'textTransform', 'fontStyle', and 'textDecoration' to match the theme.
+		    4. "fontSize" values can be any valid CSS length (rem/px/%/em/...) OR design tokens like space(N). Prefer using space() so typography is driven by the spacing system. Avoid calc(); if you need scaling, jump between breakpoints using different space(N) values.
 
     JSON Structure:
     {
@@ -271,13 +271,13 @@ export async function POST(req: Request) {
       }
     }
 
-	    Rules:
-	    - fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl.
-	    - fontSize values MUST be in rem units (e.g. xs(1rem) md(1.25rem)). Do NOT use px.
-	    - lineHeight MUST be responsive and include at least xs(...) and md(...).
-	    - fontWeight must be a string number 100-900.
-	    - fontFamily must respect the theme's current fonts unless the user explicitly requests a change.
-	    - Keep hierarchy sane for headings when returning multiple tags.
+		    Rules:
+		    - fontSize MUST be responsive and include at least xs(...) and md(...). Prefer including sm/lg/xl.
+		    - fontSize values can be any valid CSS length OR design tokens like space(N). Prefer using space() so typography is driven by the spacing system. Avoid calc(); if you need scaling, jump between breakpoints using different space(N) values.
+		    - lineHeight MUST be responsive and include at least xs(...) and md(...).
+		    - fontWeight must be a string number 100-900.
+		    - fontFamily must respect the theme's current fonts unless the user explicitly requests a change.
+		    - Keep hierarchy sane for headings when returning multiple tags.
 
     Available Fonts: ${AVAILABLE_FONTS.join(", ")}
 

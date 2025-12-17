@@ -13,7 +13,7 @@
   --default-margin-block-end: auto;
 
   /* Headings */
-  --h1-size: xs(2rem) sm(2.25rem) md(2.75rem) lg(3.25rem) xl(3.75rem);
+  --h1-size: xs(space(7)) md(space(8)) lg(space(9)) xl(space(10));
   --h1-weight: 700;
   --h1-line: xs(1.1) md(1.1);
   --h1-spacing: -0.02em;
@@ -24,7 +24,7 @@
   --h1-margin-block-start: var(--default-margin-block-start, auto);
   --h1-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h2-size: xs(1.75rem) sm(1.875rem) md(2.25rem) lg(2.75rem) xl(3.25rem);
+  --h2-size: xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9));
   --h2-weight: 700;
   --h2-line: xs(1.2) md(1.15);
   --h2-spacing: -0.01em;
@@ -35,7 +35,7 @@
   --h2-margin-block-start: var(--default-margin-block-start, auto);
   --h2-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h3-size: xs(1.5rem) sm(1.625rem) md(1.875rem) lg(2.125rem) xl(2.375rem);
+  --h3-size: xs(space(6)) md(space(7)) xl(space(8));
   --h3-weight: 600;
   --h3-line: xs(1.3) md(1.25);
   --h3-spacing: normal;
@@ -46,7 +46,7 @@
   --h3-margin-block-start: var(--default-margin-block-start, auto);
   --h3-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h4-size: xs(1.25rem) sm(1.375rem) md(1.5rem) lg(1.75rem) xl(2rem);
+  --h4-size: xs(space(5)) md(space(6)) xl(space(7));
   --h4-weight: 600;
   --h4-line: 1.4;
   --h4-spacing: normal;
@@ -57,7 +57,7 @@
   --h4-margin-block-start: var(--default-margin-block-start, auto);
   --h4-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h5-size: xs(1.125rem) sm(1.1875rem) md(1.25rem) lg(1.375rem) xl(1.5rem);
+  --h5-size: xs(space(5)) xl(space(6));
   --h5-weight: 600;
   --h5-line: 1.4;
   --h5-spacing: normal;
@@ -68,7 +68,7 @@
   --h5-margin-block-start: var(--default-margin-block-start, auto);
   --h5-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h6-size: xs(1rem) sm(1.0625rem) md(1.125rem) lg(1.25rem) xl(1.375rem);
+  --h6-size: xs(space(5));
   --h6-weight: 600;
   --h6-line: 1.4;
   --h6-spacing: normal;
@@ -80,7 +80,7 @@
   --h6-margin-block-end: var(--default-margin-block-end, auto);
 
   /* Body text */
-  --p-size: xs(0.9375rem) md(1rem);
+  --p-size: xs(space(5));
   --p-weight: 400;
   --p-line: 1.6;
   --p-spacing: normal;
@@ -91,7 +91,7 @@
   --p-margin-block-start: var(--default-margin-block-start, auto);
   --p-margin-block-end: var(--default-margin-block-end, auto);
 
-  --span-size: xs(0.8125rem) md(0.875rem);
+  --span-size: xs(space(5));
   --span-weight: 400;
   --span-line: 1.5;
   --span-spacing: normal;
@@ -102,7 +102,7 @@
   --span-margin-block-start: var(--default-margin-block-start, auto);
   --span-margin-block-end: var(--default-margin-block-end, auto);
 
-  --body-size: xs(0.875rem) md(1rem);
+  --body-size: xs(space(5));
   --body-weight: 400;
   --body-line: 1.6;
   --body-spacing: normal;
@@ -113,7 +113,7 @@
   --body-margin-block-start: var(--default-margin-block-start, auto);
   --body-margin-block-end: var(--default-margin-block-end, auto);
 
-  --caption-size: xs(0.75rem) md(0.8125rem);
+  --caption-size: xs(space(4));
   --caption-opacity: 0.8;
   --caption-line: 1.4;
   --caption-spacing: 0.01em;
@@ -124,7 +124,7 @@
   --caption-margin-block-start: var(--default-margin-block-start, auto);
   --caption-margin-block-end: var(--default-margin-block-end, auto);
 
-  --small-size: xs(0.6875rem) md(0.75rem);
+  --small-size: xs(space(4));
   --small-line: 1.4;
   --small-spacing: 0.01em;
   --small-font-family: var(--font-ui-2, var(--font-ui));
@@ -134,7 +134,7 @@
   --small-margin-block-start: var(--default-margin-block-start, auto);
   --small-margin-block-end: var(--default-margin-block-end, auto);
 
-  --pre-size: xs(0.8125rem) md(0.875rem);
+  --pre-size: xs(space(4));
   --pre-line: 1.5;
   --pre-font-family: var(--font-code);
   --pre-transform: var(--default-transform, none);
