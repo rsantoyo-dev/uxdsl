@@ -13,7 +13,7 @@
   --default-margin-block-end: auto;
 
   /* Headings */
-  --h1-size: xs(32px) sm(36px) md(44px) lg(52px) xl(60px);
+  --h1-size: xs(2rem) sm(2.25rem) md(2.75rem) lg(3.25rem) xl(3.75rem);
   --h1-weight: 700;
   --h1-line: xs(1.1) md(1.1);
   --h1-spacing: -0.02em;
@@ -24,7 +24,7 @@
   --h1-margin-block-start: var(--default-margin-block-start, auto);
   --h1-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h2-size: xs(28px) sm(30px) md(36px) lg(44px) xl(52px);
+  --h2-size: xs(1.75rem) sm(1.875rem) md(2.25rem) lg(2.75rem) xl(3.25rem);
   --h2-weight: 700;
   --h2-line: xs(1.2) md(1.15);
   --h2-spacing: -0.01em;
@@ -35,7 +35,7 @@
   --h2-margin-block-start: var(--default-margin-block-start, auto);
   --h2-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h3-size: xs(24px) sm(26px) md(30px) lg(34px) xl(38px);
+  --h3-size: xs(1.5rem) sm(1.625rem) md(1.875rem) lg(2.125rem) xl(2.375rem);
   --h3-weight: 600;
   --h3-line: xs(1.3) md(1.25);
   --h3-spacing: normal;
@@ -46,7 +46,7 @@
   --h3-margin-block-start: var(--default-margin-block-start, auto);
   --h3-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
+  --h4-size: xs(1.25rem) sm(1.375rem) md(1.5rem) lg(1.75rem) xl(2rem);
   --h4-weight: 600;
   --h4-line: 1.4;
   --h4-spacing: normal;
@@ -57,7 +57,7 @@
   --h4-margin-block-start: var(--default-margin-block-start, auto);
   --h4-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h5-size: xs(18px) sm(19px) md(20px) lg(22px) xl(24px);
+  --h5-size: xs(1.125rem) sm(1.1875rem) md(1.25rem) lg(1.375rem) xl(1.5rem);
   --h5-weight: 600;
   --h5-line: 1.4;
   --h5-spacing: normal;
@@ -68,7 +68,7 @@
   --h5-margin-block-start: var(--default-margin-block-start, auto);
   --h5-margin-block-end: var(--default-margin-block-end, auto);
 
-  --h6-size: xs(16px) sm(17px) md(18px) lg(20px) xl(22px);
+  --h6-size: xs(1rem) sm(1.0625rem) md(1.125rem) lg(1.25rem) xl(1.375rem);
   --h6-weight: 600;
   --h6-line: 1.4;
   --h6-spacing: normal;
@@ -80,7 +80,7 @@
   --h6-margin-block-end: var(--default-margin-block-end, auto);
 
   /* Body text */
-  --p-size: xs(15px) md(16px);
+  --p-size: xs(0.9375rem) md(1rem);
   --p-weight: 400;
   --p-line: 1.6;
   --p-spacing: normal;
@@ -91,7 +91,7 @@
   --p-margin-block-start: var(--default-margin-block-start, auto);
   --p-margin-block-end: var(--default-margin-block-end, auto);
 
-  --span-size: xs(13px) md(14px);
+  --span-size: xs(0.8125rem) md(0.875rem);
   --span-weight: 400;
   --span-line: 1.5;
   --span-spacing: normal;
@@ -102,7 +102,7 @@
   --span-margin-block-start: var(--default-margin-block-start, auto);
   --span-margin-block-end: var(--default-margin-block-end, auto);
 
-  --body-size: xs(14px) md(16px);
+  --body-size: xs(0.875rem) md(1rem);
   --body-weight: 400;
   --body-line: 1.6;
   --body-spacing: normal;
@@ -113,7 +113,7 @@
   --body-margin-block-start: var(--default-margin-block-start, auto);
   --body-margin-block-end: var(--default-margin-block-end, auto);
 
-  --caption-size: xs(12px) md(13px);
+  --caption-size: xs(0.75rem) md(0.8125rem);
   --caption-opacity: 0.8;
   --caption-line: 1.4;
   --caption-spacing: 0.01em;
@@ -124,7 +124,7 @@
   --caption-margin-block-start: var(--default-margin-block-start, auto);
   --caption-margin-block-end: var(--default-margin-block-end, auto);
 
-  --small-size: xs(11px) md(12px);
+  --small-size: xs(0.6875rem) md(0.75rem);
   --small-line: 1.4;
   --small-spacing: 0.01em;
   --small-font-family: var(--font-ui-2, var(--font-ui));
@@ -134,7 +134,7 @@
   --small-margin-block-start: var(--default-margin-block-start, auto);
   --small-margin-block-end: var(--default-margin-block-end, auto);
 
-  --pre-size: xs(13px) md(14px);
+  --pre-size: xs(0.8125rem) md(0.875rem);
   --pre-line: 1.5;
   --pre-font-family: var(--font-code);
   --pre-transform: var(--default-transform, none);
@@ -179,4 +179,3 @@
 .ds-typo[data-typo="small"] { font-size: var(--small-size); opacity: var(--caption-opacity, 0.8); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--small-line); letter-spacing: var(--small-spacing); }
 .ds-typo[data-typo="caption"] { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--caption-line); letter-spacing: var(--caption-spacing); }
 .ds-typo[data-typo="pre"], .ds-typo[data-typo="code"] { font-family: var(--pre-font-family, var(--font-code)), monospace; font-size: var(--pre-size); line-height: var(--pre-line); }
-

@@ -195,7 +195,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
   // Safe access to the typography details
   const defaultDetails = activeThemeData?.typography_details?.default || {
-    fontSize: 'xs(16px)',
+    fontSize: 'xs(1rem)',
     fontFamily: 'Inter',
     fontWeight: '400',
     lineHeight: '1.5',
@@ -342,11 +342,16 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       return match?.[1]?.trim();
     };
 
-    const parsePx = (raw: string | undefined) => {
+    const parseLengthToPx = (raw: string | undefined) => {
       if (!raw) return undefined;
-      const match = raw.trim().match(/^(-?\d+(?:\.\d+)?)px$/);
+      const match = raw.trim().match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
       if (!match) return undefined;
-      return Number(match[1]);
+      const value = Number(match[1]);
+      if (!Number.isFinite(value)) return undefined;
+      const unit = match[2] || 'px';
+      if (unit === 'px') return value;
+      if (unit === 'rem') return value * 16;
+      return undefined;
     };
 
     const isResponsiveSyntaxValid = (value: string, requiredBps: Array<'xs' | 'md'>) => {
@@ -407,12 +412,14 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         }
       }
 
-      if (selectedTag === 'h1' && detailsPatch.h1 && activeThemeData?.typography_details?.h1?.fontSize) {
-        const prevXs = parsePx(extractResponsiveValue(activeThemeData.typography_details.h1.fontSize, 'xs') || '');
+    if (selectedTag === 'h1' && detailsPatch.h1 && activeThemeData?.typography_details?.h1?.fontSize) {
+        const prevRaw = extractResponsiveValue(activeThemeData.typography_details.h1.fontSize, 'xs') || '';
+        const prevXs = parseLengthToPx(prevRaw);
         const nextFontSize = getStringField(detailsPatch.h1, 'fontSize') || '';
-        const nextXs = parsePx(extractResponsiveValue(nextFontSize, 'xs') || '');
+        const nextRaw = extractResponsiveValue(nextFontSize, 'xs') || '';
+        const nextXs = parseLengthToPx(nextRaw);
         if (prevXs !== undefined && nextXs !== undefined && nextXs < prevXs) {
-          return { ok: false, reason: `h1 xs fontSize should not shrink (prev ${prevXs}px, got ${nextXs}px).` };
+          return { ok: false, reason: `h1 xs fontSize should not shrink (prev ${prevRaw}, got ${nextRaw}).` };
         }
       }
 
@@ -420,7 +427,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         const pxAt = (tag: string, bp: 'xs' | 'md') => {
           const fontSize = getStringField(detailsPatch[tag], 'fontSize') || '';
           const raw = extractResponsiveValue(fontSize, bp);
-          return parsePx(raw);
+          return parseLengthToPx(raw);
         };
         const xs = {
           h1: pxAt('h1', 'xs'),

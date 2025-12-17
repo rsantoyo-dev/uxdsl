@@ -175,7 +175,7 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
               type="text" 
               value={sizeRule} 
               onChange={e => setSizeRule(e.target.value)}
-              placeholder="e.g. xs(16px) md(20px) or xs(space(4))"
+              placeholder="e.g. xs(1rem) md(1.25rem) or xs(space(4))"
               style={{ width: '100%', padding: '0.5rem' }}
             />
             <div style={{ fontSize: '0.75em', opacity: 0.6, marginTop: '0.25rem' }}>

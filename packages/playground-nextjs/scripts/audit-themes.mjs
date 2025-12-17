@@ -128,8 +128,15 @@ function resolveResponsive(parsed, bp) {
 
 function parsePx(value) {
   const v = String(value || '').trim();
-  const m = v.match(/^(-?\d+(?:\.\d+)?)px$/);
-  return m ? Number(m[1]) : null;
+  if (!v) return null;
+  const m = v.match(/^(-?\d+(?:\.\d+)?)(px|rem)?$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const unit = m[2] || 'px';
+  if (unit === 'px') return n;
+  if (unit === 'rem') return n * 16;
+  return null;
 }
 
 function fmt(r) {
@@ -202,7 +209,7 @@ function auditTypography(themeName, theme) {
       pxByTagBp[tag][bp] = px;
 
       if (sizeRaw !== undefined && px === null) {
-        warnings.push(`WARN typography: ${tag}.fontSize at ${bp} is not px (${sizeRaw})`);
+        warnings.push(`WARN typography: ${tag}.fontSize at ${bp} is not a px/rem length (${sizeRaw})`);
       }
 
       const lhNum = lhRaw !== undefined ? Number(String(lhRaw).trim()) : NaN;
