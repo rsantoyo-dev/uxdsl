@@ -47,3 +47,33 @@ This runs automatically in pre-commit via:
 
 You can run it manually before committing.
 
+## NPM release auto-increment workflow
+
+Before publish commands, ensure npm auth is active:
+
+- `npm whoami`
+- if needed: `npm login`
+
+If your npm account enforces 2FA for publish, pass OTP when running release:
+
+- `NPM_OTP=123456 npm run release:patch`
+- or `node scripts/release.js --bump patch --otp 123456`
+
+Use automated semver bumping for all publishable UXDSL packages (publish by default):
+
+- Patch: `npm run release:patch`
+- Minor: `npm run release:minor`
+- Major: `npm run release:major`
+
+Bump-only variants (no publish):
+
+- Patch: `npm run release:patch:bump-only`
+- Minor: `npm run release:minor:bump-only`
+- Major: `npm run release:major:bump-only`
+
+You can run these from repo root or from `packages/playground-nextjs` (proxied scripts are available there too).
+
+You can also include a short tweak note (stored in `packages/uxdsl-core/README.md`):
+
+- `node scripts/release.js --bump patch --note "small parser fix"`
+

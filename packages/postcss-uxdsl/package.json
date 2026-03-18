@@ -1,6 +1,6 @@
 {
   "name": "postcss-uxdsl",
-  "version": "0.1.9",
+  "version": "0.3.0",
   "description": "PostCSS plugin for UXDSL - a lightweight CSS DSL for design systems",
   "main": "dist/index.js",
   "keywords": [

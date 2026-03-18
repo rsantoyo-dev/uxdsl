@@ -20536,16 +20536,16 @@ html, body {
   }
 
   .intro-text {
-    font-family: var(--body-font-family, var(--font-ui));
-    font-size: var(--body-size);
-    line-height: var(--body-line, 1.6);
-    font-weight: var(--body-weight, 400);
-    letter-spacing: var(--body-spacing, normal);
-    text-transform: var(--body-transform, none);
-    text-decoration: var(--body-decoration, none);
-    font-style: var(--body-style, normal);
-    margin-block-start: var(--body-margin-block-start, auto);
-    margin-block-end: var(--body-margin-block-end, auto);
+    font-family: var(--span-font-family, var(--font-ui));
+    font-size: var(--span-size);
+    line-height: var(--span-line, 1.5);
+    font-weight: var(--span-weight, 400);
+    letter-spacing: var(--span-spacing, normal);
+    text-transform: var(--span-transform, none);
+    text-decoration: var(--span-decoration, none);
+    font-style: var(--span-style, normal);
+    margin-block-start: var(--span-margin-block-start, auto);
+    margin-block-end: var(--span-margin-block-end, auto);
     color: var(--ds__palette__text-secondary);
     text-align: center;
   }

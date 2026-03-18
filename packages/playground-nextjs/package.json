@@ -13,6 +13,12 @@
     "lint": "next lint",
     "stylelint": "stylelint \"src/**/*.uxdsl\" --allow-empty-input",
     "stylelint:fix": "stylelint \"src/**/*.uxdsl\" --fix --allow-empty-input",
+    "release:patch": "npm --prefix ../.. run release:patch",
+    "release:minor": "npm --prefix ../.. run release:minor",
+    "release:major": "npm --prefix ../.. run release:major",
+    "release:patch:bump-only": "npm --prefix ../.. run release:patch:bump-only",
+    "release:minor:bump-only": "npm --prefix ../.. run release:minor:bump-only",
+    "release:major:bump-only": "npm --prefix ../.. run release:major:bump-only",
     "postinstall": "npm run local-deps"
   },
   "dependencies": {

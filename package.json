@@ -10,6 +10,12 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "verify:docs": "node scripts/verify-docs-update.js",
+    "release:patch": "node scripts/release.js --bump patch",
+    "release:minor": "node scripts/release.js --bump minor",
+    "release:major": "node scripts/release.js --bump major",
+    "release:patch:bump-only": "node scripts/release.js --bump patch --skip-publish",
+    "release:minor:bump-only": "node scripts/release.js --bump minor --skip-publish",
+    "release:major:bump-only": "node scripts/release.js --bump major --skip-publish",
     "theme:audit": "npm --prefix packages/playground-nextjs run theme:audit"
   },
   "keywords": [],
