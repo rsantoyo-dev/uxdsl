@@ -24,17 +24,21 @@ export async function GET(req: NextRequest) {
   upstream.searchParams.set('model', model)
   if (seed) upstream.searchParams.set('seed', seed)
 
-  const apiKey = process.env.POLLINATIONS_API_KEY?.trim()
+  const apiKey =
+    process.env.POLLINATIONS_API_KEY?.trim() ||
+    process.env.UXDSL_POLLINATIONS_API_KEY?.trim()
   const headers: HeadersInit = {}
   if (apiKey) {
     headers.Authorization = `Bearer ${apiKey}`
+    headers['x-api-key'] = apiKey
+    upstream.searchParams.set('key', apiKey)
   }
 
   try {
     const res = await fetch(upstream.toString(), {
       method: 'GET',
       headers,
-      next: { revalidate: 300 },
+      cache: 'no-store',
     })
 
     if (!res.ok) {

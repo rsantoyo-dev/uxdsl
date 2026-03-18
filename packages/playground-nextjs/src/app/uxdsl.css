@@ -20450,7 +20450,6 @@ html, body {
     justify-content: center;
     gap: var(--density-2);
     padding: var(--density-4) var(--density-6);
-    font-weight: 600;
     border-radius: 9999px;
     transition: transform 0.2s;
     width: 100%; 
