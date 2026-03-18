@@ -7864,7 +7864,8 @@ html, body {
   }
 }
 /* Simplified DemoPalette styles - Scoped */
-#DemoPalette {
+#DemoPalette,
+.demo-palette {
   .palette-section { display: flex; flex-direction: column; gap: var(--density-2); }
   .palette-header { display: flex; flex-direction: column; gap: var(--density-2); }
   .demo-title { font-family: var(--h4-font-family, var(--font-ui)); font-size: var(--h4-size); line-height: var(--h4-line, 1.4); font-weight: var(--h4-weight, 600); letter-spacing: var(--h4-spacing, normal); text-transform: var(--h4-transform, none); text-decoration: var(--h4-decoration, none); font-style: var(--h4-style, normal); margin-block-start: var(--h4-margin-block-start, auto); margin-block-end: var(--h4-margin-block-end, auto); margin: 0; }

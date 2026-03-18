@@ -1,5 +1,6 @@
 /* Simplified DemoPalette styles - Scoped */
-#DemoPalette {
+#DemoPalette,
+.demo-palette {
   .palette-section { display: flex; flex-direction: column; gap: density(2); }
   .palette-header { display: flex; flex-direction: column; gap: density(2); }
   .demo-title { @ds-typo (h4); margin: 0; }

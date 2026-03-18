@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import runtime from 'postcss-uxdsl/ds-runtime'
+import { useTheme } from './ThemeContext'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -100,11 +102,16 @@ function ConcentricSpacing({
 }
 
 export default function DemoSpacing() {
+  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
   const [dollLevels, setDollLevels] = useState(15)
   const [computedValues, setComputedValues] = useState<Record<number, string>>({})
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
 
   useEffect(() => {
+    try {
+      runtime.loadPersistedSpacing()
+    } catch {}
+
     const style = getComputedStyle(document.documentElement)
     const values: Record<number, string> = {}
     spaces.forEach(s => {
@@ -115,7 +122,17 @@ export default function DemoSpacing() {
 
   const handleSpaceChange = (level: number, value: string) => {
     setComputedValues(prev => ({ ...prev, [level]: value }))
-    document.documentElement.style.setProperty(`--space-${level}`, value)
+    try {
+      runtime.updateSpacing(level, value, { persist: true })
+    } catch {
+      document.documentElement.style.setProperty(`--space-${level}`, value)
+    }
+
+    // Keep JSON theme model aligned with runtime token updates.
+    const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
+    if (!nextTheme.spacing) nextTheme.spacing = {}
+    nextTheme.spacing[String(level)] = value
+    setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
   }
 
   const handleSaveDialog = (val: string) => {

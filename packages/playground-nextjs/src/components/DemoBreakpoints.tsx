@@ -146,7 +146,7 @@ export default function DemoBreakpoints() {
               </div>
               <div className="breakpoints-info-card is-highlighted">
                 <span className="breakpoints-info-label">Active Token</span>
-                <strong className="breakpoints-info-value is-large">{activeBp.toUpperCase()}</strong>
+                <strong className="breakpoints-info-value is-large">{String(activeBp).toUpperCase()}</strong>
               </div>
               <p className="breakpoints-info-desc">
                 Resize your browser window to see the active token change in real-time.

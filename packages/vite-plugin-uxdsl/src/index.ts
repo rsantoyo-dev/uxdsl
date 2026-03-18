@@ -64,13 +64,19 @@ type BreakpointSpec =
   | Array<[string, number]>
   | Array<{ name: string; min?: number; px?: number }>;
 
-const DEFAULT_BPS: Record<string, number> = {
-  xs: 0,
-  sm: 480,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-};
+const DEFAULT_BPS: Record<string, number> = (() => {
+  const fallback = { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const runtime: any = nodeRequire("postcss-uxdsl/ds-runtime");
+    if (runtime && runtime.DEFAULT_BREAKPOINTS) {
+      return { ...runtime.DEFAULT_BREAKPOINTS };
+    }
+  } catch {
+    // Keep fallback for compatibility with environments that don't expose subpath exports to TS.
+  }
+  return fallback;
+})();
 
 function normalizeBpMap(input?: BreakpointSpec): Record<string, number> {
   if (!input) return { ...DEFAULT_BPS };

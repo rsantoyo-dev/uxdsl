@@ -1,21 +1,35 @@
 # UXDSL Monorepo
 
-This repo contains a minimal UX-focused CSS dialect (UXDSL) and tooling to load it in a Vite + React app.
+UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-Packages:
+## Main packages
 
-- `packages/postcss-uxdsl` — PostCSS plugin that supports root-level `$var: value;` declarations and `$var` substitutions in values.
-- `packages/vite-plugin-uxdsl` — Vite loader that transforms `.uxdsl` files and injects resulting CSS at runtime.
-- `packages/playground` — React demo app importing a `.uxdsl` stylesheet.
+- `packages/postcss-uxdsl` — Core compiler and runtime helpers.
+- `packages/vite-plugin-uxdsl` — Vite integration for `.uxdsl` files.
+- `packages/uxdsl-cli` — Build/watch CLI for framework-agnostic usage.
+- `packages/uxdsl-core` — Low-level processing engine used by integrations.
+- `packages/uxdsl-webpack-loader` — Webpack integration.
+- `packages/uxdsl-vscode` — VS Code language support.
+- `packages/playground` / `packages/playground-nextjs` — Demo apps.
 
-## Quick start
+## Breakpoint source of truth
 
-1. Open a terminal in `packages/playground`.
-2. Install deps: `npm install` (or `pnpm install` / `yarn`).
-3. Start dev server: `npm run dev`.
-4. Visit the printed URL to see “Hello UXDSL”.
+Breakpoint defaults are centralized in:
 
-Notes:
+- `packages/postcss-uxdsl/src/ds-runtime/breakpoints.ts`
 
-- The `.uxdsl` files accept plain CSS plus the root-level `$var` feature. Nested rules and other SCSS features are not implemented (by design, to keep the demo minimal). You can extend the PostCSS plugin to support more features.
+Please reuse this shared default map (`DEFAULT_BREAKPOINTS`) in integrations and demos rather than redefining the values.
+
+Default values:
+
+```ts
+{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
+```
+
+## Quick start (Next.js playground)
+
+1. Open a terminal in `packages/playground-nextjs`.
+2. Install deps: `npm install`.
+3. Build UXDSL CSS: `npm run uxdsl:build`.
+4. Start app: `npm run dev`.
 

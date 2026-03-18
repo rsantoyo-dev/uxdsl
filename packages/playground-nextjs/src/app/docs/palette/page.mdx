@@ -1,4 +1,6 @@
-import DemoPalette from '@/components/DemoPalette'
+import PalettePlayground from '@/components/PalettePlayground'
+import PaletteThemeExplorer from '@/components/PaletteThemeExplorer'
+import DemoPaletteConfig from '@/components/DemoPaletteConfig'
 import { PageTitle } from '@/components/PageTitle'
 
 <PageTitle 
@@ -6,4 +8,14 @@ import { PageTitle } from '@/components/PageTitle'
   subtitle="Semantic color mappings for primary, secondary, and surface roles."
 />
 
-<DemoPalette />
+<section id="usage" style={{ marginBottom: '3rem' }}>
+  <PalettePlayground />
+</section>
+
+<section id="explorer">
+  <PaletteThemeExplorer />
+</section>
+
+<section id="legacy-editor" style={{ marginTop: '3rem' }}>
+  <DemoPaletteConfig />
+</section>

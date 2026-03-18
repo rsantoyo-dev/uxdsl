@@ -69,6 +69,36 @@ import '../src/uxdsl.css';
 
 For a deep dive into Smart Mixins, Theming, and Component Packs, please visit the official documentation.
 
+---
+
+## Breakpoints (source of truth)
+
+The default breakpoint map is centralized and exported from the runtime:
+
+- `postcss-uxdsl/ds-runtime` → `DEFAULT_BREAKPOINTS`
+
+Canonical defaults:
+
+```ts
+{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
+```
+
+Use this exported constant in integrations instead of duplicating literal values.
+
+### Runtime breakpoint API
+
+The runtime supports live breakpoint updates by rewriting generated media queries:
+
+```ts
+import { breakpoints } from 'postcss-uxdsl/ds-runtime'
+
+breakpoints.get()                     // current map
+breakpoints.set({ md: 900 })         // apply new values
+breakpoints.update('lg', 1200)       // update one token
+breakpoints.reset()                  // reset to initial map
+breakpoints.load()                   // load persisted map from localStorage
+```
+
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
     <strong>Explore the Full Docs &rarr;</strong>

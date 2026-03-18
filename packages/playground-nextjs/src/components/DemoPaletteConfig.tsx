@@ -121,6 +121,7 @@ function hexToRgbString(hex: string) {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, variant: string, colorMap: Record<string, string>, activeTheme: any }) {
+  const { setCustomTheme, customThemeName } = useTheme()
   const ref = useRef<HTMLLIElement>(null)
   const [colorValues, setColorValues] = useState({ hex: '', rgb: '', textColor: 'inherit' })
   // Keep track of which token we are currently linked to
@@ -149,7 +150,6 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
         const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
         if (tokenName) {
-            console.log(`[DemoPalette] Linking ${tone}-${variant} to ${tokenName} (via ${defaultHex ? 'default' : 'current'})`)
             setLinkedToken(tokenName)
             
             // Register dependency in runtime
@@ -160,8 +160,7 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
             const overrideValue = document.documentElement.style.getPropertyValue(overrideVar)
             
             // If the source token (green-600) is overridden, we should update our local state to match
-            if (overrideValue) {
-                 console.log(`[DemoPalette] Found override for ${tokenName}: ${overrideValue}`)
+              if (overrideValue) {
                  // We don't need to update runtime here because if the source is overridden, 
                  // the CSS var for this palette token should already be pointing to it (via var(--...))
                  // OR if it was manually set, we might need to fix it.
@@ -181,41 +180,51 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
 
   // Listen for color changes to update OUR color if we are linked
   useEffect(() => {
-    const handleColorChange = (e: Event) => {
-      const customEvent = e as CustomEvent
-      const { token, value } = customEvent.detail
-      
-      console.log(`[DemoPalette] Event received: ${token} -> ${value}. My link: ${linkedToken}`)
+    const selfToken = `${tone}-${variant}`
+    const unsubscribe = runtime.subscribe((event) => {
+      if (event.type !== 'palette') return
+      const detail = event.detail as { token?: string; value?: string }
+      const changedToken = detail?.token
+      const value = detail?.value
+      if (!changedToken || !value) return
 
-      // If the changed token is the one we are linked to...
-      if (linkedToken === token) {
-        // CSS update is handled by runtime now!
-        
-        // Update local state
-        const newRgb = hexToRgbString(value)
-        setColorValues({
-          hex: value,
-          rgb: newRgb,
-          textColor: getContrastColor(newRgb)
-        })
-      }
-    }
+      // Refresh this card when the same palette token changes,
+      // or when the source token this card is linked to changes.
+      if (changedToken !== selfToken && changedToken !== linkedToken) return
 
-    window.addEventListener('uxdsl:color-change', handleColorChange)
-    console.log(`[DemoPalette] Listener attached for ${tone}-${variant} (linked: ${linkedToken})`)
-    return () => {
-      window.removeEventListener('uxdsl:color-change', handleColorChange)
-    }
+      const nextHex = value.toUpperCase()
+      const newRgb = hexToRgbString(nextHex)
+      setColorValues({
+        hex: nextHex,
+        rgb: newRgb,
+        textColor: getContrastColor(newRgb)
+      })
+    })
+
+    return unsubscribe
   }, [linkedToken, tone, variant])
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
     const varName = `${tone}-${variant}`;
-    
-    // Update CSS variables globally
-    document.documentElement.style.setProperty(`--${varName}`, newHex);
-    document.documentElement.style.setProperty(`--ds__palette__${varName}`, newHex);
+
+    // Update runtime palette token (with persistence)
+    try {
+      runtime.updatePalette(varName, newHex, { persist: true })
+    } catch {
+      document.documentElement.style.setProperty(`--${varName}`, newHex)
+      document.documentElement.style.setProperty(`--ds__palette__${varName}`, newHex)
+    }
+
+    // Keep JSON theme model aligned with runtime token updates.
+    const nextTheme = JSON.parse(JSON.stringify(activeTheme || {}))
+    if (!nextTheme.palette) nextTheme.palette = {}
+    if (!nextTheme.palette[tone] || typeof nextTheme.palette[tone] !== 'object') {
+      nextTheme.palette[tone] = {}
+    }
+    nextTheme.palette[tone][variant] = newHex
+    setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
     
     // Update local state
     setColorValues({
@@ -281,6 +290,7 @@ export default function DemoPaletteConfig() {
   const { activeThemeData } = useTheme()
   const colorMap = useColorMap()
   return (
+    <section className="demo-palette">
       <InteractiveDemoContainer
         title="Global Palette"
         toolbar={
@@ -312,5 +322,6 @@ export default function DemoPaletteConfig() {
           ))}
         </div>
       </InteractiveDemoContainer>
+    </section>
   )
 }

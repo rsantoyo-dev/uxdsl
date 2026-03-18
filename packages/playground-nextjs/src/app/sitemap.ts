@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '',
     '/docs/home',
     '/docs/quick-start',
+    '/docs/config',
     '/docs/palette',
     '/docs/typography',
     '/docs/densities',

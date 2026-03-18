@@ -8,6 +8,7 @@
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
+import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
 type BreakpointSpec =
   | Record<string, number>
@@ -21,14 +22,6 @@ interface UxDslOptions {
   colorVar?: (path: string) => string;
   theme?: Record<string, any>;
 }
-
-const DEFAULT_BPS: Record<string, number> = {
-  xs: 0,
-  sm: 480,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-};
 
 // Map palette(foo.bar|foo-bar) -> resolve to --ds__palette__*
 const defaultThemeVar = (path: string) => {

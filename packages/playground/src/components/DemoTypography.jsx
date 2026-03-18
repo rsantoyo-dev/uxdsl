@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './DemoTypography.uxdsl';
+import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
 
 // Lazy import runtime utilities similar to App.jsx
 async function withRuntime(cb) {
@@ -7,7 +8,7 @@ async function withRuntime(cb) {
   return cb(mod);
 }
 
-const DEFAULT_BPS = { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
+const DEFAULT_BPS = { ...DEFAULT_BREAKPOINTS };
 
 function pickCurrentBp(map, width) {
   const entries = Object.entries(map || DEFAULT_BPS)

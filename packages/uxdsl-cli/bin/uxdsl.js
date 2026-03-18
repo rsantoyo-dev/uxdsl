@@ -49,13 +49,23 @@ function loadUxDslPlugin() {
 
 const uxdslPlugin = loadUxDslPlugin();
 
-const DEFAULT_BREAKPOINTS = {
+const FALLBACK_BREAKPOINTS = {
   xs: 0,
   sm: 480,
   md: 768,
   lg: 1024,
   xl: 1280,
 };
+
+let DEFAULT_BREAKPOINTS = { ...FALLBACK_BREAKPOINTS };
+try {
+  const runtime = require('postcss-uxdsl/ds-runtime');
+  if (runtime && runtime.DEFAULT_BREAKPOINTS) {
+    DEFAULT_BREAKPOINTS = { ...runtime.DEFAULT_BREAKPOINTS };
+  }
+} catch (_) {
+  // Keep fallback defaults for older/partial installs.
+}
 
 const CONFIG_CANDIDATES = [
   'uxdsl.config.cjs',
@@ -184,8 +194,7 @@ async function loadConfig(argv) {
 }
 
 function normalizeBpMap(input) {
-  const DEFAULT_BPS = { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
-  if (!input) return { ...DEFAULT_BPS };
+  if (!input) return { ...DEFAULT_BREAKPOINTS };
   if (Array.isArray(input)) {
     const map = {};
     input.forEach((it) => {
@@ -381,13 +390,14 @@ async function init(argv) {
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
   if (!fs.existsSync(configPath)) {
+    const defaultBpJson = JSON.stringify(DEFAULT_BREAKPOINTS);
     const configContent = `module.exports = {
   // Entry point for your styles (generated or manual)
   entry: './src/uxdsl-entry.uxdsl',
   // Output CSS file
   outFile: './src/uxdsl.css',
   // Default breakpoints
-  breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 },
+  breakpoints: ${defaultBpJson},
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl', 'src/**/*.css']
 };

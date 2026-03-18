@@ -7,6 +7,7 @@ export function getDocsLinks(): NavLink[] {
   const pages = [
     'home',
     'quick-start',
+    'config',
     'breakpoints',
     'colors',
     'palette',

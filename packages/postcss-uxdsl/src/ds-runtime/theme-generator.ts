@@ -16,6 +16,19 @@ export function generateThemeCss(theme: Record<string, any>): string {
     });
   }
 
+  // Color scales (for color(token) -> --ds__color__token)
+  if (theme.colors) {
+    Object.entries(theme.colors).forEach(([key, val]) => {
+      if (typeof val === 'object' && val !== null) {
+        Object.entries(val).forEach(([subKey, subVal]) => {
+          cssVars.push(`--ds__color__${key}-${subKey}: ${subVal}`);
+        });
+      } else {
+        cssVars.push(`--ds__color__${key}: ${val}`);
+      }
+    });
+  }
+
   // Spacing
   if (theme.spacing) {
     Object.entries(theme.spacing).forEach(([key, val]) => {

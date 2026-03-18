@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import runtime from 'postcss-uxdsl/ds-runtime'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { useTheme } from './ThemeContext'
 
 const families = [
   'blue','indigo','purple','pink','red','orange','yellow','green','teal','cyan','gray'
@@ -39,7 +40,15 @@ function hexToRgbString(hex: string) {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
-function ColorScaleToken({ family, shade }: { family: string; shade: string }) {
+function ColorScaleToken({
+  family,
+  shade,
+  onTokenChange,
+}: {
+  family: string;
+  shade: string;
+  onTokenChange: (token: string, value: string) => void;
+}) {
   const ref = useRef<HTMLLIElement>(null)
   const [colorValues, setColorValues] = useState({ hex: '', rgb: '', textColor: 'inherit' })
 
@@ -60,7 +69,8 @@ function ColorScaleToken({ family, shade }: { family: string; shade: string }) {
     const newRgb = hexToRgbString(newHex);
     // Update CSS variables globally via runtime
     // This will also update any linked palette tokens
-    runtime.updateColor(`${family}-${shade}`, newHex)
+    runtime.updateColor(`${family}-${shade}`, newHex, { persist: true })
+    onTokenChange(`${family}-${shade}`, newHex)
     
     // Dispatch event for other components (UI updates only)
     console.log(`[DemoColors] Dispatching event: ${family}-${shade} -> ${newHex}`);
@@ -107,10 +117,30 @@ function ColorScaleToken({ family, shade }: { family: string; shade: string }) {
 }
 
 export default function DemoColors() {
+  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
   const [bgFamily, setBgFamily] = useState('blue')
   const [bgShade, setBgShade] = useState('600')
   const [textFamily, setTextFamily] = useState('gray')
   const [textShade, setTextShade] = useState('50')
+
+  useEffect(() => {
+    try {
+      runtime.loadPersistedColors()
+    } catch {}
+  }, [])
+
+  const handleTokenChange = (token: string, value: string) => {
+    const [family, shade] = token.split('-')
+    if (!family || !shade) return
+
+    const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
+    if (!nextTheme.colors) nextTheme.colors = {}
+    if (!nextTheme.colors[family] || typeof nextTheme.colors[family] !== 'object') {
+      nextTheme.colors[family] = {}
+    }
+    nextTheme.colors[family][shade] = value
+    setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
+  }
 
   return (
     <section id="DemoColors" className="demo-section">
@@ -199,7 +229,12 @@ export default function DemoColors() {
             <h4 className="family-title">{fam}</h4>
             <ul className="family-grid">
               {shades.map((shade) => (
-                <ColorScaleToken key={shade} family={fam} shade={shade} />
+                <ColorScaleToken
+                  key={shade}
+                  family={fam}
+                  shade={shade}
+                  onTokenChange={handleTokenChange}
+                />
               ))}
             </ul>
           </article>

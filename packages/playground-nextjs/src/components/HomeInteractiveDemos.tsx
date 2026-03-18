@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
-import { TypographyDemoProvider } from './TypographyDemoContext'
-import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer'
+import DemoBreakpoints from './DemoBreakpoints'
+import { TypographyInteractivePlayground } from './TypographyInteractivePlayground'
 import PalettePlayground from './PalettePlayground'
 import PaletteThemeExplorer from './PaletteThemeExplorer'
 
@@ -27,11 +27,14 @@ function DocsLink({ href }: { href: string }) {
 export default function HomeInteractiveDemos() {
   return (
     <div className="demos-grid">
+      {/* Breakpoints Demo */}
+      <div className="demo-item demo-item-full">
+        <DemoBreakpoints />
+      </div>
+
       {/* Typography Demo */}
       <div className="demo-item demo-item-full">
-        <TypographyDemoProvider>
-          <ResponsiveSyntaxExplainer action={<DocsLink href="/docs/typography" />} />
-        </TypographyDemoProvider>
+        <TypographyInteractivePlayground action={<DocsLink href="/docs/typography" />} />
       </div>
       
       {/* Palette Usage Demo */}

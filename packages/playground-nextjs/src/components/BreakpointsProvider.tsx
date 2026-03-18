@@ -1,14 +1,10 @@
 'use client'
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { breakpoints as runtimeBreakpoints } from 'postcss-uxdsl/ds-runtime'
+import { breakpoints as runtimeBreakpoints, DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime'
 
 const defaultBreakpoints = {
-  xs: 0,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
+  ...DEFAULT_BREAKPOINTS,
 }
 
 export type Breakpoints = typeof defaultBreakpoints
@@ -27,7 +23,9 @@ export function BreakpointsProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Sync with runtime on mount
-    // Force a read to trigger potential <link> conversion
+    // Load persisted values first (if present), then read current runtime map.
+    // This keeps the visual editor aligned with live CSS media query rewrites.
+    runtimeBreakpoints.load()
     runtimeBreakpoints.get()
     
     // Small delay to allow <link> conversion to happen if needed
@@ -55,7 +53,7 @@ export function BreakpointsProvider({ children }: { children: ReactNode }) {
   const setBreakpoints: React.Dispatch<React.SetStateAction<Breakpoints>> = (value) => {
     setBreakpointsState((prev) => {
       const next = typeof value === 'function' ? value(prev) : value
-      runtimeBreakpoints.set(next)
+      runtimeBreakpoints.set(next, { persist: true })
       return next
     })
   }

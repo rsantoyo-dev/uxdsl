@@ -1,3 +1,5 @@
+import { DEFAULT_BREAKPOINTS } from './breakpoints';
+
 export type ThemeValidationIssue = {
   path: string;
   message: string;
@@ -8,14 +10,6 @@ export type ThemeValidationResult<TTheme extends Record<string, any>> = {
   theme: TTheme;
   errors: ThemeValidationIssue[];
   warnings: ThemeValidationIssue[];
-};
-
-const DEFAULT_BREAKPOINTS: Record<string, number> = {
-  xs: 0,
-  sm: 480,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
 };
 
 function isPlainObject(value: unknown): value is Record<string, any> {
@@ -37,6 +31,21 @@ function hasAnyResponsiveMarkers(raw: string): boolean {
 
 function hasXsMarker(raw: string): boolean {
   return /xs\(/.test(raw);
+}
+
+function isLikelyCssColorValue(value: string): boolean {
+  const v = String(value || '').trim();
+  if (!v) return false;
+  return (
+    /^#([0-9a-f]{3,4}|[0-9a-f]{6}|[0-9a-f]{8})$/i.test(v) ||
+    /^rgb\(/i.test(v) ||
+    /^rgba\(/i.test(v) ||
+    /^hsl\(/i.test(v) ||
+    /^hsla\(/i.test(v) ||
+    /^color\(/i.test(v) ||
+    /^var\(/i.test(v) ||
+    /^[a-z]+$/i.test(v)
+  );
 }
 
 function normalizeFontFamily(raw: string): string {
@@ -165,6 +174,74 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
         .filter((v: unknown) => typeof v === 'string' && v.trim().length > 0)
         .map((v: string) => v.trim());
     }
+  }
+
+  // Color scales for color(token) -> --ds__color__token
+  if (theme.colors !== undefined && !isPlainObject(theme.colors)) {
+    errors.push({ path: 'colors', message: 'colors must be an object.' });
+    theme.colors = undefined;
+  }
+  if (isPlainObject(theme.colors)) {
+    Object.keys(theme.colors).forEach((familyKey) => {
+      const familyVal = theme.colors[familyKey];
+      const familyPath = `colors.${familyKey}`;
+
+      if (typeof familyVal === 'string') {
+        const trimmed = familyVal.trim();
+        if (!trimmed) {
+          errors.push({ path: familyPath, message: 'Color value cannot be empty.' });
+          delete theme.colors[familyKey];
+          return;
+        }
+        theme.colors[familyKey] = trimmed;
+        if (!isLikelyCssColorValue(trimmed)) {
+          warnings.push({
+            path: familyPath,
+            message: 'Value does not look like a common CSS color format.',
+          });
+        }
+        return;
+      }
+
+      if (!isPlainObject(familyVal)) {
+        errors.push({
+          path: familyPath,
+          message: 'Color family must be either a string or an object of shade/value pairs.',
+        });
+        delete theme.colors[familyKey];
+        return;
+      }
+
+      Object.keys(familyVal).forEach((shadeKey) => {
+        const shadePath = `${familyPath}.${shadeKey}`;
+        const raw = familyVal[shadeKey];
+
+        if (typeof raw !== 'string') {
+          errors.push({ path: shadePath, message: 'Color shade value must be a string.' });
+          delete familyVal[shadeKey];
+          return;
+        }
+
+        const trimmed = raw.trim();
+        if (!trimmed) {
+          errors.push({ path: shadePath, message: 'Color shade value cannot be empty.' });
+          delete familyVal[shadeKey];
+          return;
+        }
+
+        familyVal[shadeKey] = trimmed;
+        if (!isLikelyCssColorValue(trimmed)) {
+          warnings.push({
+            path: shadePath,
+            message: 'Value does not look like a common CSS color format.',
+          });
+        }
+      });
+
+      if (Object.keys(familyVal).length === 0) {
+        warnings.push({ path: familyPath, message: 'Color family has no valid shade values.' });
+      }
+    });
   }
 
   // Typography details (partial allowed)

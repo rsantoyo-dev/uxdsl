@@ -3,7 +3,7 @@
 import { useNav } from '@/components/NavContext'
 import { Menu, Sun, Moon } from 'lucide-react'
 import { usePathname } from 'next/navigation'
-import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
+import { useBreakpoints } from '@/components/BreakpointsProvider'
 import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { useTheme } from '@/components/ThemeContext'
@@ -24,12 +24,12 @@ export default function PageToolbar() {
       const w = window.innerWidth
       setWindowWidth(w)
       
-      const keys = Object.keys(breakpoints) as BreakpointKey[]
-      keys.sort((a, b) => breakpoints[a] - breakpoints[b])
+      const entries = Object.entries(breakpoints)
+      entries.sort((a, b) => (a[1] as number) - (b[1] as number))
       
       let current = 'xs'
-      for (const key of keys) {
-        if (w >= breakpoints[key]) {
+      for (const [key, value] of entries) {
+        if (w >= (value as number)) {
           current = key
         }
       }

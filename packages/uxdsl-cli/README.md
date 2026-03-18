@@ -55,6 +55,12 @@ module.exports = {
 };
 ```
 
+If `breakpoints` is omitted, CLI uses UXDSL shared defaults:
+
+```ts
+{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
+```
+
 ### 2. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:

@@ -2,8 +2,12 @@
 // - Palette: set/get/reset CSS variables consumed by palette()
 // - Breakpoints: adjust media query thresholds emitted by the UXDSL plugin at runtime
 
+import { DEFAULT_BREAKPOINTS, type BreakpointMap } from "./breakpoints";
+
 const PREFIX = "ds__palette__"; // canonical prefix for palette vars
 const STORE_KEY = "uxdsl:palette";
+const STORE_SP_KEY = "uxdsl:spacing";
+const STORE_COLOR_KEY = "uxdsl:colors";
 const STORE_BP_KEY = "uxdsl:breakpoints";
 
 // Dependency graph: source -> Set<dependent>
@@ -13,6 +17,8 @@ const dependencies: Record<string, Set<string>> = {};
 type ScopeOption = Element | string | undefined;
 
 type PaletteUpdate = Record<string, string>;
+type SpacingUpdate = Record<string, string>;
+type ColorUpdate = Record<string, string>;
 
 declare const document: Document;
 declare const localStorage: Storage;
@@ -32,7 +38,7 @@ type LoadOptions = {
 };
 
 // Event Listener System
-type Listener = (event: { type: 'palette' | 'breakpoint'; detail: any }) => void;
+type Listener = (event: { type: 'palette' | 'breakpoint' | 'spacing'; detail: any }) => void;
 const listeners: Set<Listener> = new Set();
 
 export function subscribe(listener: Listener): () => void {
@@ -40,8 +46,13 @@ export function subscribe(listener: Listener): () => void {
   return () => listeners.delete(listener);
 }
 
-function notify(type: 'palette' | 'breakpoint', detail: any) {
+function notify(type: 'palette' | 'breakpoint' | 'spacing', detail: any) {
   listeners.forEach(l => l({ type, detail }));
+}
+
+function normalizeSpacingToken(token: string | number): string {
+  const raw = String(token).trim();
+  return raw.replace(/^space-/, '').replace(/^--space-/, '');
 }
 
 function normalize(token: string): string {
@@ -151,10 +162,78 @@ export function updateColor(
     });
   }
   
-  // We don't currently persist color token updates in the default palette store
-  // If needed, we could add a separate store or mix them in.
+  if (opts.persist) {
+    try {
+      const store = JSON.parse(
+        localStorage.getItem(STORE_COLOR_KEY) || "{}"
+      ) as ColorUpdate;
+      store[normToken] = value;
+      localStorage.setItem(STORE_COLOR_KEY, JSON.stringify(store));
+    } catch {
+      /* ignore persistence errors */
+    }
+  }
   
   notify('palette', { token: normToken, value, isColor: true });
+}
+
+export function applyColors(
+  updates: ColorUpdate,
+  opts: UpdateOptions = {}
+): void {
+  Object.keys(updates).forEach((k) => updateColor(k, updates[k], opts));
+}
+
+export function getColor(token: string, opts: LoadOptions = {}): string {
+  if (typeof document === "undefined") return "";
+  const el = target(opts.scope) as HTMLElement;
+  const cs = getComputedStyle(el);
+  const normToken = normalize(token);
+  return cs.getPropertyValue(`--ds__color__${normToken}`).trim();
+}
+
+export function resetColors(
+  tokens?: string[] | string,
+  opts: ResetOptions = {}
+): void {
+  if (typeof document === "undefined") return;
+  const el = target(opts.scope) as HTMLElement;
+
+  if (!tokens) {
+    const style = el.style;
+    for (let i = style.length - 1; i >= 0; i--) {
+      const name = style.item(i);
+      if (name && name.startsWith('--ds__color__')) {
+        style.removeProperty(name);
+      }
+    }
+    if (opts.clearPersist) {
+      try {
+        localStorage.removeItem(STORE_COLOR_KEY);
+      } catch {
+        /* ignore persistence errors */
+      }
+    }
+    return;
+  }
+
+  const list = Array.isArray(tokens) ? tokens : [tokens];
+  list.forEach((t) => {
+    const norm = normalize(t);
+    if (norm) el.style.removeProperty(`--ds__color__${norm}`);
+  });
+}
+
+export function loadPersistedColors(opts: LoadOptions = {}): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORE_COLOR_KEY);
+    if (!raw) return;
+    const store = JSON.parse(raw) as ColorUpdate;
+    applyColors(store, opts);
+  } catch {
+    /* ignore persistence errors */
+  }
 }
 
 export function applyPalette(
@@ -221,13 +300,109 @@ export function loadPersisted(opts: LoadOptions = {}): void {
   }
 }
 
+export function updateSpacing(
+  token: string | number,
+  value: string,
+  opts: UpdateOptions = {}
+): void {
+  if (typeof document === "undefined") return;
+  const el = target(opts.scope) as HTMLElement;
+  const normToken = normalizeSpacingToken(token);
+  if (!normToken) return;
+
+  el.style.setProperty(`--space-${normToken}`, value);
+
+  if (opts.persist) {
+    try {
+      const store = JSON.parse(
+        localStorage.getItem(STORE_SP_KEY) || "{}"
+      ) as SpacingUpdate;
+      store[normToken] = value;
+      localStorage.setItem(STORE_SP_KEY, JSON.stringify(store));
+    } catch {
+      /* ignore persistence errors */
+    }
+  }
+
+  notify('spacing', { token: normToken, value });
+}
+
+export function applySpacing(
+  updates: SpacingUpdate,
+  opts: UpdateOptions = {}
+): void {
+  Object.keys(updates).forEach((k) => updateSpacing(k, updates[k], opts));
+}
+
+export function getSpacing(token: string | number, opts: LoadOptions = {}): string {
+  if (typeof document === "undefined") return "";
+  const el = target(opts.scope) as HTMLElement;
+  const cs = getComputedStyle(el);
+  const normToken = normalizeSpacingToken(token);
+  if (!normToken) return "";
+  return cs.getPropertyValue(`--space-${normToken}`).trim();
+}
+
+export function resetSpacing(
+  tokens?: Array<string | number> | string | number,
+  opts: ResetOptions = {}
+): void {
+  if (typeof document === "undefined") return;
+  const el = target(opts.scope) as HTMLElement;
+
+  if (!tokens) {
+    const style = el.style;
+    for (let i = style.length - 1; i >= 0; i--) {
+      const name = style.item(i);
+      if (name && name.startsWith('--space-')) {
+        style.removeProperty(name);
+      }
+    }
+    if (opts.clearPersist) {
+      try {
+        localStorage.removeItem(STORE_SP_KEY);
+      } catch {
+        /* ignore persistence errors */
+      }
+    }
+    return;
+  }
+
+  const list = Array.isArray(tokens) ? tokens : [tokens];
+  list.forEach((t) => {
+    const norm = normalizeSpacingToken(t);
+    if (norm) el.style.removeProperty(`--space-${norm}`);
+  });
+}
+
+export function loadPersistedSpacing(opts: LoadOptions = {}): void {
+  if (typeof localStorage === "undefined") return;
+  try {
+    const raw = localStorage.getItem(STORE_SP_KEY);
+    if (!raw) return;
+    const store = JSON.parse(raw) as SpacingUpdate;
+    applySpacing(store, opts);
+  } catch {
+    /* ignore persistence errors */
+  }
+}
+
 const runtime = {
   updatePalette,
   updateColor,
+  applyColors,
+  getColor,
+  resetColors,
+  loadPersistedColors,
   applyPalette,
   getPalette,
   resetPalette,
   loadPersisted,
+  updateSpacing,
+  applySpacing,
+  getSpacing,
+  resetSpacing,
+  loadPersistedSpacing,
   link,
   unlink,
   getBreakpoints,
@@ -244,15 +419,7 @@ export default runtime;
 // Breakpoint runtime utilities
 // -----------------------------
 
-type BreakpointMap = Record<string, number>;
-
-const DEFAULT_BPS: BreakpointMap = {
-  xs: 0,
-  sm: 480,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-};
+export { DEFAULT_BREAKPOINTS };
 
 function parseBpMeta(css: string): BreakpointMap | null {
   // Expects a trailer like: /*@uxdsl-bp {"xs":0,"sm":480,...}*/
@@ -365,8 +532,8 @@ function ensureInitialBp(): void {
       return;
     }
   }
-  __initialBp = { ...DEFAULT_BPS };
-  __currentBp = { ...DEFAULT_BPS };
+  __initialBp = { ...DEFAULT_BREAKPOINTS };
+  __currentBp = { ...DEFAULT_BREAKPOINTS };
 }
 
 export function getBreakpoints(): BreakpointMap {
@@ -437,5 +604,23 @@ export const breakpoints = {
   update: updateBreakpoint,
   reset: resetBreakpoints,
   load: loadPersistedBreakpoints,
+  subscribe,
+};
+
+export const spacing = {
+  get: getSpacing,
+  set: updateSpacing,
+  apply: applySpacing,
+  reset: resetSpacing,
+  load: loadPersistedSpacing,
+  subscribe,
+};
+
+export const colors = {
+  get: getColor,
+  set: updateColor,
+  apply: applyColors,
+  reset: resetColors,
+  load: loadPersistedColors,
   subscribe,
 };

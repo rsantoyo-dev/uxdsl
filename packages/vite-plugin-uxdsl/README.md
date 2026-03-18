@@ -96,6 +96,16 @@ The plugin accepts options that are passed directly to `uxdsl-core`'s processing
 -   `breakpoints`: An object defining custom responsive breakpoints (e.g., `{ sm: 480, md: 768 }`).
 -   Any other valid `options` for the `processUxdsl` function from `uxdsl-core`.
 
+### Note on defaults
+
+If you do not provide `breakpoints`, the plugin uses UXDSL's shared default map:
+
+```ts
+{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
+```
+
+This map is aligned with `postcss-uxdsl` runtime defaults (`DEFAULT_BREAKPOINTS`).
+
 ---
 
 ## License

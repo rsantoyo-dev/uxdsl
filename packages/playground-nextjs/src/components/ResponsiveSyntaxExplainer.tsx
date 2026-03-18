@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
 import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
+import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 // import { optimizeTypography } from '../utils/typographyOptimizer';
@@ -186,7 +187,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
     if (!hasMatches) return toCssValue(val); // Static value
 
-    const bpValues = activeThemeData?.breakpoints || { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 };
+    const bpValues = activeThemeData?.breakpoints || DEFAULT_BREAKPOINTS;
 
     // Resolve based on breakpoints (min-width, mobile-first)
     if (effectivePx >= bpValues.xl && breakpoints.xl) return toCssValue(breakpoints.xl);

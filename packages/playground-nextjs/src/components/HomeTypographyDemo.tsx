@@ -1,12 +1,7 @@
 'use client'
 
-import { TypographyDemoProvider } from './TypographyDemoContext'
-import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer'
+import { TypographyInteractivePlayground } from './TypographyInteractivePlayground'
 
 export default function HomeTypographyDemo() {
-  return (
-    <TypographyDemoProvider>
-      <ResponsiveSyntaxExplainer />
-    </TypographyDemoProvider>
-  )
+  return <TypographyInteractivePlayground />
 }
