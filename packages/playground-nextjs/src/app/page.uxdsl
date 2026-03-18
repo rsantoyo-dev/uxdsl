@@ -96,7 +96,6 @@
     justify-content: center;
     gap: density(2);
     padding: density(4) density(6);
-    font-weight: 600;
     border-radius: radius(full);
     transition: transform 0.2s;
     width: 100%; 
