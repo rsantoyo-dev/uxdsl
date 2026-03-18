@@ -9,6 +9,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
+    "verify:docs": "node scripts/verify-docs-update.js",
     "theme:audit": "npm --prefix packages/playground-nextjs run theme:audit"
   },
   "keywords": [],

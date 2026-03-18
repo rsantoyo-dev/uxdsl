@@ -37,7 +37,7 @@
   position: absolute;
   inset: 0;
   background: palette(primary-main);
-  opacity: 0.15; /* Reduced tint opacity */
+  opacity: 0.5; 
   mix-blend-mode: color;
   z-index: 2;
 }

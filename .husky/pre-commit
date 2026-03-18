@@ -1,2 +1,5 @@
+echo "Running docs update guard for changed npm packages..."
+npm run verify:docs
+
 echo "Running pre-commit build check for playground-nextjs..."
 cd packages/playground-nextjs && npm run build

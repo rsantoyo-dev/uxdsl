@@ -18,3 +18,26 @@
     grid-column: span 2;
   }
 }
+
+.home-demos {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: density(3);
+}
+
+.home-demos__actions {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.home-demos__toggle {
+  @ds-button (flat secondary small);
+  min-width: density(24);
+  opacity: 0.85;
+
+  &:hover {
+    opacity: 1;
+  }
+}

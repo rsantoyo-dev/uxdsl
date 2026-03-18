@@ -39,7 +39,7 @@ export const ThemeBackground = memo(function ThemeBackground() {
           priority
           unoptimized
           className="theme-background-image"
-          style={{ opacity: imageLoaded ? 0.35 : 0 }}
+          style={{ opacity: imageLoaded ? 0.24 : 0 }}
           onLoadingComplete={() => setImageLoaded(true)}
           onError={() => {
             setImageFailed(true)

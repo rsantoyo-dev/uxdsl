@@ -114,7 +114,7 @@
   }
 
   .intro-text {
-    @ds-typo (body);
+    @ds-typo (span);
     color: palette(text-secondary);
     text-align: center;
   }

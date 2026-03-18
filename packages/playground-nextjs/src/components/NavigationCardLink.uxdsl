@@ -65,13 +65,13 @@
   }
 
   .nav-card-title {
-    @ds-typo (h3);
+    @ds-typo (h4);
     margin: 0;
     color: palette(surface-contrast);
   }
 
   .nav-card-desc {
-    @ds-typo (body);
+    @ds-typo (span);
     margin: 0;
     color: palette(secondary-main);
   }

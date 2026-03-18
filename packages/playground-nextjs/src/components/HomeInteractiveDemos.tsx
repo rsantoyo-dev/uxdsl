@@ -1,4 +1,7 @@
+"use client"
+
 import Link from 'next/link'
+import { useState } from 'react'
 import { ArrowRight } from 'lucide-react'
 import DemoBreakpoints from './DemoBreakpoints'
 import { TypographyInteractivePlayground } from './TypographyInteractivePlayground'
@@ -25,26 +28,44 @@ function DocsLink({ href }: { href: string }) {
 }
 
 export default function HomeInteractiveDemos() {
+  const [showExtended, setShowExtended] = useState(false)
+
   return (
-    <div className="demos-grid">
-      {/* Breakpoints Demo */}
-      <div className="demo-item demo-item-full">
-        <DemoBreakpoints />
+    <div className="home-demos">
+      <div className="demos-grid">
+        {/* Breakpoints Demo */}
+        <div className="demo-item demo-item-full">
+          <DemoBreakpoints />
+        </div>
+
+        {/* Typography Demo */}
+        <div className="demo-item demo-item-full">
+          <TypographyInteractivePlayground action={<DocsLink href="/docs/typography" />} />
+        </div>
+
+        {showExtended && (
+          <>
+            {/* Palette Usage Demo */}
+            <div className="demo-item">
+              <PalettePlayground action={<DocsLink href="/docs/palette#usage" />} />
+            </div>
+
+            {/* Palette Explorer Demo */}
+            <div className="demo-item">
+              <PaletteThemeExplorer action={<DocsLink href="/docs/palette#explorer" />} />
+            </div>
+          </>
+        )}
       </div>
 
-      {/* Typography Demo */}
-      <div className="demo-item demo-item-full">
-        <TypographyInteractivePlayground action={<DocsLink href="/docs/typography" />} />
-      </div>
-      
-      {/* Palette Usage Demo */}
-      <div className="demo-item">
-        <PalettePlayground action={<DocsLink href="/docs/palette#usage" />} />
-      </div>
-
-      {/* Palette Explorer Demo */}
-      <div className="demo-item">
-        <PaletteThemeExplorer action={<DocsLink href="/docs/palette#explorer" />} />
+      <div className="home-demos__actions">
+        <button
+          type="button"
+          className="home-demos__toggle"
+          onClick={() => setShowExtended((v) => !v)}
+        >
+          {showExtended ? 'Show Less Demos' : 'Show More Demos'}
+        </button>
       </div>
     </div>
   )

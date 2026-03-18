@@ -33,3 +33,17 @@ Default values:
 3. Build UXDSL CSS: `npm run uxdsl:build`.
 4. Start app: `npm run dev`.
 
+## Commit policy for npm package updates
+
+To keep npm consumers and viewers informed, commits now enforce a docs update step for publishable packages.
+
+- If code changes are staged under `packages/<pkg>/` (non-private npm packages), you must also stage:
+  - `packages/<pkg>/README.md`, or
+  - root `README.md`
+
+This runs automatically in pre-commit via:
+
+- `npm run verify:docs`
+
+You can run it manually before committing.
+
