@@ -1,3 +1,5 @@
+import { DEFAULT_BREAKPOINTS, generateDensityCss } from '../language';
+
 export function generateThemeCss(theme: Record<string, any>): string {
   if (!theme) return '';
   
@@ -36,12 +38,7 @@ export function generateThemeCss(theme: Record<string, any>): string {
     });
   }
 
-  // Densities
-  if (theme.densities) {
-    Object.entries(theme.densities).forEach(([key, val]) => {
-      cssVars.push(`--density-${key}: ${val}`);
-    });
-  }
+  // Density references and responsive rules are compiled by the shared engine.
 
   // Radii
   if (theme.radii) {
@@ -72,6 +69,9 @@ export function generateThemeCss(theme: Record<string, any>): string {
   }
 
   let cssContent = `:root { ${cssVars.join('; ')} }`;
+  if (theme.densities) {
+    cssContent += '\n' + generateDensityCss(theme.densities, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints });
+  }
 
   // Dark Mode
   if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {

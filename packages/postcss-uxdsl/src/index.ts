@@ -8,6 +8,7 @@
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
+import { compileDensityRules, resolveResponsiveValue } from './language';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
 type BreakpointSpec =
@@ -568,39 +569,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       });
 
       // Generate CSS variables for density tokens
-      const densityRoot = postcss.rule({ selector: ":root" });
-      const densityMediaRules: Record<string, Rule> = {};
-
-      Object.keys(GLOBAL_DENSITY_TOKENS).forEach((key) => {
-        const val = GLOBAL_DENSITY_TOKENS[key];
-        // Resolve for base (xs)
-        const baseVal = rewriteFuncs(resolveValueForBp(val, ordered[0].name));
-        densityRoot.append({ prop: `--density-${key}`, value: baseVal });
-        
-        let lastVal = baseVal;
-        
-        for (let i = 1; i < ordered.length; i++) {
-            const bp = ordered[i];
-            const currVal = rewriteFuncs(resolveValueForBp(val, bp.name));
-            if (currVal !== lastVal) {
-                if (!densityMediaRules[bp.name]) {
-                    const mediaAt = postcss.atRule({ 
-                        name: 'media', 
-                        params: `(min-width: ${bp.px}px)` 
-                    });
-                    const rootRule = postcss.rule({ selector: ":root" });
-                    mediaAt.append(rootRule);
-                    densityMediaRules[bp.name] = rootRule;
-                    root.append(mediaAt);
-                }
-                densityMediaRules[bp.name].append({ prop: `--density-${key}`, value: currVal });
-                lastVal = currVal;
-            }
+      for (const compiled of compileDensityRules(GLOBAL_DENSITY_TOKENS, bps, rewriteFuncs)) {
+        const rule = postcss.rule({ selector: ':root' });
+        for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
+        if (compiled.minWidth === null) root.prepend(rule);
+        else {
+          const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
+          media.append(rule);
+          root.append(media);
         }
-      });
-      
-      if (densityRoot.nodes.length > 0) {
-          root.prepend(densityRoot);
       }
 
       // Helper to compute surface base props for a given variant/tone/size
@@ -965,58 +942,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       });
 
       function resolveValueForBp(input: string, targetBp: string): string {
-        const p = valueParser(input);
-        const nodes = p.nodes;
-        const newNodes: any[] = [];
-        
-        for (let i = 0; i < nodes.length; i++) {
-            const n = nodes[i] as any;
-            if (n.type === 'function' && bpNames.has(n.value)) {
-                // Start of a responsive group
-                const group: any[] = [n];
-                let j = i + 1;
-                while (j < nodes.length) {
-                    const next = nodes[j] as any;
-                    if (next.type === 'space') {
-                        j++;
-                        continue;
-                    }
-                    if (next.type === 'function' && bpNames.has(next.value)) {
-                        group.push(next);
-                        j++;
-                    } else {
-                        break;
-                    }
-                }
-                
-                // Process group
-                // Find best match for targetBp
-                const targetPx = bps[targetBp];
-                let best: any = null;
-                let bestPx = -1;
-                
-                for (const g of group) {
-                    const gPx = bps[g.value];
-                    if (gPx <= targetPx && gPx > bestPx) {
-                        best = g;
-                        bestPx = gPx;
-                    }
-                }
-                
-                if (best) {
-                    const inner = valueParser.stringify(best.nodes).trim();
-                    const resolved = resolveValueForBp(inner, targetBp);
-                    newNodes.push({ type: 'word', value: resolved });
-                }
-                
-                // Skip processed nodes
-                i = j - 1;
-            } else {
-                newNodes.push(n);
-            }
-        }
-        
-        return valueParser.stringify(newNodes).trim();
+        return resolveResponsiveValue(input, targetBp, bps);
       }
 
       function rewriteFuncs(input: string, _forProp?: string): string {

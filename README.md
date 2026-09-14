@@ -2,6 +2,28 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## Feature roadmap
+
+- [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.
+
+### Shared language foundation (in progress)
+
+`postcss-uxdsl/language` now owns breakpoint defaults, Density defaults,
+responsive selection and Density rule generation. PostCSS, the runtime theme
+generator and the Density playground delegate to this module. Existing runtime
+breakpoint exports remain compatible. The module has no DOM or Node built-in
+dependencies; a production browser bundle remains to be measured.
+
+Run `npm test` for shared language tests, existing core import tests and generated
+artifact drift checks. Run `npm run generate:language` after changing language
+defaults or completion metadata. This generates the Density theme file, the
+Density/breakpoint portions of the manifest, and VS Code completion data.
+
+This is not full engine unification: other token families, strict reference
+validation, process-global compiler caches, full editor schema/diagnostics and
+browser verification remain tracked in FEAT-001. Density-15's pre-existing
+reference to space-17 is preserved pending default-scale reconciliation.
+
 ## Main packages
 
 - `packages/postcss-uxdsl` — Core compiler and runtime helpers.
@@ -76,4 +98,3 @@ You can run these from repo root or from `packages/playground-nextjs` (proxied s
 You can also include a short tweak note (stored in `packages/uxdsl-core/README.md`):
 
 - `node scripts/release.js --bump patch --note "small parser fix"`
-

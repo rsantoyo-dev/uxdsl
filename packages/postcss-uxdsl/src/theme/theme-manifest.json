@@ -54,43 +54,134 @@
       "active?",
       "disabled?"
     ],
-    "states": ["hover", "active", "selected", "disabled", "focus", "invalid"],
-    "space": { "min": 1, "max": 16 },
-    "density": { "min": 1, "max": 5 },
-    "radius": { "min": 1, "max": 5 },
-    "shadow": { "min": 1, "max": 5 },
-    "border": { "min": 1, "max": 5 },
+    "states": [
+      "hover",
+      "active",
+      "selected",
+      "disabled",
+      "focus",
+      "invalid"
+    ],
+    "space": {
+      "min": 1,
+      "max": 16
+    },
+    "density": {
+      "min": 1,
+      "max": 15
+    },
+    "radius": {
+      "min": 1,
+      "max": 5
+    },
+    "shadow": {
+      "min": 1,
+      "max": 5
+    },
+    "border": {
+      "min": 1,
+      "max": 5
+    },
     "motion": {
-      "durations": ["--motion-dur-1", "--motion-dur-2", "--motion-dur-3", "--motion-dur-4", "--motion-dur-5"],
-      "easings": ["--motion-ease-standard", "--motion-ease-emphasis", "--motion-ease-enter", "--motion-ease-exit"]
+      "durations": [
+        "--motion-dur-1",
+        "--motion-dur-2",
+        "--motion-dur-3",
+        "--motion-dur-4",
+        "--motion-dur-5"
+      ],
+      "easings": [
+        "--motion-ease-standard",
+        "--motion-ease-emphasis",
+        "--motion-ease-enter",
+        "--motion-ease-exit"
+      ]
     }
   },
   "packs": {
-    "surface": ["contained", "outlined", "flat"],
-    "button": ["contained", "outlined", "flat"],
-    "input": ["contained", "outlined", "underline"]
+    "surface": [
+      "contained",
+      "outlined",
+      "flat"
+    ],
+    "button": [
+      "contained",
+      "outlined",
+      "flat"
+    ],
+    "input": [
+      "contained",
+      "outlined",
+      "underline"
+    ]
   },
   "directives": {
     "ds-typo": {
-      "variants": ["h1","h2","h3","h4","h5","h6","p","span","body","caption","small","pre"]
+      "variants": [
+        "h1",
+        "h2",
+        "h3",
+        "h4",
+        "h5",
+        "h6",
+        "p",
+        "span",
+        "body",
+        "caption",
+        "small",
+        "pre"
+      ]
     },
     "ds-surface": {
-      "params": ["variant", "tone?", "size?"],
-      "variants": ["contained", "outlined", "flat"]
+      "params": [
+        "variant",
+        "tone?",
+        "size?"
+      ],
+      "variants": [
+        "contained",
+        "outlined",
+        "flat"
+      ]
     },
     "ds-button": {
-      "params": ["variant", "tone?", "size?"],
-      "variants": ["contained", "outlined", "flat"],
+      "params": [
+        "variant",
+        "tone?",
+        "size?"
+      ],
+      "variants": [
+        "contained",
+        "outlined",
+        "flat"
+      ],
       "stateVars": [
-        "--ds-btn-bg", "--ds-btn-fg", "--ds-btn-border",
-        "--ds-btn-bg-hover", "--ds-btn-fg-hover", "--ds-btn-border-hover",
-        "--ds-btn-bg-selected", "--ds-btn-fg-selected", "--ds-btn-border-selected"
+        "--ds-btn-bg",
+        "--ds-btn-fg",
+        "--ds-btn-border",
+        "--ds-btn-bg-hover",
+        "--ds-btn-fg-hover",
+        "--ds-btn-border-hover",
+        "--ds-btn-bg-selected",
+        "--ds-btn-fg-selected",
+        "--ds-btn-border-selected"
       ]
     },
     "ds-input": {
-      "params": ["variant", "tone?", "size?"],
-      "variants": ["contained", "outlined", "underline"],
-      "extras": ["caret-color", "::placeholder color"]
+      "params": [
+        "variant",
+        "tone?",
+        "size?"
+      ],
+      "variants": [
+        "contained",
+        "outlined",
+        "underline"
+      ],
+      "extras": [
+        "caret-color",
+        "::placeholder color"
+      ]
     }
   },
   "helpers": {
@@ -102,7 +193,11 @@
       "radius(n|pill|full|circle)",
       "shadow(n)",
       "border(n[, color][, style])",
-      "xs(val)", "sm(val)", "md(val)", "lg(val)", "xl(val)"
+      "xs(val)",
+      "sm(val)",
+      "md(val)",
+      "lg(val)",
+      "xl(val)"
     ]
   }
 }

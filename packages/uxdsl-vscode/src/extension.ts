@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { completions } from './generated-completions';
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('UXDSL extension is now active!');
@@ -11,20 +12,12 @@ export function activate(context: vscode.ExtensionContext) {
 
                 // Suggest directives if typing '@'
                 if (linePrefix.endsWith('@')) {
-                    return [
-                        new vscode.CompletionItem('theme', vscode.CompletionItemKind.Keyword),
-                        new vscode.CompletionItem('ds-surface', vscode.CompletionItemKind.Keyword),
-                        new vscode.CompletionItem('ds-typo', vscode.CompletionItemKind.Keyword),
-                        new vscode.CompletionItem('ds-button', vscode.CompletionItemKind.Keyword),
-                    ];
+                    return completions.directives.map(name => new vscode.CompletionItem(name, vscode.CompletionItemKind.Keyword));
                 }
 
                 // Suggest functions if inside a value (simplistic check)
                 // We'll just provide them generally for now
-                const functionCompletions = [
-                    'palette', 'radius', 'density', 'shadow', 'space',
-                    'xs', 'sm', 'md', 'lg', 'xl'
-                ].map(fn => {
+                const functionCompletions = completions.functions.map(fn => {
                     const item = new vscode.CompletionItem(fn, vscode.CompletionItemKind.Function);
                     item.insertText = new vscode.SnippetString(`${fn}($1)`);
                     return item;

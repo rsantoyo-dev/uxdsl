@@ -7,7 +7,8 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "npm --prefix packages/postcss-uxdsl test && npm --prefix packages/uxdsl-core test && node scripts/generate-language-artifacts.js --check",
+    "generate:language": "npm --prefix packages/postcss-uxdsl run build && node scripts/generate-language-artifacts.js",
     "prepare": "husky",
     "verify:docs": "node scripts/verify-docs-update.js",
     "release:patch": "node scripts/release.js --bump patch",
