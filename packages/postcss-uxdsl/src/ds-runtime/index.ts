@@ -541,11 +541,11 @@ export function getBreakpoints(): BreakpointMap {
   return { ...(__currentBp as BreakpointMap) };
 }
 
-export function applyBreakpoints(map: BreakpointMap, opts: { persist?: boolean } = {}): void {
+export function applyBreakpoints(map: BreakpointMap, opts: { persist?: boolean; replace?: boolean } = {}): void {
   if (typeof document === 'undefined') return;
   ensureInitialBp();
   const fromMap = __currentBp as BreakpointMap;
-  const toMap = { ...fromMap, ...map } as BreakpointMap;
+  const toMap = { ...(opts.replace ? DEFAULT_BREAKPOINTS : fromMap), ...map } as BreakpointMap;
   const tags = allUxdslStyleTags();
   tags.forEach((t) => {
     const css = t.textContent || '';

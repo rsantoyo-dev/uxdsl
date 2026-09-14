@@ -37,7 +37,7 @@
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "npm run build && node --test test/language.test.js",
+    "test": "npm run build && node --test test/*.test.js",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist"

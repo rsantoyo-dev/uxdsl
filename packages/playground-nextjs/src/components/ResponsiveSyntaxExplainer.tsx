@@ -4,22 +4,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
 import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
-import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
+import { DEFAULT_BREAKPOINTS, inspectTypographyTheme, compileTypographyRules } from 'postcss-uxdsl/ds-runtime';
+import { inspectResponsiveValue } from 'postcss-uxdsl/language';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 // import { optimizeTypography } from '../utils/typographyOptimizer';
 
 // Size order (largest -> smallest-ish), HTML-first.
 const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre', 'default'];
-const BPS = [
-  { label: 'XS', width: 30 },
-  { label: 'SM', width: 45 },
-  { label: 'MD', width: 65 },
-  { label: 'LG', width: 86 },
-  { label: 'XL', width: 100 },
-  { label: 'Default', width: 100 }
-];
-
 const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = [
   { id: 'uxdsl', label: 'UXDSL — Responsive intelligent styles', text: 'UXDSL — Responsive intelligent styles' },
   { id: 'lorem', label: 'Lorem ipsum', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
@@ -29,42 +21,12 @@ const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = 
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, themeBreakpoints, baseColor }: { value: string, widthPercent: number, isAutoMode?: boolean, windowWidth?: number, themeBreakpoints?: any, baseColor?: string }) => {
+const SyntaxHighlighter = ({ value, viewportWidth, themeBreakpoints, baseColor }: { value: string, viewportWidth: number, themeBreakpoints: Record<string, number>, baseColor?: string }) => {
   const color = baseColor || 'var(--ds__palette__info-main)';
   if (!value) return <span style={{ color }}>&quot;&quot;</span>;
 
-  // Determine active breakpoint
-  const getActiveBreakpoint = () => {
-    let effectivePx;
-    
-    if (isAutoMode && windowWidth !== undefined && windowWidth > 0) {
-      effectivePx = windowWidth;
-    } else {
-      const px = (widthPercent / 100) * 1200; 
-      effectivePx = widthPercent === 100 ? 1280 : px;
-    }
-    
-    const breakpoints: Record<string, boolean> = {};
-    const regex = /(xs|sm|md|lg|xl)\(/g;
-    let match;
-    while ((match = regex.exec(value)) !== null) {
-      breakpoints[match[1]] = true;
-    }
-    
-    if (Object.keys(breakpoints).length === 0) return 'static';
-
-    const bpValues = themeBreakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 };
-
-    if (effectivePx >= bpValues.xl && breakpoints.xl) return 'xl';
-    if (effectivePx >= bpValues.lg && breakpoints.lg) return 'lg';
-    if (effectivePx >= bpValues.md && breakpoints.md) return 'md';
-    if (effectivePx >= bpValues.sm && breakpoints.sm) return 'sm';
-    if (breakpoints.xs) return 'xs';
-    if (breakpoints.sm) return 'sm';
-    return 'static';
-  };
-
-  const activeBp = getActiveBreakpoint();
+  const bpValues = { ...DEFAULT_BREAKPOINTS, ...themeBreakpoints };
+  const activeBp = inspectResponsiveValue(value, viewportWidth, bpValues).applied || 'static';
 
   if (activeBp === 'static') {
     return <span style={{ color }}>&quot;{value}&quot;</span>;
@@ -79,7 +41,7 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
       const closeParen = token.lastIndexOf(')');
       if (openParen > 0 && closeParen === token.length - 1) {
         const bp = token.substring(0, openParen);
-        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
+        if (Object.prototype.hasOwnProperty.call(bpValues, bp)) {
           return { text: token, type: 'bp', bp };
         }
       }
@@ -128,8 +90,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   const [isFontStyleEditorOpen, setIsFontStyleEditorOpen] = useState(false);
   const [isMarginBlockStartEditorOpen, setIsMarginBlockStartEditorOpen] = useState(false);
   const [isMarginBlockEndEditorOpen, setIsMarginBlockEndEditorOpen] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(100); // Percentage
-  const [isAutoMode, setIsAutoMode] = useState(true);
+  const [selectedBreakpoint, setSelectedBreakpoint] = useState<string | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -153,50 +114,19 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Helper to resolve responsive value based on width
-  const resolveResponsiveValue = (val: string, widthPercent: number) => {
-    if (!val) return '';
-    // Approximate width in pixels based on a standard 1200px container
-    const px = (widthPercent / 100) * 1200; 
-    // Hack for demo: if width is 100%, treat as XL (1280+) to ensure XL breakpoint is reachable
-    const effectivePx = widthPercent === 100 ? 1280 : px;
-    
-    const toCssValue = (input: string) => {
-      const v = String(input || '').trim();
-      if (!v) return v;
-      return v
-        .replace(/\bspace\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--space-$1)')
-        .replace(/\bdensity\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--density-$1)');
-    };
-
-    // Parse breakpoints (supports nested parentheses like xs(space(2))).
-    const breakpoints: Record<string, string> = {};
-    const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
-    let hasMatches = false;
-    parts.forEach((part) => {
-      const openParen = part.indexOf('(');
-      const closeParen = part.lastIndexOf(')');
-      if (openParen > 0 && closeParen === part.length - 1) {
-        const bp = part.substring(0, openParen);
-        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
-          breakpoints[bp] = part.substring(openParen + 1, closeParen).trim();
-          hasMatches = true;
-        }
-      }
-    });
-
-    if (!hasMatches) return toCssValue(val); // Static value
-
-    const bpValues = activeThemeData?.breakpoints || DEFAULT_BREAKPOINTS;
-
-    // Resolve based on breakpoints (min-width, mobile-first)
-    if (effectivePx >= bpValues.xl && breakpoints.xl) return toCssValue(breakpoints.xl);
-    if (effectivePx >= bpValues.lg && breakpoints.lg) return toCssValue(breakpoints.lg);
-    if (effectivePx >= bpValues.md && breakpoints.md) return toCssValue(breakpoints.md);
-    if (effectivePx >= bpValues.sm && breakpoints.sm) return toCssValue(breakpoints.sm);
-    return toCssValue(breakpoints.xs || breakpoints.sm || val);
-  };
-
+  const themeBreakpoints = { ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints };
+  const orderedBreakpoints = Object.entries(themeBreakpoints as Record<string, number>).sort((a, b) => a[1] - b[1]);
+  const maxWidth = Math.max(...orderedBreakpoints.map(([, width]) => width), 1);
+  const BPS = orderedBreakpoints.map(([name, width], index) => ({
+    name, label: name.toUpperCase(),
+    // Show the base range at a readable representative width, below its next threshold.
+    pixels: width || (orderedBreakpoints[index + 1]?.[1] ?? maxWidth) / 2,
+  }));
+  const selected = BPS.find(bp => bp.name === selectedBreakpoint);
+  const isAutoMode = !selected;
+  const previewViewport = selected?.pixels ?? windowWidth;
+  // Panel width is presentation only; never convert it back into responsive semantics.
+  const previewWidth = isAutoMode ? 100 : Math.max(22, Math.min(100, previewViewport / maxWidth * 100));
   // Sync with external edit requests (from the list below)
   useEffect(() => {
     if (editingTag && TAGS.includes(editingTag)) {
@@ -209,13 +139,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   }, [editingTag]);
 
   // Safe access to the typography details
-  const defaultDetails = activeThemeData?.typography_details?.default || {
-    fontSize: 'xs(space(5))',
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    lineHeight: '1.5',
-    letterSpacing: 'normal'
-  };
+  const defaultDetails = activeThemeData?.typography_details?.default || {};
   
   const tagDetails = activeThemeData?.typography_details?.[selectedTag] || {};
   
@@ -267,7 +191,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
     newTheme.typography_details[selectedTag].fontSize = newValue;
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleSaveFontFamily = (newValue: string) => {
@@ -318,7 +242,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       }
     }
 
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleSaveProperty = (property: string, newValue: string) => {
@@ -326,7 +250,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
     newTheme.typography_details[selectedTag][property] = newValue;
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleRemoveProperty = (property: string) => {
@@ -334,7 +258,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     const newTheme = JSON.parse(JSON.stringify(activeThemeData));
     if (newTheme.typography_details?.[selectedTag]) {
       delete newTheme.typography_details[selectedTag][property];
-      setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+      setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
     }
   };
 
@@ -351,21 +275,8 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         .trim();
     };
 
-    const extractResponsiveValue = (value: string, bp: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => {
-      const val = String(value || '').trim();
-      if (!val) return undefined;
-
-      const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
-      for (const part of parts) {
-        const openParen = part.indexOf('(');
-        const closeParen = part.lastIndexOf(')');
-        if (openParen > 0 && closeParen === part.length - 1) {
-          const key = part.substring(0, openParen);
-          if (key === bp) return part.substring(openParen + 1, closeParen).trim();
-        }
-      }
-      return undefined;
-    };
+    const extractResponsiveValue = (value: string, bp: string) =>
+      inspectResponsiveValue(value || '', themeBreakpoints[bp], themeBreakpoints).value || undefined;
 
     const parseLengthToPx = (raw: string | undefined): number | undefined => {
       if (!raw) return undefined;
@@ -459,6 +370,9 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       if (!detailsPatch || typeof detailsPatch !== 'object') {
         return { ok: false, reason: 'Missing typography_details object.' };
       }
+
+      try { compileTypographyRules(detailsPatch, themeBreakpoints); }
+      catch (cause) { return { ok: false, reason: cause instanceof Error ? cause.message : String(cause) }; }
 
       const requiredTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre'];
       if (validateMode === 'all') {
@@ -672,7 +586,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             Object.assign(newTheme.typography_details[selectedTag], detailsPatch[selectedTag]);
           }
           
-          setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+          setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
         } catch (parseError) {
           console.error("Failed to parse AI response:", parseError);
           alert("Failed to apply AI changes.");
@@ -737,29 +651,20 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         <div className="controls-section">
             <div className="controls-row-bottom">
               <div className="controls-group">
-                {BPS.map((bp) => {
-                  const isDefault = bp.label === 'Default';
-                  const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bp.width);
-                  
-                  return (
-                    <button
-                      key={bp.label}
-                      onClick={() => {
-                        if (isDefault) {
-                          setIsAutoMode(true);
-                          setPreviewWidth(100);
-                        } else {
-                          setIsAutoMode(false);
-                          setPreviewWidth(bp.width);
-                        }
-                      }}
-                      title={isDefault ? "Current Screen Size" : `${bp.label} View`}
-                      className={`control-button ${isActive ? 'active' : ''} ${isDefault ? 'is-default' : ''}`}
-                    >
-                      {isDefault ? <Monitor size={14} /> : bp.label}
-                    </button>
-                  );
-                })}
+                {BPS.map(bp => (
+                  <button key={bp.name}
+                    onClick={() => setSelectedBreakpoint(bp.name)}
+                    aria-pressed={selected?.name === bp.name}
+                    title={`${bp.label}: simulated ${bp.pixels}px viewport`}
+                    className={`control-button ${selected?.name === bp.name ? 'active' : ''}`}>
+                    {bp.label}
+                  </button>
+                ))}
+                <button onClick={() => setSelectedBreakpoint(null)} aria-pressed={isAutoMode}
+                  title="Current Screen Size" aria-label="Current Screen Size"
+                  className={`control-button is-default ${isAutoMode ? 'active' : ''}`}>
+                  <Monitor size={14} />
+                </button>
               </div>
 
               <div className="element-select-group">
@@ -835,6 +740,10 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             </div>
         </div>
 
+        <p role="status" className="typography-viewport-status">
+          {isAutoMode ? 'Current viewport' : 'Simulated viewport'}: {Math.round(previewViewport)}px
+          {selected ? ` · ${selected.label}` : ''}. The theme defines which text properties change at this width.
+        </p>
         {/* Live Preview Section */}
         <div className="live-preview-section">
         
@@ -870,8 +779,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 style: !isAutoMode
                   ? {
                       textAlign,
-                      fontSize: resolveResponsiveValue(fontSizeString, previewWidth),
-                      lineHeight: resolveResponsiveValue(lineHeightString, previewWidth)
+                      ...inspectTypographyTheme(activeThemeData, previewViewport)
                     }
                   : { textAlign }
               }
@@ -892,7 +800,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />,
+            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />,
           </div>
           <button 
             onClick={() => setIsEditorOpen(true)}
@@ -905,7 +813,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontFamilyInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -930,7 +838,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontWeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -955,7 +863,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isLineHeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -980,7 +888,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isLetterSpacingInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -1006,7 +914,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Text Transform */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isTextTransformInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -1020,7 +928,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Text Decoration */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isTextDecorationInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -1034,7 +942,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Font Style */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontStyleInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -1048,7 +956,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Margin Block Start */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isMarginBlockStartInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -1062,7 +970,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Margin Block End */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isMarginBlockEndInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">

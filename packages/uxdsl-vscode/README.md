@@ -33,3 +33,14 @@ This extension provides language support for **UXDSL** (User Experience Design S
 - **LinkedIn**: [Ricardo Santoyo](https://www.linkedin.com/in/ricardo-santoyo)
 - **GitHub**: [rsantoyo-dev/uxdsl](https://github.com/rsantoyo-dev/uxdsl)
 
+
+## Typography configuration
+
+Use `@ds-typo(h1)` (or another configured role) in component styles. Define its
+responsive fields in `typography_details` in the theme JSON, alongside `fonts`,
+`spacing`, and `breakpoints`. PostCSS and runtime use the same Typography compiler;
+the playground is an editor and consumer of that contract.
+
+The extension currently offers syntax highlighting and basic directive completion.
+It does not yet validate theme JSON or provide theme-aware Typography role/field
+completion. See `docs/features/FEAT-002-unified-typography-engine.md` for that roadmap.

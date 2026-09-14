@@ -21,6 +21,8 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
+      "postcss-uxdsl/ds-runtime": ["../postcss-uxdsl/src/ds-runtime.ts"],
+      "postcss-uxdsl/language": ["../postcss-uxdsl/src/language.ts"],
       "postcss-uxdsl/runtime": ["../postcss-uxdsl/src/runtime.ts"]
     }
   },

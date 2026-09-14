@@ -1,3 +1,4 @@
+import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
 import { DEFAULT_BREAKPOINTS } from './breakpoints';
 
 export type ThemeValidationIssue = {
@@ -23,14 +24,6 @@ function toNumberOrUndefined(value: unknown): number | undefined {
     if (Number.isFinite(n)) return n;
   }
   return undefined;
-}
-
-function hasAnyResponsiveMarkers(raw: string): boolean {
-  return /(xs|sm|md|lg|xl)\(/.test(raw);
-}
-
-function hasXsMarker(raw: string): boolean {
-  return /xs\(/.test(raw);
 }
 
 function isLikelyCssColorValue(value: string): boolean {
@@ -106,7 +99,7 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
   const errors: ThemeValidationIssue[] = [];
   const warnings: ThemeValidationIssue[] = [];
 
-  const requireXsForResponsive = opts?.requireXsForResponsive ?? true;
+  // Kept in the public options for compatibility; Typography now always needs a base.
 
   const theme: Record<string, any> = isPlainObject(input) ? deepMergeTheme({}, input) : {};
   if (!isPlainObject(input)) {
@@ -120,7 +113,7 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     if (!isPlainObject(bpRaw)) {
       errors.push({ path: 'breakpoints', message: 'breakpoints must be an object of numbers.' });
     } else {
-      (['sm', 'md', 'lg', 'xl'] as const).forEach((k) => {
+      Object.keys(bpRaw).forEach((k) => {
         const n = toNumberOrUndefined(bpRaw[k]);
         if (n === undefined) {
           if (bpRaw[k] !== undefined) {
@@ -144,7 +137,7 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
       }
     }
   }
-  theme.breakpoints = { sm: bps.sm, md: bps.md, lg: bps.lg, xl: bps.xl };
+  theme.breakpoints = bps;
 
   // Fonts
   if (theme.fonts !== undefined && !isPlainObject(theme.fonts)) {
@@ -275,33 +268,8 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
         delete next[key];
       };
 
-      ensureStringOrUndefined(`typography_details.${tag}.fontSize`, 'fontSize');
-      ensureStringOrUndefined(`typography_details.${tag}.lineHeight`, 'lineHeight');
-      ensureStringOrUndefined(`typography_details.${tag}.fontWeight`, 'fontWeight');
-      ensureStringOrUndefined(`typography_details.${tag}.letterSpacing`, 'letterSpacing');
-      ensureStringOrUndefined(`typography_details.${tag}.fontFamily`, 'fontFamily');
-      ensureStringOrUndefined(`typography_details.${tag}.textTransform`, 'textTransform');
-      ensureStringOrUndefined(`typography_details.${tag}.textDecoration`, 'textDecoration');
-      ensureStringOrUndefined(`typography_details.${tag}.fontStyle`, 'fontStyle');
-      ensureStringOrUndefined(`typography_details.${tag}.marginBlockStart`, 'marginBlockStart');
-      ensureStringOrUndefined(`typography_details.${tag}.marginBlockEnd`, 'marginBlockEnd');
-
-      if (typeof next.fontFamily === 'string') {
-        next.fontFamily = normalizeFontFamily(next.fontFamily);
-      }
-
-      const checkResponsive = (key: 'fontSize' | 'lineHeight') => {
-        const v = next[key];
-        if (typeof v !== 'string' || v.trim().length === 0) return;
-        if (hasAnyResponsiveMarkers(v) && requireXsForResponsive && !hasXsMarker(v)) {
-          errors.push({
-            path: `typography_details.${tag}.${key}`,
-            message: `Responsive syntax requires xs(...) as the base value.`,
-          });
-        }
-      };
-      checkResponsive('fontSize');
-      checkResponsive('lineHeight');
+      Object.keys(TYPOGRAPHY_PROPERTIES).forEach(key => ensureStringOrUndefined(`typography_details.${tag}.${key}`, key));
+      // Preserve configured expressions; generation and validation share one contract.
 
       return next;
     };
@@ -323,6 +291,11 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
       const merged = deepMergeTheme(normalizedDefault, raw);
       details[tag] = normalizeTagObject(tag, merged);
     });
+  }
+
+  if (theme.typography_details) {
+    try { compileTypographyRules(theme.typography_details, bps); }
+    catch (cause) { errors.push({ path: 'typography_details', message: cause instanceof Error ? cause.message : String(cause) }); }
   }
 
   return {

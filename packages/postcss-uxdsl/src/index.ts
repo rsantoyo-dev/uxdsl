@@ -9,6 +9,7 @@ import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { compileDensityRules, resolveResponsiveValue } from './language';
+import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
 type BreakpointSpec =
@@ -116,7 +117,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
   (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
 
-  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints);
+  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
@@ -148,17 +149,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
         if (opts.theme.spacing) {
              Object.entries(opts.theme.spacing).forEach(([key, val]) => {
-                addVar(key, String(val));
-            });
-        }
-        if (opts.theme.typography) {
-             Object.entries(opts.theme.typography).forEach(([key, val]) => {
-                addVar(key, String(val));
-            });
-        }
-        if (opts.theme.fonts && opts.theme.fonts.families) {
-             Object.entries(opts.theme.fonts.families).forEach(([key, val]) => {
-                addVar(`font-${key}`, String(val));
+                addVar(`space-${key}`, String(val));
             });
         }
         if (themeDecls.length > 0) {
@@ -166,6 +157,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             rootRule.append(themeDecls);
             root.append(rootRule);
         }
+        root.append(postcss.parse(generateTypographyCss(opts.theme, bps)).nodes);
 
         if (opts.theme.fonts) {
             if (opts.theme.fonts.google && Array.isArray(opts.theme.fonts.google)) {
@@ -202,21 +194,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Typography Configuration Data
           // Defines defaults for each known variant. 
           // If a variant isn't here, we can still attempt to generate generic vars for it (future proofing).
-          const defaults: Record<string, any> = {
-            h1: { weight: "700", family: "ui", line: "1.1", spacing: "-0.02em" },
-            h2: { weight: "700", family: "ui", line: "1.2", spacing: "-0.01em" },
-            h3: { weight: "600", family: "ui", line: "1.3", spacing: "normal" },
-            h4: { weight: "600", family: "ui", line: "1.4", spacing: "normal" },
-            h5: { weight: "600", family: "ui-2", line: "1.4", spacing: "normal" },
-            h6: { weight: "600", family: "ui-2", line: "1.4", spacing: "normal" },
-            p: { weight: "400", family: "ui", line: "1.6", spacing: "normal" },
-            span: { weight: "400", family: "ui", line: "1.5", spacing: "normal" },
-            body: { weight: "400", family: "ui", line: "1.6", spacing: "normal" },
-            small: { opacity: "0.8", family: "ui-2", line: "1.4", spacing: "normal" },
-            caption: { opacity: "0.8", family: "ui-2", line: "1.4", spacing: "normal" },
-            pre: { family: "code", line: "1.5" },
-            code: { family: "code", line: "1.5" }
-          };
+          const defaults = TYPOGRAPHY_DEFAULTS;
 
           const config = defaults[tag] || { weight: "400", family: "ui", line: "1.5", spacing: "normal" };
           const isCode = tag === "pre" || tag === "code";
