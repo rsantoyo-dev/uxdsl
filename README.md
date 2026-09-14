@@ -2,6 +2,13 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## AI agent guide
+
+Read [AGENTS.md](AGENTS.md) for UXDSL responsibilities, configuration examples,
+change-scope rules and verification scenarios. It also explains how to reuse the
+guide in a consuming project; npm installation alone does not load agent instructions.
+Keep this guide aligned when changing primitive behavior or AI documentation.
+
 ## Feature roadmap
 
 - [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.
