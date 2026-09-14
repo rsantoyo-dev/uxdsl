@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import themeConfig from '../themes.js';
 
 const ROOT = path.resolve(process.cwd());
 
@@ -312,7 +313,7 @@ function main() {
   let totalFailures = 0;
 
   for (const file of THEME_FILES) {
-    const theme = readJson(file);
+    const theme = themeConfig.themes[file.split('.')[2]];
     const name = file.replace(/^uxdsl\.theme\./, '').replace(/\.json$/, '');
 
     const basePalette = theme.palette || {};

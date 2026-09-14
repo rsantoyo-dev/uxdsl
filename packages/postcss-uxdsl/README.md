@@ -141,6 +141,48 @@ generated variable names can diverge.
 
 ---
 
+## Reference integrity (`references`)
+
+Every compilation now validates that every `var(--token)` it emits resolves
+to an actual definition — in this compilation, in a declared dependency
+(`references.css`), or in an explicitly declared external token
+(`references.externalTokens`). An unresolved reference fails the build by
+default:
+
+```text
+UXD_REFERENCE_MISSING: color -> --ds__palette__text-secondary has no
+definition in the active theme/scope. Define it or declare its external
+provider.
+```
+
+```js
+uxdsl({
+  theme,
+  references: {
+    mode: 'error' | 'warn' | 'off', // default: 'error'
+    css: [themeEntryCss],           // already-compiled CSS this entry depends on
+    externalTokens: ['--brand-accent'], // custom properties a host guarantees
+    onWarning: (issue) => { /* ... */ },
+  },
+})
+```
+
+With `includeTheme: false`, the plugin already validates against the theme
+entry's output automatically — you do not need to pass `references.css`
+yourself for that case.
+
+**Known caveat:** the shipped default tokens are not self-contained. The
+default Density scale (`DEFAULT_DENSITIES`) references `space(1)` through
+`space(16)`, and the default border/radius presets reference
+`color(gray.300..600)`. If your theme's `spacing` or `colors.gray` does not
+cover that full range, compiling with the defaults active will fail
+reference validation. Either configure a full spacing scale and a `gray`
+color scale, override the specific density/border/radius tokens you use, or
+set `references: { mode: 'warn' }` while you migrate a theme that only
+partially covers the defaults.
+
+---
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

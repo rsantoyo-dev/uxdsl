@@ -13,3 +13,5 @@ export * from './buttons';
 export { generateDensityCss, DEFAULT_BREAKPOINTS, DEFAULT_DENSITIES, getDensityTokens } from './language';
 
 export * from './inputs';
+export { inspectReferences, ReferenceIntegrityError } from './reference-integrity';
+export type { ReferenceOptions, ReferenceIssue } from './reference-integrity';

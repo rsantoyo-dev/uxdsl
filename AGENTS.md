@@ -451,6 +451,8 @@ Surfaces own the container composition. HTML/application code own interaction.
   and breakpoint definitions. Reuse roles; preserve intent rather than copying values.
 - Custom roles inherit contained defaults. Partial base/state fields merge;
   supplied responsive strings replace a whole field. `surface` must exist.
+- Automatic Button/Input tone generation requires a Palette family with `main`,
+  `dark` and `contrast`; partial semantic groups such as `divider` are not tones.
 - Base fields override Surface composition, including optional tone and numeric
   size. Size selects Density and Radius. Default state colors follow the optional
   Palette tone; explicit Palette references retain their configured meaning.
@@ -518,6 +520,14 @@ labels, validation and errors. Preserve intent, not just the current computed va
 keep interaction/validation semantics in HTML and application code.
 
 ## Build time, runtime and one source of truth
+
+The Next.js playground stores shared configuration in `uxdsl.theme.base.json`.
+Named `uxdsl.theme.{default,green,purple,slate}.json` files contain only overrides.
+Use `packages/playground-nextjs/themes.js` to resolve them with `deepMergeTheme`
+for CLI, SSR, runtime and audits; never pass an override file as a complete theme.
+Nested objects merge; arrays and responsive strings replace the whole field.
+Custom edits merge over the active effective theme; replace starts from the common
+base. Put shared roles and dependencies in the base, and variant changes in overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes

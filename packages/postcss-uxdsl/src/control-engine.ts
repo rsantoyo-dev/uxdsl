@@ -47,7 +47,10 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
   for (const [role, pack] of Object.entries(getTokens(theme))) {
     for (const [state, style] of Object.entries({ base: pack.base, ...pack.states })) {
       groups[`${family}-${role}-${state}`] = Object.fromEntries(Object.entries(style).map(([key,value]) => [key, surfaceValueToCss(value, theme)]));
-      for (const tone of Object.keys(theme.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key))) {
+      // A tone must be a full color family (main/dark/contrast), not a
+      // semantic overlay group like text/divider/action that only defines
+      // the sub-keys it actually needs.
+      for (const tone of Object.keys(theme.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key) && object((theme.palette as any)[key]) && ['main', 'dark', 'contrast'].every(variant => variant in (theme.palette as any)[key]))) {
         groups[`${family}-${role}-tone-${tone}-${state}`] = Object.fromEntries(Object.entries(style).map(([key,value]) => [key, surfaceValueToCss(value.replace(new RegExp(String.raw`var\(--${family}-tone-(main|dark|contrast), var\(--ds__palette__primary-\1\)\)`, 'g'), (_, variant) => `var(--ds__palette__${tone}-${variant})`), theme)]));
       }
     }

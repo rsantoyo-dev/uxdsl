@@ -1,10 +1,11 @@
 const path = require('path');
-const theme = require('./uxdsl.theme.green.json');
+const { themes } = require('./themes');
+const theme = themes.default;
 
 module.exports = {
   entry: path.join(process.cwd(), 'src/app/uxdsl-entry.uxdsl'),
   outFile: path.join(process.cwd(), 'src/app/uxdsl.css'),
-  breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 },
-  watch: ['src/**/*.uxdsl', 'src/**/*.css', 'uxdsl.theme.green.json'],
+  breakpoints: theme.breakpoints,
+  watch: ['src/**/*.uxdsl', 'src/**/*.css', 'uxdsl.theme.*.json', 'themes.js'],
   theme,
 };

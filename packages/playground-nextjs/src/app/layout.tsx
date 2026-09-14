@@ -4,7 +4,7 @@ import AppHeader from '@/components/AppHeader'
 import PageToolbar from '@/components/PageToolbar'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
-import theme from '../../uxdsl.theme.default.json'
+import { themes } from '../../themes'
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
@@ -56,7 +56,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <ThemeScript theme={theme} />
+        <ThemeScript theme={themes.default} />
       </head>
       <body className="ds-typo" data-typo="body">
         <Providers>

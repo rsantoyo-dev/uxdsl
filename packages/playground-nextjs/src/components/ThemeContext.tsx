@@ -2,10 +2,9 @@
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { deepMergeTheme, generateThemeCss, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
-import greenTheme from '../../uxdsl.theme.green.json'
-import purpleTheme from '../../uxdsl.theme.purple.json'
-import defaultTheme from '../../uxdsl.theme.default.json'
-import slateTheme from '../../uxdsl.theme.slate.json'
+import { baseTheme, themes } from '../../themes'
+
+const { default: defaultTheme, green: greenTheme, purple: purpleTheme, slate: slateTheme } = themes
 
 export type ThemeName = 'default' | 'green' | 'purple' | 'slate' | 'custom'
 
@@ -187,10 +186,9 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setCustomTheme = (name: string, themeData: any, options?: { replace?: boolean }) => {
-    // Support partial overrides by merging them over the currently active theme.
-    // This keeps the system scalable as we add palette/spacing/etc.
-    const base = activeThemeData || defaultTheme
-    const merged = options?.replace ? themeData : deepMergeTheme(base, themeData || {})
+    // Edits layer over the active theme; replace resets overrides to the common base.
+    const base = options?.replace ? baseTheme : (activeThemeData || defaultTheme)
+    const merged = deepMergeTheme(base, themeData || {})
 
     const checked = validateAndNormalizeTheme(merged)
     if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))

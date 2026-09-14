@@ -1,4 +1,6 @@
 import { generateFoundationCss } from './foundations';
+import { enforceReferences, ReferenceOptions } from './reference-integrity';
+import { generateThemeCss } from './ds-runtime/theme-generator';
 import { getInputTokens, generateInputCss, inputComponentCss, parseInputArguments } from './inputs';
 import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
@@ -46,6 +48,7 @@ interface UxDslOptions {
    * only the definitions themselves are skipped.
    */
   includeTheme?: boolean;
+  references?: ReferenceOptions;
 }
 
 // Map palette(foo.bar|foo-bar) -> resolve to --ds__palette__*
@@ -111,7 +114,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
   return {
     postcssPlugin: "postcss-uxdsl",
-    Once(root: Root) {
+    Once(root: Root, { result }: { result: Result }) {
+      const originalSources = new Set<Declaration['source']>();
+      const dslSources = new Set<Declaration['source']>();
+      root.walkDecls(node => {
+        originalSources.add(node.source);
+        if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
+      });
       if (opts.theme && includeTheme) {
         root.append(postcss.parse(generateFoundationCss(opts.theme)).nodes);
         root.append(postcss.parse(generateTypographyCss(opts.theme, bps)).nodes);
@@ -803,6 +812,20 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
       // Reuse the same resolver after substitutions and media cloning.
       root.walkDecls(decl => { if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value); });
+      const consumers: Declaration[] = [];
+      root.walkDecls(node => {
+        if (!originalSources.has(node.source) || dslSources.has(node.source)) consumers.push(node);
+      });
+      const references = opts.references || {};
+      // A component validates against its explicitly configured theme without
+      // emitting globals. Dependency CSS remains validation-only as well.
+      const css = [...(references.css || [])];
+      if (!includeTheme && opts.theme && references.mode !== 'off') {
+        css.push(generateThemeCss({ ...effectiveInputTheme, buttons: buttonOverrides, breakpoints: bps }, { mode: 'off' }));
+      }
+      enforceReferences(root, consumers, { ...references, css,
+        onWarning: issue => { result.warn(issue.message, { plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
+      });
     },
   };
 }

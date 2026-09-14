@@ -6,6 +6,8 @@ import { compileShadowRules } from '../shadows';
 import { compileEdgeRules } from '../edges';
 import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
 import { DEFAULT_BREAKPOINTS } from './breakpoints';
+import { generateThemeCss } from './theme-generator';
+import { ReferenceIntegrityError, ReferenceOptions } from '../reference-integrity';
 
 export type ThemeValidationIssue = {
   path: string;
@@ -100,6 +102,7 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
   input: unknown,
   opts?: {
     requireXsForResponsive?: boolean;
+    references?: ReferenceOptions;
   }
 ): ThemeValidationResult<TTheme> {
   const errors: ThemeValidationIssue[] = [];
@@ -319,6 +322,18 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
   try { compileEdgeRules(theme, bps); }
   catch (cause) { errors.push({ path: 'borders/radii', message: cause instanceof Error ? cause.message : String(cause) }); }
 
+  if (!errors.length) {
+    try {
+      generateThemeCss(theme, { ...opts?.references, onWarning: issue => {
+        warnings.push({ path: issue.chain.join(' -> '), message: issue.message });
+        opts?.references?.onWarning?.(issue);
+      } });
+    } catch (cause) {
+      if (cause instanceof ReferenceIntegrityError) {
+        for (const issue of cause.issues) errors.push({ path: issue.chain.join(' -> '), message: issue.message });
+      } else errors.push({ path: 'theme', message: cause instanceof Error ? cause.message : String(cause) });
+    }
+  }
   return {
     ok: errors.length === 0,
     theme: theme as TTheme,
