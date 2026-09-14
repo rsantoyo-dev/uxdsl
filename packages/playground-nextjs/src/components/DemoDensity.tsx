@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import DensitySimulator from './DensitySimulator'
 
 import { 
   RussianDoll, 
@@ -181,7 +182,7 @@ function getActiveDefinition(def: string, currentBp: string) {
 
 export default function DemoDensity() {
   const { breakpoints } = useBreakpoints()
-  const [dollLevels, setDollLevels] = useState(14)
+  const [dollLevels, setDollLevels] = useState(4)
   const [densityDefinitions, setDensityDefinitions] = useState(DEFAULT_DENSITIES)
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const currentBp = useBreakpoint(breakpoints)
@@ -210,17 +211,24 @@ export default function DemoDensity() {
     <section id="DemoDensity" className="density-section demo-section">
       <div className="density-header">
         <p className="demo-subtitle">
-          Density is a responsive unit linked to UXDSL spacing (or custom pixel values). 
-          Using a single token like <code>density(1)</code> automatically adapts across breakpoints, 
-          eliminating manual media queries reducing coding efforts
+          Spacing defines a value; Density defines how spacing responds to the viewport.
+          Use <code>space(4)</code> for a value that stays the same across breakpoints,
+          or <code>density(4)</code> for a centrally configured responsive mapping.
+          Changing that mapping updates every consumer of the token without changing component code.
         </p>
+        <ol>
+          <li>Choose a Density level and inspect its spacing around the content.</li>
+          <li>Resize the preview below: the token stays the same while its applied spacing changes.</li>
+          <li>Edit the mapping: connected examples update together at the current width.</li>
+        </ol>
+        <p>Density is optional. Keep fixed spacing or explicit responsive values where the design needs local control. The generated media queries belong to the system; they are not removed from CSS.</p>
       </div>
 
       <div className="density-doll-container">
         <h4 className="demo-subtitle">Russian Doll Visualization</h4>
         <div className="density-doll-controls">
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            Layers:
+            Density level:
             <input
               type="range"
               min={1}
@@ -232,6 +240,7 @@ export default function DemoDensity() {
             <span>{dollLevels}</span>
           </label>
         </div>
+        <p>Each ring compares a Density level measured from the same content. The rings are not nested component paddings added together. Click a ring to edit its token. This diagram responds to the main browser viewport.</p>
         <div className="density-doll-wrapper">
           <RussianDoll 
             densityIndex={dollLevels} 
@@ -255,6 +264,8 @@ export default function DemoDensity() {
           </SyntaxHighlighter>
         </div>
       </div>
+
+      <DensitySimulator definitions={densityDefinitions} breakpoints={breakpoints} level={dollLevels} onEdit={() => setEditingLevel(dollLevels)} />
 
       <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
         <h3 className="demo-title">Global Density Tokens</h3>

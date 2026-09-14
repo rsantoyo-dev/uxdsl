@@ -234,3 +234,25 @@ Current automated evidence: nine new tests pass, existing core import tests pass
 generated-artifact checks pass and `git diff --check` passes. Playground dependencies
 are absent locally, so source migration is not reported as browser-verified.
 No npm release, deployment or remote push has occurred.
+
+### Follow-up — Density documentation viewport simulator
+
+- Added explanatory copy distinguishing fixed spacing, responsive Density and
+  system-generated media queries; clarified that Russian Doll rings are comparisons,
+  not accumulated nested padding.
+- Added isolated iframe viewport controls (Auto, theme breakpoint buttons, slider,
+  exact width), connected card/form examples and a fixed spacing comparison.
+- Added shared `inspectResponsiveValue` so the indicator distinguishes the active
+  viewport breakpoint from the inherited token rule. Computed padding is read from
+  the iframe DOM, not invented by the indicator.
+- Active spacing variables are copied across the iframe boundary, with observer
+  and interval cleanup. Breakpoint changes regenerate shared Density CSS.
+- Verification: 12 language tests pass, core tests and generation checks pass,
+  playground TypeScript passes, UXDSL CSS compilation passes, and the documentation
+  route compiles and returns HTTP 200 with simulator markup.
+- Browser interaction/visual verification remains pending: Chromium was unavailable
+  and its download timed out. SSR success is not proof of hydrated interaction.
+- The initial branch was published to GitHub as `ac310f9` (same source tree as local
+  `6b16759`). This follow-up targets that same remote branch, with no main merge or
+  npm release. Earlier implementation-record push/dependency statements describe
+  the initial checkpoint, not the current state.

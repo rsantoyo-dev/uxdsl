@@ -56,3 +56,19 @@ test('runtime recompiles Density after breakpoint changes', () => {
 test('invalid widths are rejected before serialization', () => {
   assert.throws(() => language.generateDensityCss(defs, { xs: 0, md: NaN }), /UXD_BP_INVALID/);
 });
+
+test('inspector distinguishes current breakpoint from inherited token rule', () => {
+  assert.deepEqual(language.inspectResponsiveValue(defs[4], 1100, language.DEFAULT_BREAKPOINTS), {
+    active: 'lg', applied: 'md', value: 'space(5)',
+  });
+});
+test('inspector uses exact boundaries and responds to theme breakpoint changes', () => {
+  for (const [width, applied] of [[767, 'xs'], [768, 'md'], [769, 'md'], [1279, 'md'], [1280, 'xl'], [1281, 'xl']]) {
+    assert.equal(language.inspectResponsiveValue(defs[4], width, language.DEFAULT_BREAKPOINTS).applied, applied);
+  }
+  assert.equal(language.inspectResponsiveValue(defs[4], 800, { ...language.DEFAULT_BREAKPOINTS, md: 900 }).applied, 'xs');
+});
+test('inspector resolves edited mappings and static native values', () => {
+  assert.equal(language.inspectResponsiveValue('xs(space(1)) md(space(2))', 1000, language.DEFAULT_BREAKPOINTS).value, 'space(2)');
+  assert.deepEqual(language.inspectResponsiveValue('12px', 1000, language.DEFAULT_BREAKPOINTS), { active: 'md', applied: null, value: '12px' });
+});

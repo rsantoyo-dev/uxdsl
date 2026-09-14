@@ -1,0 +1,15 @@
+.simulator { border: 1px solid #8494a8; border-radius: 12px; padding: 20px; margin-block: 24px; min-width: 0; }
+.simulator p { line-height: 1.6; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.simulator button { padding: 8px 12px; border: 1px solid #8494a8; border-radius: 6px; background: transparent; color: inherit; cursor: pointer; }
+.simulator button[aria-pressed="true"] { background: #164b78; color: white; }
+.simulator button:focus-visible, .simulator input:focus-visible { outline: 3px solid #398eda; outline-offset: 3px; }
+.slider { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-block: 16px; }
+.slider input[type="range"] { flex: 1 1 160px; }
+.slider input[type="number"] { width: 90px; padding: 6px; }
+.metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.metrics dt { font-size: .85rem; }
+.metrics dd { margin: 4px 0; font-weight: 700; }
+.viewport { width: 100%; overflow-x: auto; border: 1px solid #8494a8; }
+.viewport iframe { display: block; border: 0; max-width: none; }
+.note { font-size: .9rem; }

@@ -61,6 +61,19 @@ export function spacingValueToCss(input: string): string {
   return parsed.toString();
 }
 
+/** Inspection for a single responsive token; shares the production resolver. */
+export function inspectResponsiveValue(input: string, width: number, bps: BreakpointMap) {
+  const ordered = Object.entries(bps).sort((a, b) => a[1] - b[1]);
+  const active = ordered.filter(([, px]) => px <= width).pop()?.[0];
+  const present = new Set(valueParser(input).nodes.filter(node => node.type === 'function').map(node => node.value));
+  const applied = ordered.filter(([name, px]) => px <= width && present.has(name)).pop()?.[0];
+  return {
+    active: active ?? null,
+    applied: applied ?? null,
+    value: active ? resolveResponsiveValue(input, active, bps) : '',
+  };
+}
+
 export type DensityRule = { minWidth: number | null; breakpoint: string; values: Record<string, string> };
 
 /** Both adapters share resolution, ordering and suppression of redundant rules. */

@@ -7,7 +7,7 @@ export default function DensitiesPage() {
       <div className="container">
         <PageTitle 
           title="Densities" 
-          subtitle="Compact spacing tokens for component internals."
+          subtitle="Define responsive spacing once. Keep every connected component in rhythm."
         />
         <DemoDensity />
       </div>
