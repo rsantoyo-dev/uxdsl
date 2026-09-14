@@ -2,11 +2,14 @@ import PalettePlayground from '@/components/PalettePlayground'
 import PaletteThemeExplorer from '@/components/PaletteThemeExplorer'
 import DemoPaletteConfig from '@/components/DemoPaletteConfig'
 import { PageTitle } from '@/components/PageTitle'
+import { ColorExplanation, ColorAgentGuidance } from '@/components/ColorDocumentation'
 
 <PageTitle 
   title="Palette" 
   subtitle="Semantic color mappings for primary, secondary, and surface roles."
 />
+
+<ColorExplanation topic="palette" />
 
 <section id="usage" style={{ marginBottom: '3rem' }}>
   <PalettePlayground />
@@ -19,3 +22,5 @@ import { PageTitle } from '@/components/PageTitle'
 <section id="legacy-editor" style={{ marginTop: '3rem' }}>
   <DemoPaletteConfig />
 </section>
+
+<ColorAgentGuidance topic="palette" />

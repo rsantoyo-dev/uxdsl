@@ -1,0 +1,11 @@
+.guide { margin-block: 3rem; padding: clamp(1rem, 3vw, 2rem); border: 1px solid #94a3b8; border-radius: 0.75rem; min-width: 0; line-height: 1.7; scroll-margin-top: 5rem; }
+.label { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; }
+.guide h2 { font-size: 1.5rem; margin-block: 0.5rem 1rem; }
+.guide h3 { font-size: 1.15rem; margin-block: 1.5rem 0.75rem; }
+.guide p { margin-block: 0.75rem; }
+.guide ul, .guide ol { padding-inline-start: 1.5rem; margin-block: 1rem; }
+.guide ul { list-style: disc; }
+.guide ol { list-style: decimal; }
+.guide li { margin-block: 0.5rem; }
+.guide pre { overflow-x: auto; padding: 1rem; background: #101827; color: #e2e8f0; border-radius: 0.5rem; font-size: 0.85rem; }
+.guide blockquote { border-inline-start: 3px solid #94a3b8; padding-inline-start: 1rem; margin-block: 1rem; }

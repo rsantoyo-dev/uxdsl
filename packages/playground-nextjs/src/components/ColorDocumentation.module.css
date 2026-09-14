@@ -1,0 +1,11 @@
+.explanation { min-width: 0; margin-block: 2rem; line-height: 1.7; }
+.explanation h2 { font-size: 1.5rem; margin-block: 1rem; }
+.explanation h3 { font-size: 1.2rem; margin-block: 1.5rem 0.75rem; }
+.explanation h4 { margin-bottom: 0.75rem; }
+.explanation p { margin-block: 0.75rem; }
+.explanation ul { list-style: disc; padding-inline-start: 1.5rem; }
+.explanation li { margin-block: 0.5rem; }
+.explanation a { text-decoration: underline; }
+.explanation pre { overflow-x: auto; background: #101827; color: #e2e8f0; padding: 1rem; border-radius: 0.5rem; font-size: 0.85rem; }
+.comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1rem; }
+.comparison > div { min-width: 0; }

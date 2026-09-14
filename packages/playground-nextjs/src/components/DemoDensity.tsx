@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import DensityExplanation from './DensityExplanation'
 
 import { 
   RussianDoll, 
@@ -181,7 +182,7 @@ function getActiveDefinition(def: string, currentBp: string) {
 
 export default function DemoDensity() {
   const { breakpoints } = useBreakpoints()
-  const [dollLevels, setDollLevels] = useState(14)
+  const [dollLevels, setDollLevels] = useState(4)
   const [densityDefinitions, setDensityDefinitions] = useState(DEFAULT_DENSITIES)
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const currentBp = useBreakpoint(breakpoints)
@@ -210,17 +211,26 @@ export default function DemoDensity() {
     <section id="DemoDensity" className="density-section demo-section">
       <div className="density-header">
         <p className="demo-subtitle">
-          Density is a responsive unit linked to UXDSL spacing (or custom pixel values). 
-          Using a single token like <code>density(1)</code> automatically adapts across breakpoints, 
-          eliminating manual media queries reducing coding efforts
+          Spacing defines a value; Density defines how spacing responds to the viewport.
+          Prefer <code>density(n)</code> for component spacing using the theme’s responsive mapping.
+          Use <code>space(n)</code> directly when a stable value across breakpoints is intentional.
+          Changing that mapping updates every consumer of the token without changing component code.
         </p>
+        <ol>
+          <li>Define how a spacing token changes across breakpoints in your theme JSON.</li>
+          <li>Use that Density token wherever components should share the same responsive spacing.</li>
+          <li>Edit one mapping below and watch both connected boxes update together.</li>
+        </ol>
+        <p>Density is the recommended default for component spacing. Standard CSS remains available when finer control is needed. The generated media queries belong to the system; they are not removed from CSS.</p>
       </div>
+
+      <DensityExplanation definition={densityDefinitions[4]} onEdit={() => setEditingLevel(4)} />
 
       <div className="density-doll-container">
         <h4 className="demo-subtitle">Russian Doll Visualization</h4>
         <div className="density-doll-controls">
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            Layers:
+            Density level:
             <input
               type="range"
               min={1}
@@ -232,6 +242,7 @@ export default function DemoDensity() {
             <span>{dollLevels}</span>
           </label>
         </div>
+        <p>Each ring compares a Density level measured from the same content. The rings are not nested component paddings added together. Click a ring to edit its token. This diagram responds to the main browser viewport.</p>
         <div className="density-doll-wrapper">
           <RussianDoll 
             densityIndex={dollLevels} 

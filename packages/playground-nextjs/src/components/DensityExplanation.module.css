@@ -1,0 +1,24 @@
+.explanation { display: grid; gap: 2rem; margin: 2rem 0 3rem; min-width: 0; }
+.explanation section { min-width: 0; }
+.explanation h3 { font-size: 1.5rem; margin: 0 0 1rem; }
+.explanation h4 { font-size: 1.2rem; margin: 1.25rem 0 1rem; }
+.explanation h5 { font-size: 1rem; margin: 0 0 0.75rem; }
+.explanation p { line-height: 1.7; margin: 0.75rem 0; }
+.code { background: #101827; color: #e2e8f0; padding: 1.25rem; border-radius: 0.75rem; overflow-x: auto; font-size: 0.85rem; line-height: 1.7; }
+.comparison { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); gap: 1.25rem; }
+.comparison > div { min-width: 0; }
+.tableWrap { overflow-x: auto; margin: 1.25rem 0; }
+.tableWrap table { width: 100%; border-collapse: collapse; text-align: left; }
+.tableWrap caption { text-align: left; margin-bottom: 0.75rem; font-weight: 600; }
+.tableWrap th, .tableWrap td { padding: 0.75rem; border-bottom: 1px solid #94a3b8; }
+.definition { overflow-wrap: anywhere; }
+.edit { background: #1d4ed8; color: white; border: 0; border-radius: 0.5rem; padding: 0.65rem 1rem; cursor: pointer; font: inherit; }
+.edit:hover { background: #1e40af; }
+.edit:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }
+.boxes { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); gap: 1rem; margin: 1.5rem 0; }
+.boxes figure { margin: 0; min-width: 0; }
+.boxes figcaption { display: grid; gap: 0.5rem; margin-bottom: 0.75rem; }
+.boxes figcaption code { font-size: 0.85rem; }
+.responsive { background: #bfdbfe; border: 1px solid #2563eb; border-radius: 0.5rem; }
+.fixed { background: #e2e8f0; border: 1px solid #64748b; border-radius: 0.5rem; }
+.content { background: #fff; color: #172554; border: 1px dashed #64748b; text-align: center; padding: 0.5rem; }

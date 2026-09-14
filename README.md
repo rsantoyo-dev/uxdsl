@@ -2,6 +2,73 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## Feature roadmap
+
+- [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.
+
+### Shared language foundation (in progress)
+
+`postcss-uxdsl/language` now owns breakpoint defaults, Density defaults,
+responsive selection and Density rule generation. PostCSS, the runtime theme
+generator and the Density playground delegate to this module. Existing runtime
+breakpoint exports remain compatible. The module has no DOM or Node built-in
+dependencies; a production browser bundle remains to be measured.
+
+Run `npm test` for shared language tests, existing core import tests and generated
+artifact drift checks. Run `npm run generate:language` after changing language
+defaults or completion metadata. This generates the Density theme file, the
+Density/breakpoint portions of the manifest, and VS Code completion data.
+
+This is not full engine unification: other token families, strict reference
+validation, process-global compiler caches, full editor schema/diagnostics and
+browser verification remain tracked in FEAT-001. Density-15's pre-existing
+reference to space-17 is preserved pending default-scale reconciliation.
+
+### Density documentation examples
+
+`/docs/densities` explains Density with a theme JSON excerpt, a breakpoint mapping
+table, UXDSL alongside equivalent plain CSS, and two live boxes sharing Density 4.
+A third box uses fixed `space(4)` for comparison. The Russian Doll compares levels
+measured from the same content. All live examples follow the browser viewport.
+
+To check locally, start the Next.js playground and resize the browser across the
+theme breakpoints. Edit the active Density 4 rule and verify both responsive boxes
+change while the fixed comparison does not. Edits are local to the demo. The JSON
+and CSS are explicitly labeled reference examples; the live definition reflects edits.
+The former iframe viewport simulator was removed after reported interaction failures.
+
+### AI documentation guidance
+
+Breakpoints documentation reads shared engine defaults for its JSON/table and
+explains inclusive viewport thresholds, inherited property values and Density
+dependencies. It preserves the live editor and cards, labels their local spacing
+exception, and includes an AI guide for local versus shared changes.
+
+Colors and Palette pages use `ColorDocumentation` for a shared configuration
+example, UXDSL/CSS equivalents and topic-specific AI scenarios. Colors supply
+values; Palette assigns roles through explicit references or independent literals.
+The guides distinguish reference propagation from matching hex values and include
+checks for modes, shared consumers and foreground/background contrast.
+
+UXDSL builds on standard CSS. Spacing defines the base scale; Density is its
+responsive layer and the preferred default for component spacing. Direct Spacing
+is for intentional stable values, and CSS remains available for finer control.
+`SpacingPrinciple` shares this guidance across both pages and their AI guides.
+
+Density pages end with `DensityAgentGuidance`, including token-selection rules,
+theme and component examples, local-exception guidance and breakpoint verification.
+`AgentGuidance` is the shared presentation component: pass a unique `id`, a `title`
+and documentation as `children`. Keep topic content in a separate component and
+render it from the page after its examples. The guide is visible in server-rendered
+HTML and supports direct anchor links without JavaScript or an accordion.
+
+Spacing pages follow the same pattern: `SpacingExplanation` introduces the theme
+scale, UXDSL/CSS equivalents, units and the relationship to Density. Live padding
+and gap examples consume the existing runtime variables. `SpacingAgentGuidance`
+ends the page with token-selection rules, local versus shared change examples and
+verification scenarios. Playground spacing edits persist browser overrides and
+update its custom theme model; they do not write source JSON files.
+
 ## Main packages
 
 - `packages/postcss-uxdsl` — Core compiler and runtime helpers.
@@ -76,4 +143,3 @@ You can run these from repo root or from `packages/playground-nextjs` (proxied s
 You can also include a short tweak note (stored in `packages/uxdsl-core/README.md`):
 
 - `node scripts/release.js --bump patch --note "small parser fix"`
-
