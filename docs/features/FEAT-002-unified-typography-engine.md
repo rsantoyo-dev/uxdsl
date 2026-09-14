@@ -24,6 +24,9 @@ not guarantee matching the production contract.
   override map. Full theme replacement allows removed fields to disappear.
 - Breakpoint editing synchronizes the active theme JSON with runtime thresholds.
 - Both Typography documentation entry points reuse one human and AI guide.
+- Next.js and TypeScript resolve the playground's runtime/language imports to the
+  shared source files. Branch updates cannot leave the demo loading an older
+  local `dist` export. Restart Next.js after pulling resolution-config changes.
 
 ## Contract
 
