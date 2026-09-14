@@ -1,4 +1,5 @@
 import DemoPalette from '@/components/DemoPalette'
+import { ColorExplanation, ColorAgentGuidance } from '@/components/ColorDocumentation'
 import { PageTitle } from '@/components/PageTitle'
 
 export default function PalettePage() {
@@ -9,7 +10,9 @@ export default function PalettePage() {
           title="Palette" 
           subtitle="Semantic color mappings for primary, secondary, and surface roles."
         />
+        <ColorExplanation topic="palette" />
         <DemoPalette />
+        <ColorAgentGuidance topic="palette" />
       </div>
     </main>
   )

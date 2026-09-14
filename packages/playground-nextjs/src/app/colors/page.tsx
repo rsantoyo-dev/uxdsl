@@ -1,4 +1,5 @@
 import DemoColors from '@/components/DemoColors'
+import { ColorExplanation, ColorAgentGuidance } from '@/components/ColorDocumentation'
 import { PageTitle } from '@/components/PageTitle'
 
 export default function ColorsPage() {
@@ -7,9 +8,11 @@ export default function ColorsPage() {
       <div className="container">
         <PageTitle 
           title="Colors" 
-          subtitle="Global color palette definitions and swatches."
+          subtitle="Define reusable color values. Connect them to palette roles in your theme."
         />
+        <ColorExplanation topic="colors" />
         <DemoColors />
+        <ColorAgentGuidance topic="colors" />
       </div>
     </main>
   )

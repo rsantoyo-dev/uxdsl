@@ -39,6 +39,12 @@ The former iframe viewport simulator was removed after reported interaction fail
 
 ### AI documentation guidance
 
+Colors and Palette pages use `ColorDocumentation` for a shared configuration
+example, UXDSL/CSS equivalents and topic-specific AI scenarios. Colors supply
+values; Palette assigns roles through explicit references or independent literals.
+The guides distinguish reference propagation from matching hex values and include
+checks for modes, shared consumers and foreground/background contrast.
+
 UXDSL builds on standard CSS. Spacing defines the base scale; Density is its
 responsive layer and the preferred default for component spacing. Direct Spacing
 is for intentional stable values, and CSS remains available for finer control.
