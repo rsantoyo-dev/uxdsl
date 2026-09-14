@@ -68,6 +68,8 @@ Returns a Promise that resolves to processed CSS string.
 
 Use this section for short release notes on each npm tweak.
 
+- v0.4.0 — Unified responsive Typography engine
+
 - v0.1.9 — baseline demo release for current docs/playground flow.
 
 For automated version bumps in this monorepo:
