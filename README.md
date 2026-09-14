@@ -46,6 +46,13 @@ and documentation as `children`. Keep topic content in a separate component and
 render it from the page after its examples. The guide is visible in server-rendered
 HTML and supports direct anchor links without JavaScript or an accordion.
 
+Spacing pages follow the same pattern: `SpacingExplanation` introduces the theme
+scale, UXDSL/CSS equivalents, units and the relationship to Density. Live padding
+and gap examples consume the existing runtime variables. `SpacingAgentGuidance`
+ends the page with token-selection rules, local versus shared change examples and
+verification scenarios. Playground spacing edits persist browser overrides and
+update its custom theme model; they do not write source JSON files.
+
 ## Main packages
 
 - `packages/postcss-uxdsl` — Core compiler and runtime helpers.

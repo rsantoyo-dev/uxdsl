@@ -5,6 +5,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import runtime from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
+import styles from './SpacingExplanation.module.css'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -34,8 +35,9 @@ function EditSpacingDialog({
         <h3 style={{ marginTop: 0 }}>Edit Space {level}</h3>
         
         <div style={{ marginBottom: '1.5rem' }}>
-          <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Value</label>
+          <label htmlFor="edit-spacing-value" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Value</label>
           <input 
+            id="edit-spacing-value"
             type="text"
             value={value}
             onChange={e => setValue(e.target.value)}
@@ -103,7 +105,7 @@ function ConcentricSpacing({
 
 export default function DemoSpacing() {
   const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
-  const [dollLevels, setDollLevels] = useState(15)
+  const [dollLevels, setDollLevels] = useState(4)
   const [computedValues, setComputedValues] = useState<Record<number, string>>({})
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
 
@@ -146,12 +148,29 @@ export default function DemoSpacing() {
     <section id="DemoSpacing" className="spacing-section demo-section">
       <div className="spacing-header">
         <p className="demo-subtitle">
-          Consistent spacing tokens for padding, margin, and layout gaps.
+          Edit a shared spacing token and see its consumers update together.
         </p>
+      </div>
+
+      <div className={styles.explanation}>
+        <h3>Try it: one token, two paddings and a gap</h3>
+        <p>The colored areas below use the page’s actual CSS variables. Edit <code>space(4)</code> to update both boxes and the gap between the action items.</p>
+        <button type="button" className={styles.edit} onClick={() => setEditingLevel(4)}>Edit space(4)</button>
+        <div className={styles.boxes}>
+          {['Card', 'Panel'].map(name => <figure key={name}>
+            <figcaption>{name}: <code>padding: space(4)</code></figcaption>
+            <div className={styles.padding}><div className={styles.content}>Content</div></div>
+          </figure>)}
+          <figure><figcaption>Actions: <code>gap: space(4)</code></figcaption>
+            <div className={styles.gap}><span className={styles.content}>First</span><span className={styles.content}>Second</span></div>
+          </figure>
+        </div>
+        <p>These edits update the playground’s custom theme and persist spacing overrides in this browser when storage is available. Other UI using the token may also change. They do not write to your source JSON file. The reference examples above stay unchanged.</p>
       </div>
 
       <div className="spacing-doll-container">
         <h4 className="demo-subtitle">Concentric Spacing Visualization</h4>
+        <p>Each ring shows a spacing level measured from the same content. These are alternative distances, not nested paddings added together. Click a ring to edit its token, or use the labeled token fields below. Custom values determine ring size; token numbers alone do not guarantee size order.</p>
         <div className="spacing-doll-controls">
            <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
              Visible Rings: 
@@ -206,6 +225,7 @@ export default function DemoSpacing() {
                 <div className="spacing-card__input-wrapper">
                   <input 
                     className="spacing-card__input"
+                    aria-label={`Value for space(${s})`}
                     value={computedValues[s] || ''}
                     onChange={(e) => handleSpaceChange(s, e.target.value)}
                     placeholder="e.g. 1rem"
@@ -233,4 +253,3 @@ export default function DemoSpacing() {
     </section>
   )
 }
-
