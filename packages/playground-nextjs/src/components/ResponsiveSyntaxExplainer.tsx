@@ -12,10 +12,6 @@ import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 
 // Size order (largest -> smallest-ish), HTML-first.
 const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre', 'default'];
-function previewPixels(percent: number, bps: Record<string, number>) {
-  return percent / 100 * Math.max(...Object.values(bps), 1);
-}
-
 const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = [
   { id: 'uxdsl', label: 'UXDSL — Responsive intelligent styles', text: 'UXDSL — Responsive intelligent styles' },
   { id: 'lorem', label: 'Lorem ipsum', text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.' },
@@ -25,13 +21,12 @@ const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = 
 ];
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, themeBreakpoints, baseColor }: { value: string, widthPercent: number, isAutoMode?: boolean, windowWidth?: number, themeBreakpoints?: any, baseColor?: string }) => {
+const SyntaxHighlighter = ({ value, viewportWidth, themeBreakpoints, baseColor }: { value: string, viewportWidth: number, themeBreakpoints: Record<string, number>, baseColor?: string }) => {
   const color = baseColor || 'var(--ds__palette__info-main)';
   if (!value) return <span style={{ color }}>&quot;&quot;</span>;
 
   const bpValues = { ...DEFAULT_BREAKPOINTS, ...themeBreakpoints };
-  const effectivePx = isAutoMode && windowWidth ? windowWidth : previewPixels(widthPercent, bpValues);
-  const activeBp = inspectResponsiveValue(value, effectivePx, bpValues).applied || 'static';
+  const activeBp = inspectResponsiveValue(value, viewportWidth, bpValues).applied || 'static';
 
   if (activeBp === 'static') {
     return <span style={{ color }}>&quot;{value}&quot;</span>;
@@ -95,8 +90,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   const [isFontStyleEditorOpen, setIsFontStyleEditorOpen] = useState(false);
   const [isMarginBlockStartEditorOpen, setIsMarginBlockStartEditorOpen] = useState(false);
   const [isMarginBlockEndEditorOpen, setIsMarginBlockEndEditorOpen] = useState(false);
-  const [previewWidth, setPreviewWidth] = useState(100); // Percentage
-  const [isAutoMode, setIsAutoMode] = useState(true);
+  const [selectedBreakpoint, setSelectedBreakpoint] = useState<string | null>(null);
   const [windowWidth, setWindowWidth] = useState(0);
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -121,11 +115,18 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   }, []);
 
   const themeBreakpoints = { ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints };
-  const maxWidth = Math.max(...Object.values(themeBreakpoints) as number[], 1);
-  const BPS = Object.entries(themeBreakpoints)
-    .sort((a, b) => Number(a[1]) - Number(b[1]))
-    .map(([name, width], index, entries) => ({ label: name.toUpperCase(), width: (Number(width) || Number(entries[index + 1]?.[1] || maxWidth) / 2) / maxWidth * 100 }));
-  BPS.push({ label: 'Default', width: 100 });
+  const orderedBreakpoints = Object.entries(themeBreakpoints as Record<string, number>).sort((a, b) => a[1] - b[1]);
+  const maxWidth = Math.max(...orderedBreakpoints.map(([, width]) => width), 1);
+  const BPS = orderedBreakpoints.map(([name, width], index) => ({
+    name, label: name.toUpperCase(),
+    // Show the base range at a readable representative width, below its next threshold.
+    pixels: width || (orderedBreakpoints[index + 1]?.[1] ?? maxWidth) / 2,
+  }));
+  const selected = BPS.find(bp => bp.name === selectedBreakpoint);
+  const isAutoMode = !selected;
+  const previewViewport = selected?.pixels ?? windowWidth;
+  // Panel width is presentation only; never convert it back into responsive semantics.
+  const previewWidth = isAutoMode ? 100 : Math.max(22, Math.min(100, previewViewport / maxWidth * 100));
   // Sync with external edit requests (from the list below)
   useEffect(() => {
     if (editingTag && TAGS.includes(editingTag)) {
@@ -650,29 +651,20 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         <div className="controls-section">
             <div className="controls-row-bottom">
               <div className="controls-group">
-                {BPS.map((bp) => {
-                  const isDefault = bp.label === 'Default';
-                  const isActive = isDefault ? isAutoMode : (!isAutoMode && previewWidth === bp.width);
-                  
-                  return (
-                    <button
-                      key={bp.label}
-                      onClick={() => {
-                        if (isDefault) {
-                          setIsAutoMode(true);
-                          setPreviewWidth(100);
-                        } else {
-                          setIsAutoMode(false);
-                          setPreviewWidth(bp.width);
-                        }
-                      }}
-                      title={isDefault ? "Current Screen Size" : `${bp.label}: simulated ${Math.round(previewPixels(bp.width, themeBreakpoints))}px viewport`}
-                      className={`control-button ${isActive ? 'active' : ''} ${isDefault ? 'is-default' : ''}`}
-                    >
-                      {isDefault ? <Monitor size={14} /> : bp.label}
-                    </button>
-                  );
-                })}
+                {BPS.map(bp => (
+                  <button key={bp.name}
+                    onClick={() => setSelectedBreakpoint(bp.name)}
+                    aria-pressed={selected?.name === bp.name}
+                    title={`${bp.label}: simulated ${bp.pixels}px viewport`}
+                    className={`control-button ${selected?.name === bp.name ? 'active' : ''}`}>
+                    {bp.label}
+                  </button>
+                ))}
+                <button onClick={() => setSelectedBreakpoint(null)} aria-pressed={isAutoMode}
+                  title="Current Screen Size" aria-label="Current Screen Size"
+                  className={`control-button is-default ${isAutoMode ? 'active' : ''}`}>
+                  <Monitor size={14} />
+                </button>
               </div>
 
               <div className="element-select-group">
@@ -748,6 +740,10 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             </div>
         </div>
 
+        <p role="status" className="typography-viewport-status">
+          {isAutoMode ? 'Current viewport' : 'Simulated viewport'}: {Math.round(previewViewport)}px
+          {selected ? ` · ${selected.label}` : ''}. The theme defines which text properties change at this width.
+        </p>
         {/* Live Preview Section */}
         <div className="live-preview-section">
         
@@ -783,7 +779,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 style: !isAutoMode
                   ? {
                       textAlign,
-                      ...inspectTypographyTheme(activeThemeData, previewPixels(previewWidth, themeBreakpoints))
+                      ...inspectTypographyTheme(activeThemeData, previewViewport)
                     }
                   : { textAlign }
               }
@@ -804,7 +800,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />,
+            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />,
           </div>
           <button 
             onClick={() => setIsEditorOpen(true)}
@@ -817,7 +813,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontFamilyInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -842,7 +838,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontWeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -867,7 +863,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isLineHeightInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -892,7 +888,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isLetterSpacingInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -918,7 +914,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Text Transform */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isTextTransformInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -932,7 +928,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Text Decoration */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isTextDecorationInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -946,7 +942,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Font Style */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isFontStyleInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -960,7 +956,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Margin Block Start */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isMarginBlockStartInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
@@ -974,7 +970,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         {/* Margin Block End */}
         <div className="json-property-row">
           <div>
-            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} widthPercent={previewWidth} isAutoMode={isAutoMode} windowWidth={windowWidth} themeBreakpoints={activeThemeData?.breakpoints} />}
+            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
             {isMarginBlockEndInherited && <span className="json-comment">{`// inherited`}</span>}
           </div>
           <div className="json-action-group">
