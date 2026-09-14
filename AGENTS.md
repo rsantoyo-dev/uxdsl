@@ -23,6 +23,7 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Breakpoints | Shared viewport transition thresholds | Named responsive declarations for local layout behavior |
 | Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
+| Shadows | Shared visual depth and inset treatments | `shadow(key)` / `elevation(key)` for box shadows |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
 
 A matching value does not imply a matching responsibility. Do not replace:
@@ -310,6 +311,60 @@ add a local `border-style: dashed`. “All radius-2 cards should be rounder on
 desktop” means update the shared radius-2 progression, rebuild and inspect every
 consumer while preserving mobile behavior.
 
+## Shadows
+
+**Responsibility:** maintain shared shadow treatments and their responsive behavior.
+Inspect the effective `shadows` map, breakpoints, legacy definitions and dependencies.
+A preset key is not a pixel value, z-index or guaranteed strength ranking.
+
+```json
+{
+  "breakpoints": { "xs": 0, "md": 768 },
+  "shadows": {
+    "0": "none",
+    "2": "xs(0 2px 4px rgba(0, 0, 0, 0.12)) md(0 6px 16px rgba(0, 0, 0, 0.18))",
+    "inset": "inset 0 1px 3px rgba(0, 0, 0, 0.2)"
+  }
+}
+```
+
+```css
+.card { box-shadow: shadow(2); }
+.inset-panel { box-shadow: elevation(inset); }
+```
+
+- Select an existing suitable preset. Preserve its reference instead of copying
+  the current resolved value. Components consume `var(--shadow-key)`.
+- Values can be static or responsive. Include a base value; the most recent
+  applicable declaration persists until overridden. `elevation()` is an alias
+  for `shadow()` and does not change stacking order.
+- Preserve comma-separated layers, nested color functions, inset flags, units,
+  and configured `space`, `density`, `color` or `palette` dependencies. Never
+  parse a shadow list by splitting all commas. Not all box-shadow presets are
+  valid for text-shadow or drop-shadow.
+- Change a shared preset only for a shared change. For one component choose
+  another appropriate preset, or use intentional native CSS. Default shadow-0
+  is `none`; local `box-shadow: none` deliberately removes the effect.
+- Define tokens before use. Missing references fail instead of using fallbacks.
+- PostCSS, `generateThemeCss`, `generateShadowCss` and `inspectShadowTheme` share
+  `src/shadows.ts` and the preset engine. The demo consumes that same engine.
+  Defaults generate `default-shadows.uxdsl`; do not maintain a second default map.
+- Legacy `shadow-n` in `@theme` remains supported in the same compilation. JSON
+  overrides matching legacy definitions, followed by defaults. There is no
+  process-global Shadow cache; import legacy definitions in each relevant build.
+- Update source configuration and rebuild or replace managed runtime theme CSS.
+  Preview edits are scoped and do not save JSON. Invalid edits preserve the last
+  valid preview. Inspect actual CSS; validation is not a complete CSS validator.
+- Check breakpoint boundaries, persistence at intermediate widths, multiple
+  consumers, backgrounds/themes, states, ancestor clipping and focus visibility.
+
+**Decision rule:** select a shared treatment in the component; define its visual
+and responsive behavior in the theme; use native CSS for intentional exceptions.
+
+Example: “less elevation on this card” means select a suitable existing preset
+locally. “Soften shadow-2 throughout the product” means edit its definition,
+preserve layers and references, apply the theme, and inspect all consumers.
+
 ## Build time, runtime and one source of truth
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -394,13 +449,14 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/BreakpointDocumentation.tsx`
 - `packages/playground-nextjs/src/components/TypographyDocumentation.tsx`
 - `packages/playground-nextjs/src/components/BorderDocumentation.tsx`
+- `packages/playground-nextjs/src/components/ShadowDocumentation.tsx`
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit
 those artifacts as another source of truth.
 
-Shadows, surfaces, buttons and inputs have not yet been consolidated in
+Surfaces, buttons and inputs have not yet been consolidated in
 this guide. Before editing them, inspect their current source, configuration and
 documentation. Add verified responsibilities, syntax and examples here as their
 agent guides are formalized; do not infer unsupported APIs from another primitive.

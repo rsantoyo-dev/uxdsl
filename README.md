@@ -35,6 +35,20 @@ Migration notes for the next release (not included in npm 0.4.0):
 Run `npm test` for shared-engine and integration contracts. The documentation at
 `/docs/borders` explains JSON, legacy input, runtime behavior and agent guidance.
 
+## Shared Shadows engine
+
+`src/shadows.ts` owns Shadow defaults, generation and inspection. Its responsive
+preset compiler is shared with Borders/Radii, while the family-specific APIs stay
+separate. PostCSS and runtime consume the same `shadows` JSON map; the demo uses
+that engine with scoped previews. `shadow()` and `elevation()` preserve CSS variable
+references, including layered, inset, static and responsive values.
+
+For the next release, undefined Shadow references become errors, shadow-0 is
+explicitly `none`, and legacy `@theme` definitions must be included in each
+compilation. JSON overrides matching legacy definitions; defaults are generated.
+The previous cross-compilation Shadow cache and fallback table are removed.
+These changes are not included in the already published npm 0.4.0 release.
+
 ## Feature roadmap
 
 - [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.

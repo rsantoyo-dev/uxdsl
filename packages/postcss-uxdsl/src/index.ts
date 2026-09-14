@@ -1,3 +1,4 @@
+import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
@@ -92,8 +93,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Allows defaults to be provided from a separate @theme file.
   const GLOBAL_DENSITY_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__density || Object.create(null);
-  const GLOBAL_SHADOW_TOKENS: Record<string, string> =
-    (uxdslPlugin as any).__shadows || Object.create(null);
   // Global button packs (e.g. button-contained/outlined/flat) so they can be
   // defined in a separate @theme file and used across files in the same process.
   const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
@@ -107,7 +106,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
-  (uxdslPlugin as any).__shadows = GLOBAL_SHADOW_TOKENS;
   (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
   (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
@@ -420,7 +418,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = `${n}`;
             const val = String((decl as any).value || "").trim();
             shadowTokens[key] = val;
-            GLOBAL_SHADOW_TOKENS[key] = val;
+
           }
           // border-<n> (composite)
           const b = prop.match(/^border-(\d+)$/);
@@ -540,6 +538,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         // Remove @theme blocks from output
         at.remove();
       });
+
+      const shadowTheme = { shadows: { ...shadowTokens, ...opts.theme?.shadows } };
+      const effectiveShadows = getShadowTokens(shadowTheme);
+      root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
 
       const edgeTheme = { borders: { ...borderTokens, ...opts.theme?.borders }, radii: { ...radiusTokens, ...opts.theme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
@@ -992,35 +994,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             node.type === "function" &&
             (node.value === "shadow" || node.value === "elevation")
           ) {
-            const innerText = valueParser.stringify(node.nodes).trim();
-            let idx = innerText;
-            if (
-              (idx.startsWith('"') && idx.endsWith('"')) ||
-              (idx.startsWith("'") && idx.endsWith("'"))
-            )
-              idx = idx.slice(1, -1);
-            const n = parseInt(idx.trim(), 10);
-            if (!Number.isNaN(n)) {
-              const tok =
-                shadowTokens[String(n)] || GLOBAL_SHADOW_TOKENS[String(n)];
-              if (tok) {
-                node.type = "word";
-                node.value = tok;
-                return;
-              }
-              // Fallback mapping 1..5
-              const fallbacks: Record<number, string> = {
-                1: "0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.10)",
-                2: "0 1px 2px rgba(0,0,0,0.05), 0 2px 6px rgba(0,0,0,0.12)",
-                3: "0 2px 4px rgba(0,0,0,0.06), 0 4px 10px rgba(0,0,0,0.14)",
-                4: "0 4px 6px rgba(0,0,0,0.08), 0 10px 15px rgba(0,0,0,0.16)",
-                5: "0 10px 15px rgba(0,0,0,0.10), 0 20px 25px rgba(0,0,0,0.20)",
-              };
-              const fb = fallbacks[n] || fallbacks[1];
-              node.type = "word";
-              node.value = fb;
-              return;
-            }
+            const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw new Error(`UXD_SHADOW_REFERENCE: Undefined shadow ${key}.`);
+            node.type = 'word';
+            node.value = `var(--shadow-${key})`;
             return;
           }
           // Border helper: border(n[, color][, style])

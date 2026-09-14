@@ -5,3 +5,4 @@ export * from "./typography";
 export { default } from "./ds-runtime/index";
 
 export * from './edges';
+export * from './shadows';
