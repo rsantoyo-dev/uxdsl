@@ -24,6 +24,7 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
 | Shadows | Shared visual depth and inset treatments | `shadow(key)` / `elevation(key)` for box shadows |
+| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size])` |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
 
 A matching value does not imply a matching responsibility. Do not replace:
@@ -365,6 +366,69 @@ Example: “less elevation on this card” means select a suitable existing pres
 locally. “Soften shadow-2 throughout the product” means edit its definition,
 preserve layers and references, apply the theme, and inspect all consumers.
 
+## Surfaces
+
+**Responsibility:** maintain shared container treatments by composing Density,
+Radius, Palette, Border and Shadow decisions. Components choose a configured role;
+HTML, layout and interaction logic remain separate responsibilities.
+
+```json
+{
+  "surfaces": {
+    "contained": {
+      "padding": "density(2)",
+      "radius": "radius(2)",
+      "bg": "palette(surface.main)",
+      "color": "palette(surface.contrast)",
+      "border": "border(1)",
+      "shadow": "xs(shadow(1)) md(shadow(3))"
+    }
+  }
+}
+```
+
+This excerpt assumes its referenced tokens and breakpoints exist.
+
+```css
+.card { @ds-surface(contained); }
+.notice { @ds-surface(outlined primary 2); }
+```
+
+- Inspect `surfaces`, dependencies, breakpoints and legacy imports before use.
+  Reuse a shared role instead of recreating its resolved properties locally.
+- Supported string fields: `padding`, `radius`, `bg`, `color`, `border`, `shadow`.
+  Values can be CSS literals, token references or responsive expressions.
+- Default roles are contained, outlined and flat. Partial overrides inherit
+  missing fields from the matching default; custom roles inherit contained.
+  A supplied field replaces the entire expression, not individual breakpoints.
+- Preserve references: radius consumes Radius, not Spacing. Changes to shared
+  dependencies can affect many Surfaces and their other consumers.
+- Tone is an intentional Palette-family override. Outlined uses transparent bg,
+  main foreground and a 1px solid main border. Flat uses transparent bg and main
+  foreground, preserving its border. Contained/custom roles use main bg and
+  contrast foreground, preserving the configured border.
+- Numeric size overrides padding with Density and corners with Radius. Inspect
+  both tokens; n is not a pixel value. Omit arguments to follow all role fields.
+- Modify a shared Surface only for a shared change; choose another role or CSS
+  after the directive for a local exception. Do not replace a role with values
+  merely because they match the current viewport.
+- PostCSS, `generateSurfaceCss`, `generateThemeCss`, `surfaceDeclarations` and
+  `inspectSurfaceTheme` use one Surface engine. Defaults generate the legacy file.
+- Legacy `@theme` Surface packs remain supported in the same compilation; JSON
+  fields override legacy fields, followed by defaults. No cross-build Surface
+  cache is retained. Unknown roles/fields and Radius/Border/Shadow references fail.
+  Also inspect Density, Spacing and Palette dependencies; validation is not a
+  complete token-graph, CSS grammar or accessibility checker.
+- Verify responsive boundaries and persistence, tone overrides, nested containers,
+  wrapping, clipping, border sizing, foreground contrast, focus and all consumers.
+  Preview changes are scoped and do not save source JSON.
+
+**Decision rule:** select the shared container role; keep shared visual composition
+in the theme; use arguments or CSS for deliberate overrides.
+
+For “less elevation on all contained cards at desktop,” change that role's shadow
+progression and inspect consumers. For one exceptional card, override locally.
+
 ## Build time, runtime and one source of truth
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -440,6 +504,9 @@ archive. When changing a primitive's behavior or its AI documentation, update th
 relevant section here in the same change. Preserve distinct responsibilities and
 replace obsolete instructions rather than accumulating contradictory rules.
 
+On documentation pages, place the AI implementation guide last, after the
+interactive demo. Keep human explanations before the demo.
+
 Review these documentation sources for alignment:
 
 - `packages/playground-nextjs/src/components/DensityAgentGuidance.tsx`
@@ -450,13 +517,14 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/TypographyDocumentation.tsx`
 - `packages/playground-nextjs/src/components/BorderDocumentation.tsx`
 - `packages/playground-nextjs/src/components/ShadowDocumentation.tsx`
+- `packages/playground-nextjs/src/components/SurfaceDocumentation.tsx`
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit
 those artifacts as another source of truth.
 
-Surfaces, buttons and inputs have not yet been consolidated in
+Buttons and inputs have not yet been consolidated in
 this guide. Before editing them, inspect their current source, configuration and
 documentation. Add verified responsibilities, syntax and examples here as their
 agent guides are formalized; do not infer unsupported APIs from another primitive.

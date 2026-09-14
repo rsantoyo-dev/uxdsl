@@ -1,3 +1,4 @@
+import { compileSurfaceRules } from '../surfaces';
 import { compileShadowRules } from '../shadows';
 import { compileEdgeRules } from '../edges';
 import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
@@ -299,6 +300,9 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     try { compileTypographyRules(theme.typography_details, bps); }
     catch (cause) { errors.push({ path: 'typography_details', message: cause instanceof Error ? cause.message : String(cause) }); }
   }
+
+  try { compileSurfaceRules(theme, bps); }
+  catch (cause) { errors.push({ path: 'surfaces', message: cause instanceof Error ? cause.message : String(cause) }); }
 
   try { compileShadowRules(theme, bps); }
   catch (cause) { errors.push({ path: 'shadows', message: cause instanceof Error ? cause.message : String(cause) }); }

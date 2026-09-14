@@ -6,3 +6,4 @@ export { default } from "./ds-runtime/index";
 
 export * from './edges';
 export * from './shadows';
+export * from './surfaces';

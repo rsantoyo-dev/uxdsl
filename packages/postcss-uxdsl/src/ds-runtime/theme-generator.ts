@@ -1,3 +1,4 @@
+import { generateSurfaceCss } from '../surfaces';
 import { generateShadowCss } from '../shadows';
 import { generateEdgeCss } from '../edges';
 import { DEFAULT_BREAKPOINTS, generateDensityCss } from '../language';
@@ -47,6 +48,7 @@ export function generateThemeCss(theme: Record<string, any>): string {
   cssContent += '\n' + generateTypographyCss(theme);
   cssContent += '\n' + generateEdgeCss(theme);
   cssContent += '\n' + generateShadowCss(theme);
+  cssContent += '\n' + generateSurfaceCss(theme);
   if (theme.densities) {
     cssContent += '\n' + generateDensityCss(theme.densities, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints });
   }

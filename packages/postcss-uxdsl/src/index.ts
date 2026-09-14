@@ -1,3 +1,4 @@
+import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
 import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
@@ -100,15 +101,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   ).__buttonPacks || Object.create(null);
   const GLOBAL_INPUT_PACKS: Record<string, any> =
     (uxdslPlugin as any).__inputPacks || Object.create(null);
-  const GLOBAL_SURFACE_PACKS: Record<string, Record<string, string>> = (
-    uxdslPlugin as any
-  ).__surfacePacks || Object.create(null);
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
   (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
-  (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
 
   const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
   const toVar =
@@ -452,7 +449,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               (root as any).__surfacePacks =
                 (root as any).__surfacePacks || Object.create(null);
               (root as any).__surfacePacks[vname] = parsed.base;
-              (GLOBAL_SURFACE_PACKS as any)[vname] = parsed.base;
             }
           }
           // input packs: input-<variant>: { padding.., radius.., bg.., color.., border.., shadow.., caret.., placeholder.. }
@@ -521,7 +517,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             (root as any).__surfacePacks =
               (root as any).__surfacePacks || Object.create(null);
             (root as any).__surfacePacks[vname] = base;
-            (GLOBAL_SURFACE_PACKS as any)[vname] = base;
           } else if (isInput) {
             (root as any).__inputPacks =
               (root as any).__inputPacks || Object.create(null);
@@ -559,54 +554,14 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       }
 
-      // Helper to compute surface base props for a given variant/tone/size
-      function computeSurfaceBase(
-        packsObj: any,
-        variant: string,
-        toneFamily: string,
-        sizeToken?: string
-      ): Record<string, string> {
-        const base =
-          (packsObj && (packsObj[variant] || packsObj["contained"])) || {};
-        const out: Record<string, string> = Object.create(null);
-        const copyKeys = [
-          ["padding", "padding"],
-          ["radius", "border-radius"],
-          ["bg", "background"],
-          ["color", "color"],
-          ["border", "border"],
-          ["shadow", "box-shadow"],
-        ] as Array<[string, string]>;
-        copyKeys.forEach(([k, css]) => {
-          const v = (base as any)[k];
-          if (typeof v === "string" && v) out[css] = v;
-        });
-        if (toneFamily) {
-          const main = `palette(${toneFamily}-main)`;
-          const dark = `palette(${toneFamily}-dark)`;
-          const contrast = `palette(${toneFamily}-contrast)`;
-          if (variant === "outlined") {
-            out["background"] = "transparent";
-            out["color"] = main;
-            out["border"] = `1px solid ${main}`;
-          } else if (variant === "flat") {
-            out["background"] = "transparent";
-            out["color"] = main;
-            out["border"] = out["border"] || "none";
-          } else {
-            out["background"] = main;
-            out["color"] = contrast;
-            out["border"] = out["border"] || "none";
-          }
-        }
-        if (sizeToken && /^\d+$/.test(sizeToken)) {
-          const n = parseInt(sizeToken, 10);
-          if (!Number.isNaN(n)) {
-            out["padding"] = `density(${n})`;
-            out["border-radius"] = `radius(${n})`;
-          }
-        }
-        return out;
+      getSurfaceTokens({ surfaces: opts.theme?.surfaces }); // Validate JSON before merging legacy fields.
+      const legacySurfaces = (root as any).__surfacePacks || {};
+      const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
+      for (const [role, style] of Object.entries(opts.theme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
+      const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides };
+      root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
+      function computeSurfaceBase(_packs: any, variant: string, toneFamily: string, sizeToken?: string): Record<string, string> {
+        return surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken);
       }
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
@@ -645,7 +600,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             : "";
           const surfPacks: any =
             (root as any).__surfacePacks ||
-            (uxdslPlugin as any).__surfacePacks ||
             {};
           const inputPacks: any =
             (root as any).__inputPacks ||
@@ -747,28 +701,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             inner = inner.slice(1, -1);
           if (inner.startsWith("(") && inner.endsWith(")"))
             inner = inner.slice(1, -1).trim();
-          const parts = inner
-            .split(/[\s,]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-          const known = new Set(["contained", "outlined", "flat"]);
-          let variant = (
-            parts.find((p) => known.has(p.toLowerCase())) || "contained"
-          ).toLowerCase();
-          const toneToken = parts.find(
-            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
-          );
-          const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken
-            ? (() => {
-                let fam = normalizeTokenPath(toneToken);
-                if (fam.includes("-")) fam = fam.split("-")[0];
-                return fam;
-              })()
-            : "";
+          const { role: variant, tone: toneFamily, size: sizeToken } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
           const packs: any =
             (root as any).__surfacePacks ||
-            (uxdslPlugin as any).__surfacePacks ||
             {};
           const props = computeSurfaceBase(
             packs,
@@ -831,7 +766,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Apply surface base first, then states from button pack
           const surfPacks: any =
             (root as any).__surfacePacks ||
-            (uxdslPlugin as any).__surfacePacks ||
             {};
           const surfProps = computeSurfaceBase(
             surfPacks,

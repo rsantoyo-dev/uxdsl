@@ -49,6 +49,21 @@ compilation. JSON overrides matching legacy definitions; defaults are generated.
 The previous cross-compilation Shadow cache and fallback table are removed.
 These changes are not included in the already published npm 0.4.0 release.
 
+## Shared Surfaces engine
+
+`src/surfaces.ts` owns the six-field container composition, defaults, responsive
+variable generation, tone/size composition and inspection. PostCSS, runtime and
+the preview share it. JSON fields override same-compilation legacy pack fields,
+which override defaults. Custom roles inherit contained defaults for missing fields.
+Surface definitions no longer leak between compilations. Unknown roles and fields
+fail explicitly. Built-in contained now has a valid `1px solid` border treatment;
+outlined uses an explicit neutral border rather than ignored helper arguments.
+
+Buttons and inputs reuse Surface base composition, but their own states and packs
+are not yet unified. Tests cover this dependency without claiming full unification.
+Documentation puts the AI implementation guide after the demo. These changes need
+a future npm release; they are not in published 0.4.0.
+
 ## Feature roadmap
 
 - [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.
