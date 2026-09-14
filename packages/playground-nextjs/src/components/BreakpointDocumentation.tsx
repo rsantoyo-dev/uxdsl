@@ -20,6 +20,22 @@ function Principle() {
   return <p>Breakpoints name the viewport widths where responsive rules begin to apply. The theme JSON defines the thresholds, components use those names for layout changes, and Density uses them to make Spacing responsive. <strong>Prefer Density for component spacing</strong>; use explicit breakpoint values for layout behavior and deliberate local exceptions.</p>
 }
 
+function RulePersistence() {
+  return (
+    <div className={styles.tableWrap}>
+      <table>
+        <caption>How this example keeps its most recent applicable value</caption>
+        <thead><tr><th>Viewport width</th><th>flex-direction</th><th>Supplying rule</th></tr></thead>
+        <tbody>
+          <tr><td>Below {DEFAULT_BREAKPOINTS.md}px</td><td><code>column</code></td><td><code>xs(column)</code></td></tr>
+          <tr><td>From {DEFAULT_BREAKPOINTS.md}px up to, but not including, {DEFAULT_BREAKPOINTS.xl}px</td><td><code>row</code></td><td><code>md(row)</code> remains active through lg</td></tr>
+          <tr><td>{DEFAULT_BREAKPOINTS.xl}px and above</td><td><code>row</code></td><td><code>md(row)</code> remains active unless a later rule overrides it</td></tr>
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 export function BreakpointExplanation() {
   return (
     <section className={styles.content} aria-labelledby="breakpoints-explained">
@@ -42,6 +58,7 @@ export function BreakpointExplanation() {
       </div>
       <p>With these defaults, the layout is a column below <code>{DEFAULT_BREAKPOINTS.md}px</code> and a row at that width and above. The threshold is inclusive. This is a discrete change, not a fluid interpolation.</p>
       <p>A declared value continues to apply until a later applicable rule overrides it. At <code>lg</code>, this example still uses <code>md(row)</code> because no <code>lg()</code> override was declared. The active viewport breakpoint and the rule supplying a property’s value are not necessarily the same.</p>
+      <RulePersistence />
       <h3>3. Let Density manage shared responsive spacing</h3>
       <pre><code className="language-json">{`{
   "densities": {
@@ -101,9 +118,9 @@ export function BreakpointAgentGuidance() {
       <p><strong>Responsibility: preserve the shared responsive thresholds.</strong> Decide whether the request changes a component’s behavior, a Density mapping, or a system-wide threshold before editing configuration.</p>
       <ul>
         <li>Read the actual theme’s <code>breakpoints</code>. Do not import values from another framework or infer device types from breakpoint names.</li>
-        <li>Use configured breakpoint names for explicit layout changes. Include a base value and understand which rule remains active when an intermediate breakpoint has no override.</li>
+        <li>Use configured breakpoint names for explicit responsive layout changes. Define a base value when needed, and remember that the most recent applicable rule remains active until a rule at another configured breakpoint overrides it.</li>
         <li>Prefer existing Density tokens for component spacing. Read their mappings before changing a breakpoint they depend on.</li>
-        <li>Change a shared threshold only when all affected responsive rules should move. For a local change, adjust the component’s use of existing thresholds or choose a deliberate local exception.</li>
+        <li>Change a shared threshold only when all affected responsive rules should move. For a local change, adjust the component’s responsive declarations using existing breakpoint names, or choose a deliberate local exception.</li>
         <li>Do not replace Density with local breakpoint values just because their current computed values match. Preserve the intended system dependency.</li>
         <li>Define required new thresholds through supported configuration before using them, and check support in the runtime and editor integrations. Do not assume all tools accept arbitrary names.</li>
         <li>Keep source configuration aligned with compiler/runtime inputs. A browser-only override or manually edited generated CSS is not an update to the theme JSON.</li>
@@ -113,6 +130,7 @@ export function BreakpointAgentGuidance() {
       <h3>Configuration and usage example</h3>
       <pre><code className="language-json">{theme}</code></pre>
       <pre><code className="language-css">{usage}</code></pre>
+      <RulePersistence />
       <h3>Agent reasoning example</h3>
       <blockquote>Move the shared md transition to 800px across the application.</blockquote>
       <ol>
