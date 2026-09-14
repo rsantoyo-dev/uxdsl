@@ -4,21 +4,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
 import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
-import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
+import { DEFAULT_BREAKPOINTS, inspectTypographyTheme, compileTypographyRules } from 'postcss-uxdsl/ds-runtime';
+import { inspectResponsiveValue } from 'postcss-uxdsl/language';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 // import { optimizeTypography } from '../utils/typographyOptimizer';
 
 // Size order (largest -> smallest-ish), HTML-first.
 const TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre', 'default'];
-const BPS = [
-  { label: 'XS', width: 30 },
-  { label: 'SM', width: 45 },
-  { label: 'MD', width: 65 },
-  { label: 'LG', width: 86 },
-  { label: 'XL', width: 100 },
-  { label: 'Default', width: 100 }
-];
+function previewPixels(percent: number, bps: Record<string, number>) {
+  return percent / 100 * Math.max(...Object.values(bps), 1);
+}
 
 const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = [
   { id: 'uxdsl', label: 'UXDSL — Responsive intelligent styles', text: 'UXDSL — Responsive intelligent styles' },
@@ -33,38 +29,9 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
   const color = baseColor || 'var(--ds__palette__info-main)';
   if (!value) return <span style={{ color }}>&quot;&quot;</span>;
 
-  // Determine active breakpoint
-  const getActiveBreakpoint = () => {
-    let effectivePx;
-    
-    if (isAutoMode && windowWidth !== undefined && windowWidth > 0) {
-      effectivePx = windowWidth;
-    } else {
-      const px = (widthPercent / 100) * 1200; 
-      effectivePx = widthPercent === 100 ? 1280 : px;
-    }
-    
-    const breakpoints: Record<string, boolean> = {};
-    const regex = /(xs|sm|md|lg|xl)\(/g;
-    let match;
-    while ((match = regex.exec(value)) !== null) {
-      breakpoints[match[1]] = true;
-    }
-    
-    if (Object.keys(breakpoints).length === 0) return 'static';
-
-    const bpValues = themeBreakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 };
-
-    if (effectivePx >= bpValues.xl && breakpoints.xl) return 'xl';
-    if (effectivePx >= bpValues.lg && breakpoints.lg) return 'lg';
-    if (effectivePx >= bpValues.md && breakpoints.md) return 'md';
-    if (effectivePx >= bpValues.sm && breakpoints.sm) return 'sm';
-    if (breakpoints.xs) return 'xs';
-    if (breakpoints.sm) return 'sm';
-    return 'static';
-  };
-
-  const activeBp = getActiveBreakpoint();
+  const bpValues = { ...DEFAULT_BREAKPOINTS, ...themeBreakpoints };
+  const effectivePx = isAutoMode && windowWidth ? windowWidth : previewPixels(widthPercent, bpValues);
+  const activeBp = inspectResponsiveValue(value, effectivePx, bpValues).applied || 'static';
 
   if (activeBp === 'static') {
     return <span style={{ color }}>&quot;{value}&quot;</span>;
@@ -79,7 +46,7 @@ const SyntaxHighlighter = ({ value, widthPercent, isAutoMode, windowWidth, theme
       const closeParen = token.lastIndexOf(')');
       if (openParen > 0 && closeParen === token.length - 1) {
         const bp = token.substring(0, openParen);
-        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
+        if (Object.prototype.hasOwnProperty.call(bpValues, bp)) {
           return { text: token, type: 'bp', bp };
         }
       }
@@ -153,50 +120,12 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // Helper to resolve responsive value based on width
-  const resolveResponsiveValue = (val: string, widthPercent: number) => {
-    if (!val) return '';
-    // Approximate width in pixels based on a standard 1200px container
-    const px = (widthPercent / 100) * 1200; 
-    // Hack for demo: if width is 100%, treat as XL (1280+) to ensure XL breakpoint is reachable
-    const effectivePx = widthPercent === 100 ? 1280 : px;
-    
-    const toCssValue = (input: string) => {
-      const v = String(input || '').trim();
-      if (!v) return v;
-      return v
-        .replace(/\bspace\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--space-$1)')
-        .replace(/\bdensity\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--density-$1)');
-    };
-
-    // Parse breakpoints (supports nested parentheses like xs(space(2))).
-    const breakpoints: Record<string, string> = {};
-    const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
-    let hasMatches = false;
-    parts.forEach((part) => {
-      const openParen = part.indexOf('(');
-      const closeParen = part.lastIndexOf(')');
-      if (openParen > 0 && closeParen === part.length - 1) {
-        const bp = part.substring(0, openParen);
-        if (['xs', 'sm', 'md', 'lg', 'xl'].includes(bp)) {
-          breakpoints[bp] = part.substring(openParen + 1, closeParen).trim();
-          hasMatches = true;
-        }
-      }
-    });
-
-    if (!hasMatches) return toCssValue(val); // Static value
-
-    const bpValues = activeThemeData?.breakpoints || DEFAULT_BREAKPOINTS;
-
-    // Resolve based on breakpoints (min-width, mobile-first)
-    if (effectivePx >= bpValues.xl && breakpoints.xl) return toCssValue(breakpoints.xl);
-    if (effectivePx >= bpValues.lg && breakpoints.lg) return toCssValue(breakpoints.lg);
-    if (effectivePx >= bpValues.md && breakpoints.md) return toCssValue(breakpoints.md);
-    if (effectivePx >= bpValues.sm && breakpoints.sm) return toCssValue(breakpoints.sm);
-    return toCssValue(breakpoints.xs || breakpoints.sm || val);
-  };
-
+  const themeBreakpoints = { ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints };
+  const maxWidth = Math.max(...Object.values(themeBreakpoints) as number[], 1);
+  const BPS = Object.entries(themeBreakpoints)
+    .sort((a, b) => Number(a[1]) - Number(b[1]))
+    .map(([name, width], index, entries) => ({ label: name.toUpperCase(), width: (Number(width) || Number(entries[index + 1]?.[1] || maxWidth) / 2) / maxWidth * 100 }));
+  BPS.push({ label: 'Default', width: 100 });
   // Sync with external edit requests (from the list below)
   useEffect(() => {
     if (editingTag && TAGS.includes(editingTag)) {
@@ -209,13 +138,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   }, [editingTag]);
 
   // Safe access to the typography details
-  const defaultDetails = activeThemeData?.typography_details?.default || {
-    fontSize: 'xs(space(5))',
-    fontFamily: 'Inter',
-    fontWeight: '400',
-    lineHeight: '1.5',
-    letterSpacing: 'normal'
-  };
+  const defaultDetails = activeThemeData?.typography_details?.default || {};
   
   const tagDetails = activeThemeData?.typography_details?.[selectedTag] || {};
   
@@ -267,7 +190,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
     newTheme.typography_details[selectedTag].fontSize = newValue;
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleSaveFontFamily = (newValue: string) => {
@@ -318,7 +241,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       }
     }
 
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleSaveProperty = (property: string, newValue: string) => {
@@ -326,7 +249,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     if (!newTheme.typography_details) newTheme.typography_details = {};
     if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
     newTheme.typography_details[selectedTag][property] = newValue;
-    setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+    setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
   };
 
   const handleRemoveProperty = (property: string) => {
@@ -334,7 +257,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     const newTheme = JSON.parse(JSON.stringify(activeThemeData));
     if (newTheme.typography_details?.[selectedTag]) {
       delete newTheme.typography_details[selectedTag][property];
-      setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+      setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
     }
   };
 
@@ -351,21 +274,8 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         .trim();
     };
 
-    const extractResponsiveValue = (value: string, bp: 'xs' | 'sm' | 'md' | 'lg' | 'xl') => {
-      const val = String(value || '').trim();
-      if (!val) return undefined;
-
-      const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
-      for (const part of parts) {
-        const openParen = part.indexOf('(');
-        const closeParen = part.lastIndexOf(')');
-        if (openParen > 0 && closeParen === part.length - 1) {
-          const key = part.substring(0, openParen);
-          if (key === bp) return part.substring(openParen + 1, closeParen).trim();
-        }
-      }
-      return undefined;
-    };
+    const extractResponsiveValue = (value: string, bp: string) =>
+      inspectResponsiveValue(value || '', themeBreakpoints[bp], themeBreakpoints).value || undefined;
 
     const parseLengthToPx = (raw: string | undefined): number | undefined => {
       if (!raw) return undefined;
@@ -459,6 +369,9 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       if (!detailsPatch || typeof detailsPatch !== 'object') {
         return { ok: false, reason: 'Missing typography_details object.' };
       }
+
+      try { compileTypographyRules(detailsPatch, themeBreakpoints); }
+      catch (cause) { return { ok: false, reason: cause instanceof Error ? cause.message : String(cause) }; }
 
       const requiredTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'body', 'span', 'caption', 'small', 'code', 'pre'];
       if (validateMode === 'all') {
@@ -672,7 +585,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             Object.assign(newTheme.typography_details[selectedTag], detailsPatch[selectedTag]);
           }
           
-          setCustomTheme(customThemeName || 'Custom Theme', newTheme);
+          setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
         } catch (parseError) {
           console.error("Failed to parse AI response:", parseError);
           alert("Failed to apply AI changes.");
@@ -753,7 +666,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                           setPreviewWidth(bp.width);
                         }
                       }}
-                      title={isDefault ? "Current Screen Size" : `${bp.label} View`}
+                      title={isDefault ? "Current Screen Size" : `${bp.label}: simulated ${Math.round(previewPixels(bp.width, themeBreakpoints))}px viewport`}
                       className={`control-button ${isActive ? 'active' : ''} ${isDefault ? 'is-default' : ''}`}
                     >
                       {isDefault ? <Monitor size={14} /> : bp.label}
@@ -870,8 +783,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 style: !isAutoMode
                   ? {
                       textAlign,
-                      fontSize: resolveResponsiveValue(fontSizeString, previewWidth),
-                      lineHeight: resolveResponsiveValue(lineHeightString, previewWidth)
+                      ...inspectTypographyTheme(activeThemeData, previewPixels(previewWidth, themeBreakpoints))
                     }
                   : { textAlign }
               }

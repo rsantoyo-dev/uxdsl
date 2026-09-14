@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useTheme } from './ThemeContext'
+import { generateTypographyCss } from 'postcss-uxdsl/ds-runtime'
 import { initialTypographyItems } from './TypographyDemoContext'
 
 const AVAILABLE_FONTS = [
@@ -19,29 +21,9 @@ const fontFamilies = [
 
 const fontWeights = ['100', '200', '300', '400', '500', '600', '700', '800', '900']
 
-const breakpointsMap = {
-  xs: 0,
-  sm: 640,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-  '2xl': 1536
-}
-
-const overrides: Record<string, string> = {}
-const rules: Record<string, string> = {}
-
-function updateOverrides() {
-  let styleEl = document.getElementById('uxdsl-typo-overrides')
-  if (!styleEl) {
-    styleEl = document.createElement('style')
-    styleEl.id = 'uxdsl-typo-overrides'
-    document.head.appendChild(styleEl)
-  }
-  styleEl.innerHTML = Object.values(overrides).join('\n')
-}
-
 export function EditDialog({ item, onClose }: { item: typeof initialTypographyItems[0], onClose: () => void }) {
+  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
+  const [error, setError] = useState('')
   const [family, setFamily] = useState('')
   const [weight, setWeight] = useState('')
   const [sizeRule, setSizeRule] = useState('')
@@ -53,71 +35,29 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
     const computedFamily = style.getPropertyValue(`--${item.tag}-font-family`).trim()
     setCurrentFamilyComputed(computedFamily)
     
-    let matchedOption = ''
-    for (const opt of fontFamilies) {
-      if (opt.value.startsWith('var(')) {
-        const varName = opt.value.slice(4, -1)
-        const resolved = style.getPropertyValue(varName).trim()
-        if (computedFamily === resolved || computedFamily === opt.value) {
-          matchedOption = opt.value
-          break
-        }
-      } else if (computedFamily.includes(opt.value.split(',')[0])) {
-         matchedOption = opt.value
-         break
-      }
-    }
-    
-    setFamily(matchedOption || computedFamily)
-    setWeight(style.getPropertyValue(`--${item.tag}-weight`).trim())
     setCurrentComputed(style.getPropertyValue(`--${item.tag}-size`).trim())
-    
-    if (rules[item.tag]) {
-      setSizeRule(rules[item.tag])
-    }
-  }, [item])
+    const details = activeThemeData?.typography_details || {}
+    const configured = { ...details.default, ...details[item.tag] }
+    setFamily(configured.fontFamily || '')
+    setWeight(configured.fontWeight || '')
+    setSizeRule(configured.fontSize || '')
+  }, [item, activeThemeData])
 
   const handleSave = () => {
-    const root = document.documentElement
-    if (family) root.style.setProperty(`--${item.tag}-font-family`, family)
-    if (weight) root.style.setProperty(`--${item.tag}-weight`, weight)
-    
-    if (sizeRule) {
-      rules[item.tag] = sizeRule 
-      
-      let css = ''
-      const processedRule = sizeRule.replace(/space(\d+)/g, 'var(--space-$1)')
-      
-      const regex = /(xs|sm|md|lg|xl|2xl)\((\d+px)\)/g
-      let match
-      let found = false
-      
-      regex.lastIndex = 0
-      
-      while ((match = regex.exec(processedRule)) !== null) {
-        found = true
-        const bp = match[1]
-        const val = match[2]
-        const minWidth = breakpointsMap[bp as keyof typeof breakpointsMap]
-        
-        if (minWidth === 0) {
-          css += `:root { --${item.tag}-size: ${val}; }`
-        } else {
-          css += `@media (min-width: ${minWidth}px) { :root { --${item.tag}-size: ${val}; } }`
-        }
-      }
-      
-      if (!found && processedRule.trim()) {
-        css = `:root { --${item.tag}-size: ${processedRule}; }`
-      }
-
-      if (css) {
-        overrides[item.tag] = css
-        updateOverrides()
-      }
+    const previous = activeThemeData?.typography_details || {}
+    const style = { ...previous[item.tag] }
+    for (const [key, value] of Object.entries({ fontFamily: family, fontWeight: weight, fontSize: sizeRule })) {
+      if (value.trim()) style[key] = value.trim()
+      else delete style[key]
     }
-    
-    onClose()
+    const next = { ...activeThemeData, typography_details: { ...previous, [item.tag]: style } }
+    try {
+      generateTypographyCss(next)
+      setCustomTheme(customThemeName || 'Custom Theme', next, { replace: true })
+      onClose()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+    }
   }
 
   return (
@@ -130,6 +70,7 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
         width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Edit {item.label}</h3>
+        {error && <p role="alert">{error}</p>}
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <label>

@@ -464,7 +464,7 @@
   position: relative;
   z-index: 2;
 
-  $tags: default, h1, h2, h3, h4, h5, h6, p, body, caption, span, small, pre;
+  $tags: default, h1, h2, h3, h4, h5, h6, p, body, caption, span, small, pre, code;
 
   @each $tag in $tags {
     &.#{$tag} {
@@ -481,22 +481,11 @@
     }
   }
 
-  &.code {
-    font-size: var(--pre-size);
-    font-family: var(--pre-font-family);
-    font-weight: var(--pre-weight);
-    line-height: var(--pre-line);
-    letter-spacing: var(--pre-spacing);
-    text-transform: var(--pre-transform);
-    text-decoration: var(--pre-decoration);
-    font-style: var(--pre-style);
-    margin-block-start: var(--pre-margin-block-start);
-    margin-block-end: var(--pre-margin-block-end);
-  }
+
 }
 
 .showcase-text {
-  $tags: default, h1, h2, h3, h4, h5, h6, p, body, caption, span, small, pre;
+  $tags: default, h1, h2, h3, h4, h5, h6, p, body, caption, span, small, pre, code;
 
   @each $tag in $tags {
     &.sample-#{$tag} {

@@ -18,7 +18,7 @@ interface ThemeContextType {
   activeThemeData: any
   switchTheme: (theme: ThemeName) => void
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  setCustomTheme: (name: string, themeData: any) => void
+  setCustomTheme: (name: string, themeData: any, options?: { replace?: boolean }) => void
   toggleDarkMode: () => void
 }
 
@@ -33,7 +33,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract purple curves')
 
   const lastBaseSignatureRef = useRef<string | null>(null)
-  const lastTypographySignatureRef = useRef<string | null>(null)
   const lastFontsHrefRef = useRef<string | null>(null)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const lastValidThemeRef = useRef<any>(null)
@@ -111,166 +110,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       return `https://fonts.googleapis.com/css2?family=${families}&display=swap`
     }
 
-    // 1) Base theme CSS (postcss-uxdsl runtime generator). Treat as relatively expensive.
-    const baseSignature = stableStringify({
-      // Exclude frequently-edited typography + fonts so edits don't force a full CSS rebuild.
-      ...theme,
-      typography_details: undefined,
-      fonts: undefined
-    })
-
+    // Shared engine owns typography generation; this provider only applies theme state.
+    const baseSignature = stableStringify(theme)
     if (baseSignature && baseSignature !== lastBaseSignatureRef.current) {
       const css = generateThemeCss(theme)
-      const baseStyleTag = ensureStyleTag('uxdsl-ssr-theme')
-      baseStyleTag.textContent = css
+      ensureStyleTag('uxdsl-ssr-theme').textContent = css
+      document.getElementById('uxdsl-typography-theme')?.remove()
+      document.getElementById('uxdsl-typo-overrides')?.remove()
       lastBaseSignatureRef.current = baseSignature
     }
-
-    // 2) Typography + font-family vars as a small, separate stylesheet.
-    const typographySignature = stableStringify({
-      typography_details: theme.typography_details || null,
-      breakpoints: theme.breakpoints || null,
-      fontFamilies: theme.fonts?.families || null
-    })
-
-    if (typographySignature && typographySignature !== lastTypographySignatureRef.current) {
-      let typographyCss = ''
-
-      // 2.1 Font families as CSS vars
-      if (theme.fonts?.families && typeof theme.fonts.families === 'object') {
-        const fontVars: string[] = []
-        for (const fontKey in theme.fonts.families) {
-          const v = theme.fonts.families[fontKey]
-          if (typeof v === 'string' && v.trim().length > 0) {
-            fontVars.push(`--font-${fontKey}: ${v}`)
-          }
-        }
-        if (fontVars.length > 0) {
-          typographyCss += `:root { ${fontVars.join('; ')} }\n`
-        }
-      }
-
-      // 2.2 Typography responsive vars
-      if (theme.typography_details && typeof theme.typography_details === 'object') {
-        const responsiveVars: Record<string, string[]> = { xs: [], sm: [], md: [], lg: [], xl: [] }
-
-        const toCssValue = (input: string) => {
-          const v = String(input || '').trim()
-          if (!v) return v
-          return v
-            .replace(/\bspace\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--space-$1)')
-            .replace(/\bdensity\(\s*['"]?(\d{1,3})['"]?\s*\)/g, 'var(--density-$1)')
-        }
-
-        const parseResponsiveValue = (value: string) => {
-          const val = String(value || '').trim()
-          if (!val) return { xs: val }
-
-          const out: Record<string, string> = {}
-          const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean)
-          let hasMatches = false
-
-          parts.forEach((part) => {
-            const openParen = part.indexOf('(')
-            const closeParen = part.lastIndexOf(')')
-            if (openParen > 0 && closeParen === part.length - 1) {
-              const bp = part.substring(0, openParen)
-              if (bp in responsiveVars) {
-                out[bp] = part.substring(openParen + 1, closeParen).trim()
-                hasMatches = true
-              }
-            }
-          })
-
-          if (!hasMatches) return { xs: val }
-          return out
-        }
-
-        const defaultDetails = theme.typography_details.default || {}
-
-        for (const tag in theme.typography_details) {
-          const details = theme.typography_details[tag]
-          const isDefaultTag = tag === 'default'
-
-          const processProp = (propName: string, cssVarSuffix: string) => {
-            const rawValue = details?.[propName] || (!isDefaultTag ? defaultDetails?.[propName] : undefined)
-            if (typeof rawValue !== 'string' || rawValue.trim().length === 0) return
-
-            const parsed = parseResponsiveValue(rawValue)
-            Object.entries(parsed).forEach(([bp, val]) => {
-              if (responsiveVars[bp]) {
-                responsiveVars[bp].push(`--${tag}-${cssVarSuffix}: ${toCssValue(String(val))}`)
-              }
-            })
-          }
-
-          processProp('lineHeight', 'line')
-          processProp('letterSpacing', 'spacing')
-          processProp('fontSize', 'size')
-          processProp('fontWeight', 'weight')
-          processProp('fontFamily', 'font-family')
-          processProp('textTransform', 'transform')
-          processProp('textDecoration', 'decoration')
-          processProp('fontStyle', 'style')
-          processProp('marginBlockStart', 'margin-block-start')
-          processProp('marginBlockEnd', 'margin-block-end')
-        }
-
-        if (responsiveVars.xs.length > 0) {
-          typographyCss += `:root { ${responsiveVars.xs.join('; ')} }\n`
-        }
-
-        const bpValues = theme.breakpoints || { sm: 480, md: 768, lg: 1024, xl: 1280 }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const typedBpValues = bpValues as any
-        ;['sm', 'md', 'lg', 'xl'].forEach((bp) => {
-          if (responsiveVars[bp] && responsiveVars[bp].length > 0) {
-            const minWidth = typedBpValues[bp]
-            if (minWidth) {
-              typographyCss += `@media (min-width: ${minWidth}px) { :root { ${responsiveVars[bp].join('; ')} } }\n`
-            }
-          }
-        })
-
-        // 2.3 Consumption overrides for properties that need higher specificity.
-        const consumptionTags = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'span', 'body', 'caption', 'small', 'code', 'pre']
-        let overrideCss = ''
-
-        consumptionTags.forEach((tag) => {
-          const details = theme.typography_details?.[tag]
-          const fallbackDetails = theme.typography_details?.default || {}
-          const getValue = (prop: string) => details?.[prop] || (tag !== 'default' ? fallbackDetails?.[prop] : undefined)
-
-          const propsMap = [
-            { js: 'textTransform', css: 'text-transform', varSuffix: 'transform' },
-            { js: 'textDecoration', css: 'text-decoration', varSuffix: 'decoration' },
-            { js: 'fontStyle', css: 'font-style', varSuffix: 'style' },
-            { js: 'marginBlockStart', css: 'margin-block-start', varSuffix: 'margin-block-start' },
-            { js: 'marginBlockEnd', css: 'margin-block-end', varSuffix: 'margin-block-end' }
-          ]
-
-          const rules: string[] = []
-          propsMap.forEach(({ js, css, varSuffix }) => {
-            if (getValue(js)) {
-              rules.push(`${css}: var(--${tag}-${varSuffix}) !important;`)
-            }
-          })
-
-          if (rules.length > 0) {
-            overrideCss += `:root ${tag}, .ds-typo[data-typo="${tag}"] { ${rules.join(' ')} }\n`
-          }
-        })
-
-        if (overrideCss.trim().length > 0) {
-          typographyCss += `\n/* Global Typography Overrides */\n${overrideCss}`
-        }
-      }
-
-      const typographyStyleTag = ensureStyleTag('uxdsl-typography-theme')
-      typographyStyleTag.textContent = typographyCss
-      lastTypographySignatureRef.current = typographySignature
-    }
-
     // 3) Google fonts link - avoid churn if href is unchanged.
     const nextFontsHref = buildFontsHref(theme.fonts?.google)
     if (nextFontsHref !== lastFontsHrefRef.current) {
@@ -338,12 +186,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const setCustomTheme = (name: string, themeData: any) => {
+  const setCustomTheme = (name: string, themeData: any, options?: { replace?: boolean }) => {
     // Support partial overrides by merging them over the currently active theme.
     // This keeps the system scalable as we add palette/spacing/etc.
     const base = activeThemeData || defaultTheme
-    const merged = deepMergeTheme(base, themeData || {})
+    const merged = options?.replace ? themeData : deepMergeTheme(base, themeData || {})
 
+    const checked = validateAndNormalizeTheme(merged)
+    if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))
+    generateThemeCss(merged) // Validate the exact source used by the compiler and inspector.
     setCustomThemeData(merged)
     setCustomThemeName(name)
     

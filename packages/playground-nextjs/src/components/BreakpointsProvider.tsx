@@ -1,6 +1,7 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
+import { useTheme } from './ThemeContext'
 import { breakpoints as runtimeBreakpoints, DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime'
 
 const defaultBreakpoints = {
@@ -19,7 +20,16 @@ const BreakpointsContext = createContext<{
 })
 
 export function BreakpointsProvider({ children }: { children: ReactNode }) {
+  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
   const [breakpoints, setBreakpointsState] = useState(defaultBreakpoints)
+  const currentTheme = useRef({ activeThemeData, setCustomTheme, customThemeName })
+  currentTheme.current = { activeThemeData, setCustomTheme, customThemeName }
+  const configured = JSON.stringify({ ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints })
+  useEffect(() => {
+    const map = JSON.parse(configured)
+    setBreakpointsState(map)
+    runtimeBreakpoints.set(map, { replace: true })
+  }, [configured])
 
   useEffect(() => {
     // Sync with runtime on mount
@@ -42,6 +52,11 @@ export function BreakpointsProvider({ children }: { children: ReactNode }) {
       if (event.type === 'breakpoint') {
         const updated = runtimeBreakpoints.get()
         setBreakpointsState(prev => ({ ...prev, ...updated }))
+        const current = currentTheme.current
+        const configuredMap = { ...DEFAULT_BREAKPOINTS, ...current.activeThemeData?.breakpoints }
+        if (Object.entries(updated).some(([name, width]) => configuredMap[name] !== width)) {
+          current.setCustomTheme(current.customThemeName || 'Custom Theme', { breakpoints: updated })
+        }
       }
     })
 
@@ -51,11 +66,8 @@ export function BreakpointsProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const setBreakpoints: React.Dispatch<React.SetStateAction<Breakpoints>> = (value) => {
-    setBreakpointsState((prev) => {
-      const next = typeof value === 'function' ? value(prev) : value
-      runtimeBreakpoints.set(next, { persist: true })
-      return next
-    })
+    const next = typeof value === 'function' ? value(breakpoints) : value
+    runtimeBreakpoints.set(next, { persist: true })
   }
 
   return (

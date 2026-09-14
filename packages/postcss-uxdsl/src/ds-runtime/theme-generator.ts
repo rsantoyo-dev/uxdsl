@@ -1,4 +1,5 @@
 import { DEFAULT_BREAKPOINTS, generateDensityCss } from '../language';
+import { generateTypographyCss } from '../typography';
 
 export function generateThemeCss(theme: Record<string, any>): string {
   if (!theme) return '';
@@ -61,14 +62,8 @@ export function generateThemeCss(theme: Record<string, any>): string {
     });
   }
 
-  // Typography
-  if (theme.typography) {
-    Object.entries(theme.typography).forEach(([key, val]) => {
-      cssVars.push(`--${key}: ${val}`);
-    });
-  }
-
   let cssContent = `:root { ${cssVars.join('; ')} }`;
+  cssContent += '\n' + generateTypographyCss(theme);
   if (theme.densities) {
     cssContent += '\n' + generateDensityCss(theme.densities, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints });
   }
