@@ -35,7 +35,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
       <h3>1. Define Colors and Palette in the theme JSON</h3>
       <p>This reference excerpt defines a color collection and connects palette roles to it using CSS variable references:</p>
       <pre><code className="language-json">{theme}</code></pre>
-      <p>The nested entry <code>colors.blue["700"]</code> produces <code>--ds__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--ds__palette__primary-main</code>.</p>
+      <p>The nested entry <code>{'colors.blue["700"]'}</code> produces <code>--ds__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--ds__palette__primary-main</code>.</p>
       <p><strong>References preserve the connection.</strong> In this JSON, <code>primary.main</code> references <code>blue-700</code>. Changing that color updates the role once the theme is compiled or applied. A literal hex value in a palette is also valid, but copying a color’s hex value does not create a reference to that color token.</p>
       <h3>2. Express the intended role in components</h3>
       <div className={styles.comparison}>
@@ -66,7 +66,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
       <p>The CSS shows only the variables used by these two selectors. Plain CSS custom properties provide the same reference mechanism; UXDSL connects component syntax to the theme’s shared definitions.</p>
       <h3>3. Choose the scope of the change</h3>
       <ul>
-        <li><strong>Update a color value:</strong> change <code>colors.blue["700"]</code> to update direct consumers and palette roles that reference it.</li>
+        <li><strong>Update a color value:</strong> change <code>{'colors.blue["700"]'}</code> to update direct consumers and palette roles that reference it.</li>
         <li><strong>Reassign a role:</strong> change <code>palette.primary.main</code> to reference <code>blue-500</code>. Primary actions follow that role; direct <code>color(blue-700)</code> consumers keep their token.</li>
         <li><strong>Change one component:</strong> choose another appropriate existing role or color token in that component, without changing shared definitions.</li>
       </ul>
@@ -135,7 +135,7 @@ export function ColorAgentGuidance({ topic }: { topic: Topic }) {
       </> : <>
         <blockquote>Update blue-700 across the theme, including palette roles linked to it.</blockquote>
         <ol>
-          <li>Locate <code>colors.blue["700"]</code>, its direct consumers, and palette references to it.</li>
+          <li>Locate <code>{'colors.blue["700"]'}</code>, its direct consumers, and palette references to it.</li>
           <li>Update the color value in the source JSON, preserving palette references rather than replacing them with copied hex values.</li>
           <li>Apply or compile the theme. Confirm that direct swatches and linked roles receive the new value.</li>
           <li>Check unrelated color tokens, literal palette values, relevant modes and foreground/background contrast.</li>
