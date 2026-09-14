@@ -37,6 +37,15 @@ change while the fixed comparison does not. Edits are local to the demo. The JSO
 and CSS are explicitly labeled reference examples; the live definition reflects edits.
 The former iframe viewport simulator was removed after reported interaction failures.
 
+### AI documentation guidance
+
+Density pages end with `DensityAgentGuidance`, including token-selection rules,
+theme and component examples, local-exception guidance and breakpoint verification.
+`AgentGuidance` is the shared presentation component: pass a unique `id`, a `title`
+and documentation as `children`. Keep topic content in a separate component and
+render it from the page after its examples. The guide is visible in server-rendered
+HTML and supports direct anchor links without JavaScript or an accordion.
+
 ## Main packages
 
 - `packages/postcss-uxdsl` — Core compiler and runtime helpers.

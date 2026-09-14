@@ -1,4 +1,5 @@
 import DemoDensity from '@/components/DemoDensity'
+import DensityAgentGuidance from '@/components/DensityAgentGuidance'
 import { PageTitle } from '@/components/PageTitle'
 
 export default function DensitiesPage() {
@@ -10,6 +11,7 @@ export default function DensitiesPage() {
           subtitle="Define responsive spacing once. Keep every connected component in rhythm."
         />
         <DemoDensity />
+        <DensityAgentGuidance />
       </div>
     </main>
   )
