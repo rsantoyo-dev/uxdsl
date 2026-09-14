@@ -1,3 +1,4 @@
+import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -91,12 +92,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Allows defaults to be provided from a separate @theme file.
   const GLOBAL_DENSITY_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__density || Object.create(null);
-  const GLOBAL_RADIUS_TOKENS: Record<string, string> =
-    (uxdslPlugin as any).__radii || Object.create(null);
   const GLOBAL_SHADOW_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__shadows || Object.create(null);
-  const GLOBAL_BORDER_TOKENS: Record<string, string> =
-    (uxdslPlugin as any).__borders || Object.create(null);
   // Global button packs (e.g. button-contained/outlined/flat) so they can be
   // defined in a separate @theme file and used across files in the same process.
   const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
@@ -110,9 +107,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
-  (uxdslPlugin as any).__radii = GLOBAL_RADIUS_TOKENS;
   (uxdslPlugin as any).__shadows = GLOBAL_SHADOW_TOKENS;
-  (uxdslPlugin as any).__borders = GLOBAL_BORDER_TOKENS;
   (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
   (uxdslPlugin as any).__surfacePacks = GLOBAL_SURFACE_PACKS;
@@ -416,7 +411,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = `${n}`;
             const val = String((decl as any).value || "").trim();
             radiusTokens[key] = val;
-            GLOBAL_RADIUS_TOKENS[key] = val;
+
           }
           // shadow-<n>
           const s = prop.match(/^shadow-(\d+)$/);
@@ -434,7 +429,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = `${n}`;
             const val = String((decl as any).value || "").trim();
             borderTokens[key] = val;
-            GLOBAL_BORDER_TOKENS[key] = val;
+
           }
           // button packs: button-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; }
           const pack = prop.match(/^button-([a-zA-Z][\w-]*)$/);
@@ -545,6 +540,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         // Remove @theme blocks from output
         at.remove();
       });
+
+      const edgeTheme = { borders: { ...borderTokens, ...opts.theme?.borders }, radii: { ...radiusTokens, ...opts.theme?.radii } };
+      const edgeTokens = getEdgeTokens(edgeTheme);
+      root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
       // Generate CSS variables for density tokens
       for (const compiled of compileDensityRules(GLOBAL_DENSITY_TOKENS, bps, rewriteFuncs)) {
@@ -980,57 +979,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             node.type === "function" &&
             (node.value === "radius" || node.value === "rounded")
           ) {
-            const innerText = valueParser.stringify(node.nodes).trim();
-            // Keyword support
-            if (/^['"]?(pill|full)['"]?$/.test(innerText)) {
-              node.type = "word";
-              node.value = "9999px";
+            const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+            if (RADIUS_KEYWORDS[key] || Object.prototype.hasOwnProperty.call(edgeTokens.radii, key)) {
+              node.type = 'word';
+              node.value = RADIUS_KEYWORDS[key] || `var(--radius-${key})`;
               return;
             }
-            if (/^['"]?(circle)['"]?$/.test(innerText)) {
-              node.type = "word";
-              node.value = "50%";
-              return;
-            }
-            let idx = innerText;
-            if (
-              (idx.startsWith('"') && idx.endsWith('"')) ||
-              (idx.startsWith("'") && idx.endsWith("'"))
-            )
-              idx = idx.slice(1, -1);
-            const n = parseInt(idx.trim(), 10);
-            if (!Number.isNaN(n)) {
-              const tok =
-                radiusTokens[String(n)] || GLOBAL_RADIUS_TOKENS[String(n)];
-              if (tok) {
-                node.type = "word";
-                node.value = tok;
-                return;
-              }
-              // Fallback simple ramp
-              const ordered = Object.keys(bps)
-                .map((name) => ({ name, px: (bps as any)[name] as number }))
-                .filter(
-                  (it) => typeof it.px === "number" && !Number.isNaN(it.px)
-                )
-                .sort((a, b) => a.px - b.px);
-              if (ordered.length) {
-                const parts = ordered.map((bp, i) => {
-                  const base = Math.max(2, n * 2);
-                  const step =
-                    i === 0
-                      ? base
-                      : i === 1
-                      ? Math.round(base * 2)
-                      : Math.round(base * 3);
-                  return `${bp.name}(${step}px)`;
-                });
-                node.type = "word";
-                node.value = parts.join(" ");
-                return;
-              }
-            }
-            return;
+            throw new Error(`UXD_EDGE_REFERENCE: Undefined radius ${key}.`);
           }
           // Shadow helpers: shadow(n) or elevation(n)
           if (
@@ -1070,51 +1025,10 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           }
           // Border helper: border(n[, color][, style])
           if (node.type === "function" && node.value === "border") {
-            const innerText = valueParser.stringify(node.nodes).trim();
-            const parts = innerText
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            let idx = parts[0] || "";
-            if (
-              (idx.startsWith('"') && idx.endsWith('"')) ||
-              (idx.startsWith("'") && idx.endsWith("'"))
-            )
-              idx = idx.slice(1, -1);
-            const n = parseInt(idx, 10);
-            // Determine optional color/style args if provided
-            const arg1 = parts[1] || "";
-            const arg2 = parts[2] || "";
-            const looksColor = (s: string) =>
-              /^(color\(|palette\(|var\(|#|rgb\(|hsl\()/i.test(s);
-            const looksStyle = (s: string) =>
-              /^(solid|dashed|dotted|double|groove|ridge|inset|outset)$/i.test(
-                s
-              );
-            const colorArg = looksColor(arg1)
-              ? arg1
-              : looksColor(arg2)
-              ? arg2
-              : "";
-            const styleArg = looksStyle(arg1)
-              ? arg1
-              : looksStyle(arg2)
-              ? arg2
-              : "solid";
-            if (!Number.isNaN(n)) {
-              const comp =
-                borderTokens[String(n)] || GLOBAL_BORDER_TOKENS[String(n)];
-              if (comp) {
-                node.type = "word";
-                node.value = comp;
-                return;
-              }
-              const width = `space(${n})`;
-              const color = colorArg || "color(gray.300)";
-              node.type = "word";
-              node.value = `${width} ${styleArg} ${color}`;
-              return;
-            }
+            const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
+            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw new Error(`UXD_EDGE_REFERENCE: Undefined border ${key}.`);
+            node.type = 'word';
+            node.value = `var(--border-${key})`;
             return;
           }
           if (node.type === "function" && node.value === "palette") {

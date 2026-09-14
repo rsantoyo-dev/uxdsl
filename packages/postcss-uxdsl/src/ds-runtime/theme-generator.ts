@@ -1,3 +1,4 @@
+import { generateEdgeCss } from '../edges';
 import { DEFAULT_BREAKPOINTS, generateDensityCss } from '../language';
 import { generateTypographyCss } from '../typography';
 
@@ -41,13 +42,6 @@ export function generateThemeCss(theme: Record<string, any>): string {
 
   // Density references and responsive rules are compiled by the shared engine.
 
-  // Radii
-  if (theme.radii) {
-    Object.entries(theme.radii).forEach(([key, val]) => {
-      cssVars.push(`--radius-${key}: ${val}`);
-    });
-  }
-
   // Shadows
   if (theme.shadows) {
     Object.entries(theme.shadows).forEach(([key, val]) => {
@@ -55,15 +49,9 @@ export function generateThemeCss(theme: Record<string, any>): string {
     });
   }
 
-  // Borders
-  if (theme.borders) {
-    Object.entries(theme.borders).forEach(([key, val]) => {
-      cssVars.push(`--border-${key}: ${val}`);
-    });
-  }
-
   let cssContent = `:root { ${cssVars.join('; ')} }`;
   cssContent += '\n' + generateTypographyCss(theme);
+  cssContent += '\n' + generateEdgeCss(theme);
   if (theme.densities) {
     cssContent += '\n' + generateDensityCss(theme.densities, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints });
   }

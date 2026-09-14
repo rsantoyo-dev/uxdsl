@@ -58,7 +58,7 @@
 @ds-surface ai-response {
   margin-top: space(4);
   padding: space(4);
-  border-radius: radius(lg);
+  border-radius: radius(3);
   background: palette(surface-paper);
   border: 1px solid palette(divider);
   color: palette(text-primary);
@@ -101,7 +101,7 @@
   font-family: monospace;
   background: rgba(255, 255, 255, 0.1);
   padding: space(1) space(2);
-  border-radius: radius(md);
+  border-radius: radius(2);
   color: palette(primary-light);
 }
 

@@ -1,3 +1,4 @@
+import { compileEdgeRules } from '../edges';
 import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
 import { DEFAULT_BREAKPOINTS } from './breakpoints';
 
@@ -297,6 +298,9 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     try { compileTypographyRules(theme.typography_details, bps); }
     catch (cause) { errors.push({ path: 'typography_details', message: cause instanceof Error ? cause.message : String(cause) }); }
   }
+
+  try { compileEdgeRules(theme, bps); }
+  catch (cause) { errors.push({ path: 'borders/radii', message: cause instanceof Error ? cause.message : String(cause) }); }
 
   return {
     ok: errors.length === 0,

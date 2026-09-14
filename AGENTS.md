@@ -240,11 +240,25 @@ for intentional exceptions.
 **Borders responsibility:** maintain shared edge treatments (width, style, color).
 **Radii responsibility:** maintain shared corner shapes and responsive behavior.
 
-Current definitions use `border-n` and `radius-n` inside imported UXDSL `@theme`
-blocks, not equivalent `borders`/`radii` sections in `generateThemeCss` JSON.
-Inspect `postcss-uxdsl/theme/default-borders.uxdsl` and
-`postcss-uxdsl/theme/default-radii.uxdsl` and project overrides. Load definitions
-before consumers. Do not assume every primitive already uses the same JSON path.
+Define `borders` and `radii` as maps of token keys to CSS strings or responsive
+progressions in the theme JSON. PostCSS, `generateThemeCss`, `generateEdgeCss` and
+`inspectEdgeTheme` share the engine in `src/edges.ts`. Literal CSS values are still
+supported; the former runtime copied them literally without resolving progressions.
+
+```json
+{
+  "breakpoints": { "xs": 0, "md": 768 },
+  "borders": { "1": "xs(1px solid #64748b) md(2px solid #64748b)" },
+  "radii": { "2": "xs(8px) md(12px)" }
+}
+```
+
+Legacy `border-n` and `radius-n` declarations in `@theme` remain supported in the
+same compilation. JSON overrides matching legacy entries; both override shared
+defaults. Import legacy definitions in each compilation that needs them. There
+is no cross-compilation Borders/Radii cache. The default .uxdsl files are generated
+from the shared module. Components consume `var(--border-n)`/`var(--radius-n)`;
+replacing the generated theme stylesheet updates their responsive behavior.
 
 ```css
 @theme {
@@ -265,26 +279,26 @@ for component spacing, not automatically for border width or corner rounding.
 - Reuse configured presets; numbers identify presets rather than pixel values.
   Preserve references instead of copying their current computed values.
 - Change a shared definition only when all its consumers should follow. Edit
-  source theme definitions and rebuild; browser preview edits do not save them.
+  source configuration and rebuild or use the runtime; preview edits do not save it.
 - When a Border preset exists, optional arguments in
   `border(1, palette(primary.main), dashed)` are ignored in favor of that preset.
   For local changes, follow `border: border(1)` with explicit `border-color` or
-  `border-style` longhands. Repeat those overrides at thresholds where a new
-  preset shorthand would reset them, and verify the emitted cascade. Do not
+  `border-style` longhands. The engine changes preset variables across thresholds; subsequent local
+  longhands persist without repeating their breakpoint declarations. Do not
   alter the preset for a one-component request.
 - `radius(pill)` and `radius(full)` both compile to `9999px`; `radius(circle)`
   compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
   Keywords are built-ins, not editable numbered presets. Border radius alone
   does not clip child content.
-- Define numbered presets before use. Missing-token Border fallbacks and Radius
-  fallback ramps are not validation or a stable design-system contract.
+- Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references now fail instead of inventing fallback
+  values. Define the token before using it; do not rely on old fallback behavior.
 - For local independent shapes, use intentional native CSS or per-corner values.
   Trace Spacing and Palette dependencies before changing foundational tokens.
 - Verify just below/at/above configured thresholds, box sizing, content area,
   wrapping, nested corners, aspect ratios, overflow, states and focus indicators.
   Check edge contrast and other consumers of shared presets.
-- The legacy Borders demo uses a local parser, breakpoint map and defaults.
-  Do not treat it as the canonical engine or claim JSON/runtime parity from it.
+- The Borders demo consumes shared defaults, generation and inspection. Edits
+  are scoped to the preview and invalid edits retain its last valid state.
 
 **Borders decision rule:** choose a shared preset for a shared edge treatment;
 use subsequent CSS longhands for intentional local exceptions.
