@@ -11,3 +11,5 @@ export * from './surfaces';
 export * from './buttons';
 
 export { generateDensityCss, DEFAULT_BREAKPOINTS, DEFAULT_DENSITIES } from './language';
+
+export * from './inputs';

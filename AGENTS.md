@@ -25,6 +25,8 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
 | Shadows | Shared visual depth and inset treatments | `shadow(key)` / `elevation(key)` for box shadows |
 | Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size])` |
+| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size])` |
+| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size])` |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
 
 A matching value does not imply a matching responsibility. Do not replace:
@@ -38,7 +40,8 @@ A matching value does not imply a matching responsibility. Do not replace:
 1. Locate the active theme JSON and how the application passes it to PostCSS or
    the runtime. Inspect overrides, modes and existing component conventions.
 2. Read relevant definitions and dependencies: `spacing`, `densities`, `colors`,
-   `palette`, `breakpoints`, `fonts`, and `typography_details`.
+   `palette`, `breakpoints`, `fonts`, `typography_details`, `borders`, `radii`,
+   `shadows`, `surfaces`, `buttons`, and `inputs`.
 3. Decide whether the request concerns one component, a shared role/progression,
    a foundational value, or a global threshold. Trace affected consumers.
 4. Reuse a suitable existing token. Never reference an undefined token or assume
@@ -469,6 +472,51 @@ Surfaces own the container composition. HTML/application code own interaction.
 **Decision rule:** choose an action role; maintain shared styling in the theme;
 keep behavior and accessibility semantics in HTML and application logic.
 
+## Inputs
+
+**Responsibility:** reusable field treatments and their responsive/interaction
+styles. Components choose configured roles; HTML and application logic own editing,
+labels, validation and errors. Preserve intent, not just the current computed value.
+
+```json
+{"inputs":{"search":{"surface":"outlined","base":{"padding":"density(2)","placeholder":"palette(neutral.dark)"},"states":{"focusvisible":{"outline":"2px solid palette(primary.main)"},"invalid":{"border":"2px solid palette(error.main)"}}}}}
+```
+
+```css
+.search-field { @ds-input(search); }
+.email { @ds-input(outlined primary 2); }
+```
+
+- Inspect inputs, Surfaces, Density, Radii, Palette, Borders, Shadows, breakpoints
+  and legacy imports. Reuse configured roles; never replace a role with its pixels.
+- Default roles: contained, outlined, underline. Custom roles inherit contained;
+  choose an existing Surface. Partial base/state fields merge; supplied responsive
+  expressions replace the whole field. Explicit base fields win over composition.
+- Fields: padding, radius, bg, color, border, shadow, caret, placeholder, underline,
+  opacity, outline, outline-offset, transform, cursor, font-weight. States: hover,
+  focus, focusvisible, readonly, invalid, disabled. Placeholder emits its own
+  pseudo-element, including within states. Underline maps to border-bottom; the
+  built-in underline role explicitly clears full borders and shadows.
+- Tone overrides Surface colors and default caret/focus treatment when the effective
+  theme supplies that Palette family. Explicit assignments remain explicit; invalid
+  defaults retain the error role. Numeric size selects Density and Radius tokens.
+- Use native labels, correct types, disabled/readOnly and associated help/error
+  messages. Placeholder is not a label. aria-disabled does not prevent editing;
+  aria-invalid does not validate data. Native :invalid may match before interaction.
+- Preserve native focus and appearance. Text-like inputs/textareas are the intended
+  scope; do not apply this pack blindly to checkboxes, radios, range or file inputs.
+  Defaults inherit typography, use border-box and width 100%; local CSS can override.
+- PostCSS, generateInputCss, inspectInputTheme and inputComponentCss use inputs.ts
+  and shared preset/Surface engines. Generated default-inputs.uxdsl is not a second
+  source. Legacy packs are per compilation; JSON fields win; no global Input cache.
+- Existing values update through managed theme CSS. Structural field/Surface changes
+  require regenerated component CSS. Preview changes are scoped, not saved to JSON.
+- Verify responsive boundaries, persistence, keyboard focus, hover, disabled,
+  readonly, invalid and placeholder styles, contrast, wrapping and shared consumers.
+
+**Decision rule:** choose a shared field role; evolve shared styling in the theme;
+keep interaction/validation semantics in HTML and application code.
+
 ## Build time, runtime and one source of truth
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -559,16 +607,12 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/ShadowDocumentation.tsx`
 - `packages/playground-nextjs/src/components/SurfaceDocumentation.tsx`
 - `packages/playground-nextjs/src/components/ButtonDocumentation.tsx`
+- `packages/playground-nextjs/src/components/InputDocumentation.tsx`
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit
 those artifacts as another source of truth.
-
-Inputs have not yet been consolidated in
-this guide. Before editing them, inspect their current source, configuration and
-documentation. Add verified responsibilities, syntax and examples here as their
-agent guides are formalized; do not infer unsupported APIs from another primitive.
 
 Human documentation and playground: https://uxdsl.io/
 Density reference: https://uxdsl.io/docs/densities

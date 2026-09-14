@@ -1,3 +1,4 @@
+import { getInputTokens, generateInputCss, inputComponentCss, parseInputArguments } from './inputs';
 import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
 import { generateShadowCss, getShadowTokens } from './shadows';
@@ -95,12 +96,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Allows defaults to be provided from a separate @theme file.
   const GLOBAL_DENSITY_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__density || Object.create(null);
-  const GLOBAL_INPUT_PACKS: Record<string, any> =
-    (uxdslPlugin as any).__inputPacks || Object.create(null);
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
-  (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
 
   const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
   const toVar =
@@ -459,11 +457,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               (root as any).__inputPacks[vname] = {
                 base: parsed.base,
                 states: parsed.states,
+                ...(rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/) ? { surface: rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/)![1] } : {}),
               };
-              (GLOBAL_INPUT_PACKS as any)[vname] = {
-                base: parsed.base,
-                states: parsed.states,
-              };
+
             }
           }
         });
@@ -492,7 +488,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                 .toLowerCase();
               const v = String(n.value || "").trim();
               if (k) base[k] = v;
-            } else if (mBtn && n.type === 'atrule' && n.name === 'ds-surface') {
+            } else if ((mBtn || mInp) && n.type === 'atrule' && n.name === 'ds-surface') {
               base.__surface = String(n.params).trim().replace(/^\((.*)\)$/, '$1').trim();
             } else if (!isSurface && n.type === "rule") {
               // Selector can be ':hover' or '&:hover'
@@ -518,8 +514,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           } else if (isInput) {
             (root as any).__inputPacks =
               (root as any).__inputPacks || Object.create(null);
-            (root as any).__inputPacks[vname] = { base, states };
-            (GLOBAL_INPUT_PACKS as any)[vname] = { base, states };
+            const surface = base.__surface;
+            delete base.__surface;
+            (root as any).__inputPacks[vname] = { base, states, ...(surface ? { surface } : {}) };
           } else {
             const surface = base.__surface;
             delete base.__surface;
@@ -569,134 +566,27 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
       root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
-      function computeSurfaceBase(_packs: any, variant: string, toneFamily: string, sizeToken?: string): Record<string, string> {
-        return surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken);
+      getInputTokens({ ...effectiveSurfaceTheme, inputs: opts.theme?.inputs });
+      const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
+      for (const [role, pack] of Object.entries(opts.theme?.inputs || {}) as [string, any][]) {
+        const legacy = inputOverrides[role] || {};
+        const states = { ...legacy.states };
+        for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
+        inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
+      const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
+      root.append(postcss.parse(generateInputCss(effectiveInputTheme, bps)).nodes);
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {
-        // @ds-input(variant [tone] [size])
-        rule.walkAtRules("ds-input", (at) => {
-          const parentRule = at.parent;
-          if (!parentRule || parentRule.type !== "rule") return;
-
-          let inner = String((at.params || "").trim());
-          if (
-            (inner.startsWith('"') && inner.endsWith('"')) ||
-            (inner.startsWith("'") && inner.endsWith("'"))
-          )
-            inner = inner.slice(1, -1);
-          if (inner.startsWith("(") && inner.endsWith(")"))
-            inner = inner.slice(1, -1).trim();
-          const parts = inner
-            .split(/[\s,]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-          const known = new Set(["contained", "outlined", "underline"]);
-          let variant = (
-            parts.find((p) => known.has(p.toLowerCase())) || "contained"
-          ).toLowerCase();
-          const toneToken = parts.find(
-            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
-          );
-          const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken
-            ? (() => {
-                let fam = normalizeTokenPath(toneToken);
-                if (fam.includes("-")) fam = fam.split("-")[0];
-                return fam;
-              })()
-            : "";
-          const surfPacks: any =
-            (root as any).__surfacePacks ||
-            {};
-          const inputPacks: any =
-            (root as any).__inputPacks ||
-            (uxdslPlugin as any).__inputPacks ||
-            {};
-          // Use flat surface as base for underline variant, otherwise named variant
-          const surfVariant = variant === "underline" ? "flat" : variant;
-          const baseProps = computeSurfaceBase(
-            surfPacks,
-            surfVariant,
-            toneFamily,
-            sizeToken
-          );
-          const insert = (prop: string, value: string) => {
-            (parentRule as any).insertBefore(at, { prop, value });
-          };
-          // Normalize input element defaults
-          insert("box-sizing", "border-box");
-          // Ensure form controls participate in the typography system (otherwise many browsers apply UA fonts).
-          insert("font", "inherit");
-          insert("outline", "none");
-          insert("appearance", "none");
-          insert("width", "100%");
-          // Apply base surface props
-          Object.keys(baseProps).forEach((k) => insert(k, baseProps[k]!));
-          // Underline variant: enforce bottom-only border
-          if (variant === "underline") {
-            insert("border", "none");
-            const main = toneFamily
-              ? `palette(${toneFamily}-main)`
-              : baseProps["border"] || "1px solid currentColor";
-            insert(
-              "border-bottom",
-              typeof main === "string" && main.startsWith("palette(")
-                ? `1px solid ${main}`
-                : String(main)
-            );
-            insert("box-shadow", "none");
-          }
-          // Apply input pack extras + states
-          const pack = inputPacks[variant] ||
-            inputPacks["contained"] || { base: {}, states: {} };
-          const base = pack.base || {};
-          // caret-color
-          if (base.caret) insert("caret-color", base.caret);
-          // placeholder creates ::placeholder rule
-          if (base.placeholder) {
-            const ph = postcss.rule({
-              selector: `${(parentRule as any).selector}::placeholder`,
-            });
-            ph.append({ prop: "color", value: base.placeholder });
-            (parentRule.parent as any).insertAfter(parentRule, ph);
-          }
-          // States
-          const stateToSels: Record<string, string[]> = {
-            hover: [":hover"],
-            focus: [":focus"],
-            disabled: [":disabled", '[aria-disabled="true"]'],
-            invalid: [":invalid", '[aria-invalid="true"]'],
-          };
-          Object.keys(pack.states || {}).forEach((kRaw: string) => {
-            const decls = pack.states[kRaw] || {};
-            const key = kRaw.replace(/^&/, "").replace(/^:/, "").toLowerCase();
-            const pseudos = stateToSels[key] || [":" + key];
-            pseudos.forEach((pz) => {
-              const newRule = postcss.rule({
-                selector: `${(parentRule as any).selector}${pz}`,
-              });
-              Object.keys(decls).forEach((dk) => {
-                const dv = decls[dk];
-                if (dk === "caret")
-                  newRule.append({ prop: "caret-color", value: dv });
-                else if (dk === "placeholder") {
-                  const phr = postcss.rule({
-                    selector: `${(parentRule as any).selector}${pz}::placeholder`,
-                  });
-                  phr.append({ prop: "color", value: dv });
-                  (parentRule.parent as any).insertAfter(newRule, phr);
-                } else if (dk === "underline") {
-                  newRule.append({ prop: "border", value: "none" });
-                  newRule.append({ prop: "border-bottom", value: dv });
-                } else {
-                  newRule.append({ prop: dk, value: dv });
-                }
-              });
-              (parentRule.parent as any).insertAfter(parentRule, newRule);
-            });
-          });
+        rule.walkAtRules('ds-input', at => {
+          if (at.parent !== rule) return;
+          const { role, tone, size } = parseInputArguments(effectiveInputTheme, at.params);
+          const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size));
+          const base = generated.nodes.shift() as Rule;
+          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
+          let anchor: any = rule;
+          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
           at.remove();
         });
         // @ds-surface(variant [tone])
@@ -711,15 +601,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           if (inner.startsWith("(") && inner.endsWith(")"))
             inner = inner.slice(1, -1).trim();
           const { role: variant, tone: toneFamily, size: sizeToken } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
-          const packs: any =
-            (root as any).__surfacePacks ||
-            {};
-          const props = computeSurfaceBase(
-            packs,
-            variant,
-            toneFamily,
-            sizeToken
-          );
+          const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken);
           const insert = (prop: string, value: string) => {
             (rule as any).insertBefore(at, { prop, value });
           };

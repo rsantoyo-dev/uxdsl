@@ -218,3 +218,18 @@ tone; custom Palette assignments remain explicit. Missing/invalid roles and
 fields fail instead of silently falling back. Existing values update through
 theme CSS; changing role structure requires regenerating component CSS.
 See the Buttons docs and AGENTS.md for semantics and migration details.
+
+### Shared Input engine (main; pending npm release)
+
+Input JSON roles (`surface`, `base`, `states`), legacy `@theme`, PostCSS, runtime
+and the preview now share `src/inputs.ts`. Custom roles, tones, numeric sizes,
+responsive fields, placeholder and underline treatments use the same engine.
+Default packs are generated; process-global Input caches and demo state simulations
+are removed. Import legacy packs in each build. Existing values can update through
+managed theme CSS; structural changes require regenerated component CSS too.
+
+Migration: all configured base fields now apply; state aliases map to CSS correctly.
+Default focus/error borders use explicit semantic colors instead of ignored Border
+arguments. Placeholder/disabled colors use Palette references. Native focus outlines
+and appearance are preserved; default width remains 100%. Unknown fields and roles
+fail explicitly. See Inputs docs and AGENTS.md for supported controls and semantics.

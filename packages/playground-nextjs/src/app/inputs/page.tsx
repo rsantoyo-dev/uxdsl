@@ -1,3 +1,4 @@
+import { InputDocumentation, InputAgentGuidance } from '@/components/InputDocumentation'
 import InputDemo from '@/components/InputDemo'
 import { PageTitle } from '@/components/PageTitle'
 
@@ -9,7 +10,9 @@ export default function InputsPage() {
           title="Inputs" 
           subtitle="Form controls and data entry components."
         />
+        <InputDocumentation />
         <InputDemo />
+        <InputAgentGuidance />
       </div>
     </main>
   )
