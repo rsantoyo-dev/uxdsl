@@ -24,19 +24,18 @@ validation, process-global compiler caches, full editor schema/diagnostics and
 browser verification remain tracked in FEAT-001. Density-15's pre-existing
 reference to space-17 is preserved pending default-scale reconciliation.
 
-### Density documentation simulator
+### Density documentation examples
 
-`/docs/densities` includes an isolated iframe viewport with Auto, theme breakpoint
-buttons, a width slider and exact pixel input. It reports the actual iframe width,
-active breakpoint, inherited token rule and browser-computed padding. Card/form
-examples share the selected Density token; a `space(4)` example shows fixed spacing.
-The main Russian Doll and token cards still follow the outer browser viewport.
+`/docs/densities` explains Density with a theme JSON excerpt, a breakpoint mapping
+table, UXDSL alongside equivalent plain CSS, and two live boxes sharing Density 4.
+A third box uses fixed `space(4)` for comparison. The Russian Doll compares levels
+measured from the same content. All live examples follow the browser viewport.
 
-To check locally, start the Next.js playground and compare widths 767/768/769 and
-1279/1280/1281 with default breakpoints. At 1024px, Density 4 should report `lg`
-with the inherited `md` rule. Edit that rule and verify both examples change while
-the fixed comparison does not. Auto should follow the available documentation
-width. Custom themes may have different thresholds and spacing values.
+To check locally, start the Next.js playground and resize the browser across the
+theme breakpoints. Edit the active Density 4 rule and verify both responsive boxes
+change while the fixed comparison does not. Edits are local to the demo. The JSON
+and CSS are explicitly labeled reference examples; the live definition reflects edits.
+The former iframe viewport simulator was removed after reported interaction failures.
 
 ## Main packages
 

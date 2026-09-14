@@ -235,7 +235,7 @@ generated-artifact checks pass and `git diff --check` passes. Playground depende
 are absent locally, so source migration is not reported as browser-verified.
 No npm release, deployment or remote push has occurred.
 
-### Follow-up — Density documentation viewport simulator
+### Historical follow-up — Density documentation viewport simulator (superseded)
 
 - Added explanatory copy distinguishing fixed spacing, responsive Density and
   system-generated media queries; clarified that Russian Doll rings are comparisons,
@@ -256,3 +256,17 @@ No npm release, deployment or remote push has occurred.
   `6b16759`). This follow-up targets that same remote branch, with no main merge or
   npm release. Earlier implementation-record push/dependency statements describe
   the initial checkpoint, not the current state.
+
+### Follow-up — Explain Density directly
+
+- Removed the iframe viewport simulator after the user reported it did not work.
+- Added an English primer with a theme JSON excerpt, breakpoint/value table,
+  component UXDSL and equivalent plain CSS using responsive custom properties.
+- Added two boxes consuming the existing page-level `--density-4` variable and a
+  fixed `--space-4` comparison. The existing editor updates both responsive boxes.
+- Kept the Russian Doll and global token editor. All live examples use the actual
+  browser viewport and the shared generator; no separate simulation engine exists.
+- Clarified inheritance, configurable progressions, fixed spacing, local demo edits,
+  source-code savings versus generated CSS, and the boundary between spacing and layout.
+- Verification: root tests (12 language cases, core import tests, artifact checks)
+  and playground TypeScript pass. Browser interaction still requires manual review.

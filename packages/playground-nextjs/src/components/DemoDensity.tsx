@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import DensitySimulator from './DensitySimulator'
+import DensityExplanation from './DensityExplanation'
 
 import { 
   RussianDoll, 
@@ -217,12 +217,14 @@ export default function DemoDensity() {
           Changing that mapping updates every consumer of the token without changing component code.
         </p>
         <ol>
-          <li>Choose a Density level and inspect its spacing around the content.</li>
-          <li>Resize the preview below: the token stays the same while its applied spacing changes.</li>
-          <li>Edit the mapping: connected examples update together at the current width.</li>
+          <li>Define how a spacing token changes across breakpoints in your theme JSON.</li>
+          <li>Use that Density token wherever components should share the same responsive spacing.</li>
+          <li>Edit one mapping below and watch both connected boxes update together.</li>
         </ol>
         <p>Density is optional. Keep fixed spacing or explicit responsive values where the design needs local control. The generated media queries belong to the system; they are not removed from CSS.</p>
       </div>
+
+      <DensityExplanation definition={densityDefinitions[4]} onEdit={() => setEditingLevel(4)} />
 
       <div className="density-doll-container">
         <h4 className="demo-subtitle">Russian Doll Visualization</h4>
@@ -264,8 +266,6 @@ export default function DemoDensity() {
           </SyntaxHighlighter>
         </div>
       </div>
-
-      <DensitySimulator definitions={densityDefinitions} breakpoints={breakpoints} level={dollLevels} onEdit={() => setEditingLevel(dollLevels)} />
 
       <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
         <h3 className="demo-title">Global Density Tokens</h3>
