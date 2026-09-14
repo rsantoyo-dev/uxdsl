@@ -39,6 +39,11 @@ The former iframe viewport simulator was removed after reported interaction fail
 
 ### AI documentation guidance
 
+Breakpoints documentation reads shared engine defaults for its JSON/table and
+explains inclusive viewport thresholds, inherited property values and Density
+dependencies. It preserves the live editor and cards, labels their local spacing
+exception, and includes an AI guide for local versus shared changes.
+
 Colors and Palette pages use `ColorDocumentation` for a shared configuration
 example, UXDSL/CSS equivalents and topic-specific AI scenarios. Colors supply
 values; Palette assigns roles through explicit references or independent literals.
