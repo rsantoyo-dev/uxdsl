@@ -1,3 +1,4 @@
+import { normalizeTokenKey } from '../preset-engine';
 // Runtime helpers for UXDSL
 // - Palette: set/get/reset CSS variables consumed by palette()
 // - Breakpoints: adjust media query thresholds emitted by the UXDSL plugin at runtime
@@ -55,17 +56,7 @@ function normalizeSpacingToken(token: string | number): string {
   return raw.replace(/^space-/, '').replace(/^--space-/, '');
 }
 
-function normalize(token: string): string {
-  let s = String(token).trim();
-  if (
-    (s.startsWith('"') && s.endsWith('"')) ||
-    (s.startsWith("'") && s.endsWith("'"))
-  )
-    s = s.slice(1, -1);
-  s = s.replace(/[\.\s_]+/g, "-");
-  if (!s.includes("-")) s = `${s}-main`;
-  return s;
-}
+function normalize(token: string): string { return normalizeTokenKey('palette', token); }
 
 function aliasVarName(token: string): string {
   return `--${normalize(token)}`;
@@ -148,7 +139,7 @@ export function updateColor(
 ): void {
   if (typeof document === "undefined") return;
   const el = target(opts.scope) as HTMLElement;
-  const normToken = normalize(token);
+  const normToken = normalizeTokenKey('color', token);
   
   // Update the color token variable
   // Assuming standard UXDSL naming: --ds__color__<token>
@@ -188,7 +179,7 @@ export function getColor(token: string, opts: LoadOptions = {}): string {
   if (typeof document === "undefined") return "";
   const el = target(opts.scope) as HTMLElement;
   const cs = getComputedStyle(el);
-  const normToken = normalize(token);
+  const normToken = normalizeTokenKey('color', token);
   return cs.getPropertyValue(`--ds__color__${normToken}`).trim();
 }
 
@@ -219,7 +210,7 @@ export function resetColors(
 
   const list = Array.isArray(tokens) ? tokens : [tokens];
   list.forEach((t) => {
-    const norm = normalize(t);
+    const norm = normalizeTokenKey('color', t);
     if (norm) el.style.removeProperty(`--ds__color__${norm}`);
   });
 }

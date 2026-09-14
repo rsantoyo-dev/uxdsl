@@ -1,12 +1,12 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS } from './language';
-import { compilePresetRules, mergePresetTokens } from './preset-engine';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens } from './language';
+import { compilePresetRules, mergePresetTokens, presetValueToCss } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
-export interface SurfaceTheme extends EdgeTheme, ShadowTheme { palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
+export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
 export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = Object.freeze({
   contained: Object.freeze({ padding: 'density(2)', radius: 'radius(2)', bg: 'palette(surface-main)', color: 'palette(surface-contrast)', border: '1px solid palette(surface-dark)', shadow: 'shadow(1)' }),
   outlined: Object.freeze({ padding: 'density(2)', radius: 'radius(2)', bg: 'transparent', color: 'palette(surface-contrast)', border: '1px solid palette(neutral-main)', shadow: 'none' }),
@@ -28,14 +28,9 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
   const parsed = valueParser(value);
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
   parsed.walk(node => {
-    if (node.type === 'function' && ['palette', 'color'].includes(node.value)) {
-      const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());
-      if (args.length > 1) {
-        const key = args[0].replace(/^(['"])(.*)\1$/, '$2'), alpha = Number(args[1]);
-        if (args.length !== 2 || !/^[\w.-]+$/.test(key) || !args[1] || !Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error('UXD_SURFACE_COLOR: Expected a token and alpha between 0 and 1.');
-        Object.assign(node, { type: 'word', value: `color-mix(in srgb, var(--ds__${node.value}__${key.replace(/\./g, '-')}) ${alpha * 100}%, transparent)` });
-        return false;
-      }
+    if (node.type === 'function' && node.value === 'density') {
+      const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+      if (!Object.prototype.hasOwnProperty.call(getDensityTokens(theme), key)) throw new Error(`UXD_DENSITY_REFERENCE: Undefined density ${key}.`);
     }
     if (node.type !== 'function' || !['radius', 'rounded', 'border', 'shadow', 'elevation'].includes(node.value)) return;
     const kind = node.value === 'rounded' ? 'radius' : node.value === 'elevation' ? 'shadow' : node.value;
@@ -47,7 +42,7 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
     Object.assign(node, { type: 'word', value: keyword || `var(--${kind}-${key})` });
     return false;
   });
-  return parsed.toString();
+  return presetValueToCss(parsed.toString(), 'UXD_SURFACE');
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
@@ -81,7 +76,7 @@ export function surfaceDeclarations(theme: SurfaceTheme, role = 'contained', ton
     }
   }
   if (size) {
-    if (!/^\d+$/.test(size) || !Object.prototype.hasOwnProperty.call(getEdgeTokens(theme).radii, size)) throw new Error(`UXD_SURFACE_SIZE: Undefined radius for size ${size}.`);
+    if (!/^\d+$/.test(size) || (!Object.prototype.hasOwnProperty.call(getEdgeTokens(theme).radii, size) || !Object.prototype.hasOwnProperty.call(getDensityTokens(theme), size))) throw new Error(`UXD_SURFACE_SIZE: Size ${size} requires both Density and Radius tokens.`);
     result.padding = `var(--density-${size})`; result['border-radius'] = `var(--radius-${size})`;
   }
   return result;

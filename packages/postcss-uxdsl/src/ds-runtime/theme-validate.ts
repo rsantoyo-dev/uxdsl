@@ -1,3 +1,4 @@
+import { compileDensityRules, getDensityTokens } from '../language';
 import { compileInputRules } from '../inputs';
 import { compileButtonRules } from '../buttons';
 import { compileSurfaceRules } from '../surfaces';
@@ -303,6 +304,8 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     catch (cause) { errors.push({ path: 'typography_details', message: cause instanceof Error ? cause.message : String(cause) }); }
   }
 
+  try { compileDensityRules(getDensityTokens(theme), bps); }
+  catch (cause) { errors.push({ path: 'densities', message: cause instanceof Error ? cause.message : String(cause) }); }
   try { compileInputRules(theme, bps); }
   catch (cause) { errors.push({ path: 'inputs', message: cause instanceof Error ? cause.message : String(cause) }); }
   try { compileButtonRules(theme, bps); }

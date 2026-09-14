@@ -233,3 +233,13 @@ Default focus/error borders use explicit semantic colors instead of ignored Bord
 arguments. Placeholder/disabled colors use Palette references. Native focus outlines
 and appearance are preserved; default width remains 100%. Unknown fields and roles
 fail explicitly. See Inputs docs and AGENTS.md for supported controls and semantics.
+
+### Unified engine audit (main; pending npm release)
+
+Whole-theme build/runtime parity and compilation isolation now have regression
+tests. Density JSON/defaults, foundation variables and modes, token normalization
+and responsive values are shared; Buttons and Inputs reuse one control engine.
+The current Density demo uses the shared parser and scoped theme CSS. See
+[the audit](docs/architecture/unified-engine-audit.md) for ownership, migration,
+verification scope and explicit limits, including the historical playground and
+schema-aware editor work.

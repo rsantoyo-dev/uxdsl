@@ -145,7 +145,7 @@
   .spacing-card__input {
     width: 100%;
     max-width: 120px;
-    padding: density(0.5) density(1);
+    padding: space(1) density(1);
     background: transparent;
     border: 1px solid palette(neutral-main);
     border-radius: radius(1);
@@ -176,7 +176,7 @@
     height: 1px;
     background: palette(neutral-light, 0.5);
     width: 100%;
-    margin: density(0.5) 0;
+    margin: space(1) 0;
   }
 
   @media (min-width: 768px) {

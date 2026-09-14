@@ -1,3 +1,4 @@
+import { generateFoundationCss } from './foundations';
 import { getInputTokens, generateInputCss, inputComponentCss, parseInputArguments } from './inputs';
 import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
@@ -13,7 +14,8 @@ import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { compileDensityRules, resolveResponsiveValue } from './language';
+import { presetValueToCss } from './preset-engine';
+import { compileDensityRules, resolveResponsiveValue, getDensityTokens } from './language';
 import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
@@ -74,32 +76,7 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
   return { map, ordered };
 }
 
-function normalizeTokenPath(input: string): string {
-  if (!input) return "";
-  let s = String(input).trim();
-  // Strip wrapping quotes
-  if (
-    (s.startsWith('"') && s.endsWith('"')) ||
-    (s.startsWith("'") && s.endsWith("'"))
-  ) {
-    s = s.slice(1, -1);
-  }
-  // Normalize separators to hyphen
-  s = s.replace(/[\.\s_]+/g, "-");
-  // Default shade to '-main' if only a family name is provided
-  if (!s.includes("-")) s = `${s}-main`;
-  return s;
-}
-
 function uxdslPlugin(opts: UxDslOptions = {}) {
-  // Global density token cache across files processed in this process.
-  // Allows defaults to be provided from a separate @theme file.
-  const GLOBAL_DENSITY_TOKENS: Record<string, string> =
-    (uxdslPlugin as any).__density || Object.create(null);
-  // Ensure the function object holds the same reference so subsequent
-  // plugin instances see the accumulated tokens.
-  (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
-
   const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
@@ -115,31 +92,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root) {
       if (opts.theme) {
-        const themeDecls: Declaration[] = [];
-        const addVar = (prop: string, value: string) => {
-           themeDecls.push(postcss.decl({ prop: `--${prop}`, value }));
-        };
-        if (opts.theme.palette) {
-            Object.entries(opts.theme.palette).forEach(([key, val]) => {
-                if (typeof val === 'object' && val !== null) {
-                    Object.entries(val).forEach(([subKey, subVal]) => {
-                        addVar(`ds__palette__${key}-${subKey}`, String(subVal));
-                    });
-                } else {
-                    addVar(`ds__palette__${key}`, String(val));
-                }
-            });
-        }
-        if (opts.theme.spacing) {
-             Object.entries(opts.theme.spacing).forEach(([key, val]) => {
-                addVar(`space-${key}`, String(val));
-            });
-        }
-        if (themeDecls.length > 0) {
-            const rootRule = postcss.rule({ selector: ':root' });
-            rootRule.append(themeDecls);
-            root.append(rootRule);
-        }
+        root.append(postcss.parse(generateFoundationCss(opts.theme)).nodes);
         root.append(postcss.parse(generateTypographyCss(opts.theme, bps)).nodes);
 
         if (opts.theme.fonts) {
@@ -384,13 +337,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         at.walkDecls((decl) => {
           const prop = String((decl as any).prop || "").trim();
           // Accept only generic: density-<n>
-          const m = prop.match(/^density-(\d+)$/);
+          const m = prop.match(/^density-([\w-]+)$/);
           if (m) {
             const n = m[1];
             const key = `${n}`;
             const val = String((decl as any).value || "").trim();
             densityTokens[key] = val;
-            GLOBAL_DENSITY_TOKENS[key] = val;
           }
           // radius-<n>
           const r = prop.match(/^radius-(\d+)$/);
@@ -538,8 +490,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const edgeTokens = getEdgeTokens(edgeTheme);
       root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
+      const effectiveDensities = getDensityTokens(opts.theme, densityTokens);
       // Generate CSS variables for density tokens
-      for (const compiled of compileDensityRules(GLOBAL_DENSITY_TOKENS, bps, rewriteFuncs)) {
+      for (const compiled of compileDensityRules(effectiveDensities, bps)) {
         const rule = postcss.rule({ selector: ':root' });
         for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
         if (compiled.minWidth === null) root.prepend(rule);
@@ -554,7 +507,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const legacySurfaces = (root as any).__surfacePacks || {};
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
       for (const [role, style] of Object.entries(opts.theme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
-      const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides };
+      const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
       root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: opts.theme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
@@ -655,19 +608,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const innerText = valueParser.stringify(node.nodes).trim();
 
             if (node.value === "density") {
-              let idx = innerText;
-              if (
-                (idx.startsWith('"') && idx.endsWith('"')) ||
-                (idx.startsWith("'") && idx.endsWith("'"))
-              )
-                idx = idx.slice(1, -1);
-              const base = parseInt(idx.trim(), 10);
-              if (!Number.isNaN(base) && ordered.length > 0) {
-                // Use CSS variable for density
-                node.type = "word";
-                node.value = `var(--density-${base})`;
-                return;
-              }
+              const key = innerText.trim().replace(/^(['"])(.*)\1$/, '$2');
+              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) throw new Error(`UXD_DENSITY_REFERENCE: Invalid key ${key}; define and use a token key without decimal coercion.`);
+              node.type = 'word'; node.value = `var(--density-${key})`; return;
             } else {
               const rawVals = innerText
                 .split(",")
@@ -723,52 +666,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             node.value = `var(--border-${key})`;
             return;
           }
-          if (node.type === "function" && node.value === "palette") {
-            const inner = valueParser.stringify(node.nodes).trim();
-            // Support palette(token[, alpha]) where alpha is 0..1
-            const parts = inner
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            const token = parts[0] || "";
-            const normalized = normalizeTokenPath(token);
-            const alphaRaw = parts[1];
-            if (alphaRaw != null && alphaRaw !== "") {
-              const a = Math.max(0, Math.min(1, Number(alphaRaw)));
-              const pct = Math.round(a * 100);
-              node.type = "word";
-              node.value = `color-mix(in srgb, ${toVar(normalized)} ${pct}%, transparent)`;
-              return;
-            }
-            node.type = "word";
-            node.value = toVar(normalized);
-            return;
-          }
-          if (node.type === "function" && node.value === "color") {
-            const inner = valueParser.stringify(node.nodes).trim();
-            const normalized = normalizeTokenPath(inner);
-            node.type = "word";
-            node.value = toColorVar(normalized);
-            return;
-          }
-          if (node.type === "function" && node.value === "space") {
-            const inner = valueParser.stringify(node.nodes).trim();
-            let idx = inner;
-            if (
-              (idx.startsWith('"') && idx.endsWith('"')) ||
-              (idx.startsWith("'") && idx.endsWith("'"))
-            ) {
-              idx = idx.slice(1, -1);
-            }
-            const numLike = idx.trim();
-            if (/^\d{1,3}$/.test(numLike)) {
-              node.type = "word";
-              node.value = toSpaceVar(numLike);
-              return;
-            }
+          if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {
+            node.type = 'word';
+            node.value = presetValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`, 'UXD_TOKEN', { palette: toVar, color: toColorVar, space: toSpaceVar });
+            return false;
           }
         });
-        return p.toString().replace(/\s+/g, " ").trim();
+        return p.toString().trim();
       }
 
       // Walk declarations to handle palette()/space() and responsive bp(...) values
@@ -779,36 +683,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
         // Phase 2: extract responsive values
         const parsed = valueParser(phase1Text);
-        const bpValues: Array<{ bp: string; text: string; px?: number }> = [];
         let hasResponsive = false;
-        parsed.walk((node) => {
-          const n: any = node as any;
-          if (n.type === "function" && bpNames.has(n.value)) {
-            hasResponsive = true;
-            const bp = n.value as string;
-            // Ensure functions inside the responsive value are also normalized
-            const raw = valueParser.stringify(n.nodes).trim();
-            const resolvedRaw = resolveValueForBp(raw, bp);
-            const valueString = rewriteFuncs(resolvedRaw, (decl as any).prop);
-            bpValues.push({ bp, text: valueString });
-            n.type = "word";
-            n.value = "";
-          }
-        });
-
-        if (!hasResponsive) {
-          decl.value = parsed.toString().replace(/\s+/g, " ").trim();
-          return;
-        }
-
-        const present = bpValues
-          .map((p) => ({ ...p, px: bps[p.bp] }))
-          .sort((a, b) => a.px! - b.px!);
-        const base = present[0];
-        const others = present.slice(1);
-
-        const nonBp = parsed.toString().replace(/\s+/g, " ").trim();
-        const baseOut = base && base.text ? rewriteFuncs(base.text) : nonBp;
+        parsed.walk(node => { if (node.type === 'function' && bpNames.has(node.value)) hasResponsive = true; });
+        if (!hasResponsive) { decl.value = parsed.toString().trim(); return; }
+        const resolved = ordered.map(({name: bp}) => ({ bp, text: rewriteFuncs(resolveResponsiveValue(phase1Text, bp, bps)) }));
+        const baseOut = resolved[0]?.text || '';
+        const others = resolved.filter((entry, index) => index > 0 && entry.text && entry.text !== resolved[index - 1].text);
         decl.value = baseOut;
 
         const parentNode = decl.parent;
@@ -840,6 +720,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               rootFallback.append(at as any);
             }
           });
+          if (!baseOut) decl.remove();
           return;
         }
 
@@ -876,6 +757,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           }
           targetRule.append({ prop: decl.prop, value: rewriteFuncs(text) });
         });
+        if (!baseOut) decl.remove();
       });
 
       // $var substitutions across all declarations
@@ -892,66 +774,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         });
       }
 
-      // Final safety pass: resolve any remaining palette()/space() calls that
-      // might appear in non-responsive declarations or media clones.
-      root.walkDecls((decl) => {
-        if (typeof decl.value !== "string") return;
-        const parsed = valueParser(decl.value);
-        let changed = false;
-        parsed.walk((node) => {
-          const n: any = node as any;
-          if (n.type === "function" && n.value === "palette") {
-            const inner = valueParser.stringify(n.nodes).trim();
-            const parts = inner
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-            const token = parts[0] || "";
-            const normalized = normalizeTokenPath(token);
-            const alphaRaw = parts[1];
-            if (alphaRaw != null && alphaRaw !== "") {
-              const a = Math.max(0, Math.min(1, Number(alphaRaw)));
-              const pct = Math.round(a * 100);
-              n.type = "word";
-              n.value = `color-mix(in srgb, ${toVar(normalized)} ${pct}%, transparent)`;
-              changed = true;
-              return;
-            }
-            n.type = "word";
-            n.value = toVar(normalized);
-            changed = true;
-            return;
-          }
-          if (n.type === "function" && n.value === "color") {
-            const inner = valueParser.stringify(n.nodes).trim();
-            const normalized = normalizeTokenPath(inner);
-            n.type = "word";
-            n.value = toColorVar(normalized);
-            changed = true;
-            return;
-          }
-          if (n.type === "function" && n.value === "space") {
-            const inner = valueParser.stringify(n.nodes).trim();
-            let idx = inner;
-            if (
-              (idx.startsWith('"') && idx.endsWith('"')) ||
-              (idx.startsWith("'") && idx.endsWith("'"))
-            ) {
-              idx = idx.slice(1, -1);
-            }
-            const numLike = idx.trim();
-            if (/^\d{1,3}$/.test(numLike)) {
-              n.type = "word";
-              n.value = toSpaceVar(numLike);
-              changed = true;
-              return;
-            }
-          }
-        });
-        if (changed) {
-          decl.value = parsed.toString().replace(/\s+/g, " ").trim();
-        }
-      });
+      // Reuse the same resolver after substitutions and media cloning.
+      root.walkDecls(decl => { if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value); });
     },
   };
 }

@@ -1,21 +1,20 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
+import { useBreakpoints } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
+import { responsiveEntries, resolveResponsiveValue, inspectResponsiveValue, getDensityTokens } from 'postcss-uxdsl/language'
+import { useTheme } from './ThemeContext'
 import DensityExplanation from './DensityExplanation'
 
 import { 
   RussianDoll, 
   generateDensityCss, 
   parseDensityValue, 
-  DEFAULT_DENSITIES,
   MAX_LAYERS 
 } from '@/components/RussianDoll'
 
-// Order for display and logic
-const BP_ORDER: BreakpointKey[] = ['xs', 'sm', 'md', 'lg', 'xl']
 
 function EditDensityDialog({
   level,
@@ -28,45 +27,15 @@ function EditDensityDialog({
   onSave: (def: string) => void
   onClose: () => void
 }) {
+  const { breakpoints } = useBreakpoints()
+  const bpOrder = Object.keys(breakpoints).sort((a,b) => breakpoints[a] - breakpoints[b])
   const [breakpointValues, setBreakpointValues] = useState<Record<string, string>>({})
-
-  useEffect(() => {
-    const values: Record<string, string> = {}
-    if (!initialDefinition) {
-      setBreakpointValues({})
-      return
-    }
-
-    const parts = initialDefinition.split(/\s+(?![^(]*\))/g).filter(Boolean)
-    let hasMatches = false
-    
-    parts.forEach(part => {
-      const openParen = part.indexOf('(')
-      const closeParen = part.lastIndexOf(')')
-      
-      if (openParen > 0 && closeParen === part.length - 1) {
-        const bp = part.substring(0, openParen)
-        // Check if it's a valid breakpoint to distinguish from things like calc() or space()
-        if (BP_ORDER.includes(bp as BreakpointKey)) {
-          const val = part.substring(openParen + 1, closeParen)
-          values[bp] = val
-          hasMatches = true
-        }
-      }
-    })
-
-    // If no responsive pattern found, treat the whole string as the 'xs' (base) value
-    if (!hasMatches && initialDefinition.trim()) {
-      values['xs'] = initialDefinition.trim()
-    }
-
-    setBreakpointValues(values)
-  }, [initialDefinition])
+  useEffect(() => { setBreakpointValues(responsiveEntries(initialDefinition || '', breakpoints)) }, [initialDefinition, breakpoints])
 
   const handleSave = () => {
     const parts: string[] = []
     
-    BP_ORDER.forEach(bp => {
+    bpOrder.forEach(bp => {
       const rawVal = breakpointValues[bp]
       if (!rawVal || !rawVal.trim()) return
       parts.push(`${bp}(${rawVal.trim()})`)
@@ -87,7 +56,7 @@ function EditDensityDialog({
         <h3 style={{ marginTop: 0 }}>Edit Density {level}</h3>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {BP_ORDER.map(bp => (
+          {bpOrder.map(bp => (
             <label key={bp} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
               <span style={{ width: '30px', fontWeight: 'bold', opacity: 0.7 }}>{bp}</span>
               <input 
@@ -115,44 +84,13 @@ function EditDensityDialog({
 
 
 
-function parseDefinitionForDisplay(def: string) {
-  const parts = def.split(/\s+(?![^(]*\))/g).filter(Boolean)
-  const result: Record<string, string> = {}
-  let hasMatches = false
-
-  parts.forEach(part => {
-    const openParen = part.indexOf('(')
-    const closeParen = part.lastIndexOf(')')
-    
-    if (openParen > 0 && closeParen === part.length - 1) {
-      const bp = part.substring(0, openParen)
-      if (BP_ORDER.includes(bp as BreakpointKey)) {
-        const val = part.substring(openParen + 1, closeParen)
-        result[bp] = val
-        hasMatches = true
-      }
-    }
-  })
-
-  if (!hasMatches && def.trim()) {
-    result['xs'] = def.trim()
-  }
-
-  return result
-}
-
 function useBreakpoint(breakpoints: Record<string, number>) {
   const [bp, setBp] = useState('')
 
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth
-      let current = 'xs'
-      for (const [key, val] of Object.entries(breakpoints)) {
-        if (width >= val) {
-          current = key
-        }
-      }
+      const current = inspectResponsiveValue('', width, breakpoints).active || ''
       setBp(current)
     }
     
@@ -164,28 +102,17 @@ function useBreakpoint(breakpoints: Record<string, number>) {
   return bp
 }
 
-function getActiveDefinition(def: string, currentBp: string) {
-  const parsed = parseDefinitionForDisplay(def)
-  let activeVal = parsed['xs'] || ''
-  
-  const currentBpIndex = BP_ORDER.indexOf(currentBp as BreakpointKey)
-  
-  for (let i = 0; i <= currentBpIndex; i++) {
-    const bp = BP_ORDER[i]
-    if (parsed[bp]) {
-      activeVal = parsed[bp]
-    }
-  }
-  
-  return activeVal
-}
-
 export default function DemoDensity() {
   const { breakpoints } = useBreakpoints()
+  const { activeThemeData } = useTheme()
+  const bpOrder = Object.keys(breakpoints).sort((a,b) => breakpoints[a]-breakpoints[b])
+  const [error, setError] = useState('')
   const [dollLevels, setDollLevels] = useState(4)
-  const [densityDefinitions, setDensityDefinitions] = useState(DEFAULT_DENSITIES)
+  const [densityDefinitions, setDensityDefinitions] = useState(() => getDensityTokens(activeThemeData))
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
   const currentBp = useBreakpoint(breakpoints)
+
+  useEffect(() => { setDensityDefinitions(getDensityTokens(activeThemeData)); setError('') }, [activeThemeData])
 
   const densities = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
 
@@ -197,18 +124,23 @@ export default function DemoDensity() {
       styleEl.id = styleId
       document.head.appendChild(styleEl)
     }
-    styleEl.textContent = generateDensityCss(densityDefinitions, breakpoints)
+    styleEl.textContent = generateDensityCss(densityDefinitions, breakpoints, '#DemoDensity')
+    return () => styleEl?.remove()
   }, [densityDefinitions, breakpoints])
 
   const handleSaveDefinition = (def: string) => {
     if (editingLevel !== null) {
-      setDensityDefinitions(prev => ({ ...prev, [editingLevel]: def }))
-      setEditingLevel(null)
+      try {
+        const next = { ...densityDefinitions, [editingLevel]: def }
+        generateDensityCss(next, breakpoints)
+        setDensityDefinitions(next); setEditingLevel(null); setError('')
+      } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
     }
   }
 
   return (
     <section id="DemoDensity" className="density-section demo-section">
+      {error && <p role="alert">{error}</p>}
       <div className="density-header">
         <p className="demo-subtitle">
           Spacing defines a value; Density defines how spacing responds to the viewport.
@@ -279,19 +211,19 @@ export default function DemoDensity() {
           {densities.map((s) => {
             const def = densityDefinitions[s]
             if (!def) return null
-            const parsedDef = parseDefinitionForDisplay(def)
+            const parsedDef = responsiveEntries(def, breakpoints)
             // Sort breakpoints for consistent rendering order
             const sortedBps = Object.keys(parsedDef).sort((a, b) => {
-              return BP_ORDER.indexOf(a as BreakpointKey) - BP_ORDER.indexOf(b as BreakpointKey)
+              return bpOrder.indexOf(a) - bpOrder.indexOf(b)
             })
 
-            const activeDef = getActiveDefinition(densityDefinitions[s], currentBp)
+            const activeDef = resolveResponsiveValue(densityDefinitions[s], currentBp, breakpoints)
 
             // Determine active breakpoint key
-            const currentBpIndex = BP_ORDER.indexOf(currentBp as BreakpointKey)
+            const currentBpIndex = bpOrder.indexOf(currentBp)
             let activeBpKey = 'xs'
             for (const bp of sortedBps) {
-              if (BP_ORDER.indexOf(bp as BreakpointKey) <= currentBpIndex) {
+              if (bpOrder.indexOf(bp) <= currentBpIndex) {
                 activeBpKey = bp
               }
             }

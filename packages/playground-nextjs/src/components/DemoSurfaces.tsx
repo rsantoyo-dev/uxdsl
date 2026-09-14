@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { generateSurfaceCss, getSurfaceTokens, inspectSurfaceTheme, surfaceDeclarations, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
-import { generateDensityCss, DEFAULT_BREAKPOINTS, DEFAULT_DENSITIES } from 'postcss-uxdsl/ds-runtime'
+import { generateDensityCss, DEFAULT_BREAKPOINTS, getDensityTokens } from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
 
 export default function DemoSurfaces() {
@@ -15,7 +15,7 @@ export default function DemoSurfaces() {
   const [viewport, setViewport] = useState(0)
   const theme = useMemo(() => ({ ...activeThemeData, ...overrides }), [activeThemeData, overrides])
   const tokens = useMemo(() => getSurfaceTokens(theme), [theme])
-  const css = useMemo(() => [generateDensityCss({ ...DEFAULT_DENSITIES, ...theme.densities }, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, '#DemoSurfaces'), generateEdgeCss(theme, undefined, '#DemoSurfaces'), generateShadowCss(theme, undefined, '#DemoSurfaces'), generateSurfaceCss(theme, undefined, '#DemoSurfaces')].join('\n'), [theme])
+  const css = useMemo(() => [generateDensityCss(getDensityTokens(theme), { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, '#DemoSurfaces'), generateEdgeCss(theme, undefined, '#DemoSurfaces'), generateShadowCss(theme, undefined, '#DemoSurfaces'), generateSurfaceCss(theme, undefined, '#DemoSurfaces')].join('\n'), [theme])
   const values = useMemo(() => inspectSurfaceTheme(theme, viewport), [theme, viewport])
   useEffect(() => {
     setOverrides(null)
@@ -34,7 +34,7 @@ export default function DemoSurfaces() {
       const next = JSON.parse(draft)
       if (!next || typeof next !== 'object' || Array.isArray(next)) throw new Error('Expected a theme object.')
       const candidate = { ...activeThemeData, ...next }
-      generateDensityCss({ ...DEFAULT_DENSITIES, ...candidate.densities }, { ...DEFAULT_BREAKPOINTS, ...candidate.breakpoints })
+      generateDensityCss(getDensityTokens(candidate), { ...DEFAULT_BREAKPOINTS, ...candidate.breakpoints })
       for (const key of Object.keys(getSurfaceTokens(candidate))) surfaceDeclarations(candidate, key, tone, size)
       generateSurfaceCss(candidate)
       generateEdgeCss({ ...activeThemeData, ...next })
@@ -63,7 +63,7 @@ export default function DemoSurfaces() {
       <label htmlFor="surface-size">Size (Density and Radius)</label>
       <select id="surface-size" value={size} onChange={e => setSize(e.target.value)}>
         <option value="">Use configured Surface size</option>
-        {Object.keys(getEdgeTokens(theme).radii).filter(key => /^\d+$/.test(key) && ({ ...DEFAULT_DENSITIES, ...theme.densities })[key]).map(key => <option key={key}>{key}</option>)}
+        {Object.keys(getEdgeTokens(theme).radii).filter(key => /^\d+$/.test(key) && (getDensityTokens(theme))[key]).map(key => <option key={key}>{key}</option>)}
       </select>
       <h3>Surface presets</h3>
       <div className="surfaces-grid">{Object.keys(tokens).map(key => {

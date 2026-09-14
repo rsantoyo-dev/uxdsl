@@ -38,8 +38,8 @@
   }
 
   .logo-container {
-    width: density(30); /* Changed from density(32) to density(30) */
-    height: density(30); /* Changed from density(32) to density(30) */
+    width: 7.5rem; /* Decorative shape size; not shared spacing. */
+    height: 7.5rem;
     display: grid;
     place-items: center;
     

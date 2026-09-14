@@ -1,14 +1,29 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, resolveResponsiveValue } from './language';
+import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression } from './language';
 
-export function presetValueToCss(input: string, errorPrefix = 'UXD_PRESET'): string {
+export function normalizeTokenKey(kind: string, input: string): string {
+  let key = input.trim().replace(/^(['"])(.*)\1$/, '$2');
+  if (!/^[\w.-]+$/.test(key)) throw new Error('UXD_TOKEN_KEY: Expected a token key.');
+  if (kind === 'palette' || kind === 'color') key = key.replace(/\./g, '-');
+  if (kind === 'palette' && !key.includes('-')) key += '-main';
+  return key;
+}
+
+export function presetValueToCss(input: string, errorPrefix = 'UXD_PRESET', serializers: Partial<Record<string, (key: string) => string>> = {}): string {
   const parsed = valueParser(input);
   parsed.walk(node => {
     if (node.type !== 'function' || !['space', 'density', 'color', 'palette'].includes(node.value)) return;
-    const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-    if (!/^[\w.-]+$/.test(key)) throw new Error(`${errorPrefix}_TOKEN: Expected a token key.`);
+    if (node.value === 'color' && /^(srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s/.test(valueParser.stringify(node.nodes).trim())) return;
+    const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());
+    const key = normalizeTokenKey(node.value, args[0]);
     const prefix = node.value === 'color' || node.value === 'palette' ? `ds__${node.value}__` : `${node.value}-`;
-    Object.assign(node, { type: 'word', value: `var(--${prefix}${key.replace(/\./g, '-')})` });
+    let value = serializers[node.value]?.(key) || `var(--${prefix}${key})`;
+    if (args.length > 1) {
+      const alpha = Number(args[1]);
+      if (!['palette', 'color'].includes(node.value) || args.length !== 2 || !args[1] || !Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error(`${errorPrefix}_ALPHA: Expected a number between 0 and 1.`);
+      value = `color-mix(in srgb, ${value} ${alpha * 100}%, transparent)`;
+    }
+    Object.assign(node, { type: 'word', value });
     return false;
   });
   return parsed.toString();
@@ -24,15 +39,11 @@ export function mergePresetTokens(defaults: Record<string, string>, input: Recor
 }
 
 export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix = 'UXD_PRESET') {
-  const ordered = Object.entries(breakpoints).sort((a, b) => a[1] - b[1]);
-  if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([, w]) => !Number.isFinite(w) || w < 0) || new Set(ordered.map(([, w]) => w)).size !== ordered.length) throw new Error(`${errorPrefix}_BP: Expected distinct non-negative widths and a zero-width base.`);
+  const ordered = validateBreakpoints(breakpoints, `${errorPrefix}_BP`);
   const rules = ordered.map(([breakpoint, width], i) => ({ breakpoint, minWidth: i ? width : null as number | null, values: {} as Record<string, string> }));
   for (const family of Object.keys(tokens)) {
     for (const [key, expression] of Object.entries(tokens[family])) {
-      // Unknown outer functions must not silently become invalid responsive CSS.
-      for (const node of valueParser(expression).nodes) {
-        if (node.type === 'function' && !(node.value in breakpoints) && !['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env', 'scale', 'scaleX', 'scaleY', 'translate', 'translateX', 'translateY', 'rotate', 'matrix'].includes(node.value)) throw new Error(`${errorPrefix}_BP: Unknown function or breakpoint ${node.value}.`);
-      }
+      validateResponsiveExpression(expression, breakpoints, `${errorPrefix}_BP`);
       let previous: string | undefined;
       ordered.forEach(([bp], i) => {
         const value = presetValueToCss(resolveResponsiveValue(expression, bp, breakpoints), errorPrefix);

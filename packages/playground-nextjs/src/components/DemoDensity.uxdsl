@@ -148,7 +148,7 @@
   .density-card__header-col {
     display: flex;
     flex-direction: column;
-    gap: density(0.5);
+    gap: space(1);
   }
 
   .density-card__header-col--main {

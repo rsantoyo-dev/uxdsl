@@ -34,7 +34,7 @@
 
 .home-demos__toggle {
   @ds-button (flat secondary 1);
-  min-width: density(24);
+  min-width: 6rem; /* Local control width, outside the Density spacing scale. */
   opacity: 0.85;
 
   &:hover {

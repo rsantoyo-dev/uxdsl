@@ -6,17 +6,45 @@ export const DEFAULT_BREAKPOINTS: BreakpointMap = Object.freeze({
   xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280,
 });
 
-// Compatibility defaults; density-15 still references space-17 as before.
-// Reconciliation of that existing dangling reference is tracked in ENG-00.
+export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID') {
+  const ordered = Object.entries(bps).sort((a,b) => a[1]-b[1]);
+  if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([name,width]) => !/^[a-z][\w-]*$/i.test(name) || !Number.isFinite(width) || width < 0) || new Set(ordered.map(([,width]) => width)).size !== ordered.length) throw new Error(`${prefix}: Expected named, distinct non-negative widths and a zero-width base.`);
+  return ordered;
+}
+const NATIVE_VALUE_FUNCTIONS = ['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env', 'scale', 'scaleX', 'scaleY', 'translate', 'translateX', 'translateY', 'rotate', 'matrix'];
+export function validateResponsiveExpression(expression: string, bps: BreakpointMap, prefix = 'UXD_VALUE') {
+  if (typeof expression !== 'string' || !expression.trim() || /[;{}]/.test(expression)) throw new Error(`${prefix}: Expected a nonempty value.`);
+  const parsed = valueParser(expression);
+  parsed.walk(node => { if ((node as any).unclosed) throw new Error(`${prefix}: Unclosed expression.`); });
+  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !NATIVE_VALUE_FUNCTIONS.includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
+}
+
+// Density defaults stay inside the shipped 1–16 Spacing scale.
 export const DEFAULT_DENSITIES: Record<number, string> = Object.freeze(
-  Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1,
-    `xs(space(${i + 1})) md(space(${i + 2})) xl(space(${i + 3}))`])),
+  { 0: '0', ...Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1,
+    `xs(space(${i + 1})) md(space(${i + 2})) xl(space(${Math.min(i + 3, 16)}))`])) },
 );
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
 export const LANGUAGE_COMPLETIONS = {
-  directives: ['theme', 'ds-surface', 'ds-typo', 'ds-button'],
-  functions: ['palette', 'radius', 'density', 'shadow', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
+  directives: ['theme', 'ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
+  functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
+
+/** Effective Density map is local to a compilation: defaults < legacy < JSON. */
+export function getDensityTokens(theme: { densities?: Record<string, string> } = {}, legacy: Record<string, string> = {}): Record<string, string> {
+  if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw new Error('UXD_DENSITY_MAP: Expected an object.');
+  const tokens = { ...DEFAULT_DENSITIES, ...legacy, ...theme.densities };
+  for (const [key, value] of Object.entries(tokens)) if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw new Error(`UXD_DENSITY_VALUE: Invalid ${key}.`);
+  return tokens;
+}
+
+/** Editor/display adapter: the same parser reads configured responsive groups. */
+export function responsiveEntries(input: string, bps: BreakpointMap): Record<string, string> {
+  const entries: Record<string, string> = {};
+  for (const node of valueParser(input).nodes) if (node.type === 'function' && Object.prototype.hasOwnProperty.call(bps, node.value)) entries[node.value] = valueParser.stringify(node.nodes).trim();
+  if (!Object.keys(entries).length) entries[Object.keys(bps).sort((a,b) => bps[a]-bps[b])[0]] = input.trim();
+  return entries;
+}
 
 /** Preserve native CSS and token references; select responsive groups by width. */
 export function resolveResponsiveValue(input: string, target: string, bps: BreakpointMap): string {
@@ -30,11 +58,13 @@ export function resolveResponsiveValue(input: string, target: string, bps: Break
     }
     const group = [node];
     let j = i + 1;
+    let lastFunction = i;
     while (j < nodes.length) {
       const next = nodes[j];
       if (next.type === 'space') { j++; continue; }
-      if (next.type !== 'function' || !Object.prototype.hasOwnProperty.call(bps, next.value)) break;
+      if (next.type !== 'function' || !Object.prototype.hasOwnProperty.call(bps, next.value) || group.some(entry => entry.value === next.value)) break;
       group.push(next);
+      lastFunction = j;
       j++;
     }
     let best: typeof node | undefined;
@@ -44,7 +74,7 @@ export function resolveResponsiveValue(input: string, target: string, bps: Break
       if (px <= bps[target] && px > bestPx) { best = entry; bestPx = px; }
     }
     if (best) output.push({ type: 'word', value: resolveResponsiveValue(valueParser.stringify(best.nodes).trim(), target, bps) });
-    i = j - 1;
+    i = lastFunction;
   }
   return valueParser.stringify(output).trim();
 }
@@ -82,15 +112,15 @@ export function compileDensityRules(
   breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS,
   rewrite: (value: string) => string = spacingValueToCss,
 ): DensityRule[] {
-  const ordered = Object.entries(breakpoints).sort((a, b) => a[1] - b[1]);
-  if (!ordered.length || ordered.some(([, px]) => !Number.isFinite(px) || px < 0)) {
-    throw new Error('UXD_BP_INVALID: Breakpoints must contain finite non-negative widths.');
-  }
+  const ordered = validateBreakpoints(breakpoints);
   const rules: DensityRule[] = ordered.map(([breakpoint, px], i) => ({ breakpoint, minWidth: i ? px : null, values: {} }));
   for (const [key, expression] of Object.entries(definitions)) {
+    if (!/^[\w-]+$/.test(key)) throw new Error(`UXD_DENSITY_KEY: Invalid ${key}.`);
+    validateResponsiveExpression(expression, breakpoints, 'UXD_DENSITY_VALUE');
     let previous: string | undefined;
     ordered.forEach(([bp], i) => {
       const value = rewrite(resolveResponsiveValue(expression, bp, breakpoints));
+      if (i === 0 && !value) throw new Error(`UXD_DENSITY_BASE: ${key} needs a base value.`);
       if (i === 0 || value !== previous) rules[i].values[`--density-${key}`] = value;
       previous = value;
     });

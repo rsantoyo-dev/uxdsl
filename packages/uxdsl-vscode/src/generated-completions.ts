@@ -4,13 +4,18 @@ export const completions = {
     "theme",
     "ds-surface",
     "ds-typo",
-    "ds-button"
+    "ds-button",
+    "ds-input"
   ],
   "functions": [
     "palette",
+    "color",
     "radius",
+    "rounded",
+    "border",
     "density",
     "shadow",
+    "elevation",
     "space",
     "xs",
     "sm",

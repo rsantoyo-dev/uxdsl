@@ -11,7 +11,7 @@
   .step-card {
     /* Minimalist container */
     @ds-surface(flat);
-    padding: density(0);
+    padding: 0;
     display: flex;
     flex-direction: column;
     gap: density(3);

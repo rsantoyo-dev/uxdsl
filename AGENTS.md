@@ -550,6 +550,21 @@ This is an architectural rule, not a claim that every legacy default or token
 family is already unified. Compiler success does not guarantee every reference,
 CSS value or accessibility requirement was validated. Inspect actual output.
 
+
+The active engine ownership and verification contract is documented in
+`docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective
+Density defaults and overrides. No token family should depend on a process-global
+compile cache. Use `responsiveEntries`/`resolveResponsiveValue` for inspection and
+editing rather than writing demo parsers. Buttons and Inputs share
+`control-engine.ts`; their modules define family-specific schema and defaults.
+Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
+
+Density keys are references, never values to coerce with parseInt. Undefined or
+fractional Density references fail. Density 0 explicitly means zero; the shipped
+Density scale stays within Spacing 1–16. Reject invalid alpha values instead of
+silently clamping. Color standalone names and Palette default-main behavior have
+different responsibilities; use the shared kind-aware normalizer.
+
 ## Verification scenarios
 
 - **Local change:** only intended components change; shared token values stay intact.
