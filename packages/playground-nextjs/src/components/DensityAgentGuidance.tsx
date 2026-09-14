@@ -1,4 +1,5 @@
 import AgentGuidance from './AgentGuidance'
+import SpacingPrinciple from './SpacingPrinciple'
 
 const exampleTheme = `{
   "breakpoints": {
@@ -19,12 +20,15 @@ const exampleTheme = `{
 export default function DensityAgentGuidance() {
   return (
     <AgentGuidance id="ai-density-guide" title="How an AI agent should use Density">
+      <SpacingPrinciple />
       <p>When generating or modifying UI with UXDSL:</p>
       <ul>
         <li>Read the theme&apos;s <code>spacing</code>, <code>densities</code>, and <code>breakpoints</code> definitions before selecting spacing tokens.</li>
         <li>Prefer existing design-system tokens over introducing new values, tokens, or responsive rules.</li>
-        <li>Use <code>space(n)</code> when spacing should remain fixed across breakpoints.</li>
-        <li>Use <code>density(n)</code> when spacing should follow a responsive progression defined by the theme.</li>
+        <li>Prefer an appropriate <code>density(n)</code> token by default for component spacing.</li>
+        <li>Use <code>space(n)</code> directly when a stable value across breakpoints is intentional. Use CSS directly when finer control outside the configured Density behavior is required.</li>
+        <li>Do not replace Density with Spacing merely because their values match at one breakpoint. That would discard the intended responsive progression.</li>
+        <li>If no Density token fits, inspect the theme and requested scope before creating a system-level token or choosing a deliberate local exception. Never reference an undefined token.</li>
         <li>Treat <code>density(n)</code> as a reference to a configured responsive spacing token. Never assume <code>density(4)</code> equals <code>space(4)</code> at every breakpoint.</li>
         <li>Reuse existing Density tokens when their configured progression matches the intended behavior.</li>
         <li>Do not reference undefined Density or Spacing tokens. When a new token is needed, define it in the theme before using it.</li>
@@ -34,7 +38,7 @@ export default function DensityAgentGuidance() {
         <li>Before creating a new Density token, check whether an existing token already provides the required responsive progression.</li>
         <li>Verify the result just below, at, and just above each configured breakpoint where those widths are valid, and check other components consuming the same Density token.</li>
       </ul>
-      <p><strong>Decision rule:</strong> Prefer configured system behavior over repeated local responsive decisions.</p>
+      <p><strong>Decision rule:</strong> Prefer Density for component spacing. Use Spacing for intentional stable values and CSS for finer control. Change shared Spacing or Density definitions only for intentional system-level changes.</p>
       <p><em>Choose the token in the component. Define its responsive behavior in the theme.</em></p>
 
       <h3>Example</h3>

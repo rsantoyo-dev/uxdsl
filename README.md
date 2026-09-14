@@ -39,6 +39,11 @@ The former iframe viewport simulator was removed after reported interaction fail
 
 ### AI documentation guidance
 
+UXDSL builds on standard CSS. Spacing defines the base scale; Density is its
+responsive layer and the preferred default for component spacing. Direct Spacing
+is for intentional stable values, and CSS remains available for finer control.
+`SpacingPrinciple` shares this guidance across both pages and their AI guides.
+
 Density pages end with `DensityAgentGuidance`, including token-selection rules,
 theme and component examples, local-exception guidance and breakpoint verification.
 `AgentGuidance` is the shared presentation component: pass a unique `id`, a `title`

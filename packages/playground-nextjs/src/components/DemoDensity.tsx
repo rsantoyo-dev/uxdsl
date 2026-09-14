@@ -212,8 +212,8 @@ export default function DemoDensity() {
       <div className="density-header">
         <p className="demo-subtitle">
           Spacing defines a value; Density defines how spacing responds to the viewport.
-          Use <code>space(4)</code> for a value that stays the same across breakpoints,
-          or <code>density(4)</code> for a centrally configured responsive mapping.
+          Prefer <code>density(n)</code> for component spacing using the theme’s responsive mapping.
+          Use <code>space(n)</code> directly when a stable value across breakpoints is intentional.
           Changing that mapping updates every consumer of the token without changing component code.
         </p>
         <ol>
@@ -221,7 +221,7 @@ export default function DemoDensity() {
           <li>Use that Density token wherever components should share the same responsive spacing.</li>
           <li>Edit one mapping below and watch both connected boxes update together.</li>
         </ol>
-        <p>Density is optional. Keep fixed spacing or explicit responsive values where the design needs local control. The generated media queries belong to the system; they are not removed from CSS.</p>
+        <p>Density is the recommended default for component spacing. Standard CSS remains available when finer control is needed. The generated media queries belong to the system; they are not removed from CSS.</p>
       </div>
 
       <DensityExplanation definition={densityDefinitions[4]} onEdit={() => setEditingLevel(4)} />

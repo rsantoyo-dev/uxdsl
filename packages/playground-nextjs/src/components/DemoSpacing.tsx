@@ -154,6 +154,7 @@ export default function DemoSpacing() {
 
       <div className={styles.explanation}>
         <h3>Try it: one token, two paddings and a gap</h3>
+        <p>This demonstration uses direct Spacing to show the base scale: these paddings and gaps intentionally keep a stable value across breakpoints. Prefer Density when building ordinary component spacing.</p>
         <p>The colored areas below use the page’s actual CSS variables. Edit <code>space(4)</code> to update both boxes and the gap between the action items.</p>
         <button type="button" className={styles.edit} onClick={() => setEditingLevel(4)}>Edit space(4)</button>
         <div className={styles.boxes}>

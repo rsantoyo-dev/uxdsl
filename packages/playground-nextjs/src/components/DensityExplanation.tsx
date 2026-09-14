@@ -1,6 +1,7 @@
 'use client'
 
 import styles from './DensityExplanation.module.css'
+import SpacingPrinciple from './SpacingPrinciple'
 
 const theme = `{
   "breakpoints": { "xs": 0, "md": 768, "xl": 1280 },
@@ -46,6 +47,7 @@ export default function DensityExplanation({ definition, onEdit }: {
     <div className={styles.explanation}>
       <section>
         <h3>One token. Responsive spacing everywhere.</h3>
+        <SpacingPrinciple />
         <p>A Density token maps a level to spacing values at different breakpoints. The <code>4</code> in <code>density(4)</code> identifies a token; it does not mean four pixels or a multiplier. You define its progression.</p>
         <h4>1. Define the behavior in your theme JSON</h4>
         <p>This example is a theme excerpt. Density reuses the spacing scale instead of introducing a separate set of measurements.</p>
@@ -92,7 +94,7 @@ export default function DensityExplanation({ definition, onEdit }: {
         </div>
         <p>Resize your browser to see the responsive boxes follow the mapping. The JSON and CSS above remain a reference example; the live definition shows your edits. Edits are a local demo and are not saved to your theme file.</p>
         <p><strong>Two ways to update the system:</strong> change a spacing value to update every reference to that spacing token, or change a Density mapping to update every consumer of that Density token. Component declarations stay the same.</p>
-        <p>Use <code>space()</code> when spacing should stay constant across breakpoints, and <code>density()</code> when it should follow a shared responsive rule. Density coordinates spacing; layout changes such as columns and navigation still need their own responsive decisions.</p>
+        <p>Prefer <code>density()</code> for component spacing. Use <code>space()</code> directly for an intentional stable value, or CSS for finer control. A Spacing value remains editable through the theme. Density coordinates spacing; layout changes such as columns and navigation still need their own responsive decisions.</p>
       </section>
     </div>
   )
