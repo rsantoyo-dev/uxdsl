@@ -107,6 +107,40 @@ breakpoints.load()                   // load persisted map from localStorage
 
 ---
 
+## Multi-entry theming (`includeTheme`)
+
+A single compiled `.uxdsl` file normally both **defines** the global design
+tokens (`:root { --space-1: ...; --surface-contained-padding: ...; }`) and
+**consumes** them (`@ds-surface`, `space()`, `palette()`, ...). That is the
+default and requires no configuration.
+
+Some setups compile several entries from one theme — for example, a Next.js
+app with one theme entry (`includeTheme: true`, the default) and multiple
+CSS Module entries per panel. CSS Modules loaders reject a bare `:root`
+selector as impure, and repeating the same global block in every entry is
+wasted, duplicate output. Pass `includeTheme: false` to a component entry so
+it only *consumes* tokens the theme entry already defines:
+
+```js
+// theme entry — emits the global :root definitions once
+uxdsl({ theme, includeTheme: true }) // or omit the option; true is the default
+
+// component entries — resolve space()/palette()/@ds-surface/... against the
+// same theme, but do not redeclare :root
+uxdsl({ theme, includeTheme: false })
+```
+
+`includeTheme: false` affects only the foundations, typography, density,
+shadow, edge, surface, button and input `:root` emitters. Token references
+and validation are unchanged — an entry compiled with `includeTheme: false`
+still rejects an undefined `@ds-surface(missing)` or `shadow(missing)` the
+same way a full entry does; it just relies on the theme entry's output being
+present in the page for the referenced `var()`s to resolve. Both entries
+must share the same effective theme (breakpoints, tokens, overrides) or the
+generated variable names can diverge.
+
+---
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

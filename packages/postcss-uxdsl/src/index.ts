@@ -30,6 +30,22 @@ interface UxDslOptions {
   spaceVar?: (index: string) => string;
   colorVar?: (path: string) => string;
   theme?: Record<string, any>;
+  /**
+   * Whether this compilation emits the global `:root` token definitions
+   * (foundations, typography, density, shadows, edges, surfaces, buttons,
+   * inputs). Defaults to `true`, matching the historical single-entry
+   * behavior where one compiled file both defines and consumes tokens.
+   *
+   * Set to `false` for a component/CSS-Module entry that only consumes
+   * tokens a separate `includeTheme: true` entry already defines — for
+   * example, one shared theme import plus several CSS Module files. This
+   * avoids re-emitting duplicate global declarations and the bare `:root`
+   * selector that CSS Modules loaders reject as impure. Token references
+   * (`space()`, `palette()`, `density()`, `@ds-surface`, `@ds-button`,
+   * `@ds-input`, ...) still resolve and validate normally either way —
+   * only the definitions themselves are skipped.
+   */
+  includeTheme?: boolean;
 }
 
 // Map palette(foo.bar|foo-bar) -> resolve to --ds__palette__*
@@ -87,11 +103,16 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   const bpNames = new Set(Object.keys(bps));
   const mediaRuleCache = new WeakMap<Rule, Map<string, Rule>>();
   const lastMediaByRule = new WeakMap<Rule, AtRule>();
+  // Historical single-entry behavior: one compiled file both defines and
+  // consumes tokens. A component/CSS-Module entry opts out with `false` to
+  // consume tokens a separate theme entry already defines, instead of
+  // re-emitting duplicate `:root` blocks (see includeTheme docs above).
+  const includeTheme = opts.includeTheme !== false;
 
   return {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root) {
-      if (opts.theme) {
+      if (opts.theme && includeTheme) {
         root.append(postcss.parse(generateFoundationCss(opts.theme)).nodes);
         root.append(postcss.parse(generateTypographyCss(opts.theme, bps)).nodes);
 
@@ -482,24 +503,30 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         at.remove();
       });
 
+      // Token maps are always computed so references (`shadow()`, `radius()`,
+      // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
+      // and resolving against the effective theme. Only the `:root`
+      // definitions themselves are gated by includeTheme.
       const shadowTheme = { shadows: { ...shadowTokens, ...opts.theme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
-      root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
+      if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
 
       const edgeTheme = { borders: { ...borderTokens, ...opts.theme?.borders }, radii: { ...radiusTokens, ...opts.theme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
-      root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
+      if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
       const effectiveDensities = getDensityTokens(opts.theme, densityTokens);
       // Generate CSS variables for density tokens
-      for (const compiled of compileDensityRules(effectiveDensities, bps)) {
-        const rule = postcss.rule({ selector: ':root' });
-        for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
-        if (compiled.minWidth === null) root.prepend(rule);
-        else {
-          const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
-          media.append(rule);
-          root.append(media);
+      if (includeTheme) {
+        for (const compiled of compileDensityRules(effectiveDensities, bps)) {
+          const rule = postcss.rule({ selector: ':root' });
+          for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
+          if (compiled.minWidth === null) root.prepend(rule);
+          else {
+            const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
+            media.append(rule);
+            root.append(media);
+          }
         }
       }
 
@@ -508,7 +535,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
       for (const [role, style] of Object.entries(opts.theme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
-      root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
+      if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: opts.theme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
       for (const [role, pack] of Object.entries(opts.theme?.buttons || {}) as [string, any][]) {
@@ -518,7 +545,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
-      root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
+      if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
       getInputTokens({ ...effectiveSurfaceTheme, inputs: opts.theme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
       for (const [role, pack] of Object.entries(opts.theme?.inputs || {}) as [string, any][]) {
@@ -528,7 +555,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
-      root.append(postcss.parse(generateInputCss(effectiveInputTheme, bps)).nodes);
+      if (includeTheme) root.append(postcss.parse(generateInputCss(effectiveInputTheme, bps)).nodes);
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {
