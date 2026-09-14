@@ -429,6 +429,46 @@ in the theme; use arguments or CSS for deliberate overrides.
 For “less elevation on all contained cards at desktop,” change that role's shadow
 progression and inspect consumers. For one exceptional card, override locally.
 
+## Buttons
+
+**Responsibility:** shared visual action roles and interaction states. Components
+choose a role; theme JSON defines `buttons[role]` with `surface`, `base`, `states`.
+Surfaces own the container composition. HTML/application code own interaction.
+
+```json
+{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
+```
+
+```css
+.checkout { @ds-button(checkout); }
+.save { @ds-button(contained primary 2); }
+```
+
+- Inspect roles and referenced Surfaces, Density, Radius, Palette, Border, Shadow
+  and breakpoint definitions. Reuse roles; preserve intent rather than copying values.
+- Custom roles inherit contained defaults. Partial base/state fields merge;
+  supplied responsive strings replace a whole field. `surface` must exist.
+- Base fields override Surface composition, including optional tone and numeric
+  size. Size selects Density and Radius. Default state colors follow the optional
+  Palette tone; explicit Palette references retain their configured meaning.
+- Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
+  outline-offset, transform, cursor, font-weight. States: hover, active, focus,
+  focusvisible, disabled, selected. Defaults supply hover and selected only.
+- Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
+  correct element semantics. aria-disabled styling does not prevent activation.
+  Maintain keyboard focus and validate actual contrast; no automatic guarantee.
+- Legacy `button-role` packs in `@theme` share the same engine within a build.
+  JSON overrides matching legacy fields, then defaults. No global Button cache.
+- `generateButtonCss`, `inspectButtonTheme`, `buttonComponentCss`, PostCSS and
+  the demo share `src/buttons.ts`. Defaults generate default-buttons.uxdsl.
+- Updating existing values uses managed theme CSS. Structural changes (Surface
+  selection, added/removed state fields) require regenerated component CSS too.
+- Verify all interaction states, responsive boundaries and affected consumers.
+  Edit shared configuration for shared changes; subsequent local CSS for exceptions.
+
+**Decision rule:** choose an action role; maintain shared styling in the theme;
+keep behavior and accessibility semantics in HTML and application logic.
+
 ## Build time, runtime and one source of truth
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -518,13 +558,14 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/BorderDocumentation.tsx`
 - `packages/playground-nextjs/src/components/ShadowDocumentation.tsx`
 - `packages/playground-nextjs/src/components/SurfaceDocumentation.tsx`
+- `packages/playground-nextjs/src/components/ButtonDocumentation.tsx`
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit
 those artifacts as another source of truth.
 
-Buttons and inputs have not yet been consolidated in
+Inputs have not yet been consolidated in
 this guide. Before editing them, inspect their current source, configuration and
 documentation. Add verified responsibilities, syntax and examples here as their
 agent guides are formalized; do not infer unsupported APIs from another primitive.

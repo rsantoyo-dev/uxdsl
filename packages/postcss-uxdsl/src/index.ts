@@ -1,3 +1,4 @@
+import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
 import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
@@ -94,17 +95,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   // Allows defaults to be provided from a separate @theme file.
   const GLOBAL_DENSITY_TOKENS: Record<string, string> =
     (uxdslPlugin as any).__density || Object.create(null);
-  // Global button packs (e.g. button-contained/outlined/flat) so they can be
-  // defined in a separate @theme file and used across files in the same process.
-  const GLOBAL_BUTTON_PACKS: Record<string, Record<string, string>> = (
-    uxdslPlugin as any
-  ).__buttonPacks || Object.create(null);
   const GLOBAL_INPUT_PACKS: Record<string, any> =
     (uxdslPlugin as any).__inputPacks || Object.create(null);
   // Ensure the function object holds the same reference so subsequent
   // plugin instances see the accumulated tokens.
   (uxdslPlugin as any).__density = GLOBAL_DENSITY_TOKENS;
-  (uxdslPlugin as any).__buttonPacks = GLOBAL_BUTTON_PACKS;
   (uxdslPlugin as any).__inputPacks = GLOBAL_INPUT_PACKS;
 
   const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
@@ -432,11 +427,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const vname = pack[1].toLowerCase();
             const rawVal = String((decl as any).value || "").trim();
             if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
-              const parsed = parseButtonPack(rawVal);
+              const parsed: any = parseButtonPack(rawVal);
+              const surface = rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/);
+              if (surface) parsed.surface = surface[1];
               (root as any).__btnPacks =
                 (root as any).__btnPacks || Object.create(null);
               (root as any).__btnPacks[vname] = parsed;
-              GLOBAL_BUTTON_PACKS[vname] = parsed as any;
             }
           }
           // surface packs: surface-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; shadow:.. }
@@ -496,6 +492,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
                 .toLowerCase();
               const v = String(n.value || "").trim();
               if (k) base[k] = v;
+            } else if (mBtn && n.type === 'atrule' && n.name === 'ds-surface') {
+              base.__surface = String(n.params).trim().replace(/^\((.*)\)$/, '$1').trim();
             } else if (!isSurface && n.type === "rule") {
               // Selector can be ':hover' or '&:hover'
               let st = String(n.selector || "").trim();
@@ -523,11 +521,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             (root as any).__inputPacks[vname] = { base, states };
             (GLOBAL_INPUT_PACKS as any)[vname] = { base, states };
           } else {
-            const parsed = { base, states };
+            const surface = base.__surface;
+            delete base.__surface;
+            const parsed = { base, states, ...(surface ? { surface } : {}) };
             (root as any).__btnPacks =
               (root as any).__btnPacks || Object.create(null);
             (root as any).__btnPacks[vname] = parsed;
-            GLOBAL_BUTTON_PACKS[vname] = parsed as any;
           }
         });
         // Remove @theme blocks from output
@@ -560,6 +559,16 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       for (const [role, style] of Object.entries(opts.theme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides };
       root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
+      getButtonTokens({ ...effectiveSurfaceTheme, buttons: opts.theme?.buttons });
+      const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
+      for (const [role, pack] of Object.entries(opts.theme?.buttons || {}) as [string, any][]) {
+        const legacy = buttonOverrides[role] || {};
+        const states = { ...legacy.states };
+        for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
+        buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
+      }
+      const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
+      root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
       function computeSurfaceBase(_packs: any, variant: string, toneFamily: string, sizeToken?: string): Record<string, string> {
         return surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken);
       }
@@ -718,124 +727,14 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           at.remove();
         });
 
-        // @ds-button(variant?) using packs
-        rule.walkAtRules("ds-button", (at) => {
+        rule.walkAtRules('ds-button', at => {
           if (at.parent !== rule) return;
-          const rawIn = String((at.params || "").trim());
-          let inner = rawIn;
-          if (
-            (inner.startsWith('"') && inner.endsWith('"')) ||
-            (inner.startsWith("'") && inner.endsWith("'"))
-          ) {
-            inner = inner.slice(1, -1);
-          }
-          if (inner.startsWith("(") && inner.endsWith(")")) {
-            inner = inner.slice(1, -1).trim();
-          }
-          const parts = inner
-            .split(/[\s,]+/)
-            .map((s) => s.trim())
-            .filter(Boolean);
-          const known = new Set(["contained", "outlined", "flat"]);
-          let variant = (
-            parts.find((p) => known.has(p.toLowerCase())) || "contained"
-          ).toLowerCase();
-          const toneToken = parts.find(
-            (p) => !known.has(p.toLowerCase()) && !/^\d+$/.test(p)
-          );
-          const sizeToken = parts.find((p) => /^\d+$/.test(p));
-          const toneFamily = toneToken
-            ? (() => {
-                let fam = normalizeTokenPath(toneToken);
-                if (fam.includes("-")) fam = fam.split("-")[0];
-                return fam;
-              })()
-            : "";
-          // Prefer packs defined in the same file; fall back to global packs
-          const packs: any =
-            (root as any).__btnPacks || GLOBAL_BUTTON_PACKS || {};
-          const pack: any = packs[variant] || packs["contained"];
-          const insert = (
-            prop: string,
-            value: string,
-            targetRule: Rule | null = null
-          ) => {
-            const trg: any = targetRule || rule;
-            trg.insertBefore(at, { prop, value });
-          };
-          // Apply surface base first, then states from button pack
-          const surfPacks: any =
-            (root as any).__surfacePacks ||
-            {};
-          const surfProps = computeSurfaceBase(
-            surfPacks,
-            variant,
-            toneFamily,
-            sizeToken
-          );
-
-          // PRODUCTION OPTIMIZATION: Generate direct CSS values instead of complex variables
-          if (surfProps["padding"]) insert("padding", surfProps["padding"]);
-          if (surfProps["border-radius"])
-            insert("border-radius", surfProps["border-radius"]);
-          if (surfProps["background"])
-            insert("background", surfProps["background"]);
-          if (surfProps["color"]) insert("color", surfProps["color"]);
-          if (surfProps["border"]) insert("border", surfProps["border"]);
-
-          // Generate optimized state rules without excessive variables
-          if (pack && pack.states) {
-            const states = pack.states as Record<
-              string,
-              Record<string, string>
-            >;
-            const sel = String((rule as any).selector || "");
-            const baseSels = sel
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
-
-            Object.keys(states).forEach((stateKey) => {
-              const stateProps = states[stateKey];
-              if (!stateProps) return;
-
-              // Map state keys to CSS pseudo-classes
-              const pseudoMap: Record<string, string[]> = {
-                hover: [":hover"],
-                active: [":active"],
-                focus: [":focus"],
-                disabled: [":disabled", '[aria-disabled="true"]'],
-                selected: [
-                  ".is-selected",
-                  '[aria-pressed="true"]',
-                  '[aria-selected="true"]',
-                ],
-                focusvisible: [":focus-visible"],
-              };
-
-              const pseudos = pseudoMap[stateKey] || [":" + stateKey];
-              pseudos.forEach((pseudo) => {
-                const newSel = baseSels.map((s) => `${s}${pseudo}`).join(", ");
-                const newRule = postcss.rule({ selector: newSel });
-
-                // Apply state properties directly
-                Object.keys(stateProps).forEach((prop) => {
-                  const value = stateProps[prop];
-                  if (value) {
-                    let cssProp = prop;
-                    if (prop === "bg") cssProp = "background";
-                    else if (prop === "radius") cssProp = "border-radius";
-                    else if (prop === "shadow") cssProp = "box-shadow";
-                    
-                    newRule.insertBefore(at, { prop: cssProp, value });
-                  }
-                });
-
-                (rule.parent as any).insertAfter(rule, newRule);
-              });
-            });
-          }
-
+          const { role, tone, size } = parseButtonArguments(effectiveButtonTheme, at.params);
+          const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size));
+          const base = generated.nodes.shift() as Rule;
+          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
+          let anchor: any = rule;
+          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
           at.remove();
         });
       });

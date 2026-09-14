@@ -1,3 +1,4 @@
+import { generateButtonCss } from '../buttons';
 import { generateSurfaceCss } from '../surfaces';
 import { generateShadowCss } from '../shadows';
 import { generateEdgeCss } from '../edges';
@@ -49,6 +50,7 @@ export function generateThemeCss(theme: Record<string, any>): string {
   cssContent += '\n' + generateEdgeCss(theme);
   cssContent += '\n' + generateShadowCss(theme);
   cssContent += '\n' + generateSurfaceCss(theme);
+  cssContent += '\n' + generateButtonCss(theme);
   if (theme.densities) {
     cssContent += '\n' + generateDensityCss(theme.densities, { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints });
   }

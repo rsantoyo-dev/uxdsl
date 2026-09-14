@@ -90,7 +90,7 @@
   }
 
   .get-started-btn {
-    @ds-button (contained primary large);
+    @ds-button (contained primary 3);
     display: flex;
     align-items: center;
     justify-content: center;

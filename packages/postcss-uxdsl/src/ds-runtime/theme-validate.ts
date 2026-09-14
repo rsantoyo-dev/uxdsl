@@ -1,3 +1,4 @@
+import { compileButtonRules } from '../buttons';
 import { compileSurfaceRules } from '../surfaces';
 import { compileShadowRules } from '../shadows';
 import { compileEdgeRules } from '../edges';
@@ -301,6 +302,8 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     catch (cause) { errors.push({ path: 'typography_details', message: cause instanceof Error ? cause.message : String(cause) }); }
   }
 
+  try { compileButtonRules(theme, bps); }
+  catch (cause) { errors.push({ path: 'buttons', message: cause instanceof Error ? cause.message : String(cause) }); }
   try { compileSurfaceRules(theme, bps); }
   catch (cause) { errors.push({ path: 'surfaces', message: cause instanceof Error ? cause.message : String(cause) }); }
 

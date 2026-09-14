@@ -66,7 +66,7 @@ export function SurfaceDocumentation() {
   }
 }`}</code></pre>
       <p>JSON fields override matching legacy fields, which override shared defaults. Include legacy definitions in each build that needs them: Surface packs no longer leak through a process-global cache. Unknown roles, fields and referenced Radius/Border/Shadow presets produce errors; verify other token dependencies and actual CSS too. The compiler is not a full CSS or accessibility validator.</p>
-      <p>The preview reads the active theme and shared defaults. Its JSON editor applies scoped browser changes without saving your source file. Resize the actual browser to inspect responsive behavior. Invalid edits preserve the last valid preview; Reset restores the active theme. The optional tone control uses the same composition function as the compiler.</p>
+      <p>The preview reads the active theme and shared defaults. Its JSON editor applies scoped browser changes without saving your source file. Resize the actual browser to inspect responsive behavior. Invalid edits preserve the last valid preview; Reset restores the active theme. The optional tone and size controls use the same composition function as the compiler. Size options come from the effective Density and Radius definitions, including shared defaults.</p>
     </section>
   </div>
 }

@@ -24,7 +24,7 @@ export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, Surfa
   return result;
 }
 
-function surfaceValueToCss(value: string, theme: SurfaceTheme) {
+export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
   const parsed = valueParser(value);
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
   parsed.walk(node => {

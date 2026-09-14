@@ -31,7 +31,7 @@ export function compilePresetRules(tokens: Record<string, Record<string, string>
     for (const [key, expression] of Object.entries(tokens[family])) {
       // Unknown outer functions must not silently become invalid responsive CSS.
       for (const node of valueParser(expression).nodes) {
-        if (node.type === 'function' && !(node.value in breakpoints) && !['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env'].includes(node.value)) throw new Error(`${errorPrefix}_BP: Unknown function or breakpoint ${node.value}.`);
+        if (node.type === 'function' && !(node.value in breakpoints) && !['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env', 'scale', 'scaleX', 'scaleY', 'translate', 'translateX', 'translateY', 'rotate', 'matrix'].includes(node.value)) throw new Error(`${errorPrefix}_BP: Unknown function or breakpoint ${node.value}.`);
       }
       let previous: string | undefined;
       ordered.forEach(([bp], i) => {

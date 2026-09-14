@@ -205,3 +205,16 @@ You can run these from repo root or from `packages/playground-nextjs` (proxied s
 You can also include a short tweak note (stored in `packages/uxdsl-core/README.md`):
 
 - `node scripts/release.js --bump patch --note "small parser fix"`
+
+### Shared Button engine (main; pending npm release)
+
+Button JSON roles (`surface`, `base`, `states`), legacy `@theme` packs, PostCSS,
+runtime and the documentation preview now use `src/buttons.ts`. Custom roles,
+Palette tones, numeric Density/Radius sizes and responsive state fields share
+the same implementation. Default packs are generated; cross-build Button caches
+are removed. Import legacy packs in each compilation. Explicit base fields
+override Surface composition. Default hover/selected states follow the selected
+tone; custom Palette assignments remain explicit. Missing/invalid roles and
+fields fail instead of silently falling back. Existing values update through
+theme CSS; changing role structure requires regenerating component CSS.
+See the Buttons docs and AGENTS.md for semantics and migration details.
