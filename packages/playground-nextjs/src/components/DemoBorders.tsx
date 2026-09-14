@@ -210,7 +210,9 @@ export default function DemoBorders() {
 
   const generateCode = () => {
     return `.element {
-  border: border(${width}, palette(${color}), ${style});
+  border: border(${width});
+  border-color: ${BP_ORDER.map(bp => `${bp}(palette(${color}))`).join(' ')};
+  border-style: ${BP_ORDER.map(bp => `${bp}(${style})`).join(' ')};
   border-radius: radius(${radius});
   width: 200px;
   height: 200px;
@@ -220,7 +222,7 @@ export default function DemoBorders() {
   const getRadiusValue = (r: string | number) => {
     if (r === 'pill') return '9999px'
     if (r === 'circle') return '50%'
-    if (r === 'full') return '100%'
+    if (r === 'full') return '9999px'
     return `var(--radius-${r})`
   }
 
@@ -232,7 +234,7 @@ export default function DemoBorders() {
         <div className="playground">
           <div className="controls">
             <div className="control-group">
-              <label className="control-label">Width (Preset)</label>
+              <label className="control-label">Border preset</label>
               <select 
                 value={width} 
                 onChange={(e) => setWidth(Number(e.target.value))}

@@ -21,6 +21,8 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Colors | Reusable color collection | `color(token)` for an intentional color identity |
 | Palette | Semantic interface color roles | Prefer `palette(role.variant)` for semantic UI |
 | Breakpoints | Shared viewport transition thresholds | Named responsive declarations for local layout behavior |
+| Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
+| Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
 
 A matching value does not imply a matching responsibility. Do not replace:
@@ -233,6 +235,67 @@ hardcoding its resolved values. HTML preserves document semantics.
 and evolve its visual and responsive behavior in the theme. Use local CSS only
 for intentional exceptions.
 
+## Borders and Radii
+
+**Borders responsibility:** maintain shared edge treatments (width, style, color).
+**Radii responsibility:** maintain shared corner shapes and responsive behavior.
+
+Current definitions use `border-n` and `radius-n` inside imported UXDSL `@theme`
+blocks, not equivalent `borders`/`radii` sections in `generateThemeCss` JSON.
+Inspect `postcss-uxdsl/theme/default-borders.uxdsl` and
+`postcss-uxdsl/theme/default-radii.uxdsl` and project overrides. Load definitions
+before consumers. Do not assume every primitive already uses the same JSON path.
+
+```css
+@theme {
+  border-1: xs(1px solid #64748b) md(2px solid #64748b);
+  radius-2: xs(8px) md(12px);
+}
+.card {
+  border: border(1);
+  border-radius: radius(2);
+}
+```
+
+With xs=0 and md=768, these change from 1px edges/8px corners to 2px edges/12px
+corners at 768px. The most recent applicable rule persists. Shared definitions
+can reference configured `space()` and `palette()` values. Density is preferred
+for component spacing, not automatically for border width or corner rounding.
+
+- Reuse configured presets; numbers identify presets rather than pixel values.
+  Preserve references instead of copying their current computed values.
+- Change a shared definition only when all its consumers should follow. Edit
+  source theme definitions and rebuild; browser preview edits do not save them.
+- When a Border preset exists, optional arguments in
+  `border(1, palette(primary.main), dashed)` are ignored in favor of that preset.
+  For local changes, follow `border: border(1)` with explicit `border-color` or
+  `border-style` longhands. Repeat those overrides at thresholds where a new
+  preset shorthand would reset them, and verify the emitted cascade. Do not
+  alter the preset for a one-component request.
+- `radius(pill)` and `radius(full)` both compile to `9999px`; `radius(circle)`
+  compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
+  Keywords are built-ins, not editable numbered presets. Border radius alone
+  does not clip child content.
+- Define numbered presets before use. Missing-token Border fallbacks and Radius
+  fallback ramps are not validation or a stable design-system contract.
+- For local independent shapes, use intentional native CSS or per-corner values.
+  Trace Spacing and Palette dependencies before changing foundational tokens.
+- Verify just below/at/above configured thresholds, box sizing, content area,
+  wrapping, nested corners, aspect ratios, overflow, states and focus indicators.
+  Check edge contrast and other consumers of shared presets.
+- The legacy Borders demo uses a local parser, breakpoint map and defaults.
+  Do not treat it as the canonical engine or claim JSON/runtime parity from it.
+
+**Borders decision rule:** choose a shared preset for a shared edge treatment;
+use subsequent CSS longhands for intentional local exceptions.
+**Radii decision rule:** choose a configured preset for shared shape behavior;
+change the theme for shared progressions and native CSS for independent shapes.
+
+Example: “Only the selected card should be dashed” means retain its Border and
+add a local `border-style: dashed`. “All radius-2 cards should be rounder on
+desktop” means update the shared radius-2 progression, rebuild and inspect every
+consumer while preserving mobile behavior.
+
 ## Build time, runtime and one source of truth
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -316,13 +379,14 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/ColorDocumentation.tsx`
 - `packages/playground-nextjs/src/components/BreakpointDocumentation.tsx`
 - `packages/playground-nextjs/src/components/TypographyDocumentation.tsx`
+- `packages/playground-nextjs/src/components/BorderDocumentation.tsx`
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit
 those artifacts as another source of truth.
 
-Borders, shadows, surfaces, buttons and inputs have not yet been consolidated in
+Shadows, surfaces, buttons and inputs have not yet been consolidated in
 this guide. Before editing them, inspect their current source, configuration and
 documentation. Add verified responsibilities, syntax and examples here as their
 agent guides are formalized; do not infer unsupported APIs from another primitive.
