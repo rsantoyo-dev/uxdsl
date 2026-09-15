@@ -69,6 +69,12 @@ Returns a Promise that resolves to processed CSS string.
 Use this section for short release notes on each npm tweak.
 
 - v0.1.9 — baseline demo release for current docs/playground flow.
+- v0.3.0 — `test/inline-imports.test.js`'s duplicate-import case now passes
+  `references: { mode: 'off' }` to `processUxdsl`. It exercises `@import`
+  deduplication, not styling, and `postcss-uxdsl`'s reference-integrity
+  check (on by default) was aborting the whole test process on unrelated
+  always-on defaults the fixture never uses. No change to `uxdsl-core`
+  itself.
 
 For automated version bumps in this monorepo:
 

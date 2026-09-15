@@ -141,6 +141,27 @@ Criterios de aceptación:
 > validación a lo que la fuente realmente usa, esos fixtures dejarían de
 > necesitar la escala completa — pero ese es un cambio de diseño de MIG-03
 > en sí, no algo que MIG-04/05/06 deba decidir.
+>
+> El mismo problema alcanzaba a `uxdsl-core` (paquete separado que envuelve
+> `postcss-uxdsl`): su test de deduplicación de imports (`npm test`,
+> `test/inline-imports.test.js`) compila sin tema alguno y terminaba
+> abortando el proceso completo (excepción no capturada, no un fallo de
+> test individual) por la misma cadena `--density-1 -> --space-1`. Ese test
+> no verifica nada de estilos — es sobre resolución de `@import` — así que
+> se le pasó `references: { mode: 'off' }` en vez de fabricarle un tema
+> completo que no necesita. `uxdsl-core` vuelve a pasar. Se revisó también
+> `vite-plugin-uxdsl`: no tiene carpeta `test/` en este checkout (no hay
+> nada que romper ahí todavía).
+>
+> Al correr `npm test` desde la raíz para confirmar esto se encontró un
+> tercer problema, preexistente y no relacionado con MIG-01 a MIG-06:
+> `packages/postcss-uxdsl/src/theme/theme-manifest.json` tenía
+> `tokens.density.max: 15` desincronizado de `DEFAULT_DENSITIES` (16
+> entradas, `0`..`15`), haciendo fallar
+> `node scripts/generate-language-artifacts.js --check` (exit 1) — el
+> último paso del `npm test` raíz. Corregido regenerando el artefacto
+> (`node scripts/generate-language-artifacts.js`, sin `--check`); `npm
+> test` en la raíz vuelve a pasar.
 
 ## MIG-04 — Borders con dependencias completas
 
@@ -240,22 +261,45 @@ Criterios de aceptación:
 Incluir en los paquetes publicados una referencia de gramática y un changelog con ejemplos 0.3.0 → 0.5.x. La documentación no debe depender únicamente de una web que puede describir otra versión.
 
 Implementado en este checkout (paquete identificado como 0.3.0, sin cambiar
-versiones ni publicar): guía de migración en
-[`docs/migration/0.3-to-0.5-beta.md`](../migration/0.3-to-0.5-beta.md) y
-codemod en `packages/postcss-uxdsl/scripts/codemod-size-overrides.js`
-(`npm run codemod:size-overrides` desde ese paquete), con 12 tests en
-`test/codemod-size-overrides.test.js`.
+versiones ni publicar): guía de migración y changelog **dentro del
+paquete** —
+[`packages/postcss-uxdsl/docs/migration.md`](../../packages/postcss-uxdsl/docs/migration.md)
+y
+[`packages/postcss-uxdsl/CHANGELOG.md`](../../packages/postcss-uxdsl/CHANGELOG.md) —
+para que viajen con el tarball publicado (`npm pack` los incluye; no hay
+`files` en `package.json`, así que todo lo no ignorado por git se
+publica). Codemod en
+`packages/postcss-uxdsl/scripts/codemod-size-overrides.js`
+(`npm run codemod:size-overrides` desde ese paquete, también incluido en
+el tarball), con 14 tests en `test/codemod-size-overrides.test.js`.
 
-> **Nota (auditoría):** la primera versión del codemod tenía dos bugs de
-> cascada, encontrados en revisión antes de publicarse en `main`: (1)
-> recogía cualquier declaración `border-radius`/`box-shadow` de la regla
-> sin importar su posición, incluyendo una anterior al mixin — que ya es
-> código muerto bajo la cascada normal, no el override vigente — y la
-> trataba como si fuera la intencional; (2) descartaba `!important`
-> silenciosamente al fundirlo en el argumento del mixin. Corregido: solo
-> considera declaraciones posteriores a la llamada del mixin, y una
-> declaración con `!important` se reporta como caso a revisar manualmente
-> en vez de tocarse. Ambos casos tienen test de regresión.
+> **Nota (auditoría, dos rondas):** la primera versión del codemod tenía
+> dos bugs de cascada: (1) recogía cualquier declaración
+> `border-radius`/`box-shadow` de la regla sin importar su posición,
+> incluyendo una anterior al mixin — que ya es código muerto bajo la
+> cascada normal, no el override vigente — y la trataba como si fuera la
+> intencional; (2) descartaba `!important` silenciosamente al fundirlo en
+> el argumento del mixin. Corregido: solo considera declaraciones
+> posteriores a la llamada del mixin, y una declaración con `!important`
+> se reporta como caso a revisar manualmente en vez de tocarse.
+>
+> Una segunda ronda de revisión encontró dos casos más, también de
+> cascada, en esa misma corrección: (3) con dos llamadas `@ds-*`
+> consecutivas en la misma regla, una declaración final se fundía en la
+> **primera** en vez de la más cercana, dejando que la segunda llamada
+> (con su propio `size`) volviera a ganar al final — el codemod ahora
+> limita la búsqueda a antes de la siguiente llamada `@ds-*` en la misma
+> regla; (4) una declaración de esquina (`border-top-left-radius` y
+> equivalentes) entre el mixin y el `border-radius` candidato cambiaba de
+> "sobrescrita por el shorthand posterior" a "última y ganadora" al
+> eliminar ese shorthand — ahora se detecta y se reporta como caso a
+> revisar manualmente. Los cuatro casos tienen test de regresión.
+>
+> Además, la primera versión de este documento apuntaba a
+> `docs/migration/0.3-to-0.5-beta.md` en la raíz del monorepo — un
+> directorio que nunca se publica a npm, incumpliendo el propio objetivo
+> de MIG-06 ("incluir en los paquetes publicados"). Movido dentro del
+> paquete; se agregó también el `CHANGELOG.md` que faltaba.
 
 Criterios de aceptación:
 

@@ -21,7 +21,11 @@ async function testCircularImport() {
 async function testDuplicateImportDeduped() {
   const entry = path.resolve(__dirname, 'fixtures/duplicate-root.uxdsl');
   const source = require('fs').readFileSync(entry, 'utf-8');
-  const css = await processUxdsl(source, { fileId: entry });
+  // This test is about import resolution, not styling — skip reference
+  // validation (postcss-uxdsl's enforceReferences, on by default) rather
+  // than fabricate a theme covering every always-on default this fixture
+  // never uses. See docs/features/FEAT-002-beta-migration-hardening.md.
+  const css = await processUxdsl(source, { fileId: entry, references: { mode: 'off' } });
   const occurrences = css.split('--dup-test').length - 1;
   assert.strictEqual(occurrences, 1, 'Duplicate partial should be inlined only once');
 }

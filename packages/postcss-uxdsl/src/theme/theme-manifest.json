@@ -68,7 +68,7 @@
     },
     "density": {
       "min": 1,
-      "max": 15
+      "max": 16
     },
     "radius": {
       "min": 1,

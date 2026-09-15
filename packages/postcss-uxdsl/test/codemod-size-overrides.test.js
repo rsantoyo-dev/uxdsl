@@ -12,6 +12,30 @@ const run = (source) => {
   return { css: root.toString(), ...result };
 };
 
+test('codemod: with two consecutive mixin calls, a trailing override attaches to the nearer (second) call, not the first', () => {
+  // Regression: the fix's original position check ("after the mixin")
+  // didn't stop at the NEXT mixin call, so a trailing declaration meant
+  // for (or superseding) the second call got folded into the first —
+  // after which the second call's own generated value became the new
+  // last-in-cascade winner, changing the effective radius from 4 to 3.
+  const { css, applied, skipped } = run('.x { @ds-surface(contained 2); @ds-surface(outlined 3); border-radius: radius(4); }');
+  assert.equal(css, '.x { @ds-surface(contained 2); @ds-surface(outlined 3 radius(4)); }');
+  assert.equal(applied.length, 1);
+  assert.equal(applied[0].before, '@ds-surface(outlined 3)');
+  assert.equal(skipped.length, 0);
+});
+
+test('codemod: leaves a border-radius alone when a corner longhand sits between the mixin and it', () => {
+  // Regression: removing the shorthand moves the sandwiched longhand from
+  // "overridden by a later shorthand" to "last in the rule, and winning" —
+  // a visual change for that corner. The codemod must not fold this case.
+  const { css, applied, skipped } = run('.y { @ds-surface(contained 2); border-top-left-radius: 5px; border-radius: radius(4); }');
+  assert.equal(css, '.y { @ds-surface(contained 2); border-top-left-radius: 5px; border-radius: radius(4); }');
+  assert.equal(applied.length, 0);
+  assert.equal(skipped.length, 1);
+  assert.match(skipped[0].reason, /border-top-left-radius/);
+});
+
 test('codemod: folds a manual border-radius override into the @ds-surface call', () => {
   const { css, applied, skipped } = run('.card { @ds-surface(contained 2); border-radius: radius(4); }');
   assert.equal(css, '.card { @ds-surface(contained 2 radius(4)); }');

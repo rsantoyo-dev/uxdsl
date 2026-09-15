@@ -216,7 +216,7 @@ untouched, and the two overrides are independent of each other. Each may
 appear once; a repeated `radius()`/`radius()` or an undefined key throws
 the same diagnostics as the standalone functions. A later plain CSS
 declaration in the same rule still wins last, as always. See
-[`docs/migration/0.3-to-0.5-beta.md`](../../docs/migration/0.3-to-0.5-beta.md)
+[`docs/migration.md`](docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
 (`npm run codemod:size-overrides`).

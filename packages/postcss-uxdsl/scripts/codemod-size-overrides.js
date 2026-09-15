@@ -36,6 +36,12 @@ const OVERRIDES = [
   ['border-radius', 'radius'],
   ['box-shadow', 'shadow'],
 ];
+// border-radius is a shorthand for these four (plus their logical
+// equivalents); box-shadow has no such longhand family in CSS.
+const RADIUS_LONGHANDS = new Set([
+  'border-top-left-radius', 'border-top-right-radius', 'border-bottom-right-radius', 'border-bottom-left-radius',
+  'border-start-start-radius', 'border-start-end-radius', 'border-end-start-radius', 'border-end-end-radius',
+]);
 
 function stripParens(params) {
   let inner = String(params || '').trim();
@@ -62,16 +68,32 @@ function migrateRoot(root) {
     if (parts.some((part) => /^(radius|shadow)\(/.test(part))) return; // already migrated
 
     const atPosition = rule.index(at);
+    // A trailing declaration only belongs to THIS call if no other
+    // ds-surface/button/input call sits between them — otherwise a
+    // declaration meant for (or superseded by) a later call gets folded
+    // into this earlier one, and the later call's own generated value
+    // becomes the new last-in-cascade winner once the fold removes it.
+    const siblingCallPositions = rule.nodes
+      .map((node, index) => (node.type === 'atrule' && CALL_NAMES.includes(node.name) ? index : -1))
+      .filter((index) => index >= 0)
+      .sort((a, b) => a - b);
+    const nextAtPosition = siblingCallPositions.find((index) => index > atPosition) ?? Infinity;
+
     const additions = [];
     for (const [prop, fn] of OVERRIDES) {
-      // Only a declaration positioned after the mixin call can be the one
-      // actually taking effect: the mixin's own generated declaration is
-      // inserted at the call's position, so an earlier manual declaration
-      // for the same property is already dead code under normal cascade
-      // rules, not the override being migrated. Folding a dead declaration
-      // in would silently change which value applies.
+      // Only a declaration positioned after the mixin call (and before the
+      // next one, if any) can be the one actually taking effect: the
+      // mixin's own generated declaration is inserted at the call's
+      // position, so an earlier manual declaration for the same property
+      // is already dead code under normal cascade rules, not the override
+      // being migrated. Folding a dead declaration in would silently
+      // change which value applies.
       const matches = [];
-      rule.walkDecls(prop, (decl) => { if (decl.parent === rule && rule.index(decl) > atPosition) matches.push(decl); });
+      rule.walkDecls(prop, (decl) => {
+        if (decl.parent !== rule) return;
+        const index = rule.index(decl);
+        if (index > atPosition && index < nextAtPosition) matches.push(decl);
+      });
       if (matches.length === 0) continue;
       if (matches.length > 1) {
         skipped.push({ line: at.source?.start?.line, reason: `multiple ${prop} declarations after ${at.name}(${inner}); ambiguous which one is the override` });
@@ -81,6 +103,23 @@ function migrateRoot(root) {
       if (decl.important) {
         skipped.push({ line: decl.source?.start?.line, reason: `${prop} has !important; folding it into the mixin argument would silently drop !important, which the override syntax cannot express` });
         continue;
+      }
+      if (prop === 'border-radius') {
+        // Removing the shorthand changes what wins for any corner
+        // longhand sandwiched between the mixin and it (the longhand would
+        // move from "overridden by a later shorthand" to "last, and
+        // winning") — so leave that case for manual review too.
+        const declPosition = rule.index(decl);
+        const sandwiched = [];
+        rule.walkDecls((node) => {
+          if (node.parent !== rule || node === decl) return;
+          const index = rule.index(node);
+          if (index > atPosition && index < declPosition && RADIUS_LONGHANDS.has(node.prop)) sandwiched.push(node.prop);
+        });
+        if (sandwiched.length) {
+          skipped.push({ line: decl.source?.start?.line, reason: `${sandwiched.join(', ')} between the mixin and this border-radius; removing the shorthand would change which one wins for that corner` });
+          continue;
+        }
       }
       const value = decl.value.trim();
       const match = value.match(new RegExp(`^${fn}\\(([^()]+)\\)$`));
