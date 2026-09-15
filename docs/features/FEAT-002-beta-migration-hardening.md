@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Propuesta; hallazgos pendientes de reproducción en este repositorio |
+| Estado | MIG-01 a MIG-06 implementados y auditados en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 103/103. MIG-07 y MIG-08 pendientes |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -54,6 +54,21 @@ Las estimaciones sirven para ordenar trabajo, no como plazos. Los parches P0 no 
 Implementado en este checkout (paquetes identificados como 0.3.0): normalización
 compartida por PostCSS y `generateThemeCss`, sin cambiar versiones ni publicar.
 La reproducción sobre el artefacto 0.5.0-beta.0 sigue pendiente de MIG-07.
+
+> **Corrección (auditoría posterior a MIG-04/05/06):** esta sección se marcó
+> "Implementado" con las casillas en `[x]` mientras el código real vivía solo
+> en un `git stash` sin aplicar (creado durante el rebase a la arquitectura
+> unificada de FEAT-001) — `foundations.ts` seguía emitiendo `--space-${key}`
+> directo, sin normalizar, y no existía ningún test cubriendo la
+> normalización. El doc describía trabajo que no estaba en el árbol. Ya se
+> porteó `normalizeSpacingKey`/`normalizeSpacingDefinitions` (`language.ts`)
+> a la arquitectura actual, se conectó en `foundations.ts`, y se agregó
+> `test/spacing-normalization.test.js` (5 casos, uno por criterio de
+> aceptación). Las casillas de abajo ahora reflejan el estado real y
+> verificado. Lección: al recuperar un archivo de un stash con
+> `git checkout stash@{n} -- <path>`, si es un `.md` que describe una
+> implementación, hay que recuperar o re-portear el código correspondiente
+> en el mismo paso — nunca dejar la documentación por delante del código.
 
 Definir una representación interna única para los identificadores. Durante la migración, aceptar la forma numérica y la forma histórica prefijada cuando su interpretación sea inequívoca; emitir el nombre público una sola vez.
 
@@ -109,43 +124,147 @@ Criterios de aceptación:
 - [ ] Comprobar scope, cascade y breakpoints con pruebas de navegador; encontrar un nombre en el grafo no demuestra que aplique al elemento.
 - [ ] PostCSS y runtime comparten la validación; una actualización inválida de runtime conserva el último tema válido.
 
+> **Nota de consecuencia (auditoría MIG-04/05/06):** `enforceReferences`
+> quedó conectado en `index.ts` validando *todos* los bloques `:root` que
+> el plugin siempre emite (density 1-15, los tres surfaces/buttons/inputs
+> por defecto), no solo lo que la fuente `.uxdsl` de entrada referencia.
+> Esto rompió la suite propia del paquete (34/70 tests fallando) porque
+> los fixtures de test usan temas mínimos, deliberadamente parciales, para
+> aislar lo que cada test verifica. Se decidió (ver pregunta al usuario)
+> completar los fixtures — no acotar el alcance de `enforceReferences` ni
+> cambiar comportamiento de producto — agregando una escala completa de
+> spacing (1-16) y las familias de palette (`primary`/`surface`/`neutral`/
+> `error`) que los defaults siempre-activos necesitan, en cada archivo de
+> test afectado (`buttons`, `edges`, `inputs`, `shadows`, `surfaces`,
+> `typography`, `unified-engine`, `language`, `include-theme`). Suite
+> recuperada a 103/103. Si en el futuro se decide acotar el alcance de la
+> validación a lo que la fuente realmente usa, esos fixtures dejarían de
+> necesitar la escala completa — pero ese es un cambio de diseño de MIG-03
+> en sí, no algo que MIG-04/05/06 deba decidir.
+
 ## MIG-04 — Borders con dependencias completas
 
 Decidir y documentar cómo se suministran los colores que usan los presets. Propuesta: la entrada de tema incluye las dependencias de los presets por defecto activos, respetando los overrides del usuario; si el proyecto opta por un tema sin defaults, debe recibir un diagnóstico claro cuando falte una dependencia.
 
+Implementado en este checkout (paquete identificado como 0.3.0): `edges.ts`
+exporta `DEFAULT_BORDER_COLORS` (`gray.{300,400,500,600}`, la dependencia de
+`DEFAULT_BORDERS`); `generateFoundationCss` (`foundations.ts`) lo mezcla bajo
+`theme.colors.gray`, con los shades del usuario ganando por clave, antes de
+emitir `--ds__color__*`. Un único punto de mezcla mantiene en paridad al
+compilador PostCSS y a `generateThemeCss` (runtime), que ambos llaman a
+`generateFoundationCss`. Sin cambiar versiones ni publicar. Cobertura en
+`test/border-colors.test.js` (6 casos).
+
 Criterios de aceptación:
 
-- [ ] `border(1..5)` funciona con el tema por defecto configurado sin un import CSS adicional no documentado.
-- [ ] Un tema personalizado puede reemplazar los colores sin ser sobrescrito por defaults.
-- [ ] Las entradas de componente no reintroducen globals para resolver estos colores.
-- [ ] Se prueban ambas modalidades: tema generado y colores suministrados mediante import explícito.
+- [x] `border(1..5)` funciona con el tema por defecto configurado sin un import CSS adicional no documentado — probado con `theme: {}`.
+- [x] Un tema personalizado puede reemplazar los colores sin ser sobrescrito por defaults — probado por shade individual (`colors.gray.300` override conserva 400/500/600 por defecto) y a nivel de familia completa (un tema que redefine `borders[1..5]` para no usar `color(gray.*)` en absoluto sigue emitiendo el `gray` por defecto sin efecto, ya que nada lo referencia).
+- [x] Las entradas de componente no reintroducen globals para resolver estos colores — con `includeTheme: false`, ni `--border-N` ni `--ds__color__gray-*` se emiten localmente; se validan contra la entrada de tema (mecanismo ya provisto por MIG-02/MIG-03).
+- [x] Se prueban ambas modalidades: tema generado (el merge por defecto) y un preset de border suministrado enteramente por una hoja de estilos externa del consumidor, declarado vía `references.externalTokens` sin generar tema alguno.
+
+Fuera de alcance de este parche: `DEFAULT_DENSITIES` (`space(1)`..`space(16)`)
+no tiene una dependencia por-defecto equivalente — un tema que no defina la
+escala completa de spacing sigue fallando la validación estricta al usar
+density/radius/surface por defecto. Ese es el gap documentado al cierre de
+MIG-03 (34/70 tests propios del paquete), no algo que MIG-04 prometiera
+resolver; queda como trabajo relacionado a decidir (¿debería `space()` tener
+también un `DEFAULT_SPACING` con overrides por clave, igual que `gray`?).
 
 ## MIG-05 — Tamaño y overrides independientes
 
 Conservar size como preset útil, pero permitir ajustar radio y sombra sin reemplazar manualmente las propiedades que acaba de emitir el mixin.
 
-Opciones por evaluar: argumentos opcionales `radius(...)`/`shadow(...)`, tamaños compuestos o recetas configurables. Esta propuesta no declara ninguna sintaxis nueva como soportada.
+**Gramática elegida e implementada en este checkout** (paquete identificado
+como 0.3.0, sin cambiar versiones ni publicar): argumentos opcionales
+`radius(<key>)` / `shadow(<key>)`, añadidos a la lista de argumentos ya
+aceptada por `@ds-surface`, `@ds-button` y `@ds-input`:
+
+```text
+@ds-surface(contained 2 radius(4));
+@ds-surface(contained primary 2 radius(pill) shadow(3));
+@ds-button(outlined 2 radius(1));
+@ds-input(contained 2 shadow(0));
+```
+
+`<key>` es exactamente el mismo tipo de clave que aceptan las funciones de
+valor `radius()` / `shadow()` sueltas: un keyword (`pill`, `full`, `circle`)
+o una clave numérica configurada en `theme.radii` / `theme.shadows`. No se
+introduce sintaxis responsive nueva: como el token referenciado ya puede ser
+responsive en el tema (`radii: { 4: 'xs(space(4)) lg(space(6))' }`), el
+override hereda esa capacidad sin necesidad de expresarla en el argumento.
+
+Precedencia (de menor a mayor prioridad):
+
+1. Defaults del rol/tono del preset (bg, color, border, etc.).
+2. `size`, si está presente, fija padding y radius juntos (comportamiento
+   legado, sin cambios).
+3. Un `radius(...)`/`shadow(...)` explícito reemplaza solo esa propiedad,
+   de forma independiente entre sí y de `size`; `size` puede omitirse por
+   completo si solo se necesita el override.
+4. Una declaración CSS plana posterior en la misma regla sigue ganando al
+   final, igual que cualquier otra propiedad generada (sin cambios).
+
+Implementación: `parseOverrideArguments` (nuevo, en `surfaces.ts`) extrae
+`radius(...)`/`shadow(...)` de la lista de argumentos antes de que corra la
+detección existente de role/tone/size, compartido por `parseSurfaceArguments`
+y por `parseArguments` (control-engine.ts, usado por button e input).
+`surfaceDeclarations` aplica el override después de `size`, reutilizando
+`RADIUS_KEYWORDS`/`getEdgeTokens`/`getShadowTokens` — el mismo camino de
+validación que usan `radius()`/`shadow()` sueltos, así que un `radius(99)`
+indefinido lanza `UXD_SURFACE_REFERENCE`, igual que fuera del mixin.
+Cobertura en `test/size-overrides.test.js` (10 casos).
+
+> **Corrección (auditoría):** la precedencia declarada arriba no se cumplía
+> para button/input cuando el rol define sus propios campos `radius`/`shadow`
+> en `base`. `declarations()` (`control-engine.ts`) componía
+> `{ ...surfaceDeclarations(...override incluido...), ...refs('base', pack.base) }`
+> — el spread de `pack.base` iba último y volvía a pisar el override con el
+> valor del rol. Reproducido con
+> `@ds-button(custom 2 radius(4) shadow(0))` sobre un rol `custom` con
+> `base: { radius: ..., shadow: ... }`: el override se ignoraba
+> silenciosamente. Corregido reasignando `border-radius`/`box-shadow` desde
+> el resultado ya validado de `surfaceDeclarations` después del spread de
+> `pack.base`, sin duplicar la lógica de validación. Test de regresión
+> agregado en `test/size-overrides.test.js`.
 
 Criterios de aceptación:
 
-- [ ] Reproducir los nueve casos del reporte con padding y radio independientes.
-- [ ] Elegir una gramática y documentar la precedencia entre preset, argumento explícito y declaración CSS posterior.
-- [ ] Definir tratamiento de argumentos repetidos, incompatibles y responsive.
-- [ ] Mantener coherencia entre surface, button e input cuando el concepto aplique.
-- [ ] Compartir parsing, diagnósticos, ejemplos y sugerencias del editor con el motor unificado.
+- [x] Reproducir los nueve casos del reporte con padding y radio independientes — cubierto a nivel de contrato (`@ds-surface(role size radius(key))` dejando padding intacto); no se reprodujeron los nueve usos exactos del reporte original porque el reporte no incluyó ese código fuente.
+- [x] Elegir una gramática y documentar la precedencia entre preset, argumento explícito y declaración CSS posterior — ver arriba.
+- [x] Definir tratamiento de argumentos repetidos, incompatibles y responsive — repetidos lanzan `UXD_SURFACE_ARGUMENT`/`UXD_BUTTON_ARGUMENT`/`UXD_INPUT_ARGUMENT` explícito; claves indefinidas lanzan `UXD_SURFACE_REFERENCE`; responsive se hereda del token referenciado, sin gramática nueva.
+- [x] Mantener coherencia entre surface, button e input cuando el concepto aplique — mismo parser y misma composición para los tres, probado explícitamente para button e input.
+- [x] Compartir parsing, diagnósticos, ejemplos y sugerencias del editor con el motor unificado — reutiliza `RADIUS_KEYWORDS`, `getEdgeTokens`, `getShadowTokens` y los mismos códigos de error que las funciones de valor sueltas. Sugerencias del editor (VS Code) no actualizadas en este parche — el registro de lenguaje (`LANGUAGE_COMPLETIONS` en `language.ts`) no incluye todavía `radius()`/`shadow()` como argumentos de `@ds-surface`/`@ds-button`/`@ds-input`; queda pendiente.
 
 ## MIG-06 — Migración documentada y asistida
 
 Incluir en los paquetes publicados una referencia de gramática y un changelog con ejemplos 0.3.0 → 0.5.x. La documentación no debe depender únicamente de una web que puede describir otra versión.
 
+Implementado en este checkout (paquete identificado como 0.3.0, sin cambiar
+versiones ni publicar): guía de migración en
+[`docs/migration/0.3-to-0.5-beta.md`](../migration/0.3-to-0.5-beta.md) y
+codemod en `packages/postcss-uxdsl/scripts/codemod-size-overrides.js`
+(`npm run codemod:size-overrides` desde ese paquete), con 12 tests en
+`test/codemod-size-overrides.test.js`.
+
+> **Nota (auditoría):** la primera versión del codemod tenía dos bugs de
+> cascada, encontrados en revisión antes de publicarse en `main`: (1)
+> recogía cualquier declaración `border-radius`/`box-shadow` de la regla
+> sin importar su posición, incluyendo una anterior al mixin — que ya es
+> código muerto bajo la cascada normal, no el override vigente — y la
+> trataba como si fuera la intencional; (2) descartaba `!important`
+> silenciosamente al fundirlo en el argumento del mixin. Corregido: solo
+> considera declaraciones posteriores a la llamada del mixin, y una
+> declaración con `!important` se reporta como caso a revisar manualmente
+> en vez de tocarse. Ambos casos tienen test de regresión.
+
 Criterios de aceptación:
 
-- [ ] Tabla de sintaxis anterior, equivalente nuevo, cambios de comportamiento y casos sin equivalencia exacta.
-- [ ] Guía para cinco entradas, CSS Modules, `includeTheme` y dependencias de tokens.
-- [ ] Codemod con modo de previsualización y diff; ejecutarlo dos veces no produce cambios adicionales.
-- [ ] Preservar comentarios, valores responsive y propiedades existentes.
-- [ ] Señalar casos ambiguos para revisión manual; no inventar un único size que pierda el radio original.
-- [ ] Los ejemplos compilan con los paquetes de la versión documentada.
+- [x] Tabla de sintaxis anterior, equivalente nuevo, cambios de comportamiento y casos sin equivalencia exacta — ver la guía de migración.
+- [x] Guía para cinco entradas, CSS Modules, `includeTheme` y dependencias de tokens — sección dedicada en la guía; nivel de verificación igual al de MIG-02 (compilación PostCSS, no build real de Next.js con paquetes empaquetados — eso es MIG-07).
+- [x] Codemod con modo de previsualización y diff; ejecutarlo dos veces no produce cambios adicionales — por defecto solo previsualiza (imprime línea antes/después y qué se elimina); `--write` aplica. Idempotencia probada explícitamente.
+- [x] Preservar comentarios, valores responsive y propiedades existentes — probado; el codemod nunca reescribe una expresión responsive (`xs(radius(2)) md(radius(3))`) ni una que no sea una llamada `radius()`/`shadow()` pura, las reporta como `SKIPPED` en cambio.
+- [x] Señalar casos ambiguos para revisión manual; no inventar un único size que pierda el radio original — múltiples declaraciones candidatas, valores no-función, y `!important` se reportan como `SKIPPED`, nunca se adivina.
+- [x] Los ejemplos compilan con los paquetes de la versión documentada — verificado contra `test/spacing-normalization.test.js`, `test/include-theme.test.js`, `test/border-colors.test.js`, `test/size-overrides.test.js` y `test/codemod-size-overrides.test.js` de este mismo checkout (0.3.0, sin publicar); no se verificó contra un artefacto `0.5.0-beta.x` real porque no existe todavía (eso es MIG-07).
 
 ## MIG-07 — Validación desde artefactos publicados
 

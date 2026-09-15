@@ -4,10 +4,22 @@ const postcss = require('postcss');
 const exported = require('../dist/index');
 const plugin = exported.default || exported;
 
+// Full 1-16 spacing (this file's own 1/2 win) plus the palette families the
+// always-on density/surface/button/input defaults need, and an h1 typo
+// role, so strict reference validation (every :root block the plugin
+// always emits, not just what a given source uses) passes. See
+// docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [i + 1, `${(i + 1) * 4}px`]));
 const theme = {
   breakpoints: { xs: 0, md: 800 },
-  palette: { primary: { main: '#123456', dark: '#000', contrast: '#fff' } },
-  spacing: { 1: '4px', 2: '8px' },
+  palette: {
+    primary: { main: '#123456', dark: '#000', contrast: '#fff' },
+    surface: { main: '#fff', dark: '#eee', contrast: '#000' },
+    neutral: { main: '#999', dark: '#333' },
+    error: { main: '#f00' },
+  },
+  spacing: { ...FULL_SPACING, 1: '4px', 2: '8px' },
+  typography_details: { h1: { fontSize: '2rem' } },
   fonts: { families: { ui: 'Inter' }, google: ['Inter:wght@400;700'] },
 };
 

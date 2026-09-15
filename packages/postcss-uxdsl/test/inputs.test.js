@@ -7,7 +7,14 @@ const plugin=exported.default||exported;
 const {generateInputCss,getInputTokens,inputDeclarations,inputComponentCss,inspectInputTheme,parseInputArguments}=require('../dist/inputs');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
 const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
-const theme={breakpoints:{xs:0,md:800},palette:{'brand-blue':{main:'blue',dark:'navy',contrast:'white'}},inputs:{search:{surface:'outlined',base:{padding:'xs(8px) md(16px)',placeholder:'gray'},states:{focus:{shadow:'xs(shadow(1)) md(shadow(3))',placeholder:'black'},focusvisible:{outline:'2px solid blue'},readonly:{bg:'silver'}}}}};
+// Full 1-16 spacing plus the palette families the always-on density/surface/
+// button/input defaults need, so strict reference validation (every :root
+// block the plugin always emits, not just what this file's source uses)
+// passes. See docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING=Object.fromEntries(Array.from({length:16},(_,i)=>[i+1,`${(i+1)*4}px`]));
+const BASE_PALETTE={primary:{main:'#123',dark:'#111',contrast:'#fff'},surface:{main:'#fff',dark:'#eee',contrast:'#000'},neutral:{main:'#999',dark:'#333'},error:{main:'#f00'}};
+const withBaseline=(extra={})=>({spacing:FULL_SPACING,palette:BASE_PALETTE,...extra});
+const theme={breakpoints:{xs:0,md:800},spacing:FULL_SPACING,palette:{...BASE_PALETTE,'brand-blue':{main:'blue',dark:'navy',contrast:'white'}},inputs:{search:{surface:'outlined',base:{padding:'xs(8px) md(16px)',placeholder:'gray'},states:{focus:{shadow:'xs(shadow(1)) md(shadow(3))',placeholder:'black'},focusvisible:{outline:'2px solid blue'},readonly:{bg:'silver'}}}}};
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function vars(css){const out=[];postcss.parse(css).walkDecls(/^--input-/,d=>{if(d.parent.selector===':root')out.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value])});return out;}
 test('Input PostCSS and runtime share custom roles, fields and responsive variables',async()=>{
@@ -33,16 +40,16 @@ test('Input tone, size, base precedence and native defaults match both adapters'
 });
 test('Input legacy packs merge JSON fields and do not leak into another compilation',async()=>{
  const source='@theme { input-search: { @ds-surface(outlined); padding: 7px; :focus { bg: red; placeholder: gray; } } } .x { @ds-input(search); }';
- const css=(await compile(source,{inputs:{search:{base:{padding:'9px'},states:{focus:{color:'white'}}}}})).css;
+ const css=(await compile(source,withBaseline({inputs:{search:{base:{padding:'9px'},states:{focus:{color:'white'}}}}}))).css;
  for(const text of ['--input-search-base-padding: 9px','--input-search-focus-bg: red','--input-search-focus-color: white','var(--surface-outlined-radius)'])assert(css.includes(text));
  await assert.rejects(()=>compile('.x { @ds-input(search); }'),/UXD_INPUT/);
 });
 test('generated legacy Input defaults match engine defaults',async()=>{
  const source=fs.readFileSync(require.resolve('../src/theme/default-inputs.uxdsl'),'utf8');
- assert.deepEqual(vars((await compile(source)).css),vars(generateInputCss({})));
+ assert.deepEqual(vars((await compile(source,withBaseline())).css),vars(generateInputCss(withBaseline())));
 });
 test('underline maps to bottom border and preserves local CSS ordering',async()=>{
- const css=(await compile('.x { @ds-input(underline); border-bottom-width: 3px; }')).css;
+ const css=(await compile('.x { @ds-input(underline); border-bottom-width: 3px; }',withBaseline())).css;
  const base={};postcss.parse(css).walkRules('.x',r=>r.walkDecls(d=>base[d.prop]=d.value));
  assert.equal(base.border,'var(--input-underline-base-border)');assert.equal(base['border-bottom'],'var(--input-underline-base-underline)');
  assert.equal(base['border-bottom-width'],'3px');

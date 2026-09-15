@@ -1,6 +1,29 @@
 /** Environment-independent semantics shared by build and runtime adapters. */
 import valueParser from 'postcss-value-parser';
 
+/** `space-` is a reserved legacy prefix; remove it once, never recursively. */
+export function normalizeSpacingKey(key: string): string {
+  return key.startsWith('space-') ? key.slice(6) : key;
+}
+
+/** Normalize before emission so aliases cannot silently overwrite each other. */
+export function normalizeSpacingDefinitions<T>(spacing: Record<string, T>): Record<string, T> {
+  const normalized: Record<string, T> = Object.create(null);
+  const sources = new Map<string, string>();
+  for (const [key, value] of Object.entries(spacing)) {
+    const token = normalizeSpacingKey(key);
+    if (!token || token.startsWith('space-')) {
+      throw new Error(`UXD_SPACING_KEY: Invalid spacing key "${key}"; use an identifier with at most one space- prefix.`);
+    }
+    if (sources.has(token)) {
+      throw new Error(`UXD_SPACING_COLLISION: spacing keys "${sources.get(token)}" and "${key}" both define --space-${token}. Use only one spelling.`);
+    }
+    sources.set(token, key);
+    normalized[token] = value;
+  }
+  return normalized;
+}
+
 export type BreakpointMap = Record<string, number>;
 export const DEFAULT_BREAKPOINTS: BreakpointMap = Object.freeze({
   xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280,

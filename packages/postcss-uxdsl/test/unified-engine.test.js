@@ -6,15 +6,23 @@ const {surfaceValueToCss}=require('../dist/surfaces');const {presetValueToCss}=r
 const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function variables(css){const result={};postcss.parse(css).walkDecls(/^--/,d=>{let parent=d.parent;const path=[];while(parent.type!=='root'){path.unshift(parent.type==='atrule'?`@${parent.name} ${parent.params}`:parent.selector);parent=parent.parent}result[path.join('/')+'/'+d.prop]=d.value});return result;}
-const theme={colors:{blue:{500:'#123456'},white:'#fff'},palette:{primary:{main:'var(--ds__color__blue-500)',contrast:'var(--ds__color__white)',dark:'#111'}},spacing:{1:'2px',2:'4px',3:'8px'},densities:{2:'xs(space(1)) md(space(3))'},breakpoints:{md:800},modes:{dark:{palette:{primary:{main:'#654321'}}}},surfaces:{card:{padding:'density(2)'}},buttons:{action:{surface:'card',states:{hover:{bg:'palette(primary)'}}}},inputs:{field:{surface:'card',base:{caret:'palette(primary)'}}}};
+// Full 1-16 spacing (this file's own 1/2/3 win) plus the palette families
+// (surface/neutral/error, alongside this file's own primary) the always-on
+// density/surface/button/input defaults need, so strict reference
+// validation (every :root block the plugin always emits, not just what
+// this file's source uses) passes. See
+// docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING=Object.fromEntries(Array.from({length:16},(_,i)=>[i+1,`${(i+1)*4}px`]));
+const theme={colors:{blue:{500:'#123456'},white:'#fff'},palette:{primary:{main:'var(--ds__color__blue-500)',contrast:'var(--ds__color__white)',dark:'#111'},surface:{main:'#fff',dark:'#eee',contrast:'#000'},neutral:{main:'#999',dark:'#333'},error:{main:'#f00'}},spacing:{...FULL_SPACING,1:'2px',2:'4px',3:'8px',gutter:'16px'},densities:{2:'xs(space(1)) md(space(3))'},breakpoints:{md:800},modes:{dark:{palette:{primary:{main:'#654321'}}}},surfaces:{card:{padding:'density(2)'}},buttons:{action:{surface:'card',states:{hover:{bg:'palette(primary)'}}}},inputs:{field:{surface:'card',base:{caret:'palette(primary)'}}}};
 test('all generated theme variables and mode selectors agree across build and runtime',async()=>{
  assert.deepEqual(variables((await compile('',theme)).css),variables(generateThemeCss(theme)));
 });
 test('Density JSON wins over local legacy definitions and no configuration leaks between builds',async()=>{
- const first=await compile('@theme { density-custom: xs(space(1)) md(space(2)); }',{densities:{custom:'xs(space(3))'}});
+ const first=await compile('@theme { density-custom: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{custom:'xs(space(3))'}});
  assert(first.css.includes('--density-custom: var(--space-3)'));
- const second=(await compile('')).css;assert(!second.includes('--density-custom:'));
- assert.deepEqual(variables(second),variables(generateThemeCss({})));
+ const baseline={spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors};
+ const second=(await compile('',baseline)).css;assert(!second.includes('--density-custom:'));
+ assert.deepEqual(variables(second),variables(generateThemeCss(baseline)));
 });
 test('simple values, named spacing and alpha have one meaning in direct CSS and presets',async()=>{
  for(const expression of ['color(white)','palette(primary)','space(gutter)','palette(primary.main, 0.25)','color(blue.500, 0.125)','color(display-p3 1 0 0)']){
@@ -42,10 +50,10 @@ test('browser Color helpers use the same standalone key as the compiler',()=>{
  try{runtime.updateColor('white','#abcdef');assert.equal(runtime.getColor('white'),'#abcdef');assert.equal(data.get('--ds__color__white'),'#abcdef');assert(!data.has('--ds__color__white-main'));runtime.resetColors('white');assert.equal(data.size,0)}finally{for(const key of Object.keys(previous))if(previous[key]===undefined)delete global[key];else global[key]=previous[key]}
 });
 test('literal CSS string whitespace is not altered by token resolution',async()=>{
- const css=(await compile('.x { content: "two  spaces"; }')).css;assert(css.includes('"two  spaces"'));
+ const css=(await compile('.x { content: "two  spaces"; }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors})).css;assert(css.includes('"two  spaces"'));
 });
 test('component responsive shorthand preserves independent groups and future-only overrides',async()=>{
- const css=(await compile('.x { padding: xs(1px) md(2px) xs(3px) md(4px); margin: md(5px); }')).css;
+ const css=(await compile('.x { padding: xs(1px) md(2px) xs(3px) md(4px); margin: md(5px); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors})).css;
  const records=[];postcss.parse(css).walkRules('.x',r=>r.walkDecls(d=>records.push([r.parent.type==='atrule'?r.parent.params:'base',d.prop,d.value])));
  assert(records.some(([where,key,value])=>where==='base'&&key==='padding'&&value==='1px 3px'));
  assert(records.some(([where,key,value])=>where==='(min-width: 768px)'&&key==='padding'&&value==='2px 4px'));

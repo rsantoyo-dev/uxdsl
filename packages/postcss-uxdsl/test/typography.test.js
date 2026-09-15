@@ -6,9 +6,17 @@ const { compileTypographyRules, generateTypographyCss, typographyValueToCss } = 
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
 const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
 const { inspectResponsiveValue } = require('../dist/language');
+// Full 1-16 spacing (this file's own 4/5/6 win) plus the palette families
+// the always-on density/surface/button/input defaults need, so strict
+// reference validation (every :root block the plugin always emits, not
+// just what this file's source uses) passes. See
+// docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [i + 1, `${(i + 1) * 4}px`]));
+const BASE_PALETTE = { primary: { main: '#123', dark: '#111', contrast: '#fff' }, surface: { main: '#fff', dark: '#eee', contrast: '#000' }, neutral: { main: '#999', dark: '#333' }, error: { main: '#f00' } };
 const theme = {
   breakpoints: { xs: 0, sm: 480, md: 800, lg: 1100, xl: 1400, wide: 1800 },
-  spacing: { 4: '1rem', 5: '1.5rem', 6: '2rem' },
+  spacing: { ...FULL_SPACING, 4: '1rem', 5: '1.5rem', 6: '2rem' },
+  palette: BASE_PALETTE,
   fonts: { families: { ui: 'Inter, sans-serif' } },
   typography_details: {
     default: { fontFamily: 'var(--font-ui)', lineHeight: '1.5', fontWeight: '400' },
@@ -74,7 +82,7 @@ test('legacy flat typography and font variables remain supported', () => {
   assert.match(generateTypographyCss({ typography: { 'h1-size': '2rem' }, fonts: { families: { ui: 'sans-serif' } } }), /--h1-size: 2rem;/);
 });
 test('legacy responsive variables remain equivalent in both adapters', async () => {
-  const input = { typography: { 'h1-size': 'xs(space(4)) md(3rem)' } };
+  const input = { spacing: FULL_SPACING, palette: BASE_PALETTE, typography: { 'h1-size': 'xs(space(4)) md(3rem)' } };
   const built = await postcss([plugin({ theme: input })]).process('', { from: undefined });
   assert.deepEqual(declarations(built.css), declarations(generateThemeCss(input)));
 });
@@ -88,7 +96,11 @@ test('preview scopes Density and Typography to the same simulated viewport', () 
 test('packaged data-typo selectors consume all configured properties', async () => {
   const fs = require('node:fs');
   const source = fs.readFileSync(require.resolve('../src/theme/default-typography.uxdsl'), 'utf8');
-  const built = await postcss([plugin()]).process(source, { from: undefined });
+  // default-typography.uxdsl ships .ds-typo[data-typo="default"/"code"]
+  // selectors unconditionally; a theme needs those two typography_details
+  // roles for --default-size/--code-size to resolve (see MIG-04's note on
+  // the shipped defaults not being fully self-contained).
+  const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, typography_details: { default: { fontSize: '1rem' }, code: { fontSize: '0.9rem' } } } })]).process(source, { from: undefined });
   const rule = postcss.parse(built.css).nodes.find(n => n.selector === '.ds-typo[data-typo="h1"]');
   const props = Object.fromEntries(rule.nodes.map(d => [d.prop, d.value]));
   assert.equal(props['text-transform'], 'var(--h1-transform, none)');

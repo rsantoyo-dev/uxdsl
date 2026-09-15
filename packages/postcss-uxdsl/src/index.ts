@@ -570,8 +570,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkRules((rule) => {
         rule.walkAtRules('ds-input', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size } = parseInputArguments(effectiveInputTheme, at.params);
-          const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size));
+          const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
+          const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
           const base = generated.nodes.shift() as Rule;
           for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
           let anchor: any = rule;
@@ -589,8 +589,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             inner = inner.slice(1, -1);
           if (inner.startsWith("(") && inner.endsWith(")"))
             inner = inner.slice(1, -1).trim();
-          const { role: variant, tone: toneFamily, size: sizeToken } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
-          const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken);
+          const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
+          const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
           const insert = (prop: string, value: string) => {
             (rule as any).insertBefore(at, { prop, value });
           };
@@ -600,8 +600,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
         rule.walkAtRules('ds-button', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size } = parseButtonArguments(effectiveButtonTheme, at.params);
-          const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size));
+          const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
+          const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
           const base = generated.nodes.shift() as Rule;
           for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
           let anchor: any = rule;

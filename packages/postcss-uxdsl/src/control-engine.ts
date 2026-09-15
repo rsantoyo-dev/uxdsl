@@ -1,4 +1,4 @@
-import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss } from './surfaces';
+import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
 import { DEFAULT_BREAKPOINTS, BreakpointMap } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 
@@ -63,23 +63,36 @@ function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ..
     return rule.minWidth === null ? css : `@media (min-width: ${rule.minWidth}px) { ${css} }`;
   }).join('\n');
 }
-function declarations(theme: ControlTheme, role = 'contained', tone = '', size = '') {
+function declarations(theme: ControlTheme, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const pack = getTokens(theme)[role];
   if (!pack) throw fail(`UXD_INPUT_ROLE: Undefined ${role}.`);
   const refs = (state: string, style: Record<string,string>) => Object.fromEntries(Object.keys(style).map(key => [properties[key], tone ? `var(--${family}-${role}-tone-${tone}-${state}-${key}, var(--${family}-${role}-${state}-${key}))` : `var(--${family}-${role}-${state}-${key})`]));
-  const base: Record<string,string> = { ...nativeDefaults, ...surfaceDeclarations(theme, pack.surface, tone, size), ...refs('base', pack.base) };
+  const composed = surfaceDeclarations(theme, pack.surface, tone, size, radiusOverride, shadowOverride);
+  const base: Record<string,string> = { ...nativeDefaults, ...composed, ...refs('base', pack.base) };
+  // An explicit radius()/shadow() override argument is a per-usage-site
+  // decision; it must win even when the role's own `base` fields declare
+  // radius/shadow (properties['radius'|'shadow'] === 'border-radius' |
+  // 'box-shadow'), which refs('base', pack.base) would otherwise apply
+  // last and silently reintroduce the value the override was meant to
+  // replace.
+  if (radiusOverride) base['border-radius'] = composed['border-radius'];
+  if (shadowOverride) base['box-shadow'] = composed['box-shadow'];
   if (tone) for (const variant of ['main','dark','contrast']) base[`--${family}-tone-${variant}`] = `var(--ds__palette__${tone}-${variant})`;
   return { base, states: Object.fromEntries(Object.entries(pack.states).map(([state, style]) => [state, refs(state, style)])) };
 }
+// MIG-05: radius()/shadow() override arguments are extracted before the
+// existing role/tone/size detection runs, so they compose with tone-only
+// and legacy invocations without changing how those are parsed.
 function parseArguments(theme: ControlTheme, input: string) {
-  const parts = input.trim().replace(/^(['"])(.*)\1$/, '$2').replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
+  const allParts = input.trim().replace(/^(['"])(.*)\1$/, '$2').replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
+  const { radius, shadow, rest: parts } = parseOverrideArguments(allParts, errorPrefix);
   const roles = getTokens(theme);
   const role = parts.find(part => Object.hasOwnProperty.call(roles, part)) || 'contained';
   const rest = parts.filter(part => part !== role);
   const tone = rest.find(part => !/^\d+$/.test(part)) || '';
   const size = rest.find(part => /^\d+$/.test(part)) || '';
-  if (rest.length > Number(!!tone) + Number(!!size) || (tone && (!/^[a-z][a-z0-9-]*$/.test(tone) || (!parts.some(part => Object.hasOwnProperty.call(roles, part)) && !Object.hasOwnProperty.call(theme.palette || {}, tone))))) throw fail(`UXD_INPUT_ARGUMENT: Invalid ${input}; use a configured role, Palette family and numeric size.`);
-  return { role, tone, size };
+  if (rest.length > Number(!!tone) + Number(!!size) || (tone && (!/^[a-z][a-z0-9-]*$/.test(tone) || (!parts.some(part => Object.hasOwnProperty.call(roles, part)) && !Object.hasOwnProperty.call(theme.palette || {}, tone))))) throw fail(`UXD_INPUT_ARGUMENT: Invalid ${input}; use a configured role, Palette family, numeric size and optional radius()/shadow() overrides.`);
+  return { role, tone, size, radius: radius || '', shadow: shadow || '' };
 }
 function inspectTheme(theme: ControlTheme, viewport: number) {
   if (!Number.isFinite(viewport) || viewport < 0) throw fail('UXD_INPUT_VIEWPORT: Expected a non-negative width.');
@@ -87,8 +100,8 @@ function inspectTheme(theme: ControlTheme, viewport: number) {
   for (const rule of compileRules(theme)) if (rule.minWidth === null || rule.minWidth <= viewport) Object.assign(values, rule.values);
   return values;
 }
-function componentCss(theme: ControlTheme, selector: string, role = 'contained', tone = '', size = '') {
-  const {base, states} = declarations(theme, role, tone, size);
+function componentCss(theme: ControlTheme, selector: string, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
+  const {base, states} = declarations(theme, role, tone, size, radiusOverride, shadowOverride);
   const emit = (sel: string, declarations: Record<string,string>) => `${sel} { ${Object.entries(declarations).map(([key,value]) => `${key}: ${value};`).join(' ')} }`;
   const selectors = selector.split(',').map(value => value.trim());
   const render = (targets: string[], declarations: Record<string,string>) => {

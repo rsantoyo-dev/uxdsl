@@ -40,7 +40,8 @@
     "test": "npm run build && node --test test/*.test.js",
     "build": "tsc",
     "dev": "tsc --watch",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "codemod:size-overrides": "node scripts/codemod-size-overrides.js"
   },
   "exports": {
     ".": {

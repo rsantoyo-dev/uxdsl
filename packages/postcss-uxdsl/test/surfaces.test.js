@@ -6,7 +6,14 @@ const plugin = exported.default || exported;
 const { generateSurfaceCss, inspectSurfaceTheme, surfaceDeclarations, getSurfaceTokens } = require('../dist/surfaces');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
 const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
-const theme = { breakpoints: { xs:0, md:800 }, surfaces: { contained: { shadow: 'xs(shadow(1)) md(shadow(3))', bg:'white' }, notice: { padding: '12px', border:'2px solid red' } } };
+// Full 1-16 spacing plus the palette families the always-on density/surface/
+// button/input defaults need, so strict reference validation (every :root
+// block the plugin always emits, not just what this file's source uses)
+// passes. See docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [i + 1, `${(i + 1) * 4}px`]));
+const BASE_PALETTE = { primary: { main: '#123', dark: '#111', contrast: '#fff' }, surface: { main: '#fff', dark: '#eee', contrast: '#000' }, neutral: { main: '#999', dark: '#333' }, error: { main: '#f00' } };
+const withBaseline = (extra = {}) => ({ spacing: FULL_SPACING, palette: BASE_PALETTE, ...extra });
+const theme = { breakpoints: { xs:0, md:800 }, spacing: FULL_SPACING, palette: { ...BASE_PALETTE, 'brand-blue': { main: 'blue', dark: 'navy', contrast: 'white' } }, surfaces: { contained: { shadow: 'xs(shadow(1)) md(shadow(3))', bg:'white' }, notice: { padding: '12px', border:'2px solid red' } } };
 const compile=(source,options={})=>postcss([plugin(options)]).process(source,{from:undefined});
 function declarations(css) {
  const result=[];postcss.parse(css).walkDecls(/^--surface-/,d=>result.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value]));return result;
@@ -35,11 +42,11 @@ test('tone and size composition matches compiled declarations',async()=>{
 });
 test('legacy Surface definitions normalize to shared rules; JSON wins per field; no leakage',async()=>{
  const legacy='@theme { surface-contained: { bg: pink; padding: 11px; } } .x { @ds-surface(contained); }';
- const output=await compile(legacy,{theme:{surfaces:{contained:{bg:'white'}}}});
+ const output=await compile(legacy,{theme:withBaseline({surfaces:{contained:{bg:'white'}}})});
  assert(output.css.includes('--surface-contained-bg: white'));
  assert(output.css.includes('--surface-contained-padding: 11px'));
- assert(!(await compile('.x { @ds-surface(contained); }')).css.includes('11px'));
- assert.deepEqual(declarations((await compile(legacy)).css),declarations(generateSurfaceCss({surfaces:{contained:{bg:'pink',padding:'11px'}}})));
+ assert(!(await compile('.x { @ds-surface(contained); }',{theme:withBaseline()})).css.includes('11px'));
+ assert.deepEqual(declarations((await compile(legacy,{theme:withBaseline()})).css),declarations(generateSurfaceCss(withBaseline({surfaces:{contained:{bg:'pink',padding:'11px'}}}))));
 });
 test('invalid Surface roles, fields, references and expressions are rejected',async()=>{
  for(const bad of [{surfaces:{contained:null}},{surfaces:[]},{surfaces:{contained:{unknown:'1px'}}},{surfaces:{contained:{shadow:'md(shadow(1))'}}},{surfaces:{contained:{radius:'radius(99)'}}},{surfaces:{contained:{bg:''}}}]) {
@@ -63,7 +70,7 @@ test('Surface backgrounds preserve native gradients and palette opacity',()=>{
 });
 
 test('legacy tone-only invocation uses a configured palette family',async()=>{
- const output=await compile('.x { @ds-surface(light, 2); }',{theme:{palette:{light:{main:'white',contrast:'black'}}}});
+ const output=await compile('.x { @ds-surface(light, 2); }',{theme:withBaseline({palette:{...BASE_PALETTE,light:{main:'white',contrast:'black'}}})});
  assert(output.css.includes('background: var(--ds__palette__light-main)'));
  assert(output.css.includes('padding: var(--density-2)'));
 });

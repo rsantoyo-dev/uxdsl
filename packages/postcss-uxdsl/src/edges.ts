@@ -10,6 +10,13 @@ export const DEFAULT_BORDERS: Record<string, string> = Object.freeze({
   1: 'xs(1px solid color(gray.300))', 2: 'xs(space(1) solid color(gray.300))',
   3: 'xs(space(2) solid color(gray.400))', 4: 'xs(space(3) solid color(gray.500))', 5: 'xs(space(4) solid color(gray.600))',
 });
+/** Color dependency of DEFAULT_BORDERS. Emitted by the foundation generator
+ * (merged under theme.colors.gray, user shades winning per-key) so
+ * border(1..5) resolves out of the box; a theme that overrides every
+ * DEFAULT_BORDERS key no longer references this and it goes unused. */
+export const DEFAULT_BORDER_COLORS: Record<string, Record<string, string>> = Object.freeze({
+  gray: Object.freeze({ 300: '#d1d5db', 400: '#9ca3af', 500: '#6b7280', 600: '#4b5563' }),
+});
 export const RADIUS_KEYWORDS: Record<string, string> = Object.freeze({ pill: '9999px', full: '9999px', circle: '50%' });
 export interface EdgeTheme { borders?: Record<string, string>; radii?: Record<string, string>; breakpoints?: BreakpointMap }
 

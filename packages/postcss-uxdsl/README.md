@@ -171,15 +171,55 @@ With `includeTheme: false`, the plugin already validates against the theme
 entry's output automatically — you do not need to pass `references.css`
 yourself for that case.
 
-**Known caveat:** the shipped default tokens are not self-contained. The
-default Density scale (`DEFAULT_DENSITIES`) references `space(1)` through
-`space(16)`, and the default border/radius presets reference
-`color(gray.300..600)`. If your theme's `spacing` or `colors.gray` does not
-cover that full range, compiling with the defaults active will fail
-reference validation. Either configure a full spacing scale and a `gray`
-color scale, override the specific density/border/radius tokens you use, or
-set `references: { mode: 'warn' }` while you migrate a theme that only
-partially covers the defaults.
+**Known caveat:** the shipped default Density scale (`DEFAULT_DENSITIES`)
+references `space(1)` through `space(16)`. If your theme's `spacing` does
+not cover that full range, compiling with density active (it always is,
+unless `includeTheme: false`) will fail reference validation for the
+uncovered keys. Either configure a full spacing scale, override the
+specific density tokens you use, or set `references: { mode: 'warn' }`
+while you migrate a theme that only partially covers the defaults. The
+equivalent gap for `border(1..5)`'s `color(gray.*)` dependency is closed —
+see the next section.
+
+---
+
+## Spacing keys (`space-1` vs `1`)
+
+`theme.spacing` accepts either the bare numeric/named key (`"1"`,
+`"gutter"`) or the legacy `space-`-prefixed form (`"space-1"`,
+`"space-gutter"`) — both emit `--space-1` / `--space-gutter`. `space-` is a
+reserved prefix removed exactly once; `"outer-space"` is untouched, and a
+repeated or empty prefix (`"space-space-1"`, `"space-"`) raises
+`UXD_SPACING_KEY`. Defining both spellings for the same key in one config
+(`{ "1": "4px", "space-1": "4px" }`) raises `UXD_SPACING_COLLISION` even
+when the values agree — pick one spelling.
+
+---
+
+## Independent radius/shadow overrides (`@ds-surface`/`@ds-button`/`@ds-input`)
+
+A numeric `size` argument sets padding and border-radius together
+(`@ds-surface(contained 2)`). To adjust radius or shadow without also
+changing padding — or without touching padding's size at all — add an
+explicit `radius(key)` / `shadow(key)` argument; `key` is the same kind of
+token key the standalone `radius()`/`shadow()` value functions accept:
+
+```text
+@ds-surface(contained 2 radius(4));
+@ds-surface(contained primary 2 radius(pill) shadow(3));
+@ds-button(outlined 2 radius(1));
+@ds-input(contained 2 shadow(0));
+```
+
+The override replaces only that one property — `size`'s padding is
+untouched, and the two overrides are independent of each other. Each may
+appear once; a repeated `radius()`/`radius()` or an undefined key throws
+the same diagnostics as the standalone functions. A later plain CSS
+declaration in the same rule still wins last, as always. See
+[`docs/migration/0.3-to-0.5-beta.md`](../../docs/migration/0.3-to-0.5-beta.md)
+for the full precedence rules and a codemod that folds an existing manual
+`border-radius: radius(N);` override into this syntax
+(`npm run codemod:size-overrides`).
 
 ---
 

@@ -5,7 +5,14 @@ const exported=require('../dist/index');
 const plugin=exported.default||exported;
 const {generateButtonCss,getButtonTokens,buttonDeclarations,buttonComponentCss,inspectButtonTheme,parseButtonArguments}=require('../dist/buttons');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
-const theme={breakpoints:{xs:0,md:800},palette:{'brand-blue':{main:'blue',dark:'navy',contrast:'white'}},buttons:{checkout:{surface:'outlined',base:{padding:'xs(8px) md(16px)'},states:{selected:{shadow:'xs(shadow(1)) md(shadow(3))'},focusvisible:{outline:'2px solid blue'}}}}};
+// Full 1-16 spacing plus the palette families the always-on density/surface/
+// button/input defaults need, so strict reference validation (every :root
+// block the plugin always emits, not just what this file's source uses)
+// passes. See docs/features/FEAT-002-beta-migration-hardening.md.
+const FULL_SPACING=Object.fromEntries(Array.from({length:16},(_,i)=>[i+1,`${(i+1)*4}px`]));
+const BASE_PALETTE={primary:{main:'#123',dark:'#111',contrast:'#fff'},surface:{main:'#fff',dark:'#eee',contrast:'#000'},neutral:{main:'#999',dark:'#333'},error:{main:'#f00'}};
+const withBaseline=(extra={})=>({spacing:FULL_SPACING,palette:BASE_PALETTE,...extra});
+const theme={breakpoints:{xs:0,md:800},spacing:FULL_SPACING,palette:{...BASE_PALETTE,'brand-blue':{main:'blue',dark:'navy',contrast:'white'}},buttons:{checkout:{surface:'outlined',base:{padding:'xs(8px) md(16px)'},states:{selected:{shadow:'xs(shadow(1)) md(shadow(3))'},focusvisible:{outline:'2px solid blue'}}}}};
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function vars(css){const out=[];postcss.parse(css).walkDecls(/^--button-/,d=>{if(d.parent.selector===':root')out.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value])});return out;}
 test('Buttons PostCSS/runtime share custom base and responsive state variables',async()=>{
@@ -27,7 +34,7 @@ test('Button tone, size, state selectors and component CSS use shared compositio
 });
 test('legacy button packs, JSON precedence and compilation isolation',async()=>{
  const legacy='@theme { button-checkout: { @ds-surface(outlined); padding: 7px; :hover { bg: red; } } } .x { @ds-button(checkout); }';
- const css=(await compile(legacy,{buttons:{checkout:{base:{padding:'9px'},states:{hover:{color:'white'}}}}})).css;
+ const css=(await compile(legacy,withBaseline({buttons:{checkout:{base:{padding:'9px'},states:{hover:{color:'white'}}}}}))).css;
  assert(css.includes('--button-checkout-base-padding: 9px'));
  assert(css.includes('--button-checkout-hover-bg: red'));
  assert(css.includes('--button-checkout-hover-color: white'));
@@ -43,7 +50,7 @@ test('invalid Button roles, fields, states and mappings fail in both paths',asyn
 });
 test('Button defaults are immutable across theme reads and state CSS retains local override order',async()=>{
  const a=getButtonTokens({});a.contained.states.hover.bg='red';assert.notEqual(getButtonTokens({}).contained.states.hover.bg,'red');
- const css=(await compile('.x { @ds-button(contained); padding: 3px; }')).css;
+ const css=(await compile('.x { @ds-button(contained); padding: 3px; }',withBaseline())).css;
  assert(css.indexOf('padding: 3px')>css.indexOf('padding: var(--surface-contained-padding)'));
  assert(css.includes('box-shadow: var(--surface-contained-shadow)'));
 });
