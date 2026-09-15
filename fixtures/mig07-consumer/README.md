@@ -24,7 +24,14 @@ first), builds the five entries, and checks:
   mandatory UXDSL references.
 - The four panel entries emit zero `:root` blocks; the theme entry does.
 - PostCSS and the installed `postcss-uxdsl/ds-runtime`'s `generateThemeCss`
-  agree on the same set of theme-entry variables.
+  agree on which value actually wins the CSS cascade for every theme-entry
+  declaration — via `lib/css-cascade-compare.js`'s `cascadedVariables`, not
+  a flat "collect declarations and sort" comparison (that was blind to
+  declaration order — including which of two overlapping
+  `@media (min-width: …)` blocks comes later in the stylesheet — and to
+  `!important`; see its header comment and
+  `test/cascade-compare.test.js` for the regression cases, which `run.js`
+  runs automatically at the start of every invocation).
 - Building twice from the same install produces byte-identical CSS.
 - The installed tarball actually ships `README.md`, `CHANGELOG.md` and
   `docs/migration.md` (not just source and `dist/`).

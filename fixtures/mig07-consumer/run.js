@@ -19,6 +19,7 @@
 const fs = require('fs');
 const path = require('path');
 const { execFileSync } = require('child_process');
+const { cascadedVariables, mapsEqual } = require('./lib/css-cascade-compare');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE_DIR = __dirname;
@@ -78,46 +79,24 @@ async function buildOnce(installed, theme) {
   return outputs;
 }
 
-// Resolves each (context, prop) pair to the single value that actually
-// wins the CSS cascade — not every raw declaration. A naive "collect every
-// declaration then sort()" comparison (the previous version of this
-// function) is blind to declaration order: two blocks that repeat the
-// same custom property with different values, in opposite orders, both
-// flatten to the same sorted array even though the browser applies a
-// different winner in each (the later declaration wins; sorting erases
-// "later"). It also silently drops `!important`, which can flip that
-// winner regardless of order. Mirrors the same last-declaration-wins /
-// important-wins-first tie-break `reference-integrity.ts`'s `resolve()`
-// uses for the same reason.
-function effectiveVariables(css, runtimePostcss) {
-  const root = runtimePostcss.parse(css);
-  const winners = new Map();
-  let order = 0;
-  root.walkDecls(/^--/, (declaration) => {
-    const context = [];
-    for (let parent = declaration.parent; parent && parent.type !== 'root'; parent = parent.parent) {
-      if (parent.type === 'rule') context.push(`rule:${parent.selector}`);
-      else if (parent.type === 'atrule') context.push(`at:${parent.name}:${parent.params}`);
-    }
-    const key = `${context.reverse().join(' > ')} | ${declaration.prop}`;
-    const candidate = { value: declaration.value, important: !!declaration.important, order: order++ };
-    const current = winners.get(key);
-    if (!current || Number(candidate.important) > Number(current.important) ||
-        (Number(candidate.important) === Number(current.important) && candidate.order > current.order)) {
-      winners.set(key, candidate);
-    }
-  });
-  return Array.from(winners.entries())
-    .map(([key, { value, important }]) => `${key} | ${value}${important ? ' !important' : ''}`)
-    .sort();
-}
-function mapsEqual(a, b) {
-  return a.length === b.length && a.every((value, index) => value === b[index]);
-}
+// cascadedVariables/mapsEqual live in ./lib/css-cascade-compare.js (see its
+// header for why a flat "collect every declaration then sort()" comparison
+// is wrong, and unit-tested in ./test/cascade-compare.test.js).
 
 async function main() {
   const tarballName = packAndInstall();
   check('tarball installed under ./node_modules/postcss-uxdsl (not the monorepo source)', fs.existsSync(path.join(FIXTURE_DIR, 'node_modules/postcss-uxdsl/dist/index.js')));
+
+  // Self-check: the comparison this script relies on below (cascadedVariables)
+  // has its own regression coverage — run it before trusting its verdicts,
+  // so a future regression in the comparison itself fails loudly here
+  // instead of silently passing a real bug through.
+  try {
+    execFileSync('node', ['--test', 'test/cascade-compare.test.js'], { cwd: FIXTURE_DIR, encoding: 'utf8', stdio: 'pipe' });
+    check('cascade-aware CSS comparison (lib/css-cascade-compare.js) passes its own regression tests', true);
+  } catch (err) {
+    check(`cascade-aware CSS comparison regression tests — FAILED:\n${err.stdout || err.stderr || err.message}`, false);
+  }
 
   const installed = loadInstalled();
   check('installed package.json declares main/types/exports for a consumer to resolve', !!(installed.pkgJson.main && installed.pkgJson.types && installed.pkgJson.exports));
@@ -146,9 +125,9 @@ async function main() {
   // generateThemeCss must agree on the same set of :root variables for
   // the same theme.
   if (outputs['theme.uxdsl']) {
-    const postcssVars = effectiveVariables(outputs['theme.uxdsl'], installed.postcss);
+    const postcssVars = cascadedVariables(outputs['theme.uxdsl'], installed.postcss);
     const runtimeCss = installed.runtime.generateThemeCss(theme);
-    const runtimeVars = effectiveVariables(runtimeCss, installed.postcss);
+    const runtimeVars = cascadedVariables(runtimeCss, installed.postcss);
     check('PostCSS and runtime (generateThemeCss) agree on the same :root variables for the theme entry', mapsEqual(postcssVars, runtimeVars));
   } else {
     check('PostCSS/runtime parity — skipped, theme entry did not build', false);

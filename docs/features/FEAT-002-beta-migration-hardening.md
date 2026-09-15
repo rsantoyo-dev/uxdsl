@@ -376,7 +376,35 @@ Criterios de aceptación:
 - [x] Instalación y build correctos con versiones coordinadas de los paquetes UXDSL utilizados — verificado para `postcss-uxdsl`. `uxdsl-core`/`uxdsl-cli`/`vite-plugin-uxdsl` no se empaquetaron ni instalaron en esta fixture (ver alcance abajo).
 - [x] Cero referencias UXDSL obligatorias sin resolver y cero globals generados en los módulos — las cinco entradas compilan sin lanzar (MIG-03 corre en modo estricto por defecto) y los cuatro paneles no contienen la cadena `:root`.
 - [ ] Verificación visual y de estilos computados para padding, radio y border, en varios breakpoints — **parcial**. No hay navegador headless disponible en este entorno (mismo bloqueo que ya registró FEAT-001 con la descarga de Chromium). Sustituido por el mismo método sin-navegador que ya usa el resto de la suite: las funciones `inspectSurfaceTheme`/`inspectEdgeTheme` del paquete instalado, en un par de anchos. Esto no es "verificación visual" real; queda documentado como pendiente, no como resuelto.
-- [x] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas — la entrada de tema compilada por PostCSS y `generateThemeCss` (del paquete instalado) coinciden en todas las declaraciones de variables, incluyendo selectores y `@media`; compilar dos veces produce CSS idéntico byte a byte.
+- [x] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas — la entrada de tema compilada por PostCSS y `generateThemeCss` (del paquete instalado) coinciden en el valor que efectivamente gana la cascada para cada declaración, no solo en el conjunto de declaraciones; compilar dos veces produce CSS idéntico byte a byte.
+
+  > **Corrección (auditoría):** la comparación anterior (`variableSet`) juntaba
+  > cada declaración `--` en una lista plana y la ordenaba con `.sort()` antes
+  > de comparar. Eso pierde dos cosas que sí cambian el resultado real en un
+  > navegador: (1) el orden dentro de un mismo scope — `:root { --x: 1px;
+  > --x: 2px; }` y las mismas dos declaraciones invertidas producen el mismo
+  > array ordenado, aunque la cascada real aplica la última (2px vs 1px) — y
+  > el `.sort()` también descartaba `!important` sin más; (2) el orden
+  > *entre* bloques `@media (min-width: …)` que se solapan: invertir dos
+  > bloques `min-width: 600px` y `min-width: 800px` cambia qué valor gana
+  > desde 800px en adelante (gana el que aparece más tarde en la hoja de
+  > estilos, no el de umbral más alto), pero cada `@media` se trataba como un
+  > scope independiente, así que invertir el orden no cambiaba nada que la
+  > comparación mirara. Corregido con `cascadedVariables`
+  > (`fixtures/mig07-consumer/lib/css-cascade-compare.js`): para cada par
+  > (scope, propiedad) calcula, en cada umbral de ancho relevante, qué
+  > declaración gana realmente (importancia y luego orden de aparición,
+  > igual que `reference-integrity.ts`'s `resolve()`), y compara esos
+  > valores ya resueltos en vez de las declaraciones crudas. Cobertura de
+  > regresión en `fixtures/mig07-consumer/test/cascade-compare.test.js` (6
+  > casos, incluida la inversión de bloques reportada), que `run.js` corre
+  > automáticamente al inicio de cada verificación — si esta comparación
+  > alguna vez deja de detectar el caso, la fixture falla ahí antes de
+  > confiar en su veredicto para la paridad real. Fuera de alcance,
+  > documentado en el propio archivo: una condición de `@media` que no sea
+  > `min-width` (p. ej. `prefers-color-scheme`) se trata como un scope propio,
+  > no como un umbral de ancho — no modela dos condiciones de ese tipo
+  > compitiendo entre sí de una forma que hoy no reconoce.
 - [x] La fixture migrada funciona sin los workarounds para prefijos y eliminación de globals — ningún panel declara `:root` propio ni necesita normalizar prefijos de spacing a mano (MIG-01/MIG-02 ya resuelven eso).
 - [x] El artefacto incluye documentación, exports y dependencias necesarios para un consumidor externo — verificado que el tarball instalado contiene `README.md`, `CHANGELOG.md` y `docs/migration.md`, y que `package.json` declara `main`/`types`/`exports` resolubles (el hallazgo de `exports` de arriba salió de este mismo chequeo).
 
