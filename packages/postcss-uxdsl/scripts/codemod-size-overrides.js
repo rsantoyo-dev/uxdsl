@@ -104,20 +104,25 @@ function migrateRoot(root) {
         skipped.push({ line: decl.source?.start?.line, reason: `${prop} has !important; folding it into the mixin argument would silently drop !important, which the override syntax cannot express` });
         continue;
       }
-      if (prop === 'border-radius') {
-        // Removing the shorthand changes what wins for any corner
-        // longhand sandwiched between the mixin and it (the longhand would
-        // move from "overridden by a later shorthand" to "last, and
-        // winning") — so leave that case for manual review too.
+      {
+        // Any declaration sandwiched between the mixin and the target that
+        // could change meaning once the target moves into the mixin's own
+        // generated output: `all` resets every property (so a later `all:
+        // initial/unset/revert` would wipe out a radius/shadow the mixin
+        // now bakes in earlier, where today it runs before the sandwiched
+        // `all` and survives), and — for border-radius specifically — a
+        // corner longhand would flip from "overridden by the later
+        // shorthand" to "last, and winning".
         const declPosition = rule.index(decl);
         const sandwiched = [];
         rule.walkDecls((node) => {
           if (node.parent !== rule || node === decl) return;
           const index = rule.index(node);
-          if (index > atPosition && index < declPosition && RADIUS_LONGHANDS.has(node.prop)) sandwiched.push(node.prop);
+          if (index <= atPosition || index >= declPosition) return;
+          if (node.prop === 'all' || (prop === 'border-radius' && RADIUS_LONGHANDS.has(node.prop))) sandwiched.push(node.prop);
         });
         if (sandwiched.length) {
-          skipped.push({ line: decl.source?.start?.line, reason: `${sandwiched.join(', ')} between the mixin and this border-radius; removing the shorthand would change which one wins for that corner` });
+          skipped.push({ line: decl.source?.start?.line, reason: `${sandwiched.join(', ')} between the mixin and this ${prop}; folding would change what applies there` });
           continue;
         }
       }

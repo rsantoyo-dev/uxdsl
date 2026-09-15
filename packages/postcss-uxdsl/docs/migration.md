@@ -136,6 +136,12 @@ vez de tocarse:
   lógicas `border-start-start-radius`, etc.) queda entre el mixin y el
   `border-radius` candidato — fundir el shorthand ahí cambiaría cuál gana
   en esa esquina.
+- Una declaración `all` (`all: initial`, `all: unset`, `all: revert`, ...)
+  queda entre el mixin y la declaración candidata — `all` resetea
+  cualquier propiedad, así que mover el radio/sombra al argumento del
+  mixin (que corre *antes* del `all`) haría que ese `all` posterior lo
+  borre, cuando hoy la declaración manual corre *después* del `all` y
+  sobrevive.
 
 ## Verificación
 

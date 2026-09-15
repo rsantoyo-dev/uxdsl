@@ -12,6 +12,26 @@ const run = (source) => {
   return { css: root.toString(), ...result };
 };
 
+test('codemod: leaves border-radius alone when "all" sits between the mixin and it', () => {
+  // Regression: `all: initial/unset/revert` resets every property, so
+  // moving border-radius/box-shadow into the mixin's own (earlier)
+  // generated output means the later `all` would wipe it out — whereas
+  // today the manual declaration runs after `all` and survives.
+  const { css, applied, skipped } = run('.x { @ds-surface(contained 2); all: initial; border-radius: radius(4); }');
+  assert.equal(css, '.x { @ds-surface(contained 2); all: initial; border-radius: radius(4); }');
+  assert.equal(applied.length, 0);
+  assert.equal(skipped.length, 1);
+  assert.match(skipped[0].reason, /^all between the mixin/);
+});
+
+test('codemod: leaves box-shadow alone when "all" sits between the mixin and it', () => {
+  const { css, applied, skipped } = run('.y { @ds-surface(contained 2); all: unset; box-shadow: shadow(1); }');
+  assert.equal(css, '.y { @ds-surface(contained 2); all: unset; box-shadow: shadow(1); }');
+  assert.equal(applied.length, 0);
+  assert.equal(skipped.length, 1);
+  assert.match(skipped[0].reason, /^all between the mixin/);
+});
+
 test('codemod: with two consecutive mixin calls, a trailing override attaches to the nearer (second) call, not the first', () => {
   // Regression: the fix's original position check ("after the mixin")
   // didn't stop at the NEXT mixin call, so a trailing declaration meant

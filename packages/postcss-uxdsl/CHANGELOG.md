@@ -33,8 +33,8 @@ narrative migration guide covering the same ground.
   the new `radius()`/`shadow()` argument syntax. Preview by default,
   `--write` to apply; idempotent; flags ambiguous cases (multiple
   candidate declarations, non-token values, `!important`, a nearer second
-  mixin call, an interleaved corner longhand) for manual review instead of
-  guessing.
+  mixin call, an interleaved corner longhand, an interleaved `all` reset)
+  for manual review instead of guessing.
 
 ### Fixed
 

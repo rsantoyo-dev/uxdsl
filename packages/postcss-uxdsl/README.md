@@ -219,7 +219,11 @@ declaration in the same rule still wins last, as always. See
 [`docs/migration.md`](docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
-(`npm run codemod:size-overrides`).
+(`npm run codemod:size-overrides`). The codemod skips (and reports for
+manual review) a case where folding would change which declaration wins —
+a nearer second mixin call, an interleaved corner longhand, or an
+interleaved `all` reset — rather than guessing; see the linked guide for
+the full list.
 
 ---
 

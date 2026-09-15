@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-01 a MIG-06 implementados y auditados en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 103/103. MIG-07 y MIG-08 pendientes |
+| Estado | MIG-01 a MIG-06 implementados y auditados (tres rondas) en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 107/107, `uxdsl-core` pasa. MIG-07 y MIG-08 pendientes |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -149,9 +149,18 @@ Criterios de aceptación:
 > test individual) por la misma cadena `--density-1 -> --space-1`. Ese test
 > no verifica nada de estilos — es sobre resolución de `@import` — así que
 > se le pasó `references: { mode: 'off' }` en vez de fabricarle un tema
-> completo que no necesita. `uxdsl-core` vuelve a pasar. Se revisó también
-> `vite-plugin-uxdsl`: no tiene carpeta `test/` en este checkout (no hay
-> nada que romper ahí todavía).
+> completo que no necesita. `uxdsl-core` vuelve a pasar.
+>
+> **Aclaración importante (no dar por resuelto MIG-03 en `uxdsl-core`):**
+> este fix hace que el test de `@import` de `uxdsl-core` pase porque
+> *desactiva* la validación referencial para ese caso puntual — verifica
+> que los imports se resuelvan bien, no que las dependencias de los
+> defaults por defecto (spacing 1-16, palette primary/surface/neutral/
+> error) se resuelvan en modo estricto. `uxdsl-core` no tiene ningún test
+> que compile en modo estricto contra un tema completo — ese hueco sigue
+> abierto ahí, igual que en `postcss-uxdsl` antes de la sección "Nota de
+> consecuencia" de arriba. Se revisó también `vite-plugin-uxdsl`: no tiene
+> carpeta `test/` en este checkout (no hay nada que romper ahí todavía).
 >
 > Al correr `npm test` desde la raíz para confirmar esto se encontró un
 > tercer problema, preexistente y no relacionado con MIG-01 a MIG-06:
@@ -294,6 +303,18 @@ el tarball), con 14 tests en `test/codemod-size-overrides.test.js`.
 > "sobrescrita por el shorthand posterior" a "última y ganadora" al
 > eliminar ese shorthand — ahora se detecta y se reporta como caso a
 > revisar manualmente. Los cuatro casos tienen test de regresión.
+>
+> Una tercera ronda encontró un quinto caso, de la misma familia que (4)
+> pero más general: (5) una declaración `all` (`all: initial`/`unset`/
+> `revert`) entre el mixin y la declaración candidata. `all` resetea
+> *cualquier* propiedad, no solo las de una familia de shorthand
+> específica — así que mover el radio/sombra al argumento del mixin (que
+> se genera antes en la salida) hace que ese `all` posterior lo borre,
+> cuando hoy la declaración manual corre después del `all` y sobrevive.
+> Generalizada la detección de (4) para cubrir tanto las esquinas de
+> `border-radius` como `all` para ambas propiedades (`border-radius` y
+> `box-shadow`). Test de regresión agregado para ambos casos
+> (`test/codemod-size-overrides.test.js`, ahora 16 casos).
 >
 > Además, la primera versión de este documento apuntaba a
 > `docs/migration/0.3-to-0.5-beta.md` en la raíz del monorepo — un
