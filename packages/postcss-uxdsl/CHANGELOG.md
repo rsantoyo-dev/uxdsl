@@ -8,6 +8,12 @@ narrative migration guide covering the same ground.
 
 ## Unreleased
 
+- FEAT-002: explicit namespace migration targeting 0.5.0-beta.1, with
+  preview/write codemod and explicit mappings for host tokens/custom roles.
+- Shared radius/shadow directive-argument completion metadata for VS Code.
+- Reference-integrity regression coverage and atomic playground theme application.
+- Integrated tarball → Next.js strict CSS Modules → Chrome computed-style checks.
+
 ### Added
 
 - `includeTheme` plugin option: set to `false` on a component/CSS-Module

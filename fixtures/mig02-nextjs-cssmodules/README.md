@@ -1,5 +1,11 @@
 # MIG-02 Next.js CSS Modules build fixture
 
+Current integrated command: `npm run verify:cssmodules-build` from the root.
+It builds and installs MIG-07's tarball, uses that installation for the
+Next.js positive/negative controls, then checks Chrome computed styles at
+twelve boundary widths in light/dark. Set `UXDSL_CHROME_PATH` if Chrome is
+not installed at `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`.
+
 Proves the 5-entry guide (`includeTheme: true` theme entry + four
 `includeTheme: false` CSS-Module panels) compiles in a **real Next.js
 production build**, under css-loader's actual strict/pure CSS Modules
@@ -22,13 +28,10 @@ node run.js         # from this directory
 npm run verify
 ```
 
-First run installs `next`/`react`/`react-dom` locally (not from the
-monorepo — this fixture is a real, if minimal, Next.js app). `postcss-uxdsl`
-itself is required directly from `../../packages/postcss-uxdsl` (its
-current built `dist/`, not installed as a dependency) — this fixture is
-about the Next.js/css-loader build behavior, not packaging fidelity, which
-`fixtures/mig07-consumer/` already covers separately and more rigorously
-(a real `npm pack` tarball install).
+First run installs the fixture dependencies locally. Every run builds and
+packs `postcss-uxdsl`, installs it through `fixtures/mig07-consumer/`, then
+compiles using that installed package. No compiler source is imported from
+the monorepo by this fixture.
 
 Each run:
 
@@ -42,20 +45,21 @@ Each run:
    tree-shaken away unused) from `pages/index.js`. Must succeed — the
    panels never contain `:root` (MIG-01/MIG-02 already guarantee that),
    so there is nothing for pure mode to reject.
-3. **Negative control**: copies the *theme* output (which does contain
+3. **Browser verification**: Chrome checks padding, radius, border and modes
+   at twelve boundary widths using the installed package's generated CSS.
+4. **Negative control**: copies the *theme* output (which does contain
    `:root`) to a `.module.css` path and imports it from a throwaway page.
    `next build` must now **fail** with css-loader's real "is not pure"
    error. Without this, check #2 passing wouldn't prove much — a
    misconfigured or bypassed loader would let anything through silently.
-4. Cleans up the throwaway negative-control page and style file, and the
+5. Cleans up the throwaway negative-control page and style file, and the
    `.next` build cache, so the directory is back in its normal,
    always-succeeding state for the next run.
 
 ## What this does not verify
 
-- **Real browser rendering** of the built pages — this only proves the
-  *build* step (the webpack/css-loader compilation itself) succeeds or
-  fails as expected, not that the pages render correctly once served.
+- **Visual review of all built pages** — computed-style tests run in a
+  controlled document with the package CSS, not a screenshot audit.
 - **The App Router (`app/`) specifically** — this fixture uses the Pages
   Router (`pages/`) for simplicity. Next.js's CSS Modules loader
   (`loaders/modules.js`) is shared by both routers, so the mechanism under

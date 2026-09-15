@@ -2,6 +2,26 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## FEAT-002 migration verification
+
+The planned 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
+Use the shipped `postcss-uxdsl/scripts/codemod-namespace.js` in preview mode
+before migrating selected consumer CSS/JSON; explicit mappings protect host
+tokens and handle custom typography roles. See the
+[migration guide](packages/postcss-uxdsl/docs/migration.md).
+No release or publish is performed by these changes.
+
+VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
+and Input directives using generated shared-language metadata. CLI consumers
+must supply the same complete effective theme and regenerate their CSS when
+adopting the namespace; no automatic legacy aliases are provided.
+
+`npm test` includes reference-integrity, migration and cascade regressions.
+`npm run verify:cssmodules-build` builds and installs the compiler tarball,
+checks a real Next.js strict CSS Modules build with a negative control, and
+verifies Chrome computed styles in light/dark at responsive boundaries.
+Set `UXDSL_CHROME_PATH` for non-default Chrome locations.
+
 ## AI agent guide
 
 Read [AGENTS.md](AGENTS.md) for UXDSL responsibilities, configuration examples,

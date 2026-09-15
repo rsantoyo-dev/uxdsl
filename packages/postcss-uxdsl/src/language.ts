@@ -50,6 +50,11 @@ export const DEFAULT_DENSITIES: Record<number, string> = Object.freeze(
 );
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
 export const LANGUAGE_COMPLETIONS = {
+  directiveArguments: {
+    'ds-surface': ['radius', 'shadow'],
+    'ds-button': ['radius', 'shadow'],
+    'ds-input': ['radius', 'shadow'],
+  },
   directives: ['theme', 'ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
   functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;

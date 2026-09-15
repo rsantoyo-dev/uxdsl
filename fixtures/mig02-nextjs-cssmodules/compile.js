@@ -3,9 +3,8 @@
 
 /**
  * Compiles the same 5 entries MIG-07's consumer fixture uses (1 theme +
- * 4 CSS-Module-style panels) with the monorepo's own postcss-uxdsl build
- * (not a packaged tarball — that fidelity is MIG-07's job; this fixture is
- * only about the Next.js/css-loader build behavior) into real files a
+ * 4 CSS-Module-style panels) with MIG-07's freshly installed tarball
+ * into real files a
  * Next.js app can import: styles/theme.css (global, no CSS Modules) and
  * styles/panel-*.module.css (CSS Modules, includeTheme: false, so no
  * `:root`).
@@ -16,11 +15,12 @@ const path = require('path');
 
 const FIXTURE_DIR = __dirname;
 const MIG07_DIR = path.resolve(FIXTURE_DIR, '..', 'mig07-consumer');
-const PACKAGE_DIR = path.resolve(FIXTURE_DIR, '..', '..', 'packages', 'postcss-uxdsl');
+const PACKAGE_DIR = path.join(MIG07_DIR, 'node_modules', 'postcss-uxdsl');
 const STYLES_DIR = path.join(FIXTURE_DIR, 'styles');
 
 const plugin = require(PACKAGE_DIR);
-const postcss = require(path.join(PACKAGE_DIR, 'node_modules', 'postcss'));
+const installedRequire = require('module').createRequire(path.join(MIG07_DIR, 'package.json'));
+const postcss = installedRequire('postcss');
 const uxdsl = plugin.default || plugin;
 
 async function compile(source, theme, includeTheme) {

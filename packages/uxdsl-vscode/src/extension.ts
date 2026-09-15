@@ -9,6 +9,16 @@ export function activate(context: vscode.ExtensionContext) {
         {
             provideCompletionItems(document: vscode.TextDocument, position: vscode.Position) {
                 const linePrefix = document.lineAt(position).text.substr(0, position.character);
+                const directive = linePrefix.match(/@(ds-surface|ds-button|ds-input)\([^;{}]*$/);
+                if (directive) {
+                    const name = directive[1] as keyof typeof completions.directiveArguments;
+                    return completions.directiveArguments[name].map(fn => {
+                        const item = new vscode.CompletionItem(fn, vscode.CompletionItemKind.Function);
+                        item.insertText = new vscode.SnippetString(`${fn}(\${1:key})`);
+                        item.detail = 'Configured token override; preserves the other role fields';
+                        return item;
+                    });
+                }
 
                 // Suggest directives if typing '@'
                 if (linePrefix.endsWith('@')) {
@@ -26,7 +36,7 @@ export function activate(context: vscode.ExtensionContext) {
                 return functionCompletions;
             }
         },
-        '@' // Trigger character
+        '@', '(', ' '
     );
 
     context.subscriptions.push(provider);

@@ -41,7 +41,8 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
-    "codemod:size-overrides": "node scripts/codemod-size-overrides.js"
+    "codemod:size-overrides": "node scripts/codemod-size-overrides.js",
+    "codemod:namespace": "node scripts/codemod-namespace.js"
   },
   "exports": {
     ".": {

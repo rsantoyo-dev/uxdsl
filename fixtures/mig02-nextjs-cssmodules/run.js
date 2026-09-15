@@ -48,21 +48,25 @@ function run(cmd, args, opts = {}) {
 }
 
 async function main() {
+  execFileSync(process.execPath, [path.resolve(FIXTURE_DIR, '../mig07-consumer/run.js')], { stdio: 'inherit' });
   if (!fs.existsSync(path.join(FIXTURE_DIR, 'node_modules'))) {
     console.log('Installing next/react/react-dom (first run only)...');
     execFileSync('npm', ['install', '--no-audit', '--no-fund'], { cwd: FIXTURE_DIR, stdio: 'inherit' });
   }
 
-  console.log('Compiling theme + 4 panel entries with the monorepo\'s current postcss-uxdsl build...');
+  console.log('Compiling theme + 4 panel entries with the freshly installed tarball...');
   const compileResult = run('node', ['compile.js']);
   check('theme.css + 4 panel .module.css files compiled', compileResult.ok);
   if (!compileResult.ok) console.log(compileResult.output);
+  if (!compileResult.ok) throw new Error('Compilation failed; refusing to test stale CSS.');
 
   fs.rmSync(path.join(FIXTURE_DIR, '.next'), { recursive: true, force: true });
   console.log('\nBuilding (positive control): 1 theme entry (global CSS) + 4 CSS-Module panels...');
   const positive = run('npx', ['next', 'build']);
   check('next build succeeds with the compiled theme + 4 panels, no :root/pure-mode workaround needed', positive.ok);
   if (!positive.ok) console.log(positive.output);
+  if (!positive.ok) throw new Error('Positive Next.js build failed.');
+  execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
 
   console.log('\nBuilding (negative control): a :root-bearing file saved as .module.css...');
   fs.copyFileSync(path.join(FIXTURE_DIR, 'styles', 'theme.css'), BAD_STYLE);
@@ -82,7 +86,7 @@ async function main() {
   fs.rmSync(path.join(FIXTURE_DIR, '.next'), { recursive: true, force: true });
 
   console.log('\nNOT VERIFIED by this script (documented gap, see docs/features/FEAT-002-beta-migration-hardening.md MIG-02):');
-  console.log('  - Real browser rendering of the built pages (this only proves the build step, i.e. the webpack/css-loader compilation itself, succeeds or fails as expected).');
+  console.log('  - Visual review of all product pages; Chrome verifies computed styles in a controlled document using the installed package.');
   console.log('  - The App Router (`app/`) CSS Modules pipeline specifically — this fixture uses the Pages Router; next/dist/build/webpack/config/blocks/css/loaders/modules.js is shared by both, so the mechanism under test is the same either way, but it was not additionally exercised through app/.');
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);

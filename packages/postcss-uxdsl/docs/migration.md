@@ -184,6 +184,50 @@ vez de tocarse:
   genérica de saberlo. Cualquier regla/at-rule anidada en el medio se trata
   como barrera, sin inspeccionar su contenido.
 
+## Decisión de compatibilidad de FEAT-002
+
+La versión de destino para este contrato es **0.5.0-beta.1** (planificada,
+no publicada por este cambio). Se adopta una migración explícita a
+`--uxdsl__<familia>__<clave>`, sin aliases automáticos. Los consumidores
+existentes deben migrar definiciones y referencias en la misma actualización;
+no mezclar CSS precompilado antiguo con un tema generado por la versión nueva.
+Esto no depende de asumir que no existen consumidores publicados.
+
+Ejecutar desde el paquete instalado, primero sin `--write`:
+
+```bash
+node node_modules/postcss-uxdsl/scripts/codemod-namespace.js styles.css theme.json
+node node_modules/postcss-uxdsl/scripts/codemod-namespace.js --write styles.css theme.json
+```
+
+La vista previa muestra un diff por línea. Solo seleccionar archivos cuyos
+prefijos antiguos pertenecen a UXDSL; también se actualizan referencias en
+JSON, overrides CSS y listas `externalTokens`. Las claves lógicas JSON no
+cambian. El comando no cambia nombres de propiedades de `theme.typography`
+plano: ese escape hatch requiere revisión manual de sus claves y consumidores.
+No infiere que `--primary-main` sea un token de Palette.
+
+Para roles tipográficos personalizados y nombres que pertenecen al host,
+pasar `--map mapping.json`: un objeto de nombre anterior a nombre destino.
+Un mapeo a sí mismo protege un token externo que coincida con un prefijo de
+UXDSL. Ejemplo: `{ "--space-host": "--space-host",
+"--custom-title-size": "--uxdsl__typography__custom-title-size" }`.
+Revisar el diff antes de escribir; conservar el commit anterior permite
+revertir la migración. Una segunda ejecución no produce cambios adicionales.
+
+El modo estricto exige un **tema efectivo completo** para las dependencias de
+los presets emitidos (incluyendo Spacing 1–16 y Palette de controles). No se
+inyecta otra escala ni se desactiva la validación para hacer pasar temas
+incompletos. CSS externo sin DSL permanece fuera de esa validación; proveedores
+externos alcanzados desde tokens deben declararse explícitamente.
+
+La validación estática prueba `:root`, selectores idénticos y condiciones
+reconocidas; no sustituye un motor CSS para selectores arbitrarios, herencia,
+capas o estados combinados. La fixture de navegador comprueba el contrato
+responsive usado por el consumidor. Antes de reemplazar una hoja runtime,
+generar el CSS completo correctamente; ante una excepción conservar la hoja
+y el último tema válido.
+
 ## Verificación
 
 Los ejemplos de este documento están verificados contra los tests de este
@@ -191,7 +235,7 @@ checkout (`postcss-uxdsl@0.3.0`):
 `test/spacing-normalization.test.js`, `test/include-theme.test.js`,
 `test/border-colors.test.js`, `test/size-overrides.test.js`,
 `test/codemod-size-overrides.test.js`, `test/naming.test.js` — `npm test`
-corre los 116 casos, incluidos estos. `fixtures/mig07-consumer/` (`npm run
+corre los casos, incluidos estos. `fixtures/mig07-consumer/` (`npm run
 verify:consumer-fixture` desde la raíz del monorepo) verifica además el
 nombrado `--uxdsl__<familia>__<clave>` instalando el paquete desde un
 tarball real, no desde el código fuente del monorepo.

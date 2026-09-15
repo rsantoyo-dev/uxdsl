@@ -84,6 +84,13 @@ These are not implied capabilities of the engine:
 
 ## Migration
 
+FEAT-002 adds explicit `uxdsl__` namespace migration and a packaged
+Next.js/Chrome verification path (`npm run verify:cssmodules-build`). The
+static reference validator checks generated consumers against declared
+providers; it remains conservative for arbitrary selectors and conditions.
+Strict themes must supply dependencies of all emitted presets. Runtime
+applications record last-valid state only after successful CSS generation.
+
 Import legacy definitions in each build; process-global Density inheritance is
 removed. Use defined Density keys; decimals are no longer truncated. Default
 Density 15 stops at Spacing 16 and Density 0 is explicitly zero. Out-of-range

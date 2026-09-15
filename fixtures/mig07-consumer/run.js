@@ -34,6 +34,7 @@ function check(label, condition) {
 }
 
 function packAndInstall() {
+  execFileSync('npm', ['run', 'build'], { cwd: PACKAGE_DIR, stdio: 'inherit' });
   console.log('Packing postcss-uxdsl (npm pack)...');
   const packOutput = execFileSync('npm', ['pack', '--pack-destination', FIXTURE_DIR], { cwd: PACKAGE_DIR, encoding: 'utf8' });
   const tarballName = packOutput.trim().split('\n').filter(Boolean).pop();

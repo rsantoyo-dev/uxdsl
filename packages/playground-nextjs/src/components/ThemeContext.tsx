@@ -74,7 +74,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       }
     } else {
       theme = validated.theme
-      lastValidThemeRef.current = theme
 
       if (validated.warnings.length > 0) {
         // eslint-disable-next-line no-console
@@ -112,8 +111,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     // Shared engine owns typography generation; this provider only applies theme state.
     const baseSignature = stableStringify(theme)
     if (baseSignature && baseSignature !== lastBaseSignatureRef.current) {
-      const css = generateThemeCss(theme)
+      let css: string
+      try {
+        css = generateThemeCss(theme)
+      } catch (error) {
+        console.error('UXDSL theme generation failed; keeping the applied theme', error)
+        return
+      }
       ensureStyleTag('uxdsl-ssr-theme').textContent = css
+      lastValidThemeRef.current = theme
       document.getElementById('uxdsl-typography-theme')?.remove()
       document.getElementById('uxdsl-typo-overrides')?.remove()
       lastBaseSignatureRef.current = baseSignature

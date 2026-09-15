@@ -521,6 +521,15 @@ keep interaction/validation semantics in HTML and application code.
 
 ## Build time, runtime and one source of truth
 
+FEAT-002 targets explicit migration to `--uxdsl__<family>__<key>` in
+0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped
+`scripts/codemod-namespace.js` previews migration of selected consumer files;
+use explicit mappings for custom typography roles or host-owned prefix matches.
+Strict validation requires the effective theme to supply dependencies of all
+emitted presets. Do not invent default Spacing or disable validation to hide
+missing dependencies. Generate CSS successfully before recording a runtime
+theme as last-valid or replacing its managed stylesheet.
+
 The Next.js playground stores shared configuration in `uxdsl.theme.base.json`.
 Named `uxdsl.theme.{default,green,purple,slate}.json` files contain only overrides.
 Use `packages/playground-nextjs/themes.js` to resolve them with `deepMergeTheme`
