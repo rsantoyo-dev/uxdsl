@@ -6,9 +6,9 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
-## Unreleased
+## 0.5.0-beta.1 — 2026-09-15
 
-- FEAT-002: explicit namespace migration targeting 0.5.0-beta.1, with
+- FEAT-002: explicit namespace migration included in 0.5.0-beta.1, with
   preview/write codemod and explicit mappings for host tokens/custom roles.
 - Shared radius/shadow directive-argument completion metadata for VS Code.
 - Reference-integrity regression coverage and atomic playground theme application.
