@@ -44,6 +44,13 @@ narrative migration guide covering the same ground.
   `--space-space-1`). Defining both spellings for the same key in one
   config now raises `UXD_SPACING_COLLISION` instead of one silently
   winning by object-key order.
+- Naming collisions: two different logical identifiers that concatenate to
+  the same generated CSS variable name (e.g. palette key `"primary-main"`
+  vs. structured `palette.primary.main`; a surface/button/input/edge/
+  shadow family+key pair colliding with a different one, such as family
+  `"x"` key `"a-b"` vs. family `"x-a"` key `"b"`, both `--x-a-b`) now raise
+  `UXD_FOUNDATION_NAME_COLLISION` / `UXD_PRESET_NAME_COLLISION` instead of
+  one silently overwriting the other.
 
 ### Known limitations
 

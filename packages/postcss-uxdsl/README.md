@@ -227,6 +227,21 @@ interleaved `all` reset, or an interleaved nested rule/at-rule such as
 
 ---
 
+## Naming collisions
+
+Every generated CSS variable name is built from a logical identifier —
+a family and a key (`surface.contained.padding`), or a namespace and a key
+(`palette.primary-main`). Two different identifiers can concatenate to the
+identical name (a palette key literally named `"primary-main"` collides
+with the structured `palette.primary.main`; a surface role named
+`"contained-shadow"` collides with role `"contained"` field `"shadow"`).
+When that happens, compiling throws `UXD_FOUNDATION_NAME_COLLISION` or
+`UXD_PRESET_NAME_COLLISION` naming both identifiers and the variable they
+both produce, instead of one silently overwriting the other. Rename
+whichever one you didn't intend to share that variable.
+
+---
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

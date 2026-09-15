@@ -1,5 +1,6 @@
 /** Environment-independent semantics shared by build and runtime adapters. */
 import valueParser from 'postcss-value-parser';
+import { buildVarName } from './naming';
 
 /** `space-` is a reserved legacy prefix; remove it once, never recursively. */
 export function normalizeSpacingKey(key: string): string {
@@ -107,7 +108,7 @@ export function spacingValueToCss(input: string): string {
   parsed.walk(node => {
     if (node.type === 'function' && node.value === 'space') {
       const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-      Object.assign(node, { type: 'word', value: `var(--space-${key})` });
+      Object.assign(node, { type: 'word', value: `var(${buildVarName('space', key)})` });
       return false;
     }
   });
@@ -144,7 +145,7 @@ export function compileDensityRules(
     ordered.forEach(([bp], i) => {
       const value = rewrite(resolveResponsiveValue(expression, bp, breakpoints));
       if (i === 0 && !value) throw new Error(`UXD_DENSITY_BASE: ${key} needs a base value.`);
-      if (i === 0 || value !== previous) rules[i].values[`--density-${key}`] = value;
+      if (i === 0 || value !== previous) rules[i].values[buildVarName('density', key)] = value;
       previous = value;
     });
   }

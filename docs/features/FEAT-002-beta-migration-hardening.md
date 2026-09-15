@@ -363,12 +363,56 @@ Criterios de aceptación:
 
 Inventariar nombres como `--ds__palette__primary-main`, `--ds__color__gray-300`, `--space-1`, `--density-1` y `--surface-flat-padding`. Centralizar su construcción aunque inicialmente se conserven las formas públicas actuales.
 
+Implementado en este checkout (paquete identificado como 0.3.0, sin cambiar
+versiones ni publicar): `src/naming.ts`, nuevo, exporta `buildVarName`
+(`--<family>-<key>`, usado por density, spacing, edges, shadows, surfaces,
+buttons, inputs y typography), `buildNamespacedVarName`
+(`--ds__<namespace>__<key>`, usado por palette y color) y `NameRegistry`
+— una clase pequeña que recuerda qué identificador lógico (`"surface.
+contained.shadow"`, `"palette.primary-main"`) reclamó cada nombre generado
+dentro de una compilación, y lanza un diagnóstico claro
+(`UXD_*_NAME_COLLISION`) si un identificador *distinto* reclama el mismo
+nombre, en vez de que uno pise al otro en silencio.
+
+Conectado en los dos puntos donde la colisión es real y demostrable:
+
+- `preset-engine.ts`'s `compilePresetRules` — el punto ya compartido por
+  `edges.ts`, `shadows.ts`, `surfaces.ts` y (vía `control-engine.ts`)
+  `buttons.ts`/`inputs.ts`. Antes: `rules[i].values[`--${family}-${key}`]
+  = value` sobrescribía en silencio si dos pares `(family, key)`
+  distintos concatenaban al mismo string (ej. familia `"x"` clave `"a-b"`
+  y familia `"x-a"` clave `"b"`, ambos `--x-a-b`).
+- `foundations.ts`'s `generateFoundationCss` — un `theme.palette` con la
+  clave plana `"primary-main"` junto con la estructurada
+  `primary: { main }` ya emitía `--ds__palette__primary-main` dos veces
+  con valores distintos, sin ningún aviso (CSS solo aplica el último). El
+  modo oscuro usa su propio `NameRegistry` porque es un scope distinto
+  (`@media`/`[data-theme]`) donde redefinir el mismo nombre es la
+  intención, no una colisión.
+
+También conectado, por consistencia (sin superficie de colisión realista
+demostrada con el vocabulario actual, pero mismo contrato): `language.ts`
+(`--space-*`, `--density-*`) y `typography.ts` (`--<role>-<field>`,
+`--font-*`).
+
+Cobertura en `test/naming.test.js` (8 casos). Los 116 tests del paquete
+(incluidos los 108 preexistentes) confirman que centralizar la
+construcción no cambió ningún nombre público ya emitido.
+
+**Decisión sobre renombres (criterio 3):** no se renombra ninguna variable
+pública en este parche. El paquete no está publicado todavía y no hay
+evidencia de consumidores externos que dependan de nombres actuales — la
+única señal disponible es el propio reporte de migración de FEAT-002, que
+no pide renombres. Revisar esta decisión si aparece evidencia de
+consumidores, o al cerrar MIG-07 (que si instala desde tarballs podría
+revelar fricciones de nombres no visibles todavía).
+
 Criterios de aceptación:
 
-- [ ] Un único contrato construye nombres y referencias para todas las familias.
-- [ ] Separar el identificador lógico del prefijo CSS; detectar colisiones.
-- [ ] Decidir si es necesario renombrar variables públicas y cuándo, con evidencia de consumidores.
-- [ ] Si hay renombres, incluir aliases o una migración explícita, plazo de deprecación y pruebas de overrides del usuario.
+- [x] Un único contrato construye nombres y referencias para todas las familias — `naming.ts`, conectado en los ocho módulos de definición y en `preset-engine.ts`'s `presetValueToCss` (referencias `var(...)`).
+- [x] Separar el identificador lógico del prefijo CSS; detectar colisiones — `NameRegistry`; dos colisiones reales encontradas y ahora bloqueadas (`compilePresetRules`, `generateFoundationCss`).
+- [x] Decidir si es necesario renombrar variables públicas y cuándo, con evidencia de consumidores — decisión: no todavía, ver arriba.
+- [x] Si hay renombres, incluir aliases o una migración explícita, plazo de deprecación y pruebas de overrides del usuario — no aplica; no hubo renombres.
 
 ## Orden recomendado y salida de beta
 

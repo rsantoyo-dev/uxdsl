@@ -1,5 +1,6 @@
 import valueParser from 'postcss-value-parser';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue } from './language';
+import { buildVarName, NameRegistry } from './naming';
 
 /** JSON fields and their public CSS variable suffixes. */
 export const TYPOGRAPHY_PROPERTIES = Object.freeze({
@@ -53,14 +54,19 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
     }
   }
   const rules = ordered.map(([breakpoint, width], index) => ({ breakpoint, minWidth: index ? width : null as number | null, values: {} as Record<string, string> }));
+  // MIG-08: a role like "h1-weight" combined with field "size" would
+  // concatenate to the same name as role "h1" field "weight-size" — catch
+  // that instead of one silently overwriting the other.
+  const names = new NameRegistry('UXD_TYPO');
   for (const [role, style] of Object.entries(details)) {
     const merged = role === 'default' ? style : { ...details.default, ...style };
     for (const [field, expression] of Object.entries(merged)) {
+      const varName = names.claim(buildVarName(role, TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]), `${role}.${field}`);
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
         const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints));
         if (!value && index === 0) throw new Error(`UXD_TYPO_BASE: ${role}.${field} needs a base value.`);
-        if (value !== previous) rules[index].values[`--${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`] = value;
+        if (value !== previous) rules[index].values[varName] = value;
         previous = value;
       });
     }
@@ -71,7 +77,7 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
 /** Pure generation used identically by PostCSS, SSR and browser applications. */
 export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
   const base: Record<string, string> = {};
-  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[`--font-${key}`] = String(value);
+  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = String(value);
   const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
   const output = Object.keys(base).length ? [serialize(base)] : [];
   // Legacy flat variables share the same responsive resolver as structured fields.
