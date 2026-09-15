@@ -11,6 +11,12 @@ tokens and handle custom typography roles. See the
 [migration guide](packages/postcss-uxdsl/docs/migration.md).
 No release or publish is performed by these changes.
 
+The five npm package manifests are prepared for `0.5.0-beta.1`, with
+coordinated internal dependencies. Publication with `--tag latest` remains
+pending npm 2FA; preparing these versions does not update npm dist-tags.
+The release script accepts beta versions and updates the CLI's actual
+dependency on `postcss-uxdsl`.
+
 VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
 and Input directives using generated shared-language metadata. CLI consumers
 must supply the same complete effective theme and regenerate their CSS when

@@ -60,11 +60,11 @@ const packages = [
   { name: 'uxdsl-core', dir: 'packages/uxdsl-core', deps: ['postcss-uxdsl'] },
   { name: 'vite-plugin-uxdsl', dir: 'packages/vite-plugin-uxdsl', deps: ['postcss-uxdsl', 'uxdsl-core'] },
   { name: 'uxdsl-webpack-loader', dir: 'packages/uxdsl-webpack-loader', deps: ['uxdsl-core'] },
-  { name: 'uxdsl-cli', dir: 'packages/uxdsl-cli', deps: ['uxdsl-core'] },
+  { name: 'uxdsl-cli', dir: 'packages/uxdsl-cli', deps: ['postcss-uxdsl'] },
 ];
 
 function isValidSemver(input) {
-  return /^\d+\.\d+\.\d+$/.test(String(input || '').trim());
+  return /^\d+\.\d+\.\d+(?:-beta\.\d+)?$/.test(String(input || '').trim());
 }
 
 function bumpSemver(current, type) {
