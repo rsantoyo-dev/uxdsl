@@ -1,13 +1,14 @@
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
+import { buildVarName, buildNamespacedVarName } from './naming';
 
 export const BUTTON_PROPERTIES: Record<string, string> = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight' };
 export const BUTTON_STATES: Record<string, string[]> = { hover: [':hover'], active: [':active'], focus: [':focus'], focusvisible: [':focus-visible'], disabled: [':disabled', '[aria-disabled="true"]'], selected: ['.is-selected', '[aria-pressed="true"]', '[aria-selected="true"]'] };
 export interface ButtonRole extends ControlRole {}
 export interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
-const dark = 'var(--button-tone-dark, var(--ds__palette__primary-dark))';
-const main = 'var(--button-tone-main, var(--ds__palette__primary-main))';
-const contrast = 'var(--button-tone-contrast, var(--ds__palette__primary-contrast))';
+const dark = `var(${buildVarName('button', 'tone-dark')}, var(${buildNamespacedVarName('palette', 'primary-dark')}))`;
+const main = `var(${buildVarName('button', 'tone-main')}, var(${buildNamespacedVarName('palette', 'primary-main')}))`;
+const contrast = `var(${buildVarName('button', 'tone-contrast')}, var(${buildNamespacedVarName('palette', 'primary-contrast')}))`;
 export const DEFAULT_BUTTONS: Record<string, ButtonRole> = {
   contained: { surface: 'contained', base: {}, states: { hover: { bg: dark, color: contrast }, selected: { bg: dark, color: contrast } } },
   outlined: { surface: 'outlined', base: {}, states: { hover: { color: dark, border: `1px solid ${dark}` }, selected: { bg: main, color: contrast, border: `1px solid ${main}` } } },

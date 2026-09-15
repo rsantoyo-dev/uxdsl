@@ -31,12 +31,12 @@ test('includeTheme: false skips every global :root definition, including density
   assert(!/(^|[^-\w])\:root\b/.test(result.css), `unexpected :root in:\n${result.css}`);
   assert(!result.css.includes('@import'));
   // References still resolve against the effective (default + configured) theme.
-  assert.match(result.css, /padding: var\(--surface-contained-padding\)/);
-  assert.match(result.css, /padding: var\(--space-1\)/);
-  assert.match(result.css, /border-radius: var\(--radius-2\)/);
-  assert.match(result.css, /box-shadow: var\(--shadow-1\)/);
-  assert.match(result.css, /border: var\(--border-1\)/);
-  assert.match(result.css, /font-size: var\(--h1-size\)/);
+  assert.match(result.css, /padding: var\(--uxdsl__surface__contained-padding\)/);
+  assert.match(result.css, /padding: var\(--uxdsl__space__1\)/);
+  assert.match(result.css, /border-radius: var\(--uxdsl__radius__2\)/);
+  assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__1\)/);
+  assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
+  assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-size\)/);
 });
 
 test('includeTheme defaults to true and matches the explicit-true single-entry output', async () => {
@@ -45,7 +45,7 @@ test('includeTheme defaults to true and matches the explicit-true single-entry o
   const explicit = await compile(source, { theme, includeTheme: true });
   assert.equal(implicit.css, explicit.css);
   assert(implicit.css.includes(':root'));
-  assert(implicit.css.includes('--surface-contained-padding:'));
+  assert(implicit.css.includes('--uxdsl__surface__contained-padding:'));
   assert(implicit.css.includes('@import'));
 });
 
@@ -58,8 +58,8 @@ test('a theme entry (includeTheme: true) and a component entry (includeTheme: fa
   // component entry must not add any of its own.
   const soloRootBlocks = (themeEntry.css.match(/:root\s*\{/g) || []).length;
   assert.equal(rootBlocks.length, soloRootBlocks);
-  assert(componentEntry.css.includes('var(--surface-contained-padding)'));
-  assert(!componentEntry.css.includes('--surface-contained-padding:'));
+  assert(componentEntry.css.includes('var(--uxdsl__surface__contained-padding)'));
+  assert(!componentEntry.css.includes('--uxdsl__surface__contained-padding:'));
 });
 
 test('includeTheme: false still validates references and rejects unknown tokens', async () => {

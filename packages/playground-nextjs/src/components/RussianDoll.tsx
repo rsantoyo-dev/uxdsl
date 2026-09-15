@@ -13,7 +13,7 @@ export function RussianDoll({
   onLayerClick?: (level: number) => void 
 }) {
   const [hoveredLevel, setHoveredLevel] = useState<number | null>(null)
-  const paddingStyle = { padding: `var(--density-${densityIndex})` }
+  const paddingStyle = { padding: `var(--uxdsl__density__${densityIndex})` }
 
   return (
     <div className="concentric-wrapper" style={paddingStyle}>
@@ -23,7 +23,7 @@ export function RussianDoll({
         {Array.from({ length: Math.max(0, densityIndex) }, (_, i) => i + 1).map(level => (
           <div 
             key={level}
-            className={`concentric-ring concentric-ring--density-${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
+            className={`concentric-ring concentric-ring--uxdsl__density__${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
             onMouseEnter={() => setHoveredLevel(level)}
             onMouseLeave={() => setHoveredLevel(null)}
             onClick={(e) => {

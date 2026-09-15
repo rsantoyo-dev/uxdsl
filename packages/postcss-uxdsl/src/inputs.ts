@@ -1,11 +1,12 @@
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
+import { buildVarName, buildNamespacedVarName } from './naming';
 
 export const INPUT_PROPERTIES: Record<string, string> = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight', caret: 'caret-color', placeholder: 'placeholder', underline: 'border-bottom' };
 export const INPUT_STATES: Record<string, string[]> = { hover: [':hover'], focus: [':focus'], focusvisible: [':focus-visible'], readonly: [':read-only'], invalid: [':invalid', '[aria-invalid="true"]'], disabled: [':disabled', '[aria-disabled="true"]'] };
 export interface InputRole extends ControlRole {}
 export interface InputTheme extends SurfaceTheme { inputs?: Record<string, InputRole> }
-const main = 'var(--input-tone-main, var(--ds__palette__primary-main))';
+const main = `var(${buildVarName('input', 'tone-main')}, var(${buildNamespacedVarName('palette', 'primary-main')}))`;
 export const DEFAULT_INPUTS: Record<string, InputRole> = {
   contained: { surface: 'contained', base: { caret: main, placeholder: 'palette(neutral.dark)' }, states: { focus: { border: `1px solid ${main}`, shadow: 'shadow(2)' }, invalid: { border: '1px solid palette(error.main)' }, disabled: { color: 'palette(neutral.dark)', opacity: '0.6' } } },
   outlined: { surface: 'outlined', base: { caret: main, placeholder: 'palette(neutral.dark)' }, states: { focus: { border: `1px solid ${main}` }, invalid: { border: '1px solid palette(error.main)' }, disabled: { opacity: '0.6' } } },

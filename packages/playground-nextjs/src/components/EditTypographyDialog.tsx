@@ -13,9 +13,9 @@ const AVAILABLE_FONTS = [
 ];
 
 const fontFamilies = [
-  { name: 'System UI (Default)', value: 'var(--font-ui)' },
-  { name: 'System UI Secondary', value: 'var(--font-ui-2)' },
-  { name: 'System Mono', value: 'var(--font-code)' },
+  { name: 'System UI (Default)', value: 'var(--uxdsl__font__ui)' },
+  { name: 'System UI Secondary', value: 'var(--uxdsl__font__ui-2)' },
+  { name: 'System Mono', value: 'var(--uxdsl__font__code)' },
   ...AVAILABLE_FONTS.map(font => ({ name: font, value: font }))
 ]
 
@@ -32,10 +32,10 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
 
   useEffect(() => {
     const style = getComputedStyle(document.documentElement)
-    const computedFamily = style.getPropertyValue(`--${item.tag}-font-family`).trim()
+    const computedFamily = style.getPropertyValue(`--uxdsl__typography__${item.tag}-font-family`).trim()
     setCurrentFamilyComputed(computedFamily)
-    
-    setCurrentComputed(style.getPropertyValue(`--${item.tag}-size`).trim())
+
+    setCurrentComputed(style.getPropertyValue(`--uxdsl__typography__${item.tag}-size`).trim())
     const details = activeThemeData?.typography_details || {}
     const configured = { ...details.default, ...details[item.tag] }
     setFamily(configured.fontFamily || '')
@@ -66,7 +66,7 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
       background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
     }} onClick={onClose}>
       <div style={{
-        background: 'var(--ds__palette__surface-main)', padding: '2rem', borderRadius: '8px',
+        background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '8px',
         width: '500px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Edit {item.label}</h3>
@@ -127,7 +127,7 @@ export function EditDialog({ item, onClose }: { item: typeof initialTypographyIt
           <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'flex-end' }}>
             <button onClick={onClose} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Cancel</button>
             <button onClick={handleSave} style={{ 
-              padding: '0.5rem 1rem', background: 'var(--ds__palette__primary-main)', 
+              padding: '0.5rem 1rem', background: 'var(--uxdsl__palette__primary-main)', 
               color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' 
             }}>Save</button>
           </div>

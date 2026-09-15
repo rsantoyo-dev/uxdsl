@@ -5,7 +5,7 @@
     flex-direction: column; 
     gap: density(4);
     /* Polyfill for missing 0 space token in some builds */
-    --space-0: 0px; 
+    --uxdsl__space__0: 0px; 
   }
   .surfaces-header { display: flex; flex-direction: column; gap: density(2); }
 

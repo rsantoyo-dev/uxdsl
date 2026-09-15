@@ -29,18 +29,18 @@ export default function SpacingExplanation() {
   gap: space(4);
 }`}</code></pre></div>
         <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{`:root {
-  --space-2: 0.25rem;
-  --space-4: 0.75rem;
-  --space-6: 1.5rem;
+  --uxdsl__space__2: 0.25rem;
+  --uxdsl__space__4: 0.75rem;
+  --uxdsl__space__6: 1.5rem;
 }
 
 .card, .panel {
-  padding: var(--space-4);
+  padding: var(--uxdsl__space__4);
 }
 
 .actions {
   display: flex;
-  gap: var(--space-4);
+  gap: var(--uxdsl__space__4);
 }`}</code></pre></div>
       </div>
       <p>Plain CSS custom properties can provide the same reuse. UXDSL expresses those references through the theme’s token vocabulary. The benefit is maintaining shared values instead of repeating measurements throughout the application.</p>

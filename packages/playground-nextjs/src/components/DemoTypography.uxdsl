@@ -70,8 +70,8 @@
   .sample-h2 { 
     @ds-typo(h2); 
     margin: 0; 
-    font-size: var(--h3-size); /* Use H3 size for a smaller look */
-    font-weight: var(--p-weight); /* Use paragraph weight for not bold */
+    font-size: var(--uxdsl__typography__h3-size); /* Use H3 size for a smaller look */
+    font-weight: var(--uxdsl__typography__p-weight); /* Use paragraph weight for not bold */
   }
   .sample-h3 { @ds-typo(h3); margin: 0; }
   .sample-h4 { @ds-typo(h4); margin: 0; }

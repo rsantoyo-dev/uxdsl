@@ -178,7 +178,7 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     }
   }
 
-  // Color scales for color(token) -> --ds__color__token
+  // Color scales for color(token) -> --uxdsl__color__token
   if (theme.colors !== undefined && !isPlainObject(theme.colors)) {
     errors.push({ path: 'colors', message: 'colors must be an object.' });
     theme.colors = undefined;

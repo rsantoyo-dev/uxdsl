@@ -468,16 +468,16 @@
 
   @each $tag in $tags {
     &.#{$tag} {
-      font-size: var(--#{$tag}-size);
-      font-family: var(--#{$tag}-font-family);
-      font-weight: var(--#{$tag}-weight);
-      line-height: var(--#{$tag}-line);
-      letter-spacing: var(--#{$tag}-spacing);
-      text-transform: var(--#{$tag}-transform);
-      text-decoration: var(--#{$tag}-decoration);
-      font-style: var(--#{$tag}-style);
-      margin-block-start: var(--#{$tag}-margin-block-start);
-      margin-block-end: var(--#{$tag}-margin-block-end);
+      font-size: var(--uxdsl__typography__#{$tag}-size);
+      font-family: var(--uxdsl__typography__#{$tag}-font-family);
+      font-weight: var(--uxdsl__typography__#{$tag}-weight);
+      line-height: var(--uxdsl__typography__#{$tag}-line);
+      letter-spacing: var(--uxdsl__typography__#{$tag}-spacing);
+      text-transform: var(--uxdsl__typography__#{$tag}-transform);
+      text-decoration: var(--uxdsl__typography__#{$tag}-decoration);
+      font-style: var(--uxdsl__typography__#{$tag}-style);
+      margin-block-start: var(--uxdsl__typography__#{$tag}-margin-block-start);
+      margin-block-end: var(--uxdsl__typography__#{$tag}-margin-block-end);
     }
   }
 
@@ -489,30 +489,30 @@
 
   @each $tag in $tags {
     &.sample-#{$tag} {
-      font-size: var(--#{$tag}-size);
-      font-family: var(--#{$tag}-font-family);
-      font-weight: var(--#{$tag}-weight);
-      line-height: var(--#{$tag}-line);
-      letter-spacing: var(--#{$tag}-spacing);
-      text-transform: var(--#{$tag}-transform);
-      text-decoration: var(--#{$tag}-decoration);
-      font-style: var(--#{$tag}-style);
-      margin-block-start: var(--#{$tag}-margin-block-start);
-      margin-block-end: var(--#{$tag}-margin-block-end);
+      font-size: var(--uxdsl__typography__#{$tag}-size);
+      font-family: var(--uxdsl__typography__#{$tag}-font-family);
+      font-weight: var(--uxdsl__typography__#{$tag}-weight);
+      line-height: var(--uxdsl__typography__#{$tag}-line);
+      letter-spacing: var(--uxdsl__typography__#{$tag}-spacing);
+      text-transform: var(--uxdsl__typography__#{$tag}-transform);
+      text-decoration: var(--uxdsl__typography__#{$tag}-decoration);
+      font-style: var(--uxdsl__typography__#{$tag}-style);
+      margin-block-start: var(--uxdsl__typography__#{$tag}-margin-block-start);
+      margin-block-end: var(--uxdsl__typography__#{$tag}-margin-block-end);
     }
   }
 
   &.sample-code {
-    font-size: var(--pre-size);
-    font-family: var(--pre-font-family);
-    font-weight: var(--pre-weight);
-    line-height: var(--pre-line);
-    letter-spacing: var(--pre-spacing);
-    text-transform: var(--pre-transform);
-    text-decoration: var(--pre-decoration);
-    font-style: var(--pre-style);
-    margin-block-start: var(--pre-margin-block-start);
-    margin-block-end: var(--pre-margin-block-end);
+    font-size: var(--uxdsl__typography__pre-size);
+    font-family: var(--uxdsl__typography__pre-font-family);
+    font-weight: var(--uxdsl__typography__pre-weight);
+    line-height: var(--uxdsl__typography__pre-line);
+    letter-spacing: var(--uxdsl__typography__pre-spacing);
+    text-transform: var(--uxdsl__typography__pre-transform);
+    text-decoration: var(--uxdsl__typography__pre-decoration);
+    font-style: var(--uxdsl__typography__pre-style);
+    margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
   }
 }
 

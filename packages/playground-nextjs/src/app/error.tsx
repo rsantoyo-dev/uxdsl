@@ -16,15 +16,15 @@ export default function Error({
   return (
     <div style={{ padding: '2rem', textAlign: 'center' }}>
       <h2 style={{ marginBottom: '1rem' }}>Something went wrong!</h2>
-      <p style={{ color: 'var(--ds__palette__error-main, red)', marginBottom: '1rem' }}>
+      <p style={{ color: 'var(--uxdsl__palette__error-main, red)', marginBottom: '1rem' }}>
         {error.message || 'An unexpected error occurred'}
       </p>
       <button
         onClick={() => reset()}
         style={{
           padding: '0.5rem 1rem',
-          background: 'var(--ds__palette__primary-main, #333)',
-          color: 'var(--ds__palette__primary-contrast, #fff)',
+          background: 'var(--uxdsl__palette__primary-main, #333)',
+          color: 'var(--uxdsl__palette__primary-contrast, #fff)',
           border: 'none',
           borderRadius: '4px',
           cursor: 'pointer',

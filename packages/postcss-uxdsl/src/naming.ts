@@ -1,41 +1,51 @@
 /**
  * MIG-08: a single contract for building the CSS custom property names
- * every token family emits (`--space-1`, `--density-1`,
- * `--ds__palette__primary-main`, `--ds__color__gray-300`,
- * `--radius-1`/`--border-1`, `--shadow-1`, `--surface-flat-padding`,
- * `--button-contained-hover-bg`, `--input-outlined-focus-border`,
- * `--h1-size`, ...).
+ * every token family emits (`--uxdsl__space__1`, `--uxdsl__density__1`,
+ * `--uxdsl__palette__primary-main`, `--uxdsl__color__gray-300`,
+ * `--uxdsl__radius__1`/`--uxdsl__border__1`, `--uxdsl__shadow__1`,
+ * `--uxdsl__surface__flat-padding`, `--uxdsl__button__contained-hover-bg`,
+ * `--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-size`,
+ * ...).
  *
- * This module does not rename anything: every helper here reproduces the
- * exact string each family already emitted before centralizing, so wiring
- * it in is a pure refactor. What it adds is `NameRegistry`, which the
- * previous per-family construction had no equivalent of: a way to detect
+ * Centralizing this construction is what let every family move from a bare
+ * `--<family>-<key>` (or, for palette/color, `--ds__<namespace>__<key>`) to
+ * one shared `--uxdsl__<family>__<key>` shape in a single place (this file)
+ * instead of a blind find-and-replace across every family that used to
+ * hardcode its own — requested directly by the maintainer, and done while
+ * the package is still unpublished (0.3.0, no npm release), the safest
+ * possible time for a public-name change: no external consumer to alias,
+ * deprecate or break.
+ *
+ * `NameRegistry` is the other thing centralizing enabled: a way to detect
  * two different logical identifiers (e.g. palette family `"primary-main"`
  * and palette family `"primary"` sub-key `"main"`, or surface role
  * `"contained-shadow"` and role `"contained"` field `"shadow"`) producing
  * the identical generated name, so the second silently overwrites the
  * first with no diagnostic. See docs/features/FEAT-002-beta-migration-hardening.md.
- *
- * Renaming existing public variables is out of scope here: there is no
- * external consumer evidence yet (the package is unpublished) to justify
- * it, and the acceptance criteria this satisfies explicitly allow keeping
- * current public forms while centralizing their construction.
  */
 
-/** `--<family>-<key>` — edges, shadows, surfaces, buttons, inputs,
- * density, spacing and typography all use this one shape. */
+/** `--uxdsl__<family>__<key>` — edges, shadows, surfaces, buttons, inputs,
+ * density, spacing, typography and font families all use this one shape.
+ * Every UXDSL-generated custom property carries the `uxdsl__` namespace
+ * (not just palette/color) so it is unambiguous — in a browser's computed-
+ * style/devtools view, in generated CSS, and in diagnostics — that the
+ * variable came from this compiler, at the cost of a few extra
+ * characters. */
 export function buildVarName(family: string, key: string): string {
-  return `--${family}-${key}`;
+  return `--uxdsl__${family}__${key}`;
 }
 
-/** `--ds__<namespace>__<key>` — palette and color are namespaced instead
- * of hyphen-joined so a family name containing a hyphen (`"primary-main"`
- * as a literal top-level palette key, vs. the structured `primary.main`)
- * cannot be confused with the reserved `__` separator itself. It can
- * still collide with another logical identifier that normalizes to the
- * same key — see `NameRegistry`. */
+/** `--uxdsl__<namespace>__<key>` — palette and color use the same shape
+ * as `buildVarName`, just spelled out for readability at call sites where
+ * "namespace" fits better than "family" (both parameters mean the same
+ * thing to `NameRegistry`). Namespacing instead of hyphen-joining also
+ * means a name containing a hyphen (`"primary-main"` as a literal
+ * top-level palette key, vs. the structured `primary.main`) cannot be
+ * confused with the reserved `__` separator itself — though it can still
+ * collide with another logical identifier that normalizes to the same
+ * key; see `NameRegistry`. */
 export function buildNamespacedVarName(namespace: string, key: string): string {
-  return `--ds__${namespace}__${key}`;
+  return buildVarName(namespace, key);
 }
 
 /**

@@ -47,7 +47,7 @@ function useColorMap() {
     
     colorFamilies.forEach(family => {
       colorShades.forEach(shade => {
-         const varName = `--ds__color__${family}-${shade}`
+         const varName = `--uxdsl__color__${family}-${shade}`
          const val = docStyle.getPropertyValue(varName)
          if (val) {
              overrides[varName] = val
@@ -59,7 +59,7 @@ function useColorMap() {
     colorFamilies.forEach(family => {
       colorShades.forEach(shade => {
         const span = document.createElement('span')
-        span.style.backgroundColor = `var(--ds__color__${family}-${shade})`
+        span.style.backgroundColor = `var(--uxdsl__color__${family}-${shade})`
         container.appendChild(span)
         
         const bg = window.getComputedStyle(span).backgroundColor
@@ -156,7 +156,7 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
             runtime.link(`${tone}-${variant}`, tokenName)
 
             // Check if the linked token has an override
-            const overrideVar = `--ds__color__${tokenName}`
+            const overrideVar = `--uxdsl__color__${tokenName}`
             const overrideValue = document.documentElement.style.getPropertyValue(overrideVar)
             
             // If the source token (green-600) is overridden, we should update our local state to match
@@ -214,7 +214,7 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
       runtime.updatePalette(varName, newHex, { persist: true })
     } catch {
       document.documentElement.style.setProperty(`--${varName}`, newHex)
-      document.documentElement.style.setProperty(`--ds__palette__${varName}`, newHex)
+      document.documentElement.style.setProperty(`--uxdsl__palette__${varName}`, newHex)
     }
 
     // Keep JSON theme model aligned with runtime token updates.
@@ -294,7 +294,7 @@ export default function DemoPaletteConfig() {
       <InteractiveDemoContainer
         title="Global Palette"
         toolbar={
-          <div style={{ fontSize: '0.8rem', color: 'var(--ds__palette__text-secondary)' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
             Click on any color swatch to update the UX-DSL token.
           </div>
         }

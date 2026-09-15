@@ -2,7 +2,7 @@ import { DEFAULT_BORDER_COLORS } from './edges';
 import { normalizeSpacingDefinitions } from './language';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
-/** Emits `--ds__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
+/** Emits `--uxdsl__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
  * nested token map, claiming each name in `names` so two different logical
  * identifiers (e.g. top-level palette key `"primary-main"` and structured
  * `primary.main`) that concatenate to the identical variable name raise
@@ -31,7 +31,7 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   // Palette
   if (theme.palette) cssVars.push(...namespacedVars('palette', theme.palette, names));
 
-  // Color scales (for color(token) -> --ds__color__token). DEFAULT_BORDERS
+  // Color scales (for color(token) -> --uxdsl__color__token). DEFAULT_BORDERS
   // (edges.ts) depends on color(gray.*); merge that dependency in here —
   // under the theme's own gray shades when given — so border(1..5) resolves
   // out of the box. A theme that overrides every DEFAULT_BORDERS key no
@@ -39,7 +39,7 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   const colors = { ...theme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...theme.colors?.gray } };
   cssVars.push(...namespacedVars('color', colors, names));
 
-  // Spacing. MIG-01: "space-1" and "1" both mean --space-1; normalize
+  // Spacing. MIG-01: "space-1" and "1" both mean --uxdsl__space__1; normalize
   // before emission so neither form silently doubles the prefix or lets
   // one spelling win by accidental object key order.
   if (theme.spacing) {

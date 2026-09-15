@@ -2,10 +2,10 @@
 @theme {
   input-contained: {
     @ds-surface(contained);
-    caret: var(--input-tone-main, var(--ds__palette__primary-main));
+    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
     placeholder: palette(neutral.dark);
     :focus {
-      border: 1px solid var(--input-tone-main, var(--ds__palette__primary-main));
+      border: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
       shadow: shadow(2);
     }
     :invalid {
@@ -18,10 +18,10 @@
   }
   input-outlined: {
     @ds-surface(outlined);
-    caret: var(--input-tone-main, var(--ds__palette__primary-main));
+    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
     placeholder: palette(neutral.dark);
     :focus {
-      border: 1px solid var(--input-tone-main, var(--ds__palette__primary-main));
+      border: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
     }
     :invalid {
       border: 1px solid palette(error.main);
@@ -35,10 +35,10 @@
     border: none;
     shadow: none;
     underline: 1px solid palette(neutral.dark);
-    caret: var(--input-tone-main, var(--ds__palette__primary-main));
+    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
     placeholder: palette(neutral.dark);
     :focus {
-      underline: 1px solid var(--input-tone-main, var(--ds__palette__primary-main));
+      underline: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
     }
     :invalid {
       underline: 1px solid palette(error.main);

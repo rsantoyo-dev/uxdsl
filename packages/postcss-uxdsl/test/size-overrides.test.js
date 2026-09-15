@@ -23,26 +23,26 @@ function declared(css, selector) {
 test('MIG-05: size still sets padding and radius together (legacy behavior, unchanged)', async () => {
   const css = (await compile('.x { @ds-surface(contained 2); }')).css;
   const props = declared(css, '.x');
-  assert.equal(props.padding, 'var(--density-2)');
-  assert.equal(props['border-radius'], 'var(--radius-2)');
+  assert.equal(props.padding, 'var(--uxdsl__density__2)');
+  assert.equal(props['border-radius'], 'var(--uxdsl__radius__2)');
 });
 
 test('MIG-05: an explicit radius() override replaces only the radius that size set, padding stays from size', async () => {
   const css = (await compile('.x { @ds-surface(contained 2 radius(4)); }')).css;
   const props = declared(css, '.x');
-  assert.equal(props.padding, 'var(--density-2)');
-  assert.equal(props['border-radius'], 'var(--radius-4)');
+  assert.equal(props.padding, 'var(--uxdsl__density__2)');
+  assert.equal(props['border-radius'], 'var(--uxdsl__radius__4)');
 });
 
 test('MIG-05: radius()/shadow() overrides work independently of size, and of each other', async () => {
   const radiusOnly = declared((await compile('.x { @ds-surface(contained radius(9)); }')).css, '.x');
-  assert.equal(radiusOnly['border-radius'], 'var(--radius-9)');
-  assert.equal(radiusOnly.padding, 'var(--surface-contained-padding)'); // role default, no size applied
+  assert.equal(radiusOnly['border-radius'], 'var(--uxdsl__radius__9)');
+  assert.equal(radiusOnly.padding, 'var(--uxdsl__surface__contained-padding)'); // role default, no size applied
 
   const both = declared((await compile('.x { @ds-surface(contained 2 radius(4) shadow(1)); }')).css, '.x');
-  assert.equal(both.padding, 'var(--density-2)');
-  assert.equal(both['border-radius'], 'var(--radius-4)');
-  assert.equal(both['box-shadow'], 'var(--shadow-1)');
+  assert.equal(both.padding, 'var(--uxdsl__density__2)');
+  assert.equal(both['border-radius'], 'var(--uxdsl__radius__4)');
+  assert.equal(both['box-shadow'], 'var(--uxdsl__shadow__1)');
 });
 
 test('MIG-05: a radius keyword (pill/full/circle) is accepted as an override, matching the standalone radius() function', async () => {
@@ -63,8 +63,8 @@ test('MIG-05: an undefined override key is rejected with the same diagnostic fam
 
 test('MIG-05: the override composes with tone, and with legacy tone-only invocation', async () => {
   const props = declared((await compile('.x { @ds-surface(contained primary 2 radius(4)); }')).css, '.x');
-  assert.equal(props.background, 'var(--ds__palette__primary-main)');
-  assert.equal(props['border-radius'], 'var(--radius-4)');
+  assert.equal(props.background, 'var(--uxdsl__palette__primary-main)');
+  assert.equal(props['border-radius'], 'var(--uxdsl__radius__4)');
 });
 
 test('MIG-05: an explicit override wins even when the role itself defines radius/shadow in its base fields', async () => {
@@ -74,26 +74,26 @@ test('MIG-05: an explicit override wins even when the role itself defines radius
   // override.
   const withRoleDefaults = {
     ...theme,
-    buttons: { custom: { base: { radius: 'var(--radius-2)', shadow: 'var(--shadow-1)' } } },
+    buttons: { custom: { base: { radius: 'var(--uxdsl__radius__2)', shadow: 'var(--uxdsl__shadow__1)' } } },
   };
   const props = declared((await compile('.x { @ds-button(custom 2 radius(4) shadow(0)); }', { theme: withRoleDefaults })).css, '.x');
-  assert.equal(props['border-radius'], 'var(--radius-4)');
-  assert.equal(props['box-shadow'], 'var(--shadow-0)');
+  assert.equal(props['border-radius'], 'var(--uxdsl__radius__4)');
+  assert.equal(props['box-shadow'], 'var(--uxdsl__shadow__0)');
 });
 
 test('MIG-05: button and input accept the same radius()/shadow() override arguments as surface', async () => {
   const button = declared((await compile('.x { @ds-button(contained 2 radius(4)); }')).css, '.x');
-  assert.equal(button.padding, 'var(--density-2)');
-  assert.equal(button['border-radius'], 'var(--radius-4)');
+  assert.equal(button.padding, 'var(--uxdsl__density__2)');
+  assert.equal(button['border-radius'], 'var(--uxdsl__radius__4)');
 
   const input = declared((await compile('.x { @ds-input(contained 2 shadow(1)); }')).css, '.x');
-  assert.equal(input.padding, 'var(--density-2)');
-  assert.equal(input['box-shadow'], 'var(--shadow-1)');
+  assert.equal(input.padding, 'var(--uxdsl__density__2)');
+  assert.equal(input['box-shadow'], 'var(--uxdsl__shadow__1)');
 });
 
 test('MIG-05: a later plain CSS declaration in the same rule still wins last, same as before', async () => {
   const css = (await compile('.x { @ds-surface(contained 2 radius(4)); border-radius: 6px; }')).css;
   const rule = /\.x\s*\{([^}]*)\}/.exec(css)[1];
   const radiusDeclarations = [...rule.matchAll(/border-radius:\s*([^;]+);/g)].map(m => m[1]);
-  assert.deepEqual(radiusDeclarations, ['var(--radius-4)', '6px']);
+  assert.deepEqual(radiusDeclarations, ['var(--uxdsl__radius__4)', '6px']);
 });

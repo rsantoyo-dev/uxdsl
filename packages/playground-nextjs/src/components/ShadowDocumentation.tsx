@@ -23,11 +23,11 @@ export default function ShadowDocumentation() {
 .inset-panel {
   box-shadow: shadow(inset);
 }`}</code></pre></div>
-        <div><h4>Equivalent CSS for the card</h4><pre><code className="language-css">{`:root { --shadow-2: 0 2px 4px rgba(0, 0, 0, 0.12); }
+        <div><h4>Equivalent CSS for the card</h4><pre><code className="language-css">{`:root { --uxdsl__shadow__2: 0 2px 4px rgba(0, 0, 0, 0.12); }
 @media (min-width: 768px) {
-  :root { --shadow-2: 0 6px 16px rgba(0, 0, 0, 0.18); }
+  :root { --uxdsl__shadow__2: 0 6px 16px rgba(0, 0, 0, 0.18); }
 }
-.card { box-shadow: var(--shadow-2); }`}</code></pre></div>
+.card { box-shadow: var(--uxdsl__shadow__2); }`}</code></pre></div>
       </div>
       <p>The component selects a preset. At 768px the shared variable changes; at later breakpoints that value persists until another override applies. This is a discrete transition, not automatic interpolation. <code>elevation(2)</code> is an alias for <code>shadow(2)</code>; neither changes stacking order.</p>
       <h3>Layers, inset effects and system references</h3>

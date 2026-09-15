@@ -23,7 +23,7 @@
   top: 65%; /* Adjusted vertical position */
   left: 50%;
   transform: translate(-50%, -50%);
-  font-family: var(--font-code, monospace);
+  font-family: var(--uxdsl__font__code, monospace);
   font-size: 0.75rem;
   color: palette(text-secondary);
   z-index: 1;

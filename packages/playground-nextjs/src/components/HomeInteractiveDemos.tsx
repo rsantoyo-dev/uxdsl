@@ -17,7 +17,7 @@ function DocsLink({ href }: { href: string }) {
         alignItems: 'center', 
         gap: '0.25rem', 
         fontSize: '0.75rem', 
-        color: 'var(--ds__palette__primary-main)',
+        color: 'var(--uxdsl__palette__primary-main)',
         textDecoration: 'none',
         fontWeight: 600
       }}

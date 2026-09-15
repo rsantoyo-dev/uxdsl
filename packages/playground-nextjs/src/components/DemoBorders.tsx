@@ -48,16 +48,16 @@ export default function DemoBorders() {
     <section className="section">
       <h3>Border presets</h3>
       <div className="grid">{Object.keys(tokens.borders).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ border: `var(--border-${key})`, borderRadius: 'var(--radius-2)' }}>Border {key}</div>
-        <pre>{`border: border(${key});`}</pre><code>{values[`--border-${key}`]}</code>
+        <div className="preview-box" style={{ border: `var(--uxdsl__border__${key})`, borderRadius: 'var(--uxdsl__radius__2)' }}>Border {key}</div>
+        <pre>{`border: border(${key});`}</pre><code>{values[`--uxdsl__border__${key}`]}</code>
       </div>)}</div>
       <h3>Radius presets</h3>
       <div className="grid">{Object.keys(tokens.radii).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ border: 'var(--border-1)', borderRadius: `var(--radius-${key})` }}>Radius {key}</div>
-        <pre>{`border-radius: radius(${key});`}</pre><code>{values[`--radius-${key}`]}</code>
+        <div className="preview-box" style={{ border: 'var(--uxdsl__border__1)', borderRadius: `var(--uxdsl__radius__${key})` }}>Radius {key}</div>
+        <pre>{`border-radius: radius(${key});`}</pre><code>{values[`--uxdsl__radius__${key}`]}</code>
       </div>)}</div>
       <h3>Built-in shapes</h3>
-      <div className="grid">{Object.entries(RADIUS_KEYWORDS).map(([key, value]) => <div key={key} className="card"><div className="preview-box" style={{ border: 'var(--border-1)', borderRadius: value }}>{key}</div><code>{`radius(${key}) → ${value}`}</code></div>)}</div>
+      <div className="grid">{Object.entries(RADIUS_KEYWORDS).map(([key, value]) => <div key={key} className="card"><div className="preview-box" style={{ border: 'var(--uxdsl__border__1)', borderRadius: value }}>{key}</div><code>{`radius(${key}) → ${value}`}</code></div>)}</div>
     </section>
   </div>
 }

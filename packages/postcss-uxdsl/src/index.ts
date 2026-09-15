@@ -6,6 +6,7 @@ import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArgu
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
 import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
+import { buildVarName, buildNamespacedVarName } from './naming';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -51,20 +52,20 @@ interface UxDslOptions {
   references?: ReferenceOptions;
 }
 
-// Map palette(foo.bar|foo-bar) -> resolve to --ds__palette__*
+// Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
 const defaultThemeVar = (path: string) => {
   const key = String(path).trim().replace(/\./g, "-");
-  return `var(--ds__palette__${key})`;
+  return `var(${buildNamespacedVarName('palette', key)})`;
 };
 
-// Map space(2) -> var(--space-2)
+// Map space(2) -> var(--uxdsl__space__2)
 const defaultSpaceVar = (index: string) =>
-  `var(--space-${String(index).trim()})`;
+  `var(${buildVarName('space', String(index).trim())})`;
 
-// Map color(blue.500|blue-500) -> resolve to --ds__color__*
+// Map color(blue.500|blue-500) -> resolve to --uxdsl__color__*
 const defaultColorVar = (path: string) => {
   const key = String(path).trim().replace(/\./g, "-");
-  return `var(--ds__color__${key})`;
+  return `var(${buildNamespacedVarName('color', key)})`;
 };
 
 function normalizeBreakpoints(input?: BreakpointSpec) {
@@ -165,49 +166,55 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           const config = defaults[tag] || { weight: "400", family: "ui", line: "1.5", spacing: "normal" };
           const isCode = tag === "pre" || tag === "code";
 
+          // Consumer side of typography.ts's compileTypographyRules, which
+          // emits `--uxdsl__typography__<tag>-<field>` (MIG-08: one shared
+          // "typography" family, not the tag itself); `typo` composes that
+          // name the same way so definition and reference always match.
+          const typo = (field: string) => buildVarName('typography', `${tag}-${field}`);
+
           // 1. Font Family
-          // Logic: var(--tag-font-family, var(--font-configFamily))
-          const fontRef = config.family === "code" ? "var(--font-code)" : (config.family === "ui-2" ? "var(--font-ui-2, var(--font-ui))" : "var(--font-ui)");
+          // Logic: var(--uxdsl__typography__tag-font-family, var(--uxdsl__font__configFamily))
+          const fontRef = config.family === "code" ? `var(${buildVarName('font', 'code')})` : (config.family === "ui-2" ? `var(${buildVarName('font', 'ui-2')}, var(${buildVarName('font', 'ui')}))` : `var(${buildVarName('font', 'ui')})`);
           // Special case: code/pre often append 'monospace' directly in fallback
           const familyFallback = isCode ? `${fontRef}, monospace` : fontRef;
-          insert("font-family", `var(--${tag}-font-family, ${familyFallback})`);
+          insert("font-family", `var(${typo('font-family')}, ${familyFallback})`);
 
           // 2. Font Size
-          insert("font-size", `var(--${tag}-size)`);
+          insert("font-size", `var(${typo('size')})`);
 
           // 3. Line Height
           if (config.line) {
-             insert("line-height", `var(--${tag}-line, ${config.line})`);
+             insert("line-height", `var(${typo('line')}, ${config.line})`);
           }
 
           // 4. Font Weight (Skip for code usually, but consistent to add)
           if (config.weight) {
-             insert("font-weight", `var(--${tag}-weight, ${config.weight})`);
+             insert("font-weight", `var(${typo('weight')}, ${config.weight})`);
           }
 
           // 5. Letter Spacing
           if (config.spacing) {
-             insert("letter-spacing", `var(--${tag}-spacing, ${config.spacing})`);
+             insert("letter-spacing", `var(${typo('spacing')}, ${config.spacing})`);
           }
 
           // 6. Text Transform
-          insert("text-transform", `var(--${tag}-transform, none)`);
+          insert("text-transform", `var(${typo('transform')}, none)`);
 
           // 7. Text Decoration
-          insert("text-decoration", `var(--${tag}-decoration, none)`);
+          insert("text-decoration", `var(${typo('decoration')}, none)`);
 
           // 8. Font Style
-          insert("font-style", `var(--${tag}-style, normal)`);
+          insert("font-style", `var(${typo('style')}, normal)`);
 
           // 9. Margin Block Start
-          insert("margin-block-start", `var(--${tag}-margin-block-start, auto)`);
+          insert("margin-block-start", `var(${typo('margin-block-start')}, auto)`);
 
           // 10. Margin Block End
-          insert("margin-block-end", `var(--${tag}-margin-block-end, auto)`);
+          insert("margin-block-end", `var(${typo('margin-block-end')}, auto)`);
 
           // 11. Opacity (Special for caption/small)
           if (config.opacity) {
-             insert("opacity", `var(--${tag}-opacity, ${config.opacity})`);
+             insert("opacity", `var(${typo('opacity')}, ${config.opacity})`);
           }
 
           at.remove();
@@ -646,7 +653,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             if (node.value === "density") {
               const key = innerText.trim().replace(/^(['"])(.*)\1$/, '$2');
               if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) throw new Error(`UXD_DENSITY_REFERENCE: Invalid key ${key}; define and use a token key without decimal coercion.`);
-              node.type = 'word'; node.value = `var(--density-${key})`; return;
+              node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
             } else {
               const rawVals = innerText
                 .split(",")
@@ -678,7 +685,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
             if (RADIUS_KEYWORDS[key] || Object.prototype.hasOwnProperty.call(edgeTokens.radii, key)) {
               node.type = 'word';
-              node.value = RADIUS_KEYWORDS[key] || `var(--radius-${key})`;
+              node.value = RADIUS_KEYWORDS[key] || `var(${buildVarName('radius', key)})`;
               return;
             }
             throw new Error(`UXD_EDGE_REFERENCE: Undefined radius ${key}.`);
@@ -691,7 +698,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
             if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw new Error(`UXD_SHADOW_REFERENCE: Undefined shadow ${key}.`);
             node.type = 'word';
-            node.value = `var(--shadow-${key})`;
+            node.value = `var(${buildVarName('shadow', key)})`;
             return;
           }
           // Border helper: border(n[, color][, style])
@@ -699,7 +706,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
             if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw new Error(`UXD_EDGE_REFERENCE: Undefined border ${key}.`);
             node.type = 'word';
-            node.value = `var(--border-${key})`;
+            node.value = `var(${buildVarName('border', key)})`;
             return;
           }
           if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {

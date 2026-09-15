@@ -35,7 +35,7 @@ export default function BorderDocumentation() {
         <div><h4>UXDSL</h4><pre><code className="language-css">{definition}</code></pre></div>
         <div><h4>Equivalent CSS behavior</h4><pre><code className="language-css">{equivalent}</code></pre></div>
       </div>
-      <p>Below 768px, the card has a 1px border and 8px corners. At 768px and above, it has a 2px border and 12px corners. The most recent applicable value persists until another rule overrides it. Reusing the presets on another component shares that progression. The component consumes variables such as --border-1 and --radius-2. Edit and rebuild the source theme, or replace the managed theme stylesheet through generateThemeCss(nextTheme), to update consumers. The plain CSS example isolates the equivalent visual behavior.</p>
+      <p>Below 768px, the card has a 1px border and 8px corners. At 768px and above, it has a 2px border and 12px corners. The most recent applicable value persists until another rule overrides it. Reusing the presets on another component shares that progression. The component consumes variables such as --uxdsl__border__1 and --uxdsl__radius__2. Edit and rebuild the source theme, or replace the managed theme stylesheet through generateThemeCss(nextTheme), to update consumers. The plain CSS example isolates the equivalent visual behavior.</p>
       <h3>Connect edges to the design system</h3>
       <pre><code className="language-css">{`/* Assumes spacing 2/3 and palette primary.main are configured. */
 @theme {

@@ -1,11 +1,11 @@
 import { normalizeTokenKey } from '../preset-engine';
+import { buildVarName, buildNamespacedVarName } from '../naming';
 // Runtime helpers for UXDSL
 // - Palette: set/get/reset CSS variables consumed by palette()
 // - Breakpoints: adjust media query thresholds emitted by the UXDSL plugin at runtime
 
 import { DEFAULT_BREAKPOINTS, type BreakpointMap } from "./breakpoints";
 
-const PREFIX = "ds__palette__"; // canonical prefix for palette vars
 const STORE_KEY = "uxdsl:palette";
 const STORE_SP_KEY = "uxdsl:spacing";
 const STORE_COLOR_KEY = "uxdsl:colors";
@@ -63,7 +63,7 @@ function aliasVarName(token: string): string {
 }
 
 function canonicalVarName(token: string): string {
-  return `--${PREFIX}${normalize(token)}`;
+  return buildNamespacedVarName('palette', normalize(token));
 }
 
 function target(scope?: ScopeOption): Element {
@@ -142,8 +142,7 @@ export function updateColor(
   const normToken = normalizeTokenKey('color', token);
   
   // Update the color token variable
-  // Assuming standard UXDSL naming: --ds__color__<token>
-  const varName = `--ds__color__${normToken}`;
+  const varName = buildNamespacedVarName('color', normToken);
   el.style.setProperty(varName, value);
   
   // Propagate to dependents (palette tokens)
@@ -180,7 +179,7 @@ export function getColor(token: string, opts: LoadOptions = {}): string {
   const el = target(opts.scope) as HTMLElement;
   const cs = getComputedStyle(el);
   const normToken = normalizeTokenKey('color', token);
-  return cs.getPropertyValue(`--ds__color__${normToken}`).trim();
+  return cs.getPropertyValue(buildNamespacedVarName('color', normToken)).trim();
 }
 
 export function resetColors(
@@ -194,7 +193,7 @@ export function resetColors(
     const style = el.style;
     for (let i = style.length - 1; i >= 0; i--) {
       const name = style.item(i);
-      if (name && name.startsWith('--ds__color__')) {
+      if (name && name.startsWith(buildNamespacedVarName('color', ''))) {
         style.removeProperty(name);
       }
     }
@@ -211,7 +210,7 @@ export function resetColors(
   const list = Array.isArray(tokens) ? tokens : [tokens];
   list.forEach((t) => {
     const norm = normalizeTokenKey('color', t);
-    if (norm) el.style.removeProperty(`--ds__color__${norm}`);
+    if (norm) el.style.removeProperty(buildNamespacedVarName('color', norm));
   });
 }
 
@@ -257,7 +256,7 @@ export function resetPalette(
       if (
         name &&
         name.startsWith("--") &&
-        (name.includes(`${PREFIX}`) || FAMILY_RE.test(name))
+        (name.includes(buildNamespacedVarName('palette', '')) || FAMILY_RE.test(name))
       ) {
         style.removeProperty(name);
       }
@@ -301,7 +300,7 @@ export function updateSpacing(
   const normToken = normalizeSpacingToken(token);
   if (!normToken) return;
 
-  el.style.setProperty(`--space-${normToken}`, value);
+  el.style.setProperty(buildVarName('space', normToken), value);
 
   if (opts.persist) {
     try {
@@ -331,7 +330,7 @@ export function getSpacing(token: string | number, opts: LoadOptions = {}): stri
   const cs = getComputedStyle(el);
   const normToken = normalizeSpacingToken(token);
   if (!normToken) return "";
-  return cs.getPropertyValue(`--space-${normToken}`).trim();
+  return cs.getPropertyValue(buildVarName('space', normToken)).trim();
 }
 
 export function resetSpacing(
@@ -345,7 +344,7 @@ export function resetSpacing(
     const style = el.style;
     for (let i = style.length - 1; i >= 0; i--) {
       const name = style.item(i);
-      if (name && name.startsWith('--space-')) {
+      if (name && name.startsWith(buildVarName('space', ''))) {
         style.removeProperty(name);
       }
     }
@@ -362,7 +361,7 @@ export function resetSpacing(
   const list = Array.isArray(tokens) ? tokens : [tokens];
   list.forEach((t) => {
     const norm = normalizeSpacingToken(t);
-    if (norm) el.style.removeProperty(`--space-${norm}`);
+    if (norm) el.style.removeProperty(buildVarName('space', norm));
   });
 }
 

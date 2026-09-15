@@ -20,11 +20,45 @@ actualizar.
 
 | Área | Antes | Ahora | Cambio de comportamiento |
 | --- | --- | --- | --- |
-| Spacing keys | `"space-1"` y `"1"` en el JSON emiten variables distintas (`--space-space-1` vs `--space-1`); density/radius apuntan solo a la forma sin prefijo | Ambas formas emiten `--space-1`; usar ambas en la misma config lanza `UXD_SPACING_COLLISION` | Corrección de bug, no sintaxis nueva |
+| Spacing keys | `"space-1"` y `"1"` en el JSON emiten variables distintas (`--uxdsl__space__space-1` vs `--uxdsl__space__1`); density/radius apuntan solo a la forma sin prefijo | Ambas formas emiten `--uxdsl__space__1`; usar ambas en la misma config lanza `UXD_SPACING_COLLISION` | Corrección de bug, no sintaxis nueva |
 | Entradas múltiples | Cada archivo compilado emite siempre `:root` completo (foundations, density, shadows, edges, surfaces, buttons, inputs) | `includeTheme: false` en la opción del plugin desactiva esos ocho emisores para una entrada que solo consume tokens de otra | Opt-in; por defecto (`true`) no cambia nada |
 | Referencias indefinidas | `var(--token-inexistente)` se emitía igual; el navegador simplemente no aplicaba la propiedad | Falla el build con `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`, indicando la cadena completa de dependencia | Ver "Qué hacer si tu build empieza a fallar" abajo |
 | `border(1..5)` | Requería que el tema definiera `colors.gray.{300,400,500,600}` manualmente, o las propiedades quedaban inválidas en silencio | Ese `gray` por defecto se mezcla automáticamente (tus shades ganan por clave si los definís) | Nadie necesita cambiar código; los temas que ya definían `colors.gray` siguen ganando |
 | Tamaño de surface/button/input | `@ds-surface(role size)` fija padding y radius juntos; para radio/sombra distintos había que sobreescribir la propiedad a mano después del mixin | `@ds-surface(role size radius(key) shadow(key))` fija radio/sombra de forma independiente | Sintaxis nueva, opt-in; ver tabla de sintaxis abajo |
+| Nombres de variables CSS | Cada familia usaba su propia forma: `--space-1`, `--radius-2`, `--surface-contained-padding`, `--h1-size`, y solo palette/color llevaban un namespace (`--ds__palette__primary-main`) | Todas las familias comparten `--uxdsl__<familia>__<clave>`: `--uxdsl__space__1`, `--uxdsl__radius__2`, `--uxdsl__surface__contained-padding`, `--uxdsl__typography__h1-size`, `--uxdsl__palette__primary-main` | Paquete sin publicar (0.3.0, sin release en npm); ningún consumidor externo depende todavía del nombre público. Ver la sección dedicada abajo |
+
+## Nombres de variables CSS (`--uxdsl__<familia>__<clave>`)
+
+Cada variable CSS que este compilador genera o consume comparte una sola
+forma: `--uxdsl__<familia>__<clave>`. Esto es una centralización (todo
+pasa por `src/naming.ts`), no un cambio de sintaxis del DSL — `palette()`,
+`space()`, `@ds-surface`, etc. y las claves lógicas del tema (`theme.spacing`,
+`theme.palette`, ...) no cambian.
+
+| Familia | Ejemplo anterior | Ejemplo actual |
+| --- | --- | --- |
+| Spacing | `--space-1` | `--uxdsl__space__1` |
+| Density | `--density-1` | `--uxdsl__density__1` |
+| Radius | `--radius-2` | `--uxdsl__radius__2` |
+| Border | `--border-1` | `--uxdsl__border__1` |
+| Shadow | `--shadow-2` | `--uxdsl__shadow__2` |
+| Surface | `--surface-flat-padding` | `--uxdsl__surface__flat-padding` |
+| Button | `--button-contained-hover-bg` | `--uxdsl__button__contained-hover-bg` |
+| Input | `--input-outlined-focus-border` | `--uxdsl__input__outlined-focus-border` |
+| Typography | `--h1-size` | `--uxdsl__typography__h1-size` |
+| Font family | `--font-ui` | `--uxdsl__font__ui` |
+| Palette | `--ds__palette__primary-main` | `--uxdsl__palette__primary-main` |
+| Color | `--ds__color__gray-300` | `--uxdsl__color__gray-300` |
+
+Si tu propio CSS lee o escribe alguna de estas variables directamente
+(por ejemplo, `getComputedStyle(el).getPropertyValue('--h1-size')`, o un
+`element.style.setProperty('--surface-contained-padding', ...)` fuera del
+runtime de UXDSL), actualizá esas referencias al nuevo nombre — este
+compilador ya no emite la forma anterior. La única excepción es
+`theme.typography` (el mapa plano, no `theme.typography_details`): su
+clave JSON pasa a ser el nombre de variable tal cual (`{ typography: {
+"h1-size": "2rem" } }` sigue emitiendo `--h1-size: 2rem;`), porque ese
+nombre lo elegiste vos, no este compilador.
 
 ## Tabla de sintaxis: anterior → equivalente nuevo
 
@@ -81,7 +115,7 @@ Puntos clave:
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice
    exactamente qué propiedad, en qué archivo/línea, depende de qué
    variable indefinida.
-2. Si el token es tuyo (por ejemplo `--ds__palette__text-secondary` de un
+2. Si el token es tuyo (por ejemplo `--uxdsl__palette__text-secondary` de un
    `palette(text-secondary)` que escribiste), definilo en el tema
    (`theme.palette.text = { secondary: '...' }`).
 3. Si el token lo genera un preset por defecto que no usás con esa forma
@@ -156,5 +190,8 @@ Los ejemplos de este documento están verificados contra los tests de este
 checkout (`postcss-uxdsl@0.3.0`):
 `test/spacing-normalization.test.js`, `test/include-theme.test.js`,
 `test/border-colors.test.js`, `test/size-overrides.test.js`,
-`test/codemod-size-overrides.test.js` — `npm test` corre los 103 casos,
-incluidos estos.
+`test/codemod-size-overrides.test.js`, `test/naming.test.js` — `npm test`
+corre los 116 casos, incluidos estos. `fixtures/mig07-consumer/` (`npm run
+verify:consumer-fixture` desde la raíz del monorepo) verifica además el
+nombrado `--uxdsl__<familia>__<clave>` instalando el paquete desde un
+tarball real, no desde el código fuente del monorepo.

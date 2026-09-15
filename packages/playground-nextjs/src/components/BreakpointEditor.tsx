@@ -32,7 +32,7 @@ export function BreakpointEditor({ isOpen, onClose, initialValue = '', onSave, t
     }
   };
   return <div role="presentation" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'grid', placeItems: 'center' }}>
-    <section role="dialog" aria-modal="true" aria-labelledby="typography-expression-title" onClick={event => event.stopPropagation()} style={{ background: 'var(--ds__palette__surface-main)', padding: '2rem', borderRadius: '1rem', width: 'min(560px, 90vw)' }}>
+    <section role="dialog" aria-modal="true" aria-labelledby="typography-expression-title" onClick={event => event.stopPropagation()} style={{ background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '1rem', width: 'min(560px, 90vw)' }}>
       <h3 id="typography-expression-title">Edit {tagName}</h3>
       <p>Edit the theme expression. Tokens and native CSS remain intact.</p>
       <label htmlFor="typography-expression">Value or responsive progression</label>

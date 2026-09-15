@@ -1,6 +1,7 @@
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
 import { DEFAULT_BREAKPOINTS, BreakpointMap } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
+import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
 export interface ControlRole { surface?: string; base?: Record<string, string>; states?: Record<string, Record<string, string>> }
 export interface ControlTheme extends SurfaceTheme { [key: string]: any }
@@ -43,19 +44,40 @@ function getTokens(theme: ControlTheme = {}): Record<string, Required<ControlRol
   return result;
 }
 function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  const groups: Record<string, Record<string,string>> = {};
+  // MIG-08: every role/state/tone bucket shares one `family` namespace
+  // (`button`/`input`) instead of folding role/state into the family
+  // portion, so the emitted name is `--uxdsl__button__<role>-<state>-<key>`
+  // (e.g. `--uxdsl__button__contained-hover-bg`), matching every other
+  // family's `--uxdsl__<family>__<key>` shape. Each composite key is
+  // claimed through a registry (identifier `role.state.key`) before it
+  // reaches the shared bucket object, so two different (role, state, key)
+  // triples that happen to concatenate to the identical string (e.g. role
+  // "a-b" state "c" vs role "a" state "b-c") raise a clear collision
+  // instead of one silently overwriting the other as a plain object
+  // property — compilePresetRules's own registry only sees the bucket
+  // after that has already happened.
+  const bucket: Record<string, string> = {};
+  const names = new NameRegistry(errorPrefix);
+  const put = (comboKey: string, identifier: string, value: string) => { bucket[names.claim(comboKey, identifier)] = value; };
   for (const [role, pack] of Object.entries(getTokens(theme))) {
     for (const [state, style] of Object.entries({ base: pack.base, ...pack.states })) {
-      groups[`${family}-${role}-${state}`] = Object.fromEntries(Object.entries(style).map(([key,value]) => [key, surfaceValueToCss(value, theme)]));
+      for (const [key, value] of Object.entries(style)) put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(value, theme));
       // A tone must be a full color family (main/dark/contrast), not a
       // semantic overlay group like text/divider/action that only defines
       // the sub-keys it actually needs.
       for (const tone of Object.keys(theme.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key) && object((theme.palette as any)[key]) && ['main', 'dark', 'contrast'].every(variant => variant in (theme.palette as any)[key]))) {
-        groups[`${family}-${role}-tone-${tone}-${state}`] = Object.fromEntries(Object.entries(style).map(([key,value]) => [key, surfaceValueToCss(value.replace(new RegExp(String.raw`var\(--${family}-tone-(main|dark|contrast), var\(--ds__palette__primary-\1\)\)`, 'g'), (_, variant) => `var(--ds__palette__${tone}-${variant})`), theme)]));
+        // buildVarName/buildNamespacedVarName output has no regex-special
+        // characters (letters, digits, hyphens, underscores) other than the
+        // literal backreference placeholder appended below, so it's safe to
+        // splice straight into the pattern.
+        const primaryTonePattern = `var\\(${buildVarName(family, 'tone-')}(main|dark|contrast), var\\(${buildNamespacedVarName('palette', 'primary')}-\\1\\)\\)`;
+        for (const [key, value] of Object.entries(style)) {
+          put(`${role}-tone-${tone}-${state}-${key}`, `${role}.tone.${tone}.${state}.${key}`, surfaceValueToCss(value.replace(new RegExp(primaryTonePattern, 'g'), (_, variant) => `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`), theme));
+        }
       }
     }
   }
-  return compilePresetRules(groups, breakpoints, errorPrefix);
+  return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix);
 }
 function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileRules(theme, breakpoints).map(rule => {
@@ -66,7 +88,7 @@ function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ..
 function declarations(theme: ControlTheme, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const pack = getTokens(theme)[role];
   if (!pack) throw fail(`UXD_INPUT_ROLE: Undefined ${role}.`);
-  const refs = (state: string, style: Record<string,string>) => Object.fromEntries(Object.keys(style).map(key => [properties[key], tone ? `var(--${family}-${role}-tone-${tone}-${state}-${key}, var(--${family}-${role}-${state}-${key}))` : `var(--${family}-${role}-${state}-${key})`]));
+  const refs = (state: string, style: Record<string,string>) => Object.fromEntries(Object.keys(style).map(key => [properties[key], tone ? `var(${buildVarName(family, `${role}-tone-${tone}-${state}-${key}`)}, var(${buildVarName(family, `${role}-${state}-${key}`)}))` : `var(${buildVarName(family, `${role}-${state}-${key}`)})`]));
   const composed = surfaceDeclarations(theme, pack.surface, tone, size, radiusOverride, shadowOverride);
   const base: Record<string,string> = { ...nativeDefaults, ...composed, ...refs('base', pack.base) };
   // An explicit radius()/shadow() override argument is a per-usage-site
@@ -77,7 +99,7 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   // replace.
   if (radiusOverride) base['border-radius'] = composed['border-radius'];
   if (shadowOverride) base['box-shadow'] = composed['box-shadow'];
-  if (tone) for (const variant of ['main','dark','contrast']) base[`--${family}-tone-${variant}`] = `var(--ds__palette__${tone}-${variant})`;
+  if (tone) for (const variant of ['main','dark','contrast']) base[buildVarName(family, `tone-${variant}`)] = `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`;
   return { base, states: Object.fromEntries(Object.entries(pack.states).map(([state, style]) => [state, refs(state, style)])) };
 }
 // MIG-05: radius()/shadow() override arguments are extracted before the

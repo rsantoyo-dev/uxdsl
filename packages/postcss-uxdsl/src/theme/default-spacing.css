@@ -1,20 +1,20 @@
 :root {
   /* Spacing scale (1–20). Curated, even-friendly values */
 
-  --space-1: 0.125rem; /* 2px */
-  --space-2: 0.25rem; /* 4px */
-  --space-3: 0.5rem; /* 8px */
-  --space-4: 0.75rem; /* 12px */
-  --space-5: 1rem; /* 16px */
-  --space-6: 1.5rem; /* 24px */
-  --space-7: 2rem; /* 32px */
-  --space-8: 2.5rem; /* 40px */
-  --space-9: 3.125rem; /* 50px */
-  --space-10: 3.875rem; /* 62px */
-  --space-11: 4.875rem; /* 78px */
-  --space-12: 6.125rem; /* 98px */
-  --space-13: 7.75rem; /* 124px */
-  --space-14: 9.75rem; /* 156px */
-  --space-15: 12.25rem; /* 196px */
-  --space-16: 15.375rem; /* 246px */
+  --uxdsl__space__1: 0.125rem; /* 2px */
+  --uxdsl__space__2: 0.25rem; /* 4px */
+  --uxdsl__space__3: 0.5rem; /* 8px */
+  --uxdsl__space__4: 0.75rem; /* 12px */
+  --uxdsl__space__5: 1rem; /* 16px */
+  --uxdsl__space__6: 1.5rem; /* 24px */
+  --uxdsl__space__7: 2rem; /* 32px */
+  --uxdsl__space__8: 2.5rem; /* 40px */
+  --uxdsl__space__9: 3.125rem; /* 50px */
+  --uxdsl__space__10: 3.875rem; /* 62px */
+  --uxdsl__space__11: 4.875rem; /* 78px */
+  --uxdsl__space__12: 6.125rem; /* 98px */
+  --uxdsl__space__13: 7.75rem; /* 124px */
+  --uxdsl__space__14: 9.75rem; /* 156px */
+  --uxdsl__space__15: 12.25rem; /* 196px */
+  --uxdsl__space__16: 15.375rem; /* 246px */
 }

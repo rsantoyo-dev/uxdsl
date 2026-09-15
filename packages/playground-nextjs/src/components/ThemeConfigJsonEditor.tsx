@@ -98,20 +98,20 @@ export default function ThemeConfigJsonEditor() {
     <InteractiveDemoContainer
       title="Runtime Config JSON"
       toolbar={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--ds__palette__text-secondary)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--uxdsl__space__3)', flexWrap: 'wrap' }}>
+          <div style={{ fontSize: '0.8rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
             Edit JSON to update UI live. UI changes also sync back here.
           </div>
-          <div style={{ display: 'flex', gap: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', gap: 'var(--uxdsl__space__2)' }}>
             <button
               type="button"
               onClick={handleReset}
               style={{
-                border: '1px solid var(--ds__palette__neutral-light)',
-                background: 'var(--ds__palette__surface-light)',
-                color: 'var(--ds__palette__text-primary)',
-                borderRadius: 'var(--radius-1, 6px)',
-                padding: 'var(--space-2) var(--space-3)',
+                border: '1px solid var(--uxdsl__palette__neutral-light)',
+                background: 'var(--uxdsl__palette__surface-light)',
+                color: 'var(--uxdsl__palette__text-primary)',
+                borderRadius: 'var(--uxdsl__radius__1, 6px)',
+                padding: 'var(--uxdsl__space__2) var(--uxdsl__space__3)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -124,11 +124,11 @@ export default function ThemeConfigJsonEditor() {
               type="button"
               onClick={handleExport}
               style={{
-                border: '1px solid var(--ds__palette__primary-main)',
-                background: 'var(--ds__palette__primary-main)',
-                color: 'var(--ds__palette__primary-contrast)',
-                borderRadius: 'var(--radius-1, 6px)',
-                padding: 'var(--space-2) var(--space-3)',
+                border: '1px solid var(--uxdsl__palette__primary-main)',
+                background: 'var(--uxdsl__palette__primary-main)',
+                color: 'var(--uxdsl__palette__primary-contrast)',
+                borderRadius: 'var(--uxdsl__radius__1, 6px)',
+                padding: 'var(--uxdsl__space__2) var(--uxdsl__space__3)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
@@ -141,7 +141,7 @@ export default function ThemeConfigJsonEditor() {
         </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-2)' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--uxdsl__space__2)' }}>
         <textarea
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
@@ -151,17 +151,17 @@ export default function ThemeConfigJsonEditor() {
             width: '100%',
             minHeight: '460px',
             resize: 'vertical',
-            fontFamily: 'var(--font-code, ui-monospace, SFMono-Regular, Menlo, monospace)',
+            fontFamily: 'var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace)',
             fontSize: '0.82rem',
             lineHeight: 1.5,
-            border: `1px solid ${error ? 'var(--ds__palette__error-main)' : 'var(--ds__palette__neutral-light)'}`,
-            borderRadius: 'var(--radius-1, 8px)',
-            padding: 'var(--space-3)',
-            background: 'var(--ds__palette__surface-main)',
-            color: 'var(--ds__palette__text-primary)'
+            border: `1px solid ${error ? 'var(--uxdsl__palette__error-main)' : 'var(--uxdsl__palette__neutral-light)'}`,
+            borderRadius: 'var(--uxdsl__radius__1, 8px)',
+            padding: 'var(--uxdsl__space__3)',
+            background: 'var(--uxdsl__palette__surface-main)',
+            color: 'var(--uxdsl__palette__text-primary)'
           }}
         />
-        <div style={{ fontSize: '0.75rem', color: error ? 'var(--ds__palette__error-main)' : 'var(--ds__palette__text-secondary)' }}>
+        <div style={{ fontSize: '0.75rem', color: error ? 'var(--uxdsl__palette__error-main)' : 'var(--uxdsl__palette__text-secondary)' }}>
           {error
             ? error
             : status === 'synced'

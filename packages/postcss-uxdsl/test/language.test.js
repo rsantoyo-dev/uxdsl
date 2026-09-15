@@ -16,7 +16,7 @@ const withBaseline = (extra = {}) => ({ spacing: FULL_SPACING, palette: BASE_PAL
 
 function densityDeclarations(css) {
   const output = [];
-  postcss.parse(css).walkDecls(/^--density-/, decl => {
+  postcss.parse(css).walkDecls(/^--uxdsl__density__/, decl => {
     output.push([decl.parent.parent.type === 'atrule' ? decl.parent.parent.params : 'base', decl.prop, decl.value]);
   });
   return output;
@@ -27,21 +27,21 @@ test('shared module imports without a browser and preserves breakpoint compatibi
   assert.equal(typeof document, 'undefined');
 });
 test('Density preserves references and suppresses redundant breakpoints', () => {
-  assert.deepEqual(language.compileDensityRules(defs).map(x => [x.minWidth, x.values['--density-4']]), [
-    [null, 'var(--space-4)'], [768, 'var(--space-5)'], [1280, 'var(--space-6)'],
+  assert.deepEqual(language.compileDensityRules(defs).map(x => [x.minWidth, x.values['--uxdsl__density__4']]), [
+    [null, 'var(--uxdsl__space__4)'], [768, 'var(--uxdsl__space__5)'], [1280, 'var(--uxdsl__space__6)'],
   ]);
 });
 test('runtime and PostCSS have equivalent Density declarations', async () => {
   const built = await postcss([plugin({ theme: withBaseline() })]).process('@theme { density-4: xs(space(4)) md(space(5)) xl(space(6)); } .card { padding: density(4); }', { from: undefined });
   assert.deepEqual(densityDeclarations(built.css), densityDeclarations(generateThemeCss(withBaseline({ densities: defs }))));
-  assert.match(built.css, /padding: var\(--density-4\)/);
+  assert.match(built.css, /padding: var\(--uxdsl__density__4\)/);
 });
 test('custom breakpoint values and input order are handled consistently', () => {
   const css = language.generateDensityCss({ 4: 'xl(space(6)) xs(space(4)) md(space(5))' }, { xl: 1600, xs: 0, md: 850 });
   assert.deepEqual(densityDeclarations(css).map(x => x[0]), ['base', '(min-width: 850px)', '(min-width: 1600px)']);
 });
 test('nested native expressions and quoted spacing references survive', () => {
-  assert.equal(language.spacingValueToCss('calc(space("4") + 2px)'), 'calc(var(--space-4) + 2px)');
+  assert.equal(language.spacingValueToCss('calc(space("4") + 2px)'), 'calc(var(--uxdsl__space__4) + 2px)');
   assert.equal(language.resolveResponsiveValue('xs(calc(space(4) + 2px)) md(space(5))', 'xs', language.DEFAULT_BREAKPOINTS), 'calc(space(4) + 2px)');
   assert.equal(language.resolveResponsiveValue('rgb(10, 20, 30)', 'md', language.DEFAULT_BREAKPOINTS), 'rgb(10, 20, 30)');
 });

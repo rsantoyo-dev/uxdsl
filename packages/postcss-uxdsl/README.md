@@ -110,7 +110,7 @@ breakpoints.load()                   // load persisted map from localStorage
 ## Multi-entry theming (`includeTheme`)
 
 A single compiled `.uxdsl` file normally both **defines** the global design
-tokens (`:root { --space-1: ...; --surface-contained-padding: ...; }`) and
+tokens (`:root { --uxdsl__space__1: ...; --uxdsl__surface__contained-padding: ...; }`) and
 **consumes** them (`@ds-surface`, `space()`, `palette()`, ...). That is the
 default and requires no configuration.
 
@@ -150,7 +150,7 @@ to an actual definition — in this compilation, in a declared dependency
 default:
 
 ```text
-UXD_REFERENCE_MISSING: color -> --ds__palette__text-secondary has no
+UXD_REFERENCE_MISSING: color -> --uxdsl__palette__text-secondary has no
 definition in the active theme/scope. Define it or declare its external
 provider.
 ```
@@ -187,7 +187,7 @@ see the next section.
 
 `theme.spacing` accepts either the bare numeric/named key (`"1"`,
 `"gutter"`) or the legacy `space-`-prefixed form (`"space-1"`,
-`"space-gutter"`) — both emit `--space-1` / `--space-gutter`. `space-` is a
+`"space-gutter"`) — both emit `--uxdsl__space__1` / `--uxdsl__space__gutter`. `space-` is a
 reserved prefix removed exactly once; `"outer-space"` is untouched, and a
 repeated or empty prefix (`"space-space-1"`, `"space-"`) raises
 `UXD_SPACING_KEY`. Defining both spellings for the same key in one config
@@ -227,6 +227,29 @@ interleaved `all` reset, or an interleaved nested rule/at-rule such as
 
 ---
 
+## Generated variable names (`--uxdsl__<family>__<key>`)
+
+Every custom property this compiler emits or consumes carries the shared
+`--uxdsl__<family>__<key>` shape — `--uxdsl__space__1`,
+`--uxdsl__density__2`, `--uxdsl__radius__2`/`--uxdsl__border__1`,
+`--uxdsl__shadow__1`, `--uxdsl__surface__contained-padding`,
+`--uxdsl__button__contained-hover-bg`,
+`--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-size`,
+`--uxdsl__font__ui`, `--uxdsl__palette__primary-main`,
+`--uxdsl__color__gray-300`. One shared, always-`uxdsl__`-prefixed
+namespace is what makes a UXDSL-generated variable unambiguous to spot in
+a browser's computed-style/devtools view, in generated CSS, or in a
+diagnostic message — nothing else on the page uses it by accident. This
+does not change the DSL syntax you write (`palette()`, `space()`,
+`@ds-surface`, ...) or the logical keys in your theme JSON — only the CSS
+custom property name the compiler produces underneath.
+
+The one exception is a flat `theme.typography` entry (as opposed to the
+structured `theme.typography_details`): its JSON key becomes the variable
+name verbatim (`{ typography: { "h1-size": "2rem" } }` emits
+`--h1-size: 2rem;`), since that key is a name you chose yourself, not one
+this compiler assigns from a family/key pair.
+
 ## Naming collisions
 
 Every generated CSS variable name is built from a logical identifier —
@@ -234,11 +257,12 @@ a family and a key (`surface.contained.padding`), or a namespace and a key
 (`palette.primary-main`). Two different identifiers can concatenate to the
 identical name (a palette key literally named `"primary-main"` collides
 with the structured `palette.primary.main`; a surface role named
-`"contained-shadow"` collides with role `"contained"` field `"shadow"`).
-When that happens, compiling throws `UXD_FOUNDATION_NAME_COLLISION` or
-`UXD_PRESET_NAME_COLLISION` naming both identifiers and the variable they
-both produce, instead of one silently overwriting the other. Rename
-whichever one you didn't intend to share that variable.
+`"contained-shadow"` field `"x"` collides with role `"contained"` field
+`"shadow-x"`). When that happens, compiling throws
+`UXD_FOUNDATION_NAME_COLLISION` or `UXD_PRESET_NAME_COLLISION` naming both
+identifiers and the variable they both produce, instead of one silently
+overwriting the other. Rename whichever one you didn't intend to share
+that variable.
 
 ---
 

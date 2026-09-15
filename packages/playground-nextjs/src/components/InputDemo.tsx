@@ -68,7 +68,7 @@ export default function InputDemo() {
         <input id={`preview-${role}`} type="text" data-input-role={role} aria-invalid={invalid} aria-describedby={`help-${role}`} readOnly={readOnly} disabled={disabled} placeholder="Enter a value" />
         <p id={`help-${role}`}>{invalid ? 'Example error: check this value.' : 'Visible label and help text remain separate from styling.'}</p>
         <pre>{`.field { @ds-input(${role}${tone ? ` ${tone}` : ''}${size ? ` ${size}` : ''}); }`}</pre>
-        <details><summary>CSS from the shared engine</summary><pre>{inputComponentCss(theme, '.field', role, tone, size)}</pre><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => key.startsWith(`--input-${role}-`))), null, 2)}</pre></details>
+        <details><summary>CSS from the shared engine</summary><pre>{inputComponentCss(theme, '.field', role, tone, size)}</pre><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => key.startsWith(`--uxdsl__input__${role}-`))), null, 2)}</pre></details>
       </div>)}</div>
     </section>
   </div>

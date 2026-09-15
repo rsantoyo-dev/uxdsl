@@ -3,6 +3,7 @@ import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens } from './language
 import { compilePresetRules, mergePresetTokens, presetValueToCss } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
+import { buildVarName, buildNamespacedVarName } from './naming';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
@@ -69,19 +70,23 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
     const map = kind === 'radius' ? edges.radii : kind === 'border' ? edges.borders : shadows;
     const keyword = kind === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
     if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
-    Object.assign(node, { type: 'word', value: keyword || `var(--${kind}-${key})` });
+    Object.assign(node, { type: 'word', value: keyword || `var(${buildVarName(kind, key)})` });
     return false;
   });
   return presetValueToCss(parsed.toString(), 'UXD_SURFACE');
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  const groups: Record<string, Record<string, string>> = {};
+  // MIG-08: one shared "surface" family, keyed `${role}-${field}` — so the
+  // emitted name is `--uxdsl__surface__<role>-<field>` (e.g.
+  // `--uxdsl__surface__flat-padding`), matching every other family's
+  // `--uxdsl__<family>__<key>` shape instead of folding the role into the
+  // family portion.
+  const surface: Record<string, string> = {};
   for (const [role, style] of Object.entries(getSurfaceTokens(theme))) {
-    groups[`surface-${role}`] = {};
-    for (const [field, value] of Object.entries(style)) groups[`surface-${role}`][field] = surfaceValueToCss(value!, theme);
+    for (const [field, value] of Object.entries(style)) surface[`${role}-${field}`] = surfaceValueToCss(value!, theme);
   }
-  return compilePresetRules(groups, breakpoints, 'UXD_SURFACE');
+  return compilePresetRules({ surface }, breakpoints, 'UXD_SURFACE');
 }
 export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileSurfaceRules(theme, breakpoints).map(rule => {
@@ -103,29 +108,30 @@ export function surfaceDeclarations(theme: SurfaceTheme, role = 'contained', ton
   if (!Object.prototype.hasOwnProperty.call(getSurfaceTokens(theme), role)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined surface ${role}.`);
   if (tone && !/^[a-z][a-z0-9-]*$/.test(tone)) throw new Error('UXD_SURFACE_TONE: Invalid palette family.');
   const result: Record<string, string> = {};
-  for (const [field, property] of Object.entries(SURFACE_PROPERTIES)) result[property] = `var(--surface-${role}-${field})`;
+  for (const [field, property] of Object.entries(SURFACE_PROPERTIES)) result[property] = `var(${buildVarName('surface', `${role}-${field}`)})`;
   if (tone) {
+    const toneMain = `var(${buildNamespacedVarName('palette', `${tone}-main`)})`;
     if (role === 'outlined') {
-      result.background = 'transparent'; result.color = `var(--ds__palette__${tone}-main)`; result.border = `1px solid var(--ds__palette__${tone}-main)`;
+      result.background = 'transparent'; result.color = toneMain; result.border = `1px solid ${toneMain}`;
     } else if (role === 'flat') {
-      result.background = 'transparent'; result.color = `var(--ds__palette__${tone}-main)`;
+      result.background = 'transparent'; result.color = toneMain;
     } else {
-      result.background = `var(--ds__palette__${tone}-main)`; result.color = `var(--ds__palette__${tone}-contrast)`;
+      result.background = toneMain; result.color = `var(${buildNamespacedVarName('palette', `${tone}-contrast`)})`;
     }
   }
   if (size) {
     if (!/^\d+$/.test(size) || (!Object.prototype.hasOwnProperty.call(getEdgeTokens(theme).radii, size) || !Object.prototype.hasOwnProperty.call(getDensityTokens(theme), size))) throw new Error(`UXD_SURFACE_SIZE: Size ${size} requires both Density and Radius tokens.`);
-    result.padding = `var(--density-${size})`; result['border-radius'] = `var(--radius-${size})`;
+    result.padding = `var(${buildVarName('density', size)})`; result['border-radius'] = `var(${buildVarName('radius', size)})`;
   }
   if (radiusOverride) {
     const radii = getEdgeTokens(theme).radii;
     const keyword = RADIUS_KEYWORDS[radiusOverride];
     if (!keyword && !Object.prototype.hasOwnProperty.call(radii, radiusOverride)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined radius ${radiusOverride}.`);
-    result['border-radius'] = keyword || `var(--radius-${radiusOverride})`;
+    result['border-radius'] = keyword || `var(${buildVarName('radius', radiusOverride)})`;
   }
   if (shadowOverride) {
     if (!Object.prototype.hasOwnProperty.call(getShadowTokens(theme), shadowOverride)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined shadow ${shadowOverride}.`);
-    result['box-shadow'] = `var(--shadow-${shadowOverride})`;
+    result['box-shadow'] = `var(${buildVarName('shadow', shadowOverride)})`;
   }
   return result;
 }

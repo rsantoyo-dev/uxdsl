@@ -8,9 +8,9 @@ const { generateFoundationCss } = require('../dist/foundations');
 
 const compile = (source, options = {}) => postcss([plugin({ references: { mode: 'off' }, ...options })]).process(source, { from: undefined });
 
-test('MIG-01: "1" and "space-1", in separate configurations, both produce --space-1', () => {
+test('MIG-01: "1" and "space-1", in separate configurations, both produce --uxdsl__space__1', () => {
   assert.equal(generateFoundationCss({ spacing: { 1: '4px' } }), generateFoundationCss({ spacing: { 'space-1': '4px' } }));
-  assert.match(generateFoundationCss({ spacing: { 'space-1': '4px' } }), /--space-1: 4px/);
+  assert.match(generateFoundationCss({ spacing: { 'space-1': '4px' } }), /--uxdsl__space__1: 4px/);
 });
 
 test('MIG-01: both keys in the same configuration collide instead of one winning by accidental order', () => {
@@ -30,10 +30,10 @@ test('MIG-01: an arbitrary identifier prefix is never stripped without the docum
 test('MIG-01: Density and radius resolve against a configured spacing key regardless of which spelling defined it', async () => {
   const bySpace1 = await compile('.x { padding: space(gutter); }', { theme: { spacing: { 'space-gutter': '12px' } } });
   const byBare = await compile('.x { padding: space(gutter); }', { theme: { spacing: { gutter: '12px' } } });
-  assert.match(bySpace1.css, /padding: var\(--space-gutter\)/);
+  assert.match(bySpace1.css, /padding: var\(--uxdsl__space__gutter\)/);
   assert.equal(bySpace1.css, byBare.css);
   const themeCss = generateFoundationCss({ spacing: { 'space-gutter': '12px' } });
-  assert.match(themeCss, /--space-gutter: 12px/);
+  assert.match(themeCss, /--uxdsl__space__gutter: 12px/);
 });
 
 test('MIG-01: legacy, new and custom-scale spacing configurations are all covered', () => {

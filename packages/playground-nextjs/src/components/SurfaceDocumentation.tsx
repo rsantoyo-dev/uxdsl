@@ -27,15 +27,15 @@ export function SurfaceDocumentation() {
   @ds-surface(contained);
 }`}</code></pre></div>
         <div><h4>CSS consumption</h4><pre><code className="language-css">{`.card {
-  padding: var(--surface-contained-padding);
-  border-radius: var(--surface-contained-radius);
-  background: var(--surface-contained-bg);
-  color: var(--surface-contained-color);
-  border: var(--surface-contained-border);
-  box-shadow: var(--surface-contained-shadow);
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
 }`}</code></pre></div>
       </div>
-      <p>The generated theme variables retain references such as <code>var(--density-2)</code> and <code>var(--radius-2)</code>. In this example, the shadow changes from shadow-1 to shadow-3 at 768px and remains there until another rule overrides it. Density and Radius can also respond through their own mappings. The component does not need to repeat those decisions.</p>
+      <p>The generated theme variables retain references such as <code>var(--uxdsl__density__2)</code> and <code>var(--uxdsl__radius__2)</code>. In this example, the shadow changes from shadow-1 to shadow-3 at 768px and remains there until another rule overrides it. Density and Radius can also respond through their own mappings. The component does not need to repeat those decisions.</p>
       <h3>Choose the scope of your change</h3>
       <ul>
         <li><strong>One container:</strong> select another configured Surface or add an intentional CSS override after the directive.</li>

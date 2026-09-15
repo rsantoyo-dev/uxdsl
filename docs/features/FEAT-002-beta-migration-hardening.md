@@ -389,58 +389,128 @@ esta fixture con mayor fidelidad.
 
 ## MIG-08 — Nombres consistentes sin ruptura silenciosa
 
-Inventariar nombres como `--ds__palette__primary-main`, `--ds__color__gray-300`, `--space-1`, `--density-1` y `--surface-flat-padding`. Centralizar su construcción aunque inicialmente se conserven las formas públicas actuales.
+Inventariar nombres como `--ds__palette__primary-main`, `--ds__color__gray-300`, `--space-1`, `--density-1` y `--surface-flat-padding`. Centralizar su construcción y migrarlos a un namespace común `--uxdsl__` que permita identificar las variables de UXDSL durante el debugging.
 
 Implementado en este checkout (paquete identificado como 0.3.0, sin cambiar
-versiones ni publicar): `src/naming.ts`, nuevo, exporta `buildVarName`
-(`--<family>-<key>`, usado por density, spacing, edges, shadows, surfaces,
-buttons, inputs y typography), `buildNamespacedVarName`
-(`--ds__<namespace>__<key>`, usado por palette y color) y `NameRegistry`
-— una clase pequeña que recuerda qué identificador lógico (`"surface.
+versiones ni publicar): `src/naming.ts` exporta `buildVarName`
+(`--uxdsl__<family>__<key>`, usado por density, spacing, edges, shadows,
+surfaces, buttons, inputs, typography y font), `buildNamespacedVarName`
+(el mismo contrato, usado por palette y color — hoy delega en
+`buildVarName`, se mantiene como nombre separado porque "namespace" lee
+mejor que "family" en esos call sites) y `NameRegistry` — una clase
+pequeña que recuerda qué identificador lógico (`"surface.
 contained.shadow"`, `"palette.primary-main"`) reclamó cada nombre generado
 dentro de una compilación, y lanza un diagnóstico claro
 (`UXD_*_NAME_COLLISION`) si un identificador *distinto* reclama el mismo
 nombre, en vez de que uno pise al otro en silencio.
 
-Conectado en los dos puntos donde la colisión es real y demostrable:
+Conectado en todos los puntos que construían un nombre a mano:
 
 - `preset-engine.ts`'s `compilePresetRules` — el punto ya compartido por
   `edges.ts`, `shadows.ts`, `surfaces.ts` y (vía `control-engine.ts`)
   `buttons.ts`/`inputs.ts`. Antes: `rules[i].values[`--${family}-${key}`]
   = value` sobrescribía en silencio si dos pares `(family, key)`
-  distintos concatenaban al mismo string (ej. familia `"x"` clave `"a-b"`
-  y familia `"x-a"` clave `"b"`, ambos `--x-a-b`).
-- `foundations.ts`'s `generateFoundationCss` — un `theme.palette` con la
-  clave plana `"primary-main"` junto con la estructurada
-  `primary: { main }` ya emitía `--ds__palette__primary-main` dos veces
-  con valores distintos, sin ningún aviso (CSS solo aplica el último). El
-  modo oscuro usa su propio `NameRegistry` porque es un scope distinto
-  (`@media`/`[data-theme]`) donde redefinir el mismo nombre es la
-  intención, no una colisión.
+  distintos concatenaban al mismo string. El separador `__` entre familia
+  y clave ya cierra la mayoría de esos casos por construcción (familia
+  `"x"` clave `"a-b"` y familia `"x-a"` clave `"b"` ahora producen
+  `--uxdsl__x__a-b` y `--uxdsl__x-a__b`, distintos); lo que sigue siendo
+  alcanzable — y sigue cubierto por `NameRegistry` — es una clave que
+  contiene literalmente `__` y aterriza justo sobre el separador (familia
+  `"x"` clave `"y__z"` vs. familia `"x__y"` clave `"z"`, ambos
+  `--uxdsl__x__y__z`; las claves de preset admiten `_` vía
+  `/^[\w-]+$/`).
+- `control-engine.ts`'s `compileRules` (buttons/inputs) — reestructurado
+  para que `surface-${role}`/`button-${role}-${state}` dejen de ser la
+  "familia": ahora hay una única familia (`button`/`input`) con clave
+  compuesta `${role}-${state}-${key}` (o `${role}-tone-${tone}-${state}-
+  ${key}`), reclamada contra un `NameRegistry` propio *antes* de
+  ensamblar el objeto que recibe `compilePresetRules` — de otro modo dos
+  triples `(role, state, key)` que concatenan al mismo string chocarían
+  como propiedad de objeto plano, invisible para el registro compartido
+  que solo ve el resultado ya ensamblado.
+- `surfaces.ts` — mismo cambio de forma: familia única `surface`, clave
+  `${role}-${field}` (antes familia `surface-${role}`, clave `field`).
+- `typography.ts`'s `compileTypographyRules` — familia única
+  `typography`, clave `${role}-${field}` (antes el `role` mismo era la
+  familia).
+- `foundations.ts`'s `generateFoundationCss` — sin cambios de forma
+  (palette/color ya usaban `buildNamespacedVarName`); un `theme.palette`
+  con la clave plana `"primary-main"` junto con la estructurada
+  `primary: { main }` ya emitía `--uxdsl__palette__primary-main` dos
+  veces con valores distintos, sin ningún aviso (CSS solo aplica el
+  último). El modo oscuro usa su propio `NameRegistry` porque es un scope
+  distinto (`@media`/`[data-theme]`) donde redefinir el mismo nombre es
+  la intención, no una colisión.
+- `language.ts` (`--uxdsl__space__*`, `--uxdsl__density__*`),
+  `ds-runtime/index.ts`'s `updateSpacing`/`getSpacing`/`resetSpacing`
+  (los únicos puntos del runtime que construían `--space-*` a mano) y
+  `index.ts`'s consumidores — `@ds-typo` (antes construía
+  `--${tag}-font-family` etc. directamente) y `rewriteFuncs`'s
+  `density()`/`radius()`/`rounded()`/`shadow()`/`elevation()`/`border()`
+  (antes `` `var(--radius-${key})` `` etc.) — ahora llaman a
+  `buildVarName` en vez de interpolar el prefijo a mano, así que
+  definición y referencia no pueden divergir.
 
-También conectado, por consistencia (sin superficie de colisión realista
-demostrada con el vocabulario actual, pero mismo contrato): `language.ts`
-(`--space-*`, `--density-*`) y `typography.ts` (`--<role>-<field>`,
-`--font-*`).
+Cobertura en `test/naming.test.js` (8 casos), más las suites existentes de
+cada familia actualizadas a la forma `--uxdsl__<familia>__<clave>`. Los
+116 tests del paquete pasan contra la forma final.
 
-Cobertura en `test/naming.test.js` (8 casos). Los 116 tests del paquete
-(incluidos los 108 preexistentes) confirman que centralizar la
-construcción no cambió ningún nombre público ya emitido.
+**Decisión de renombre (tomada el 2026-09-15, implementada el mismo
+checkout):** todas las familias usan `--uxdsl__<familia>__<identificador>`
+como contrato común. El prefijo `uxdsl__` reemplaza `ds__` (antes solo en
+palette/color) y también se aplica a las familias que antes no llevaban
+namespace, para facilitar su identificación en DevTools, CSS generado y
+diagnósticos.
 
-**Decisión sobre renombres (criterio 3):** no se renombra ninguna variable
-pública en este parche. El paquete no está publicado todavía y no hay
-evidencia de consumidores externos que dependan de nombres actuales — la
-única señal disponible es el propio reporte de migración de FEAT-002, que
-no pide renombres. Revisar esta decisión si aparece evidencia de
-consumidores, o al cerrar MIG-07 (que si instala desde tarballs podría
-revelar fricciones de nombres no visibles todavía).
+| Nombre anterior | Nombre actual |
+| --- | --- |
+| `--ds__palette__primary-main` | `--uxdsl__palette__primary-main` |
+| `--ds__color__gray-300` | `--uxdsl__color__gray-300` |
+| `--space-1` | `--uxdsl__space__1` |
+| `--density-1` | `--uxdsl__density__1` |
+| `--radius-2` | `--uxdsl__radius__2` |
+| `--border-1` | `--uxdsl__border__1` |
+| `--shadow-2` | `--uxdsl__shadow__2` |
+| `--surface-flat-padding` | `--uxdsl__surface__flat-padding` |
+| `--button-contained-hover-bg` | `--uxdsl__button__contained-hover-bg` |
+| `--input-outlined-focus-border` | `--uxdsl__input__outlined-focus-border` |
+| `--h1-size` | `--uxdsl__typography__h1-size` |
+| `--font-ui` | `--uxdsl__font__ui` |
+
+La sintaxis del DSL (`palette()`, `space()`, `@ds-surface`, etc.) y las
+claves lógicas del tema no cambian por esta decisión — solo el nombre de
+la variable CSS generada. La única excepción deliberada es un
+`theme.typography` plano (no `theme.typography_details`): su clave JSON
+se sigue emitiendo tal cual (`{ typography: { "h1-size": "2rem" } }` sigue
+generando `--h1-size: 2rem;`), porque ese nombre lo elige el consumidor,
+no este compilador.
+
+No se definieron aliases temporales ni un período de deprecación: el
+paquete sigue sin publicar (0.3.0, sin release en npm) en el momento de
+este renombro, así que no existe todavía un consumidor externo que
+dependa del nombre público anterior — es, en palabras del propio
+criterio de aceptación original, el momento más seguro posible para este
+cambio. Si el paquete llega a publicarse con los nombres antiguos antes
+de este commit, este punto debe revisarse (sí haría falta una migración
+explícita para quien ya esté en producción).
+
+Verificado además en `packages/playground-nextjs` (el consumidor real del
+monorepo): build de producción completo, `scripts/test-theme-inheritance.cjs`,
+y una revisión exhaustiva de referencias hardcodeadas a nombres de
+variables (incluyendo interpolación SCSS `#{$tag}` dentro de `var(--...)`,
+que un `grep` ingenuo con límites de palabra no detecta) — sin residuos de
+la forma anterior fuera del escape hatch de `theme.typography` plano
+documentado arriba. También verificado en `fixtures/mig07-consumer/`
+(MIG-07): el fixture instala el tarball real y sus propias comprobaciones
+de "valor computado aproximado" fueron actualizadas a los nombres nuevos.
 
 Criterios de aceptación:
 
-- [x] Un único contrato construye nombres y referencias para todas las familias — `naming.ts`, conectado en los ocho módulos de definición y en `preset-engine.ts`'s `presetValueToCss` (referencias `var(...)`).
-- [x] Separar el identificador lógico del prefijo CSS; detectar colisiones — `NameRegistry`; dos colisiones reales encontradas y ahora bloqueadas (`compilePresetRules`, `generateFoundationCss`).
-- [x] Decidir si es necesario renombrar variables públicas y cuándo, con evidencia de consumidores — decisión: no todavía, ver arriba.
-- [x] Si hay renombres, incluir aliases o una migración explícita, plazo de deprecación y pruebas de overrides del usuario — no aplica; no hubo renombres.
+- [x] Un único contrato construye nombres y referencias para todas las familias con `--uxdsl__<familia>__<identificador>`; completada la integración de `naming.ts` en `preset-engine.ts`, `control-engine.ts`, `surfaces.ts`, `typography.ts`, `language.ts`, `ds-runtime/index.ts` e `index.ts`, y eliminadas las construcciones paralelas (`` `--${family}-${key}` ``, `` `--${tag}-size` ``, etc.).
+- [x] Separar el identificador lógico del prefijo CSS; detectar colisiones — `NameRegistry`; colisiones reales encontradas y bloqueadas (`compilePresetRules`, `generateFoundationCss`, y el registro defensivo agregado en `control-engine.ts`'s `compileRules` para el ensamblado de claves compuestas antes de llegar al registro compartido).
+- [x] Decidir si es necesario renombrar variables públicas y cuándo — decisión tomada: namespace `uxdsl__` para todas las familias, implementada en este mismo checkout mientras el paquete sigue sin publicar.
+- [x] Aliases o migración explícita, plazo de deprecación si corresponde, y pruebas de referencias y overrides del usuario; guía, changelog y codemod de MIG-06 actualizados — no hicieron falta aliases (paquete sin publicar, ver nota arriba); `docs/migration.md`, `README.md` y `CHANGELOG.md` documentan la forma final; el codemod de MIG-06 opera a nivel de sintaxis DSL (`radius()`/`shadow()`), no de nombres de variable, así que no necesitó cambios.
+- [x] Verificar el namespace nuevo y la estrategia de compatibilidad en PostCSS, runtime y la fixture empaquetada de MIG-07, sin renombrar variables externas del consumidor — verificado; ningún nombre elegido por el consumidor (temas JSON, `theme.typography` plano, `externalTokens`) fue tocado.
 
 ## Orden recomendado y salida de beta
 
@@ -448,7 +518,7 @@ Criterios de aceptación:
 2. Resolver MIG-01 y MIG-02; desarrollar MIG-03 con los casos de spacing y borders, y cerrar MIG-04.
 3. Acordar la gramática de MIG-05 antes de congelar el codemod de MIG-06.
 4. Cerrar MIG-07 desde los paquetes empaquetados y publicar las notas de migración junto a la siguiente beta.
-5. Centralizar naming como parte de FEAT-001; posponer renombres públicos si no son necesarios para corregir los fallos.
+5. Completar MIG-08 con el namespace `uxdsl__`, coordinando el contrato compartido con FEAT-001, la migración documentada con MIG-06 y la verificación desde paquetes con MIG-07.
 
 La salida de beta requiere P0 reproducidos y corregidos, decisiones P1 documentadas y la fixture de consumidor pasando. Una tarea pendiente no se considera resuelta por existir un workaround en la aplicación.
 

@@ -21,12 +21,12 @@ function edgeDeclarations(css) {
 test('PostCSS and runtime emit the same responsive edge variables', async () => {
   const result = await compile('.card { border: border(1); border-radius: radius(2); }', { theme });
   assert.deepEqual(edgeDeclarations(result.css), edgeDeclarations(generateThemeCss(theme)));
-  assert.match(result.css, /border: var\(--border-1\)/);
-  assert.match(result.css, /border-radius: var\(--radius-2\)/);
+  assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
+  assert.match(result.css, /border-radius: var\(--uxdsl__radius__2\)/);
 });
 test('inspection preserves values below, at, above and after transitions', () => {
-  for (const [width, expected] of [[799, '8px'], [800, '12px'], [801, '12px'], [1600, '12px']]) assert.equal(inspectEdgeTheme(theme, width)['--radius-2'], expected);
-  assert.equal(inspectEdgeTheme(theme, 800)['--border-1'], '2px dashed var(--ds__palette__primary-main)');
+  for (const [width, expected] of [[799, '8px'], [800, '12px'], [801, '12px'], [1600, '12px']]) assert.equal(inspectEdgeTheme(theme, width)['--uxdsl__radius__2'], expected);
+  assert.equal(inspectEdgeTheme(theme, 800)['--uxdsl__border__1'], '2px dashed var(--uxdsl__palette__primary-main)');
 });
 test('legacy @theme uses the shared generator and JSON wins over legacy declarations', async () => {
   const legacy = '@theme { radius-2: xs(8px) md(12px); border-1: xs(1px solid palette(primary.main)) md(2px dashed palette(primary.main)); } .card { border: border(1); border-radius: radius(2); }';
@@ -42,7 +42,7 @@ test('edge definitions do not leak across PostCSS invocations', async () => {
   assert(!result.css.includes('99px'));
 });
 test('literal values, nested CSS, shape keywords and references are preserved', async () => {
-  assert.match(generateEdgeCss({ radii: { 2: 'calc(space(2) + 1px)' }, borders: { 1: '1px solid rgba(0, 0, 0, .2)' } }), /calc\(var\(--space-2\) \+ 1px\)/);
+  assert.match(generateEdgeCss({ radii: { 2: 'calc(space(2) + 1px)' }, borders: { 1: '1px solid rgba(0, 0, 0, .2)' } }), /calc\(var\(--uxdsl__space__2\) \+ 1px\)/);
   for (const [key, value] of Object.entries(RADIUS_KEYWORDS)) assert((await compile(`.x { border-radius: radius(${key}); }`, { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })).css.includes(`border-radius: ${value}`));
 });
 test('invalid updates fail before CSS is emitted', async () => {

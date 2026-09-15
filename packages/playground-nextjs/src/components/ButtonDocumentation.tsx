@@ -12,13 +12,13 @@ export function ButtonDocumentation() {
 /* Use a real <button type="button"> for an action. */`}</code></pre>
     <h3>What the component keeps</h3>
     <pre><code className="language-css">{`.checkout {
-  padding: var(--button-checkout-base-padding);
-  box-shadow: var(--button-checkout-base-shadow);
+  padding: var(--uxdsl__button__checkout-base-padding);
+  box-shadow: var(--uxdsl__button__checkout-base-shadow);
   /* Other fields reference the selected Surface. */
 }
 .checkout:focus-visible {
-  outline: var(--button-checkout-focusvisible-outline);
-  outline-offset: var(--button-checkout-focusvisible-outline-offset);
+  outline: var(--uxdsl__button__checkout-focusvisible-outline);
+  outline-offset: var(--uxdsl__button__checkout-focusvisible-outline-offset);
 }`}</code></pre>
     <p>At md, the example selected shadow changes to shadow-3 and persists until overridden. Padding follows Density independently. The component retains references instead of copying the current pixels. Replace managed theme CSS with <code>generateThemeCss(nextTheme)</code> to update existing token values. Adding or removing state fields, changing the selected Surface, or changing role structure requires regenerating component CSS too; <code>buttonComponentCss</code> does this in the demo.</p>
     <h3>Tones, sizes and states</h3>

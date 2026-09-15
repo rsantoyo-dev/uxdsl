@@ -64,7 +64,7 @@ export default function DemoButtons() {
       <div className="surfaces-grid">{Object.keys(tokens).map(role => <div key={role}>
         <button type="button" data-button-role={role} aria-pressed={selected} disabled={disabled}>{role} action</button>
         <pre>{`.action { @ds-button(${role}${tone ? ` ${tone}` : ''}${size ? ` ${size}` : ''}); }`}</pre>
-        <details><summary>CSS from the shared engine</summary><pre>{buttonComponentCss(theme, '.action', role, tone, size)}</pre><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => key.startsWith(`--button-${role}-`))), null, 2)}</pre></details>
+        <details><summary>CSS from the shared engine</summary><pre>{buttonComponentCss(theme, '.action', role, tone, size)}</pre><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => key.startsWith(`--uxdsl__button__${role}-`))), null, 2)}</pre></details>
       </div>)}</div>
     </section>
   </div>

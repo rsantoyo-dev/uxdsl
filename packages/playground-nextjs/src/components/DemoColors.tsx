@@ -184,10 +184,10 @@ export default function DemoColors() {
 
            <div className="surface-playground__preview">
              <div style={{
-               backgroundColor: `var(--ds__color__${bgFamily}-${bgShade})`,
-               color: `var(--ds__color__${textFamily}-${textShade})`,
-               padding: 'var(--space-4)',
-               borderRadius: 'var(--space-2)',
+               backgroundColor: `var(--uxdsl__color__${bgFamily}-${bgShade})`,
+               color: `var(--uxdsl__color__${textFamily}-${textShade})`,
+               padding: 'var(--uxdsl__space__4)',
+               borderRadius: 'var(--uxdsl__space__2)',
                textAlign: 'center',
                fontWeight: 'bold',
                fontSize: '1.2rem',

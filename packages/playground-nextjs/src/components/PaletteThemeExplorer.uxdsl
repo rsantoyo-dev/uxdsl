@@ -14,10 +14,10 @@
   display: flex;
   align-items: center;
   gap: density(4);
-  background: var(--ds__palette__surface-main);
+  background: var(--uxdsl__palette__surface-main);
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid var(--ds__palette__neutral-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
 }
 
 .inspector-item-details {

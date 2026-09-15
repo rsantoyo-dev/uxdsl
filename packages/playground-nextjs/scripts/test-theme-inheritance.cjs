@@ -6,7 +6,7 @@ const { baseTheme, themes } = require('../themes');
 test('every named theme inherits required roles and generates standalone runtime CSS', () => {
   for (const theme of Object.values(themes)) {
     const css = generateThemeCss(theme);
-    for (const token of ['--ds__palette__divider-main:', '--ds__palette__text-secondary:', '--body-sm-size:']) {
+    for (const token of ['--uxdsl__palette__divider-main:', '--uxdsl__palette__text-secondary:', '--uxdsl__typography__body-sm-size:']) {
       assert.ok(css.includes(token), token);
     }
     assert.deepEqual(theme.spacing, baseTheme.spacing);

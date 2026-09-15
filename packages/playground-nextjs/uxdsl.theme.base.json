@@ -41,8 +41,8 @@
       "light": "#f8fafc",
       "dark": "#e2e8f0",
       "contrast": "#0f172a",
-      "paper": "var(--ds__palette__surface-light)",
-      "subtle": "var(--ds__palette__surface-dark)"
+      "paper": "var(--uxdsl__palette__surface-light)",
+      "subtle": "var(--uxdsl__palette__surface-dark)"
     },
     "tertiary": {
       "main": "#94a3b8",
@@ -93,16 +93,16 @@
       "contrast": "#0f172a"
     },
     "text": {
-      "main": "var(--ds__palette__text-primary)",
-      "primary": "var(--ds__palette__surface-contrast)",
-      "secondary": "var(--ds__palette__neutral-dark)",
-      "disabled": "var(--ds__palette__tertiary-main)"
+      "main": "var(--uxdsl__palette__text-primary)",
+      "primary": "var(--uxdsl__palette__surface-contrast)",
+      "secondary": "var(--uxdsl__palette__neutral-dark)",
+      "disabled": "var(--uxdsl__palette__tertiary-main)"
     },
     "divider": {
-      "main": "var(--ds__palette__surface-dark)"
+      "main": "var(--uxdsl__palette__surface-dark)"
     },
     "action": {
-      "disabled": "var(--ds__palette__text-disabled)"
+      "disabled": "var(--uxdsl__palette__text-disabled)"
     }
   },
   "modes": {

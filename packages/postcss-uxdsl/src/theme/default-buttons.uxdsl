@@ -3,33 +3,33 @@
   button-contained: {
     @ds-surface(contained);
     :hover {
-      bg: var(--button-tone-dark, var(--ds__palette__primary-dark));
-      color: var(--button-tone-contrast, var(--ds__palette__primary-contrast));
+      bg: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
+      color: var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast));
     }
     :selected {
-      bg: var(--button-tone-dark, var(--ds__palette__primary-dark));
-      color: var(--button-tone-contrast, var(--ds__palette__primary-contrast));
+      bg: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
+      color: var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast));
     }
   }
   button-outlined: {
     @ds-surface(outlined);
     :hover {
-      color: var(--button-tone-dark, var(--ds__palette__primary-dark));
-      border: 1px solid var(--button-tone-dark, var(--ds__palette__primary-dark));
+      color: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
+      border: 1px solid var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
     }
     :selected {
-      bg: var(--button-tone-main, var(--ds__palette__primary-main));
-      color: var(--button-tone-contrast, var(--ds__palette__primary-contrast));
-      border: 1px solid var(--button-tone-main, var(--ds__palette__primary-main));
+      bg: var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main));
+      color: var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast));
+      border: 1px solid var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main));
     }
   }
   button-flat: {
     @ds-surface(flat);
     :hover {
-      color: var(--button-tone-dark, var(--ds__palette__primary-dark));
+      color: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
     }
     :selected {
-      color: var(--button-tone-dark, var(--ds__palette__primary-dark));
+      color: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));
     }
   }
 }

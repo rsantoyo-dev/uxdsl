@@ -21,22 +21,22 @@ const uxdsl = `.card, .panel {
 
 const css = `/* Base spacing tokens from the theme */
 :root {
-  --space-4: 0.75rem;
-  --space-5: 1rem;
-  --space-6: 1.5rem;
-  --density-4: var(--space-4);
+  --uxdsl__space__4: 0.75rem;
+  --uxdsl__space__5: 1rem;
+  --uxdsl__space__6: 1.5rem;
+  --uxdsl__density__4: var(--uxdsl__space__4);
 }
 
 @media (min-width: 768px) {
-  :root { --density-4: var(--space-5); }
+  :root { --uxdsl__density__4: var(--uxdsl__space__5); }
 }
 
 @media (min-width: 1280px) {
-  :root { --density-4: var(--space-6); }
+  :root { --uxdsl__density__4: var(--uxdsl__space__6); }
 }
 
 .card, .panel {
-  padding: var(--density-4);
+  padding: var(--uxdsl__density__4);
 }`
 
 export default function DensityExplanation({ definition, onEdit }: {
@@ -86,7 +86,7 @@ export default function DensityExplanation({ definition, onEdit }: {
             <figure key={name}>
               <figcaption><strong>{name}</strong><code>padding: {index === 2 ? 'space(4)' : 'density(4)'}</code></figcaption>
               <div className={index === 2 ? styles.fixed : styles.responsive}
-                style={{ padding: index === 2 ? 'var(--space-4)' : 'var(--density-4)' }}>
+                style={{ padding: index === 2 ? 'var(--uxdsl__space__4)' : 'var(--uxdsl__density__4)' }}>
                 <div className={styles.content}>Content</div>
               </div>
             </figure>

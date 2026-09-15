@@ -39,7 +39,7 @@ export default function HomeDemo() {
         </div>
       </div>
 
-      <p className="mb-caption" style={{ textAlign: 'center', maxWidth: '400px', color: 'var(--ds__palette__text-secondary)', fontSize: '0.9rem' }}>
+      <p className="mb-caption" style={{ textAlign: 'center', maxWidth: '400px', color: 'var(--uxdsl__palette__text-secondary)', fontSize: '0.9rem' }}>
         <strong>Mind-blowing simplicity:</strong> This complex, responsive, themed component is built with just ~15 lines of UXDSL logic.
       </p>
 

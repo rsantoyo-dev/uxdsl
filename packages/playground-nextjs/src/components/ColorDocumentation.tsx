@@ -11,12 +11,12 @@ const theme = `{
   },
   "palette": {
     "primary": {
-      "main": "var(--ds__color__blue-700)",
-      "contrast": "var(--ds__color__white)"
+      "main": "var(--uxdsl__color__blue-700)",
+      "contrast": "var(--uxdsl__color__white)"
     },
     "surface": {
-      "main": "var(--ds__color__white)",
-      "contrast": "var(--ds__color__ink)"
+      "main": "var(--uxdsl__color__white)",
+      "contrast": "var(--uxdsl__color__ink)"
     }
   }
 }`
@@ -35,7 +35,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
       <h3>1. Define Colors and Palette in the theme JSON</h3>
       <p>This reference excerpt defines a color collection and connects palette roles to it using CSS variable references:</p>
       <pre><code className="language-json">{theme}</code></pre>
-      <p>The nested entry <code>{'colors.blue["700"]'}</code> produces <code>--ds__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--ds__palette__primary-main</code>.</p>
+      <p>The nested entry <code>{'colors.blue["700"]'}</code> produces <code>--uxdsl__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--uxdsl__palette__primary-main</code>.</p>
       <p><strong>References preserve the connection.</strong> In this JSON, <code>primary.main</code> references <code>blue-700</code>. Changing that color updates the role once the theme is compiled or applied. A literal hex value in a palette is also valid, but copying a color’s hex value does not create a reference to that color token.</p>
       <h3>2. Express the intended role in components</h3>
       <div className={styles.comparison}>
@@ -49,18 +49,18 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
   background: color(blue-700);
 }`}</code></pre></div>
         <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{`:root {
-  --ds__color__blue-700: #1d4ed8;
-  --ds__color__white: #ffffff;
-  --ds__palette__primary-main: var(--ds__color__blue-700);
-  --ds__palette__primary-contrast: var(--ds__color__white);
+  --uxdsl__color__blue-700: #1d4ed8;
+  --uxdsl__color__white: #ffffff;
+  --uxdsl__palette__primary-main: var(--uxdsl__color__blue-700);
+  --uxdsl__palette__primary-contrast: var(--uxdsl__color__white);
 }
 
 .primary-action {
-  background: var(--ds__palette__primary-main);
-  color: var(--ds__palette__primary-contrast);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
 }
 .blue-swatch {
-  background: var(--ds__color__blue-700);
+  background: var(--uxdsl__color__blue-700);
 }`}</code></pre></div>
       </div>
       <p>The CSS shows only the variables used by these two selectors. Plain CSS custom properties provide the same reference mechanism; UXDSL connects component syntax to the theme’s shared definitions.</p>
@@ -128,7 +128,7 @@ export function ColorAgentGuidance({ topic }: { topic: Topic }) {
         <blockquote>Change primary actions to use the existing blue-500 color.</blockquote>
         <ol>
           <li>Confirm <code>blue-500</code> exists and inspect the primary role, its consumers and mode overrides.</li>
-          <li>Update <code>palette.primary.main</code> to <code>var(--ds__color__blue-500)</code> in the intended theme scope.</li>
+          <li>Update <code>palette.primary.main</code> to <code>var(--uxdsl__color__blue-500)</code> in the intended theme scope.</li>
           <li>Keep components using <code>palette(primary.main)</code>; leave direct blue-700 references unchanged.</li>
           <li>Apply the theme and verify affected actions, states and modes. Recheck the contrast foreground and adjust its definition if the design requires it.</li>
         </ol>

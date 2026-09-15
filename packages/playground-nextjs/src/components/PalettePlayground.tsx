@@ -39,7 +39,7 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', width: '100%' }}>
          {/* Background Column */}
          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
-           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ds__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Background</div>
+           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--uxdsl__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Background</div>
            <div style={{ display: 'flex', gap: '0.5rem' }}>
              <div className="control-group" style={{ flex: 1 }}>
                <label className="control-label" style={{ fontSize: '0.7rem' }}>Tone</label>
@@ -58,7 +58,7 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
 
          {/* Text Column */}
          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
-           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--ds__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Text</div>
+           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--uxdsl__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Text</div>
            <div style={{ display: 'flex', gap: '0.5rem' }}>
              <div className="control-group" style={{ flex: 1 }}>
                <label className="control-label" style={{ fontSize: '0.7rem' }}>Tone</label>
@@ -88,9 +88,9 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
         <div className="playground-wrapper">
            <div className="preview-container">
              <div className="live-preview" style={{
-               backgroundColor: `var(--ds__palette__${bgTone}-${bgVariant})`,
-               color: `var(--ds__palette__${textTone}-${textVariant})`,
-               padding: 'var(--space-4)',
+               backgroundColor: `var(--uxdsl__palette__${bgTone}-${bgVariant})`,
+               color: `var(--uxdsl__palette__${textTone}-${textVariant})`,
+               padding: 'var(--uxdsl__space__4)',
                textAlign: 'center',
                fontWeight: 'bold',
                fontSize: '1.2rem',
@@ -101,15 +101,15 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
              <div style={{
                  marginTop: '1.5rem',
                  padding: '1rem',
-                 background: 'var(--ds__palette__surface-light)',
-                 border: '1px solid var(--ds__palette__neutral-light)',
+                 background: 'var(--uxdsl__palette__surface-light)',
+                 border: '1px solid var(--uxdsl__palette__neutral-light)',
                  borderRadius: '6px',
                  textAlign: 'left'
              }}>
                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
                    <span style={{ 
                        fontSize: '0.8rem', 
-                       color: 'var(--ds__palette__text-secondary)',
+                       color: 'var(--uxdsl__palette__text-secondary)',
                        fontWeight: 600,
                        textTransform: 'uppercase',
                        letterSpacing: '0.05em'
@@ -118,50 +118,50 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
                    </span>
                  </div>
                  <div style={{
-                     background: 'var(--ds__palette__surface-dark)',
+                     background: 'var(--uxdsl__palette__surface-dark)',
                      padding: '0.75rem',
                      borderRadius: '6px',
-                     fontFamily: 'var(--font-code)',
+                     fontFamily: 'var(--uxdsl__font__code)',
                      fontSize: '0.85rem',
                      display: 'flex',
                      flexDirection: 'column',
                      gap: '0.25rem',
                      overflowX: 'auto',
-                     border: '1px solid var(--ds__palette__neutral-dark)'
+                     border: '1px solid var(--uxdsl__palette__neutral-dark)'
                  }}>
                      <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--ds__palette__secondary-light)' }}>.my-element</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-disabled)' }}>{`{`}</span>
+                        <span style={{ color: 'var(--uxdsl__palette__secondary-light)' }}>.my-element</span>
+                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-disabled)' }}>{`{`}</span>
                      </div>
                      <div style={{ paddingLeft: '1rem' }}>
-                        <span style={{ color: 'var(--ds__palette__primary-light)' }}>background</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>:</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-primary)' }}>palette</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>(</span>
-                        <span style={{ color: 'var(--ds__palette__warning-light)' }}>{bgTone}-{bgVariant}</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>)</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>;</span>
+                        <span style={{ color: 'var(--uxdsl__palette__primary-light)' }}>background</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>:</span>
+                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-primary)' }}>palette</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>(</span>
+                        <span style={{ color: 'var(--uxdsl__palette__warning-light)' }}>{bgTone}-{bgVariant}</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>)</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>;</span>
                      </div>
                      <div style={{ paddingLeft: '1rem' }}>
-                        <span style={{ color: 'var(--ds__palette__primary-light)' }}>color</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>:</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--ds__palette__text-primary)' }}>palette</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>(</span>
-                        <span style={{ color: 'var(--ds__palette__warning-light)' }}>{textTone}-{textVariant}</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>)</span>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>;</span>
+                        <span style={{ color: 'var(--uxdsl__palette__primary-light)' }}>color</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>:</span>
+                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-primary)' }}>palette</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>(</span>
+                        <span style={{ color: 'var(--uxdsl__palette__warning-light)' }}>{textTone}-{textVariant}</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>)</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>;</span>
                      </div>
                      <div>
-                        <span style={{ color: 'var(--ds__palette__text-disabled)' }}>{`}`}</span>
+                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>{`}`}</span>
                      </div>
                  </div>
                  <p style={{ 
                      marginTop: '0.75rem', 
                      fontSize: '0.8rem', 
-                     color: 'var(--ds__palette__text-secondary)',
+                     color: 'var(--uxdsl__palette__text-secondary)',
                      lineHeight: 1.5
                  }}>
-                     <strong style={{ color: 'var(--ds__palette__text-primary)' }}>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
+                     <strong style={{ color: 'var(--uxdsl__palette__text-primary)' }}>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
                  </p>
              </div>
              </div>

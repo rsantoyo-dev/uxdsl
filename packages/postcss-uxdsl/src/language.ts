@@ -17,7 +17,7 @@ export function normalizeSpacingDefinitions<T>(spacing: Record<string, T>): Reco
       throw new Error(`UXD_SPACING_KEY: Invalid spacing key "${key}"; use an identifier with at most one space- prefix.`);
     }
     if (sources.has(token)) {
-      throw new Error(`UXD_SPACING_COLLISION: spacing keys "${sources.get(token)}" and "${key}" both define --space-${token}. Use only one spelling.`);
+      throw new Error(`UXD_SPACING_COLLISION: spacing keys "${sources.get(token)}" and "${key}" both define ${buildVarName('space', token)}. Use only one spelling.`);
     }
     sources.set(token, key);
     normalized[token] = value;

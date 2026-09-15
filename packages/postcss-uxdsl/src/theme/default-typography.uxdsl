@@ -1,152 +1,152 @@
 :root {
   /* UI font families */
-  --font-ui: Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-  --font-ui-2: Roboto, "Helvetica Neue", Arial, sans-serif;
+  --uxdsl__font__ui: Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --uxdsl__font__ui-2: Roboto, "Helvetica Neue", Arial, sans-serif;
 
-  --font-code: Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace;
+  --uxdsl__font__code: Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace;
 
   /* Global Defaults */
-  --default-transform: none;
-  --default-decoration: none;
-  --default-style: normal;
-  --default-margin-block-start: auto;
-  --default-margin-block-end: auto;
+  --uxdsl__typography__default-transform: none;
+  --uxdsl__typography__default-decoration: none;
+  --uxdsl__typography__default-style: normal;
+  --uxdsl__typography__default-margin-block-start: auto;
+  --uxdsl__typography__default-margin-block-end: auto;
 
   /* Headings */
-  --h1-size: xs(space(7)) md(space(8)) lg(space(9)) xl(space(10));
-  --h1-weight: 700;
-  --h1-line: xs(1.1) md(1.1);
-  --h1-spacing: -0.02em;
-  --h1-font-family: var(--font-ui);
-  --h1-transform: var(--default-transform, none);
-  --h1-decoration: var(--default-decoration, none);
-  --h1-style: var(--default-style, normal);
-  --h1-margin-block-start: var(--default-margin-block-start, auto);
-  --h1-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h1-size: xs(space(7)) md(space(8)) lg(space(9)) xl(space(10));
+  --uxdsl__typography__h1-weight: 700;
+  --uxdsl__typography__h1-line: xs(1.1) md(1.1);
+  --uxdsl__typography__h1-spacing: -0.02em;
+  --uxdsl__typography__h1-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__h1-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h1-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h1-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h1-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h1-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --h2-size: xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9));
-  --h2-weight: 700;
-  --h2-line: xs(1.2) md(1.15);
-  --h2-spacing: -0.01em;
-  --h2-font-family: var(--font-ui);
-  --h2-transform: var(--default-transform, none);
-  --h2-decoration: var(--default-decoration, none);
-  --h2-style: var(--default-style, normal);
-  --h2-margin-block-start: var(--default-margin-block-start, auto);
-  --h2-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h2-size: xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9));
+  --uxdsl__typography__h2-weight: 700;
+  --uxdsl__typography__h2-line: xs(1.2) md(1.15);
+  --uxdsl__typography__h2-spacing: -0.01em;
+  --uxdsl__typography__h2-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__h2-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h2-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h2-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h2-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h2-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --h3-size: xs(space(6)) md(space(7)) xl(space(8));
-  --h3-weight: 600;
-  --h3-line: xs(1.3) md(1.25);
-  --h3-spacing: normal;
-  --h3-font-family: var(--font-ui);
-  --h3-transform: var(--default-transform, none);
-  --h3-decoration: var(--default-decoration, none);
-  --h3-style: var(--default-style, normal);
-  --h3-margin-block-start: var(--default-margin-block-start, auto);
-  --h3-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h3-size: xs(space(6)) md(space(7)) xl(space(8));
+  --uxdsl__typography__h3-weight: 600;
+  --uxdsl__typography__h3-line: xs(1.3) md(1.25);
+  --uxdsl__typography__h3-spacing: normal;
+  --uxdsl__typography__h3-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__h3-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h3-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h3-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h3-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h3-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --h4-size: xs(space(5)) md(space(6)) xl(space(7));
-  --h4-weight: 600;
-  --h4-line: 1.4;
-  --h4-spacing: normal;
-  --h4-font-family: var(--font-ui);
-  --h4-transform: var(--default-transform, none);
-  --h4-decoration: var(--default-decoration, none);
-  --h4-style: var(--default-style, normal);
-  --h4-margin-block-start: var(--default-margin-block-start, auto);
-  --h4-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h4-size: xs(space(5)) md(space(6)) xl(space(7));
+  --uxdsl__typography__h4-weight: 600;
+  --uxdsl__typography__h4-line: 1.4;
+  --uxdsl__typography__h4-spacing: normal;
+  --uxdsl__typography__h4-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__h4-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h4-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h4-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h4-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h4-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --h5-size: xs(space(5)) xl(space(6));
-  --h5-weight: 600;
-  --h5-line: 1.4;
-  --h5-spacing: normal;
-  --h5-font-family: var(--font-ui-2, var(--font-ui));
-  --h5-transform: var(--default-transform, none);
-  --h5-decoration: var(--default-decoration, none);
-  --h5-style: var(--default-style, normal);
-  --h5-margin-block-start: var(--default-margin-block-start, auto);
-  --h5-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h5-size: xs(space(5)) xl(space(6));
+  --uxdsl__typography__h5-weight: 600;
+  --uxdsl__typography__h5-line: 1.4;
+  --uxdsl__typography__h5-spacing: normal;
+  --uxdsl__typography__h5-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
+  --uxdsl__typography__h5-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h5-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h5-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h5-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h5-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --h6-size: xs(space(5));
-  --h6-weight: 600;
-  --h6-line: 1.4;
-  --h6-spacing: normal;
-  --h6-font-family: var(--font-ui-2, var(--font-ui));
-  --h6-transform: var(--default-transform, none);
-  --h6-decoration: var(--default-decoration, none);
-  --h6-style: var(--default-style, normal);
-  --h6-margin-block-start: var(--default-margin-block-start, auto);
-  --h6-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__h6-size: xs(space(5));
+  --uxdsl__typography__h6-weight: 600;
+  --uxdsl__typography__h6-line: 1.4;
+  --uxdsl__typography__h6-spacing: normal;
+  --uxdsl__typography__h6-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
+  --uxdsl__typography__h6-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__h6-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__h6-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__h6-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__h6-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
   /* Body text */
-  --p-size: xs(space(5));
-  --p-weight: 400;
-  --p-line: 1.6;
-  --p-spacing: normal;
-  --p-font-family: var(--font-ui);
-  --p-transform: var(--default-transform, none);
-  --p-decoration: var(--default-decoration, none);
-  --p-style: var(--default-style, normal);
-  --p-margin-block-start: var(--default-margin-block-start, auto);
-  --p-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__p-size: xs(space(5));
+  --uxdsl__typography__p-weight: 400;
+  --uxdsl__typography__p-line: 1.6;
+  --uxdsl__typography__p-spacing: normal;
+  --uxdsl__typography__p-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__p-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__p-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__p-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__p-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__p-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --span-size: xs(space(5));
-  --span-weight: 400;
-  --span-line: 1.5;
-  --span-spacing: normal;
-  --span-font-family: var(--font-ui);
-  --span-transform: var(--default-transform, none);
-  --span-decoration: var(--default-decoration, none);
-  --span-style: var(--default-style, normal);
-  --span-margin-block-start: var(--default-margin-block-start, auto);
-  --span-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__span-size: xs(space(5));
+  --uxdsl__typography__span-weight: 400;
+  --uxdsl__typography__span-line: 1.5;
+  --uxdsl__typography__span-spacing: normal;
+  --uxdsl__typography__span-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__span-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__span-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__span-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__span-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__span-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --body-size: xs(space(5));
-  --body-weight: 400;
-  --body-line: 1.6;
-  --body-spacing: normal;
-  --body-font-family: var(--font-ui);
-  --body-transform: var(--default-transform, none);
-  --body-decoration: var(--default-decoration, none);
-  --body-style: var(--default-style, normal);
-  --body-margin-block-start: var(--default-margin-block-start, auto);
-  --body-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__body-size: xs(space(5));
+  --uxdsl__typography__body-weight: 400;
+  --uxdsl__typography__body-line: 1.6;
+  --uxdsl__typography__body-spacing: normal;
+  --uxdsl__typography__body-font-family: var(--uxdsl__font__ui);
+  --uxdsl__typography__body-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__body-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__body-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__body-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__body-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --caption-size: xs(space(4));
-  --caption-opacity: 0.8;
-  --caption-line: 1.4;
-  --caption-spacing: 0.01em;
-  --caption-font-family: var(--font-ui-2, var(--font-ui));
-  --caption-transform: var(--default-transform, none);
-  --caption-decoration: var(--default-decoration, none);
-  --caption-style: var(--default-style, normal);
-  --caption-margin-block-start: var(--default-margin-block-start, auto);
-  --caption-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__caption-size: xs(space(4));
+  --uxdsl__typography__caption-opacity: 0.8;
+  --uxdsl__typography__caption-line: 1.4;
+  --uxdsl__typography__caption-spacing: 0.01em;
+  --uxdsl__typography__caption-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
+  --uxdsl__typography__caption-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__caption-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__caption-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__caption-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__caption-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --small-size: xs(space(4));
-  --small-line: 1.4;
-  --small-spacing: 0.01em;
-  --small-font-family: var(--font-ui-2, var(--font-ui));
-  --small-transform: var(--default-transform, none);
-  --small-decoration: var(--default-decoration, none);
-  --small-style: var(--default-style, normal);
-  --small-margin-block-start: var(--default-margin-block-start, auto);
-  --small-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__small-size: xs(space(4));
+  --uxdsl__typography__small-line: 1.4;
+  --uxdsl__typography__small-spacing: 0.01em;
+  --uxdsl__typography__small-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
+  --uxdsl__typography__small-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__small-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__small-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__small-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__small-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 
-  --pre-size: xs(space(4));
-  --pre-line: 1.5;
-  --pre-font-family: var(--font-code);
-  --pre-transform: var(--default-transform, none);
-  --pre-decoration: var(--default-decoration, none);
-  --pre-style: var(--default-style, normal);
-  --pre-margin-block-start: var(--default-margin-block-start, auto);
-  --pre-margin-block-end: var(--default-margin-block-end, auto);
+  --uxdsl__typography__pre-size: xs(space(4));
+  --uxdsl__typography__pre-line: 1.5;
+  --uxdsl__typography__pre-font-family: var(--uxdsl__font__code);
+  --uxdsl__typography__pre-transform: var(--uxdsl__typography__default-transform, none);
+  --uxdsl__typography__pre-decoration: var(--uxdsl__typography__default-decoration, none);
+  --uxdsl__typography__pre-style: var(--uxdsl__typography__default-style, normal);
+  --uxdsl__typography__pre-margin-block-start: var(--uxdsl__typography__default-margin-block-start, auto);
+  --uxdsl__typography__pre-margin-block-end: var(--uxdsl__typography__default-margin-block-end, auto);
 }
 
 /* Single opt-in gate for DS typography */
 .ds-typo {
-  font-family: var(--font-ui), sans-serif;
+  font-family: var(--uxdsl__font__ui), sans-serif;
   color: inherit;
   margin-block-start: auto;
   margin-block-end: auto;
@@ -154,18 +154,18 @@
 }
 
 /* Element-aware rules (low specificity via :where) */
-:where(h1).ds-typo { font-size: var(--h1-size); font-weight: var(--h1-weight, 700); font-family: var(--h1-font-family, var(--font-ui)); line-height: var(--h1-line); letter-spacing: var(--h1-spacing); text-transform: var(--h1-transform, none); text-decoration: var(--h1-decoration, none); font-style: var(--h1-style, normal); margin-block-start: var(--h1-margin-block-start, auto); margin-block-end: var(--h1-margin-block-end, auto); }
-:where(h2).ds-typo { font-size: var(--h2-size); font-weight: var(--h2-weight, 700); font-family: var(--h2-font-family, var(--font-ui)); line-height: var(--h2-line); letter-spacing: var(--h2-spacing); text-transform: var(--h2-transform, none); text-decoration: var(--h2-decoration, none); font-style: var(--h2-style, normal); margin-block-start: var(--h2-margin-block-start, auto); margin-block-end: var(--h2-margin-block-end, auto); }
-:where(h3).ds-typo { font-size: var(--h3-size); font-weight: var(--h3-weight, 600); font-family: var(--h3-font-family, var(--font-ui)); line-height: var(--h3-line); letter-spacing: var(--h3-spacing); text-transform: var(--h3-transform, none); text-decoration: var(--h3-decoration, none); font-style: var(--h3-style, normal); margin-block-start: var(--h3-margin-block-start, auto); margin-block-end: var(--h3-margin-block-end, auto); }
-:where(h4).ds-typo { font-size: var(--h4-size); font-weight: var(--h4-weight, 600); font-family: var(--h4-font-family, var(--font-ui)); line-height: var(--h4-line); letter-spacing: var(--h4-spacing); text-transform: var(--h4-transform, none); text-decoration: var(--h4-decoration, none); font-style: var(--h4-style, normal); margin-block-start: var(--h4-margin-block-start, auto); margin-block-end: var(--h4-margin-block-end, auto); }
-:where(h5).ds-typo { font-size: var(--h5-size); font-weight: var(--h5-weight, 600); font-family: var(--h5-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--h5-line); letter-spacing: var(--h5-spacing); text-transform: var(--h5-transform, none); text-decoration: var(--h5-decoration, none); font-style: var(--h5-style, normal); margin-block-start: var(--h5-margin-block-start, auto); margin-block-end: var(--h5-margin-block-end, auto); }
-:where(h6).ds-typo { font-size: var(--h6-size); font-weight: var(--h6-weight, 600); font-family: var(--h6-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--h6-line); letter-spacing: var(--h6-spacing); text-transform: var(--h6-transform, none); text-decoration: var(--h6-decoration, none); font-style: var(--h6-style, normal); margin-block-start: var(--h6-margin-block-start, auto); margin-block-end: var(--h6-margin-block-end, auto); }
+:where(h1).ds-typo { font-size: var(--uxdsl__typography__h1-size); font-weight: var(--uxdsl__typography__h1-weight, 700); font-family: var(--uxdsl__typography__h1-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h1-line); letter-spacing: var(--uxdsl__typography__h1-spacing); text-transform: var(--uxdsl__typography__h1-transform, none); text-decoration: var(--uxdsl__typography__h1-decoration, none); font-style: var(--uxdsl__typography__h1-style, normal); margin-block-start: var(--uxdsl__typography__h1-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h1-margin-block-end, auto); }
+:where(h2).ds-typo { font-size: var(--uxdsl__typography__h2-size); font-weight: var(--uxdsl__typography__h2-weight, 700); font-family: var(--uxdsl__typography__h2-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h2-line); letter-spacing: var(--uxdsl__typography__h2-spacing); text-transform: var(--uxdsl__typography__h2-transform, none); text-decoration: var(--uxdsl__typography__h2-decoration, none); font-style: var(--uxdsl__typography__h2-style, normal); margin-block-start: var(--uxdsl__typography__h2-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h2-margin-block-end, auto); }
+:where(h3).ds-typo { font-size: var(--uxdsl__typography__h3-size); font-weight: var(--uxdsl__typography__h3-weight, 600); font-family: var(--uxdsl__typography__h3-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h3-line); letter-spacing: var(--uxdsl__typography__h3-spacing); text-transform: var(--uxdsl__typography__h3-transform, none); text-decoration: var(--uxdsl__typography__h3-decoration, none); font-style: var(--uxdsl__typography__h3-style, normal); margin-block-start: var(--uxdsl__typography__h3-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h3-margin-block-end, auto); }
+:where(h4).ds-typo { font-size: var(--uxdsl__typography__h4-size); font-weight: var(--uxdsl__typography__h4-weight, 600); font-family: var(--uxdsl__typography__h4-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h4-line); letter-spacing: var(--uxdsl__typography__h4-spacing); text-transform: var(--uxdsl__typography__h4-transform, none); text-decoration: var(--uxdsl__typography__h4-decoration, none); font-style: var(--uxdsl__typography__h4-style, normal); margin-block-start: var(--uxdsl__typography__h4-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h4-margin-block-end, auto); }
+:where(h5).ds-typo { font-size: var(--uxdsl__typography__h5-size); font-weight: var(--uxdsl__typography__h5-weight, 600); font-family: var(--uxdsl__typography__h5-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__h5-line); letter-spacing: var(--uxdsl__typography__h5-spacing); text-transform: var(--uxdsl__typography__h5-transform, none); text-decoration: var(--uxdsl__typography__h5-decoration, none); font-style: var(--uxdsl__typography__h5-style, normal); margin-block-start: var(--uxdsl__typography__h5-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h5-margin-block-end, auto); }
+:where(h6).ds-typo { font-size: var(--uxdsl__typography__h6-size); font-weight: var(--uxdsl__typography__h6-weight, 600); font-family: var(--uxdsl__typography__h6-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__h6-line); letter-spacing: var(--uxdsl__typography__h6-spacing); text-transform: var(--uxdsl__typography__h6-transform, none); text-decoration: var(--uxdsl__typography__h6-decoration, none); font-style: var(--uxdsl__typography__h6-style, normal); margin-block-start: var(--uxdsl__typography__h6-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h6-margin-block-end, auto); }
 
-:where(p).ds-typo { font-size: var(--p-size); line-height: var(--p-line, normal); font-weight: var(--p-weight, 400); font-family: var(--p-font-family, var(--font-ui)); letter-spacing: var(--p-spacing); text-transform: var(--p-transform, none); text-decoration: var(--p-decoration, none); font-style: var(--p-style, normal); margin-block-start: var(--p-margin-block-start, auto); margin-block-end: var(--p-margin-block-end, auto); }
-:where(span).ds-typo { font-size: var(--span-size); font-weight: var(--span-weight, 400); font-family: var(--span-font-family, var(--font-ui)); line-height: var(--span-line); letter-spacing: var(--span-spacing); text-transform: var(--span-transform, none); text-decoration: var(--span-decoration, none); font-style: var(--span-style, normal); margin-block-start: var(--span-margin-block-start, auto); margin-block-end: var(--span-margin-block-end, auto); }
-:where(small).ds-typo { font-size: var(--small-size); opacity: var(--caption-opacity, 1); font-family: var(--small-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--small-line); letter-spacing: var(--small-spacing); text-transform: var(--small-transform, none); text-decoration: var(--small-decoration, none); font-style: var(--small-style, normal); margin-block-start: var(--small-margin-block-start, auto); margin-block-end: var(--small-margin-block-end, auto); }
-:where(.caption).ds-typo, :where(caption).ds-typo { font-size: var(--caption-size); opacity: var(--caption-opacity, 0.8); font-family: var(--caption-font-family, var(--font-ui-2, var(--font-ui))); line-height: var(--caption-line); letter-spacing: var(--caption-spacing); text-transform: var(--caption-transform, none); text-decoration: var(--caption-decoration, none); font-style: var(--caption-style, normal); margin-block-start: var(--caption-margin-block-start, auto); margin-block-end: var(--caption-margin-block-end, auto); }
-:where(pre).ds-typo, :where(code).ds-typo { font-family: var(--pre-font-family, var(--font-code)), monospace; font-size: var(--pre-size); line-height: var(--pre-line); }
+:where(p).ds-typo { font-size: var(--uxdsl__typography__p-size); line-height: var(--uxdsl__typography__p-line, normal); font-weight: var(--uxdsl__typography__p-weight, 400); font-family: var(--uxdsl__typography__p-font-family, var(--uxdsl__font__ui)); letter-spacing: var(--uxdsl__typography__p-spacing); text-transform: var(--uxdsl__typography__p-transform, none); text-decoration: var(--uxdsl__typography__p-decoration, none); font-style: var(--uxdsl__typography__p-style, normal); margin-block-start: var(--uxdsl__typography__p-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__p-margin-block-end, auto); }
+:where(span).ds-typo { font-size: var(--uxdsl__typography__span-size); font-weight: var(--uxdsl__typography__span-weight, 400); font-family: var(--uxdsl__typography__span-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__span-line); letter-spacing: var(--uxdsl__typography__span-spacing); text-transform: var(--uxdsl__typography__span-transform, none); text-decoration: var(--uxdsl__typography__span-decoration, none); font-style: var(--uxdsl__typography__span-style, normal); margin-block-start: var(--uxdsl__typography__span-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__span-margin-block-end, auto); }
+:where(small).ds-typo { font-size: var(--uxdsl__typography__small-size); opacity: var(--uxdsl__typography__caption-opacity, 1); font-family: var(--uxdsl__typography__small-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__small-line); letter-spacing: var(--uxdsl__typography__small-spacing); text-transform: var(--uxdsl__typography__small-transform, none); text-decoration: var(--uxdsl__typography__small-decoration, none); font-style: var(--uxdsl__typography__small-style, normal); margin-block-start: var(--uxdsl__typography__small-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__small-margin-block-end, auto); }
+:where(.caption).ds-typo, :where(caption).ds-typo { font-size: var(--uxdsl__typography__caption-size); opacity: var(--uxdsl__typography__caption-opacity, 0.8); font-family: var(--uxdsl__typography__caption-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__caption-line); letter-spacing: var(--uxdsl__typography__caption-spacing); text-transform: var(--uxdsl__typography__caption-transform, none); text-decoration: var(--uxdsl__typography__caption-decoration, none); font-style: var(--uxdsl__typography__caption-style, normal); margin-block-start: var(--uxdsl__typography__caption-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__caption-margin-block-end, auto); }
+:where(pre).ds-typo, :where(code).ds-typo { font-family: var(--uxdsl__typography__pre-font-family, var(--uxdsl__font__code)), monospace; font-size: var(--uxdsl__typography__pre-size); line-height: var(--uxdsl__typography__pre-line); }
 
 /* Attribute fallback for non-semantic tags */
 .ds-typo[data-typo="h1"] { @ds-typo(h1); }

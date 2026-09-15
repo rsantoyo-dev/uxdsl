@@ -74,7 +74,7 @@ export default function DemoSurfaces() {
             <h4>{key}</h4><p>A shared container treatment.</p>
           </div>
           <pre>{`.card { @ds-surface(${key}${tone ? ` ${tone}` : ''}${size ? ` ${size}` : ''}); }`}</pre>
-          <details><summary>Resolved preset references</summary><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([name]) => name.startsWith(`--surface-${key}-`))), null, 2)}</pre></details>
+          <details><summary>Resolved preset references</summary><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([name]) => name.startsWith(`--uxdsl__surface__${key}-`))), null, 2)}</pre></details>
         </div>
       })}</div>
     </section>

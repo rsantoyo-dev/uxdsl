@@ -7,7 +7,7 @@ const theme = `{
   "fonts": { "families": { "ui": "Inter, sans-serif" } },
   "typography_details": {
     "default": {
-      "fontFamily": "var(--font-ui)",
+      "fontFamily": "var(--uxdsl__font__ui)",
       "fontWeight": "400",
       "lineHeight": "1.5"
     },
@@ -47,7 +47,7 @@ export default function TypographyDocumentation() {
       </table></div>
       <h3>Choose a style in the component</h3>
       <div className={styles.comparison}><div><h4>UXDSL</h4><pre><code className="language-css">{usage}</code></pre></div><div><h4>Pure CSS: the size progression</h4><pre><code className="language-css">{css}</code></pre></div></div>
-      <p>The mixin consumes CSS variables such as <code>--h1-size</code> and <code>--h1-line</code>. The compiler generates their responsive definitions from the JSON. Pure CSS can centralize the same behavior with variables and media queries; UXDSL provides the reusable configuration and compilation layer.</p>
+      <p>The mixin consumes CSS variables such as <code>--uxdsl__typography__h1-size</code> and <code>--uxdsl__typography__h1-line</code>. The compiler generates their responsive definitions from the JSON. Pure CSS can centralize the same behavior with variables and media queries; UXDSL provides the reusable configuration and compilation layer.</p>
       <p>Keep HTML semantics independent of visual styling: use the appropriate heading level for the document, even when its visual style comes from another Typography role. Custom configured names, such as <code>label</code>, can also be consumed with <code>@ds-typo(label)</code>.</p>
       <h3>Change the system, update its consumers</h3>
       <ul><li>Change a Typography progression to update every component consuming that style.</li><li>Change a Spacing token to update its direct consumers and the Typography or Density definitions referencing it.</li><li>Change a breakpoint threshold to move transitions using that name.</li><li>Choose another configured style or use a deliberate local CSS override when only one component should change.</li></ul>

@@ -11,8 +11,8 @@
 .boxes figure { margin: 0; min-width: 0; }
 .boxes figcaption { margin-bottom: 0.75rem; }
 .padding, .gap { background: #bfdbfe; border: 1px solid #2563eb; border-radius: 0.5rem; }
-.padding { padding: var(--space-4); }
-.gap { display: flex; flex-wrap: wrap; gap: var(--space-4); padding: var(--space-2); }
+.padding { padding: var(--uxdsl__space__4); }
+.gap { display: flex; flex-wrap: wrap; gap: var(--uxdsl__space__4); padding: var(--uxdsl__space__2); }
 .content { background: white; color: #172554; padding: 0.5rem; border: 1px dashed #64748b; text-align: center; }
 .edit { padding: 0.65rem 1rem; background: #1d4ed8; color: white; border: 0; border-radius: 0.5rem; font: inherit; cursor: pointer; }
 .edit:focus-visible { outline: 3px solid #60a5fa; outline-offset: 3px; }

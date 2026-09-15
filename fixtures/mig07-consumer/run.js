@@ -145,12 +145,12 @@ async function main() {
   console.log('\nApproximate computed-value check via inspector functions (not a real browser — see header):');
   const surfaceAt0 = installed.runtime.inspectSurfaceTheme(theme, 0);
   const surfaceAtLg = installed.runtime.inspectSurfaceTheme(theme, 1024);
-  check('surface.contained padding resolves at xs (width 0)', surfaceAt0['--surface-contained-padding'] === 'var(--density-2)');
+  check('surface.contained padding resolves at xs (width 0)', surfaceAt0['--uxdsl__surface__contained-padding'] === 'var(--uxdsl__density__2)');
   check('edge radius(3) and border(2) resolve to concrete var() references', (() => {
     const edge = installed.runtime.inspectEdgeTheme(theme, 0);
-    return edge['--radius-3'] !== undefined && edge['--border-2'] !== undefined;
+    return edge['--uxdsl__radius__3'] !== undefined && edge['--uxdsl__border__2'] !== undefined;
   })());
-  check('button.contained padding tracks the theme breakpoint (xs vs lg can legitimately be equal without a density override; check both resolve)', surfaceAt0['--surface-contained-padding'] !== undefined && surfaceAtLg['--surface-contained-padding'] !== undefined);
+  check('button.contained padding tracks the theme breakpoint (xs vs lg can legitimately be equal without a density override; check both resolve)', surfaceAt0['--uxdsl__surface__contained-padding'] !== undefined && surfaceAtLg['--uxdsl__surface__contained-padding'] !== undefined);
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
   for (const [file, css] of Object.entries(outputs)) fs.writeFileSync(path.join(OUT_DIR, file.replace(/\.uxdsl$/, '.css')), css || '');

@@ -44,9 +44,9 @@ export default function CodeBlock({ language = 'bash', children, code }: CodeBlo
 
   return (
     <div style={{ 
-      borderRadius: 'var(--radius-2)', 
+      borderRadius: 'var(--uxdsl__radius__2)', 
       overflow: 'hidden',
-      border: '1px solid var(--ds__palette__neutral-light)',
+      border: '1px solid var(--uxdsl__palette__neutral-light)',
       fontSize: '0.9rem'
     }}>
       <SyntaxHighlighter

@@ -128,7 +128,7 @@ test('codemod: ignores a declaration positioned before the mixin call — it is 
   // The mixin's own generated border-radius is inserted at the @ds-surface
   // call's position, so it comes AFTER this one and wins already; folding
   // this earlier, already-overridden value in would change the effective
-  // radius from --radius-2 (from size) to --radius-3.
+  // radius from --uxdsl__radius__2 (from size) to --uxdsl__radius__3.
   const { css, applied, skipped } = run('.x { border-radius: radius(3); @ds-surface(contained 2); }');
   assert.equal(css, '.x { border-radius: radius(3); @ds-surface(contained 2); }');
   assert.equal(applied.length, 0);

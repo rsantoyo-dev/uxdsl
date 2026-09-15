@@ -50,7 +50,7 @@ function EditDensityDialog({
       background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
     }} onClick={onClose}>
       <div style={{
-        background: 'var(--ds__palette__surface-main)', padding: '2rem', borderRadius: '8px',
+        background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '8px',
         width: '400px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Edit Density {level}</h3>
@@ -73,7 +73,7 @@ function EditDensityDialog({
         <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Cancel</button>
           <button onClick={handleSave} style={{ 
-            padding: '0.5rem 1rem', background: 'var(--ds__palette__primary-main)', 
+            padding: '0.5rem 1rem', background: 'var(--uxdsl__palette__primary-main)', 
             color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' 
           }}>Save</button>
         </div>

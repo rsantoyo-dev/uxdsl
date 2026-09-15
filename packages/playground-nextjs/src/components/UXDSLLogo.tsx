@@ -2,12 +2,12 @@ import React, { useId } from 'react'
 
 export const UXDSLLogo = ({ 
   className,
-  primaryMain = 'var(--ds__palette__primary-main)',
-  primaryDark = 'var(--ds__palette__primary-dark)',
-  primaryLight = 'var(--ds__palette__primary-light)',
-  secondaryMain = 'var(--ds__palette__secondary-main)',
-  secondaryLight = 'var(--ds__palette__secondary-light)',
-  infoMain = 'var(--ds__palette__info-main)'
+  primaryMain = 'var(--uxdsl__palette__primary-main)',
+  primaryDark = 'var(--uxdsl__palette__primary-dark)',
+  primaryLight = 'var(--uxdsl__palette__primary-light)',
+  secondaryMain = 'var(--uxdsl__palette__secondary-main)',
+  secondaryLight = 'var(--uxdsl__palette__secondary-light)',
+  infoMain = 'var(--uxdsl__palette__info-main)'
 }: { 
   className?: string;
   primaryMain?: string;

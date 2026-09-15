@@ -48,8 +48,8 @@ export default function DemoShadows() {
     <section className="section">
       <h3>Shadow presets</h3>
       <div className="grid">{Object.keys(tokens).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ boxShadow: `var(--shadow-${key})` }}>Shadow {key}</div>
-        <pre>{`box-shadow: shadow(${key});`}</pre><code>{values[`--shadow-${key}`]}</code>
+        <div className="preview-box" style={{ boxShadow: `var(--uxdsl__shadow__${key})` }}>Shadow {key}</div>
+        <pre>{`box-shadow: shadow(${key});`}</pre><code>{values[`--uxdsl__shadow__${key}`]}</code>
       </div>)}</div>
     </section>
   </div>

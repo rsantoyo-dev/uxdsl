@@ -87,7 +87,7 @@ function TokenInspectorItem({
                                  width: '40px',
                                  height: '40px',
                                  borderRadius: '4px',
-                                 background: `var(--ds__palette__${tone}-${variant})`,
+                                 background: `var(--uxdsl__palette__${tone}-${variant})`,
                                  border: '1px solid rgba(0,0,0,0.1)'
                              }}
                          />
@@ -108,8 +108,8 @@ function TokenInspectorItem({
            <div className="inspector-item-details">
                <span style={{ fontSize: '0.8rem', fontWeight: 600 }}>{variant}</span>
                <div className="inspector-item-meta">
-                   <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--ds__palette__text-secondary)' }}>{colorInfo.hex}</span>
-                   <span style={{ fontSize: '0.6rem', color: 'var(--ds__palette__text-disabled)' }}>{colorInfo.rgb}</span>
+                   <span style={{ fontSize: '0.7rem', fontFamily: 'monospace', color: 'var(--uxdsl__palette__text-secondary)' }}>{colorInfo.hex}</span>
+                   <span style={{ fontSize: '0.6rem', color: 'var(--uxdsl__palette__text-disabled)' }}>{colorInfo.rgb}</span>
                </div>
            </div>
       </div>
@@ -127,7 +127,7 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
             runtime.updatePalette(token, nextHex, { persist: true })
         } catch {
             document.documentElement.style.setProperty(`--${token}`, nextHex)
-            document.documentElement.style.setProperty(`--ds__palette__${token}`, nextHex)
+            document.documentElement.style.setProperty(`--uxdsl__palette__${token}`, nextHex)
         }
 
         const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
@@ -145,17 +145,17 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                  
                  {/* Detail Panel */}
                  <div style={{ 
-                     background: 'var(--ds__palette__surface-light)',
-                     border: '1px solid var(--ds__palette__neutral-light)',
+                     background: 'var(--uxdsl__palette__surface-light)',
+                     border: '1px solid var(--uxdsl__palette__neutral-light)',
                      borderRadius: '8px',
                      padding: '1.5rem',
                      marginBottom: '2rem'
                  }}>
                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.75rem', marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--ds__palette__text-primary)', margin: 0 }}>
+                        <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--uxdsl__palette__text-primary)', margin: 0 }}>
                             {paletteCards.find(t => t.id === inspectorTone)?.title}
                         </h3>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--ds__palette__text-secondary)' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
                             {paletteCards.find(t => t.id === inspectorTone)?.detail}
                         </span>
                      </div>
@@ -171,13 +171,13 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                                                          />
                          ))}
                      </div>
-                                        <p style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--ds__palette__text-secondary)' }}>
+                                        <p style={{ marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
                                             Click any swatch above to edit and apply the selected color.
                                         </p>
                  </div>
 
                  {/* Selector Grid */}
-                 <h5 style={{ fontSize: '0.7rem', color: 'var(--ds__palette__text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
+                 <h5 style={{ fontSize: '0.7rem', color: 'var(--uxdsl__palette__text-secondary)', fontWeight: 600, textTransform: 'uppercase', marginBottom: '0.75rem' }}>
                     Select Tone
                  </h5>
                  <div className="selector-grid">
@@ -189,22 +189,22 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                                  alignItems: 'center',
                                  justifyContent: 'space-between',
                                  gap: '1rem',
-                                 background: 'var(--ds__palette__surface-light)',
-                                 border: tone.id === inspectorTone ? '1px solid var(--ds__palette__primary-main)' : '1px solid var(--ds__palette__neutral-light)',
+                                 background: 'var(--uxdsl__palette__surface-light)',
+                                 border: tone.id === inspectorTone ? '1px solid var(--uxdsl__palette__primary-main)' : '1px solid var(--uxdsl__palette__neutral-light)',
                                  borderRadius: '6px',
                                  padding: '0.5rem 0.75rem',
                                  cursor: 'pointer',
                                  opacity: tone.id === inspectorTone ? 1 : 0.8,
                                  transition: 'all 0.2s'
                              }}>
-                                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--ds__palette__text-primary)' }}>{tone.title}</span>
+                                 <span style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--uxdsl__palette__text-primary)' }}>{tone.title}</span>
                                  <div style={{ display: 'flex', gap: '2px', width: '100px' }}>
                                      {variants.map(variant => (
                                          <div key={variant.id} 
                                               style={{ 
                                                  flex: 1,
                                                  height: '18px', 
-                                                 background: `var(--ds__palette__${tone.id}-${variant.id})`,
+                                                 background: `var(--uxdsl__palette__${tone.id}-${variant.id})`,
                                                  borderRadius: '2px',
                                                  border: '1px solid rgba(0,0,0,0.05)',
                                               }} 

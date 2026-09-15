@@ -15,15 +15,15 @@ export function InputDocumentation() {
 <p id="search-help">Enter a product name.</p>`}</code></pre>
     <h3>The component preserves shared references</h3>
     <pre><code className="language-css">{`.search-field {
-  padding: var(--input-search-base-padding);
-  caret-color: var(--input-search-base-caret);
+  padding: var(--uxdsl__input__search-base-padding);
+  caret-color: var(--uxdsl__input__search-base-caret);
   /* Remaining container fields reference the selected Surface. */
 }
 .search-field::placeholder {
-  color: var(--input-search-base-placeholder);
+  color: var(--uxdsl__input__search-base-placeholder);
 }
 .search-field:focus {
-  border: var(--input-search-focus-border);
+  border: var(--uxdsl__input__search-focus-border);
 }`}</code></pre>
     <p>Padding follows Density. Other fields can define their own progression, such as <code>xs(shadow(1)) md(shadow(2))</code>. Define a base value; the most recent applicable rule persists until another threshold overrides it. Update the JSON and rebuild, or replace managed theme CSS to update existing values. Adding or removing fields or changing a role&apos;s Surface requires regenerating component CSS too; the demo uses <code>inputComponentCss</code> for that step.</p>
     <h3>Tones, sizes and underline treatment</h3>

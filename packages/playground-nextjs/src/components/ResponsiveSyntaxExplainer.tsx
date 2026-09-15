@@ -22,7 +22,7 @@ const SAMPLE_TEXT_PRESETS: Array<{ id: string; label: string; text: string }> = 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SyntaxHighlighter = ({ value, viewportWidth, themeBreakpoints, baseColor }: { value: string, viewportWidth: number, themeBreakpoints: Record<string, number>, baseColor?: string }) => {
-  const color = baseColor || 'var(--ds__palette__info-main)';
+  const color = baseColor || 'var(--uxdsl__palette__info-main)';
   if (!value) return <span style={{ color }}>&quot;&quot;</span>;
 
   const bpValues = { ...DEFAULT_BREAKPOINTS, ...themeBreakpoints };
@@ -201,8 +201,8 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
     const rawSelection = (newValue || '').trim();
     const systemFontMap: Record<string, string> = {
-      'System UI': 'var(--font-ui)',
-      'Monospace': 'var(--font-code)',
+      'System UI': 'var(--uxdsl__font__ui)',
+      'Monospace': 'var(--uxdsl__font__code)',
       'Serif': 'serif',
       'Sans-Serif': 'sans-serif',
       Arial: 'Arial, sans-serif',
@@ -296,13 +296,13 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
       const spaceMatch = v.match(/^space\(\s*['"]?(\d{1,3})['"]?\s*\)$/);
       if (spaceMatch) {
-        const token = readVar(`--space-${spaceMatch[1]}`);
+        const token = readVar(`--uxdsl__space__${spaceMatch[1]}`);
         return parseLengthToPx(token);
       }
 
       const densityMatch = v.match(/^density\(\s*['"]?(\d{1,3})['"]?\s*\)$/);
       if (densityMatch) {
-        const token = readVar(`--density-${densityMatch[1]}`);
+        const token = readVar(`--uxdsl__density__${densityMatch[1]}`);
         return parseLengthToPx(token);
       }
 

@@ -34,7 +34,7 @@ export function typographyValueToCss(input: string): string {
     if (node.type !== 'function' || !['space', 'density'].includes(node.value)) return;
     const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
     if (!/^[\w.-]+$/.test(key)) throw new Error(`UXD_TYPO_TOKEN: Invalid ${node.value} reference.`);
-    Object.assign(node, { type: 'word', value: `var(--${node.value === 'space' ? 'space' : 'density'}-${key})` });
+    Object.assign(node, { type: 'word', value: `var(${buildVarName(node.value === 'space' ? 'space' : 'density', key)})` });
     return false;
   });
   return parsed.toString();
@@ -54,14 +54,18 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
     }
   }
   const rules = ordered.map(([breakpoint, width], index) => ({ breakpoint, minWidth: index ? width : null as number | null, values: {} as Record<string, string> }));
-  // MIG-08: a role like "h1-weight" combined with field "size" would
-  // concatenate to the same name as role "h1" field "weight-size" — catch
+  // MIG-08: every role shares one "typography" family instead of the role
+  // itself being the family, so the emitted name is
+  // `--uxdsl__typography__<role>-<field>` (e.g. `--uxdsl__typography__h1-size`),
+  // matching every other family's `--uxdsl__<family>__<key>` shape. A role
+  // like "h1-weight" combined with field "size" would still concatenate to
+  // the same name as role "h1" field "weight-size" — the registry catches
   // that instead of one silently overwriting the other.
   const names = new NameRegistry('UXD_TYPO');
   for (const [role, style] of Object.entries(details)) {
     const merged = role === 'default' ? style : { ...details.default, ...style };
     for (const [field, expression] of Object.entries(merged)) {
-      const varName = names.claim(buildVarName(role, TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]), `${role}.${field}`);
+      const varName = names.claim(buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`), `${role}.${field}`);
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
         const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints));

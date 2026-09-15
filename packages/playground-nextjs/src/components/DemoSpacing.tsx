@@ -29,7 +29,7 @@ function EditSpacingDialog({
       background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
     }} onClick={onClose}>
       <div style={{
-        background: 'var(--ds__palette__surface-main)', padding: '2rem', borderRadius: '8px',
+        background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '8px',
         width: '400px', maxWidth: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
       }} onClick={e => e.stopPropagation()}>
         <h3 style={{ marginTop: 0 }}>Edit Space {level}</h3>
@@ -50,7 +50,7 @@ function EditSpacingDialog({
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
           <button onClick={onClose} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Cancel</button>
           <button onClick={() => onSave(value)} style={{ 
-            padding: '0.5rem 1rem', background: 'var(--ds__palette__primary-main)', 
+            padding: '0.5rem 1rem', background: 'var(--uxdsl__palette__primary-main)', 
             color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' 
           }}>Save</button>
         </div>
@@ -117,7 +117,7 @@ export default function DemoSpacing() {
     const style = getComputedStyle(document.documentElement)
     const values: Record<number, string> = {}
     spaces.forEach(s => {
-      values[s] = style.getPropertyValue(`--space-${s}`).trim()
+      values[s] = style.getPropertyValue(`--uxdsl__space__${s}`).trim()
     })
     setComputedValues(values)
   }, [])
@@ -127,7 +127,7 @@ export default function DemoSpacing() {
     try {
       runtime.updateSpacing(level, value, { persist: true })
     } catch {
-      document.documentElement.style.setProperty(`--space-${level}`, value)
+      document.documentElement.style.setProperty(`--uxdsl__space__${level}`, value)
     }
 
     // Keep JSON theme model aligned with runtime token updates.

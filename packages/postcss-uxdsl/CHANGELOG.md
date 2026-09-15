@@ -37,6 +37,30 @@ narrative migration guide covering the same ground.
   an interleaved nested rule/at-rule such as `@media`) for manual review
   instead of guessing.
 
+### Changed
+
+- Every CSS custom property this compiler generates or consumes now
+  shares one `--uxdsl__<family>__<key>` shape, centralized in
+  `src/naming.ts`. Previously only palette/color carried a namespace
+  (`--ds__palette__primary-main`); every other family used a bare
+  `--<family>-<key>` (`--space-1`, `--radius-2`,
+  `--surface-contained-padding`, `--h1-size`, `--font-ui`). Now all of
+  them do: `--uxdsl__space__1`, `--uxdsl__radius__2`,
+  `--uxdsl__surface__contained-padding`, `--uxdsl__typography__h1-size`,
+  `--uxdsl__font__ui`, `--uxdsl__palette__primary-main`,
+  `--uxdsl__color__gray-300`. This makes a UXDSL-generated variable
+  unambiguous to spot in devtools, generated CSS or a diagnostic message.
+  The DSL syntax (`palette()`, `space()`, `@ds-surface`, ...) and theme
+  JSON's logical keys are unchanged — only the generated CSS variable
+  name. The one deliberate exception is a flat `theme.typography` entry
+  (not `theme.typography_details`): its JSON key is still emitted
+  verbatim, since that name is the consumer's own choice, not one this
+  compiler assigns. Done while the package is still unpublished (0.3.0,
+  no npm release) — the safest time for a public-name change, since there
+  is no external consumer yet to alias, deprecate or break. See
+  [`docs/migration.md`](docs/migration.md) for the full before/after
+  table.
+
 ### Fixed
 
 - `package.json`'s `exports` map was missing `"./package.json"`, so an
@@ -47,17 +71,17 @@ narrative migration guide covering the same ground.
   importing the monorepo source — a class of issue source imports can't
   surface, since they never go through Node's `exports` resolution.
 - Spacing keys: `"space-1"` and `"1"` in `theme.spacing` now both resolve
-  to `--space-1` (previously `"space-1"` doubled the prefix to
+  to `--uxdsl__space__1` (previously `"space-1"` doubled the prefix to
   `--space-space-1`). Defining both spellings for the same key in one
   config now raises `UXD_SPACING_COLLISION` instead of one silently
   winning by object-key order.
 - Naming collisions: two different logical identifiers that concatenate to
   the same generated CSS variable name (e.g. palette key `"primary-main"`
   vs. structured `palette.primary.main`; a surface/button/input/edge/
-  shadow family+key pair colliding with a different one, such as family
-  `"x"` key `"a-b"` vs. family `"x-a"` key `"b"`, both `--x-a-b`) now raise
-  `UXD_FOUNDATION_NAME_COLLISION` / `UXD_PRESET_NAME_COLLISION` instead of
-  one silently overwriting the other.
+  shadow family+key pair colliding with a different one, such as a token
+  key literally containing `__` landing on the family/key separator) now
+  raise `UXD_FOUNDATION_NAME_COLLISION` / `UXD_PRESET_NAME_COLLISION`
+  instead of one silently overwriting the other.
 
 ### Known limitations
 
