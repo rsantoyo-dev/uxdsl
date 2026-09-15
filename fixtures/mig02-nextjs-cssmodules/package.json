@@ -1,0 +1,14 @@
+{
+  "name": "mig02-nextjs-cssmodules",
+  "private": true,
+  "version": "0.0.0",
+  "description": "MIG-02 fixture: compiles a real theme entry + four CSS-Module panel entries through an actual Next.js production build (css-loader's strict/pure CSS Modules mode), and, as a negative control, proves the same build genuinely rejects a :root-bearing .module.css.",
+  "scripts": {
+    "verify": "node run.js"
+  },
+  "devDependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  }
+}

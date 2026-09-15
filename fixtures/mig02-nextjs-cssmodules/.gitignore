@@ -1,0 +1,7 @@
+node_modules/
+.next/
+package-lock.json
+styles/theme.css
+styles/panel-*.module.css
+styles/bad-theme.module.css
+pages/bad.js

@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-01, MIG-04 y MIG-06 implementados; MIG-02, MIG-03, MIG-05, MIG-07 y MIG-08 siguen parcialmente cerrados (ver la sección de cada uno para el detalle exacto — MIG-05 le falta el autocompletado del editor). Suite de `postcss-uxdsl` en 116/116, `uxdsl-core` pasa y la fixture de consumidor (MIG-07) está en verde para sus comprobaciones no visuales. |
+| Estado | MIG-01, MIG-02, MIG-04 y MIG-06 implementados; MIG-03, MIG-05, MIG-07 y MIG-08 siguen parcialmente cerrados (ver la sección de cada uno para el detalle exacto — MIG-05 le falta el autocompletado del editor). Suite de `postcss-uxdsl` en 116/116, `uxdsl-core` pasa, la fixture de consumidor (MIG-07) está en verde para sus comprobaciones no visuales, y `fixtures/mig02-nextjs-cssmodules/` verifica un build real de Next.js contra `css-loader` en modo estricto (con control negativo). Nota cruzada MIG-02/MIG-07: son dos fixtures separadas — ninguna verifica todavía instalar desde un tarball empaquetado *y* pasar por ese build de Next.js a la vez. |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -86,16 +86,39 @@ Usar `includeTheme` para expresar quién emite las definiciones globales. Una en
 
 Implementado en este checkout (paquete identificado como 0.3.0): opción
 `includeTheme` en el plugin PostCSS de `postcss-uxdsl`, sin cambiar versiones
-ni publicar. Lo verificado aquí es a nivel de compilación PostCSS con pruebas
-de contrato (`test/include-theme.test.js`); la fixture de consumidor con
-Next.js y CSS Modules real (instalando tarballs empaquetados) sigue
-pendiente de MIG-07.
+ni publicar. Verificado a nivel de compilación PostCSS con pruebas de
+contrato (`test/include-theme.test.js`) y, ahora también, con un build real
+de Next.js contra `css-loader` en modo estricto
+([`fixtures/mig02-nextjs-cssmodules/`](../../fixtures/mig02-nextjs-cssmodules/),
+detalle en el criterio de aceptación correspondiente abajo). Sigue
+pendiente de MIG-07 la combinación de ambos: instalar desde un tarball
+empaquetado *y* pasar por ese mismo build de Next.js (hoy son dos
+fixtures separadas — MIG-07 verifica el tarball, este fixture verifica
+Next.js/css-loader, cada una contra el código fuente del monorepo o el
+tarball respectivamente, pero no las dos cosas a la vez).
 
 Criterios de aceptación:
 
 - [x] Con `includeTheme: false`, los emisores de foundations, shadows, edges, surfaces, buttons e inputs no añaden `:root` globales. Density y typography comparten el mismo defecto (también emitían `:root` sin condición) y quedan cubiertos por la misma bandera, aunque el hallazgo original no los nombró explícitamente.
 - [x] Con `includeTheme: true` (valor por defecto), el tema emite todas las definiciones necesarias sin duplicados evitables — comportamiento idéntico al existente antes de este cambio; los tests de regresión de `unified-engine`, `surfaces`, `buttons`, `inputs`, `shadows`, `edges` y `typography` siguen pasando sin modificarse.
-- [ ] La fixture de cinco entradas compila en Next.js con CSS Modules sin el plugin que elimina `:root`. La fixture de MIG-07 instala el tarball y comprueba la salida PostCSS, pero todavía no ejecuta un build real de Next.js con `css-loader` en modo estricto.
+- [x] La fixture de cinco entradas compila en Next.js con CSS Modules sin el plugin que elimina `:root` —
+  [`fixtures/mig02-nextjs-cssmodules/`](../../fixtures/mig02-nextjs-cssmodules/)
+  (`npm run verify:cssmodules-build` desde la raíz) compila los mismos 5
+  entries que usa MIG-07 y corre un `next build` real (no un `webpack.config`
+  aproximado): el código fuente de Next.js
+  (`next/dist/build/webpack/config/blocks/css/loaders/modules.js`) fija
+  `modules: { mode: "pure" }` sin condición para todo `.module.css`, que es
+  exactamente el modo que rechaza un selector sin clase/id local (incluido
+  `:root`). El build pasa limpio con los cuatro paneles reales (sin
+  `:global()` ni ningún otro workaround) y, como control negativo, el mismo
+  contenido de la entrada de tema guardado con extensión `.module.css` hace
+  fallar el build con el error real de css-loader (`"... is not pure (pure
+  selectors must contain at least one local class or id)"`) — así el check
+  anterior no es "cualquier CSS pasa". No usa navegador (`next build` es un
+  paso Node-only). No cubierto: render real en navegador de las páginas
+  compiladas, y el pipeline específico del App Router (`app/`) — este
+  fixture usa el Pages Router; el loader de CSS Modules es el mismo para
+  ambos, pero no se ejerció el build de `app/` en particular.
 - [x] Se documentan el valor por defecto, la importación del tema y el caso standalone de una sola entrada (README de `postcss-uxdsl`, sección "Multi-entry theming (`includeTheme`)").
 - [x] Se preservan reglas del usuario y reglas de componente necesarias: `includeTheme: false` solo desactiva los ocho emisores globales listados arriba; `@ds-surface`, `@ds-button`, `@ds-input`, `@ds-typo` y las funciones de valor (`space()`, `palette()`, `density()`, `radius()`, `shadow()`, `border()`) se siguen expandiendo y validando igual, y siguen rechazando referencias indefinidas (`@ds-surface(missing)`, `shadow(missing)`, temas inválidos) con `includeTheme` en cualquier valor.
 - [x] Compilaciones consecutivas con distintos valores de `includeTheme` no comparten estado — probado intercalando `false`/`true`/`false` sobre el mismo tema y comparando la salida. No se probó concurrencia real (`Promise.all` sobre el mismo proceso PostCSS) más allá de lo ya cubierto por los tests de aislamiento de FEAT-001.
@@ -408,12 +431,17 @@ Criterios de aceptación:
 - [x] La fixture migrada funciona sin los workarounds para prefijos y eliminación de globals — ningún panel declara `:root` propio ni necesita normalizar prefijos de spacing a mano (MIG-01/MIG-02 ya resuelven eso).
 - [x] El artefacto incluye documentación, exports y dependencias necesarios para un consumidor externo — verificado que el tarball instalado contiene `README.md`, `CHANGELOG.md` y `docs/migration.md`, y que `package.json` declara `main`/`types`/`exports` resolubles (el hallazgo de `exports` de arriba salió de este mismo chequeo).
 
-**Fuera de alcance de este parche, documentado explícitamente:** un build
-real de CSS Modules (ej. `css-loader` de webpack en modo estricto)
-consumiendo los paneles; instalación coordinada de los otros paquetes
-UXDSL (`uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`); verificación con
-navegador real. Los tres quedan como trabajo futuro si se decide cerrar
-esta fixture con mayor fidelidad.
+**Fuera de alcance de este parche, documentado explícitamente:** instalación
+coordinada de los otros paquetes UXDSL (`uxdsl-core`, `uxdsl-cli`,
+`vite-plugin-uxdsl`); verificación con navegador real. Ambos quedan como
+trabajo futuro si se decide cerrar esta fixture con mayor fidelidad. El
+build real de CSS Modules (`css-loader` en modo estricto) sí está cubierto
+— pero en una fixture separada,
+[`fixtures/mig02-nextjs-cssmodules/`](../../fixtures/mig02-nextjs-cssmodules/)
+(ver MIG-02), que compila los paneles contra el código fuente del monorepo,
+no contra este tarball empaquetado. Ninguna de las dos fixtures verifica
+todavía instalar desde el tarball *y* pasar por ese build de Next.js a la
+vez.
 
 ## MIG-08 — Nombres consistentes sin ruptura silenciosa
 
