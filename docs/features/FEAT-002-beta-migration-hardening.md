@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-01 a MIG-06 implementados y auditados (tres rondas) en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 107/107, `uxdsl-core` pasa. MIG-07 y MIG-08 pendientes |
+| Estado | MIG-01 a MIG-06 implementados y auditados (cuatro rondas) en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 108/108, `uxdsl-core` pasa. MIG-07 y MIG-08 pendientes |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -315,6 +315,21 @@ el tarball), con 14 tests en `test/codemod-size-overrides.test.js`.
 > `border-radius` como `all` para ambas propiedades (`border-radius` y
 > `box-shadow`). Test de regresión agregado para ambos casos
 > (`test/codemod-size-overrides.test.js`, ahora 16 casos).
+>
+> Una cuarta ronda encontró un sexto caso: (6) una regla o at-rule anidada
+> (`@media`, `@supports`, `&:hover`, etc.) entre el mixin y la declaración
+> candidata — por ejemplo `@media (min-width: 768px) { border-radius:
+> radius(1); }` antes de un `border-radius: radius(4);` final. La posición
+> relativa de la declaración final respecto al bloque anidado es
+> justamente lo que hoy decide qué gana (a igual especificidad, la
+> declaración posterior gana siempre, dentro o fuera del alcance del
+> `@media`); fundirla eliminaría esa posición y podría dejar que el bloque
+> anidado empiece a aplicar. En vez de intentar razonar sobre cascada
+> dentro de bloques anidados caso por caso, cualquier `rule`/`atrule`
+> intermedio ahora se trata como barrera dura y detiene el fold sin
+> inspeccionar su contenido — tal como se sugirió en la revisión. Test de
+> regresión agregado (`test/codemod-size-overrides.test.js`, ahora 17
+> casos).
 >
 > Además, la primera versión de este documento apuntaba a
 > `docs/migration/0.3-to-0.5-beta.md` en la raíz del monorepo — un

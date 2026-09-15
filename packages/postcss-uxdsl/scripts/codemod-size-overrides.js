@@ -105,24 +105,27 @@ function migrateRoot(root) {
         continue;
       }
       {
-        // Any declaration sandwiched between the mixin and the target that
-        // could change meaning once the target moves into the mixin's own
-        // generated output: `all` resets every property (so a later `all:
-        // initial/unset/revert` would wipe out a radius/shadow the mixin
-        // now bakes in earlier, where today it runs before the sandwiched
-        // `all` and survives), and — for border-radius specifically — a
-        // corner longhand would flip from "overridden by the later
-        // shorthand" to "last, and winning".
+        // Anything sandwiched between the mixin and the target that could
+        // change meaning once the target moves into the mixin's own
+        // (earlier-emitted) generated output. Two kinds:
+        //  - a nested rule/at-rule (@media, @supports, &:hover, ...): its
+        //    cascade position relative to the target is exactly what makes
+        //    the target win or lose today; folding the target away could
+        //    let the nested block start applying (or stop being
+        //    overridden) with no way to reason about it generically, so
+        //    any such sibling is treated as a hard barrier.
+        //  - a direct declaration for `all` (resets every property, not
+        //    just one shorthand family) or, for border-radius specifically,
+        //    a corner longhand — both already flip meaning even without
+        //    any nesting involved.
         const declPosition = rule.index(decl);
-        const sandwiched = [];
-        rule.walkDecls((node) => {
-          if (node.parent !== rule || node === decl) return;
-          const index = rule.index(node);
-          if (index <= atPosition || index >= declPosition) return;
-          if (node.prop === 'all' || (prop === 'border-radius' && RADIUS_LONGHANDS.has(node.prop))) sandwiched.push(node.prop);
-        });
-        if (sandwiched.length) {
-          skipped.push({ line: decl.source?.start?.line, reason: `${sandwiched.join(', ')} between the mixin and this ${prop}; folding would change what applies there` });
+        const between = rule.nodes.slice(atPosition + 1, declPosition);
+        const barrier = between.find((node) => node.type === 'rule' || node.type === 'atrule');
+        const sandwichedDecl = between.find((node) => node.type === 'decl' && (node.prop === 'all' || (prop === 'border-radius' && RADIUS_LONGHANDS.has(node.prop))));
+        const blocker = barrier || sandwichedDecl;
+        if (blocker) {
+          const what = blocker.type === 'rule' ? `nested rule (${blocker.selector})` : blocker.type === 'atrule' ? `nested @${blocker.name}` : blocker.prop;
+          skipped.push({ line: decl.source?.start?.line, reason: `${what} between the mixin and this ${prop}; folding would change what applies there` });
           continue;
         }
       }

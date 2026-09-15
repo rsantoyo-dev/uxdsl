@@ -221,9 +221,9 @@ for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
 (`npm run codemod:size-overrides`). The codemod skips (and reports for
 manual review) a case where folding would change which declaration wins —
-a nearer second mixin call, an interleaved corner longhand, or an
-interleaved `all` reset — rather than guessing; see the linked guide for
-the full list.
+a nearer second mixin call, an interleaved corner longhand, an
+interleaved `all` reset, or an interleaved nested rule/at-rule such as
+`@media` — rather than guessing; see the linked guide for the full list.
 
 ---
 

@@ -142,6 +142,13 @@ vez de tocarse:
   mixin (que corre *antes* del `all`) haría que ese `all` posterior lo
   borre, cuando hoy la declaración manual corre *después* del `all` y
   sobrevive.
+- Una regla o at-rule anidada (`@media`, `@supports`, `&:hover`, etc.)
+  queda entre el mixin y la declaración candidata — su posición relativa a
+  la declaración final es justamente lo que hoy decide qué gana; fundir la
+  declaración final la eliminaría de esa posición y podría dejar que la
+  regla anidada empiece a aplicar (o deje de ser sobrescrita) sin forma
+  genérica de saberlo. Cualquier regla/at-rule anidada en el medio se trata
+  como barrera, sin inspeccionar su contenido.
 
 ## Verificación
 

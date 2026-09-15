@@ -32,6 +32,20 @@ test('codemod: leaves box-shadow alone when "all" sits between the mixin and it'
   assert.match(skipped[0].reason, /^all between the mixin/);
 });
 
+test('codemod: leaves a border-radius alone when a nested rule/at-rule (e.g. @media) sits between the mixin and it', () => {
+  // Regression: the trailing border-radius(4) is what makes it win
+  // unconditionally today, including over the nested @media's radius(1) —
+  // because it comes after that @media at equal specificity. Folding it
+  // away would let the nested @media's declaration become the last (and
+  // winning) one once the media query matches.
+  const source = '.x { @ds-surface(contained 2); @media (min-width: 768px) { border-radius: radius(1); } border-radius: radius(4); }';
+  const { css, applied, skipped } = run(source);
+  assert.equal(css, source);
+  assert.equal(applied.length, 0);
+  assert.equal(skipped.length, 1);
+  assert.match(skipped[0].reason, /^nested @media between the mixin/);
+});
+
 test('codemod: with two consecutive mixin calls, a trailing override attaches to the nearer (second) call, not the first', () => {
   // Regression: the fix's original position check ("after the mixin")
   // didn't stop at the NEXT mixin call, so a trailing declaration meant
