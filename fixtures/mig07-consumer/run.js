@@ -78,17 +78,41 @@ async function buildOnce(installed, theme) {
   return outputs;
 }
 
-function variableSet(css, runtimePostcss) {
-  const result = new Map();
-  runtimePostcss.parse(css).walkDecls(/^--/, (d) => {
-    if (d.parent.type === 'rule' && d.parent.selector === ':root') result.set(d.prop, d.value);
+// Resolves each (context, prop) pair to the single value that actually
+// wins the CSS cascade — not every raw declaration. A naive "collect every
+// declaration then sort()" comparison (the previous version of this
+// function) is blind to declaration order: two blocks that repeat the
+// same custom property with different values, in opposite orders, both
+// flatten to the same sorted array even though the browser applies a
+// different winner in each (the later declaration wins; sorting erases
+// "later"). It also silently drops `!important`, which can flip that
+// winner regardless of order. Mirrors the same last-declaration-wins /
+// important-wins-first tie-break `reference-integrity.ts`'s `resolve()`
+// uses for the same reason.
+function effectiveVariables(css, runtimePostcss) {
+  const root = runtimePostcss.parse(css);
+  const winners = new Map();
+  let order = 0;
+  root.walkDecls(/^--/, (declaration) => {
+    const context = [];
+    for (let parent = declaration.parent; parent && parent.type !== 'root'; parent = parent.parent) {
+      if (parent.type === 'rule') context.push(`rule:${parent.selector}`);
+      else if (parent.type === 'atrule') context.push(`at:${parent.name}:${parent.params}`);
+    }
+    const key = `${context.reverse().join(' > ')} | ${declaration.prop}`;
+    const candidate = { value: declaration.value, important: !!declaration.important, order: order++ };
+    const current = winners.get(key);
+    if (!current || Number(candidate.important) > Number(current.important) ||
+        (Number(candidate.important) === Number(current.important) && candidate.order > current.order)) {
+      winners.set(key, candidate);
+    }
   });
-  return result;
+  return Array.from(winners.entries())
+    .map(([key, { value, important }]) => `${key} | ${value}${important ? ' !important' : ''}`)
+    .sort();
 }
 function mapsEqual(a, b) {
-  if (a.size !== b.size) return false;
-  for (const [k, v] of a) if (b.get(k) !== v) return false;
-  return true;
+  return a.length === b.length && a.every((value, index) => value === b[index]);
 }
 
 async function main() {
@@ -122,9 +146,9 @@ async function main() {
   // generateThemeCss must agree on the same set of :root variables for
   // the same theme.
   if (outputs['theme.uxdsl']) {
-    const postcssVars = variableSet(outputs['theme.uxdsl'], installed.postcss);
-    const runtimeCss = installed.runtime.generateThemeCss(theme, { mode: 'off' });
-    const runtimeVars = variableSet(runtimeCss, installed.postcss);
+    const postcssVars = effectiveVariables(outputs['theme.uxdsl'], installed.postcss);
+    const runtimeCss = installed.runtime.generateThemeCss(theme);
+    const runtimeVars = effectiveVariables(runtimeCss, installed.postcss);
     check('PostCSS and runtime (generateThemeCss) agree on the same :root variables for the theme entry', mapsEqual(postcssVars, runtimeVars));
   } else {
     check('PostCSS/runtime parity — skipped, theme entry did not build', false);

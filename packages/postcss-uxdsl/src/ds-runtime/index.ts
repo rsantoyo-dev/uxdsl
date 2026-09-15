@@ -58,10 +58,6 @@ function normalizeSpacingToken(token: string | number): string {
 
 function normalize(token: string): string { return normalizeTokenKey('palette', token); }
 
-function aliasVarName(token: string): string {
-  return `--${normalize(token)}`;
-}
-
 function canonicalVarName(token: string): string {
   return buildNamespacedVarName('palette', normalize(token));
 }
@@ -104,8 +100,7 @@ export function updatePalette(
   const el = target(opts.scope) as HTMLElement;
   const normToken = normalize(token);
   
-  // Update the token itself
-  el.style.setProperty(aliasVarName(token), value);
+  // Update the canonical token variable.
   el.style.setProperty(canonicalVarName(token), value);
   
   // Propagate to dependents
@@ -237,8 +232,7 @@ export function getPalette(token: string, opts: LoadOptions = {}): string {
   if (typeof document === "undefined") return "";
   const el = target(opts.scope) as HTMLElement;
   const cs = getComputedStyle(el);
-  const alias = cs.getPropertyValue(aliasVarName(token)).trim();
-  return alias || cs.getPropertyValue(canonicalVarName(token)).trim();
+  return cs.getPropertyValue(canonicalVarName(token)).trim();
 }
 
 export function resetPalette(
@@ -273,7 +267,6 @@ export function resetPalette(
 
   const list = Array.isArray(tokens) ? tokens : [tokens];
   list.forEach((t) => {
-    el.style.removeProperty(aliasVarName(t));
     el.style.removeProperty(canonicalVarName(t));
   });
 }

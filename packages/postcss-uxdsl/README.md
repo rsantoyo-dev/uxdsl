@@ -250,6 +250,12 @@ name verbatim (`{ typography: { "h1-size": "2rem" } }` emits
 `--h1-size: 2rem;`), since that key is a name you chose yourself, not one
 this compiler assigns from a family/key pair.
 
+`postcss-uxdsl/ds-runtime`'s `updatePalette`/`getPalette`/`resetPalette`
+read and write only this canonical name — they no longer also
+write/read a second, bare `--<token>` alias. If you were reading or
+setting a Palette token's CSS variable directly (outside these runtime
+functions), use `--uxdsl__palette__<token>`.
+
 ## Naming collisions
 
 Every generated CSS variable name is built from a logical identifier —

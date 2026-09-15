@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-01 a MIG-08 implementados en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 116/116, `uxdsl-core` pasa, fixture de consumidor (MIG-07) en verde. MIG-07 tiene un punto parcial (verificación visual sin navegador) documentado en su sección |
+| Estado | MIG-01, MIG-04 y MIG-06 implementados; MIG-02, MIG-03, MIG-05, MIG-07 y MIG-08 siguen parcialmente cerrados (ver la sección de cada uno para el detalle exacto — MIG-05 le falta el autocompletado del editor). Suite de `postcss-uxdsl` en 116/116, `uxdsl-core` pasa y la fixture de consumidor (MIG-07) está en verde para sus comprobaciones no visuales. |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -74,7 +74,7 @@ Definir una representación interna única para los identificadores. Durante la 
 
 Criterios de aceptación:
 
-- [x] `"1"` y `"space-1"`, en configuraciones separadas, producen `--space-1` y referencias compatibles.
+- [x] `"1"` y `"space-1"`, en configuraciones separadas, producen `--uxdsl__space__1` y referencias compatibles; `--space-1` queda solo como nombre histórico del reporte.
 - [x] Si ambas keys aparecen en una configuración, se detecta la colisión; nunca gana una por orden accidental.
 - [x] No se eliminan prefijos de identificadores arbitrarios sin una regla documentada.
 - [x] Density y radius conservan sus referencias y resuelven con el spacing configurado (comprobado en el CSS emitido; validación de navegador en MIG-07).
@@ -95,7 +95,7 @@ Criterios de aceptación:
 
 - [x] Con `includeTheme: false`, los emisores de foundations, shadows, edges, surfaces, buttons e inputs no añaden `:root` globales. Density y typography comparten el mismo defecto (también emitían `:root` sin condición) y quedan cubiertos por la misma bandera, aunque el hallazgo original no los nombró explícitamente.
 - [x] Con `includeTheme: true` (valor por defecto), el tema emite todas las definiciones necesarias sin duplicados evitables — comportamiento idéntico al existente antes de este cambio; los tests de regresión de `unified-engine`, `surfaces`, `buttons`, `inputs`, `shadows`, `edges` y `typography` siguen pasando sin modificarse.
-- [ ] La fixture de cinco entradas compila en Next.js con CSS Modules sin el plugin que elimina `:root`. Pendiente: requiere la fixture de consumidor de MIG-07 (instalación desde tarballs, build real de Next.js con `css-loader` en modo estricto). Lo probado en este checkout es el equivalente a nivel de PostCSS: una entrada compilada con `includeTheme:false` no contiene la cadena `:root` en su salida.
+- [ ] La fixture de cinco entradas compila en Next.js con CSS Modules sin el plugin que elimina `:root`. La fixture de MIG-07 instala el tarball y comprueba la salida PostCSS, pero todavía no ejecuta un build real de Next.js con `css-loader` en modo estricto.
 - [x] Se documentan el valor por defecto, la importación del tema y el caso standalone de una sola entrada (README de `postcss-uxdsl`, sección "Multi-entry theming (`includeTheme`)").
 - [x] Se preservan reglas del usuario y reglas de componente necesarias: `includeTheme: false` solo desactiva los ocho emisores globales listados arriba; `@ds-surface`, `@ds-button`, `@ds-input`, `@ds-typo` y las funciones de valor (`space()`, `palette()`, `density()`, `radius()`, `shadow()`, `border()`) se siguen expandiendo y validando igual, y siguen rechazando referencias indefinidas (`@ds-surface(missing)`, `shadow(missing)`, temas inválidos) con `includeTheme` en cualquier valor.
 - [x] Compilaciones consecutivas con distintos valores de `includeTheme` no comparten estado — probado intercalando `false`/`true`/`false` sobre el mismo tema y comparando la salida. No se probó concurrencia real (`Promise.all` sobre el mismo proceso PostCSS) más allá de lo ya cubierto por los tests de aislamiento de FEAT-001.
@@ -200,7 +200,7 @@ MIG-03 (34/70 tests propios del paquete), no algo que MIG-04 prometiera
 resolver; queda como trabajo relacionado a decidir (¿debería `space()` tener
 también un `DEFAULT_SPACING` con overrides por clave, igual que `gray`?).
 
-## MIG-05 — Tamaño y overrides independientes
+## MIG-05 — Tamaño y overrides independientes (parcial: falta autocompletado del editor)
 
 Conservar size como preset útil, pero permitir ajustar radio y sombra sin reemplazar manualmente las propiedades que acaba de emitir el mixin.
 
@@ -263,7 +263,7 @@ Criterios de aceptación:
 - [x] Elegir una gramática y documentar la precedencia entre preset, argumento explícito y declaración CSS posterior — ver arriba.
 - [x] Definir tratamiento de argumentos repetidos, incompatibles y responsive — repetidos lanzan `UXD_SURFACE_ARGUMENT`/`UXD_BUTTON_ARGUMENT`/`UXD_INPUT_ARGUMENT` explícito; claves indefinidas lanzan `UXD_SURFACE_REFERENCE`; responsive se hereda del token referenciado, sin gramática nueva.
 - [x] Mantener coherencia entre surface, button e input cuando el concepto aplique — mismo parser y misma composición para los tres, probado explícitamente para button e input.
-- [x] Compartir parsing, diagnósticos, ejemplos y sugerencias del editor con el motor unificado — reutiliza `RADIUS_KEYWORDS`, `getEdgeTokens`, `getShadowTokens` y los mismos códigos de error que las funciones de valor sueltas. Sugerencias del editor (VS Code) no actualizadas en este parche — el registro de lenguaje (`LANGUAGE_COMPLETIONS` en `language.ts`) no incluye todavía `radius()`/`shadow()` como argumentos de `@ds-surface`/`@ds-button`/`@ds-input`; queda pendiente.
+- [ ] Compartir parsing, diagnósticos, ejemplos y sugerencias del editor con el motor unificado — parsing, diagnósticos y ejemplos sí: reutiliza `RADIUS_KEYWORDS`, `getEdgeTokens`, `getShadowTokens` y los mismos códigos de error que las funciones de valor sueltas. **Pendiente:** sugerencias del editor (VS Code) — el registro de lenguaje (`LANGUAGE_COMPLETIONS` en `language.ts`) no incluye todavía `radius()`/`shadow()` como argumentos de `@ds-surface`/`@ds-button`/`@ds-input`, así que el autocompletado del editor no ofrece la sintaxis nueva. MIG-05 no se da por cerrado hasta que esto se complete.
 
 ## MIG-06 — Migración documentada y asistida
 
@@ -376,7 +376,7 @@ Criterios de aceptación:
 - [x] Instalación y build correctos con versiones coordinadas de los paquetes UXDSL utilizados — verificado para `postcss-uxdsl`. `uxdsl-core`/`uxdsl-cli`/`vite-plugin-uxdsl` no se empaquetaron ni instalaron en esta fixture (ver alcance abajo).
 - [x] Cero referencias UXDSL obligatorias sin resolver y cero globals generados en los módulos — las cinco entradas compilan sin lanzar (MIG-03 corre en modo estricto por defecto) y los cuatro paneles no contienen la cadena `:root`.
 - [ ] Verificación visual y de estilos computados para padding, radio y border, en varios breakpoints — **parcial**. No hay navegador headless disponible en este entorno (mismo bloqueo que ya registró FEAT-001 con la descarga de Chromium). Sustituido por el mismo método sin-navegador que ya usa el resto de la suite: las funciones `inspectSurfaceTheme`/`inspectEdgeTheme` del paquete instalado, en un par de anchos. Esto no es "verificación visual" real; queda documentado como pendiente, no como resuelto.
-- [x] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas — la entrada de tema compilada por PostCSS y `generateThemeCss` (del paquete instalado) coinciden variable por variable; compilar dos veces produce CSS idéntico byte a byte.
+- [x] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas — la entrada de tema compilada por PostCSS y `generateThemeCss` (del paquete instalado) coinciden en todas las declaraciones de variables, incluyendo selectores y `@media`; compilar dos veces produce CSS idéntico byte a byte.
 - [x] La fixture migrada funciona sin los workarounds para prefijos y eliminación de globals — ningún panel declara `:root` propio ni necesita normalizar prefijos de spacing a mano (MIG-01/MIG-02 ya resuelven eso).
 - [x] El artefacto incluye documentación, exports y dependencias necesarios para un consumidor externo — verificado que el tarball instalado contiene `README.md`, `CHANGELOG.md` y `docs/migration.md`, y que `package.json` declara `main`/`types`/`exports` resolubles (el hallazgo de `exports` de arriba salió de este mismo chequeo).
 
@@ -485,14 +485,13 @@ se sigue emitiendo tal cual (`{ typography: { "h1-size": "2rem" } }` sigue
 generando `--h1-size: 2rem;`), porque ese nombre lo elige el consumidor,
 no este compilador.
 
-No se definieron aliases temporales ni un período de deprecación: el
-paquete sigue sin publicar (0.3.0, sin release en npm) en el momento de
-este renombro, así que no existe todavía un consumidor externo que
-dependa del nombre público anterior — es, en palabras del propio
-criterio de aceptación original, el momento más seguro posible para este
-cambio. Si el paquete llega a publicarse con los nombres antiguos antes
-de este commit, este punto debe revisarse (sí haría falta una migración
-explícita para quien ya esté en producción).
+El runtime ya no genera aliases de Palette fuera de `uxdsl__`: `updatePalette`,
+`getPalette` y `resetPalette` usan únicamente el nombre canónico. Los nombres
+anteriores se conservan aquí solo como referencias históricas de migración; no
+se debe inferir la ausencia de consumidores a partir de que este checkout local
+no tenga un release publicado. Antes de una versión estable falta decidir y
+probar la estrategia de compatibilidad para consumidores que ya hayan usado
+variables antiguas (aliases temporales o una migración explícita).
 
 Verificado además en `packages/playground-nextjs` (el consumidor real del
 monorepo): build de producción completo, `scripts/test-theme-inheritance.cjs`,
@@ -508,9 +507,9 @@ Criterios de aceptación:
 
 - [x] Un único contrato construye nombres y referencias para todas las familias con `--uxdsl__<familia>__<identificador>`; completada la integración de `naming.ts` en `preset-engine.ts`, `control-engine.ts`, `surfaces.ts`, `typography.ts`, `language.ts`, `ds-runtime/index.ts` e `index.ts`, y eliminadas las construcciones paralelas (`` `--${family}-${key}` ``, `` `--${tag}-size` ``, etc.).
 - [x] Separar el identificador lógico del prefijo CSS; detectar colisiones — `NameRegistry`; colisiones reales encontradas y bloqueadas (`compilePresetRules`, `generateFoundationCss`, y el registro defensivo agregado en `control-engine.ts`'s `compileRules` para el ensamblado de claves compuestas antes de llegar al registro compartido).
-- [x] Decidir si es necesario renombrar variables públicas y cuándo — decisión tomada: namespace `uxdsl__` para todas las familias, implementada en este mismo checkout mientras el paquete sigue sin publicar.
-- [x] Aliases o migración explícita, plazo de deprecación si corresponde, y pruebas de referencias y overrides del usuario; guía, changelog y codemod de MIG-06 actualizados — no hicieron falta aliases (paquete sin publicar, ver nota arriba); `docs/migration.md`, `README.md` y `CHANGELOG.md` documentan la forma final; el codemod de MIG-06 opera a nivel de sintaxis DSL (`radius()`/`shadow()`), no de nombres de variable, así que no necesitó cambios.
-- [x] Verificar el namespace nuevo y la estrategia de compatibilidad en PostCSS, runtime y la fixture empaquetada de MIG-07, sin renombrar variables externas del consumidor — verificado; ningún nombre elegido por el consumidor (temas JSON, `theme.typography` plano, `externalTokens`) fue tocado.
+- [x] Decidir si es necesario renombrar variables públicas y cuándo — se eligió el namespace `uxdsl__` para todas las familias y se implementó en este checkout; la compatibilidad con consumidores de nombres anteriores sigue pendiente.
+- [ ] Aliases o migración explícita, plazo de deprecación si corresponde, y pruebas de referencias y overrides del usuario. La guía, el changelog y el codemod documentan la forma final, y el runtime ya no genera aliases de Palette; falta decidir la compatibilidad para consumidores de nombres antiguos.
+- [ ] Verificar el namespace nuevo y la estrategia de compatibilidad en PostCSS, runtime y la fixture empaquetada de MIG-07, sin renombrar variables externas del consumidor — el namespace canónico está verificado y ningún nombre elegido por el consumidor (temas JSON, `theme.typography` plano, `externalTokens`) fue tocado; falta verificar la estrategia para nombres anteriores.
 
 ## Orden recomendado y salida de beta
 

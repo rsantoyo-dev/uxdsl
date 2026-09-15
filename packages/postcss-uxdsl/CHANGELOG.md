@@ -60,6 +60,14 @@ narrative migration guide covering the same ground.
   is no external consumer yet to alias, deprecate or break. See
   [`docs/migration.md`](docs/migration.md) for the full before/after
   table.
+- `ds-runtime`'s `updatePalette`/`getPalette`/`resetPalette` no longer
+  write or read a second, bare `--<token>` alias alongside the canonical
+  `--uxdsl__palette__<token>` name. That dual-write predated this
+  changelog entry and was never documented publicly; removing it is a
+  cleanup, not a deprecation. The compatibility strategy for a consumer
+  that already reads/writes the previous plain-family variable names
+  directly (not through this runtime) is still an open decision — see
+  MIG-08 in `docs/features/FEAT-002-beta-migration-hardening.md`.
 
 ### Fixed
 
