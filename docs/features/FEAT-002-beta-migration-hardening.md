@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-01 a MIG-06 implementados y auditados (cuatro rondas) en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 108/108, `uxdsl-core` pasa. MIG-07 y MIG-08 pendientes |
+| Estado | MIG-01 a MIG-08 implementados en este checkout (0.3.0, sin publicar); suite de `postcss-uxdsl` en 116/116, `uxdsl-core` pasa, fixture de consumidor (MIG-07) en verde. MIG-07 tiene un punto parcial (verificación visual sin navegador) documentado en su sección |
 | Origen | Feedback de migración real de 0.3.0 a 0.5.0-beta.0 |
 | Prioridad general | P0 para integridad de tokens y compatibilidad multi-entrada |
 | Objetivo | Resolver bloqueantes durante la beta y definir los contratos antes de estable |
@@ -350,14 +350,42 @@ Criterios de aceptación:
 
 Crear una fixture de consumidor que instale tarballs producidos por `npm pack`, sin depender de imports al código fuente del monorepo. Usar una entrada de tema y cuatro entradas CSS Module con las familias del reporte.
 
+Implementado en este checkout (paquete identificado como 0.3.0, sin cambiar
+versiones ni publicar):
+[`fixtures/mig07-consumer/`](../../fixtures/mig07-consumer/) — `npm run
+verify:consumer-fixture` desde la raíz (o `node run.js` parado ahí). Cada
+corrida: empaqueta `postcss-uxdsl` con `npm pack`, borra cualquier
+instalación previa e instala el tarball recién producido en su propio
+`node_modules` (nunca el código fuente del monorepo), compila una entrada
+de tema (`includeTheme: true`) más cuatro paneles estilo CSS Module
+(`includeTheme: false`) cubriendo `@ds-surface`/`@ds-button`/`@ds-input`/
+`@ds-typo`/`border()`/`radius()`, y corre las verificaciones automatizadas
+descritas abajo. Ver el `README.md` de la fixture para el detalle completo
+de qué prueba y qué no.
+
+**Hallazgo real durante la implementación:** el `package.json` publicado no
+incluía `"./package.json"` en `exports`, así que cualquier consumidor
+externo (herramientas que hacen `require('postcss-uxdsl/package.json')`
+para leer la versión, patrón común) recibía `ERR_PACKAGE_PATH_NOT_EXPORTED`
+— un error que la importación directa desde el monorepo nunca hubiera
+revelado, porque ahí nada pasa por la resolución de `exports` de Node.
+Corregido agregando esa entrada al mapa de `exports`.
+
 Criterios de aceptación:
 
-- [ ] Instalación y build correctos con versiones coordinadas de los paquetes UXDSL utilizados.
-- [ ] Cero referencias UXDSL obligatorias sin resolver y cero globals generados en los módulos.
-- [ ] Verificación visual y de estilos computados para padding, radio y border, en varios breakpoints.
-- [ ] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas.
-- [ ] La fixture migrada funciona sin los workarounds para prefijos y eliminación de globals.
-- [ ] El artefacto incluye documentación, exports y dependencias necesarios para un consumidor externo.
+- [x] Instalación y build correctos con versiones coordinadas de los paquetes UXDSL utilizados — verificado para `postcss-uxdsl`. `uxdsl-core`/`uxdsl-cli`/`vite-plugin-uxdsl` no se empaquetaron ni instalaron en esta fixture (ver alcance abajo).
+- [x] Cero referencias UXDSL obligatorias sin resolver y cero globals generados en los módulos — las cinco entradas compilan sin lanzar (MIG-03 corre en modo estricto por defecto) y los cuatro paneles no contienen la cadena `:root`.
+- [ ] Verificación visual y de estilos computados para padding, radio y border, en varios breakpoints — **parcial**. No hay navegador headless disponible en este entorno (mismo bloqueo que ya registró FEAT-001 con la descarga de Chromium). Sustituido por el mismo método sin-navegador que ya usa el resto de la suite: las funciones `inspectSurfaceTheme`/`inspectEdgeTheme` del paquete instalado, en un par de anchos. Esto no es "verificación visual" real; queda documentado como pendiente, no como resuelto.
+- [x] Paridad PostCSS/runtime y salida determinista en compilaciones repetidas — la entrada de tema compilada por PostCSS y `generateThemeCss` (del paquete instalado) coinciden variable por variable; compilar dos veces produce CSS idéntico byte a byte.
+- [x] La fixture migrada funciona sin los workarounds para prefijos y eliminación de globals — ningún panel declara `:root` propio ni necesita normalizar prefijos de spacing a mano (MIG-01/MIG-02 ya resuelven eso).
+- [x] El artefacto incluye documentación, exports y dependencias necesarios para un consumidor externo — verificado que el tarball instalado contiene `README.md`, `CHANGELOG.md` y `docs/migration.md`, y que `package.json` declara `main`/`types`/`exports` resolubles (el hallazgo de `exports` de arriba salió de este mismo chequeo).
+
+**Fuera de alcance de este parche, documentado explícitamente:** un build
+real de CSS Modules (ej. `css-loader` de webpack en modo estricto)
+consumiendo los paneles; instalación coordinada de los otros paquetes
+UXDSL (`uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`); verificación con
+navegador real. Los tres quedan como trabajo futuro si se decide cerrar
+esta fixture con mayor fidelidad.
 
 ## MIG-08 — Nombres consistentes sin ruptura silenciosa
 

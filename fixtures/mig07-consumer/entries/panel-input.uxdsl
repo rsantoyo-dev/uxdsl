@@ -1,0 +1,14 @@
+/* CSS Module panel: compiled with includeTheme: false. */
+.field {
+  @ds-input(outlined 2);
+}
+.field-underline {
+  @ds-input(underline primary);
+}
+.field-contained {
+  @ds-input(contained 2 shadow(0));
+}
+.hint {
+  @ds-typo(caption);
+  color: palette(text-disabled);
+}

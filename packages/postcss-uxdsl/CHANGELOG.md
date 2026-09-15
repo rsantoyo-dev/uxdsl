@@ -39,6 +39,13 @@ narrative migration guide covering the same ground.
 
 ### Fixed
 
+- `package.json`'s `exports` map was missing `"./package.json"`, so an
+  external consumer resolving `require("postcss-uxdsl/package.json")` (a
+  common way to read a dependency's own version) got
+  `ERR_PACKAGE_PATH_NOT_EXPORTED`. Found via `fixtures/mig07-consumer`,
+  which installs this package from a real `npm pack` tarball instead of
+  importing the monorepo source — a class of issue source imports can't
+  surface, since they never go through Node's `exports` resolution.
 - Spacing keys: `"space-1"` and `"1"` in `theme.spacing` now both resolve
   to `--space-1` (previously `"space-1"` doubled the prefix to
   `--space-space-1`). Defining both spellings for the same key in one

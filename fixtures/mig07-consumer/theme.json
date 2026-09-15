@@ -1,0 +1,22 @@
+{
+  "breakpoints": { "xs": 0, "sm": 480, "md": 768, "lg": 1024, "xl": 1280 },
+  "fonts": { "families": { "ui": "system-ui, sans-serif", "ui-2": "system-ui, sans-serif", "code": "monospace" } },
+  "spacing": {
+    "1": "4px", "2": "8px", "3": "12px", "4": "16px", "5": "20px", "6": "24px",
+    "7": "28px", "8": "32px", "9": "36px", "10": "40px", "11": "44px", "12": "48px",
+    "13": "52px", "14": "56px", "15": "60px", "16": "64px"
+  },
+  "palette": {
+    "primary": { "main": "#2563eb", "dark": "#1d4ed8", "contrast": "#ffffff" },
+    "surface": { "main": "#ffffff", "dark": "#e5e7eb", "contrast": "#111827" },
+    "neutral": { "main": "#6b7280", "dark": "#374151" },
+    "error": { "main": "#dc2626" },
+    "text": { "primary": "#111827", "secondary": "#4b5563", "disabled": "#9ca3af" },
+    "divider": { "main": "#e5e7eb" }
+  },
+  "typography_details": {
+    "h1": { "fontSize": "xs(space(8)) md(space(10))", "fontWeight": "700" },
+    "body": { "fontSize": "xs(space(5))", "fontWeight": "400" },
+    "caption": { "fontSize": "xs(space(4))", "fontWeight": "400" }
+  }
+}

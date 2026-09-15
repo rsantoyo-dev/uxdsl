@@ -242,6 +242,18 @@ whichever one you didn't intend to share that variable.
 
 ---
 
+## Verified from a real install
+
+`fixtures/mig07-consumer/` (in the monorepo, `npm run
+verify:consumer-fixture`) installs this package from an actual `npm pack`
+tarball — never the monorepo's TypeScript source — and compiles a theme
+entry plus four CSS-Module-style panel entries against it. That check is
+what caught `package.json`'s `exports` map missing `"./package.json"`,
+which broke `require("postcss-uxdsl/package.json")` for any consumer that
+reads a dependency's own version that way; now fixed.
+
+---
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

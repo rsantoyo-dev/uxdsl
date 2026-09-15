@@ -1,0 +1,14 @@
+/* CSS Module panel: compiled with includeTheme: false. */
+.card {
+  @ds-surface(contained 2);
+}
+.notice {
+  @ds-surface(outlined primary 3 radius(2) shadow(1));
+}
+.title {
+  @ds-typo(h1);
+}
+.flat {
+  @ds-surface(flat);
+  border-bottom: 1px solid palette(divider);
+}

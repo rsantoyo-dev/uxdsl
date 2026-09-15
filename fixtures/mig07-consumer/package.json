@@ -1,0 +1,9 @@
+{
+  "name": "mig07-consumer",
+  "private": true,
+  "version": "0.0.0",
+  "description": "MIG-07 fixture: installs postcss-uxdsl from a real npm-pack tarball (no monorepo source imports) and compiles a theme entry plus four CSS-Module-style panel entries.",
+  "scripts": {
+    "verify": "node run.js"
+  }
+}

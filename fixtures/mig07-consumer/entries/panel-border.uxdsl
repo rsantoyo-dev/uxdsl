@@ -1,0 +1,16 @@
+/* CSS Module panel: compiled with includeTheme: false. Exercises
+   border(1..5) resolving without an extra color import (MIG-04). */
+.box {
+  border: border(2);
+  border-radius: radius(3);
+}
+.box-strong {
+  border: border(4);
+  border-radius: radius(4) radius(4) 0 0;
+}
+.divider {
+  border-bottom: 1px solid palette(divider);
+}
+.muted {
+  color: palette(text-secondary);
+}

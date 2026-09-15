@@ -59,7 +59,8 @@
       "require": "./dist/language.js",
       "import": "./dist/language.js"
     },
-    "./theme/*": "./src/theme/*"
+    "./theme/*": "./src/theme/*",
+    "./package.json": "./package.json"
   },
   "dependencies": {
     "postcss": "^8.5.6",

@@ -1,0 +1,14 @@
+/* CSS Module panel: compiled with includeTheme: false. */
+.btn {
+  @ds-button(contained 2);
+}
+.btn-outline {
+  @ds-button(outlined primary 3);
+}
+.btn-flat {
+  @ds-button(flat 2 radius(1));
+}
+.label {
+  @ds-typo(body);
+  color: palette(text-secondary);
+}
