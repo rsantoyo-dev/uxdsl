@@ -522,22 +522,55 @@ preexistentes, Next.js, errores y variables namespaced, y está conectada al
 >    Reproducido en vivo (proceso en background, `watch: [...]` igual al de
 >    `init`): más de 30 reconstrucciones idénticas en 8 segundos sin tocar
 >    ningún archivo. Corregido pasando `ignored: config.outFile` a
->    `chokidar.watch(...)`. Límite conocido: ese `ignored` se fija al
->    construir el watcher; si `outFile` cambia en una recarga posterior de
->    config, no se vuelve a aplicar sin reiniciar el proceso — mismo tipo de
->    límite que el punto anterior con la lista de `watch`.
+>    `chokidar.watch(...)`.
 >
-> Cobertura de regresión en `packages/uxdsl-cli/test/watch-mode.test.js` (2
-> casos, ambos con un `uxdsl watch` real como subproceso y cambios reales en
-> el filesystem, no un mock): edición de tema mientras corre `watch` se
-> refleja en el CSS reconstruido; y ningún build extra ocurre en una ventana
-> de 5s cuando `watch` incluye el propio `outFile`. Verificado manualmente
-> que ambos casos fallan de la manera esperada contra el código anterior
-> (el primero por timeout esperando el valor nuevo; el segundo con
-> reconstrucciones repetidas confirmadas en un proceso real, no solo en el
-> test automatizado — la primera corrida del test contra el código viejo
-> dio un falso "ok" por una carrera con el `npm install` del propio
-> fixture, así que la validación en vivo fue la que realmente lo confirmó).
+> **Segunda ronda (dos huecos más, también reproducidos antes de corregir):**
+>
+> 3. Limpiar `require.cache` solo del archivo de tema/config de nivel
+>    superior no alcanza si ese archivo hace `theme: require('./datos.json')`
+>    — un split real (JSON como datos puros, un `.cjs` delgado alrededor).
+>    Node vuelve a ejecutar el archivo de nivel superior al recargar, pero
+>    ese `require()` anidado sigue resolviendo a la entrada de caché sin
+>    tocar del JSON. Corregido: `clearRequireCache` ahora recorre
+>    recursivamente `.children` de cada entrada de caché (que Node ya
+>    registra) y limpia cada dependencia local del proyecto — los paquetes
+>    de `node_modules` (chokidar, postcss, ...) se dejan intactos, porque no
+>    cambian entre reconstrucciones.
+> 4. La exclusión de `outFile` de arriba se pasaba una sola vez a
+>    `chokidar.watch()` al construir el watcher. Si una recarga posterior
+>    cambia `outFile` a otra ruta, chokidar no tiene API pública para
+>    actualizar `ignored` después — la ruta vieja queda excluida para
+>    siempre (inofensivo) pero la nueva nunca lo está, así que el loop del
+>    punto 2 puede reaparecer bajo el nombre nuevo. Corregido: la exclusión
+>    ahora es un chequeo dinámico dentro del handler `watcher.on('all', ...)`
+>    contra el `config.outFile` **actual** (reasignado por clausura en cada
+>    recarga), no una opción estática fijada al construir.
+>
+> También en esta segunda ronda: `uxdsl.config.cjs` se agrega automáticamente
+> a `watch`, igual que ya pasaba con el archivo de tema — antes, editarlo
+> (por ejemplo para cambiar `outFile`) no se detectaba en absoluto.
+>
+> **Tercera ronda, en paralelo (retargeting dinámico completo):** una sesión
+> concurrente fue más allá de los puntos 1-4 e hizo que el watcher
+> reconfigure en caliente sus propios globs vigilados y su `themeFile`
+> cuando la config cambia — no solo el *contenido* de config/tema, que es
+> el alcance de las correcciones 1-4 de arriba. Ver el test "watch retargets
+> themeFile and source globs without restarting the CLI" y la sección de
+> `watch` del README de `uxdsl-cli` para ese comportamiento más completo.
+> Con esto, los dos "límites conocidos" registrados en la primera ronda (la
+> lista de `watch` y el `outFile` no se releían sin reiniciar el proceso)
+> quedan resueltos también.
+>
+> Cobertura de regresión en `packages/uxdsl-cli/test/watch-mode.test.js` (4
+> casos propios, más el de retargeting dinámico de la sesión concurrente:
+> 5 en total), todos con un `uxdsl watch` real como subproceso y cambios
+> reales en el filesystem, no un mock. Verificado manualmente que cada
+> hallazgo falla de la manera esperada contra el código anterior a su
+> corrección — para el punto 2, la primera corrida del test automatizado
+> contra el código viejo dio un falso "ok" por una carrera con el
+> `npm install` del propio fixture; la validación en vivo (proceso en
+> background) fue la que realmente lo confirmó, y una segunda corrida del
+> test sí lo detectó.
 
 ### Historia
 
