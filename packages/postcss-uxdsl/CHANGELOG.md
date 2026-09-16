@@ -17,6 +17,8 @@ FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 through MIG-B2-05:
   object keys and explicit identity mappings; preview/write remain idempotent.
 - Coordinated five-package tarball gate covers partial themes, external fonts,
   fallback/negative cases and CLI/PostCSS/runtime parity.
+- CLI watch reloads local config dependencies, updates watched paths when
+  `themeFile` or patterns change, and ignores its current output file.
 
 ### Added
 

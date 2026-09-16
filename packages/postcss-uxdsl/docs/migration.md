@@ -178,9 +178,8 @@ Puntos clave:
 - Ningún panel vuelve a declarar `:root`, así que un loader de CSS Modules
   en modo estricto (que rechaza `:root` como selector "impuro") no debería
   fallar. Esto está verificado a nivel de compilación PostCSS
-  (`test/include-theme.test.js`); la verificación con un build real de
-  Next.js + `css-loader` instalando paquetes empaquetados desde tarballs
-  sigue pendiente.
+  (`test/include-theme.test.js`) y con Next.js + `css-loader` desde tarballs
+  (`verify:cssmodules-build`), con control negativo y estilos computados en Chrome.
 
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
@@ -288,9 +287,10 @@ Revisar el diff antes de escribir; conservar el commit anterior permite
 revertir la migración. Una segunda ejecución no produce cambios adicionales.
 
 El modo estricto exige un **tema efectivo completo** para las dependencias de
-los presets emitidos (incluyendo Spacing 1–16 y Palette de controles). No se
-inyecta otra escala ni se desactiva la validación para hacer pasar temas
-incompletos. CSS externo sin DSL permanece fuera de esa validación; proveedores
+los presets emitidos (incluyendo Spacing 1–16 y Palette de controles). Desde
+beta.2, `resolveTheme` combina los overrides con los defaults canónicos antes
+de validar. Las referencias desconocidas siguen fallando; no se desactiva la
+validación. CSS externo sin DSL permanece fuera de esa validación; proveedores
 externos alcanzados desde tokens deben declararse explícitamente.
 
 La validación estática prueba `:root`, selectores idénticos y condiciones

@@ -526,8 +526,12 @@ FEAT-002 targets explicit migration to `--uxdsl__<family>__<key>` in
 `scripts/codemod-namespace.js` previews migration of selected consumer files;
 use explicit mappings for custom typography roles or host-owned prefix matches.
 Strict validation requires the effective theme to supply dependencies of all
-emitted presets. Do not invent default Spacing or disable validation to hide
-missing dependencies. Generate CSS successfully before recording a runtime
+emitted presets. In beta.2, `resolveTheme` merges partial overrides with canonical
+defaults for PostCSS, CLI and `generateThemeCss`. Use that resolver rather than
+inventing Spacing or disabling validation. Unknown references still fail.
+The CLI reloads local config dependencies on rebuild; list those files in
+`watch` to observe their edits. Changing `themeFile` or watch patterns updates
+the running watcher. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
 The Next.js playground stores shared configuration in `uxdsl.theme.base.json`.

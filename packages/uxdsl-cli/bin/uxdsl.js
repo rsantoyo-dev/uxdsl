@@ -330,6 +330,13 @@ async function loadConfig(argv, cwd = process.cwd()) {
     if (themeConfigPath && !resolvedConfig.watch.includes(themeConfigPath)) {
       resolvedConfig.watch.push(themeConfigPath);
     }
+    // The build config itself can change entry/outFile/watch/theme/
+    // references too — watch it for the same reason the theme file is
+    // watched, so `uxdsl watch` picks up a config edit without the user
+    // having to list uxdsl.config.cjs in their own `watch` array.
+    if (configPath && !resolvedConfig.watch.includes(configPath)) {
+      resolvedConfig.watch.push(configPath);
+    }
   }
   // Exposed so the watcher can invalidate require()'s module cache for
   // exactly these two files before reloading config on a change (they are
@@ -409,28 +416,45 @@ async function buildOnce(config) {
   );
 }
 
-/** Node's `require()` cache is keyed by resolved path — a config or theme
- * file edited on disk is otherwise served stale forever, since nothing
- * else ever evicts it. Cleared right before each reload so `loadConfig()`
- * actually re-reads the current file content instead of the module
- * object it returned the first time. */
+/** Clears `filePath` from require()'s cache — and, recursively, every
+ * project-local module it itself required (tracked by Node on each
+ * cache entry's `.children`). A config or theme file that does
+ * `theme: require('./theme.json')` (or requires any other local helper)
+ * would otherwise keep serving THAT nested module's pre-edit content even
+ * after the top-level file's own cache entry is cleared and re-required —
+ * Node re-executes the top-level file, but its own `require('./theme.json')`
+ * call still resolves to the untouched cache entry for that JSON file.
+ * node_modules dependencies (chokidar, postcss, ...) are deliberately left
+ * alone: they don't change between rebuilds, and re-executing them on
+ * every keystroke would be pure waste (and, for some packages, unsafe to
+ * do more than once). */
 function clearRequireCache(filePath) {
   if (!filePath) return;
+  let resolved;
   try {
-    delete require.cache[require.resolve(filePath)];
+    resolved = require.resolve(filePath);
   } catch (_) {
-    // Not required yet (or already gone) — nothing to invalidate.
+    return; // Not required yet (or already gone) — nothing to invalidate.
   }
+  const seen = new Set();
+  const visit = (id) => {
+    if (seen.has(id)) return;
+    seen.add(id);
+    const mod = require.cache[id];
+    if (!mod) return;
+    for (const child of mod.children || []) {
+      if (child.id && !child.id.split(path.sep).includes('node_modules')) {
+        visit(child.id);
+      }
+    }
+    delete require.cache[id];
+  };
+  visit(resolved);
 }
 
 function startWatch(initialConfig, argv, cwd, builder) {
   let config = initialConfig;
-  // The output file itself must never be a watch target: `init`'s default
-  // `watch: ['src/**/*.uxdsl', 'src/**/*.css']` matches `src/uxdsl.css`
-  // (the very file `builder` writes) as much as any real source file.
-  // Left unguarded, every build's own write would re-trigger chokidar,
-  // which triggers another identical build, indefinitely.
-  const watcher = chokidar.watch(config.watch, { ignoreInitial: true, ignored: config.outFile });
+  let watcher = chokidar.watch(config.watch, { ignoreInitial: true });
   console.log('[uxdsl] watching for changes...');
   let building = false;
   let queued = false;
@@ -449,7 +473,22 @@ function startWatch(initialConfig, argv, cwd, builder) {
       clearRequireCache(config.configPath);
       clearRequireCache(config.themeConfigPath);
       const reloaded = await loadConfig(argv, cwd);
-      if (reloaded) config = reloaded;
+      if (reloaded) {
+        const previous = [...config.watch].sort();
+        const next = [...reloaded.watch].sort();
+        config = reloaded;
+        if (JSON.stringify(previous) !== JSON.stringify(next)) {
+          // Recreate to handle overlapping globs without unwatch() leaving
+          // exclusions behind. Keep config errors recoverable on the old watcher.
+          await watcher.close();
+          watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+          watcher.on('all', onChange);
+          await new Promise((resolve, reject) => {
+            watcher.once('ready', resolve);
+            watcher.once('error', reject);
+          });
+        }
+      }
       await builder(config);
     } catch (err) {
       console.error('[uxdsl] build failed:', err.message);
@@ -462,11 +501,26 @@ function startWatch(initialConfig, argv, cwd, builder) {
     }
   };
 
-  watcher.on('all', (event, filePath) => {
+  function onChange(event, filePath) {
+    // The output file itself must never trigger a rebuild: `init`'s
+    // default `watch: ['src/**/*.uxdsl', 'src/**/*.css']` matches
+    // `src/uxdsl.css` (the very file `builder` writes) as much as any
+    // real source file. Left unguarded, every build's own write would
+    // re-trigger chokidar, which triggers another identical build,
+    // indefinitely. Checked here — against the *current* `config.outFile`,
+    // which a reload may have changed — rather than passed once to
+    // `chokidar.watch()`'s `ignored` option at construction time, which
+    // has no public API to update after the fact: a static `ignored`
+    // would keep excluding the *original* outFile forever and never learn
+    // about a new one after a config change moved it.
+    if (filePath && config.outFile && path.resolve(filePath) === path.resolve(config.outFile)) {
+      return;
+    }
     const rel = path.relative(process.cwd(), filePath);
     console.log(`[uxdsl] ${event} ${rel}`);
     trigger();
-  });
+  }
+  watcher.on('all', onChange);
 }
 
 // --- Command: Generate Entry ---

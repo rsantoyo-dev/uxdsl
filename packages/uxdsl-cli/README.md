@@ -162,10 +162,10 @@ Watch mode reloads `uxdsl.config.cjs` and the theme file from disk on every
 rebuild — editing either while `watch` is running takes effect on the next
 save. The output file (`outFile`) is automatically excluded from the watch
 list even if a broader glob like `src/**/*.css` would otherwise match it,
-so the CLI's own write never re-triggers itself. Adding or removing entries
-from `watch` in the config file does take effect on the *next* `uxdsl watch`
-run, but not on a process that's already running — restart it after that
-kind of change.
+so the CLI's own write never re-triggers itself, including after changing
+`outFile`. Changes to `watch` patterns or `themeFile` update the active watcher
+without restarting the CLI. Local modules required by the config are reloaded
+too; include their source paths in `watch` to trigger a rebuild when edited.
 
 ### 4. CLI Arguments (No Config)
 
