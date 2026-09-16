@@ -6,6 +6,30 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
+## Unreleased
+
+FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 and MIG-B2-02:
+
+### Added
+
+- `resolveTheme(override)` / `DEFAULT_THEME` / `getDefaultTheme()`
+  (exported from `postcss-uxdsl/ds-runtime`): an omitted or partial `theme`
+  now resolves against a built-in default (Spacing 1-16, Palette
+  `primary`/`surface`/`neutral`/`error`, font families `ui`/`ui-2`/`code`)
+  instead of leaving those families' `var()` references undefined.
+  `generateThemeCss()` with no arguments now generates valid CSS; before
+  this it returned an empty string. The PostCSS plugin resolves through
+  the same function, so both always agree on the same effective theme.
+- `uxdsl.theme.config.cjs`/`.js`/`.json` (or `uxdsl.theme.json`), discovered
+  automatically by `uxdsl-cli` next to `uxdsl.config.cjs` — see that
+  package's own CHANGELOG/README for the full contract (`references`
+  precedence, `themeFile`, `UXDSL_DEBUG`).
+
+### Fixed
+
+- A `theme` that isn't `undefined`/`null` or a plain object now throws
+  `UXD_THEME_INVALID` instead of being silently ignored.
+
 ## 0.5.0-beta.1 — 2026-09-15
 
 - FEAT-002: explicit namespace migration included in 0.5.0-beta.1, with

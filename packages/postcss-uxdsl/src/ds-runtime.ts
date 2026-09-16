@@ -15,3 +15,8 @@ export { generateDensityCss, DEFAULT_BREAKPOINTS, DEFAULT_DENSITIES, getDensityT
 export * from './inputs';
 export { inspectReferences, ReferenceIntegrityError } from './reference-integrity';
 export type { ReferenceOptions, ReferenceIssue } from './reference-integrity';
+
+// MIG-B2-02: the same canonical default theme + resolution `generateThemeCss`
+// and the PostCSS plugin already use internally, exported so a consuming app
+// can build the identical effective theme during SSR/runtime (item 9).
+export { DEFAULT_THEME, getDefaultTheme, resolveTheme } from './default-theme';

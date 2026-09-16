@@ -272,6 +272,37 @@ that variable.
 
 ---
 
+## Zero-config defaults (`resolveTheme`)
+
+`theme` can be omitted or partial. An omitted or missing family — Spacing
+1-16, Palette `primary`/`surface`/`neutral`/`error`, and font families
+`ui`/`ui-2`/`code` — resolves against a built-in `DEFAULT_THEME` instead of
+leaving `var()` references with no definition:
+
+```js
+uxdsl()                    // no options at all — compiles against DEFAULT_THEME
+uxdsl({ theme: { palette: { primary: { main: '#123456' } } } })
+// -> primary.main overridden; primary.dark/contrast, surface, neutral,
+//    error, spacing and fonts keep their defaults
+```
+
+Merge rules: object keys merge recursively; arrays and scalars (including
+`null`) replace the previous value whole; `undefined` never overwrites a
+default. A `theme` that isn't an object (and isn't `undefined`/`null`)
+throws `UXD_THEME_INVALID` rather than being silently ignored. `generateThemeCss`
+(`postcss-uxdsl/ds-runtime`) and the PostCSS plugin resolve through the
+exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
+`DEFAULT_THEME` and `getDefaultTheme()` (a mutable copy) directly, for an
+app that needs to build the same effective theme during SSR.
+
+Radius, Shadow, Border, Surface, Button and Input shapes already had their
+own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
+`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`, `DEFAULT_BUTTONS`,
+`DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
+(Spacing, Palette) those defaults depend on but that had none of their own.
+
+---
+
 ## Verified from a real install
 
 `fixtures/mig07-consumer/` (in the monorepo, `npm run

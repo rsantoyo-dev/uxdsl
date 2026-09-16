@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B2-01 completada y verificada; MIG-B2-02 a MIG-B2-05 pendientes |
+| Estado | MIG-B2-01 y MIG-B2-02 completadas y verificadas; MIG-B2-03 a MIG-B2-05 pendientes. MIG-B2-02 deja explícitamente pendiente para MIG-B2-03 la decisión sobre duplicación de `generate-entry`'s `CORE_IMPORTS` (item 7) |
 | Objetivo | Que un proyecto consumidor compile UXDSL con defaults sin conocer detalles internos del motor |
 | Versión objetivo | `0.5.0-beta.2` |
 | Prioridad | P0: configuración y tema; P1: `init`, migración y empaquetado |
@@ -308,6 +308,79 @@ npm test
 ---
 
 ## MIG-B2-02 — Fuente única del tema por defecto y merge de temas parciales
+
+**Implementado en este checkout:** `packages/postcss-uxdsl/src/default-theme.ts`
+(nuevo) exporta `DEFAULT_THEME` (spacing 1-16, palette
+`primary`/`surface`/`neutral`/`error` — exactamente lo que Surface/Button/
+Input siempre-activos necesitan y no tenían default hasta ahora — y
+`fonts.families` `ui`/`ui-2`/`code`, con los mismos valores visuales que
+`postcss-uxdsl/theme/default-palette.css`/`default-spacing.css`/
+`default-typography.uxdsl` ya usan, para que un proyecto que después
+importe esos archivos más completos no vea un salto visual), `getDefaultTheme()`
+(copia mutable vía `JSON.parse(JSON.stringify(...))`, sin depender de
+`structuredClone`) y `resolveTheme(override)`. `deepMergeTheme`
+(`ds-runtime/theme-validate.ts`) ya existía y ya cumplía exactamente las
+reglas de merge pedidas (objetos por clave, arrays reemplazo completo,
+`undefined` nunca sobrescribe) — `resolveTheme` lo reutiliza en vez de
+reimplementarlo, y le agrega dos cosas: (1) normaliza las claves de
+`override.spacing` con `normalizeSpacingDefinitions` *antes* de mezclar,
+para que un override en forma `"space-1"` reemplace la clave por defecto
+`"1"` en vez de mezclarse como una clave adicional distinta (o colisionar);
+(2) rechaza con `UXD_THEME_INVALID` un override que no sea `undefined`/`null`
+ni un objeto plano (`deepMergeTheme` por sí solo lo hubiera ignorado en
+silencio, que es justo lo que el criterio de "inputs inválidos: error
+estructurado" pide evitar). Deliberadamente NO se incluyó `theme.colors.gray`
+aquí — `DEFAULT_BORDER_COLORS` (edges.ts) ya lo provee para `border(1..5)` y
+mezclarlo de nuevo aquí, con valores propios, hubiera reintroducido
+exactamente el bug de "dos fuentes default divergentes" que esta historia
+existe para evitar.
+
+`generateThemeCss()` (`ds-runtime/theme-generator.ts`) ahora resuelve
+`resolveTheme(theme)` como primer paso — antes retornaba `''` de inmediato
+si `theme` era falsy, lo que impedía que cualquier default pudiera aplicar
+nunca; ahora `generateThemeCss()` sin argumentos genera CSS de tema válido.
+El plugin PostCSS (`index.ts`) resuelve `effectiveTheme = resolveTheme(opts.theme)`
+una sola vez al inicio de `uxdslPlugin(opts)` y lo usa en todos los puntos
+donde antes leía `opts.theme` directamente — mismo punto de resolución que
+`generateThemeCss`, no uno paralelo (criterio del item 6). Como efecto
+correcto (no un bug): con `includeTheme: false` y sin `theme` declarado, la
+validación cruzada contra "lo que la entrada de tema emitiría" ahora
+también se ejecuta (antes se saltaba en silencio si no había `theme`),
+porque esa entrada de tema virtual ahora sí existe — el tema por defecto.
+
+Exportado desde `postcss-uxdsl/ds-runtime` (`DEFAULT_THEME`, `getDefaultTheme`,
+`resolveTheme`) para que una app pueda construir el mismo tema efectivo
+durante SSR/runtime (item 9).
+
+Cobertura en `packages/postcss-uxdsl/test/default-theme.test.js` (10 casos,
+uno por cada ítem de "Pruebas requeridas" abajo). Dos tests preexistentes
+(`border-colors.test.js`, `reference-integrity.test.js`) tenían un "sanity
+check" que asumía que `border(1)` sin tema fallaba siempre — ahora
+`border(1..5)` resuelve por defecto incluso sin tema (exactamente el
+objetivo de esta historia), así que esa aserción se volvió estructuralmente
+incorrecta, no rota; se actualizó a una familia de palette que
+deliberadamente no tiene default (`palette(brand-custom.main)`) para seguir
+demostrando que el modo estricto rechaza lo que de verdad no está definido.
+Suite completa: 136/136. Verificado además contra la fixture de tarball real
+(`verify:consumer-fixture`) y la fixture de Next.js + Chrome
+(`verify:cssmodules-build`, incluye ahora verificación de estilos
+computados en navegador real vía Playwright/Chrome, agregada por una sesión
+concurrente) — ambas en verde.
+
+**Decisión explícita, no resuelta aquí (queda para MIG-B2-03):** el item 7
+("evitar que `generate-entry` importe los defaults por duplicado") no se
+tocó en esta historia. `generate-entry`'s `CORE_IMPORTS` sigue important
+los 10 archivos `default-*.uxdsl`/`.css` estáticos sin cambios. Con el
+tema por defecto ahora siempre resuelto, un proyecto `init`+`build` sin
+tema propio tendría AMBAS fuentes activas a la vez (los imports estáticos
+Y la emisión automática del plugin) — mismos valores hoy (no divergen,
+así que no es el bug que el item 7 advierte), pero sí trabajo duplicado en
+el CSS de salida. Dado que MIG-B2-03 es la historia que literalmente
+posee "hacer que `init` + `build` funcionen zero-config" y sus propios
+criterios de aceptación, la decisión de qué hacer con `CORE_IMPORTS`
+(dejar de importarlos, o detectar y no re-emitir) se toma y se prueba ahí,
+con el contexto completo del flujo `init` en la mesa — no como un efecto
+lateral de esta historia.
 
 ### Historia
 

@@ -8,10 +8,14 @@ import { DEFAULT_BREAKPOINTS, generateDensityCss, getDensityTokens } from '../la
 import { generateTypographyCss } from '../typography';
 import postcss, { Declaration } from 'postcss';
 import { enforceReferences, ReferenceOptions } from '../reference-integrity';
+import { resolveTheme } from '../default-theme';
 
-export function generateThemeCss(theme: Record<string, any>, references: ReferenceOptions = {}): string {
-  if (!theme) return '';
-  
+/** MIG-B2-02: omitted/partial themes resolve against `DEFAULT_THEME`
+ * before generating or validating — `generateThemeCss()` with no
+ * arguments at all now produces valid CSS instead of an empty string. */
+export function generateThemeCss(theme?: Record<string, any>, references: ReferenceOptions = {}): string {
+  theme = resolveTheme(theme);
+
   // Density references and responsive rules are compiled by the shared engine.
 
   let cssContent = generateFoundationCss(theme);

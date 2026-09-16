@@ -68,21 +68,24 @@ test('MIG-04: a component entry (includeTheme: false) resolves border() against 
   assert.match(componentEntry.css, /border: var\(--uxdsl__border__2\)/);
 });
 
-test('MIG-04: a border preset supplied by an external stylesheet (no generated theme at all) is accepted when declared, in strict mode', async () => {
-  // The consumer writes their own plain CSS defining --uxdsl__border__1..5 (and
-  // whatever those declarations reference), bypassing edges.ts entirely —
-  // no theme option, no includeTheme:true entry anywhere for this build.
+test('MIG-04: an external stylesheet is accepted when declared, in strict mode', async () => {
+  // border(1..5) now resolves out of the box even with no theme option at
+  // all (MIG-B2-02: DEFAULT_THEME's spacing/palette cover its dependency
+  // chain, same as it always did with a real theme) — externalTokens is no
+  // longer needed for border(1) specifically to prove this. To still prove
+  // strict mode rejects a reference truly absent from both the theme and
+  // the defaults, use a palette family DEFAULT_THEME doesn't define.
   await assert.rejects(
-    compile('.x { border: border(1); }', { includeTheme: false }),
-    /UXD_REFERENCE_MISSING: border -> --uxdsl__border__1/,
-    'sanity check: without a declared external token or a theme, border(1) still fails validation'
+    compile('.x { color: palette(brand-custom.main); }', { includeTheme: false }),
+    /UXD_REFERENCE_MISSING: color -> --uxdsl__palette__brand-custom-main/,
+    'sanity check: a reference absent from both the theme and DEFAULT_THEME still fails validation'
   );
-  const result = await compile('.x { border: border(1); }', {
+  const result = await compile('.x { color: palette(brand-custom.main); }', {
     includeTheme: false,
-    references: { externalTokens: ['--uxdsl__border__1'] },
+    references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] },
   });
   assert(!result.css.includes(':root'));
-  assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
+  assert.match(result.css, /color: var\(--uxdsl__palette__brand-custom-main\)/);
 });
 
 test('MIG-04: PostCSS and the runtime theme generator emit the same gray dependency', () => {

@@ -34,8 +34,12 @@ test('strict components use declared themes and custom density 16 without global
   assert.ok(!result.css.includes(':root'));
 });
 test('external providers are explicit and plain host CSS stays outside DSL validation', async () => {
-  await postcss([plugin({ includeTheme: false, references: { externalTokens: ['--uxdsl__border__1'] } })]).process('.x { border: border(1); color: var(--host); }', { from: undefined });
-  await assert.rejects(postcss([plugin({ includeTheme: false })]).process('.x { border: border(1); }', { from: undefined }), /UXD_REFERENCE_MISSING/);
+  // border(1) now resolves out of the box even with includeTheme: false and
+  // no theme option (MIG-B2-02's DEFAULT_THEME covers its dependencies), so
+  // a palette family DEFAULT_THEME doesn't define is used here instead to
+  // still exercise a reference that genuinely has no default.
+  await postcss([plugin({ includeTheme: false, references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] } })]).process('.x { color: palette(brand-custom.main); } .y { color: var(--host); }', { from: undefined });
+  await assert.rejects(postcss([plugin({ includeTheme: false })]).process('.x { color: palette(brand-custom.main); }', { from: undefined }), /UXD_REFERENCE_MISSING/);
 });
 test('runtime and PostCSS reject missing mandatory theme dependencies', async () => {
   const invalid = { ...theme, surfaces: { contained: { bg: 'palette(missing.main)' } } };

@@ -7,6 +7,7 @@ import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurface
 import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
+import { resolveTheme } from './default-theme';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -97,7 +98,14 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
 }
 
 function uxdslPlugin(opts: UxDslOptions = {}) {
-  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (opts.theme?.breakpoints ? { ...DEFAULT_BPS, ...opts.theme.breakpoints } : undefined));
+  // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
+  // caller provided deep-merged on top — is resolved once here and used
+  // everywhere `opts.theme` used to be read directly below, so an omitted
+  // or partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
+  // still produces a fully-defined, strictly-valid effective theme instead
+  // of leaving whichever families the caller didn't mention undefined.
+  const effectiveTheme = resolveTheme(opts.theme);
+  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
@@ -122,14 +130,14 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         originalSources.add(node.source);
         if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
       });
-      if (opts.theme && includeTheme) {
-        root.append(postcss.parse(generateFoundationCss(opts.theme)).nodes);
-        root.append(postcss.parse(generateTypographyCss(opts.theme, bps)).nodes);
+      if (effectiveTheme && includeTheme) {
+        root.append(postcss.parse(generateFoundationCss(effectiveTheme)).nodes);
+        root.append(postcss.parse(generateTypographyCss(effectiveTheme, bps)).nodes);
 
-        if (opts.theme.fonts) {
-            if (opts.theme.fonts.google && Array.isArray(opts.theme.fonts.google)) {
+        if (effectiveTheme.fonts) {
+            if (effectiveTheme.fonts.google && Array.isArray(effectiveTheme.fonts.google)) {
                 // Reverse order so they end up in correct order when prepended
-                [...opts.theme.fonts.google].reverse().forEach((font: string) => {
+                [...effectiveTheme.fonts.google].reverse().forEach((font: string) => {
                     const url = `https://fonts.googleapis.com/css2?family=${font}&display=swap`;
                     const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
                     root.prepend(importRule);
@@ -523,15 +531,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
       // and resolving against the effective theme. Only the `:root`
       // definitions themselves are gated by includeTheme.
-      const shadowTheme = { shadows: { ...shadowTokens, ...opts.theme?.shadows } };
+      const shadowTheme = { shadows: { ...shadowTokens, ...effectiveTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
       if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
 
-      const edgeTheme = { borders: { ...borderTokens, ...opts.theme?.borders }, radii: { ...radiusTokens, ...opts.theme?.radii } };
+      const edgeTheme = { borders: { ...borderTokens, ...effectiveTheme?.borders }, radii: { ...radiusTokens, ...effectiveTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
       if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
-      const effectiveDensities = getDensityTokens(opts.theme, densityTokens);
+      const effectiveDensities = getDensityTokens(effectiveTheme, densityTokens);
       // Generate CSS variables for density tokens
       if (includeTheme) {
         for (const compiled of compileDensityRules(effectiveDensities, bps)) {
@@ -546,15 +554,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       }
 
-      getSurfaceTokens({ surfaces: opts.theme?.surfaces }); // Validate JSON before merging legacy fields.
+      getSurfaceTokens({ surfaces: effectiveTheme?.surfaces }); // Validate JSON before merging legacy fields.
       const legacySurfaces = (root as any).__surfacePacks || {};
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
-      for (const [role, style] of Object.entries(opts.theme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
-      const effectiveSurfaceTheme = { ...opts.theme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
+      for (const [role, style] of Object.entries(effectiveTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
+      const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
       if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
-      getButtonTokens({ ...effectiveSurfaceTheme, buttons: opts.theme?.buttons });
+      getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
-      for (const [role, pack] of Object.entries(opts.theme?.buttons || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(effectiveTheme?.buttons || {}) as [string, any][]) {
         const legacy = buttonOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
@@ -562,9 +570,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
       if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
-      getInputTokens({ ...effectiveSurfaceTheme, inputs: opts.theme?.inputs });
+      getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
-      for (const [role, pack] of Object.entries(opts.theme?.inputs || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(effectiveTheme?.inputs || {}) as [string, any][]) {
         const legacy = inputOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
@@ -827,7 +835,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // A component validates against its explicitly configured theme without
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];
-      if (!includeTheme && opts.theme && references.mode !== 'off') {
+      if (!includeTheme && effectiveTheme && references.mode !== 'off') {
         css.push(generateThemeCss({ ...effectiveInputTheme, buttons: buttonOverrides, breakpoints: bps }, { mode: 'off' }));
       }
       enforceReferences(root, consumers, { ...references, css,
