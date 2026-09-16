@@ -37,7 +37,7 @@ This package works best when initialized with the CLI.
 
 ### 1. Install
 ```bash
-npm install -D postcss-uxdsl uxdsl-cli concurrently
+npm install -D postcss-uxdsl@0.5.0-beta.2 uxdsl-cli@0.5.0-beta.2 concurrently
 ```
 
 ### 2. Initialize
@@ -51,7 +51,7 @@ Import the generated CSS in your root layout (e.g., `src/app/layout.tsx`) and st
 
 ```tsx
 // src/app/layout.tsx
-import '../src/uxdsl.css';
+import '../uxdsl.css';
 ```
 
 ```json

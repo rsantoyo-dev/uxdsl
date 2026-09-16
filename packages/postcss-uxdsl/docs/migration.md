@@ -1,7 +1,82 @@
-# Migrando de UXDSL 0.3.x a los cambios de la beta 0.5
+# Migración a UXDSL 0.5.0-beta.2
+
+Beta.2 está preparada en este checkout; la publicación en npm es un paso separado.
+El namespace `--uxdsl__` ya se introdujo en beta.1. Beta.2 añade defaults y
+temas parciales; los helpers `space(7)`, `density(2)` y las directivas no cambian.
+
+## De beta.1 a beta.2
+
+1. Tras publicar beta.2, instalar versiones coordinadas:
+
+   ```bash
+   npm install -D uxdsl-cli@0.5.0-beta.2 postcss-uxdsl@0.5.0-beta.2
+   npx uxdsl init
+   ```
+
+2. Conservar el build config existente (`entry`, `outFile`, `watch`). `init`
+   añade solo archivos y scripts faltantes. Para proyectos nuevos genera
+   `src/uxdsl-entry.uxdsl` sin imports legacy: el plugin emite los defaults.
+   Un entry antiguo puede seguir importando los packs públicos. Si se retiran,
+   revisar primero usos de selectores `.ds-typo`, colores o Palette ampliada
+   proporcionados por esos packs; no eliminarlos ciegamente.
+
+3. El tema es opcional. Un **tema parcial** contiene overrides; `resolveTheme`
+   lo combina con defaults para obtener el **tema efectivo**. Objetos mezclan
+   por clave; arrays, strings responsive y escalares reemplazan; `undefined`
+   conserva defaults. **CSS legacy** es una entrada explícita de compatibilidad,
+   no un parche JSON. Pasar los mismos overrides a CLI, PostCSS y runtime.
+
+4. Para fuentes Next, elegir una de estas configuraciones:
+
+   ```js
+   // uxdsl.theme.config.cjs: fallback válido sin declarar externos
+   module.exports = {
+     fonts: { families: {
+       ui: 'var(--font-geist-sans, Arial, sans-serif)',
+       code: 'var(--font-geist-mono, ui-monospace, monospace)'
+     } }
+   };
+   ```
+
+   ```js
+   // Alternativa: el host garantiza las variables durante render.
+   module.exports = {
+     theme: { fonts: { families: { ui: 'var(--font-geist-sans)' } } },
+     references: { externalTokens: ['--font-geist-sans'] }
+   };
+   ```
+
+   `references` del build config gana completo sobre el archivo de tema.
+   PostCSS recibe `{ theme, references }`; runtime usa
+   `generateThemeCss(theme, references)`. Declarar un externo permite validar,
+   pero no crea ni carga la fuente: Next debe aplicar su clase/variable al DOM.
+
+5. Si aún quedan nombres anteriores a beta.1, ejecutar primero el preview:
+
+   ```bash
+   node node_modules/postcss-uxdsl/scripts/codemod-namespace.js styles.css theme.json
+   node node_modules/postcss-uxdsl/scripts/codemod-namespace.js --write styles.css theme.json
+   npm run uxdsl:build
+   ```
+
+   Solo `--font-ui`, `--font-ui-2` y `--font-code` se migran automáticamente.
+   `--font-geist-sans`, `--font-geist-mono` y fuentes personalizadas se preservan;
+   usar `--map mapping.json` para fuentes propias de UXDSL y roles personalizados.
+   Un mapping identidad protege un prefijo del host. Las claves lógicas y
+   `theme.typography` plano permanecen; revisar sus consumidores manualmente.
+
+6. Importar `../uxdsl.css` desde `src/app/layout.tsx`; ejecutar
+   `npm run uxdsl:watch` junto a `next dev`. PostCSS por sí solo no vuelve a
+   ejecutar el CLI ni descubre archivos nuevos. `npx uxdsl generate-entry`
+   actualiza los imports tras agregar o quitar componentes.
+
+Para CSS Modules, emitir el tema una vez en la entrada global y usar
+`includeTheme: false` en módulos con los mismos overrides y `references`.
+Sin overrides, ambas entradas usan defaults. No cargar CSS precompilado de
+otra versión junto al tema nuevo.
 
 > **Alcance de este documento:** describe la migración desde las versiones
-> anteriores hacia el paquete publicado `postcss-uxdsl@0.5.0-beta.1`. Ver el
+> anteriores hacia beta.1 (publicada) y beta.2 (preparada). Ver el
 > historial de cambios en [`CHANGELOG.md`](../CHANGELOG.md) y el contexto
 > completo (hallazgos, prioridades, estado de cada mejora) en el
 > [monorepo, FEAT-002](https://github.com/rsantoyo-dev/uxdsl/blob/main/docs/features/FEAT-002-beta-migration-hardening.md).
@@ -73,10 +148,9 @@ nombre lo elegiste vos, no este compilador.
 - **Tamaños compuestos o "recetas" configurables** (por ejemplo, un `size`
   que además ajuste tipografía o densidad de ícono) no están soportados.
   Solo `radius()`/`shadow()` son overridables hoy.
-- **`includeTheme: false` sin pasar `theme`** (para que el componente no
-  necesite conocer el tema en absoluto) no está soportado — hoy hace falta
-  pasar el mismo objeto `theme` a cada entrada para que las referencias
-  validen y los nombres de variable coincidan.
+- **`includeTheme: false` sin pasar `theme`** usa defaults desde beta.2.
+  Si hay overrides, compartirlos con la entrada global para que ambas
+  compilaciones validen contra el mismo tema efectivo.
 - **Migración automática cuando el manual override no es una llamada
   `radius()`/`shadow()` pura** (un literal, `calc()`, o una expresión
   responsive), cuando hay más de una declaración candidata en la regla, o
@@ -229,7 +303,7 @@ y el último tema válido.
 ## Verificación
 
 Los ejemplos de este documento están verificados contra los tests de este
-checkout (`postcss-uxdsl@0.3.0`):
+checkout (`postcss-uxdsl@0.5.0-beta.2`):
 `test/spacing-normalization.test.js`, `test/include-theme.test.js`,
 `test/border-colors.test.js`, `test/size-overrides.test.js`,
 `test/codemod-size-overrides.test.js`, `test/naming.test.js` — `npm test`

@@ -25,11 +25,27 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 
 ```bash
 # Install locally in your project (Recommended)
-npm install uxdsl-cli --save-dev
+npm install -D uxdsl-cli@0.5.0-beta.2 postcss-uxdsl@0.5.0-beta.2
 
 # Or install globally
 npm install -g uxdsl-cli
 ```
+
+For a new project, run the first-run setup after installation:
+
+These instructions target the prepared beta.2 release, once published.
+
+```bash
+npx uxdsl init
+npm run uxdsl:build
+```
+
+`init` creates `uxdsl.config.cjs` and `src/uxdsl-entry.uxdsl`, adds the
+`uxdsl:build` and `uxdsl:watch` scripts when they are missing, and never
+overwrites existing project configuration. The generated entry gets the
+canonical default theme from `postcss-uxdsl`; it does not need to import the
+legacy `default-*` packs. Import the generated `src/uxdsl.css` once from the
+application's root layout or entrypoint.
 
 ## Usage
 

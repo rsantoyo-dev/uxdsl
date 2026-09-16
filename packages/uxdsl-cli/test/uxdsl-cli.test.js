@@ -200,3 +200,13 @@ test('MIG-B2-01: `themeFile` in uxdsl.config.cjs wins over the conventional name
   const config = await cli.loadConfig({}, dir);
   assert.deepEqual(config.theme, { fonts: { families: { ui: 'Custom' } } });
 });
+
+test('MIG-B2-03: generated entries rely on the canonical plugin theme instead of importing legacy defaults', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'src/components/Button.uxdsl', '.button { color: red; }');
+  const outFile = path.join(dir, 'src/uxdsl-entry.uxdsl');
+  await cli.generateEntry({ src: path.join(dir, 'src'), out: outFile });
+  const generated = fs.readFileSync(outFile, 'utf8');
+  assert.doesNotMatch(generated, /postcss-uxdsl\/theme\/default-/);
+  assert.match(generated, /components\/Button\.uxdsl/);
+});

@@ -6,9 +6,17 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
-## Unreleased
+## 0.5.0-beta.2 — prepared, not published
 
-FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 and MIG-B2-02:
+FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 through MIG-B2-05:
+
+- Fresh CLI `init` + `build` works with no theme; missing scripts are added
+  without replacing user scripts. Generated entries use compiler defaults.
+- Default heading Typography is shared with generated compatibility artifacts.
+- Namespace migration preserves host font variables (including Next Geist),
+  object keys and explicit identity mappings; preview/write remain idempotent.
+- Coordinated five-package tarball gate covers partial themes, external fonts,
+  fallback/negative cases and CLI/PostCSS/runtime parity.
 
 ### Added
 

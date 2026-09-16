@@ -35,7 +35,7 @@ Code with no obvious demo usage is not necessarily dead: public exports, package
 ## Proposal review: architectural corrections
 
 1. **Separate language rules from theme data.** The language defines syntax and supported families; the active theme defines available tokens and breakpoint values. A default range is not a language-wide maximum.
-2. **Preserve references.** Do not permanently flatten `space(4)` to pixels during resolution. Retain the reference and emit `var(--space-4)` so live spacing changes propagate. Computing a preview value is a separate inspection operation.
+2. **Preserve references.** Do not permanently flatten `space(4)` to pixels during resolution. Retain the reference and emit `var(--uxdsl__space__4)` (named `--space-4` at the time of this decision, before FEAT-002's namespace migration) so live spacing changes propagate. Computing a preview value is a separate inspection operation.
 3. **Metadata cannot implement semantics.** Generate schema, completions and reference tables from a registry, but every advertised function also needs a real handler and contract tests. Adding a registry entry alone must not advertise a working feature.
 4. **Equivalence is semantic, not necessarily byte-for-byte.** PostCSS and runtime may serialize differently; compare declarations, conditions, cascade and browser-computed behavior. Require deterministic output within each emitter.
 5. **Container support is not proven by emitting `@container`.** Verify an actual query-container ancestor, scoping and behavior at container boundaries in browser tests.
@@ -262,8 +262,10 @@ No npm release, deployment or remote push has occurred.
 - Removed the iframe viewport simulator after the user reported it did not work.
 - Added an English primer with a theme JSON excerpt, breakpoint/value table,
   component UXDSL and equivalent plain CSS using responsive custom properties.
-- Added two boxes consuming the existing page-level `--density-4` variable and a
-  fixed `--space-4` comparison. The existing editor updates both responsive boxes.
+- Added two boxes consuming the existing page-level `--density-4` variable (now
+  `--uxdsl__density__4`, after FEAT-002's namespace migration) and a fixed
+  `--space-4` (now `--uxdsl__space__4`) comparison. The existing editor updates
+  both responsive boxes.
 - Kept the Russian Doll and global token editor. All live examples use the actual
   browser viewport and the shared generator; no separate simulation engine exists.
 - Clarified inheritance, configurable progressions, fixed spacing, local demo edits,

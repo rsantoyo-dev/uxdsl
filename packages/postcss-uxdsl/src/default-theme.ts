@@ -1,5 +1,6 @@
 import { deepMergeTheme } from './ds-runtime/theme-validate';
 import { normalizeSpacingDefinitions } from './language';
+import { DEFAULT_TYPOGRAPHY } from './typography-defaults';
 
 /**
  * MIG-B2-02 (FEAT-003): a single canonical default theme, merged under
@@ -53,6 +54,24 @@ export const DEFAULT_THEME: Readonly<Record<string, any>> = Object.freeze({
       code: 'Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace',
     }),
   }),
+  // MIG-B2-03: the legacy postcss-uxdsl/theme/default-typography.uxdsl pack
+  // remains available for explicit imports, but `generate-entry` no longer
+  // imports it automatically. That pack fully defines h1-h6/p/span/
+  // body/etc. via literal xs()/space() declarations that don't read
+  // theme.typography_details at all, but its own `default`/`code` roles
+  // (`.ds-typo[data-typo="default"/"code"]`) only cover transform/
+  // decoration/style/margin — `fontSize` for those two specifically has
+  // always come from theme.typography_details, undocumented anywhere as
+  // a requirement. That's the exact zero-config crash this closes: a
+  // fresh `uxdsl init` + `uxdsl build`, no theme at all, failed with
+  // UXD_REFERENCE_MISSING for --uxdsl__typography__default-size and
+  // -code-size. A project with its own typography_details.default/.code
+  // still overrides these per-key normally.
+  typography_details: Object.freeze({
+    ...DEFAULT_TYPOGRAPHY,
+    default: Object.freeze({ ...DEFAULT_TYPOGRAPHY.default, fontSize: '1rem' }),
+    code: Object.freeze({ fontSize: '0.9rem' }),
+  }),
 });
 
 /** Returns a fresh, mutable deep copy of `DEFAULT_THEME` — browser-safe
@@ -81,7 +100,7 @@ export function getDefaultTheme(): Record<string, any> {
  * clearly meant as one override, not two conflicting spellings of it.
  */
 export function resolveTheme(override?: unknown): Record<string, any> {
-  const isPlainObject = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && !Array.isArray(value);
+  const isPlainObject = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
   // A non-object override (a string, number, array, ...) is a caller
   // mistake, not "no override" — silently falling back to DEFAULT_THEME
   // here would hide it. `undefined`/`null` (genuinely "no override") are

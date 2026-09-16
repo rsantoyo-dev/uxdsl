@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B2-01 y MIG-B2-02 completadas y verificadas; MIG-B2-03 a MIG-B2-05 pendientes. MIG-B2-02 deja explícitamente pendiente para MIG-B2-03 la decisión sobre duplicación de `generate-entry`'s `CORE_IMPORTS` (item 7) |
+| Estado | MIG-B2-01, MIG-B2-02 y MIG-B2-03 completadas y verificadas. MIG-B2-04: codemod ampliado y probado; ejemplos legacy de FEAT-001 y el mapeo de nombres corregidos (ver su sección); falta una revisión final de que toda la documentación de consumidor quede alineada a beta.2. MIG-B2-05: las 5 tarballs coordinadas, el flujo zero-config, el tema parcial con `references.externalTokens`, CSS Modules y los controles negativos pasan (`fixtures/mig-b2-05-release/`); lockfiles modificados validados con `npm ci` limpio en los 5 paquetes. Falta la aprobación explícita de publicación (fuera de alcance de esta implementación) |
 | Objetivo | Que un proyecto consumidor compile UXDSL con defaults sin conocer detalles internos del motor |
 | Versión objetivo | `0.5.0-beta.2` |
 | Prioridad | P0: configuración y tema; P1: `init`, migración y empaquetado |
@@ -46,8 +46,9 @@ los dos primeros y su estado se detalla en la story correspondiente:
   `externalTokens`; MIG-B2-01 ahora conecta esas opciones desde el CLI.
 - Los defaults están distribuidos en varios archivos generados. La generación
   de tema runtime todavía puede fallar si recibe `{}` como tema incompleto.
-- `uxdsl init` crea una configuración básica y un entry con imports de defaults,
-  pero no garantiza que un tema parcial se combine con un tema completo.
+- `uxdsl init` creaba históricamente una configuración básica y un entry con
+  imports de defaults; MIG-B2-02 y MIG-B2-03 ahora hacen que el plugin emita
+  el tema canónico y que el entry generado no duplique esos imports.
 - `npm run uxdsl:build:theme` no es un script proporcionado por este monorepo;
   la interfaz oficial actual es `uxdsl build`.
 
@@ -172,10 +173,11 @@ accionable (`Run "npx uxdsl init"...`) si no. `buildOnce` propaga
 (`loadConfig`, `findThemeConfigPath`, etc.) para poder probarlas sin
 depender de `process.exit`.
 
-Cobertura en `packages/uxdsl-cli/test/uxdsl-cli.test.js` (15 casos: los 10
-pedidos en "Pruebas requeridas" más la extensión `.json`, precedencia de
-`theme` inline vs. archivo, `themeFile` explícito, y los dos sub-casos del
-item 10 de implementación). Agregado a `npm test` de la raíz
+Cobertura en `packages/uxdsl-cli/test/uxdsl-cli.test.js` (15 casos de
+MIG-B2-01: los 10 pedidos en "Pruebas requeridas" más la extensión `.json`,
+precedencia de `theme` inline vs. archivo, `themeFile` explícito, y los dos
+sub-casos del item 10 de implementación; además hay un guard separado de
+MIG-B2-03 para `generate-entry`). Agregado a `npm test` de la raíz
 (`npm --prefix packages/uxdsl-cli test`) y a `packages/uxdsl-cli/package.json`
 como script `test`.
 
@@ -187,16 +189,10 @@ compila con éxito y emite `--uxdsl__font__ui: var(--font-geist-sans, Arial,
 sans-serif);` en el CSS resultante — el caso Next.js exacto que motiva esta
 historia.
 
-**Gap ya documentado, no resuelto aquí (es de MIG-B2-02):** el mismo `uxdsl
-build` con un tema `{}` vacío (o sin `typography_details.default`/`.code`)
-falla con `UXD_REFERENCE_MISSING` porque `default-typography.uxdsl` (import
-estático de `generate-entry`) asume esos dos roles definidos — es
-exactamente "la generación de tema runtime todavía puede fallar si recibe
-`{}` como tema incompleto" de la evidencia de arriba. MIG-B2-01 no cambia
-ese comportamiento; provee el archivo de tema y la propagación de
-`references` para que un tema *completo* (parcial en sus propios términos,
-no vacío) ya funcione hoy, mientras MIG-B2-02 resuelve el tema por defecto
-en sí.
+**Resuelto por MIG-B2-02/MIG-B2-03:** `uxdsl build` sin tema propio, incluido
+un tema vacío o un proyecto recién inicializado, usa el tema canónico y ya no
+depende de que `default-typography.uxdsl` sea importado manualmente para
+definir `typography_details.default`/`.code`.
 
 ### Historia
 
@@ -361,26 +357,15 @@ objetivo de esta historia), así que esa aserción se volvió estructuralmente
 incorrecta, no rota; se actualizó a una familia de palette que
 deliberadamente no tiene default (`palette(brand-custom.main)`) para seguir
 demostrando que el modo estricto rechaza lo que de verdad no está definido.
-Suite completa: 136/136. Verificado además contra la fixture de tarball real
-(`verify:consumer-fixture`) y la fixture de Next.js + Chrome
-(`verify:cssmodules-build`, incluye ahora verificación de estilos
-computados en navegador real vía Playwright/Chrome, agregada por una sesión
-concurrente) — ambas en verde.
+Suite completa: 137/137 en esta revisión. La verificación desde tarballs y la
+fixture de Next.js/CSS Modules/Chrome permanecen como gates de MIG-B2-05; no se
+marcan aquí como evidencia de esta ejecución.
 
-**Decisión explícita, no resuelta aquí (queda para MIG-B2-03):** el item 7
-("evitar que `generate-entry` importe los defaults por duplicado") no se
-tocó en esta historia. `generate-entry`'s `CORE_IMPORTS` sigue important
-los 10 archivos `default-*.uxdsl`/`.css` estáticos sin cambios. Con el
-tema por defecto ahora siempre resuelto, un proyecto `init`+`build` sin
-tema propio tendría AMBAS fuentes activas a la vez (los imports estáticos
-Y la emisión automática del plugin) — mismos valores hoy (no divergen,
-así que no es el bug que el item 7 advierte), pero sí trabajo duplicado en
-el CSS de salida. Dado que MIG-B2-03 es la historia que literalmente
-posee "hacer que `init` + `build` funcionen zero-config" y sus propios
-criterios de aceptación, la decisión de qué hacer con `CORE_IMPORTS`
-(dejar de importarlos, o detectar y no re-emitir) se toma y se prueba ahí,
-con el contexto completo del flujo `init` en la mesa — no como un efecto
-lateral de esta historia.
+**Decisión resuelta por MIG-B2-03:** se eligió la estrategia preferida del
+item 7: el plugin emite el tema por defecto y `generate-entry` ya no inserta
+los diez imports `default-*.uxdsl`/`.css`. Los imports públicos siguen
+disponibles para compatibilidad explícita; el entry generado para proyectos
+nuevos tiene una sola fuente de definiciones.
 
 ### Historia
 
@@ -498,6 +483,17 @@ npm run test
 ---
 
 ## MIG-B2-03 — `uxdsl init` y flujo zero-config
+
+**Implementado y verificado en este checkout:** `init` crea la configuración,
+el entry y los scripts faltantes sin sobrescribir archivos existentes; crea
+PostCSS solo para Next.js cuando falta; muestra la integración manual cuando
+ya existe; y deja el flujo Vite en una única ruta recomendada. `build` valida
+entry, output y propiedades de configuración con mensajes accionables.
+`generate-entry` deja de importar los packs legacy por defecto porque el
+plugin ya emite el tema canónico. La fixture real
+`fixtures/mig-b2-03-cli-init/run.js` cubre init/build, idempotencia, archivos
+preexistentes, Next.js, errores y variables namespaced, y está conectada al
+`npm test` raíz.
 
 ### Historia
 
@@ -652,6 +648,45 @@ sin ambigüedades para actualizar referencias directas y fuentes externas.
 
 ## MIG-B2-05 — Gate de integración, tarballs y release beta.2
 
+**Estado:** `fixtures/mig-b2-05-release/run.js` — empaqueta y prueba las 5
+tarballs coordinadas, el flujo zero-config (`init` + script de npm), un
+tema parcial con `references.externalTokens` (incluido el caso Next.js con
+fallback `var(--font-geist-sans, ...)`), paridad CLI/PostCSS/runtime,
+`includeTheme: false` sin `:root`, dos controles negativos (`references`
+faltantes y `palette(not-defined.main)`, ambos deben fallar con
+`UXD_REFERENCE_MISSING` y preservar la salida previa en lugar de escribir
+CSS roto) y la presencia de exports/manifest en el paquete instalado —
+todo en verde.
+
+> **Corrección (auditoría):** la comparación de paridad tras compilar
+> componentes reales (`.card { @ds-surface(contained); } .button {
+> @ds-button(contained primary 2); } ...`) comparaba **todas** las
+> declaraciones `--` del CSS compilado contra `runtime.generateThemeCss()`
+> — pero `@ds-button(... primary ...)`/`@ds-input(... primary ...)` con un
+> tono explícito escriben variables de "hook" con scope de componente
+> (`--uxdsl__button__tone-main`/`-dark`/`-contrast` directamente en el
+> selector `.button`, no en `:root`), que `generateThemeCss()` nunca
+> genera (no tiene noción de un uso concreto de `@ds-button`, solo de los
+> tokens del tema). La comparación fallaba en cuanto el entry usaba un
+> tono real, no porque el tema divergiera. Corregido filtrando a solo las
+> declaraciones con scope `:root` (`rule::root`, incluidos sus `@media`
+> anidados) antes de comparar — exactamente lo que `generateThemeCss()`
+> produce y nada más.
+>
+> También se validaron con `npm ci` (instalación limpia desde el
+> lockfile, sin reescritura posterior) los 5 lockfiles que el bump de
+> versión a `0.5.0-beta.2` modificó (`postcss-uxdsl`, `uxdsl-cli`,
+> `uxdsl-core`, `vite-plugin-uxdsl`, `uxdsl-webpack-loader`); los 5
+> instalan limpio.
+>
+> Hallazgo adicional (documentación, no bloqueante para el gate): el
+> comando `npm pack --dry-run --prefix packages/<paquete>` listado abajo
+> **no empaqueta el paquete indicado** — con `--prefix` sigue empaquetando
+> el `package.json` de la raíz del monorepo (`uxdsl@1.0.0`), no el del
+> subpaquete. La forma que sí empaqueta el paquete correcto es `(cd
+> packages/<paquete> && npm pack --dry-run)`. Corregido en "Comandos de
+> verificación" abajo.
+
 ### Historia
 
 Como mantenedor, quiero comprobar la experiencia desde paquetes instalados para
@@ -719,8 +754,16 @@ incluir además:
 
 ```bash
 git diff --check
-npm pack --dry-run --prefix packages/postcss-uxdsl
-npm pack --dry-run --prefix packages/uxdsl-cli
+node fixtures/mig-b2-05-release/run.js
+```
+
+Nota: `npm pack --dry-run --prefix packages/<paquete>` **no** empaqueta ese
+paquete — `--prefix` no cambia el objetivo de `pack`, así que termina
+empaquetando la raíz del monorepo (`uxdsl@1.0.0`). Usar en su lugar:
+
+```bash
+(cd packages/postcss-uxdsl && npm pack --dry-run)
+(cd packages/uxdsl-cli && npm pack --dry-run)
 ```
 
 ## Orden recomendado de implementación
@@ -740,16 +783,13 @@ instalación suave.
 
 ## Definition of done
 
-- [ ] Un proyecto nuevo compila con `init` + `build` usando defaults.
-- [ ] Un tema parcial se combina con un tema default completo.
-- [ ] `uxdsl.theme.config.cjs` se descubre y se carga de forma documentada.
-- [ ] `references.externalTokens` funciona desde CLI, PostCSS y runtime donde
-      corresponda.
-- [ ] No se emiten aliases legacy automáticos.
-- [ ] Los fallbacks de fuentes y referencias externas tienen pruebas.
-- [ ] El flujo empaquetado no depende del monorepo.
-- [ ] README, migration guide, CHANGELOG y manifest reflejan beta.2.
-- [ ] `npm test`, fixtures de consumidor, CSS Modules y `git diff --check`
-      pasan.
-- [ ] La publicación queda fuera de la implementación y requiere aprobación
-      explícita.
+- [x] Un proyecto nuevo compila con `init` + `build` usando defaults — verificado en un directorio temporal (MIG-B2-03) y desde las 5 tarballs reales (`fixtures/mig-b2-05-release/`, "installed CLI init + npm script build, zero-config runtime parity").
+- [x] Un tema parcial se combina con un tema default completo — `resolveTheme`/`DEFAULT_THEME` (MIG-B2-02), probado también desde tarball con un tema parcial real (spacing/palette/fonts) en MIG-B2-05.
+- [x] `uxdsl.theme.config.cjs` se descubre y se carga de forma documentada — MIG-B2-01, README de `uxdsl-cli`.
+- [x] `references.externalTokens` funciona desde CLI, PostCSS y runtime donde corresponda — probado en los tres desde tarball (`fixtures/mig-b2-05-release/`), incluido el caso Next.js `var(--font-geist-sans, ...)`.
+- [x] No se emiten aliases legacy automáticos — decisión tomada (sin aliases) y ya vigente desde el rename de MIG-08/FEAT-002.
+- [x] Los fallbacks de fuentes y referencias externas tienen pruebas — `default-theme.test.js`, `uxdsl-cli.test.js`, `mig-b2-05-release/run.js`.
+- [x] El flujo empaquetado no depende del monorepo — `fixtures/mig-b2-05-release/run.js` instala las 5 tarballs en un directorio aislado, sin symlinks ni resolución accidental a `src/`; confirmado también que cada `package-lock.json` modificado por el bump de versión instala limpio con `npm ci`.
+- [ ] README, migration guide, CHANGELOG y manifest reflejan beta.2 — el manifest (`uxdslVersion`), el CHANGELOG (`## 0.5.0-beta.2 — prepared, not published`) y el migration guide (título y tabla "de beta.1 a beta.2") ya están alineados; los ejemplos legacy de FEAT-001 que todavía mostraban nombres sin namespace se corrigieron en esta pasada. No se hizo una auditoría exhaustiva de *toda* la documentación de consumidor (playground, otros READMEs) — dejarlo marcado como pendiente hasta esa revisión final.
+- [x] `npm test`, fixtures de consumidor, CSS Modules y `git diff --check` pasan — `npm test` (root), `verify:consumer-fixture`, `verify:cssmodules-build`, `mig-b2-05-release/run.js` y `git diff --check` verificados en esta pasada.
+- [ ] La publicación queda fuera de la implementación y requiere aprobación explícita — respetado hasta ahora (nada de esta historia publicó nada); sigue pendiente por naturaleza hasta que se decida publicar beta.2, momento en el que requiere pedir aprobación explícita, no asumirla.

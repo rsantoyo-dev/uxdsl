@@ -105,15 +105,25 @@ function printHelp() {
   console.log(`Usage: uxdsl <command> [options]
 
 Commands:
-  build             Build CSS from UXDSL entry file
-  watch             Watch for changes and rebuild
-  init              Initialize UXDSL in the current project
-  generate-entry    Auto-generate an entry file importing all .uxdsl files
+  init              First-run setup: creates uxdsl.config.cjs, src/uxdsl-entry.uxdsl
+                    and (Next.js) postcss.config.js if they don't exist yet.
+                    Never overwrites an existing file. Run this once per project.
+  generate-entry    Run after adding or removing .uxdsl files.
+                    Re-scan a source directory and rewrite the entry file's
+                    @import list to match every .uxdsl file found.
+  build             Compile the entry file (from uxdsl.config.cjs, --config,
+                    or --entry/--out) into a single CSS file, once.
+  watch             Same as "build", then keep rebuilding as files change.
 
 Build/Watch Options:
   --entry, -e       Entry .uxdsl file that contains @import statements
   --out, -o         Output CSS file path
-  --config, -c      Path to configuration file (defaults to uxdsl.config.cjs)
+  --config, -c      Path to the build config file (default: discovers
+                    uxdsl.config.cjs/.js/.json in the current directory).
+                    A theme file (uxdsl.theme.config.cjs/.js/.json, or
+                    uxdsl.theme.json) is discovered the same way, next to
+                    whichever build config was used — see that package's
+                    README for the full contract.
   --watch, -w       (Build only) Rebuild on file changes
 
 Generate Entry Options:
@@ -123,8 +133,11 @@ Generate Entry Options:
 
 Examples:
   uxdsl init
+  uxdsl build
   uxdsl build --entry src/main.uxdsl --out dist/styles.css
   uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
+
+Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
 `);
 }
 
@@ -228,7 +241,17 @@ async function loadConfig(argv, cwd = process.cwd()) {
     if (configPath) {
       configModule = await loadModuleExport(configPath);
       if (!configModule || typeof configModule !== 'object') {
-        throw new Error(`Invalid configuration export in ${configPath}`);
+        throw new Error(`Invalid configuration export in ${configPath}: expected an object (or a function/promise resolving to one).`);
+      }
+      // MIG-B2-03 item 7: name the file AND the property, not just "invalid
+      // configuration" — these two are required for buildOnce to do
+      // anything at all, so catch a wrong type here instead of surfacing a
+      // confusing failure several steps later.
+      if (configModule.entry !== undefined && typeof configModule.entry !== 'string') {
+        throw new Error(`Invalid configuration in ${configPath}: "entry" must be a string path.`);
+      }
+      if (configModule.outFile !== undefined && typeof configModule.outFile !== 'string') {
+        throw new Error(`Invalid configuration in ${configPath}: "outFile" must be a string path.`);
       }
       const baseDir = path.dirname(configPath);
       resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
@@ -335,11 +358,19 @@ function normalizeBpMap(input) {
 }
 
 async function buildOnce(config) {
-  if (!config || !config.entry || !config.outFile) {
-      throw new Error('Invalid build configuration. Provide --entry and --out or a config file.');
+  // MIG-B2-03 item 7: each of these has a concrete, actionable fix, not a
+  // generic "invalid configuration".
+  if (!config || !config.entry) {
+    throw new Error('No entry file configured. Pass --entry <path>, or set "entry" in uxdsl.config.cjs (run "npx uxdsl init" to create one).');
+  }
+  if (!config.outFile) {
+    throw new Error('No output file configured. Pass --out <path>, or set "outFile" in uxdsl.config.cjs.');
+  }
+  if (!fs.existsSync(config.entry)) {
+    throw new Error(`Entry file not found: ${config.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
   }
   if (config.theme) console.log('[uxdsl] Theme config detected');
-  
+
   const source = fs.readFileSync(config.entry, 'utf8');
   const resolveImport = createImportResolver(config);
   const result = await postcss([
@@ -445,21 +476,6 @@ async function generateEntry(argv) {
 
   const outputDir = path.dirname(outFile);
   
-  // Default core imports
-  const CORE_IMPORTS = [
-    "@import 'postcss-uxdsl/theme/default-colors.css';",
-    "@import 'postcss-uxdsl/theme/default-palette.css';",
-    "@import 'postcss-uxdsl/theme/default-spacing.css';",
-    "@import 'postcss-uxdsl/theme/default-typography.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-densities.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-radii.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-shadows.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-borders.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-surfaces.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-buttons.uxdsl';",
-    "@import 'postcss-uxdsl/theme/default-inputs.uxdsl';",
-  ];
-
   // Prioritize certain files like theme definitions
   const PRIORITY_PATTERNS = ['theme-def', 'layout', 'app', 'variables'];
 
@@ -483,9 +499,10 @@ async function generateEntry(argv) {
   lines.push("/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */");
   lines.push(`/* Generated by uxdsl generate-entry */`);
   lines.push("");
-  lines.push("/* --- Core Library Imports --- */");
-  CORE_IMPORTS.forEach(imp => lines.push(imp));
-  lines.push("");
+  // MIG-B2-03: the PostCSS plugin emits the canonical default theme. Do not
+  // import the legacy default packs here as well, otherwise a fresh init
+  // produces duplicate declarations. The public postcss-uxdsl/theme/* files
+  // remain available for explicit compatibility imports.
   lines.push("/* --- Application & Component Imports --- */");
   importLines.forEach(item => lines.push(`@import '${item.path}';`));
   lines.push("");
@@ -499,7 +516,7 @@ async function generateEntry(argv) {
 
 async function init(argv) {
   const cwd = process.cwd();
-  const isNext = fs.existsSync(path.join(cwd, 'next.config.js')) || fs.existsSync(path.join(cwd, 'next.config.mjs'));
+  const isNext = ['next.config.js', 'next.config.mjs', 'next.config.ts'].some(file => fs.existsSync(path.join(cwd, file)));
   const isVite = fs.existsSync(path.join(cwd, 'vite.config.js')) || fs.existsSync(path.join(cwd, 'vite.config.ts'));
   
   console.log('[uxdsl] Initializing...');
@@ -539,32 +556,66 @@ async function init(argv) {
 
   // 3. Setup PostCSS (Required for Next.js, Optional/Good for Vite if not using plugin)
   // For Next.js, we must ensure postcss-uxdsl is in postcss.config.js
-  if (isNext) {
-    const postcssPath = path.join(cwd, 'postcss.config.js');
-    if (!fs.existsSync(postcssPath)) {
-      fs.writeFileSync(postcssPath, `module.exports = {
+  const POSTCSS_SNIPPET = `module.exports = {
   plugins: {
-    'postcss-uxdsl': {},
+    // The CLI-generated global CSS already contains the theme.
+    'postcss-uxdsl': { includeTheme: false },
   },
 };
-`);
-      console.log(`  -> Created postcss.config.js`);
+`;
+  if (isNext) {
+    const existingPostcss = ['postcss.config.js', 'postcss.config.cjs', 'postcss.config.mjs', 'postcss.config.json'].find(file => fs.existsSync(path.join(cwd, file)));
+    let esm = false;
+    try { esm = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json'), 'utf8')).type === 'module'; } catch (_) {}
+    const postcssPath = path.join(cwd, existingPostcss || (esm ? 'postcss.config.cjs' : 'postcss.config.js'));
+    if (!existingPostcss) {
+      fs.writeFileSync(postcssPath, POSTCSS_SNIPPET);
+      console.log(`  -> Created ${path.basename(postcssPath)}`);
     } else {
-      console.log(`  -> postcss.config.js exists. Please ensure 'postcss-uxdsl' is added to plugins.`);
+      // MIG-B2-03 item 5: never overwrite or append to an existing
+      // postcss.config.js (its plugin list, order and options are the
+      // project's own) — print the exact snippet to merge in by hand.
+      console.log(`  -> ${existingPostcss} already exists — not modified. For direct UXDSL compilation, merge these options using your config's module syntax:`);
+      console.log(POSTCSS_SNIPPET.trim().split('\n').map((l) => `       ${l}`).join('\n'));
     }
   }
 
-  // 4. Next Steps
+  // 4. package.json scripts — added only if absent, existing scripts of
+  // any name are never touched (MIG-B2-03 item 4).
+  const NEW_SCRIPTS = { 'uxdsl:build': 'uxdsl build', 'uxdsl:watch': 'uxdsl build --watch' };
+  const pkgPath = path.join(cwd, 'package.json');
+  let addedScripts = false;
+  if (fs.existsSync(pkgPath)) {
+    try {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+      pkg.scripts = pkg.scripts || {};
+      const missing = Object.entries(NEW_SCRIPTS).filter(([name]) => !(name in pkg.scripts));
+      if (missing.length) {
+        missing.forEach(([name, cmd]) => { pkg.scripts[name] = cmd; });
+        fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+        console.log(`  -> Added script(s) to package.json: ${missing.map(([name]) => name).join(', ')}`);
+        addedScripts = true;
+      } else {
+        console.log('  -> package.json already has uxdsl:build/uxdsl:watch scripts — not modified.');
+      }
+    } catch (err) {
+      console.log(`  -> Could not update package.json scripts (${err.message}). Add these by hand if you want them:`);
+      console.log(`       "uxdsl:build": "${NEW_SCRIPTS['uxdsl:build']}", "uxdsl:watch": "${NEW_SCRIPTS['uxdsl:watch']}"`);
+    }
+  }
+
+  // 5. Next Steps
+  const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
   console.log('\n[uxdsl] Initialization complete.');
   console.log('Next steps:');
+  console.log(`1. Import the generated CSS (once you run a build) — e.g.:`);
+  console.log(`   import './${outFileRel}';`);
+  console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
+  console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}`);
   if (isNext) {
-    console.log('1. Import the generated CSS in your layout (e.g., src/app/layout.tsx):');
-    console.log("   import '../uxdsl.css'; (or wherever your config.outFile points)");
-    console.log('2. Add "uxdsl build --watch" to your dev script if you want separate processing,');
-    console.log('   OR rely on PostCSS (recommended for Next.js).');
+    console.log('3. Next.js: import "../uxdsl.css" from src/app/layout.tsx. Run uxdsl:watch alongside next dev to rebuild this generated file.');
   } else if (isVite) {
-    console.log('1. Add "vite-plugin-uxdsl" to your vite.config.js plugins.');
-    console.log('2. Import your .uxdsl files directly in components.');
+    console.log('3. Vite: import the generated CSS and run uxdsl:watch alongside vite. For direct .uxdsl imports, use vite-plugin-uxdsl instead of the generated-CSS workflow.');
   }
   console.log('\nTry adding a file named "src/components/Button.uxdsl" and run:');
   console.log('  npx uxdsl generate-entry');

@@ -87,7 +87,7 @@ function updateDependencyRanges(pkgJson, depNames) {
   depNames.forEach((dep) => {
     fields.forEach((field) => {
       if (pkgJson[field] && pkgJson[field][dep]) {
-        pkgJson[field][dep] = `^${version}`;
+        pkgJson[field][dep] = version;
       }
     });
   });
@@ -230,6 +230,28 @@ packages.forEach((pkg) => {
 });
 
 if (skipPublish) {
+  // Before publishing, registry tarballs for this version do not exist yet.
+  // Development locks resolve coordinated packages to sibling checkouts;
+  // published manifests still declare exact registry versions. Never invent
+  // registry integrity hashes for artifacts that have not been published.
+  if (!dryRun) {
+    const byName = Object.fromEntries(packages.map(pkg => [pkg.name, readJson(path.join(rootDir, pkg.dir, 'package.json'))]));
+    for (const dir of [...packages.map(pkg => pkg.dir), 'packages/playground', 'packages/playground-nextjs']) {
+      const lockFile = path.join(rootDir, dir, 'package-lock.json');
+      if (!fs.existsSync(lockFile)) continue;
+      const lock = readJson(lockFile);
+      const own = readJson(path.join(rootDir, dir, 'package.json'));
+      lock.version = own.version;
+      Object.assign(lock.packages[''], { version: own.version, dependencies: own.dependencies, devDependencies: own.devDependencies });
+      for (const [name, pkg] of Object.entries(byName)) {
+        const key = `node_modules/${name}`, local = `../${name}`;
+        if (!lock.packages[key] && !lock.packages[local]) continue;
+        lock.packages[key] = { resolved: local, link: true };
+        lock.packages[local] = { version: pkg.version, license: pkg.license, dependencies: pkg.dependencies, devDependencies: pkg.devDependencies, peerDependencies: pkg.peerDependencies, bin: pkg.bin };
+      }
+      writeJson(lockFile, lock);
+    }
+  }
   console.log('Publish skipped.');
   process.exit(0);
 }

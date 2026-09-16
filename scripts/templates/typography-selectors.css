@@ -1,0 +1,38 @@
+/* Single opt-in gate for DS typography */
+.ds-typo {
+  font-family: var(--uxdsl__font__ui), sans-serif;
+  color: inherit;
+  margin-block-start: auto;
+  margin-block-end: auto;
+
+}
+
+/* Element-aware rules (low specificity via :where) */
+:where(h1).ds-typo { font-size: var(--uxdsl__typography__h1-size); font-weight: var(--uxdsl__typography__h1-weight, 700); font-family: var(--uxdsl__typography__h1-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h1-line); letter-spacing: var(--uxdsl__typography__h1-spacing); text-transform: var(--uxdsl__typography__h1-transform, none); text-decoration: var(--uxdsl__typography__h1-decoration, none); font-style: var(--uxdsl__typography__h1-style, normal); margin-block-start: var(--uxdsl__typography__h1-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h1-margin-block-end, auto); }
+:where(h2).ds-typo { font-size: var(--uxdsl__typography__h2-size); font-weight: var(--uxdsl__typography__h2-weight, 700); font-family: var(--uxdsl__typography__h2-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h2-line); letter-spacing: var(--uxdsl__typography__h2-spacing); text-transform: var(--uxdsl__typography__h2-transform, none); text-decoration: var(--uxdsl__typography__h2-decoration, none); font-style: var(--uxdsl__typography__h2-style, normal); margin-block-start: var(--uxdsl__typography__h2-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h2-margin-block-end, auto); }
+:where(h3).ds-typo { font-size: var(--uxdsl__typography__h3-size); font-weight: var(--uxdsl__typography__h3-weight, 600); font-family: var(--uxdsl__typography__h3-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h3-line); letter-spacing: var(--uxdsl__typography__h3-spacing); text-transform: var(--uxdsl__typography__h3-transform, none); text-decoration: var(--uxdsl__typography__h3-decoration, none); font-style: var(--uxdsl__typography__h3-style, normal); margin-block-start: var(--uxdsl__typography__h3-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h3-margin-block-end, auto); }
+:where(h4).ds-typo { font-size: var(--uxdsl__typography__h4-size); font-weight: var(--uxdsl__typography__h4-weight, 600); font-family: var(--uxdsl__typography__h4-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__h4-line); letter-spacing: var(--uxdsl__typography__h4-spacing); text-transform: var(--uxdsl__typography__h4-transform, none); text-decoration: var(--uxdsl__typography__h4-decoration, none); font-style: var(--uxdsl__typography__h4-style, normal); margin-block-start: var(--uxdsl__typography__h4-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h4-margin-block-end, auto); }
+:where(h5).ds-typo { font-size: var(--uxdsl__typography__h5-size); font-weight: var(--uxdsl__typography__h5-weight, 600); font-family: var(--uxdsl__typography__h5-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__h5-line); letter-spacing: var(--uxdsl__typography__h5-spacing); text-transform: var(--uxdsl__typography__h5-transform, none); text-decoration: var(--uxdsl__typography__h5-decoration, none); font-style: var(--uxdsl__typography__h5-style, normal); margin-block-start: var(--uxdsl__typography__h5-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h5-margin-block-end, auto); }
+:where(h6).ds-typo { font-size: var(--uxdsl__typography__h6-size); font-weight: var(--uxdsl__typography__h6-weight, 600); font-family: var(--uxdsl__typography__h6-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__h6-line); letter-spacing: var(--uxdsl__typography__h6-spacing); text-transform: var(--uxdsl__typography__h6-transform, none); text-decoration: var(--uxdsl__typography__h6-decoration, none); font-style: var(--uxdsl__typography__h6-style, normal); margin-block-start: var(--uxdsl__typography__h6-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__h6-margin-block-end, auto); }
+
+:where(p).ds-typo { font-size: var(--uxdsl__typography__p-size); line-height: var(--uxdsl__typography__p-line, normal); font-weight: var(--uxdsl__typography__p-weight, 400); font-family: var(--uxdsl__typography__p-font-family, var(--uxdsl__font__ui)); letter-spacing: var(--uxdsl__typography__p-spacing); text-transform: var(--uxdsl__typography__p-transform, none); text-decoration: var(--uxdsl__typography__p-decoration, none); font-style: var(--uxdsl__typography__p-style, normal); margin-block-start: var(--uxdsl__typography__p-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__p-margin-block-end, auto); }
+:where(span).ds-typo { font-size: var(--uxdsl__typography__span-size); font-weight: var(--uxdsl__typography__span-weight, 400); font-family: var(--uxdsl__typography__span-font-family, var(--uxdsl__font__ui)); line-height: var(--uxdsl__typography__span-line); letter-spacing: var(--uxdsl__typography__span-spacing); text-transform: var(--uxdsl__typography__span-transform, none); text-decoration: var(--uxdsl__typography__span-decoration, none); font-style: var(--uxdsl__typography__span-style, normal); margin-block-start: var(--uxdsl__typography__span-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__span-margin-block-end, auto); }
+:where(small).ds-typo { font-size: var(--uxdsl__typography__small-size); opacity: var(--uxdsl__typography__caption-opacity, 1); font-family: var(--uxdsl__typography__small-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__small-line); letter-spacing: var(--uxdsl__typography__small-spacing); text-transform: var(--uxdsl__typography__small-transform, none); text-decoration: var(--uxdsl__typography__small-decoration, none); font-style: var(--uxdsl__typography__small-style, normal); margin-block-start: var(--uxdsl__typography__small-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__small-margin-block-end, auto); }
+:where(.caption).ds-typo, :where(caption).ds-typo { font-size: var(--uxdsl__typography__caption-size); opacity: var(--uxdsl__typography__caption-opacity, 0.8); font-family: var(--uxdsl__typography__caption-font-family, var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))); line-height: var(--uxdsl__typography__caption-line); letter-spacing: var(--uxdsl__typography__caption-spacing); text-transform: var(--uxdsl__typography__caption-transform, none); text-decoration: var(--uxdsl__typography__caption-decoration, none); font-style: var(--uxdsl__typography__caption-style, normal); margin-block-start: var(--uxdsl__typography__caption-margin-block-start, auto); margin-block-end: var(--uxdsl__typography__caption-margin-block-end, auto); }
+:where(pre).ds-typo, :where(code).ds-typo { font-family: var(--uxdsl__typography__pre-font-family, var(--uxdsl__font__code)), monospace; font-size: var(--uxdsl__typography__pre-size); line-height: var(--uxdsl__typography__pre-line); }
+
+/* Attribute fallback for non-semantic tags */
+.ds-typo[data-typo="h1"] { @ds-typo(h1); }
+.ds-typo[data-typo="h2"] { @ds-typo(h2); }
+.ds-typo[data-typo="h3"] { @ds-typo(h3); }
+.ds-typo[data-typo="h4"] { @ds-typo(h4); }
+.ds-typo[data-typo="h5"] { @ds-typo(h5); }
+.ds-typo[data-typo="h6"] { @ds-typo(h6); }
+.ds-typo[data-typo="p"] { @ds-typo(p); }
+.ds-typo[data-typo="body"] { @ds-typo(body); }
+.ds-typo[data-typo="span"] { @ds-typo(span); }
+.ds-typo[data-typo="small"] { @ds-typo(small); }
+.ds-typo[data-typo="caption"] { @ds-typo(caption); }
+.ds-typo[data-typo="pre"] { @ds-typo(pre); }
+.ds-typo[data-typo="code"] { @ds-typo(code); }
+.ds-typo[data-typo="default"] { @ds-typo(default); }

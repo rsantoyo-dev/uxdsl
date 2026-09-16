@@ -50,6 +50,20 @@ test('MIG-B2-02: a partial theme keeps every non-overridden default and changes 
   assert.match(css, new RegExp(`--uxdsl__palette__surface-main: ${DEFAULT_THEME.palette.surface.main.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
 });
 
+test('MIG-B2-02: partial Typography, fonts and spacing overrides merge without dropping sibling defaults', () => {
+  const resolved = resolveTheme({
+    spacing: { 4: '2rem' },
+    fonts: { families: { ui: 'Custom UI, sans-serif' } },
+    typography_details: { default: { fontSize: '1.125rem' } },
+  });
+  assert.equal(resolved.spacing[4], '2rem');
+  assert.equal(resolved.spacing[5], DEFAULT_THEME.spacing[5]);
+  assert.equal(resolved.fonts.families.ui, 'Custom UI, sans-serif');
+  assert.equal(resolved.fonts.families.code, DEFAULT_THEME.fonts.families.code);
+  assert.equal(resolved.typography_details.default.fontSize, '1.125rem');
+  assert.equal(resolved.typography_details.code.fontSize, DEFAULT_THEME.typography_details.code.fontSize);
+});
+
 test('MIG-B2-02: spacing keys are normalized before merging, so a "space-N" override replaces the default instead of colliding with it', () => {
   const resolved = resolveTheme({ spacing: { 'space-1': '99px' } });
   assert.equal(resolved.spacing[1], '99px');
@@ -136,4 +150,27 @@ test('MIG-B2-02: resolving one theme does not leak into the next resolution or m
   copy.palette.primary.main = '#mutated';
   assert.notEqual(DEFAULT_THEME.palette.primary.main, '#mutated');
   assert.notEqual(resolveTheme().palette.primary.main, '#mutated');
+});
+
+test('MIG-B2-02: default headings and controls compile without legacy imports at every boundary', async () => {
+  const source = '.h { @ds-typo(h1); } .s { @ds-surface(contained); } .b { @ds-button(contained primary 2); } .i { @ds-input(outlined primary 2); }';
+  const result = await compile(source);
+  const runtime = postcss.parse(generateThemeCss());
+  const valueAt = (root, width) => {
+    let result;
+    root.walkDecls('--uxdsl__typography__h1-size', d => {
+      let active = true;
+      for (let p = d.parent; p; p = p.parent) if (p.type === 'atrule' && p.name === 'media') active = active && width >= Number(p.params.match(/min-width:\s*([\d.]+)/)[1]);
+      if (active) result = d.value;
+    });
+    return result;
+  };
+  for (const width of [479, 480, 481, 767, 768, 769, 1023, 1024, 1025, 1279, 1280, 1281]) {
+    const expected = `var(--uxdsl__space__${width >= 1280 ? 10 : width >= 1024 ? 9 : width >= 768 ? 8 : 7})`;
+    assert.equal(valueAt(result.root, width), expected);
+    assert.equal(valueAt(runtime, width), expected);
+  }
+  const component = await compile(source, { includeTheme: false });
+  assert.doesNotMatch(component.css, /:root/);
+  assert.throws(() => resolveTheme(new Date()), /UXD_THEME_INVALID/);
 });

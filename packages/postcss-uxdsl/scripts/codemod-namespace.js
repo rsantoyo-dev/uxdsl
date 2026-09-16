@@ -6,7 +6,9 @@
 const fs = require('node:fs');
 function migrate(source, explicit = {}) {
   const changes = [];
-  const output = source.replace(/--[a-zA-Z0-9_-]+/g, token => {
+  const output = source.replace(/--[a-zA-Z0-9_-]+/g, (token, offset) => {
+    // Quoted object keys are host-owned logical names, not CSS references.
+    if (/^["']\s*:/.test(source.slice(offset + token.length)) && /["']/.test(source[offset - 1] || '')) return token;
     let next = explicit[token];
     let match;
     if (Object.hasOwnProperty.call(explicit, token)) {
@@ -15,7 +17,8 @@ function migrate(source, explicit = {}) {
       return next;
     }
     if ((match = token.match(/^--ds__(palette|color)__(.+)$/))) next = `--uxdsl__${match[1]}__${match[2]}`;
-    else if ((match = token.match(/^--(space|density|radius|border|shadow|surface|button|input|font)-(.+)$/))) next = `--uxdsl__${match[1]}__${match[2]}`;
+    else if ((match = token.match(/^--font-(ui|ui-2|code)$/))) next = `--uxdsl__font__${match[1]}`;
+    else if ((match = token.match(/^--(space|density|radius|border|shadow|surface|button|input)-(.+)$/))) next = `--uxdsl__${match[1]}__${match[2]}`;
     else if ((match = token.match(/^--(h[1-6]|p|span|body|small|code|pre|caption|default|tag|body-sm|subtitle2)-(font-family|size|line|weight|spacing|transform|decoration|style|margin-block-start|margin-block-end)$/))) next = `--uxdsl__typography__${match[1]}-${match[2]}`;
     if (!next || token.startsWith('--uxdsl__')) return token;
     changes.push({ before: token, after: next });

@@ -2,6 +2,25 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## 0.5.0-beta.2 — prepared release
+
+The checkout prepares beta.2; publication is a separate step. After publication:
+
+```bash
+npm install -D uxdsl-cli@0.5.0-beta.2 postcss-uxdsl@0.5.0-beta.2
+npx uxdsl init
+npm run uxdsl:build
+```
+
+Import `src/uxdsl.css` once (from `src/app/layout.tsx`: `import '../uxdsl.css'`).
+Run `npm run uxdsl:watch` alongside the app's development server. After adding
+or removing `.uxdsl` files, run `npx uxdsl generate-entry`.
+No theme file is required. Optional `uxdsl.theme.config.cjs` supplies partial
+overrides, merged with canonical defaults by CLI, PostCSS and runtime.
+See the [beta.2 migration recipe](packages/postcss-uxdsl/docs/migration.md).
+`npm run verify:beta2` installs all five packages from fresh tarballs and tests
+zero-config, partial themes, host font variables and compiler/runtime parity.
+
 ## FEAT-002 migration verification
 
 The published 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
@@ -21,7 +40,7 @@ on `postcss-uxdsl`.
 
 VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
 and Input directives using generated shared-language metadata. CLI consumers
-must supply the same complete effective theme and regenerate their CSS when
+must use the same theme overrides across integrations and regenerate their CSS when
 adopting the namespace; no automatic legacy aliases are provided.
 
 `npm test` includes reference-integrity, migration and cascade regressions.
