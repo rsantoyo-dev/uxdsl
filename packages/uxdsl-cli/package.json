@@ -5,6 +5,9 @@
   "bin": {
     "uxdsl": "./bin/uxdsl.js"
   },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
   "keywords": [
     "UX-DSL",
     "CLI",

@@ -73,6 +73,20 @@ const CONFIG_CANDIDATES = [
   'uxdsl.config.json',
 ];
 
+// MIG-B2-01: build config (entry/outFile/watch/references) and theme
+// (tokens + the theme's own `references`) are discovered separately, so a
+// project can add `uxdsl.theme.config.cjs` without touching
+// `uxdsl.config.cjs` at all.
+const THEME_CANDIDATES = [
+  'uxdsl.theme.config.cjs',
+  'uxdsl.theme.config.js',
+  'uxdsl.theme.config.json',
+  'uxdsl.theme.json',
+];
+
+const DEFAULT_ENTRY_REL = path.join('src', 'uxdsl-entry.uxdsl');
+const DEFAULT_OUT_REL = path.join('src', 'uxdsl.css');
+
 function createImportResolver(config) {
   const entryDir = path.dirname(config.entry);
   return (id, basedir) => {
@@ -129,6 +143,49 @@ function findConfigPath(cwd) {
   return null;
 }
 
+function findThemeConfigPath(dir) {
+  for (const candidate of THEME_CANDIDATES) {
+    const full = path.resolve(dir, candidate);
+    if (fs.existsSync(full)) return full;
+  }
+  return null;
+}
+
+/** Same CommonJS/`default`-interop/async-function contract as the build
+ * config, applied to any config-shaped file. */
+async function loadModuleExport(filePath) {
+  let mod = require(filePath);
+  if (mod && typeof mod === 'object' && 'default' in mod) mod = mod.default;
+  if (typeof mod === 'function') mod = await mod();
+  return mod;
+}
+
+/** `uxdsl.theme.config.*`'s export is either `{ theme, references }`
+ * (recommended when there are external variables) or a bare theme object —
+ * distinguished by the presence of a `theme` or `references` key, not by
+ * guessing at the shape of theme data itself. Never lets a `references` key
+ * leak into the object that becomes `theme` (and, from there, generated
+ * CSS): a plain theme object legitimately could have a key literally named
+ * "theme" or "references" as a token family, but that's exactly the
+ * ambiguity this contract accepts as the tradeoff for two vs. three files. */
+function normalizeThemeExport(themeModule) {
+  if (
+    themeModule && typeof themeModule === 'object' && !Array.isArray(themeModule) &&
+    (Object.prototype.hasOwnProperty.call(themeModule, 'theme') || Object.prototype.hasOwnProperty.call(themeModule, 'references'))
+  ) {
+    return { theme: themeModule.theme, references: themeModule.references };
+  }
+  return { theme: themeModule, references: undefined };
+}
+
+async function loadThemeConfig(themeConfigPath) {
+  const themeModule = await loadModuleExport(themeConfigPath);
+  if (!themeModule || typeof themeModule !== 'object') {
+    throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
+  }
+  return normalizeThemeExport(themeModule);
+}
+
 function normalizeWatchGlobs(globs, cwd, entry) {
   if (Array.isArray(globs) && globs.length > 0) {
     return globs.map((glob) =>
@@ -142,53 +199,111 @@ function normalizeWatchGlobs(globs, cwd, entry) {
   ];
 }
 
-async function loadConfig(argv) {
-  const cwd = process.cwd();
+async function loadConfig(argv, cwd = process.cwd()) {
   const directEntry = argv.entry || argv.e;
   const directOut = argv.out || argv.o;
   const configPathArg = argv.config || argv.c;
+  const debug = !!process.env.UXDSL_DEBUG;
   let resolvedConfig = {};
+  let configPath = null;
+  let configModule = null;
+
   if (directEntry || directOut) {
     resolvedConfig.entry = resolvePath(directEntry, cwd);
     resolvedConfig.outFile = resolvePath(directOut, cwd);
     resolvedConfig.breakpoints = DEFAULT_BREAKPOINTS;
     resolvedConfig.watch = [];
   } else {
-    const configPath = configPathArg
-      ? resolvePath(configPathArg, cwd)
-      : findConfigPath(cwd);
-    if (!configPath) {
-      // Return defaults if no config found, but warn if building without explicit args
-      return null;
+    // MIG-B2-01 item 9: an explicit --config is never silently swapped for
+    // another file — a missing one is a hard, clearly-worded error, not a
+    // silent fall-through to "no config found".
+    if (configPathArg) {
+      configPath = resolvePath(configPathArg, cwd);
+      if (!fs.existsSync(configPath)) {
+        throw new Error(`Configuration file not found: ${configPath}`);
+      }
+    } else {
+      configPath = findConfigPath(cwd);
     }
-    let configModule = require(configPath);
-    if (configModule && typeof configModule === 'object' && 'default' in configModule) {
-      configModule = configModule.default;
+    if (configPath) {
+      configModule = await loadModuleExport(configPath);
+      if (!configModule || typeof configModule !== 'object') {
+        throw new Error(`Invalid configuration export in ${configPath}`);
+      }
+      const baseDir = path.dirname(configPath);
+      resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
+      resolvedConfig.outFile = resolvePath(configModule.outFile || configModule.output, baseDir);
+      resolvedConfig.breakpoints = configModule.breakpoints || DEFAULT_BREAKPOINTS;
+      resolvedConfig.watch = configModule.watch || [];
+      resolvedConfig.theme = configModule.theme;
+      resolvedConfig.references = configModule.references;
     }
-    if (typeof configModule === 'function') {
-      configModule = await configModule();
-    }
-    if (!configModule || typeof configModule !== 'object') {
-      throw new Error(`Invalid configuration export in ${configPath}`);
-    }
-    const baseDir = path.dirname(configPath);
-    resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
-    resolvedConfig.outFile = resolvePath(
-      configModule.outFile || configModule.output,
-      baseDir
-    );
-    resolvedConfig.breakpoints = configModule.breakpoints || DEFAULT_BREAKPOINTS;
-    resolvedConfig.watch = configModule.watch || [];
-    resolvedConfig.theme = configModule.theme;
   }
-  
+
+  // --- MIG-B2-01: theme file discovery, resolved relative to whichever
+  // file declares it (the build config's directory when one was found,
+  // the theme file's own directory otherwise), never the CLI package's. ---
+  const themeSearchDir = configPath ? path.dirname(configPath) : cwd;
+  let themeConfigPath = null;
+  if (configModule && configModule.themeFile) {
+    // `themeFile` wins over the conventional name and is resolved relative
+    // to the build config that declared it.
+    themeConfigPath = resolvePath(configModule.themeFile, themeSearchDir);
+    if (!fs.existsSync(themeConfigPath)) {
+      throw new Error(`themeFile not found: ${themeConfigPath}`);
+    }
+  } else if (!configModule || resolvedConfig.theme === undefined) {
+    // Only look for a conventional theme file when the build config didn't
+    // already declare `theme` inline — same "complete precedence" rule
+    // item 6 states for `references`, applied symmetrically to `theme` so
+    // there is one predictable rule instead of two.
+    themeConfigPath = findThemeConfigPath(themeSearchDir);
+  }
+
+  if (themeConfigPath) {
+    const { theme: fileTheme, references: fileReferences } = await loadThemeConfig(themeConfigPath);
+    if (resolvedConfig.theme === undefined) resolvedConfig.theme = fileTheme;
+    // Build config's `references` has complete precedence over the theme
+    // file's — never merged, matching item 6 exactly.
+    if (resolvedConfig.references === undefined) resolvedConfig.references = fileReferences;
+  }
+
+  // --- item 10: a theme file with no uxdsl.config.cjs at all still works,
+  // falling back to the conventional entry/output `init` would have
+  // created — but only if that entry actually exists; otherwise this is an
+  // actionable error, not a silent no-op. ---
+  if (!configModule && !resolvedConfig.entry && themeConfigPath) {
+    const defaultEntry = path.resolve(cwd, DEFAULT_ENTRY_REL);
+    if (!fs.existsSync(defaultEntry)) {
+      throw new Error(
+        `Found ${path.basename(themeConfigPath)} but no ${path.relative(cwd, defaultEntry)} and no uxdsl.config.cjs. ` +
+        'Run "npx uxdsl init" to create the conventional entry, or pass --entry/--out explicitly.'
+      );
+    }
+    resolvedConfig.entry = defaultEntry;
+    resolvedConfig.outFile = path.resolve(cwd, DEFAULT_OUT_REL);
+    resolvedConfig.breakpoints = DEFAULT_BREAKPOINTS;
+    resolvedConfig.watch = [];
+  }
+
+  if (!resolvedConfig.entry) {
+    // No build config, no direct --entry/--out, and no theme file either —
+    // same "nothing to build" signal callers already handle (print help).
+    return null;
+  }
+
+  if (debug) {
+    console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
+    console.log(`[uxdsl:debug] theme file: ${themeConfigPath || '(none)'}`);
+    console.log(`[uxdsl:debug] external tokens: ${JSON.stringify((resolvedConfig.references && resolvedConfig.references.externalTokens) || [])}`);
+  }
+
   // Final normalization
   if (resolvedConfig.entry && resolvedConfig.watch) {
-      resolvedConfig.watch = normalizeWatchGlobs(
-        resolvedConfig.watch,
-        process.cwd(),
-        resolvedConfig.entry
-      );
+    resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, cwd, resolvedConfig.entry);
+    if (themeConfigPath && !resolvedConfig.watch.includes(themeConfigPath)) {
+      resolvedConfig.watch.push(themeConfigPath);
+    }
   }
   return resolvedConfig;
 }
@@ -227,9 +342,10 @@ async function buildOnce(config) {
   const result = await postcss([
     postcssImport({ resolve: resolveImport }),
     postcssAdvancedVariables(),
-    uxdslPlugin({ 
+    uxdslPlugin({
       breakpoints: config.breakpoints || DEFAULT_BREAKPOINTS,
-      theme: config.theme
+      theme: config.theme,
+      references: config.references,
     }),
   ]).process(source, {
     from: config.entry,
@@ -512,4 +628,28 @@ async function main() {
   }
 }
 
-main();
+if (require.main === module) {
+  main();
+}
+
+// Exported for tests (bin/uxdsl.test.js): pure-ish normalization functions
+// that don't call process.exit, so they can be exercised directly instead
+// of spawning the CLI as a subprocess for every case.
+module.exports = {
+  CONFIG_CANDIDATES,
+  THEME_CANDIDATES,
+  DEFAULT_ENTRY_REL,
+  DEFAULT_OUT_REL,
+  findConfigPath,
+  findThemeConfigPath,
+  normalizeThemeExport,
+  loadThemeConfig,
+  loadConfig,
+  resolvePath,
+  normalizeWatchGlobs,
+  normalizeBpMap,
+  buildOnce,
+  init,
+  generateEntry,
+  main,
+};

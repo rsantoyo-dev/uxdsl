@@ -1,0 +1,676 @@
+# FEAT-003 — UXDSL 0.5.0-beta.2: instalación suave y tema por defecto
+
+| Campo | Valor |
+| --- | --- |
+| Estado | Propuesta lista para implementación |
+| Objetivo | Que un proyecto consumidor compile UXDSL con defaults sin conocer detalles internos del motor |
+| Versión objetivo | `0.5.0-beta.2` |
+| Prioridad | P0: configuración y tema; P1: `init`, migración y empaquetado |
+| Depende de | FEAT-002 y el contrato de [motores unificados](../architecture/unified-engine-audit.md) |
+
+## Objetivo del release
+
+Un proyecto nuevo debe poder ejecutar:
+
+```bash
+npm install -D uxdsl-cli postcss-uxdsl
+npx uxdsl init
+npx uxdsl build
+```
+
+y obtener CSS válido con el tema por defecto, sin crear manualmente una escala
+de Spacing, Palette, Typography, Borders, Radii, Shadows, Surfaces, Buttons o
+Inputs.
+
+Un proyecto con tema propio debe poder añadir únicamente sus overrides:
+
+```text
+uxdsl.config.cjs          # entry, output, watch y opciones de build
+uxdsl.theme.config.cjs    # overrides del tema y referencias externas
+```
+
+El consumidor no debe necesitar importar diez archivos `default-*.uxdsl` para
+obtener los defaults, ni debe perder las variables de Next.js por validación de
+build. Las importaciones legacy siguen soportadas durante beta.2, pero no son
+la ruta documentada para un proyecto nuevo.
+
+## Evidencia del estado actual
+
+La baseline contiene estos huecos confirmados:
+
+- El CLI solo descubre `uxdsl.config.cjs`, `uxdsl.config.js` y
+  `uxdsl.config.json`; no descubre `uxdsl.theme.config.cjs`.
+- El CLI lee `theme`, pero no propaga `references` al plugin PostCSS.
+- El motor y el runtime ya aceptan `ReferenceOptions`, incluidos
+  `externalTokens`, pero la integración CLI no los conecta.
+- Los defaults están distribuidos en varios archivos generados. La generación
+  de tema runtime todavía puede fallar si recibe `{}` como tema incompleto.
+- `uxdsl init` crea una configuración básica y un entry con imports de defaults,
+  pero no garantiza que un tema parcial se combine con un tema completo.
+- `npm run uxdsl:build:theme` no es un script proporcionado por este monorepo;
+  la interfaz oficial actual es `uxdsl build`.
+
+Archivos de referencia:
+
+- [CLI](../../packages/uxdsl-cli/bin/uxdsl.js)
+- [opciones del plugin](../../packages/postcss-uxdsl/src/index.ts)
+- [integridad referencial](../../packages/postcss-uxdsl/src/reference-integrity.ts)
+- [generador runtime](../../packages/postcss-uxdsl/src/ds-runtime/theme-generator.ts)
+- [guía de migración](../../packages/postcss-uxdsl/docs/migration.md)
+
+## Contrato común de beta.2
+
+### Separación entre configuración de build y tema
+
+`uxdsl.config.cjs` controla el proceso:
+
+```js
+const path = require('node:path');
+
+module.exports = {
+  entry: path.resolve('src/uxdsl-entry.uxdsl'),
+  outFile: path.resolve('src/uxdsl.css'),
+  watch: ['src/**/*.uxdsl', 'uxdsl.theme.config.cjs'],
+  references: {
+    externalTokens: ['--font-geist-sans', '--font-geist-mono']
+  }
+};
+```
+
+`uxdsl.theme.config.cjs` controla el tema. Puede exportar directamente un
+objeto de tema:
+
+```js
+module.exports = {
+  fonts: {
+    families: {
+      ui: 'var(--font-geist-sans, Arial, sans-serif)',
+      code: 'var(--font-geist-mono, ui-monospace, monospace)'
+    }
+  }
+};
+```
+
+También puede exportar explícitamente tema y referencias:
+
+```js
+module.exports = {
+  theme: {
+    fonts: {
+      families: {
+        ui: 'var(--font-geist-sans)',
+        code: 'var(--font-geist-mono)'
+      }
+    }
+  },
+  references: {
+    externalTokens: ['--font-geist-sans', '--font-geist-mono']
+  }
+};
+```
+
+La forma `{ theme, references }` es la recomendada cuando hay variables
+externas. Si `references` aparece tanto en `uxdsl.config.cjs` como en el tema,
+la configuración de build gana. Las listas se reemplazan completas; no se
+concatenan implícitamente.
+
+### Precedencia
+
+La resolución debe ser determinista:
+
+```text
+tema por defecto
+  <- tema del proyecto
+      <- overrides explícitos de la configuración de build
+```
+
+Los objetos anidados se combinan por clave. Arrays y valores escalares
+reemplazan el valor anterior. `references` no se considera parte de los tokens
+del tema y no debe emitirse como CSS.
+
+### Naming
+
+La migración de nombres continúa siendo explícita:
+
+```text
+--space-7       -> --uxdsl__space__7
+--font-ui       -> --uxdsl__font__ui
+--h1-size       -> --uxdsl__typography__h1-size
+```
+
+La sintaxis `space(7)`, `palette(primary.main)`, `radius(2)` y las directivas
+`@ds-*` no cambian.
+
+---
+
+## MIG-B2-01 — Descubrimiento de configuración y propagación de referencias
+
+**Implementado en este checkout** (`packages/uxdsl-cli/bin/uxdsl.js`):
+`THEME_CANDIDATES` (las 4 extensiones, en el orden especificado),
+`findThemeConfigPath`, `normalizeThemeExport` (distingue `{theme,
+references}` de un tema plano por la presencia de esas claves, nunca deja
+que `references` se filtre al objeto `theme`), y `loadConfig` reescrito
+para: descubrir el archivo de tema relativo al directorio del `uxdsl.config.*`
+que lo declara (o de `--config` cuando se usa explícitamente, nunca al cwd
+ni al paquete del CLI); dar precedencia completa a `references` (y, por
+simetría, a `theme`) del build config sobre el archivo de tema cuando
+ambos están presentes; soportar `themeFile` explícito; agregar el archivo
+de tema descubierto al `watch`; y (item 10) permitir compilar con
+`uxdsl.theme.config.cjs` solo, sin `uxdsl.config.cjs`, cayendo en el
+entry/output convencionales de `init` si existen, o fallando con un error
+accionable (`Run "npx uxdsl init"...`) si no. `buildOnce` propaga
+`config.references` al plugin, que antes se descartaba en silencio.
+`UXDSL_DEBUG=1` imprime qué config/tema se descubrió y la lista de
+`externalTokens` (nunca valores). `main()` quedó detrás de un guard
+`require.main === module` y el archivo exporta sus funciones puras
+(`loadConfig`, `findThemeConfigPath`, etc.) para poder probarlas sin
+depender de `process.exit`.
+
+Cobertura en `packages/uxdsl-cli/test/uxdsl-cli.test.js` (15 casos: los 10
+pedidos en "Pruebas requeridas" más la extensión `.json`, precedencia de
+`theme` inline vs. archivo, `themeFile` explícito, y los dos sub-casos del
+item 10 de implementación). Agregado a `npm test` de la raíz
+(`npm --prefix packages/uxdsl-cli test`) y a `packages/uxdsl-cli/package.json`
+como script `test`.
+
+**Verificado además con el binario real** (no solo las funciones
+exportadas): `uxdsl init` + `uxdsl build` con un `uxdsl.theme.config.cjs`
+completo (spacing 1-16, palette, `fonts.families` con `var(--font-geist-sans,
+...)`, `typography_details.default/code`, `references.externalTokens`)
+compila con éxito y emite `--uxdsl__font__ui: var(--font-geist-sans, Arial,
+sans-serif);` en el CSS resultante — el caso Next.js exacto que motiva esta
+historia.
+
+**Gap ya documentado, no resuelto aquí (es de MIG-B2-02):** el mismo `uxdsl
+build` con un tema `{}` vacío (o sin `typography_details.default`/`.code`)
+falla con `UXD_REFERENCE_MISSING` porque `default-typography.uxdsl` (import
+estático de `generate-entry`) asume esos dos roles definidos — es
+exactamente "la generación de tema runtime todavía puede fallar si recibe
+`{}` como tema incompleto" de la evidencia de arriba. MIG-B2-01 no cambia
+ese comportamiento; provee el archivo de tema y la propagación de
+`references` para que un tema *completo* (parcial en sus propios términos,
+no vacío) ya funcione hoy, mientras MIG-B2-02 resuelve el tema por defecto
+en sí.
+
+### Historia
+
+Como consumidor de UXDSL, quiero separar mi configuración de build de mi tema
+para que el CLI encuentre automáticamente `uxdsl.theme.config.cjs` y valide
+variables externas de mi framework.
+
+### Alcance
+
+Modificar el cargador de configuración del CLI. No cambiar la semántica del
+validador de referencias ni inferir variables externas automáticamente.
+
+### Implementación requerida
+
+1. Mantener los candidatos de configuración de build existentes:
+
+   ```text
+   uxdsl.config.cjs
+   uxdsl.config.js
+   uxdsl.config.json
+   ```
+
+2. Añadir candidatos de tema, en este orden:
+
+   ```text
+   uxdsl.theme.config.cjs
+   uxdsl.theme.config.js
+   uxdsl.theme.config.json
+   uxdsl.theme.json
+   ```
+
+3. Resolver paths relativos al directorio del archivo que los declara, no al
+   directorio del paquete CLI.
+
+4. Aceptar exports CommonJS, `default` interop y funciones async, igual que la
+   configuración de build actual.
+
+5. Normalizar el export del archivo de tema:
+
+   - si contiene `theme` o `references`, usar esos campos;
+   - si no, tratar el objeto completo como tema;
+   - no introducir `references` dentro del objeto enviado como `theme`.
+
+6. Leer `references` desde `uxdsl.config.*` y desde el archivo de tema.
+   Las referencias del build tienen precedencia completa sobre las del tema.
+
+7. Pasar al plugin todas las opciones relevantes:
+
+   ```js
+   uxdslPlugin({
+     breakpoints: resolvedConfig.breakpoints,
+     theme: resolvedConfig.theme,
+     references: resolvedConfig.references
+   });
+   ```
+
+8. En modo `UXDSL_DEBUG`, informar qué archivos fueron descubiertos y si se
+   cargaron referencias externas. No imprimir valores secretos; las listas de
+   nombres de variables sí son aceptables.
+
+9. Si se especifica `--config`, cargar exclusivamente ese archivo como
+   configuración de build; nunca sustituirlo silenciosamente por otro archivo.
+   Si esa configuración no contiene `theme` ni `themeFile`, buscar el candidato
+   de tema en el mismo directorio del archivo indicado. `themeFile`, cuando
+   exista, gana sobre el nombre convencional y se resuelve relativo al archivo
+   de build. Registrar esta regla en el código y en README.
+
+10. Si solo existe `uxdsl.theme.config.cjs`, conservar los defaults de entry y
+    output definidos por `init` cuando sea posible. Si no existe entry
+    convencional, producir un error accionable que indique cómo crearla.
+
+### Criterios de aceptación
+
+- Un proyecto con `uxdsl.config.cjs` y `uxdsl.theme.config.cjs` compila sin
+  importar manualmente el tema desde `uxdsl.config.cjs`.
+- `references.externalTokens` permite compilar una fuente que usa
+  `var(--font-geist-sans)` sin fallback.
+- Un token externo no declarado sigue produciendo `UXD_REFERENCE_MISSING`.
+- Una referencia en `uxdsl.theme.config.cjs` llega al plugin y no aparece como
+  una variable CSS emitida.
+- La configuración explícita de build gana sobre la configuración del tema.
+- Un archivo de tema que exporta directamente tokens continúa funcionando.
+- La ausencia de archivo de tema no rompe la compilación con defaults.
+- El CLI conserva el comportamiento de `--entry`, `--out`, `--config` y `--watch`.
+
+### Pruebas requeridas
+
+Crear pruebas de Node para el CLI, preferiblemente extrayendo funciones puras de
+normalización para no depender de `process.exit`:
+
+1. descubre cada extensión soportada;
+2. resuelve rutas relativas al proyecto;
+3. acepta `module.exports = theme`;
+4. acepta `module.exports = { theme, references }`;
+5. propaga `externalTokens` y permite una fuente con `var(--host-token)`;
+6. rechaza la misma fuente sin `externalTokens`;
+7. verifica precedencia de `references` del build;
+8. verifica que `theme.references` no se emite como token;
+9. verifica que `--config missing.cjs` falla con mensaje claro;
+10. verifica watch incluyendo el archivo de tema descubierto.
+
+Comando mínimo de verificación:
+
+```bash
+npm --prefix packages/postcss-uxdsl run build
+npm test
+```
+
+---
+
+## MIG-B2-02 — Fuente única del tema por defecto y merge de temas parciales
+
+### Historia
+
+Como consumidor de UXDSL, quiero configurar solo los tokens que necesito para
+que el resto provenga del tema por defecto y todas las integraciones generen el
+mismo CSS.
+
+### Alcance
+
+Crear una fuente canónica de datos de tema y hacer que PostCSS, runtime y CLI la
+usen. Los archivos `default-*.css` y `default-*.uxdsl` siguen existiendo como
+artefactos de compatibilidad generados.
+
+### Implementación requerida
+
+1. Inventariar los defaults actuales antes de moverlos. No cambiar valores,
+   breakpoints, nombres CSS ni rangos como parte de esta story.
+
+2. Crear una API browser-safe y clonable, por ejemplo:
+
+   ```ts
+   export const DEFAULT_THEME: Readonly<Record<string, any>>;
+   export function getDefaultTheme(): Record<string, any>;
+   export function resolveTheme(override?: unknown): Record<string, any>;
+   ```
+
+   El nombre exacto puede adaptarse al repositorio, pero debe existir una sola
+   fuente semántica. No duplicar mapas completos en CLI, playground y runtime.
+
+3. El tema por defecto debe cubrir las dependencias emitidas por los presets
+   actuales, como mínimo:
+
+   - Spacing 1–16;
+   - Density y breakpoints canónicos;
+   - Palette requerida por Surface, Button e Input;
+   - colores requeridos por Borders;
+   - Radii y Shadows usados por defaults;
+   - roles Typography y familias de fuente con fallback CSS válido.
+
+4. Implementar merge profundo con estas reglas:
+
+   - objetos: merge por clave;
+   - arrays: reemplazo completo;
+   - strings, números, booleanos y `null`: reemplazo;
+   - `undefined`: no sobrescribe;
+   - inputs inválidos: error estructurado, no corrección silenciosa.
+
+5. `generateThemeCss()` debe aceptar tema omitido o parcial y resolverlo contra
+   el tema por defecto antes de generar y validar.
+
+6. El plugin PostCSS debe resolver el mismo tema efectivo para sus mapas de
+   tokens y validación. `includeTheme: false` debe continuar sin emitir bloques
+   globales, pero validar contra el mismo tema efectivo.
+
+7. El CLI debe usar esta resolución. Si `generate-entry` deja imports legacy de
+   defaults, decidir y documentar una única estrategia para evitar duplicación:
+
+   - preferido: el plugin emite el tema por defecto y el entry generado deja de
+     importar los packs por defecto;
+   - alternativa compatible: detectar imports de defaults y no volver a
+     emitirlos automáticamente.
+
+   No aceptar una solución que produzca dos fuentes divergentes de valores.
+
+8. Mantener disponibles los imports públicos `postcss-uxdsl/theme/default-*` y
+   regenerarlos desde la fuente canónica. Ejecutar el generador correspondiente;
+   no editar los artefactos manualmente.
+
+9. Exportar la resolución desde `postcss-uxdsl/ds-runtime` para que una app
+   pueda construir el mismo tema efectivo durante SSR y runtime.
+
+### Criterios de aceptación
+
+- `generateThemeCss()` sin argumentos genera CSS válido y pasa validación
+  estricta.
+- `generateThemeCss({ palette: { primary: { main: '#123' } } })` conserva todos
+  los defaults no reemplazados y cambia solo `primary.main`.
+- Un array override reemplaza el array completo, según el contrato documentado.
+- PostCSS y `generateThemeCss` producen las mismas declaraciones semánticas para
+  el mismo tema efectivo.
+- El tema efectivo contiene nombres `--uxdsl__...`; no reaparecen aliases
+  legacy automáticos.
+- `includeTheme: false` no emite `:root`, pero acepta `space()`, `density()`,
+  `@ds-surface`, `@ds-button` y `@ds-input` contra el tema efectivo.
+- Un override con `palette(missing)` sigue fallando con
+  `UXD_REFERENCE_MISSING`.
+- La compilación de una app sin tema propio funciona con solo los defaults.
+- Los artefactos generados y el manifest no tienen drift.
+
+### Pruebas requeridas
+
+Añadir o ampliar pruebas del runtime y PostCSS:
+
+1. tema vacío: `generateThemeCss()` compila;
+2. tema parcial: merge de Palette, Typography, fonts y spacing;
+3. arrays reemplazados y `undefined` ignorado;
+4. objeto inválido rechazado;
+5. paridad de variables entre PostCSS y runtime;
+6. paridad de referencias responsive en 479/480/481, 767/768/769,
+   1023/1024/1025 y 1279/1280/1281;
+7. `includeTheme: false` sin `:root`;
+8. ausencia de fugas entre dos resoluciones consecutivas;
+9. generación de artefactos con `--uxdsl__`;
+10. drift check del manifest y metadata.
+
+Comandos mínimos:
+
+```bash
+npm --prefix packages/postcss-uxdsl test
+npm run generate:language
+npm run test:themes --prefix packages/playground-nextjs
+npm run test
+```
+
+---
+
+## MIG-B2-03 — `uxdsl init` y flujo zero-config
+
+### Historia
+
+Como desarrollador que instala UXDSL en una app nueva, quiero ejecutar `init`
+y después `build` sin ensamblar manualmente el entry ni conocer la estructura
+de los defaults.
+
+### Implementación requerida
+
+1. `uxdsl init` debe crear, sin sobreescribir archivos existentes:
+
+   ```text
+   uxdsl.config.cjs
+   src/uxdsl-entry.uxdsl
+   src/uxdsl.css       # puede crearse durante build, no necesariamente init
+   ```
+
+2. La configuración generada debe usar paths relativos al proyecto y contener
+   defaults de entry, output, breakpoints y watch.
+
+3. El entry generado debe ser válido aunque `src/` no contenga archivos `.uxdsl`
+   propios. Debe compilar el tema por defecto mediante la estrategia definida
+   en MIG-B2-02.
+
+4. Añadir scripts al `package.json` solo si no existen y sin modificar scripts
+   del usuario:
+
+   ```json
+   {
+     "uxdsl:build": "uxdsl build",
+     "uxdsl:watch": "uxdsl build --watch"
+   }
+   ```
+
+   Si modificar `package.json` se considera demasiado invasivo para el CLI,
+   dejar los scripts fuera de `init`, pero imprimir el bloque exacto y cubrirlo
+   en README. La decisión debe quedar documentada y testeada.
+
+5. Si el proyecto tiene Next.js, crear `postcss.config.js` solo cuando no
+   exista. Si existe, no sobrescribirlo; mostrar una instrucción precisa para
+   integrar UXDSL.
+
+6. Si el proyecto tiene Vite, no insertar simultáneamente loader y plugin que
+   procesen la misma entrada. Mostrar una única ruta recomendada.
+
+7. `uxdsl build` debe dar errores con solución concreta:
+
+   - entry inexistente: indicar `--entry` y el path esperado;
+   - output inválido: indicar `--out`;
+   - referencia faltante: mostrar código, consumidor y cadena;
+   - configuración inválida: indicar archivo y propiedad.
+
+8. Actualizar el help para distinguir claramente `init`, `build`, `watch` y
+   `generate-entry`.
+
+### Criterios de aceptación
+
+- En un directorio temporal vacío con un `package.json` mínimo, `uxdsl init`
+  crea los archivos esperados y termina con código cero.
+- Ejecutar `uxdsl build` inmediatamente después produce `src/uxdsl.css` válido.
+- El CSS contiene como mínimo variables namespaced de Spacing, Palette,
+  Typography, Radius, Shadow y Density.
+- Repetir `uxdsl init` no cambia archivos existentes.
+- Un `uxdsl.config.cjs` preexistente no se sobreescribe.
+- Un `postcss.config.js` preexistente no se sobreescribe ni se corrompe.
+- Un `src` sin componentes sigue siendo un caso válido.
+- La salida de `init` documenta el import CSS y el comando watch correctos.
+
+### Pruebas requeridas
+
+Crear una fixture de CLI en un directorio temporal o bajo `fixtures/` que:
+
+1. ejecute `init` en proyecto vacío;
+2. compruebe archivos y contenido;
+3. ejecute `build` real;
+4. inspeccione variables namespaced del CSS;
+5. ejecute `init` por segunda vez y compare hashes;
+6. preserve un `uxdsl.config.cjs` y `postcss.config.js` existentes;
+7. pruebe Next.js y Vite solo si las dependencias ya están disponibles;
+8. verifique mensajes de error para entry y configuración inválidos.
+
+El test debe usar el CLI del checkout o un tarball construido explícitamente,
+nunca resolver accidentalmente un `uxdsl-cli` global.
+
+---
+
+## MIG-B2-04 — Migración beta.1, codemod y documentación de consumidor
+
+### Historia
+
+Como equipo que migra desde beta.1, quiero una ruta automatizable y una guía
+sin ambigüedades para actualizar referencias directas y fuentes externas.
+
+### Implementación requerida
+
+1. Mantener `space(7)` y demás helpers sin cambios. Migrar únicamente nombres
+   CSS directos pertenecientes a UXDSL.
+
+2. Revisar el codemod de namespace para que cubra, con preview obligatorio:
+
+   ```text
+   --space-*        -> --uxdsl__space__*
+   --density-*      -> --uxdsl__density__*
+   --radius-*       -> --uxdsl__radius__*
+   --border-*       -> --uxdsl__border__*
+   --shadow-*       -> --uxdsl__shadow__*
+   --font-*         -> --uxdsl__font__*
+   --h1-size        -> --uxdsl__typography__h1-size
+   --ds__palette__* -> --uxdsl__palette__*
+   ```
+
+3. No cambiar automáticamente:
+
+   - claves lógicas de `theme.spacing`;
+   - claves de `theme.typography` plano elegidas por el host;
+   - variables externas ambiguas;
+   - nombres protegidos por `--map`.
+
+4. Documentar dos soluciones para fuentes Next:
+
+   - fallback CSS, válido sin configuración externa;
+   - `references.externalTokens`, válido cuando el host garantiza la variable.
+
+5. Actualizar README, migration guide, CHANGELOG y esta feature para que el
+   nombre canónico sea beta.2 y no exista el comando ficticio
+   `uxdsl:build:theme` como requisito general.
+
+6. Corregir ejemplos obsoletos de FEAT-001 que todavía muestran variables
+   `--space-*`, sin reescribir el historial de decisiones de beta.1.
+
+### Criterios de aceptación
+
+- Preview del codemod no modifica archivos.
+- `--write` modifica solo referencias seleccionadas.
+- Segunda ejecución es idempotente.
+- Un mapeo identidad protege una variable del host.
+- Fallbacks en `var()` pasan la validación sin declarar externals.
+- Variables externas sin fallback pasan solo cuando están declaradas.
+- La guía contiene una receta completa desde beta.1 hasta beta.2.
+- La documentación distingue tema parcial, tema completo y CSS legacy.
+
+### Pruebas requeridas
+
+- ampliar `namespace-migration.test.js` con Typography y fonts;
+- cubrir `--space-4` hasta `--space-10` en valores directos;
+- cubrir referencias dentro de JSON, CSS y `externalTokens`;
+- probar preview, write e idempotencia;
+- probar fallback válido y fallback ausente;
+- ejecutar `git diff --check` sobre el resultado documentado.
+
+---
+
+## MIG-B2-05 — Gate de integración, tarballs y release beta.2
+
+### Historia
+
+Como mantenedor, quiero comprobar la experiencia desde paquetes instalados para
+que beta.2 no funcione solo por aliases o `dist` stale del monorepo.
+
+### Implementación requerida
+
+1. Construir `postcss-uxdsl` antes de empaquetarlo.
+
+2. Construir y probar el CLI usando la versión empaquetada de
+   `postcss-uxdsl`, no una ruta accidental a `src/`.
+
+3. Añadir una fixture de consumidor con:
+
+   ```text
+   uxdsl.config.cjs
+   uxdsl.theme.config.cjs
+   src/uxdsl-entry.uxdsl
+   ```
+
+   La fixture debe usar un tema parcial, una referencia externa de fuente y al
+   menos una directiva `@ds-surface`, un `@ds-button` y un `@ds-input`.
+
+4. Verificar que PostCSS, runtime y CLI reciben el mismo tema efectivo.
+
+5. Ejecutar pruebas de CSS Modules con una entrada global y entradas de
+   componentes `includeTheme: false`. No permitir `:root` en los módulos.
+
+6. Mantener control negativo: un token desconocido debe fallar y no ser
+   convertido en un fallback inventado.
+
+7. Sincronizar versiones de los paquetes publicables a `0.5.0-beta.2`, revisar
+   dependencias internas, exports, README, CHANGELOG y lockfiles. Usar el
+   mecanismo de release del repositorio; no editar versiones generadas a mano
+   si el script las administra.
+
+8. No publicar automáticamente como parte de esta story. La publicación y el
+   tag npm requieren una aprobación separada.
+
+### Criterios de aceptación
+
+- Una instalación desde tarball reproduce el flujo zero-config.
+- Una instalación desde tarball reproduce el flujo con tema parcial.
+- `references.externalTokens` funciona desde el CLI instalado.
+- El CSS generado desde paquete instalado usa `--uxdsl__...`.
+- La fixture de Next/CSS Modules pasa en los breakpoints definidos.
+- PostCSS y runtime no divergen en valores, estados o temas.
+- El paquete publicado contiene los defaults y exports requeridos.
+- No hay dependencia accidental de archivos del monorepo.
+
+### Comandos de verificación
+
+Ejecutar desde la raíz:
+
+```bash
+npm test
+npm run verify:consumer-fixture
+npm run verify:cssmodules-build
+npm run generate:language
+npm --prefix packages/uxdsl-vscode run compile
+```
+
+Añadir comandos específicos del CLI cuando se cree su suite. El gate final debe
+incluir además:
+
+```bash
+git diff --check
+npm pack --dry-run --prefix packages/postcss-uxdsl
+npm pack --dry-run --prefix packages/uxdsl-cli
+```
+
+## Orden recomendado de implementación
+
+No empezar por cambiar versiones. El orden es:
+
+1. MIG-B2-01 — cargar config/tema y propagar `references`;
+2. MIG-B2-02 — resolver tema por defecto y temas parciales;
+3. MIG-B2-03 — hacer `init` realmente ejecutable;
+4. MIG-B2-04 — actualizar codemod y documentación;
+5. MIG-B2-05 — probar tarballs y preparar release.
+
+Cada story debe mantener verdes las pruebas anteriores. Si una decisión de
+compatibilidad cambia los valores actuales, detenerse y registrar una story
+separada; beta.2 no debe esconder cambios visuales bajo la etiqueta de
+instalación suave.
+
+## Definition of done
+
+- [ ] Un proyecto nuevo compila con `init` + `build` usando defaults.
+- [ ] Un tema parcial se combina con un tema default completo.
+- [ ] `uxdsl.theme.config.cjs` se descubre y se carga de forma documentada.
+- [ ] `references.externalTokens` funciona desde CLI, PostCSS y runtime donde
+      corresponda.
+- [ ] No se emiten aliases legacy automáticos.
+- [ ] Los fallbacks de fuentes y referencias externas tienen pruebas.
+- [ ] El flujo empaquetado no depende del monorepo.
+- [ ] README, migration guide, CHANGELOG y manifest reflejan beta.2.
+- [ ] `npm test`, fixtures de consumidor, CSS Modules y `git diff --check`
+      pasan.
+- [ ] La publicación queda fuera de la implementación y requiere aprobación
+      explícita.

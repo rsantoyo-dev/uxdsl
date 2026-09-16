@@ -61,7 +61,76 @@ If `breakpoints` is omitted, CLI uses UXDSL shared defaults:
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
 
-### 2. Running the CLI
+### 2. Theme configuration (`uxdsl.theme.config.cjs`)
+
+Keep your theme separate from build settings by adding a theme config file
+next to `uxdsl.config.cjs`. The CLI discovers it automatically — no import
+needed in `uxdsl.config.cjs`:
+
+```text
+uxdsl.theme.config.cjs   (or .js / .json, or uxdsl.theme.json)
+```
+
+It can export the theme directly:
+
+```js
+module.exports = {
+  fonts: { families: { ui: 'var(--font-geist-sans, Arial, sans-serif)' } },
+};
+```
+
+...or `{ theme, references }` explicitly — the recommended form once you
+reference a host variable UXDSL doesn't define itself, such as a
+framework-injected font variable:
+
+```js
+module.exports = {
+  theme: {
+    fonts: { families: { ui: 'var(--font-geist-sans)' } },
+  },
+  references: {
+    externalTokens: ['--font-geist-sans'],
+  },
+};
+```
+
+`references.externalTokens` tells the reference-integrity check (on by
+default — see `postcss-uxdsl`'s README) that a variable with no fallback is
+guaranteed by the host, instead of failing the build with
+`UXD_REFERENCE_MISSING`. If `references` is declared in **both**
+`uxdsl.config.cjs` and the theme file, the build config's value wins
+completely (they are not merged):
+
+```js
+// uxdsl.config.cjs
+module.exports = {
+  entry: './src/uxdsl-entry.uxdsl',
+  outFile: './src/uxdsl.css',
+  references: { externalTokens: ['--font-geist-sans', '--font-geist-mono'] },
+};
+```
+
+A custom path can be pointed to explicitly with `themeFile` in
+`uxdsl.config.cjs` (resolved relative to that config file, taking priority
+over the conventional name):
+
+```js
+module.exports = {
+  entry: './src/uxdsl-entry.uxdsl',
+  outFile: './src/uxdsl.css',
+  themeFile: './config/brand-theme.cjs',
+};
+```
+
+The theme file is added to the watch list automatically. Set `UXDSL_DEBUG=1`
+to see which config and theme files were discovered, and which external
+tokens were loaded (never their values):
+
+```bash
+UXDSL_DEBUG=1 npx uxdsl build
+```
+
+### 3. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:
 
@@ -73,7 +142,7 @@ npx uxdsl build
 npx uxdsl build --watch
 ```
 
-### 3. CLI Arguments (No Config)
+### 4. CLI Arguments (No Config)
 
 You can also skip the config file and pass paths directly via command line arguments:
 
