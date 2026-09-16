@@ -79,6 +79,15 @@ FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 through MIG-B2-05:
 - A `theme` that isn't `undefined`/`null` or a plain object now throws
   `UXD_THEME_INVALID` instead of being silently ignored.
 
+### Visual changes
+
+- Added retroactively (FEAT-004/MIG-B3-05): `h2`/`h3`'s default `line-height`
+  became responsive — `h2: xs(1.2) md(1.15)`, `h3: xs(1.3) md(1.25)`,
+  instead of the flat `1.2`/`1.3` every other beta used. Only projects with
+  no `typography_details.h2`/`.h3` override of their own are affected. This
+  shipped in beta.2 without a changelog note; recorded here once a beta.2
+  consumer's migration report surfaced it as an unannounced visual change.
+
 ## 0.5.0-beta.1 — 2026-09-15
 
 - FEAT-002: explicit namespace migration included in 0.5.0-beta.1, with

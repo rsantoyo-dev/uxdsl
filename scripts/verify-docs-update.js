@@ -38,6 +38,19 @@ function getPublishablePackages() {
     }));
 }
 
+// MIG-B3-05 (FEAT-004): these files define the *default* visual output any
+// consumer with no override of the affected tokens/tags actually sees —
+// beta.2 changed h2/h3's line-height here with no changelog note, and it
+// took a consumer's own migration report to surface it. A change here is a
+// visual change, not an ordinary code change, so it gets its own stricter
+// requirement: the package's actual CHANGELOG.md, not just any README.
+const VISUAL_DEFAULT_FILES = [
+  'packages/postcss-uxdsl/src/default-theme.ts',
+  'packages/postcss-uxdsl/src/typography-defaults.ts',
+  'packages/postcss-uxdsl/src/typography.ts',
+];
+const VISUAL_DEFAULT_CHANGELOG = 'packages/postcss-uxdsl/CHANGELOG.md';
+
 function isCodeChangeInPackage(relFile, pkgRel) {
   if (!relFile.startsWith(`${pkgRel}/`)) return false;
   const local = relFile.slice(pkgRel.length + 1);
@@ -95,6 +108,17 @@ function main() {
       console.error(`  - ${pkg.rel}/ (stage ${pkg.readme} or README.md)`);
     });
     console.error('\nTip: include at least one docs note per package change to keep npm consumers informed.');
+    process.exit(1);
+  }
+
+  const touchedVisualFiles = VISUAL_DEFAULT_FILES.filter((f) => stagedFiles.includes(f));
+  if (touchedVisualFiles.length > 0 && !stagedFiles.includes(VISUAL_DEFAULT_CHANGELOG)) {
+    console.error('\n❌ Visual-default change without a CHANGELOG note.');
+    console.error(`You changed a file that defines default visual output, but ${VISUAL_DEFAULT_CHANGELOG} was not staged:`);
+    touchedVisualFiles.forEach((f) => console.error(`  - ${f}`));
+    console.error('\nA change here alters compiled output for any consumer with no override of the affected');
+    console.error('tokens/tags. Add a "### Visual changes" entry (see 0.5.0-beta.2\'s entry in the CHANGELOG for');
+    console.error('the format) — even a small tweak, since a consumer diffing compiled CSS is how this was found.');
     process.exit(1);
   }
 

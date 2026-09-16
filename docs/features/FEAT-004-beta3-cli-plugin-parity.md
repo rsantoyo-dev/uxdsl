@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Propuesta. Ninguna story implementada. Baseline verificado contra el código publicado en `0.5.0-beta.2` |
+| Estado | MIG-B3-01 a MIG-B3-05 implementadas y probadas (unitarias, subprocess real de `uxdsl watch`, y un guard nuevo en `verify-docs-update.js`). Falta MIG-B3-06 (fixture de release con las 5 tarballs) y la aprobación explícita de publicación |
 | Objetivo | Que todo lo que el plugin sabe hacer sea alcanzable desde el CLI, y que el tema resuelto sea inspeccionable |
 | Versión objetivo | `0.5.0-beta.3` |
 | Prioridad | P0: puente de opciones CLI→plugin; P1: entradas múltiples, diagnóstico de tema; P2: política de cambios visuales |
@@ -242,8 +242,13 @@ y qué vino de los defaults de la librería, sin diffear CSS compilado.
 - `uxdsl theme` sin tema de proyecto imprime `DEFAULT_THEME` íntegro.
 - `uxdsl theme --diff` con un override de `fonts.families.ui` muestra esa ruta
   como `[project]` y no lista el resto.
-- `uxdsl theme --strict` falla en un proyecto que define `colors.brand` pero
-  hereda el resto de `colors`, y pasa cuando la familia está completa.
+- `uxdsl theme --strict` falla en un proyecto que define `palette.primary`
+  pero deja el resto de `palette` (surface/neutral/error, y
+  primary.dark/contrast) sin declarar, heredado de `DEFAULT_THEME`; pasa
+  cuando la familia está completa. La procedencia es por presencia en el
+  tema crudo del proyecto, no por igualdad de valor — un valor que
+  coincide con el default sigue siendo del proyecto si el proyecto lo
+  escribió.
 - La salida es JSON parseable (sin logs mezclados en stdout).
 
 ## MIG-B3-05 — Política de cambios visuales en defaults (P2)

@@ -7,7 +7,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "npm --prefix packages/postcss-uxdsl test && npm --prefix packages/uxdsl-core test && npm --prefix packages/uxdsl-cli test && node fixtures/mig-b2-03-cli-init/run.js && node --test fixtures/mig07-consumer/test/*.test.js && node scripts/generate-language-artifacts.js --check",
+    "test": "npm --prefix packages/postcss-uxdsl test && npm --prefix packages/uxdsl-core test && npm --prefix packages/uxdsl-cli test && node fixtures/mig-b2-03-cli-init/run.js && node --test fixtures/mig07-consumer/test/*.test.js && node --test scripts/verify-docs-update.test.js && node scripts/generate-language-artifacts.js --check",
     "generate:language": "npm --prefix packages/postcss-uxdsl run build && node scripts/generate-language-artifacts.js",
     "prepare": "husky",
     "verify:docs": "node scripts/verify-docs-update.js",
