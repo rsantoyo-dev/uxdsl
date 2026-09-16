@@ -16,6 +16,28 @@ const cli = require('../bin/uxdsl.js');
 const uxdslPluginModule = require('postcss-uxdsl');
 const uxdslPlugin = uxdslPluginModule.default || uxdslPluginModule;
 
+function captureWarnings(fn) {
+  const original = console.warn;
+  const messages = [];
+  console.warn = (...args) => { messages.push(args.join(' ')); };
+  try {
+    return { result: fn(), messages };
+  } finally {
+    console.warn = original;
+  }
+}
+
+async function captureWarningsAsync(fn) {
+  const original = console.warn;
+  const messages = [];
+  console.warn = (...args) => { messages.push(args.join(' ')); };
+  try {
+    return { result: await fn(), messages };
+  } finally {
+    console.warn = original;
+  }
+}
+
 function mkTmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-test-'));
 }
@@ -209,4 +231,180 @@ test('MIG-B2-03: generated entries rely on the canonical plugin theme instead of
   const generated = fs.readFileSync(outFile, 'utf8');
   assert.doesNotMatch(generated, /postcss-uxdsl\/theme\/default-/);
   assert.match(generated, /components\/Button\.uxdsl/);
+});
+
+// --- MIG-B3-01 (FEAT-004): includeTheme/breakpoints reach the plugin ---
+// Root cause fixed here: `buildOnce` used to hand the plugin a hardcoded
+// three-key allowlist (breakpoints/theme/references) with breakpoints
+// eagerly defaulted before the theme was even resolved. `includeTheme` was
+// unreachable from the CLI, and `theme.breakpoints` (already supported by
+// the plugin) was permanently shadowed by that eager default.
+
+test('MIG-B3-01: resolveIncludeTheme — flag overrides config, config overrides the true default', () => {
+  assert.equal(cli.resolveIncludeTheme(undefined, undefined), true);
+  assert.equal(cli.resolveIncludeTheme(undefined, false), false);
+  assert.equal(cli.resolveIncludeTheme(undefined, true), true);
+  assert.equal(cli.resolveIncludeTheme(true, false), true);
+  assert.equal(cli.resolveIncludeTheme(false, true), false);
+});
+
+test('MIG-B3-01: resolveBreakpoints — config wins over theme, theme wins over defaults, both merge partially', () => {
+  const defaults = cli.resolveBreakpoints(undefined, undefined);
+  assert.deepEqual(defaults, { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 });
+
+  const themeOnly = cli.resolveBreakpoints(undefined, { xl: 1440 });
+  assert.deepEqual(themeOnly, { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1440 });
+
+  const configWins = cli.resolveBreakpoints({ xl: 1600 }, { xl: 1440, sm: 500 });
+  assert.deepEqual(configWins, { xs: 0, sm: 500, md: 768, lg: 1024, xl: 1600 });
+});
+
+test('MIG-B3-01: "includeTheme" in uxdsl.config.cjs reaches loadConfig\'s resolved config', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  assert.equal(config.includeTheme, false);
+});
+
+test('MIG-B3-01: --no-include-theme overrides a config that declares includeTheme: true', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({ 'include-theme': false }, dir);
+  assert.equal(config.includeTheme, false);
+});
+
+test('MIG-B3-01: a non-boolean "includeTheme" in uxdsl.config.cjs is a hard, actionable error', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: 'yes' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(() => cli.loadConfig({}, dir), /"includeTheme" must be a boolean/);
+});
+
+test('MIG-B3-01: a theme-declared breakpoint reaches loadConfig\'s resolved breakpoints', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { breakpoints: { xl: 1440 } };`);
+  const config = await cli.loadConfig({}, dir);
+  assert.equal(config.breakpoints.xl, 1440);
+  assert.equal(config.breakpoints.sm, 480, 'unrelated breakpoints keep their default');
+});
+
+test('MIG-B3-01: uxdsl.config.cjs breakpoints win over the theme file\'s on the same key', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', breakpoints: { xl: 1600 } };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { breakpoints: { xl: 1440 } };`);
+  const config = await cli.loadConfig({}, dir);
+  assert.equal(config.breakpoints.xl, 1600);
+});
+
+test('MIG-B3-01: buildOnce with includeTheme: false emits no :root and no #uxdsl-bp-meta marker', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
+  const config = await cli.loadConfig({}, dir);
+  config.theme = FULL_THEME;
+  await cli.buildOnce(config);
+  const css = fs.readFileSync(config.outFile, 'utf8');
+  assert.doesNotMatch(css, /:root/);
+  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
+  assert.doesNotMatch(css, /@uxdsl-bp/);
+});
+
+test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root and the #uxdsl-bp-meta marker', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
+  const config = await cli.loadConfig({}, dir);
+  config.theme = FULL_THEME;
+  await cli.buildOnce(config);
+  const css = fs.readFileSync(config.outFile, 'utf8');
+  assert.match(css, /:root/);
+  assert.match(css, /#uxdsl-bp-meta/);
+});
+
+test('MIG-B3-01: a theme entry and a component entry compiled separately compose without any duplicate definitions', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
+  const themeConfig = await cli.loadConfig({ entry: path.join(dir, 'theme.uxdsl'), out: path.join(dir, 'theme.css') }, dir);
+  themeConfig.theme = FULL_THEME;
+  themeConfig.includeTheme = true;
+  await cli.buildOnce(themeConfig);
+  const panelConfig = await cli.loadConfig({ entry: path.join(dir, 'panel.uxdsl'), out: path.join(dir, 'panel.css') }, dir);
+  panelConfig.theme = FULL_THEME;
+  panelConfig.includeTheme = false;
+  await cli.buildOnce(panelConfig);
+
+  const combined = fs.readFileSync(themeConfig.outFile, 'utf8') + '\n' + fs.readFileSync(panelConfig.outFile, 'utf8');
+  const rootCount = (combined.match(/:root/g) || []).length;
+  const bpMetaCount = (combined.match(/#uxdsl-bp-meta/g) || []).length;
+  assert.ok(rootCount > 0, 'the theme entry must still define :root');
+  assert.equal(bpMetaCount, 1, `expected exactly one #uxdsl-bp-meta across both entries; got ${bpMetaCount}`);
+  // The component entry's own reference (@ds-surface) must still resolve —
+  // includeTheme: false only skips emitting definitions, not validation.
+  assert.match(panelConfig && fs.readFileSync(panelConfig.outFile, 'utf8'), /background/);
+});
+
+test('MIG-B3-01: includeTheme: false still fails with UXD_REFERENCE_MISSING for an unknown token', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'src/entry.uxdsl', `.x { color: shadow(nonexistent); }`);
+  const config = await cli.loadConfig({}, dir);
+  config.theme = FULL_THEME;
+  await assert.rejects(() => cli.buildOnce(config), /UXD_SHADOW_REFERENCE|UXD_REFERENCE_MISSING/);
+});
+
+// --- MIG-B3-03 (FEAT-004): theme-file/build-config collision diagnostic ---
+// Without a "theme" or "references" key, a theme file's entire export
+// becomes "the theme" (see normalizeThemeExport) — a uxdsl.config.cjs
+// accidentally copied/renamed to a theme-file name silently "worked" with
+// its entry/outFile/watch keys quietly ignored as unknown tokens.
+
+test('MIG-B3-03: warnIfLooksLikeBuildConfig warns when a theme export has no theme/references key but has build-config keys', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnIfLooksLikeBuildConfig({ entry: './src/entry.uxdsl', outFile: './src/out.css' }, '/project/uxdsl.theme.config.cjs')
+  );
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /uxdsl\.theme\.config\.cjs/);
+  assert.match(messages[0], /"entry"/);
+  assert.match(messages[0], /"outFile"/);
+});
+
+test('MIG-B3-03: warnIfLooksLikeBuildConfig stays silent for the { theme, references } shape even with build-config-named keys', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnIfLooksLikeBuildConfig({ theme: { watch: 'not-actually-a-family' }, references: undefined }, '/project/uxdsl.theme.config.cjs')
+  );
+  assert.deepEqual(messages, []);
+});
+
+test('MIG-B3-03: warnIfLooksLikeBuildConfig stays silent for a bare theme object with no build-config-shaped keys', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnIfLooksLikeBuildConfig({ fonts: { families: { ui: 'Inter' } } }, '/project/uxdsl.theme.config.cjs')
+  );
+  assert.deepEqual(messages, []);
+});
+
+test('MIG-B3-03: loadConfig surfaces the collision warning for a real theme file shaped like a build config', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  // A build-config file accidentally saved under the theme-file name.
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { entry: './other/entry.uxdsl', outFile: './other/out.css', watch: [] };`);
+  const { messages } = await captureWarningsAsync(() => cli.loadConfig({}, dir));
+  assert.ok(messages.some((m) => /looks like a build config/.test(m)), `expected a collision warning; got ${JSON.stringify(messages)}`);
+});
+
+test('MIG-B3-03: the same theme-file shape only warns once per session (no per-rebuild spam)', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { entry: './other/entry.uxdsl' };`);
+  const { messages: first } = await captureWarningsAsync(() => cli.loadConfig({}, dir));
+  assert.equal(first.length, 1);
+  const { messages: second } = await captureWarningsAsync(() => cli.loadConfig({}, dir));
+  assert.deepEqual(second, [], 'a second loadConfig call with the identical shape must not warn again');
 });

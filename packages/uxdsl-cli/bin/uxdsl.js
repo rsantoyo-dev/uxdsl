@@ -125,6 +125,13 @@ Build/Watch Options:
                     whichever build config was used — see that package's
                     README for the full contract.
   --watch, -w       (Build only) Rebuild on file changes
+  --include-theme, --no-include-theme
+                    Emit (or skip) the global :root token definitions.
+                    Defaults to true. Pass --no-include-theme for a
+                    component/CSS-Module entry that only consumes tokens
+                    a separate includeTheme entry already defines — see
+                    postcss-uxdsl's includeTheme option. Overrides
+                    "includeTheme" in uxdsl.config.cjs when passed.
 
 Generate Entry Options:
   --src             Source directory to scan (default: ./src)
@@ -191,11 +198,60 @@ function normalizeThemeExport(themeModule) {
   return { theme: themeModule, references: undefined };
 }
 
+// MIG-B3-03 (FEAT-004): keys that only make sense on a build config
+// (uxdsl.config.cjs), never on theme data. Used only as a heuristic for the
+// warning below — not an exhaustive/validated list, since a real theme
+// family could coincidentally use one of these names.
+const BUILD_CONFIG_SHAPED_KEYS = ['entry', 'outFile', 'output', 'watch', 'themeFile', 'plugins', 'builds'];
+
+/** A theme file with no `theme`/`references` key has its entire export
+ * treated as theme data (see normalizeThemeExport's own doc) — so a
+ * uxdsl.config.cjs accidentally renamed/copied to a theme-file name
+ * silently "works" (no throw anywhere), with its entry/outFile/watch keys
+ * quietly ignored as unknown theme tokens. This is a warning, not an
+ * error: a project could legitimately have a token family literally named
+ * "watch" or "plugins", and warning-then-continuing costs nothing there. */
+// MIG-B3-03 item 3: `loadThemeConfig` re-runs on every rebuild in watch
+// mode — without dedup this warning would repeat on every keystroke.
+// Keyed by path so an unrelated project (or a second theme file) still
+// gets its own warning, and cleared/replaced when the shape actually
+// changes so a later-introduced or later-fixed collision is still caught.
+const warnedBuildConfigShapes = new Map();
+
+function warnIfLooksLikeBuildConfig(themeModule, themeConfigPath) {
+  if (
+    Object.prototype.hasOwnProperty.call(themeModule, 'theme') ||
+    Object.prototype.hasOwnProperty.call(themeModule, 'references')
+  ) {
+    warnedBuildConfigShapes.delete(themeConfigPath); // Fixed since a previous warning, if any.
+    return; // Unambiguous shape (the { theme, references } form) — nothing to warn about.
+  }
+  const suspects = BUILD_CONFIG_SHAPED_KEYS.filter((key) =>
+    Object.prototype.hasOwnProperty.call(themeModule, key)
+  );
+  if (suspects.length === 0) {
+    warnedBuildConfigShapes.delete(themeConfigPath);
+    return;
+  }
+  const signature = suspects.join(',');
+  if (warnedBuildConfigShapes.get(themeConfigPath) === signature) return; // Same shape already warned this session.
+  warnedBuildConfigShapes.set(themeConfigPath, signature);
+  const keyList = suspects.map((k) => `"${k}"`).join(', ');
+  console.warn(
+    `[uxdsl] Warning: ${themeConfigPath} looks like a build config (found ${keyList}), but has no ` +
+    '"theme" or "references" key, so it is being treated entirely as theme data — ' +
+    `${suspects.length > 1 ? 'those keys are' : 'that key is'} silently ignored as unknown tokens. ` +
+    'If this is really a theme file, wrap your data as { theme: { ... } }. ' +
+    'If it is a build config, rename it away from uxdsl.theme.config.*/uxdsl.theme.json.'
+  );
+}
+
 async function loadThemeConfig(themeConfigPath) {
   const themeModule = await loadModuleExport(themeConfigPath);
   if (!themeModule || typeof themeModule !== 'object') {
     throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
   }
+  warnIfLooksLikeBuildConfig(themeModule, themeConfigPath);
   return normalizeThemeExport(themeModule);
 }
 
@@ -221,10 +277,16 @@ async function loadConfig(argv, cwd = process.cwd()) {
   let configPath = null;
   let configModule = null;
 
+  // Raw, unresolved values tracked across every branch below and combined
+  // into `resolvedConfig.breakpoints`/`includeTheme` in one place, once the
+  // theme (and thus `theme.breakpoints`) is known — see resolveBreakpoints/
+  // resolveIncludeTheme above for why this can't happen eagerly per-branch.
+  let rawBreakpoints;
+  let rawIncludeTheme;
+
   if (directEntry || directOut) {
     resolvedConfig.entry = resolvePath(directEntry, cwd);
     resolvedConfig.outFile = resolvePath(directOut, cwd);
-    resolvedConfig.breakpoints = DEFAULT_BREAKPOINTS;
     resolvedConfig.watch = [];
   } else {
     // MIG-B2-01 item 9: an explicit --config is never silently swapped for
@@ -253,10 +315,18 @@ async function loadConfig(argv, cwd = process.cwd()) {
       if (configModule.outFile !== undefined && typeof configModule.outFile !== 'string') {
         throw new Error(`Invalid configuration in ${configPath}: "outFile" must be a string path.`);
       }
+      // MIG-B3-01: same treatment as entry/outFile above — a wrong type
+      // here used to be silently swallowed by the plugin's own `!== false`
+      // check (a typo'd string or number reads as "true"), which is a
+      // confusing way to discover a config mistake.
+      if (configModule.includeTheme !== undefined && typeof configModule.includeTheme !== 'boolean') {
+        throw new Error(`Invalid configuration in ${configPath}: "includeTheme" must be a boolean.`);
+      }
       const baseDir = path.dirname(configPath);
       resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
       resolvedConfig.outFile = resolvePath(configModule.outFile || configModule.output, baseDir);
-      resolvedConfig.breakpoints = configModule.breakpoints || DEFAULT_BREAKPOINTS;
+      rawBreakpoints = configModule.breakpoints;
+      rawIncludeTheme = configModule.includeTheme;
       resolvedConfig.watch = configModule.watch || [];
       resolvedConfig.theme = configModule.theme;
       resolvedConfig.references = configModule.references;
@@ -305,7 +375,6 @@ async function loadConfig(argv, cwd = process.cwd()) {
     }
     resolvedConfig.entry = defaultEntry;
     resolvedConfig.outFile = path.resolve(cwd, DEFAULT_OUT_REL);
-    resolvedConfig.breakpoints = DEFAULT_BREAKPOINTS;
     resolvedConfig.watch = [];
   }
 
@@ -314,6 +383,13 @@ async function loadConfig(argv, cwd = process.cwd()) {
     // same "nothing to build" signal callers already handle (print help).
     return null;
   }
+
+  // MIG-B3-01: resolved once the theme is known, not eagerly per-branch
+  // above — see resolveBreakpoints/resolveIncludeTheme for why order
+  // matters here. A `--include-theme`/`--no-include-theme` flag always
+  // wins over the build config's own `includeTheme`.
+  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints);
+  resolvedConfig.includeTheme = resolveIncludeTheme(argv['include-theme'], rawIncludeTheme);
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -346,6 +422,33 @@ async function loadConfig(argv, cwd = process.cwd()) {
   resolvedConfig.configPath = configPath;
   resolvedConfig.themeConfigPath = themeConfigPath;
   return resolvedConfig;
+}
+
+// MIG-B3-01 (FEAT-004): `--include-theme`/config `includeTheme` and
+// `--config`'s/theme's `breakpoints` both need one resolution point,
+// applied after the theme is known, instead of being resolved eagerly
+// inside `loadConfig`'s three separate "found a config" branches — that
+// eager resolution is exactly why `theme.breakpoints` (already supported
+// and validated by the plugin) was permanently shadowed by
+// `config.breakpoints || DEFAULT_BREAKPOINTS`: the fallback ran before
+// there was ever a theme to consult.
+function resolveIncludeTheme(flagValue, configValue) {
+  if (typeof flagValue === 'boolean') return flagValue;
+  if (typeof configValue === 'boolean') return configValue;
+  return true;
+}
+
+// Config-level breakpoints and theme-level breakpoints both merge onto
+// DEFAULT_BREAKPOINTS (config wins key-for-key on collision), mirroring
+// the partial-merge semantics beta.2 already established for the theme
+// itself — a project can override just `xl` without repeating `xs`/`sm`/
+// `md`/`lg`. `normalizeBpMap` already accepts every BreakpointSpec shape
+// (map, array of pairs, array of {name,min|px}), so both inputs reuse it.
+function resolveBreakpoints(configBreakpoints, themeBreakpoints) {
+  const merged = { ...DEFAULT_BREAKPOINTS };
+  if (themeBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(themeBreakpoints));
+  if (configBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(configBreakpoints));
+  return merged;
 }
 
 function normalizeBpMap(input) {
@@ -383,7 +486,13 @@ async function buildOnce(config) {
   if (!fs.existsSync(config.entry)) {
     throw new Error(`Entry file not found: ${config.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
   }
-  if (config.theme) console.log('[uxdsl] Theme config detected');
+  // MIG-B3-01: `includeTheme` defaults to true, matching the plugin's own
+  // default — an omitted config/flag means "this entry defines the theme".
+  const includeTheme = config.includeTheme !== false;
+  // Don't claim a theme was "detected" (i.e. will be emitted) for an entry
+  // that only uses it to resolve/validate references against — that's
+  // exactly what includeTheme: false means.
+  if (config.theme && includeTheme) console.log('[uxdsl] Theme config detected');
 
   const source = fs.readFileSync(config.entry, 'utf8');
   const resolveImport = createImportResolver(config);
@@ -394,6 +503,7 @@ async function buildOnce(config) {
       breakpoints: config.breakpoints || DEFAULT_BREAKPOINTS,
       theme: config.theme,
       references: config.references,
+      includeTheme,
     }),
   ]).process(source, {
     from: config.entry,
@@ -401,13 +511,22 @@ async function buildOnce(config) {
     syntax: postcssScss,
   });
 
-  // Inject breakpoint metadata for runtime
-  const bpMap = normalizeBpMap(config.breakpoints || DEFAULT_BREAKPOINTS);
-  const bpJson = JSON.stringify(bpMap);
-  const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
-  // Also inject a marker rule for CSSOM detection
-  const bpMarker = `#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
-  const finalCss = result.css + '\n' + bpMeta + '\n' + bpMarker;
+  // Breakpoint metadata is global-theme information (consumed by the
+  // runtime to detect the active breakpoint from the CSSOM) — it belongs
+  // to the entry that defines the theme, not to every component entry
+  // compiled against it. Forwarding `includeTheme: false` naively without
+  // this guard would trade one duplication (global `:root`, fixed by
+  // includeTheme itself) for another: a `#uxdsl-bp-meta` marker per
+  // component entry.
+  let finalCss = result.css;
+  if (includeTheme) {
+    const bpMap = normalizeBpMap(config.breakpoints || DEFAULT_BREAKPOINTS);
+    const bpJson = JSON.stringify(bpMap);
+    const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
+    // Also inject a marker rule for CSSOM detection
+    const bpMarker = `#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
+    finalCss = finalCss + '\n' + bpMeta + '\n' + bpMarker;
+  }
 
   fs.mkdirSync(path.dirname(config.outFile), { recursive: true });
   fs.writeFileSync(config.outFile, finalCss, 'utf8');
@@ -786,11 +905,14 @@ module.exports = {
   findConfigPath,
   findThemeConfigPath,
   normalizeThemeExport,
+  warnIfLooksLikeBuildConfig,
   loadThemeConfig,
   loadConfig,
   resolvePath,
   normalizeWatchGlobs,
   normalizeBpMap,
+  resolveIncludeTheme,
+  resolveBreakpoints,
   buildOnce,
   startWatch,
   clearRequireCache,

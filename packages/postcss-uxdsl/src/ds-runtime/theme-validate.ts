@@ -21,6 +21,18 @@ export type ThemeValidationResult<TTheme extends Record<string, any>> = {
   warnings: ThemeValidationIssue[];
 };
 
+// MIG-B3-03 (FEAT-004): every top-level theme family this validator (or the
+// compiler/generator it wraps) actually reads. A family outside this list
+// is either a typo (`color` instead of `colors`) or a stray field left over
+// from copy-pasting a build config into a theme file — both currently pass
+// through silently and end up nowhere, since nothing consumes an unknown
+// key. Kept in one place so a new family added elsewhere doesn't need a
+// second edit here to stop warning about itself.
+const KNOWN_THEME_FAMILIES = new Set([
+  'breakpoints', 'spacing', 'palette', 'fonts', 'colors', 'typography_details',
+  'densities', 'inputs', 'buttons', 'surfaces', 'shadows', 'borders', 'radii',
+]);
+
 function isPlainObject(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -334,6 +346,20 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
       } else errors.push({ path: 'theme', message: cause instanceof Error ? cause.message : String(cause) });
     }
   }
+  // MIG-B3-03: an unknown top-level family is exactly the "silent fallback"
+  // gap that lets a theme-file/build-config collision (or a plain typo like
+  // `color` for `colors`) go unnoticed — nothing consumes the key, so it
+  // neither errors nor visibly does anything. A warning, not an error: this
+  // validator has no way to distinguish "typo" from "a family this version
+  // doesn't know about yet" from "genuinely unused scratch data".
+  if (isPlainObject(input)) {
+    Object.keys(input).forEach((key) => {
+      if (!KNOWN_THEME_FAMILIES.has(key)) {
+        warnings.push({ path: key, message: `Unknown theme family "${key}" — it will not be compiled into any CSS.` });
+      }
+    });
+  }
+
   return {
     ok: errors.length === 0,
     theme: theme as TTheme,

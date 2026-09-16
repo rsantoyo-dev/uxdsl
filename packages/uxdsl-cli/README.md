@@ -144,7 +144,44 @@ tokens were loaded (never their values):
 UXDSL_DEBUG=1 npx uxdsl build
 ```
 
-### 3. Running the CLI
+If a theme file has no `theme` or `references` key, its entire export is
+treated as theme data (see the two forms above). If that export also has
+build-config-shaped keys (`entry`, `outFile`, `watch`, `themeFile`,
+`plugins`, `builds`) — typically a `uxdsl.config.cjs` accidentally saved
+under the theme-file name — the CLI prints a warning naming the file and
+the stray keys instead of silently ignoring them as unknown tokens.
+
+### 3. Multiple entries, one shared theme (`includeTheme`)
+
+`postcss-uxdsl`'s `includeTheme` option (see that package's README) reaches
+`uxdsl build`/`watch` directly, so a theme entry and any number of
+component/CSS-Module entries can each be built with the CLI, without a
+custom PostCSS pipeline:
+
+```bash
+npx uxdsl build --entry src/theme.uxdsl   --out src/theme.css
+npx uxdsl build --entry src/panel-a.uxdsl --out src/panel-a.css --no-include-theme
+```
+
+`--include-theme`/`--no-include-theme` always overrides `includeTheme` in
+`uxdsl.config.cjs`; the config's own value is the default when the flag is
+omitted, and `true` is the default when neither is set. With
+`--no-include-theme`, the entry still validates every `space()`/`palette()`/
+`@ds-surface`/`@ds-button`/`@ds-input` reference against the theme — it just
+skips writing the global `:root` definitions and the runtime breakpoint
+marker (`#uxdsl-bp-meta`), both of which belong to the one entry that does
+define the theme.
+
+`breakpoints` can now come from either `uxdsl.config.cjs` or the theme
+file — both merge onto the shared defaults (config wins key-for-key), the
+same partial-override contract the theme itself already has:
+
+```js
+// uxdsl.theme.config.cjs
+module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaults
+```
+
+### 4. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:
 
@@ -165,7 +202,7 @@ so the CLI's own write never re-triggers itself, including after changing
 without restarting the CLI. Local modules required by the config are reloaded
 too; include their source paths in `watch` to trigger a rebuild when edited.
 
-### 4. CLI Arguments (No Config)
+### 5. CLI Arguments (No Config)
 
 You can also skip the config file and pass paths directly via command line arguments:
 

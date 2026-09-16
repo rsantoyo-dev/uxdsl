@@ -6,6 +6,31 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
+## 0.5.0-beta.3 — prepared, not published
+
+FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 and MIG-B3-03 so far:
+
+- `uxdsl build`/`watch` (uxdsl-cli) now forward `includeTheme` to the plugin
+  (`--include-theme`/`--no-include-theme`, or `includeTheme` in
+  `uxdsl.config.cjs`) — it was previously unreachable from the CLI, forcing
+  every CLI build to emit global `:root` even for a component/CSS-Module
+  entry meant to only consume tokens.
+- `theme.breakpoints` (already supported and validated by the plugin) is no
+  longer permanently shadowed by the CLI's own `config.breakpoints ||
+  DEFAULT_BREAKPOINTS` fallback — config and theme breakpoints now merge
+  onto the shared defaults, config winning key-for-key.
+- The CLI's `#uxdsl-bp-meta` runtime marker and `@uxdsl-bp` comment are
+  emitted once, by the entry that has `includeTheme: true`, instead of once
+  per compiled entry.
+- `validateAndNormalizeTheme` (`postcss-uxdsl/ds-runtime`) now warns about
+  any top-level theme key it doesn't recognize, instead of silently
+  ignoring it — catches a typo (`color` for `colors`) or a build config
+  accidentally saved under a theme-file name.
+- `uxdsl.theme.config.*`/`uxdsl.theme.json` files shaped like a build config
+  (no `theme`/`references` key, but `entry`/`outFile`/`watch`/... present)
+  now print a CLI warning naming the file and the stray keys, deduplicated
+  across watch-mode rebuilds.
+
 ## 0.5.0-beta.2 — 2026-09-16
 
 FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 through MIG-B2-05:

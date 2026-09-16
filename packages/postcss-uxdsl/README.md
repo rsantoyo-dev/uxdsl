@@ -301,6 +301,18 @@ own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
 `DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
 (Spacing, Palette) those defaults depend on but that had none of their own.
 
+### Unknown theme families (`validateAndNormalizeTheme`)
+
+`postcss-uxdsl/ds-runtime`'s `validateAndNormalizeTheme(theme)` — the
+validator behind the playground's theme editor — warns (`result.warnings`,
+not `result.errors`) about any top-level key it doesn't recognize
+(`breakpoints`, `spacing`, `palette`, `fonts`, `colors`,
+`typography_details`, `densities`, `inputs`, `buttons`, `surfaces`,
+`shadows`, `borders`, `radii`). An unrecognized key is silently unused —
+nothing compiles it into CSS — so this catches a typo (`color` instead of
+`colors`) or a stray field left over from copy-pasting the wrong file, that
+would otherwise produce no error and no visible effect at all.
+
 ---
 
 ## Verified from a real install
