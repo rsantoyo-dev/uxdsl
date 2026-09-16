@@ -273,17 +273,29 @@ async function loadThemeConfig(themeConfigPath) {
   return normalizeThemeExport(themeModule);
 }
 
-function normalizeWatchGlobs(globs, cwd, entry) {
+// `entryOrEntries` is a single path for a single-entry config, or (MIG-B3-02)
+// an array of paths for a `builds` config — the default watch list then
+// covers every entry plus its own directory's *.uxdsl files, deduplicated
+// (two build entries commonly share a directory).
+function normalizeWatchGlobs(globs, cwd, entryOrEntries) {
   if (Array.isArray(globs) && globs.length > 0) {
     return globs.map((glob) =>
       path.isAbsolute(glob) ? glob : path.resolve(cwd, glob)
     );
   }
-  const entryDir = path.dirname(entry);
-  return [
-    entry,
-    path.join(entryDir, '**/*.uxdsl'),
-  ];
+  const entries = Array.isArray(entryOrEntries) ? entryOrEntries : [entryOrEntries];
+  const seen = new Set();
+  const result = [];
+  for (const entry of entries) {
+    const entryDir = path.dirname(entry);
+    for (const g of [entry, path.join(entryDir, '**/*.uxdsl')]) {
+      if (!seen.has(g)) {
+        seen.add(g);
+        result.push(g);
+      }
+    }
+  }
+  return result;
 }
 
 async function loadConfig(argv, cwd = process.cwd()) {
@@ -341,10 +353,46 @@ async function loadConfig(argv, cwd = process.cwd()) {
         throw new Error(`Invalid configuration in ${configPath}: "includeTheme" must be a boolean.`);
       }
       const baseDir = path.dirname(configPath);
-      resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
-      resolvedConfig.outFile = resolvePath(configModule.outFile || configModule.output, baseDir);
+
+      // MIG-B3-02: "builds" is mutually exclusive with top-level entry/
+      // outFile/includeTheme — a project declares either one entry inline
+      // or a list of them, never both, so there's exactly one place to look
+      // for "what does this build actually compile".
+      if (configModule.builds !== undefined) {
+        if (!Array.isArray(configModule.builds) || configModule.builds.length === 0) {
+          throw new Error(`Invalid configuration in ${configPath}: "builds" must be a non-empty array of { entry, outFile } objects.`);
+        }
+        if (configModule.entry !== undefined || configModule.outFile !== undefined || configModule.output !== undefined) {
+          throw new Error(`Invalid configuration in ${configPath}: "builds" cannot be combined with a top-level "entry"/"outFile" — declare every entry inside "builds" instead.`);
+        }
+        resolvedConfig.builds = configModule.builds.map((buildEntry, index) => {
+          if (!buildEntry || typeof buildEntry !== 'object') {
+            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}]" must be an object.`);
+          }
+          if (typeof buildEntry.entry !== 'string') {
+            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].entry" must be a string path.`);
+          }
+          if (typeof buildEntry.outFile !== 'string' && typeof buildEntry.output !== 'string') {
+            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].outFile" must be a string path.`);
+          }
+          if (buildEntry.includeTheme !== undefined && typeof buildEntry.includeTheme !== 'boolean') {
+            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].includeTheme" must be a boolean.`);
+          }
+          return {
+            entry: resolvePath(buildEntry.entry, baseDir),
+            outFile: resolvePath(buildEntry.outFile || buildEntry.output, baseDir),
+            // Resolved to a definite boolean below, alongside the
+            // single-entry case — see the `--include-theme` precedence
+            // comment near the end of this function.
+            includeTheme: buildEntry.includeTheme,
+          };
+        });
+      } else {
+        resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
+        resolvedConfig.outFile = resolvePath(configModule.outFile || configModule.output, baseDir);
+        rawIncludeTheme = configModule.includeTheme;
+      }
       rawBreakpoints = configModule.breakpoints;
-      rawIncludeTheme = configModule.includeTheme;
       resolvedConfig.watch = configModule.watch || [];
       resolvedConfig.theme = configModule.theme;
       resolvedConfig.references = configModule.references;
@@ -396,7 +444,8 @@ async function loadConfig(argv, cwd = process.cwd()) {
     resolvedConfig.watch = [];
   }
 
-  if (!resolvedConfig.entry) {
+  const hasBuilds = Array.isArray(resolvedConfig.builds) && resolvedConfig.builds.length > 0;
+  if (!resolvedConfig.entry && !hasBuilds) {
     // No build config, no direct --entry/--out, and no theme file either —
     // same "nothing to build" signal callers already handle (print help).
     return null;
@@ -405,9 +454,18 @@ async function loadConfig(argv, cwd = process.cwd()) {
   // MIG-B3-01: resolved once the theme is known, not eagerly per-branch
   // above — see resolveBreakpoints/resolveIncludeTheme for why order
   // matters here. A `--include-theme`/`--no-include-theme` flag always
-  // wins over the build config's own `includeTheme`.
+  // wins over the build config's own `includeTheme` — for `builds`, that
+  // means the flag overrides every entry uniformly; each entry's own
+  // `includeTheme` is only consulted when the flag is absent.
   resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints);
-  resolvedConfig.includeTheme = resolveIncludeTheme(argv['include-theme'], rawIncludeTheme);
+  if (hasBuilds) {
+    resolvedConfig.builds = resolvedConfig.builds.map((buildEntry) => ({
+      ...buildEntry,
+      includeTheme: resolveIncludeTheme(argv['include-theme'], buildEntry.includeTheme),
+    }));
+  } else {
+    resolvedConfig.includeTheme = resolveIncludeTheme(argv['include-theme'], rawIncludeTheme);
+  }
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -416,11 +474,12 @@ async function loadConfig(argv, cwd = process.cwd()) {
   }
 
   // Final normalization
-  if (resolvedConfig.entry && resolvedConfig.watch) {
+  if ((resolvedConfig.entry || hasBuilds) && resolvedConfig.watch) {
     // Build-config-relative globs must follow the same base directory as
     // entry/outFile. This matters when `--config` points outside cwd.
     const watchBaseDir = configPath ? path.dirname(configPath) : cwd;
-    resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, watchBaseDir, resolvedConfig.entry);
+    const entryOrEntries = hasBuilds ? resolvedConfig.builds.map((b) => b.entry) : resolvedConfig.entry;
+    resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, watchBaseDir, entryOrEntries);
     if (themeConfigPath && !resolvedConfig.watch.includes(themeConfigPath)) {
       resolvedConfig.watch.push(themeConfigPath);
     }
@@ -492,40 +551,46 @@ function normalizeBpMap(input) {
   return map;
 }
 
-async function buildOnce(config) {
+// Compiles one { entry, outFile, includeTheme } pair against the theme/
+// references/breakpoints every entry in a build shares. Returns the CSS to
+// write without writing it — MIG-B3-02's multi-entry buildOnce compiles
+// every entry to memory first, so a failure partway through a `builds`
+// array leaves nothing written at all rather than some files updated and
+// others stale.
+async function compileEntryToCss(entryConfig, sharedConfig) {
   // MIG-B2-03 item 7: each of these has a concrete, actionable fix, not a
   // generic "invalid configuration".
-  if (!config || !config.entry) {
+  if (!entryConfig || !entryConfig.entry) {
     throw new Error('No entry file configured. Pass --entry <path>, or set "entry" in uxdsl.config.cjs (run "npx uxdsl init" to create one).');
   }
-  if (!config.outFile) {
+  if (!entryConfig.outFile) {
     throw new Error('No output file configured. Pass --out <path>, or set "outFile" in uxdsl.config.cjs.');
   }
-  if (!fs.existsSync(config.entry)) {
-    throw new Error(`Entry file not found: ${config.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
+  if (!fs.existsSync(entryConfig.entry)) {
+    throw new Error(`Entry file not found: ${entryConfig.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
   }
   // MIG-B3-01: `includeTheme` defaults to true, matching the plugin's own
   // default — an omitted config/flag means "this entry defines the theme".
-  const includeTheme = config.includeTheme !== false;
+  const includeTheme = entryConfig.includeTheme !== false;
   // Don't claim a theme was "detected" (i.e. will be emitted) for an entry
   // that only uses it to resolve/validate references against — that's
   // exactly what includeTheme: false means.
-  if (config.theme && includeTheme) console.log('[uxdsl] Theme config detected');
+  if (sharedConfig.theme && includeTheme) console.log('[uxdsl] Theme config detected');
 
-  const source = fs.readFileSync(config.entry, 'utf8');
-  const resolveImport = createImportResolver(config);
+  const source = fs.readFileSync(entryConfig.entry, 'utf8');
+  const resolveImport = createImportResolver(entryConfig);
   const result = await postcss([
     postcssImport({ resolve: resolveImport }),
     postcssAdvancedVariables(),
     uxdslPlugin({
-      breakpoints: config.breakpoints || DEFAULT_BREAKPOINTS,
-      theme: config.theme,
-      references: config.references,
+      breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
+      theme: sharedConfig.theme,
+      references: sharedConfig.references,
       includeTheme,
     }),
   ]).process(source, {
-    from: config.entry,
-    to: config.outFile,
+    from: entryConfig.entry,
+    to: entryConfig.outFile,
     syntax: postcssScss,
   });
 
@@ -538,7 +603,7 @@ async function buildOnce(config) {
   // component entry.
   let finalCss = result.css;
   if (includeTheme) {
-    const bpMap = normalizeBpMap(config.breakpoints || DEFAULT_BREAKPOINTS);
+    const bpMap = normalizeBpMap(sharedConfig.breakpoints || DEFAULT_BREAKPOINTS);
     const bpJson = JSON.stringify(bpMap);
     const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
     // Also inject a marker rule for CSSOM detection
@@ -546,11 +611,46 @@ async function buildOnce(config) {
     finalCss = finalCss + '\n' + bpMeta + '\n' + bpMarker;
   }
 
-  fs.mkdirSync(path.dirname(config.outFile), { recursive: true });
-  fs.writeFileSync(config.outFile, finalCss, 'utf8');
-  console.log(
-    `[uxdsl] built ${path.relative(process.cwd(), config.outFile)} (${finalCss.length} bytes)`
-  );
+  return { outFile: entryConfig.outFile, finalCss };
+}
+
+// MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
+// includeTheme }) compiles several entries against the one shared theme/
+// references/breakpoints in a single `uxdsl build`/`watch` invocation,
+// instead of running the CLI once per entry. Single-entry configs
+// (config.builds absent) take the exact same path they always did —
+// entries becomes a one-element array built from config.entry/outFile/
+// includeTheme, so this refactor changes nothing observable for them.
+async function buildOnce(config) {
+  const entries = config && config.builds && config.builds.length
+    ? config.builds
+    : [{ entry: config && config.entry, outFile: config && config.outFile, includeTheme: config && config.includeTheme }];
+  const multi = entries.length > 1;
+
+  const compiled = [];
+  for (let i = 0; i < entries.length; i++) {
+    try {
+      compiled.push(await compileEntryToCss(entries[i], config || {}));
+    } catch (err) {
+      if (multi) {
+        const label = entries[i] && entries[i].outFile
+          ? path.relative(process.cwd(), entries[i].outFile)
+          : `#${i}`;
+        err.message = `builds[${i}] (${label}): ${err.message}`;
+      }
+      throw err;
+    }
+  }
+
+  // Every entry is compiled before anything is written — item 4: a failure
+  // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
+  for (const { outFile, finalCss } of compiled) {
+    fs.mkdirSync(path.dirname(outFile), { recursive: true });
+    fs.writeFileSync(outFile, finalCss, 'utf8');
+    console.log(
+      `[uxdsl] built ${path.relative(process.cwd(), outFile)} (${finalCss.length} bytes)`
+    );
+  }
 }
 
 // --- Command: Theme introspection (MIG-B3-04, FEAT-004) ---
@@ -678,6 +778,18 @@ function clearRequireCache(filePath) {
   visit(resolved);
 }
 
+// MIG-B3-02: a `builds` config has no single `config.outFile` — every
+// entry's own outFile must be excluded from triggering a rebuild, the same
+// way the single-entry case already excludes `config.outFile`.
+function isOwnOutputFile(config, filePath) {
+  const resolvedFilePath = path.resolve(filePath);
+  if (config.outFile && path.resolve(config.outFile) === resolvedFilePath) return true;
+  if (Array.isArray(config.builds)) {
+    return config.builds.some((b) => b.outFile && path.resolve(b.outFile) === resolvedFilePath);
+  }
+  return false;
+}
+
 function startWatch(initialConfig, argv, cwd, builder) {
   let config = initialConfig;
   let watcher = chokidar.watch(config.watch, { ignoreInitial: true });
@@ -738,8 +850,9 @@ function startWatch(initialConfig, argv, cwd, builder) {
     // `chokidar.watch()`'s `ignored` option at construction time, which
     // has no public API to update after the fact: a static `ignored`
     // would keep excluding the *original* outFile forever and never learn
-    // about a new one after a config change moved it.
-    if (filePath && config.outFile && path.resolve(filePath) === path.resolve(config.outFile)) {
+    // about a new one after a config change moved it. MIG-B3-02: a `builds`
+    // config has no single `config.outFile` — check every entry's outFile.
+    if (filePath && isOwnOutputFile(config, filePath)) {
       return;
     }
     const rel = path.relative(process.cwd(), filePath);

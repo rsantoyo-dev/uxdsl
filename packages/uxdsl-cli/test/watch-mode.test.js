@@ -201,6 +201,53 @@ test('watch mode does not treat its own output file as a source change (no self-
   assert.equal(buildCount, 1, `expected exactly 1 build (the initial one); got ${buildCount} — the watcher is reacting to its own output write.\n${output}`);
 });
 
+// MIG-B3-02 (FEAT-004): a "builds" config drives a single watcher across
+// several entries. Unlike the unit-level buildOnce/loadConfig tests
+// elsewhere, this exercises the full main()/startWatch() wiring with a real
+// chokidar watcher and a real spawned CLI process.
+test('watch mode with a "builds" config rebuilds every entry from one watcher, excluding both output files from self-triggering', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), `module.exports = {
+    builds: [
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css', includeTheme: true },
+      { entry: './src/panel.uxdsl', outFile: './src/panel.css', includeTheme: false },
+    ],
+    // Matches init's own default watch list, and both compiled outFiles —
+    // the exact shape that needs the self-trigger exclusion to do anything.
+    watch: ['src/**/*.uxdsl', 'src/**/*.css'],
+  };\n`);
+  fs.writeFileSync(path.join(dir, 'src', 'theme.uxdsl'), '/* theme-only entry */');
+  fs.writeFileSync(path.join(dir, 'src', 'panel.uxdsl'), '.card { color: red; }');
+  fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+
+  const themeCssPath = path.join(dir, 'src', 'theme.css');
+  const panelCssPath = path.join(dir, 'src', 'panel.css');
+  await waitFor(() => fs.existsSync(themeCssPath) && fs.existsSync(panelCssPath));
+  await waitFor(() => fs.readFileSync(themeCssPath, 'utf8').includes('#111111'));
+  assert.doesNotMatch(fs.readFileSync(panelCssPath, 'utf8'), /:root/, 'the includeTheme: false entry must not define :root');
+  await delay(WATCHER_SETTLE_MS);
+
+  // Editing the theme file rebuilds both entries against the new theme.
+  fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { palette: { primary: { main: '#222222' } } };\n");
+  await waitFor(() => fs.readFileSync(themeCssPath, 'utf8').includes('#222222'));
+  await delay(WATCHER_SETTLE_MS);
+
+  const buildCount = () => (output.match(/\[uxdsl\] built /g) || []).length;
+  const before = buildCount();
+  // Neither output file is a real source change — give a self-triggering
+  // loop, if either exclusion were missing, several cycles to manifest.
+  await delay(4000);
+  assert.equal(buildCount(), before, `neither builds[] outFile may trigger its own rebuild.\n${output}`);
+});
+
 test('changing outFile via a config reload does not resurrect the self-triggered rebuild loop under the new path', async (t) => {
   const dir = mkProject();
   installPostcssUxdsl(dir);

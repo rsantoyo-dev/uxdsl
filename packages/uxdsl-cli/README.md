@@ -181,6 +181,30 @@ same partial-override contract the theme itself already has:
 module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaults
 ```
 
+Running the CLI once per entry works, but a `builds` array in
+`uxdsl.config.cjs` compiles all of them — against the one shared
+`theme`/`references`/`breakpoints` — from a single `build`/`watch`
+invocation and a single watcher, instead:
+
+```js
+module.exports = {
+  builds: [
+    { entry: './src/theme.uxdsl', outFile: './src/theme.css' }, // includeTheme: true is the default
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
+    { entry: './src/panel-b.uxdsl', outFile: './src/panel-b.css', includeTheme: false },
+  ],
+  watch: ['src/**/*.uxdsl'],
+};
+```
+
+`builds` cannot be combined with a top-level `entry`/`outFile` — declare
+every entry inside `builds` instead. `--include-theme`/`--no-include-theme`
+still overrides every entry uniformly when passed; without the flag, each
+entry uses its own `includeTheme` (default `true`). Every entry is
+compiled in memory before anything is written: a failure in any one of
+them aborts the whole build with no output files touched at all, rather
+than leaving some freshly rebuilt and others missing or stale.
+
 ### 4. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:

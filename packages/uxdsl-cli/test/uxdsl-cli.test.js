@@ -408,3 +408,116 @@ test('MIG-B3-03: the same theme-file shape only warns once per session (no per-r
   const { messages: second } = await captureWarningsAsync(() => cli.loadConfig({}, dir));
   assert.deepEqual(second, [], 'a second loadConfig call with the identical shape must not warn again');
 });
+
+// --- MIG-B3-02 (FEAT-004): multiple entries in one uxdsl.config.cjs ---
+// A `builds` array compiles a theme entry and any number of component/
+// CSS-Module entries against the same shared theme/references/breakpoints
+// in a single `uxdsl build`/`watch` invocation.
+
+test('MIG-B3-02: "builds" cannot be combined with a top-level "entry"/"outFile"', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './a.uxdsl', outFile: './a.css', builds: [{ entry: './b.uxdsl', outFile: './b.css' }] };`);
+  await assert.rejects(() => cli.loadConfig({}, dir), /"builds" cannot be combined with a top-level "entry"\/"outFile"/);
+});
+
+test('MIG-B3-02: "builds" must be a non-empty array', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [] };`);
+  await assert.rejects(() => cli.loadConfig({}, dir), /"builds" must be a non-empty array/);
+});
+
+test('MIG-B3-02: each builds[] entry is validated the same way a top-level entry/outFile/includeTheme would be', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [{ entry: 123, outFile: './a.css' }] };`);
+  await assert.rejects(() => cli.loadConfig({}, dir), /"builds\[0\]\.entry" must be a string path/);
+});
+
+test('MIG-B3-02: loadConfig resolves each builds[] entry\'s paths relative to the build config, with per-entry includeTheme', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css', includeTheme: true },
+      { entry: './src/panel.uxdsl', outFile: './src/panel.css', includeTheme: false },
+    ],
+  };`);
+  write(dir, 'src/theme.uxdsl', '/* theme */');
+  write(dir, 'src/panel.uxdsl', '/* panel */');
+  const config = await cli.loadConfig({}, dir);
+  assert.equal(config.builds.length, 2);
+  assert.equal(config.builds[0].entry, path.join(dir, 'src/theme.uxdsl'));
+  assert.equal(config.builds[0].outFile, path.join(dir, 'src/theme.css'));
+  assert.equal(config.builds[0].includeTheme, true);
+  assert.equal(config.builds[1].includeTheme, false);
+});
+
+test('MIG-B3-02: --no-include-theme overrides every builds[] entry uniformly when passed', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './a.uxdsl', outFile: './a.css', includeTheme: true },
+      { entry: './b.uxdsl', outFile: './b.css' },
+    ],
+  };`);
+  write(dir, 'a.uxdsl', '');
+  write(dir, 'b.uxdsl', '');
+  const config = await cli.loadConfig({ 'include-theme': false }, dir);
+  assert.equal(config.builds[0].includeTheme, false);
+  assert.equal(config.builds[1].includeTheme, false);
+});
+
+test('MIG-B3-02: default watch globs cover every builds[] entry and its directory, deduplicated', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+      { entry: './src/panel.uxdsl', outFile: './src/panel.css' },
+    ],
+  };`);
+  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/panel.uxdsl', '');
+  const config = await cli.loadConfig({}, dir);
+  const srcGlob = path.join(dir, 'src', '**/*.uxdsl');
+  assert.equal(config.watch.filter((w) => w === srcGlob).length, 1, 'the shared directory glob must not be duplicated');
+  assert.ok(config.watch.includes(path.join(dir, 'src/theme.uxdsl')));
+  assert.ok(config.watch.includes(path.join(dir, 'src/panel.uxdsl')));
+});
+
+test('MIG-B3-02: buildOnce compiles a theme entry and a component entry from one "builds" config with no duplicate definitions', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './theme.uxdsl', outFile: './theme.css', includeTheme: true },
+      { entry: './panel.uxdsl', outFile: './panel.css', includeTheme: false },
+    ],
+  };`);
+  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
+  const config = await cli.loadConfig({}, dir);
+  config.theme = FULL_THEME;
+  await cli.buildOnce(config);
+
+  const themeCss = fs.readFileSync(config.builds[0].outFile, 'utf8');
+  const panelCss = fs.readFileSync(config.builds[1].outFile, 'utf8');
+  assert.match(themeCss, /:root/);
+  assert.match(themeCss, /#uxdsl-bp-meta/);
+  assert.doesNotMatch(panelCss, /:root/);
+  assert.doesNotMatch(panelCss, /#uxdsl-bp-meta/);
+  assert.match(panelCss, /background/);
+});
+
+test('MIG-B3-02: buildOnce writes nothing at all when one of several builds[] entries fails to compile', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './ok.uxdsl', outFile: './ok.css' },
+      { entry: './broken.uxdsl', outFile: './broken.css' },
+    ],
+  };`);
+  write(dir, 'ok.uxdsl', '.x { color: red; }');
+  write(dir, 'broken.uxdsl', '.x { color: shadow(nonexistent); }');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = FULL_THEME;
+  await assert.rejects(() => cli.buildOnce(config), /builds\[1\].*broken\.css/);
+  assert.ok(!fs.existsSync(config.builds[0].outFile), 'the earlier, successfully-compiled entry must not be written either');
+  assert.ok(!fs.existsSync(config.builds[1].outFile));
+});

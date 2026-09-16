@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.3 — prepared, not published
 
-FEAT-004 (`0.5.0-beta.3`), MIG-B3-01, MIG-B3-03 and MIG-B3-04 so far:
+FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 through MIG-B3-04 so far:
 
 - `uxdsl build`/`watch` (uxdsl-cli) now forward `includeTheme` to the plugin
   (`--include-theme`/`--no-include-theme`, or `includeTheme` in
@@ -37,6 +37,13 @@ FEAT-004 (`0.5.0-beta.3`), MIG-B3-01, MIG-B3-03 and MIG-B3-04 so far:
   equality — a value that happens to match the default is still yours if
   you wrote it). `--strict` exits non-zero if a declared family ended up
   partially filled from defaults.
+- `uxdsl.config.cjs` can now declare a `builds` array — several
+  `{ entry, outFile, includeTheme }` entries compiled against one shared
+  `theme`/`references`/`breakpoints` from a single `build`/`watch`
+  invocation and one watcher, instead of running the CLI once per entry.
+  Every entry compiles in memory before any of them are written, so a
+  failure in one leaves every output file untouched rather than partially
+  rebuilt.
 
 ## 0.5.0-beta.2 — 2026-09-16
 
