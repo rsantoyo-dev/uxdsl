@@ -33,8 +33,6 @@ npm install -g uxdsl-cli
 
 For a new project, run the first-run setup after installation:
 
-These instructions target the prepared beta.2 release, once published.
-
 ```bash
 npx uxdsl init
 npm run uxdsl:build
