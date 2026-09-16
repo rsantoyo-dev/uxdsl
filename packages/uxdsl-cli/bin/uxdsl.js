@@ -331,6 +331,13 @@ async function loadConfig(argv, cwd = process.cwd()) {
       resolvedConfig.watch.push(themeConfigPath);
     }
   }
+  // Exposed so the watcher can invalidate require()'s module cache for
+  // exactly these two files before reloading config on a change (they are
+  // `require()`d in loadModuleExport/loadThemeConfig, and Node caches by
+  // resolved path — a bare re-call of loadConfig() would otherwise keep
+  // serving the pre-edit module forever).
+  resolvedConfig.configPath = configPath;
+  resolvedConfig.themeConfigPath = themeConfigPath;
   return resolvedConfig;
 }
 
@@ -402,8 +409,28 @@ async function buildOnce(config) {
   );
 }
 
-function startWatch(config, builder) {
-  const watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+/** Node's `require()` cache is keyed by resolved path — a config or theme
+ * file edited on disk is otherwise served stale forever, since nothing
+ * else ever evicts it. Cleared right before each reload so `loadConfig()`
+ * actually re-reads the current file content instead of the module
+ * object it returned the first time. */
+function clearRequireCache(filePath) {
+  if (!filePath) return;
+  try {
+    delete require.cache[require.resolve(filePath)];
+  } catch (_) {
+    // Not required yet (or already gone) — nothing to invalidate.
+  }
+}
+
+function startWatch(initialConfig, argv, cwd, builder) {
+  let config = initialConfig;
+  // The output file itself must never be a watch target: `init`'s default
+  // `watch: ['src/**/*.uxdsl', 'src/**/*.css']` matches `src/uxdsl.css`
+  // (the very file `builder` writes) as much as any real source file.
+  // Left unguarded, every build's own write would re-trigger chokidar,
+  // which triggers another identical build, indefinitely.
+  const watcher = chokidar.watch(config.watch, { ignoreInitial: true, ignored: config.outFile });
   console.log('[uxdsl] watching for changes...');
   let building = false;
   let queued = false;
@@ -415,6 +442,14 @@ function startWatch(config, builder) {
     }
     building = true;
     try {
+      // The changed file could be uxdsl.config.cjs or the theme file
+      // itself — reload both from disk (past their require() cache)
+      // before building, instead of reusing whatever was resolved when
+      // watch mode started or after the previous change.
+      clearRequireCache(config.configPath);
+      clearRequireCache(config.themeConfigPath);
+      const reloaded = await loadConfig(argv, cwd);
+      if (reloaded) config = reloaded;
       await builder(config);
     } catch (err) {
       console.error('[uxdsl] build failed:', err.message);
@@ -659,7 +694,7 @@ async function main() {
           }
           await buildOnce(config);
           if (argv.watch) {
-            startWatch(config, buildOnce);
+            startWatch(config, argv, process.cwd(), buildOnce);
           }
         }
         break;
@@ -668,7 +703,7 @@ async function main() {
           const config = await loadConfig(argv);
           if (!config) throw new Error('No configuration found for watch.');
           await buildOnce(config);
-          startWatch(config, buildOnce);
+          startWatch(config, argv, process.cwd(), buildOnce);
         }
         break;
       default:
@@ -703,6 +738,8 @@ module.exports = {
   normalizeWatchGlobs,
   normalizeBpMap,
   buildOnce,
+  startWatch,
+  clearRequireCache,
   init,
   generateEntry,
   main,

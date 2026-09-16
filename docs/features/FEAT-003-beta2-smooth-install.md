@@ -495,6 +495,50 @@ plugin ya emite el tema canónico. La fixture real
 preexistentes, Next.js, errores y variables namespaced, y está conectada al
 `npm test` raíz.
 
+> **Corrección (auditoría, dos hallazgos P1 en `watch`):**
+>
+> 1. **`watch` recompilaba con config/tema viejos.** `startWatch` capturaba
+>    `config` una sola vez al arrancar y `trigger()` siempre construía con
+>    ese mismo objeto — editar `uxdsl.theme.config.cjs` (o `uxdsl.config.cjs`)
+>    nunca se reflejaba en el CSS reconstruido. Peor: ni siquiera volver a
+>    llamar `loadConfig()` en cada rebuild alcanzaba, porque `loadModuleExport`
+>    usa `require()`, que Node cachea por ruta resuelta — sin invalidar esa
+>    caché, un segundo `require()` del mismo archivo de tema devuelve el
+>    módulo de antes de la edición. Reproducido exactamente como se reportó:
+>    cambiar `palette.primary.main` mientras `watch` corre no cambiaba el
+>    valor en `src/uxdsl.css`. Corregido: `loadConfig` ahora expone las rutas
+>    resueltas de config/tema (`configPath`/`themeConfigPath`); `startWatch`
+>    limpia `require.cache` para esas dos rutas y vuelve a llamar
+>    `loadConfig()` en cada `trigger()`, antes de construir. Queda como
+>    límite conocido, no resuelto aquí: si un cambio agrega/quita rutas de
+>    `watch` en `uxdsl.config.cjs`, el `chokidar.watch()` ya creado no
+>    recibe esas rutas nuevas hasta reiniciar el proceso — solo el
+>    contenido de config/tema se recarga, no la lista de globs vigilados.
+> 2. **El watcher vigilaba su propio archivo de salida.** `init` genera
+>    `watch: ['src/**/*.uxdsl', 'src/**/*.css']`, y ese segundo glob
+>    coincide con `outFile` (`src/uxdsl.css`) tanto como con cualquier CSS
+>    real del proyecto. Sin excluirlo, cada escritura de build dispara un
+>    evento `change`, que dispara otro build idéntico, indefinidamente.
+>    Reproducido en vivo (proceso en background, `watch: [...]` igual al de
+>    `init`): más de 30 reconstrucciones idénticas en 8 segundos sin tocar
+>    ningún archivo. Corregido pasando `ignored: config.outFile` a
+>    `chokidar.watch(...)`. Límite conocido: ese `ignored` se fija al
+>    construir el watcher; si `outFile` cambia en una recarga posterior de
+>    config, no se vuelve a aplicar sin reiniciar el proceso — mismo tipo de
+>    límite que el punto anterior con la lista de `watch`.
+>
+> Cobertura de regresión en `packages/uxdsl-cli/test/watch-mode.test.js` (2
+> casos, ambos con un `uxdsl watch` real como subproceso y cambios reales en
+> el filesystem, no un mock): edición de tema mientras corre `watch` se
+> refleja en el CSS reconstruido; y ningún build extra ocurre en una ventana
+> de 5s cuando `watch` incluye el propio `outFile`. Verificado manualmente
+> que ambos casos fallan de la manera esperada contra el código anterior
+> (el primero por timeout esperando el valor nuevo; el segundo con
+> reconstrucciones repetidas confirmadas en un proceso real, no solo en el
+> test automatizado — la primera corrida del test contra el código viejo
+> dio un falso "ok" por una carrera con el `npm install` del propio
+> fixture, así que la validación en vivo fue la que realmente lo confirmó).
+
 ### Historia
 
 Como desarrollador que instala UXDSL en una app nueva, quiero ejecutar `init`

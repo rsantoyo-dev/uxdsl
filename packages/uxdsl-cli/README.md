@@ -158,6 +158,15 @@ npx uxdsl build
 npx uxdsl build --watch
 ```
 
+Watch mode reloads `uxdsl.config.cjs` and the theme file from disk on every
+rebuild — editing either while `watch` is running takes effect on the next
+save. The output file (`outFile`) is automatically excluded from the watch
+list even if a broader glob like `src/**/*.css` would otherwise match it,
+so the CLI's own write never re-triggers itself. Adding or removing entries
+from `watch` in the config file does take effect on the *next* `uxdsl watch`
+run, but not on a process that's already running — restart it after that
+kind of change.
+
 ### 4. CLI Arguments (No Config)
 
 You can also skip the config file and pass paths directly via command line arguments:
