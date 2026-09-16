@@ -10,44 +10,56 @@ const postcssAdvancedVariables = require('postcss-advanced-variables');
 const postcssScss = require('postcss-scss');
 const { createRequire } = require('module');
 
-function loadUxDslPlugin() {
-  const tryProjectRequire = () => {
-    try {
-      const projectRequire = createRequire(path.join(process.cwd(), 'package.json'));
-      const resolved = projectRequire.resolve('postcss-uxdsl');
-      const plugin = projectRequire(resolved);
-      if (process.env.UXDSL_DEBUG) {
-        console.log(`[uxdsl] using postcss-uxdsl from ${resolved}`);
-      }
-      return plugin;
-    } catch (_) {
-      return null;
+// Project's own postcss-uxdsl install first (so `theme`'s introspection and
+// the actual build always agree on which install is authoritative), the
+// CLI-bundled copy as a fallback for older/partial project installs.
+function resolveUxDslModule(specifier, { warnLabel } = {}) {
+  try {
+    const projectRequire = createRequire(path.join(process.cwd(), 'package.json'));
+    const resolved = projectRequire.resolve(specifier);
+    const mod = projectRequire(resolved);
+    if (process.env.UXDSL_DEBUG) {
+      console.log(`[uxdsl] using ${specifier} from ${resolved}`);
     }
-  };
-
-  const projectPlugin = tryProjectRequire();
-  if (projectPlugin) {
-    return projectPlugin;
+    return mod;
+  } catch (_) {
+    // Fall through to the CLI-bundled copy below.
   }
 
   const localPath = (() => {
     try {
-      return require.resolve('postcss-uxdsl', { paths: [__dirname] });
+      return require.resolve(specifier, { paths: [__dirname] });
     } catch (_) {
       return null;
     }
   })();
   if (localPath) {
     if (process.env.UXDSL_DEBUG) {
-      console.warn('[uxdsl] Using CLI-bundled postcss-uxdsl.');
+      console.warn(`[uxdsl] Using CLI-bundled ${warnLabel || specifier}.`);
     }
     return require(localPath);
   }
+  return null;
+}
 
-  throw new Error('postcss-uxdsl package not found. Install it in your project or alongside the CLI.');
+function loadUxDslPlugin() {
+  const plugin = resolveUxDslModule('postcss-uxdsl', { warnLabel: 'postcss-uxdsl' });
+  if (!plugin) {
+    throw new Error('postcss-uxdsl package not found. Install it in your project or alongside the CLI.');
+  }
+  return plugin;
+}
+
+// MIG-B3-04 (FEAT-004): `uxdsl theme` needs `resolveTheme`/`DEFAULT_THEME`
+// from the exact same postcss-uxdsl install the actual build resolves —
+// resolveUxDslModule's project-first order guarantees introspection can
+// never silently disagree with what `uxdsl build` itself would produce.
+function loadUxDslRuntime() {
+  return resolveUxDslModule('postcss-uxdsl/ds-runtime', { warnLabel: 'postcss-uxdsl/ds-runtime' });
 }
 
 const uxdslPlugin = loadUxDslPlugin();
+const uxdslRuntime = loadUxDslRuntime() || {};
 
 const FALLBACK_BREAKPOINTS = {
   xs: 0,
@@ -57,15 +69,9 @@ const FALLBACK_BREAKPOINTS = {
   xl: 1280,
 };
 
-let DEFAULT_BREAKPOINTS = { ...FALLBACK_BREAKPOINTS };
-try {
-  const runtime = require('postcss-uxdsl/ds-runtime');
-  if (runtime && runtime.DEFAULT_BREAKPOINTS) {
-    DEFAULT_BREAKPOINTS = { ...runtime.DEFAULT_BREAKPOINTS };
-  }
-} catch (_) {
-  // Keep fallback defaults for older/partial installs.
-}
+const DEFAULT_BREAKPOINTS = uxdslRuntime.DEFAULT_BREAKPOINTS
+  ? { ...uxdslRuntime.DEFAULT_BREAKPOINTS }
+  : { ...FALLBACK_BREAKPOINTS };
 
 const CONFIG_CANDIDATES = [
   'uxdsl.config.cjs',
@@ -114,6 +120,17 @@ Commands:
   build             Compile the entry file (from uxdsl.config.cjs, --config,
                     or --entry/--out) into a single CSS file, once.
   watch             Same as "build", then keep rebuilding as files change.
+  theme             Print the resolved effective theme as JSON — same
+                    discovery and resolution as "build", no CSS written.
+
+Theme Options (theme command only):
+  --diff            Print only the theme families your own config/theme
+                    file mentions, one row per leaf value, each labeled
+                    "project" (your value) or "default" (silently
+                    inherited from DEFAULT_THEME) instead of the full tree.
+  --strict          Exit non-zero if any family you declared ended up
+                    partially filled from defaults. Combine with --diff to
+                    see exactly which leaves triggered it.
 
 Build/Watch Options:
   --entry, -e       Entry .uxdsl file that contains @import statements
@@ -143,6 +160,7 @@ Examples:
   uxdsl build
   uxdsl build --entry src/main.uxdsl --out dist/styles.css
   uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
+  uxdsl theme --diff --strict
 
 Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
 `);
@@ -535,6 +553,95 @@ async function buildOnce(config) {
   );
 }
 
+// --- Command: Theme introspection (MIG-B3-04, FEAT-004) ---
+//
+// Answers "what theme did my build actually resolve, and where did each
+// value come from?" without diffing compiled CSS by hand. Uses the exact
+// same discovery (`loadConfig`) and resolution (`resolveTheme`) the real
+// build uses, so this can never silently disagree with `uxdsl build`.
+
+function isPlainThemeObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+// Presence in the project's own *raw* theme object, not value equality
+// against the default, decides provenance: a project that happens to set
+// `palette.primary.main` to the exact same hex the default uses wrote that
+// value — it isn't "inherited" just because it matches. Walks the
+// *effective* theme's own shape (so every resolved leaf is visited, whether
+// or not it's one of `DEFAULT_THEME`'s known families) and asks, at each
+// leaf, whether `rawNode` supplied a value there.
+function diffThemeSubtree(rawNode, effectiveNode, pathPrefix) {
+  if (isPlainThemeObject(effectiveNode)) {
+    const rows = [];
+    for (const key of Object.keys(effectiveNode)) {
+      rows.push(...diffThemeSubtree(
+        isPlainThemeObject(rawNode) ? rawNode[key] : undefined,
+        effectiveNode[key],
+        [...pathPrefix, key]
+      ));
+    }
+    return rows;
+  }
+  return [{
+    path: pathPrefix.join('.'),
+    value: effectiveNode,
+    source: rawNode !== undefined ? 'project' : 'default',
+  }];
+}
+
+// Only families the project's own theme actually mentions are shown —
+// per-leaf, labeled by provenance. A family the project never touched is
+// pure default top to bottom and adds nothing to "what's mine vs. inherited".
+function diffThemeAgainstDefaults(rawTheme, effectiveTheme) {
+  const touchedFamilies = isPlainThemeObject(rawTheme) ? Object.keys(rawTheme) : [];
+  const rows = [];
+  for (const family of touchedFamilies) {
+    rows.push(...diffThemeSubtree(rawTheme[family], effectiveTheme[family], [family]));
+  }
+  return rows;
+}
+
+// --strict's question is narrower than the diff itself: not "what's mine",
+// but "did any family I explicitly declared end up partially filled by
+// defaults anyway" — the exact silent-fallback gap the CLI plugin-parity
+// report flagged as invisible.
+function findPartiallyDefaultedFamilies(rawTheme, effectiveTheme) {
+  const touchedFamilies = isPlainThemeObject(rawTheme) ? Object.keys(rawTheme) : [];
+  return touchedFamilies.filter((family) => {
+    const rows = diffThemeSubtree(rawTheme[family], effectiveTheme[family], [family]);
+    return rows.some((row) => row.source === 'default');
+  });
+}
+
+async function themeCommand(argv, cwd = process.cwd()) {
+  if (typeof uxdslRuntime.resolveTheme !== 'function') {
+    throw new Error('postcss-uxdsl/ds-runtime not found (or too old to export resolveTheme). Install a current postcss-uxdsl in your project or alongside the CLI.');
+  }
+  const config = await loadConfig(argv, cwd);
+  // No build config/theme file/direct args at all is not an error here —
+  // it just means "what would a zero-config build use", i.e. DEFAULT_THEME.
+  const rawTheme = config ? config.theme : undefined;
+  const effectiveTheme = uxdslRuntime.resolveTheme(rawTheme);
+
+  const output = argv.diff ? diffThemeAgainstDefaults(rawTheme, effectiveTheme) : effectiveTheme;
+  // Always valid, parseable JSON on stdout — no log lines mixed in — so
+  // `uxdsl theme` composes with `| jq`/scripts. (UXDSL_DEBUG=1 still prints
+  // its own discovery lines, same as `build`; the two are not meant to be
+  // combined when a script needs clean JSON.)
+  console.log(JSON.stringify(output, null, 2));
+
+  if (argv.strict) {
+    const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme);
+    if (incomplete.length > 0) {
+      throw new Error(
+        `--strict: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        'Provide every key of these families explicitly, or drop --strict if inheriting some of them is intentional.'
+      );
+    }
+  }
+}
+
 /** Clears `filePath` from require()'s cache — and, recursively, every
  * project-local module it itself required (tracked by Node on each
  * cache entry's `.children`). A config or theme file that does
@@ -879,6 +986,9 @@ async function main() {
           startWatch(config, argv, process.cwd(), buildOnce);
         }
         break;
+      case 'theme':
+        await themeCommand(argv);
+        break;
       default:
         console.error(`Unknown command: ${cmd}`);
         printHelp();
@@ -914,6 +1024,9 @@ module.exports = {
   resolveIncludeTheme,
   resolveBreakpoints,
   buildOnce,
+  diffThemeAgainstDefaults,
+  findPartiallyDefaultedFamilies,
+  themeCommand,
   startWatch,
   clearRequireCache,
   init,

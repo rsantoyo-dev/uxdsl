@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.3 — prepared, not published
 
-FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 and MIG-B3-03 so far:
+FEAT-004 (`0.5.0-beta.3`), MIG-B3-01, MIG-B3-03 and MIG-B3-04 so far:
 
 - `uxdsl build`/`watch` (uxdsl-cli) now forward `includeTheme` to the plugin
   (`--include-theme`/`--no-include-theme`, or `includeTheme` in
@@ -30,6 +30,13 @@ FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 and MIG-B3-03 so far:
   (no `theme`/`references` key, but `entry`/`outFile`/`watch`/... present)
   now print a CLI warning naming the file and the stray keys, deduplicated
   across watch-mode rebuilds.
+- New `uxdsl theme` command prints the resolved effective theme as JSON,
+  using the same discovery/resolution `build` uses. `--diff` shows only the
+  families the project's own config/theme mentions, one row per leaf,
+  labeled `project` or `default` by presence in the raw theme (not value
+  equality — a value that happens to match the default is still yours if
+  you wrote it). `--strict` exits non-zero if a declared family ended up
+  partially filled from defaults.
 
 ## 0.5.0-beta.2 — 2026-09-16
 

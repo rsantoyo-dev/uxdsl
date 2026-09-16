@@ -210,6 +210,46 @@ You can also skip the config file and pass paths directly via command line argum
 npx uxdsl build --entry src/app/uxdsl-entry.uxdsl --out src/app/uxdsl.css --watch
 ```
 
+### 6. Theme introspection (`uxdsl theme`)
+
+Print the theme your build actually resolves — same discovery
+(`uxdsl.config.cjs`/`--config`/`--entry`+`--out`) and resolution
+(`resolveTheme`) as `build`, no CSS written:
+
+```bash
+npx uxdsl theme
+```
+
+`--diff` prints only the families your own `uxdsl.config.cjs`/theme file
+mentions, one row per leaf, each labeled `"project"` (you supplied that
+value) or `"default"` (silently inherited from `postcss-uxdsl`'s
+`DEFAULT_THEME`) — instead of the full resolved tree:
+
+```bash
+npx uxdsl theme --diff
+```
+
+```json
+[
+  { "path": "palette.primary.main", "value": "#123456", "source": "project" },
+  { "path": "palette.primary.dark", "value": "#581c87", "source": "default" }
+]
+```
+
+`--strict` exits non-zero if any family you declared ended up partially
+filled from defaults — the case a plain diff of compiled CSS can't
+distinguish from "this value happens to match the default anyway":
+
+```bash
+npx uxdsl theme --strict
+```
+
+Both flags combine. Output is always parseable JSON on stdout (no log
+lines mixed in), so `uxdsl theme` composes with `| jq` or a script —
+except when `UXDSL_DEBUG=1` is also set, which prints its own discovery
+lines the same way `build` does; the two aren't meant to be combined when
+a script needs clean JSON.
+
 ---
 
 ## License
