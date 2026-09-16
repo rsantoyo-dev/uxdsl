@@ -2,9 +2,9 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Implementación y verificaciones del alcance descrito abajo completas en el checkout; sin publicar |
+| Estado | Completada y publicada como `0.5.0-beta.1` |
 | Origen | Feedback de migración de 0.3.0 a 0.5.0-beta.0; reporte externo, no reproducción del artefacto original |
-| Destino del contrato | 0.5.0-beta.1, planificada; los package.json permanecen en sus versiones actuales |
+| Destino del contrato | `0.5.0-beta.1`, publicado en npm con los tags `latest` y `beta` |
 | Prioridad | P0: integridad y multi-entrada; P1: controles, migración e integración; P2: naming |
 | Relación | [FEAT-001](./FEAT-001-unified-language-engine.md) y [contrato de motores](../architecture/unified-engine-audit.md) |
 
@@ -18,8 +18,9 @@ ni los nueve fragmentos de código originales que no se proporcionaron.
 
 Preservar roles, referencias y progresiones responsive; usar CSS nativo para
 excepciones deliberadas. El namespace nuevo cambia nombres CSS, no la sintaxis
-del DSL ni las responsabilidades de sus primitivas. No se publica ni se hace
-push como parte de esta tarea.
+del DSL ni las responsabilidades de sus primitivas. La implementación de esta
+feature se publicó como `0.5.0-beta.1`; el hardening posterior de instalación
+suave está separado en [FEAT-003](./FEAT-003-beta2-smooth-install.md).
 
 ## MIG-01 — Normalización compatible de Spacing (P0)
 
@@ -172,4 +173,6 @@ componentes y tema juntos; no mezclar salidas antiguas con tema nuevo.
 - `npm --prefix packages/uxdsl-vscode run compile`: extensión.
 - `npm run verify:cssmodules-build`: tarball, Next.js y Chrome.
 - El build del playground se verifica aparte cuando cambie su integración.
-- Antes de publicar: coordinar versiones y release notes; esta tarea no publica.
+- Release realizado y registrado en [docs/releases/0.5.0-beta.1.md](../releases/0.5.0-beta.1.md).
+- La siguiente versión beta debe seguir el gate y el alcance de FEAT-003; no
+  asumir que una publicación de beta.1 completa automáticamente beta.2.

@@ -300,7 +300,10 @@ async function loadConfig(argv, cwd = process.cwd()) {
 
   // Final normalization
   if (resolvedConfig.entry && resolvedConfig.watch) {
-    resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, cwd, resolvedConfig.entry);
+    // Build-config-relative globs must follow the same base directory as
+    // entry/outFile. This matters when `--config` points outside cwd.
+    const watchBaseDir = configPath ? path.dirname(configPath) : cwd;
+    resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, watchBaseDir, resolvedConfig.entry);
     if (themeConfigPath && !resolvedConfig.watch.includes(themeConfigPath)) {
       resolvedConfig.watch.push(themeConfigPath);
     }

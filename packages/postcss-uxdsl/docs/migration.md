@@ -1,9 +1,7 @@
 # Migrando de UXDSL 0.3.x a los cambios de la beta 0.5
 
-> **Alcance de este documento:** describe el comportamiento de este
-> paquete tal como se publica (`postcss-uxdsl@0.3.0`). No hay un release
-> `0.5.0-beta.x` real todavía — este documento existe para que la
-> migración se pueda validar y ajustar antes de que exista uno. Ver el
+> **Alcance de este documento:** describe la migración desde las versiones
+> anteriores hacia el paquete publicado `postcss-uxdsl@0.5.0-beta.1`. Ver el
 > historial de cambios en [`CHANGELOG.md`](../CHANGELOG.md) y el contexto
 > completo (hallazgos, prioridades, estado de cada mejora) en el
 > [monorepo, FEAT-002](https://github.com/rsantoyo-dev/uxdsl/blob/main/docs/features/FEAT-002-beta-migration-hardening.md).
@@ -25,7 +23,7 @@ actualizar.
 | Referencias indefinidas | `var(--token-inexistente)` se emitía igual; el navegador simplemente no aplicaba la propiedad | Falla el build con `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`, indicando la cadena completa de dependencia | Ver "Qué hacer si tu build empieza a fallar" abajo |
 | `border(1..5)` | Requería que el tema definiera `colors.gray.{300,400,500,600}` manualmente, o las propiedades quedaban inválidas en silencio | Ese `gray` por defecto se mezcla automáticamente (tus shades ganan por clave si los definís) | Nadie necesita cambiar código; los temas que ya definían `colors.gray` siguen ganando |
 | Tamaño de surface/button/input | `@ds-surface(role size)` fija padding y radius juntos; para radio/sombra distintos había que sobreescribir la propiedad a mano después del mixin | `@ds-surface(role size radius(key) shadow(key))` fija radio/sombra de forma independiente | Sintaxis nueva, opt-in; ver tabla de sintaxis abajo |
-| Nombres de variables CSS | Cada familia usaba su propia forma: `--space-1`, `--radius-2`, `--surface-contained-padding`, `--h1-size`, y solo palette/color llevaban un namespace (`--ds__palette__primary-main`) | Todas las familias comparten `--uxdsl__<familia>__<clave>`: `--uxdsl__space__1`, `--uxdsl__radius__2`, `--uxdsl__surface__contained-padding`, `--uxdsl__typography__h1-size`, `--uxdsl__palette__primary-main` | Paquete sin publicar (0.3.0, sin release en npm); ningún consumidor externo depende todavía del nombre público. Ver la sección dedicada abajo |
+| Nombres de variables CSS | Cada familia usaba su propia forma: `--space-1`, `--radius-2`, `--surface-contained-padding`, `--h1-size`, y solo palette/color llevaban un namespace (`--ds__palette__primary-main`) | Todas las familias comparten `--uxdsl__<familia>__<clave>`: `--uxdsl__space__1`, `--uxdsl__radius__2`, `--uxdsl__surface__contained-padding`, `--uxdsl__typography__h1-size`, `--uxdsl__palette__primary-main` | Cambio publicado en `0.5.0-beta.1`; requiere migrar referencias directas y no mezclar CSS precompilado antiguo con el tema nuevo |
 
 ## Nombres de variables CSS (`--uxdsl__<familia>__<clave>`)
 
@@ -186,8 +184,8 @@ vez de tocarse:
 
 ## Decisión de compatibilidad de FEAT-002
 
-La versión de destino para este contrato es **0.5.0-beta.1** (planificada,
-no publicada por este cambio). Se adopta una migración explícita a
+La versión de destino de este contrato es **0.5.0-beta.1**, ya publicada.
+Se adopta una migración explícita a
 `--uxdsl__<familia>__<clave>`, sin aliases automáticos. Los consumidores
 existentes deben migrar definiciones y referencias en la misma actualización;
 no mezclar CSS precompilado antiguo con un tema generado por la versión nueva.

@@ -4,18 +4,20 @@ UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
 ## FEAT-002 migration verification
 
-The planned 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
+The published 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
 Use the shipped `postcss-uxdsl/scripts/codemod-namespace.js` in preview mode
 before migrating selected consumer CSS/JSON; explicit mappings protect host
 tokens and handle custom typography roles. See the
 [migration guide](packages/postcss-uxdsl/docs/migration.md).
-No release or publish is performed by these changes.
+The beta.1 release is recorded in
+[docs/releases/0.5.0-beta.1.md](docs/releases/0.5.0-beta.1.md). Follow-up
+installation hardening is tracked in
+[FEAT-003](docs/features/FEAT-003-beta2-smooth-install.md).
 
-The five npm package manifests are prepared for `0.5.0-beta.1`, with
-coordinated internal dependencies. Publication with `--tag latest` remains
-pending npm 2FA; preparing these versions does not update npm dist-tags.
-The release script accepts beta versions and updates the CLI's actual
-dependency on `postcss-uxdsl`.
+The five npm packages were published as `0.5.0-beta.1` with coordinated
+internal dependencies. Both `latest` and `beta` point to that release. The
+release script accepts beta versions and updates the CLI's actual dependency
+on `postcss-uxdsl`.
 
 VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
 and Input directives using generated shared-language metadata. CLI consumers
@@ -232,7 +234,7 @@ You can also include a short tweak note (stored in `packages/uxdsl-core/README.m
 
 - `node scripts/release.js --bump patch --note "small parser fix"`
 
-### Shared Button engine (main; pending npm release)
+### Shared Button engine (`0.5.0-beta.1`)
 
 Button JSON roles (`surface`, `base`, `states`), legacy `@theme` packs, PostCSS,
 runtime and the documentation preview now use `src/buttons.ts`. Custom roles,
@@ -245,7 +247,7 @@ fields fail instead of silently falling back. Existing values update through
 theme CSS; changing role structure requires regenerating component CSS.
 See the Buttons docs and AGENTS.md for semantics and migration details.
 
-### Shared Input engine (main; pending npm release)
+### Shared Input engine (`0.5.0-beta.1`)
 
 Input JSON roles (`surface`, `base`, `states`), legacy `@theme`, PostCSS, runtime
 and the preview now share `src/inputs.ts`. Custom roles, tones, numeric sizes,
@@ -260,7 +262,7 @@ arguments. Placeholder/disabled colors use Palette references. Native focus outl
 and appearance are preserved; default width remains 100%. Unknown fields and roles
 fail explicitly. See Inputs docs and AGENTS.md for supported controls and semantics.
 
-### Unified engine audit (main; pending npm release)
+### Unified engine audit (`0.5.0-beta.1`)
 
 Whole-theme build/runtime parity and compilation isolation now have regression
 tests. Density JSON/defaults, foundation variables and modes, token normalization

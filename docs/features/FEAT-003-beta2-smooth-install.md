@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Propuesta lista para implementación |
+| Estado | MIG-B2-01 completada y verificada; MIG-B2-02 a MIG-B2-05 pendientes |
 | Objetivo | Que un proyecto consumidor compile UXDSL con defaults sin conocer detalles internos del motor |
 | Versión objetivo | `0.5.0-beta.2` |
 | Prioridad | P0: configuración y tema; P1: `init`, migración y empaquetado |
@@ -34,15 +34,16 @@ obtener los defaults, ni debe perder las variables de Next.js por validación de
 build. Las importaciones legacy siguen soportadas durante beta.2, pero no son
 la ruta documentada para un proyecto nuevo.
 
-## Evidencia del estado actual
+## Evidencia de baseline antes de MIG-B2-01
 
-La baseline contiene estos huecos confirmados:
+Estos eran los huecos confirmados al iniciar FEAT-003. MIG-B2-01 ya resolvió
+los dos primeros y su estado se detalla en la story correspondiente:
 
-- El CLI solo descubre `uxdsl.config.cjs`, `uxdsl.config.js` y
-  `uxdsl.config.json`; no descubre `uxdsl.theme.config.cjs`.
-- El CLI lee `theme`, pero no propaga `references` al plugin PostCSS.
+- El CLI solo descubría `uxdsl.config.cjs`, `uxdsl.config.js` y
+  `uxdsl.config.json`; no descubría `uxdsl.theme.config.cjs`.
+- El CLI leía `theme`, pero no propagaba `references` al plugin PostCSS.
 - El motor y el runtime ya aceptan `ReferenceOptions`, incluidos
-  `externalTokens`, pero la integración CLI no los conecta.
+  `externalTokens`; MIG-B2-01 ahora conecta esas opciones desde el CLI.
 - Los defaults están distribuidos en varios archivos generados. La generación
   de tema runtime todavía puede fallar si recibe `{}` como tema incompleto.
 - `uxdsl init` crea una configuración básica y un entry con imports de defaults,
@@ -144,6 +145,11 @@ La sintaxis `space(7)`, `palette(primary.main)`, `radius(2)` y las directivas
 ---
 
 ## MIG-B2-01 — Descubrimiento de configuración y propagación de referencias
+
+**Estado:** completada en `a9cf447` y cubierta por 15 pruebas de CLI integradas
+en `npm test`. La regresión adicional verifica que los globs de `watch` también
+se resuelven relativos al archivo `uxdsl.config.*`. La verificación final del
+release debe repetirse con el tarball cuando se ejecute MIG-B2-05.
 
 **Implementado en este checkout** (`packages/uxdsl-cli/bin/uxdsl.js`):
 `THEME_CANDIDATES` (las 4 extensiones, en el orden especificado),

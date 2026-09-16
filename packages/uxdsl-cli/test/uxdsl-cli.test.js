@@ -52,7 +52,7 @@ test('MIG-B2-01: discovers every supported theme-config extension', async () => 
 test('MIG-B2-01: resolves config/theme/entry paths relative to the file that declares them, not cwd', async () => {
   const dir = mkTmpDir();
   const projectDir = path.join(dir, 'project');
-  write(projectDir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(projectDir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', watch: ['src/**/*.uxdsl'] };`);
   const entryPath = write(projectDir, 'src/entry.uxdsl', '.x { color: red; }');
   write(projectDir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#123' } } };`);
   // cwd is the parent of `project/` — only --config tells loadConfig where
@@ -61,6 +61,7 @@ test('MIG-B2-01: resolves config/theme/entry paths relative to the file that dec
   const config = await cli.loadConfig({ config: path.join('project', 'uxdsl.config.cjs') }, dir);
   assert.equal(config.entry, entryPath);
   assert.equal(config.theme.palette.primary.main, '#123');
+  assert.ok(config.watch.includes(path.join(projectDir, 'src/**/*.uxdsl')), `expected config-relative watch glob in ${JSON.stringify(config.watch)}`);
 });
 
 test('MIG-B2-01: a theme file exporting a bare object is treated as the theme itself', async () => {
