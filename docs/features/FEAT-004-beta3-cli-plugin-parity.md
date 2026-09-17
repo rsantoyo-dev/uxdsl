@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Las 6 stories implementadas y probadas: MIG-B3-01 a MIG-B3-05 con pruebas unitarias y de subprocess real (`uxdsl watch` con chokidar real); MIG-B3-06 (`fixtures/mig-b3-06-release/`, `npm run verify:beta3`) reproduce el escenario completo del reporte original contra las 5 tarballs instaladas, sin resolución al monorepo. Falta la aprobación explícita de publicación, igual que en beta.2 |
+| Estado | Las 6 stories implementadas, probadas y publicadas. El dueño del proyecto dio la aprobación explícita y los 5 paquetes se publicaron como `0.5.0-beta.3` bajo los tags `latest` y `beta`; ver [docs/releases/0.5.0-beta.3.md](../releases/0.5.0-beta.3.md) |
 | Objetivo | Que todo lo que el plugin sabe hacer sea alcanzable desde el CLI, y que el tema resuelto sea inspeccionable |
 | Versión objetivo | `0.5.0-beta.3` |
 | Prioridad | P0: puente de opciones CLI→plugin; P1: entradas múltiples, diagnóstico de tema; P2: política de cambios visuales |
@@ -340,6 +340,7 @@ antes de publicar.
       guard, contra las 5 tarballs reales.
 - [x] README (raíz, `uxdsl-cli`, `postcss-uxdsl`), migration guide y
       CHANGELOG reflejan beta.3.
-- [ ] La publicación queda fuera de la implementación y requiere aprobación
-      explícita del dueño — sigue pendiente por naturaleza hasta que se
-      decida publicar beta.3.
+- [x] La publicación queda fuera de la implementación y requiere aprobación
+      explícita del dueño — el dueño pidió "beta.3 y npm publish" y confirmó
+      el esquema de dist-tags (`latest` y `beta`). Publicado — ver
+      [docs/releases/0.5.0-beta.3.md](../releases/0.5.0-beta.3.md).
