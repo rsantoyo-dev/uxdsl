@@ -19,55 +19,105 @@
 
 ## Overview
 
-`postcss-uxdsl` transforms `.uxdsl` files into optimized CSS. It is typically used alongside `uxdsl-cli` or within frameworks like Next.js and Vite to power your design system.
+`postcss-uxdsl` transforms `.uxdsl` files — plain CSS plus a small set of
+responsive/theme functions and component mixins — into optimized, plain
+CSS. It's typically used alongside `uxdsl-cli`, or directly inside Next.js
+and Vite.
 
-It enables features like:
-- **Variables**: `$primary: #000;`
-- **Responsive Functions**: `width: xs(100%) md(50%);`
-- **Theme Tokens**: `color: palette(primary-main);`
-- **Smart Mixins**: `@ds-button primary;`
+## Install
+
+```bash
+npm install -D postcss-uxdsl uxdsl-cli
+npx uxdsl init
+npx uxdsl build
+```
+
+`init` scaffolds a starter theme and entry file; `build` compiles it once
+to a plain `.css` file you import from your app like any other stylesheet.
+`npx uxdsl build --watch` recompiles as you edit. See
+[`uxdsl-cli`'s README](../uxdsl-cli/README.md) for the full setup
+(Next.js/Vite detection, `uxdsl:build`/`uxdsl:watch` scripts, multi-entry
+projects).
+
+---
+
+## See it in 60 seconds
+
+Everything below is real, verified UXDSL — write it into the entry file
+`init` created and it compiles exactly as shown.
+
+### Responsive values, without writing a single media query
+
+```css
+.card { padding: xs(0.5rem) md(1rem) xl(1.5rem); }
+```
+
+compiles to:
+
+```css
+.card { padding: 0.5rem; }
+@media (min-width: 768px)  { .card { padding: 1rem; } }
+@media (min-width: 1280px) { .card { padding: 1.5rem; } }
+```
+
+Any property accepts any of the five breakpoints (`xs sm md lg xl`) —
+write the value once per breakpoint you care about, get the media queries
+generated for you.
+
+### Theme tokens instead of hex codes
+
+```css
+.card { background: palette(primary); color: palette(primary.contrast); }
+```
+
+`palette(primary)` resolves to `primary.main` by default —
+`palette(primary.contrast)` reaches a specific shade the same way. Both
+compile to `var(--uxdsl__palette__primary-main)`/`...-contrast`: every
+UXDSL-generated custom property follows the same
+`--uxdsl__<family>__<key>` shape, so it's unmistakable in devtools.
+
+### Density: one scale, proportionally airier as the viewport grows
+
+```css
+.stack { gap: density(4); }
+```
+
+`density(4)` *is* `space(4)` on mobile — and automatically becomes
+`space(5)` at the `md` breakpoint, `space(6)` at `xl`, following your own
+spacing scale. One token, no manual media queries, spacing that breathes
+more on a bigger screen the way a real layout should.
+
+### A full component, one line
+
+```css
+.btn { @ds-button(contained primary); }
+```
+
+generates padding, radius, background, text color, border, shadow, and
+working `:hover`/selected states — all wired to `primary` from your
+palette. Add a plain CSS declaration below it to override just one
+property; everything else stays generated.
+
+### Live theming — change it with no rebuild at all
+
+```ts
+import { updatePalette } from 'postcss-uxdsl/ds-runtime';
+
+updatePalette('primary.main', '#e11d48');
+```
+
+Every `.btn` and every `palette(primary)` reference above updates
+instantly in the browser — no CSS rebuild, no page reload. The compiler
+only ever emitted `var(--uxdsl__palette__primary-main)`; this just
+changes that one custom property, and the cascade does the rest.
+
+<p align="center">
+  <a href="https://uxdsl.vercel.app/">
+    <strong>Explore Smart Mixins, Theming and Component Packs in the full docs & playground &rarr;</strong>
+  </a>
+</p>
 
 <img src="./assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
-
----
-
-## Quick Start
-
-This package works best when initialized with the CLI.
-
-### 1. Install
-```bash
-npm install -D postcss-uxdsl@0.5.0-beta.4 uxdsl-cli@0.5.0-beta.4 concurrently
-```
-
-### 2. Initialize
-Auto-configure your project (creates `uxdsl.config.cjs` and entry files).
-```bash
-npx uxdsl init
-```
-
-### 3. Connect & Run
-Import the generated CSS in your root layout (e.g., `src/app/layout.tsx`) and start the watcher.
-
-```tsx
-// src/app/layout.tsx
-import '../uxdsl.css';
-```
-
-```json
-// package.json
-"scripts": {
-  "dev": "concurrently \"npx uxdsl build --watch\" \"next dev\""
-}
-```
-
----
-
-## Syntax Preview
-
-<img src="./assets/code-example.png" width="400px" alt="Code Example" />
-
-For a deep dive into Smart Mixins, Theming, and Component Packs, please visit the official documentation.
 
 ---
 
