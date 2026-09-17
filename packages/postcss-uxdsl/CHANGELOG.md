@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.3 — prepared, not published
 
-FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 through MIG-B3-04 so far:
+FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 through MIG-B3-06 (all six stories):
 
 - `uxdsl build`/`watch` (uxdsl-cli) now forward `includeTheme` to the plugin
   (`--include-theme`/`--no-include-theme`, or `includeTheme` in
@@ -44,6 +44,17 @@ FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 through MIG-B3-04 so far:
   Every entry compiles in memory before any of them are written, so a
   failure in one leaves every output file untouched rather than partially
   rebuilt.
+- Repo tooling: `scripts/verify-docs-update.js` (the pre-commit docs guard)
+  now also requires `CHANGELOG.md` — not just any README — when a commit
+  touches `default-theme.ts`, `typography-defaults.ts` or `typography.ts`,
+  since those files define default *visual* output. See the "Visual
+  changes" entry under 0.5.0-beta.2 below for why this exists.
+- `fixtures/mig-b3-06-release/` (`npm run verify:beta3`) reproduces the
+  origin consumer report end to end against real tarballs of all five
+  packages: a theme entry plus four component entries built from one
+  `builds` array, zero duplicate `:root`/`#uxdsl-bp-meta`, a
+  theme-file-only `breakpoints.xl` reaching a component entry's media
+  query, and both negative controls.
 
 ## 0.5.0-beta.2 — 2026-09-16
 

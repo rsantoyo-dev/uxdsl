@@ -181,6 +181,39 @@ Puntos clave:
   (`test/include-theme.test.js`) y con Next.js + `css-loader` desde tarballs
   (`verify:cssmodules-build`), con control negativo y estilos computados en Chrome.
 
+### Desde beta.3: lo mismo, vía `uxdsl-cli` (`builds`)
+
+Hasta beta.2, reproducir esta guía con el CLI (en vez de llamar al plugin
+directamente) requería correr `uxdsl build` cinco veces — `includeTheme` no
+llegaba del CLI al plugin (era el guard que FEAT-004 identificó y cerró).
+Desde beta.3, un `builds` array en `uxdsl.config.cjs` compila las cinco
+entradas de una sola invocación, contra el mismo `theme`/`references`/
+`breakpoints` compartido:
+
+```js
+// uxdsl.config.cjs
+module.exports = {
+  builds: [
+    { entry: './src/theme.uxdsl', outFile: './src/theme.css' }, // includeTheme: true es el default
+    { entry: './src/panel-a.module.uxdsl', outFile: './src/panel-a.module.css', includeTheme: false },
+    { entry: './src/panel-b.module.uxdsl', outFile: './src/panel-b.module.css', includeTheme: false },
+    { entry: './src/panel-c.module.uxdsl', outFile: './src/panel-c.module.css', includeTheme: false },
+    { entry: './src/panel-d.module.uxdsl', outFile: './src/panel-d.module.css', includeTheme: false },
+  ],
+};
+```
+
+`builds` no se combina con `entry`/`outFile` de nivel superior. Cada entrada
+se compila en memoria antes de escribir cualquier archivo, así que un error
+en una no deja a las demás a medio escribir. `--include-theme`/
+`--no-include-theme` siguen disponibles y, cuando se pasan, anulan el
+`includeTheme` de **todas** las entradas por igual. `uxdsl theme --diff`
+muestra qué valores del tema resuelto vienen del proyecto y cuáles de
+`DEFAULT_THEME`; `--strict` falla si alguna familia que declaraste quedó
+parcialmente completada por defaults. Detalles completos en el
+[README de uxdsl-cli](../../uxdsl-cli/README.md) y en
+[FEAT-004](../../../docs/features/FEAT-004-beta3-cli-plugin-parity.md).
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

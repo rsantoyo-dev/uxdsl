@@ -325,6 +325,14 @@ what caught `package.json`'s `exports` map missing `"./package.json"`,
 which broke `require("postcss-uxdsl/package.json")` for any consumer that
 reads a dependency's own version that way; now fixed.
 
+`fixtures/mig-b3-06-release/` (`npm run verify:beta3`) does the same from
+fresh tarballs of all five coordinated packages, exercising `uxdsl-cli`'s
+`builds` array end to end: a theme entry and four component entries built
+from one `uxdsl.config.cjs`, a partial theme with `externalTokens` and a
+theme-file-only `breakpoints.xl`, zero duplicate `:root`/`#uxdsl-bp-meta`
+across the five outputs, and both negative controls (an unknown token still
+fails; `--no-include-theme` overrides every entry).
+
 ---
 
 ## License

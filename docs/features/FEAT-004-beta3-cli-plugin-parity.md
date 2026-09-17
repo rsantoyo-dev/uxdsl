@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B3-01 a MIG-B3-05 implementadas y probadas (unitarias, subprocess real de `uxdsl watch`, y un guard nuevo en `verify-docs-update.js`). Falta MIG-B3-06 (fixture de release con las 5 tarballs) y la aprobación explícita de publicación |
+| Estado | Las 6 stories implementadas y probadas: MIG-B3-01 a MIG-B3-05 con pruebas unitarias y de subprocess real (`uxdsl watch` con chokidar real); MIG-B3-06 (`fixtures/mig-b3-06-release/`, `npm run verify:beta3`) reproduce el escenario completo del reporte original contra las 5 tarballs instaladas, sin resolución al monorepo. Falta la aprobación explícita de publicación, igual que en beta.2 |
 | Objetivo | Que todo lo que el plugin sabe hacer sea alcanzable desde el CLI, y que el tema resuelto sea inspeccionable |
 | Versión objetivo | `0.5.0-beta.3` |
 | Prioridad | P0: puente de opciones CLI→plugin; P1: entradas múltiples, diagnóstico de tema; P2: política de cambios visuales |
@@ -322,18 +322,24 @@ antes de publicar.
 
 ## Definition of done
 
-- [ ] Toda opción documentada del plugin es alcanzable desde el CLI, con una
-      prueba que lo garantice a futuro.
-- [ ] `--no-include-theme` produce entradas de componente sin `:root` ni
+- [x] Toda opción documentada del plugin es alcanzable desde el CLI, con una
+      prueba que lo garantice a futuro — `plugin-option-parity.test.js`
+      enumera `UxDslOptions` y falla si una queda sin reenviar.
+- [x] `--no-include-theme` produce entradas de componente sin `:root` ni
       metadatos de breakpoints, y las referencias se siguen validando.
-- [ ] La precedencia de breakpoints es única, documentada y probada; el CSS y
+- [x] La precedencia de breakpoints es única, documentada y probada; el CSS y
       `#uxdsl-bp-meta` no pueden divergir.
-- [ ] Un archivo de tema con forma de build-config produce un warning
+- [x] Un archivo de tema con forma de build-config produce un warning
       accionable.
-- [ ] `uxdsl theme`, `--diff` y `--strict` cubren introspección y procedencia.
-- [ ] El CHANGELOG registra los cambios visuales de beta.2 y el guard impide
-      que se repita la omisión.
-- [ ] El fixture de release reproduce el escenario del consumidor sin guard.
-- [ ] README, migration guide y CHANGELOG reflejan beta.3.
+- [x] `uxdsl theme`, `--diff` y `--strict` cubren introspección y procedencia.
+- [x] El CHANGELOG registra los cambios visuales de beta.2 y el guard impide
+      que se repita la omisión — extensión de `verify-docs-update.js`, con
+      su propia cobertura automatizada (`verify-docs-update.test.js`).
+- [x] El fixture de release (`fixtures/mig-b3-06-release/`,
+      `npm run verify:beta3`) reproduce el escenario del consumidor sin
+      guard, contra las 5 tarballs reales.
+- [x] README (raíz, `uxdsl-cli`, `postcss-uxdsl`), migration guide y
+      CHANGELOG reflejan beta.3.
 - [ ] La publicación queda fuera de la implementación y requiere aprobación
-      explícita del dueño.
+      explícita del dueño — sigue pendiente por naturaleza hasta que se
+      decida publicar beta.3.

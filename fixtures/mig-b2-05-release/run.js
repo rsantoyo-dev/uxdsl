@@ -3,36 +3,17 @@
 // Installed-package acceptance gate. All five coordinated packages come from
 // fresh tarballs in an isolated directory, with no workspace resolution.
 const fs = require('node:fs');
-const os = require('node:os');
 const path = require('node:path');
 const assert = require('node:assert/strict');
-const { createRequire } = require('node:module');
-const { execFileSync } = require('node:child_process');
 const { cascadedVariables } = require('../mig07-consumer/lib/css-cascade-compare');
-const root = path.resolve(__dirname, '../..');
-const names = ['postcss-uxdsl', 'uxdsl-core', 'vite-plugin-uxdsl', 'uxdsl-webpack-loader', 'uxdsl-cli'];
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-beta2-release-'));
-const run = (cmd, args, cwd = dir) => execFileSync(cmd, args, { cwd, encoding: 'utf8', stdio: 'pipe', timeout: 180000 });
-const write = (file, value) => fs.writeFileSync(path.join(dir, file), value);
+const { packAndInstall, DEFAULT_NAMES: names } = require('../lib/tarball-consumer');
 
 async function main() {
-  console.log(`Tarball consumer: ${dir}`);
-  const archives = [];
+  const { dir, run, write, req, version } = packAndInstall({
+    tmpPrefix: 'uxdsl-beta2-release-',
+    consumerPkg: { name: 'uxdsl-beta2-consumer', version: '1.0.0', private: true },
+  });
   for (const name of names) {
-    const cwd = path.join(root, 'packages', name);
-    const pkg = JSON.parse(fs.readFileSync(path.join(cwd, 'package.json')));
-    if (pkg.scripts?.build) run('npm', ['run', 'build'], cwd);
-    const pack = JSON.parse(run('npm', ['pack', '--json', '--pack-destination', dir], cwd))[0];
-    archives.push(path.join(dir, pack.filename));
-  }
-  write('package.json', JSON.stringify({ name: 'uxdsl-beta2-consumer', version: '1.0.0', private: true }));
-  run('npm', ['install', '--ignore-scripts', '--legacy-peer-deps', '--no-audit', '--no-fund', ...archives]);
-  const req = createRequire(path.join(dir, 'package.json'));
-  const version = require('../../packages/postcss-uxdsl/package.json').version;
-  for (const name of names) {
-    const pkgDir = path.join(dir, 'node_modules', name);
-    assert.equal(fs.lstatSync(pkgDir).isSymbolicLink(), false, name);
-    assert.equal(JSON.parse(fs.readFileSync(path.join(pkgDir, 'package.json'))).version, version);
     if (name !== 'uxdsl-cli') req(name);
   }
   const cli = path.join(dir, 'node_modules/uxdsl-cli/bin/uxdsl.js');
