@@ -159,6 +159,14 @@ build-config-shaped keys (`entry`, `outFile`, `watch`, `themeFile`,
 under the theme-file name — the CLI prints a warning naming the file and
 the stray keys instead of silently ignoring them as unknown tokens.
 
+`build`/`watch` also warn about an unrecognized top-level theme family
+(`color` instead of `colors`) and an unrecognized key inside
+`typography_details`/`palette`/`fonts.families` (`h9` instead of `h2`,
+`primry` instead of `primary`) — a typo that would otherwise compile into
+nothing, silently. Both are warnings, not errors: the build still
+succeeds, and the same message is never repeated across rebuilds in one
+`watch` session.
+
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 
 `postcss-uxdsl`'s `includeTheme` option (see that package's README) reaches

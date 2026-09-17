@@ -301,17 +301,28 @@ own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
 `DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
 (Spacing, Palette) those defaults depend on but that had none of their own.
 
-### Unknown theme families (`validateAndNormalizeTheme`)
+### Unknown theme families and keys (`validateAndNormalizeTheme`)
 
 `postcss-uxdsl/ds-runtime`'s `validateAndNormalizeTheme(theme)` — the
-validator behind the playground's theme editor — warns (`result.warnings`,
-not `result.errors`) about any top-level key it doesn't recognize
-(`breakpoints`, `spacing`, `palette`, `fonts`, `colors`,
-`typography_details`, `densities`, `inputs`, `buttons`, `surfaces`,
-`shadows`, `borders`, `radii`). An unrecognized key is silently unused —
-nothing compiles it into CSS — so this catches a typo (`color` instead of
-`colors`) or a stray field left over from copy-pasting the wrong file, that
-would otherwise produce no error and no visible effect at all.
+validator behind the playground's theme editor, and behind `uxdsl-cli`'s
+own build-time warnings — warns (`result.warnings`, not `result.errors`)
+about any top-level key it doesn't recognize (`breakpoints`, `spacing`,
+`palette`, `fonts`, `colors`, `typography_details`, `densities`, `inputs`,
+`buttons`, `surfaces`, `shadows`, `borders`, `radii`). An unrecognized key
+is silently unused — nothing compiles it into CSS — so this catches a typo
+(`color` instead of `colors`) or a stray field left over from
+copy-pasting the wrong file, that would otherwise produce no error and no
+visible effect at all.
+
+The same check goes one level deeper for the three families whose own
+design is a registry of named entries — `typography_details` (tags: `h1`
+through `h6`, `p`, `span`, `body`, `caption`, `small`, `pre`, `code`,
+`default`), `palette` (roles: `primary`, `surface`, `neutral`, `error`)
+and `fonts.families` (roles: `ui`, `ui-2`, `code`) — warning on an entry
+name it doesn't recognize (`h9`, `primry`) the same way, without requiring
+every entry to be present: partial per-key override is the intended usage
+for all three (see "Zero-config defaults" above), so only an unrecognized
+*name* is flagged, never an incomplete one.
 
 ---
 

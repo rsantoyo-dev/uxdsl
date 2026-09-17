@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.5 — prepared, not published
 
-FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 so far:
+FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 and MIG-B5-02 so far:
 
 - `uxdsl build`/`watch --strict-theme` and `uxdsl theme --strict` now
   accept an optional family scope (`--strict-theme=palette,breakpoints`,
@@ -21,6 +21,16 @@ FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 so far:
   example this package's own README uses, and of a partial `spacing`
   override, not just `typography_details`. Purely additive; `true`
   (or the bare flag) behaves exactly as it did in beta.4.
+- `validateAndNormalizeTheme` now also warns about an unrecognized entry
+  name inside `typography_details` (tags), `palette` (roles) and
+  `fonts.families` (roles) — a typo (`h9`, `primry`) — without requiring
+  every entry to be present, since partial per-entry override is the
+  intended usage for all three. These warnings, and MIG-B3-03's own
+  top-level "Unknown theme family" warning from FEAT-004, now also print
+  from a real `uxdsl build`/`watch` — previously neither reached the CLI
+  at all, only the playground's theme editor called
+  `validateAndNormalizeTheme`. Deduplicated by exact message across
+  rebuilds in one `watch` session.
 
 ## 0.5.0-beta.4 — 2026-09-17
 

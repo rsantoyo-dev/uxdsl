@@ -798,3 +798,44 @@ test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strin
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean or an array of family names/);
 });
+
+// --- MIG-B5-02 (FEAT-006): unknown theme family/key warnings, surfaced
+// from a real build --- `validateAndNormalizeTheme`'s "Unknown theme
+// family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
+// never actually reachable from `uxdsl build` before this — only the
+// playground's theme editor called that function at all. Test names below
+// use unique, test-scoped family/tag names so the module-level dedup Set
+// (shared across every test in this process) never causes one test to see
+// a warning already consumed by an earlier one.
+
+test('MIG-B5-02: warnUnknownThemeKeys prints an unknown top-level family and an unknown nested key', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnUnknownThemeKeys({ migB502UnknownFamilyA: { x: 1 }, typography_details: { migB502UnknownTagA: { fontSize: '1rem' } } })
+  );
+  assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyA"/.test(m)), JSON.stringify(messages));
+  assert.ok(messages.some((m) => /Unknown typography_details key "migB502UnknownTagA"/.test(m)), JSON.stringify(messages));
+});
+
+test('MIG-B5-02: warnUnknownThemeKeys is a no-op for an undefined theme (zero-config)', () => {
+  const { messages } = captureWarnings(() => cli.warnUnknownThemeKeys(undefined));
+  assert.deepEqual(messages, []);
+});
+
+test('MIG-B5-02: warnUnknownThemeKeys deduplicates the identical message across repeated calls', () => {
+  const theme = { migB502UnknownFamilyB: { x: 1 } };
+  const { messages: first } = captureWarnings(() => cli.warnUnknownThemeKeys(theme));
+  assert.equal(first.length, 1);
+  const { messages: second } = captureWarnings(() => cli.warnUnknownThemeKeys(theme));
+  assert.deepEqual(second, [], 'the identical warning must not reprint on a second call (watch-mode rebuild)');
+});
+
+test('MIG-B5-02: a real buildOnce surfaces the warning for an unknown theme family declared in uxdsl.config.cjs', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = { migB502UnknownFamilyC: { x: 1 } };
+  const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
+  assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyC"/.test(m)), JSON.stringify(messages));
+  assert.ok(fs.existsSync(config.outFile), 'an unknown-family warning must not block the build');
+});

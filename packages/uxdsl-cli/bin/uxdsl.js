@@ -720,6 +720,33 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   return { outFile: entryConfig.outFile, finalCss };
 }
 
+// MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
+// reasoning as `warnedBuildConfigShapes` above — without this, an unfixed
+// typo'd tag/role name would reprint on every unrelated save. Unlike that
+// Map (keyed by file, cleared when the specific file's shape changes),
+// this is a flat Set of exact warning strings: simpler, at the cost of
+// not re-warning if the *same* message recurs later in one process after
+// being fixed in between — an acceptable trade-off for best-effort
+// diagnostic output, not a build-correctness gate.
+const warnedUnknownThemeKeys = new Set();
+
+function warnUnknownThemeKeys(theme) {
+  if (theme === undefined || typeof uxdslRuntime.validateAndNormalizeTheme !== 'function') return;
+  let warnings;
+  try {
+    ({ warnings } = uxdslRuntime.validateAndNormalizeTheme(theme));
+  } catch (_) {
+    return; // Diagnostic-only — must never be the reason a build fails.
+  }
+  for (const w of warnings || []) {
+    if (!/^Unknown /.test(w.message)) continue;
+    const key = `${w.path}: ${w.message}`;
+    if (warnedUnknownThemeKeys.has(key)) continue;
+    warnedUnknownThemeKeys.add(key);
+    console.warn(`[uxdsl] Warning: ${key}`);
+  }
+}
+
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
 // includeTheme }) compiles several entries against the one shared theme/
 // references/breakpoints in a single `uxdsl build`/`watch` invocation,
@@ -749,6 +776,17 @@ async function buildOnce(config) {
       );
     }
   }
+
+  // MIG-B5-02 (FEAT-006): `validateAndNormalizeTheme`'s "Unknown theme
+  // family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
+  // never actually reachable from a real build — only the playground's
+  // theme editor called this function at all. Surfacing just these two
+  // warning kinds here (not the others `validateAndNormalizeTheme` can
+  // produce, e.g. color-format hints, which nobody asked to see from
+  // `build` and the plugin's own reference-integrity pass already covers
+  // differently) closes that gap without changing what a normal build
+  // reports beyond it. Checked once per build, same as `--strict-theme`.
+  warnUnknownThemeKeys(config && config.theme);
 
   const entries = config && config.builds && config.builds.length
     ? config.builds
@@ -1342,6 +1380,7 @@ module.exports = {
   normalizeStrictThemeScope,
   resolveBreakpoints,
   buildOnce,
+  warnUnknownThemeKeys,
   diffThemeAgainstDefaults,
   findPartiallyDefaultedFamilies,
   themeCommand,

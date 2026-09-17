@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B5-01 implementada y probada (unitarias + verificación manual contra el CLI real, reproduciendo el repro exacto del reporte tanto sin acotar —sigue fallando, sin regresión— como acotado a `palette` —pasa—). Faltan MIG-B5-02 (opcional) y MIG-B5-03 |
+| Estado | MIG-B5-01 y MIG-B5-02 implementadas y probadas contra el CLI real. MIG-B5-02 encontró un hallazgo no anticipado al escribir esta story: `uxdsl build`/`watch` nunca invocaban `validateAndNormalizeTheme` — ni siquiera el warning de MIG-B3-03 (ya publicado en beta.3/4) llegaba a la consola real, solo al playground — y quedó cerrado como parte de esta misma story. Falta MIG-B5-03 |
 | Objetivo | Que `--strict-theme`/`uxdsl theme --strict` sirvan como gate de CI real, sin entrar en conflicto con el propio diseño de partial theme que la librería documenta y celebra |
 | Versión objetivo | `0.5.0-beta.5` |
 | Prioridad | P0: alcance por familia (corrige un falso positivo que hace el flag inutilizable en la práctica); P2: warning de claves desconocidas dentro de familias matriz |
@@ -164,6 +164,8 @@ pregunta correcta ahí pero "typo" sí lo es.
   nivel más adentro, para las familias con forma de "registro de claves
   conocidas": `typography_details` (tags), `palette` (roles), `fonts.families`
   (roles).
+- `packages/uxdsl-cli/bin/uxdsl.js` — ver item 4, agregado tras verificar
+  en código que hacía falta.
 - No reemplaza ni depende de MIG-B5-01 — es una mejora complementaria y
   puede implementarse o publicarse por separado sin bloquear el gate de
   release de esta feature.
@@ -181,6 +183,20 @@ pregunta correcta ahí pero "typo" sí lo es.
 3. Un rol/tag nuevo declarado deliberadamente (una familia de color
    adicional, por ejemplo) es una decisión legítima del proyecto — por eso
    es warning, no error, igual que el resto de esta línea de trabajo.
+4. **Hallazgo al implementar, no anticipado al escribir esta story:**
+   `uxdsl build`/`watch` nunca llamaron a `validateAndNormalizeTheme` —
+   verificado con un build real, ninguna de sus dos categorías de warning
+   (ni siquiera la de MIG-B3-03, ya publicada en beta.3/4) llega nunca a la
+   consola del CLI; solo el editor de tema del playground invoca esa
+   función. Sin cerrar esto, MIG-B5-02 no protege a nadie que use el CLI —
+   por eso `buildOnce` ahora también llama a `validateAndNormalizeTheme(config.theme)`
+   una vez por build (mismo criterio que `--strict-theme`) e imprime, vía
+   `console.warn`, únicamente los warnings que empiezan con `"Unknown "` —
+   no el resto de lo que esa función puede advertir (formato de color,
+   etc.), que nadie pidió ver desde `build` y que la propia validación de
+   referencias del plugin cubre de otra forma. Deduplicado por mensaje
+   exacto entre rebuilds de un mismo proceso de `watch`, mismo criterio que
+   el warning de colisión de MIG-B3-03.
 
 ### Criterios de aceptación
 
@@ -189,12 +205,23 @@ pregunta correcta ahí pero "typo" sí lo es.
 - `palette: { primry: { main: '#fff' } }` (typo) produce un warning
   nombrando `primry`.
 - Un tag/rol válido no produce ningún warning nuevo.
+- `uxdsl build` con cualquiera de los dos casos de arriba imprime el
+  warning en consola (no solo `validateAndNormalizeTheme` en aislado) y
+  el build igual termina en éxito — es un aviso, no un bloqueo.
+- El mismo warning, sin cambios de por medio, no se repite en un segundo
+  rebuild dentro de un mismo proceso de `uxdsl watch`.
 
 ### Pruebas requeridas
 
 - Unitarias en el estilo de `theme-validate-unknown-family.test.js`
   (MIG-B3-03), una por familia (`typography_details`, `palette`,
-  `fonts.families`).
+  `fonts.families`), más el caso de todas las claves reales (incluidas
+  `code`/`default`, agregadas por `default-theme.ts` encima de
+  `typography-defaults.ts`) sin ningún warning.
+- `uxdsl-cli`: una prueba unitaria de la función que imprime los warnings
+  desde `buildOnce` (familia y clave desconocida, no-op con tema
+  `undefined`, deduplicación entre llamadas), y una que confirma que un
+  `buildOnce` real imprime el warning y aun así completa el build.
 
 ## MIG-B5-03 — Gate de release beta.5 (P1)
 
@@ -240,8 +267,10 @@ reales antes de publicar, igual que en los releases anteriores.
 - [x] El mismo alcance funciona en `uxdsl theme --strict`.
 - [x] Un `strictTheme` de tipo inválido falla nombrando el archivo y la
       propiedad.
-- [ ] (Opcional) Claves desconocidas dentro de `typography_details`,
-      `palette` y `fonts.families` producen un warning.
+- [x] (Opcional) Claves desconocidas dentro de `typography_details`,
+      `palette` y `fonts.families` producen un warning — y ese warning
+      llega a la consola real de `uxdsl build`/`watch`, no solo al
+      playground.
 - [ ] El fixture de release reproduce el escenario original del reporte
       contra tarballs reales.
 - [ ] README, migration guide y CHANGELOG reflejan beta.5.

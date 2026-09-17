@@ -8,6 +8,13 @@ import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
 import { DEFAULT_BREAKPOINTS } from './breakpoints';
 import { generateThemeCss } from './theme-generator';
 import { ReferenceIntegrityError, ReferenceOptions } from '../reference-integrity';
+// `default-theme.ts` imports `deepMergeTheme` from this file, so this is a
+// circular import — safe because `DEFAULT_THEME` is only ever read inside
+// `validateAndNormalizeTheme`'s body (MIG-B5-02), never at this module's
+// own top level: by the time that function is actually called, the full
+// require chain has finished and `DEFAULT_THEME` is completely
+// initialized, regardless of which of these two files loaded first.
+import { DEFAULT_THEME } from '../default-theme';
 
 export type ThemeValidationIssue = {
   path: string;
@@ -358,6 +365,39 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
         warnings.push({ path: key, message: `Unknown theme family "${key}" — it will not be compiled into any CSS.` });
       }
     });
+  }
+
+  // MIG-B5-02 (FEAT-006): completeness isn't the right question for a
+  // family whose whole design is per-key partial override
+  // (typography_details, palette, fonts.families — see MIG-B5-01's own
+  // reasoning for why `--strict-theme` can't check those unconditionally
+  // either) — but a key that doesn't exist ANYWHERE in the known set for
+  // that family is still a real mistake (a typo'd tag/role name), which
+  // no amount of intentional partial override excuses. Reuses
+  // DEFAULT_THEME's own already-merged key sets as the known set — kept
+  // in one place, so it can never drift out of sync with the actual
+  // defaults the way a separately hand-maintained list could. Computed
+  // here (inside the function), not at module scope, so this never reads
+  // DEFAULT_THEME before the circular import above has fully resolved.
+  if (isPlainObject(input)) {
+    const KNOWN_NESTED_KEYS: Array<[string, Set<string>]> = [
+      ['typography_details', new Set(Object.keys(DEFAULT_THEME.typography_details || {}))],
+      ['palette', new Set(Object.keys(DEFAULT_THEME.palette || {}))],
+      ['fonts.families', new Set(Object.keys(DEFAULT_THEME.fonts?.families || {}))],
+    ];
+    for (const [familyPath, knownKeys] of KNOWN_NESTED_KEYS) {
+      let node: unknown = input;
+      for (const segment of familyPath.split('.')) {
+        node = isPlainObject(node) ? (node as Record<string, any>)[segment] : undefined;
+      }
+      if (isPlainObject(node)) {
+        Object.keys(node).forEach((key) => {
+          if (!knownKeys.has(key)) {
+            warnings.push({ path: `${familyPath}.${key}`, message: `Unknown ${familyPath} key "${key}" — it will not be compiled into any CSS.` });
+          }
+        });
+      }
+    }
   }
 
   return {
