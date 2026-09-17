@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Las 3 stories implementadas, probadas y verificadas contra las 5 tarballs reales (`npm run verify:beta5`). Dos hallazgos no anticipados al escribir esta propuesta, ambos cerrados en el camino: `uxdsl build`/`watch` nunca invocaban `validateAndNormalizeTheme` (ni siquiera el warning de MIG-B3-03, ya publicado, llegaba a la consola real); y `scripts/release.js` nunca sincronizaba `theme-manifest.json` tras bumpear versiones, causa raíz de una deriva que MIG-B4-04 ya había parchado una vez sin arreglar de fondo. Falta la aprobación explícita de publicación |
+| Estado | Las 3 stories implementadas, probadas y publicadas. El dueño del proyecto dio la aprobación explícita y los 5 paquetes se publicaron como `0.5.0-beta.5` bajo los tags `latest` y `beta`; ver [docs/releases/0.5.0-beta.5.md](../releases/0.5.0-beta.5.md). Dos hallazgos no anticipados al escribir esta propuesta, ambos cerrados en el camino: `uxdsl build`/`watch` nunca invocaban `validateAndNormalizeTheme`; y `scripts/release.js` nunca sincronizaba `theme-manifest.json` tras bumpear versiones — confirmado ya corregido en el publish real |
 | Objetivo | Que `--strict-theme`/`uxdsl theme --strict` sirvan como gate de CI real, sin entrar en conflicto con el propio diseño de partial theme que la librería documenta y celebra |
 | Versión objetivo | `0.5.0-beta.5` |
 | Prioridad | P0: alcance por familia (corrige un falso positivo que hace el flag inutilizable en la práctica); P2: warning de claves desconocidas dentro de familias matriz |
@@ -296,5 +296,8 @@ reales antes de publicar, igual que en los releases anteriores.
 - [x] El fixture de release reproduce el escenario original del reporte
       contra tarballs reales.
 - [x] README, migration guide y CHANGELOG reflejan beta.5.
-- [ ] La publicación queda fuera de la implementación y requiere aprobación
-      explícita del dueño.
+- [x] La publicación queda fuera de la implementación y requiere aprobación
+      explícita del dueño — el dueño pidió "publish npm next beta como
+      latest" y los 5 paquetes se publicaron como `0.5.0-beta.5` bajo
+      `latest` y `beta`. Ver
+      [docs/releases/0.5.0-beta.5.md](../releases/0.5.0-beta.5.md).

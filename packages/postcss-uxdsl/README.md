@@ -27,7 +27,7 @@ and Vite.
 ## Install
 
 ```bash
-npm install -D postcss-uxdsl uxdsl-cli
+npm install -D postcss-uxdsl@beta uxdsl-cli@beta
 npx uxdsl init
 npx uxdsl build
 ```

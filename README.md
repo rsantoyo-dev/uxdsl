@@ -2,7 +2,7 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## 0.5.0-beta.4 — published
+## 0.5.0-beta.5 — published
 
 ```bash
 npm install -D uxdsl-cli@beta postcss-uxdsl@beta
@@ -12,49 +12,36 @@ npm run uxdsl:build
 
 Import `src/uxdsl.css` once (from `src/app/layout.tsx`: `import '../uxdsl.css'`).
 Run `npm run uxdsl:watch` alongside the app's development server. After adding
-or removing `.uxdsl` files, run `npx uxdsl generate-entry`.
-No theme file is required. Optional `uxdsl.theme.config.cjs` supplies partial
-overrides, merged with canonical defaults by CLI, PostCSS and runtime.
+or removing `.uxdsl` files, run `npx uxdsl generate-entry`. See
+[`postcss-uxdsl`'s README](packages/postcss-uxdsl/README.md) for a 60-second
+tour of the syntax itself — responsive values, palette tokens, density,
+buttons, and live theming with no rebuild.
 
-[FEAT-005](docs/features/FEAT-005-beta4-zero-friction-cli.md), based on a
-second round of real-consumer verification against beta.3: `uxdsl
-build`/`watch` now watch every local module a config or theme file
-`require()`s transitively, not just the top-level file; `--strict-theme`
-(reusing `uxdsl theme --strict`'s check directly) fails a build before
-writing anything if a declared theme family ended up partially filled from
-defaults; and `uxdsl init --multi` scaffolds a `builds` project (theme entry
-+ example component entry) instead of requiring it to be hand-written from
-the README. Entirely additive — no migration steps needed from beta.3.
-
-See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
-[published release record](docs/releases/0.5.0-beta.4.md).
-`npm run verify:beta4` installs all five packages from fresh tarballs and
-exercises all three scenarios end to end; `verify:beta3`/`verify:beta2`
-still cover their own earlier scenarios the same way.
-
-Previous prereleases are recorded in
-[docs/releases/0.5.0-beta.3.md](docs/releases/0.5.0-beta.3.md) and
-[docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
-
-## 0.5.0-beta.5 — in progress
-
-[FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on
-a real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
+[FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on a
+real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
 accept an optional family scope (`--strict-theme=palette,breakpoints`, or
 `strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
 the bare flag flags any documented partial theme override — not just in
 `typography_details`, but in the zero-config `palette` example this
 project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme` also now warns about an
-unrecognized entry name inside `typography_details`/`palette`/`fonts.families`
-(a typo, not an incomplete override), and — together with its pre-existing
-top-level "Unknown theme family" warning — actually prints from a real
-`uxdsl build`/`watch` for the first time; previously only the playground's
-theme editor called that function. Entirely additive — no migration steps
-needed from beta.4. Not yet published — that requires the owner's
-separate, explicit approval, same as every prior beta.
+unchanged. `validateAndNormalizeTheme` also now warns about an unrecognized
+entry name inside `typography_details`/`palette`/`fonts.families` (a typo,
+not an incomplete override), and — together with its pre-existing top-level
+"Unknown theme family" warning — actually prints from a real `uxdsl
+build`/`watch` for the first time; previously only the playground's theme
+editor called that function. Entirely additive — no migration steps needed
+from beta.4.
+
+See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
+[published release record](docs/releases/0.5.0-beta.5.md).
 `npm run verify:beta5` installs all five packages from fresh tarballs and
-exercises the full scenario end to end.
+exercises the full scenario end to end; `verify:beta4`/`verify:beta3`/`verify:beta2`
+still cover their own earlier scenarios the same way.
+
+Previous prereleases are recorded in
+[docs/releases/0.5.0-beta.4.md](docs/releases/0.5.0-beta.4.md),
+[docs/releases/0.5.0-beta.3.md](docs/releases/0.5.0-beta.3.md) and
+[docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
 
 ## FEAT-002 migration verification
 
