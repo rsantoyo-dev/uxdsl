@@ -277,6 +277,25 @@ except when `UXDSL_DEBUG=1` is also set, which prints its own discovery
 lines the same way `build` does; the two aren't meant to be combined when
 a script needs clean JSON.
 
+### 7. Failing the build on partial theme inheritance (`--strict-theme`)
+
+The same check `uxdsl theme --strict` runs is also reachable directly from
+`build`/`watch`, so CI doesn't need a separate `uxdsl theme` step to catch
+it:
+
+```bash
+npx uxdsl build --strict-theme
+```
+
+Fails before writing anything if a theme family you declared (via
+`uxdsl.config.cjs`'s `theme`, or a theme file) ended up partially filled
+from `DEFAULT_THEME`. Defaults to `false` — an existing project never
+starts failing builds it didn't ask to be stricter about just from
+upgrading. `strictTheme: true` in `uxdsl.config.cjs` has the same effect;
+`--strict-theme`/`--no-strict-theme` on the command line always overrides
+it. With a `builds` array, the shared theme is checked once, not once per
+entry.
+
 ---
 
 ## License

@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.4 — prepared, not published
 
-FEAT-005 (`0.5.0-beta.4`), MIG-B4-02 so far:
+FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 and MIG-B4-02 so far:
 
 - `uxdsl build`/`watch` (uxdsl-cli) now watch every local module a build
   config or theme file `require()`s transitively, not just the top-level
@@ -18,6 +18,12 @@ FEAT-005 (`0.5.0-beta.4`), MIG-B4-02 so far:
   (`module.exports = require('./real-config.js')`, or a theme that reads
   `require('./theme-data.json')`) now triggers a rebuild on its own,
   without touching the file that requires it.
+- `uxdsl build`/`watch` accept `--strict-theme` (or `strictTheme: true` in
+  `uxdsl.config.cjs`), reusing the same check `uxdsl theme --strict`
+  already ran — fails before writing anything if a declared theme family
+  ended up partially filled from `DEFAULT_THEME`. Defaults to `false`, and
+  is checked once per build even with a `builds` array (the theme is
+  shared across every entry).
 
 ## 0.5.0-beta.3 — 2026-09-16
 

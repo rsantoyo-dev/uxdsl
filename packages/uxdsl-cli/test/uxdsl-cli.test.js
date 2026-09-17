@@ -15,6 +15,7 @@ const postcss = require('postcss');
 const cli = require('../bin/uxdsl.js');
 const uxdslPluginModule = require('postcss-uxdsl');
 const uxdslPlugin = uxdslPluginModule.default || uxdslPluginModule;
+const { DEFAULT_THEME } = require('postcss-uxdsl/ds-runtime');
 
 function captureWarnings(fn) {
   const original = console.warn;
@@ -618,4 +619,93 @@ test('MIG-B4-02: the theme/config file itself is still recorded using its own ca
   // silently double-watch the same physical file under two spellings.
   assert.ok(config.watch.includes(config.themeConfigPath));
   assert.equal(config.watch.filter((w) => w === themePath).length, 1);
+});
+
+// --- MIG-B4-01 (FEAT-005): --strict-theme reachable from build/watch ---
+// Reuses findPartiallyDefaultedFamilies/uxdslRuntime.resolveTheme, already
+// built and tested for `uxdsl theme --strict` (MIG-B3-04) — no engine
+// changes, just a new place to call the same check from.
+
+test('MIG-B4-01: resolveStrictTheme — flag overrides config, config overrides the false default', () => {
+  assert.equal(cli.resolveStrictTheme(undefined, undefined), false);
+  assert.equal(cli.resolveStrictTheme(undefined, true), true);
+  assert.equal(cli.resolveStrictTheme(undefined, false), false);
+  assert.equal(cli.resolveStrictTheme(true, false), true);
+  assert.equal(cli.resolveStrictTheme(false, true), false);
+});
+
+test('MIG-B4-01: "strictTheme" in uxdsl.config.cjs reaches loadConfig\'s resolved config, overridden by --no-strict-theme', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const withConfig = await cli.loadConfig({}, dir);
+  assert.equal(withConfig.strictTheme, true);
+  const withFlag = await cli.loadConfig({ 'strict-theme': false }, dir);
+  assert.equal(withFlag.strictTheme, false);
+});
+
+test('MIG-B4-01: a non-boolean "strictTheme" in uxdsl.config.cjs is a hard, actionable error', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: 'yes' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean/);
+});
+
+test('MIG-B4-01: buildOnce with strictTheme: true fails, before writing anything, when a declared family is partially defaulted', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  // Only palette.primary.main declared — the rest of palette (dark/contrast,
+  // surface, neutral, error) is left to DEFAULT_THEME.
+  config.theme = { palette: { primary: { main: '#123456' } } };
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*palette/);
+  assert.ok(!fs.existsSync(config.outFile));
+});
+
+test('MIG-B4-01: buildOnce with strictTheme: true passes when every key of a declared family is explicit', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = { spacing: FULL_SPACING, palette: DEFAULT_THEME.palette };
+  await cli.buildOnce(config); // Must not throw.
+  assert.ok(fs.existsSync(config.outFile));
+});
+
+test('MIG-B4-01: buildOnce with strictTheme: true passes when no theme is declared at all', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  await cli.buildOnce(config); // zero-config — nothing declared, nothing "partial".
+  assert.ok(fs.existsSync(config.outFile));
+});
+
+test('MIG-B4-01: buildOnce without strictTheme (default) does not fail on a partially declared family', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = { palette: { primary: { main: '#123456' } } };
+  await cli.buildOnce(config); // Must not throw — this is beta.2's own smooth-install feature.
+  assert.ok(fs.existsSync(config.outFile));
+});
+
+test('MIG-B4-01: with a "builds" config, a shared partially-defaulted theme fails the whole build once, writing nothing', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = {
+    builds: [
+      { entry: './a.uxdsl', outFile: './a.css' },
+      { entry: './b.uxdsl', outFile: './b.css', includeTheme: false },
+    ],
+    strictTheme: true,
+  };`);
+  write(dir, 'a.uxdsl', '');
+  write(dir, 'b.uxdsl', '');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = { palette: { primary: { main: '#123456' } } };
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*palette/);
+  assert.ok(!fs.existsSync(config.builds[0].outFile));
+  assert.ok(!fs.existsSync(config.builds[1].outFile));
 });

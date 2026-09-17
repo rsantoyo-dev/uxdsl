@@ -149,6 +149,15 @@ Build/Watch Options:
                     a separate includeTheme entry already defines — see
                     postcss-uxdsl's includeTheme option. Overrides
                     "includeTheme" in uxdsl.config.cjs when passed.
+  --strict-theme, --no-strict-theme
+                    Fail the build (before writing anything) if a theme
+                    family you declared ended up partially filled from
+                    DEFAULT_THEME. Defaults to false — an existing
+                    project never starts failing builds it didn't ask to
+                    be stricter about. Same check as "uxdsl theme
+                    --strict", reachable from build/watch directly.
+                    Overrides "strictTheme" in uxdsl.config.cjs when
+                    passed.
 
 Generate Entry Options:
   --src             Source directory to scan (default: ./src)
@@ -161,6 +170,7 @@ Examples:
   uxdsl build --entry src/main.uxdsl --out dist/styles.css
   uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
   uxdsl theme --diff --strict
+  uxdsl build --strict-theme
 
 Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
 `);
@@ -308,11 +318,13 @@ async function loadConfig(argv, cwd = process.cwd()) {
   let configModule = null;
 
   // Raw, unresolved values tracked across every branch below and combined
-  // into `resolvedConfig.breakpoints`/`includeTheme` in one place, once the
-  // theme (and thus `theme.breakpoints`) is known — see resolveBreakpoints/
-  // resolveIncludeTheme above for why this can't happen eagerly per-branch.
+  // into `resolvedConfig.breakpoints`/`includeTheme`/`strictTheme` in one
+  // place, once the theme (and thus `theme.breakpoints`) is known — see
+  // resolveBreakpoints/resolveIncludeTheme/resolveStrictTheme above for
+  // why this can't happen eagerly per-branch.
   let rawBreakpoints;
   let rawIncludeTheme;
+  let rawStrictTheme;
 
   if (directEntry || directOut) {
     resolvedConfig.entry = resolvePath(directEntry, cwd);
@@ -352,6 +364,13 @@ async function loadConfig(argv, cwd = process.cwd()) {
       if (configModule.includeTheme !== undefined && typeof configModule.includeTheme !== 'boolean') {
         throw new Error(`Invalid configuration in ${configPath}: "includeTheme" must be a boolean.`);
       }
+      // MIG-B4-01 (FEAT-005): shared across every entry (single or
+      // `builds`) — the theme is one thing per build, so this is
+      // validated once here regardless of which branch below runs.
+      if (configModule.strictTheme !== undefined && typeof configModule.strictTheme !== 'boolean') {
+        throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be a boolean.`);
+      }
+      rawStrictTheme = configModule.strictTheme;
       const baseDir = path.dirname(configPath);
 
       // MIG-B3-02: "builds" is mutually exclusive with top-level entry/
@@ -466,6 +485,9 @@ async function loadConfig(argv, cwd = process.cwd()) {
   } else {
     resolvedConfig.includeTheme = resolveIncludeTheme(argv['include-theme'], rawIncludeTheme);
   }
+  // MIG-B4-01: independent of `builds` — the theme is shared across every
+  // entry, so this is resolved once here regardless of single/multi mode.
+  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme);
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -531,6 +553,16 @@ function resolveIncludeTheme(flagValue, configValue) {
   if (typeof flagValue === 'boolean') return flagValue;
   if (typeof configValue === 'boolean') return configValue;
   return true;
+}
+
+// MIG-B4-01 (FEAT-005): same precedence shape as resolveIncludeTheme
+// (flag > config > default), but the default is `false` — unlike
+// includeTheme, an existing project should never start failing builds it
+// didn't ask to be stricter about just because it upgraded the CLI.
+function resolveStrictTheme(flagValue, configValue) {
+  if (typeof flagValue === 'boolean') return flagValue;
+  if (typeof configValue === 'boolean') return configValue;
+  return false;
 }
 
 // Config-level breakpoints and theme-level breakpoints both merge onto
@@ -640,6 +672,27 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
 // entries becomes a one-element array built from config.entry/outFile/
 // includeTheme, so this refactor changes nothing observable for them.
 async function buildOnce(config) {
+  // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
+  // anything, if the project explicitly declared a theme family that
+  // ended up partially filled from DEFAULT_THEME — the same question
+  // `uxdsl theme --strict` already answers (MIG-B3-04), now reachable
+  // from `build`/`watch` directly instead of requiring a separate command.
+  // Checked once here, not per-entry: the theme is shared across every
+  // entry, `builds` or not.
+  if (config && config.strictTheme) {
+    if (typeof uxdslRuntime.resolveTheme !== 'function') {
+      throw new Error('postcss-uxdsl/ds-runtime not found (or too old to export resolveTheme) — required for --strict-theme. Install a current postcss-uxdsl in your project or alongside the CLI.');
+    }
+    const effectiveTheme = uxdslRuntime.resolveTheme(config.theme);
+    const incomplete = findPartiallyDefaultedFamilies(config.theme, effectiveTheme);
+    if (incomplete.length > 0) {
+      throw new Error(
+        `--strict-theme: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        'Provide every key of these families explicitly, or drop --strict-theme/strictTheme if inheriting some of them is intentional.'
+      );
+    }
+  }
+
   const entries = config && config.builds && config.builds.length
     ? config.builds
     : [{ entry: config && config.entry, outFile: config && config.outFile, includeTheme: config && config.includeTheme }];
@@ -1166,6 +1219,7 @@ module.exports = {
   normalizeWatchGlobs,
   normalizeBpMap,
   resolveIncludeTheme,
+  resolveStrictTheme,
   resolveBreakpoints,
   buildOnce,
   diffThemeAgainstDefaults,
