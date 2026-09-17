@@ -39,7 +39,15 @@ async function captureWarningsAsync(fn) {
 }
 
 function mkTmpDir() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-test-'));
+  // Realpath-resolved so every path this test builds from `dir` (globs,
+  // configPath, themeConfigPath, ...) already matches the form
+  // require.resolve() naturally produces for a newly-discovered nested
+  // require() — on macOS, os.tmpdir() lives under /tmp, itself a symlink
+  // to /private/tmp; without this, a test could construct an "expected"
+  // path via path.join(dir, ...) that differs textually from the real
+  // path the code under test actually resolves to, despite naming the
+  // exact same file on disk.
+  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-test-')));
 }
 
 function write(dir, relPath, content) {
@@ -520,4 +528,94 @@ test('MIG-B3-02: buildOnce writes nothing at all when one of several builds[] en
   await assert.rejects(() => cli.buildOnce(config), /builds\[1\].*broken\.css/);
   assert.ok(!fs.existsSync(config.builds[0].outFile), 'the earlier, successfully-compiled entry must not be written either');
   assert.ok(!fs.existsSync(config.builds[1].outFile));
+});
+
+// --- MIG-B4-02 (FEAT-005): auto-watch of transitive local require()s ---
+// clearRequireCache already walked a config/theme file's full require()
+// tree to invalidate the cache; collectLocalRequireTree is that same walk,
+// now also used to populate the watch list so editing a nested module (not
+// just the top-level file) actually produces a filesystem event.
+
+function cleanupRequireCache(...paths) {
+  for (const p of paths) {
+    try { delete require.cache[require.resolve(p)]; } catch (_) { /* not required — nothing to clean up */ }
+  }
+}
+
+test('MIG-B4-02: collectLocalRequireTree includes the root and a direct nested require()', () => {
+  const dir = mkTmpDir();
+  const childPath = write(dir, 'child.js', 'module.exports = 1;');
+  const rootPath = write(dir, 'root.js', `module.exports = require('./child.js');`);
+  require(rootPath); // populate require.cache with the real tree, like loadModuleExport would
+  try {
+    const ids = cli.collectLocalRequireTree(rootPath);
+    assert.ok(ids.has(require.resolve(rootPath)), `expected the root itself in ${JSON.stringify([...ids])}`);
+    assert.ok(ids.has(require.resolve(childPath)), `expected the nested require() in ${JSON.stringify([...ids])}`);
+  } finally {
+    cleanupRequireCache(rootPath, childPath);
+  }
+});
+
+test('MIG-B4-02: collectLocalRequireTree follows nesting two levels deep', () => {
+  const dir = mkTmpDir();
+  const grandchildPath = write(dir, 'grandchild.js', 'module.exports = 1;');
+  const childPath = write(dir, 'child.js', `module.exports = require('./grandchild.js');`);
+  const rootPath = write(dir, 'root.js', `module.exports = require('./child.js');`);
+  require(rootPath);
+  try {
+    const ids = cli.collectLocalRequireTree(rootPath);
+    assert.ok(ids.has(require.resolve(grandchildPath)), `expected the two-levels-deep require() in ${JSON.stringify([...ids])}`);
+  } finally {
+    cleanupRequireCache(rootPath, childPath, grandchildPath);
+  }
+});
+
+test('MIG-B4-02: collectLocalRequireTree excludes node_modules dependencies', () => {
+  const dir = mkTmpDir();
+  write(dir, 'node_modules/fake-dep/package.json', JSON.stringify({ name: 'fake-dep', main: 'index.js' }));
+  const depPath = write(dir, 'node_modules/fake-dep/index.js', 'module.exports = 1;');
+  const rootPath = write(dir, 'root.js', `module.exports = require('fake-dep');`);
+  require(rootPath);
+  try {
+    const ids = cli.collectLocalRequireTree(rootPath);
+    assert.ok(![...ids].some((id) => id.split(path.sep).includes('node_modules')), `expected no node_modules entry in ${JSON.stringify([...ids])}`);
+  } finally {
+    cleanupRequireCache(rootPath, depPath);
+  }
+});
+
+test('MIG-B4-02: a uxdsl.config.cjs that requires another local module has that module in loadConfig\'s watch list', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'real-config.js', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = require('./real-config.js');`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  const realConfigPath = path.join(dir, 'real-config.js');
+  assert.ok(config.watch.includes(realConfigPath), `expected ${realConfigPath} in ${JSON.stringify(config.watch)}`);
+});
+
+test('MIG-B4-02: a uxdsl.theme.config.cjs that requires a nested JSON file has that file in loadConfig\'s watch list', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'theme-data.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = require('./theme-data.json');`);
+  const config = await cli.loadConfig({}, dir);
+  const themeDataPath = path.join(dir, 'theme-data.json');
+  assert.ok(config.watch.includes(themeDataPath), `expected ${themeDataPath} in ${JSON.stringify(config.watch)}`);
+});
+
+test('MIG-B4-02: the theme/config file itself is still recorded using its own canonical path, not a resolved variant', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const themePath = write(dir, 'uxdsl.theme.config.cjs', `module.exports = {};`);
+  const config = await cli.loadConfig({}, dir);
+  // Exact string match against what findThemeConfigPath/resolvePath produced
+  // (config.themeConfigPath), not merely "some path resolving to the same
+  // file" — a mismatch here (e.g. via require.resolve()'s realpath, which
+  // differs from this on any /tmp-is-a-symlink system such as macOS) would
+  // silently double-watch the same physical file under two spellings.
+  assert.ok(config.watch.includes(config.themeConfigPath));
+  assert.equal(config.watch.filter((w) => w === themePath).length, 1);
 });

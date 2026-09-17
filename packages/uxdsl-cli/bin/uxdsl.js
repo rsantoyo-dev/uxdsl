@@ -480,16 +480,34 @@ async function loadConfig(argv, cwd = process.cwd()) {
     const watchBaseDir = configPath ? path.dirname(configPath) : cwd;
     const entryOrEntries = hasBuilds ? resolvedConfig.builds.map((b) => b.entry) : resolvedConfig.entry;
     resolvedConfig.watch = normalizeWatchGlobs(resolvedConfig.watch, watchBaseDir, entryOrEntries);
-    if (themeConfigPath && !resolvedConfig.watch.includes(themeConfigPath)) {
-      resolvedConfig.watch.push(themeConfigPath);
-    }
-    // The build config itself can change entry/outFile/watch/theme/
-    // references too — watch it for the same reason the theme file is
-    // watched, so `uxdsl watch` picks up a config edit without the user
-    // having to list uxdsl.config.cjs in their own `watch` array.
-    if (configPath && !resolvedConfig.watch.includes(configPath)) {
-      resolvedConfig.watch.push(configPath);
-    }
+    // MIG-B4-02 (FEAT-005): watch every local module the theme/build
+    // config requires transitively, not just the top-level file itself —
+    // `require.cache` already holds the full tree at this point
+    // (loadModuleExport/loadThemeConfig already ran the real require()
+    // above), so this is free information, not a second resolution pass.
+    // The build config itself is watched for the same reason the theme
+    // file is: so `uxdsl watch` picks up an edit without the user having
+    // to list uxdsl.config.cjs (or whatever it requires) in their own
+    // `watch` array.
+    const addRequireTreeToWatch = (filePath) => {
+      if (!filePath) return;
+      // The root is recorded using the caller's own string (the exact
+      // form `resolvedConfig.themeConfigPath`/`configPath` already use)
+      // rather than whatever `collectLocalRequireTree` resolved it to —
+      // `require.resolve()` can return a realpath-resolved variant of the
+      // same file (e.g. macOS's /tmp -> /private/tmp symlink), which
+      // would otherwise add one physical file to the watch list twice
+      // under two different spellings.
+      if (!resolvedConfig.watch.includes(filePath)) resolvedConfig.watch.push(filePath);
+      let rootId;
+      try { rootId = require.resolve(filePath); } catch (_) { rootId = null; }
+      for (const id of collectLocalRequireTree(filePath)) {
+        if (id === rootId) continue; // Already recorded above as `filePath` itself.
+        if (!resolvedConfig.watch.includes(id)) resolvedConfig.watch.push(id);
+      }
+    };
+    addRequireTreeToWatch(themeConfigPath);
+    addRequireTreeToWatch(configPath);
   }
   // Exposed so the watcher can invalidate require()'s module cache for
   // exactly these two files before reloading config on a change (they are
@@ -742,30 +760,38 @@ async function themeCommand(argv, cwd = process.cwd()) {
   }
 }
 
-/** Clears `filePath` from require()'s cache — and, recursively, every
- * project-local module it itself required (tracked by Node on each
- * cache entry's `.children`). A config or theme file that does
- * `theme: require('./theme.json')` (or requires any other local helper)
- * would otherwise keep serving THAT nested module's pre-edit content even
- * after the top-level file's own cache entry is cleared and re-required —
- * Node re-executes the top-level file, but its own `require('./theme.json')`
- * call still resolves to the untouched cache entry for that JSON file.
- * node_modules dependencies (chokidar, postcss, ...) are deliberately left
- * alone: they don't change between rebuilds, and re-executing them on
- * every keystroke would be pure waste (and, for some packages, unsafe to
- * do more than once). */
-function clearRequireCache(filePath) {
-  if (!filePath) return;
+/** Walks `filePath`'s require() tree — the file itself plus, recursively,
+ * every project-local module it itself required (tracked by Node on each
+ * cache entry's `.children`) — and returns the `Set` of resolved module
+ * ids visited. A config or theme file that does `theme: require('./theme.json')`
+ * (or requires any other local helper) has that nested module as part of
+ * this tree. node_modules dependencies (chokidar, postcss, ...) are
+ * deliberately excluded from the walk: they don't change between
+ * rebuilds, re-executing them on every keystroke would be pure waste
+ * (and, for some packages, unsafe to do more than once), and nothing
+ * needs them invalidated or watched.
+ *
+ * Shared by two different needs that both require walking this exact
+ * tree: `clearRequireCache` (delete every visited id so a reload
+ * re-executes fresh code) and `loadConfig`'s watch-list population
+ * (MIG-B4-02, FEAT-005) — watching only the top-level config/theme file
+ * and not what it transitively `require()`s meant editing a nested
+ * module produced no filesystem event chokidar could react to at all,
+ * even though the cache was already being invalidated correctly on the
+ * *next* unrelated rebuild. Calling this after the real require() already
+ * ran (as `loadModuleExport`/`loadThemeConfig` do) costs nothing extra —
+ * `require.cache` already holds the full tree by then. */
+function collectLocalRequireTree(filePath) {
+  const ids = new Set();
   let resolved;
   try {
     resolved = require.resolve(filePath);
   } catch (_) {
-    return; // Not required yet (or already gone) — nothing to invalidate.
+    return ids; // Not required yet (or already gone) — nothing to report.
   }
-  const seen = new Set();
   const visit = (id) => {
-    if (seen.has(id)) return;
-    seen.add(id);
+    if (ids.has(id)) return;
+    ids.add(id);
     const mod = require.cache[id];
     if (!mod) return;
     for (const child of mod.children || []) {
@@ -773,9 +799,14 @@ function clearRequireCache(filePath) {
         visit(child.id);
       }
     }
-    delete require.cache[id];
   };
   visit(resolved);
+  return ids;
+}
+
+function clearRequireCache(filePath) {
+  if (!filePath) return;
+  for (const id of collectLocalRequireTree(filePath)) delete require.cache[id];
 }
 
 // MIG-B3-02: a `builds` config has no single `config.outFile` — every
@@ -1142,6 +1173,7 @@ module.exports = {
   themeCommand,
   startWatch,
   clearRequireCache,
+  collectLocalRequireTree,
   init,
   generateEntry,
   main,

@@ -6,6 +6,19 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
+## 0.5.0-beta.4 — prepared, not published
+
+FEAT-005 (`0.5.0-beta.4`), MIG-B4-02 so far:
+
+- `uxdsl build`/`watch` (uxdsl-cli) now watch every local module a build
+  config or theme file `require()`s transitively, not just the top-level
+  file — `clearRequireCache` already walked that exact tree to invalidate
+  the cache; the same walk (`collectLocalRequireTree`) now also populates
+  the watch list. Editing a module the config/theme delegates to
+  (`module.exports = require('./real-config.js')`, or a theme that reads
+  `require('./theme-data.json')`) now triggers a rebuild on its own,
+  without touching the file that requires it.
+
 ## 0.5.0-beta.3 — 2026-09-16
 
 FEAT-004 (`0.5.0-beta.3`), MIG-B3-01 through MIG-B3-06 (all six stories):

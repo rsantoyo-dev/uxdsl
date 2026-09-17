@@ -161,18 +161,49 @@ test('watch mode reloads a theme value that comes from a nested require() (e.g. 
   await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('#111111'));
   await delay(WATCHER_SETTLE_MS);
 
-  // Only the nested JSON changes — uxdsl.theme.config.cjs's own file
-  // content and mtime are untouched, so this exercises the require()
-  // cache specifically for the dependency, not the top-level file.
+  // MIG-B4-02 (FEAT-005): only the nested JSON changes — uxdsl.theme.config.cjs's
+  // own file content and mtime are untouched. Before this fix, chokidar only
+  // watched the top-level theme file, so this edit produced no filesystem
+  // event at all and required a synthetic fs.utimesSync touch of the parent
+  // file as a workaround; theme-data.json is now itself part of the watch
+  // list (collectLocalRequireTree), so the real edit alone is enough.
   fs.writeFileSync(path.join(dir, 'theme-data.json'), JSON.stringify({ palette: { primary: { main: '#333333' } } }));
-  // theme-data.json isn't itself in `watch` — touch the theme file (whose
-  // content is unchanged) so chokidar has something to react to, exactly
-  // as an editor's "save" would if a project watched the whole directory.
-  fs.utimesSync(path.join(dir, 'uxdsl.theme.config.cjs'), new Date(), new Date());
 
   await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('#333333'));
   assert.ok(fs.readFileSync(cssPath, 'utf8').includes('#333333'), 'rebuilt CSS must carry the new value from the nested JSON require()');
   assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('#111111'), 'rebuilt CSS must not still carry the stale nested value');
+});
+
+// MIG-B4-02 (FEAT-005): the exact scenario a real consumer found — a build
+// config (not a theme file) that delegates to another local module — never
+// triggered a rebuild on its own before this fix, only the top-level
+// uxdsl.config.cjs was watched.
+test('watch mode reloads when the build config (not the theme file) delegates to a nested require()', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  // A real responsive declaration is required — the breakpoint value alone
+  // (e.g. via the #uxdsl-bp-meta marker) is serialized as `"xl":1280`, with
+  // no "px" suffix, so only an actual @media rule proves the value changed.
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.card { width: xs(100%) xl(50%); }');
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1280 } };\n");
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = require('./real-config.js');\n");
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('1280px'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // Only real-config.js changes — uxdsl.config.cjs's own content is
+  // untouched, so this exercises the config's own nested require(), the
+  // exact case a real consumer reported as never triggering a rebuild.
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1440 } };\n");
+
+  await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('1440px'));
+  assert.ok(fs.readFileSync(cssPath, 'utf8').includes('1440px'), 'rebuilt CSS must carry the new breakpoint from the nested require()');
+  assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('1280px'), 'rebuilt CSS must not still carry the stale nested value');
 });
 
 test('watch mode does not treat its own output file as a source change (no self-triggered rebuild loop)', async (t) => {

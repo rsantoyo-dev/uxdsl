@@ -223,8 +223,11 @@ save. The output file (`outFile`) is automatically excluded from the watch
 list even if a broader glob like `src/**/*.css` would otherwise match it,
 so the CLI's own write never re-triggers itself, including after changing
 `outFile`. Changes to `watch` patterns or `themeFile` update the active watcher
-without restarting the CLI. Local modules required by the config are reloaded
-too; include their source paths in `watch` to trigger a rebuild when edited.
+without restarting the CLI. Local modules the config or theme file
+`require()`s — transitively, at any depth — are watched automatically too;
+editing one of them alone (without touching the file that requires it)
+triggers a rebuild. `node_modules` dependencies are excluded, since they
+don't change between rebuilds.
 
 ### 5. CLI Arguments (No Config)
 
