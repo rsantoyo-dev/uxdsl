@@ -6,7 +6,7 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
-## 0.5.0-beta.4 — prepared, not published
+## 0.5.0-beta.4 — 2026-09-17
 
 FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-04 (all four stories):
 

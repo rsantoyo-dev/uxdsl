@@ -25,7 +25,7 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 
 ```bash
 # Install locally in your project (Recommended)
-npm install -D uxdsl-cli@0.5.0-beta.3 postcss-uxdsl@0.5.0-beta.3
+npm install -D uxdsl-cli@0.5.0-beta.4 postcss-uxdsl@0.5.0-beta.4
 
 # Or install globally
 npm install -g uxdsl-cli

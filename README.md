@@ -2,7 +2,7 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## 0.5.0-beta.3 — published
+## 0.5.0-beta.4 — published
 
 ```bash
 npm install -D uxdsl-cli@beta postcss-uxdsl@beta
@@ -16,38 +16,25 @@ or removing `.uxdsl` files, run `npx uxdsl generate-entry`.
 No theme file is required. Optional `uxdsl.theme.config.cjs` supplies partial
 overrides, merged with canonical defaults by CLI, PostCSS and runtime.
 
-[FEAT-004](docs/features/FEAT-004-beta3-cli-plugin-parity.md) closed the gap a
-beta.2 consumer's own migration report surfaced: `includeTheme` and theme-file
-`breakpoints` are now reachable from `uxdsl build`/`watch`
-(`--include-theme`/`--no-include-theme`), a `builds` array in
-`uxdsl.config.cjs` compiles a theme entry plus several component/CSS-Module
-entries from one invocation, `uxdsl theme --diff`/`--strict` show which theme
-values are inherited versus the project's own, and a theme file that looks
-like a build config now warns instead of silently ignoring its keys.
-
-See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
-[published release record](docs/releases/0.5.0-beta.3.md).
-`npm run verify:beta3` installs all five packages from fresh tarballs and
-exercises the full `builds`/`includeTheme`/theme-breakpoints scenario end to
-end; `npm run verify:beta2` still covers the earlier zero-config/partial-theme
-scenario the same way.
-
-The previous prerelease, `0.5.0-beta.2`, is recorded in
-[docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
-
-## 0.5.0-beta.4 — in progress
-
 [FEAT-005](docs/features/FEAT-005-beta4-zero-friction-cli.md), based on a
 second round of real-consumer verification against beta.3: `uxdsl
 build`/`watch` now watch every local module a config or theme file
-`require()`s transitively, not just the top-level file
-(`--strict-theme`'s partial-default-inheritance check reused directly from
-`uxdsl theme --strict`), and `uxdsl init --multi` scaffolds a `builds`
-project (theme entry + example component entry) instead of requiring it to
-be hand-written from the README. Not yet published — that requires the
-owner's separate, explicit approval, same as every prior beta.
+`require()`s transitively, not just the top-level file; `--strict-theme`
+(reusing `uxdsl theme --strict`'s check directly) fails a build before
+writing anything if a declared theme family ended up partially filled from
+defaults; and `uxdsl init --multi` scaffolds a `builds` project (theme entry
++ example component entry) instead of requiring it to be hand-written from
+the README. Entirely additive — no migration steps needed from beta.3.
+
+See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
+[published release record](docs/releases/0.5.0-beta.4.md).
 `npm run verify:beta4` installs all five packages from fresh tarballs and
-exercises all three scenarios end to end.
+exercises all three scenarios end to end; `verify:beta3`/`verify:beta2`
+still cover their own earlier scenarios the same way.
+
+Previous prereleases are recorded in
+[docs/releases/0.5.0-beta.3.md](docs/releases/0.5.0-beta.3.md) and
+[docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
 
 ## FEAT-002 migration verification
 

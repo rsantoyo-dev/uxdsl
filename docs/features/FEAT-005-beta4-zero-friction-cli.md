@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Las 4 stories implementadas y probadas: MIG-B4-01/02/03 con unitarias, subprocess real de `uxdsl watch` y verificación manual contra el CLI; MIG-B4-04 (`fixtures/mig-b4-04-release/`, `npm run verify:beta4`) reproduce las tres contra las 5 tarballs reales. De paso se encontró y corrigió una deriva preexistente no relacionada con esta feature (`theme-manifest.json` con la versión de beta.2 tras el publish de beta.3). Falta la aprobación explícita de publicación |
+| Estado | Las 4 stories implementadas, probadas y publicadas. El dueño del proyecto dio la aprobación explícita y los 5 paquetes se publicaron como `0.5.0-beta.4` bajo los tags `latest` y `beta`; ver [docs/releases/0.5.0-beta.4.md](../releases/0.5.0-beta.4.md) |
 | Objetivo | Cerrar las fricciones de superficie que quedaron después de FEAT-004: invocar `--strict-theme` sin salir de `build`, que editar un módulo transitivo del config/tema dispare rebuild, y que `init` arranque un proyecto multi-entrada sin copiar el README a mano |
 | Versión objetivo | `0.5.0-beta.4` |
 | Prioridad | P0: auto-watch de requires transitivos (bug real, no feature); P1: `--strict-theme` en build/watch; P2: `init --multi` |
@@ -278,8 +278,10 @@ reales antes de publicar, igual que en beta.2 y beta.3.
 - [x] El fixture de release reproduce los tres escenarios contra tarballs
       reales.
 - [x] README, migration guide y CHANGELOG reflejan beta.4.
-- [ ] La publicación queda fuera de la implementación y requiere aprobación
-      explícita del dueño.
+- [x] La publicación queda fuera de la implementación y requiere aprobación
+      explícita del dueño — el dueño pidió "publícalo también como latest"
+      y los 5 paquetes se publicaron como `0.5.0-beta.4` bajo `latest` y
+      `beta`. Ver [docs/releases/0.5.0-beta.4.md](../releases/0.5.0-beta.4.md).
 
 ---
 

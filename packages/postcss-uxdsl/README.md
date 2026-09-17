@@ -37,7 +37,7 @@ This package works best when initialized with the CLI.
 
 ### 1. Install
 ```bash
-npm install -D postcss-uxdsl@0.5.0-beta.3 uxdsl-cli@0.5.0-beta.3 concurrently
+npm install -D postcss-uxdsl@0.5.0-beta.4 uxdsl-cli@0.5.0-beta.4 concurrently
 ```
 
 ### 2. Initialize
