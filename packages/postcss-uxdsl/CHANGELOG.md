@@ -6,6 +6,22 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
+## 0.5.0-beta.5 — prepared, not published
+
+FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 so far:
+
+- `uxdsl build`/`watch --strict-theme` and `uxdsl theme --strict` now
+  accept an optional family scope (`--strict-theme=palette,breakpoints`,
+  or `strictTheme: ['palette', 'breakpoints']` in `uxdsl.config.cjs`),
+  checking only the named families instead of every family the project
+  touched. Fixes a real false positive: `typography_details` documents
+  per-key partial override as the intended pattern, but the bare
+  `--strict-theme` (unchanged, still available) flags any such override as
+  "incomplete" — and the same is true of the zero-config `palette`
+  example this package's own README uses, and of a partial `spacing`
+  override, not just `typography_details`. Purely additive; `true`
+  (or the bare flag) behaves exactly as it did in beta.4.
+
 ## 0.5.0-beta.4 — 2026-09-17
 
 FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-04 (all four stories):

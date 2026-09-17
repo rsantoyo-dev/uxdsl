@@ -148,3 +148,40 @@ test('MIG-B3-04: `uxdsl theme --strict` passes when every key of a declared fami
   // Must not throw.
   await captureStdoutAsync(() => cli.themeCommand({ strict: true }, dir));
 });
+
+// --- MIG-B5-01 (FEAT-006): `--strict` scoped by family, same as build's ---
+// `--strict-theme` — a project names which families it wants completeness
+// enforced for, instead of the tool checking every touched family
+// unconditionally (which conflicts with typography_details' own
+// documented partial-override pattern).
+
+test('MIG-B5-01: `uxdsl theme --strict=palette` passes despite a partial typography_details override', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: ${JSON.stringify(DEFAULT_THEME.palette)}, typography_details: { h2: { fontSize: '2.2rem' } } };`);
+  // Must not throw — the exact reported repro, scoped out.
+  await captureStdoutAsync(() => cli.themeCommand({ strict: 'palette' }, dir));
+});
+
+test('MIG-B5-01: `uxdsl theme --strict=palette` still fails when palette itself is partial', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#111111' } } };`);
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'palette' }, dir)),
+    /--strict \(scoped to: palette\):.*palette/
+  );
+});
+
+test('MIG-B5-01: bare `uxdsl theme --strict` (no scope) is unchanged — still fails on the exact reported typography_details repro', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: true }, dir)),
+    /--strict:.*typography_details/
+  );
+});

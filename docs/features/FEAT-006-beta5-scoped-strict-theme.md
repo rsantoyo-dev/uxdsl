@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | Propuesta. Ninguna story implementada. Baseline verificado contra el código publicado en `0.5.0-beta.4` |
+| Estado | MIG-B5-01 implementada y probada (unitarias + verificación manual contra el CLI real, reproduciendo el repro exacto del reporte tanto sin acotar —sigue fallando, sin regresión— como acotado a `palette` —pasa—). Faltan MIG-B5-02 (opcional) y MIG-B5-03 |
 | Objetivo | Que `--strict-theme`/`uxdsl theme --strict` sirvan como gate de CI real, sin entrar en conflicto con el propio diseño de partial theme que la librería documenta y celebra |
 | Versión objetivo | `0.5.0-beta.5` |
 | Prioridad | P0: alcance por familia (corrige un falso positivo que hace el flag inutilizable en la práctica); P2: warning de claves desconocidas dentro de familias matriz |
@@ -233,12 +233,12 @@ reales antes de publicar, igual que en los releases anteriores.
 
 ## Definition of done
 
-- [ ] `--strict-theme=familia1,familia2` (y su equivalente en
+- [x] `--strict-theme=familia1,familia2` (y su equivalente en
       `uxdsl.config.cjs`) chequea solo esas familias, entre las tocadas.
-- [ ] `strictTheme: true`/`--strict-theme` sin valor se comportan
+- [x] `strictTheme: true`/`--strict-theme` sin valor se comportan
       exactamente igual que en beta.4 — cero regresión.
-- [ ] El mismo alcance funciona en `uxdsl theme --strict`.
-- [ ] Un `strictTheme` de tipo inválido falla nombrando el archivo y la
+- [x] El mismo alcance funciona en `uxdsl theme --strict`.
+- [x] Un `strictTheme` de tipo inválido falla nombrando el archivo y la
       propiedad.
 - [ ] (Opcional) Claves desconocidas dentro de `typography_details`,
       `palette` y `fonts.families` producen un warning.

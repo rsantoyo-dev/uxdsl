@@ -15,7 +15,7 @@ const postcss = require('postcss');
 const cli = require('../bin/uxdsl.js');
 const uxdslPluginModule = require('postcss-uxdsl');
 const uxdslPlugin = uxdslPluginModule.default || uxdslPluginModule;
-const { DEFAULT_THEME } = require('postcss-uxdsl/ds-runtime');
+const { DEFAULT_THEME, resolveTheme: resolveThemeForTests } = require('postcss-uxdsl/ds-runtime');
 
 function captureWarnings(fn) {
   const original = console.warn;
@@ -708,4 +708,93 @@ test('MIG-B4-01: with a "builds" config, a shared partially-defaulted theme fail
   await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*palette/);
   assert.ok(!fs.existsSync(config.builds[0].outFile));
   assert.ok(!fs.existsSync(config.builds[1].outFile));
+});
+
+// --- MIG-B5-01 (FEAT-006): --strict-theme/--strict scoped by family ---
+// `strictTheme: true` checks every touched family, which turns out to
+// conflict with the library's own documented partial-override pattern —
+// verified for typography_details (the reported case), but also for
+// palette (the postcss-uxdsl README's own celebrated example) and spacing
+// (mig-b2-05-release's own fixture). The fix lets a project name which
+// families it wants checked, instead of the tool guessing.
+
+test('MIG-B5-01: normalizeStrictThemeScope — CSV string, array, booleans, and "nothing here" all normalize correctly', () => {
+  assert.equal(cli.normalizeStrictThemeScope(undefined), undefined);
+  assert.equal(cli.normalizeStrictThemeScope(null), undefined);
+  assert.equal(cli.normalizeStrictThemeScope(true), true);
+  assert.equal(cli.normalizeStrictThemeScope(false), false);
+  assert.deepEqual(cli.normalizeStrictThemeScope('palette,breakpoints'), ['palette', 'breakpoints']);
+  assert.deepEqual(cli.normalizeStrictThemeScope(' palette , breakpoints '), ['palette', 'breakpoints']);
+  assert.deepEqual(cli.normalizeStrictThemeScope(['palette', 'breakpoints']), ['palette', 'breakpoints']);
+  assert.equal(cli.normalizeStrictThemeScope(''), undefined);
+  assert.equal(cli.normalizeStrictThemeScope([]), undefined);
+});
+
+test('MIG-B5-01: resolveStrictTheme — a scoped flag overrides a scoped or boolean config, unchanged precedence otherwise', () => {
+  assert.equal(cli.resolveStrictTheme(undefined, undefined), false);
+  assert.equal(cli.resolveStrictTheme(undefined, true), true, 'strictTheme: true in config still means "check everything"');
+  assert.deepEqual(cli.resolveStrictTheme(undefined, ['palette']), ['palette']);
+  assert.deepEqual(cli.resolveStrictTheme('palette,breakpoints', true), ['palette', 'breakpoints'], 'a scoped flag overrides an unscoped true in config');
+  assert.equal(cli.resolveStrictTheme(false, ['palette']), false, '--no-strict-theme always wins, scoped config or not');
+});
+
+test('MIG-B5-01: findPartiallyDefaultedFamilies with a scope only evaluates the intersection with touched families', () => {
+  const raw = { palette: { primary: { main: '#123456' } }, typography_details: { h2: { fontSize: '2rem' } } };
+  const effective = resolveThemeForTests(raw);
+  assert.deepEqual(cli.findPartiallyDefaultedFamilies(raw, effective, ['palette']), ['palette'], 'typography_details is incomplete too, but out of scope');
+  assert.deepEqual(cli.findPartiallyDefaultedFamilies(raw, effective, ['typography_details']), ['typography_details']);
+  assert.deepEqual(cli.findPartiallyDefaultedFamilies(raw, effective, ['breakpoints']), [], 'breakpoints was never touched — nothing to flag even though it\'s in scope');
+  assert.deepEqual(cli.findPartiallyDefaultedFamilies(raw, effective, true).sort(), ['palette', 'typography_details'], 'true (or omitted) keeps checking every touched family, unchanged');
+});
+
+test('MIG-B5-01: buildOnce with strictTheme scoped to ["palette"] passes despite a partial typography_details override', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  assert.deepEqual(config.strictTheme, ['palette']);
+  // The exact reported repro: a single documented partial override,
+  // explicitly out of this project's chosen strict-theme scope.
+  config.theme = { palette: DEFAULT_THEME.palette, typography_details: { h2: { fontSize: '2.2rem' } } };
+  await cli.buildOnce(config); // Must not throw.
+  assert.ok(fs.existsSync(config.outFile));
+});
+
+test('MIG-B5-01: buildOnce with strictTheme scoped to ["palette"] still fails when palette itself is partial', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  config.theme = { palette: { primary: { main: '#123456' } }, typography_details: { h2: { fontSize: '2.2rem' } } };
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme \(scoped to: palette\):.*palette/);
+  assert.ok(!fs.existsSync(config.outFile));
+});
+
+test('MIG-B5-01: --strict-theme=<families> on the command line scopes the check the same way as the config array', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({ 'strict-theme': 'palette' }, dir);
+  assert.deepEqual(config.strictTheme, ['palette']);
+  config.theme = { palette: DEFAULT_THEME.palette, typography_details: { h2: { fontSize: '2.2rem' } } };
+  await cli.buildOnce(config); // Must not throw — typography_details is out of scope.
+});
+
+test('MIG-B5-01: bare --strict-theme (no scope) is unchanged from beta.4 — still fails on the exact reported repro', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  assert.equal(config.strictTheme, true);
+  // The exact repro from the consumer report: one documented partial
+  // typography override, nothing else touched.
+  config.theme = { typography_details: { h2: { line: '1.15' } } };
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*typography_details/);
+});
+
+test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strings is a hard, actionable error', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: 'palette' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean or an array of family names/);
 });

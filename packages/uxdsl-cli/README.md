@@ -279,6 +279,10 @@ distinguish from "this value happens to match the default anyway":
 npx uxdsl theme --strict
 ```
 
+`--strict=palette,breakpoints` scopes the check to only those families —
+see `--strict-theme`'s own note below for why this is usually what you
+want over the bare flag.
+
 Both flags combine. Output is always parseable JSON on stdout (no log
 lines mixed in), so `uxdsl theme` composes with `| jq` or a script —
 except when `UXDSL_DEBUG=1` is also set, which prints its own discovery
@@ -303,6 +307,33 @@ upgrading. `strictTheme: true` in `uxdsl.config.cjs` has the same effect;
 `--strict-theme`/`--no-strict-theme` on the command line always overrides
 it. With a `builds` array, the shared theme is checked once, not once per
 entry.
+
+**Scope it to specific families** — recommended for most projects:
+
+```bash
+npx uxdsl build --strict-theme=palette,breakpoints
+```
+
+```js
+// uxdsl.config.cjs
+module.exports = {
+  strictTheme: ['palette', 'breakpoints'],
+};
+```
+
+`typography_details` documents per-key partial override as the intended
+pattern (see "Guía de 5 entradas" and the migration guide) — declaring
+`typography_details.h2.fontSize` alone and inheriting the rest of `h2`,
+and every other tag, from `DEFAULT_THEME` is normal, encouraged usage, not
+an oversight. The bare `--strict-theme` (every touched family) checks
+`typography_details` too, so it tends to fail on exactly that recommended
+usage — this isn't unique to `typography_details` either: the
+zero-config `palette.primary.main` example a few sections up, and a
+partial `spacing` override, are checked the same unforgiving way. Scoping
+to the families you actually want fully specified (typically `palette`
+and/or `breakpoints`) avoids the conflict while keeping the guarantee
+where it's meaningful. `true` remains available for a project that
+deliberately wants maximum strictness everywhere.
 
 ---
 

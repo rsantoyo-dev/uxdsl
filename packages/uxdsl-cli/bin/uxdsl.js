@@ -136,6 +136,9 @@ Theme Options (theme command only):
   --strict          Exit non-zero if any family you declared ended up
                     partially filled from defaults. Combine with --diff to
                     see exactly which leaves triggered it.
+                    --strict=<family1>,<family2> scopes the check to only
+                    those families — see --strict-theme's own note under
+                    build/watch above for why this is usually what you want.
 
 Build/Watch Options:
   --entry, -e       Entry .uxdsl file that contains @import statements
@@ -163,6 +166,15 @@ Build/Watch Options:
                     --strict", reachable from build/watch directly.
                     Overrides "strictTheme" in uxdsl.config.cjs when
                     passed.
+                    --strict-theme=<family1>,<family2> checks only the
+                    named families instead of every family you declared.
+                    Recommended over the bare flag for most projects: a
+                    family like typography_details documents per-key
+                    partial override as the intended pattern, so checking
+                    "every touched family" tends to fail on exactly the
+                    usage the library recommends. Scope it to the
+                    families you actually want fully specified (e.g.
+                    palette, breakpoints).
 
 Generate Entry Options:
   --src             Source directory to scan (default: ./src)
@@ -373,8 +385,15 @@ async function loadConfig(argv, cwd = process.cwd()) {
       // MIG-B4-01 (FEAT-005): shared across every entry (single or
       // `builds`) — the theme is one thing per build, so this is
       // validated once here regardless of which branch below runs.
-      if (configModule.strictTheme !== undefined && typeof configModule.strictTheme !== 'boolean') {
-        throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be a boolean.`);
+      // MIG-B5-01 (FEAT-006): also accepts an array of family names —
+      // see resolveStrictTheme/normalizeStrictThemeScope for why `true`
+      // (check every touched family) isn't the only meaningful value.
+      if (
+        configModule.strictTheme !== undefined &&
+        typeof configModule.strictTheme !== 'boolean' &&
+        !(Array.isArray(configModule.strictTheme) && configModule.strictTheme.every((f) => typeof f === 'string'))
+      ) {
+        throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be a boolean or an array of family names.`);
       }
       rawStrictTheme = configModule.strictTheme;
       const baseDir = path.dirname(configPath);
@@ -561,13 +580,44 @@ function resolveIncludeTheme(flagValue, configValue) {
   return true;
 }
 
-// MIG-B4-01 (FEAT-005): same precedence shape as resolveIncludeTheme
-// (flag > config > default), but the default is `false` — unlike
-// includeTheme, an existing project should never start failing builds it
-// didn't ask to be stricter about just because it upgraded the CLI.
+// MIG-B5-01 (FEAT-006): `strictTheme`/`--strict-theme` accepts three
+// shapes — `false`/absent, `true` (check every touched family — beta.4's
+// original behavior, unchanged), or a list of family names (check only
+// those, among the touched ones). A project declares which families it
+// wants completeness enforced for, instead of the tool guessing: every
+// family `resolveTheme()` actually merges (spacing, palette, fonts,
+// typography_details) documents partial override as the intended
+// pattern, so there is no family that's safe to check unconditionally by
+// default — verified against the library's own README example
+// (`palette.primary.main` alone) and the mig-b2-05-release fixture's own
+// partial `spacing` override, both of which `true` already flags as
+// "incomplete" today, same as `typography_details`.
+//
+// A CLI flag value arrives as a comma-separated string
+// (`--strict-theme=palette,breakpoints`); a config value can already be a
+// real array. Both normalize to the same `string[]`. Returns `undefined`
+// for anything that isn't a meaningful value at this level (absent, or an
+// empty string/array) so the flag > config > default chain below falls
+// through correctly instead of treating "nothing here" as "off".
+function normalizeStrictThemeScope(value) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'boolean') return value;
+  if (Array.isArray(value)) {
+    const families = value.map((f) => String(f).trim()).filter(Boolean);
+    return families.length > 0 ? families : undefined;
+  }
+  if (typeof value === 'string') {
+    const families = value.split(',').map((f) => f.trim()).filter(Boolean);
+    return families.length > 0 ? families : undefined;
+  }
+  return true;
+}
+
 function resolveStrictTheme(flagValue, configValue) {
-  if (typeof flagValue === 'boolean') return flagValue;
-  if (typeof configValue === 'boolean') return configValue;
+  const flag = normalizeStrictThemeScope(flagValue);
+  if (flag !== undefined) return flag;
+  const config = normalizeStrictThemeScope(configValue);
+  if (config !== undefined) return config;
   return false;
 }
 
@@ -690,10 +740,11 @@ async function buildOnce(config) {
       throw new Error('postcss-uxdsl/ds-runtime not found (or too old to export resolveTheme) — required for --strict-theme. Install a current postcss-uxdsl in your project or alongside the CLI.');
     }
     const effectiveTheme = uxdslRuntime.resolveTheme(config.theme);
-    const incomplete = findPartiallyDefaultedFamilies(config.theme, effectiveTheme);
+    const incomplete = findPartiallyDefaultedFamilies(config.theme, effectiveTheme, config.strictTheme);
     if (incomplete.length > 0) {
+      const scopeNote = Array.isArray(config.strictTheme) ? ` (scoped to: ${config.strictTheme.join(', ')})` : '';
       throw new Error(
-        `--strict-theme: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        `--strict-theme${scopeNote}: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
         'Provide every key of these families explicitly, or drop --strict-theme/strictTheme if inheriting some of them is intentional.'
       );
     }
@@ -783,9 +834,18 @@ function diffThemeAgainstDefaults(rawTheme, effectiveTheme) {
 // but "did any family I explicitly declared end up partially filled by
 // defaults anyway" — the exact silent-fallback gap the CLI plugin-parity
 // report flagged as invisible.
-function findPartiallyDefaultedFamilies(rawTheme, effectiveTheme) {
+// MIG-B5-01 (FEAT-006): `scope` is the normalized `resolveStrictTheme`
+// result — `true`/undefined checks every touched family (unchanged from
+// beta.4); an array checks only its intersection with the touched
+// families, so a family the project deliberately left out of scope (e.g.
+// `typography_details`, mid partial-override) is never evaluated at all,
+// not just tolerated when it happens to fail.
+function findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, scope) {
   const touchedFamilies = isPlainThemeObject(rawTheme) ? Object.keys(rawTheme) : [];
-  return touchedFamilies.filter((family) => {
+  const candidates = Array.isArray(scope)
+    ? touchedFamilies.filter((family) => scope.includes(family))
+    : touchedFamilies;
+  return candidates.filter((family) => {
     const rows = diffThemeSubtree(rawTheme[family], effectiveTheme[family], [family]);
     return rows.some((row) => row.source === 'default');
   });
@@ -808,11 +868,16 @@ async function themeCommand(argv, cwd = process.cwd()) {
   // combined when a script needs clean JSON.)
   console.log(JSON.stringify(output, null, 2));
 
-  if (argv.strict) {
-    const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme);
+  // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
+  // `--strict` still means "every touched family" (unchanged);
+  // `--strict=palette,breakpoints` checks only those.
+  const strictScope = normalizeStrictThemeScope(argv.strict);
+  if (strictScope) {
+    const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, strictScope);
     if (incomplete.length > 0) {
+      const scopeNote = Array.isArray(strictScope) ? ` (scoped to: ${strictScope.join(', ')})` : '';
       throw new Error(
-        `--strict: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        `--strict${scopeNote}: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
         'Provide every key of these families explicitly, or drop --strict if inheriting some of them is intentional.'
       );
     }
@@ -1274,6 +1339,7 @@ module.exports = {
   normalizeBpMap,
   resolveIncludeTheme,
   resolveStrictTheme,
+  normalizeStrictThemeScope,
   resolveBreakpoints,
   buildOnce,
   diffThemeAgainstDefaults,
