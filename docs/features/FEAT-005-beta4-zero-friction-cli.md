@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B4-01 y MIG-B4-02 implementadas y probadas (unitarias + subprocess real de `uxdsl watch`, incluido el escenario exacto reportado: config delegando a otro módulo vía `require()`; verificado también a mano contra el CLI real). Faltan MIG-B4-03 y MIG-B4-04 |
+| Estado | MIG-B4-01, MIG-B4-02 y MIG-B4-03 implementadas y probadas (unitarias, subprocess real de `uxdsl watch`, fixture de `init` extendido, y verificación manual contra el CLI real en cada una). Falta MIG-B4-04 |
 | Objetivo | Cerrar las fricciones de superficie que quedaron después de FEAT-004: invocar `--strict-theme` sin salir de `build`, que editar un módulo transitivo del config/tema dispare rebuild, y que `init` arranque un proyecto multi-entrada sin copiar el README a mano |
 | Versión objetivo | `0.5.0-beta.4` |
 | Prioridad | P0: auto-watch de requires transitivos (bug real, no feature); P1: `--strict-theme` en build/watch; P2: `init --multi` |
@@ -273,7 +273,7 @@ reales antes de publicar, igual que en beta.2 y beta.3.
       dispara rebuild con el watcher real corriendo, sin workarounds.
 - [x] El README de `uxdsl-cli` ya no describe la limitación de módulos
       transitivos como comportamiento esperado.
-- [ ] `uxdsl init --multi` produce un proyecto `builds` funcional; `init`
+- [x] `uxdsl init --multi` produce un proyecto `builds` funcional; `init`
       sin el flag no cambia.
 - [ ] El fixture de release reproduce los tres escenarios contra tarballs
       reales.

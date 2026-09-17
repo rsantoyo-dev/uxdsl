@@ -114,6 +114,11 @@ Commands:
   init              First-run setup: creates uxdsl.config.cjs, src/uxdsl-entry.uxdsl
                     and (Next.js) postcss.config.js if they don't exist yet.
                     Never overwrites an existing file. Run this once per project.
+                    --multi: scaffold a theme entry + one example
+                    component entry (a "builds" array) instead — for a
+                    project that starts with a theme + several CSS-Module
+                    panels, so it doesn't need to be hand-written from
+                    the README.
   generate-entry    Run after adding or removing .uxdsl files.
                     Re-scan a source directory and rewrite the entry file's
                     @import list to match every .uxdsl file found.
@@ -166,6 +171,7 @@ Generate Entry Options:
 
 Examples:
   uxdsl init
+  uxdsl init --multi
   uxdsl build
   uxdsl build --entry src/main.uxdsl --out dist/styles.css
   uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
@@ -1030,16 +1036,39 @@ async function init(argv) {
   const cwd = process.cwd();
   const isNext = ['next.config.js', 'next.config.mjs', 'next.config.ts'].some(file => fs.existsSync(path.join(cwd, file)));
   const isVite = fs.existsSync(path.join(cwd, 'vite.config.js')) || fs.existsSync(path.join(cwd, 'vite.config.ts'));
-  
+  // MIG-B4-03 (FEAT-005): opt-in only — without --multi, behavior is
+  // byte-identical to before this story (see fixtures/mig-b2-03-cli-init/).
+  const isMulti = !!argv.multi;
+
   console.log('[uxdsl] Initializing...');
   if (isNext) console.log('  -> Detected Next.js');
   if (isVite) console.log('  -> Detected Vite');
+  if (isMulti) console.log('  -> Multi-entry mode (--multi): a theme entry plus one example component entry');
+
+  const srcDir = path.join(cwd, 'src');
 
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
   if (!fs.existsSync(configPath)) {
     const defaultBpJson = JSON.stringify(DEFAULT_BREAKPOINTS);
-    const configContent = `module.exports = {
+    const configContent = isMulti
+      ? `module.exports = {
+  // A theme entry (emits the shared :root definitions once) plus any
+  // number of component/CSS-Module entries — includeTheme: false, no
+  // :root of their own — compiled together from this one config. Add
+  // more entries here as the project grows; see the CLI README's
+  // "Multiple entries, one shared theme" section for the full contract.
+  builds: [
+    { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
+  ],
+  // Default breakpoints
+  breakpoints: ${defaultBpJson},
+  // Watch patterns for HMR/Rebuilds
+  watch: ['src/**/*.uxdsl']
+};
+`
+      : `module.exports = {
   // Entry point for your styles (generated or manual)
   entry: './src/uxdsl-entry.uxdsl',
   // Output CSS file
@@ -1056,14 +1085,28 @@ async function init(argv) {
     console.log(`  -> uxdsl.config.cjs already exists.`);
   }
 
-  // 2. Create initial entry file
-  const srcDir = path.join(cwd, 'src');
+  // 2. Create initial entry file(s)
   if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir);
-  
-  const entryPath = path.join(srcDir, 'uxdsl-entry.uxdsl');
-  if (!fs.existsSync(entryPath)) {
-    // Run generate logic to create initial file
-    await generateEntry({ src: './src', out: entryPath });
+
+  if (isMulti) {
+    const themeEntryPath = path.join(srcDir, 'theme.uxdsl');
+    if (!fs.existsSync(themeEntryPath)) {
+      fs.writeFileSync(themeEntryPath, '/* Theme-only entry — no component rules here. Emits the shared\n * :root definitions every other entry in "builds" consumes. */\n');
+      console.log('  -> Created src/theme.uxdsl');
+    }
+    // A real example, not an empty file, so the very first build produces
+    // something visible instead of a blank stylesheet.
+    const panelEntryPath = path.join(srcDir, 'panel-a.uxdsl');
+    if (!fs.existsSync(panelEntryPath)) {
+      fs.writeFileSync(panelEntryPath, '.example {\n  @ds-surface(contained);\n}\n');
+      console.log('  -> Created src/panel-a.uxdsl');
+    }
+  } else {
+    const entryPath = path.join(srcDir, 'uxdsl-entry.uxdsl');
+    if (!fs.existsSync(entryPath)) {
+      // Run generate logic to create initial file
+      await generateEntry({ src: './src', out: entryPath });
+    }
   }
 
   // 3. Setup PostCSS (Required for Next.js, Optional/Good for Vite if not using plugin)
@@ -1117,20 +1160,31 @@ async function init(argv) {
   }
 
   // 5. Next Steps
-  const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
   console.log('\n[uxdsl] Initialization complete.');
   console.log('Next steps:');
-  console.log(`1. Import the generated CSS (once you run a build) — e.g.:`);
-  console.log(`   import './${outFileRel}';`);
-  console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
-  console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}`);
-  if (isNext) {
-    console.log('3. Next.js: import "../uxdsl.css" from src/app/layout.tsx. Run uxdsl:watch alongside next dev to rebuild this generated file.');
-  } else if (isVite) {
-    console.log('3. Vite: import the generated CSS and run uxdsl:watch alongside vite. For direct .uxdsl imports, use vite-plugin-uxdsl instead of the generated-CSS workflow.');
+  if (isMulti) {
+    const themeCssRel = path.relative(cwd, path.join(srcDir, 'theme.css')).split(path.sep).join('/');
+    const panelCssRel = path.relative(cwd, path.join(srcDir, 'panel-a.css')).split(path.sep).join('/');
+    console.log('1. Import the generated CSS files (once you run a build) — e.g.:');
+    console.log(`   import './${themeCssRel}';`);
+    console.log(`   import './${panelCssRel}';`);
+    console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
+    console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}`);
+    console.log('3. Add more component entries to the "builds" array in uxdsl.config.cjs as the project grows.');
+  } else {
+    const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
+    console.log(`1. Import the generated CSS (once you run a build) — e.g.:`);
+    console.log(`   import './${outFileRel}';`);
+    console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
+    console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}`);
+    if (isNext) {
+      console.log('3. Next.js: import "../uxdsl.css" from src/app/layout.tsx. Run uxdsl:watch alongside next dev to rebuild this generated file.');
+    } else if (isVite) {
+      console.log('3. Vite: import the generated CSS and run uxdsl:watch alongside vite. For direct .uxdsl imports, use vite-plugin-uxdsl instead of the generated-CSS workflow.');
+    }
+    console.log('\nTry adding a file named "src/components/Button.uxdsl" and run:');
+    console.log('  npx uxdsl generate-entry');
   }
-  console.log('\nTry adding a file named "src/components/Button.uxdsl" and run:');
-  console.log('  npx uxdsl generate-entry');
 }
 
 async function main() {

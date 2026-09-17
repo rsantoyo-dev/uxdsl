@@ -16,6 +16,11 @@
  * vite.config.js — no real `next`/`vite` package needed for this level),
  * (8) actionable error messages for a missing entry file and a missing
  * --config file.
+ *
+ * (9) MIG-B4-03 (FEAT-005): `init --multi` scaffolds a `builds` project
+ * (theme entry + one example component entry) — build succeeds
+ * immediately, only the theme entry defines `:root`, a second run is
+ * idempotent (hash comparison), and plain `init` (no flag) is unaffected.
  */
 
 const fs = require('fs');
@@ -141,6 +146,38 @@ async function main() {
   fs.writeFileSync(path.join(badConfigProject, 'uxdsl.config.cjs'), 'module.exports = { entry: 123, outFile: "./src/uxdsl.css" };\n');
   const badConfig = runCli(['build'], badConfigProject);
   check('an invalid config property (wrong type) names the file and the property', !badConfig.ok && /uxdsl\.config\.cjs/.test(badConfig.output) && /"entry"/.test(badConfig.output));
+
+  // --- 9 (MIG-B4-03, FEAT-005): --multi scaffolds a "builds" project ---
+  const multiProject = mkProject();
+  installPostcssUxdsl(multiProject);
+  const multiInit1 = runCli(['init', '--multi'], multiProject);
+  check('init --multi exits 0 in an empty project', multiInit1.ok);
+  check('init --multi creates uxdsl.config.cjs with a "builds" array', fs.existsSync(path.join(multiProject, 'uxdsl.config.cjs')) && /builds:\s*\[/.test(fs.readFileSync(path.join(multiProject, 'uxdsl.config.cjs'), 'utf8')));
+  check('init --multi creates src/theme.uxdsl', fs.existsSync(path.join(multiProject, 'src', 'theme.uxdsl')));
+  check('init --multi creates src/panel-a.uxdsl with a real example, not an empty file', fs.readFileSync(path.join(multiProject, 'src', 'panel-a.uxdsl'), 'utf8').trim().length > 0);
+  check('init --multi output documents both generated CSS files', /theme\.css/.test(multiInit1.output) && /panel-a\.css/.test(multiInit1.output));
+
+  const multiBuild1 = runCli(['build'], multiProject);
+  check('build succeeds immediately after init --multi', multiBuild1.ok);
+  if (!multiBuild1.ok) console.log(multiBuild1.output);
+  const themeCssPath = path.join(multiProject, 'src', 'theme.css');
+  const panelCssPath = path.join(multiProject, 'src', 'panel-a.css');
+  check('build produces src/theme.css', fs.existsSync(themeCssPath));
+  check('build produces src/panel-a.css', fs.existsSync(panelCssPath));
+  const themeCss = fs.existsSync(themeCssPath) ? fs.readFileSync(themeCssPath, 'utf8') : '';
+  const panelCss = fs.existsSync(panelCssPath) ? fs.readFileSync(panelCssPath, 'utf8') : '';
+  check('the theme entry defines :root', /:root/.test(themeCss));
+  check('the component entry (includeTheme: false) does not define :root', !/:root/.test(panelCss));
+  check('the component entry\'s @ds-surface(contained) actually compiled', /background/.test(panelCss));
+
+  const multiTrackedFiles = ['uxdsl.config.cjs', path.join('src', 'theme.uxdsl'), path.join('src', 'panel-a.uxdsl'), 'package.json'];
+  const multiBefore = snapshotHashes(multiProject, multiTrackedFiles);
+  const multiInit2 = runCli(['init', '--multi'], multiProject);
+  const multiAfter = snapshotHashes(multiProject, multiTrackedFiles);
+  check('running init --multi a second time exits 0', multiInit2.ok);
+  check('running init --multi a second time changes no existing file (hash comparison)', JSON.stringify(multiBefore) === JSON.stringify(multiAfter));
+
+  check('plain "init" (no --multi) still produces the single-entry form, unaffected by this story', !/builds:\s*\[/.test(configContent));
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   if (failures.length) {

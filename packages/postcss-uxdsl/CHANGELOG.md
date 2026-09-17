@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.4 — prepared, not published
 
-FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 and MIG-B4-02 so far:
+FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-03 so far:
 
 - `uxdsl build`/`watch` (uxdsl-cli) now watch every local module a build
   config or theme file `require()`s transitively, not just the top-level
@@ -24,6 +24,10 @@ FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 and MIG-B4-02 so far:
   ended up partially filled from `DEFAULT_THEME`. Defaults to `false`, and
   is checked once per build even with a `builds` array (the theme is
   shared across every entry).
+- `uxdsl init --multi` scaffolds a theme entry plus one example component
+  entry (a `builds` array) directly, instead of starting from the
+  single-entry form and hand-writing `builds` from the README. Plain
+  `init` (no flag) is unaffected.
 
 ## 0.5.0-beta.3 — 2026-09-16
 

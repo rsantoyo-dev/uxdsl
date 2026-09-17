@@ -45,6 +45,14 @@ canonical default theme from `postcss-uxdsl`; it does not need to import the
 legacy `default-*` packs. Import the generated `src/uxdsl.css` once from the
 application's root layout or entrypoint.
 
+Already know the project needs a theme plus several CSS-Module panels?
+`npx uxdsl init --multi` scaffolds that shape directly — a `builds` array in
+`uxdsl.config.cjs` with a theme entry (`src/theme.uxdsl`) and one example
+component entry (`src/panel-a.uxdsl`, `includeTheme: false`) — instead of
+starting from the single-entry form and hand-writing `builds` from the
+"Multiple entries, one shared theme" section below. Add more entries to the
+array as the project grows.
+
 ## Usage
 
 ### 1. Configuration (Recommended)
