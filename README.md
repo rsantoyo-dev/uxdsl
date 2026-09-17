@@ -35,6 +35,20 @@ scenario the same way.
 The previous prerelease, `0.5.0-beta.2`, is recorded in
 [docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
 
+## 0.5.0-beta.4 — in progress
+
+[FEAT-005](docs/features/FEAT-005-beta4-zero-friction-cli.md), based on a
+second round of real-consumer verification against beta.3: `uxdsl
+build`/`watch` now watch every local module a config or theme file
+`require()`s transitively, not just the top-level file
+(`--strict-theme`'s partial-default-inheritance check reused directly from
+`uxdsl theme --strict`), and `uxdsl init --multi` scaffolds a `builds`
+project (theme entry + example component entry) instead of requiring it to
+be hand-written from the README. Not yet published — that requires the
+owner's separate, explicit approval, same as every prior beta.
+`npm run verify:beta4` installs all five packages from fresh tarballs and
+exercises all three scenarios end to end.
+
 ## FEAT-002 migration verification
 
 The published 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.

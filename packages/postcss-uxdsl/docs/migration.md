@@ -214,6 +214,25 @@ parcialmente completada por defaults. Detalles completos en el
 [README de uxdsl-cli](../../uxdsl-cli/README.md) y en
 [FEAT-004](../../../docs/features/FEAT-004-beta3-cli-plugin-parity.md).
 
+### Desde beta.4: sin pasos de migración, tres frictions menos
+
+beta.4 ([FEAT-005](../../../docs/features/FEAT-005-beta4-zero-friction-cli.md))
+no cambia contratos existentes — es aditivo y opt-in en los tres puntos:
+
+- `uxdsl build --strict-theme` (o `strictTheme: true` en `uxdsl.config.cjs`)
+  hace la misma pregunta que `uxdsl theme --strict`, pero como gate de
+  build/watch — falla antes de escribir nada si una familia declarada quedó
+  parcialmente heredada del default. Por defecto sigue en `false`, así que
+  ningún proyecto existente empieza a fallar por actualizar el CLI.
+- Editar un módulo que `uxdsl.config.cjs`/`uxdsl.theme.config.cjs` requiere
+  transitivamente (`module.exports = require('./real-config.js')`, o un
+  tema que lee `require('./theme-data.json')`) ahora dispara rebuild en
+  `uxdsl watch` por sí solo — antes solo el archivo de nivel superior
+  estaba vigilado.
+- `uxdsl init --multi` scaffoldea la forma de "Guía de 5 entradas" de
+  arriba directamente (`builds` con una entrada de tema y un panel de
+  ejemplo), en vez de escribirla a mano.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

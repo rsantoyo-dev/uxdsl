@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.4 — prepared, not published
 
-FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-03 so far:
+FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-04 (all four stories):
 
 - `uxdsl build`/`watch` (uxdsl-cli) now watch every local module a build
   config or theme file `require()`s transitively, not just the top-level
@@ -28,6 +28,15 @@ FEAT-005 (`0.5.0-beta.4`), MIG-B4-01 through MIG-B4-03 so far:
   entry (a `builds` array) directly, instead of starting from the
   single-entry form and hand-writing `builds` from the README. Plain
   `init` (no flag) is unaffected.
+- Release gate (`fixtures/mig-b4-04-release/`, `npm run verify:beta4`)
+  reproducing all three stories above against real tarballs of the five
+  coordinated packages.
+- Fixed unrelated to this feature's own work but caught while building its
+  release gate: `theme-manifest.json`'s `uxdslVersion` had gone stale at
+  `0.5.0-beta.2` after the beta.3 publish bumped every package's own
+  version — `npm run generate:language` wasn't re-run afterward. Re-run
+  now; the root `npm test`'s drift check (`generate-language-artifacts.js
+  --check`) catches this going forward, but only when it's actually run.
 
 ## 0.5.0-beta.3 — 2026-09-16
 
