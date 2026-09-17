@@ -2,7 +2,7 @@
 
 | Campo | Valor |
 | --- | --- |
-| Estado | MIG-B5-01 y MIG-B5-02 implementadas y probadas contra el CLI real. MIG-B5-02 encontró un hallazgo no anticipado al escribir esta story: `uxdsl build`/`watch` nunca invocaban `validateAndNormalizeTheme` — ni siquiera el warning de MIG-B3-03 (ya publicado en beta.3/4) llegaba a la consola real, solo al playground — y quedó cerrado como parte de esta misma story. Falta MIG-B5-03 |
+| Estado | Las 3 stories implementadas, probadas y verificadas contra las 5 tarballs reales (`npm run verify:beta5`). Dos hallazgos no anticipados al escribir esta propuesta, ambos cerrados en el camino: `uxdsl build`/`watch` nunca invocaban `validateAndNormalizeTheme` (ni siquiera el warning de MIG-B3-03, ya publicado, llegaba a la consola real); y `scripts/release.js` nunca sincronizaba `theme-manifest.json` tras bumpear versiones, causa raíz de una deriva que MIG-B4-04 ya había parchado una vez sin arreglar de fondo. Falta la aprobación explícita de publicación |
 | Objetivo | Que `--strict-theme`/`uxdsl theme --strict` sirvan como gate de CI real, sin entrar en conflicto con el propio diseño de partial theme que la librería documenta y celebra |
 | Versión objetivo | `0.5.0-beta.5` |
 | Prioridad | P0: alcance por familia (corrige un falso positivo que hace el flag inutilizable en la práctica); P2: warning de claves desconocidas dentro de familias matriz |
@@ -238,8 +238,23 @@ reales antes de publicar, igual que en los releases anteriores.
    `typography_details` parcial (patrón documentado) y `palette` completa,
    compilado con `uxdsl build --strict-theme=palette` (pasa) y con
    `uxdsl build --strict-theme` sin alcance (sigue fallando, sin regresión
-   de lo que beta.4 ya hacía).
-3. **No publicar** como parte de esta story. La publicación y el dist-tag
+   de lo que beta.4 ya hacía). También cubre `uxdsl theme --strict=palette`
+   y el aviso de MIG-B5-02 (familia y clave desconocida) desde un build
+   real, ambos contra las tarballs instaladas.
+3. **Hallazgo al correr el fixture, no anticipado al escribir esta
+   story:** `verify:beta2` falló — `theme-manifest.json` (empaquetado en
+   la tarball) volvió a quedar con la versión vieja (`0.5.0-beta.3`)
+   mientras `package.json` ya decía `0.5.0-beta.4`. Es la misma clase de
+   deriva que MIG-B4-04 ya había encontrado y corregido una vez — pero
+   esa corrección solo regeneró el archivo a mano en ese momento; nunca
+   arregló la causa: `scripts/release.js` bumpea la versión de los 5
+   paquetes pero nunca vuelve a correr `generate:language`. Corregido acá
+   de raíz: `release.js` ahora corre
+   `node scripts/generate-language-artifacts.js` automáticamente después
+   de bumpear versiones (y construir `postcss-uxdsl`, del que depende), no
+   solo cuando alguien se acuerda de hacerlo a mano. El archivo actual
+   también se regeneró para reflejar la versión vigente.
+4. **No publicar** como parte de esta story. La publicación y el dist-tag
    requieren aprobación explícita del dueño, igual que en cada release
    anterior.
 
@@ -248,7 +263,14 @@ reales antes de publicar, igual que en los releases anteriores.
 - El fixture pasa contra las 5 tarballs, sin resolución accidental al
   monorepo.
 - Ambos comportamientos (`--strict-theme` acotado y sin acotar) se prueban
-  contra el paquete instalado.
+  contra el paquete instalado, junto con `uxdsl theme --strict` y el aviso
+  de clave desconocida de MIG-B5-02.
+- `node scripts/release.js --version <x> --dry-run` muestra el paso de
+  `generate-language-artifacts.js` después de bumpear las 5 versiones y
+  antes de publicar.
+- `theme-manifest.json` no vuelve a quedar desincronizado después de un
+  release real (verificado corriendo `verify:beta2` — el más antiguo, el
+  primero en notar la deriva la vez pasada — después del bump).
 
 ## Orden recomendado de implementación
 
@@ -271,8 +293,8 @@ reales antes de publicar, igual que en los releases anteriores.
       `palette` y `fonts.families` producen un warning — y ese warning
       llega a la consola real de `uxdsl build`/`watch`, no solo al
       playground.
-- [ ] El fixture de release reproduce el escenario original del reporte
+- [x] El fixture de release reproduce el escenario original del reporte
       contra tarballs reales.
-- [ ] README, migration guide y CHANGELOG reflejan beta.5.
+- [x] README, migration guide y CHANGELOG reflejan beta.5.
 - [ ] La publicación queda fuera de la implementación y requiere aprobación
       explícita del dueño.

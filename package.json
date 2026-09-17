@@ -22,6 +22,7 @@
     "verify:beta2": "node fixtures/mig-b2-05-release/run.js",
     "verify:beta3": "node fixtures/mig-b3-06-release/run.js",
     "verify:beta4": "node fixtures/mig-b4-04-release/run.js",
+    "verify:beta5": "node fixtures/mig-b5-03-release/run.js",
     "verify:cssmodules-build": "node fixtures/mig02-nextjs-cssmodules/run.js"
   },
   "keywords": [],

@@ -233,6 +233,28 @@ no cambia contratos existentes — es aditivo y opt-in en los tres puntos:
   arriba directamente (`builds` con una entrada de tema y un panel de
   ejemplo), en vez de escribirla a mano.
 
+### Desde beta.5: `--strict-theme` con alcance por familia
+
+beta.5 ([FEAT-006](../../../docs/features/FEAT-006-beta5-scoped-strict-theme.md))
+corrige un falso positivo real de `--strict-theme`/`uxdsl theme --strict`:
+declarar solo `typography_details.h2.fontSize` (el patrón documentado en
+"Guía de 5 entradas" arriba) marcaba **toda** la familia como incompleta —
+y lo mismo le pasa al ejemplo de `palette.primary.main` de la sección
+"Zero-config defaults" del README de este paquete. Si usás `--strict-theme`
+en CI, acotalo a las familias que de verdad querés completas:
+
+```bash
+uxdsl build --strict-theme=palette,breakpoints
+```
+
+`strictTheme: true`/`--strict-theme` sin acotar siguen funcionando
+exactamente igual que en beta.4 — no hace falta cambiar nada si no usabas
+el flag, o si tu tema ya especifica cada familia por completo. Además,
+`uxdsl build`/`watch` ahora avisan (sin fallar el build) si una familia de
+tema es desconocida o si `typography_details`/`palette`/`fonts.families`
+tiene una clave que no existe (`h9`, `primry`) — antes ese aviso solo lo
+veía el editor del playground.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

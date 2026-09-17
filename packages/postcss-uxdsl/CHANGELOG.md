@@ -8,7 +8,7 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.5 — prepared, not published
 
-FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 and MIG-B5-02 so far:
+FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 through MIG-B5-03 (all three stories):
 
 - `uxdsl build`/`watch --strict-theme` and `uxdsl theme --strict` now
   accept an optional family scope (`--strict-theme=palette,breakpoints`,
@@ -31,6 +31,17 @@ FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 and MIG-B5-02 so far:
   at all, only the playground's theme editor called
   `validateAndNormalizeTheme`. Deduplicated by exact message across
   rebuilds in one `watch` session.
+- Release gate (`fixtures/mig-b5-03-release/`, `npm run verify:beta5`)
+  reproducing the origin report's exact scenario against real tarballs of
+  the five coordinated packages.
+- Fixed unrelated to this feature's own work but caught while building
+  its release gate: `theme-manifest.json`'s `uxdslVersion` had gone stale
+  again after the beta.4 publish bumped every package's version — the
+  same class of drift MIG-B4-04 patched once for beta.4 itself without
+  fixing the cause. `scripts/release.js` now runs
+  `generate-language-artifacts.js` automatically after bumping every
+  package's version (and building `postcss-uxdsl`, which it depends on),
+  instead of relying on someone remembering to run it by hand.
 
 ## 0.5.0-beta.4 — 2026-09-17
 

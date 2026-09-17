@@ -36,6 +36,26 @@ Previous prereleases are recorded in
 [docs/releases/0.5.0-beta.3.md](docs/releases/0.5.0-beta.3.md) and
 [docs/releases/0.5.0-beta.2.md](docs/releases/0.5.0-beta.2.md).
 
+## 0.5.0-beta.5 — in progress
+
+[FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on
+a real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
+accept an optional family scope (`--strict-theme=palette,breakpoints`, or
+`strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
+the bare flag flags any documented partial theme override — not just in
+`typography_details`, but in the zero-config `palette` example this
+project's own README uses — as "incomplete". `true`/the bare flag is
+unchanged. `validateAndNormalizeTheme` also now warns about an
+unrecognized entry name inside `typography_details`/`palette`/`fonts.families`
+(a typo, not an incomplete override), and — together with its pre-existing
+top-level "Unknown theme family" warning — actually prints from a real
+`uxdsl build`/`watch` for the first time; previously only the playground's
+theme editor called that function. Entirely additive — no migration steps
+needed from beta.4. Not yet published — that requires the owner's
+separate, explicit approval, same as every prior beta.
+`npm run verify:beta5` installs all five packages from fresh tarballs and
+exercises the full scenario end to end.
+
 ## FEAT-002 migration verification
 
 The published 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
