@@ -53,9 +53,16 @@ async function main() {
   command('theme', '--strict=palette'); // Must not throw.
   console.log('PASS: uxdsl theme --strict=palette has the same scope as build\'s equivalent.');
 
-  // --- MIG-B5-02: an unknown top-level family and an unknown nested key
-  // both warn (not fail) from a real build, and don't repeat on a second
-  // build in the same process. ---
+  // --- MIG-B5-02: an unknown top-level family warns (not fails) from a
+  // real build, and doesn't repeat on a second build in the same process.
+  // This originally also asserted a second, one-level-deeper "Unknown
+  // typography_details key" warning for `h9` here — MIG-B6-01 (FEAT-007)
+  // found that check to be a false positive (typography_details tag names,
+  // like palette and fonts.families roles, are an open namespace with no
+  // real closed set to compare against — DEFAULT_THEME's own key set was
+  // never meant to be one) and removed it at the source, so `h9` is
+  // correctly silent below now. See docs/features/FEAT-007 for the full
+  // writeup. ---
   write('uxdsl.theme.config.cjs', `module.exports = {
     palette: ${JSON.stringify(DEFAULT_THEME.palette)},
     typography_details: { h9: { fontSize: '1rem' } },
@@ -68,9 +75,9 @@ async function main() {
   const firstBuildOutput = `${firstBuild.stdout}${firstBuild.stderr}`;
   assert.equal(firstBuild.status, 0, `build with only warnings must still succeed:\n${firstBuildOutput}`);
   assert.match(firstBuildOutput, /Unknown theme family "color"/);
-  assert.match(firstBuildOutput, /Unknown typography_details key "h9"/);
+  assert.doesNotMatch(firstBuildOutput, /Unknown typography_details key "h9"/, 'MIG-B6-01 regression: a typo-shaped-but-valid tag name must not warn');
   assert.ok(fs.existsSync(path.join(dir, 'src/uxdsl.css')), 'an unknown-key warning must not block the build');
-  console.log('PASS: unknown theme family/key warnings print from a real build and do not block it.');
+  console.log('PASS: unknown theme family warning prints from a real build and does not block it; the reverted nested-key warning stays gone.');
 }
 
 main().catch((error) => {

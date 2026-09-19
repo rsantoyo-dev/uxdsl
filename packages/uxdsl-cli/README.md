@@ -160,12 +160,18 @@ under the theme-file name — the CLI prints a warning naming the file and
 the stray keys instead of silently ignoring them as unknown tokens.
 
 `build`/`watch` also warn about an unrecognized top-level theme family
-(`color` instead of `colors`) and an unrecognized key inside
-`typography_details`/`palette`/`fonts.families` (`h9` instead of `h2`,
-`primry` instead of `primary`) — a typo that would otherwise compile into
-nothing, silently. Both are warnings, not errors: the build still
+(`color` instead of `colors`) — a typo that would otherwise compile into
+nothing, silently. It is a warning, not an error: the build still
 succeeds, and the same message is never repeated across rebuilds in one
 `watch` session.
+
+Entry *names* inside `typography_details`/`palette`/`fonts.families` are
+not checked against any list — those are open registries, so a role or
+tag your project invents compiles normally. (beta.5 warned on names
+outside `postcss-uxdsl`'s own minimal defaults; beta.6 removed that
+warning as a false positive.) A misspelled *field* inside a typography
+tag — `fontsize` for `fontSize` — is still a hard `UXD_TYPO_FIELD` build
+error.
 
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 

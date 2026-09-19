@@ -251,9 +251,33 @@ uxdsl build --strict-theme=palette,breakpoints
 exactamente igual que en beta.4 — no hace falta cambiar nada si no usabas
 el flag, o si tu tema ya especifica cada familia por completo. Además,
 `uxdsl build`/`watch` ahora avisan (sin fallar el build) si una familia de
-tema es desconocida o si `typography_details`/`palette`/`fonts.families`
-tiene una clave que no existe (`h9`, `primry`) — antes ese aviso solo lo
-veía el editor del playground.
+tema top-level es desconocida — antes ese aviso solo lo veía el editor del
+playground. beta.5 también avisaba de claves desconocidas *dentro* de
+`typography_details`/`palette`/`fonts.families`; ese segundo aviso era un
+falso positivo y beta.6 lo retira (ver abajo).
+
+### Desde beta.6: sin warnings falsos en registros abiertos
+
+beta.6 ([FEAT-007](../../../docs/features/FEAT-007-beta6-pre1-foundations.md),
+MIG-B6-01) elimina el aviso `Unknown <familia> key` que beta.5 introdujo
+para `typography_details`, `palette` y `fonts.families`. Esas tres
+familias son **registros abiertos**: el nombre de cada role o tag lo
+define tu proyecto y se compila igual, esté o no en los defaults mínimos
+del paquete. El aviso comparaba contra las claves de `DEFAULT_THEME` —
+que es un fallback para no romper en zero-config, no un catálogo de
+nombres permitidos — así que cualquier tema con una paleta más rica que
+las 4 roles por defecto (o una fuente propia, o un tag tipográfico
+propio) recibía en cada build un aviso incorrecto de que su tema "no se
+compilará", sin flag que lo pidiera.
+
+No hay pasos de migración: si veías esos avisos, desaparecen. Lo que
+sigue igual:
+
+- el aviso de familia top-level desconocida (`palete` por `palette`)
+  sigue existiendo — ese conjunto sí es cerrado;
+- un campo mal escrito dentro de un tag tipográfico (`fontsize` por
+  `fontSize`) sigue siendo error duro `UXD_TYPO_FIELD`, no un aviso;
+- `--strict-theme` y su alcance por familia no cambian.
 
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 

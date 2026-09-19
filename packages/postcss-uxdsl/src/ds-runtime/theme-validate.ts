@@ -8,13 +8,6 @@ import { compileTypographyRules, TYPOGRAPHY_PROPERTIES } from '../typography';
 import { DEFAULT_BREAKPOINTS } from './breakpoints';
 import { generateThemeCss } from './theme-generator';
 import { ReferenceIntegrityError, ReferenceOptions } from '../reference-integrity';
-// `default-theme.ts` imports `deepMergeTheme` from this file, so this is a
-// circular import — safe because `DEFAULT_THEME` is only ever read inside
-// `validateAndNormalizeTheme`'s body (MIG-B5-02), never at this module's
-// own top level: by the time that function is actually called, the full
-// require chain has finished and `DEFAULT_THEME` is completely
-// initialized, regardless of which of these two files loaded first.
-import { DEFAULT_THEME } from '../default-theme';
 
 export type ThemeValidationIssue = {
   path: string;
@@ -367,38 +360,27 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
     });
   }
 
-  // MIG-B5-02 (FEAT-006): completeness isn't the right question for a
-  // family whose whole design is per-key partial override
-  // (typography_details, palette, fonts.families — see MIG-B5-01's own
-  // reasoning for why `--strict-theme` can't check those unconditionally
-  // either) — but a key that doesn't exist ANYWHERE in the known set for
-  // that family is still a real mistake (a typo'd tag/role name), which
-  // no amount of intentional partial override excuses. Reuses
-  // DEFAULT_THEME's own already-merged key sets as the known set — kept
-  // in one place, so it can never drift out of sync with the actual
-  // defaults the way a separately hand-maintained list could. Computed
-  // here (inside the function), not at module scope, so this never reads
-  // DEFAULT_THEME before the circular import above has fully resolved.
-  if (isPlainObject(input)) {
-    const KNOWN_NESTED_KEYS: Array<[string, Set<string>]> = [
-      ['typography_details', new Set(Object.keys(DEFAULT_THEME.typography_details || {}))],
-      ['palette', new Set(Object.keys(DEFAULT_THEME.palette || {}))],
-      ['fonts.families', new Set(Object.keys(DEFAULT_THEME.fonts?.families || {}))],
-    ];
-    for (const [familyPath, knownKeys] of KNOWN_NESTED_KEYS) {
-      let node: unknown = input;
-      for (const segment of familyPath.split('.')) {
-        node = isPlainObject(node) ? (node as Record<string, any>)[segment] : undefined;
-      }
-      if (isPlainObject(node)) {
-        Object.keys(node).forEach((key) => {
-          if (!knownKeys.has(key)) {
-            warnings.push({ path: `${familyPath}.${key}`, message: `Unknown ${familyPath} key "${key}" — it will not be compiled into any CSS.` });
-          }
-        });
-      }
-    }
-  }
+  // MIG-B6-01 (FEAT-007): MIG-B5-02 added a parallel "Unknown <family> key"
+  // warning one level deeper, for typography_details/palette/fonts.families,
+  // reusing DEFAULT_THEME's own key sets as the "known" list. That's wrong:
+  // DEFAULT_THEME is a deliberately minimal, zero-crash fallback (see its
+  // own doc comment), not a catalog of every valid key — and unlike the
+  // top-level family check above, none of these three families actually
+  // has a closed set anywhere in the compiler to compare against.
+  // `foundations.ts`'s `namespacedVars()` turns every key a theme provides
+  // into a CSS var for `palette`/`fonts.families` with no restriction at
+  // all, and `typography.ts`'s tag-name validation only checks *shape*
+  // (`/^[a-z][a-z0-9-]*$/`), not membership in any fixed list — so any
+  // project with a richer palette (or a custom font role, or a custom
+  // typography tag) than DEFAULT_THEME's 4/3/1 entries got incorrect
+  // "won't be compiled" warnings on every build, unconditionally, since
+  // this ships with no opt-in flag (unlike `--strict-theme`). Removed
+  // rather than repointed at a bigger list, because no such list exists to
+  // point at: "known key" isn't a well-defined question for a family whose
+  // whole design is an open, per-project namespace. Field names *within* a
+  // typography tag remain validated for real, as a hard compiler error —
+  // see `TYPOGRAPHY_PROPERTIES` above and `compileTypographyRules`'s
+  // `UXD_TYPO_FIELD`.
 
   return {
     ok: errors.length === 0,

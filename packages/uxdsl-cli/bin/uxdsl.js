@@ -722,7 +722,7 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
 
 // MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
 // reasoning as `warnedBuildConfigShapes` above — without this, an unfixed
-// typo'd tag/role name would reprint on every unrelated save. Unlike that
+// typo'd family name would reprint on every unrelated save. Unlike that
 // Map (keyed by file, cleared when the specific file's shape changes),
 // this is a flat Set of exact warning strings: simpler, at the cost of
 // not re-warning if the *same* message recurs later in one process after
@@ -778,14 +778,20 @@ async function buildOnce(config) {
   }
 
   // MIG-B5-02 (FEAT-006): `validateAndNormalizeTheme`'s "Unknown theme
-  // family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
-  // never actually reachable from a real build — only the playground's
-  // theme editor called this function at all. Surfacing just these two
-  // warning kinds here (not the others `validateAndNormalizeTheme` can
-  // produce, e.g. color-format hints, which nobody asked to see from
-  // `build` and the plugin's own reference-integrity pass already covers
-  // differently) closes that gap without changing what a normal build
-  // reports beyond it. Checked once per build, same as `--strict-theme`.
+  // family" warning (MIG-B3-03) was never actually reachable from a real
+  // build — only the playground's theme editor called this function at
+  // all. Surfacing just `/^Unknown /`-prefixed warnings here (not the
+  // others `validateAndNormalizeTheme` can produce, e.g. color-format
+  // hints, which nobody asked to see from `build` and the plugin's own
+  // reference-integrity pass already covers differently) closes that gap
+  // without changing what a normal build reports beyond it. MIG-B5-02
+  // also briefly added a second, one-level-deeper "Unknown <family> key"
+  // warning (typography_details/palette/fonts.families); MIG-B6-01
+  // (FEAT-007) removed that check at the source for being a false
+  // positive on any project with a richer palette/fonts/typography set
+  // than DEFAULT_THEME's minimal fallback — nothing here needed to change
+  // for that fix, since this just forwards whatever the runtime reports.
+  // Checked once per build, same as `--strict-theme`.
   warnUnknownThemeKeys(config && config.theme);
 
   const entries = config && config.builds && config.builds.length

@@ -364,15 +364,22 @@ is silently unused — nothing compiles it into CSS — so this catches a typo
 copy-pasting the wrong file, that would otherwise produce no error and no
 visible effect at all.
 
-The same check goes one level deeper for the three families whose own
-design is a registry of named entries — `typography_details` (tags: `h1`
-through `h6`, `p`, `span`, `body`, `caption`, `small`, `pre`, `code`,
-`default`), `palette` (roles: `primary`, `surface`, `neutral`, `error`)
-and `fonts.families` (roles: `ui`, `ui-2`, `code`) — warning on an entry
-name it doesn't recognize (`h9`, `primry`) the same way, without requiring
-every entry to be present: partial per-key override is the intended usage
-for all three (see "Zero-config defaults" above), so only an unrecognized
-*name* is flagged, never an incomplete one.
+That check stops at the top level. The three families whose own design
+is a registry of named entries — `typography_details` (tags), `palette`
+(roles) and `fonts.families` (roles) — are **open registries**: every
+entry name your theme declares is compiled, whether or not it appears in
+this package's own defaults, so `palette.brand`,
+`fonts.families.marketing` or `typography_details.display-xl` are all
+ordinary valid names. beta.5 briefly warned on entry names outside
+`DEFAULT_THEME`'s minimal fallback set; beta.6 removed that check as a
+false positive — `DEFAULT_THEME` is a zero-crash fallback, not a catalog
+of permitted names, and no closed set of entry names exists anywhere in
+the compiler to check against.
+
+What *is* still checked for real, one level deeper still, is the set of
+**fields** inside a `typography_details` tag: `fontsize` instead of
+`fontSize` is a hard `UXD_TYPO_FIELD` error, not a warning, because that
+list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 

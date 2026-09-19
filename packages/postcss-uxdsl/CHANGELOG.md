@@ -6,6 +6,37 @@ version stays at whatever `package.json` currently says until a release
 actually happens. See [`docs/migration.md`](docs/migration.md) for a
 narrative migration guide covering the same ground.
 
+## 0.5.0-beta.6 — unreleased
+
+FEAT-007 (`0.5.0-beta.6`), MIG-B6-01:
+
+- **Fix (regression from beta.5):** `validateAndNormalizeTheme` no longer
+  warns about entry names inside `typography_details` (tags), `palette`
+  (roles) and `fonts.families` (roles). beta.5 compared those names
+  against `DEFAULT_THEME`'s own key sets (4 palette roles, 3 font roles,
+  2 typography tags) and warned that anything else "will not be compiled
+  into any CSS". That was a false positive: `DEFAULT_THEME` is a
+  deliberately minimal zero-crash fallback, not a catalog of permitted
+  names, and all three families are open registries — `foundations.ts`
+  emits a CSS var for every key a theme provides, and `typography.ts`
+  validates a tag name by shape only. Any project with a richer palette,
+  a custom font role or a custom typography tag got the warning on every
+  plain `uxdsl build`/`watch`, with no flag to opt out. Removed at the
+  source rather than repointed at a longer list, because no closed list
+  of valid entry names exists to point at.
+- Unchanged by that fix, and covered by new regression tests:
+  MIG-B3-03's top-level "Unknown theme family" warning (`palete` for
+  `palette`) — that family set genuinely is closed — and the hard
+  `UXD_TYPO_FIELD` error for a misspelled *field* inside a typography tag
+  (`fontsize` for `fontSize`), whose `TYPOGRAPHY_PROPERTIES` list is also
+  closed. `--strict-theme` and its family scoping are untouched.
+- Tests: `test/theme-validate-open-registries.test.js` (three open
+  registries, the top-level negative control, and the closed-field
+  error), a CLI no-warning regression test, and
+  `fixtures/mig-b5-03-release/run.js` — the beta.5 release gate — updated
+  to assert from a real build that the reverted warning stays gone while
+  the top-level one still prints.
+
 ## 0.5.0-beta.5 — 2026-09-17
 
 FEAT-006 (`0.5.0-beta.5`), MIG-B5-01 through MIG-B5-03 (all three stories):

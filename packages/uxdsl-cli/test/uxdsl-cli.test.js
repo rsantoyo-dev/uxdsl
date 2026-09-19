@@ -799,21 +799,32 @@ test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strin
   await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean or an array of family names/);
 });
 
-// --- MIG-B5-02 (FEAT-006): unknown theme family/key warnings, surfaced
-// from a real build --- `validateAndNormalizeTheme`'s "Unknown theme
-// family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
-// never actually reachable from `uxdsl build` before this — only the
-// playground's theme editor called that function at all. Test names below
-// use unique, test-scoped family/tag names so the module-level dedup Set
-// (shared across every test in this process) never causes one test to see
-// a warning already consumed by an earlier one.
+// --- MIG-B5-02 (FEAT-006): unknown theme family warnings, surfaced from a
+// real build --- `validateAndNormalizeTheme`'s "Unknown theme family"
+// warning (MIG-B3-03) was never actually reachable from `uxdsl build`
+// before this — only the playground's theme editor called that function at
+// all. MIG-B5-02 also shipped a parallel "Unknown <family> key" warning one
+// level deeper (typography_details/palette/fonts.families); MIG-B6-01
+// (FEAT-007) removed that one — none of those three families has a real
+// closed set to check a key against, so it produced false positives for
+// any project with a richer palette/fonts/typography set than
+// DEFAULT_THEME's minimal fallback. Test names below use unique,
+// test-scoped family/tag names so the module-level dedup Set (shared
+// across every test in this process) never causes one test to see a
+// warning already consumed by an earlier one.
 
-test('MIG-B5-02: warnUnknownThemeKeys prints an unknown top-level family and an unknown nested key', () => {
+test('MIG-B5-02: warnUnknownThemeKeys prints an unknown top-level family', () => {
   const { messages } = captureWarnings(() =>
-    cli.warnUnknownThemeKeys({ migB502UnknownFamilyA: { x: 1 }, typography_details: { migB502UnknownTagA: { fontSize: '1rem' } } })
+    cli.warnUnknownThemeKeys({ migB502UnknownFamilyA: { x: 1 } })
   );
   assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyA"/.test(m)), JSON.stringify(messages));
-  assert.ok(messages.some((m) => /Unknown typography_details key "migB502UnknownTagA"/.test(m)), JSON.stringify(messages));
+});
+
+test('MIG-B6-01: warnUnknownThemeKeys does not warn on a typography_details tag beyond DEFAULT_THEME\'s built-ins (regression)', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnUnknownThemeKeys({ typography_details: { migB601CustomTag: { fontSize: '1rem' } } })
+  );
+  assert.deepEqual(messages, []);
 });
 
 test('MIG-B5-02: warnUnknownThemeKeys is a no-op for an undefined theme (zero-config)', () => {
