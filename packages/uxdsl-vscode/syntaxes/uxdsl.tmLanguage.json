@@ -21,8 +21,8 @@
       "patterns": [
         {
           "name": "comment.block.uxdsl",
-          "begin": "/\*",
-          "end": "\*/"
+          "begin": "/\\*",
+          "end": "\\*/"
         }
       ]
     },
@@ -30,14 +30,14 @@
       "patterns": [
         {
           "name": "keyword.control.at-rule.uxdsl",
-          "match": "@(theme|ds-[a-zA-Z0-9-]+)\b"
+          "match": "@(theme|ds-[a-zA-Z0-9-]+)\\b"
         }
       ]
     },
     "functions": {
       "patterns": [
         {
-          "match": "\b(palette|radius|density|shadow|space|xs|sm|md|lg|xl)\s*(?=\()",
+          "match": "\\b(palette|color|radius|rounded|border|density|shadow|elevation|space|xs|sm|md|lg|xl)\\s*(?=\\()",
           "name": "support.function.uxdsl"
         }
       ]

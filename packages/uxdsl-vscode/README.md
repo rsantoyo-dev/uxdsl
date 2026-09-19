@@ -6,11 +6,16 @@ This extension provides language support for **UXDSL** (User Experience Design S
 
 - **Syntax Highlighting**: Colorization for `.uxdsl` files, including:
   - Directives: `@theme`, `@ds-button`, `@ds-surface`, etc.
-  - Functions: `palette()`, `space()`, `radius()`, `density()`.
+  - Functions: `palette()`, `color()`, `space()`, `density()`, `radius()`, `rounded()`, `border()`, `shadow()`, `elevation()`.
   - Responsive modifiers: `xs()`, `sm()`, `md()`, `lg()`, `xl()`.
   - Standard CSS syntax support.
 - **IntelliSense**: Basic autocompletion for UXDSL directives.
 - **Snippets**: (Coming soon)
+
+> The grammar shipped in `uxdsl-vscode-0.0.1.vsix` contains invalid JSON escapes and
+> does not load, so `.uxdsl` files open without highlighting. The grammar in this
+> repository is fixed; package a new `.vsix` from source until 0.1.0 is published
+> (FEAT-008, MIG-B6-26).
 
 ## Installation
 
