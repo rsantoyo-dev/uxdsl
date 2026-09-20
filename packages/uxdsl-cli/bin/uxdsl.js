@@ -73,6 +73,49 @@ const DEFAULT_BREAKPOINTS = uxdslRuntime.DEFAULT_BREAKPOINTS
   ? { ...uxdslRuntime.DEFAULT_BREAKPOINTS }
   : { ...FALLBACK_BREAKPOINTS };
 
+// MIG-B6-01 (FEAT-008): the shared top-level family registry the compiler
+// itself validates against. Only defined when the resolved postcss-uxdsl
+// install is new enough to export it — an older install falls back to
+// `undefined`, in which case callers skip family-name validation entirely
+// rather than reject every family name as unknown.
+function getKnownThemeFamilies() {
+  return uxdslRuntime.KNOWN_THEME_FAMILIES instanceof Set ? uxdslRuntime.KNOWN_THEME_FAMILIES : undefined;
+}
+
+// MIG-B6-22 (FEAT-008): same edit-distance-based suggestion shape as
+// postcss-uxdsl's own diagnostics (`closestKey` in src/diagnostics.ts) —
+// duplicated in a handful of lines here because that module has no public
+// export path a CLI dependency could import (postcss-uxdsl's package export
+// is the PostCSS plugin function itself, nothing else). Used both for
+// unknown-flag suggestions and unknown-theme-family suggestions.
+function editDistance(left, right) {
+  const rows = Array.from({ length: left.length + 1 }, (_, index) => [index]);
+  for (let column = 1; column <= right.length; column++) rows[0][column] = column;
+  for (let row = 1; row <= left.length; row++) {
+    for (let column = 1; column <= right.length; column++) {
+      const substitution = left[row - 1] === right[column - 1] ? 0 : 1;
+      rows[row][column] = Math.min(
+        rows[row - 1][column] + 1,
+        rows[row][column - 1] + 1,
+        rows[row - 1][column - 1] + substitution,
+      );
+    }
+  }
+  return rows[left.length][right.length];
+}
+
+function closestMatch(value, candidates) {
+  let closest;
+  let distance = 3;
+  for (const candidate of candidates) {
+    const candidateDistance = editDistance(value.toLowerCase(), candidate.toLowerCase());
+    if (candidateDistance > 2 || candidateDistance >= distance) continue;
+    closest = candidate;
+    distance = candidateDistance;
+  }
+  return closest;
+}
+
 const CONFIG_CANDIDATES = [
   'uxdsl.config.cjs',
   'uxdsl.config.js',
@@ -191,6 +234,11 @@ Examples:
   uxdsl build --strict-theme
 
 Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
+
+An unrecognized flag, or a real flag used on the wrong command, fails
+immediately with a suggestion (e.g. "Did you mean --strict-theme?")
+instead of being silently ignored. See the CLI README's "Strict flag
+parsing" section for the full accepted-value table.
 `);
 }
 
@@ -512,7 +560,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   }
   // MIG-B4-01: independent of `builds` — the theme is shared across every
   // entry, so this is resolved once here regardless of single/multi mode.
-  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme);
+  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies() });
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -574,7 +622,20 @@ async function loadConfig(argv, cwd = process.cwd()) {
 // and validated by the plugin) was permanently shadowed by
 // `config.breakpoints || DEFAULT_BREAKPOINTS`: the fallback ran before
 // there was ever a theme to consult.
+// MIG-B6-22 (FEAT-008): `--include-theme`/`--no-include-theme` arrive as
+// real booleans from minimist (bare flag or `--no-` negation), but
+// `--include-theme=false`/`=true` arrive as the strings `"false"`/`"true"`
+// — previously only `typeof flagValue === 'boolean'` was accepted, so the
+// `=value` form silently fell through to the config value/default instead
+// of taking effect. `--include-theme=banana` (or any other string) is a
+// hard error instead of silently reading as `true`, matching the
+// bare-boolean-flag contract minimist itself already provides.
 function resolveIncludeTheme(flagValue, configValue) {
+  if (typeof flagValue === 'string') {
+    if (flagValue === 'true') flagValue = true;
+    else if (flagValue === 'false') flagValue = false;
+    else throw new Error(`Invalid value for --include-theme: "${flagValue}". Expected true or false (or --no-include-theme).`);
+  }
   if (typeof flagValue === 'boolean') return flagValue;
   if (typeof configValue === 'boolean') return configValue;
   return true;
@@ -599,24 +660,60 @@ function resolveIncludeTheme(flagValue, configValue) {
 // for anything that isn't a meaningful value at this level (absent, or an
 // empty string/array) so the flag > config > default chain below falls
 // through correctly instead of treating "nothing here" as "off".
-function normalizeStrictThemeScope(value) {
+//
+// MIG-B6-22 (FEAT-008): a bare `--strict-theme`/`--strict` (no declared
+// minimist type — see main()) already arrives here as the real boolean
+// `true`, and `--no-strict-theme`/`--no-strict` as `false`; those are
+// unaffected by this function. What minimist cannot know on its own is that
+// `--strict-theme=true`/`=false` should mean the same thing as the bare
+// boolean forms — undeclared, `=value` always arrives as a string, so
+// those two literal strings used to fall into the CSV branch below and be
+// misread as a family named "true"/"false" (a silent no-op gate: "true"
+// never matches a real family, so nothing is ever flagged incomplete).
+// Matched by exact, case-insensitive value — "True,false" is a two-element
+// family list, not a mix of booleans, since a real family name can't
+// contain a comma anyway and this keeps the special case narrow.
+//
+// `knownFamilies` (MIG-B6-01's `KNOWN_THEME_FAMILIES`) is optional so the
+// large existing pure-parsing test suite for this function keeps working
+// unchanged when it isn't passed; passing it validates every family name
+// and throws with an edit-distance suggestion for a typo (e.g. "pallete"),
+// describing where the value came from via `source` ("--strict-theme",
+// "--strict", or "strictTheme (in the config file)") so the message names
+// what was actually used, not just a fixed flag name.
+function normalizeStrictThemeScope(value, { knownFamilies, source = '--strict-theme' } = {}) {
   if (value === undefined || value === null) return undefined;
   if (typeof value === 'boolean') return value;
-  if (Array.isArray(value)) {
-    const families = value.map((f) => String(f).trim()).filter(Boolean);
-    return families.length > 0 ? families : undefined;
-  }
+  const toValidatedFamilyList = (rawFamilies) => {
+    const families = rawFamilies.map((f) => String(f).trim()).filter(Boolean);
+    if (families.length === 0) return undefined;
+    if (knownFamilies) {
+      for (const family of families) {
+        if (!knownFamilies.has(family)) {
+          const suggestion = closestMatch(family, knownFamilies);
+          throw new Error(
+            `Unknown theme family "${family}" in ${source}.` +
+            (suggestion ? ` Did you mean "${suggestion}"?` : '')
+          );
+        }
+      }
+    }
+    return families;
+  };
+  if (Array.isArray(value)) return toValidatedFamilyList(value);
   if (typeof value === 'string') {
-    const families = value.split(',').map((f) => f.trim()).filter(Boolean);
-    return families.length > 0 ? families : undefined;
+    const trimmed = value.trim().toLowerCase();
+    if (trimmed === 'true') return true;
+    if (trimmed === 'false') return false;
+    return toValidatedFamilyList(value.split(','));
   }
   return true;
 }
 
-function resolveStrictTheme(flagValue, configValue) {
-  const flag = normalizeStrictThemeScope(flagValue);
+function resolveStrictTheme(flagValue, configValue, { knownFamilies } = {}) {
+  const flag = normalizeStrictThemeScope(flagValue, { knownFamilies, source: '--strict-theme' });
   if (flag !== undefined) return flag;
-  const config = normalizeStrictThemeScope(configValue);
+  const config = normalizeStrictThemeScope(configValue, { knownFamilies, source: 'strictTheme (in the config file)' });
   if (config !== undefined) return config;
   return false;
 }
@@ -930,7 +1027,7 @@ async function themeCommand(argv, cwd = process.cwd()) {
   // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
   // `--strict` still means "every touched family" (unchanged);
   // `--strict=palette,breakpoints` checks only those.
-  const strictScope = normalizeStrictThemeScope(argv.strict);
+  const strictScope = normalizeStrictThemeScope(argv.strict, { knownFamilies: getKnownThemeFamilies(), source: '--strict' });
   if (strictScope) {
     const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, strictScope);
     if (incomplete.length > 0) {
@@ -1311,19 +1408,110 @@ async function init(argv) {
   }
 }
 
-async function main() {
-  const argv = minimist(process.argv.slice(2), {
-    boolean: ['watch', 'help'],
-    alias: {
-      watch: 'w',
-      help: 'h',
-      entry: 'e',
-      out: 'o',
-      config: 'c',
+const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'watch', 'theme'];
+
+// MIG-B6-22 (FEAT-008): every flag each command actually reads, as one
+// registry instead of scattered `argv.foo` reads scattered through each
+// command's own function — printHelp, the CLI README and parseCommandArgv's
+// validation below all have to agree on exactly this list, so a future
+// story (MIG-B6-16's `--contrast`, MIG-B6-21's `--sourcemap`) adds its flag
+// here once, not in three places that can drift apart.
+//
+// `manual` lists flags declared in neither `boolean` nor `string` — minimist
+// then applies its own default inference (bare flag → `true`, `--no-x` →
+// `false`, `--x=value` → the raw string `value`) exactly like an
+// undeclared flag always has, and the flag's own resolver function (e.g.
+// `resolveIncludeTheme`) does its own validation on that raw value instead
+// of trusting minimist's implicit boolean coercion — which silently turns
+// ANY unrecognized string into `true` (`--include-theme=banana` bug this
+// story closes). `manual` still counts as "known" for unknown-flag
+// detection; only its type declaration is deliberately left out.
+const COMMAND_FLAG_SPECS = {
+  init: { boolean: ['multi'], string: [], manual: [], alias: {} },
+  'generate-entry': { boolean: [], string: ['src', 'out', 'exclude'], manual: [], alias: { out: 'o' } },
+  // `strict-theme`/`strict` are deliberately `manual`, not `string`: a
+  // minimist `string`-typed flag turns a BARE flag (no `=value`) into `''`
+  // instead of `true` — which silently disabled the bare `--strict-theme`/
+  // `--strict` control case entirely (caught by the manual repro in this
+  // story's test file, not by any prior automated test) since `''`
+  // normalizes to "no families", not "check everything".
+  build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
+  watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { entry: 'e', out: 'o', config: 'c' } },
+  theme: { boolean: ['diff'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
+};
+
+function canonicalFlagName(rawArg) {
+  return rawArg.replace(/^--?/, '').replace(/=.*$/, '').replace(/^no-/, '');
+}
+
+/** Parses argv scoped to the command actually invoked, so a flag valid for
+ * one command but used on another (`--strict` on `build` instead of
+ * `--strict-theme`) is unknown for THAT command, not silently accepted
+ * because the name happens to exist elsewhere — and a typo (`--strict-thme`)
+ * or a nonexistent flag fails loudly with a suggestion instead of being
+ * ignored outright the way plain minimist does for anything undeclared.
+ * The command itself is read directly off `rawArgs[0]`, never parsed by
+ * minimist, so a mistyped flag immediately after it can't eat the command
+ * token as its own value (minimist does exactly that for an undeclared
+ * flag followed by a bare word — verified while building this). */
+function parseCommandArgv(rawArgs) {
+  const cmd = rawArgs[0] && !rawArgs[0].startsWith('-') ? rawArgs[0] : undefined;
+  const rest = cmd !== undefined ? rawArgs.slice(1) : rawArgs;
+  // An unrecognized command still needs *some* spec to parse its flags
+  // with — "build" (also the default-command spec) is as good as any,
+  // since main()'s switch reports "Unknown command" for it regardless and
+  // that flag-validation result is discarded below.
+  const spec = COMMAND_FLAG_SPECS[cmd] || COMMAND_FLAG_SPECS.build;
+  const boolean = ['help', ...spec.boolean];
+  const string = [...spec.string];
+  const alias = { help: 'h', ...spec.alias };
+  const knownFlags = new Set([...boolean, ...string, ...spec.manual]);
+
+  const unknownFlags = [];
+  const argv = minimist(rest, {
+    boolean, string, alias,
+    unknown: (arg) => {
+      if (arg.startsWith('-') && !knownFlags.has(canonicalFlagName(arg))) unknownFlags.push(arg);
+      return true;
     },
   });
 
-  const cmd = argv._[0];
+  // None of this CLI's flags are meant to accept multiple values — but
+  // minimist collects a repeated flag (`--entry a --entry b`) into an
+  // array instead of keeping only the last one, which every consumer
+  // below (`path.resolve`, `String(...).split(',')`, ...) would either
+  // choke on or silently misuse. The last occurrence winning is the
+  // documented contract (see this story's Pruebas section), so collapse
+  // any array here, once, instead of at every call site.
+  for (const key of Object.keys(argv)) {
+    if (key !== '_' && Array.isArray(argv[key])) argv[key] = argv[key][argv[key].length - 1];
+  }
+
+  // A command that isn't one of the five real ones gets its own clear
+  // "Unknown command" error from main()'s switch statement — reporting
+  // every one of its flags as "unknown option" too would only bury that
+  // message under noise for a typo'd command name.
+  if ((cmd === undefined || KNOWN_COMMANDS.includes(cmd)) && unknownFlags.length > 0) {
+    const knownLongFlags = [...knownFlags];
+    const message = unknownFlags.map((rawArg) => {
+      const displayArg = rawArg.replace(/=.*$/, '');
+      const suggestion = closestMatch(canonicalFlagName(rawArg), knownLongFlags);
+      return `Unknown option ${displayArg}.` + (suggestion ? ` Did you mean --${suggestion}?` : '');
+    }).join(' ');
+    throw new Error(message);
+  }
+
+  return { cmd, argv };
+}
+
+async function main() {
+  let cmd, argv;
+  try {
+    ({ cmd, argv } = parseCommandArgv(process.argv.slice(2)));
+  } catch (err) {
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+    process.exit(1);
+  }
 
   if (argv.help) {
     printHelp();
@@ -1401,6 +1589,11 @@ module.exports = {
   resolveIncludeTheme,
   resolveStrictTheme,
   normalizeStrictThemeScope,
+  getKnownThemeFamilies,
+  closestMatch,
+  canonicalFlagName,
+  COMMAND_FLAG_SPECS,
+  parseCommandArgv,
   resolveBreakpoints,
   buildOnce,
   warnUnknownThemeKeys,

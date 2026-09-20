@@ -356,6 +356,39 @@ and/or `breakpoints`) avoids the conflict while keeping the guarantee
 where it's meaningful. `true` remains available for a project that
 deliberately wants maximum strictness everywhere.
 
+### 8. Strict flag parsing: accepted values, unknown flags, unknown families
+
+Every flag accepts a fixed, explicit set of forms — anything else is a hard
+error before any build runs, not a silent no-op:
+
+| Flag | Accepted forms |
+| --- | --- |
+| `--include-theme` | bare (`true`), `--no-include-theme` (`false`), `=true`, `=false`. Any other value (`--include-theme=banana`) fails with `Invalid value for --include-theme: "banana"...`. |
+| `--strict-theme` (build/watch) | bare (check every touched family), `--no-strict-theme`/`=false` (off), `=true` (same as bare), `=<family1>,<family2>` (scoped). `=true`/`=false` are recognized as the booleans they mean, not as families literally named "true"/"false". |
+| `--strict` (theme) | same forms and rules as `--strict-theme`. |
+
+A family name in `--strict-theme`/`--strict`/`strictTheme` (in
+`uxdsl.config.cjs`) is validated against the same top-level family set the
+compiler itself recognizes. A typo fails immediately with a suggestion:
+
+```console
+$ npx uxdsl build --strict-theme=pallete
+[uxdsl] Error: Unknown theme family "pallete" in --strict-theme. Did you mean "palette"?
+```
+
+An unrecognized flag — a typo, or a real flag used on the wrong command
+(`--strict` on `build` instead of `--strict-theme`, or `--watch` on
+`theme`) — fails the same way instead of being silently ignored:
+
+```console
+$ npx uxdsl build --strict-thme
+[uxdsl] Error: Unknown option --strict-thme. Did you mean --strict-theme?
+```
+
+`--help`/`-h` and every flag documented above are the only ones each
+command accepts; a positional argument (a bare path with no leading `-`)
+is never mistaken for a flag.
+
 ---
 
 ## License

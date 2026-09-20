@@ -291,6 +291,43 @@ sigue igual:
   `fontSize`) sigue siendo error duro `UXD_TYPO_FIELD`, no un aviso;
 - `--strict-theme` y su alcance por familia no cambian.
 
+### Desde beta.6: flags del CLI estrictos (MIG-B6-22)
+
+beta.6 corrige tres formas en las que `uxdsl-cli` aceptaba un flag mal
+escrito o un valor inválido en silencio, en vez de fallar:
+
+- **Un flag desconocido, o de otro comando, ahora falla con sugerencia.**
+  Un script que hoy pasa `--strict-thme` (typo) o `--strict` a `build`
+  (ese flag es de `theme`, la forma correcta es `--strict-theme`) dejaba de
+  aplicar esa opción sin ningún aviso; ahora falla con exit 1 y "Unknown
+  option ... Did you mean ...?". Revisá tus scripts de build/CI si usan
+  flags que nunca existieron o que pertenecen a otro comando — antes
+  "funcionaban" porque `uxdsl` los ignoraba.
+- **`--include-theme=false`/`=true` ahora sí surten efecto.** Antes solo
+  la forma sin `=` (`--include-theme`/`--no-include-theme`) cambiaba algo;
+  `--include-theme=false` se leía como texto y cambiaba, en la práctica,
+  el criterio de omitir la tabla. Si tu build dependía de que
+  `--include-theme=false` **no** desactivara el tema (comportamiento
+  previo, no documentado como contrato), usá `--no-include-theme`
+  explícitamente para conservar el tema.
+- **`--strict-theme=true`/`--strict-theme=false` (y `theme --strict=...`)
+  ahora significan lo mismo que la forma sin `=`.** Antes se interpretaban
+  como una familia de tema llamada literalmente "true"/"false" (que nunca
+  existe, así que el chequeo no hacía nada). Un proyecto que ya pasaba
+  `--strict-theme=true` esperando el chequeo completo empieza a recibirlo
+  de verdad a partir de beta.6 — puede que un build que antes pasaba en
+  silencio ahora falle con una familia parcial real; ver la sección
+  "`--strict-theme` con alcance por familia" arriba para acotarlo.
+- **Un nombre de familia inválido en `--strict-theme`/`--strict`/
+  `strictTheme` falla con sugerencia** (`Unknown theme family "pallete"...
+  Did you mean "palette"?`) en vez de aceptarse y no comprobar nada.
+
+Ningún cambio afecta la semántica de `--strict-theme` en sí (qué cuenta
+como "familia parcialmente heredada de los defaults") — solo qué formas de
+escribir el flag el CLI reconoce y valida. Ver la sección "Strict flag
+parsing" del [README de uxdsl-cli](../../uxdsl-cli/README.md) para la
+tabla completa de formas aceptadas por flag.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice
