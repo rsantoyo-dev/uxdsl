@@ -151,7 +151,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | MIG-B6-13 | [Errores y avisos con ubicación](MIG-B6-13-errores-con-ubicacion.md) | A — Diagnósticos veraces | P0 · M | — | En curso; revisión 2026-09-20 en ficha |
 | MIG-B6-14 | [Cero salidas silenciosas del lenguaje](MIG-B6-14-cero-salidas-silenciosas.md) | A — Diagnósticos veraces | P0 · M | 13 | Pendiente |
 | MIG-B6-15 | [Selectores funcionales y `!important` responsive](MIG-B6-15-selectores-e-important.md) | B — Tema base y salida correcta | P1 · S | 14 | Pendiente |
-| MIG-B6-22 | [Flags estrictos del CLI](MIG-B6-22-flags-estrictos.md) | D — CLI | P0 · S | 1 | Pendiente |
+| MIG-B6-22 | [Flags estrictos del CLI](MIG-B6-22-flags-estrictos.md) | D — CLI | P0 · S | 1 | Implementada/verificada en `feat/feat-008-beta6-plan` (`097ee88`); integración a `main` pendiente |
 | MIG-B6-25 | [Validación de referencias en tiempo casi lineal](MIG-B6-25-referencias-lineales.md) | E — Rendimiento | P1 · M | 13 | Pendiente |
 | MIG-B6-18 | [`compile()` compartido en `uxdsl-core`](MIG-B6-18-compile-compartido.md) | C — Un solo pipeline (**camino crítico**) | P0 · L | 22 | Pendiente |
 | MIG-B6-19 | [Configuración única de tema y breakpoints](MIG-B6-19-configuracion-unica.md) | C — Un solo pipeline | P1 · M | 18 | Pendiente |
