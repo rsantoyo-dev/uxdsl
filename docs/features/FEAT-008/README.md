@@ -147,7 +147,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | ID | Ficha | Track | Prioridad · Tamaño | Depende de | Estado |
 | --- | --- | --- | --- | --- | --- |
 | MIG-B6-01 | [Familias top-level reconocidas](MIG-B6-01-familias-top-level.md) | A — Diagnósticos veraces | P0 · S | — | Verificada localmente; commit/integración pendientes |
-| MIG-B6-02 | [Procedencia exacta de la validación de FEAT-002](MIG-B6-02-procedencia-feat-002.md) | G — Release | P0 · S (sólo documentación y un test documental) | — | Pendiente |
+| MIG-B6-02 | [Procedencia exacta de la validación de FEAT-002](MIG-B6-02-procedencia-feat-002.md) | G — Release | P0 · S (sólo documentación y un test documental) | — | Implementada/verificada en `feat/feat-008-beta6-plan` (`887622c`, `b00b84d` + hardening); commit/integración a `main` pendientes |
 | MIG-B6-13 | [Errores y avisos con ubicación](MIG-B6-13-errores-con-ubicacion.md) | A — Diagnósticos veraces | P0 · M | — | En curso; revisión 2026-09-20 en ficha |
 | MIG-B6-14 | [Cero salidas silenciosas del lenguaje](MIG-B6-14-cero-salidas-silenciosas.md) | A — Diagnósticos veraces | P0 · M | 13 | Pendiente |
 | MIG-B6-15 | [Selectores funcionales y `!important` responsive](MIG-B6-15-selectores-e-important.md) | B — Tema base y salida correcta | P1 · S | 14 | Pendiente |
