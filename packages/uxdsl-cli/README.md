@@ -389,6 +389,17 @@ $ npx uxdsl build --strict-thme
 command accepts; a positional argument (a bare path with no leading `-`)
 is never mistaken for a flag.
 
+A stray comma in a family list is also rejected, not silently dropped:
+`--strict-theme=,` and `--strict-theme=palette,,fonts` both fail with "A
+family list cannot contain an empty entry" instead of quietly checking
+zero or fewer families than you named. `--include-theme=0`/`=1` fail the
+same way `=banana` does — only `true`/`false` (or the bare/`--no-` forms)
+are accepted, never a number. If the resolved `postcss-uxdsl` install
+predates the family registry this validates against, scoping to specific
+families (`--strict-theme=palette`) fails with an "upgrade postcss-uxdsl"
+error rather than silently skipping the check; the unscoped boolean form
+(`--strict-theme`/`=false`) still works without it.
+
 ---
 
 ## License

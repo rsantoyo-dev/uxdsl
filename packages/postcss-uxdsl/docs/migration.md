@@ -321,6 +321,17 @@ escrito o un valor inválido en silencio, en vez de fallar:
 - **Un nombre de familia inválido en `--strict-theme`/`--strict`/
   `strictTheme` falla con sugerencia** (`Unknown theme family "pallete"...
   Did you mean "palette"?`) en vez de aceptarse y no comprobar nada.
+- **Una coma suelta en la lista de familias también falla.**
+  `--strict-theme=,` o `--strict-theme=palette,,fonts` antes descartaban el
+  elemento vacío en silencio (el primer caso, sin ninguna familia real,
+  terminaba desactivando el chequeo por completo); ahora fallan con "A
+  family list cannot contain an empty entry". `--include-theme=0`/`=1`
+  fallan igual que `=banana` — antes se leían como texto y se ignoraban.
+  Si tu proyecto tiene un `postcss-uxdsl` anterior a beta.6 (sin el
+  registro de familias), acotar `--strict-theme`/`--strict` a familias
+  específicas falla pidiendo actualizar el paquete, en vez de aceptar
+  cualquier nombre sin validarlo; la forma sin acotar (`--strict-theme`
+  a secas, o `=false`) sigue funcionando igual.
 
 Ningún cambio afecta la semántica de `--strict-theme` en sí (qué cuenta
 como "familia parcialmente heredada de los defaults") — solo qué formas de

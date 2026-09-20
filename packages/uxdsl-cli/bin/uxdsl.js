@@ -560,7 +560,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   }
   // MIG-B4-01: independent of `builds` — the theme is shared across every
   // entry, so this is resolved once here regardless of single/multi mode.
-  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies() });
+  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true });
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -627,11 +627,18 @@ async function loadConfig(argv, cwd = process.cwd()) {
 // `--include-theme=false`/`=true` arrive as the strings `"false"`/`"true"`
 // — previously only `typeof flagValue === 'boolean'` was accepted, so the
 // `=value` form silently fell through to the config value/default instead
-// of taking effect. `--include-theme=banana` (or any other string) is a
-// hard error instead of silently reading as `true`, matching the
-// bare-boolean-flag contract minimist itself already provides.
+// of taking effect. Any other explicit value is a hard error instead of
+// silently reading as `true`, matching the bare-boolean-flag contract
+// minimist itself already provides — including a *number*, which is the
+// case a code review caught this missing for: minimist auto-parses an
+// undeclared flag's numeric-looking value (`--include-theme=0`) into the
+// actual JS number `0`, which is neither `'true'`/`'false'` (so the old
+// string-only check skipped it) nor a real boolean, and fell all the way
+// through to the config value/default — silently accepting a value never
+// documented as valid. Checking "not already a real boolean" up front,
+// rather than "is a string", catches every such explicit-but-invalid value.
 function resolveIncludeTheme(flagValue, configValue) {
-  if (typeof flagValue === 'string') {
+  if (flagValue !== undefined && typeof flagValue !== 'boolean') {
     if (flagValue === 'true') flagValue = true;
     else if (flagValue === 'false') flagValue = false;
     else throw new Error(`Invalid value for --include-theme: "${flagValue}". Expected true or false (or --no-include-theme).`);
@@ -681,39 +688,80 @@ function resolveIncludeTheme(flagValue, configValue) {
 // describing where the value came from via `source` ("--strict-theme",
 // "--strict", or "strictTheme (in the config file)") so the message names
 // what was actually used, not just a fixed flag name.
-function normalizeStrictThemeScope(value, { knownFamilies, source = '--strict-theme' } = {}) {
+//
+// `requireKnownFamilies` is a separate opt-in (only the real CLI call
+// sites in loadConfig/themeCommand pass it) for a case a code review
+// caught: `knownFamilies` comes from whatever postcss-uxdsl install the
+// *project* resolves (see getKnownThemeFamilies/resolveUxDslModule's
+// project-first order), which can be older than this CLI and simply not
+// export `KNOWN_THEME_FAMILIES` yet. Silently skipping validation in that
+// case would quietly re-open exactly the "pallete never gets flagged"
+// hole this story closes, for any project on an older postcss-uxdsl —
+// worse than never having added the check, since it would look enabled.
+// A plain boolean scope (`true`/`false`, no specific families named)
+// never needed a family list to validate, so it's unaffected either way.
+function normalizeStrictThemeScope(value, { knownFamilies, requireKnownFamilies = false, source = '--strict-theme' } = {}) {
   if (value === undefined || value === null) return undefined;
   if (typeof value === 'boolean') return value;
-  const toValidatedFamilyList = (rawFamilies) => {
-    const families = rawFamilies.map((f) => String(f).trim()).filter(Boolean);
-    if (families.length === 0) return undefined;
-    if (knownFamilies) {
-      for (const family of families) {
-        if (!knownFamilies.has(family)) {
-          const suggestion = closestMatch(family, knownFamilies);
-          throw new Error(
-            `Unknown theme family "${family}" in ${source}.` +
-            (suggestion ? ` Did you mean "${suggestion}"?` : '')
-          );
-        }
+
+  // MIG-B6-22 fix (code review): an empty overall value (`''`/`[]`) still
+  // means "nothing here" — falls through to config/default, matching the
+  // pre-existing contract a config like `strictTheme: someEnvVar || ''`
+  // already relies on. But a NON-empty value that contains an empty
+  // element after splitting (a stray comma: `--strict-theme=,` or
+  // `=palette,,fonts`) is a different case — the user clearly tried to
+  // name families and got the list wrong, so this is a hard error instead
+  // of silently discarding the empty slot and continuing (which, for
+  // `--strict-theme=,`, previously discarded *every* slot and silently
+  // turned strict-theme off).
+  const toValidatedFamilyList = (rawFamilies, describeInput) => {
+    const families = rawFamilies.map((f) => String(f).trim());
+    const emptyIndex = families.findIndex((f) => f === '');
+    if (emptyIndex !== -1) {
+      throw new Error(`Invalid value for ${source}: ${describeInput()}. A family list cannot contain an empty entry — check for a stray or trailing comma.`);
+    }
+    if (!knownFamilies) {
+      if (requireKnownFamilies) {
+        throw new Error(
+          `Cannot validate family names for ${source}: this postcss-uxdsl install does not export ` +
+          'KNOWN_THEME_FAMILIES (added in 0.5.0-beta.6). Upgrade postcss-uxdsl in this project, or pass ' +
+          `a plain boolean (${source}=true or =false) instead of scoping to specific families.`
+        );
+      }
+      return families;
+    }
+    for (const family of families) {
+      if (!knownFamilies.has(family)) {
+        const suggestion = closestMatch(family, knownFamilies);
+        throw new Error(
+          `Unknown theme family "${family}" in ${source}.` +
+          (suggestion ? ` Did you mean "${suggestion}"?` : '')
+        );
       }
     }
     return families;
   };
-  if (Array.isArray(value)) return toValidatedFamilyList(value);
-  if (typeof value === 'string') {
-    const trimmed = value.trim().toLowerCase();
-    if (trimmed === 'true') return true;
-    if (trimmed === 'false') return false;
-    return toValidatedFamilyList(value.split(','));
+
+  if (Array.isArray(value)) {
+    if (value.length === 0) return undefined;
+    return toValidatedFamilyList(value, () => `[${value.map((f) => JSON.stringify(f)).join(', ')}]`);
   }
-  return true;
+  if (typeof value === 'string') {
+    if (value.trim() === '') return undefined;
+    const trimmedLower = value.trim().toLowerCase();
+    if (trimmedLower === 'true') return true;
+    if (trimmedLower === 'false') return false;
+    return toValidatedFamilyList(value.split(','), () => JSON.stringify(value));
+  }
+  // Reachable when minimist auto-parses an undeclared flag's numeric-looking
+  // value into a real number (`--strict-theme=5`) — not a documented form.
+  throw new Error(`Invalid value for ${source}: ${JSON.stringify(value)}. Expected true, false, or a comma-separated list of family names.`);
 }
 
-function resolveStrictTheme(flagValue, configValue, { knownFamilies } = {}) {
-  const flag = normalizeStrictThemeScope(flagValue, { knownFamilies, source: '--strict-theme' });
+function resolveStrictTheme(flagValue, configValue, { knownFamilies, requireKnownFamilies } = {}) {
+  const flag = normalizeStrictThemeScope(flagValue, { knownFamilies, requireKnownFamilies, source: '--strict-theme' });
   if (flag !== undefined) return flag;
-  const config = normalizeStrictThemeScope(configValue, { knownFamilies, source: 'strictTheme (in the config file)' });
+  const config = normalizeStrictThemeScope(configValue, { knownFamilies, requireKnownFamilies, source: 'strictTheme (in the config file)' });
   if (config !== undefined) return config;
   return false;
 }
@@ -1027,7 +1075,7 @@ async function themeCommand(argv, cwd = process.cwd()) {
   // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
   // `--strict` still means "every touched family" (unchanged);
   // `--strict=palette,breakpoints` checks only those.
-  const strictScope = normalizeStrictThemeScope(argv.strict, { knownFamilies: getKnownThemeFamilies(), source: '--strict' });
+  const strictScope = normalizeStrictThemeScope(argv.strict, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true, source: '--strict' });
   if (strictScope) {
     const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, strictScope);
     if (incomplete.length > 0) {

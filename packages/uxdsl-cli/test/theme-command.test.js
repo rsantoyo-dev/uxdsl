@@ -219,3 +219,17 @@ test('MIG-B6-22: `uxdsl theme --strict=pallete` (typo) fails with a suggestion, 
     /Unknown theme family "pallete" in --strict\. Did you mean "palette"\?/
   );
 });
+
+// MIG-B6-22 code-review fix: `uxdsl theme --strict` goes through the same
+// normalizeStrictThemeScope as `build --strict-theme` (see uxdsl-cli.test.js
+// for the equivalent build-side coverage), so a stray comma must fail here
+// too instead of silently normalizing to "no families" (strict off).
+test('MIG-B6-22: `uxdsl theme --strict=,` (stray comma) fails instead of silently turning strict off', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: ',' }, dir)),
+    /Invalid value for --strict: ","\. A family list cannot contain an empty entry/
+  );
+});

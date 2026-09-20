@@ -854,6 +854,100 @@ test('MIG-B6-22: resolveStrictTheme validates both the flag and the config value
   );
 });
 
+// --- MIG-B6-22 code-review fixes: an empty-after-split family list, a
+// numeric --include-theme value, and a missing KNOWN_THEME_FAMILIES export
+// each used to be silently accepted instead of rejected. ---
+
+test('MIG-B6-22: normalizeStrictThemeScope rejects a stray comma instead of silently dropping the empty family and turning strict off', () => {
+  const knownFamilies = new Set(['palette', 'fonts']);
+  // A lone comma, or a value that is only commas/whitespace, must not be
+  // treated the same as a genuinely empty value (`''`/`[]`, still "nothing
+  // here" — see the true/false test above) — the user typed something,
+  // and it parses to zero real family names, which is always a mistake.
+  assert.throws(
+    () => cli.normalizeStrictThemeScope(',', { knownFamilies }),
+    /Invalid value for --strict-theme: ","\. A family list cannot contain an empty entry/
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette,,fonts', { knownFamilies }),
+    /Invalid value for --strict-theme: "palette,,fonts"\. A family list cannot contain an empty entry/
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette,', { knownFamilies }),
+    /A family list cannot contain an empty entry/,
+    'a trailing comma must fail too, not just an internal one'
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope(['palette', ''], { knownFamilies }),
+    /A family list cannot contain an empty entry/,
+    'the same rule applies to a config-provided array, not just the CLI CSV string'
+  );
+  // Still preserved: a truly empty value is "nothing here", not an error.
+  assert.equal(cli.normalizeStrictThemeScope('', { knownFamilies }), undefined);
+  assert.equal(cli.normalizeStrictThemeScope([], { knownFamilies }), undefined);
+});
+
+test('MIG-B6-22 (subprocess): --strict-theme=, and --strict-theme=palette,,fonts fail instead of silently disabling strict mode', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+
+  const lonelyComma = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=,'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(lonelyComma.status, 1);
+  assert.match(lonelyComma.stderr, /A family list cannot contain an empty entry/);
+
+  const doubleComma = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=palette,,fonts'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(doubleComma.status, 1);
+  assert.match(doubleComma.stderr, /A family list cannot contain an empty entry/);
+});
+
+test('MIG-B6-22: resolveIncludeTheme rejects a number (minimist auto-parses --include-theme=0/=1 into a real number)', () => {
+  assert.throws(() => cli.resolveIncludeTheme(0, undefined), /Invalid value for --include-theme: "0"/);
+  assert.throws(() => cli.resolveIncludeTheme(1, undefined), /Invalid value for --include-theme: "1"/);
+  assert.throws(() => cli.resolveIncludeTheme(0, true), /Invalid value for --include-theme: "0"/, 'an explicit invalid flag value must fail even when config would otherwise supply a valid one');
+});
+
+test('MIG-B6-22 (subprocess): --include-theme=0 is a hard error, not a silently-accepted "true"', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=0'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Invalid value for --include-theme: "0"/);
+});
+
+test('MIG-B6-22: normalizeStrictThemeScope reports an incompatible install instead of silently skipping family validation', () => {
+  // requireKnownFamilies mirrors what loadConfig/themeCommand always pass —
+  // simulating an older postcss-uxdsl install that doesn't export
+  // KNOWN_THEME_FAMILIES yet (getKnownThemeFamilies() would return
+  // undefined for it, since resolveUxDslModule prioritizes whatever the
+  // *project* has installed over the CLI's own bundled copy).
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette', { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for --strict-theme: this postcss-uxdsl install does not export KNOWN_THEME_FAMILIES/
+  );
+  // A plain boolean scope never needed family validation, so it's unaffected.
+  assert.equal(cli.normalizeStrictThemeScope(true, { knownFamilies: undefined, requireKnownFamilies: true }), true);
+  assert.equal(cli.normalizeStrictThemeScope('true', { knownFamilies: undefined, requireKnownFamilies: true }), true);
+  // Without requireKnownFamilies (the default every pre-existing/pure-parsing
+  // test above relies on), skipping validation is still the documented
+  // behavior — only the two real CLI call sites opt into requiring it.
+  assert.deepEqual(cli.normalizeStrictThemeScope('palette', { knownFamilies: undefined }), ['palette']);
+});
+
+test('MIG-B6-22: resolveStrictTheme propagates requireKnownFamilies to both the flag and the config value', () => {
+  assert.throws(
+    () => cli.resolveStrictTheme('palette', undefined, { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for --strict-theme/
+  );
+  assert.throws(
+    () => cli.resolveStrictTheme(undefined, ['palette'], { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for strictTheme \(in the config file\)/
+  );
+});
+
 test('MIG-B6-22: buildOnce with a real theme fails on --strict-theme=true (string) the same way it fails on the bare flag', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
