@@ -29,7 +29,10 @@ suave está separado en [FEAT-003](./FEAT-003-beta2-smooth-install.md).
 - [x] El prefijo histórico reservado se elimina una sola vez; identificadores
   arbitrarios no se reinterpretan silenciosamente.
 - [x] Referencias, escalas nuevas y legacy tienen pruebas de contrato.
-- [x] La fixture integrada verifica las dependencias responsive en el navegador.
+- [x] `fixtures/mig02-nextjs-cssmodules/browser.js` (vía `npm run
+  verify:cssmodules-build`) comprueba en Chrome que el padding responsivo
+  resuelto a través de Density→Spacing cambia en los anchos de frontera
+  documentados en MIG-07; no es una fixture de Spacing dedicada.
 
 Responsable: normalización en `language.ts`, emisión en `foundations.ts`.
 Pruebas: `spacing-normalization.test.js` y fixture integrada.
@@ -118,25 +121,53 @@ solo sobre archivos seleccionados cuyos prefijos históricos pertenezcan a UXDSL
 Un mapeo identidad protege nombres del host que coincidan con esos prefijos.
 Las claves de `theme.typography` plano se revisan manualmente.
 
-## MIG-07 — Consumidor desde tarball y navegador (P1)
+## MIG-07 — Consumidor empaquetado desde tarball (P1)
 
 - [x] Se construye el paquete antes de empaquetar, para evitar dist obsoleto.
 - [x] Se instala el tarball de `postcss-uxdsl` y compilan cinco entradas estrictas.
-- [x] La fixture Next.js consume esa misma instalación, no el fuente del monorepo.
-- [x] Control negativo real de CSS Modules.
+- [x] Control negativo de que los cuatro paneles no emiten `:root`.
 - [x] Paridad de variables PostCSS/runtime en modo estricto y determinismo.
 - [x] Seis regresiones de comparación de cascada forman parte de `npm test`,
   incluyendo media queries min-width superpuestas.
-- [x] Chrome comprueba padding, radio, borde y colores en light/dark en
-  479/480/481, 767/768/769, 1023/1024/1025 y 1279/1280/1281px.
 - [x] El artefacto contiene documentación, exports y dependencias necesarias.
 
-Comando integrado: `npm run verify:cssmodules-build`. Requiere Chrome
-instalado y `UXDSL_CHROME_PATH` si no está en la ruta macOS predeterminada.
-La prueba computada usa CSS del tarball en un documento controlado;
-no es una auditoría visual de todas las pantallas de la aplicación.
+Comando integrado: `npm run verify:consumer-fixture`
+(`fixtures/mig07-consumer/run.js`). Esta fixture no abre Chrome ni ejecuta
+el `css-loader` real de Next.js/webpack; ver "What this does not verify" en
+[`fixtures/mig07-consumer/README.md`](../../fixtures/mig07-consumer/README.md).
 Solo se empaqueta `postcss-uxdsl`, el paquete utilizado por esta fixture;
 CLI/Vite y un consumidor App Router/Next.js 16 requieren fixtures propias.
+
+### Gate externo — Next.js/CSS Modules y navegador
+
+`npm run verify:cssmodules-build` (`fixtures/mig02-nextjs-cssmodules/run.js`)
+invoca primero el consumidor de MIG-07 (arriba) y, usando esa misma
+instalación empaquetada:
+
+- [x] Compila la guía de 5 entradas y ejecuta un build de producción real de
+  Next.js 14 (Pages Router) con css-loader en modo estricto/puro sobre los
+  cuatro `.module.css`.
+- [x] Control negativo real de CSS Modules: el CSS del tema (que sí contiene
+  `:root`) hace fallar ese mismo build con el error real "is not pure".
+- [x] `fixtures/mig02-nextjs-cssmodules/browser.js` comprueba en Chrome
+  padding, radio, borde y fondo en light/dark en 479/480/481, 767/768/769,
+  1023/1024/1025 y 1279/1280/1281px, y que una generación de tema inválida
+  no reemplaza el CSS ya aplicado.
+
+Requiere Chrome instalado y `UXDSL_CHROME_PATH` si no está en la ruta macOS
+predeterminada; sin Chrome disponible el comando falla con el error de
+lanzamiento (no hay salida silenciosa ni degradación a "verificado por
+inspector"). No cubre App Router ni Next.js 16; ver "What this does not
+verify" en
+[`fixtures/mig02-nextjs-cssmodules/README.md`](../../fixtures/mig02-nextjs-cssmodules/README.md).
+
+### Procedencia de la cobertura
+
+| Evidencia | Comando | Verifica | No verifica |
+| --- | --- | --- | --- |
+| Consumidor de tarball | `npm run verify:consumer-fixture` | build de `postcss-uxdsl`, `npm pack`, instalación local, cinco entradas, `includeTheme`, integridad de referencias, paridad runtime/PostCSS, determinismo e inspectores | navegador, `css-loader`, Next.js, revisión visual completa, instalación coordinada de cinco paquetes |
+| Next.js/CSS Modules | `npm run verify:cssmodules-build` | invoca primero el consumidor de tarball; compila las salidas; ejecuta el build de producción de Next.js 14 Pages Router con cuatro `.module.css`, y un control negativo `:root`/`is not pure` | App Router, Next.js 16, revisión visual completa |
+| Chrome controlado | `fixtures/mig02-nextjs-cssmodules/browser.js`, invocado por el comando anterior | computed styles light/dark de padding, radius, border y background en 12 anchos de frontera; una generación inválida no reemplaza el CSS aplicado | auditoría visual de producto, todos los componentes, todos los navegadores, accesibilidad |
 
 ## MIG-08 — Namespace único y migración explícita (P2)
 
