@@ -19,11 +19,28 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
 
 function unknownWarnings(result) {
   return result.warnings.filter((w) => /^Unknown /.test(w.message));
 }
+
+test('MIG-B6-01: public runtime validates the README example and actual playground base', () => {
+  const runtime = require('../dist/ds-runtime');
+  assert.strictEqual(runtime.KNOWN_THEME_FAMILIES, require('../dist/ds-runtime/theme-validate').KNOWN_THEME_FAMILIES);
+  const readme = fs.readFileSync(path.join(__dirname, '../README.md'), 'utf8');
+  const section = readme.split('### Recognized theme families')[1];
+  const example = section.match(/```json\s*([\s\S]*?)```/);
+  assert.ok(example, 'README example must remain executable JSON');
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../../playground-nextjs/uxdsl.theme.base.json'), 'utf8'));
+  for (const theme of [JSON.parse(example[1]), base]) {
+    const result = runtime.validateAndNormalizeTheme(theme);
+    assert.equal(result.ok, true, JSON.stringify(result.errors));
+    assert.deepEqual(unknownWarnings(result), []);
+  }
+});
 
 test('MIG-B6-01: a palette role beyond DEFAULT_THEME\'s 4 built-ins produces no warning', () => {
   const result = validateAndNormalizeTheme({
@@ -66,6 +83,17 @@ test('MIG-B6-01: palette.brand + fonts.families.marketing + typography_details.d
     palette: { brand: { main: '#ff5722' } },
     fonts: { families: { marketing: 'Poppins' } },
     typography_details: { 'display-xl': { fontSize: '4rem' } },
+  });
+  assert.deepEqual(unknownWarnings(result), []);
+});
+
+test('MIG-B6-01: modes and legacy typography compile warning-free with open registries', () => {
+  const result = validateAndNormalizeTheme({
+    modes: { dark: { palette: { primary: { main: '#000000' } } } },
+    typography: { hero: '2rem' },
+    typography_details: { lead: { fontSize: '1.25rem' } },
+    palette: { brand: { main: '#ff5722' } },
+    fonts: { families: { display: 'Poppins' } },
   });
   assert.deepEqual(unknownWarnings(result), []);
 });

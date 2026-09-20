@@ -654,3 +654,54 @@ those artifacts as another source of truth.
 
 Human documentation and playground: https://uxdsl.io/
 Density reference: https://uxdsl.io/docs/densities
+
+
+## Beta.6 implementation planning and evidence
+
+MIG-B6-01 in the local beta.6 implementation exports `KNOWN_THEME_FAMILIES`
+from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
+do not copy it or use it as a list of nested roles or complete Palette tones.
+`modes` and legacy `typography` are recognized families; unknown top-level names
+still warn, and invalid Typography fields still fail. This does not add new modes,
+change strict-theme behavior, or imply the unreleased change is on npm.
+
+For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
+`MIG-B6-*.md` before implementation. The parent feature records product decisions;
+the individual story owns its detailed contract; the index owns integration order.
+FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirements.
+
+These documents describe planned APIs, not shipped capabilities. At the
+2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme`,
+the packaged base JSON, shared `compile` and the beta.6 gate are pending.
+Keep the current usage guidance above until the relevant implementation lands;
+then replace it in the same change, including playground agent guidance.
+
+For each story, preserve intent, token references, merge precedence and CSS-native
+exceptions. Reproduce the defect, add a regression that fails before the fix, and
+include valid-input controls and failure recovery where relevant. Test public
+entries and packaged consumers, not just internal helpers. Use real browser
+checks for claims about computed styles, modes, interaction states and hydration.
+A DOM stub or CSS snapshot cannot establish those claims.
+
+Record evidence in the story Markdown: base/implementation SHA, criterion-to-test
+mapping, commands, environment, exit status, documentation changes and unverified
+limits. Update package README, CHANGELOG/migration and the affected sections here
+when behavior changes. Do not mark a story integrated before merge or mark a
+missing command, skipped browser check or unperformed external validation as PASS.
+
+Implementation contracts clarified by this plan:
+
+- Runtime application is synchronous; the editor batches input outside the API.
+  Initialize with the project's build/SSR override. Structural component changes
+  require regeneration; variable parity alone is not behavioral parity.
+- Preserve legacy scopes/events/breakpoint behavior through documented adapters;
+  do not silently turn a scoped setter into a global theme change.
+- Extract configurable defaults into the base JSON while retaining defaults <
+  same-compilation legacy < explicit project override precedence.
+- Per-file atomic rename is not a multi-file transaction. Watch must retain
+  last-valid output, recover from missing imports and serialize pending changes.
+- Contrast checks report tested backgrounds, modes, states, responsive intervals,
+  unresolved colors and exact exceptions; they are not a product accessibility
+  certification.
+- Prepublish, browser, external-consumer and postpublish evidence are separate.
+  Planning and verification do not authorize publishing or changing dist-tags.

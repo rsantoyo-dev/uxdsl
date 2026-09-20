@@ -173,6 +173,13 @@ warning as a false positive.) A misspelled *field* inside a typography
 tag — `fontsize` for `fontSize` — is still a hard `UXD_TYPO_FIELD` build
 error.
 
+## Diagnostics
+
+Build failures from UXDSL include the source file, line, column and a code frame
+when they originate in CSS, including imported partials. Theme failures name the
+theme/configuration file and the invalid key path; diagnostic messages start with
+their stable `UXD_*` code.
+
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 
 `postcss-uxdsl`'s `includeTheme` option (see that package's README) reaches

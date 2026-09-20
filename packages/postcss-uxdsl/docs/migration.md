@@ -1,5 +1,17 @@
 # Migración a UXDSL 0.5.0-beta.2
 
+## Adelanto beta.6 — MIG-B6-01 (sin publicar)
+
+No requiere cambiar el JSON ni el CSS: `modes` y `typography` legacy dejan de
+producir avisos falsos de familia desconocida. Los roles custom de Palette,
+fuentes y Typography siguen abiertos; `palete` sigue avisando y `fontsize`
+en un rol tipográfico sigue fallando. No cambia `--strict-theme`.
+Las herramientas pueden importar `KNOWN_THEME_FAMILIES` desde
+`postcss-uxdsl/ds-runtime` en la implementación beta.6, sin duplicar la lista.
+Esto no implica disponibilidad en la versión beta.5 publicada.
+
+## Contexto beta.2
+
 Beta.2 está preparada en este checkout; la publicación en npm es un paso separado.
 El namespace `--uxdsl__` ya se introdujo en beta.1. Beta.2 añade defaults y
 temas parciales; los helpers `space(7)`, `density(2)` y las directivas no cambian.

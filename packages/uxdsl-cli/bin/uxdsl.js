@@ -747,6 +747,20 @@ function warnUnknownThemeKeys(theme) {
   }
 }
 
+function annotateThemeError(err, config) {
+  if (!err || typeof err !== 'object' || !err.keyPath || err.name === 'CssSyntaxError' || err.themeFile) return err;
+  const themeFile = config.themeConfigPath || (config.theme !== undefined ? config.configPath : null);
+  if (!themeFile) return err;
+  err.themeFile = themeFile;
+  err.message = `${path.relative(process.cwd(), themeFile)}: ${err.message}`;
+  return err;
+}
+
+function formatCliDiagnostic(message) {
+  const cwdPrefix = `${process.cwd()}${path.sep}`;
+  return String(message).split('\n').map(line => line.split(cwdPrefix).join('')).join('\n');
+}
+
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
 // includeTheme }) compiles several entries against the one shared theme/
 // references/breakpoints in a single `uxdsl build`/`watch` invocation,
@@ -804,6 +818,7 @@ async function buildOnce(config) {
     try {
       compiled.push(await compileEntryToCss(entries[i], config || {}));
     } catch (err) {
+      annotateThemeError(err, config || {});
       if (multi) {
         const label = entries[i] && entries[i].outFile
           ? path.relative(process.cwd(), entries[i].outFile)
@@ -1355,7 +1370,9 @@ async function main() {
         process.exit(1);
     }
   } catch (err) {
-    console.error(`[uxdsl] Error: ${err.message}`);
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+    const frame = err && typeof err.showSourceCode === 'function' ? err.showSourceCode(false) : '';
+    if (frame) console.error(frame);
     process.exit(1);
   }
 }

@@ -73,9 +73,11 @@ requerida"):
 `scripts/verify-docs-update.test.js`) comprueba que:
 
 - FEAT-002 contiene los tres comandos de la tabla;
-- ninguna línea de FEAT-002, del README raíz, de `fixtures/mig07-consumer/README.md` o
-  de `docs/releases/*.md` atribuye "navegador", "browser", "Chrome" o `css-loader` a
-  `mig07-consumer`/`verify:consumer-fixture`.
+- la tabla de procedencia identifica runner, cobertura y límites. Comprobar
+  enlaces/comandos y fixtures positivas/negativas de afirmaciones; no fallar sólo
+  porque una línea contenga a la vez `mig07-consumer` y `browser`: la negación
+  «MIG-07 no ejecuta browser» es correcta. Las frases históricas se contextualizan
+  por versión, sin reescribir evidencia pasada como si la nueva cobertura existiera.
 
 ## Documentación
 
@@ -99,3 +101,25 @@ npm test
 ## Entrega
 
 `docs(FEAT-008): MIG-B6-02 - exact provenance for FEAT-002 coverage claims`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

@@ -1,5 +1,6 @@
 import postcss, { Declaration, Root } from 'postcss';
 import valueParser from 'postcss-value-parser';
+import { closestKey, formatKeyList } from './diagnostics';
 
 export interface ReferenceOptions {
   /** Strict by default. Warnings support an explicit migration period. */
@@ -19,11 +20,39 @@ export interface ReferenceIssue {
   source?: string;
   line?: number;
   column?: number;
+  node?: Declaration;
 }
+
+export function formatReferenceIssue(issue: ReferenceIssue): string {
+  if (!issue.source) return issue.message;
+  const position = issue.line === undefined ? '' : `:${issue.line}${issue.column === undefined ? '' : `:${issue.column}`}`;
+  return `${issue.source}${position}: ${issue.message}`;
+}
+
+function missingTokenHint(reference: string, definitions: Iterable<string>): string {
+  const match = reference.match(/^--uxdsl__(palette|color)__(.+)$/);
+  if (!match) return '';
+  const [, family, key] = match;
+  const prefix = `--uxdsl__${family}__`;
+  const candidates = Array.from(definitions).filter(name => name.startsWith(prefix)).map(name => name.slice(prefix.length));
+  const candidate = closestKey(key, candidates);
+  if (!candidate) return '';
+  const written = family === 'palette' && key.endsWith('-main') && candidate.endsWith('-main')
+    ? candidate.slice(0, -'-main'.length)
+    : candidate;
+  return ` Did you mean "${written}"?`;
+}
+
 export class ReferenceIntegrityError extends Error {
   constructor(public readonly issues: ReferenceIssue[]) {
-    super(issues.map(issue => issue.message).join('\n'));
+    super(issues.map(formatReferenceIssue).join('\n'));
     this.name = 'ReferenceIntegrityError';
+    const located = issues.find(issue => issue.source);
+    if (located) {
+      (this as any).file = located.source;
+      (this as any).line = located.line;
+      (this as any).column = located.column;
+    }
   }
 }
 
@@ -69,12 +98,17 @@ export function inspectReferences(root: Root, consumers: Declaration[], options:
   const seen = new Set<string>();
   const report = (code: ReferenceIssue['code'], node: Declaration, chain: string[]) => {
     const reference = chain[chain.length - 1];
-    const message = `${code}: ${chain.join(' -> ')}${code === 'UXD_REFERENCE_MISSING' ? ' has no definition in the active theme/scope. Define it or declare its external provider.' : ' is a cyclic token dependency.'}`;
+    const referenceHint = code === 'UXD_REFERENCE_MISSING' && /^--uxdsl__space__\d+$/.test(reference)
+      ? ` Available space() keys: ${formatKeyList(Array.from(definitions.keys()).filter(name => name.startsWith('--uxdsl__space__')).map(name => name.slice('--uxdsl__space__'.length)))}.`
+      : code === 'UXD_REFERENCE_MISSING' ? missingTokenHint(reference, Array.from(definitions.keys()).concat(Array.from(externals))) : '';
+    const message = `${code}: ${chain.join(' -> ')}${code === 'UXD_REFERENCE_MISSING' ? ` has no definition in the active theme/scope. Define it or declare its external provider.${referenceHint}` : ' is a cyclic token dependency.'}`;
     const key = `${message}:${node.source?.input.file}:${node.source?.start?.line}:${contextOf(node).selector}`;
     if (seen.has(key)) return;
     seen.add(key);
-    issues.push({ code, message, consumer: node.prop, reference, chain,
-      source: node.source?.input.file, line: node.source?.start?.line, column: node.source?.start?.column });
+    const issue: ReferenceIssue = { code, message, consumer: node.prop, reference, chain,
+      source: node.source?.input.file, line: node.source?.start?.line, column: node.source?.start?.column };
+    Object.defineProperty(issue, 'node', { value: node, enumerable: false });
+    issues.push(issue);
   };
   function resolve(name: string, context: Context): Entry | undefined {
     return (definitions.get(name) || []).filter(entry =>

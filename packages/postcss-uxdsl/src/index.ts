@@ -8,6 +8,7 @@ import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
+import { diagnostic, locateError, missingKeyMessage } from './diagnostics';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -124,6 +125,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   return {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root, { result }: { result: Result }) {
+      const inheritSource = (node: any, source: any) => {
+        node.source = source;
+        for (const child of node.nodes || []) inheritSource(child, source);
+        return node;
+      };
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
@@ -163,7 +169,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           tag = tag.toLowerCase();
 
           const insert = (prop: string, value: string) => {
-            at.parent.insertBefore(at, { prop, value });
+            at.parent.insertBefore(at, { prop, value, source: at.source });
           };
 
           // Typography Configuration Data
@@ -585,43 +591,55 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkRules((rule) => {
         rule.walkAtRules('ds-input', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
-          const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
-          const base = generated.nodes.shift() as Rule;
-          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
-          let anchor: any = rule;
-          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
-          at.remove();
+          try {
+            const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
+            const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
+            const base = generated.nodes.shift() as Rule;
+            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
+            let anchor: any = rule;
+            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
         // @ds-surface(variant [tone])
         rule.walkAtRules("ds-surface", (at) => {
           if (at.parent !== rule) return;
-          let inner = String((at.params || "").trim());
-          if (
-            (inner.startsWith('"') && inner.endsWith('"')) ||
-            (inner.startsWith("'") && inner.endsWith("'"))
-          )
-            inner = inner.slice(1, -1);
-          if (inner.startsWith("(") && inner.endsWith(")"))
-            inner = inner.slice(1, -1).trim();
-          const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
-          const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
-          const insert = (prop: string, value: string) => {
-            (rule as any).insertBefore(at, { prop, value });
-          };
-          Object.keys(props).forEach((k) => insert(k, props[k]!));
-          at.remove();
+          try {
+            let inner = String((at.params || "").trim());
+            if (
+              (inner.startsWith('"') && inner.endsWith('"')) ||
+              (inner.startsWith("'") && inner.endsWith("'"))
+            )
+              inner = inner.slice(1, -1);
+            if (inner.startsWith("(") && inner.endsWith(")"))
+              inner = inner.slice(1, -1).trim();
+            const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
+            const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
+            const insert = (prop: string, value: string) => {
+              (rule as any).insertBefore(at, { prop, value, source: at.source });
+            };
+            Object.keys(props).forEach((k) => insert(k, props[k]!));
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
 
         rule.walkAtRules('ds-button', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
-          const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
-          const base = generated.nodes.shift() as Rule;
-          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
-          let anchor: any = rule;
-          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
-          at.remove();
+          try {
+            const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
+            const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
+            const base = generated.nodes.shift() as Rule;
+            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
+            let anchor: any = rule;
+            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
       });
 
@@ -660,7 +678,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
             if (node.value === "density") {
               const key = innerText.trim().replace(/^(['"])(.*)\1$/, '$2');
-              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) throw new Error(`UXD_DENSITY_REFERENCE: Invalid key ${key}; define and use a token key without decimal coercion.`);
+              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) {
+                throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), valueParser.stringify(node));
+              }
               node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
             } else {
               const rawVals = innerText
@@ -696,7 +716,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               node.value = RADIUS_KEYWORDS[key] || `var(${buildVarName('radius', key)})`;
               return;
             }
-            throw new Error(`UXD_EDGE_REFERENCE: Undefined radius ${key}.`);
+            throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', node.value, key, [...Object.keys(edgeTokens.radii), ...Object.keys(RADIUS_KEYWORDS)]), valueParser.stringify(node));
           }
           // Shadow helpers: shadow(n) or elevation(n)
           if (
@@ -704,7 +724,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             (node.value === "shadow" || node.value === "elevation")
           ) {
             const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw new Error(`UXD_SHADOW_REFERENCE: Undefined shadow ${key}.`);
+            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw diagnostic(missingKeyMessage('UXD_SHADOW_REFERENCE', node.value, key, Object.keys(effectiveShadows)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('shadow', key)})`;
             return;
@@ -712,7 +732,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Border helper: border(n[, color][, style])
           if (node.type === "function" && node.value === "border") {
             const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
-            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw new Error(`UXD_EDGE_REFERENCE: Undefined border ${key}.`);
+            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', 'border', key, Object.keys(edgeTokens.borders)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('border', key)})`;
             return;
@@ -728,7 +748,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
       // Walk declarations to handle palette()/space() and responsive bp(...) values
       root.walkDecls((decl) => {
-        if (typeof decl.value !== "string") return;
+        try {
+          if (typeof decl.value !== "string") return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
         const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
 
@@ -759,7 +780,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const cloned = parentFallback?.clone
               ? parentFallback.clone({ nodes: [] })
               : postcss.rule();
-            cloned.append({ prop: decl.prop, value: text });
+            cloned.append({ prop: decl.prop, value: text, source: decl.source });
             (at as any).append(cloned);
             if (
               parentFallback &&
@@ -806,9 +827,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             bucket.set(bp, cloned);
             targetRule = cloned;
           }
-          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text) });
+          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), source: decl.source });
         });
         if (!baseOut) decl.remove();
+        } catch (error) {
+          throw locateError(error, decl);
+        }
       });
 
       // $var substitutions across all declarations
@@ -826,7 +850,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       }
 
       // Reuse the same resolver after substitutions and media cloning.
-      root.walkDecls(decl => { if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value); });
+      root.walkDecls(decl => {
+        try {
+          if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value);
+        } catch (error) {
+          throw locateError(error, decl);
+        }
+      });
       const consumers: Declaration[] = [];
       root.walkDecls(node => {
         if (!originalSources.has(node.source) || dslSources.has(node.source)) consumers.push(node);
@@ -839,7 +869,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         css.push(generateThemeCss({ ...effectiveInputTheme, buttons: buttonOverrides, breakpoints: bps }, { mode: 'off' }));
       }
       enforceReferences(root, consumers, { ...references, css,
-        onWarning: issue => { result.warn(issue.message, { plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
+        onWarning: issue => { result.warn(issue.message, { node: (issue as any).node, plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
       });
     },
   };

@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P1 · S |
 | Cierra | UX-05, UX-07 |
 | Depende de | MIG-B6-14 (sólo por el orden de `index.ts`) |
-| Bloquea | MIG-B6-17, MIG-B6-21 (siguientes en `index.ts`) |
+| Bloquea | MIG-B6-12, MIG-B6-17, MIG-B6-29 |
 | Archivos | `packages/postcss-uxdsl/src/control-engine.ts`, `packages/postcss-uxdsl/src/index.ts` |
 | Coordinación | Tercero en la secuencia de `index.ts` |
 
@@ -60,14 +60,23 @@ Salida actual:
    paréntesis. Buscar en `src/` otros `split(',')` aplicados a **selectores** (no a
    argumentos de funciones) y corregirlos igual. `@ds-surface` usa otro camino:
    comprobar que no tenga el mismo problema.
-2. En las dos llamadas de `index.ts`, pasar `important: decl.important`. No agregar
-   `source` aquí: eso le toca a MIG-B6-21.
+2. En las declaraciones generadas de `index.ts`, preservar `important` y el
+   source que 13 requiere para errores. Preferir clonar la declaración de origen;
+   21 completa el encadenado de mapas, no se descarta procedencia mientras tanto.
 
 ## Fuera de alcance
 
 - Sourcemaps (MIG-B6-21).
 
 ## Pruebas
+
+- Comas en atributos con strings, escapes y listas de selectores anidados.
+  Pseudo-elementos: estados se insertan en posición válida o entrada no soportada
+  da error explícito; nunca producir un selector inválido al concatenar `:hover`.
+- Verificar AST de cada media y el efecto en navegador ante una declaración
+  competidora, no sólo que el texto contenga una vez `!important`.
+- Surface no genera estados de control; su prueba asegura selector base intacto.
+  Estados seleccionados y placeholder se prueban sólo donde el motor los emite.
 
 - `test/control-selectors.test.js`: `:is(.x, .y)`, `:where(.x, .y)`,
   `:not(.a, .b)`, `:has(> .a, + .b)`, una lista `.a, .b` y nesting con `&`, sobre
@@ -99,3 +108,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-15 - comma-aware selectors in control directives, !important kept across breakpoints`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

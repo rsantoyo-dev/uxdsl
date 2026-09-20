@@ -21,16 +21,15 @@ export type ThemeValidationResult<TTheme extends Record<string, any>> = {
   warnings: ThemeValidationIssue[];
 };
 
-// MIG-B3-03 (FEAT-004): every top-level theme family this validator (or the
-// compiler/generator it wraps) actually reads. A family outside this list
-// is either a typo (`color` instead of `colors`) or a stray field left over
-// from copy-pasting a build config into a theme file — both currently pass
-// through silently and end up nowhere, since nothing consumes an unknown
-// key. Kept in one place so a new family added elsewhere doesn't need a
-// second edit here to stop warning about itself.
-const KNOWN_THEME_FAMILIES = new Set([
+// MIG-B3-03 (FEAT-004), MIG-B6-01 (FEAT-008): every top-level theme family
+// the compiler and theme generator read. The top-level set is closed: a key
+// outside it is either a typo or unused data. `theme-families-drift.test.js`
+// scans source reads to keep this public registry synchronized for CLI strict
+// validation and the theme schema.
+export const KNOWN_THEME_FAMILIES = new Set([
   'breakpoints', 'spacing', 'palette', 'fonts', 'colors', 'typography_details',
   'densities', 'inputs', 'buttons', 'surfaces', 'shadows', 'borders', 'radii',
+  'modes', 'typography',
 ]);
 
 function isPlainObject(value: unknown): value is Record<string, any> {

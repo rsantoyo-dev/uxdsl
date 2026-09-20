@@ -345,6 +345,33 @@ exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
 `DEFAULT_THEME` and `getDefaultTheme()` (a mutable copy) directly, for an
 app that needs to build the same effective theme during SSR.
 
+### Recognized theme families
+
+`postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry
+used by theme validation. Nested Palette, font-family and Typography role names
+remain open. For example, this partial theme introduces no unknown-family warnings:
+
+```json
+{
+  "modes": { "dark": { "palette": { "primary": { "main": "#000000" } } } },
+  "typography": { "hero": "2rem" },
+  "typography_details": { "lead": { "fontSize": "1.25rem" } },
+  "palette": { "brand": { "main": "#ff5722" } },
+  "fonts": { "families": { "display": "Poppins" } }
+}
+```
+
+### Diagnostics
+
+Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and
+`@ds-typo`, `@ds-surface`, `@ds-button`, and `@ds-input` directives are reported
+with their stylesheet location; direct expansion failures are PostCSS
+`CssSyntaxError`s, while post-expansion reference failures retain
+`ReferenceIntegrityError` and its issues. Imported partials retain their own
+source location. Theme validators name a key path where that validator provides
+one; lower-level theme-map errors currently preserve their code and message but
+do not claim a configuration-file location.
+
 Radius, Shadow, Border, Surface, Button and Input shapes already had their
 own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
 `DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`, `DEFAULT_BUTTONS`,
@@ -358,7 +385,7 @@ validator behind the playground's theme editor, and behind `uxdsl-cli`'s
 own build-time warnings — warns (`result.warnings`, not `result.errors`)
 about any top-level key it doesn't recognize (`breakpoints`, `spacing`,
 `palette`, `fonts`, `colors`, `typography_details`, `densities`, `inputs`,
-`buttons`, `surfaces`, `shadows`, `borders`, `radii`). An unrecognized key
+`buttons`, `surfaces`, `shadows`, `borders`, `radii`, `modes`, `typography`). An unrecognized key
 is silently unused — nothing compiles it into CSS — so this catches a typo
 (`color` instead of `colors`) or a stray field left over from
 copy-pasting the wrong file, that would otherwise produce no error and no

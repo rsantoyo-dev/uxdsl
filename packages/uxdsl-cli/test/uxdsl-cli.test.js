@@ -827,6 +827,18 @@ test('MIG-B6-01: warnUnknownThemeKeys does not warn on a typography_details tag 
   assert.deepEqual(messages, []);
 });
 
+test('MIG-B6-01: warnUnknownThemeKeys recognizes modes and typography but still warns on a typo', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnUnknownThemeKeys({
+      modes: { dark: { palette: { primary: { main: '#000000' } } } },
+      typography: { hero: '2rem' },
+      migB601PaleteTypo: {},
+    })
+  );
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /Unknown theme family "migB601PaleteTypo"/);
+});
+
 test('MIG-B5-02: warnUnknownThemeKeys is a no-op for an undefined theme (zero-config)', () => {
   const { messages } = captureWarnings(() => cli.warnUnknownThemeKeys(undefined));
   assert.deepEqual(messages, []);

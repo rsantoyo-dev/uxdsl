@@ -6,10 +6,10 @@
 | Track | B — Tema base y salida correcta |
 | Prioridad · Tamaño | P0 · L |
 | Cierra | N-07, N-08. Es la raíz de UX-01, UX-08, UX-09 y de la contradicción de palette de UX-21 |
-| Depende de | — (decisiones del dueño resueltas el 2026-09-19; ver abajo) |
-| Bloquea | MIG-B6-16 (verificador de contraste), MIG-B6-17, MIG-B6-30, MIG-B6-20 (retiro de packs legacy) |
-| Archivos | `packages/playground-nextjs/uxdsl.theme.base.json` (se mueve), `packages/postcss-uxdsl/src/default-theme.ts`, `packages/postcss-uxdsl/src/theme/`, nuevo `src/ds-runtime/contrast.ts`, `scripts/generate-language-artifacts.js`, `scripts/verify-docs-update.js`, `packages/playground-nextjs/themes.js`, `AGENTS.md` |
-| Coordinación | Va antes que MIG-B6-17 en `default-theme.ts` y `typography*.ts`. **No toca `index.ts`**: la emisión de `@ds-typo` es de MIG-B6-17 |
+| Depende de | MIG-B6-15 para integrar el cambio acotado de fuentes en index. Inventario/extracción JSON y contraste pueden prepararse antes; decisiones del dueño resueltas |
+| Bloquea | MIG-B6-12, MIG-B6-16, MIG-B6-17, MIG-B6-20, MIG-B6-26, MIG-B6-27, MIG-B6-28, MIG-B6-30 |
+| Archivos | `packages/playground-nextjs/uxdsl.theme.base.json` (se mueve), `packages/postcss-uxdsl/src/default-theme.ts`, `packages/postcss-uxdsl/src/theme/`, nuevo `src/ds-runtime/contrast.ts`, `src/{language,edges,shadows,surfaces,buttons,inputs,foundations}.ts`, `src/ds-runtime/theme-generator.ts`, `src/ds-runtime.ts`, nuevo helper puro de fuentes, `scripts/generate-language-artifacts.js`, `scripts/verify-docs-update.js`, `packages/playground-nextjs/themes.js`, `AGENTS.md` |
+| Coordinación | Dueño de los defaults de todos los motores, antes de 17. La integración de fuentes en `index.ts` se hace en un commit pequeño coordinado con 15; no toca `applyTypo`. 28 reutiliza el helper de fuentes, no lo duplica |
 
 ## Por qué
 
@@ -95,8 +95,9 @@ el JSON base (2.401 y 4.655 bytes con gzip).
    sigue la preferencia oscura del sistema operativo (`foundations.ts` emite
    `@media (prefers-color-scheme: dark)` y `:root[data-theme='dark']`). Por eso **el
    gate de contraste del modo oscuro es bloqueante**, igual que el claro. Hay que
-   documentar cómo fijar el modo claro: `data-theme="light"` en `<html>`, o un override
-   de `modes`.
+   documentar cómo fijar el modo claro: `data-theme="light"` en `<html>`.
+   Un override `modes: {}` no desactiva dark: los objetos se mezclan por clave.
+   No documentar una receta de eliminación de modos sin contrato y test.
 4. **Los colores los corrige el agente** (paso 8), con las reglas de abajo. El dueño
    revisa los cambios en el PR.
 
@@ -111,7 +112,17 @@ el JSON base (2.401 y 4.655 bytes con gzip).
 3. `DEFAULT_THEME` pasa a ser el JSON, con deep-freeze, sin valores escritos a mano
    en TypeScript. `getDefaultTheme()` y `resolveTheme()` mantienen su contrato,
    incluida la normalización de spacing. `DEFAULT_TYPOGRAPHY` deja de alimentar a
-   `DEFAULT_THEME`; MIG-B6-17 lo elimina.
+   `DEFAULT_THEME`; MIG-B6-17 elimina sus fallbacks de consumo.
+   **Completar las siete familias que faltan en el JSON actual:** `densities`,
+   `borders`, `radii`, `shadows`, `surfaces`, `buttons`, `inputs`. Extraer los mapas
+   `DEFAULT_*` y las dependencias gray desde sus motores; también los breakpoints
+   deben derivarse del JSON. Exportar vistas congeladas para mantener APIs, sin
+   circularidades entre JSON, resolver y motores. No importar el resolver desde
+   el módulo de datos. Los keywords de sintaxis (`pill`, `circle`) y la mecánica
+   nativa de controles no son presets editables: enumerar esas excepciones.
+   Preservar defaults < legacy de esta compilación < override explícito por campo:
+   pasar un tema resuelto como si todo fuera override no debe tapar packs legacy.
+   Probar además los helpers de familia usados solos, y copias sin mutación compartida.
 4. Playground:
    - `themes.js` importa la base desde `postcss-uxdsl/theme/base.json` y mezcla su
      propio override;
@@ -125,7 +136,8 @@ el JSON base (2.401 y 4.655 bytes con gzip).
    - los packs legacy quedan marcados como deprecados.
 6. Packs legacy: agregar un aviso de deprecación en su cabecera y en el README. No
    borrarlos en beta.6, porque hay proyectos que los importan explícitamente.
-   MIG-B6-20 deja de inyectarlos en Vite.
+   MIG-B6-20 deja de inyectarlos en Vite. Regenerarlos desde la misma fuente;
+   deprecar no autoriza mantener un segundo mapa ni cambiar su precedencia.
 7. **Gate de accesibilidad.** Crear `src/ds-runtime/contrast.ts` con
    `checkThemeContrast(effectiveTheme)`, exportada: MIG-B6-16 la usa para
    `uxdsl theme --contrast`.
@@ -136,17 +148,39 @@ el JSON base (2.401 y 4.655 bytes con gzip).
      (WCAG 1.4.11).
    - Se resuelven las referencias `color(x.y)` y `var(--uxdsl__…)` del propio tema.
      Si un valor no se puede resolver a un color, el gate falla: no lo ignora.
-   - Las excepciones van en `src/theme/base.contrast-exceptions.json`, cada una con
-     familia, par y motivo. No van dentro del tema, para no agregar una familia
-     top-level.
+   - Definir un contexto reproducible: cada rol sobre `surface.main`, con tone
+     sólo para familias compatibles, todos sus estados emitidos y cada intervalo
+     responsive. Componer transparencia/alpha y foreground heredado sobre ese fondo;
+     resolver `var()` con fallbacks y detectar ciclos. Incluir selected, placeholder
+     y focus cuando el motor los define. No inventar CSS que el motor no emite.
+   - Colores no resolubles se reportan como `unresolved` y hacen fallar el chequeo,
+     no como ratio cero ni como excepción automática. Registrar entorno/fondo;
+     este chequeo no certifica un DOM arbitrario ni toda la accesibilidad.
+     Derivar contexto también para opacity/disabled: documentar estados exentos
+     del umbral normativo y reportarlos aparte; no alterar colores de controles
+     inactivos para satisfacer un requisito inventado.
+   - Excepciones en `src/theme/base.contrast-exceptions.json`: id, modo, rol,
+     tone, estado, par, intervalo/fondo, valores resueltos y motivo. Coincidencia
+     exacta: ninguna excepción de base se aplica a valores alterados por un override.
+     Una excepción obsoleta o duplicada falla en CI. Reportar excepciones separadas
+     de pares aprobados. `passed` significa cero fallos no exceptuados; no significa
+     que todos los pares cumplan. Listar cada excepción incluso cuando passed=true.
+   - Exportar reporte tipado compartido con 16: `passed`, `failures`, `exceptions`;
+     cada fallo incluye `mode`, `family`, `component`, `state`, `pair`, `background`,
+     `breakpoint`, `ratio` (null si unresolved), `required` y `reason`.
 8. **Colores (decisión 4: los corrige el agente).** Reglas para preservar la
    intención del diseño:
    - **Cambio mínimo, en OKLCH.** Conservar tono (H) y croma (C) y mover sólo la
      luminosidad (L), en pasos de 0.01, hasta pasar el umbral con un margen mínimo
-     (≥ 4.6:1 para texto y ≥ 3.1:1 para bordes). Convertir de vuelta a hex.
+     (≥ 4.6:1 para texto y ≥ 3.1:1 para bordes). Buscar en ambas direcciones y elegir
+     el menor cambio válido. Medir de nuevo sobre el hex final redondeado. Si sale
+     del gamut sRGB, reducir C lo mínimo con algoritmo determinista y registrar la
+     desviación; no recortar canales silenciosamente ni prometer H/C idénticos.
    - **Qué se toca primero:** las variantes de estado (`dark`) y `contrast`. `main`
      sólo cambia si no hay `contrast` (blanco o negro) que cumpla con él, porque
-     `main` es la identidad de la marca.
+     `main` es la identidad de la marca. Evaluar todos los pares del rol juntos:
+     mejorar contained no garantiza outlined. Si las restricciones no tienen
+     solución, registrar combinación no soportada y motivo; no oscilar ajustes.
    - **Modo oscuro:** las 8 familias de `modes.dark` que hoy sólo redefinen `main` y
      `contrast` (`secondary`, `tertiary`, `success`, `info`, `warning`, `error`,
      `light` y `dark`) reciben su propio `dark` (el tono de hover) calculado con la
@@ -159,7 +193,14 @@ el JSON base (2.401 y 4.655 bytes con gzip).
    - **Tabla en el PR:** familia, modo, variante, antes, después, ratio antes y ratio
      después. El dueño la aprueba en la revisión; si algún cambio no le convence, se
      ajusta en el mismo PR.
-9. Agregar el JSON base (y el archivo de excepciones) a `VISUAL_DEFAULT_FILES` en
+9. **Fuentes en un solo motor.** Extraer un helper puro que codifique Google Fonts
+   preservando separadores css2 (`:`, `@`, `;`, comas), espacios como `+` y escapado
+   seguro del resto. PostCSS y `generateThemeCss` emiten los mismos imports al
+   principio del CSS cuando corresponde emitir tema; lista vacía no emite ninguno.
+   No ejecutar fetch desde el compilador. 30 retira la gestión duplicada de links
+   del playground. Cubrir varias familias, caracteres escapados y repetición de
+   compilación; el browser bundle no importa `fs` ni el cargador de config.
+10. Agregar el JSON base (y el archivo de excepciones) a `VISUAL_DEFAULT_FILES` en
    `scripts/verify-docs-update.js:49`, para que todo cambio exija CHANGELOG.
 
 ## Fuera de alcance
@@ -171,15 +212,22 @@ el JSON base (2.401 y 4.655 bytes con gzip).
 ## Pruebas
 
 - `test/default-theme.test.js`: `resolveTheme(undefined)` es igual, en profundidad,
-  al JSON base, menos las exclusiones acordadas. Adaptar las aserciones que fijaban
+  al JSON base final publicado. Las exclusiones del playground se hacen antes de
+  publicar ese JSON, no como excepciones del resolver. Adaptar aserciones que fijaban
   valores del tema mínimo.
-- `test/base-theme-contrast.test.js`: el gate (paso 7), en claro y, si aplica, en
-  oscuro.
+- `test/base-theme-contrast.test.js`: el gate (paso 7), siempre en claro y oscuro,
+  todos los roles/estados/intervalos; una regresión de cada modo debe fallar.
 - `test/contrast.test.js`: unidades de `checkThemeContrast`. Casos: pares conocidos
   (`#ffffff`/`#000000` = 21:1), referencias `color()` resueltas y un valor sin
-  resolver que hace fallar el gate.
+  resolver que hace fallar el gate. Añadir alpha/transparencia, fallbacks, ciclos,
+  excepciones exactas, override que invalida una excepción y redondeo final.
 - `node scripts/generate-language-artifacts.js --check` pasa con el manifiesto
   regenerado.
+- Defaults: las siete familias extraídas coinciden con sus mapas anteriores salvo
+  cambios visuales declarados; helpers aislados, compilaciones consecutivas y
+  precedencia defaults/legacy/JSON conservan el contrato. Congelación profunda.
+- Fuentes: igualdad build/runtime, lista vacía, múltiples familias; fuentes/modos
+  se completan con la prueba de navegador de 30. JSON público presente en tarball.
 - Playground: `npm --prefix packages/playground-nextjs run build` compila, y
   `scripts/test-theme-inheritance.cjs` pasa.
 
@@ -200,7 +248,8 @@ el JSON base (2.401 y 4.655 bytes con gzip).
 
 - [ ] Existe una sola fuente de defaults: el JSON base dentro de `postcss-uxdsl`, y
       no quedan valores de diseño literales en `src/` fuera de él. Excepción: los que
-      MIG-B6-17 retira, si todavía no se integró.
+      MIG-B6-17 retira, si todavía no se integró, y los keywords/mecanismos
+      no configurables enumerados en el inventario.
 - [ ] `resolveTheme(undefined)` es igual, en profundidad, al JSON base.
 - [ ] El playground consume la base desde el paquete.
 - [ ] El gate de contraste pasa en claro **y en oscuro** (bloqueante, porque
@@ -224,3 +273,25 @@ npm run verify:beta5
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-29 - the reviewed base theme json is the library default, with a contrast gate`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

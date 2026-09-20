@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P0 · S |
 | Cierra | UX-04. Aplica D-5 |
 | Depende de | MIG-B6-01 (`KNOWN_THEME_FAMILIES` exportada) |
-| Bloquea | MIG-B6-16 y MIG-B6-21 (sus flags nuevos usan este parseo) |
+| Bloquea | MIG-B6-12, MIG-B6-16, MIG-B6-18 |
 | Archivos | `packages/uxdsl-cli/bin/uxdsl.js` (`main` ~1299-1310, `normalizeStrictThemeScope` ~602, `resolveStrictTheme` ~616, `resolveIncludeTheme` ~577, `themeCommand` ~898, `printHelp` ~110-196, `loadConfig` ~392-398), `packages/uxdsl-cli/test/uxdsl-cli.test.js`, `packages/uxdsl-cli/test/theme-command.test.js` |
 | Coordinación | Primero en la secuencia de `uxdsl.js` |
 
@@ -85,6 +85,14 @@ node $CLI build --strict-thme         >/dev/null 2>&1; echo $?                  
 
 ## Pruebas
 
+- Tabla por comando con formas bare/true/false/no-, aliases, flags repetidos
+  (última aparición gana), `--` y valores inválidos. Preservar precedencia cuando
+  minimist crea un false implícito: flag ausente no debe anular config.
+- Para opciones booleanas rechazar `--include-theme=banana` antes de coerción;
+  para strict rechazar listas vacías/con elementos vacíos. Comando desconocido y
+  opciones válidas sólo para otro comando fallan con ayuda apropiada.
+- Nuevos flags de 16/21 se añaden al mismo registro y a su matriz de tests.
+
 - Cada fila de la tabla "Resultado esperado", como test en `uxdsl-cli.test.js` o en
   `theme-command.test.js` (usar la función de parseo expuesta en `module.exports`, o
   procesos hijos).
@@ -117,3 +125,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-22 - strict cli flags: true/false values, validated families, unknown options fail`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

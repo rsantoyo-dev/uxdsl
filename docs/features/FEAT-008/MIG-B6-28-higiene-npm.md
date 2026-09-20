@@ -6,7 +6,7 @@
 | Track | G — Release |
 | Prioridad · Tamaño | P0 · S |
 | Cierra | UX-21. Aplica D-6 |
-| Depende de | Nada para empezar. La evaluación de `postcss-advanced-variables` (paso 6) necesita la suite de paridad de MIG-B6-18. Los cambios en `index.ts` (paso 5) van al final de la secuencia de ese archivo |
+| Depende de | MIG-B6-18 (paridad), MIG-B6-21 (orden de index), MIG-B6-27 (exports/schema), MIG-B6-29 (fuentes/defaults). Inventario de paquetes puede empezar antes |
 | Bloquea | MIG-B6-12 |
 | Archivos | los cinco `package.json` publicables, `packages/postcss-uxdsl/README.md` (imágenes), `scripts/release.js`, `packages/postcss-uxdsl/src/theme/theme-manifest.json` (vía el generador), nuevo test del manifiesto, `packages/postcss-uxdsl/src/index.ts` (líneas ~11-16 y ~141) |
 | Coordinación | La parte de `index.ts` va en un commit separado, después de MIG-B6-21 |
@@ -45,15 +45,26 @@ grep -n motion packages/postcss-uxdsl/src/theme/theme-manifest.json; ls packages
 ## Implementación
 
 1. **Campo `files`** en los cinco paquetes: `dist`, `README.md`, `LICENSE` y los assets
-   que se usan en tiempo de ejecución. En `postcss-uxdsl`, `src/theme/` sigue incluido
+   que se usan en tiempo de ejecución. Enumerar también `bin/`, shims de entrada,
+   codemods documentados, schema, config y archivos referenciados por exports;
+   no copiar el mismo allowlist a paquetes con estructuras distintas.
+   En `postcss-uxdsl`, `src/theme/` sigue incluido
    porque se exporta `./theme/*`. Nada de tests, fuentes `.ts` sueltas ni PNG. Las
    imágenes del README pasan a URLs absolutas de GitHub.
 2. **`scripts/release.js`:**
    - antes de publicar, ejecuta `npm pack --dry-run --json` por paquete y aborta si
      alguno supera su presupuesto (`postcss-uxdsl` 250 KB; el resto, su tamaño
      actual + 50 %);
-   - después de publicar, consulta `npm view <pkg> dist-tags --json` y falla si
-     `latest` y `beta` no apuntan a la versión recién publicada (D-6).
+   - para beta.6, después de publicar consulta dist-tags con reintentos acotados
+     y verifica latest/beta (D-6). Separar resultado postpublish de gate prepublish.
+     No intentar republicar versiones ya existentes para reparar un tag.
+   - admitir la ruta anunciada `0.5.0-rc.1`: hoy el regex sólo acepta beta/estable.
+     Validar SemVer y política de tags por canal con tests; beta.6 usa latest/beta,
+     RC y estable tienen expectativas explícitas en su propio release record,
+     sin aplicar automáticamente la regla beta a todos los canales.
+   - publicar exactamente los tarballs inspeccionados/validados, registrando hash;
+     detectar cambios de fuentes/dependencias después de los gates. Actualizar
+     manifests y lockfiles coordinadamente, comprobar instalación limpia.
 3. **Manifiesto:** si MIG-B6-29 ya se integró, el generador lo produce desde el JSON
    base; si no, quitar la entrada `motion`. Test:
    `test/theme-manifest-files.test.js` comprueba que toda ruta de
@@ -62,8 +73,8 @@ grep -n motion packages/postcss-uxdsl/src/theme/theme-manifest.json; ls packages
    desaparece el test que fallaba fuera del monorepo (requería
    `../../../fixtures/mig07-consumer/theme.json`).
 5. **`index.ts`** (commit separado, al final de la secuencia de ese archivo):
-   - codificar la familia de Google Fonts: espacios como `+` y el resto con
-     `encodeURIComponent`, conservando `:` y `@` según la sintaxis de la API css2;
+   - verificar/reutilizar el helper de Google Fonts de 29: no crear otra
+     codificación sólo en index. Incluir `;` y comas de ejes en sus tests;
    - reescribir el comentario de cabecera con las capacidades reales.
 6. **`postcss-advanced-variables` 5.x:** probar la actualización con
    `npm run test:parity` (MIG-B6-18). Actualizar sólo si la salida es idéntica; si no,
@@ -75,6 +86,15 @@ grep -n motion packages/postcss-uxdsl/src/theme/theme-manifest.json; ls packages
 - Mover la documentación visual fuera del README.
 
 ## Pruebas
+
+- Consumidor limpio instalado desde tarballs: sólo imports públicos, CLI bin,
+  runtime browser, config, schema, base JSON y codemods documentados resolubles;
+  nada de links al monorepo ni fallback a dist viejo.
+- `--check-pack` debe ejecutar comprobación local real sin mutar versiones/publicar;
+  `--dry-run` de release hoy sólo imprime comandos y no prueba contenidos.
+- Simular tamaño excedido, export faltante, versión interna desalineada, rc.1,
+  tag incorrecto y publicación parcial usando procesos/npm falsos, nunca registry
+  real. El guard debe fallar antes de cualquier publish en errores preflight.
 
 - `test/theme-manifest-files.test.js` (paso 3).
 - Un test del presupuesto: un script que el release usa y que se puede correr solo
@@ -110,3 +130,25 @@ npm test
 ## Entrega
 
 `chore(FEAT-008): MIG-B6-28 - lean tarballs, size budgets, manifest without dead paths, dist-tag check`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

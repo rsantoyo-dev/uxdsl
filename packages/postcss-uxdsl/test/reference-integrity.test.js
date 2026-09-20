@@ -1,5 +1,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
 const postcss = require('postcss');
 const { inspectReferences } = require('../dist/reference-integrity');
 const plugin = require('../dist');
@@ -18,6 +20,12 @@ test('missing transitives carry consumer, chain and location', () => {
   assert.equal(issue.consumer, 'color');
   assert.ok(issue.source.endsWith('reference-fixture.css'));
   assert.equal(issue.line, 1);
+});
+test('reference integrity remains browser-safe and preserves source paths verbatim', () => {
+  const source = fs.readFileSync(path.join(__dirname, '../src/reference-integrity.ts'), 'utf8');
+  assert.doesNotMatch(source, /node:path|process\.cwd\(\)/);
+  const [issue] = inspect(':root { --a: var(--b); } .x { color: var(--a); }');
+  assert.match(issue.source, /reference-fixture\.css$/);
 });
 test('cycles fail and valid fallbacks recover absent tokens', () => {
   assert.equal(inspect(':root { --a: var(--b); --b: var(--a); } .x { color: var(--a); }')[0].code, 'UXD_REFERENCE_CYCLE');

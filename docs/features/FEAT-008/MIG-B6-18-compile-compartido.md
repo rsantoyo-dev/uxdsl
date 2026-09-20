@@ -6,8 +6,8 @@
 | Track | C — Un solo pipeline (**camino crítico**) |
 | Prioridad · Tamaño | P0 · L |
 | Cierra | UX-02, N-02, N-06. Es la base de UX-16 (con MIG-B6-20) y de UX-20 (con MIG-B6-21) |
-| Depende de | — (el paso 0, la suite de paridad, empieza en la ola 1) |
-| Bloquea | MIG-B6-19, MIG-B6-20, MIG-B6-21, MIG-B6-23, MIG-B6-24, MIG-B6-26, MIG-B6-28 (evaluación de `postcss-advanced-variables`) |
+| Depende de | MIG-B6-22 para integrar cambios del CLI. El corpus y oráculo (paso 0) pueden prepararse antes |
+| Bloquea | MIG-B6-12, MIG-B6-19, MIG-B6-20, MIG-B6-21, MIG-B6-23, MIG-B6-24, MIG-B6-26, MIG-B6-28 |
 | Archivos | `packages/uxdsl-core/src/index.ts`, `packages/uxdsl-core/index.js`, `packages/uxdsl-core/package.json`, `packages/uxdsl-core/test/`, `packages/uxdsl-cli/bin/uxdsl.js` (`compileEntryToCss` ~666-722, `createImportResolver` ~96), `packages/uxdsl-cli/package.json`, `scripts/release.js` (~58-63), nuevo `fixtures/parity/`, `package.json` raíz |
 | Coordinación | Segundo en la secuencia de `uxdsl.js` (22 → 18 → …). **No toca** `vite-plugin-uxdsl` ni `uxdsl-webpack-loader`: los migra MIG-B6-20 |
 
@@ -76,19 +76,25 @@ los caminos.
 
 ## Implementación
 
-0. **Suite de paridad, antes del refactor.** Se puede empezar en la ola 1.
+0. **Suite de paridad, antes del refactor.** Puede prepararse antes de las
+   dependencias de integración, según el índice.
    - Crear `fixtures/parity/` con una entrada por caso: `url()` sin comillas,
      comentario de bloque con URL, comentarios `//`, `$vars` con valores responsive,
      imports anidados, import inexistente, ciclo de imports, import duplicado.
    - Un runner (`fixtures/parity/run.js`, con `npm run test:parity` en la raíz)
-     compila cada caso con el CLI y guarda la salida como oráculo en
-     `fixtures/parity/expected/`.
+     compila cada caso con el CLI y guarda una vez la salida en
+     `fixtures/parity/expected/`, con commit/opciones de captura. Ejecución normal
+     compara; regenerar requiere opción explícita y diff revisado. Bugs corregidos
+     por 14/15/17/29 llevan expectativas corregidas y la story que explica el cambio;
+     la salida anterior no es oráculo de corrección.
    - Los casos que hoy fallan en el CLI (import inexistente) guardan el código de
      error esperado.
 1. **API aditiva** en `uxdsl-core`:
    ```ts
    compile(input: { entry: string } | { source: string; from?: string }, config?: {
-     theme?; references?; breakpoints?; includeTheme?; sourceMap?: false | 'inline' | 'external';
+     theme?; references?; breakpoints?; includeTheme?;
+     to?: string; sourcesContent?: boolean;
+     sourceMap?: false | 'inline' | 'external';
    }): Promise<{ css: string; map?: string; dependencies: string[]; warnings: Array<{ text: string; file?: string; line?: number; column?: number }> }>
    ```
    Usa exactamente el pipeline del CLI: sintaxis `postcss-scss`, `postcss-import`
@@ -97,7 +103,9 @@ los caminos.
    metadata de breakpoints que hoy agrega sólo el CLI (`/*@uxdsl-bp …*/` y
    `#uxdsl-bp-meta`, `uxdsl.js:710-720`), con la misma condición `includeTheme`.
    `dependencies` sale de `result.messages` de tipo `dependency`. `sourceMap` queda
-   declarado pero lo implementa MIG-B6-21: por ahora, sólo `false`.
+   declarado pero lo implementa MIG-B6-21: por ahora sólo `false`; otro modo da
+   error de opción no implementada, nunca se ignora. Reenviar warnings en cada
+   adaptador; dependencias incluyen entry con orden estable.
 2. **Compatibilidad** (D3 de FEAT-007): `processUxdsl(source, options)` sigue siendo
    el export callable y sigue devolviendo `Promise<string>`, ahora como envoltorio de
    `compile()`. Exportar `compile` como propiedad:
@@ -131,6 +139,14 @@ los caminos.
   resuelto).
 
 ## Pruebas
+
+- Imports con media/supports/layer y duplicados en condiciones diferentes:
+  preservar semántica, no deduplicar por path global. Ciclo con cadena completa,
+  rutas con espacios y fuentes en memoria con from.
+- CSS nativo, $vars y error de parcial se comparan por contrato; normalizar sólo
+  envoltorios de bundler, nunca ordenar reglas/declaraciones ni ocultar cascada.
+- Consumo limpio sin paquetes hermanos ni fallback: dependencia exacta publicada,
+  callable CSS string, compile, warnings y errores equivalentes.
 
 - `fixtures/parity/`: CLI y `compile()` dan salidas idénticas al oráculo, o el mismo
   código de error.
@@ -183,3 +199,25 @@ Dos commits:
 1. `test(FEAT-008): MIG-B6-18 - parity suite with the current CLI output as oracle`
    (el paso 0; puede integrarse antes).
 2. `feat(FEAT-008): MIG-B6-18 - one shared compile() in uxdsl-core, used by the CLI`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

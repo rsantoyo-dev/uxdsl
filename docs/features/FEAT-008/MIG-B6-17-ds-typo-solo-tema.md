@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P1 · M |
 | Cierra | UX-09; reduce UX-19 |
 | Depende de | MIG-B6-29 (el JSON base es el default), MIG-B6-15 (orden de `index.ts`) |
-| Bloquea | MIG-B6-21 (siguiente en `index.ts`), MIG-B6-12 |
+| Bloquea | MIG-B6-12, MIG-B6-21, MIG-B6-30 |
 | Archivos | `packages/postcss-uxdsl/src/index.ts` (`applyTypo`, ~152-230), `src/typography.ts` (`TYPOGRAPHY_DEFAULTS` en la línea 16, `TYPOGRAPHY_PROPERTIES`, `generateTypographyCss`), `src/typography-defaults.ts`, `src/theme/base.json` |
 | Coordinación | Cuarto en la secuencia de `index.ts`; después de MIG-B6-29 en `typography*.ts` |
 
@@ -75,11 +75,15 @@ ese tag, y nada más. No hay respaldos literales.
      campo del tema). Si diseño quiere un caption atenuado, que lo exprese con un
      color de palette en el componente. Agregar `opacity` a `TYPOGRAPHY_PROPERTIES`
      sería ampliar un conjunto cerrado; sólo con aprobación explícita.
-3. **Cambiar `applyTypo`:** recorrer los campos definidos en
-   `effectiveTheme.typography_details[tag]` y emitir
-   `prop: var(--uxdsl__typography__<tag>-<field>)`, sin respaldo literal. La
-   integridad de referencias garantiza que la variable exista. La cadena de fuentes
-   (`ui-2` → `ui`, `code` → `monospace`) pasa a ser un valor del JSON base.
+3. **Cambiar `applyTypo`:** usar un resolvedor compartido con
+   `compileTypographyRules`: `{ ...details.default, ...details[tag] }` para un rol
+   existente, sin mezclar expresiones responsive campo a campo. Validar rol antes
+   de heredar: un nombre inexistente no se convierte en `default` silenciosamente.
+   Emitir sólo campos efectivos con el mapeo de propiedad CSS y
+   `TYPOGRAPHY_PROPERTIES` para el sufijo (`fontSize` → `size`, `lineHeight` →
+   `line`, `fontWeight` → `weight`); no construir nombres desde camelCase.
+   Las declaraciones referencian variables sin respaldo literal. La cadena de
+   fuentes (`ui-2` → `ui`, `code` → `monospace`) pasa al JSON base.
 4. Eliminar `TYPOGRAPHY_DEFAULTS` y `DEFAULT_TYPOGRAPHY`, o derivarlos del JSON base
    si otro módulo los necesita. Comprobarlo con `grep`.
 5. Documentar la precedencia: la directiva emite en su posición, así que una
@@ -93,6 +97,14 @@ ese tag, y nada más. No hay respaldos literales.
 - Salida basada en clases compartidas (`composes:`); queda para después de 0.5.0.
 
 ## Pruebas
+
+- Rol custom con sólo `fontSize`: hereda los campos de `default` tanto en
+  directiva como en generador/inspector. Override responsive sustituye el campo
+  completo; rol inexistente falla con ubicación. Dos directivas en la misma regla
+  respetan su posición y declaraciones CSS anteriores/posteriores.
+- Navegador: flujo normal, flex y grid con p/h1/a/caption; margen declarado 0,
+  subrayado del enlace no eliminado y opacity no inventada. Registrar diferencias
+  deliberadas contra beta.5; no mantener snapshots incorrectos por compatibilidad.
 
 - `test/typography.test.js`:
   - con el JSON base, `@ds-typo(caption)` no emite `margin-block-*` (salvo que la base
@@ -136,3 +148,25 @@ npm run verify:beta5
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-17 - @ds-typo emits only what the theme defines`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

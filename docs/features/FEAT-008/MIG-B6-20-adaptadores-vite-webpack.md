@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P1 · L |
 | Cierra | N-03, N-04, el resto de UX-16. Aplica D-4 |
 | Depende de | MIG-B6-18 (`compile()`), MIG-B6-19 (cargador de configuración), MIG-B6-29 (retiro de packs legacy) |
-| Bloquea | MIG-B6-21, MIG-B6-12 |
+| Bloquea | MIG-B6-12, MIG-B6-21 |
 | Archivos | `packages/vite-plugin-uxdsl/src/index.ts` (974 líneas; se reescribe casi entero), `packages/vite-plugin-uxdsl/package.json`, `packages/uxdsl-webpack-loader/index.js`, `packages/uxdsl-webpack-loader/package.json`, nuevos `fixtures/vite-adapter/` y `fixtures/webpack-adapter/`, `fixtures/parity/` |
 | Coordinación | Dueño único de los dos paquetes durante esta story |
 
@@ -82,8 +82,9 @@ Parte del paso 1 es convertir cada problema en un test que falle.
      documentado como fuera de la garantía de paridad. `$vars`, `@mixin` y `@each`
      ya los cubre `postcss-advanced-variables` dentro de `compile()`.
    - **Proyectos con `postcss-uxdsl` en su `postcss.config`:** Vite le pasará el CSS ya
-     compilado. Verificar que eso es idempotente (no quedan funciones de UXDSL) o
-     documentar cómo excluir los `.uxdsl`.
+     compilado. Sin funciones DSL aún puede duplicarse tema/imports. Fixture con
+     ambos activos: evitar doble pasada por id/origen o configuración documentada
+     y comprobada; contar temas y fuentes.
 3. **Webpack:**
    ```js
    module.exports = async function uxdslLoader(source) {
@@ -93,14 +94,15 @@ Parte del paso 1 es convertir cada problema en un test que falle.
        const config = { ...loadConfig(this.rootContext), ...options }; // MIG-B6-19
        const { css, map, dependencies } = await compile({ source, from: this.resourcePath }, config);
        dependencies.forEach((dep) => this.addDependency(dep));
-       callback(null, css, map);
+       callback(null, css, map ? JSON.parse(map) : undefined);
      } catch (err) { callback(err); }
    };
    ```
 4. Agregar Vite y Webpack a `fixtures/parity/`.
 5. **D-4:** el tema llega por la configuración del proyecto o por `uxdsl.theme.json`,
    y el resultado es idéntico en los cuatro caminos. El live theming (MIG-B6-30)
-   trabaja sobre variables CSS, así que no depende de la entrega.
+   trabaja sobre variables CSS para cambios compatibles con la estructura
+   compilada, según 30. No prometer regeneración de estados o umbrales locales.
 
 ## Fuera de alcance
 
@@ -109,6 +111,15 @@ Parte del paso 1 es convertir cada problema en un test que falle.
   la fixture lo exija.
 
 ## Pruebas
+
+- Editar tema y su JSON requerido cambia CSS sin reiniciar; import faltante se
+  recupera al crearlo. Advertencias de compile aparecen en ambos bundlers.
+- Assets relativos de un parcial se resuelven respecto de su origen tras cambiar
+  a id CSS; probar url(), ?inline, nombres con espacios y base pública.
+- SSR real de la fixture: import no accede a document y CSS queda disponible para
+  el render/manifest del host; extracción sola no demuestra SSR.
+- HMR: invalidación de grafo más actualización de computed style en navegador;
+  declarar qué prueba cada nivel. Sin polyfills Node para ds-runtime en cliente.
 
 - **`fixtures/vite-adapter/`:**
   - `vite build`: hay un `.css` extraído que contiene las reglas;
@@ -152,3 +163,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-20 - vite and webpack deliver real css through compile(), with dependencies and the project theme`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

@@ -6,10 +6,10 @@
 | Track | B — Tema base y salida correcta |
 | Prioridad · Tamaño | P1 · S |
 | Cierra | UX-08 |
-| Depende de | MIG-B6-29 (`checkThemeContrast`), MIG-B6-22 (parseo de flags) |
+| Depende de | MIG-B6-29 (`checkThemeContrast`), MIG-B6-22 (flags), MIG-B6-21 (orden del CLI) |
 | Bloquea | MIG-B6-12 |
 | Archivos | `packages/uxdsl-cli/bin/uxdsl.js` (`themeCommand` ~898, `diffThemeAgainstDefaults` ~868, `diffThemeSubtree` ~846), `packages/uxdsl-cli/test/theme-command.test.js`, READMEs |
-| Coordinación | Último en la secuencia de `uxdsl.js` (22 → 18 → 19 → 24 → 23 → 16) |
+| Coordinación | Último en la secuencia de `uxdsl.js` (22 → 18 → 19 → 24 → 23 → 21 → 16) |
 
 ## Por qué
 
@@ -43,7 +43,8 @@ aproximadamente 3.1:1, por debajo de AA.
   El JSON de stdout no cambia: ya lo consumen scripts.
 - `uxdsl theme --contrast` ejecuta `checkThemeContrast` (MIG-B6-29) sobre el tema
   efectivo del proyecto. Imprime en stdout un reporte JSON
-  (`{ passed, failures: [{ family, component, state, pair, ratio, required }] }`) y
+  con el tipo compartido de 29 (`passed`, `failures`, `exceptions`, contexto de
+  modo/fondo/breakpoint y causa de valores unresolved), y
   sale con código 1 si hay fallos. No forma parte de `build`.
 
 ## Implementación
@@ -52,9 +53,9 @@ aproximadamente 3.1:1, por debajo de AA.
    `typography_details.<tag>` con filas `project` y `default` a la vez.
 2. Imprimir el resumen por stderr, respetando la regla de `themeCommand` de dejar
    stdout como JSON limpio.
-3. Agregar el flag `--contrast` con el parseo estricto de MIG-B6-22. Documentar si se
-   puede combinar con `--diff` o `--strict`; lo más simple es que no se combine y que
-   se rechace con un mensaje claro.
+3. Agregar `--contrast` al parseo estricto de 22. No combinar con `--diff` ni
+   `--strict`: error claro sin mezclar dos formatos de stdout. Errores de carga van
+   por stderr; un reporte de contraste válido se imprime completo aunque falle.
 4. Documentar la semántica del override en el README de `postcss-uxdsl`, sección de
    defaults: sobrescribir `main` conserva `dark` y `contrast`, y para cambiar el hover
    también hay que sobrescribir `dark`. Con un ejemplo.
@@ -65,6 +66,10 @@ aproximadamente 3.1:1, por debajo de AA.
 - Cambiar el formato de stdout de `--diff`.
 
 ## Pruebas
+
+- JSON stdout parseable; logs sólo stderr. Modo oscuro, placeholder y estado
+  selected incluidos. Valor unresolved sale con 1; excepción exacta de base se
+  enumera, override que cambia ese par deja de heredar la excepción.
 
 En `packages/uxdsl-cli/test/theme-command.test.js`:
 
@@ -99,3 +104,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-16 - theme --diff reports mixed entries, theme --contrast checks the effective theme`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

@@ -68,10 +68,15 @@ de la implementación actual.
    - las entradas por selector;
    - las definiciones por nombre de propiedad, ya ordenadas por la regla de `resolve`;
    - los contextos distintos por selector.
-3. Calcular los contextos candidatos **por selector**, no por consumidor. Todos los
-   consumidores de un selector comparten la lista.
-4. Memoizar `resolve(name, contextKey)` y `checkValue(value, contextKey)` durante una
-   pasada.
+3. Indexar candidatos por selector y filtrar por las **condiciones del consumidor**.
+   Dos declaraciones del mismo selector bajo medias distintas no comparten siempre
+   los mismos contextos. Preservar el orden de visita original y los scopes :root
+   de modo oscuro; no ordenar condiciones si cambia su identidad.
+4. Memoizar `resolve(name, contextKey)` y el parseo de valores durante una pasada.
+   `checkValue` actual también depende de `chain` y `stack`: no cachear sus arrays
+   de errores sólo por valor/contexto. Separar resolución independiente del camino
+   y reconstrucción de diagnósticos por consumidor, o conservar la recursión hasta
+   demostrar equivalencia para ciclos y fallbacks. No compartir cachés entre builds.
 5. No cambiar la semántica: `conditionsApply`, el orden por `!important`/selector/orden
    y el manejo de fallbacks y ciclos quedan igual.
 
@@ -81,6 +86,15 @@ de la implementación actual.
 - Paralelizar.
 
 ## Pruebas
+
+- Oráculo fijado al commit posterior a 13, con procedencia y hash; el runner
+  compara sin regenerarlo automáticamente. Mismo selector en medias y modos
+  distintos, ciclos compartidos vistos desde dos consumidores, fallbacks anidados,
+  `!important`, proveedores externos y compilaciones sucesivas con temas distintos.
+- Benchmark con warmup y muestras secuenciales aisladas del runner paralelo;
+  registrar Node, OS, CPU, commit, entrada y medianas. El umbral absoluto usa la
+  máquina declarada; la razón usa tamaños suficientemente grandes y tiempos crudos
+  adjuntos. No atribuir ruido de CI a mejora ni relajar el presupuesto sin evidencia.
 
 - **Equivalencia:** sobre todos los casos de `test/reference-integrity.test.js`, las
   fixtures del repositorio y el bloque sintético (N = 50, con errores inyectados:
@@ -116,3 +130,25 @@ npm test
 ## Entrega
 
 `perf(FEAT-008): MIG-B6-25 - near-linear reference validation, equivalent to the previous implementation`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

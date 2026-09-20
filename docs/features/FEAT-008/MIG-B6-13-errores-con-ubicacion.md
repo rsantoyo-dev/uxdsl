@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P0 · M |
 | Cierra | UX-03 |
 | Depende de | — |
-| Bloquea | MIG-B6-14 (usa el helper de errores y de sugerencias), MIG-B6-25 (forma de `ReferenceIssue`), MIG-B6-26 |
+| Bloquea | MIG-B6-12, MIG-B6-14, MIG-B6-25 |
 | Archivos | `packages/postcss-uxdsl/src/index.ts`, `preset-engine.ts`, `control-engine.ts`, `surfaces.ts`, `reference-integrity.ts`, nuevo `src/diagnostics.ts`, `packages/uxdsl-cli/bin/uxdsl.js` |
 | Coordinación | Primero en la secuencia de `index.ts` (13 → 14 → 15 → 17 → 21). En `reference-integrity.ts` va antes que MIG-B6-25 |
 
@@ -111,14 +111,24 @@ sólo `[uxdsl] Error: UXD_DENSITY_REFERENCE: …`.
 
 ## Pruebas
 
+- Directiva que genera una referencia inválida y `$var` expandida conservan el
+  origen del usuario; copiar source mínimo aquí cuando haga falta para diagnóstico,
+  sin esperar a 21. 21 completa mapas. Error de JSON nombra archivo y key, sin
+  inventar línea CSS ni pasar un nodo inexistente al helper.
+- Catálogo distingue códigos de CSS, tema, runtime y config; ubicar según origen,
+  no exigir file/line a una llamada runtime sin archivo. Códigos dinámicos se
+  registran desde sus prefijos de familia, con casos ejecutables.
+
 - `test/diagnostics-catalog.test.js`: un script descubre en `src/` cada código
   emitido, literal o compuesto. El test falla si hay un código fuera del catálogo o
   un código del catálogo sin fixture.
 - `test/diagnostics-location.test.js`: una fixture por código que puede nacer en el
   CSS. Debe cumplirse:
-  - `err.name === 'CssSyntaxError'`;
+  - errores de una declaración/directiva: `err.name === 'CssSyntaxError'`;
+    errores agregados de referencias conservan `ReferenceIntegrityError` e `.issues`;
   - `err.file`, `err.line` y `err.column` están definidos;
-  - el mensaje empieza con el código;
+  - `reason` contiene el código al inicio; `message` de PostCSS puede anteponer
+    plugin/archivo/posición, no exigirle empezar por UXD;
   - `err.cause` existe cuando el error se envolvió.
 - Códigos que nacen en el tema: el mensaje contiene la ruta de la clave.
 - `ReferenceIntegrityError`: cada línea empieza con `archivo:línea:columna`. En modo
@@ -152,3 +162,57 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-13 - every UXD_* diagnostic carries its source location`
+
+## Registro de implementación y evidencia
+
+### Revisión 2026-09-20 — base parcial, no cerrada
+
+Base `60fdd76599fcc62b7da48d4770f576de2b4d0062` más cambios locales sin commit.
+Los bloqueos anteriores de `node:path`, iteración ES5 y códigos compuestos ausentes
+ya no se reproducen: `npm test` exit 0 y build Next.js completo exit 0
+(`/tmp/uxdsl-b6-close-tests.log`, `/tmp/uxdsl-b6-close-next.log`, logs locales).
+Los tests de ubicación cubren ahora declaraciones generadas por directivas.
+El README limita correctamente sus garantías para errores de tema sin key path.
+
+Pendientes para cerrar la historia completa:
+
+- **P2 — claves de tema:** `{ surfaces: { contained: { bogus: 'red' } } }`
+  produce `UXD_SURFACE_FIELD: Unknown contained.bogus.` sin `keyPath`;
+  `{ densities: { x: '' } }` produce `UXD_DENSITY_VALUE: Invalid x.` sin
+  `keyPath`. `{ radii: { '1': '' } }` tampoco identifica `radii.1`.
+  Reproducido con `postcss([uxdsl({ theme })]).process('.a {}', { from:
+  '/tmp/review.uxdsl' })`. Incluir la ruta completa sin inventar ubicación CSS,
+  y probar archivo de tema en CLI. Un README acotado no satisface este contrato.
+- **P2 — catálogo y fixtures:** el guard actual comprueba literales y
+  combinaciones de prefijos/sufijos inventariados, pero no exige una fixture
+  ejecutable por código. Añadir un código al Set sin fixture sigue pasando;
+  tampoco rechaza por sí mismo un emisor compuesto en un archivo sin inventario.
+  Añadir controles negativos de ambas situaciones y clasificación por origen.
+- Completar la matriz criterio → caso ejecutable, incluida expansión `$var`,
+  `cause`, rutas de tema y códigos restantes; no sustituirla por el PASS global.
+- Mantener el motor browser-safe: rutas relativas a cwd pertenecen a la CLI.
+  Ajustar el punto 3 del contrato al registrar esa decisión, sin reintroducir Node
+  en el runtime compartido.
+
+No se cambió la implementación de 13 durante esta revisión. Los pendientes se
+registran aquí para el siguiente agente; 01 se verifica de forma independiente.
+
+Estado de implementación: **En curso; base parcial verificada, pendientes arriba**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

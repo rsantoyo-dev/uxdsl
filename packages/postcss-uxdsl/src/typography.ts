@@ -1,6 +1,7 @@
 import valueParser from 'postcss-value-parser';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue } from './language';
 import { buildVarName, NameRegistry } from './naming';
+import { themeError } from './diagnostics';
 
 /** JSON fields and their public CSS variable suffixes. */
 export const TYPOGRAPHY_PROPERTIES = Object.freeze({
@@ -33,7 +34,7 @@ export function typographyValueToCss(input: string): string {
   parsed.walk(node => {
     if (node.type !== 'function' || !['space', 'density'].includes(node.value)) return;
     const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-    if (!/^[\w.-]+$/.test(key)) throw new Error(`UXD_TYPO_TOKEN: Invalid ${node.value} reference.`);
+    if (!/^[\w.-]+$/.test(key)) throw themeError('UXD_TYPO_TOKEN', `Invalid ${node.value} reference`, 'typography');
     Object.assign(node, { type: 'word', value: `var(${buildVarName(node.value === 'space' ? 'space' : 'density', key)})` });
     return false;
   });
@@ -44,13 +45,13 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
   const ordered = Object.entries(breakpoints).sort((a, b) => a[1] - b[1]);
   if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([, width]) => !Number.isFinite(width) || width < 0) || new Set(ordered.map(([, width]) => width)).size !== ordered.length) {
-    throw new Error('UXD_TYPO_BP: Typography requires distinct non-negative breakpoint widths and a zero-width base.');
+    throw themeError('UXD_TYPO_BP', 'Typography requires distinct non-negative breakpoint widths and a zero-width base', 'breakpoints');
   }
-  if (!details || typeof details !== 'object' || Array.isArray(details)) throw new Error('UXD_TYPO_DETAILS: Expected an object.');
+  if (!details || typeof details !== 'object' || Array.isArray(details)) throw themeError('UXD_TYPO_DETAILS', 'Expected an object', 'typography_details');
   for (const [role, style] of Object.entries(details)) {
-    if (!/^[a-z][a-z0-9-]*$/.test(role) || !style || typeof style !== 'object' || Array.isArray(style)) throw new Error(`UXD_TYPO_ROLE: Invalid style ${role}.`);
+    if (!/^[a-z][a-z0-9-]*$/.test(role) || !style || typeof style !== 'object' || Array.isArray(style)) throw themeError('UXD_TYPO_ROLE', `Invalid style ${role}`, `typography_details.${role}`);
     for (const [field, value] of Object.entries(style)) {
-      if (!Object.prototype.hasOwnProperty.call(TYPOGRAPHY_PROPERTIES, field) || typeof value !== 'string' || !value.trim()) throw new Error(`UXD_TYPO_FIELD: Invalid ${role}.${field}.`);
+      if (!Object.prototype.hasOwnProperty.call(TYPOGRAPHY_PROPERTIES, field) || typeof value !== 'string' || !value.trim()) throw themeError('UXD_TYPO_FIELD', `Invalid ${role}.${field}`, `typography_details.${role}.${field}`);
     }
   }
   const rules = ordered.map(([breakpoint, width], index) => ({ breakpoint, minWidth: index ? width : null as number | null, values: {} as Record<string, string> }));
@@ -69,7 +70,7 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
         const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints));
-        if (!value && index === 0) throw new Error(`UXD_TYPO_BASE: ${role}.${field} needs a base value.`);
+        if (!value && index === 0) throw themeError('UXD_TYPO_BASE', `${role}.${field} needs a base value`, `typography_details.${role}.${field}`);
         if (value !== previous) rules[index].values[varName] = value;
         previous = value;
       });

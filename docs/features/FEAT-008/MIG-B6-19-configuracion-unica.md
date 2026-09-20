@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P1 · M |
 | Cierra | UX-13, UX-14 |
 | Depende de | MIG-B6-18 |
-| Bloquea | MIG-B6-20, MIG-B6-24, MIG-B6-27 (`defineConfig` vive en el mismo entry) |
+| Bloquea | MIG-B6-12, MIG-B6-20, MIG-B6-24, MIG-B6-27 |
 | Archivos | `packages/uxdsl-cli/bin/uxdsl.js` (`CONFIG_CANDIDATES` ~76, `THEME_CANDIDATES` ~86, `findConfigPath` ~204, `findThemeConfigPath` ~212, `loadModuleExport` ~222, `normalizeThemeExport` ~237, `loadThemeConfig` ~295, `loadConfig` ~329-575, `resolveBreakpoints` ~630, `init` ~1144-1245), nuevo `packages/postcss-uxdsl/src/config.ts`, `packages/postcss-uxdsl/package.json` (exports), `packages/postcss-uxdsl/src/index.ts` (sólo la entrada de opciones del plugin), `fixtures/mig-b2-03-cli-init/` |
 | Coordinación | Tercero en la secuencia de `uxdsl.js`. En `index.ts` sólo toca la lectura de opciones al inicio de `uxdslPlugin`; hacerlo en un commit chico y rebasar sobre la story de `index.ts` que esté en curso |
 
@@ -57,16 +57,24 @@ La salida incluye `min-width: 768px`; `900px` no aparece. Pasa igual con y sin
    la resolución que hoy está en el CLI: candidatos, carga del módulo,
    `normalizeThemeExport`, `warnIfLooksLikeBuildConfig` y `references`. Vive en
    `postcss-uxdsl` porque el plugin lo necesita y el plugin no depende de core. El
-   CLI conserva sólo el manejo de flags.
+   CLI conserva flags y orquestación de build/watch. Compartir descubrimiento,
+   normalización, precedencia y dependencias con dos envoltorios: sync para el
+   plugin y async para CLI/adaptadores. El CLI ya admite funciones async CJS;
+   conservarlo. Sync rechaza exports async con mensaje que indique pasar theme
+   resuelto, sin cambiar silenciosamente al default.
 2. **Descubrimiento en el plugin:** si `opts.theme === undefined` y
    `opts.discoverTheme !== false`, cargar el tema con el cargador, desde
    `opts.configRoot ?? process.cwd()`.
    - Tiene que ser **síncrono**: el factory del plugin es síncrono y hay usos con
      `.process().css`. Soportar `.cjs`, `.json` y `.js` CommonJS con `require`. Un
      tema ESM exige pasar `theme` explícito, con un error claro que lo diga.
-   - Registrar el archivo de tema como dependencia
-     (`result.messages.push({ type: 'dependency', plugin: 'postcss-uxdsl', file })`),
-     para que Next, Vite y Webpack lo vigilen.
+   - Registrar config, tema y dependencias locales transitivas de carga como
+     mensajes `dependency`. Invalidar su cache en cada rebuild; ver editar un
+     archivo no basta si require sigue devolviendo el objeto anterior. Conservar
+     aislamiento de dos proyectos compilados en el mismo proceso.
+   - Hacer la resolución por compilación (Once), no congelarla al construir el
+     plugin reutilizable. Registrar candidatos ausentes con el mecanismo del
+     watcher para detectar la creación/eliminación del config.
 3. **`init`:** quitar `breakpoints:` de las dos plantillas (~1164-1190). Actualizar
    `fixtures/mig-b2-03-cli-init/`, que compara la salida de `init`.
 4. **Conflicto:** en `resolveBreakpoints`, si el config y el tema definen la misma
@@ -82,11 +90,19 @@ La salida incluye `min-width: 768px`; `900px` no aparece. Pasa igual con y sin
 
 ## Pruebas
 
+- Plugin reutilizado: editar JSON requerido por tema cambia la siguiente salida;
+  config/tema roto produce diagnóstico sin usar caché vieja como build válido.
+- Dos configRoot en un proceso no comparten overrides; theme explícito gana;
+  config/tema fuera de cwd resuelve rutas relativas a su archivo.
+- Función async CJS sigue funcionando en CLI; plugin sync la rechaza claramente.
+  Comprobar creación/eliminación de config y cambio de themeFile con watchers.
+- El control negativo usa un token exclusivo, no `secondary`, que 29 agrega a base.
+
 - `packages/postcss-uxdsl/test/config.test.js`: candidatos, orden de precedencia,
   export `{ theme, references }` o tema plano, tema ESM → error claro, archivo de tema
   en `result.messages` como dependencia.
 - **Plugin con descubrimiento:** un fixture de proyecto con `uxdsl.theme.config.cjs`
-  que define `palette.secondary`. Un `.css` con `palette(secondary)`, procesado con
+  que define `palette.review-only-brand`. Un `.css` con `palette(review-only-brand)`, procesado con
   `postcss([uxdsl({ includeTheme: false, configRoot })])`, compila. Con
   `discoverTheme: false` falla, como hoy.
 - **CLI:** `init` + `theme.breakpoints.md = 900` → `min-width: 900px`. Un conflicto
@@ -123,3 +139,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-19 - one config loader for cli, core and the plugin; init stops overriding theme breakpoints`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

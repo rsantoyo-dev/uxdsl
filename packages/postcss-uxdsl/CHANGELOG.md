@@ -8,7 +8,13 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
-FEAT-007 (`0.5.0-beta.6`), MIG-B6-01:
+FEAT-008, MIG-B6-13:
+
+- **Fix:** CSS diagnostics now retain their source location through PostCSS,
+  reference validation and the CLI, including imported partials. The CLI prints
+  a color-free code frame, and diagnostics identify invalid theme key paths.
+
+FEAT-007 / FEAT-008 (`0.5.0-beta.6`), MIG-B6-01:
 
 - **Fix (regression from beta.5):** `validateAndNormalizeTheme` no longer
   warns about entry names inside `typography_details` (tags), `palette`
@@ -24,6 +30,12 @@ FEAT-007 (`0.5.0-beta.6`), MIG-B6-01:
   plain `uxdsl build`/`watch`, with no flag to opt out. Removed at the
   source rather than repointed at a longer list, because no closed list
   of valid entry names exists to point at.
+- The closed top-level family registry now includes `modes` and legacy
+  `typography`, both already consumed by the compiler. They no longer emit
+  false "will not be compiled" warnings; unknown top-level names still do.
+- The public runtime exports `KNOWN_THEME_FAMILIES`. AST negative controls
+  cover optional/literal access and destructuring; executable README and
+  playground-base tests protect the documented validation contract.
 - Unchanged by that fix, and covered by new regression tests:
   MIG-B3-03's top-level "Unknown theme family" warning (`palete` for
   `palette`) — that family set genuinely is closed — and the hard

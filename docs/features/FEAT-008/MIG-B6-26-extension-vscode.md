@@ -6,7 +6,7 @@
 | Track | F — Editor y tipos |
 | Prioridad · Tamaño | P1 · M |
 | Cierra | N-05; UX-17 en parte |
-| Depende de | MIG-B6-14 (directivas y errores estables), MIG-B6-18 |
+| Depende de | MIG-B6-14 (lenguaje), MIG-B6-18 (pipeline), MIG-B6-29 (defaults/tonos para metadata) |
 | Bloquea | MIG-B6-12 |
 | Archivos | `packages/uxdsl-vscode/` (`package.json`, `src/extension.ts`, `src/generated-completions.ts`, `syntaxes/uxdsl.tmLanguage.json`, `uxdsl.custom-data.json`, `language-configuration.json`, `uxdsl-vscode-0.0.1.vsix`), `packages/postcss-uxdsl/src/language.ts` (`LANGUAGE_COMPLETIONS`), `scripts/generate-language-artifacts.js`, `.gitignore` |
 | Coordinación | Dueño único de `packages/uxdsl-vscode` |
@@ -66,8 +66,10 @@ grep -n "' '" packages/uxdsl-vscode/src/extension.ts
    escribirlos a mano:
    - roles de `@ds-surface`, `@ds-button` y `@ds-input` (de `DEFAULT_SURFACES`, los
      botones y los inputs);
-   - tonos (familias de palette del JSON base, tras MIG-B6-29);
-   - tamaños.
+   - tonos (familias con main/dark/contrast, usando el mismo predicado del motor;
+     no ofrecer grupos semánticos parciales como action/divider);
+   - tamaños válidos para el componente (intersección Density/Radius, no todas
+     las claves numéricas de cualquiera de las dos familias).
 4. **Completado** (`extension.ts`):
    - quitar `' '` de los caracteres de disparo;
    - extraer la detección de contexto a una función pura
@@ -97,8 +99,18 @@ pierde la gramática de UXDSL.
 
 ## Pruebas
 
-- CI: `JSON.parse` de la gramática y `new RegExp(...)` de cada `match`, `begin` y
-  `end`.
+- Completado multilinea, nesting, pseudoselectores con ':', valores con strings
+  escapados y argumentos de directiva; ningún token sugerido del default falla
+  al compilar con el motor. Distinguir función nativa color de token.
+- VSIX empaquetado: manifest, paths de gramática, activación del lenguaje y assets
+  existen dentro del archivo, y extensión carga en un smoke test de host. Conectar
+  compile/test/package a CI (12 integra el gate final); compilación sola no prueba
+  resaltado ni publicación. Documentar la versión de VS Code usada.
+
+- CI: `JSON.parse` más tokenización con el motor TextMate/Oniguruma que consume
+  VS Code; `new RegExp` JavaScript no demuestra compatibilidad de la gramática.
+  Probar funciones, directivas, strings, comentarios y URL https:// sin cortar
+  contenido como comentario de línea. Fijar versiones de las dependencias de test.
 - `node scripts/generate-language-artifacts.js --check` cubre la gramática y la
   custom data.
 - `test/completion-context.test.js` (node --test, en el paquete de la extensión):
@@ -136,3 +148,25 @@ npm test
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-26 - vscode extension 0.1.0: valid generated grammar, context-aware completion, ci packaging`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

@@ -7,7 +7,7 @@
 | Prioridad · Tamaño | P0 · M |
 | Cierra | UX-06, UX-15, N-01 y la parte de UX-16 que corresponde al plugin (`$vars` responsive) |
 | Depende de | MIG-B6-13 (helper de ubicación y de sugerencias) |
-| Bloquea | MIG-B6-26 (la metadata de directivas queda estable) |
+| Bloquea | MIG-B6-12, MIG-B6-15, MIG-B6-26 |
 | Archivos | `packages/postcss-uxdsl/src/index.ts`, `preset-engine.ts`, `language.ts` |
 | Coordinación | Segundo en la secuencia de `index.ts` |
 
@@ -75,8 +75,8 @@ Salida actual:
 ## Implementación
 
 1. **Pasada final** en `index.ts`, después de procesar todas las directivas y antes
-   de `enforceReferences`. Cada at-rule cuyo nombre empiece con `ds` (incluye `ds-*`
-   y `ds`), o un `@theme` fuera de su contexto, lanza:
+   de `enforceReferences`. Cada at-rule del namespace reservado (`ds-*`
+   o exactamente `ds`), o un `@theme` fuera de su contexto, lanza:
    - `UXD_DIRECTIVE_UNKNOWN` si el nombre no es una directiva conocida. La lista sale
      de `LANGUAGE_COMPLETIONS.directives` (`language.ts:58`); no se copia. Incluye
      `did you mean @ds-surface?` con el helper de MIG-B6-13.
@@ -125,6 +125,18 @@ Salida actual:
 
 ## Pruebas
 
+- Regla dentro de @media/@supports de nivel superior con directiva hija directa
+  sigue válida; directiva dentro de at-rule anidado bajo esa regla da contexto
+  inválido. Distinguir ambas estructuras y documentarlas.
+- Strings, URLs, comentarios y custom properties con contenido literal no sufren
+  detección por regex sobre todo el CSS. Funciones CSS conocidas se consultan
+  antes de distancia; funciones custom con prefijo `--` no se confunden con bp.
+- `color()` con espacios nativos y color relativo permanece intacto; token válido
+  con alpha inválido sigue fallando. No convertir el passthrough en bypass del
+  validador de tokens. Variables se resuelven antes de responsive también solas.
+- Cada heurística de typo tiene control positivo CSS; este guard no pretende ser
+  un validador exhaustivo del lenguaje CSS.
+
 - `test/directives-leftover.test.js`: los cuatro casos de directivas, cada uno con
   código, ubicación y sugerencia cuando aplica.
 - `test/breakpoint-unknown.test.js`: `xxl(2rem)` falla con la lista `xs, sm, md, lg,
@@ -165,3 +177,25 @@ npm run verify:beta5
 ## Entrega
 
 `feat(FEAT-008): MIG-B6-14 - leftover directives and unknown breakpoints fail, native color() passes`
+
+## Registro de implementación y evidencia
+
+Estado de esta revisión documental: **Pendiente de implementación/verificación**
+(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
+criterios por intención ni confundir una reproducción histórica con prueba actual.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Pendiente |
+| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
+| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
+| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
+| Resultado después / control negativo | Pendiente |
+| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
+| README / CHANGELOG / migration | Paths y secciones: pendiente |
+| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
+| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+
+Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
+un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
