@@ -1,0 +1,4 @@
+$gap: xs(1rem) md(2rem);
+.a {
+  gap: $gap;
+}

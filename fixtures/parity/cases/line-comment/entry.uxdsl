@@ -1,0 +1,4 @@
+// a real line comment, stripped from output
+.a {
+  color: red;
+}
