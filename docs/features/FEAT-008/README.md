@@ -148,7 +148,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | --- | --- | --- | --- | --- | --- |
 | MIG-B6-01 | [Familias top-level reconocidas](MIG-B6-01-familias-top-level.md) | A — Diagnósticos veraces | P0 · S | — | Verificada localmente; commit/integración pendientes |
 | MIG-B6-02 | [Procedencia exacta de la validación de FEAT-002](MIG-B6-02-procedencia-feat-002.md) | G — Release | P0 · S (sólo documentación y un test documental) | — | Implementada/verificada en `feat/feat-008-beta6-plan` (`887622c`, `b00b84d`, `34c6daf`); integración a `main` pendiente |
-| MIG-B6-13 | [Errores y avisos con ubicación](MIG-B6-13-errores-con-ubicacion.md) | A — Diagnósticos veraces | P0 · M | — | En curso; revisión 2026-09-20 en ficha |
+| MIG-B6-13 | [Errores y avisos con ubicación](MIG-B6-13-errores-con-ubicacion.md) | A — Diagnósticos veraces | P0 · M | — | Implementada/verificada en `feat/feat-008-beta6-plan` (`afa571f`); dos gaps conocidos no bloqueantes en ficha (keyPath de Button/Input, 5 códigos UXD_PRESET_* sin confirmar); integración a `main` pendiente |
 | MIG-B6-14 | [Cero salidas silenciosas del lenguaje](MIG-B6-14-cero-salidas-silenciosas.md) | A — Diagnósticos veraces | P0 · M | 13 | Pendiente |
 | MIG-B6-15 | [Selectores funcionales y `!important` responsive](MIG-B6-15-selectores-e-important.md) | B — Tema base y salida correcta | P1 · S | 14 | Pendiente |
 | MIG-B6-22 | [Flags estrictos del CLI](MIG-B6-22-flags-estrictos.md) | D — CLI | P0 · S | 1 | Implementada/verificada en `feat/feat-008-beta6-plan` (`097ee88`, correcciones de revisión en `fd1f432`); integración a `main` pendiente |
