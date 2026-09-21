@@ -7,7 +7,7 @@ import DemoSpacing from './components/DemoSpacing.jsx';
 import DemoInputs from './components/DemoInputs.jsx';
 
 async function withRuntime(cb) {
-  const mod = await import('postcss-uxdsl/runtime');
+  const mod = await import('postcss-uxdsl/ds-runtime');
   return cb(mod);
 }
 
