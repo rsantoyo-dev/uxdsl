@@ -386,6 +386,38 @@ que ya era correcta — solo convierten una salida silenciosamente inválida en
 un error accionable. Revisá tu contenido `.uxdsl` si alguno de estos errores
 aparece al actualizar: probablemente ya estaba mal, solo que nadie lo veía.
 
+### Desde beta.6: un solo `compile()` compartido entre `uxdsl-cli` y `uxdsl-core` (MIG-B6-18)
+
+`uxdsl-cli` ya no arma su propio pipeline PostCSS in-line; ahora llama al
+`compile()` de `uxdsl-core`, el mismo que usará cualquier adaptador de
+bundler futuro (Vite/Webpack). `uxdsl-core` en sí mismo pasó de un inliner
+de `@import` basado en strings (que cortaba comentarios línea por línea,
+sin entender `url(...)` ni bloques `/* */`) a un pipeline real basado en
+`postcss-scss`/`postcss-import`/`postcss-advanced-variables`. Esto no
+cambia la sintaxis `.uxdsl` ni las opciones del CLI — cambia qué builds que
+antes compilaban en silencio ahora fallan, o qué salidas que antes se
+corrompían en silencio ahora salen intactas:
+
+- **Un `@import` inexistente ahora falla** con un error ubicado (archivo y
+  línea de origen, más `Failed to find '...' in [...]`), en vez de dejar la
+  línea `@import` sin resolver en la salida (CSS inválido, sin ningún
+  error).
+- **Un ciclo de `@import` real (`a.uxdsl` → `b.uxdsl` → `a.uxdsl`) ahora
+  falla siempre**, nombrando la cadena completa de archivos, en vez de
+  duplicar el contenido una vez en silencio.
+- **Un `url(...)` sin comillas que contiene `//`** (por ejemplo
+  `background: url(https://ejemplo.com/a.png);`) y **un comentario de
+  bloque `/* ... */` que contiene una URL** ya no se corrompen: el inliner
+  anterior cortaba todo lo que seguía a un `//` en cada línea, sin entender
+  que estaba dentro de un `url()` o de un comentario de bloque.
+- Un comentario `//` real (fuera de cualquier `url()`) se sigue eliminando
+  de la salida, como lo haría un compilador Sass real.
+
+`processUxdsl(source, options)` de `uxdsl-core` conserva su firma y su
+`Promise<string>`; `compile(input, config)` es una exportación nueva. Ver
+[`uxdsl-core`'s README](../../uxdsl-core/README.md#compile-input-config)
+para su contrato completo.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

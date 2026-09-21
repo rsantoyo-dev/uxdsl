@@ -4,10 +4,6 @@ const fs = require('fs');
 const path = require('path');
 const minimist = require('minimist');
 const chokidar = require('chokidar');
-const postcss = require('postcss');
-const postcssImport = require('postcss-import');
-const postcssAdvancedVariables = require('postcss-advanced-variables');
-const postcssScss = require('postcss-scss');
 const { createRequire } = require('module');
 
 // Project's own postcss-uxdsl install first (so `theme`'s introspection and
@@ -58,8 +54,24 @@ function loadUxDslRuntime() {
   return resolveUxDslModule('postcss-uxdsl/ds-runtime', { warnLabel: 'postcss-uxdsl/ds-runtime' });
 }
 
+// MIG-B6-18 (FEAT-008): the CLI's own build pipeline (postcss-scss syntax,
+// postcss-import, postcss-advanced-variables, postcss-uxdsl) is retired in
+// favor of uxdsl-core's compile() — the exact same pipeline, now shared
+// with any other adapter (Vite/Webpack, MIG-B6-20) instead of drifting
+// independently. Same project-first resolution order as postcss-uxdsl
+// itself, for the same reason: a project's own uxdsl-core install (or the
+// version this CLI release pins) must be the one actually compiling.
+function loadUxDslCore() {
+  const core = resolveUxDslModule('uxdsl-core', { warnLabel: 'uxdsl-core' });
+  if (!core || typeof core.compile !== 'function') {
+    throw new Error('uxdsl-core package (with a compile() export) not found. Install it in your project or alongside the CLI.');
+  }
+  return core;
+}
+
 const uxdslPlugin = loadUxDslPlugin();
 const uxdslRuntime = loadUxDslRuntime() || {};
+const uxdslCore = loadUxDslCore();
 
 const FALLBACK_BREAKPOINTS = {
   xs: 0,
@@ -135,20 +147,6 @@ const THEME_CANDIDATES = [
 
 const DEFAULT_ENTRY_REL = path.join('src', 'uxdsl-entry.uxdsl');
 const DEFAULT_OUT_REL = path.join('src', 'uxdsl.css');
-
-function createImportResolver(config) {
-  const entryDir = path.dirname(config.entry);
-  return (id, basedir) => {
-    const request = id.startsWith('~') ? id.slice(1) : id;
-    try {
-      return require.resolve(request, {
-        paths: [basedir, entryDir, process.cwd()],
-      });
-    } catch (_) {
-      return path.resolve(basedir, request);
-    }
-  };
-}
 
 function printHelp() {
   console.log(`Usage: uxdsl <command> [options]
@@ -828,39 +826,23 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // exactly what includeTheme: false means.
   if (sharedConfig.theme && includeTheme) console.log('[uxdsl] Theme config detected');
 
-  const source = fs.readFileSync(entryConfig.entry, 'utf8');
-  const resolveImport = createImportResolver(entryConfig);
-  const result = await postcss([
-    postcssImport({ resolve: resolveImport }),
-    postcssAdvancedVariables(),
-    uxdslPlugin({
+  // MIG-B6-18 (FEAT-008): delegates to uxdsl-core's compile() — the exact
+  // pipeline this function used to run inline (postcss-scss syntax,
+  // postcss-import with the shared resolver, postcss-advanced-variables,
+  // postcss-uxdsl), plus the breakpoint metadata this function used to
+  // append itself, both moved into core so every compile() caller gets
+  // them identically instead of the CLI having its own copy that could
+  // drift from core's (the exact bug this story closes).
+  const { css: finalCss } = await uxdslCore.compile(
+    { entry: entryConfig.entry },
+    {
       breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
       theme: sharedConfig.theme,
       references: sharedConfig.references,
       includeTheme,
-    }),
-  ]).process(source, {
-    from: entryConfig.entry,
-    to: entryConfig.outFile,
-    syntax: postcssScss,
-  });
-
-  // Breakpoint metadata is global-theme information (consumed by the
-  // runtime to detect the active breakpoint from the CSSOM) — it belongs
-  // to the entry that defines the theme, not to every component entry
-  // compiled against it. Forwarding `includeTheme: false` naively without
-  // this guard would trade one duplication (global `:root`, fixed by
-  // includeTheme itself) for another: a `#uxdsl-bp-meta` marker per
-  // component entry.
-  let finalCss = result.css;
-  if (includeTheme) {
-    const bpMap = normalizeBpMap(sharedConfig.breakpoints || DEFAULT_BREAKPOINTS);
-    const bpJson = JSON.stringify(bpMap);
-    const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
-    // Also inject a marker rule for CSSOM detection
-    const bpMarker = `#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
-    finalCss = finalCss + '\n' + bpMeta + '\n' + bpMarker;
-  }
+      to: entryConfig.outFile,
+    }
+  );
 
   return { outFile: entryConfig.outFile, finalCss };
 }

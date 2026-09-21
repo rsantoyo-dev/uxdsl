@@ -19,6 +19,15 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 - **Performance**: Run your CSS compilation in a separate process or during a build step, keeping your main bundler fast.
 - **Watch Mode**: Includes a robust file watcher that recompiles your styles instantly as you edit your `.uxdsl` files.
 
+The CLI's `@import`/`$var`/theme compilation pipeline is the shared
+[`compile()`](../uxdsl-core#compile-input-config) from `uxdsl-core` — the
+same pipeline any future Vite/Webpack adapter will use, so behavior can't
+silently drift between them. Two related, user-visible fixes came with
+that: a missing `@import` now always fails with a located error instead of
+silently passing the `@import` line through untouched, and an import cycle
+(`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) now always fails naming
+the file chain instead of silently duplicating content once.
+
 ---
 
 ## Installation

@@ -174,12 +174,12 @@ los caminos.
 
 ## Criterios de aceptación
 
-- [ ] Las dos reproducciones dan CSS correcto y error, respectivamente.
-- [ ] La suite de paridad pasa para CLI y core.
-- [ ] `processUxdsl()` mantiene su firma y tipo de retorno.
-- [ ] No quedan `stripLineComments`, inline por strings ni implementación de respaldo
+- [x] Las dos reproducciones dan CSS correcto y error, respectivamente.
+- [x] La suite de paridad pasa para CLI y core.
+- [x] `processUxdsl()` mantiene su firma y tipo de retorno.
+- [x] No quedan `stripLineComments`, inline por strings ni implementación de respaldo
       en `uxdsl-core`.
-- [ ] El CLI no tiene un pipeline propio.
+- [x] El CLI no tiene un pipeline propio.
 
 ## Verificación
 
@@ -202,22 +202,20 @@ Dos commits:
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada en
+`feat/feat-008-beta6-plan`** (integración a `main` pendiente).
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `cb1cbd4` (2026-09-21). Entrega: commit siguiente en `feat/feat-008-beta6-plan` (dos commits, ver "Entrega" arriba); PR pendiente de abrir |
+| Reproducción antes del cambio | Script exacto de la sección "Reproducción" ejecutado sobre `cb1cbd4`: `url()`/comentario con `//` corrompidos (`.a { background: url(https:` cortado a mitad, `/* docs: https:` idem); `@import` inexistente compilaba sin error (`sin error: @import "./missing-partial.uxdsl";`); `$gap` responsive sin expandir. 2026-09-21 |
+| Criterio → regresión | "CSS correcto y error" → `packages/uxdsl-core/test/compile.test.js` (tests `unquoted url()`, `block comment`, `nonexistent import`, `real import cycle`) + `fixtures/parity/` (`url-unquoted`, `comment-with-url`, `missing-import`, `import-cycle`). "Suite de paridad" → `fixtures/parity/run.js` (8 casos, oráculo en `fixtures/parity/expected/`). "`processUxdsl()` firma" → `compile.test.js`: "processUxdsl(source, options) keeps returning a Promise<string>". "Sin stripLineComments/inline por strings/respaldo" → verificado por lectura de `packages/uxdsl-core/src/index.ts` (reescrito completo) y `npm pack --dry-run` (sin `index.js` de respaldo en el tarball). "CLI sin pipeline propio" → `packages/uxdsl-cli/test/plugin-option-parity.test.js` (test `MIG-B6-18`, guarda estructural de que `uxdsl.js` reenvía a `uxdslCore.compile(...)`, no a un `postcss([...])` propio) |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, desde el root del monorepo: `npm run test:parity` (exit 0, 8/8), `npm --prefix packages/uxdsl-core test` (exit 0, 18/18), `npm --prefix packages/uxdsl-cli test` (exit 0, 132/132), `npm --prefix packages/postcss-uxdsl test` (exit 0, 227/227), `npm run verify:consumer-fixture` (PASS), `npm run verify:beta2` (PASS), `npm run verify:beta3` (PASS), `npm run verify:beta4` (PASS), `npm run verify:beta5` (PASS), `npm test` (exit 0, todas las suites en verde incluyendo `test:parity` ahora en la cadena), `npm --prefix packages/playground-nextjs run uxdsl:build` (OK) y `npx next build` en `packages/playground-nextjs` (build de producción completo, OK) |
+| Resultado después / control negativo | Los tres casos de "Reproducción" ahora dan el resultado correcto (ver comando repetido arriba): `url()`/comentario intactos, `@import` inexistente falla con `Failed to find './missing-partial.uxdsl'` ubicado, `$gap` se expande a `gap: 1rem;` + `@media (min-width: 768px)`. Control negativo: CSS nativo sin funciones UXDSL compila sin cambios (`compile.test.js`, "positive control"); un import bare a un paquete real (`postcss-uxdsl/theme/default-colors.css`) sigue resolviendo (regresión real encontrada y corregida durante esta story — ver "Límites" abajo) |
+| Cambios visuales o API / migración | API aditiva: `compile(input, config)` nuevo, exportado como `module.exports.compile`. `processUxdsl(source, options)` sin cambio de firma/retorno (D3 de FEAT-007). Cambio de comportamiento (no de API): un `@import` inexistente y un ciclo de imports ahora fallan en vez de compilar en silencio con salida incorrecta — documentado en migration.md |
+| README / CHANGELOG / migration | `packages/uxdsl-core/README.md` (sección `compile(input, config?)` + nota en "Demo update notes"); `packages/uxdsl-cli/README.md` (nota sobre el pipeline compartido y los dos cambios de comportamiento visibles); `packages/postcss-uxdsl/docs/migration.md` (sección "Desde beta.6: un solo `compile()` compartido..."); no existe `CHANGELOG.md` propio en `uxdsl-core` ni `uxdsl-cli` — ambos paquetes documentan cambios en su propio README, siguiendo el patrón ya establecido en `uxdsl-core/README.md` ("Demo update notes") |
+| AGENTS / guías / arquitectura | No aplica: este cambio es interno al pipeline de compilación (`uxdsl-core`/`uxdsl-cli`), no toca ninguna primitiva de diseño (`spacing`, `palette`, `surfaces`, etc.) ni el contrato documentado en `AGENTS.md` de este repo, que describe el motor unificado de forma agnóstica a cuál paquete corre el pipeline |
+| Límites y seguimiento | (1) `uxdsl-core@0.5.0-beta.5` también está publicado en npm real, así que un `npm install --prefix packages/uxdsl-cli` en blanco lo resolvía desde el registro, pisando el enlace local — se detectó exactamente así al correr `npm --prefix packages/playground-nextjs run build` (su script `local-deps` reinstala `uxdsl-cli`). Corregido en este mismo cambio: `npm install ../uxdsl-core` dentro de `uxdsl-cli` (mismo mecanismo que ya traía `postcss-uxdsl`) hace que npm registre `"resolved": "../uxdsl-core", "link": true` en `package-lock.json`; se revirtió a mano la versión exacta (`0.5.0-beta.5`, no `file:../uxdsl-core`) en `package.json` y en el lockfile para mantener el estilo de dependencia coordinada por versión. Verificado con `npm install` repetido y con el flujo real de `playground-nextjs` (`local-deps` + `uxdsl:build` + `next build`): el symlink ya sobrevive. (2) `fixtures/parity/` compara el CLI (subproceso real) contra `compile()` (en proceso) para 8 casos representativos, no un corpus exhaustivo — cubre los bugs de esta story y de MIG-B6-14/15/17/29, no cada combinación de `@import`/condición documentada en "Pruebas" (p. ej. `@media`/`@supports`/`@layer` con duplicados en condiciones distintas está cubierto en `compile.test.js`, no en `fixtures/parity/`). (3) No se migró la resolución de imports condicionados (`media`/`supports`/`layer`) a un caso de paridad dedicado — cubierta sólo por el test unitario de `uxdsl-core`. (4) `sourceMap` sigue sin implementar (declarado, rechaza cualquier valor salvo `false`) — la implementación real es MIG-B6-21, fuera de alcance |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
