@@ -811,7 +811,7 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // append itself, both moved into core so every compile() caller gets
   // them identically instead of the CLI having its own copy that could
   // drift from core's (the exact bug this story closes).
-  const { css: finalCss } = await uxdslCore.compile(
+  const { css: finalCss, dependencies } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
       breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
@@ -822,7 +822,10 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
     }
   );
 
-  return { outFile: entryConfig.outFile, finalCss };
+  // MIG-B6-23 (FEAT-008): `dependencies` (entry first, every transitively
+  // @import-ed file) lets watch mode rebuild only the entries a changed
+  // file actually affects, instead of every entry on every change.
+  return { outFile: entryConfig.outFile, finalCss, dependencies };
 }
 
 // MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
@@ -866,6 +869,76 @@ function formatCliDiagnostic(message) {
   return String(message).split('\n').map(line => line.split(cwdPrefix).join('')).join('\n');
 }
 
+// MIG-B6-23 (FEAT-008): writes only what actually changed, and does so
+// atomically per file. Reads the existing file first — identical content
+// means no write at all, so an unaffected entry keeps its mtime/inode
+// (previously every rebuild rewrote every entry unconditionally, so a dev
+// server watching the output directory reloaded stylesheets nothing
+// changed in). A real write goes to a freshly, exclusively created temp
+// file in the *same* directory (`flag: 'wx'` — fails instead of silently
+// reusing a stale leftover; a name derived only from pid isn't unique
+// enough across two rapid rebuilds) and is committed with `renameSync`,
+// atomic on any filesystem where source and destination share a volume —
+// true here since both live in the same directory. Returns 'unchanged' or
+// 'written' so the caller can log accordingly.
+function commitFileIfChanged(outFile, content) {
+  let existing = null;
+  try {
+    existing = fs.readFileSync(outFile, 'utf8');
+  } catch (_) {
+    existing = null; // Doesn't exist yet — falls through to a real write.
+  }
+  if (existing === content) return 'unchanged';
+  fs.mkdirSync(path.dirname(outFile), { recursive: true });
+  const tmpFile = path.join(
+    path.dirname(outFile),
+    `.${path.basename(outFile)}.${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.tmp`
+  );
+  fs.writeFileSync(tmpFile, content, { encoding: 'utf8', flag: 'wx' });
+  try {
+    fs.renameSync(tmpFile, outFile);
+  } catch (err) {
+    try { fs.unlinkSync(tmpFile); } catch (_) { /* best effort cleanup */ }
+    throw err;
+  }
+  return 'written';
+}
+
+// Commits every already-compiled output (each entry was compiled to CSS in
+// memory before this runs — a failure partway through *compiling* never
+// reaches here at all, so it can't leave some outputs written and others
+// stale). A failure *committing* (the rename itself) is different: this
+// entry and every earlier one in `compiled` already touched disk, so this
+// rolls those back to what was on disk before this call started, and
+// reports (rather than hides) a rollback that itself fails. This is
+// per-file atomicity composed across files, not one filesystem
+// transaction — a reader could still observe a mix of old/new content
+// while a rollback is in progress.
+function commitCompiled(compiled) {
+  const previousContent = compiled.map(({ outFile }) => {
+    try { return fs.readFileSync(outFile, 'utf8'); } catch (_) { return undefined; }
+  });
+  const statuses = [];
+  try {
+    for (const { outFile, finalCss } of compiled) {
+      statuses.push(commitFileIfChanged(outFile, finalCss));
+    }
+  } catch (commitErr) {
+    for (let i = 0; i < statuses.length; i++) {
+      if (statuses[i] !== 'written') continue; // 'unchanged' never touched disk — nothing to roll back.
+      const { outFile } = compiled[i];
+      try {
+        if (previousContent[i] === undefined) fs.unlinkSync(outFile);
+        else fs.writeFileSync(outFile, previousContent[i], 'utf8');
+      } catch (rollbackErr) {
+        commitErr.message += `\n[uxdsl] additionally failed to restore the previous ${path.relative(process.cwd(), outFile)}: ${rollbackErr.message}`;
+      }
+    }
+    throw commitErr;
+  }
+  return statuses;
+}
+
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
 // includeTheme }) compiles several entries against the one shared theme/
 // references/breakpoints in a single `uxdsl build`/`watch` invocation,
@@ -873,7 +946,16 @@ function formatCliDiagnostic(message) {
 // (config.builds absent) take the exact same path they always did —
 // entries becomes a one-element array built from config.entry/outFile/
 // includeTheme, so this refactor changes nothing observable for them.
-async function buildOnce(config) {
+//
+// MIG-B6-23 (FEAT-008): `entryIndices` (optional) compiles/commits only
+// those entries — used by watch mode's dependency-graph-based selective
+// rebuild — instead of always every entry. Omitted (every existing call
+// site: `build`, `build --watch`'s and `watch`'s own initial build)
+// behaves exactly as before. Returns each compiled entry's own
+// `dependencies` (from compile(), MIG-B6-18) so a caller can build/update
+// that graph; entries not included in `entryIndices` are left completely
+// untouched — not recompiled, not rewritten, not part of the return value.
+async function buildOnce(config, entryIndices) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
   // ended up partially filled from DEFAULT_THEME — the same question
@@ -917,11 +999,12 @@ async function buildOnce(config) {
     ? config.builds
     : [{ entry: config && config.entry, outFile: config && config.outFile, includeTheme: config && config.includeTheme }];
   const multi = entries.length > 1;
+  const indices = entryIndices || entries.map((_, i) => i);
 
   const compiled = [];
-  for (let i = 0; i < entries.length; i++) {
+  for (const i of indices) {
     try {
-      compiled.push(await compileEntryToCss(entries[i], config || {}));
+      compiled.push({ index: i, ...(await compileEntryToCss(entries[i], config || {})) });
     } catch (err) {
       annotateThemeError(err, config || {});
       if (multi) {
@@ -936,13 +1019,18 @@ async function buildOnce(config) {
 
   // Every entry is compiled before anything is written — item 4: a failure
   // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
-  for (const { outFile, finalCss } of compiled) {
-    fs.mkdirSync(path.dirname(outFile), { recursive: true });
-    fs.writeFileSync(outFile, finalCss, 'utf8');
-    console.log(
-      `[uxdsl] built ${path.relative(process.cwd(), outFile)} (${finalCss.length} bytes)`
-    );
+  const statuses = commitCompiled(compiled);
+  for (let k = 0; k < compiled.length; k++) {
+    const { outFile, finalCss } = compiled[k];
+    const rel = path.relative(process.cwd(), outFile);
+    if (statuses[k] === 'written') {
+      console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)`);
+    } else {
+      console.log(`[uxdsl] unchanged ${rel}`);
+    }
   }
+
+  return compiled.map(({ index, outFile, dependencies }) => ({ index, outFile, dependencies }));
 }
 
 // --- Command: Theme introspection (MIG-B3-04, FEAT-004) ---
@@ -1088,51 +1176,178 @@ function isOwnOutputFile(config, filePath) {
   return false;
 }
 
+// MIG-B6-23 (FEAT-008): the candidates a `watch`/`build --watch` falls
+// back to watching when it has never had a working config to read a real
+// `watch` list from — a broken/missing `uxdsl.config.cjs` at startup, or
+// an explicit `--config`/`--entry` that doesn't exist yet. Once any of
+// these changes, `runFullBuild` retries `loadConfig` and, on success,
+// switches to the real config's own watch list the same way a later
+// config edit already does.
+function bootstrapWatchTargets(argv, cwd) {
+  const targets = new Set();
+  for (const c of CONFIG_CANDIDATES) targets.add(path.resolve(cwd, c));
+  for (const c of THEME_CANDIDATES) targets.add(path.resolve(cwd, c));
+  const explicitConfig = argv.config || argv.c;
+  if (explicitConfig) targets.add(resolvePath(explicitConfig, cwd));
+  const explicitEntry = argv.entry || argv.e;
+  if (explicitEntry) targets.add(resolvePath(explicitEntry, cwd));
+  return [...targets];
+}
+
+// `initialConfig` may be `null` — the caller's own initial `loadConfig`/
+// `buildOnce` already failed and was logged; this starts in "bootstrap"
+// mode (watching config/theme candidates only) instead of never reaching
+// watch mode at all (MIG-B6-23 item 1).
 function startWatch(initialConfig, argv, cwd, builder) {
   let config = initialConfig;
-  let watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+  // Entry index -> Set<absolute dependency path>, from each entry's own
+  // `compile()` result (MIG-B6-18). Populated after every successful full
+  // build; a selective build only updates the indices it actually
+  // recompiled, leaving every other entry's last-known set alone. A failed
+  // build (full or selective) never touches this — the last valid graph is
+  // what a subsequent change is still checked against (item 3).
+  let dependencyGraph = new Map();
+  let watcher = chokidar.watch(config ? config.watch : bootstrapWatchTargets(argv, cwd), { ignoreInitial: true });
   console.log('[uxdsl] watching for changes...');
   let building = false;
-  let queued = false;
+  // 'full' once any queued change requires one; otherwise a Set of the
+  // specific changed files queued for a selective follow-up batch. No
+  // build already committed is ever overwritten by a stale one: a change
+  // arriving mid-build is queued, never dropped, and always evaluated
+  // against the *current* config/graph once its turn comes.
+  let queued = null;
 
-  const trigger = async () => {
+  function configRelatedPaths() {
+    const paths = new Set();
+    if (!config) return paths; // Bootstrap mode — see isRelevantChange below.
+    if (config.configPath) {
+      paths.add(path.resolve(config.configPath));
+      for (const id of collectLocalRequireTree(config.configPath)) paths.add(id);
+    }
+    if (config.themeConfigPath) {
+      paths.add(path.resolve(config.themeConfigPath));
+      for (const id of collectLocalRequireTree(config.themeConfigPath)) paths.add(id);
+    }
+    return paths;
+  }
+
+  function entriesAffectedBy(resolvedFile) {
+    const indices = [];
+    for (const [index, deps] of dependencyGraph) {
+      if (deps.has(resolvedFile)) indices.push(index);
+    }
+    return indices;
+  }
+
+  async function runFullBuild() {
+    // The changed file could be uxdsl.config.cjs or the theme file
+    // itself — reload both from disk (past their require() cache)
+    // before building, instead of reusing whatever was resolved when
+    // watch mode started or after the previous change.
+    clearRequireCache(config && config.configPath);
+    clearRequireCache(config && config.themeConfigPath);
+    let reloaded;
+    try {
+      reloaded = await loadConfig(argv, cwd);
+    } catch (err) {
+      // MIG-B6-23 item 1: a broken config must not end the process — log
+      // and keep watching (the bootstrap/previous watcher is untouched).
+      console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)} — watching for a fix...`);
+      return;
+    }
+    if (!reloaded) {
+      if (!config) console.error('[uxdsl] No configuration found — watching for one to appear...');
+      return;
+    }
+    const previousWatch = (config ? config.watch : bootstrapWatchTargets(argv, cwd)).slice().sort();
+    const nextWatch = [...reloaded.watch].sort();
+    config = reloaded;
+    if (JSON.stringify(previousWatch) !== JSON.stringify(nextWatch)) {
+      // Recreate to handle overlapping globs without unwatch() leaving
+      // exclusions behind. Keep config errors recoverable on the old watcher.
+      await watcher.close();
+      watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+      watcher.on('all', onChange);
+      await new Promise((resolve, reject) => {
+        watcher.once('ready', resolve);
+        watcher.once('error', reject);
+      });
+    }
+    try {
+      const results = await builder(config);
+      dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
+    } catch (err) {
+      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
+      // Keep the previous dependencyGraph (item 3): a failed rebuild
+      // doesn't invalidate what the last successful one already knew.
+    }
+  }
+
+  async function runSelectiveBuild(indices) {
+    try {
+      const results = await builder(config, indices);
+      for (const { index, dependencies } of results) {
+        dependencyGraph.set(index, new Set(dependencies));
+      }
+    } catch (err) {
+      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
+    }
+  }
+
+  // Decides full vs. selective for one changed file, without yet running
+  // anything — shared between a fresh event and a queued-batch replay.
+  function classify(resolvedFile) {
+    if (!config || configRelatedPaths().has(resolvedFile)) return { full: true };
+    const indices = entriesAffectedBy(resolvedFile);
+    // Not found in any entry's known dependency set — either a graph we
+    // never had (first run failed before compiling anything) or a file
+    // outside every entry's *previous* import graph, e.g. a previously
+    // missing partial just created. Rebuilding everything is the safe
+    // fallback (item 3's "recuperar el build"), not silently doing nothing.
+    if (indices.length === 0) return { full: true };
+    return { full: false, indices };
+  }
+
+  const trigger = async (resolvedFile) => {
     if (building) {
-      queued = true;
+      if (queued !== 'full') {
+        if (resolvedFile === undefined || classify(resolvedFile).full) {
+          queued = 'full';
+        } else {
+          queued = queued instanceof Set ? queued : new Set();
+          queued.add(resolvedFile);
+        }
+      }
       return;
     }
     building = true;
     try {
-      // The changed file could be uxdsl.config.cjs or the theme file
-      // itself — reload both from disk (past their require() cache)
-      // before building, instead of reusing whatever was resolved when
-      // watch mode started or after the previous change.
-      clearRequireCache(config.configPath);
-      clearRequireCache(config.themeConfigPath);
-      const reloaded = await loadConfig(argv, cwd);
-      if (reloaded) {
-        const previous = [...config.watch].sort();
-        const next = [...reloaded.watch].sort();
-        config = reloaded;
-        if (JSON.stringify(previous) !== JSON.stringify(next)) {
-          // Recreate to handle overlapping globs without unwatch() leaving
-          // exclusions behind. Keep config errors recoverable on the old watcher.
-          await watcher.close();
-          watcher = chokidar.watch(config.watch, { ignoreInitial: true });
-          watcher.on('all', onChange);
-          await new Promise((resolve, reject) => {
-            watcher.once('ready', resolve);
-            watcher.once('error', reject);
-          });
-        }
+      if (resolvedFile === undefined) {
+        await runFullBuild();
+      } else {
+        const decision = classify(resolvedFile);
+        if (decision.full) await runFullBuild();
+        else await runSelectiveBuild(decision.indices);
       }
-      await builder(config);
-    } catch (err) {
-      console.error('[uxdsl] build failed:', err.message);
     } finally {
       building = false;
-      if (queued) {
-        queued = false;
+      const next = queued;
+      queued = null;
+      if (next === 'full') {
         trigger();
+      } else if (next instanceof Set && next.size > 0) {
+        // One combined pass for everything that arrived mid-build, not one
+        // trigger() per file — a config-related file among them still
+        // forces the whole batch to a full rebuild.
+        const indices = new Set();
+        let full = false;
+        for (const f of next) {
+          const decision = classify(f);
+          if (decision.full) { full = true; break; }
+          for (const i of decision.indices) indices.add(i);
+        }
+        if (full) trigger();
+        else runSelectiveBuild([...indices]).finally(() => { /* not building's own promise chain; fire and forget is fine, errors are already logged inside */ });
       }
     }
   };
@@ -1150,12 +1365,12 @@ function startWatch(initialConfig, argv, cwd, builder) {
     // would keep excluding the *original* outFile forever and never learn
     // about a new one after a config change moved it. MIG-B3-02: a `builds`
     // config has no single `config.outFile` — check every entry's outFile.
-    if (filePath && isOwnOutputFile(config, filePath)) {
+    if (filePath && config && isOwnOutputFile(config, filePath)) {
       return;
     }
     const rel = path.relative(process.cwd(), filePath);
     console.log(`[uxdsl] ${event} ${rel}`);
-    trigger();
+    trigger(filePath ? path.resolve(filePath) : undefined);
   }
   watcher.on('all', onChange);
 }
@@ -1500,6 +1715,36 @@ function parseCommandArgv(rawArgs) {
   return { cmd, argv };
 }
 
+// MIG-B6-23 (FEAT-008): the initial load+build a watch session starts
+// from. Any failure here is fatal for a one-shot `build` (`watching:
+// false` — unchanged: the error propagates to main()'s own outer
+// try/catch, which exits 1). For `watch`/`build --watch`, the same
+// failure is logged and this returns whatever it has (a real config, or
+// `null`) instead of ending the process before a single file is even
+// watched — `startWatch` accepts `null` and falls back to watching
+// config/theme candidates until one loads successfully.
+async function loadAndBuildForWatch(argv, watching) {
+  let config = null;
+  try {
+    config = await loadConfig(argv);
+  } catch (err) {
+    if (!watching) throw err;
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)} — watching for a fix...`);
+    return null;
+  }
+  if (!config) {
+    if (watching) console.error('[uxdsl] No configuration found — watching for one to appear...');
+    return config;
+  }
+  try {
+    await buildOnce(config);
+  } catch (err) {
+    if (!watching) throw err;
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+  }
+  return config;
+}
+
 async function main() {
   let cmd, argv;
   try {
@@ -1525,23 +1770,21 @@ async function main() {
       case 'build':
       case undefined: // Default to build if no command but args present
         {
-          const config = await loadConfig(argv);
-          if (!config) {
-             // No config and no command -> Print help
-             printHelp();
-             process.exit(0);
+          const watching = !!argv.watch;
+          const config = await loadAndBuildForWatch(argv, watching);
+          if (!config && !watching) {
+            // No config and no command -> Print help
+            printHelp();
+            process.exit(0);
           }
-          await buildOnce(config);
-          if (argv.watch) {
+          if (watching) {
             startWatch(config, argv, process.cwd(), buildOnce);
           }
         }
         break;
       case 'watch':
         {
-          const config = await loadConfig(argv);
-          if (!config) throw new Error('No configuration found for watch.');
-          await buildOnce(config);
+          const config = await loadAndBuildForWatch(argv, true);
           startWatch(config, argv, process.cwd(), buildOnce);
         }
         break;
@@ -1602,4 +1845,8 @@ module.exports = {
   init,
   generateEntry,
   main,
+  commitFileIfChanged,
+  commitCompiled,
+  bootstrapWatchTargets,
+  loadAndBuildForWatch,
 };

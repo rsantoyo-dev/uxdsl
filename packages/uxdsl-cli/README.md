@@ -291,6 +291,30 @@ editing one of them alone (without touching the file that requires it)
 triggers a rebuild. `node_modules` dependencies are excluded, since they
 don't change between rebuilds.
 
+**Watch survives errors** (MIG-B6-23, FEAT-008): an initial build that fails
+to compile, or a config/theme file that fails to load at all (a syntax
+error, for instance), no longer ends the process — the error prints and
+`watch` keeps running, watching `uxdsl.config.cjs`/`uxdsl.theme.config.*`'s
+usual candidate names (plus any explicit `--config`/`--entry`) until one
+loads successfully. A plain `uxdsl build` (no `--watch`) is unaffected —
+it still exits non-zero on any failure, same as always.
+
+**Selective rebuilds:** editing a source file only recompiles the
+`builds[]` entries that actually depend on it (tracked via each entry's own
+`compile()` dependency list) — not every entry on every change. Editing
+`uxdsl.config.cjs`, the theme file, or anything either of them `require()`s
+still rebuilds everything, since those are shared across every entry. A
+file watch mode doesn't yet know about (e.g. a previously-missing `@import`
+target just created) also rebuilds everything, as the safe fallback.
+
+**Writes only what changed, atomically:** an entry whose compiled output is
+byte-identical to what's already on disk is left completely alone — same
+mtime, same inode — instead of being rewritten every rebuild (previously
+every entry was rewritten unconditionally, so a dev server watching the
+output directory reloaded stylesheets nothing had actually changed in). A
+real write goes to a temp file in the same directory first, then an atomic
+rename — a reader can never observe a truncated or empty output file mid-write.
+
 ### 5. CLI Arguments (No Config)
 
 You can also skip the config file and pass paths directly via command line arguments:

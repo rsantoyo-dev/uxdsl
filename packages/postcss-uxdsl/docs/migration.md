@@ -491,6 +491,36 @@ fallaba antes de esta story, aunque sí fallaba correctamente vía `{ entry }`
 desde MIG-B6-18 — corregido en el mismo cambio, para los cuatro caminos por
 igual.
 
+### Desde beta.6: `uxdsl watch` sobrevive errores, escribe sólo lo que cambió, y recompila selectivamente (MIG-B6-23)
+
+Antes, un error de compilación inicial (o un `uxdsl.config.cjs`/tema roto
+al arrancar) terminaba el proceso — con `concurrently
+--kill-others-on-fail`, eso además tumbaba el `next dev`/`vite`/etc. que
+corría en paralelo. Ahora `uxdsl watch` (y `uxdsl build --watch`) imprime
+el error y sigue vigilando: un config roto se recupera solo al corregirlo,
+sin reiniciar el proceso. `uxdsl build` sin `--watch` no cambia — sigue
+saliendo con código 1 ante cualquier error, como siempre.
+
+Cada rebuild ahora también:
+
+- **Escribe sólo lo que cambió, atómicamente.** Una entrada cuya salida
+  compilada es idéntica byte a byte a la que ya está en disco no se
+  reescribe — mismo mtime, mismo inode — en vez de reescribirse siempre.
+  Si tenías un flujo que dependía de que el archivo *siempre* se
+  reescribiera (por ejemplo, para forzar un reload en una herramienta que
+  no mira el contenido), ese comportamiento cambió a propósito: es
+  exactamente lo que evita que un HMR externo recargue hojas de estilo que
+  no cambiaron.
+- **Recompila sólo las entradas afectadas** en un `builds` con más de una
+  entrada — editar un parcial que sólo importa la entrada B ya no
+  recompila (ni reescribe) la entrada A. Editar el config, el tema, o
+  cualquier `require()` de cualquiera de los dos sigue recompilando todo,
+  como corresponde a algo compartido entre entradas.
+
+Ninguno de los dos cambios altera qué CSS final produce una entrada dada —
+sólo cuándo y con qué frecuencia se escribe a disco, y cuáles otras
+entradas un cambio dispara.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

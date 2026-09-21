@@ -1205,3 +1205,121 @@ test('MIG-B5-02: a real buildOnce surfaces the warning for an unknown theme fami
   assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyC"/.test(m)), JSON.stringify(messages));
   assert.ok(fs.existsSync(config.outFile), 'an unknown-family warning must not block the build');
 });
+
+// MIG-B6-23 (FEAT-008): fast, direct unit coverage of the atomic
+// commit helpers — the slow, real-chokidar end-to-end scenarios live in
+// watch-mode.test.js instead.
+
+test('MIG-B6-23: commitFileIfChanged writes a new file and reports "written"', () => {
+  const dir = mkTmpDir();
+  const outFile = path.join(dir, 'out.css');
+  const status = cli.commitFileIfChanged(outFile, '.a { color: red; }');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a { color: red; }');
+});
+
+test('MIG-B6-23: commitFileIfChanged reports "unchanged" and does not touch mtime/inode for identical content', () => {
+  const dir = mkTmpDir();
+  const outFile = write(dir, 'out.css', '.a { color: red; }');
+  const before = fs.statSync(outFile);
+  const status = cli.commitFileIfChanged(outFile, '.a { color: red; }');
+  const after = fs.statSync(outFile);
+  assert.equal(status, 'unchanged');
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(after.ino, before.ino);
+});
+
+test('MIG-B6-23: commitFileIfChanged replaces different content atomically (rename, not in-place truncation) and leaves no temp file behind', () => {
+  const dir = mkTmpDir();
+  const outFile = write(dir, 'out.css', '.a { color: red; }');
+  const status = cli.commitFileIfChanged(outFile, '.a { color: blue; }');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a { color: blue; }');
+  const leftovers = fs.readdirSync(dir).filter((f) => f.includes('.tmp'));
+  assert.deepEqual(leftovers, [], 'no temp file should remain after a successful commit');
+});
+
+test('MIG-B6-23: commitFileIfChanged creates the output directory if missing', () => {
+  const dir = mkTmpDir();
+  const outFile = path.join(dir, 'nested', 'deep', 'out.css');
+  const status = cli.commitFileIfChanged(outFile, '.a {}');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a {}');
+});
+
+test('MIG-B6-23: commitCompiled writes only the entries whose content actually changed', () => {
+  const dir = mkTmpDir();
+  const aFile = write(dir, 'a.css', '.a { color: red; }');
+  const bFile = write(dir, 'b.css', '.b { color: green; }');
+  const statuses = cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: red; }' }, // unchanged
+    { outFile: bFile, finalCss: '.b { color: blue; }' }, // changed
+  ]);
+  assert.deepEqual(statuses, ['unchanged', 'written']);
+  assert.equal(fs.readFileSync(bFile, 'utf8'), '.b { color: blue; }');
+});
+
+test('MIG-B6-23: commitCompiled rolls back every entry it already wrote if a later commit in the same call fails', () => {
+  const dir = mkTmpDir();
+  const aFile = write(dir, 'a.css', '.a { color: red; }');
+  // A directory in place of the "file" for the second entry — its rename
+  // will fail (EISDIR/ENOTEMPTY depending on platform), simulating a
+  // commit failing partway through a multi-entry batch.
+  const bFile = path.join(dir, 'b.css');
+  fs.mkdirSync(bFile);
+  fs.writeFileSync(path.join(bFile, 'keep-dir-nonempty'), 'x');
+
+  assert.throws(() => cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: NEW; }' },
+    { outFile: bFile, finalCss: '.b { color: blue; }' },
+  ]));
+
+  assert.equal(fs.readFileSync(aFile, 'utf8'), '.a { color: red; }', "a.css must be rolled back to its pre-build content after b's commit fails");
+  const leftovers = fs.readdirSync(dir).filter((f) => f.includes('.tmp'));
+  assert.deepEqual(leftovers, [], 'no temp file should remain after a rolled-back commit');
+});
+
+test('MIG-B6-23: commitCompiled removes (does not leave stale content in) an entry that did not exist before a failed rollback', () => {
+  const dir = mkTmpDir();
+  const aFile = path.join(dir, 'a.css'); // Does not exist yet.
+  const bFile = path.join(dir, 'b.css');
+  fs.mkdirSync(bFile);
+  fs.writeFileSync(path.join(bFile, 'keep-dir-nonempty'), 'x');
+
+  assert.throws(() => cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: red; }' },
+    { outFile: bFile, finalCss: '.b { color: blue; }' },
+  ]));
+
+  assert.equal(fs.existsSync(aFile), false, 'a.css did not exist before this build, and must not exist after the rollback either');
+});
+
+test('MIG-B6-23: bootstrapWatchTargets includes every config/theme candidate plus an explicit --config/--entry, resolved against cwd', () => {
+  const dir = mkTmpDir();
+  const targets = cli.bootstrapWatchTargets({ config: './my-config.cjs' }, dir);
+  for (const candidate of cli.CONFIG_CANDIDATES) assert.ok(targets.includes(path.join(dir, candidate)), candidate);
+  for (const candidate of cli.THEME_CANDIDATES) assert.ok(targets.includes(path.join(dir, candidate)), candidate);
+  assert.ok(targets.includes(path.join(dir, 'my-config.cjs')));
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, false) rethrows a loadConfig failure (a one-shot "build" still exits non-zero)', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', 'module.exports = { this is not valid javascript');
+  await assert.rejects(() => cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, false));
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a loadConfig failure and returns null instead of throwing', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', 'module.exports = { this is not valid javascript');
+  const config = await cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, true);
+  assert.equal(config, null);
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a compile failure but still returns the loaded config', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.a { color: palette(does-not-exist); }');
+  const config = await cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, true);
+  assert.ok(config, 'a compile failure must not prevent the loaded config from being returned to startWatch');
+  assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')), false, 'nothing should have been written for a build that failed to compile');
+});

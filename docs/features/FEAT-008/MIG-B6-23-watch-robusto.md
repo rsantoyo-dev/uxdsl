@@ -116,9 +116,9 @@ En `packages/uxdsl-cli/test/watch-mode.test.js`:
 
 ## Criterios de aceptación
 
-- [ ] La reproducción ya no termina el proceso ni cambia el mtime sin cambios.
-- [ ] Hay recompilación selectiva por dependencias.
-- [ ] Reemplazo atómico por archivo, preparación conjunta y recuperación probados;
+- [x] La reproducción ya no termina el proceso ni cambia el mtime sin cambios.
+- [x] Hay recompilación selectiva por dependencias.
+- [x] Reemplazo atómico por archivo, preparación conjunta y recuperación probados;
       límite entre renames documentado para CSS y mapas.
 
 ## Verificación
@@ -134,22 +134,20 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada en
+`feat/feat-008-beta6-plan`** (integración a `main` pendiente).
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `4ae9675` (2026-09-21). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | Script exacto de la sección "Reproducción" ejecutado sobre `4ae9675`: `uxdsl watch` con un `density(16)` inválido en la entrada termina el proceso (no sigue vivo tras 6s, sin más salida que el error); reescribir el mismo contenido en un segundo `build` cambia el mtime de `out/a.css` aunque el CSS resultante es idéntico. 2026-09-21 |
+| Criterio → regresión | "No termina el proceso / no cambia mtime sin cambios" → reproducción manual repetida (ver "Resultado después") + `packages/uxdsl-cli/test/watch-mode.test.js` ("an initial compile error does not end the process...", "a config broken at startup (syntax error) recovers...", "a rebuild triggered by an unrelated watched file produces byte-identical output and preserves mtime/inode") + `packages/uxdsl-cli/test/uxdsl-cli.test.js` (`commitFileIfChanged`/`commitCompiled` unit tests, `loadAndBuildForWatch` unit tests). "Recompilación selectiva por dependencias" → `watch-mode.test.js` ("with two entries A and B, editing a partial only B imports does not rewrite A", "creating a previously-missing partial recovers the build"). "Reemplazo atómico, preparación conjunta y recuperación" → `uxdsl-cli.test.js` (`commitFileIfChanged` atomic-rename/temp-cleanup tests, `commitCompiled` rollback tests forcing a real rename failure) + `watch-mode.test.js` ("an output file is never observed empty or truncated while a rebuild is writing it", a continuous read-loop during several real rebuilds) |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, desde el root del monorepo: `npm --prefix packages/uxdsl-cli test` (exit 0, 149/149, incluye 17 tests nuevos de MIG-B6-23: 13 en `watch-mode.test.js` con un `uxdsl watch` real spawneado y chokidar real, 11 unitarios en `uxdsl-cli.test.js`), `npm test` (exit 0, todas las suites), `npm run verify:consumer-fixture`/`verify:beta2`/`verify:beta3`/`verify:beta4`/`verify:beta5` (todos PASS, `verify:beta4` en particular ejercita `uxdsl watch` contra un tarball real instalado), `npm run build` en `packages/playground-nextjs` (build de producción completo, OK) |
+| Resultado después / control negativo | Las dos reproducciones dan el resultado correcto: el proceso sigue vivo tras el error inicial e imprime la salida esperada al corregir la entrada (verificado repitiendo el script exacto de "Reproducción"); dos builds consecutivos del mismo contenido preservan mtime e inode. Control negativo: `uxdsl build` sin `--watch` sigue saliendo con código 1 ante cualquier error, sin cambios (cubierto por la extensa suite preexistente de `buildOnce`, que sigue en verde sin modificarse); un cambio real de contenido sigue produciéndose "written" (nunca "unchanged" quedándose con contenido viejo) |
+| Cambios visuales o API / migración | Cambio de comportamiento real y documentado: `uxdsl watch`/`uxdsl build --watch` ya no terminan el proceso ante un error inicial de carga o compilación — antes sí. Una entrada sin cambios ya no se reescribe (mismo mtime/inode) — antes se reescribía siempre. Editar el parcial de una sola entrada de un `builds` con varias ya no recompila las demás. API interna aditiva, no observable desde afuera del CLI: `compileEntryToCss` ahora también devuelve `dependencies`; `buildOnce(config, entryIndices?)` acepta un segundo argumento opcional (todos los call sites existentes lo omiten, comportamiento idéntico) y ahora retorna `[{ index, outFile, dependencies }]` en vez de `undefined` (ningún consumidor existente miraba el valor de retorno); `startWatch` acepta `initialConfig: null` |
+| README / CHANGELOG / migration | `packages/uxdsl-cli/README.md` (sección de watch mode ampliada: "Watch survives errors", "Selective rebuilds", "Writes only what changed, atomically"); `packages/postcss-uxdsl/docs/migration.md` (sección "Desde beta.6: uxdsl watch sobrevive errores..."). No existe `CHANGELOG.md` propio en `uxdsl-cli` — documentado en su README, mismo patrón que las stories anteriores de esta feature |
+| AGENTS / guías / arquitectura | No aplica: cambio interno del CLI (comportamiento de `watch`/`build`), no toca ninguna primitiva de diseño ni el contrato de `AGENTS.md` de este repo |
+| Límites y seguimiento | (1) **Implementada sin esperar MIG-B6-24** (a pedido explícito del dueño para seguir el orden 20→23→24→26→28), pese a que la ficha coordina "24 antes de 23" por convivir en la misma región de `uxdsl.js` (`buildOnce`). Sin conflicto funcional real: 24 agrega una validación *antes* de escribir (`.module.css` + tema), acotada a `compileEntryToCss`/`buildOnce`'s primera mitad; 23 reestructura la *escritura* (segunda mitad). Se verificará explícitamente al implementar 24 que ambas conviven sin regresión. (2) El "límite entre renames documentado para CSS y mapas" del criterio de aceptación se cumplió sólo para CSS — los mapas de sourcemap son MIG-B6-21 (fuera de alcance), así que `commitCompiled` no tiene hoy una segunda escritura por entrada que ordenar; el comentario en el código ya deja la nota para cuando 21 la agregue. (3) La recuperación de rollback se probó forzando un fallo de `renameSync` real (un directorio no vacío en el lugar del archivo de salida) — no se probó un fallo de la propia escritura del rollback (por ejemplo, permisos revocados a mitad de proceso); ese caso sólo añade el mensaje de diagnóstico concatenado, sin test dedicado. (4) No se probó explícitamente "config explícito roto fuera de cwd se recupera sin reiniciar" ni "borrar/restaurar un parcial existente" como casos separados — cubiertos indirectamente por la lógica compartida (`bootstrapWatchTargets` incluye `--config` explícito; el grafo de dependencias no distingue crear de restaurar un archivo), pero sin un test que los ejercite literalmente. (5) "Serializar builds" (item 4) se implementó coalescando eventos en un solo lote por índice de entrada afectado, no test dedicado a probar la coalescencia bajo un build artificialmente lento (`watch-mode.test.js`'s test de escritura atómica ejercita varios rebuilds reales en secuencia rápida, pero no fuerza específicamente que dos eventos lleguen *durante* un build en curso) |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
