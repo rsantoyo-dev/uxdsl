@@ -154,7 +154,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | MIG-B6-22 | [Flags estrictos del CLI](MIG-B6-22-flags-estrictos.md) | D — CLI | P0 · S | 1 | Implementada/verificada en `feat/feat-008-beta6-plan` (`097ee88`, correcciones de revisión en `fd1f432`); integración a `main` pendiente |
 | MIG-B6-25 | [Validación de referencias en tiempo casi lineal](MIG-B6-25-referencias-lineales.md) | E — Rendimiento | P1 · M | 13 | Pendiente |
 | MIG-B6-18 | [`compile()` compartido en `uxdsl-core`](MIG-B6-18-compile-compartido.md) | C — Un solo pipeline (**camino crítico**) | P0 · L | 22 | Implementada/verificada en `feat/feat-008-beta6-plan` (`63babfe`, `aa3ae27`); integración a `main` pendiente |
-| MIG-B6-19 | [Configuración única de tema y breakpoints](MIG-B6-19-configuracion-unica.md) | C — Un solo pipeline | P1 · M | 18 | Pendiente |
+| MIG-B6-19 | [Configuración única de tema y breakpoints](MIG-B6-19-configuracion-unica.md) | C — Un solo pipeline | P1 · M | 18 | Implementada/verificada en `feat/feat-008-beta6-plan` (commit siguiente); integración a `main` pendiente |
 | MIG-B6-24 | [Guardas de `builds`](MIG-B6-24-guardas-builds.md) | D — CLI | P1 · S | 18, 19 | Pendiente |
 | MIG-B6-23 | [Watch robusto](MIG-B6-23-watch-robusto.md) | D — CLI | P1 · M | 18, 24 | Pendiente |
 | MIG-B6-29 | [El JSON base es la única fuente de defaults](MIG-B6-29-json-base-unica-fuente.md) | B — Tema base y salida correcta | P0 · L | 15 | Pendiente |

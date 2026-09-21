@@ -32,8 +32,18 @@ const CLI_SRC = path.resolve(__dirname, '..', 'bin', 'uxdsl.js');
 // use, but forwarding them through a CommonJS `uxdsl.config.cjs` (or
 // `compile()`'s own JSON-shaped config) is a separate, unscoped feature
 // (FEAT-004 doesn't ask for it) — excluded here on purpose, not by oversight.
+//
+// MIG-B6-19 (FEAT-008): `discoverTheme`/`configRoot` control the plugin's
+// own theme *discovery* for when it's used directly with no `theme`
+// option at all (e.g. a project's own postcss.config.js). The CLI/core
+// path always resolves and passes an explicit `theme` itself (its own
+// uxdsl.config.cjs/uxdsl.theme.config.* discovery, now shared with the
+// plugin via postcss-uxdsl/config — see loadConfig/discoverThemeAsync), so
+// these two never have anything to do there; forwarding them would be
+// dead weight, not a fix for a real gap.
+//
 // Every other option must be forwarded.
-const KNOWN_UNFORWARDED_PLUGIN_OPTIONS = new Set(['themeVar', 'spaceVar', 'colorVar']);
+const KNOWN_UNFORWARDED_PLUGIN_OPTIONS = new Set(['themeVar', 'spaceVar', 'colorVar', 'discoverTheme', 'configRoot']);
 
 function extractInterfaceKeys(source, interfaceName, fromFile) {
   const match = source.match(new RegExp(`interface ${interfaceName} \\{([\\s\\S]*?)\\n\\}`));

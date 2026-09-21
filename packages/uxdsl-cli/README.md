@@ -78,15 +78,15 @@ module.exports = {
   // Where the compiled CSS should be saved
   outFile: path.join(process.cwd(), 'src/app/uxdsl.css'),
   
-  // Custom breakpoints (optional)
-  breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 },
-  
   // Files to watch for changes
   watch: ['src/**/*.uxdsl', 'src/**/*.css'],
 };
 ```
 
-If `breakpoints` is omitted, CLI uses UXDSL shared defaults:
+`init` never writes `breakpoints:` here (MIG-B6-19, FEAT-008) — see "Breakpoints
+and the theme file" below for why, and where they actually belong. If
+`breakpoints` is omitted everywhere (here and in the theme file), the CLI uses
+UXDSL's shared defaults:
 
 ```ts
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
@@ -219,7 +219,9 @@ skips writing the global `:root` definitions and the runtime breakpoint
 marker (`#uxdsl-bp-meta`), both of which belong to the one entry that does
 define the theme.
 
-`breakpoints` can now come from either `uxdsl.config.cjs` or the theme
+### Breakpoints and the theme file
+
+`breakpoints` can come from either `uxdsl.config.cjs` or the theme
 file — both merge onto the shared defaults (config wins key-for-key), the
 same partial-override contract the theme itself already has:
 
@@ -227,6 +229,19 @@ same partial-override contract the theme itself already has:
 // uxdsl.theme.config.cjs
 module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaults
 ```
+
+Prefer declaring `breakpoints` in the theme file, not `uxdsl.config.cjs` — the
+theme is the one thing `uxdsl-cli`, the plugin used directly, and any future
+bundler adapter all discover and agree on, while `uxdsl.config.cjs` is
+build-orchestration specific to this CLI. `init` never writes `breakpoints:`
+into `uxdsl.config.cjs` for exactly this reason (MIG-B6-19, FEAT-008): a full
+copy of the defaults there used to permanently shadow every key the theme
+file declared, since the config wins key-for-key on any name it repeats —
+including the ones it never meant to override. If both files declare the
+same key with genuinely different values, the build still lets
+`uxdsl.config.cjs` win (unchanged), but warns once, naming both files, so the
+shadowing is visible instead of a silent "why isn't my theme's breakpoint
+taking effect".
 
 Running the CLI once per entry works, but a `builds` array in
 `uxdsl.config.cjs` compiles all of them — against the one shared

@@ -368,6 +368,38 @@ remain open. For example, this partial theme introduces no unknown-family warnin
 }
 ```
 
+### Theme discovery (`discoverTheme`, `configRoot`)
+
+When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks
+for a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
+`configRoot` (default `process.cwd()`) — the exact same discovery `uxdsl-cli`
+has always done, now available with the plugin used directly, e.g. from a
+project's own `postcss.config.js`:
+
+```js
+// postcss.config.js — no `theme` option needed at all; discovered from cwd.
+module.exports = { plugins: { 'postcss-uxdsl': { includeTheme: false } } };
+```
+
+```js
+uxdsl({ theme: {...} })                    // explicit theme always wins — discovery never runs
+uxdsl({ discoverTheme: false })            // opt out — validates against DEFAULT_THEME, as before this feature
+uxdsl({ configRoot: '/path/to/project' })  // search a directory other than process.cwd()
+```
+
+The theme file's export shape (`{ theme, references }` or a bare theme
+object), the async-factory support, and the "looks like a build config"
+warning are exactly `uxdsl-cli`'s own — both share `postcss-uxdsl/config`, so
+they can never quietly disagree. One difference: discovery inside the plugin
+is **synchronous** (the plugin factory and its compilation pass both are), so
+an `uxdsl.theme.config.cjs` exporting an async factory function
+(`module.exports = async () => ({...})`) throws a clear error naming the
+file — pass a resolved `theme` object to the plugin directly instead, or use
+an integration that supports async config (`uxdsl-cli`, or a future bundler
+adapter). The discovered theme file (and anything it locally `require()`s)
+is reported as a real PostCSS `dependency` message, so a bundler's own
+watcher picks up an edit to it.
+
 ### Diagnostics
 
 Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and

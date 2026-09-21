@@ -55,6 +55,11 @@
       "import": "./dist/ds-runtime.js",
       "types": "./dist/ds-runtime.d.ts"
     },
+    "./config": {
+      "require": "./dist/config.js",
+      "import": "./dist/config.js",
+      "types": "./dist/config.d.ts"
+    },
     "./language": {
       "types": "./dist/language.d.ts",
       "require": "./dist/language.js",

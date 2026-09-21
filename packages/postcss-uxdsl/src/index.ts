@@ -9,6 +9,7 @@ import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
+import { discoverThemeSync } from './config';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -52,6 +53,20 @@ interface UxDslOptions {
    */
   includeTheme?: boolean;
   references?: ReferenceOptions;
+  /**
+   * When `theme` is omitted (and this isn't `false`), the plugin looks for
+   * a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
+   * `configRoot` (default `process.cwd()`) and validates/compiles against
+   * it instead of the built-in default theme — the same discovery
+   * uxdsl-cli has always done, now available with the plugin used
+   * directly (e.g. from a project's own `postcss.config.js`). An explicit
+   * `theme` always wins outright; this has no effect when one is given.
+   * Set to `false` to keep the old always-default-theme behavior.
+   */
+  discoverTheme?: boolean;
+  /** Directory theme discovery searches from. Defaults to `process.cwd()`.
+   * Ignored when `theme` is explicit or `discoverTheme` is `false`. */
+  configRoot?: string;
 }
 
 // Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
@@ -99,21 +114,12 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
 }
 
 function uxdslPlugin(opts: UxDslOptions = {}) {
-  // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
-  // caller provided deep-merged on top — is resolved once here and used
-  // everywhere `opts.theme` used to be read directly below, so an omitted
-  // or partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
-  // still produces a fully-defined, strictly-valid effective theme instead
-  // of leaving whichever families the caller didn't mention undefined.
-  const effectiveTheme = resolveTheme(opts.theme);
-  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
     typeof opts.spaceVar === "function" ? opts.spaceVar : defaultSpaceVar;
   const toColorVar =
     typeof opts.colorVar === "function" ? opts.colorVar : defaultColorVar;
-  const bpNames = new Set(Object.keys(bps));
   const mediaRuleCache = new WeakMap<Rule, Map<string, Rule>>();
   const lastMediaByRule = new WeakMap<Rule, AtRule>();
   // Historical single-entry behavior: one compiled file both defines and
@@ -125,6 +131,34 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   return {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root, { result }: { result: Result }) {
+      // MIG-B6-19 (FEAT-008): resolved per compilation (here), not frozen
+      // once when the plugin factory runs — a reused plugin instance
+      // (a long-running dev server, or two projects compiled in the same
+      // process) must not keep serving the first project's discovered
+      // theme, or a stale copy from before an edit to
+      // uxdsl.theme.config.* on disk.
+      const configRoot = opts.configRoot ?? process.cwd();
+      let discovered: ReturnType<typeof discoverThemeSync> = null;
+      if (opts.theme === undefined && opts.discoverTheme !== false) {
+        discovered = discoverThemeSync(configRoot);
+        if (discovered) {
+          for (const file of discovered.dependencies) {
+            result.messages.push({ type: 'dependency', plugin: 'postcss-uxdsl', file, parent: result.opts.from });
+          }
+        }
+      }
+      // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
+      // caller provided (or, absent that, whatever discovery found) deep-
+      // merged on top — is resolved once here and used everywhere
+      // `opts.theme` used to be read directly below, so an omitted or
+      // partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
+      // still produces a fully-defined, strictly-valid effective theme
+      // instead of leaving whichever families the caller didn't mention
+      // undefined.
+      const effectiveTheme = resolveTheme(opts.theme ?? discovered?.theme);
+      const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
+      const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
+      const bpNames = new Set(Object.keys(bps));
       const inheritSource = (node: any, source: any) => {
         node.source = source;
         for (const child of node.nodes || []) inheritSource(child, source);
@@ -931,7 +965,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkDecls(node => {
         if (!originalSources.has(node.source) || dslSources.has(node.source)) consumers.push(node);
       });
-      const references = opts.references || {};
+      const references = effectiveReferences || {};
       // A component validates against its explicitly configured theme without
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];

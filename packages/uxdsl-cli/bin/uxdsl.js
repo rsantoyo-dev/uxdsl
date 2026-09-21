@@ -69,9 +69,27 @@ function loadUxDslCore() {
   return core;
 }
 
+// MIG-B6-19 (FEAT-008): theme-file discovery/loading — candidates, module
+// loading, `{ theme, references }`/bare-theme normalization, the
+// looks-like-a-build-config warning — moved to postcss-uxdsl/config so the
+// plugin itself can discover a project's theme too, without duplicating
+// (and risking drifting from) this exact contract. The CLI keeps its own
+// build-config (uxdsl.config.cjs) discovery and build/watch orchestration.
+function loadUxDslConfig() {
+  const mod = resolveUxDslModule('postcss-uxdsl/config', { warnLabel: 'postcss-uxdsl/config' });
+  if (!mod || typeof mod.discoverThemeAsync !== 'function') {
+    throw new Error(
+      'postcss-uxdsl/config (with discoverThemeAsync) not found. Install postcss-uxdsl 0.5.0-beta.6 ' +
+      'or later in your project, or alongside the CLI.'
+    );
+  }
+  return mod;
+}
+
 const uxdslPlugin = loadUxDslPlugin();
 const uxdslRuntime = loadUxDslRuntime() || {};
 const uxdslCore = loadUxDslCore();
+const uxdslConfig = loadUxDslConfig();
 
 const FALLBACK_BREAKPOINTS = {
   xs: 0,
@@ -138,12 +156,11 @@ const CONFIG_CANDIDATES = [
 // (tokens + the theme's own `references`) are discovered separately, so a
 // project can add `uxdsl.theme.config.cjs` without touching
 // `uxdsl.config.cjs` at all.
-const THEME_CANDIDATES = [
-  'uxdsl.theme.config.cjs',
-  'uxdsl.theme.config.js',
-  'uxdsl.theme.config.json',
-  'uxdsl.theme.json',
-];
+// MIG-B6-19 (FEAT-008): the candidate list itself now lives in
+// postcss-uxdsl/config (the plugin needs it too) — re-exported here
+// unchanged so existing tests/tooling that reference `THEME_CANDIDATES`
+// from this module keep working against the one real list.
+const THEME_CANDIDATES = uxdslConfig.THEME_CANDIDATES;
 
 const DEFAULT_ENTRY_REL = path.join('src', 'uxdsl-entry.uxdsl');
 const DEFAULT_OUT_REL = path.join('src', 'uxdsl.css');
@@ -255,13 +272,13 @@ function findConfigPath(cwd) {
   return null;
 }
 
-function findThemeConfigPath(dir) {
-  for (const candidate of THEME_CANDIDATES) {
-    const full = path.resolve(dir, candidate);
-    if (fs.existsSync(full)) return full;
-  }
-  return null;
-}
+// MIG-B6-19 (FEAT-008): theme candidate lookup, module loading/normalizing
+// and the looks-like-a-build-config warning all moved to
+// postcss-uxdsl/config — re-exported here so existing tests/call sites in
+// this file keep working unchanged against the one real implementation.
+const findThemeConfigPath = uxdslConfig.findThemeConfigPath;
+const normalizeThemeExport = uxdslConfig.normalizeThemeExport;
+const warnIfLooksLikeBuildConfig = uxdslConfig.warnIfLooksLikeBuildConfig;
 
 /** Same CommonJS/`default`-interop/async-function contract as the build
  * config, applied to any config-shaped file. */
@@ -272,79 +289,8 @@ async function loadModuleExport(filePath) {
   return mod;
 }
 
-/** `uxdsl.theme.config.*`'s export is either `{ theme, references }`
- * (recommended when there are external variables) or a bare theme object —
- * distinguished by the presence of a `theme` or `references` key, not by
- * guessing at the shape of theme data itself. Never lets a `references` key
- * leak into the object that becomes `theme` (and, from there, generated
- * CSS): a plain theme object legitimately could have a key literally named
- * "theme" or "references" as a token family, but that's exactly the
- * ambiguity this contract accepts as the tradeoff for two vs. three files. */
-function normalizeThemeExport(themeModule) {
-  if (
-    themeModule && typeof themeModule === 'object' && !Array.isArray(themeModule) &&
-    (Object.prototype.hasOwnProperty.call(themeModule, 'theme') || Object.prototype.hasOwnProperty.call(themeModule, 'references'))
-  ) {
-    return { theme: themeModule.theme, references: themeModule.references };
-  }
-  return { theme: themeModule, references: undefined };
-}
-
-// MIG-B3-03 (FEAT-004): keys that only make sense on a build config
-// (uxdsl.config.cjs), never on theme data. Used only as a heuristic for the
-// warning below — not an exhaustive/validated list, since a real theme
-// family could coincidentally use one of these names.
-const BUILD_CONFIG_SHAPED_KEYS = ['entry', 'outFile', 'output', 'watch', 'themeFile', 'plugins', 'builds'];
-
-/** A theme file with no `theme`/`references` key has its entire export
- * treated as theme data (see normalizeThemeExport's own doc) — so a
- * uxdsl.config.cjs accidentally renamed/copied to a theme-file name
- * silently "works" (no throw anywhere), with its entry/outFile/watch keys
- * quietly ignored as unknown theme tokens. This is a warning, not an
- * error: a project could legitimately have a token family literally named
- * "watch" or "plugins", and warning-then-continuing costs nothing there. */
-// MIG-B3-03 item 3: `loadThemeConfig` re-runs on every rebuild in watch
-// mode — without dedup this warning would repeat on every keystroke.
-// Keyed by path so an unrelated project (or a second theme file) still
-// gets its own warning, and cleared/replaced when the shape actually
-// changes so a later-introduced or later-fixed collision is still caught.
-const warnedBuildConfigShapes = new Map();
-
-function warnIfLooksLikeBuildConfig(themeModule, themeConfigPath) {
-  if (
-    Object.prototype.hasOwnProperty.call(themeModule, 'theme') ||
-    Object.prototype.hasOwnProperty.call(themeModule, 'references')
-  ) {
-    warnedBuildConfigShapes.delete(themeConfigPath); // Fixed since a previous warning, if any.
-    return; // Unambiguous shape (the { theme, references } form) — nothing to warn about.
-  }
-  const suspects = BUILD_CONFIG_SHAPED_KEYS.filter((key) =>
-    Object.prototype.hasOwnProperty.call(themeModule, key)
-  );
-  if (suspects.length === 0) {
-    warnedBuildConfigShapes.delete(themeConfigPath);
-    return;
-  }
-  const signature = suspects.join(',');
-  if (warnedBuildConfigShapes.get(themeConfigPath) === signature) return; // Same shape already warned this session.
-  warnedBuildConfigShapes.set(themeConfigPath, signature);
-  const keyList = suspects.map((k) => `"${k}"`).join(', ');
-  console.warn(
-    `[uxdsl] Warning: ${themeConfigPath} looks like a build config (found ${keyList}), but has no ` +
-    '"theme" or "references" key, so it is being treated entirely as theme data — ' +
-    `${suspects.length > 1 ? 'those keys are' : 'that key is'} silently ignored as unknown tokens. ` +
-    'If this is really a theme file, wrap your data as { theme: { ... } }. ' +
-    'If it is a build config, rename it away from uxdsl.theme.config.*/uxdsl.theme.json.'
-  );
-}
-
 async function loadThemeConfig(themeConfigPath) {
-  const themeModule = await loadModuleExport(themeConfigPath);
-  if (!themeModule || typeof themeModule !== 'object') {
-    throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
-  }
-  warnIfLooksLikeBuildConfig(themeModule, themeConfigPath);
-  return normalizeThemeExport(themeModule);
+  return uxdslConfig.loadThemeConfigAsync(themeConfigPath);
 }
 
 // `entryOrEntries` is a single path for a single-entry config, or (MIG-B3-02)
@@ -547,7 +493,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   // wins over the build config's own `includeTheme` — for `builds`, that
   // means the flag overrides every entry uniformly; each entry's own
   // `includeTheme` is only consulted when the flag is absent.
-  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints);
+  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints, { configPath, themeConfigPath });
   if (hasBuilds) {
     resolvedConfig.builds = resolvedConfig.builds.map((buildEntry) => ({
       ...buildEntry,
@@ -770,10 +716,42 @@ function resolveStrictTheme(flagValue, configValue, { knownFamilies, requireKnow
 // itself — a project can override just `xl` without repeating `xs`/`sm`/
 // `md`/`lg`. `normalizeBpMap` already accepts every BreakpointSpec shape
 // (map, array of pairs, array of {name,min|px}), so both inputs reuse it.
-function resolveBreakpoints(configBreakpoints, themeBreakpoints) {
+//
+// MIG-B6-19 (FEAT-008): the config always winning key-for-key is
+// unchanged (out of scope to flip), but a project silently losing a
+// theme's breakpoint value to an unrelated build config used to be
+// invisible — most often `init`'s own full default map, previously
+// written into every uxdsl.config.cjs, permanently shadowing every key a
+// theme declared. Warned once per distinct conflict (by file pair +
+// exact key/value signature), same dedup shape as
+// warnIfLooksLikeBuildConfig, so watch mode doesn't repeat it every
+// rebuild.
+const warnedBreakpointConflicts = new Map();
+
+function resolveBreakpoints(configBreakpoints, themeBreakpoints, { configPath, themeConfigPath } = {}) {
   const merged = { ...DEFAULT_BREAKPOINTS };
-  if (themeBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(themeBreakpoints));
-  if (configBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(configBreakpoints));
+  const normalizedTheme = themeBreakpoints !== undefined ? normalizeBpMap(themeBreakpoints) : undefined;
+  const normalizedConfig = configBreakpoints !== undefined ? normalizeBpMap(configBreakpoints) : undefined;
+  if (normalizedTheme) Object.assign(merged, normalizedTheme);
+  if (normalizedConfig) Object.assign(merged, normalizedConfig);
+
+  if (normalizedTheme && normalizedConfig && configPath && themeConfigPath) {
+    const conflicts = Object.keys(normalizedConfig).filter(
+      (key) => normalizedTheme[key] !== undefined && normalizedTheme[key] !== normalizedConfig[key]
+    );
+    if (conflicts.length > 0) {
+      const signature = conflicts.map((key) => `${key}:${normalizedTheme[key]}->${normalizedConfig[key]}`).sort().join(',');
+      const cacheKey = `${configPath}|${themeConfigPath}`;
+      if (warnedBreakpointConflicts.get(cacheKey) !== signature) {
+        warnedBreakpointConflicts.set(cacheKey, signature);
+        console.warn(
+          `[uxdsl] Warning: ${path.basename(configPath)} and ${path.basename(themeConfigPath)} both define ` +
+          `breakpoint(s) ${conflicts.join(', ')} with different values — ${path.basename(configPath)} wins. ` +
+          'Remove the conflicting key(s) from one of the two files if this is unintentional.'
+        );
+      }
+    }
+  }
   return merged;
 }
 
@@ -1090,34 +1068,13 @@ async function themeCommand(argv, cwd = process.cwd()) {
  * even though the cache was already being invalidated correctly on the
  * *next* unrelated rebuild. Calling this after the real require() already
  * ran (as `loadModuleExport`/`loadThemeConfig` do) costs nothing extra —
- * `require.cache` already holds the full tree by then. */
-function collectLocalRequireTree(filePath) {
-  const ids = new Set();
-  let resolved;
-  try {
-    resolved = require.resolve(filePath);
-  } catch (_) {
-    return ids; // Not required yet (or already gone) — nothing to report.
-  }
-  const visit = (id) => {
-    if (ids.has(id)) return;
-    ids.add(id);
-    const mod = require.cache[id];
-    if (!mod) return;
-    for (const child of mod.children || []) {
-      if (child.id && !child.id.split(path.sep).includes('node_modules')) {
-        visit(child.id);
-      }
-    }
-  };
-  visit(resolved);
-  return ids;
-}
-
-function clearRequireCache(filePath) {
-  if (!filePath) return;
-  for (const id of collectLocalRequireTree(filePath)) delete require.cache[id];
-}
+ * `require.cache` already holds the full tree by then.
+ *
+ * MIG-B6-19 (FEAT-008): this exact tree-walk now lives once in
+ * postcss-uxdsl/config (the plugin's own theme discovery needs it too) —
+ * re-exported here under the same names for existing tests/call sites. */
+const collectLocalRequireTree = uxdslConfig.collectLocalRequireTree;
+const clearRequireCache = uxdslConfig.clearLocalRequireCache;
 
 // MIG-B3-02: a `builds` config has no single `config.outFile` — every
 // entry's own outFile must be excluded from triggering a rebuild, the same
@@ -1301,7 +1258,13 @@ async function init(argv) {
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
   if (!fs.existsSync(configPath)) {
-    const defaultBpJson = JSON.stringify(DEFAULT_BREAKPOINTS);
+    // MIG-B6-19 (FEAT-008): no `breakpoints:` here — a build config's
+    // breakpoints win key-for-key over the theme's own (see
+    // resolveBreakpoints), so writing the full default map here silently
+    // shadowed every key a project's uxdsl.theme.config.* declared,
+    // including ones it never touched. Breakpoints belong in the theme;
+    // this config only overrides one when a project deliberately wants a
+    // build-specific value the theme doesn't have.
     const configContent = isMulti
       ? `module.exports = {
   // A theme entry (emits the shared :root definitions once) plus any
@@ -1313,8 +1276,6 @@ async function init(argv) {
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
     { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
   ],
-  // Default breakpoints
-  breakpoints: ${defaultBpJson},
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl']
 };
@@ -1324,8 +1285,6 @@ async function init(argv) {
   entry: './src/uxdsl-entry.uxdsl',
   // Output CSS file
   outFile: './src/uxdsl.css',
-  // Default breakpoints
-  breakpoints: ${defaultBpJson},
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl', 'src/**/*.css']
 };
@@ -1362,9 +1321,16 @@ async function init(argv) {
 
   // 3. Setup PostCSS (Required for Next.js, Optional/Good for Vite if not using plugin)
   // For Next.js, we must ensure postcss-uxdsl is in postcss.config.js
+  // MIG-B6-19 (FEAT-008): no `theme` here, and none needed — the plugin
+  // discovers `uxdsl.theme.config.*`/`uxdsl.theme.json` from this same
+  // project root itself (same file the CLI build reads), so a `.css` file
+  // processed by this postcss.config.js validates against the project's
+  // real theme, not the built-in default, without any extra option.
   const POSTCSS_SNIPPET = `module.exports = {
   plugins: {
-    // The CLI-generated global CSS already contains the theme.
+    // The CLI-generated global CSS already contains the theme; the
+    // project's uxdsl.theme.config.*/uxdsl.theme.json (if any) is
+    // discovered automatically for everything else.
     'postcss-uxdsl': { includeTheme: false },
   },
 };

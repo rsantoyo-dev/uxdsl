@@ -121,11 +121,11 @@ La salida incluye `min-width: 768px`; `900px` no aparece. Pasa igual con y sin
 
 ## Criterios de aceptación
 
-- [ ] La reproducción de UX-13 da `900px`.
-- [ ] El plugin valida contra el tema del proyecto sin configuración extra, y se
+- [x] La reproducción de UX-13 da `900px`.
+- [x] El plugin valida contra el tema del proyecto sin configuración extra, y se
       puede desactivar.
-- [ ] Un solo cargador: el CLI no tiene lógica propia de descubrimiento.
-- [ ] El archivo de tema es dependencia observada.
+- [x] Un solo cargador: el CLI no tiene lógica propia de descubrimiento.
+- [x] El archivo de tema es dependencia observada.
 
 ## Verificación
 
@@ -142,22 +142,20 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada en
+`feat/feat-008-beta6-plan`** (integración a `main` pendiente).
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `bfbf6ff` (2026-09-21). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | UX-13: script exacto de la sección "Reproducción" ejecutado sobre `bfbf6ff` — `grep -o 'min-width: [0-9]*px' src/uxdsl.css` da `768px`, nunca `900px`, con `uxdsl.theme.config.cjs: { breakpoints: { md: 900 } }`. UX-14: `postcss([uxdsl({ includeTheme:false, theme:undefined })])` sobre `.a { color: palette(reviewonlybrand) }` con un `uxdsl.theme.config.cjs` que declara esa familia falla con `UXD_REFERENCE_MISSING` (valida contra `DEFAULT_THEME`, no descubre nada). 2026-09-21 |
+| Criterio → regresión | "UX-13 da 900px" → manual (comando de "Reproducción" repetido, ver "Resultado después") + `fixtures/mig-b2-03-cli-init/run.js` (init ya no escribe `breakpoints:`, sigue en verde). "Plugin valida contra el tema del proyecto sin config extra, desactivable" → `packages/postcss-uxdsl/test/config.test.js`: "the plugin discovers uxdsl.theme.config.* from configRoot when theme is omitted", "discoverTheme: false keeps validating against the built-in default theme", "an explicit theme option always wins over discovery". "Un solo cargador" → `findThemeConfigPath`/`normalizeThemeExport`/`warnIfLooksLikeBuildConfig`/`collectLocalRequireTree` eliminados de `uxdsl-cli/bin/uxdsl.js` y reemplazados por re-exports de `postcss-uxdsl/config` (verificado por lectura del archivo); `uxdsl-cli/test/uxdsl-cli.test.js` (que llama `cli.THEME_CANDIDATES`/`cli.warnIfLooksLikeBuildConfig`) sigue en verde sin modificarse, porque son el mismo objeto/función reexportado. "Archivo de tema es dependencia observada" → `config.test.js`: "discovery registers the theme file as a PostCSS dependency message"; `discoverThemeAsync`/`discoverThemeSync` devuelven `dependencies` (tema + su árbol `require()` local), consumidos por `loadConfig`'s watch-list y por los mensajes `dependency` que emite el plugin |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, desde el root del monorepo: `npm --prefix packages/postcss-uxdsl test` (exit 0, 247/247, incluye las 20 pruebas nuevas de `config.test.js`), `npm --prefix packages/uxdsl-cli test` (exit 0, 132/132), `node fixtures/mig-b2-03-cli-init/run.js` (PASS, sin cambios necesarios en el fixture), `npm test` (exit 0, todas las suites), `npm run verify:consumer-fixture` (PASS), `npm run verify:beta2` (PASS), `npm run verify:beta3` (PASS), `npm run verify:beta4` (PASS), `npm run verify:beta5` (PASS) |
+| Resultado después / control negativo | UX-13: mismo script de reproducción da `900px` (y ya no `768px`) tras el cambio. Conflicto real (config y tema declaran `md` con valores distintos): un único aviso `[uxdsl] Warning: uxdsl.config.cjs and uxdsl.theme.config.cjs both define breakpoint(s) md...`, config sigue ganando (sin cambio de precedencia), verificado manualmente. UX-14: el mismo `.css` con `palette(reviewonlybrand)` compila una vez que el plugin descubre `uxdsl.theme.config.cjs` desde `configRoot`. Control negativo: `discoverTheme: false` seguí fallando contra `DEFAULT_THEME` exactamente como antes de esta story (test dedicado); un `theme` explícito (incluso `{}`) sigue ganando sobre cualquier descubrimiento |
+| Cambios visuales o API / migración | API aditiva en `postcss-uxdsl`: opciones nuevas `discoverTheme`/`configRoot` en `UxDslOptions` (ambas opcionales, `discoverTheme` por defecto `true`); nuevo subpath export `postcss-uxdsl/config`. Sin cambios de firma en APIs existentes. Cambio de comportamiento (no de API): `uxdsl init` ya no escribe `breakpoints:` en `uxdsl.config.cjs`; un proyecto existente con ese bloque generado por una versión anterior no cambia hasta que lo edite — documentado en migration.md |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md` (sección "Theme discovery (discoverTheme, configRoot)"); `packages/uxdsl-cli/README.md` (ejemplo de config sin `breakpoints:` + sección "Breakpoints and the theme file" con el aviso de conflicto); `packages/postcss-uxdsl/docs/migration.md` (sección "Desde beta.6: el plugin descubre el tema del proyecto solo, y init deja de escribir breakpoints"); no existe `CHANGELOG.md` propio en `uxdsl-core`/`uxdsl-cli` — cambios documentados en su propio README, mismo patrón que MIG-B6-18 |
+| AGENTS / guías / arquitectura | No aplica: cambio interno de descubrimiento de configuración/tema (`uxdsl-cli`/`postcss-uxdsl`), no toca ninguna primitiva de diseño ni el contrato de `AGENTS.md` de este repo |
+| Límites y seguimiento | (1) La resolución por-compilación (item 2 de "Implementación": mover `effectiveTheme`/`bps`/`bpNames` de la fábrica del plugin a `Once()`) se implementó y se probó con dos `configRoot` distintos en el mismo proceso y con una edición real en disco entre dos compilaciones de la misma instancia — no se probó explícitamente bajo Vite/Webpack real (esos adaptadores son MIG-B6-20, fuera de alcance). (2) El aviso de conflicto de breakpoints usa sólo nombre base de archivo, no ruta completa, en el mensaje — suficiente para el caso común (un solo config/tema por proyecto) pero podría ser ambiguo con `--config`/`themeFile` apuntando a una ruta con el mismo nombre base en otro directorio; no se consideró necesario para esta story. (3) No se agregó una prueba dedicada de fixture `fixtures/mig-b2-03-cli-init/` para "init ya no escribe breakpoints" porque el fixture existente no aserta sobre ese contenido y sigue en verde sin cambios — la cobertura real está en la reproducción manual de UX-13 y en `config.test.js`. (4) Rutas con espacios (mencionado en "Pruebas") no se probaron explícitamente para el descubrimiento del tema — mismo mecanismo (`fs.existsSync`/`require`) que el resto del CLI ya usa sin ese caso probado |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

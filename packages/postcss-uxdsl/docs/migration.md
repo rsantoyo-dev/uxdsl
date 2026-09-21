@@ -418,6 +418,38 @@ corrompían en silencio ahora salen intactas:
 [`uxdsl-core`'s README](../../uxdsl-core/README.md#compile-input-config)
 para su contrato completo.
 
+### Desde beta.6: el plugin descubre el tema del proyecto solo, y `init` deja de escribir `breakpoints` (MIG-B6-19)
+
+Usado directamente (por ejemplo desde el `postcss.config.js` propio de un
+proyecto Next.js), el plugin ya no valida siempre contra el tema por
+defecto. Si se omite `theme`, busca un `uxdsl.theme.config.{cjs,js,json}` o
+`uxdsl.theme.json` convencional en `configRoot` (por defecto
+`process.cwd()`) — el mismo descubrimiento que `uxdsl-cli` siempre tuvo,
+ahora compartido vía `postcss-uxdsl/config`. Si tu `postcss.config.js`
+necesitaba pasar `theme` a mano porque el tema real vivía en un archivo así,
+ya no hace falta: quitalo y dejá que el plugin lo descubra, o pasá
+`discoverTheme: false` si preferís seguir validando contra el tema por
+defecto a propósito.
+
+Quien use `postcss-uxdsl/config` directamente (un adaptador de bundler, o
+una integración propia) encuentra ahí `findThemeConfigPath`,
+`loadThemeConfigAsync`/`loadThemeConfigSync`, `discoverThemeAsync`/
+`discoverThemeSync`, `normalizeThemeExport` y `warnIfLooksLikeBuildConfig` —
+la misma resolución que antes vivía sólo dentro de `uxdsl-cli`. La versión
+sync (la que usa el plugin) rechaza un archivo de tema que exporta una
+función async, con un mensaje que indica pasar `theme` ya resuelto en su
+lugar.
+
+Aparte, `uxdsl init` ya no escribe `breakpoints:` en el `uxdsl.config.cjs`
+que genera. Si tenías un `uxdsl.config.cjs` generado por una versión
+anterior con el mapa completo de breakpoints por defecto copiado ahí, y
+también declarás `breakpoints` en tu `uxdsl.theme.config.*`, ese
+`uxdsl.config.cjs` viejo va a seguir ganando clave por clave (sin cambios de
+precedencia) — pero ahora vas a ver un aviso una vez, nombrando los dos
+archivos, en vez de que el valor del tema desaparezca en silencio. Si el
+tema es la fuente real, borrá `breakpoints` de `uxdsl.config.cjs` para que
+el aviso desaparezca y el tema mande.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice
