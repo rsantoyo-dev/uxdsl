@@ -26,9 +26,16 @@ async function main() {
   // One theme entry (includeTheme: true, the default) and four component
   // entries (includeTheme: false) sharing the same theme/references —
   // the exact "theme + N CSS Module panels" shape from the origin report.
+  // MIG-B6-24 (FEAT-008): the theme entry's own outFile deliberately does
+  // NOT end in .module.css — that combination (a CSS-Modules-named file
+  // that still defines :root/#uxdsl-bp-meta) is exactly what that story
+  // makes the CLI refuse, matching real Next.js CSS Modules behavior
+  // ("Selector :root is not pure"). Only the four component panels, which
+  // compile with includeTheme: false and never define :root themselves,
+  // use the .module.css convention.
   write('uxdsl.config.cjs', `module.exports = {
     builds: [
-      { entry: './src/theme.uxdsl', outFile: './src/theme.module.css' },
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
       { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.module.css', includeTheme: false },
       { entry: './src/panel-b.uxdsl', outFile: './src/panel-b.module.css', includeTheme: false },
       { entry: './src/panel-c.uxdsl', outFile: './src/panel-c.module.css', includeTheme: false },
@@ -64,7 +71,7 @@ async function main() {
 
   const read = (name) => fs.readFileSync(path.join(dir, 'src', name), 'utf8');
   const outputs = {
-    theme: read('theme.module.css'),
+    theme: read('theme.css'),
     a: read('panel-a.module.css'),
     b: read('panel-b.module.css'),
     c: read('panel-c.module.css'),
@@ -95,7 +102,7 @@ async function main() {
   // just the in-process unit tests). ---
   write('src/panel-b.uxdsl', '.bad { color: palette(not-defined.main); }');
   assert.throws(() => command('build'), (error) => /UXD_REFERENCE_MISSING/.test(String(error.stderr)));
-  assert.equal(read('theme.module.css'), outputs.theme, 'a failed build must not touch the theme entry\'s previous output');
+  assert.equal(read('theme.css'), outputs.theme, 'a failed build must not touch the theme entry\'s previous output');
   assert.equal(read('panel-a.module.css'), outputs.a, 'a failed build must not touch an unrelated entry\'s previous output');
   console.log('PASS: an unknown token still fails the whole build, leaving every previous output untouched.');
 
@@ -103,7 +110,7 @@ async function main() {
   // builds[] entry uniformly, forcing even a `true` entry to skip :root. ---
   write('src/panel-b.uxdsl', '.button { @ds-button(contained primary 2); }'); // restore
   command('build', '--no-include-theme');
-  const themeWithFlag = read('theme.module.css');
+  const themeWithFlag = read('theme.css');
   assert.doesNotMatch(themeWithFlag, /:root/, '--no-include-theme must override even a builds[] entry whose own includeTheme is true');
   console.log('PASS: --no-include-theme overrides every builds[] entry, including the theme entry.');
 }

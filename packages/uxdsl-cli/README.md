@@ -267,6 +267,30 @@ compiled in memory before anything is written: a failure in any one of
 them aborts the whole build with no output files touched at all, rather
 than leaving some freshly rebuilt and others missing or stale.
 
+**A `.module.css` entry must never define `:root`** (MIG-B6-24, FEAT-008):
+a CSS Modules loader (Next.js's own included) rejects a bare `:root`
+selector outright ("Selector :root is not pure"). An entry whose `outFile`
+ends in `.module.css` and would still emit `:root`/`#uxdsl-bp-meta` — its
+own `includeTheme` resolving to `true`, or a legacy import/explicit native
+CSS reintroducing either selector even with `includeTheme: false` — fails
+**before anything is written**, naming the entry:
+
+```
+[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
+```
+
+The fix is almost always `includeTheme: false` on that entry — name the
+shared theme entry's own `outFile` without a `.module.css` suffix instead
+(`theme.css`, not `theme.module.css`), and keep `.module.css` for the
+per-component panels that don't define the theme. Separately, if more
+than one entry in `builds` ends up emitting the theme at all (regardless
+of file name — usually a config mistake, not a CSS Modules one), the CLI
+warns once, naming every offending entry, without failing the build:
+
+```
+[uxdsl] Warning: 2 entries emit the theme (builds[0], builds[1]); usually only one theme entry should.
+```
+
 ### 4. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:

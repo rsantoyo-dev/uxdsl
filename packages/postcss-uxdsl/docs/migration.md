@@ -521,6 +521,37 @@ Ninguno de los dos cambios altera qué CSS final produce una entrada dada —
 sólo cuándo y con qué frecuencia se escribe a disco, y cuáles otras
 entradas un cambio dispara.
 
+### Desde beta.6: una entrada `.module.css` que emitiría `:root` ahora falla antes de escribir (MIG-B6-24)
+
+En un `builds` con una entrada de tema y varios paneles CSS Modules, una
+entrada cuyo `outFile` termina en `.module.css` pero cuyo `includeTheme`
+efectivo sigue siendo `true` (u otra vía, como un import legacy, sigue
+introduciendo `:root`/`#uxdsl-bp-meta`) ahora falla, antes de escribir nada,
+en vez de compilar en silencio un archivo que Next.js (u otro loader de CSS
+Modules) rechaza igual en tiempo de build real ("Selector :root is not
+pure"). El mensaje nombra la entrada exacta y sugiere el fix:
+
+```
+[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
+```
+
+Si tu `uxdsl.config.cjs` nombra la entrada de tema compartida con sufijo
+`.module.css` (por ejemplo, `theme.module.css`, para mantener una
+convención de nombres uniforme con los paneles), renombrala sin ese sufijo
+— `theme.css` — y dejá `.module.css` sólo para las entradas
+`includeTheme: false` que de verdad se importan como CSS Modules. La
+detección es sobre el CSS ya compilado (un selector real, vía parseo, no
+una búsqueda de texto), así que un comentario o un `content: ":root"` en
+tu propio CSS nunca la dispara.
+
+Por separado, más de una entrada emitiendo el tema (con cualquier nombre de
+archivo) ahora avisa una sola vez, sin fallar — normalmente es un error de
+configuración, no necesariamente algo que rompa un CSS Modules build:
+
+```
+[uxdsl] Warning: 2 entries emit the theme (builds[0], builds[1]); usually only one theme entry should.
+```
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

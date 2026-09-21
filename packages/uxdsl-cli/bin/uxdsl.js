@@ -4,6 +4,7 @@ const fs = require('fs');
 const path = require('path');
 const minimist = require('minimist');
 const chokidar = require('chokidar');
+const postcss = require('postcss');
 const { createRequire } = require('module');
 
 // Project's own postcss-uxdsl install first (so `theme`'s introspection and
@@ -864,6 +865,65 @@ function annotateThemeError(err, config) {
   return err;
 }
 
+// MIG-B6-24 (FEAT-008): a real, parsed CSS rule selector — never a
+// substring match, so `content: ":root";` or `/* see :root above */`
+// (both legal, unrelated CSS) never trip this. `postcss.list.comma`
+// splits a compound selector (`:root, .a`) into each individual selector,
+// matching the same comma-aware handling MIG-B6-15 already established
+// for control directives.
+function findThemeLeakSelector(css) {
+  let found = null;
+  postcss.parse(css).walkRules((rule) => {
+    if (found) return;
+    for (const selector of postcss.list.comma(rule.selector)) {
+      const trimmed = selector.trim();
+      if (trimmed === ':root' || trimmed === '#uxdsl-bp-meta') {
+        found = trimmed;
+        return;
+      }
+    }
+  });
+  return found;
+}
+
+// MIG-B6-24 (FEAT-008): before writing anything (called from buildOnce
+// against each entry's already-compiled, in-memory CSS), refuses an entry
+// whose outFile is named like a CSS Module and would still define :root/
+// #uxdsl-bp-meta — Next.js (and other CSS Modules loaders) reject a bare
+// `:root` selector ("Selector :root is not pure"), and the CLI previously
+// never noticed. `includeTheme: false` is the normal way to avoid this;
+// this only catches the actual output, not just the config flag, since a
+// legacy import or explicit native CSS could still reintroduce either
+// selector even with `includeTheme: false`. Not a general CSS Modules
+// purity validator — only these two known selectors this compiler itself
+// can produce.
+function assertNoThemeLeakIntoCssModule(outFile, css, label) {
+  if (!/\.module\.css$/i.test(outFile)) return;
+  const leaked = findThemeLeakSelector(css);
+  if (!leaked) return;
+  throw new Error(
+    `${label}this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ` +
+    '("Selector :root is not pure"). Set includeTheme: false for component entries.'
+  );
+}
+
+// Deduplicated the same way warnUnknownThemeKeys already is (see its own
+// comment) — keyed by the exact set of entries involved, so a config edit
+// that changes *which* entries emit the theme warns again, but repeating
+// the same rebuild in watch mode does not.
+const warnedMultipleThemeEntries = new Set();
+
+function warnIfMultipleEntriesEmitTheme(themeEmittingLabels) {
+  if (themeEmittingLabels.length <= 1) return;
+  const key = themeEmittingLabels.join(',');
+  if (warnedMultipleThemeEntries.has(key)) return;
+  warnedMultipleThemeEntries.add(key);
+  console.warn(
+    `[uxdsl] Warning: ${themeEmittingLabels.length} entries emit the theme (${themeEmittingLabels.join(', ')}); ` +
+    'usually only one theme entry should.'
+  );
+}
+
 function formatCliDiagnostic(message) {
   const cwdPrefix = `${process.cwd()}${path.sep}`;
   return String(message).split('\n').map(line => line.split(cwdPrefix).join('')).join('\n');
@@ -1016,6 +1076,29 @@ async function buildOnce(config, entryIndices) {
       throw err;
     }
   }
+
+  // MIG-B6-24 (FEAT-008): checked against every entry's actual compiled
+  // output, before any of them are written — a CSS-Module-named outFile
+  // that would still define :root/#uxdsl-bp-meta fails the whole build
+  // here, same as any other compile error (item 4: nothing partial gets
+  // written). More than one entry emitting the theme at all (regardless
+  // of outFile name) is a warning, not an error — usually intentional to
+  // have exactly one, but not necessarily wrong to have more.
+  const themeEmittingLabels = [];
+  for (const { index, outFile, finalCss } of compiled) {
+    const entryConfig = entries[index] || {};
+    const label = multi ? `builds[${index}] (${path.relative(process.cwd(), outFile)}): ` : '';
+    try {
+      assertNoThemeLeakIntoCssModule(outFile, finalCss, label);
+    } catch (err) {
+      annotateThemeError(err, config || {});
+      throw err;
+    }
+    if (entryConfig.includeTheme !== false) {
+      themeEmittingLabels.push(multi ? `builds[${index}]` : path.relative(process.cwd(), outFile));
+    }
+  }
+  warnIfMultipleEntriesEmitTheme(themeEmittingLabels);
 
   // Every entry is compiled before anything is written — item 4: a failure
   // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
@@ -1849,4 +1932,7 @@ module.exports = {
   commitCompiled,
   bootstrapWatchTargets,
   loadAndBuildForWatch,
+  findThemeLeakSelector,
+  assertNoThemeLeakIntoCssModule,
+  warnIfMultipleEntriesEmitTheme,
 };

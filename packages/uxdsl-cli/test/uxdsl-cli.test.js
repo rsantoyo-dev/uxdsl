@@ -1323,3 +1323,80 @@ test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a compile failure but
   assert.ok(config, 'a compile failure must not prevent the loaded config from being returned to startWatch');
   assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')), false, 'nothing should have been written for a build that failed to compile');
 });
+
+// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root/
+// #uxdsl-bp-meta into a *.module.css output fails before anything is
+// written; more than one entry emitting the theme at all is a warning,
+// not an error.
+
+test('MIG-B6-24: findThemeLeakSelector finds a real :root rule, not text inside a string or comment', () => {
+  assert.equal(cli.findThemeLeakSelector(':root { --x: 1; }'), ':root');
+  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), '#uxdsl-bp-meta');
+  assert.equal(cli.findThemeLeakSelector('.a, :root { color: red; }'), ':root', 'must catch :root inside a compound comma-separated selector');
+  assert.equal(cli.findThemeLeakSelector('/* mentions :root in a comment */\n.a { color: red; }'), null);
+  assert.equal(cli.findThemeLeakSelector('.a::before { content: ":root example"; }'), null);
+  assert.equal(cli.findThemeLeakSelector('.a { color: red; }'), null);
+});
+
+test('MIG-B6-24: the exact reproduction fails before writing, naming the offending entry', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' },
+  ] };`);
+  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  await assert.rejects(
+    () => cli.buildOnce(config),
+    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
+  );
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing must be written, including the other, unrelated entry');
+});
+
+test('MIG-B6-24: a .module.css entry with includeTheme: false compiles without error', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false },
+  ] };`);
+  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  await cli.buildOnce(config); // Must not throw.
+  assert.ok(fs.existsSync(path.join(dir, 'out', 'panel.module.css')));
+});
+
+test('MIG-B6-24: includeTheme: false does not exempt a .module.css entry whose own content still defines :root (e.g. explicit native CSS)', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false };`);
+  write(dir, 'src/panel.uxdsl', ':root { --leaked: 1; }\n.p { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root and #uxdsl-bp-meta/);
+});
+
+test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, naming both', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/a.uxdsl', outFile: './out/a.css' },
+    { entry: './src/b.uxdsl', outFile: './out/b.css' },
+  ] };`);
+  write(dir, 'src/a.uxdsl', '.a { color: red; }');
+  write(dir, 'src/b.uxdsl', '.b { color: blue; }');
+  const config = await cli.loadConfig({}, dir);
+  const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
+  const relevant = messages.filter((m) => /entries emit the theme/.test(m));
+  assert.equal(relevant.length, 1, JSON.stringify(messages));
+  assert.match(relevant[0], /2 entries emit the theme \(builds\[0\], builds\[1\]\); usually only one theme entry should\./);
+});
+
+test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-include-theme fixes it', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
+  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root and #uxdsl-bp-meta/);
+
+  const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);
+  await cli.buildOnce(passing); // Must not throw.
+  assert.ok(fs.existsSync(path.join(dir, 'out', 'x.module.css')));
+});

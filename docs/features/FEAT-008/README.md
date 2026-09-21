@@ -155,7 +155,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | MIG-B6-25 | [Validación de referencias en tiempo casi lineal](MIG-B6-25-referencias-lineales.md) | E — Rendimiento | P1 · M | 13 | Pendiente |
 | MIG-B6-18 | [`compile()` compartido en `uxdsl-core`](MIG-B6-18-compile-compartido.md) | C — Un solo pipeline (**camino crítico**) | P0 · L | 22 | Implementada/verificada en `feat/feat-008-beta6-plan` (`63babfe`, `aa3ae27`); integración a `main` pendiente |
 | MIG-B6-19 | [Configuración única de tema y breakpoints](MIG-B6-19-configuracion-unica.md) | C — Un solo pipeline | P1 · M | 18 | Implementada/verificada en `feat/feat-008-beta6-plan` (`38f6b23`); integración a `main` pendiente |
-| MIG-B6-24 | [Guardas de `builds`](MIG-B6-24-guardas-builds.md) | D — CLI | P1 · S | 18, 19 | Pendiente |
+| MIG-B6-24 | [Guardas de `builds`](MIG-B6-24-guardas-builds.md) | D — CLI | P1 · S | 18, 19 | Implementada/verificada en `feat/feat-008-beta6-plan` (commit siguiente), implementada después de 23 (orden 20→23→24→26→28 pedido por el dueño); integración a `main` pendiente |
 | MIG-B6-23 | [Watch robusto](MIG-B6-23-watch-robusto.md) | D — CLI | P1 · M | 18, 24 | Implementada/verificada en `feat/feat-008-beta6-plan` (`c878169`) sin esperar 24 — ver "Límites y seguimiento" de la ficha; integración a `main` pendiente |
 | MIG-B6-29 | [El JSON base es la única fuente de defaults](MIG-B6-29-json-base-unica-fuente.md) | B — Tema base y salida correcta | P0 · L | 15 | Pendiente |
 | MIG-B6-17 | [`@ds-typo` emite sólo lo que define el tema](MIG-B6-17-ds-typo-solo-tema.md) | B — Tema base y salida correcta | P1 · M | 29, 15 | Pendiente |
