@@ -5,6 +5,10 @@
   "bin": {
     "uxdsl": "./bin/uxdsl.js"
   },
+  "files": [
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js"
   },

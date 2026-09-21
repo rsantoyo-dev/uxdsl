@@ -1,7 +1,7 @@
 # postcss-uxdsl
 
 <p align="center">
-  <img src="./assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/postcss-uxdsl/assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
 </p>
 
 > **The core PostCSS engine for UXDSL** — a type-safe design system language.
@@ -124,7 +124,7 @@ changes that one custom property, and the cascade does the rest.
   </a>
 </p>
 
-<img src="./assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
+<img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/postcss-uxdsl/assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
 
 ---
 
@@ -273,7 +273,7 @@ untouched, and the two overrides are independent of each other. Each may
 appear once; a repeated `radius()`/`radius()` or an undefined key throws
 the same diagnostics as the standalone functions. A later plain CSS
 declaration in the same rule still wins last, as always. See
-[`docs/migration.md`](docs/migration.md)
+[`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
 (`npm run codemod:size-overrides`). The codemod skips (and reports for

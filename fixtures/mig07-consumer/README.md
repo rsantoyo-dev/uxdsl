@@ -33,8 +33,11 @@ first), builds the five entries, and checks:
   `test/cascade-compare.test.js` for the regression cases, which `run.js`
   runs automatically at the start of every invocation).
 - Building twice from the same install produces byte-identical CSS.
-- The installed tarball actually ships `README.md`, `CHANGELOG.md` and
-  `docs/migration.md` (not just source and `dist/`).
+- The installed tarball actually ships `README.md` and `CHANGELOG.md` (not
+  just source and `dist/`). `docs/migration.md` is deliberately *not*
+  shipped (MIG-B6-28, FEAT-008) — its README link is checked to be an
+  absolute GitHub URL instead of a relative path that would 404 once
+  unshipped.
 - Effective padding/radius/border resolve via the installed package's own
   inspector functions (`inspectSurfaceTheme`, `inspectEdgeTheme`) at a
   couple of breakpoints.

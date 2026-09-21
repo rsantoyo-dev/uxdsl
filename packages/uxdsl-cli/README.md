@@ -483,6 +483,41 @@ error rather than silently skipping the check; the unscoped boolean form
 
 ---
 
+### 9. Dependency status: `postcss-advanced-variables` stays on `^3`
+
+`uxdsl-core` (this CLI's compiler dependency) pins `postcss-advanced-variables`
+to `^3.0.0` deliberately, not because no one has checked for a newer one.
+MIG-B6-28 (FEAT-008) tried both `^4.0.0` and `^5.0.0` and ran this repo's
+`npm run test:parity` plus a full `packages/playground-nextjs` production
+build against each. Both newer majors break a real pattern already shipping
+in that playground — an `@mixin` whose SCSS parameter is used as a bare
+UXDSL directive argument and inside a `#{...}` interpolation:
+
+```scss
+@mixin palette-card($tone, $variant) {
+  .palette-card-#{$tone}-#{$variant} {
+    @ds-surface($tone, 1);
+    background: palette(#{$tone}-#{$variant});
+  }
+}
+```
+
+Under `^3`, `postcss-advanced-variables` expands `$tone`/`$variant` to their
+literal values before `postcss-uxdsl` ever sees `@ds-surface(...)`. Under
+`^4` and `^5`, `$tone` reaches `@ds-surface` unexpanded, and compilation
+fails with `UXD_SURFACE_REFERENCE: Undefined surface or palette family
+$tone` — the mixin argument was never substituted for this shape. This
+repo's smaller synthetic fixtures (the parity suite, the beta2–beta5
+release-gate tarball builds) do not happen to exercise this exact
+mixin-parameter-as-directive-argument pattern, so they stayed green against
+both newer majors — only the full playground build caught it. Re-attempt
+the upgrade only after confirming a newer `postcss-advanced-variables`
+release changes this specific behavior, and verify with the same
+`packages/playground-nextjs` production build, not just the parity/release
+fixtures.
+
+---
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

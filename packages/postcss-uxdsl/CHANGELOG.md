@@ -3,10 +3,31 @@
 All notable changes to `postcss-uxdsl` are documented here. Dates are
 omitted for entries that have not been published to npm — the package
 version stays at whatever `package.json` currently says until a release
-actually happens. See [`docs/migration.md`](docs/migration.md) for a
-narrative migration guide covering the same ground.
+actually happens. See
+[`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
+for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
+
+FEAT-008, MIG-B6-28:
+
+- **Packaging:** the published tarball now declares an explicit `files`
+  field (`dist`, `src/theme`, the two documented `scripts/codemod-*.js`
+  entry points, `README.md`, `CHANGELOG.md`) instead of shipping everything
+  not gitignored. The tarball dropped from ~2 040 KB (117 files — three
+  README images totalling ~1 930 KB, 19 test files, and every loose `.ts`
+  source alongside its compiled `dist/` output) to ~87 KB (61 files). The
+  three README images now load from an absolute GitHub URL instead of a
+  relative path that only ever resolved inside this repository, and the
+  `docs/migration.md` link does the same, since `docs/` is no longer
+  shipped either (pure prose, no runtime import ever pointed at it).
+- **Fix:** `src/theme/theme-manifest.json`'s `defaults.files.motion` pointed
+  at `src/theme/default-motion.css`, which has never existed. Removed; a
+  new `test/theme-manifest-files.test.js` now fails if any `defaults.files`
+  entry ever points somewhere outside the real packed tarball again.
+- Not otherwise a `postcss-uxdsl` runtime/compiler change — this story's
+  broader scope (pack-size budgets, dist-tag verification) lives in
+  `scripts/release.js`, outside any single published package.
 
 FEAT-008, MIG-B6-26:
 
@@ -327,8 +348,8 @@ FEAT-003 (`0.5.0-beta.2`), MIG-B2-01 through MIG-B2-05:
   compiler assigns. Done while the package is still unpublished (0.3.0,
   no npm release) — the safest time for a public-name change, since there
   is no external consumer yet to alias, deprecate or break. See
-  [`docs/migration.md`](docs/migration.md) for the full before/after
-  table.
+  [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
+  for the full before/after table.
 - `ds-runtime`'s `updatePalette`/`getPalette`/`resetPalette` no longer
   write or read a second, bare `--<token>` alias alongside the canonical
   `--uxdsl__palette__<token>` name. That dual-write predated this

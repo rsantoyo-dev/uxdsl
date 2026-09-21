@@ -36,6 +36,13 @@ You typically do **not** need to install this directly unless you are building a
 npm install uxdsl-core
 ```
 
+MIG-B6-28 (FEAT-008): the published tarball now declares an explicit `files`
+field (`dist`, `README.md`) instead of shipping everything not gitignored —
+previously that also included `src/*.ts`, `test/*.js` and `tsconfig.json`,
+none of which a consumer ever imports (`main`/`types` only ever point at
+`dist/`). See `packages/uxdsl-cli/README.md`'s own dependency-status section
+for the related `postcss-advanced-variables` pin this story also checked.
+
 ## Usage
 
 ```javascript

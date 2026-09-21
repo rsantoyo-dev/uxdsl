@@ -37,6 +37,11 @@ loader.
 npm install uxdsl-webpack-loader uxdsl-core --save-dev
 ```
 
+MIG-B6-28 (FEAT-008): the published tarball now declares an explicit `files`
+field (`index.js`, `README.md`) instead of shipping everything not
+gitignored — this loader has no build step and no other runtime file, so
+nothing else was ever needed.
+
 ## Usage
 
 In `webpack.config.js`:

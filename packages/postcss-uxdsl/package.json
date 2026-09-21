@@ -36,6 +36,14 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src/theme",
+    "scripts/codemod-size-overrides.js",
+    "scripts/codemod-namespace.js",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "npm run build && node --test test/*.test.js",
     "build": "tsc",

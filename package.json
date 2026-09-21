@@ -7,11 +7,12 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "npm --prefix packages/postcss-uxdsl test && npm --prefix packages/uxdsl-core test && npm --prefix packages/uxdsl-cli test && npm --prefix packages/vite-plugin-uxdsl test && npm --prefix packages/uxdsl-webpack-loader test && npm --prefix packages/uxdsl-vscode test && node fixtures/parity/run.js && node fixtures/mig-b2-03-cli-init/run.js && node --test fixtures/mig07-consumer/test/*.test.js && node --test scripts/verify-docs-update.test.js && node --test scripts/docs-provenance.test.js && node scripts/generate-language-artifacts.js --check",
+    "test": "npm --prefix packages/postcss-uxdsl test && npm --prefix packages/uxdsl-core test && npm --prefix packages/uxdsl-cli test && npm --prefix packages/vite-plugin-uxdsl test && npm --prefix packages/uxdsl-webpack-loader test && npm --prefix packages/uxdsl-vscode test && node fixtures/parity/run.js && node fixtures/mig-b2-03-cli-init/run.js && node --test fixtures/mig07-consumer/test/*.test.js && node --test scripts/verify-docs-update.test.js && node --test scripts/docs-provenance.test.js && node --test scripts/release.test.js && node scripts/generate-language-artifacts.js --check",
     "test:parity": "node fixtures/parity/run.js",
     "verify:vite-adapter": "node fixtures/vite-adapter/run.js",
     "verify:webpack-adapter": "node fixtures/webpack-adapter/run.js",
     "verify:vscode-extension": "node fixtures/vscode-extension/run.js",
+    "verify:pack-budget": "node scripts/release.js --check-pack",
     "generate:language": "npm --prefix packages/postcss-uxdsl run build && node scripts/generate-language-artifacts.js",
     "prepare": "husky",
     "verify:docs": "node scripts/verify-docs-update.js",
