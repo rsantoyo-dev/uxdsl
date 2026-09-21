@@ -115,7 +115,7 @@ pierde la gramática de UXDSL.
   custom data.
 - `test/completion-context.test.js` (node --test, en el paquete de la extensión):
   - un selector, un comentario o un string no ofrecen funciones;
-  - después de `padding: ` sí;
+  - después de `padding:` sí;
   - `@ds-button(` ofrece roles;
   - `@` ofrece directivas;
   - un espacio en un selector no dispara nada.
@@ -162,7 +162,7 @@ ver "Límites y seguimiento").
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Base `9be6956` (2026-09-21). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| SHA base / entrega / PR | Base `9be6956` (2026-09-21). Entrega: `07dd397` en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
 | Reproducción antes del cambio | Sobre `9be6956`: `node -e "const d=require('./packages/uxdsl-vscode/uxdsl.custom-data.json'); console.log(Object.keys(d), d.atDirectives.map(x=>x.name))"` da `[ 'version', 'functions', 'atDirectives' ] [ '@theme', '@ds-surface', '@ds-button', '@ds-typography' ]` — confirma la clave `functions` inválida para el formato de CSS custom data, `@ds-typography` (no existe) y falta de `@ds-input`. `grep -n "' '" packages/uxdsl-vscode/src/extension.ts` confirma `' '` como carácter de disparo. Escrito a mano en `uxdsl.custom-data.json`: el ejemplo `radius(md)` (falla `UXD_EDGE_REFERENCE` real, verificado). 2026-09-21 |
 | Criterio → regresión | "Gramática válida, generada, tokenización real" → `packages/uxdsl-vscode/test/grammar.test.js` (9 tests, usa `vscode-textmate`+`vscode-oniguruma`, el motor real de VS Code — no `new RegExp`; incluye la regresión real encontrada durante esta story: contenido dentro de un string se resaltaba como directiva/función real). "Custom data generada y correcta" → `scripts/generate-language-artifacts.js --check` cubre `uxdsl.custom-data.json`; verificado manualmente que no tiene `functions`, no tiene `@ds-typography`/`typography()`, y sí tiene `@ds-input`. "Completado sin espacio, sensible al contexto" → `packages/uxdsl-vscode/test/completion-context.test.js` (21 tests: selector/comentario/string sin funciones, `padding:` con funciones, `@ds-button(` con argumentos de esa directiva, `@` con directivas, multilínea, anidamiento, pseudo-selectores con `:`, comillas escapadas) + lectura de `extension.ts` (trigger characters ya no incluyen `' '`). "Sin `.vsix` en el repo, empaquetado real" → `git rm packages/uxdsl-vscode/uxdsl-vscode-0.0.1.vsix` + `.gitignore` (`*.vsix`) + `fixtures/vscode-extension/run.js` (6 checks sobre un `.vsix` real producido por `vsce package`, incluyendo extracción y parseo del manifest/grammar/package.json empaquetados) |
 | Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, `@vscode/vsce` 3.9.2, `vscode-textmate` 9.3.2, `vscode-oniguruma` 2.0.1, desde el root del monorepo: `npm run generate:language && node scripts/generate-language-artifacts.js --check` (exit 0), `npm --prefix packages/uxdsl-vscode run compile` (exit 0), `npm --prefix packages/uxdsl-vscode test` (exit 0, 30/30 — 21 de completion-context + 9 de grammar), `npm test` (exit 0, todas las suites, incluye ahora `uxdsl-vscode` en la cadena), `node fixtures/vscode-extension/run.js` (PASS, 6/6, empaqueta un `.vsix` real y lo inspecciona), `npm run verify:beta2`/`verify:beta3`/`verify:beta4`/`verify:beta5` (todos PASS, confirman que el refactor de `control-engine.ts`/`language.ts` no cambió ningún comportamiento del compilador), `npm run build` en `packages/playground-nextjs` (build de producción completo, OK) |
