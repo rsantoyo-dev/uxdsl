@@ -3,19 +3,23 @@
 // MIG-B6-01 (FEAT-007): regression coverage for the bug MIG-B5-02 shipped in
 // 0.5.0-beta.5. That change added an "Unknown <family> key" warning for
 // typography_details/palette/fonts.families, comparing each key a project
-// declares against Object.keys(DEFAULT_THEME.<family>) — 4 palette roles, 3
-// font roles, 2 typography tags. DEFAULT_THEME is a deliberately minimal,
-// zero-crash fallback (see its own doc comment in default-theme.ts), not a
-// catalog of every valid key, and none of these three families has a real
-// closed set anywhere in the compiler: `foundations.ts`'s `namespacedVars()`
-// turns any key into a CSS var for palette/fonts.families, and
-// `typography.ts` validates tag names by shape only, not membership in a
-// fixed list. So every project with a richer palette than the 4 built-in
-// roles (or a custom font role, or a custom typography tag) saw incorrect
-// "won't be compiled" warnings on every plain `uxdsl build`/`watch`, no flag
-// needed. MIG-B6-01 removed that nested check entirely; these tests pin the
-// fix by asserting such keys produce zero warnings, while the unrelated
-// MIG-B3-03 top-level family check keeps working.
+// declares against Object.keys(DEFAULT_THEME.<family>). None of these three
+// families has a real closed set anywhere in the compiler:
+// `foundations.ts`'s `namespacedVars()` turns any key into a CSS var for
+// palette/fonts.families, and `typography.ts` validates tag names by shape
+// only, not membership in a fixed list. So every project with a role/tag
+// DEFAULT_THEME doesn't itself define saw incorrect "won't be compiled"
+// warnings on every plain `uxdsl build`/`watch`, no flag needed. MIG-B6-01
+// removed that nested check entirely; these tests pin the fix by asserting
+// such keys produce zero warnings, while the unrelated MIG-B3-03 top-level
+// family check keeps working.
+//
+// MIG-B6-29 (FEAT-008) grew DEFAULT_THEME from a "deliberately minimal"
+// 4-palette-family/3-font-family/2-typography-tag fallback into the full
+// reviewed theme/base.json (14 palette families, 2 font families, 17
+// typography tags) — the tests below use family/tag names that are novel
+// under *either* shape, so they keep testing "no closed set" rather than
+// quietly starting to pass only because the name is now a real built-in.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -34,7 +38,11 @@ test('MIG-B6-01: public runtime validates the README example and actual playgrou
   const section = readme.split('### Recognized theme families')[1];
   const example = section.match(/```json\s*([\s\S]*?)```/);
   assert.ok(example, 'README example must remain executable JSON');
-  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../../playground-nextjs/uxdsl.theme.base.json'), 'utf8'));
+  // MIG-B6-29 (FEAT-008): the base theme moved from the playground-only
+  // packages/playground-nextjs/uxdsl.theme.base.json into the package
+  // itself (postcss-uxdsl/theme/base.json) — this is now the same file
+  // DEFAULT_THEME loads, not a second copy the playground alone used.
+  const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/theme/base.json'), 'utf8'));
   for (const theme of [JSON.parse(example[1]), base]) {
     const result = runtime.validateAndNormalizeTheme(theme);
     assert.equal(result.ok, true, JSON.stringify(result.errors));
@@ -42,22 +50,26 @@ test('MIG-B6-01: public runtime validates the README example and actual playgrou
   }
 });
 
-test('MIG-B6-01: a palette role beyond DEFAULT_THEME\'s 4 built-ins produces no warning', () => {
+test('MIG-B6-01: a palette role beyond DEFAULT_THEME\'s built-ins produces no warning', () => {
   const result = validateAndNormalizeTheme({
     palette: {
-      secondary: { main: '#0ea5e9' },
-      tertiary: { main: '#a855f7' },
-      success: { main: '#16a34a' },
-      info: { main: '#0284c7' },
-      warning: { main: '#d97706' },
-      dark: { main: '#111827' },
-      light: { main: '#f9fafb' },
+      // MIG-B6-29: these must NOT collide with theme/base.json's own 14
+      // families (primary/secondary/surface/tertiary/success/info/warning/
+      // error/dark/neutral/light/text/divider/action), or this would stop
+      // proving "no closed set" and start passing for the wrong reason.
+      brand: { main: '#0ea5e9' },
+      accent: { main: '#a855f7' },
+      lagoon: { main: '#16a34a' },
+      sunrise: { main: '#0284c7' },
+      ember: { main: '#d97706' },
+      midnight: { main: '#111827' },
+      chalk: { main: '#f9fafb' },
     },
   });
   assert.deepEqual(unknownWarnings(result), []);
 });
 
-test('MIG-B6-01: a custom fonts.families role beyond DEFAULT_THEME\'s 3 built-ins produces no warning', () => {
+test('MIG-B6-01: a custom fonts.families role beyond DEFAULT_THEME\'s built-ins produces no warning', () => {
   const result = validateAndNormalizeTheme({ fonts: { families: { mono2: 'Fira Code' } } });
   assert.deepEqual(unknownWarnings(result), []);
 });

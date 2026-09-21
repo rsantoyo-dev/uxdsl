@@ -9,6 +9,85 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-29 (part 1 of this story — see "Not yet done" below):
+
+- **Visual (default theme, every zero-config project):** `DEFAULT_THEME` is
+  now `postcss-uxdsl/theme/base.json` — the full theme previously used only
+  by the Next.js playground — instead of a "deliberately minimal" 4-family
+  Palette (`primary`/`surface`/`neutral`/`error`) with hand-picked hex
+  values. A project with no theme override of its own now gets:
+  - a full 14-family Palette (adds `secondary`, `tertiary`, `success`,
+    `info`, `warning`, `dark`, `light`, `text`, `divider`, `action`; the 4
+    previous families keep their same *role* but different hex values);
+  - **`fonts.google: ["Inter:wght@400;500;600;700"]`** — a real
+    `@import` to Google's servers on every compile with no theme, unless
+    the project's own theme sets `fonts: { google: [] }`;
+  - **`modes.dark`** — the OS `prefers-color-scheme: dark` is now followed
+    automatically; pin light with `data-theme="light"` on `<html>`;
+  - font families `ui`/`code` only (the old minimal theme's third,
+    hardcoded `ui-2` is gone — a project can still add its own);
+  - `densities`/`borders`/`radii`/`shadows`/`surfaces`/`buttons`/`inputs`
+    populated in the JSON itself for the first time (previously computed
+    or hardcoded independently inside `language.ts`/`edges.ts`/
+    `shadows.ts`/`surfaces.ts`/`buttons.ts`/`inputs.ts`, with identical
+    values — this is a source-of-truth change, not a value change, for
+    these seven families specifically).
+  - `theme.colors.gray` (the dependency `border(1..5)` resolves against)
+    now matches the base theme's own gray (`#CBD5E1`/`#94A3B8`/`#64748B`/
+    `#475569`) instead of a second, independently hardcoded gray
+    (`#d1d5db`/`#9ca3af`/`#6b7280`/`#4b5563`) that only ever lived in
+    `edges.ts` — border colors shift slightly for any project that didn't
+    already override `colors.gray` itself.
+- **Fix:** a real precedence bug this same change would otherwise have
+  newly triggered on every project using a legacy `@theme { shadow-N: ...
+  }` / `border-N` / `radius-N` / `density-N` / `surface-<role>` /
+  `button-<role>` / `input-<role>` block without also setting the
+  equivalent field on `theme` itself. `index.ts` merged legacy declarations
+  under the *resolved* effective theme (`{ ...legacy, ...effectiveTheme.shadows
+  }`), which only ever meant "legacy loses to an explicit override" back
+  when `DEFAULT_THEME` didn't define these seven families at all — once it
+  does, `effectiveTheme.shadows` is always populated by the default, so
+  legacy silently lost to the default instead of winning as documented
+  ("defaults < legacy < explicit override"). Fixed by merging legacy
+  declarations under the *unresolved* theme the caller/discovery actually
+  provided, for all seven families, and now covered by a fake-`npm`-free
+  regression test per family (four already existed; density did not and is
+  new here).
+- `typography-defaults.ts`'s `DEFAULT_TYPOGRAPHY` no longer feeds
+  `DEFAULT_THEME.typography_details` (the JSON's own is already complete on
+  its own terms) — left in place, unused, as MIG-B6-17's own explicit
+  exception to remove. A `@ds-typo` role with no explicit
+  `typography_details` entry of its own no longer inherits
+  `textTransform`/`textDecoration`/`fontStyle`/`marginBlockStart`/
+  `marginBlockEnd` from a `typography_details.default` that used to
+  provide them (the base JSON's own `default` role provides
+  `fontSize`/`fontWeight`/`lineHeight`/`letterSpacing` instead) —
+  reconciling `@ds-typo`'s consumption side with the new shape is
+  MIG-B6-17's stated scope, not this change's.
+- `theme/base.json` is generated nowhere and hand-edited directly; the
+  legacy `default-{densities,borders,radii,shadows,buttons,inputs,
+  surfaces}.uxdsl`/`default-spacing.css`/`default-typography.uxdsl` packs
+  remain generated *from* it via `scripts/generate-language-artifacts.js`
+  (unchanged mechanism, now reading a JSON-derived engine default instead
+  of a hardcoded one). `default-colors.css`/`default-palette.css` are a
+  deliberately separate, richer, opt-in legacy palette (a different design
+  direction, not this JSON) and are untouched.
+- The Next.js playground's own copy of this file
+  (`packages/playground-nextjs/uxdsl.theme.base.json`) is deleted;
+  `packages/playground-nextjs/themes.js` now requires
+  `postcss-uxdsl/theme/base.json` instead.
+- **Not yet done** (explicitly later parts of this same story, per its own
+  multi-phase scope): the accessibility contrast gate (`checkThemeContrast`)
+  has not run against this theme yet, so none of its colors have been
+  verified or corrected for contrast; the Google Fonts URL is not yet
+  percent-encoded (a family name with a space would currently produce an
+  invalid URL — the shipped default has none, so it is unaffected); and
+  `generateThemeCss()` (the runtime/SSR path) does not emit the Google
+  Fonts `@import` at all yet — only the PostCSS plugin does. Neither
+  Google Fonts gap is new (both already existed for any project that had
+  set `fonts.google` explicitly); both simply become visible on the
+  *default* path now that `fonts.google` ships by default.
+
 FEAT-008, MIG-B6-28:
 
 - **Packaging:** the published tarball now declares an explicit `files`

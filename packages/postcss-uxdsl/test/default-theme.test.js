@@ -6,6 +6,7 @@ const plugin = exported.default || exported;
 const { DEFAULT_THEME, getDefaultTheme, resolveTheme } = require('../dist/default-theme');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
 const { inspectResponsiveValue } = require('../dist/language');
+const baseThemeJson = require('../src/theme/base.json');
 
 const compile = (source, options = {}) => postcss([plugin(options)]).process(source, { from: undefined });
 
@@ -74,11 +75,17 @@ test('MIG-B2-02: array overrides replace the whole array; undefined never overwr
   const resolved = resolveTheme({ fonts: { google: ['Example'], families: { ui: undefined, code: 'Custom Mono' } } });
   assert.deepEqual(resolved.fonts.google, ['Example']);
   // `ui` was explicitly undefined -> the default survives; `code` was a
-  // real value -> it replaces the default; `ui-2` was never mentioned ->
-  // untouched.
+  // real value -> it replaces the default; a family the caller never
+  // mentions at all -> untouched, whatever DEFAULT_THEME does or doesn't
+  // define it as.
   assert.equal(resolved.fonts.families.ui, DEFAULT_THEME.fonts.families.ui);
   assert.equal(resolved.fonts.families.code, 'Custom Mono');
-  assert.equal(resolved.fonts.families['ui-2'], DEFAULT_THEME.fonts.families['ui-2']);
+  // MIG-B6-29: DEFAULT_THEME.fonts.families is now theme/base.json's own
+  // { ui, code } — no built-in `ui-2` (the old minimal theme's third,
+  // TypeScript-literal family). A project can still add one; the default
+  // simply doesn't ship one anymore.
+  assert.equal(DEFAULT_THEME.fonts.families['ui-2'], undefined);
+  assert.equal(resolved.fonts.families['ui-2'], undefined);
 });
 
 test('MIG-B2-02: an invalid (non-object) theme is a structured rejection, not a silent fallback to defaults', () => {
@@ -173,4 +180,75 @@ test('MIG-B2-02: default headings and controls compile without legacy imports at
   const component = await compile(source, { includeTheme: false });
   assert.doesNotMatch(component.css, /:root/);
   assert.throws(() => resolveTheme(new Date()), /UXD_THEME_INVALID/);
+});
+
+// MIG-B6-29 (FEAT-008): DEFAULT_THEME now ships fonts.google and modes.dark
+// for the first time (theme/base.json's own decisions 2-3) — every project
+// with no theme override of its own now makes a real request to Google
+// Fonts and follows the OS dark-mode preference. Both are documented,
+// disableable/pinnable behaviors per the story's own owner decisions, not
+// accidents, so both need real regression coverage, not just a docs note.
+
+test('MIG-B6-29: DEFAULT_THEME requests Google Fonts by default; fonts: { google: [] } opts out', async () => {
+  const zeroConfig = await compile('.x { color: red; }');
+  assert.match(zeroConfig.css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=/);
+
+  const optedOut = await compile('.x { color: red; }', { theme: { fonts: { google: [] } } });
+  assert.doesNotMatch(optedOut.css, /@import/);
+  assert.deepEqual(resolveTheme({ fonts: { google: [] } }).fonts.google, []);
+});
+
+test('MIG-B6-29: resolveTheme(undefined) is deep-equal to theme/base.json, the literal acceptance criterion', () => {
+  assert.deepEqual(resolveTheme(undefined), baseThemeJson);
+  assert.deepEqual(DEFAULT_THEME, baseThemeJson);
+});
+
+test('MIG-B6-29: the migration.md beta.5-pinning recipe restores exactly beta.5\'s main/dark/contrast/font values', () => {
+  // Pins packages/postcss-uxdsl/docs/migration.md's own documented override
+  // literally, so a drift between the doc and resolveTheme's real behavior
+  // fails here instead of only being caught by someone copy-pasting it.
+  const resolved = resolveTheme({
+    palette: {
+      primary: { main: '#7e22ce', dark: '#581c87', contrast: '#ffffff' },
+      surface: { main: '#ffffff', dark: '#dde5eb', contrast: '#102a43' },
+      neutral: { main: '#e2e8f0', dark: '#cbd5e1' },
+      error: { main: '#c61625' },
+    },
+    fonts: {
+      google: [],
+      families: {
+        ui: 'Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+        'ui-2': 'Roboto, "Helvetica Neue", Arial, sans-serif',
+        code: 'Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace',
+      },
+    },
+  });
+  assert.equal(resolved.palette.primary.main, '#7e22ce');
+  assert.equal(resolved.palette.primary.dark, '#581c87');
+  assert.equal(resolved.palette.primary.contrast, '#ffffff');
+  assert.equal(resolved.palette.surface.dark, '#dde5eb');
+  assert.equal(resolved.palette.surface.contrast, '#102a43');
+  assert.equal(resolved.palette.neutral.main, '#e2e8f0');
+  assert.equal(resolved.palette.neutral.dark, '#cbd5e1');
+  assert.equal(resolved.palette.error.main, '#c61625');
+  assert.equal(resolved.fonts.families.ui, 'Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif');
+  assert.equal(resolved.fonts.families['ui-2'], 'Roboto, "Helvetica Neue", Arial, sans-serif');
+  assert.equal(resolved.fonts.families.code, 'Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace');
+  assert.deepEqual(resolved.fonts.google, []);
+  // Documented, disclosed non-goal: beta.5 never defined a `light` variant
+  // for these families at all, and there is no override that removes a
+  // merged-in key — this recipe is not bit-for-bit identical to beta.5.
+  assert.equal(resolved.palette.primary.light, '#a855f7');
+});
+
+test('MIG-B6-29: DEFAULT_THEME follows the OS dark-mode preference by default; data-theme="light" pins light', () => {
+  const css = generateThemeCss();
+  assert.match(css, /@media \(prefers-color-scheme: dark\)/);
+  // The light-pin guard is baked into the dark-mode selector itself
+  // (foundations.ts), not a separate override a project must author.
+  assert.match(css, /:root:not\(\[data-theme='light'\]\)/);
+  assert.match(css, /:root\[data-theme='dark'\]/);
+  // Sanity: the actual dark-mode palette values differ from light, so this
+  // is a real second color set, not an empty/no-op media query.
+  assert.notEqual(DEFAULT_THEME.modes.dark.palette.primary.main, DEFAULT_THEME.palette.primary.main);
 });

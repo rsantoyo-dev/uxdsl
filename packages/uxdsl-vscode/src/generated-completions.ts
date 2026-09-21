@@ -9,7 +9,16 @@ export const completions = {
       ],
       "tones": [
         "primary",
-        "surface"
+        "secondary",
+        "surface",
+        "tertiary",
+        "success",
+        "info",
+        "warning",
+        "error",
+        "dark",
+        "neutral",
+        "light"
       ],
       "sizes": [
         "0",
@@ -32,7 +41,16 @@ export const completions = {
       ],
       "tones": [
         "primary",
-        "surface"
+        "secondary",
+        "surface",
+        "tertiary",
+        "success",
+        "info",
+        "warning",
+        "error",
+        "dark",
+        "neutral",
+        "light"
       ],
       "sizes": [
         "0",
@@ -55,7 +73,16 @@ export const completions = {
       ],
       "tones": [
         "primary",
-        "surface"
+        "secondary",
+        "surface",
+        "tertiary",
+        "success",
+        "info",
+        "warning",
+        "error",
+        "dark",
+        "neutral",
+        "light"
       ],
       "sizes": [
         "0",

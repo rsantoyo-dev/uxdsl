@@ -1,78 +1,36 @@
 import { deepMergeTheme } from './ds-runtime/theme-validate';
 import { normalizeSpacingDefinitions } from './language';
-import { DEFAULT_TYPOGRAPHY } from './typography-defaults';
+import { BASE_THEME } from './base-theme';
 
 /**
- * MIG-B2-02 (FEAT-003): a single canonical default theme, merged under
- * whatever a consumer provides, so `generateThemeCss()`/the PostCSS plugin
- * produce valid, strictly-passing CSS from an omitted or partial theme
- * instead of failing with `UXD_REFERENCE_MISSING` for every family that
- * has no built-in fallback of its own.
+ * MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is the reviewed `theme/base.json`
+ * itself — colors, fonts (including `fonts.google`), breakpoints, spacing,
+ * densities, borders, radii, shadows, the full 14-family palette,
+ * `modes.dark`, surfaces, buttons, inputs and typography_details — not a
+ * "deliberately minimal" 4-family subset hand-picked to avoid crashes.
+ * Before this, four different places answered "what are the defaults"
+ * (this file's own minimal literal, the full JSON the playground alone
+ * used, values hardcoded in typography.ts/typography-defaults.ts, and the
+ * opt-in legacy `default-*.css`/`.uxdsl` packs) and their values diverged
+ * (see the story's own reproduction). Now there is one: `theme/base.json`,
+ * loaded once and deep-frozen by `base-theme.ts`; every engine
+ * (`language.ts`, `edges.ts`, `shadows.ts`, `surfaces.ts`, `buttons.ts`,
+ * `inputs.ts`) derives its own `DEFAULT_*` export from the same object
+ * instead of maintaining a parallel literal.
  *
- * Scope is deliberately minimal: exactly the tokens the *always-on*
- * presets (Density, Radius, Surface, Button, Input — none of which can be
- * turned off short of `includeTheme: false`, which skips emission but
- * still validates against this same effective theme) reference and had no
- * default for before this. Radius/Shadow/Border/Surface/Button/Input
- * shapes themselves already default via `DEFAULT_RADII`/`DEFAULT_SHADOWS`/
- * `DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`/`DEFAULT_SURFACES`/
- * `DEFAULT_BUTTONS`/`DEFAULT_INPUTS` in their own modules — this file does
- * not duplicate those. `theme.colors.gray` is deliberately NOT set here
- * even though it would visually match: `DEFAULT_BORDER_COLORS` (edges.ts)
- * already supplies it, merged in by `foundations.ts`, and this file
- * merging in a *different* default value for the same `gray` family key
- * would only reintroduce the exact "two divergent default sources" bug
- * this story exists to avoid — one leaked from the other's silently
- * unresolved case rather than one having no default at all.
- *
- * Colors here are literal hex, not `color()` references into
- * `postcss-uxdsl/theme/default-colors.css`'s richer palette (secondary/
- * tertiary/success/info/warning/dark/light + dark-mode variants) — that
- * file remains available as a separate, opt-in, more complete palette;
- * this is only the minimum needed for the compiler to never crash on an
- * incomplete theme. The specific values (purple/slate/red family) were
- * chosen to match that file's own primary/surface/neutral/error entries,
- * so a project that later imports the richer palette sees no visible
- * jump.
+ * `typography-defaults.ts`'s `DEFAULT_TYPOGRAPHY` (a *different*,
+ * richer-but-differently-shaped typography map, previously spliced in here
+ * with an ad hoc `default.fontSize`/`code.fontSize` patch to plug a
+ * zero-config crash) no longer feeds `DEFAULT_THEME` — the JSON's own
+ * `typography_details` is already complete on its own terms. That file is
+ * left as-is; MIG-B6-17 owns removing whatever `@ds-typo` consumption-side
+ * fallback logic still assumes the old shape (see this story's own
+ * evidence for the specific fields this can affect: `@ds-typo` roles no
+ * longer inherit `textTransform`/`textDecoration`/`fontStyle`/
+ * `marginBlockStart`/`marginBlockEnd` from a `typography_details.default`
+ * that used to provide them and no longer does).
  */
-export const DEFAULT_THEME: Readonly<Record<string, any>> = Object.freeze({
-  spacing: Object.freeze({
-    1: '0.125rem', 2: '0.25rem', 3: '0.5rem', 4: '0.75rem', 5: '1rem', 6: '1.5rem',
-    7: '2rem', 8: '2.5rem', 9: '3.125rem', 10: '3.875rem', 11: '4.875rem', 12: '6.125rem',
-    13: '7.75rem', 14: '9.75rem', 15: '12.25rem', 16: '15.375rem',
-  }),
-  palette: Object.freeze({
-    primary: Object.freeze({ main: '#7e22ce', dark: '#581c87', contrast: '#ffffff' }),
-    surface: Object.freeze({ main: '#ffffff', dark: '#dde5eb', contrast: '#102a43' }),
-    neutral: Object.freeze({ main: '#e2e8f0', dark: '#cbd5e1' }),
-    error: Object.freeze({ main: '#c61625' }),
-  }),
-  fonts: Object.freeze({
-    families: Object.freeze({
-      ui: 'Inter, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      'ui-2': 'Roboto, "Helvetica Neue", Arial, sans-serif',
-      code: 'Menlo, "SF Mono", Monaco, Inconsolata, "Roboto Mono", "Source Code Pro", monospace',
-    }),
-  }),
-  // MIG-B2-03: the legacy postcss-uxdsl/theme/default-typography.uxdsl pack
-  // remains available for explicit imports, but `generate-entry` no longer
-  // imports it automatically. That pack fully defines h1-h6/p/span/
-  // body/etc. via literal xs()/space() declarations that don't read
-  // theme.typography_details at all, but its own `default`/`code` roles
-  // (`.ds-typo[data-typo="default"/"code"]`) only cover transform/
-  // decoration/style/margin — `fontSize` for those two specifically has
-  // always come from theme.typography_details, undocumented anywhere as
-  // a requirement. That's the exact zero-config crash this closes: a
-  // fresh `uxdsl init` + `uxdsl build`, no theme at all, failed with
-  // UXD_REFERENCE_MISSING for --uxdsl__typography__default-size and
-  // -code-size. A project with its own typography_details.default/.code
-  // still overrides these per-key normally.
-  typography_details: Object.freeze({
-    ...DEFAULT_TYPOGRAPHY,
-    default: Object.freeze({ ...DEFAULT_TYPOGRAPHY.default, fontSize: '1rem' }),
-    code: Object.freeze({ fontSize: '0.9rem' }),
-  }),
-});
+export const DEFAULT_THEME: Readonly<Record<string, any>> = BASE_THEME;
 
 /** Returns a fresh, mutable deep copy of `DEFAULT_THEME` — browser-safe
  * (no `structuredClone` dependency assumed) and clonable, per item 2. */

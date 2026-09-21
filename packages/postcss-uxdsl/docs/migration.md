@@ -1,5 +1,75 @@
 # Migración a UXDSL 0.5.0-beta.2
 
+## Adelanto beta.6 — MIG-B6-29: el tema por defecto cambió (sin publicar)
+
+`DEFAULT_THEME` pasó de un subconjunto mínimo (4 familias de palette, 3
+familias de fuente, sin `modes.dark` ni `fonts.google`) al JSON base completo
+(`postcss-uxdsl/theme/base.json`) que antes sólo usaba el playground. Un
+proyecto **sin tema propio** ve un cambio visual real al actualizar. Uno con
+tema propio no ve cambio en ninguna clave que su propio tema ya declare —
+`deepMergeTheme` sigue mezclando por clave; sólo lo que el proyecto nunca
+mencionó cambia.
+
+Para conservar el mismo `main`/`dark`/`contrast`/`ui`/`ui-2`/`code` de
+beta.5, agregar este override (sustituye únicamente esas claves; todo lo
+demás del JSON base —incluidas las 10 familias de palette nuevas, y las
+siete familias densities/borders/radii/shadows/surfaces/buttons/inputs,
+sin cambio de valor respecto a beta.5— sigue disponible pero simplemente
+no lo usa ningún componente que sólo referencie
+`primary`/`surface`/`neutral`/`error`). No es bit-a-bit idéntico a beta.5:
+`primary`/`surface`/`neutral`/`error` ganan además un `light` que beta.5
+nunca definió (mezcla por clave, no hay forma de quitarlo) — una variable
+CSS más por familia, sin efecto visual salvo que el propio proyecto
+empiece a referenciar `palette(<familia>.light)` a propósito):
+
+```json
+{
+  "palette": {
+    "primary": { "main": "#7e22ce", "dark": "#581c87", "contrast": "#ffffff" },
+    "surface": { "main": "#ffffff", "dark": "#dde5eb", "contrast": "#102a43" },
+    "neutral": { "main": "#e2e8f0", "dark": "#cbd5e1" },
+    "error": { "main": "#c61625" }
+  },
+  "fonts": {
+    "google": [],
+    "families": {
+      "ui": "Inter, system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "ui-2": "Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "code": "Menlo, \"SF Mono\", Monaco, Inconsolata, \"Roboto Mono\", \"Source Code Pro\", monospace"
+    }
+  }
+}
+```
+
+`fonts.google: []` reemplaza el array completo (no lo vacía por partes) y
+evita la petición real a Google Fonts que el nuevo default hace por defecto.
+
+**Esta receta no cubre `typography_details`.** `DEFAULT_THEME.typography_details`
+ya no viene de `typography-defaults.ts`'s `DEFAULT_TYPOGRAPHY` (ver más abajo);
+viene del JSON base, con una forma de campos distinta (por ejemplo, `h1.lineHeight`
+pasa de `xs(1.1) md(1.1)` a `xs(1.2) md(1.3)`, y ningún rol trae ya
+`fontFamily`/`textTransform`/`textDecoration`/`fontStyle`/`marginBlockStart`/
+`marginBlockEnd` por defecto salvo que el propio rol los declare). Reconciliar
+esa forma es responsabilidad explícita de MIG-B6-17, no de esta receta — un
+proyecto que también quiera fijar `typography_details` exactamente como en
+beta.5 debe copiar el bloque completo desde la versión de `typography-defaults.ts`
+de beta.5 a su propio override.
+
+**`modes.dark` no tiene receta de eliminación.** `deepMergeTheme` mezcla
+objetos por clave y nunca borra una clave — no existe un valor de override
+que quite `modes.dark` una vez que `DEFAULT_THEME` lo define (`modes: {}`
+es un no-op, exactamente como no mencionar `modes` en absoluto: ver la
+sección "Zero-config defaults" del README). Esto es una decisión explícita
+del dueño de esta historia, no un vacío de esta guía. Lo único soportado:
+- Fijar el modo claro en pantalla con `data-theme="light"` en `<html>` — el
+  CSS de modo oscuro se sigue emitiendo (el selector `:root:not([data-theme='light'])`
+  simplemente no aplica), no es una reducción de bytes, es una fijación visual.
+- Si además se quiere que el modo oscuro sea visualmente un no-op (no sólo
+  fijado, sino idéntico al claro), sobrescribir cada clave de
+  `modes.dark.palette.<familia>` con el mismo valor que su
+  `palette.<familia>` correspondiente — sigue emitiéndose el CSS, deja de
+  cambiar nada visible.
+
 ## Adelanto beta.6 — MIG-B6-01 (sin publicar)
 
 No requiere cambiar el JSON ni el CSS: `modes` y `typography` legacy dejan de

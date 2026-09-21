@@ -110,6 +110,22 @@ test('MIG-B3-05: default-theme.ts and typography-defaults.ts are covered by the 
   assert.match(result.stderr, /default-theme\.ts/);
 });
 
+test('MIG-B6-29: theme/base.json is covered by the same guard', () => {
+  const { dir, pkgDir } = mkFakeRepo();
+  fs.mkdirSync(path.join(pkgDir, 'src', 'theme'), { recursive: true });
+  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'base.json'), '{}\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add base.json']);
+
+  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'base.json'), '{"spacing":{}}\n');
+  fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
+  stage(dir, 'packages/postcss-uxdsl/src/theme/base.json', 'packages/postcss-uxdsl/README.md');
+  const result = runGuard(dir);
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Visual-default change without a CHANGELOG note/);
+  assert.match(result.stderr, /theme\/base\.json/);
+});
+
 test('MIG-B3-05: a docs-only change (README/CHANGELOG/docs) never requires further docs', () => {
   const { dir, pkgDir } = mkFakeRepo();
   fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');

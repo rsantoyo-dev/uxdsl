@@ -6,6 +6,7 @@ const exported=require('../dist/index');
 const plugin=exported.default||exported;
 const {generateInputCss,getInputTokens,inputDeclarations,inputComponentCss,inspectInputTheme,parseInputArguments}=require('../dist/inputs');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
+const {resolveTheme}=require('../dist/default-theme');
 const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
 // Full 1-16 spacing plus the palette families the always-on density/surface/
 // button/input defaults need, so strict reference validation (every :root
@@ -46,7 +47,14 @@ test('Input legacy packs merge JSON fields and do not leak into another compilat
 });
 test('generated legacy Input defaults match engine defaults',async()=>{
  const source=fs.readFileSync(require.resolve('../src/theme/default-inputs.uxdsl'),'utf8');
- assert.deepEqual(vars((await compile(source,withBaseline())).css),vars(generateInputCss(withBaseline())));
+ // MIG-B6-29: compile() resolves withBaseline() against the now much
+ // larger DEFAULT_THEME.palette (14 families, not 4) before generating
+ // tone variables; a bare generateInputCss(withBaseline()) call bypasses
+ // that resolution and only ever sees withBaseline()'s own 4 families, so
+ // the two sides must both go through resolveTheme() to compare the same
+ // effective tone set instead of two different ones that happened to
+ // coincide back when DEFAULT_THEME.palette itself only had 4 families.
+ assert.deepEqual(vars((await compile(source,withBaseline())).css),vars(generateInputCss(resolveTheme(withBaseline()))));
 });
 test('underline maps to bottom border and preserves local CSS ordering',async()=>{
  const css=(await compile('.x { @ds-input(underline); border-bottom-width: 3px; }',withBaseline())).css;

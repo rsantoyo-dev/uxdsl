@@ -48,6 +48,12 @@ const VISUAL_DEFAULT_FILES = [
   'packages/postcss-uxdsl/src/default-theme.ts',
   'packages/postcss-uxdsl/src/typography-defaults.ts',
   'packages/postcss-uxdsl/src/typography.ts',
+  // MIG-B6-29 (FEAT-008): DEFAULT_THEME is theme/base.json itself now — most
+  // future visual-default changes will edit this file directly, not
+  // default-theme.ts (which barely has any literal content left). The
+  // planned base.contrast-exceptions.json (contrast-gate phase of this
+  // same story) belongs here too once it exists.
+  'packages/postcss-uxdsl/src/theme/base.json',
 ];
 const VISUAL_DEFAULT_CHANGELOG = 'packages/postcss-uxdsl/CHANGELOG.md';
 

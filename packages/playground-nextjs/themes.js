@@ -1,5 +1,7 @@
 const { deepMergeTheme } = require('postcss-uxdsl/ds-runtime');
-const baseTheme = require('./uxdsl.theme.base.json');
+// MIG-B6-29 (FEAT-008): the base theme moved into the package itself —
+// this playground no longer owns the only copy of it.
+const baseTheme = require('postcss-uxdsl/theme/base.json');
 const overrides = {
   default: require('./uxdsl.theme.default.json'),
   green: require('./uxdsl.theme.green.json'),

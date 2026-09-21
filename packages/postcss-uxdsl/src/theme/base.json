@@ -23,6 +23,65 @@
     "lg": 1024,
     "xl": 1280
   },
+  "spacing": {
+    "1": "0.125rem",
+    "2": "0.25rem",
+    "3": "0.5rem",
+    "4": "0.75rem",
+    "5": "1rem",
+    "6": "1.5rem",
+    "7": "2rem",
+    "8": "2.5rem",
+    "9": "3.125rem",
+    "10": "3.875rem",
+    "11": "4.875rem",
+    "12": "6.125rem",
+    "13": "7.75rem",
+    "14": "9.75rem",
+    "15": "12.25rem",
+    "16": "15.375rem"
+  },
+  "densities": {
+    "0": "0",
+    "1": "xs(space(1)) md(space(2)) xl(space(3))",
+    "2": "xs(space(2)) md(space(3)) xl(space(4))",
+    "3": "xs(space(3)) md(space(4)) xl(space(5))",
+    "4": "xs(space(4)) md(space(5)) xl(space(6))",
+    "5": "xs(space(5)) md(space(6)) xl(space(7))",
+    "6": "xs(space(6)) md(space(7)) xl(space(8))",
+    "7": "xs(space(7)) md(space(8)) xl(space(9))",
+    "8": "xs(space(8)) md(space(9)) xl(space(10))",
+    "9": "xs(space(9)) md(space(10)) xl(space(11))",
+    "10": "xs(space(10)) md(space(11)) xl(space(12))",
+    "11": "xs(space(11)) md(space(12)) xl(space(13))",
+    "12": "xs(space(12)) md(space(13)) xl(space(14))",
+    "13": "xs(space(13)) md(space(14)) xl(space(15))",
+    "14": "xs(space(14)) md(space(15)) xl(space(16))",
+    "15": "xs(space(15)) md(space(16)) xl(space(16))"
+  },
+  "borders": {
+    "1": "xs(1px solid color(gray.300))",
+    "2": "xs(space(1) solid color(gray.300))",
+    "3": "xs(space(2) solid color(gray.400))",
+    "4": "xs(space(3) solid color(gray.500))",
+    "5": "xs(space(4) solid color(gray.600))"
+  },
+  "radii": {
+    "0": "0",
+    "1": "xs(space(1)) lg(space(2))",
+    "2": "xs(space(2)) lg(space(3))",
+    "3": "xs(space(3)) lg(space(4))",
+    "4": "xs(space(4)) lg(space(6))",
+    "5": "xs(space(6)) lg(space(8))"
+  },
+  "shadows": {
+    "0": "none",
+    "1": "0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1)",
+    "2": "0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12)",
+    "3": "0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14)",
+    "4": "0 4px 6px rgba(0, 0, 0, 0.08), 0 10px 15px rgba(0, 0, 0, 0.16)",
+    "5": "0 10px 15px rgba(0, 0, 0, 0.1), 0 20px 25px rgba(0, 0, 0, 0.2)"
+  },
   "palette": {
     "primary": {
       "main": "#7e22ce",
@@ -161,23 +220,135 @@
       }
     }
   },
-  "spacing": {
-    "1": "0.125rem",
-    "2": "0.25rem",
-    "3": "0.5rem",
-    "4": "0.75rem",
-    "5": "1rem",
-    "6": "1.5rem",
-    "7": "2rem",
-    "8": "2.5rem",
-    "9": "3.125rem",
-    "10": "3.875rem",
-    "11": "4.875rem",
-    "12": "6.125rem",
-    "13": "7.75rem",
-    "14": "9.75rem",
-    "15": "12.25rem",
-    "16": "15.375rem"
+  "surfaces": {
+    "contained": {
+      "padding": "density(2)",
+      "radius": "radius(2)",
+      "bg": "palette(surface-main)",
+      "color": "palette(surface-contrast)",
+      "border": "1px solid palette(surface-dark)",
+      "shadow": "shadow(1)"
+    },
+    "outlined": {
+      "padding": "density(2)",
+      "radius": "radius(2)",
+      "bg": "transparent",
+      "color": "palette(surface-contrast)",
+      "border": "1px solid palette(neutral-main)",
+      "shadow": "none"
+    },
+    "flat": {
+      "padding": "density(2)",
+      "radius": "radius(2)",
+      "bg": "transparent",
+      "color": "palette(surface-contrast)",
+      "border": "none",
+      "shadow": "none"
+    }
+  },
+  "buttons": {
+    "contained": {
+      "surface": "contained",
+      "base": {},
+      "states": {
+        "hover": {
+          "bg": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
+          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))"
+        },
+        "selected": {
+          "bg": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
+          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))"
+        }
+      }
+    },
+    "outlined": {
+      "surface": "outlined",
+      "base": {},
+      "states": {
+        "hover": {
+          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
+          "border": "1px solid var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+        },
+        "selected": {
+          "bg": "var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main))",
+          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))",
+          "border": "1px solid var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main))"
+        }
+      }
+    },
+    "flat": {
+      "surface": "flat",
+      "base": {},
+      "states": {
+        "hover": {
+          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+        },
+        "selected": {
+          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+        }
+      }
+    }
+  },
+  "inputs": {
+    "contained": {
+      "surface": "contained",
+      "base": {
+        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "placeholder": "palette(neutral.dark)"
+      },
+      "states": {
+        "focus": {
+          "border": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+          "shadow": "shadow(2)"
+        },
+        "invalid": {
+          "border": "1px solid palette(error.main)"
+        },
+        "disabled": {
+          "color": "palette(neutral.dark)",
+          "opacity": "0.6"
+        }
+      }
+    },
+    "outlined": {
+      "surface": "outlined",
+      "base": {
+        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "placeholder": "palette(neutral.dark)"
+      },
+      "states": {
+        "focus": {
+          "border": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))"
+        },
+        "invalid": {
+          "border": "1px solid palette(error.main)"
+        },
+        "disabled": {
+          "opacity": "0.6"
+        }
+      }
+    },
+    "underline": {
+      "surface": "flat",
+      "base": {
+        "border": "none",
+        "shadow": "none",
+        "underline": "1px solid palette(neutral.dark)",
+        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "placeholder": "palette(neutral.dark)"
+      },
+      "states": {
+        "focus": {
+          "underline": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))"
+        },
+        "invalid": {
+          "underline": "1px solid palette(error.main)"
+        },
+        "disabled": {
+          "opacity": "0.6"
+        }
+      }
+    }
   },
   "typography": {
     "font-code": "\"JetBrains Mono\", \"SF Mono\", Menlo, monospace"

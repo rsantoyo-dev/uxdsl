@@ -155,7 +155,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // still produces a fully-defined, strictly-valid effective theme
       // instead of leaving whichever families the caller didn't mention
       // undefined.
-      const effectiveTheme = resolveTheme(opts.theme ?? discovered?.theme);
+      // MIG-B6-29 (FEAT-008): the *unresolved* caller/discovered theme, kept
+      // separate from `effectiveTheme` below. Once DEFAULT_THEME started
+      // carrying its own shadows/borders/radii/surfaces/buttons/inputs
+      // (previously all absent from it), every `effectiveTheme?.<family>`
+      // read further down silently stopped meaning "what the caller
+      // explicitly asked for" and started meaning "that, or the default if
+      // they didn't" — which made a legacy `@theme { shadow-2: ... }`
+      // declaration always lose to DEFAULT_THEME's own shadow-2, even
+      // though the caller never touched shadows.2 at all. `rawTheme` is
+      // used everywhere a legacy `@theme{}` block needs to know whether a
+      // field was genuinely overridden, so "defaults < legacy < explicit
+      // override" (this story's own required precedence) holds regardless
+      // of how populated DEFAULT_THEME is.
+      const rawTheme = (opts.theme ?? discovered?.theme) as Record<string, any> | undefined;
+      const effectiveTheme = resolveTheme(rawTheme);
       const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
       const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
       const bpNames = new Set(Object.keys(bps));
@@ -578,15 +592,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
       // and resolving against the effective theme. Only the `:root`
       // definitions themselves are gated by includeTheme.
-      const shadowTheme = { shadows: { ...shadowTokens, ...effectiveTheme?.shadows } };
+      const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
       if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
 
-      const edgeTheme = { borders: { ...borderTokens, ...effectiveTheme?.borders }, radii: { ...radiusTokens, ...effectiveTheme?.radii } };
+      const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
       if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
-      const effectiveDensities = getDensityTokens(effectiveTheme, densityTokens);
+      // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
+      // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
+      // ...legacy, ...theme.densities}` already gives `theme.densities`
+      // top precedence, which is only correct when `theme` is the
+      // *unresolved* override, not `effectiveTheme` (which now always
+      // carries DEFAULT_THEME's own densities too).
+      const effectiveDensities = getDensityTokens(rawTheme, densityTokens);
       // Generate CSS variables for density tokens
       if (includeTheme) {
         for (const compiled of compileDensityRules(effectiveDensities, bps)) {
@@ -604,12 +624,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       getSurfaceTokens({ surfaces: effectiveTheme?.surfaces }); // Validate JSON before merging legacy fields.
       const legacySurfaces = (root as any).__surfacePacks || {};
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
-      for (const [role, style] of Object.entries(effectiveTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
+      for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
       if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
-      for (const [role, pack] of Object.entries(effectiveTheme?.buttons || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
         const legacy = buttonOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
@@ -619,7 +639,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
       getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
-      for (const [role, pack] of Object.entries(effectiveTheme?.inputs || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
         const legacy = inputOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };

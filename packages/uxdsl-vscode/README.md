@@ -32,6 +32,11 @@ post-0.5.0; see `docs/features/FEAT-008/MIG-B6-26-*.md`'s own "Fuera de
 alcance" section). Today's role/tone/size completions are generated from
 the compiler's *built-in default* theme — accurate for a project that
 hasn't customized those families, not necessarily for one that has.
+MIG-B6-29 (FEAT-008) grew that built-in default theme from 4 to 14 palette
+families, so `@ds-surface(`/`@ds-button(`/`@ds-input(` tone completions now
+offer 11 tones (every family with `main`/`dark`/`contrast`) instead of 2 —
+no change to this extension's own code was needed for that; it was already
+deriving the list from the compiler's defaults at generation time.
 
 In the meantime, `.uxdsl` files can be associated with the `scss` language
 instead, trading this extension's UXDSL-aware grammar for full IntelliSense

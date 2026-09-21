@@ -33,6 +33,7 @@
     "paletteFamilies": [
       "primary",
       "secondary",
+      "surface",
       "tertiary",
       "success",
       "info",
@@ -41,7 +42,9 @@
       "dark",
       "neutral",
       "light",
-      "surface"
+      "text",
+      "divider",
+      "action"
     ],
     "toneContract": [
       "main",

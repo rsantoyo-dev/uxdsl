@@ -540,13 +540,21 @@ The CLI reloads local config dependencies on rebuild; list those files in
 the running watcher. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
-The Next.js playground stores shared configuration in `uxdsl.theme.base.json`.
-Named `uxdsl.theme.{default,green,purple,slate}.json` files contain only overrides.
-Use `packages/playground-nextjs/themes.js` to resolve them with `deepMergeTheme`
-for CLI, SSR, runtime and audits; never pass an override file as a complete theme.
-Nested objects merge; arrays and responsive strings replace the whole field.
-Custom edits merge over the active effective theme; replace starts from the common
-base. Put shared roles and dependencies in the base, and variant changes in overrides.
+The reviewed base theme ships inside `postcss-uxdsl` itself, at
+`postcss-uxdsl/theme/base.json` (`packages/postcss-uxdsl/src/theme/base.json`
+in this repo) — it is `DEFAULT_THEME`, not a playground-only convenience file.
+The Next.js playground no longer keeps its own copy; `packages/playground-nextjs/themes.js`
+requires that same package path as `baseTheme`. Named
+`uxdsl.theme.{default,green,purple,slate}.json` files in the playground remain
+overrides only (the `default` theme's own override file is intentionally empty —
+it *is* the base, unmodified). Use `themes.js` to resolve overrides with
+`deepMergeTheme` for CLI, SSR, runtime and audits; never pass an override file
+as a complete theme. Nested objects merge; arrays and responsive strings
+replace the whole field. Custom edits merge over the active effective theme;
+replace starts from the common base. Put shared roles and dependencies in the
+base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
+history and the still-pending accessibility contrast gate), and variant
+changes in the playground's own overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
@@ -677,10 +685,15 @@ the individual story owns its detailed contract; the index owns integration orde
 FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirements.
 
 These documents describe planned APIs, not shipped capabilities. At the
-2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme`,
-the packaged base JSON, shared `compile` and the beta.6 gate are pending.
-Keep the current usage guidance above until the relevant implementation lands;
-then replace it in the same change, including playground agent guidance.
+2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
+the beta.6 gate are pending. The packaged base JSON landed in MIG-B6-29 (this
+guide's own "Build time, runtime and one source of truth" section above
+already reflects it) — that story's own accessibility contrast gate and
+color-correction pass have not, so `DEFAULT_THEME` is the full reviewed
+*shape* (14 palette families, `modes.dark`, `fonts.google`, every family a
+component engine needs), not yet a contrast-checked one. Keep the current
+usage guidance above until each remaining piece lands; then replace it in the
+same change, including playground agent guidance.
 
 For each story, preserve intent, token references, merge precedence and CSS-native
 exceptions. Reproduce the defect, add a regression that fails before the fix, and

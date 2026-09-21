@@ -2,6 +2,7 @@
 import valueParser from 'postcss-value-parser';
 import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
+import { BASE_THEME } from './base-theme';
 
 /** `space-` is a reserved legacy prefix; remove it once, never recursively. */
 export function normalizeSpacingKey(key: string): string {
@@ -27,9 +28,10 @@ export function normalizeSpacingDefinitions<T>(spacing: Record<string, T>): Reco
 }
 
 export type BreakpointMap = Record<string, number>;
-export const DEFAULT_BREAKPOINTS: BreakpointMap = Object.freeze({
-  xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280,
-});
+// MIG-B6-29 (FEAT-008): derived from theme/base.json (via BASE_THEME), not a
+// second, independently-maintained literal — see base-theme.ts for why this
+// direction (engine imports data) never cycles back through the resolver.
+export const DEFAULT_BREAKPOINTS: BreakpointMap = BASE_THEME.breakpoints as BreakpointMap;
 
 export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID') {
   const ordered = Object.entries(bps).sort((a,b) => a[1]-b[1]);
@@ -74,11 +76,10 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
 }
 
-// Density defaults stay inside the shipped 1–16 Spacing scale.
-export const DEFAULT_DENSITIES: Record<number, string> = Object.freeze(
-  { 0: '0', ...Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1,
-    `xs(space(${i + 1})) md(space(${i + 2})) xl(space(${Math.min(i + 3, 16)}))`])) },
-);
+// MIG-B6-29 (FEAT-008): derived from theme/base.json, not computed here —
+// density defaults still stay inside the shipped 1-16 Spacing scale, that
+// shape is just data now instead of a formula.
+export const DEFAULT_DENSITIES: Record<string, string> = BASE_THEME.densities as Record<string, string>;
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
 // `directiveArguments` lists each directive's override-argument function
 // names (`radius(...)`/`shadow(...)`, nested inside e.g. `@ds-button(...)`)

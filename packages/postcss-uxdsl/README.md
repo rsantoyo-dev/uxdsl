@@ -331,17 +331,62 @@ that variable.
 
 ## Zero-config defaults (`resolveTheme`)
 
-`theme` can be omitted or partial. An omitted or missing family — Spacing
-1-16, Palette `primary`/`surface`/`neutral`/`error`, and font families
-`ui`/`ui-2`/`code` — resolves against a built-in `DEFAULT_THEME` instead of
-leaving `var()` references with no definition:
+`theme` can be omitted or partial. An omitted or missing family resolves
+against a built-in `DEFAULT_THEME` instead of leaving `var()` references
+with no definition:
 
 ```js
 uxdsl()                    // no options at all — compiles against DEFAULT_THEME
 uxdsl({ theme: { palette: { primary: { main: '#123456' } } } })
-// -> primary.main overridden; primary.dark/contrast, surface, neutral,
-//    error, spacing and fonts keep their defaults
+// -> primary.main overridden; every other palette family, and every other
+//    top-level family (fonts, spacing, densities, borders, radii, shadows,
+//    surfaces, buttons, inputs, typography_details), keeps its default
 ```
+
+**MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is `postcss-uxdsl/theme/base.json`
+itself** — the reviewed base theme, not a "deliberately minimal" 4-family
+stub kept just to avoid a crash. It defines a full 14-family Palette
+(`primary`/`secondary`/`surface`/`tertiary`/`success`/`info`/`warning`/
+`error`/`dark`/`neutral`/`light`/`text`/`divider`/`action`), font families
+`ui`/`code` (no built-in `ui-2`), the full 1-16 Spacing scale, and every
+Density/Border/Radius/Shadow/Surface/Button/Input default those engines
+already shipped — extracted into this same file instead of staying
+hardcoded separately in each one.
+
+Two of its fields change what a zero-config project actually renders,
+compared to any earlier beta:
+
+- **`fonts.google: ["Inter:wght@400;500;600;700"]`** — every project
+  with no theme of its own now emits a real
+  `@import url('https://fonts.googleapis.com/css2?family=Inter...')`, a
+  request to Google's servers. Opt out with an empty array in your own
+  override — arrays replace whole, so this genuinely means "none", not
+  "append nothing":
+  ```json
+  { "fonts": { "google": [] } }
+  ```
+- **`modes.dark`** — every project with no theme of its own now follows
+  the OS `prefers-color-scheme: dark` preference automatically (11 of the
+  14 palette families redefine at least `main`/`contrast` for dark). Pin
+  light mode regardless of OS preference with `data-theme="light"` on
+  `<html>` (the generated dark-mode selector already excludes it —
+  `:root:not([data-theme='light'])` — no override theme needed just for
+  this); pin dark mode the same way with `data-theme="dark"`. An override
+  of `modes: {}` does **not** disable dark mode — like every other family,
+  objects merge by key, so an empty object changes nothing.
+
+Known gaps, both scoped to a later MIG-B6-29 change, not this one: the
+Google Fonts URL isn't yet percent-encoded (a family name with a space,
+e.g. `"Open Sans:wght@400;700"`, produces an invalid URL — the shipped
+default, `"Inter:..."`, has no space and is unaffected); and
+`generateThemeCss()` (the runtime/SSR path) does not emit the `@import`
+at all yet — only the PostCSS plugin does. An app calling `generateThemeCss`
+directly for SSR needs to add the Google Fonts `<link>`/`@import` itself
+until that lands. Neither gap is new: the encoding bug already existed for
+any project that had set `fonts.google` explicitly, and the runtime import
+was never wired up at all — both simply become visible on the *default*
+path now that `fonts.google` ships by default. The theme's colors have not
+yet been run through an accessibility contrast gate (also a later change).
 
 Merge rules: object keys merge recursively; arrays and scalars (including
 `null`) replace the previous value whole; `undefined` never overwrites a
@@ -382,6 +427,23 @@ import from `language.ts`). It is not re-exported from the public
 `scripts/generate-language-artifacts.js` (which builds the VS Code
 extension's completion metadata) already reaches into compiled `dist/*`
 modules directly for several such internals, `getToneFamilies` among them.
+
+### Legacy opt-in packs (deprecated)
+
+`postcss-uxdsl/theme/*.uxdsl` and `postcss-uxdsl/theme/*.css`
+(`default-densities`, `default-borders`, `default-radii`, `default-shadows`,
+`default-surfaces`, `default-buttons`, `default-inputs`, `default-spacing`,
+`default-typography`, plus the separate `default-colors`/`default-palette`
+pair) are **deprecated as of MIG-B6-29 (FEAT-008)**, not removed. Every
+built-in preset already reads its defaults from `DEFAULT_THEME`
+(`theme/base.json`) directly — none of these imports is needed for
+`density()`/`border()`/`radius()`/`shadow()`/`@ds-surface`/`@ds-button`/
+`@ds-input`/`@ds-typo` to work out of the box. They remain available,
+generated from the exact same engine defaults (except `default-colors`/
+`default-palette`, a deliberately separate, richer, opt-in palette — a
+different design direction, not a superset of `DEFAULT_THEME.palette`), for
+a project that already imports one of them explicitly. Not scheduled for
+removal in 0.5.0-beta.6.
 
 ### Theme discovery (`discoverTheme`, `configRoot`)
 

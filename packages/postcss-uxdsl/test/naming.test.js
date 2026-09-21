@@ -73,9 +73,12 @@ test('MIG-08: centralizing name construction did not change existing output for 
     spacing: { 1: '4px', 2: '8px' },
   };
   const css = generateFoundationCss(theme);
+  // MIG-B6-29: gray-* comes from theme/base.json's own colors.gray now
+  // (DEFAULT_BORDER_COLORS derives from it), not a second, independently
+  // hardcoded gray literal that used to live only in edges.ts.
   assert.equal(
     css,
-    ":root { --uxdsl__palette__primary-main: #123; --uxdsl__palette__primary-dark: #111; --uxdsl__palette__primary-contrast: #fff; --uxdsl__color__blue-500: #123456; --uxdsl__color__gray-300: #d1d5db; --uxdsl__color__gray-400: #9ca3af; --uxdsl__color__gray-500: #6b7280; --uxdsl__color__gray-600: #4b5563; --uxdsl__space__1: 4px; --uxdsl__space__2: 8px; }"
+    ":root { --uxdsl__palette__primary-main: #123; --uxdsl__palette__primary-dark: #111; --uxdsl__palette__primary-contrast: #fff; --uxdsl__color__blue-500: #123456; --uxdsl__color__gray-300: #CBD5E1; --uxdsl__color__gray-400: #94A3B8; --uxdsl__color__gray-500: #64748B; --uxdsl__color__gray-600: #475569; --uxdsl__space__1: 4px; --uxdsl__space__2: 8px; }"
   );
 });
 
