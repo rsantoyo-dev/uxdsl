@@ -13,7 +13,21 @@ export const DIAGNOSTIC_CODES = new Set([
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
-  ...['UXD_PRESET', 'UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE'].flatMap(prefix => ['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
+  ...['UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE'].flatMap(prefix => ['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
+  // UXD_PRESET is preset-engine.ts's *default* errorPrefix — no call site in
+  // src/ ever omits the explicit family prefix, so UXD_PRESET_VIEWPORT (a
+  // literal, per-family string everywhere else, e.g. UXD_EDGE_VIEWPORT) was
+  // never actually reachable and is dropped rather than kept as a code
+  // nothing produces (MIG-B6-13 code-review follow-up: a stricter
+  // diagnostics-catalog.test.js check now catches exactly this). The other
+  // UXD_PRESET_* codes below are kept for now — this file's own
+  // `${errorPrefix}_ALPHA`-shaped templates make them look reachable to that
+  // check's static text scan even though no caller passes 'UXD_PRESET'
+  // either; distinguishing "textually composable in this generic engine"
+  // from "some real call site actually uses this prefix" needs call-graph
+  // analysis this check doesn't do, so this narrower case is flagged as a
+  // known gap rather than fixed here.
+  ...['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION'].map(suffix => `UXD_PRESET_${suffix}`),
   ...['UXD_BUTTON', 'UXD_INPUT'].flatMap(prefix => ['ALPHA', 'MAP', 'ROLE', 'FIELD', 'FIELDS', 'SURFACE', 'STATES', 'STATE', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'ARGUMENT', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
 ]);
 

@@ -1,6 +1,7 @@
 import valueParser from 'postcss-value-parser';
 import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression } from './language';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
+import { themeError } from './diagnostics';
 
 export function normalizeTokenKey(kind: string, input: string): string {
   let key = input.trim().replace(/^(['"])(.*)\1$/, '$2');
@@ -30,11 +31,30 @@ export function presetValueToCss(input: string, errorPrefix = 'UXD_PRESET', seri
   return parsed.toString();
 }
 
-export function mergePresetTokens(defaults: Record<string, string>, input: Record<string, string> | undefined, errorPrefix: string) {
-  if (input !== undefined && (!input || typeof input !== 'object' || Array.isArray(input))) throw new Error(`${errorPrefix}_MAP: Expected an object.`);
+// MIG-B6-13 (FEAT-008) code-review follow-up: `keyPathPrefix` is optional so
+// every pre-existing caller (surfaces.ts's own per-role merge, control-engine.ts)
+// keeps its exact prior message/shape; only a caller that actually knows which
+// top-level theme family it's validating (edges.ts, for `radii`/`borders`)
+// passes it, turning `UXD_EDGE_VALUE: Invalid token 1.` into a located
+// `UXD_EDGE_VALUE: Invalid token 1 (at radii.1).` with `.keyPath` set —
+// previously `{ radii: { '1': '' } }` gave no way to tell which family/key
+// was wrong without already knowing this function's internals.
+export function mergePresetTokens(defaults: Record<string, string>, input: Record<string, string> | undefined, errorPrefix: string, keyPathPrefix?: string) {
+  if (input !== undefined && (!input || typeof input !== 'object' || Array.isArray(input))) {
+    throw keyPathPrefix
+      ? themeError(`${errorPrefix}_MAP`, 'Expected an object', keyPathPrefix)
+      : new Error(`${errorPrefix}_MAP: Expected an object.`);
+  }
   for (const [key, value] of Object.entries(input || {})) {
-    if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw new Error(`${errorPrefix}_VALUE: Invalid token ${key}.`);
-    valueParser(value).walk(node => { if ((node as any).unclosed) throw new Error(`${errorPrefix}_VALUE: Unclosed expression for ${key}.`); });
+    const keyPath = keyPathPrefix ? `${keyPathPrefix}.${key}` : undefined;
+    if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) {
+      throw keyPath ? themeError(`${errorPrefix}_VALUE`, `Invalid token ${key}`, keyPath) : new Error(`${errorPrefix}_VALUE: Invalid token ${key}.`);
+    }
+    valueParser(value).walk(node => {
+      if ((node as any).unclosed) {
+        throw keyPath ? themeError(`${errorPrefix}_VALUE`, `Unclosed expression for ${key}`, keyPath) : new Error(`${errorPrefix}_VALUE: Unclosed expression for ${key}.`);
+      }
+    });
   }
   return { ...defaults, ...input };
 }

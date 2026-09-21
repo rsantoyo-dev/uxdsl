@@ -65,3 +65,55 @@ for (const [css, line] of [
     assert.equal(error.line, line);
   });
 }
+
+// --- MIG-B6-13 code-review follow-up: theme-object errors (no CSS line to
+// point at) must name the exact dotted key path that failed, not just embed
+// it as free text inside the message. A prior pass added this for
+// typography_details (typography.ts) but left surfaces/densities/radii
+// throwing a plain, unlocated Error — reproduced with the exact theme
+// snippets from that review.
+for (const [theme, code, keyPath] of [
+  [{ surfaces: { contained: { bogus: 'red' } } }, 'UXD_SURFACE_FIELD', 'surfaces.contained.bogus'],
+  [{ surfaces: { 'bad role': {} } }, 'UXD_SURFACE_ROLE', 'surfaces.bad role'],
+  [{ surfaces: 'not-an-object' }, 'UXD_SURFACE_MAP', 'surfaces'],
+  [{ densities: { x: '' } }, 'UXD_DENSITY_VALUE', 'densities.x'],
+  [{ densities: 'not-an-object' }, 'UXD_DENSITY_MAP', 'densities'],
+  [{ radii: { '1': '' } }, 'UXD_EDGE_VALUE', 'radii.1'],
+  [{ borders: { '1': '' } }, 'UXD_EDGE_VALUE', 'borders.1'],
+  [{ shadows: { '1': '' } }, 'UXD_SHADOW_VALUE', 'shadows.1'],
+]) {
+  test(`MIG-B6-13: ${code} at "${keyPath}" carries the theme key path`, async () => {
+    const error = await postcss([plugin({ includeTheme: false, theme })]).process('.a {}', { from: file }).then(() => null, caught => caught);
+    assert.ok(error, 'compilation fails');
+    assert.equal(error.keyPath, keyPath);
+    assert.match(error.message, new RegExp(`^${code}: `));
+    assert.match(error.message, new RegExp(`\\(at ${keyPath.replace(/[.[\]]/g, '\\$&')}\\)`));
+  });
+}
+
+// MIG-B6-13 pending item from the story's own Pruebas section: a $var
+// substitution rewrites `decl.value` in place on the same PostCSS node
+// (see index.ts's "$var substitutions across all declarations" pass), so
+// an invalid reference reached only through an expanded $var must still
+// report the *consuming* declaration's own location, not the `$bad: ...`
+// declaration that defined the variable (which is removed from the tree
+// entirely before this check would even see it).
+test('MIG-B6-13: an invalid reference reached through $var expansion retains the consuming declaration\'s location', async () => {
+  const error = await compile('$bad: density(16);\n.a {\n  padding: $bad;\n}').then(() => null, caught => caught);
+  assert.ok(error, 'compilation fails');
+  assert.equal(error.file, file);
+  assert.equal(error.line, 3, 'the "padding: $bad" declaration, not the "$bad: density(16)" one on line 1');
+  assert.match(error.message, /UXD_DENSITY_REFERENCE/);
+});
+
+// MIG-B6-13 pending item: `locateError` sets `.cause` to the original,
+// unlocated error when it wraps one into a PostCSS CssSyntaxError — nothing
+// checked this before. `cause` is what lets `err.cause.keyPath`/programmatic
+// inspection reach the original diagnostic even after relocation swapped
+// the error's own identity (name, message shape) for PostCSS's.
+test('MIG-B6-13: a located CSS error keeps the original error as .cause', async () => {
+  const error = await compile('.a {\n  padding: density(16);\n}').then(() => null, caught => caught);
+  assert.equal(error.name, 'CssSyntaxError');
+  assert.ok(error.cause instanceof Error);
+  assert.match(error.cause.message, /^UXD_DENSITY_REFERENCE: /);
+});

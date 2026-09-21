@@ -1,6 +1,7 @@
 /** Environment-independent semantics shared by build and runtime adapters. */
 import valueParser from 'postcss-value-parser';
 import { buildVarName } from './naming';
+import { themeError } from './diagnostics';
 
 /** `space-` is a reserved legacy prefix; remove it once, never recursively. */
 export function normalizeSpacingKey(key: string): string {
@@ -59,11 +60,15 @@ export const LANGUAGE_COMPLETIONS = {
   functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
 
+// MIG-B6-13 (FEAT-008) code-review follow-up: located with `themeError` the
+// same way typography.ts already is — `{ densities: { x: '' } }` previously
+// threw `UXD_DENSITY_VALUE: Invalid x.` with no `.keyPath`, leaving no way
+// to tell it came from `densities.x` versus a merged default/legacy key.
 /** Effective Density map is local to a compilation: defaults < legacy < JSON. */
 export function getDensityTokens(theme: { densities?: Record<string, string> } = {}, legacy: Record<string, string> = {}): Record<string, string> {
-  if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw new Error('UXD_DENSITY_MAP: Expected an object.');
+  if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw themeError('UXD_DENSITY_MAP', 'Expected an object', 'densities');
   const tokens = { ...DEFAULT_DENSITIES, ...legacy, ...theme.densities };
-  for (const [key, value] of Object.entries(tokens)) if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw new Error(`UXD_DENSITY_VALUE: Invalid ${key}.`);
+  for (const [key, value] of Object.entries(tokens)) if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw themeError('UXD_DENSITY_VALUE', `Invalid ${key}`, `densities.${key}`);
   return tokens;
 }
 

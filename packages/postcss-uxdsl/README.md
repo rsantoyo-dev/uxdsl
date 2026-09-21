@@ -368,9 +368,13 @@ Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and
 with their stylesheet location; direct expansion failures are PostCSS
 `CssSyntaxError`s, while post-expansion reference failures retain
 `ReferenceIntegrityError` and its issues. Imported partials retain their own
-source location. Theme validators name a key path where that validator provides
-one; lower-level theme-map errors currently preserve their code and message but
-do not claim a configuration-file location.
+source location. Theme validators name a key path (`.keyPath`, e.g.
+`surfaces.contained.bogus`, `densities.x`, `radii.1`, `shadows.1`,
+`borders.1`, `typography_details.h1.fontSize`) where that validator provides
+one — `uxdsl-cli` prepends the theme file's own path when it resolved one, so
+`uxdsl build` names both the file and the exact key. Button/Input theme
+errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) and a few lower-level theme-map checks
+do not yet carry a key path; they still preserve their code and message.
 
 Radius, Shadow, Border, Surface, Button and Input shapes already had their
 own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/

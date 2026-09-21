@@ -23,6 +23,14 @@ export interface ReferenceIssue {
   node?: Declaration;
 }
 
+// MIG-B6-13 (FEAT-008) architecture decision, recorded on code review:
+// `issue.source` is whatever PostCSS's `from` option resolved to (absolute,
+// relative, or undefined) — never made relative to the working directory
+// here. This engine is browser-safe (no Node-only globals, see the guard
+// test below); working-directory-relative display is a CLI-only concern,
+// already handled by `formatCliDiagnostic` in
+// packages/uxdsl-cli/bin/uxdsl.js, which strips that prefix for terminal
+// output. Do not reintroduce Node's path/cwd APIs here.
 export function formatReferenceIssue(issue: ReferenceIssue): string {
   if (!issue.source) return issue.message;
   const position = issue.line === undefined ? '' : `:${issue.line}${issue.column === undefined ? '' : `:${issue.column}`}`;

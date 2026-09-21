@@ -10,7 +10,10 @@ export const DEFAULT_SHADOWS: Record<string, string> = Object.freeze({
   5: '0 10px 15px rgba(0, 0, 0, 0.1), 0 20px 25px rgba(0, 0, 0, 0.2)',
 });
 export interface ShadowTheme { shadows?: Record<string, string>; breakpoints?: BreakpointMap }
-export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW');
+// MIG-B6-13 (FEAT-008) code-review follow-up: same `keyPathPrefix` fix as
+// edges.ts's radii/borders — `{ shadows: { '1': '' } }` previously threw an
+// unlocated Error.
+export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW', 'shadows');
 export function compileShadowRules(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
   return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW');
 }

@@ -178,7 +178,16 @@ error.
 Build failures from UXDSL include the source file, line, column and a code frame
 when they originate in CSS, including imported partials. Theme failures name the
 theme/configuration file and the invalid key path; diagnostic messages start with
-their stable `UXD_*` code.
+their stable `UXD_*` code:
+
+```console
+$ npx uxdsl build
+[uxdsl] Error: uxdsl.theme.config.cjs: UXD_EDGE_VALUE: Invalid token 1 (at radii.1).
+```
+
+Surfaces, Densities, Radii, Borders, Shadows and Typography details theme
+errors all carry this key path today; Button/Input role/state errors and a
+few lower-level theme-map checks do not yet.
 
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 

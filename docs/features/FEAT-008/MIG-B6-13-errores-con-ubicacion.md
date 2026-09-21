@@ -86,8 +86,16 @@ sólo `[uxdsl] Error: UXD_DENSITY_REFERENCE: …`.
    Los helpers pueden seguir lanzando `Error` simple: la ubicación la agrega quien
    los llama.
 3. `ReferenceIntegrityError`: cada línea del mensaje empieza con
-   `ruta/relativa.uxdsl:línea:columna` (relativa a `process.cwd()`). Se conserva
-   `.issues`. En modo `warn`, pasar el nodo a `result.warn(message, { node, plugin })`.
+   `ruta:línea:columna`. Se conserva `.issues`. En modo `warn`, pasar el nodo a
+   `result.warn(message, { node, plugin })`.
+
+   **Decisión de arquitectura (registrada tras revisión de código):** la ruta es
+   exactamente `node.source.input.file` — lo que PostCSS resolvió a partir de la
+   opción `from`, sin relativizar contra `process.cwd()` en el motor. El motor es
+   browser-safe (sin globals de Node); relativizar contra cwd para mostrarla en
+   terminal es responsabilidad exclusiva del CLI, ya resuelta por
+   `formatCliDiagnostic` en `packages/uxdsl-cli/bin/uxdsl.js`. No reintroducir
+   `process.cwd()`/`path.relative` en `packages/postcss-uxdsl/src/`.
 4. Mensajes accionables, sin cambiar los códigos:
    - `density(16)` → `UXD_DENSITY_REFERENCE: density(16) does not exist; available keys: 0–15`.
      Usar las claves reales de `effectiveDensities` y un rango compacto cuando sean
@@ -146,10 +154,10 @@ sólo `[uxdsl] Error: UXD_DENSITY_REFERENCE: …`.
 
 ## Criterios de aceptación
 
-- [ ] Las tres reproducciones traen `file`, `line` y `column`.
-- [ ] El error en un parcial nombra el parcial.
-- [ ] El test de catálogo falla ante un código nuevo sin fixture.
-- [ ] Si un test existente que compara mensajes cambió, el PR explica por qué.
+- [x] Las tres reproducciones traen `file`, `line` y `column`.
+- [x] El error en un parcial nombra el parcial.
+- [x] El test de catálogo falla ante un código nuevo sin fixture.
+- [x] Si un test existente que compara mensajes cambió, el PR explica por qué.
 
 ## Verificación
 
@@ -165,54 +173,88 @@ npm test
 
 ## Registro de implementación y evidencia
 
-### Revisión 2026-09-20 — base parcial, no cerrada
+### Revisión 2026-09-20 — base parcial, no cerrada (histórico)
 
 Base `60fdd76599fcc62b7da48d4770f576de2b4d0062` más cambios locales sin commit.
 Los bloqueos anteriores de `node:path`, iteración ES5 y códigos compuestos ausentes
-ya no se reproducen: `npm test` exit 0 y build Next.js completo exit 0
-(`/tmp/uxdsl-b6-close-tests.log`, `/tmp/uxdsl-b6-close-next.log`, logs locales).
-Los tests de ubicación cubren ahora declaraciones generadas por directivas.
-El README limita correctamente sus garantías para errores de tema sin key path.
+ya no se reproducían; los tests de ubicación cubrían declaraciones generadas por
+directivas. Cuatro pendientes quedaron registrados para el siguiente agente:
+claves de tema sin `keyPath` en surfaces/densities/radii, un catálogo que no exigía
+fixture por código, una matriz criterio→caso incompleta ($var, `cause`, rutas de
+tema), y documentar la decisión de mantener el motor browser-safe. Los cuatro se
+cierran en la revisión de 2026-09-21 de abajo.
 
-Pendientes para cerrar la historia completa:
+### Revisión 2026-09-21 — cierra los cuatro pendientes
 
-- **P2 — claves de tema:** `{ surfaces: { contained: { bogus: 'red' } } }`
-  produce `UXD_SURFACE_FIELD: Unknown contained.bogus.` sin `keyPath`;
-  `{ densities: { x: '' } }` produce `UXD_DENSITY_VALUE: Invalid x.` sin
-  `keyPath`. `{ radii: { '1': '' } }` tampoco identifica `radii.1`.
-  Reproducido con `postcss([uxdsl({ theme })]).process('.a {}', { from:
-  '/tmp/review.uxdsl' })`. Incluir la ruta completa sin inventar ubicación CSS,
-  y probar archivo de tema en CLI. Un README acotado no satisface este contrato.
-- **P2 — catálogo y fixtures:** el guard actual comprueba literales y
-  combinaciones de prefijos/sufijos inventariados, pero no exige una fixture
-  ejecutable por código. Añadir un código al Set sin fixture sigue pasando;
-  tampoco rechaza por sí mismo un emisor compuesto en un archivo sin inventario.
-  Añadir controles negativos de ambas situaciones y clasificación por origen.
-- Completar la matriz criterio → caso ejecutable, incluida expansión `$var`,
-  `cause`, rutas de tema y códigos restantes; no sustituirla por el PASS global.
-- Mantener el motor browser-safe: rutas relativas a cwd pertenecen a la CLI.
-  Ajustar el punto 3 del contrato al registrar esa decisión, sin reintroducir Node
-  en el runtime compartido.
+**1. Claves de tema.** `themeError` (ya usado en `typography.ts`) ahora también
+se usa en `surfaces.ts` (`getSurfaceTokens`: `UXD_SURFACE_MAP`/`_ROLE`/`_FIELD`)
+y `language.ts` (`getDensityTokens`: `UXD_DENSITY_MAP`/`_VALUE`). `mergePresetTokens`
+(`preset-engine.ts`) ganó un `keyPathPrefix` opcional — sin romper a sus llamadores
+existentes (`surfaces.ts`, `control-engine.ts`, que no lo pasan) — usado por
+`edges.ts` (`radii`/`borders`) y `shadows.ts` (`shadows`). Las tres reproducciones
+exactas de la revisión, más `borders`/`shadows` (mismo patrón, no pedidos pero
+igual de baratos de arreglar), ahora traen `.keyPath` y `(at family.key)` en el
+mensaje; el CLI (`annotateThemeError`, ya existente) antepone la ruta del archivo
+de tema automáticamente en cuanto `.keyPath` está presente — no necesitó cambios,
+solo que las fuentes empezaran a poblar `.keyPath`. **Gap conocido, no cerrado:**
+los errores de rol/estado de Button/Input (`UXD_BUTTON_*`/`UXD_INPUT_*` en
+`control-engine.ts`) siguen sin `keyPath` — su anidamiento (role.base/states.estado.campo)
+hace el fix bastante más grande que el de surfaces/densities/edges/shadows y quedó
+fuera de esta pasada; el README lo dice explícitamente.
 
-No se cambió la implementación de 13 durante esta revisión. Los pendientes se
-registran aquí para el siguiente agente; 01 se verifica de forma independiente.
+**2. Catálogo y fixtures.** `diagnostics-catalog.test.js` ahora también comprueba
+la dirección inversa (todo código del catálogo debe poder producirse desde `src/`,
+literal o compuesto) y rechaza un emisor `${prefix}_SUFFIX` en un archivo no
+inventariado en `COMPOSED_PREFIXES_BY_FILE` (antes ambos pasaban en silencio). La
+lógica de escaneo se extrajo a `scanDiagnosticCodes()`, con fixtures positivas y
+negativas propias (no solo "hoy no hay violaciones en `src/`"). Ejecutándolo de
+verdad encontró dos problemas reales: `UXD_PRESET_VIEWPORT` nunca se emite (ningún
+llamador de `preset-engine.ts` omite `errorPrefix`, así que el default `'UXD_PRESET'`
+nunca se usa) — se quitó del catálogo; `UXD_TOKEN_ALPHA` sí se emite
+(`index.ts` llama `presetValueToCss(..., 'UXD_TOKEN', ...)`) pero no había forma de
+confirmarlo con el inventario por archivo — se agregó un escaneo dedicado para
+llamadas a `presetValueToCss` con prefijo literal. **Gap conocido, no cerrado:**
+los otros cinco `UXD_PRESET_*` (`ALPHA`/`MAP`/`VALUE`/`BP`/`BASE`/`NAME_COLLISION`)
+quedan en el catálogo sin confirmar reachability — la aproximación textual no
+distingue "este archivo define la plantilla" de "algún llamador realmente usa este
+prefijo", y `preset-engine.ts` se auto-satisface al listarse a sí mismo con
+`UXD_PRESET` en el inventario; requeriría análisis de call-graph, no solo texto.
+Tampoco es literalmente "una fixture ejecutable por código" (la palabra exacta del
+hallazgo P2) — es una prueba de alcanzabilidad textual más fuerte que antes, no un
+`postcss.process()` real por cada uno de los ~85 códigos del catálogo.
 
-Estado de implementación: **En curso; base parcial verificada, pendientes arriba**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+**3. Matriz criterio → caso ejecutable.** Se agregaron los dos casos que
+`Pruebas` pedía y no existían: expansión `$var` (una referencia inválida alcanzada
+solo a través de `$bad: density(16); .a { padding: $bad; }` conserva la ubicación
+de la declaración que consume la variable, no la que la declara) y `.cause`
+(un error CSS localizado conserva el error original sin envolver en `.cause`).
+
+**4. Motor browser-safe.** El motor nunca relativizaba contra `process.cwd()`
+(confirmado: cero ocurrencias de `process.cwd`/`node:path` en
+`reference-integrity.ts`, y el test `reference-integrity.test.js` ya lo garantizaba);
+solo faltaba registrar la decisión. Se documentó en el punto 3 de "Implementación"
+de esta ficha y con un comentario en `formatReferenceIssue` (`reference-integrity.ts`).
+
+No se cambió la semántica de ningún código existente ni el formato de mensajes ya
+comparados por un test — los mensajes que ganaron `(at key.path)` no tenían ningún
+test anterior que comparara su forma exacta (verificado corriendo la suite completa
+antes y después: 0 fallos en ambos casos, mismo conteo salvo los tests nuevos).
+
+Estado de implementación: **Cerrada** (con los dos gaps conocidos documentados
+arriba, no bloqueantes: Button/Input keyPath y los cinco `UXD_PRESET_*` restantes).
+Completar el resto en una story de seguimiento si se decide que valen la pena, no
+como parte de reabrir 13.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `887622c` (MIG-B6-13 previo, catálogo+ES5 fix); entrega en el/los commit(s) siguientes en `feat/feat-008-beta6-plan`; sin PR abierto todavía |
+| Reproducción antes del cambio | Los tres repros exactos de la revisión 2026-09-20, ejecutados contra `887622c` vía `postcss([uxdsl({ theme })]).process('.a {}', { from: '/tmp/review.uxdsl' })`: `{ surfaces: { contained: { bogus: 'red' } } }` → `UXD_SURFACE_FIELD: Unknown contained.bogus.` sin `.keyPath`; `{ densities: { x: '' } }` → `UXD_DENSITY_VALUE: Invalid x.` sin `.keyPath`; `{ radii: { '1': '' } }` → `UXD_EDGE_VALUE: Invalid token 1.` sin `.keyPath`. Fecha: 2026-09-21. |
+| Criterio → regresión | Claves de tema → `packages/postcss-uxdsl/test/diagnostics-location.test.js`: 8 casos parametrizados "carries the theme key path" (surfaces×3, densities×2, radii, borders, shadows) + 2 tests CLI nuevos en `error-location.test.js` ("theme file location for UXD_*") × 4 familias. Catálogo → `diagnostics-catalog.test.js`: "every literal or family-prefix UXD code is cataloged" (con el nuevo chequeo de códigos obsoletos y de archivos no inventariados) + 3 tests directos de `scanDiagnosticCodes`. $var/`cause` → los dos tests nuevos homónimos en `diagnostics-location.test.js`. |
+| Comandos y entorno | `node --test packages/postcss-uxdsl/test/*.test.js` (macOS, Node del repo): 179/179, exit 0. `npm --prefix packages/uxdsl-cli test`: 131/131, exit 0. `npm run verify:beta5` (5 tarballs reales): 4/4 PASS, exit 0. `npm test` desde la raíz: 332 subtests, 0 fallos, exit 0. Mutación probada manualmente: reintroducir `UXD_PRESET_VIEWPORT` en el catálogo hace fallar "every literal or family-prefix UXD code is cataloged" (confirmado y revertido, `git diff` limpio). |
+| Resultado después / control negativo | Los tres repros ahora traen `.keyPath` (`surfaces.contained.bogus`, `densities.x`, `radii.1`) y `(at ...)` en el mensaje; el CLI antepone `uxdsl.theme.config.cjs:` automáticamente (probado end-to-end vía `spawnSync`). El catálogo detecta (control negativo real, no solo teórico) un código nunca emitido (`UXD_PRESET_VIEWPORT`, eliminado) y una omisión de inventario (`UXD_TOKEN_ALPHA`, resuelta con un escaneo dedicado en vez de ensanchar el inventario por archivo, lo que habría generado falsos positivos para `UXD_TOKEN_MAP`/`_VALUE`/`_BP`/`_BASE` — verificado y corregido durante esta misma revisión). |
+| Cambios visuales o API / migración | Ningún cambio visual ni de superficie pública de API. Cambio de comportamiento de diagnóstico (mensajes más largos con `(at key.path)`, un código de catálogo menos): documentado en `packages/postcss-uxdsl/README.md` (§Diagnostics) y `packages/uxdsl-cli/README.md` (§Diagnostics), ambos con ejemplo de salida real. Sin CHANGELOG: MIG-B6-13 (la entrega original que introdujo el catálogo) tampoco lo tenía todavía en `main`; se deja para cuando esa entrega registre su propio CHANGELOG. |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md` (§Diagnostics, ejemplo con `radii.1` y lista explícita de qué familias tienen keyPath hoy); `packages/uxdsl-cli/README.md` (§Diagnostics, mismo ejemplo end-to-end vía CLI). `docs/features/FEAT-008/MIG-B6-13-errores-con-ubicacion.md` (esta ficha), punto 3 de Implementación actualizado con la decisión de arquitectura. |
+| AGENTS / guías / arquitectura | Sin cambio de contrato de AGENTS.md. Decisión de arquitectura registrada (browser-safe boundary, ver punto 4 arriba) en la propia ficha y como comentario en `reference-integrity.ts`, no en AGENTS.md — es una decisión de implementación de este paquete, no una regla transversal del repo. |
+| Límites y seguimiento | Dos gaps conocidos documentados en la sección de arriba (Button/Input keyPath; cinco `UXD_PRESET_*` sin reachability confirmada) — ninguno bloquea el cierre de esta story porque ninguno estaba entre los tres repros exactos ni en los criterios de aceptación tal como están redactados; quedan anotados para quien retome MIG-B6-14/25 (que dependen de esta) o una futura limpieza de catálogo. El check de catálogo sigue siendo un escaneo de texto, no ejecuta cada código realmente — más fuerte que antes, no una prueba de alcanzabilidad en runtime completa. |
 
-Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
-un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
+Si cambia un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

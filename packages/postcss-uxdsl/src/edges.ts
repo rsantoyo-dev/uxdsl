@@ -24,8 +24,8 @@ export const edgeValueToCss = (input: string) => presetValueToCss(input, 'UXD_ED
 
 export function getEdgeTokens(theme: EdgeTheme = {}) {
   return {
-    borders: mergePresetTokens(DEFAULT_BORDERS, theme.borders, 'UXD_EDGE'),
-    radii: mergePresetTokens(DEFAULT_RADII, theme.radii, 'UXD_EDGE'),
+    borders: mergePresetTokens(DEFAULT_BORDERS, theme.borders, 'UXD_EDGE', 'borders'),
+    radii: mergePresetTokens(DEFAULT_RADII, theme.radii, 'UXD_EDGE', 'radii'),
   };
 }
 
