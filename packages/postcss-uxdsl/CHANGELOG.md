@@ -8,6 +8,22 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-15:
+
+- **Fix:** `@ds-button`/`@ds-input`'s host selector used to be split on
+  every comma, including commas inside a functional pseudo-class's own
+  argument list (`:is(.x, .y)`, `:where(...)`, `:not(...)`, `:has(...)`).
+  `.btn:is(.x, .y) { @ds-button(...); }` generated the invalid
+  `.btn:is(.x:hover, .y):hover` instead of `.btn:is(.x, .y):hover`. Now
+  uses `postcss.list.comma`, which only splits top-level commas.
+  `@ds-surface` was never affected — it inserts declarations directly
+  into the host rule rather than generating a separate selector list.
+- **Fix:** `!important` on a responsive value (`padding: xs(1rem)
+  md(2rem) !important;`) was kept in the base breakpoint's declaration
+  but silently dropped from every `@media` block generated for the
+  other breakpoints, so a competing, non-responsive `!important`
+  declaration elsewhere in the cascade could still win from md/lg/xl up.
+
 FEAT-008, MIG-B6-14:
 
 - **Fix:** three cases where compiled output silently didn't reflect the

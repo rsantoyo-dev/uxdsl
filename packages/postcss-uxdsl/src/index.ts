@@ -833,7 +833,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const cloned = parentFallback?.clone
               ? parentFallback.clone({ nodes: [] })
               : postcss.rule();
-            cloned.append({ prop: decl.prop, value: text, source: decl.source });
+            // MIG-B6-15 (FEAT-008): `decl.important` is a separate flag from
+            // `decl.value` (PostCSS already strips the literal `!important`
+            // text out when parsing) — omitting it here silently dropped
+            // `!important` from every breakpoint but the base one, so a
+            // competing, non-responsive `!important` declaration elsewhere
+            // in the cascade could still win at md/lg/xl.
+            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source });
             (at as any).append(cloned);
             if (
               parentFallback &&
@@ -880,7 +886,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             bucket.set(bp, cloned);
             targetRule = cloned;
           }
-          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), source: decl.source });
+          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source });
         });
         if (!baseOut) decl.remove();
         } catch (error) {

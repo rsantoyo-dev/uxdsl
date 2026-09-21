@@ -62,7 +62,10 @@ compiles to:
 
 Any property accepts any of the five breakpoints (`xs sm md lg xl`) —
 write the value once per breakpoint you care about, get the media queries
-generated for you.
+generated for you. `!important` on a responsive value is kept at every
+breakpoint, not just the base one — `padding: xs(1rem) md(2rem)
+!important;` compiles to `!important` in both the base rule and the
+generated `@media` block.
 
 ### Theme tokens instead of hex codes
 
@@ -96,7 +99,11 @@ more on a bigger screen the way a real layout should.
 generates padding, radius, background, text color, border, shadow, and
 working `:hover`/selected states — all wired to `primary` from your
 palette. Add a plain CSS declaration below it to override just one
-property; everything else stays generated.
+property; everything else stays generated. The host selector can be a
+comma-separated list, including one with functional pseudo-classes —
+`.btn:is(.a, .b) { @ds-button(...); }` generates
+`.btn:is(.a, .b):hover { ... }`, never splitting inside the `:is()`/
+`:where()`/`:not()`/`:has()` argument list.
 
 ### Live theming — change it with no rebuild at all
 

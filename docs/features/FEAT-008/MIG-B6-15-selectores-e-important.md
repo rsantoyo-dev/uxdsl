@@ -94,8 +94,8 @@ Salida actual:
 
 ## Criterios de aceptación
 
-- [ ] Las dos reproducciones dan la salida esperada.
-- [ ] Las fixtures cubren las cuatro pseudo-clases funcionales en los tres
+- [x] Las dos reproducciones dan la salida esperada.
+- [x] Las fixtures cubren las cuatro pseudo-clases funcionales en los tres
       componentes.
 
 ## Verificación
@@ -111,22 +111,21 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada/verificada** en la rama
+`feat/feat-008-beta6-plan`, conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias).
+Integración (merge a `main`) sigue pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `72747e7` (MIG-B6-14, entrega previa); entrega en el commit siguiente en `feat/feat-008-beta6-plan`; sin PR abierto todavía |
+| Reproducción antes del cambio | El script de la sección "Reproducción" de este archivo, ejecutado antes del cambio: `.btn:is(.x:hover, .y):hover { … }` (selector partido dentro de `:is()`) y `.a { padding: 1rem !important; }@media (min-width: 768px) {.a { padding: 2rem; } }` (`!important` perdido en el `@media`). Fecha: 2026-09-21. |
+| Criterio → regresión | Selectores → `test/control-selectors.test.js` (14 tests: las 4 pseudo-clases funcionales `:is`/`:where`/`:not`/`:has` × `@ds-button`/`@ds-input`/`@ds-surface`, más un caso multi-estado/multi-sufijo y un control de lista simple `.a, .b`). `!important` → `test/responsive-important.test.js` (6 tests: `xs()/md()`, 3 breakpoints, control positivo sin `!important`, `density()`, custom property, y una declaración anidada bajo una regla ya existente). |
+| Comandos y entorno | `node --test packages/postcss-uxdsl/test/*.test.js` (macOS, Node del repo): 227/227, exit 0. `npm --prefix packages/uxdsl-cli test`: 131/131, exit 0. `npm run verify:beta5`: 4/4 PASS. `npm run verify:consumer-fixture` (tarball real): todos los checks PASS. `npm test` desde la raíz: 377 subtests, 0 fallos, exit 0. `packages/playground-nextjs`: `npm run uxdsl:build` compila los 43 imports reales sin cambios de tamaño de salida (433961 bytes, igual que antes — el contenido real no usa las formas que este fix corrige, confirmando ausencia de regresión). |
+| Resultado después / control negativo | `.btn:is(.x, .y) { @ds-button(outlined primary 2); }` ahora genera `.btn:is(.x, .y):hover { … }` (selector intacto). `.a { padding: xs(1rem) md(2rem) !important; }` ahora genera `!important` tanto en la regla base como en el `@media`. Controles negativos: una lista simple `.a, .b` sigue generando `.a:hover, .b:hover` (sin regresión); un valor responsive sin `!important` nunca gana `!important` en ningún breakpoint; `@ds-surface` nunca dividió el selector (confirmado explícitamente para las 4 pseudo-clases, no solo asumido). |
+| Cambios visuales o API / migración | Cambio de comportamiento del compilador: selectores antes rotos ahora se generan correctamente (posible cambio visual si un proyecto real dependía, sin saberlo, del selector roto — no se encontró ningún caso así en `playground-nextjs`); `!important` ahora se propaga donde antes se perdía (un build real con `!important` responsive puede ver una declaración de breakpoint ganar la cascada donde antes no lo hacía — es el comportamiento correcto documentado, no uno nuevo). Documentado en `packages/postcss-uxdsl/README.md` y `CHANGELOG.md`. |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md`: nota sobre `!important` en la sección de valores responsive ("See it in 60 seconds") y nota sobre selectores con pseudo-clases funcionales en la sección "A full component, one line". `packages/postcss-uxdsl/CHANGELOG.md`: entrada MIG-B6-15 en beta.6. |
+| AGENTS / guías / arquitectura | Sin cambio de contrato de AGENTS.md — este fix no cambia responsabilidades de ninguna primitiva, corrige un bug de implementación en cómo `@ds-button`/`@ds-input` procesan su selector host. |
+| Límites y seguimiento | Fuera de alcance según la propia story: sourcemaps (MIG-B6-21). No se investigó nesting con `&` (mencionado en Pruebas) porque este plugin no resuelve nesting por sí mismo — es responsabilidad de un plugin de nesting anterior en el pipeline (p. ej. `postcss-nested`), fuera del código que esta story toca; si un proyecto usa `&` sin ese plugin, no llega a `@ds-button`/`@ds-input` como selector válido en absoluto, así que no hay una forma correcta de reproducir "nesting roto por esta story" en aislamiento. |
 
-Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
-un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
+Si cambia un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

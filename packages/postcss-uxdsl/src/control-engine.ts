@@ -1,3 +1,4 @@
+import postcss from 'postcss';
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
 import { DEFAULT_BREAKPOINTS, BreakpointMap } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
@@ -125,7 +126,14 @@ function inspectTheme(theme: ControlTheme, viewport: number) {
 function componentCss(theme: ControlTheme, selector: string, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const {base, states} = declarations(theme, role, tone, size, radiusOverride, shadowOverride);
   const emit = (sel: string, declarations: Record<string,string>) => `${sel} { ${Object.entries(declarations).map(([key,value]) => `${key}: ${value};`).join(' ')} }`;
-  const selectors = selector.split(',').map(value => value.trim());
+  // MIG-B6-15 (FEAT-008): a plain `.split(',')` also splits inside
+  // functional pseudo-classes (`:is(.x, .y)`, `:where(...)`, `:not(...)`,
+  // `:has(...)`) since they contain commas of their own — `.btn:is(.x, .y)`
+  // became the two bogus selectors `.btn:is(.x` and `.y)`, and appending a
+  // state like `:hover` to each produced the invalid, silently-wrong
+  // `.btn:is(.x:hover, .y):hover`. `postcss.list.comma` is selector-aware
+  // and only splits top-level commas, outside any parentheses.
+  const selectors = postcss.list.comma(selector).map(value => value.trim());
   const render = (targets: string[], declarations: Record<string,string>) => {
     const { placeholder, ...regular } = declarations;
     const result = [emit(targets.join(', '), regular)];
