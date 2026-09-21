@@ -130,11 +130,16 @@ pierde la gramática de UXDSL.
 
 ## Criterios de aceptación
 
-- [ ] La gramática es válida, generada y probada en CI.
-- [ ] La custom data es generada y correcta.
-- [ ] El completado no se dispara con espacios y respeta el contexto.
-- [ ] No hay `.vsix` en el repositorio y el empaquetado corre en CI.
-- [ ] La extensión `0.1.0` está publicada, o el release declara por qué no.
+- [ ] La gramática es válida, generada y probada en CI. **(válida, generada y
+      probada con el motor Oniguruma real — no hay CI en este repositorio; ver
+      "Límites y seguimiento")**
+- [x] La custom data es generada y correcta.
+- [x] El completado no se dispara con espacios y respeta el contexto.
+- [ ] No hay `.vsix` en el repositorio y el empaquetado corre en CI. **(no hay
+      `.vsix` en el repositorio; el empaquetado corre y se verifica localmente —
+      no hay CI en este repositorio; ver "Límites y seguimiento")**
+- [x] La extensión `0.1.0` está publicada, o el release declara por qué no.
+      **(el release declara por qué no: requiere los tokens del dueño)**
 
 ## Verificación
 
@@ -151,22 +156,21 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada localmente en
+`feat/feat-008-beta6-plan`** (integración a `main` y wiring de CI pendientes —
+ver "Límites y seguimiento").
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `9be6956` (2026-09-21). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | Sobre `9be6956`: `node -e "const d=require('./packages/uxdsl-vscode/uxdsl.custom-data.json'); console.log(Object.keys(d), d.atDirectives.map(x=>x.name))"` da `[ 'version', 'functions', 'atDirectives' ] [ '@theme', '@ds-surface', '@ds-button', '@ds-typography' ]` — confirma la clave `functions` inválida para el formato de CSS custom data, `@ds-typography` (no existe) y falta de `@ds-input`. `grep -n "' '" packages/uxdsl-vscode/src/extension.ts` confirma `' '` como carácter de disparo. Escrito a mano en `uxdsl.custom-data.json`: el ejemplo `radius(md)` (falla `UXD_EDGE_REFERENCE` real, verificado). 2026-09-21 |
+| Criterio → regresión | "Gramática válida, generada, tokenización real" → `packages/uxdsl-vscode/test/grammar.test.js` (9 tests, usa `vscode-textmate`+`vscode-oniguruma`, el motor real de VS Code — no `new RegExp`; incluye la regresión real encontrada durante esta story: contenido dentro de un string se resaltaba como directiva/función real). "Custom data generada y correcta" → `scripts/generate-language-artifacts.js --check` cubre `uxdsl.custom-data.json`; verificado manualmente que no tiene `functions`, no tiene `@ds-typography`/`typography()`, y sí tiene `@ds-input`. "Completado sin espacio, sensible al contexto" → `packages/uxdsl-vscode/test/completion-context.test.js` (21 tests: selector/comentario/string sin funciones, `padding:` con funciones, `@ds-button(` con argumentos de esa directiva, `@` con directivas, multilínea, anidamiento, pseudo-selectores con `:`, comillas escapadas) + lectura de `extension.ts` (trigger characters ya no incluyen `' '`). "Sin `.vsix` en el repo, empaquetado real" → `git rm packages/uxdsl-vscode/uxdsl-vscode-0.0.1.vsix` + `.gitignore` (`*.vsix`) + `fixtures/vscode-extension/run.js` (6 checks sobre un `.vsix` real producido por `vsce package`, incluyendo extracción y parseo del manifest/grammar/package.json empaquetados) |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, `@vscode/vsce` 3.9.2, `vscode-textmate` 9.3.2, `vscode-oniguruma` 2.0.1, desde el root del monorepo: `npm run generate:language && node scripts/generate-language-artifacts.js --check` (exit 0), `npm --prefix packages/uxdsl-vscode run compile` (exit 0), `npm --prefix packages/uxdsl-vscode test` (exit 0, 30/30 — 21 de completion-context + 9 de grammar), `npm test` (exit 0, todas las suites, incluye ahora `uxdsl-vscode` en la cadena), `node fixtures/vscode-extension/run.js` (PASS, 6/6, empaqueta un `.vsix` real y lo inspecciona), `npm run verify:beta2`/`verify:beta3`/`verify:beta4`/`verify:beta5` (todos PASS, confirman que el refactor de `control-engine.ts`/`language.ts` no cambió ningún comportamiento del compilador), `npm run build` en `packages/playground-nextjs` (build de producción completo, OK) |
+| Resultado después / control negativo | `uxdsl.custom-data.json` regenerado: `{ version: 1.1, atDirectives: [...] }`, sin `functions`, con `@ds-input`, sin `@ds-typography`. La gramática regenerada tokeniza `xs(` como función real y `@ds-button` como directiva real bajo Oniguruma; un string que contiene literalmente `@ds-button xs(1rem)` ya NO se resalta como código real (control negativo que además reveló y corrigió un bug real de la gramática — ver "Límites y seguimiento"). El completado: un espacio en un selector no dispara nada; `padding:` ofrece funciones; `@ds-button(` ofrece roles/tonos/tamaños/overrides reales derivados de `DEFAULT_BUTTONS`/`getToneFamilies`/la intersección Density∩Radius, no una lista fija. `getToneFamilies` con el theme por defecto da exactamente `['primary', 'surface']` (verificado que `neutral`/`error` correctamente NO califican por no tener las tres claves) |
+| Cambios visuales o API / migración | Cambio de comportamiento real: la gramática ya no resalta un `@ds-*` arbitrario vía wildcard (`ds-[a-zA-Z0-9-]+`) — sólo los cinco nombres reales; un directive typo'd deja de highlightearse como si fuera válido (regresión visual intencional, mejor señal que un falso positivo). El completado ya no se dispara con espacio. `uxdsl-vscode` pasa de `0.0.1` a `0.1.0`. Nueva exportación pública en `postcss-uxdsl`: `getToneFamilies` (aditiva, sin cambio de comportamiento en `control-engine.ts`, que sólo pasó a importarla en vez de tener el predicado inline — 247/247 tests de `postcss-uxdsl` siguen en verde) |
+| README / CHANGELOG / migration | `packages/uxdsl-vscode/README.md` (reescrito: features reales, gaps conocidos, trade-off documentado de `files.associations: { "*.uxdsl": "scss" }`, instrucciones de desarrollo/empaquetado); `packages/uxdsl-vscode/CHANGELOG.md` (nuevo); `packages/postcss-uxdsl/CHANGELOG.md` (entrada MIG-B6-26 documentando `getToneFamilies`) |
+| AGENTS / guías / arquitectura | No aplica: cambio interno de tooling de editor (gramática/completado/empaquetado de `uxdsl-vscode`) y una extracción de utilidad ya existente (`getToneFamilies`) sin cambio de contrato del compilador; no toca ninguna primitiva de diseño ni el contrato de `AGENTS.md` de este repo |
+| Límites y seguimiento | (1) **No existe ningún workflow de CI en este repositorio** (`.github/workflows/` no existe, ni ningún otro archivo de CI) — los criterios que piden "probado/empaquetado en CI" se verificaron localmente (`npm test`, `node fixtures/vscode-extension/run.js`) pero NO están conectados a un pipeline real; conectar eso es una story de infraestructura aparte (MIG-B6-12 aparece como bloqueador final en el índice de esta feature, consistente con esa lectura). Marcado explícitamente sin tildar en los criterios de aceptación de arriba, no asumido como cumplido. (2) **Publicación a Marketplace/Open VSX no se hizo** — corresponde al dueño con sus propios tokens, declarado en el CHANGELOG de la extensión. (3) Durante esta story se encontró y corrigió un bug real de la gramática (no mencionado explícitamente en la reproducción original de la story): el contenido dentro de un string literal (`content: "@ds-button xs(1rem)"`) se resaltaba como una directiva/función real, porque la gramática no tenía ninguna regla de `#strings` — corregido agregando una con prioridad antes de `#directives`/`#functions`, descubierto por el propio test de tokenización real con Oniguruma que esta story agrega. (4) No se agregó un archivo `LICENSE`/`LICENSE.md` — `vsce package` avisa de su ausencia (warning, no error); es un gap preexistente de TODO el monorepo (ningún paquete tiene LICENSE propio pese a declarar `"license": "MIT"`), fuera del alcance acotado de esta story sobre `uxdsl-vscode` específicamente — no se inventó un texto de licencia/copyright como efecto secundario. (5) No se lanzó un Extension Development Host real ni `@vscode/test-electron` — verificado en su lugar con el motor Oniguruma real (gramática) y una función pura unit-testeada (completado), ambos corriendo en Node plano, sin descargar un binario de VS Code; documentado explícitamente como el nivel de prueba alcanzado, no como equivalente a un smoke test de host real. (6) El completado de roles/tonos/tamaños usa el tema **por defecto** del compilador, no el tema real de un proyecto — declarado como gap conocido en el README de la extensión, ítem explícitamente fuera de alcance de esta story (ver "Fuera de alcance" arriba). (7) **Esta story se implementó sin esperar a MIG-B6-29** (listada arriba como dependencia, "defaults/tonos para metadata"), por instrucción explícita de secuenciar 20→23→24→26→28 en este repositorio. Esto es seguro porque `getToneFamilies`/`directiveRoles`/`sizeKeys` en `scripts/generate-language-artifacts.js` se derivan del `DEFAULT_THEME` **actual** de `postcss-uxdsl` (hoy: tonos `['primary','surface']`), no de un valor hardcodeado ni copiado a mano; cuando MIG-B6-29 amplíe o cambie esos defaults, el mismo generador los recogerá automáticamente en la siguiente ejecución de `npm run generate:language`, sin requerir ningún cambio adicional en esta story. Es la misma independencia de orden ya documentada para MIG-B6-20 (Vite/Webpack antes de MIG-B6-29) y MIG-B6-24 en este mismo plan. |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

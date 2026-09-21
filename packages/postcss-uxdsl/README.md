@@ -368,6 +368,21 @@ remain open. For example, this partial theme introduces no unknown-family warnin
 }
 ```
 
+### Palette tone families (internal: `getToneFamilies`)
+
+`src/language.ts` exports `getToneFamilies(palette)`, the predicate
+Buttons/Inputs use to decide which Palette roles are valid "tones": a role
+qualifies only when it defines all three of `main`, `dark` and `contrast`. A
+partial semantic group (e.g. a `divider`-only role) does not qualify. This
+was previously duplicated inline inside `control-engine.ts`; both now import
+the single implementation from `language.ts` (chosen to avoid a circular
+import, since `default-theme.ts`/`surfaces.ts`/`control-engine.ts` already
+import from `language.ts`). It is not re-exported from the public
+`postcss-uxdsl/ds-runtime` entry point; the repository's own
+`scripts/generate-language-artifacts.js` (which builds the VS Code
+extension's completion metadata) already reaches into compiled `dist/*`
+modules directly for several such internals, `getToneFamilies` among them.
+
 ### Theme discovery (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks

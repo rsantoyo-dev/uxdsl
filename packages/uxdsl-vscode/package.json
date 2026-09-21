@@ -3,7 +3,7 @@
   "publisher": "rsantoyo-dev",
   "displayName": "UXDSL Support",
   "description": "Language support for UXDSL (User Experience Design System Language)",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "homepage": "https://uxdsl.vercel.app",
   "repository": {
     "type": "git",
@@ -56,11 +56,16 @@
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -p ./",
-    "watch": "tsc -watch -p ./"
+    "watch": "tsc -watch -p ./",
+    "test": "npm run compile && node --test test/*.test.js",
+    "package": "npm run compile && vsce package"
   },
   "devDependencies": {
-    "@types/vscode": "^1.80.0",
     "@types/node": "18.x",
-    "typescript": "^5.0.0"
+    "@types/vscode": "^1.80.0",
+    "@vscode/vsce": "^3.9.2",
+    "typescript": "^5.0.0",
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.3.2"
   }
 }

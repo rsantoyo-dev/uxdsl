@@ -80,6 +80,12 @@ export const DEFAULT_DENSITIES: Record<number, string> = Object.freeze(
     `xs(space(${i + 1})) md(space(${i + 2})) xl(space(${Math.min(i + 3, 16)}))`])) },
 );
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
+// `directiveArguments` lists each directive's override-argument function
+// names (`radius(...)`/`shadow(...)`, nested inside e.g. `@ds-button(...)`)
+// — distinct from the role/tone/size argument values themselves, which
+// depend on the effective theme and are composed on top of this in
+// scripts/generate-language-artifacts.js (see getToneFamilies below),
+// not hand-listed here.
 export const LANGUAGE_COMPLETIONS = {
   directiveArguments: {
     'ds-surface': ['radius', 'shadow'],
@@ -89,6 +95,27 @@ export const LANGUAGE_COMPLETIONS = {
   directives: ['theme', 'ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
   functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
+
+// MIG-B6-26 (FEAT-008): the exact tone predicate control-engine.ts's own
+// button/input tone generation uses (moved here, not duplicated, and
+// re-exported for it to import back) — a tone must be a full color family
+// (main/dark/contrast), not a semantic overlay group like text/divider/
+// action that only defines the sub-keys it actually needs. Lives in
+// language.ts (not control-engine.ts/surfaces.ts) so the vscode
+// extension's completion generator can derive its own tone list from
+// DEFAULT_THEME.palette without importing anything that would create a
+// cycle back through surfaces.ts/control-engine.ts, both of which already
+// import from this module.
+export function getToneFamilies(palette: Record<string, unknown> = {}): string[] {
+  return Object.keys(palette).filter((key) => {
+    const family = (palette as Record<string, unknown>)[key];
+    return (
+      /^[a-z][a-z0-9-]*$/.test(key) &&
+      !!family && typeof family === 'object' && !Array.isArray(family) &&
+      ['main', 'dark', 'contrast'].every((variant) => variant in (family as Record<string, unknown>))
+    );
+  });
+}
 
 // MIG-B6-13 (FEAT-008) code-review follow-up: located with `themeError` the
 // same way typography.ts already is — `{ densities: { x: '' } }` previously

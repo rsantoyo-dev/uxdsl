@@ -1,6 +1,6 @@
 import postcss from 'postcss';
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
-import { DEFAULT_BREAKPOINTS, BreakpointMap } from './language';
+import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
@@ -63,10 +63,10 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
   for (const [role, pack] of Object.entries(getTokens(theme))) {
     for (const [state, style] of Object.entries({ base: pack.base, ...pack.states })) {
       for (const [key, value] of Object.entries(style)) put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(value, theme));
-      // A tone must be a full color family (main/dark/contrast), not a
-      // semantic overlay group like text/divider/action that only defines
-      // the sub-keys it actually needs.
-      for (const tone of Object.keys(theme.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key) && object((theme.palette as any)[key]) && ['main', 'dark', 'contrast'].every(variant => variant in (theme.palette as any)[key]))) {
+      // MIG-B6-26 (FEAT-008): moved to language.ts as getToneFamilies, so
+      // the vscode extension's completion generator can derive the exact
+      // same tone list without duplicating this predicate by hand.
+      for (const tone of getToneFamilies(theme.palette)) {
         // buildVarName/buildNamespacedVarName output has no regex-special
         // characters (letters, digits, hyphens, underscores) other than the
         // literal backreference placeholder appended below, so it's safe to

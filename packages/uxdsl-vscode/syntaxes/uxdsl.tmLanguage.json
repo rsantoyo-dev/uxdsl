@@ -7,6 +7,9 @@
       "include": "#comments"
     },
     {
+      "include": "#strings"
+    },
+    {
       "include": "#directives"
     },
     {
@@ -26,11 +29,35 @@
         }
       ]
     },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.uxdsl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.uxdsl",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "match": "\\\\."
+            }
+          ]
+        }
+      ]
+    },
     "directives": {
       "patterns": [
         {
           "name": "keyword.control.at-rule.uxdsl",
-          "match": "@(theme|ds-[a-zA-Z0-9-]+)\\b"
+          "match": "@(theme|ds-surface|ds-typo|ds-button|ds-input)\\b"
         }
       ]
     },

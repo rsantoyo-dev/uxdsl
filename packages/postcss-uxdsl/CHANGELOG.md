@@ -8,6 +8,19 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-26:
+
+- **New:** `getToneFamilies(palette)` exported from `language.ts` — the
+  exact tone predicate `control-engine.ts`'s button/input tone generation
+  already used (a full color family with `main`/`dark`/`contrast`, not a
+  partial semantic group like `divider`), moved here so `uxdsl-vscode`'s
+  completion generator can derive the same tone list from
+  `DEFAULT_THEME.palette` without duplicating the predicate by hand.
+  `control-engine.ts` now imports and reuses it; no behavior change.
+- Not a `postcss-uxdsl` runtime change otherwise — this story's actual
+  scope is `packages/uxdsl-vscode` (grammar/completion/custom-data
+  generation, packaging). See that package's own `CHANGELOG.md`.
+
 FEAT-008, MIG-B6-15:
 
 - **Fix:** `@ds-button`/`@ds-input`'s host selector used to be split on
