@@ -119,7 +119,7 @@ function checkPackBudgets(packageList, budgetsKB, rootDirPath, options = {}) {
       : packDryRun(pkgDir, options);
     const budgetKB = budgetsKB[pkg.name];
     const sizeKB = info.size / 1024;
-    const entry = { name: pkg.name, sizeKB, budgetKB, files: info.files.map((f) => f.path) };
+    const entry = { name: pkg.name, sizeKB, budgetKB, shasum: info.shasum, files: info.files.map((f) => f.path) };
     results.push(entry);
     if (typeof budgetKB === 'number' && sizeKB > budgetKB) {
       violations.push(entry);
@@ -221,9 +221,8 @@ function defaultNpmViewDistTags(pkgName) {
 }
 
 function sleep(ms) {
-  const { execSync } = require('child_process');
   if (ms <= 0) return;
-  execSync(`node -e "setTimeout(()=>{}, ${ms})"`);
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 }
 
 function verifyDistTags(packageNames, version, options = {}) {
@@ -475,12 +474,14 @@ function main(argv) {
 
   assertNpmPublishAccess(packages.map((p) => p.name), { dryRun, skipPublish });
 
-  // MIG-B6-28: prepublish pack-budget gate. Runs before any version is
-  // written to disk or anything is published — a build here uses whatever
-  // sources are on disk *right now*, same as the version-bump/build loop
-  // just below, so an over-budget tarball is caught before touching any
-  // package.json/dist output for the release.
-  if (!skipBuild) {
+  // MIG-B6-28: fail-fast preflight gate on whatever is on disk right now,
+  // before any package.json is rewritten — an over-budget tarball or a
+  // missing entry point aborts with the tree untouched. Not tied to
+  // --skip-build: that flag means "don't rebuild dist/", not "don't check
+  // it" (a stale or missing dist/ is exactly what this must catch). The
+  // exact artifacts that get published are validated again, after the
+  // bump/build below, right before the publish loop.
+  {
     const gateReport = checkPackBudgets(packages, PACK_BUDGETS_KB, rootDir);
     printCheckPackReport(gateReport);
     const exportsReport = checkExportsPresent(packages, rootDir);
@@ -494,16 +495,6 @@ function main(argv) {
   if (options.note) {
     appendCoreReadmeNote(version, options.note, { dryRun });
   }
-
-  // MIG-B6-28: hash the pre-build tarball state so a source/dependency
-  // change slipping in between this gate and the actual publish call below
-  // is detectable, instead of silently publishing something that was never
-  // the thing just validated.
-  const preBuildHashes = !dryRun && !skipBuild
-    ? Object.fromEntries(
-        packages.map((pkg) => [pkg.name, packDryRun(path.join(rootDir, pkg.dir)).shasum])
-      )
-    : null;
 
   packages.forEach((pkg) => {
     const pkgDir = path.join(rootDir, pkg.dir);
@@ -583,24 +574,43 @@ function main(argv) {
     return;
   }
 
-  if (!dryRun && preBuildHashes) {
-    const postBuildViolations = [];
-    packages.forEach((pkg) => {
-      const info = packDryRun(path.join(rootDir, pkg.dir));
-      if (info.shasum !== preBuildHashes[pkg.name]) {
-        postBuildViolations.push(pkg.name);
-      }
-    });
-    if (postBuildViolations.length > 0) {
-      console.error('\nAborting release: the following packages changed after the prepublish gate ran:');
-      postBuildViolations.forEach((name) => console.error(`  - ${name}`));
-      console.error('This should not happen inside a single release run; re-run the release from a clean state.');
+  // MIG-B6-28: validate the *exact* artifacts about to be published — after
+  // the bump, the build and generate-language-artifacts have all rewritten
+  // files that ship — and record each tarball's shasum ("registrando
+  // hash"). Then, right before each individual `npm publish`, re-pack that
+  // package and refuse to publish anything whose shasum no longer matches:
+  // publishing five packages sequentially (with OTP prompts) leaves a real
+  // window for a source/dependency change to land on disk mid-loop.
+  const validatedShasums = {};
+  if (!dryRun) {
+    const finalReport = checkPackBudgets(packages, PACK_BUDGETS_KB, rootDir);
+    const finalExports = checkExportsPresent(packages, rootDir);
+    if (finalReport.violations.length > 0 || finalExports.violations.length > 0) {
+      printCheckPackReport(finalReport);
+      printExportsReport(finalExports);
+      console.error('\nAborting release: the built artifacts failed validation (see above). Nothing was published.');
       process.exit(1);
     }
+    finalReport.results.forEach((entry) => {
+      validatedShasums[entry.name] = entry.shasum;
+      console.log(`validated ${entry.name}@${version}: ${entry.sizeKB.toFixed(1)}KB, shasum ${entry.shasum}`);
+    });
   }
 
+  const published = [];
   packages.forEach((pkg) => {
     const pkgDir = path.join(rootDir, pkg.dir);
+    if (!dryRun) {
+      const current = packDryRun(pkgDir).shasum;
+      if (current !== validatedShasums[pkg.name]) {
+        const notPublished = packages.map((p) => p.name).filter((name) => !published.includes(name));
+        console.error(`\nAborting release: ${pkg.name} changed after it was validated (shasum ${validatedShasums[pkg.name]} -> ${current}).`);
+        console.error(`Already published: ${published.length > 0 ? published.join(', ') : '(none)'}`);
+        console.error(`Not published: ${notPublished.join(', ')}`);
+        console.error('Versions already on the registry cannot be republished; re-validate from a clean tree and publish the remaining packages deliberately.');
+        process.exit(1);
+      }
+    }
     const argsList = ['publish', '--access', 'public'];
     if (options.tag) {
       argsList.push('--tag', options.tag);
@@ -618,6 +628,7 @@ function main(argv) {
       console.error('If using token-based publish, use a granular token with publish + 2FA bypass enabled.');
       throw error;
     }
+    published.push(pkg.name);
   });
 
   // MIG-B6-28 (D-6): postpublish dist-tag verification is deliberately

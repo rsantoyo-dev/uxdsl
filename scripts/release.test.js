@@ -230,10 +230,15 @@ test('MIG-B6-28: verifyDistTags does not apply the beta latest/beta rule to rc o
 const REAL_SCRIPT = path.resolve(__dirname, 'release.js');
 const PKG_NAMES = ['postcss-uxdsl', 'uxdsl-core', 'vite-plugin-uxdsl', 'uxdsl-webpack-loader', 'uxdsl-cli'];
 
-function mkFakeMonorepo() {
+function mkFakeMonorepo({ withGenerateStub = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-release-guard-'));
   fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
   fs.copyFileSync(REAL_SCRIPT, path.join(dir, 'scripts', 'release.js'));
+  if (withGenerateStub) {
+    // The real generate-language-artifacts.js needs postcss-uxdsl's compiled
+    // dist/; a full-flow test only needs the call site to succeed.
+    fs.writeFileSync(path.join(dir, 'scripts', 'generate-language-artifacts.js'), 'process.exit(0);\n');
+  }
 
   PKG_NAMES.forEach((name) => {
     const pkgDir = path.join(dir, 'packages', name);
@@ -255,10 +260,21 @@ function mkFakeMonorepo() {
 const FAKE_NPM_SOURCE = `#!/usr/bin/env node
 'use strict';
 const fs = require('fs');
+const path = require('path');
+const crypto = require('crypto');
 const args = process.argv.slice(2);
 
+// cwd is always <repo>/packages/<name> for the commands release.js runs
+// per package, so the fake repo root is two levels up.
+const repoRoot = path.resolve(process.cwd(), '..', '..');
+const mutationMarker = path.join(repoRoot, '.fake-npm-mutated');
+const publishLog = path.join(repoRoot, '.fake-npm-published');
+
+function readOwnPackageText() {
+  try { return fs.readFileSync('package.json', 'utf8'); } catch { return ''; }
+}
 function readOwnPackageName() {
-  try { return JSON.parse(fs.readFileSync('package.json', 'utf8')).name; } catch { return null; }
+  try { return JSON.parse(readOwnPackageText()).name; } catch { return null; }
 }
 
 if (args[0] === 'pack' && args.includes('--dry-run')) {
@@ -269,7 +285,12 @@ if (args[0] === 'pack' && args.includes('--dry-run')) {
   const files = name === missingExportPkg
     ? [{ path: 'package.json', size: 100 }]
     : [{ path: 'package.json', size: 100 }, { path: 'index.js', size: 200 }];
-  process.stdout.write(JSON.stringify([{ name, version: '0.0.1', size, unpackedSize: size, shasum: 'fake-shasum', files }]));
+  // Content-derived, like real npm's reproducible pack: a version bump or a
+  // simulated source mutation changes the shasum. A constant here would
+  // silently mask any bug in release.js's hash comparison.
+  const mutated = fs.existsSync(mutationMarker) ? 'mutated' : '';
+  const shasum = crypto.createHash('sha1').update(readOwnPackageText() + mutated).digest('hex');
+  process.stdout.write(JSON.stringify([{ name, version: '0.0.1', size, unpackedSize: size, shasum, files }]));
   process.exit(0);
 }
 if (args[0] === 'run' && args[1] === 'build') {
@@ -288,6 +309,12 @@ if (args[0] === 'publish') {
   if (name === process.env.FAKE_NPM_FAIL_PUBLISH_PKG) {
     process.stderr.write('fake-npm: simulated publish failure\\n');
     process.exit(1);
+  }
+  fs.appendFileSync(publishLog, name + '\\n');
+  // Simulates a source change landing on disk while the publish loop is
+  // already running — after this, every later pack --dry-run hashes differently.
+  if (process.env.FAKE_NPM_MUTATE_ON_FIRST_PUBLISH && !fs.existsSync(mutationMarker)) {
+    fs.writeFileSync(mutationMarker, '');
   }
   process.exit(0);
 }
@@ -319,6 +346,12 @@ function runRelease(repoDir, args, env = {}) {
 
 function readFakeVersion(repoDir, name) {
   return JSON.parse(fs.readFileSync(path.join(repoDir, 'packages', name, 'package.json'), 'utf8')).version;
+}
+
+function publishedPackages(repoDir) {
+  const logFile = path.join(repoDir, '.fake-npm-published');
+  if (!fs.existsSync(logFile)) return [];
+  return fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean);
 }
 
 test('MIG-B6-28 (subprocess, fake npm): the preflight gate aborts an oversized package before any file is touched, and accepts an rc version string', () => {
@@ -361,11 +394,49 @@ test('MIG-B6-28 (subprocess, fake npm): a real publish failure ("publicación pa
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stderr, /Publish failed/);
   assert.match(result.stderr, /simulated publish failure/);
+  // Exactly the first package reached the registry; the failing 2nd one and
+  // the three after it were never attempted.
+  assert.deepEqual(publishedPackages(dir), ['postcss-uxdsl']);
   // Every package.json was still bumped for real (the version-bump loop
   // runs before publishing starts) — only the *publish step itself* is
   // partial, which is exactly the state a human operator needs to see
   // accurately to know what still needs `npm publish` run by hand.
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '9.9.9'));
+});
+
+test('MIG-B6-28 (subprocess, fake npm): a clean full release — no --dry-run/--skip-build/--skip-publish — publishes all five packages and completes', () => {
+  // Regression: the first version of this story recorded each tarball's
+  // shasum *before* the version-bump loop rewrote every package.json (and
+  // before generate-language-artifacts rewrote theme-manifest.json, which
+  // ships), then compared *after* — so every real release aborted with
+  // "changed after the prepublish gate ran" before publishing anything.
+  // None of the other subprocess tests reach a real publish with a real
+  // build path, and the fake npm used to return a constant shasum, which
+  // would have masked it even if they had.
+  const dir = mkFakeMonorepo({ withGenerateStub: true });
+  const result = runRelease(dir, ['--version', '9.9.9']);
+
+  assert.equal(result.status, 0, result.stdout + result.stderr);
+  assert.match(result.stdout, /Release complete/);
+  assert.deepEqual(publishedPackages(dir), PKG_NAMES);
+  PKG_NAMES.forEach((name) => {
+    assert.equal(readFakeVersion(dir, name), '9.9.9');
+    assert.match(result.stdout, new RegExp(`validated ${name}@9\\.9\\.9: .*shasum [0-9a-f]{40}`));
+  });
+});
+
+test('MIG-B6-28 (subprocess, fake npm): a source change landing between validation and publish stops the loop before the affected package is published', () => {
+  const dir = mkFakeMonorepo({ withGenerateStub: true });
+  const result = runRelease(dir, ['--version', '9.9.9'], { FAKE_NPM_MUTATE_ON_FIRST_PUBLISH: '1' });
+
+  assert.equal(result.status, 1, result.stdout + result.stderr);
+  // The mutation lands while publishing the 1st package; the 2nd package's
+  // own pre-publish recheck is the one that sees a different tarball.
+  assert.match(result.stderr, /uxdsl-core changed after it was validated/);
+  assert.match(result.stderr, /Already published: postcss-uxdsl/);
+  assert.match(result.stderr, /Not published: uxdsl-core, vite-plugin-uxdsl, uxdsl-webpack-loader, uxdsl-cli/);
+  assert.doesNotMatch(result.stderr, /npm publish/);
+  assert.deepEqual(publishedPackages(dir), ['postcss-uxdsl']);
 });
 
 test('MIG-B6-28 (subprocess, fake npm): --check-pack is a real, local, side-effect-free check that needs no --version at all', () => {
