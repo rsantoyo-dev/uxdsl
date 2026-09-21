@@ -21,6 +21,9 @@ const CASES_DIR = path.join(__dirname, 'cases');
 const EXPECTED_DIR = path.join(__dirname, 'expected');
 const CLI_BIN = path.join(ROOT, 'packages', 'uxdsl-cli', 'bin', 'uxdsl.js');
 const core = require(path.join(ROOT, 'packages', 'uxdsl-core', 'dist', 'index.js'));
+const viteModule = require(path.join(ROOT, 'packages', 'vite-plugin-uxdsl', 'dist', 'index.js'));
+const uxdslVitePlugin = viteModule.default || viteModule;
+const webpackLoader = require(path.join(ROOT, 'packages', 'uxdsl-webpack-loader', 'index.js'));
 
 const UPDATE = process.argv.includes('--update');
 
@@ -47,6 +50,51 @@ async function runCore(entry) {
   }
 }
 
+// MIG-B6-20 (FEAT-008): Vite's own resolveId/load called directly (not a
+// real `vite build`) — this checks the exact same call this plugin's
+// `load()` makes into `compile()`, and its own id/dependency bookkeeping,
+// without paying for a real bundler spin-up on every case. Bundler
+// integration behavior itself (extraction, HMR, no-absolute-paths, watch
+// mode) has its own dedicated coverage in fixtures/vite-adapter/ and
+// fixtures/webpack-adapter/ — this only needs to prove the CSS output
+// agrees.
+async function runVite(entry) {
+  const plugin = uxdslVitePlugin({ includeTheme: false });
+  const ctx = { addWatchFile() {}, warn() {} };
+  try {
+    const virtualId = plugin.resolveId.call(ctx, entry, undefined);
+    if (!virtualId) throw new Error('resolveId did not recognize the entry as a .uxdsl specifier');
+    const result = await plugin.load.call(ctx, virtualId);
+    return { css: result.code };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+// Same rationale as runVite: the loader function called directly with a
+// minimal real webpack loader-context shape, not a real webpack build.
+function runWebpack(entry) {
+  return new Promise((resolve) => {
+    const source = fs.readFileSync(entry, 'utf8');
+    const ctx = {
+      resourcePath: entry,
+      rootContext: path.dirname(entry),
+      async() {
+        return (err, css) => resolve(err ? { error: err.message } : { css });
+      },
+      getOptions() {
+        return { includeTheme: false };
+      },
+      addDependency() {},
+      emitWarning() {},
+    };
+    // Real webpack's `this.async()` returns the callback synchronously —
+    // matched here so the loader's own `const callback = this.async();`
+    // line works unchanged.
+    webpackLoader.call(ctx, source);
+  });
+}
+
 // Only the parts of an error message that are stable across machines/runs
 // are compared — full absolute temp paths would make the oracle
 // unreproducible across checkouts.
@@ -61,16 +109,28 @@ async function runCase(name) {
 
   const cli = runCli(entry, tmpOut);
   const coreResult = await runCore(entry);
+  const viteResult = await runVite(entry);
+  const webpackResult = await runWebpack(entry);
 
   const expectError = EXPECT_ERROR.has(name);
   if (expectError) {
     if (!cli.error) throw new Error(`[${name}] expected the CLI to fail, it compiled successfully instead`);
     if (!coreResult.error) throw new Error(`[${name}] expected compile() to fail, it compiled successfully instead`);
+    if (!viteResult.error) throw new Error(`[${name}] expected the Vite adapter to fail, it compiled successfully instead`);
+    if (!webpackResult.error) throw new Error(`[${name}] expected the Webpack adapter to fail, it compiled successfully instead`);
   } else {
     if (cli.error) throw new Error(`[${name}] CLI failed unexpectedly: ${cli.error}`);
     if (coreResult.error) throw new Error(`[${name}] compile() failed unexpectedly: ${coreResult.error}`);
+    if (viteResult.error) throw new Error(`[${name}] Vite adapter failed unexpectedly: ${viteResult.error}`);
+    if (webpackResult.error) throw new Error(`[${name}] Webpack adapter failed unexpectedly: ${webpackResult.error}`);
     if (cli.css !== coreResult.css) {
       throw new Error(`[${name}] CLI and compile() disagree on output.\n--- CLI ---\n${cli.css}\n--- compile() ---\n${coreResult.css}`);
+    }
+    if (cli.css !== viteResult.css) {
+      throw new Error(`[${name}] CLI and the Vite adapter disagree on output.\n--- CLI ---\n${cli.css}\n--- Vite ---\n${viteResult.css}`);
+    }
+    if (cli.css !== webpackResult.css) {
+      throw new Error(`[${name}] CLI and the Webpack adapter disagree on output.\n--- CLI ---\n${cli.css}\n--- Webpack ---\n${webpackResult.css}`);
     }
   }
 
@@ -102,7 +162,7 @@ async function main() {
   for (const name of names) {
     await runCase(name);
   }
-  console.log(`PASS: ${names.length} parity case(s) — CLI and uxdsl-core's compile() agree${UPDATE ? ' (oracle refreshed)' : ', matching the committed oracle'}.`);
+  console.log(`PASS: ${names.length} parity case(s) — CLI, compile(), and the Vite/Webpack adapters agree${UPDATE ? ' (oracle refreshed)' : ', matching the committed oracle'}.`);
 }
 
 main().catch((err) => {

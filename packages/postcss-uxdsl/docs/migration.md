@@ -450,6 +450,47 @@ archivos, en vez de que el valor del tema desaparezca en silencio. Si el
 tema es la fuente real, borrá `breakpoints` de `uxdsl.config.cjs` para que
 el aviso desaparezca y el tema mande.
 
+### Desde beta.6: Vite y Webpack entregan CSS real, no un `<style>` inyectado en runtime (MIG-B6-20)
+
+**`vite-plugin-uxdsl`:** un `import './panel.uxdsl'` ya no compila a un módulo
+JS que inserta un `<style>` en `document.head` en tiempo de ejecución. Ahora
+compila a un id que Vite reconoce como CSS, así que `vite build` extrae un
+`.css` real, el HMR es el nativo de Vite (no uno propio) y SSR recibe un
+módulo vacío en vez de un `typeof document !== 'undefined'` que nunca era
+`true` en el servidor. Si tu código hacía `import css from './panel.uxdsl'`
+esperando el string compilado, cambialo a
+`import css from './panel.uxdsl?inline'` — el mismo sufijo que ya usa
+cualquier import CSS de Vite. Se eliminó también la inyección automática de
+los packs legacy `default-*.css`/`.uxdsl` (tema, spacing, colors,
+typography, densities, radii, shadows, borders, surfaces, inputs, buttons):
+el `compile()` que corre ahora ya emite las mismas definiciones globales
+cuando `includeTheme` es `true` (el default), así que esos packs nunca
+hicieron falta para un proyecto usando el compilador real. El modo
+`scss: 'auto'` (activado en silencio si el proyecto tenía `sass` instalado
+por cualquier motivo) se eliminó; `scss: 'on'` sigue andando igual, ahora
+como opción explícita únicamente. El plugin también descubre
+`uxdsl.theme.config.*`/`uxdsl.theme.json` del proyecto solo, igual que
+`uxdsl-cli` (ver la sección de MIG-B6-19 arriba) — si le pasabas `theme`
+manualmente sólo para que compile contra el tema real, ya no hace falta.
+
+**`uxdsl-webpack-loader`:** encadenalo antes de `css-loader` (con
+`style-loader` o `MiniCssExtractPlugin.loader` delante de ese) — antes
+devolvía `module.exports = "css compilado como string"`, que `css-loader`
+no podía interpretar como CSS real en absoluto. El loader ahora también
+llama a `this.addDependency()` por cada parcial importado (y por el archivo
+de tema descubierto), así que el caché y el modo watch de Webpack ven sus
+ediciones; antes no los veían en absoluto. Las opciones llegan por
+`this.getOptions()` (la API real de Webpack 5), no por `this.query`.
+
+**Los cuatro caminos (CLI, `uxdsl-core` usado directo, Vite, Webpack)**
+ahora comparten exactamente el mismo `compile()` y dan el mismo CSS para la
+misma entrada y el mismo tema — verificado en `fixtures/parity/`. Un efecto
+colateral real de unificar Webpack sobre `compile({ source, from })`: un
+ciclo de `@import` alcanzado sólo por ese camino (nunca por `{ entry }`) no
+fallaba antes de esta story, aunque sí fallaba correctamente vía `{ entry }`
+desde MIG-B6-18 — corregido en el mismo cambio, para los cuatro caminos por
+igual.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

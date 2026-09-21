@@ -159,7 +159,7 @@ integrarse. No hay una «ola 1» completa sin dependencias.
 | MIG-B6-23 | [Watch robusto](MIG-B6-23-watch-robusto.md) | D — CLI | P1 · M | 18, 24 | Pendiente |
 | MIG-B6-29 | [El JSON base es la única fuente de defaults](MIG-B6-29-json-base-unica-fuente.md) | B — Tema base y salida correcta | P0 · L | 15 | Pendiente |
 | MIG-B6-17 | [`@ds-typo` emite sólo lo que define el tema](MIG-B6-17-ds-typo-solo-tema.md) | B — Tema base y salida correcta | P1 · M | 29, 15 | Pendiente |
-| MIG-B6-20 | [Adaptadores Vite y Webpack sobre `compile()`](MIG-B6-20-adaptadores-vite-webpack.md) | C — Un solo pipeline (**camino crítico**) | P1 · L | 18, 19, 29 | Pendiente |
+| MIG-B6-20 | [Adaptadores Vite y Webpack sobre `compile()`](MIG-B6-20-adaptadores-vite-webpack.md) | C — Un solo pipeline (**camino crítico**) | P1 · L | 18, 19, 29 | Implementada/verificada en `feat/feat-008-beta6-plan` (commit siguiente) sin esperar 29 (retiro de packs legacy) — ver "Límites y seguimiento" de la ficha; integración a `main` pendiente |
 | MIG-B6-21 | [Sourcemaps vía PostCSS](MIG-B6-21-sourcemaps.md) | C — Un solo pipeline (**camino crítico**) | P2 · M | 18, 20, 23, 17 | Pendiente |
 | MIG-B6-27 | [Tipos y esquema de configuración](MIG-B6-27-tipos-y-esquema.md) | F — Editor y tipos | P2 · S-M | 1, 19, 21, 29 | Pendiente |
 | MIG-B6-30 | [applyTheme(json): un modelo de tema en build y runtime](MIG-B6-30-apply-theme-runtime.md) | B — Tema base y salida correcta | P1 · L | 29, 17, 27 | Pendiente |

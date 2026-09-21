@@ -65,6 +65,33 @@ test('MIG-B6-18: compile({ entry }) rejects the same cycle the same way', async 
   await assert.rejects(() => core.compile({ entry }), /UXD_IMPORT_CYCLE: Circular import detected: /);
 });
 
+test('MIG-B6-20: compile({ source, from }) rejects the same cycle too — not just compile({ entry }) — since the Webpack loader and Vite\'s optional Sass pre-pass only ever call compile() this way', async () => {
+  const entry = path.join(FIXTURES, 'cycle-a.uxdsl');
+  const source = fs.readFileSync(entry, 'utf8');
+  await assert.rejects(
+    () => core.compile({ source, from: entry }),
+    (err) => {
+      assert.match(err.message, /^UXD_IMPORT_CYCLE: Circular import detected: /);
+      assert.match(err.message, /cycle-a\.uxdsl -> .*cycle-b\.uxdsl -> .*cycle-a\.uxdsl/);
+      return true;
+    }
+  );
+});
+
+test('MIG-B6-20: compile({ source, from }) still resolves a bare package-specifier @import, matching compile({ entry })', async () => {
+  const source = "@import 'postcss-uxdsl/theme/default-colors.css';\n.a { color: red; }\n";
+  const css = await core.compile({ source, from: path.join(FIXTURES, 'virtual-entry.uxdsl') }, { includeTheme: false });
+  assert.match(css.css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
+});
+
+test('MIG-B6-20: compile({ source, from }) does not require `from` to be a real file on disk (an unsaved editor buffer/Sass-preprocessed content)', async () => {
+  const result = await core.compile(
+    { source: '.a { color: red; }', from: path.join(FIXTURES, 'this-file-does-not-exist-on-disk.uxdsl') },
+    { includeTheme: false }
+  );
+  assert.match(result.css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
+});
+
 test('MIG-B6-18: a non-cyclic duplicate import is inlined only once (unchanged from before)', async () => {
   const entry = path.join(FIXTURES, 'duplicate-root.uxdsl');
   const source = fs.readFileSync(entry, 'utf8');

@@ -135,12 +135,28 @@ function resolveForCycleCheck(id: string, basedir: string, entryDir: string): st
  * actual inlining. A nonexistent import is deliberately left alone here —
  * postcss-import's own error for that case already names the importing
  * file and the exact line (verified), so duplicating that check would
- * only risk giving a worse message. */
+ * only risk giving a worse message.
+ *
+ * MIG-B6-20 (FEAT-008): also called for a `{ source, from }` compile, not
+ * just `{ entry }` — the Vite plugin's optional Sass pre-pass and every
+ * single Webpack loader compilation use that shape exclusively.
+ * Discovered via the shared parity fixture: without this, a cycle
+ * reached only through `{ source, from }` (never `{ entry }`) silently
+ * duplicated content again, defeating this exact guard for one of the
+ * two call shapes `compile()` accepts. */
 function checkImportCycles(
   entry: string,
   entryDir: string,
   visited: Set<string> = new Set(),
-  stack: string[] = []
+  stack: string[] = [],
+  // MIG-B6-20 (FEAT-008) item 5: the top-level node's own content, for a
+  // `{ source, from }` call — `from` need not exist on disk at all (an
+  // unsaved editor buffer, or Sass-preprocessed content upstream), so this
+  // reads from the caller's in-memory string instead of `fs.readFileSync`
+  // for exactly the first (outermost) call only. Every nested import found
+  // from there is still a real file, resolved and read from disk exactly
+  // as before — only the walk's own starting point can be virtual.
+  initialSource?: string
 ): void {
   if (stack.includes(entry)) {
     const cycleStart = stack.indexOf(entry);
@@ -152,11 +168,15 @@ function checkImportCycles(
   stack.push(entry);
 
   let source: string;
-  try {
-    source = fs.readFileSync(entry, 'utf8');
-  } catch (_) {
-    stack.pop();
-    return; // Unreadable/missing — postcss-import reports this on the real pass.
+  if (initialSource !== undefined) {
+    source = initialSource;
+  } else {
+    try {
+      source = fs.readFileSync(entry, 'utf8');
+    } catch (_) {
+      stack.pop();
+      return; // Unreadable/missing — postcss-import reports this on the real pass.
+    }
   }
   const root = postcssScss.parse(source, { from: entry });
   const importTargets: string[] = [];
@@ -175,16 +195,18 @@ function checkImportCycles(
 
 interface CompileInput {
   /** Absolute or cwd-relative path to the entry `.uxdsl` file. Mutually
-   * exclusive with `source` — enables `@import` inlining and cycle
-   * detection, which need a real file to resolve relative imports against. */
+   * exclusive with `source`. */
   entry?: string;
-  /** In-memory UXDSL source. `@import`s inside it still resolve relative
-   * to `from` if provided (matching postcss's own `from` contract), but
-   * there is no entry file on disk for cycle pre-detection to start from —
-   * only postcss-import's own per-`@import` resolution applies. */
+  /** In-memory UXDSL source. `@import`s inside it resolve relative to
+   * `from` if provided (matching postcss's own `from` contract) — a
+   * bare/`~`-prefixed specifier resolves the same way it would for
+   * `entry`, and the same cycle pre-detection applies, both starting from
+   * this in-memory content rather than reading `from` off disk (which
+   * need not exist as a real file at all). */
   source?: string;
   /** Origin path for an in-memory `source`, for relative `@import`
-   * resolution and diagnostics location. Ignored when `entry` is given. */
+   * resolution, bare/`~`-specifier resolution, cycle detection and
+   * diagnostics location. Ignored when `entry` is given. */
   from?: string;
 }
 
@@ -249,11 +271,18 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
   if (entry !== undefined && !fs.existsSync(entry)) {
     throw new Error(`uxdsl-core: entry file not found: ${entry}`);
   }
-  const resolveImport = entry !== undefined ? createImportResolver(entry) : undefined;
-  if (entry !== undefined) {
-    checkImportCycles(entry, path.dirname(entry));
-  }
   const source = entry !== undefined ? fs.readFileSync(entry, 'utf8') : (input.source as string);
+  // MIG-B6-20 (FEAT-008): both the import resolver (bare/`~` specifiers)
+  // and cycle detection key off `from`, not just `entry` — a `{ source,
+  // from }` call needs exactly the same guarantees an `{ entry }` call
+  // gets, since the Vite plugin's Sass pre-pass and every Webpack loader
+  // compilation only ever use this shape. `initialSource` supplies the
+  // top-level node's own content for the cycle walk, since `from` need
+  // not exist on disk at all in this shape.
+  const resolveImport = from !== undefined ? createImportResolver(from) : undefined;
+  if (from !== undefined) {
+    checkImportCycles(from, path.dirname(from), undefined, undefined, entry === undefined ? source : undefined);
+  }
 
   const includeTheme = config.includeTheme !== false;
   const plugins = [

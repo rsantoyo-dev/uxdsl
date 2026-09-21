@@ -112,6 +112,14 @@ const { css, dependencies, warnings } = await compile(
 Use this section for short release notes on each npm tweak.
 
 - v0.1.9 — baseline demo release for current docs/playground flow.
+- v0.5.0-beta.6 (MIG-B6-20, FEAT-008) — `compile({ source, from })` (used
+  exclusively by `uxdsl-webpack-loader` and by `vite-plugin-uxdsl`'s
+  optional Sass pre-pass) now gets the same import-cycle detection and
+  bare/`~`-specifier resolution `compile({ entry })` already had — both now
+  key off `from`, not just `entry`. Previously an import cycle reached only
+  through `{ source, from }` silently duplicated content instead of
+  failing, undoing MIG-B6-18's own guarantee for that call shape. No API
+  change — `from` was already accepted, just under-used internally.
 - v0.5.0-beta.6 (MIG-B6-18, FEAT-008) — replaced the old comment-stripping,
   string-based `@import` inliner with a real `compile()` built on
   `postcss-scss`/`postcss-import`/`postcss-advanced-variables`/
