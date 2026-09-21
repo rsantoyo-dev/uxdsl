@@ -36,12 +36,42 @@ export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID
   if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([name,width]) => !/^[a-z][\w-]*$/i.test(name) || !Number.isFinite(width) || width < 0) || new Set(ordered.map(([,width]) => width)).size !== ordered.length) throw new Error(`${prefix}: Expected named, distinct non-negative widths and a zero-width base.`);
   return ordered;
 }
-const NATIVE_VALUE_FUNCTIONS = ['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env', 'scale', 'scaleX', 'scaleY', 'translate', 'translateX', 'translateY', 'rotate', 'matrix'];
+// MIG-B6-14 (FEAT-008): every CSS/UXDSL function name a responsive-looking
+// value can legitimately use at its top level, shared by validateResponsiveExpression
+// (theme-level Density/Typography values) and index.ts's own UXD_BREAKPOINT_UNKNOWN
+// check (arbitrary user CSS declarations) — one inventory, not two independently
+// maintained lists that can drift apart. Not an exhaustive CSS grammar: functions
+// nested inside another function's arguments are never top-level breakpoint
+// candidates in the first place, so they don't need to be listed here.
+//
+// Known trap: `log` sits at edit distance 1 from the `lg` breakpoint name. This
+// list is consulted before any edit-distance heuristic runs specifically so a
+// real `log(...)` in a value next to `lg(...)` is never misread as a typo of it.
+export const KNOWN_CSS_FUNCTIONS = [
+  // UXDSL's own value functions.
+  'space', 'density', 'color', 'palette', 'radius', 'rounded', 'border', 'shadow', 'elevation',
+  // Math.
+  'calc', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
+  'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp',
+  // Color.
+  'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color-mix', 'light-dark',
+  // Everything else: references, gradients, grid/sizing, easing, transforms, filters, anchoring.
+  'var', 'env', 'attr', 'url', 'image-set',
+  'linear-gradient', 'radial-gradient', 'conic-gradient',
+  'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient',
+  'fit-content', 'repeat', 'minmax', 'cubic-bezier', 'steps',
+  'translate', 'translateX', 'translateY', 'translateZ', 'translate3d',
+  'scale', 'scaleX', 'scaleY', 'scaleZ', 'scale3d',
+  'rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d',
+  'skew', 'skewX', 'skewY', 'matrix', 'matrix3d', 'perspective',
+  'blur', 'brightness', 'contrast', 'drop-shadow', 'grayscale', 'hue-rotate', 'invert', 'opacity', 'saturate', 'sepia',
+  'anchor', 'anchor-size',
+] as const;
 export function validateResponsiveExpression(expression: string, bps: BreakpointMap, prefix = 'UXD_VALUE') {
   if (typeof expression !== 'string' || !expression.trim() || /[;{}]/.test(expression)) throw new Error(`${prefix}: Expected a nonempty value.`);
   const parsed = valueParser(expression);
   parsed.walk(node => { if ((node as any).unclosed) throw new Error(`${prefix}: Unclosed expression.`); });
-  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !NATIVE_VALUE_FUNCTIONS.includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
+  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
 }
 
 // Density defaults stay inside the shipped 1–16 Spacing scale.

@@ -8,7 +8,7 @@ import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
-import { diagnostic, locateError, missingKeyMessage } from './diagnostics';
+import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -20,7 +20,7 @@ import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
-import { compileDensityRules, resolveResponsiveValue, getDensityTokens } from './language';
+import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
@@ -152,8 +152,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       }
       const vars: Record<string, string> = Object.create(null);
-      // Selector-scoped typography directives
-      // Supports: @ds-typo(h1), @ds(h1), and @ds-h1 (no params)
+      // Selector-scoped typography directives.
+      // MIG-B6-14 (FEAT-008): only @ds-typo(h1) is supported — @ds(h1) and
+      // @ds-h1 were never implemented despite an older comment claiming
+      // otherwise; both now fall through to the final pass below and fail
+      // as UXD_DIRECTIVE_UNKNOWN instead of reaching CSS untouched.
       root.walkRules((rule) => {
         const applyTypo = (at: any, variantRaw: string) => {
           let tag = String(variantRaw || "").trim();
@@ -234,8 +237,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           at.remove();
         };
 
-        // @ds-typo(h1)
-        rule.walkAtRules("ds-typo", (at) => applyTypo(at, at.params || ""));
+        // @ds-typo(h1). MIG-B6-14 (FEAT-008): only a direct child of `rule`,
+        // matching @ds-surface/@ds-button/@ds-input below — otherwise a
+        // @ds-typo nested inside a @media/@supports under this rule would
+        // be silently applied as if it were responsive, instead of being
+        // left for the final UXD_DIRECTIVE_CONTEXT pass to reject.
+        rule.walkAtRules("ds-typo", (at) => { if (at.parent === rule) applyTypo(at, at.params || ""); });
       });
       const densityTokens: Record<string, string> = Object.create(null);
       const radiusTokens: Record<string, string> = Object.create(null);
@@ -657,6 +664,29 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       });
 
+      // MIG-B6-14 (FEAT-008): $var substitutions must happen BEFORE the
+      // responsive-expansion walk below, not after it. That walk decides
+      // whether a declaration is responsive by looking for a breakpoint
+      // function in its CURRENT value — a declaration whose value is still
+      // the literal string "$gap" never matches, so a $var holding a
+      // responsive expression (`$gap: xs(1rem) md(2rem);`) used to reach
+      // output as the literal, invalid text `gap: xs(1rem) md(2rem);`
+      // instead of being split into media queries the way the CLI (which
+      // resolves $vars via postcss-advanced-variables before this plugin
+      // ever runs) already does.
+      const varNames = Object.keys(vars);
+      if (varNames.length > 0) {
+        const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
+        root.walkDecls((decl) => {
+          if (typeof decl.value !== "string") return;
+          decl.value = decl.value.replace(varRefRE, (_m, name) => {
+            return Object.prototype.hasOwnProperty.call(vars, name)
+              ? vars[name]
+              : _m;
+          });
+        });
+      }
+
       function resolveValueForBp(input: string, targetBp: string): string {
         return resolveResponsiveValue(input, targetBp, bps);
       }
@@ -756,7 +786,30 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         // Phase 2: extract responsive values
         const parsed = valueParser(phase1Text);
         let hasResponsive = false;
-        parsed.walk(node => { if (node.type === 'function' && bpNames.has(node.value)) hasResponsive = true; });
+        // MIG-B6-14 (FEAT-008): a top-level function that is neither a
+        // configured breakpoint nor a known CSS function used to reach CSS
+        // untouched (e.g. `padding: xs(1rem) xxl(2rem);` -> literal,
+        // invalid `xxl(2rem)` in the output). Only the top-level of the
+        // value counts — a function nested inside e.g. calc(...) is that
+        // function's own argument, never a breakpoint candidate. Collected
+        // in the same pass that finds real breakpoint functions so
+        // `hasResponsive` below is fully known before either condition
+        // (co-occurrence, edit distance) is evaluated for any of them.
+        const suspiciousFunctions: string[] = [];
+        for (const node of parsed.nodes) {
+          if (node.type !== 'function') continue;
+          if (bpNames.has(node.value)) { hasResponsive = true; continue; }
+          if (!(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) suspiciousFunctions.push(node.value);
+        }
+        for (const name of suspiciousFunctions) {
+          const distanceOne = Array.from(bpNames).some(bp => editDistance(name.toLowerCase(), bp.toLowerCase()) === 1);
+          if (hasResponsive || distanceOne) {
+            throw diagnostic(
+              `UXD_BREAKPOINT_UNKNOWN: ${name}(...) is not a configured breakpoint or a known CSS function; ` +
+              `configured breakpoints: ${Array.from(bpNames).join(', ')}.`
+            );
+          }
+        }
         if (!hasResponsive) { decl.value = parsed.toString().trim(); return; }
         const resolved = ordered.map(({name: bp}) => ({ bp, text: rewriteFuncs(resolveResponsiveValue(phase1Text, bp, bps)) }));
         const baseOut = resolved[0]?.text || '';
@@ -835,20 +888,6 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         }
       });
 
-      // $var substitutions across all declarations
-      const varNames = Object.keys(vars);
-      if (varNames.length > 0) {
-        const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
-        root.walkDecls((decl) => {
-          if (typeof decl.value !== "string") return;
-          decl.value = decl.value.replace(varRefRE, (_m, name) => {
-            return Object.prototype.hasOwnProperty.call(vars, name)
-              ? vars[name]
-              : _m;
-          });
-        });
-      }
-
       // Reuse the same resolver after substitutions and media cloning.
       root.walkDecls(decl => {
         try {
@@ -857,6 +896,31 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           throw locateError(error, decl);
         }
       });
+      // MIG-B6-14 (FEAT-008): a final, generic pass over every reserved-namespace
+      // at-rule (`ds` or `ds-*`) still left in the tree. Every directive handler
+      // above only consumes an occurrence that is a *direct* child of the rule
+      // it's walked from (`if (at.parent !== rule) return;`, or the equivalent
+      // for @ds-typo above) — anything still here is either misspelled/nonexistent
+      // (UXD_DIRECTIVE_UNKNOWN) or a real directive used at the document root or
+      // nested inside another at-rule such as @media/@supports
+      // (UXD_DIRECTIVE_CONTEXT: directives style a whole rule and are not
+      // responsive — D-3). One rule, no per-directive special-casing, so a
+      // browser never silently discards an at-rule this plugin never processed.
+      const knownDirectives: string[] = LANGUAGE_COMPLETIONS.directives.filter(name => name.startsWith('ds-'));
+      root.walkAtRules(at => {
+        if (at.name !== 'ds' && !at.name.startsWith('ds-')) return;
+        if (knownDirectives.includes(at.name)) {
+          throw locateError(diagnostic(
+            'UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; ' +
+            'use responsive values on the properties instead, e.g. padding: xs(…) md(…).'
+          ), at);
+        }
+        const suggestion = closestKey(at.name, knownDirectives);
+        throw locateError(diagnostic(
+          `UXD_DIRECTIVE_UNKNOWN: Unknown directive @${at.name}.${suggestion ? ` Did you mean @${suggestion}?` : ''}`
+        ), at);
+      });
+
       const consumers: Declaration[] = [];
       root.walkDecls(node => {
         if (!originalSources.has(node.source) || dslSources.has(node.source)) consumers.push(node);

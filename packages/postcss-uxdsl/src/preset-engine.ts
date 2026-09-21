@@ -15,7 +15,17 @@ export function presetValueToCss(input: string, errorPrefix = 'UXD_PRESET', seri
   const parsed = valueParser(input);
   parsed.walk(node => {
     if (node.type !== 'function' || !['space', 'density', 'color', 'palette'].includes(node.value)) return;
-    if (node.value === 'color' && /^(srgb|srgb-linear|display-p3|a98-rgb|prophoto-rgb|rec2020|xyz|xyz-d50|xyz-d65)\s/.test(valueParser.stringify(node.nodes).trim())) return;
+    // MIG-B6-14 (FEAT-008): `color()` is the one UXDSL token function that
+    // collides with a real native CSS function of the same name (relative
+    // color syntax `color(from red srgb r g b / 0.5)`, an explicit color
+    // space `color(display-p3 1 0 0)`). A token's own key always matches
+    // `normalizeTokenKey`'s shape (`/^[\w.-]+$/`, no spaces); any native
+    // form's first "argument" (there's no comma to split on) contains a
+    // space or slash and never does. This replaces a fixed, incomplete list
+    // of known color-space keywords — CSS keeps adding spaces (rec2100-pq,
+    // etc.) that list would need to track forever — with a shape check that
+    // needs no such list at all.
+    if (node.value === 'color' && !/^[\w.-]+$/.test(valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2'))) return;
     const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());
     const key = normalizeTokenKey(node.value, args[0]);
     const varName = node.value === 'color' || node.value === 'palette' ? buildNamespacedVarName(node.value, key) : buildVarName(node.value, key);

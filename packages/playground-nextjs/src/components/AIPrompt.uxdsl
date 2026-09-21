@@ -1,4 +1,4 @@
-@ds-surface ai-prompt-container {
+.ai-prompt-container {
   margin-top: space(4);
   width: 100%;
   max-width: 600px;
@@ -11,7 +11,7 @@
   width: 100%;
 }
 
-@ds-surface input-wrapper {
+.input-wrapper {
   display: flex;
   align-items: center;
   padding: space(2);
@@ -55,7 +55,7 @@
   }
 }
 
-@ds-surface ai-response {
+.ai-response {
   margin-top: space(4);
   padding: space(4);
   border-radius: radius(3);

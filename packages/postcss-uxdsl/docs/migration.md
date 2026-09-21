@@ -339,6 +339,53 @@ escribir el flag el CLI reconoce y valida. Ver la sección "Strict flag
 parsing" del [README de uxdsl-cli](../../uxdsl-cli/README.md) para la
 tabla completa de formas aceptadas por flag.
 
+### Desde beta.6: cero salidas silenciosas del lenguaje (MIG-B6-14)
+
+beta.6 corrige tres casos en los que la salida no reflejaba la entrada, y
+nadie avisaba:
+
+- **Una directiva (`@ds-typo`/`@ds-surface`/`@ds-button`/`@ds-input`) que no
+  es hija directa de la regla que estiliza ahora falla** con
+  `UXD_DIRECTIVE_CONTEXT` en vez de compilar sin cambios y que el navegador
+  la descarte en silencio junto con todo lo que había adentro. Esto incluye
+  la directiva en la raíz del documento y una directiva anidada dentro de
+  `@media`/`@supports` bajo la regla — las directivas no son responsive por
+  sí mismas; poné el valor responsive en cada propiedad
+  (`padding: xs(1rem) md(2rem);`), no en la directiva. Un at-rule del
+  namespace reservado `ds`/`ds-*` que no es ninguna de esas cuatro
+  directivas (un typo, o un alias que nunca existió como `@ds-h1`/`@ds(h1)`)
+  falla como `UXD_DIRECTIVE_UNKNOWN`, con sugerencia cuando hay una
+  directiva real a distancia de edición 1. Si tu build tenía contenido con
+  este error — un componente real de este mismo repo lo tenía
+  (`@ds-surface nombre-de-clase { ... }` en vez de `.nombre-de-clase { ... }`,
+  ver el commit de esta story) — sus estilos nunca llegaron al navegador;
+  corregilo a la sintaxis de regla normal.
+- **Una función de nivel superior que no es un breakpoint configurado ni una
+  función CSS conocida ahora falla** con `UXD_BREAKPOINT_UNKNOWN` cuando
+  aparece junto a una función de breakpoint real en el mismo valor, o está a
+  distancia de edición 1 de un breakpoint configurado —
+  `padding: xs(1rem) xxl(2rem);` con `xxl` no configurado, o
+  `padding: xd(1rem);` a secas. Antes compilaba con el texto inválido tal
+  cual. La lista de funciones CSS conocidas (`KNOWN_CSS_FUNCTIONS` en
+  `./language`) se consulta antes que la distancia de edición, así que
+  `log(...)` nunca se confunde con un typo de `lg`.
+- **`color()` ahora distingue un token de la sintaxis nativa por la forma
+  del primer argumento**, no por una lista fija de espacios de color:
+  `color(from red srgb r g b / 0.5)` y `color(display-p3 1 0 0)` pasan sin
+  cambios; `color(primary)`/`color(blue.500)` siguen siendo tokens. Si tu
+  build fallaba antes con `UXD_TOKEN_KEY: Expected a token key.` al usar
+  sintaxis de color relativo o un espacio de color que esa lista fija no
+  cubría, ahora compila.
+- **Un `$var` con una expresión responsive se expande igual con el plugin
+  usado solo**, no solo desde el CLI: `$gap: xs(1rem) md(2rem); .a { gap:
+  $gap; }` produce el valor base más el `@media`, en vez de compilar el
+  texto sin expandir `gap: xs(1rem) md(2rem);` (CSS inválido, sin error).
+
+Ninguno de los tres primeros cambios altera el resultado de una compilación
+que ya era correcta — solo convierten una salida silenciosamente inválida en
+un error accionable. Revisá tu contenido `.uxdsl` si alguno de estos errores
+aparece al actualizar: probablemente ya estaba mal, solo que nadie lo veía.
+
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice

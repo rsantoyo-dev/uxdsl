@@ -160,11 +160,11 @@ Salida actual:
 
 ## Criterios de aceptación
 
-- [ ] Los cinco primeros casos fallan con código y ubicación.
-- [ ] `color(from …)` pasa sin cambios.
-- [ ] Ninguna función CSS de la lista produce un falso positivo.
-- [ ] La lista de directivas viene de `LANGUAGE_COMPLETIONS`.
-- [ ] Un `$var` responsive se expande en el plugin usado solo.
+- [x] Los cinco primeros casos fallan con código y ubicación.
+- [x] `color(from …)` pasa sin cambios.
+- [x] Ninguna función CSS de la lista produce un falso positivo.
+- [x] La lista de directivas viene de `LANGUAGE_COMPLETIONS`.
+- [x] Un `$var` responsive se expande en el plugin usado solo.
 
 ## Verificación
 
@@ -180,22 +180,31 @@ npm run verify:beta5
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada/verificada** en la rama
+`feat/feat-008-beta6-plan`, conforme al
+[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias).
+Integración (merge a `main`) sigue pendiente.
+
+Hallazgo durante la verificación: el build real de `packages/playground-nextjs`
+dejó de compilar tras este cambio, porque `AIPrompt.uxdsl` usaba
+`@ds-surface nombre-de-clase { ... }` (tres veces) en vez de
+`.nombre-de-clase { ... }` — exactamente el silencio que esta story cierra.
+Esas tres reglas nunca se aplicaron al componente real (el navegador
+descartaba el at-rule completo); se corrigieron a sintaxis de regla normal
+en el mismo cambio, y el `uxdsl.css` generado del playground quedó con esas
+tres reglas presentes por primera vez. No es un efecto secundario de la
+story: es exactamente el tipo de bug que declara cerrar.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `afa571f` (MIG-B6-13, entrega previa); entrega en el commit siguiente en `feat/feat-008-beta6-plan`; sin PR abierto todavía |
+| Reproducción antes del cambio | El script completo de la sección "Reproducción" de este archivo, ejecutado contra `afa571f`: los cinco primeros casos compilan sin error con la directiva/`xxl(2rem)` tal cual en la salida; `color(from red srgb r g b / 0.5)` falla con `UXD_TOKEN_KEY: Expected a token key.`; el `$var` responsive compila a `.a { gap: xs(1rem) md(2rem); }` (CSS inválido, sin error). Fecha: 2026-09-21. |
+| Criterio → regresión | Directivas → `test/directives-leftover.test.js` (8 tests: raíz, `@media` anidado, `@supports` anidado, typo con sugerencia, `@ds-h1`/`@ds(h1)`, `@ds` a secas, controles positivos). Breakpoints → `test/breakpoint-unknown.test.js` (5 tests, incluida la trampa `log`/`lg` y un control positivo que ejercita cada entrada de `KNOWN_CSS_FUNCTIONS`) + 3 tests en `test/language.test.js` para `validateResponsiveExpression`. `color()` nativo → `test/color-native.test.js` (8 tests: 3 formas nativas, referencia externa dentro de una forma nativa, token con y sin alpha, alpha inválida, y la forma "cualquier espacio es nativa por diseño"). `$var` responsive → `test/vars-responsive.test.js` (4 tests). |
+| Comandos y entorno | `node --test packages/postcss-uxdsl/test/*.test.js` (macOS, Node del repo): 207/207, exit 0. `npm --prefix packages/uxdsl-cli test`: 131/131, exit 0. `npm run verify:beta5`: 4/4 PASS. `npm run verify:consumer-fixture` (tarball real, 5 entradas del reporte de migración original): todos los checks PASS. `npm test` desde la raíz: 360 subtests, 0 fallos, exit 0. `npm run build` completo de `packages/playground-nextjs` (Next.js, contenido real de 43 imports): exit 0 tras corregir `AIPrompt.uxdsl` (ver hallazgo arriba). |
+| Resultado después / control negativo | Los siete casos del script de reproducción confirmados uno por uno tras el cambio: los cinco primeros fallan con código, ubicación y sugerencia cuando aplica; `color(from …)` compila sin cambios; el `$var` responsive expande a valor base + `@media`. Controles negativos: cada función de `KNOWN_CSS_FUNCTIONS` compila sola junto a `xs()`/`md()` sin disparar `UXD_BREAKPOINT_UNKNOWN`; `log(...)` nunca se confunde con `lg`; una directiva correctamente anidada (regla dentro de `@media` de nivel superior, con su propia directiva como hija directa) sigue compilando; un token `color(primary)` sigue resolviendo a `var(...)`; un `$var` no responsive sigue sustituyendo como valor plano. |
+| Cambios visuales o API / migración | Cambio de comportamiento del compilador (nuevos códigos de error; ningún cambio de significado en output previamente válido). Documentado en `packages/postcss-uxdsl/README.md` (nueva sección "Zero silent output"), `packages/postcss-uxdsl/docs/migration.md` (nueva sección "Desde beta.6: cero salidas silenciosas del lenguaje"), `packages/postcss-uxdsl/CHANGELOG.md` (entrada MIG-B6-14 en beta.6) y `AGENTS.md` (sección Surfaces, restricción de posición de `@ds-surface`). Cambio visual real y deliberado en `packages/playground-nextjs` (ver hallazgo arriba): tres reglas de `AIPrompt.uxdsl` que nunca se aplicaban ahora sí — paquete privado, no sujeto al guard de CHANGELOG de `postcss-uxdsl`. |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md` §"Zero silent output: leftover directives and unknown breakpoints (MIG-B6-14)"; `packages/postcss-uxdsl/docs/migration.md` §"Desde beta.6: cero salidas silenciosas del lenguaje (MIG-B6-14)"; `packages/postcss-uxdsl/CHANGELOG.md` entrada MIG-B6-14; `AGENTS.md` sección Surfaces. |
+| AGENTS / guías / arquitectura | `AGENTS.md` sección Surfaces actualizada con la restricción de posición de las directivas (hijo directo de la regla) y la referencia a `UXD_DIRECTIVE_CONTEXT`. Sección Breakpoints revisada; no describe uso de directivas, sin cambio. |
+| Límites y seguimiento | Fuera de alcance según la propia story: soportar directivas dentro de `@media` (no implementado, D-3) y validar la gramática CSS completa. `@theme` "fuera de su contexto" (mencionado en Implementación punto 1) no se implementó como caso separado: el `walkAtRules("theme", ...)` existente ya procesa `@theme` en cualquier posición sin distinguir contexto, y ninguno de los siete repros de esta story lo ejercita; queda para una revisión de código si se decide que hace falta. `KNOWN_CSS_FUNCTIONS` es una lista curada, no generada desde la especificación CSS — una función CSS legítima pero no listada seguiría sin producir `UXD_BREAKPOINT_UNKNOWN` por sí sola (correcto, ya que el chequeo solo dispara con co-ocurrencia o distancia 1), pero podría dar un falso positivo si además está a distancia 1 de un breakpoint configurado; no se encontró ningún caso real de esto en el playground. |
 
-Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
-un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
+Si cambia un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

@@ -399,6 +399,12 @@ This excerpt assumes its referenced tokens and breakpoints exist.
 
 - Inspect `surfaces`, dependencies, breakpoints and legacy imports before use.
   Reuse a shared role instead of recreating its resolved properties locally.
+- `@ds-surface(...)` (and `@ds-button`/`@ds-input`/`@ds-typo`) must be a
+  direct child of the rule it styles — at the document root, or nested
+  inside `@media`/`@supports` under that rule, it fails as
+  `UXD_DIRECTIVE_CONTEXT` instead of compiling untouched. Directives style a
+  whole rule and are not themselves responsive; put a responsive expression
+  on the individual property instead (`padding: xs(1rem) md(2rem);`).
 - Supported string fields: `padding`, `radius`, `bg`, `color`, `border`, `shadow`.
   Values can be CSS literals, token references or responsive expressions.
 - Default roles are contained, outlined and flat. Partial overrides inherit

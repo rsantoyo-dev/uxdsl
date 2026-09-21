@@ -80,3 +80,22 @@ test('inspector resolves edited mappings and static native values', () => {
   assert.equal(language.inspectResponsiveValue('xs(space(1)) md(space(2))', 1000, language.DEFAULT_BREAKPOINTS).value, 'space(2)');
   assert.deepEqual(language.inspectResponsiveValue('12px', 1000, language.DEFAULT_BREAKPOINTS), { active: 'md', applied: null, value: '12px' });
 });
+
+// MIG-B6-14 (FEAT-008): KNOWN_CSS_FUNCTIONS is the shared inventory behind
+// validateResponsiveExpression (Density/Typography theme values) and
+// index.ts's own UXD_BREAKPOINT_UNKNOWN check (see breakpoint-unknown.test.js
+// for the latter's full coverage of every entry in this list).
+test('validateResponsiveExpression accepts every function in KNOWN_CSS_FUNCTIONS at a value\'s top level', () => {
+  for (const name of language.KNOWN_CSS_FUNCTIONS) {
+    assert.doesNotThrow(
+      () => language.validateResponsiveExpression(`xs(1px) md(${name}(1, 2))`, language.DEFAULT_BREAKPOINTS),
+      `${name} must be accepted as a known top-level function`
+    );
+  }
+});
+test('validateResponsiveExpression still rejects an unknown top-level function', () => {
+  assert.throws(() => language.validateResponsiveExpression('xs(1px) notAFunction(1)', language.DEFAULT_BREAKPOINTS), /UXD_VALUE: Unknown function or breakpoint notAFunction\./);
+});
+test('validateResponsiveExpression does not misread log() as a typo of lg (known trap this list exists to avoid)', () => {
+  assert.doesNotThrow(() => language.validateResponsiveExpression('xs(1px) lg(log(2, 3))', language.DEFAULT_BREAKPOINTS));
+});

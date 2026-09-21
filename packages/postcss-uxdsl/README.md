@@ -382,6 +382,57 @@ own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
 `DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
 (Spacing, Palette) those defaults depend on but that had none of their own.
 
+### Zero silent output: leftover directives and unknown breakpoints (MIG-B6-14)
+
+A directive at-rule (`@ds-typo`, `@ds-surface`, `@ds-button`, `@ds-input`) is
+only recognized as a **direct child of the rule it styles**:
+
+```css
+.card { @ds-surface(contained); }              /* recognized */
+@ds-surface(contained);                        /* UXD_DIRECTIVE_CONTEXT: at the document root */
+.card { @media (min-width: 10px) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: nested under @media */
+```
+
+Directives style a whole rule and are not themselves responsive — put
+responsive values on the individual properties instead
+(`padding: xs(1rem) md(2rem);`). Any at-rule in the reserved `ds`/`ds-*`
+namespace that isn't one of the four names above — a typo, or an alias that
+was never implemented (`@ds-h1`, `@ds(h1)`) — fails as `UXD_DIRECTIVE_UNKNOWN`
+with a "did you mean" suggestion when a configured directive is one edit away.
+Previously an at-rule like this compiled through untouched, and a browser
+silently discarded it along with every declaration inside it.
+
+A responsive value's top-level function that is neither a configured
+breakpoint nor a known CSS function fails as `UXD_BREAKPOINT_UNKNOWN` when it
+appears next to a real breakpoint function in the same value, or is one edit
+away from a configured breakpoint name:
+
+```css
+.a { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN: xxl is not configured */
+.a { padding: xd(1rem); }            /* UXD_BREAKPOINT_UNKNOWN: one edit from "xs" */
+.a { width: log(1, 2); }             /* fine — a known CSS function, not a typo of "lg" */
+```
+
+The known-function list (math, color, gradients, transforms, filters, and
+UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `./language` —
+consulted before any edit-distance check, so a real `log(...)` next to
+`lg(...)` is never misread as a typo of it.
+
+`color()` is a token reference only when its first argument looks like one
+(`color(primary)`, `color(blue.500)`); native CSS forms — relative color
+syntax, an explicit color space — pass through untouched:
+
+```css
+.a { color: color(from red srgb r g b / 0.5); }  /* untouched */
+.a { color: color(display-p3 1 0 0); }           /* untouched */
+.a { color: color(primary); }                    /* var(--uxdsl__color__primary) */
+```
+
+A `$var` holding a responsive expression now expands correctly when this
+plugin runs standalone (not only via a build that resolves `$var`s first):
+`$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
+plus `@media` block as writing the responsive value inline.
+
 ### Unknown theme families and keys (`validateAndNormalizeTheme`)
 
 `postcss-uxdsl/ds-runtime`'s `validateAndNormalizeTheme(theme)` — the

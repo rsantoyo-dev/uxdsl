@@ -8,6 +8,35 @@ narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-14:
+
+- **Fix:** three cases where compiled output silently didn't reflect the
+  source now fail instead. A directive (`@ds-typo`/`@ds-surface`/
+  `@ds-button`/`@ds-input`) that isn't a direct child of the rule it styles
+  — at the document root, or nested inside `@media`/`@supports` under that
+  rule — now fails as `UXD_DIRECTIVE_CONTEXT` instead of reaching CSS
+  untouched for a browser to silently discard, along with everything
+  inside it. A reserved-namespace at-rule that isn't a real directive (a
+  typo, or an alias like `@ds-h1`/`@ds(h1)` that was never implemented
+  despite an old comment claiming otherwise) fails as
+  `UXD_DIRECTIVE_UNKNOWN`, with a suggestion when a real directive is one
+  edit away. A top-level value function that is neither a configured
+  breakpoint nor a known CSS function — `padding: xs(1rem) xxl(2rem);`,
+  `xxl` unconfigured — now fails as `UXD_BREAKPOINT_UNKNOWN` when it
+  co-occurs with a real breakpoint function or sits at edit distance 1 from
+  one; `KNOWN_CSS_FUNCTIONS` (new export from `./language`) is consulted
+  first so a real `log(...)` next to `lg(...)` is never misread as a typo.
+- **Fix:** `color()` is now recognized as a token reference only when its
+  first argument has a token's shape (`color(primary)`, `color(blue.500)`);
+  any other form — relative color syntax, an explicit color space — passes
+  through untouched. Replaces a fixed, necessarily incomplete list of known
+  color-space keywords.
+- **Fix:** a `$var` holding a responsive expression
+  (`$gap: xs(1rem) md(2rem);`) now expands correctly when this plugin runs
+  standalone, matching what a build that resolves `$var`s ahead of this
+  plugin already produced. Substitution now happens before responsive
+  expansion instead of after it.
+
 FEAT-008, MIG-B6-13:
 
 - **Fix:** CSS diagnostics now retain their source location through PostCSS,

@@ -13,6 +13,11 @@ export const DIAGNOSTIC_CODES = new Set([
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
+  // MIG-B6-14 (FEAT-008): a reserved-namespace at-rule (`ds`/`ds-*`) or a
+  // top-level responsive value function left unprocessed at the end of the
+  // pipeline — see index.ts's final walkAtRules pass and its responsive
+  // value-function scan.
+  'UXD_DIRECTIVE_UNKNOWN', 'UXD_DIRECTIVE_CONTEXT', 'UXD_BREAKPOINT_UNKNOWN',
   ...['UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE'].flatMap(prefix => ['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
   // UXD_PRESET is preset-engine.ts's *default* errorPrefix — no call site in
   // src/ ever omits the explicit family prefix, so UXD_PRESET_VIEWPORT (a
@@ -80,7 +85,11 @@ export function formatKeyList(keys: Iterable<string>): string {
   return [...parts, ...named].join(', ') || '(none)';
 }
 
-function editDistance(left: string, right: string): number {
+// MIG-B6-14 (FEAT-008): exported so index.ts's UXD_BREAKPOINT_UNKNOWN check
+// can require an exact distance of 1 (a typo of a specific breakpoint name)
+// rather than closestKey's own ≤2 threshold, which is right for a longer
+// token key but too loose for short 2-3 letter breakpoint names like `lg`.
+export function editDistance(left: string, right: string): number {
   const rows = Array.from({ length: left.length + 1 }, (_, index) => [index]);
   for (let column = 1; column <= right.length; column++) rows[0][column] = column;
   for (let row = 1; row <= left.length; row++) {

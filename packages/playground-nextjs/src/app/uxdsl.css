@@ -905,7 +905,7 @@ html, body {
 /* =============================
    Density tokens (sample overrides)
    ============================= */
-@ds-surface ai-prompt-container {
+.ai-prompt-container {
   margin-top: var(--uxdsl__space__4);
   width: 100%;
   max-width: 600px;
@@ -916,7 +916,7 @@ html, body {
 .ai-prompt-form {
   width: 100%;
 }
-@ds-surface input-wrapper {
+.input-wrapper {
   display: flex;
   align-items: center;
   padding: var(--uxdsl__space__2);
@@ -957,7 +957,7 @@ html, body {
 }
 .ai-submit-btn:hover { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
 .ai-submit-btn.is-selected, .ai-submit-btn[aria-pressed="true"], .ai-submit-btn[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
-@ds-surface ai-response {
+.ai-response {
   margin-top: var(--uxdsl__space__4);
   padding: var(--uxdsl__space__4);
   border-radius: var(--uxdsl__radius__3);
