@@ -85,6 +85,15 @@ These are not implied capabilities of the engine:
   `packages/postcss-uxdsl/test/performance/reference-performance.test.js` asserts the growth
   ratio, and `npm run bench:references` prints the absolute curve with the
   machine that produced it.
+- `applyTheme` (MIG-B6-30) applies theme *values* at run time; it is not a
+  compiler. It replaces one managed stylesheet of custom properties and cannot
+  rewrite the rules a build already compiled into a host's components, so a
+  patch that changes what a directive would emit is refused rather than applied
+  half-way. Variable parity is not behavioral parity: the structural signature
+  is derived from the same emitters the compiler uses
+  (`buttonDeclarations`, `inputDeclarations`, `surfaceDeclarations`,
+  `resolveTypographyRole`), never from a second model of the theme. Its state is
+  per document; like every other family it keeps no process-global cache.
 - Legacy DOM linking/persistence APIs and advanced compiler callback options remain
   integration-specific APIs. Whole-theme parity uses the same effective JSON and
   standard serializers; it is not a promise that arbitrary callbacks can run in
