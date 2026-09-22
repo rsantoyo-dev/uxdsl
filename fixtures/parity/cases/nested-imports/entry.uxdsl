@@ -1,0 +1,5 @@
+@import "./partial-a.uxdsl";
+
+.entry {
+  color: green;
+}

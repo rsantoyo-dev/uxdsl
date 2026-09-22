@@ -19,6 +19,15 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 - **Performance**: Run your CSS compilation in a separate process or during a build step, keeping your main bundler fast.
 - **Watch Mode**: Includes a robust file watcher that recompiles your styles instantly as you edit your `.uxdsl` files.
 
+The CLI's `@import`/`$var`/theme compilation pipeline is the shared
+[`compile()`](../uxdsl-core#compile-input-config) from `uxdsl-core` — the
+same pipeline any future Vite/Webpack adapter will use, so behavior can't
+silently drift between them. Two related, user-visible fixes came with
+that: a missing `@import` now always fails with a located error instead of
+silently passing the `@import` line through untouched, and an import cycle
+(`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) now always fails naming
+the file chain instead of silently duplicating content once.
+
 ---
 
 ## Installation
@@ -69,15 +78,15 @@ module.exports = {
   // Where the compiled CSS should be saved
   outFile: path.join(process.cwd(), 'src/app/uxdsl.css'),
   
-  // Custom breakpoints (optional)
-  breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 },
-  
   // Files to watch for changes
   watch: ['src/**/*.uxdsl', 'src/**/*.css'],
 };
 ```
 
-If `breakpoints` is omitted, CLI uses UXDSL shared defaults:
+`init` never writes `breakpoints:` here (MIG-B6-19, FEAT-008) — see "Breakpoints
+and the theme file" below for why, and where they actually belong. If
+`breakpoints` is omitted everywhere (here and in the theme file), the CLI uses
+UXDSL's shared defaults:
 
 ```ts
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
@@ -160,12 +169,34 @@ under the theme-file name — the CLI prints a warning naming the file and
 the stray keys instead of silently ignoring them as unknown tokens.
 
 `build`/`watch` also warn about an unrecognized top-level theme family
-(`color` instead of `colors`) and an unrecognized key inside
-`typography_details`/`palette`/`fonts.families` (`h9` instead of `h2`,
-`primry` instead of `primary`) — a typo that would otherwise compile into
-nothing, silently. Both are warnings, not errors: the build still
+(`color` instead of `colors`) — a typo that would otherwise compile into
+nothing, silently. It is a warning, not an error: the build still
 succeeds, and the same message is never repeated across rebuilds in one
 `watch` session.
+
+Entry *names* inside `typography_details`/`palette`/`fonts.families` are
+not checked against any list — those are open registries, so a role or
+tag your project invents compiles normally. (beta.5 warned on names
+outside `postcss-uxdsl`'s own minimal defaults; beta.6 removed that
+warning as a false positive.) A misspelled *field* inside a typography
+tag — `fontsize` for `fontSize` — is still a hard `UXD_TYPO_FIELD` build
+error.
+
+## Diagnostics
+
+Build failures from UXDSL include the source file, line, column and a code frame
+when they originate in CSS, including imported partials. Theme failures name the
+theme/configuration file and the invalid key path; diagnostic messages start with
+their stable `UXD_*` code:
+
+```console
+$ npx uxdsl build
+[uxdsl] Error: uxdsl.theme.config.cjs: UXD_EDGE_VALUE: Invalid token 1 (at radii.1).
+```
+
+Surfaces, Densities, Radii, Borders, Shadows and Typography details theme
+errors all carry this key path today; Button/Input role/state errors and a
+few lower-level theme-map checks do not yet.
 
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 
@@ -188,7 +219,9 @@ skips writing the global `:root` definitions and the runtime breakpoint
 marker (`#uxdsl-bp-meta`), both of which belong to the one entry that does
 define the theme.
 
-`breakpoints` can now come from either `uxdsl.config.cjs` or the theme
+### Breakpoints and the theme file
+
+`breakpoints` can come from either `uxdsl.config.cjs` or the theme
 file — both merge onto the shared defaults (config wins key-for-key), the
 same partial-override contract the theme itself already has:
 
@@ -196,6 +229,19 @@ same partial-override contract the theme itself already has:
 // uxdsl.theme.config.cjs
 module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaults
 ```
+
+Prefer declaring `breakpoints` in the theme file, not `uxdsl.config.cjs` — the
+theme is the one thing `uxdsl-cli`, the plugin used directly, and any future
+bundler adapter all discover and agree on, while `uxdsl.config.cjs` is
+build-orchestration specific to this CLI. `init` never writes `breakpoints:`
+into `uxdsl.config.cjs` for exactly this reason (MIG-B6-19, FEAT-008): a full
+copy of the defaults there used to permanently shadow every key the theme
+file declared, since the config wins key-for-key on any name it repeats —
+including the ones it never meant to override. If both files declare the
+same key with genuinely different values, the build still lets
+`uxdsl.config.cjs` win (unchanged), but warns once, naming both files, so the
+shadowing is visible instead of a silent "why isn't my theme's breakpoint
+taking effect".
 
 Running the CLI once per entry works, but a `builds` array in
 `uxdsl.config.cjs` compiles all of them — against the one shared
@@ -221,6 +267,30 @@ compiled in memory before anything is written: a failure in any one of
 them aborts the whole build with no output files touched at all, rather
 than leaving some freshly rebuilt and others missing or stale.
 
+**A `.module.css` entry must never define `:root`** (MIG-B6-24, FEAT-008):
+a CSS Modules loader (Next.js's own included) rejects a bare `:root`
+selector outright ("Selector :root is not pure"). An entry whose `outFile`
+ends in `.module.css` and would still emit `:root`/`#uxdsl-bp-meta` — its
+own `includeTheme` resolving to `true`, or a legacy import/explicit native
+CSS reintroducing either selector even with `includeTheme: false` — fails
+**before anything is written**, naming the entry:
+
+```
+[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
+```
+
+The fix is almost always `includeTheme: false` on that entry — name the
+shared theme entry's own `outFile` without a `.module.css` suffix instead
+(`theme.css`, not `theme.module.css`), and keep `.module.css` for the
+per-component panels that don't define the theme. Separately, if more
+than one entry in `builds` ends up emitting the theme at all (regardless
+of file name — usually a config mistake, not a CSS Modules one), the CLI
+warns once, naming every offending entry, without failing the build:
+
+```
+[uxdsl] Warning: 2 entries emit the theme (builds[0], builds[1]); usually only one theme entry should.
+```
+
 ### 4. Running the CLI
 
 Add scripts to your `package.json` or run directly via `npx`:
@@ -244,6 +314,30 @@ without restarting the CLI. Local modules the config or theme file
 editing one of them alone (without touching the file that requires it)
 triggers a rebuild. `node_modules` dependencies are excluded, since they
 don't change between rebuilds.
+
+**Watch survives errors** (MIG-B6-23, FEAT-008): an initial build that fails
+to compile, or a config/theme file that fails to load at all (a syntax
+error, for instance), no longer ends the process — the error prints and
+`watch` keeps running, watching `uxdsl.config.cjs`/`uxdsl.theme.config.*`'s
+usual candidate names (plus any explicit `--config`/`--entry`) until one
+loads successfully. A plain `uxdsl build` (no `--watch`) is unaffected —
+it still exits non-zero on any failure, same as always.
+
+**Selective rebuilds:** editing a source file only recompiles the
+`builds[]` entries that actually depend on it (tracked via each entry's own
+`compile()` dependency list) — not every entry on every change. Editing
+`uxdsl.config.cjs`, the theme file, or anything either of them `require()`s
+still rebuilds everything, since those are shared across every entry. A
+file watch mode doesn't yet know about (e.g. a previously-missing `@import`
+target just created) also rebuilds everything, as the safe fallback.
+
+**Writes only what changed, atomically:** an entry whose compiled output is
+byte-identical to what's already on disk is left completely alone — same
+mtime, same inode — instead of being rewritten every rebuild (previously
+every entry was rewritten unconditionally, so a dev server watching the
+output directory reloaded stylesheets nothing had actually changed in). A
+real write goes to a temp file in the same directory first, then an atomic
+rename — a reader can never observe a truncated or empty output file mid-write.
 
 ### 5. CLI Arguments (No Config)
 
@@ -342,6 +436,85 @@ to the families you actually want fully specified (typically `palette`
 and/or `breakpoints`) avoids the conflict while keeping the guarantee
 where it's meaningful. `true` remains available for a project that
 deliberately wants maximum strictness everywhere.
+
+### 8. Strict flag parsing: accepted values, unknown flags, unknown families
+
+Every flag accepts a fixed, explicit set of forms — anything else is a hard
+error before any build runs, not a silent no-op:
+
+| Flag | Accepted forms |
+| --- | --- |
+| `--include-theme` | bare (`true`), `--no-include-theme` (`false`), `=true`, `=false`. Any other value (`--include-theme=banana`) fails with `Invalid value for --include-theme: "banana"...`. |
+| `--strict-theme` (build/watch) | bare (check every touched family), `--no-strict-theme`/`=false` (off), `=true` (same as bare), `=<family1>,<family2>` (scoped). `=true`/`=false` are recognized as the booleans they mean, not as families literally named "true"/"false". |
+| `--strict` (theme) | same forms and rules as `--strict-theme`. |
+
+A family name in `--strict-theme`/`--strict`/`strictTheme` (in
+`uxdsl.config.cjs`) is validated against the same top-level family set the
+compiler itself recognizes. A typo fails immediately with a suggestion:
+
+```console
+$ npx uxdsl build --strict-theme=pallete
+[uxdsl] Error: Unknown theme family "pallete" in --strict-theme. Did you mean "palette"?
+```
+
+An unrecognized flag — a typo, or a real flag used on the wrong command
+(`--strict` on `build` instead of `--strict-theme`, or `--watch` on
+`theme`) — fails the same way instead of being silently ignored:
+
+```console
+$ npx uxdsl build --strict-thme
+[uxdsl] Error: Unknown option --strict-thme. Did you mean --strict-theme?
+```
+
+`--help`/`-h` and every flag documented above are the only ones each
+command accepts; a positional argument (a bare path with no leading `-`)
+is never mistaken for a flag.
+
+A stray comma in a family list is also rejected, not silently dropped:
+`--strict-theme=,` and `--strict-theme=palette,,fonts` both fail with "A
+family list cannot contain an empty entry" instead of quietly checking
+zero or fewer families than you named. `--include-theme=0`/`=1` fail the
+same way `=banana` does — only `true`/`false` (or the bare/`--no-` forms)
+are accepted, never a number. If the resolved `postcss-uxdsl` install
+predates the family registry this validates against, scoping to specific
+families (`--strict-theme=palette`) fails with an "upgrade postcss-uxdsl"
+error rather than silently skipping the check; the unscoped boolean form
+(`--strict-theme`/`=false`) still works without it.
+
+---
+
+### 9. Dependency status: `postcss-advanced-variables` stays on `^3`
+
+`uxdsl-core` (this CLI's compiler dependency) pins `postcss-advanced-variables`
+to `^3.0.0` deliberately, not because no one has checked for a newer one.
+MIG-B6-28 (FEAT-008) tried both `^4.0.0` and `^5.0.0` and ran this repo's
+`npm run test:parity` plus a full `packages/playground-nextjs` production
+build against each. Both newer majors break a real pattern already shipping
+in that playground — an `@mixin` whose SCSS parameter is used as a bare
+UXDSL directive argument and inside a `#{...}` interpolation:
+
+```scss
+@mixin palette-card($tone, $variant) {
+  .palette-card-#{$tone}-#{$variant} {
+    @ds-surface($tone, 1);
+    background: palette(#{$tone}-#{$variant});
+  }
+}
+```
+
+Under `^3`, `postcss-advanced-variables` expands `$tone`/`$variant` to their
+literal values before `postcss-uxdsl` ever sees `@ds-surface(...)`. Under
+`^4` and `^5`, `$tone` reaches `@ds-surface` unexpanded, and compilation
+fails with `UXD_SURFACE_REFERENCE: Undefined surface or palette family
+$tone` — the mixin argument was never substituted for this shape. This
+repo's smaller synthetic fixtures (the parity suite, the beta2–beta5
+release-gate tarball builds) do not happen to exercise this exact
+mixin-parameter-as-directive-argument pattern, so they stayed green against
+both newer majors — only the full playground build caught it. Re-attempt
+the upgrade only after confirming a newer `postcss-advanced-variables`
+release changes this specific behavior, and verify with the same
+`packages/playground-nextjs` production build, not just the parity/release
+fixtures.
 
 ---
 

@@ -19,8 +19,7 @@
       "typography": "src/theme/default-typography.uxdsl",
       "surfaces": "src/theme/default-surfaces.uxdsl",
       "buttons": "src/theme/default-buttons.uxdsl",
-      "inputs": "src/theme/default-inputs.uxdsl",
-      "motion": "src/theme/default-motion.css"
+      "inputs": "src/theme/default-inputs.uxdsl"
     },
     "breakpoints": {
       "xs": 0,
@@ -34,6 +33,7 @@
     "paletteFamilies": [
       "primary",
       "secondary",
+      "surface",
       "tertiary",
       "success",
       "info",
@@ -42,7 +42,9 @@
       "dark",
       "neutral",
       "light",
-      "surface"
+      "text",
+      "divider",
+      "action"
     ],
     "toneContract": [
       "main",

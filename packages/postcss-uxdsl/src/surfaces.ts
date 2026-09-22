@@ -4,15 +4,15 @@ import { compilePresetRules, mergePresetTokens, presetValueToCss } from './prese
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
 import { buildVarName, buildNamespacedVarName } from './naming';
+import { themeError } from './diagnostics';
+import { BASE_THEME } from './base-theme';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
 export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
-export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = Object.freeze({
-  contained: Object.freeze({ padding: 'density(2)', radius: 'radius(2)', bg: 'palette(surface-main)', color: 'palette(surface-contrast)', border: '1px solid palette(surface-dark)', shadow: 'shadow(1)' }),
-  outlined: Object.freeze({ padding: 'density(2)', radius: 'radius(2)', bg: 'transparent', color: 'palette(surface-contrast)', border: '1px solid palette(neutral-main)', shadow: 'none' }),
-  flat: Object.freeze({ padding: 'density(2)', radius: 'radius(2)', bg: 'transparent', color: 'palette(surface-contrast)', border: 'none', shadow: 'none' }),
-});
+// MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
+// independently-maintained literal.
+export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = BASE_THEME.surfaces as Record<string, SurfaceStyle>;
 
 /**
  * MIG-05: extract optional `radius(key)` / `shadow(key)` override arguments
@@ -44,13 +44,19 @@ export function parseOverrideArguments(parts: string[], errorPrefix: string): { 
   return { radius, shadow, rest };
 }
 
+// MIG-B6-13 (FEAT-008) code-review follow-up: each throw below now carries
+// the theme key path it actually failed at (`surfaces`, `surfaces.<role>`,
+// `surfaces.<role>.<field>`) via `themeError`, matching typography.ts's
+// existing pattern — previously `{ surfaces: { contained: { bogus: 'red' } } }`
+// threw `UXD_SURFACE_FIELD: Unknown contained.bogus.` with no `.keyPath` at
+// all, even though the message already spelled out which role/field.
 export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, SurfaceStyle> {
-  if (theme.surfaces !== undefined && (!theme.surfaces || typeof theme.surfaces !== 'object' || Array.isArray(theme.surfaces))) throw new Error('UXD_SURFACE_MAP: Expected an object.');
+  if (theme.surfaces !== undefined && (!theme.surfaces || typeof theme.surfaces !== 'object' || Array.isArray(theme.surfaces))) throw themeError('UXD_SURFACE_MAP', 'Expected an object', 'surfaces');
   const result: Record<string, SurfaceStyle> = { ...DEFAULT_SURFACES };
   for (const [role, style] of Object.entries(theme.surfaces || {})) {
-    if (!/^[a-z][a-z0-9-]*$/.test(role) || !style || typeof style !== 'object' || Array.isArray(style)) throw new Error(`UXD_SURFACE_ROLE: Invalid role ${role}.`);
-    for (const key of Object.keys(style)) if (!Object.prototype.hasOwnProperty.call(SURFACE_PROPERTIES, key)) throw new Error(`UXD_SURFACE_FIELD: Unknown ${role}.${key}.`);
-    result[role] = mergePresetTokens(DEFAULT_SURFACES[role] || DEFAULT_SURFACES.contained, style, 'UXD_SURFACE');
+    if (!/^[a-z][a-z0-9-]*$/.test(role) || !style || typeof style !== 'object' || Array.isArray(style)) throw themeError('UXD_SURFACE_ROLE', `Invalid role ${role}`, `surfaces.${role}`);
+    for (const key of Object.keys(style)) if (!Object.prototype.hasOwnProperty.call(SURFACE_PROPERTIES, key)) throw themeError('UXD_SURFACE_FIELD', `Unknown ${role}.${key}`, `surfaces.${role}.${key}`);
+    result[role] = mergePresetTokens(DEFAULT_SURFACES[role] || DEFAULT_SURFACES.contained, style, 'UXD_SURFACE', `surfaces.${role}`);
   }
   return result;
 }

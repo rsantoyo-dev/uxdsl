@@ -5,9 +5,6 @@ const path = require('path');
 const minimist = require('minimist');
 const chokidar = require('chokidar');
 const postcss = require('postcss');
-const postcssImport = require('postcss-import');
-const postcssAdvancedVariables = require('postcss-advanced-variables');
-const postcssScss = require('postcss-scss');
 const { createRequire } = require('module');
 
 // Project's own postcss-uxdsl install first (so `theme`'s introspection and
@@ -58,8 +55,42 @@ function loadUxDslRuntime() {
   return resolveUxDslModule('postcss-uxdsl/ds-runtime', { warnLabel: 'postcss-uxdsl/ds-runtime' });
 }
 
+// MIG-B6-18 (FEAT-008): the CLI's own build pipeline (postcss-scss syntax,
+// postcss-import, postcss-advanced-variables, postcss-uxdsl) is retired in
+// favor of uxdsl-core's compile() — the exact same pipeline, now shared
+// with any other adapter (Vite/Webpack, MIG-B6-20) instead of drifting
+// independently. Same project-first resolution order as postcss-uxdsl
+// itself, for the same reason: a project's own uxdsl-core install (or the
+// version this CLI release pins) must be the one actually compiling.
+function loadUxDslCore() {
+  const core = resolveUxDslModule('uxdsl-core', { warnLabel: 'uxdsl-core' });
+  if (!core || typeof core.compile !== 'function') {
+    throw new Error('uxdsl-core package (with a compile() export) not found. Install it in your project or alongside the CLI.');
+  }
+  return core;
+}
+
+// MIG-B6-19 (FEAT-008): theme-file discovery/loading — candidates, module
+// loading, `{ theme, references }`/bare-theme normalization, the
+// looks-like-a-build-config warning — moved to postcss-uxdsl/config so the
+// plugin itself can discover a project's theme too, without duplicating
+// (and risking drifting from) this exact contract. The CLI keeps its own
+// build-config (uxdsl.config.cjs) discovery and build/watch orchestration.
+function loadUxDslConfig() {
+  const mod = resolveUxDslModule('postcss-uxdsl/config', { warnLabel: 'postcss-uxdsl/config' });
+  if (!mod || typeof mod.discoverThemeAsync !== 'function') {
+    throw new Error(
+      'postcss-uxdsl/config (with discoverThemeAsync) not found. Install postcss-uxdsl 0.5.0-beta.6 ' +
+      'or later in your project, or alongside the CLI.'
+    );
+  }
+  return mod;
+}
+
 const uxdslPlugin = loadUxDslPlugin();
 const uxdslRuntime = loadUxDslRuntime() || {};
+const uxdslCore = loadUxDslCore();
+const uxdslConfig = loadUxDslConfig();
 
 const FALLBACK_BREAKPOINTS = {
   xs: 0,
@@ -73,6 +104,49 @@ const DEFAULT_BREAKPOINTS = uxdslRuntime.DEFAULT_BREAKPOINTS
   ? { ...uxdslRuntime.DEFAULT_BREAKPOINTS }
   : { ...FALLBACK_BREAKPOINTS };
 
+// MIG-B6-01 (FEAT-008): the shared top-level family registry the compiler
+// itself validates against. Only defined when the resolved postcss-uxdsl
+// install is new enough to export it — an older install falls back to
+// `undefined`, in which case callers skip family-name validation entirely
+// rather than reject every family name as unknown.
+function getKnownThemeFamilies() {
+  return uxdslRuntime.KNOWN_THEME_FAMILIES instanceof Set ? uxdslRuntime.KNOWN_THEME_FAMILIES : undefined;
+}
+
+// MIG-B6-22 (FEAT-008): same edit-distance-based suggestion shape as
+// postcss-uxdsl's own diagnostics (`closestKey` in src/diagnostics.ts) —
+// duplicated in a handful of lines here because that module has no public
+// export path a CLI dependency could import (postcss-uxdsl's package export
+// is the PostCSS plugin function itself, nothing else). Used both for
+// unknown-flag suggestions and unknown-theme-family suggestions.
+function editDistance(left, right) {
+  const rows = Array.from({ length: left.length + 1 }, (_, index) => [index]);
+  for (let column = 1; column <= right.length; column++) rows[0][column] = column;
+  for (let row = 1; row <= left.length; row++) {
+    for (let column = 1; column <= right.length; column++) {
+      const substitution = left[row - 1] === right[column - 1] ? 0 : 1;
+      rows[row][column] = Math.min(
+        rows[row - 1][column] + 1,
+        rows[row][column - 1] + 1,
+        rows[row - 1][column - 1] + substitution,
+      );
+    }
+  }
+  return rows[left.length][right.length];
+}
+
+function closestMatch(value, candidates) {
+  let closest;
+  let distance = 3;
+  for (const candidate of candidates) {
+    const candidateDistance = editDistance(value.toLowerCase(), candidate.toLowerCase());
+    if (candidateDistance > 2 || candidateDistance >= distance) continue;
+    closest = candidate;
+    distance = candidateDistance;
+  }
+  return closest;
+}
+
 const CONFIG_CANDIDATES = [
   'uxdsl.config.cjs',
   'uxdsl.config.js',
@@ -83,29 +157,14 @@ const CONFIG_CANDIDATES = [
 // (tokens + the theme's own `references`) are discovered separately, so a
 // project can add `uxdsl.theme.config.cjs` without touching
 // `uxdsl.config.cjs` at all.
-const THEME_CANDIDATES = [
-  'uxdsl.theme.config.cjs',
-  'uxdsl.theme.config.js',
-  'uxdsl.theme.config.json',
-  'uxdsl.theme.json',
-];
+// MIG-B6-19 (FEAT-008): the candidate list itself now lives in
+// postcss-uxdsl/config (the plugin needs it too) — re-exported here
+// unchanged so existing tests/tooling that reference `THEME_CANDIDATES`
+// from this module keep working against the one real list.
+const THEME_CANDIDATES = uxdslConfig.THEME_CANDIDATES;
 
 const DEFAULT_ENTRY_REL = path.join('src', 'uxdsl-entry.uxdsl');
 const DEFAULT_OUT_REL = path.join('src', 'uxdsl.css');
-
-function createImportResolver(config) {
-  const entryDir = path.dirname(config.entry);
-  return (id, basedir) => {
-    const request = id.startsWith('~') ? id.slice(1) : id;
-    try {
-      return require.resolve(request, {
-        paths: [basedir, entryDir, process.cwd()],
-      });
-    } catch (_) {
-      return path.resolve(basedir, request);
-    }
-  };
-}
 
 function printHelp() {
   console.log(`Usage: uxdsl <command> [options]
@@ -191,6 +250,11 @@ Examples:
   uxdsl build --strict-theme
 
 Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
+
+An unrecognized flag, or a real flag used on the wrong command, fails
+immediately with a suggestion (e.g. "Did you mean --strict-theme?")
+instead of being silently ignored. See the CLI README's "Strict flag
+parsing" section for the full accepted-value table.
 `);
 }
 
@@ -209,13 +273,13 @@ function findConfigPath(cwd) {
   return null;
 }
 
-function findThemeConfigPath(dir) {
-  for (const candidate of THEME_CANDIDATES) {
-    const full = path.resolve(dir, candidate);
-    if (fs.existsSync(full)) return full;
-  }
-  return null;
-}
+// MIG-B6-19 (FEAT-008): theme candidate lookup, module loading/normalizing
+// and the looks-like-a-build-config warning all moved to
+// postcss-uxdsl/config — re-exported here so existing tests/call sites in
+// this file keep working unchanged against the one real implementation.
+const findThemeConfigPath = uxdslConfig.findThemeConfigPath;
+const normalizeThemeExport = uxdslConfig.normalizeThemeExport;
+const warnIfLooksLikeBuildConfig = uxdslConfig.warnIfLooksLikeBuildConfig;
 
 /** Same CommonJS/`default`-interop/async-function contract as the build
  * config, applied to any config-shaped file. */
@@ -226,79 +290,8 @@ async function loadModuleExport(filePath) {
   return mod;
 }
 
-/** `uxdsl.theme.config.*`'s export is either `{ theme, references }`
- * (recommended when there are external variables) or a bare theme object —
- * distinguished by the presence of a `theme` or `references` key, not by
- * guessing at the shape of theme data itself. Never lets a `references` key
- * leak into the object that becomes `theme` (and, from there, generated
- * CSS): a plain theme object legitimately could have a key literally named
- * "theme" or "references" as a token family, but that's exactly the
- * ambiguity this contract accepts as the tradeoff for two vs. three files. */
-function normalizeThemeExport(themeModule) {
-  if (
-    themeModule && typeof themeModule === 'object' && !Array.isArray(themeModule) &&
-    (Object.prototype.hasOwnProperty.call(themeModule, 'theme') || Object.prototype.hasOwnProperty.call(themeModule, 'references'))
-  ) {
-    return { theme: themeModule.theme, references: themeModule.references };
-  }
-  return { theme: themeModule, references: undefined };
-}
-
-// MIG-B3-03 (FEAT-004): keys that only make sense on a build config
-// (uxdsl.config.cjs), never on theme data. Used only as a heuristic for the
-// warning below — not an exhaustive/validated list, since a real theme
-// family could coincidentally use one of these names.
-const BUILD_CONFIG_SHAPED_KEYS = ['entry', 'outFile', 'output', 'watch', 'themeFile', 'plugins', 'builds'];
-
-/** A theme file with no `theme`/`references` key has its entire export
- * treated as theme data (see normalizeThemeExport's own doc) — so a
- * uxdsl.config.cjs accidentally renamed/copied to a theme-file name
- * silently "works" (no throw anywhere), with its entry/outFile/watch keys
- * quietly ignored as unknown theme tokens. This is a warning, not an
- * error: a project could legitimately have a token family literally named
- * "watch" or "plugins", and warning-then-continuing costs nothing there. */
-// MIG-B3-03 item 3: `loadThemeConfig` re-runs on every rebuild in watch
-// mode — without dedup this warning would repeat on every keystroke.
-// Keyed by path so an unrelated project (or a second theme file) still
-// gets its own warning, and cleared/replaced when the shape actually
-// changes so a later-introduced or later-fixed collision is still caught.
-const warnedBuildConfigShapes = new Map();
-
-function warnIfLooksLikeBuildConfig(themeModule, themeConfigPath) {
-  if (
-    Object.prototype.hasOwnProperty.call(themeModule, 'theme') ||
-    Object.prototype.hasOwnProperty.call(themeModule, 'references')
-  ) {
-    warnedBuildConfigShapes.delete(themeConfigPath); // Fixed since a previous warning, if any.
-    return; // Unambiguous shape (the { theme, references } form) — nothing to warn about.
-  }
-  const suspects = BUILD_CONFIG_SHAPED_KEYS.filter((key) =>
-    Object.prototype.hasOwnProperty.call(themeModule, key)
-  );
-  if (suspects.length === 0) {
-    warnedBuildConfigShapes.delete(themeConfigPath);
-    return;
-  }
-  const signature = suspects.join(',');
-  if (warnedBuildConfigShapes.get(themeConfigPath) === signature) return; // Same shape already warned this session.
-  warnedBuildConfigShapes.set(themeConfigPath, signature);
-  const keyList = suspects.map((k) => `"${k}"`).join(', ');
-  console.warn(
-    `[uxdsl] Warning: ${themeConfigPath} looks like a build config (found ${keyList}), but has no ` +
-    '"theme" or "references" key, so it is being treated entirely as theme data — ' +
-    `${suspects.length > 1 ? 'those keys are' : 'that key is'} silently ignored as unknown tokens. ` +
-    'If this is really a theme file, wrap your data as { theme: { ... } }. ' +
-    'If it is a build config, rename it away from uxdsl.theme.config.*/uxdsl.theme.json.'
-  );
-}
-
 async function loadThemeConfig(themeConfigPath) {
-  const themeModule = await loadModuleExport(themeConfigPath);
-  if (!themeModule || typeof themeModule !== 'object') {
-    throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
-  }
-  warnIfLooksLikeBuildConfig(themeModule, themeConfigPath);
-  return normalizeThemeExport(themeModule);
+  return uxdslConfig.loadThemeConfigAsync(themeConfigPath);
 }
 
 // `entryOrEntries` is a single path for a single-entry config, or (MIG-B3-02)
@@ -501,7 +494,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   // wins over the build config's own `includeTheme` — for `builds`, that
   // means the flag overrides every entry uniformly; each entry's own
   // `includeTheme` is only consulted when the flag is absent.
-  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints);
+  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints, { configPath, themeConfigPath });
   if (hasBuilds) {
     resolvedConfig.builds = resolvedConfig.builds.map((buildEntry) => ({
       ...buildEntry,
@@ -512,7 +505,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   }
   // MIG-B4-01: independent of `builds` — the theme is shared across every
   // entry, so this is resolved once here regardless of single/multi mode.
-  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme);
+  resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true });
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -574,7 +567,27 @@ async function loadConfig(argv, cwd = process.cwd()) {
 // and validated by the plugin) was permanently shadowed by
 // `config.breakpoints || DEFAULT_BREAKPOINTS`: the fallback ran before
 // there was ever a theme to consult.
+// MIG-B6-22 (FEAT-008): `--include-theme`/`--no-include-theme` arrive as
+// real booleans from minimist (bare flag or `--no-` negation), but
+// `--include-theme=false`/`=true` arrive as the strings `"false"`/`"true"`
+// — previously only `typeof flagValue === 'boolean'` was accepted, so the
+// `=value` form silently fell through to the config value/default instead
+// of taking effect. Any other explicit value is a hard error instead of
+// silently reading as `true`, matching the bare-boolean-flag contract
+// minimist itself already provides — including a *number*, which is the
+// case a code review caught this missing for: minimist auto-parses an
+// undeclared flag's numeric-looking value (`--include-theme=0`) into the
+// actual JS number `0`, which is neither `'true'`/`'false'` (so the old
+// string-only check skipped it) nor a real boolean, and fell all the way
+// through to the config value/default — silently accepting a value never
+// documented as valid. Checking "not already a real boolean" up front,
+// rather than "is a string", catches every such explicit-but-invalid value.
 function resolveIncludeTheme(flagValue, configValue) {
+  if (flagValue !== undefined && typeof flagValue !== 'boolean') {
+    if (flagValue === 'true') flagValue = true;
+    else if (flagValue === 'false') flagValue = false;
+    else throw new Error(`Invalid value for --include-theme: "${flagValue}". Expected true or false (or --no-include-theme).`);
+  }
   if (typeof flagValue === 'boolean') return flagValue;
   if (typeof configValue === 'boolean') return configValue;
   return true;
@@ -599,24 +612,101 @@ function resolveIncludeTheme(flagValue, configValue) {
 // for anything that isn't a meaningful value at this level (absent, or an
 // empty string/array) so the flag > config > default chain below falls
 // through correctly instead of treating "nothing here" as "off".
-function normalizeStrictThemeScope(value) {
+//
+// MIG-B6-22 (FEAT-008): a bare `--strict-theme`/`--strict` (no declared
+// minimist type — see main()) already arrives here as the real boolean
+// `true`, and `--no-strict-theme`/`--no-strict` as `false`; those are
+// unaffected by this function. What minimist cannot know on its own is that
+// `--strict-theme=true`/`=false` should mean the same thing as the bare
+// boolean forms — undeclared, `=value` always arrives as a string, so
+// those two literal strings used to fall into the CSV branch below and be
+// misread as a family named "true"/"false" (a silent no-op gate: "true"
+// never matches a real family, so nothing is ever flagged incomplete).
+// Matched by exact, case-insensitive value — "True,false" is a two-element
+// family list, not a mix of booleans, since a real family name can't
+// contain a comma anyway and this keeps the special case narrow.
+//
+// `knownFamilies` (MIG-B6-01's `KNOWN_THEME_FAMILIES`) is optional so the
+// large existing pure-parsing test suite for this function keeps working
+// unchanged when it isn't passed; passing it validates every family name
+// and throws with an edit-distance suggestion for a typo (e.g. "pallete"),
+// describing where the value came from via `source` ("--strict-theme",
+// "--strict", or "strictTheme (in the config file)") so the message names
+// what was actually used, not just a fixed flag name.
+//
+// `requireKnownFamilies` is a separate opt-in (only the real CLI call
+// sites in loadConfig/themeCommand pass it) for a case a code review
+// caught: `knownFamilies` comes from whatever postcss-uxdsl install the
+// *project* resolves (see getKnownThemeFamilies/resolveUxDslModule's
+// project-first order), which can be older than this CLI and simply not
+// export `KNOWN_THEME_FAMILIES` yet. Silently skipping validation in that
+// case would quietly re-open exactly the "pallete never gets flagged"
+// hole this story closes, for any project on an older postcss-uxdsl —
+// worse than never having added the check, since it would look enabled.
+// A plain boolean scope (`true`/`false`, no specific families named)
+// never needed a family list to validate, so it's unaffected either way.
+function normalizeStrictThemeScope(value, { knownFamilies, requireKnownFamilies = false, source = '--strict-theme' } = {}) {
   if (value === undefined || value === null) return undefined;
   if (typeof value === 'boolean') return value;
+
+  // MIG-B6-22 fix (code review): an empty overall value (`''`/`[]`) still
+  // means "nothing here" — falls through to config/default, matching the
+  // pre-existing contract a config like `strictTheme: someEnvVar || ''`
+  // already relies on. But a NON-empty value that contains an empty
+  // element after splitting (a stray comma: `--strict-theme=,` or
+  // `=palette,,fonts`) is a different case — the user clearly tried to
+  // name families and got the list wrong, so this is a hard error instead
+  // of silently discarding the empty slot and continuing (which, for
+  // `--strict-theme=,`, previously discarded *every* slot and silently
+  // turned strict-theme off).
+  const toValidatedFamilyList = (rawFamilies, describeInput) => {
+    const families = rawFamilies.map((f) => String(f).trim());
+    const emptyIndex = families.findIndex((f) => f === '');
+    if (emptyIndex !== -1) {
+      throw new Error(`Invalid value for ${source}: ${describeInput()}. A family list cannot contain an empty entry — check for a stray or trailing comma.`);
+    }
+    if (!knownFamilies) {
+      if (requireKnownFamilies) {
+        throw new Error(
+          `Cannot validate family names for ${source}: this postcss-uxdsl install does not export ` +
+          'KNOWN_THEME_FAMILIES (added in 0.5.0-beta.6). Upgrade postcss-uxdsl in this project, or pass ' +
+          `a plain boolean (${source}=true or =false) instead of scoping to specific families.`
+        );
+      }
+      return families;
+    }
+    for (const family of families) {
+      if (!knownFamilies.has(family)) {
+        const suggestion = closestMatch(family, knownFamilies);
+        throw new Error(
+          `Unknown theme family "${family}" in ${source}.` +
+          (suggestion ? ` Did you mean "${suggestion}"?` : '')
+        );
+      }
+    }
+    return families;
+  };
+
   if (Array.isArray(value)) {
-    const families = value.map((f) => String(f).trim()).filter(Boolean);
-    return families.length > 0 ? families : undefined;
+    if (value.length === 0) return undefined;
+    return toValidatedFamilyList(value, () => `[${value.map((f) => JSON.stringify(f)).join(', ')}]`);
   }
   if (typeof value === 'string') {
-    const families = value.split(',').map((f) => f.trim()).filter(Boolean);
-    return families.length > 0 ? families : undefined;
+    if (value.trim() === '') return undefined;
+    const trimmedLower = value.trim().toLowerCase();
+    if (trimmedLower === 'true') return true;
+    if (trimmedLower === 'false') return false;
+    return toValidatedFamilyList(value.split(','), () => JSON.stringify(value));
   }
-  return true;
+  // Reachable when minimist auto-parses an undeclared flag's numeric-looking
+  // value into a real number (`--strict-theme=5`) — not a documented form.
+  throw new Error(`Invalid value for ${source}: ${JSON.stringify(value)}. Expected true, false, or a comma-separated list of family names.`);
 }
 
-function resolveStrictTheme(flagValue, configValue) {
-  const flag = normalizeStrictThemeScope(flagValue);
+function resolveStrictTheme(flagValue, configValue, { knownFamilies, requireKnownFamilies } = {}) {
+  const flag = normalizeStrictThemeScope(flagValue, { knownFamilies, requireKnownFamilies, source: '--strict-theme' });
   if (flag !== undefined) return flag;
-  const config = normalizeStrictThemeScope(configValue);
+  const config = normalizeStrictThemeScope(configValue, { knownFamilies, requireKnownFamilies, source: 'strictTheme (in the config file)' });
   if (config !== undefined) return config;
   return false;
 }
@@ -627,10 +717,42 @@ function resolveStrictTheme(flagValue, configValue) {
 // itself — a project can override just `xl` without repeating `xs`/`sm`/
 // `md`/`lg`. `normalizeBpMap` already accepts every BreakpointSpec shape
 // (map, array of pairs, array of {name,min|px}), so both inputs reuse it.
-function resolveBreakpoints(configBreakpoints, themeBreakpoints) {
+//
+// MIG-B6-19 (FEAT-008): the config always winning key-for-key is
+// unchanged (out of scope to flip), but a project silently losing a
+// theme's breakpoint value to an unrelated build config used to be
+// invisible — most often `init`'s own full default map, previously
+// written into every uxdsl.config.cjs, permanently shadowing every key a
+// theme declared. Warned once per distinct conflict (by file pair +
+// exact key/value signature), same dedup shape as
+// warnIfLooksLikeBuildConfig, so watch mode doesn't repeat it every
+// rebuild.
+const warnedBreakpointConflicts = new Map();
+
+function resolveBreakpoints(configBreakpoints, themeBreakpoints, { configPath, themeConfigPath } = {}) {
   const merged = { ...DEFAULT_BREAKPOINTS };
-  if (themeBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(themeBreakpoints));
-  if (configBreakpoints !== undefined) Object.assign(merged, normalizeBpMap(configBreakpoints));
+  const normalizedTheme = themeBreakpoints !== undefined ? normalizeBpMap(themeBreakpoints) : undefined;
+  const normalizedConfig = configBreakpoints !== undefined ? normalizeBpMap(configBreakpoints) : undefined;
+  if (normalizedTheme) Object.assign(merged, normalizedTheme);
+  if (normalizedConfig) Object.assign(merged, normalizedConfig);
+
+  if (normalizedTheme && normalizedConfig && configPath && themeConfigPath) {
+    const conflicts = Object.keys(normalizedConfig).filter(
+      (key) => normalizedTheme[key] !== undefined && normalizedTheme[key] !== normalizedConfig[key]
+    );
+    if (conflicts.length > 0) {
+      const signature = conflicts.map((key) => `${key}:${normalizedTheme[key]}->${normalizedConfig[key]}`).sort().join(',');
+      const cacheKey = `${configPath}|${themeConfigPath}`;
+      if (warnedBreakpointConflicts.get(cacheKey) !== signature) {
+        warnedBreakpointConflicts.set(cacheKey, signature);
+        console.warn(
+          `[uxdsl] Warning: ${path.basename(configPath)} and ${path.basename(themeConfigPath)} both define ` +
+          `breakpoint(s) ${conflicts.join(', ')} with different values — ${path.basename(configPath)} wins. ` +
+          'Remove the conflicting key(s) from one of the two files if this is unintentional.'
+        );
+      }
+    }
+  }
   return merged;
 }
 
@@ -683,46 +805,33 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // exactly what includeTheme: false means.
   if (sharedConfig.theme && includeTheme) console.log('[uxdsl] Theme config detected');
 
-  const source = fs.readFileSync(entryConfig.entry, 'utf8');
-  const resolveImport = createImportResolver(entryConfig);
-  const result = await postcss([
-    postcssImport({ resolve: resolveImport }),
-    postcssAdvancedVariables(),
-    uxdslPlugin({
+  // MIG-B6-18 (FEAT-008): delegates to uxdsl-core's compile() — the exact
+  // pipeline this function used to run inline (postcss-scss syntax,
+  // postcss-import with the shared resolver, postcss-advanced-variables,
+  // postcss-uxdsl), plus the breakpoint metadata this function used to
+  // append itself, both moved into core so every compile() caller gets
+  // them identically instead of the CLI having its own copy that could
+  // drift from core's (the exact bug this story closes).
+  const { css: finalCss, dependencies } = await uxdslCore.compile(
+    { entry: entryConfig.entry },
+    {
       breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
       theme: sharedConfig.theme,
       references: sharedConfig.references,
       includeTheme,
-    }),
-  ]).process(source, {
-    from: entryConfig.entry,
-    to: entryConfig.outFile,
-    syntax: postcssScss,
-  });
+      to: entryConfig.outFile,
+    }
+  );
 
-  // Breakpoint metadata is global-theme information (consumed by the
-  // runtime to detect the active breakpoint from the CSSOM) — it belongs
-  // to the entry that defines the theme, not to every component entry
-  // compiled against it. Forwarding `includeTheme: false` naively without
-  // this guard would trade one duplication (global `:root`, fixed by
-  // includeTheme itself) for another: a `#uxdsl-bp-meta` marker per
-  // component entry.
-  let finalCss = result.css;
-  if (includeTheme) {
-    const bpMap = normalizeBpMap(sharedConfig.breakpoints || DEFAULT_BREAKPOINTS);
-    const bpJson = JSON.stringify(bpMap);
-    const bpMeta = `/*@uxdsl-bp ${bpJson}*/`;
-    // Also inject a marker rule for CSSOM detection
-    const bpMarker = `#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
-    finalCss = finalCss + '\n' + bpMeta + '\n' + bpMarker;
-  }
-
-  return { outFile: entryConfig.outFile, finalCss };
+  // MIG-B6-23 (FEAT-008): `dependencies` (entry first, every transitively
+  // @import-ed file) lets watch mode rebuild only the entries a changed
+  // file actually affects, instead of every entry on every change.
+  return { outFile: entryConfig.outFile, finalCss, dependencies };
 }
 
 // MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
 // reasoning as `warnedBuildConfigShapes` above — without this, an unfixed
-// typo'd tag/role name would reprint on every unrelated save. Unlike that
+// typo'd family name would reprint on every unrelated save. Unlike that
 // Map (keyed by file, cleared when the specific file's shape changes),
 // this is a flat Set of exact warning strings: simpler, at the cost of
 // not re-warning if the *same* message recurs later in one process after
@@ -747,6 +856,149 @@ function warnUnknownThemeKeys(theme) {
   }
 }
 
+function annotateThemeError(err, config) {
+  if (!err || typeof err !== 'object' || !err.keyPath || err.name === 'CssSyntaxError' || err.themeFile) return err;
+  const themeFile = config.themeConfigPath || (config.theme !== undefined ? config.configPath : null);
+  if (!themeFile) return err;
+  err.themeFile = themeFile;
+  err.message = `${path.relative(process.cwd(), themeFile)}: ${err.message}`;
+  return err;
+}
+
+// MIG-B6-24 (FEAT-008): a real, parsed CSS rule selector — never a
+// substring match, so `content: ":root";` or `/* see :root above */`
+// (both legal, unrelated CSS) never trip this. `postcss.list.comma`
+// splits a compound selector (`:root, .a`) into each individual selector,
+// matching the same comma-aware handling MIG-B6-15 already established
+// for control directives.
+function findThemeLeakSelector(css) {
+  let found = null;
+  postcss.parse(css).walkRules((rule) => {
+    if (found) return;
+    for (const selector of postcss.list.comma(rule.selector)) {
+      const trimmed = selector.trim();
+      if (trimmed === ':root' || trimmed === '#uxdsl-bp-meta') {
+        found = trimmed;
+        return;
+      }
+    }
+  });
+  return found;
+}
+
+// MIG-B6-24 (FEAT-008): before writing anything (called from buildOnce
+// against each entry's already-compiled, in-memory CSS), refuses an entry
+// whose outFile is named like a CSS Module and would still define :root/
+// #uxdsl-bp-meta — Next.js (and other CSS Modules loaders) reject a bare
+// `:root` selector ("Selector :root is not pure"), and the CLI previously
+// never noticed. `includeTheme: false` is the normal way to avoid this;
+// this only catches the actual output, not just the config flag, since a
+// legacy import or explicit native CSS could still reintroduce either
+// selector even with `includeTheme: false`. Not a general CSS Modules
+// purity validator — only these two known selectors this compiler itself
+// can produce.
+function assertNoThemeLeakIntoCssModule(outFile, css, label) {
+  if (!/\.module\.css$/i.test(outFile)) return;
+  const leaked = findThemeLeakSelector(css);
+  if (!leaked) return;
+  throw new Error(
+    `${label}this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ` +
+    '("Selector :root is not pure"). Set includeTheme: false for component entries.'
+  );
+}
+
+// Deduplicated the same way warnUnknownThemeKeys already is (see its own
+// comment) — keyed by the exact set of entries involved, so a config edit
+// that changes *which* entries emit the theme warns again, but repeating
+// the same rebuild in watch mode does not.
+const warnedMultipleThemeEntries = new Set();
+
+function warnIfMultipleEntriesEmitTheme(themeEmittingLabels) {
+  if (themeEmittingLabels.length <= 1) return;
+  const key = themeEmittingLabels.join(',');
+  if (warnedMultipleThemeEntries.has(key)) return;
+  warnedMultipleThemeEntries.add(key);
+  console.warn(
+    `[uxdsl] Warning: ${themeEmittingLabels.length} entries emit the theme (${themeEmittingLabels.join(', ')}); ` +
+    'usually only one theme entry should.'
+  );
+}
+
+function formatCliDiagnostic(message) {
+  const cwdPrefix = `${process.cwd()}${path.sep}`;
+  return String(message).split('\n').map(line => line.split(cwdPrefix).join('')).join('\n');
+}
+
+// MIG-B6-23 (FEAT-008): writes only what actually changed, and does so
+// atomically per file. Reads the existing file first — identical content
+// means no write at all, so an unaffected entry keeps its mtime/inode
+// (previously every rebuild rewrote every entry unconditionally, so a dev
+// server watching the output directory reloaded stylesheets nothing
+// changed in). A real write goes to a freshly, exclusively created temp
+// file in the *same* directory (`flag: 'wx'` — fails instead of silently
+// reusing a stale leftover; a name derived only from pid isn't unique
+// enough across two rapid rebuilds) and is committed with `renameSync`,
+// atomic on any filesystem where source and destination share a volume —
+// true here since both live in the same directory. Returns 'unchanged' or
+// 'written' so the caller can log accordingly.
+function commitFileIfChanged(outFile, content) {
+  let existing = null;
+  try {
+    existing = fs.readFileSync(outFile, 'utf8');
+  } catch (_) {
+    existing = null; // Doesn't exist yet — falls through to a real write.
+  }
+  if (existing === content) return 'unchanged';
+  fs.mkdirSync(path.dirname(outFile), { recursive: true });
+  const tmpFile = path.join(
+    path.dirname(outFile),
+    `.${path.basename(outFile)}.${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.tmp`
+  );
+  fs.writeFileSync(tmpFile, content, { encoding: 'utf8', flag: 'wx' });
+  try {
+    fs.renameSync(tmpFile, outFile);
+  } catch (err) {
+    try { fs.unlinkSync(tmpFile); } catch (_) { /* best effort cleanup */ }
+    throw err;
+  }
+  return 'written';
+}
+
+// Commits every already-compiled output (each entry was compiled to CSS in
+// memory before this runs — a failure partway through *compiling* never
+// reaches here at all, so it can't leave some outputs written and others
+// stale). A failure *committing* (the rename itself) is different: this
+// entry and every earlier one in `compiled` already touched disk, so this
+// rolls those back to what was on disk before this call started, and
+// reports (rather than hides) a rollback that itself fails. This is
+// per-file atomicity composed across files, not one filesystem
+// transaction — a reader could still observe a mix of old/new content
+// while a rollback is in progress.
+function commitCompiled(compiled) {
+  const previousContent = compiled.map(({ outFile }) => {
+    try { return fs.readFileSync(outFile, 'utf8'); } catch (_) { return undefined; }
+  });
+  const statuses = [];
+  try {
+    for (const { outFile, finalCss } of compiled) {
+      statuses.push(commitFileIfChanged(outFile, finalCss));
+    }
+  } catch (commitErr) {
+    for (let i = 0; i < statuses.length; i++) {
+      if (statuses[i] !== 'written') continue; // 'unchanged' never touched disk — nothing to roll back.
+      const { outFile } = compiled[i];
+      try {
+        if (previousContent[i] === undefined) fs.unlinkSync(outFile);
+        else fs.writeFileSync(outFile, previousContent[i], 'utf8');
+      } catch (rollbackErr) {
+        commitErr.message += `\n[uxdsl] additionally failed to restore the previous ${path.relative(process.cwd(), outFile)}: ${rollbackErr.message}`;
+      }
+    }
+    throw commitErr;
+  }
+  return statuses;
+}
+
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
 // includeTheme }) compiles several entries against the one shared theme/
 // references/breakpoints in a single `uxdsl build`/`watch` invocation,
@@ -754,7 +1006,16 @@ function warnUnknownThemeKeys(theme) {
 // (config.builds absent) take the exact same path they always did —
 // entries becomes a one-element array built from config.entry/outFile/
 // includeTheme, so this refactor changes nothing observable for them.
-async function buildOnce(config) {
+//
+// MIG-B6-23 (FEAT-008): `entryIndices` (optional) compiles/commits only
+// those entries — used by watch mode's dependency-graph-based selective
+// rebuild — instead of always every entry. Omitted (every existing call
+// site: `build`, `build --watch`'s and `watch`'s own initial build)
+// behaves exactly as before. Returns each compiled entry's own
+// `dependencies` (from compile(), MIG-B6-18) so a caller can build/update
+// that graph; entries not included in `entryIndices` are left completely
+// untouched — not recompiled, not rewritten, not part of the return value.
+async function buildOnce(config, entryIndices) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
   // ended up partially filled from DEFAULT_THEME — the same question
@@ -778,26 +1039,34 @@ async function buildOnce(config) {
   }
 
   // MIG-B5-02 (FEAT-006): `validateAndNormalizeTheme`'s "Unknown theme
-  // family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
-  // never actually reachable from a real build — only the playground's
-  // theme editor called this function at all. Surfacing just these two
-  // warning kinds here (not the others `validateAndNormalizeTheme` can
-  // produce, e.g. color-format hints, which nobody asked to see from
-  // `build` and the plugin's own reference-integrity pass already covers
-  // differently) closes that gap without changing what a normal build
-  // reports beyond it. Checked once per build, same as `--strict-theme`.
+  // family" warning (MIG-B3-03) was never actually reachable from a real
+  // build — only the playground's theme editor called this function at
+  // all. Surfacing just `/^Unknown /`-prefixed warnings here (not the
+  // others `validateAndNormalizeTheme` can produce, e.g. color-format
+  // hints, which nobody asked to see from `build` and the plugin's own
+  // reference-integrity pass already covers differently) closes that gap
+  // without changing what a normal build reports beyond it. MIG-B5-02
+  // also briefly added a second, one-level-deeper "Unknown <family> key"
+  // warning (typography_details/palette/fonts.families); MIG-B6-01
+  // (FEAT-007) removed that check at the source for being a false
+  // positive on any project with a richer palette/fonts/typography set
+  // than DEFAULT_THEME's minimal fallback — nothing here needed to change
+  // for that fix, since this just forwards whatever the runtime reports.
+  // Checked once per build, same as `--strict-theme`.
   warnUnknownThemeKeys(config && config.theme);
 
   const entries = config && config.builds && config.builds.length
     ? config.builds
     : [{ entry: config && config.entry, outFile: config && config.outFile, includeTheme: config && config.includeTheme }];
   const multi = entries.length > 1;
+  const indices = entryIndices || entries.map((_, i) => i);
 
   const compiled = [];
-  for (let i = 0; i < entries.length; i++) {
+  for (const i of indices) {
     try {
-      compiled.push(await compileEntryToCss(entries[i], config || {}));
+      compiled.push({ index: i, ...(await compileEntryToCss(entries[i], config || {})) });
     } catch (err) {
+      annotateThemeError(err, config || {});
       if (multi) {
         const label = entries[i] && entries[i].outFile
           ? path.relative(process.cwd(), entries[i].outFile)
@@ -808,15 +1077,43 @@ async function buildOnce(config) {
     }
   }
 
+  // MIG-B6-24 (FEAT-008): checked against every entry's actual compiled
+  // output, before any of them are written — a CSS-Module-named outFile
+  // that would still define :root/#uxdsl-bp-meta fails the whole build
+  // here, same as any other compile error (item 4: nothing partial gets
+  // written). More than one entry emitting the theme at all (regardless
+  // of outFile name) is a warning, not an error — usually intentional to
+  // have exactly one, but not necessarily wrong to have more.
+  const themeEmittingLabels = [];
+  for (const { index, outFile, finalCss } of compiled) {
+    const entryConfig = entries[index] || {};
+    const label = multi ? `builds[${index}] (${path.relative(process.cwd(), outFile)}): ` : '';
+    try {
+      assertNoThemeLeakIntoCssModule(outFile, finalCss, label);
+    } catch (err) {
+      annotateThemeError(err, config || {});
+      throw err;
+    }
+    if (entryConfig.includeTheme !== false) {
+      themeEmittingLabels.push(multi ? `builds[${index}]` : path.relative(process.cwd(), outFile));
+    }
+  }
+  warnIfMultipleEntriesEmitTheme(themeEmittingLabels);
+
   // Every entry is compiled before anything is written — item 4: a failure
   // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
-  for (const { outFile, finalCss } of compiled) {
-    fs.mkdirSync(path.dirname(outFile), { recursive: true });
-    fs.writeFileSync(outFile, finalCss, 'utf8');
-    console.log(
-      `[uxdsl] built ${path.relative(process.cwd(), outFile)} (${finalCss.length} bytes)`
-    );
+  const statuses = commitCompiled(compiled);
+  for (let k = 0; k < compiled.length; k++) {
+    const { outFile, finalCss } = compiled[k];
+    const rel = path.relative(process.cwd(), outFile);
+    if (statuses[k] === 'written') {
+      console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)`);
+    } else {
+      console.log(`[uxdsl] unchanged ${rel}`);
+    }
   }
+
+  return compiled.map(({ index, outFile, dependencies }) => ({ index, outFile, dependencies }));
 }
 
 // --- Command: Theme introspection (MIG-B3-04, FEAT-004) ---
@@ -909,7 +1206,7 @@ async function themeCommand(argv, cwd = process.cwd()) {
   // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
   // `--strict` still means "every touched family" (unchanged);
   // `--strict=palette,breakpoints` checks only those.
-  const strictScope = normalizeStrictThemeScope(argv.strict);
+  const strictScope = normalizeStrictThemeScope(argv.strict, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true, source: '--strict' });
   if (strictScope) {
     const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, strictScope);
     if (incomplete.length > 0) {
@@ -942,34 +1239,13 @@ async function themeCommand(argv, cwd = process.cwd()) {
  * even though the cache was already being invalidated correctly on the
  * *next* unrelated rebuild. Calling this after the real require() already
  * ran (as `loadModuleExport`/`loadThemeConfig` do) costs nothing extra —
- * `require.cache` already holds the full tree by then. */
-function collectLocalRequireTree(filePath) {
-  const ids = new Set();
-  let resolved;
-  try {
-    resolved = require.resolve(filePath);
-  } catch (_) {
-    return ids; // Not required yet (or already gone) — nothing to report.
-  }
-  const visit = (id) => {
-    if (ids.has(id)) return;
-    ids.add(id);
-    const mod = require.cache[id];
-    if (!mod) return;
-    for (const child of mod.children || []) {
-      if (child.id && !child.id.split(path.sep).includes('node_modules')) {
-        visit(child.id);
-      }
-    }
-  };
-  visit(resolved);
-  return ids;
-}
-
-function clearRequireCache(filePath) {
-  if (!filePath) return;
-  for (const id of collectLocalRequireTree(filePath)) delete require.cache[id];
-}
+ * `require.cache` already holds the full tree by then.
+ *
+ * MIG-B6-19 (FEAT-008): this exact tree-walk now lives once in
+ * postcss-uxdsl/config (the plugin's own theme discovery needs it too) —
+ * re-exported here under the same names for existing tests/call sites. */
+const collectLocalRequireTree = uxdslConfig.collectLocalRequireTree;
+const clearRequireCache = uxdslConfig.clearLocalRequireCache;
 
 // MIG-B3-02: a `builds` config has no single `config.outFile` — every
 // entry's own outFile must be excluded from triggering a rebuild, the same
@@ -983,51 +1259,178 @@ function isOwnOutputFile(config, filePath) {
   return false;
 }
 
+// MIG-B6-23 (FEAT-008): the candidates a `watch`/`build --watch` falls
+// back to watching when it has never had a working config to read a real
+// `watch` list from — a broken/missing `uxdsl.config.cjs` at startup, or
+// an explicit `--config`/`--entry` that doesn't exist yet. Once any of
+// these changes, `runFullBuild` retries `loadConfig` and, on success,
+// switches to the real config's own watch list the same way a later
+// config edit already does.
+function bootstrapWatchTargets(argv, cwd) {
+  const targets = new Set();
+  for (const c of CONFIG_CANDIDATES) targets.add(path.resolve(cwd, c));
+  for (const c of THEME_CANDIDATES) targets.add(path.resolve(cwd, c));
+  const explicitConfig = argv.config || argv.c;
+  if (explicitConfig) targets.add(resolvePath(explicitConfig, cwd));
+  const explicitEntry = argv.entry || argv.e;
+  if (explicitEntry) targets.add(resolvePath(explicitEntry, cwd));
+  return [...targets];
+}
+
+// `initialConfig` may be `null` — the caller's own initial `loadConfig`/
+// `buildOnce` already failed and was logged; this starts in "bootstrap"
+// mode (watching config/theme candidates only) instead of never reaching
+// watch mode at all (MIG-B6-23 item 1).
 function startWatch(initialConfig, argv, cwd, builder) {
   let config = initialConfig;
-  let watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+  // Entry index -> Set<absolute dependency path>, from each entry's own
+  // `compile()` result (MIG-B6-18). Populated after every successful full
+  // build; a selective build only updates the indices it actually
+  // recompiled, leaving every other entry's last-known set alone. A failed
+  // build (full or selective) never touches this — the last valid graph is
+  // what a subsequent change is still checked against (item 3).
+  let dependencyGraph = new Map();
+  let watcher = chokidar.watch(config ? config.watch : bootstrapWatchTargets(argv, cwd), { ignoreInitial: true });
   console.log('[uxdsl] watching for changes...');
   let building = false;
-  let queued = false;
+  // 'full' once any queued change requires one; otherwise a Set of the
+  // specific changed files queued for a selective follow-up batch. No
+  // build already committed is ever overwritten by a stale one: a change
+  // arriving mid-build is queued, never dropped, and always evaluated
+  // against the *current* config/graph once its turn comes.
+  let queued = null;
 
-  const trigger = async () => {
+  function configRelatedPaths() {
+    const paths = new Set();
+    if (!config) return paths; // Bootstrap mode — see isRelevantChange below.
+    if (config.configPath) {
+      paths.add(path.resolve(config.configPath));
+      for (const id of collectLocalRequireTree(config.configPath)) paths.add(id);
+    }
+    if (config.themeConfigPath) {
+      paths.add(path.resolve(config.themeConfigPath));
+      for (const id of collectLocalRequireTree(config.themeConfigPath)) paths.add(id);
+    }
+    return paths;
+  }
+
+  function entriesAffectedBy(resolvedFile) {
+    const indices = [];
+    for (const [index, deps] of dependencyGraph) {
+      if (deps.has(resolvedFile)) indices.push(index);
+    }
+    return indices;
+  }
+
+  async function runFullBuild() {
+    // The changed file could be uxdsl.config.cjs or the theme file
+    // itself — reload both from disk (past their require() cache)
+    // before building, instead of reusing whatever was resolved when
+    // watch mode started or after the previous change.
+    clearRequireCache(config && config.configPath);
+    clearRequireCache(config && config.themeConfigPath);
+    let reloaded;
+    try {
+      reloaded = await loadConfig(argv, cwd);
+    } catch (err) {
+      // MIG-B6-23 item 1: a broken config must not end the process — log
+      // and keep watching (the bootstrap/previous watcher is untouched).
+      console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)} — watching for a fix...`);
+      return;
+    }
+    if (!reloaded) {
+      if (!config) console.error('[uxdsl] No configuration found — watching for one to appear...');
+      return;
+    }
+    const previousWatch = (config ? config.watch : bootstrapWatchTargets(argv, cwd)).slice().sort();
+    const nextWatch = [...reloaded.watch].sort();
+    config = reloaded;
+    if (JSON.stringify(previousWatch) !== JSON.stringify(nextWatch)) {
+      // Recreate to handle overlapping globs without unwatch() leaving
+      // exclusions behind. Keep config errors recoverable on the old watcher.
+      await watcher.close();
+      watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+      watcher.on('all', onChange);
+      await new Promise((resolve, reject) => {
+        watcher.once('ready', resolve);
+        watcher.once('error', reject);
+      });
+    }
+    try {
+      const results = await builder(config);
+      dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
+    } catch (err) {
+      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
+      // Keep the previous dependencyGraph (item 3): a failed rebuild
+      // doesn't invalidate what the last successful one already knew.
+    }
+  }
+
+  async function runSelectiveBuild(indices) {
+    try {
+      const results = await builder(config, indices);
+      for (const { index, dependencies } of results) {
+        dependencyGraph.set(index, new Set(dependencies));
+      }
+    } catch (err) {
+      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
+    }
+  }
+
+  // Decides full vs. selective for one changed file, without yet running
+  // anything — shared between a fresh event and a queued-batch replay.
+  function classify(resolvedFile) {
+    if (!config || configRelatedPaths().has(resolvedFile)) return { full: true };
+    const indices = entriesAffectedBy(resolvedFile);
+    // Not found in any entry's known dependency set — either a graph we
+    // never had (first run failed before compiling anything) or a file
+    // outside every entry's *previous* import graph, e.g. a previously
+    // missing partial just created. Rebuilding everything is the safe
+    // fallback (item 3's "recuperar el build"), not silently doing nothing.
+    if (indices.length === 0) return { full: true };
+    return { full: false, indices };
+  }
+
+  const trigger = async (resolvedFile) => {
     if (building) {
-      queued = true;
+      if (queued !== 'full') {
+        if (resolvedFile === undefined || classify(resolvedFile).full) {
+          queued = 'full';
+        } else {
+          queued = queued instanceof Set ? queued : new Set();
+          queued.add(resolvedFile);
+        }
+      }
       return;
     }
     building = true;
     try {
-      // The changed file could be uxdsl.config.cjs or the theme file
-      // itself — reload both from disk (past their require() cache)
-      // before building, instead of reusing whatever was resolved when
-      // watch mode started or after the previous change.
-      clearRequireCache(config.configPath);
-      clearRequireCache(config.themeConfigPath);
-      const reloaded = await loadConfig(argv, cwd);
-      if (reloaded) {
-        const previous = [...config.watch].sort();
-        const next = [...reloaded.watch].sort();
-        config = reloaded;
-        if (JSON.stringify(previous) !== JSON.stringify(next)) {
-          // Recreate to handle overlapping globs without unwatch() leaving
-          // exclusions behind. Keep config errors recoverable on the old watcher.
-          await watcher.close();
-          watcher = chokidar.watch(config.watch, { ignoreInitial: true });
-          watcher.on('all', onChange);
-          await new Promise((resolve, reject) => {
-            watcher.once('ready', resolve);
-            watcher.once('error', reject);
-          });
-        }
+      if (resolvedFile === undefined) {
+        await runFullBuild();
+      } else {
+        const decision = classify(resolvedFile);
+        if (decision.full) await runFullBuild();
+        else await runSelectiveBuild(decision.indices);
       }
-      await builder(config);
-    } catch (err) {
-      console.error('[uxdsl] build failed:', err.message);
     } finally {
       building = false;
-      if (queued) {
-        queued = false;
+      const next = queued;
+      queued = null;
+      if (next === 'full') {
         trigger();
+      } else if (next instanceof Set && next.size > 0) {
+        // One combined pass for everything that arrived mid-build, not one
+        // trigger() per file — a config-related file among them still
+        // forces the whole batch to a full rebuild.
+        const indices = new Set();
+        let full = false;
+        for (const f of next) {
+          const decision = classify(f);
+          if (decision.full) { full = true; break; }
+          for (const i of decision.indices) indices.add(i);
+        }
+        if (full) trigger();
+        else runSelectiveBuild([...indices]).finally(() => { /* not building's own promise chain; fire and forget is fine, errors are already logged inside */ });
       }
     }
   };
@@ -1045,12 +1448,12 @@ function startWatch(initialConfig, argv, cwd, builder) {
     // would keep excluding the *original* outFile forever and never learn
     // about a new one after a config change moved it. MIG-B3-02: a `builds`
     // config has no single `config.outFile` — check every entry's outFile.
-    if (filePath && isOwnOutputFile(config, filePath)) {
+    if (filePath && config && isOwnOutputFile(config, filePath)) {
       return;
     }
     const rel = path.relative(process.cwd(), filePath);
     console.log(`[uxdsl] ${event} ${rel}`);
-    trigger();
+    trigger(filePath ? path.resolve(filePath) : undefined);
   }
   watcher.on('all', onChange);
 }
@@ -1153,7 +1556,13 @@ async function init(argv) {
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
   if (!fs.existsSync(configPath)) {
-    const defaultBpJson = JSON.stringify(DEFAULT_BREAKPOINTS);
+    // MIG-B6-19 (FEAT-008): no `breakpoints:` here — a build config's
+    // breakpoints win key-for-key over the theme's own (see
+    // resolveBreakpoints), so writing the full default map here silently
+    // shadowed every key a project's uxdsl.theme.config.* declared,
+    // including ones it never touched. Breakpoints belong in the theme;
+    // this config only overrides one when a project deliberately wants a
+    // build-specific value the theme doesn't have.
     const configContent = isMulti
       ? `module.exports = {
   // A theme entry (emits the shared :root definitions once) plus any
@@ -1165,8 +1574,6 @@ async function init(argv) {
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
     { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
   ],
-  // Default breakpoints
-  breakpoints: ${defaultBpJson},
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl']
 };
@@ -1176,8 +1583,6 @@ async function init(argv) {
   entry: './src/uxdsl-entry.uxdsl',
   // Output CSS file
   outFile: './src/uxdsl.css',
-  // Default breakpoints
-  breakpoints: ${defaultBpJson},
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl', 'src/**/*.css']
 };
@@ -1214,9 +1619,16 @@ async function init(argv) {
 
   // 3. Setup PostCSS (Required for Next.js, Optional/Good for Vite if not using plugin)
   // For Next.js, we must ensure postcss-uxdsl is in postcss.config.js
+  // MIG-B6-19 (FEAT-008): no `theme` here, and none needed — the plugin
+  // discovers `uxdsl.theme.config.*`/`uxdsl.theme.json` from this same
+  // project root itself (same file the CLI build reads), so a `.css` file
+  // processed by this postcss.config.js validates against the project's
+  // real theme, not the built-in default, without any extra option.
   const POSTCSS_SNIPPET = `module.exports = {
   plugins: {
-    // The CLI-generated global CSS already contains the theme.
+    // The CLI-generated global CSS already contains the theme; the
+    // project's uxdsl.theme.config.*/uxdsl.theme.json (if any) is
+    // discovered automatically for everything else.
     'postcss-uxdsl': { includeTheme: false },
   },
 };
@@ -1290,19 +1702,140 @@ async function init(argv) {
   }
 }
 
-async function main() {
-  const argv = minimist(process.argv.slice(2), {
-    boolean: ['watch', 'help'],
-    alias: {
-      watch: 'w',
-      help: 'h',
-      entry: 'e',
-      out: 'o',
-      config: 'c',
+const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'watch', 'theme'];
+
+// MIG-B6-22 (FEAT-008): every flag each command actually reads, as one
+// registry instead of scattered `argv.foo` reads scattered through each
+// command's own function — printHelp, the CLI README and parseCommandArgv's
+// validation below all have to agree on exactly this list, so a future
+// story (MIG-B6-16's `--contrast`, MIG-B6-21's `--sourcemap`) adds its flag
+// here once, not in three places that can drift apart.
+//
+// `manual` lists flags declared in neither `boolean` nor `string` — minimist
+// then applies its own default inference (bare flag → `true`, `--no-x` →
+// `false`, `--x=value` → the raw string `value`) exactly like an
+// undeclared flag always has, and the flag's own resolver function (e.g.
+// `resolveIncludeTheme`) does its own validation on that raw value instead
+// of trusting minimist's implicit boolean coercion — which silently turns
+// ANY unrecognized string into `true` (`--include-theme=banana` bug this
+// story closes). `manual` still counts as "known" for unknown-flag
+// detection; only its type declaration is deliberately left out.
+const COMMAND_FLAG_SPECS = {
+  init: { boolean: ['multi'], string: [], manual: [], alias: {} },
+  'generate-entry': { boolean: [], string: ['src', 'out', 'exclude'], manual: [], alias: { out: 'o' } },
+  // `strict-theme`/`strict` are deliberately `manual`, not `string`: a
+  // minimist `string`-typed flag turns a BARE flag (no `=value`) into `''`
+  // instead of `true` — which silently disabled the bare `--strict-theme`/
+  // `--strict` control case entirely (caught by the manual repro in this
+  // story's test file, not by any prior automated test) since `''`
+  // normalizes to "no families", not "check everything".
+  build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
+  watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { entry: 'e', out: 'o', config: 'c' } },
+  theme: { boolean: ['diff'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
+};
+
+function canonicalFlagName(rawArg) {
+  return rawArg.replace(/^--?/, '').replace(/=.*$/, '').replace(/^no-/, '');
+}
+
+/** Parses argv scoped to the command actually invoked, so a flag valid for
+ * one command but used on another (`--strict` on `build` instead of
+ * `--strict-theme`) is unknown for THAT command, not silently accepted
+ * because the name happens to exist elsewhere — and a typo (`--strict-thme`)
+ * or a nonexistent flag fails loudly with a suggestion instead of being
+ * ignored outright the way plain minimist does for anything undeclared.
+ * The command itself is read directly off `rawArgs[0]`, never parsed by
+ * minimist, so a mistyped flag immediately after it can't eat the command
+ * token as its own value (minimist does exactly that for an undeclared
+ * flag followed by a bare word — verified while building this). */
+function parseCommandArgv(rawArgs) {
+  const cmd = rawArgs[0] && !rawArgs[0].startsWith('-') ? rawArgs[0] : undefined;
+  const rest = cmd !== undefined ? rawArgs.slice(1) : rawArgs;
+  // An unrecognized command still needs *some* spec to parse its flags
+  // with — "build" (also the default-command spec) is as good as any,
+  // since main()'s switch reports "Unknown command" for it regardless and
+  // that flag-validation result is discarded below.
+  const spec = COMMAND_FLAG_SPECS[cmd] || COMMAND_FLAG_SPECS.build;
+  const boolean = ['help', ...spec.boolean];
+  const string = [...spec.string];
+  const alias = { help: 'h', ...spec.alias };
+  const knownFlags = new Set([...boolean, ...string, ...spec.manual]);
+
+  const unknownFlags = [];
+  const argv = minimist(rest, {
+    boolean, string, alias,
+    unknown: (arg) => {
+      if (arg.startsWith('-') && !knownFlags.has(canonicalFlagName(arg))) unknownFlags.push(arg);
+      return true;
     },
   });
 
-  const cmd = argv._[0];
+  // None of this CLI's flags are meant to accept multiple values — but
+  // minimist collects a repeated flag (`--entry a --entry b`) into an
+  // array instead of keeping only the last one, which every consumer
+  // below (`path.resolve`, `String(...).split(',')`, ...) would either
+  // choke on or silently misuse. The last occurrence winning is the
+  // documented contract (see this story's Pruebas section), so collapse
+  // any array here, once, instead of at every call site.
+  for (const key of Object.keys(argv)) {
+    if (key !== '_' && Array.isArray(argv[key])) argv[key] = argv[key][argv[key].length - 1];
+  }
+
+  // A command that isn't one of the five real ones gets its own clear
+  // "Unknown command" error from main()'s switch statement — reporting
+  // every one of its flags as "unknown option" too would only bury that
+  // message under noise for a typo'd command name.
+  if ((cmd === undefined || KNOWN_COMMANDS.includes(cmd)) && unknownFlags.length > 0) {
+    const knownLongFlags = [...knownFlags];
+    const message = unknownFlags.map((rawArg) => {
+      const displayArg = rawArg.replace(/=.*$/, '');
+      const suggestion = closestMatch(canonicalFlagName(rawArg), knownLongFlags);
+      return `Unknown option ${displayArg}.` + (suggestion ? ` Did you mean --${suggestion}?` : '');
+    }).join(' ');
+    throw new Error(message);
+  }
+
+  return { cmd, argv };
+}
+
+// MIG-B6-23 (FEAT-008): the initial load+build a watch session starts
+// from. Any failure here is fatal for a one-shot `build` (`watching:
+// false` — unchanged: the error propagates to main()'s own outer
+// try/catch, which exits 1). For `watch`/`build --watch`, the same
+// failure is logged and this returns whatever it has (a real config, or
+// `null`) instead of ending the process before a single file is even
+// watched — `startWatch` accepts `null` and falls back to watching
+// config/theme candidates until one loads successfully.
+async function loadAndBuildForWatch(argv, watching) {
+  let config = null;
+  try {
+    config = await loadConfig(argv);
+  } catch (err) {
+    if (!watching) throw err;
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)} — watching for a fix...`);
+    return null;
+  }
+  if (!config) {
+    if (watching) console.error('[uxdsl] No configuration found — watching for one to appear...');
+    return config;
+  }
+  try {
+    await buildOnce(config);
+  } catch (err) {
+    if (!watching) throw err;
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+  }
+  return config;
+}
+
+async function main() {
+  let cmd, argv;
+  try {
+    ({ cmd, argv } = parseCommandArgv(process.argv.slice(2)));
+  } catch (err) {
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+    process.exit(1);
+  }
 
   if (argv.help) {
     printHelp();
@@ -1320,23 +1853,21 @@ async function main() {
       case 'build':
       case undefined: // Default to build if no command but args present
         {
-          const config = await loadConfig(argv);
-          if (!config) {
-             // No config and no command -> Print help
-             printHelp();
-             process.exit(0);
+          const watching = !!argv.watch;
+          const config = await loadAndBuildForWatch(argv, watching);
+          if (!config && !watching) {
+            // No config and no command -> Print help
+            printHelp();
+            process.exit(0);
           }
-          await buildOnce(config);
-          if (argv.watch) {
+          if (watching) {
             startWatch(config, argv, process.cwd(), buildOnce);
           }
         }
         break;
       case 'watch':
         {
-          const config = await loadConfig(argv);
-          if (!config) throw new Error('No configuration found for watch.');
-          await buildOnce(config);
+          const config = await loadAndBuildForWatch(argv, true);
           startWatch(config, argv, process.cwd(), buildOnce);
         }
         break;
@@ -1349,7 +1880,9 @@ async function main() {
         process.exit(1);
     }
   } catch (err) {
-    console.error(`[uxdsl] Error: ${err.message}`);
+    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+    const frame = err && typeof err.showSourceCode === 'function' ? err.showSourceCode(false) : '';
+    if (frame) console.error(frame);
     process.exit(1);
   }
 }
@@ -1378,6 +1911,11 @@ module.exports = {
   resolveIncludeTheme,
   resolveStrictTheme,
   normalizeStrictThemeScope,
+  getKnownThemeFamilies,
+  closestMatch,
+  canonicalFlagName,
+  COMMAND_FLAG_SPECS,
+  parseCommandArgv,
   resolveBreakpoints,
   buildOnce,
   warnUnknownThemeKeys,
@@ -1390,4 +1928,11 @@ module.exports = {
   init,
   generateEntry,
   main,
+  commitFileIfChanged,
+  commitCompiled,
+  bootstrapWatchTargets,
+  loadAndBuildForWatch,
+  findThemeLeakSelector,
+  assertNoThemeLeakIntoCssModule,
+  warnIfMultipleEntriesEmitTheme,
 };

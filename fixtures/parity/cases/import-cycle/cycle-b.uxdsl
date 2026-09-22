@@ -1,0 +1,5 @@
+@import "./entry.uxdsl";
+
+.b {
+  color: blue;
+}

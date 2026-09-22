@@ -1,0 +1,3 @@
+{
+  "css": ":root {\n  --dup-marker: 1;\n}\n.entry {\n  color: green;\n}\n"
+}

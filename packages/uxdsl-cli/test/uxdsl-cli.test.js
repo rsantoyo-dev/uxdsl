@@ -10,8 +10,10 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { spawnSync } = require('node:child_process');
 const postcss = require('postcss');
 
+const CLI_BIN = path.join(__dirname, '..', 'bin', 'uxdsl.js');
 const cli = require('../bin/uxdsl.js');
 const uxdslPluginModule = require('postcss-uxdsl');
 const uxdslPlugin = uxdslPluginModule.default || uxdslPluginModule;
@@ -799,21 +801,385 @@ test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strin
   await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean or an array of family names/);
 });
 
-// --- MIG-B5-02 (FEAT-006): unknown theme family/key warnings, surfaced
-// from a real build --- `validateAndNormalizeTheme`'s "Unknown theme
-// family"/"Unknown <family> key" warnings (MIG-B3-03, MIG-B5-02) were
-// never actually reachable from `uxdsl build` before this — only the
-// playground's theme editor called that function at all. Test names below
-// use unique, test-scoped family/tag names so the module-level dedup Set
-// (shared across every test in this process) never causes one test to see
-// a warning already consumed by an earlier one.
+// --- MIG-B6-22 (FEAT-008): --strict-theme/--include-theme "=true"/"=false"
+// string forms, unknown-family/unknown-flag suggestions, and per-command
+// flag scoping. Before this story, minimist's undeclared-flag inference
+// meant `--strict-theme=true`/`=false` were read as a *family named*
+// "true"/"false" (never matches a real family, so the gate silently did
+// nothing) and `--include-theme=false` was silently ignored (only a real
+// boolean, from the bare flag or --no- negation, was ever accepted).
 
-test('MIG-B5-02: warnUnknownThemeKeys prints an unknown top-level family and an unknown nested key', () => {
+test('MIG-B6-22: normalizeStrictThemeScope treats the strings "true"/"false" as the same booleans, not as family names', () => {
+  assert.equal(cli.normalizeStrictThemeScope('true'), true);
+  assert.equal(cli.normalizeStrictThemeScope('false'), false);
+  assert.equal(cli.normalizeStrictThemeScope('True'), true, 'case-insensitive');
+  assert.equal(cli.normalizeStrictThemeScope('FALSE'), false, 'case-insensitive');
+  // A real family named exactly "true" is not a supported use case (every
+  // real family name is a fixed identifier from KNOWN_THEME_FAMILIES,
+  // never "true"/"false"), so this is an acceptable, deliberate ambiguity.
+  assert.deepEqual(cli.normalizeStrictThemeScope('palette,breakpoints'), ['palette', 'breakpoints'], 'unaffected: still a plain CSV family list');
+});
+
+test('MIG-B6-22: normalizeStrictThemeScope validates family names against knownFamilies and suggests a close match', () => {
+  const knownFamilies = new Set(['palette', 'breakpoints', 'spacing']);
+  assert.deepEqual(cli.normalizeStrictThemeScope('palette,breakpoints', { knownFamilies }), ['palette', 'breakpoints']);
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('pallete', { knownFamilies }),
+    /Unknown theme family "pallete" in --strict-theme\. Did you mean "palette"\?/
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('pallete', { knownFamilies, source: '--strict' }),
+    /Unknown theme family "pallete" in --strict\. Did you mean "palette"\?/
+  );
+  // A typo too far from any known family gets no suggestion, not a wrong one.
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('xyzxyz', { knownFamilies }),
+    (err) => /Unknown theme family "xyzxyz" in --strict-theme\.$/.test(err.message)
+  );
+  // No knownFamilies passed at all (older postcss-uxdsl install without
+  // KNOWN_THEME_FAMILIES) — validation is skipped entirely, matching every
+  // pre-existing test above that calls this function with one argument.
+  assert.deepEqual(cli.normalizeStrictThemeScope('pallete'), ['pallete']);
+});
+
+test('MIG-B6-22: resolveStrictTheme validates both the flag and the config value, labeling each source', () => {
+  const knownFamilies = new Set(['palette']);
+  assert.throws(
+    () => cli.resolveStrictTheme('pallete', undefined, { knownFamilies }),
+    /Unknown theme family "pallete" in --strict-theme/
+  );
+  assert.throws(
+    () => cli.resolveStrictTheme(undefined, ['pallete'], { knownFamilies }),
+    /Unknown theme family "pallete" in strictTheme \(in the config file\)/
+  );
+});
+
+// --- MIG-B6-22 code-review fixes: an empty-after-split family list, a
+// numeric --include-theme value, and a missing KNOWN_THEME_FAMILIES export
+// each used to be silently accepted instead of rejected. ---
+
+test('MIG-B6-22: normalizeStrictThemeScope rejects a stray comma instead of silently dropping the empty family and turning strict off', () => {
+  const knownFamilies = new Set(['palette', 'fonts']);
+  // A lone comma, or a value that is only commas/whitespace, must not be
+  // treated the same as a genuinely empty value (`''`/`[]`, still "nothing
+  // here" — see the true/false test above) — the user typed something,
+  // and it parses to zero real family names, which is always a mistake.
+  assert.throws(
+    () => cli.normalizeStrictThemeScope(',', { knownFamilies }),
+    /Invalid value for --strict-theme: ","\. A family list cannot contain an empty entry/
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette,,fonts', { knownFamilies }),
+    /Invalid value for --strict-theme: "palette,,fonts"\. A family list cannot contain an empty entry/
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette,', { knownFamilies }),
+    /A family list cannot contain an empty entry/,
+    'a trailing comma must fail too, not just an internal one'
+  );
+  assert.throws(
+    () => cli.normalizeStrictThemeScope(['palette', ''], { knownFamilies }),
+    /A family list cannot contain an empty entry/,
+    'the same rule applies to a config-provided array, not just the CLI CSV string'
+  );
+  // Still preserved: a truly empty value is "nothing here", not an error.
+  assert.equal(cli.normalizeStrictThemeScope('', { knownFamilies }), undefined);
+  assert.equal(cli.normalizeStrictThemeScope([], { knownFamilies }), undefined);
+});
+
+test('MIG-B6-22 (subprocess): --strict-theme=, and --strict-theme=palette,,fonts fail instead of silently disabling strict mode', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+
+  const lonelyComma = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=,'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(lonelyComma.status, 1);
+  assert.match(lonelyComma.stderr, /A family list cannot contain an empty entry/);
+
+  const doubleComma = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=palette,,fonts'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(doubleComma.status, 1);
+  assert.match(doubleComma.stderr, /A family list cannot contain an empty entry/);
+});
+
+test('MIG-B6-22: resolveIncludeTheme rejects a number (minimist auto-parses --include-theme=0/=1 into a real number)', () => {
+  assert.throws(() => cli.resolveIncludeTheme(0, undefined), /Invalid value for --include-theme: "0"/);
+  assert.throws(() => cli.resolveIncludeTheme(1, undefined), /Invalid value for --include-theme: "1"/);
+  assert.throws(() => cli.resolveIncludeTheme(0, true), /Invalid value for --include-theme: "0"/, 'an explicit invalid flag value must fail even when config would otherwise supply a valid one');
+});
+
+test('MIG-B6-22 (subprocess): --include-theme=0 is a hard error, not a silently-accepted "true"', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=0'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Invalid value for --include-theme: "0"/);
+});
+
+test('MIG-B6-22: normalizeStrictThemeScope reports an incompatible install instead of silently skipping family validation', () => {
+  // requireKnownFamilies mirrors what loadConfig/themeCommand always pass —
+  // simulating an older postcss-uxdsl install that doesn't export
+  // KNOWN_THEME_FAMILIES yet (getKnownThemeFamilies() would return
+  // undefined for it, since resolveUxDslModule prioritizes whatever the
+  // *project* has installed over the CLI's own bundled copy).
+  assert.throws(
+    () => cli.normalizeStrictThemeScope('palette', { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for --strict-theme: this postcss-uxdsl install does not export KNOWN_THEME_FAMILIES/
+  );
+  // A plain boolean scope never needed family validation, so it's unaffected.
+  assert.equal(cli.normalizeStrictThemeScope(true, { knownFamilies: undefined, requireKnownFamilies: true }), true);
+  assert.equal(cli.normalizeStrictThemeScope('true', { knownFamilies: undefined, requireKnownFamilies: true }), true);
+  // Without requireKnownFamilies (the default every pre-existing/pure-parsing
+  // test above relies on), skipping validation is still the documented
+  // behavior — only the two real CLI call sites opt into requiring it.
+  assert.deepEqual(cli.normalizeStrictThemeScope('palette', { knownFamilies: undefined }), ['palette']);
+});
+
+test('MIG-B6-22: resolveStrictTheme propagates requireKnownFamilies to both the flag and the config value', () => {
+  assert.throws(
+    () => cli.resolveStrictTheme('palette', undefined, { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for --strict-theme/
+  );
+  assert.throws(
+    () => cli.resolveStrictTheme(undefined, ['palette'], { knownFamilies: undefined, requireKnownFamilies: true }),
+    /Cannot validate family names for strictTheme \(in the config file\)/
+  );
+});
+
+test('MIG-B6-22: buildOnce with a real theme fails on --strict-theme=true (string) the same way it fails on the bare flag', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({ 'strict-theme': 'true' }, dir);
+  assert.equal(config.strictTheme, true, '"true" (string) must resolve to the real boolean, not a ["true"] family list');
+  config.theme = { typography_details: { h2: { fontSize: '2.2rem' } } };
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*typography_details/);
+});
+
+test('MIG-B6-22: buildOnce does not fail on --strict-theme=false (string) even with a partially-defaulted family', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({ 'strict-theme': 'false' }, dir);
+  assert.equal(config.strictTheme, false);
+  config.theme = { typography_details: { h2: { fontSize: '2.2rem' } } };
+  await cli.buildOnce(config); // Must not throw.
+});
+
+test('MIG-B6-22: loadConfig rejects an unknown family name in --strict-theme, with a suggestion', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(
+    () => cli.loadConfig({ 'strict-theme': 'pallete' }, dir),
+    /Unknown theme family "pallete" in --strict-theme\. Did you mean "palette"\?/
+  );
+});
+
+test('MIG-B6-22: loadConfig rejects an unknown family name in "strictTheme" from uxdsl.config.cjs, with a suggestion', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['pallete'] };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(
+    () => cli.loadConfig({}, dir),
+    /Unknown theme family "pallete" in strictTheme \(in the config file\)\. Did you mean "palette"\?/
+  );
+});
+
+test('MIG-B6-22: resolveIncludeTheme coerces the "true"/"false" strings --include-theme=<value> produces', () => {
+  assert.equal(cli.resolveIncludeTheme('true', undefined), true);
+  assert.equal(cli.resolveIncludeTheme('false', undefined), false);
+  assert.equal(cli.resolveIncludeTheme('false', true), false, 'the CLI flag still overrides config');
+});
+
+test('MIG-B6-22: resolveIncludeTheme rejects any other string instead of silently reading it as truthy', () => {
+  assert.throws(
+    () => cli.resolveIncludeTheme('banana', undefined),
+    /Invalid value for --include-theme: "banana"\. Expected true or false \(or --no-include-theme\)\./
+  );
+});
+
+test('MIG-B6-22: loadConfig with --include-theme=false emits zero :root definitions, same as --no-include-theme', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const config = await cli.loadConfig({ 'include-theme': 'false' }, dir);
+  assert.equal(config.includeTheme, false);
+});
+
+// --- MIG-B6-22: parseCommandArgv — per-command flag scoping and unknown
+// flag/family detection. These exercise the same function main() calls,
+// without spawning a subprocess for every case.
+
+test('MIG-B6-22: parseCommandArgv reads the command from the first non-flag token and never lets an unknown flag eat it', () => {
+  const { cmd, argv } = cli.parseCommandArgv(['build', '--entry', 'x.uxdsl']);
+  assert.equal(cmd, 'build');
+  assert.equal(argv.entry, 'x.uxdsl');
+});
+
+test('MIG-B6-22: parseCommandArgv defaults to "build"\'s flag set when no command is given', () => {
+  const { cmd, argv } = cli.parseCommandArgv(['--strict-theme']);
+  assert.equal(cmd, undefined);
+  assert.equal(argv['strict-theme'], true);
+});
+
+test('MIG-B6-22: parseCommandArgv rejects a mistyped flag with a suggestion, scoped to that command\'s own flags', () => {
+  assert.throws(
+    () => cli.parseCommandArgv(['build', '--strict-thme']),
+    /Unknown option --strict-thme\. Did you mean --strict-theme\?/
+  );
+});
+
+test('MIG-B6-22: parseCommandArgv rejects a flag that is valid for a different command', () => {
+  assert.throws(() => cli.parseCommandArgv(['build', '--strict']), /Unknown option --strict\.$/);
+  assert.throws(() => cli.parseCommandArgv(['theme', '--watch']), /Unknown option --watch\.$/);
+});
+
+test('MIG-B6-22: parseCommandArgv does not treat a positional argument as an unknown flag', () => {
+  const { argv } = cli.parseCommandArgv(['generate-entry', '--src', './src', 'not-a-flag']);
+  assert.deepEqual(argv._, ['not-a-flag']);
+});
+
+test('MIG-B6-22: parseCommandArgv skips flag validation for an unrecognized command, leaving "Unknown command" as the only error', () => {
+  const { cmd } = cli.parseCommandArgv(['bogus', '--whatever']);
+  assert.equal(cmd, 'bogus'); // main()'s switch reports "Unknown command: bogus" for this, not a flag error.
+});
+
+test('MIG-B6-22: parseCommandArgv resolves a repeated flag to its last occurrence, not an array', () => {
+  assert.equal(cli.parseCommandArgv(['build', '--entry', 'a', '--entry', 'b']).argv.entry, 'b');
+  assert.equal(cli.parseCommandArgv(['build', '--include-theme=true', '--include-theme=false']).argv['include-theme'], 'false');
+  const viaAlias = cli.parseCommandArgv(['build', '-e', 'a', '-e', 'b']);
+  assert.equal(viaAlias.argv.entry, 'b');
+  assert.equal(viaAlias.argv.e, 'b');
+});
+
+test('MIG-B6-22: parseCommandArgv still accepts --no-include-theme and --no-strict-theme (manual flags keep their negation form)', () => {
+  const { argv } = cli.parseCommandArgv(['build', '--no-include-theme', '--no-strict-theme']);
+  assert.equal(argv['include-theme'], false);
+  assert.equal(argv['strict-theme'], false);
+});
+
+test('MIG-B6-22: parseCommandArgv reports every unknown flag when more than one is passed', () => {
+  assert.throws(() => cli.parseCommandArgv(['build', '--bogus1', '--bogus2']), /Unknown option --bogus1\.[\s\S]*Unknown option --bogus2\./);
+});
+
+// --- MIG-B6-22: end-to-end through the real subprocess (main()'s own
+// process.exit/console.error wiring isn't exercised by any function-level
+// test above), covering exactly the table in the story's "Resultado
+// esperado" section.
+
+test('MIG-B6-22 (subprocess): --strict-thme (typo) fails with exit 1 and a suggestion', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-thme'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Unknown option --strict-thme\. Did you mean --strict-theme\?/);
+});
+
+test('MIG-B6-22 (subprocess): --strict-theme=pallete (typo family) fails with exit 1 and a suggestion', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=pallete'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Unknown theme family "pallete" in --strict-theme\. Did you mean "palette"\?/);
+});
+
+test('MIG-B6-22 (subprocess): --strict-theme=true (string) behaves like the bare flag; --strict-theme=false turns it off', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: palette(primary); }\n');
+
+  const bare = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme'], { cwd: dir, encoding: 'utf8' });
+  const trueString = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=true'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(bare.status, 1);
+  assert.equal(trueString.status, 1, 'bare and "=true" must fail identically — a partially-defaulted palette either way');
+  assert.match(trueString.stderr, /--strict-theme:.*palette/);
+
+  const falseString = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=false'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(falseString.status, 0, '"=false" must turn the gate off, not read as a family named "false"');
+});
+
+test('MIG-B6-22 (subprocess): --include-theme=false emits zero :root definitions, matching --no-include-theme', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+
+  const equalsFalse = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=false'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(equalsFalse.status, 0, equalsFalse.stderr);
+  assert.equal((fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8').match(/:root/g) || []).length, 0);
+
+  const noFlag = spawnSync(process.execPath, [CLI_BIN, 'build', '--no-include-theme'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(noFlag.status, 0, noFlag.stderr);
+  assert.equal((fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8').match(/:root/g) || []).length, 0, 'control: --no-include-theme already worked before this fix');
+});
+
+test('MIG-B6-22 (subprocess): --include-theme=banana is a hard error, not a silent true', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=banana'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Invalid value for --include-theme: "banana"/);
+});
+
+test('MIG-B6-22 (subprocess): a flag valid for another command fails as unknown for this one', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /\[uxdsl\] Error: Unknown option --strict\.$/m);
+});
+
+// --- MIG-B5-02 (FEAT-006): unknown theme family warnings, surfaced from a
+// real build --- `validateAndNormalizeTheme`'s "Unknown theme family"
+// warning (MIG-B3-03) was never actually reachable from `uxdsl build`
+// before this — only the playground's theme editor called that function at
+// all. MIG-B5-02 also shipped a parallel "Unknown <family> key" warning one
+// level deeper (typography_details/palette/fonts.families); MIG-B6-01
+// (FEAT-007) removed that one — none of those three families has a real
+// closed set to check a key against, so it produced false positives for
+// any project with a richer palette/fonts/typography set than
+// DEFAULT_THEME's minimal fallback. Test names below use unique,
+// test-scoped family/tag names so the module-level dedup Set (shared
+// across every test in this process) never causes one test to see a
+// warning already consumed by an earlier one.
+
+test('MIG-B5-02: warnUnknownThemeKeys prints an unknown top-level family', () => {
   const { messages } = captureWarnings(() =>
-    cli.warnUnknownThemeKeys({ migB502UnknownFamilyA: { x: 1 }, typography_details: { migB502UnknownTagA: { fontSize: '1rem' } } })
+    cli.warnUnknownThemeKeys({ migB502UnknownFamilyA: { x: 1 } })
   );
   assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyA"/.test(m)), JSON.stringify(messages));
-  assert.ok(messages.some((m) => /Unknown typography_details key "migB502UnknownTagA"/.test(m)), JSON.stringify(messages));
+});
+
+test('MIG-B6-01: warnUnknownThemeKeys does not warn on a typography_details tag beyond DEFAULT_THEME\'s built-ins (regression)', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnUnknownThemeKeys({ typography_details: { migB601CustomTag: { fontSize: '1rem' } } })
+  );
+  assert.deepEqual(messages, []);
+});
+
+test('MIG-B6-01: warnUnknownThemeKeys recognizes modes and typography but still warns on a typo', () => {
+  const { messages } = captureWarnings(() =>
+    cli.warnUnknownThemeKeys({
+      modes: { dark: { palette: { primary: { main: '#000000' } } } },
+      typography: { hero: '2rem' },
+      migB601PaleteTypo: {},
+    })
+  );
+  assert.equal(messages.length, 1);
+  assert.match(messages[0], /Unknown theme family "migB601PaleteTypo"/);
 });
 
 test('MIG-B5-02: warnUnknownThemeKeys is a no-op for an undefined theme (zero-config)', () => {
@@ -838,4 +1204,199 @@ test('MIG-B5-02: a real buildOnce surfaces the warning for an unknown theme fami
   const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
   assert.ok(messages.some((m) => /Unknown theme family "migB502UnknownFamilyC"/.test(m)), JSON.stringify(messages));
   assert.ok(fs.existsSync(config.outFile), 'an unknown-family warning must not block the build');
+});
+
+// MIG-B6-23 (FEAT-008): fast, direct unit coverage of the atomic
+// commit helpers — the slow, real-chokidar end-to-end scenarios live in
+// watch-mode.test.js instead.
+
+test('MIG-B6-23: commitFileIfChanged writes a new file and reports "written"', () => {
+  const dir = mkTmpDir();
+  const outFile = path.join(dir, 'out.css');
+  const status = cli.commitFileIfChanged(outFile, '.a { color: red; }');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a { color: red; }');
+});
+
+test('MIG-B6-23: commitFileIfChanged reports "unchanged" and does not touch mtime/inode for identical content', () => {
+  const dir = mkTmpDir();
+  const outFile = write(dir, 'out.css', '.a { color: red; }');
+  const before = fs.statSync(outFile);
+  const status = cli.commitFileIfChanged(outFile, '.a { color: red; }');
+  const after = fs.statSync(outFile);
+  assert.equal(status, 'unchanged');
+  assert.equal(after.mtimeMs, before.mtimeMs);
+  assert.equal(after.ino, before.ino);
+});
+
+test('MIG-B6-23: commitFileIfChanged replaces different content atomically (rename, not in-place truncation) and leaves no temp file behind', () => {
+  const dir = mkTmpDir();
+  const outFile = write(dir, 'out.css', '.a { color: red; }');
+  const status = cli.commitFileIfChanged(outFile, '.a { color: blue; }');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a { color: blue; }');
+  const leftovers = fs.readdirSync(dir).filter((f) => f.includes('.tmp'));
+  assert.deepEqual(leftovers, [], 'no temp file should remain after a successful commit');
+});
+
+test('MIG-B6-23: commitFileIfChanged creates the output directory if missing', () => {
+  const dir = mkTmpDir();
+  const outFile = path.join(dir, 'nested', 'deep', 'out.css');
+  const status = cli.commitFileIfChanged(outFile, '.a {}');
+  assert.equal(status, 'written');
+  assert.equal(fs.readFileSync(outFile, 'utf8'), '.a {}');
+});
+
+test('MIG-B6-23: commitCompiled writes only the entries whose content actually changed', () => {
+  const dir = mkTmpDir();
+  const aFile = write(dir, 'a.css', '.a { color: red; }');
+  const bFile = write(dir, 'b.css', '.b { color: green; }');
+  const statuses = cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: red; }' }, // unchanged
+    { outFile: bFile, finalCss: '.b { color: blue; }' }, // changed
+  ]);
+  assert.deepEqual(statuses, ['unchanged', 'written']);
+  assert.equal(fs.readFileSync(bFile, 'utf8'), '.b { color: blue; }');
+});
+
+test('MIG-B6-23: commitCompiled rolls back every entry it already wrote if a later commit in the same call fails', () => {
+  const dir = mkTmpDir();
+  const aFile = write(dir, 'a.css', '.a { color: red; }');
+  // A directory in place of the "file" for the second entry — its rename
+  // will fail (EISDIR/ENOTEMPTY depending on platform), simulating a
+  // commit failing partway through a multi-entry batch.
+  const bFile = path.join(dir, 'b.css');
+  fs.mkdirSync(bFile);
+  fs.writeFileSync(path.join(bFile, 'keep-dir-nonempty'), 'x');
+
+  assert.throws(() => cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: NEW; }' },
+    { outFile: bFile, finalCss: '.b { color: blue; }' },
+  ]));
+
+  assert.equal(fs.readFileSync(aFile, 'utf8'), '.a { color: red; }', "a.css must be rolled back to its pre-build content after b's commit fails");
+  const leftovers = fs.readdirSync(dir).filter((f) => f.includes('.tmp'));
+  assert.deepEqual(leftovers, [], 'no temp file should remain after a rolled-back commit');
+});
+
+test('MIG-B6-23: commitCompiled removes (does not leave stale content in) an entry that did not exist before a failed rollback', () => {
+  const dir = mkTmpDir();
+  const aFile = path.join(dir, 'a.css'); // Does not exist yet.
+  const bFile = path.join(dir, 'b.css');
+  fs.mkdirSync(bFile);
+  fs.writeFileSync(path.join(bFile, 'keep-dir-nonempty'), 'x');
+
+  assert.throws(() => cli.commitCompiled([
+    { outFile: aFile, finalCss: '.a { color: red; }' },
+    { outFile: bFile, finalCss: '.b { color: blue; }' },
+  ]));
+
+  assert.equal(fs.existsSync(aFile), false, 'a.css did not exist before this build, and must not exist after the rollback either');
+});
+
+test('MIG-B6-23: bootstrapWatchTargets includes every config/theme candidate plus an explicit --config/--entry, resolved against cwd', () => {
+  const dir = mkTmpDir();
+  const targets = cli.bootstrapWatchTargets({ config: './my-config.cjs' }, dir);
+  for (const candidate of cli.CONFIG_CANDIDATES) assert.ok(targets.includes(path.join(dir, candidate)), candidate);
+  for (const candidate of cli.THEME_CANDIDATES) assert.ok(targets.includes(path.join(dir, candidate)), candidate);
+  assert.ok(targets.includes(path.join(dir, 'my-config.cjs')));
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, false) rethrows a loadConfig failure (a one-shot "build" still exits non-zero)', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', 'module.exports = { this is not valid javascript');
+  await assert.rejects(() => cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, false));
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a loadConfig failure and returns null instead of throwing', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', 'module.exports = { this is not valid javascript');
+  const config = await cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, true);
+  assert.equal(config, null);
+});
+
+test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a compile failure but still returns the loaded config', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.a { color: palette(does-not-exist); }');
+  const config = await cli.loadAndBuildForWatch({ config: path.join(dir, 'uxdsl.config.cjs') }, true);
+  assert.ok(config, 'a compile failure must not prevent the loaded config from being returned to startWatch');
+  assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')), false, 'nothing should have been written for a build that failed to compile');
+});
+
+// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root/
+// #uxdsl-bp-meta into a *.module.css output fails before anything is
+// written; more than one entry emitting the theme at all is a warning,
+// not an error.
+
+test('MIG-B6-24: findThemeLeakSelector finds a real :root rule, not text inside a string or comment', () => {
+  assert.equal(cli.findThemeLeakSelector(':root { --x: 1; }'), ':root');
+  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), '#uxdsl-bp-meta');
+  assert.equal(cli.findThemeLeakSelector('.a, :root { color: red; }'), ':root', 'must catch :root inside a compound comma-separated selector');
+  assert.equal(cli.findThemeLeakSelector('/* mentions :root in a comment */\n.a { color: red; }'), null);
+  assert.equal(cli.findThemeLeakSelector('.a::before { content: ":root example"; }'), null);
+  assert.equal(cli.findThemeLeakSelector('.a { color: red; }'), null);
+});
+
+test('MIG-B6-24: the exact reproduction fails before writing, naming the offending entry', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' },
+  ] };`);
+  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  await assert.rejects(
+    () => cli.buildOnce(config),
+    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
+  );
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing must be written, including the other, unrelated entry');
+});
+
+test('MIG-B6-24: a .module.css entry with includeTheme: false compiles without error', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false },
+  ] };`);
+  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  await cli.buildOnce(config); // Must not throw.
+  assert.ok(fs.existsSync(path.join(dir, 'out', 'panel.module.css')));
+});
+
+test('MIG-B6-24: includeTheme: false does not exempt a .module.css entry whose own content still defines :root (e.g. explicit native CSS)', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false };`);
+  write(dir, 'src/panel.uxdsl', ':root { --leaked: 1; }\n.p { color: red; }');
+  const config = await cli.loadConfig({}, dir);
+  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root and #uxdsl-bp-meta/);
+});
+
+test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, naming both', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/a.uxdsl', outFile: './out/a.css' },
+    { entry: './src/b.uxdsl', outFile: './out/b.css' },
+  ] };`);
+  write(dir, 'src/a.uxdsl', '.a { color: red; }');
+  write(dir, 'src/b.uxdsl', '.b { color: blue; }');
+  const config = await cli.loadConfig({}, dir);
+  const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
+  const relevant = messages.filter((m) => /entries emit the theme/.test(m));
+  assert.equal(relevant.length, 1, JSON.stringify(messages));
+  assert.match(relevant[0], /2 entries emit the theme \(builds\[0\], builds\[1\]\); usually only one theme entry should\./);
+});
+
+test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-include-theme fixes it', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
+  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root and #uxdsl-bp-meta/);
+
+  const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);
+  await cli.buildOnce(passing); // Must not throw.
+  assert.ok(fs.existsSync(path.join(dir, 'out', 'x.module.css')));
 });

@@ -307,3 +307,204 @@ test('changing outFile via a config reload does not resurrect the self-triggered
 
   assert.equal(buildCountFor('src/uxdsl-renamed.css'), 1, `expected exactly 1 build of the new outFile; the watcher is reacting to its own output write under the new path.\n${output}`);
 });
+
+// MIG-B6-23 (FEAT-008): watch mode surviving errors, atomic/skip-unchanged
+// writes, and dependency-graph-based selective rebuilds.
+
+test('MIG-B6-23: an initial compile error does not end the process; correcting the entry produces output', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  // A real, valid config and a real entry file that fails to *compile* —
+  // an unresolvable token — not a broken config file (that's the next test).
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: palette(this-family-does-not-exist); }');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let exited = false;
+  child.on('exit', () => { exited = true; });
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+
+  await waitFor(() => /UXD_REFERENCE_MISSING|error/i.test(output));
+  await delay(WATCHER_SETTLE_MS);
+  assert.equal(exited, false, `the process must still be running after an initial compile error.\n${output}`);
+  assert.equal(fs.existsSync(path.join(dir, 'src', 'uxdsl.css')), false, 'nothing should have been written for a build that failed to compile');
+
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('color: red'));
+  assert.equal(exited, false, 'the process must still be running after recovering from the error');
+});
+
+test('MIG-B6-23: a config broken at startup (syntax error) recovers once fixed, without restarting the CLI', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
+  // A real syntax error, not just a semantically invalid config — this is
+  // "failed to *load*", the case item 1 distinguishes from a compile error.
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), 'module.exports = { this is not valid javascript');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let exited = false;
+  child.on('exit', () => { exited = true; });
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+
+  await waitFor(() => /SyntaxError|Unexpected|error/i.test(output));
+  await delay(WATCHER_SETTLE_MS);
+  assert.equal(exited, false, `the process must still be running after a config file that fails to load at all.\n${output}`);
+
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('color: red'));
+  assert.equal(exited, false, 'the process must still be running after the config becomes loadable');
+});
+
+test('MIG-B6-23: a rebuild triggered by an unrelated watched file produces byte-identical output and preserves mtime/inode', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  // Both files match the watch glob; only unused.uxdsl changes, and
+  // nothing imports it, so the entry's own compiled output cannot differ.
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
+  fs.writeFileSync(path.join(dir, 'src', 'unused.uxdsl'), '/* not imported by anything */');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  await waitFor(() => fs.existsSync(cssPath));
+  await delay(WATCHER_SETTLE_MS);
+  const statBefore = fs.statSync(cssPath);
+
+  fs.writeFileSync(path.join(dir, 'src', 'unused.uxdsl'), '/* edited, still unused by anything */');
+  await waitFor(() => output.includes('unused.uxdsl'));
+  await waitFor(() => /\[uxdsl\] unchanged /.test(output));
+  await delay(300);
+
+  const statAfter = fs.statSync(cssPath);
+  assert.equal(statAfter.mtimeMs, statBefore.mtimeMs, `an unaffected rebuild must not touch the output file's mtime.\n${output}`);
+  assert.equal(statAfter.ino, statBefore.ino, "an unaffected rebuild must not replace the output file's inode (no rewrite happened)");
+});
+
+test('MIG-B6-23: with two entries A and B, editing a partial only B imports does not rewrite A', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), `module.exports = {
+    builds: [
+      { entry: './src/a.uxdsl', outFile: './src/a.css' },
+      { entry: './src/b.uxdsl', outFile: './src/b.css' },
+    ],
+    watch: ['src/**/*.uxdsl'],
+  };\n`);
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }');
+  fs.writeFileSync(path.join(dir, 'src', 'b-partial.uxdsl'), '.b-partial { color: green; }');
+  fs.writeFileSync(path.join(dir, 'src', 'b.uxdsl'), '@import "./b-partial.uxdsl";\n.b { color: blue; }');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+
+  const aCssPath = path.join(dir, 'src', 'a.css');
+  const bCssPath = path.join(dir, 'src', 'b.css');
+  await waitFor(() => fs.existsSync(aCssPath) && fs.existsSync(bCssPath));
+  await waitFor(() => fs.readFileSync(bCssPath, 'utf8').includes('color: green'));
+  await delay(WATCHER_SETTLE_MS);
+  const aStatBefore = fs.statSync(aCssPath);
+
+  fs.writeFileSync(path.join(dir, 'src', 'b-partial.uxdsl'), '.b-partial { color: yellow; }');
+  await waitFor(() => fs.readFileSync(bCssPath, 'utf8').includes('color: yellow'));
+  await delay(500);
+
+  const aStatAfter = fs.statSync(aCssPath);
+  assert.equal(aStatAfter.mtimeMs, aStatBefore.mtimeMs, `editing B's own partial must not rewrite A.\n${output}`);
+  assert.equal(aStatAfter.ino, aStatBefore.ino, "editing B's own partial must not replace A's file");
+  assert.doesNotMatch(fs.readFileSync(aCssPath, 'utf8'), /yellow|green/, "A's output must never contain B's partial content");
+});
+
+test('MIG-B6-23: an output file is never observed empty or truncated while a rebuild is writing it (atomic replace)', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  await waitFor(() => fs.existsSync(cssPath));
+  await delay(WATCHER_SETTLE_MS);
+
+  let polling = true;
+  let sawBadRead = null;
+  const pollLoop = (async () => {
+    while (polling) {
+      let content;
+      try {
+        content = fs.readFileSync(cssPath, 'utf8');
+      } catch (_) {
+        sawBadRead = sawBadRead || 'output file disappeared mid-rebuild';
+        await new Promise((resolve) => setImmediate(resolve));
+        continue;
+      }
+      if (content.trim() === '' || !/color:\s*(red|blue|green|purple|orange)/.test(content)) {
+        sawBadRead = sawBadRead || `output file observed empty/truncated: ${JSON.stringify(content)}`;
+      }
+      // Yields to the event loop each iteration — a tight synchronous loop
+      // here would starve this test process's own event loop (including
+      // the `waitFor` polls below), not just spin CPU. Still effectively
+      // continuous: setImmediate fires as soon as the loop is idle.
+      await new Promise((resolve) => setImmediate(resolve));
+    }
+  })();
+
+  const colors = ['blue', 'green', 'purple', 'orange', 'red'];
+  for (const color of colors) {
+    fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), `.a { color: ${color}; }`);
+    await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes(`color: ${color}`));
+  }
+  polling = false;
+  await pollLoop;
+  assert.equal(sawBadRead, null, sawBadRead || '');
+});
+
+test('MIG-B6-23: creating a previously-missing partial recovers the build (unknown-to-the-graph file falls back to a full rebuild)', async (t) => {
+  const dir = mkProject();
+  installPostcssUxdsl(dir);
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
+  // The import target doesn't exist yet — the initial build fails, so the
+  // dependency graph never learns about missing-partial.uxdsl at all (it
+  // isn't a dependency of anything that compiled successfully).
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '@import "./missing-partial.uxdsl";\n.a { color: red; }');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let exited = false;
+  child.on('exit', () => { exited = true; });
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+
+  await waitFor(() => /error/i.test(output));
+  await delay(WATCHER_SETTLE_MS);
+  const cssPath = path.join(dir, 'src', 'uxdsl.css');
+  assert.equal(fs.existsSync(cssPath), false, 'nothing should have been written for the initial failed build');
+
+  // Created outside the graph's knowledge (there is no graph yet) but
+  // still inside the watched glob — this must still trigger a rebuild.
+  fs.writeFileSync(path.join(dir, 'src', 'missing-partial.uxdsl'), '.imported { color: green; }');
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('color: green'));
+  assert.equal(exited, false, 'the process must still be running after the missing partial is created');
+});

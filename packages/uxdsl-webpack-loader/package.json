@@ -3,6 +3,13 @@
   "version": "0.5.0-beta.5",
   "description": "Webpack loader for UXDSL files - process .uxdsl to CSS",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
   "keywords": [
     "UX-DSL",
     "Webpack",
@@ -36,6 +43,7 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "dependencies": {
+    "postcss-uxdsl": "0.5.0-beta.5",
     "uxdsl-core": "0.5.0-beta.5"
   },
   "peerDependencies": {
@@ -44,5 +52,10 @@
   "publishConfig": {
     "access": "public",
     "tag": "latest"
+  },
+  "devDependencies": {
+    "css-loader": "^7.1.5",
+    "mini-css-extract-plugin": "^2.10.2",
+    "style-loader": "^4.0.0"
   }
 }

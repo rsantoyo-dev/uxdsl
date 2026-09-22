@@ -36,10 +36,12 @@ test('MIG-04: a custom gray shade overrides the default without losing sibling s
   const theme = { colors: { gray: { 300: '#custom' } } };
   const css = generateFoundationCss(theme);
   assert(css.includes('--uxdsl__color__gray-300: #custom'));
-  // 400/500/600 still fall back to the shipped defaults.
-  assert(css.includes('--uxdsl__color__gray-400: #9ca3af'));
-  assert(css.includes('--uxdsl__color__gray-500: #6b7280'));
-  assert(css.includes('--uxdsl__color__gray-600: #4b5563'));
+  // MIG-B6-29: 400/500/600 fall back to theme/base.json's own colors.gray —
+  // the single source every DEFAULT_BORDERS dependency now shares, not a
+  // second, independently hardcoded gray that used to live only here.
+  assert(css.includes('--uxdsl__color__gray-400: #94A3B8'));
+  assert(css.includes('--uxdsl__color__gray-500: #64748B'));
+  assert(css.includes('--uxdsl__color__gray-600: #475569'));
 });
 
 test('MIG-04: a theme overriding every DEFAULT_BORDERS key never needs the gray dependency to be correct, even though it is still emitted, and still validates strictly', async () => {
@@ -92,8 +94,8 @@ test('MIG-04: PostCSS and the runtime theme generator emit the same gray depende
   const theme = { colors: { gray: { 400: '#custom-400' } } };
   const foundation = generateFoundationCss(theme);
   const runtime = generateThemeCss(theme, { mode: 'off' });
-  assert(foundation.includes('--uxdsl__color__gray-300: #d1d5db'));
+  assert(foundation.includes('--uxdsl__color__gray-300: #CBD5E1'));
   assert(foundation.includes('--uxdsl__color__gray-400: #custom-400'));
-  assert(runtime.includes('--uxdsl__color__gray-300: #d1d5db'));
+  assert(runtime.includes('--uxdsl__color__gray-300: #CBD5E1'));
   assert(runtime.includes('--uxdsl__color__gray-400: #custom-400'));
 });

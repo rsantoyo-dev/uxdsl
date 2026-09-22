@@ -1,0 +1,5 @@
+@import "./does-not-exist.uxdsl";
+
+.entry {
+  color: green;
+}

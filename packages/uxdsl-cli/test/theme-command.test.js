@@ -185,3 +185,51 @@ test('MIG-B5-01: bare `uxdsl theme --strict` (no scope) is unchanged — still f
     /--strict:.*typography_details/
   );
 });
+
+// --- MIG-B6-22 (FEAT-008): `--strict=true`/`=false` string forms and
+// unknown-family validation, reachable the same way from `theme --strict`
+// as from `build --strict-theme` (both go through normalizeStrictThemeScope).
+
+test('MIG-B6-22: `uxdsl theme --strict=true` (string) fails the same way the bare flag does', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'true' }, dir)),
+    /--strict:.*typography_details/
+  );
+});
+
+test('MIG-B6-22: `uxdsl theme --strict=false` (string) does not fail despite a partial family', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
+  await captureStdoutAsync(() => cli.themeCommand({ strict: 'false' }, dir)); // Must not throw.
+});
+
+test('MIG-B6-22: `uxdsl theme --strict=pallete` (typo) fails with a suggestion, before the incompleteness check ever runs', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: ${JSON.stringify(DEFAULT_THEME.palette)} };`);
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'pallete' }, dir)),
+    /Unknown theme family "pallete" in --strict\. Did you mean "palette"\?/
+  );
+});
+
+// MIG-B6-22 code-review fix: `uxdsl theme --strict` goes through the same
+// normalizeStrictThemeScope as `build --strict-theme` (see uxdsl-cli.test.js
+// for the equivalent build-side coverage), so a stray comma must fail here
+// too instead of silently normalizing to "no families" (strict off).
+test('MIG-B6-22: `uxdsl theme --strict=,` (stray comma) fails instead of silently turning strict off', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ strict: ',' }, dir)),
+    /Invalid value for --strict: ","\. A family list cannot contain an empty entry/
+  );
+});

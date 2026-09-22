@@ -1,7 +1,7 @@
 # postcss-uxdsl
 
 <p align="center">
-  <img src="./assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
+  <img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/postcss-uxdsl/assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
 </p>
 
 > **The core PostCSS engine for UXDSL** — a type-safe design system language.
@@ -62,7 +62,10 @@ compiles to:
 
 Any property accepts any of the five breakpoints (`xs sm md lg xl`) —
 write the value once per breakpoint you care about, get the media queries
-generated for you.
+generated for you. `!important` on a responsive value is kept at every
+breakpoint, not just the base one — `padding: xs(1rem) md(2rem)
+!important;` compiles to `!important` in both the base rule and the
+generated `@media` block.
 
 ### Theme tokens instead of hex codes
 
@@ -96,7 +99,11 @@ more on a bigger screen the way a real layout should.
 generates padding, radius, background, text color, border, shadow, and
 working `:hover`/selected states — all wired to `primary` from your
 palette. Add a plain CSS declaration below it to override just one
-property; everything else stays generated.
+property; everything else stays generated. The host selector can be a
+comma-separated list, including one with functional pseudo-classes —
+`.btn:is(.a, .b) { @ds-button(...); }` generates
+`.btn:is(.a, .b):hover { ... }`, never splitting inside the `:is()`/
+`:where()`/`:not()`/`:has()` argument list.
 
 ### Live theming — change it with no rebuild at all
 
@@ -117,7 +124,7 @@ changes that one custom property, and the cascade does the rest.
   </a>
 </p>
 
-<img src="./assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
+<img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/postcss-uxdsl/assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
 
 ---
 
@@ -266,7 +273,7 @@ untouched, and the two overrides are independent of each other. Each may
 appear once; a repeated `radius()`/`radius()` or an undefined key throws
 the same diagnostics as the standalone functions. A later plain CSS
 declaration in the same rule still wins last, as always. See
-[`docs/migration.md`](docs/migration.md)
+[`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
 (`npm run codemod:size-overrides`). The codemod skips (and reports for
@@ -324,17 +331,67 @@ that variable.
 
 ## Zero-config defaults (`resolveTheme`)
 
-`theme` can be omitted or partial. An omitted or missing family — Spacing
-1-16, Palette `primary`/`surface`/`neutral`/`error`, and font families
-`ui`/`ui-2`/`code` — resolves against a built-in `DEFAULT_THEME` instead of
-leaving `var()` references with no definition:
+`theme` can be omitted or partial. An omitted or missing family resolves
+against a built-in `DEFAULT_THEME` instead of leaving `var()` references
+with no definition:
 
 ```js
 uxdsl()                    // no options at all — compiles against DEFAULT_THEME
 uxdsl({ theme: { palette: { primary: { main: '#123456' } } } })
-// -> primary.main overridden; primary.dark/contrast, surface, neutral,
-//    error, spacing and fonts keep their defaults
+// -> primary.main overridden; every other palette family, and every other
+//    top-level family (fonts, spacing, densities, borders, radii, shadows,
+//    surfaces, buttons, inputs, typography_details), keeps its default
 ```
+
+**MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is `postcss-uxdsl/theme/base.json`
+itself** — the reviewed base theme, not a "deliberately minimal" 4-family
+stub kept just to avoid a crash. It defines a full 14-family Palette
+(`primary`/`secondary`/`surface`/`tertiary`/`success`/`info`/`warning`/
+`error`/`dark`/`neutral`/`light`/`text`/`divider`/`action`), font families
+`ui`/`code` (no built-in `ui-2`), the full 1-16 Spacing scale, and every
+Density/Border/Radius/Shadow/Surface/Button/Input default those engines
+already shipped — extracted into this same file instead of staying
+hardcoded separately in each one.
+
+Two of its fields change what a zero-config project actually renders,
+compared to any earlier beta:
+
+- **`fonts.google: ["Inter:wght@400;500;600;700"]`** — every project
+  with no theme of its own now emits a real
+  `@import url('https://fonts.googleapis.com/css2?family=Inter...')`, a
+  request to Google's servers. Opt out with an empty array in your own
+  override — arrays replace whole, so this genuinely means "none", not
+  "append nothing":
+  ```json
+  { "fonts": { "google": [] } }
+  ```
+- **`modes.dark`** — every project with no theme of its own now follows
+  the OS `prefers-color-scheme: dark` preference automatically (11 of the
+  14 palette families redefine at least `main`/`contrast` for dark). Pin
+  light mode regardless of OS preference with `data-theme="light"` on
+  `<html>` (the generated dark-mode selector already excludes it —
+  `:root:not([data-theme='light'])` — no override theme needed just for
+  this); pin dark mode the same way with `data-theme="dark"`. An override
+  of `modes: {}` does **not** disable dark mode — like every other family,
+  objects merge by key, so an empty object changes nothing.
+
+Both gaps that used to exist here are closed (MIG-B6-29 phase 4): the
+Google Fonts URL is now built by a shared, tested encoder
+(`encodeGoogleFontFamily`/`googleFontsImportUrls`, `postcss-uxdsl/ds-runtime`)
+that safely handles a family name with a space (`"Open Sans:wght@400;700"`
+→ `family=Open+Sans:wght@400;700`) or any other character outside css2's
+own syntax, instead of a bare, unescaped template interpolation; and
+`generateThemeCss()` (the runtime/SSR path) now emits the identical
+`@import` the PostCSS plugin does, for the same theme — an app calling
+`generateThemeCss` directly for SSR no longer needs to add its own Google
+Fonts `<link>`/`@import` to match. See "Google Fonts URL encoding" below
+for the exact rules and how to reuse the encoder for a hand-rolled
+`<link>`, e.g. a client-side theme switcher managing its own tag. The
+theme's colors have
+been run through the accessibility contrast gate and corrected where an
+automated, minimal, hue-preserving fix existed (MIG-B6-29 phase 3 — see
+below); three real, disclosed gaps in the *engine* (not color choices)
+remain open, documented in that story's own evidence.
 
 Merge rules: object keys merge recursively; arrays and scalars (including
 `null`) replace the previous value whole; `undefined` never overwrites a
@@ -345,11 +402,272 @@ exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
 `DEFAULT_THEME` and `getDefaultTheme()` (a mutable copy) directly, for an
 app that needs to build the same effective theme during SSR.
 
+`DEFAULT_THEME` is deep-frozen, but only an internal clone of
+`theme/base.json` — never the module object that path itself resolves to.
+If your own bundler aliases `postcss-uxdsl/*` straight to this package's
+source (rather than its published `dist/`, e.g. for a monorepo dev setup),
+importing `postcss-uxdsl/theme/base.json` directly still gives you a plain,
+mutable object, safe to `deepMergeTheme` and pass around without it being
+affected by anything this package itself froze.
+
+### Recognized theme families
+
+`postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry
+used by theme validation. Nested Palette, font-family and Typography role names
+remain open. For example, this partial theme introduces no unknown-family warnings:
+
+```json
+{
+  "modes": { "dark": { "palette": { "primary": { "main": "#000000" } } } },
+  "typography": { "hero": "2rem" },
+  "typography_details": { "lead": { "fontSize": "1.25rem" } },
+  "palette": { "brand": { "main": "#ff5722" } },
+  "fonts": { "families": { "display": "Poppins" } }
+}
+```
+
+### Palette tone families (internal: `getToneFamilies`)
+
+`src/language.ts` exports `getToneFamilies(palette)`, the predicate
+Buttons/Inputs use to decide which Palette roles are valid "tones": a role
+qualifies only when it defines all three of `main`, `dark` and `contrast`. A
+partial semantic group (e.g. a `divider`-only role) does not qualify. This
+was previously duplicated inline inside `control-engine.ts`; both now import
+the single implementation from `language.ts` (chosen to avoid a circular
+import, since `default-theme.ts`/`surfaces.ts`/`control-engine.ts` already
+import from `language.ts`). It is not re-exported from the public
+`postcss-uxdsl/ds-runtime` entry point; the repository's own
+`scripts/generate-language-artifacts.js` (which builds the VS Code
+extension's completion metadata) already reaches into compiled `dist/*`
+modules directly for several such internals, `getToneFamilies` among them.
+
+### Accessibility contrast gate (`checkThemeContrast`)
+
+**MIG-B6-29 (FEAT-008), phase 2/4 (the gate) and phase 3/4 (color
+correction).** `postcss-uxdsl/ds-runtime` exports
+`checkThemeContrast(theme, { exceptions? })`, which MIG-B6-16 uses for
+`uxdsl theme --contrast`. It checks every text/placeholder color and every
+border/underline color this theme's Surface/Button/Input engines actually
+define — for every role, every tone `getToneFamilies` recognizes, every
+state (including the implicit base), in light mode and (since `modes.dark`
+is now a real default — see above) dark mode, at every configured
+breakpoint — against WCAG's normal-text ratio (4.5:1) and non-text ratio
+(3:1, WCAG 1.4.11 — the threshold a border needs to stay visible against
+its surroundings).
+
+```js
+const { checkThemeContrast } = require('postcss-uxdsl/ds-runtime')
+const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json')
+
+const report = checkThemeContrast(resolveTheme(myTheme), { exceptions })
+report.passed    // false if any non-excepted pair fails, or any exception is stale/duplicated
+report.failures  // { mode, family, component, tone, state, pair, ratio, required, reason, ... }[]
+report.checked   // every pair actually evaluated, including passes and exempt ones
+```
+
+Every check is derived from the same functions the real compiler calls
+(`surfaceDeclarations`, `buttonDeclarations`, `inputDeclarations`,
+`inspectSurfaceTheme`/`inspectButtonTheme`/`inspectInputTheme`) — never a
+hand-written list of pairs, and never a second color parser independent of
+what PostCSS/the runtime actually emit. An unresolvable color reference
+always fails the check (never a silent pass, never treated as a 0 ratio).
+A `disabled` state is still computed and listed in `report.checked`, but
+never blocks `report.passed` on its own (`exempt: true`) — WCAG itself
+does not hold inactive controls to the normative threshold.
+
+**Exceptions** (`postcss-uxdsl/theme/base.contrast-exceptions.json`) cover
+a specific (mode, family, component, tone, state, pair) combination that
+is unsupported *by the nature of the role* — e.g. the palette's `light`
+family (a background role) used as a text color on a transparent-background
+role, which this JSON file itself documents as its only current entry —
+never a color the theme could reasonably fix instead. Matching is exact:
+an exception also records the resolved foreground/background hex it was
+written against, and stops applying the moment either one changes for any
+reason (a theme override, or a future color correction) — it can never
+silently keep "covering" a color that is not the one it was reviewed for.
+A duplicate exception `id`, or an exception whose recorded colors no
+longer occur anywhere, fails the gate too (`report.exceptionIssues`), so a
+stale entry can't quietly accumulate.
+
+**What this does not check**: it is a compiled-output check, not a DOM or
+browser certification — no real layout, no stacking context, no
+`filter`/`mix-blend-mode`, no arbitrary CSS a project layers on top of
+what these engines emit. Border contrast is only checked against the
+theme's ambient page background (`palette.surface.main`), not also against
+each component's own inner background — a component's border touches both,
+and only the outer, more common failure mode is verified here. Passing
+this gate is not, by itself, an accessibility certification for a real
+page.
+
+**Current status against `theme/base.json`**: phase 3 corrected 16 colors
+(hue and chroma held fixed, only lightness moved, in both directions,
+smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
+full before/after table). `report.passed` is still honestly `false`:
+three real, disclosed findings remain, none of them a color this pass
+could fix — `inputs.*.base.placeholder` is never tone-substituted (unlike
+`bg`/`color`/`border`), so it can't read on every toned background at
+once; `light`/`dark`/`surface` are canvas-identity families whose own
+`main`/`dark` are asked to double as text/border when used as an explicit
+tone; `warning.main` (light mode) isn't dark enough for direct text/
+border use without losing its own identity. Each is recommended as its
+own follow-up in that story's evidence, not swept into an exception.
+
+### Google Fonts URL encoding (`encodeGoogleFontFamily`, `googleFontsImportUrls`)
+
+**MIG-B6-29 (FEAT-008), phase 4/4.** Both the PostCSS plugin and
+`generateThemeCss` build a theme's `fonts.google` entries into
+`@import url('https://fonts.googleapis.com/css2?family=...&display=swap')`
+through this one shared, pure encoder — never a second, independently
+hand-rolled URL builder — so a build-time compile and a runtime/SSR call
+for the same theme always emit byte-identical imports.
+
+```js
+const { encodeGoogleFontFamily, googleFontsImportUrls } = require('postcss-uxdsl/ds-runtime')
+
+encodeGoogleFontFamily('Open Sans:wght@400;700') // 'Open+Sans:wght@400;700'
+googleFontsImportUrls(['Inter:wght@400;700', 'Playfair Display'])
+// ['https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap',
+//  'https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap']
+```
+
+A space becomes `+` (css2's own convention, not `%20`); `:`, `@`, `;` and
+`,` — the characters css2's own syntax depends on for the family name /
+axis-tag / value-list structure — pass through unescaped; anything else is
+percent-encoded one character at a time. This is stricter than
+`encodeURIComponent` alone: that leaves `' ( ) ! ~ *` unescaped by spec,
+and the result is embedded in a single-quoted `url('...')` CSS string by
+both callers, where an unescaped `'` would close the string early and
+corrupt the generated CSS, not just misencode a character — this module
+explicitly re-escapes all six regardless of what `encodeURIComponent`
+itself considers safe. `googleFontsImportUrls([])` (or `undefined`)
+returns `[]`, matching `fonts: { google: [] }` emitting no import at all.
+Neither function performs the request itself, and neither imports
+anything Node-only — both are exported from the same browser-safe
+`postcss-uxdsl/ds-runtime` entry as `checkThemeContrast` and
+`generateThemeCss`, so a project managing its own font `<link>` (a
+client-side theme switcher, for example) can reuse the exact same
+encoding instead of drifting from what the compiler itself emits.
+
+### Legacy opt-in packs (deprecated)
+
+`postcss-uxdsl/theme/*.uxdsl` and `postcss-uxdsl/theme/*.css`
+(`default-densities`, `default-borders`, `default-radii`, `default-shadows`,
+`default-surfaces`, `default-buttons`, `default-inputs`, `default-spacing`,
+`default-typography`, plus the separate `default-colors`/`default-palette`
+pair) are **deprecated as of MIG-B6-29 (FEAT-008)**, not removed. Every
+built-in preset already reads its defaults from `DEFAULT_THEME`
+(`theme/base.json`) directly — none of these imports is needed for
+`density()`/`border()`/`radius()`/`shadow()`/`@ds-surface`/`@ds-button`/
+`@ds-input`/`@ds-typo` to work out of the box. They remain available,
+generated from the exact same engine defaults (except `default-colors`/
+`default-palette`, a deliberately separate, richer, opt-in palette — a
+different design direction, not a superset of `DEFAULT_THEME.palette`), for
+a project that already imports one of them explicitly. Not scheduled for
+removal in 0.5.0-beta.6.
+
+### Theme discovery (`discoverTheme`, `configRoot`)
+
+When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks
+for a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
+`configRoot` (default `process.cwd()`) — the exact same discovery `uxdsl-cli`
+has always done, now available with the plugin used directly, e.g. from a
+project's own `postcss.config.js`:
+
+```js
+// postcss.config.js — no `theme` option needed at all; discovered from cwd.
+module.exports = { plugins: { 'postcss-uxdsl': { includeTheme: false } } };
+```
+
+```js
+uxdsl({ theme: {...} })                    // explicit theme always wins — discovery never runs
+uxdsl({ discoverTheme: false })            // opt out — validates against DEFAULT_THEME, as before this feature
+uxdsl({ configRoot: '/path/to/project' })  // search a directory other than process.cwd()
+```
+
+The theme file's export shape (`{ theme, references }` or a bare theme
+object), the async-factory support, and the "looks like a build config"
+warning are exactly `uxdsl-cli`'s own — both share `postcss-uxdsl/config`, so
+they can never quietly disagree. One difference: discovery inside the plugin
+is **synchronous** (the plugin factory and its compilation pass both are), so
+an `uxdsl.theme.config.cjs` exporting an async factory function
+(`module.exports = async () => ({...})`) throws a clear error naming the
+file — pass a resolved `theme` object to the plugin directly instead, or use
+an integration that supports async config (`uxdsl-cli`, or a future bundler
+adapter). The discovered theme file (and anything it locally `require()`s)
+is reported as a real PostCSS `dependency` message, so a bundler's own
+watcher picks up an edit to it.
+
+### Diagnostics
+
+Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and
+`@ds-typo`, `@ds-surface`, `@ds-button`, and `@ds-input` directives are reported
+with their stylesheet location; direct expansion failures are PostCSS
+`CssSyntaxError`s, while post-expansion reference failures retain
+`ReferenceIntegrityError` and its issues. Imported partials retain their own
+source location. Theme validators name a key path (`.keyPath`, e.g.
+`surfaces.contained.bogus`, `densities.x`, `radii.1`, `shadows.1`,
+`borders.1`, `typography_details.h1.fontSize`) where that validator provides
+one — `uxdsl-cli` prepends the theme file's own path when it resolved one, so
+`uxdsl build` names both the file and the exact key. Button/Input theme
+errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) and a few lower-level theme-map checks
+do not yet carry a key path; they still preserve their code and message.
+
 Radius, Shadow, Border, Surface, Button and Input shapes already had their
 own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
 `DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`, `DEFAULT_BUTTONS`,
 `DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
 (Spacing, Palette) those defaults depend on but that had none of their own.
+
+### Zero silent output: leftover directives and unknown breakpoints (MIG-B6-14)
+
+A directive at-rule (`@ds-typo`, `@ds-surface`, `@ds-button`, `@ds-input`) is
+only recognized as a **direct child of the rule it styles**:
+
+```css
+.card { @ds-surface(contained); }              /* recognized */
+@ds-surface(contained);                        /* UXD_DIRECTIVE_CONTEXT: at the document root */
+.card { @media (min-width: 10px) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: nested under @media */
+```
+
+Directives style a whole rule and are not themselves responsive — put
+responsive values on the individual properties instead
+(`padding: xs(1rem) md(2rem);`). Any at-rule in the reserved `ds`/`ds-*`
+namespace that isn't one of the four names above — a typo, or an alias that
+was never implemented (`@ds-h1`, `@ds(h1)`) — fails as `UXD_DIRECTIVE_UNKNOWN`
+with a "did you mean" suggestion when a configured directive is one edit away.
+Previously an at-rule like this compiled through untouched, and a browser
+silently discarded it along with every declaration inside it.
+
+A responsive value's top-level function that is neither a configured
+breakpoint nor a known CSS function fails as `UXD_BREAKPOINT_UNKNOWN` when it
+appears next to a real breakpoint function in the same value, or is one edit
+away from a configured breakpoint name:
+
+```css
+.a { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN: xxl is not configured */
+.a { padding: xd(1rem); }            /* UXD_BREAKPOINT_UNKNOWN: one edit from "xs" */
+.a { width: log(1, 2); }             /* fine — a known CSS function, not a typo of "lg" */
+```
+
+The known-function list (math, color, gradients, transforms, filters, and
+UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `./language` —
+consulted before any edit-distance check, so a real `log(...)` next to
+`lg(...)` is never misread as a typo of it.
+
+`color()` is a token reference only when its first argument looks like one
+(`color(primary)`, `color(blue.500)`); native CSS forms — relative color
+syntax, an explicit color space — pass through untouched:
+
+```css
+.a { color: color(from red srgb r g b / 0.5); }  /* untouched */
+.a { color: color(display-p3 1 0 0); }           /* untouched */
+.a { color: color(primary); }                    /* var(--uxdsl__color__primary) */
+```
+
+A `$var` holding a responsive expression now expands correctly when this
+plugin runs standalone (not only via a build that resolves `$var`s first):
+`$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
+plus `@media` block as writing the responsive value inline.
 
 ### Unknown theme families and keys (`validateAndNormalizeTheme`)
 
@@ -358,21 +676,28 @@ validator behind the playground's theme editor, and behind `uxdsl-cli`'s
 own build-time warnings — warns (`result.warnings`, not `result.errors`)
 about any top-level key it doesn't recognize (`breakpoints`, `spacing`,
 `palette`, `fonts`, `colors`, `typography_details`, `densities`, `inputs`,
-`buttons`, `surfaces`, `shadows`, `borders`, `radii`). An unrecognized key
+`buttons`, `surfaces`, `shadows`, `borders`, `radii`, `modes`, `typography`). An unrecognized key
 is silently unused — nothing compiles it into CSS — so this catches a typo
 (`color` instead of `colors`) or a stray field left over from
 copy-pasting the wrong file, that would otherwise produce no error and no
 visible effect at all.
 
-The same check goes one level deeper for the three families whose own
-design is a registry of named entries — `typography_details` (tags: `h1`
-through `h6`, `p`, `span`, `body`, `caption`, `small`, `pre`, `code`,
-`default`), `palette` (roles: `primary`, `surface`, `neutral`, `error`)
-and `fonts.families` (roles: `ui`, `ui-2`, `code`) — warning on an entry
-name it doesn't recognize (`h9`, `primry`) the same way, without requiring
-every entry to be present: partial per-key override is the intended usage
-for all three (see "Zero-config defaults" above), so only an unrecognized
-*name* is flagged, never an incomplete one.
+That check stops at the top level. The three families whose own design
+is a registry of named entries — `typography_details` (tags), `palette`
+(roles) and `fonts.families` (roles) — are **open registries**: every
+entry name your theme declares is compiled, whether or not it appears in
+this package's own defaults, so `palette.brand`,
+`fonts.families.marketing` or `typography_details.display-xl` are all
+ordinary valid names. beta.5 briefly warned on entry names outside
+`DEFAULT_THEME`'s minimal fallback set; beta.6 removed that check as a
+false positive — `DEFAULT_THEME` is a zero-crash fallback, not a catalog
+of permitted names, and no closed set of entry names exists anywhere in
+the compiler to check against.
+
+What *is* still checked for real, one level deeper still, is the set of
+**fields** inside a `typography_details` tag: `fontsize` instead of
+`fontSize` is a hard `UXD_TYPO_FIELD` error, not a warning, because that
+list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 

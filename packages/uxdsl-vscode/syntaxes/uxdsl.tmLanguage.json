@@ -7,6 +7,9 @@
       "include": "#comments"
     },
     {
+      "include": "#strings"
+    },
+    {
       "include": "#directives"
     },
     {
@@ -21,8 +24,32 @@
       "patterns": [
         {
           "name": "comment.block.uxdsl",
-          "begin": "/\*",
-          "end": "\*/"
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.uxdsl",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.uxdsl",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "match": "\\\\."
+            }
+          ]
         }
       ]
     },
@@ -30,14 +57,14 @@
       "patterns": [
         {
           "name": "keyword.control.at-rule.uxdsl",
-          "match": "@(theme|ds-[a-zA-Z0-9-]+)\b"
+          "match": "@(theme|ds-surface|ds-typo|ds-button|ds-input)\\b"
         }
       ]
     },
     "functions": {
       "patterns": [
         {
-          "match": "\b(palette|radius|density|shadow|space|xs|sm|md|lg|xl)\s*(?=\()",
+          "match": "\\b(palette|color|radius|rounded|border|density|shadow|elevation|space|xs|sm|md|lg|xl)\\s*(?=\\()",
           "name": "support.function.uxdsl"
         }
       ]

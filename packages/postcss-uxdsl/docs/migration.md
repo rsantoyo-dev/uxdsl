@@ -1,5 +1,87 @@
 # Migración a UXDSL 0.5.0-beta.2
 
+## Adelanto beta.6 — MIG-B6-29: el tema por defecto cambió (sin publicar)
+
+`DEFAULT_THEME` pasó de un subconjunto mínimo (4 familias de palette, 3
+familias de fuente, sin `modes.dark` ni `fonts.google`) al JSON base completo
+(`postcss-uxdsl/theme/base.json`) que antes sólo usaba el playground. Un
+proyecto **sin tema propio** ve un cambio visual real al actualizar. Uno con
+tema propio no ve cambio en ninguna clave que su propio tema ya declare —
+`deepMergeTheme` sigue mezclando por clave; sólo lo que el proyecto nunca
+mencionó cambia.
+
+Para conservar el mismo `main`/`dark`/`contrast`/`ui`/`ui-2`/`code` de
+beta.5, agregar este override (sustituye únicamente esas claves; todo lo
+demás del JSON base —incluidas las 10 familias de palette nuevas, y las
+siete familias densities/borders/radii/shadows/surfaces/buttons/inputs,
+sin cambio de valor respecto a beta.5— sigue disponible pero simplemente
+no lo usa ningún componente que sólo referencie
+`primary`/`surface`/`neutral`/`error`). No es bit-a-bit idéntico a beta.5:
+`primary`/`surface`/`neutral`/`error` ganan además un `light` que beta.5
+nunca definió (mezcla por clave, no hay forma de quitarlo) — una variable
+CSS más por familia, sin efecto visual salvo que el propio proyecto
+empiece a referenciar `palette(<familia>.light)` a propósito):
+
+```json
+{
+  "palette": {
+    "primary": { "main": "#7e22ce", "dark": "#581c87", "contrast": "#ffffff" },
+    "surface": { "main": "#ffffff", "dark": "#dde5eb", "contrast": "#102a43" },
+    "neutral": { "main": "#e2e8f0", "dark": "#cbd5e1" },
+    "error": { "main": "#c61625" }
+  },
+  "fonts": {
+    "google": [],
+    "families": {
+      "ui": "Inter, system-ui, \"Segoe UI\", Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "ui-2": "Roboto, \"Helvetica Neue\", Arial, sans-serif",
+      "code": "Menlo, \"SF Mono\", Monaco, Inconsolata, \"Roboto Mono\", \"Source Code Pro\", monospace"
+    }
+  }
+}
+```
+
+`fonts.google: []` reemplaza el array completo (no lo vacía por partes) y
+evita la petición real a Google Fonts que el nuevo default hace por defecto.
+
+**Esta receta no cubre `typography_details`.** `DEFAULT_THEME.typography_details`
+ya no viene de `typography-defaults.ts`'s `DEFAULT_TYPOGRAPHY` (ver más abajo);
+viene del JSON base, con una forma de campos distinta (por ejemplo, `h1.lineHeight`
+pasa de `xs(1.1) md(1.1)` a `xs(1.2) md(1.3)`, y ningún rol trae ya
+`fontFamily`/`textTransform`/`textDecoration`/`fontStyle`/`marginBlockStart`/
+`marginBlockEnd` por defecto salvo que el propio rol los declare). Reconciliar
+esa forma es responsabilidad explícita de MIG-B6-17, no de esta receta — un
+proyecto que también quiera fijar `typography_details` exactamente como en
+beta.5 debe copiar el bloque completo desde la versión de `typography-defaults.ts`
+de beta.5 a su propio override.
+
+**`modes.dark` no tiene receta de eliminación.** `deepMergeTheme` mezcla
+objetos por clave y nunca borra una clave — no existe un valor de override
+que quite `modes.dark` una vez que `DEFAULT_THEME` lo define (`modes: {}`
+es un no-op, exactamente como no mencionar `modes` en absoluto: ver la
+sección "Zero-config defaults" del README). Esto es una decisión explícita
+del dueño de esta historia, no un vacío de esta guía. Lo único soportado:
+- Fijar el modo claro en pantalla con `data-theme="light"` en `<html>` — el
+  CSS de modo oscuro se sigue emitiendo (el selector `:root:not([data-theme='light'])`
+  simplemente no aplica), no es una reducción de bytes, es una fijación visual.
+- Si además se quiere que el modo oscuro sea visualmente un no-op (no sólo
+  fijado, sino idéntico al claro), sobrescribir cada clave de
+  `modes.dark.palette.<familia>` con el mismo valor que su
+  `palette.<familia>` correspondiente — sigue emitiéndose el CSS, deja de
+  cambiar nada visible.
+
+## Adelanto beta.6 — MIG-B6-01 (sin publicar)
+
+No requiere cambiar el JSON ni el CSS: `modes` y `typography` legacy dejan de
+producir avisos falsos de familia desconocida. Los roles custom de Palette,
+fuentes y Typography siguen abiertos; `palete` sigue avisando y `fontsize`
+en un rol tipográfico sigue fallando. No cambia `--strict-theme`.
+Las herramientas pueden importar `KNOWN_THEME_FAMILIES` desde
+`postcss-uxdsl/ds-runtime` en la implementación beta.6, sin duplicar la lista.
+Esto no implica disponibilidad en la versión beta.5 publicada.
+
+## Contexto beta.2
+
 Beta.2 está preparada en este checkout; la publicación en npm es un paso separado.
 El namespace `--uxdsl__` ya se introdujo en beta.1. Beta.2 añade defaults y
 temas parciales; los helpers `space(7)`, `density(2)` y las directivas no cambian.
@@ -251,9 +333,294 @@ uxdsl build --strict-theme=palette,breakpoints
 exactamente igual que en beta.4 — no hace falta cambiar nada si no usabas
 el flag, o si tu tema ya especifica cada familia por completo. Además,
 `uxdsl build`/`watch` ahora avisan (sin fallar el build) si una familia de
-tema es desconocida o si `typography_details`/`palette`/`fonts.families`
-tiene una clave que no existe (`h9`, `primry`) — antes ese aviso solo lo
-veía el editor del playground.
+tema top-level es desconocida — antes ese aviso solo lo veía el editor del
+playground. beta.5 también avisaba de claves desconocidas *dentro* de
+`typography_details`/`palette`/`fonts.families`; ese segundo aviso era un
+falso positivo y beta.6 lo retira (ver abajo).
+
+### Desde beta.6: sin warnings falsos en registros abiertos
+
+beta.6 ([FEAT-007](../../../docs/features/FEAT-007-beta6-pre1-foundations.md),
+MIG-B6-01) elimina el aviso `Unknown <familia> key` que beta.5 introdujo
+para `typography_details`, `palette` y `fonts.families`. Esas tres
+familias son **registros abiertos**: el nombre de cada role o tag lo
+define tu proyecto y se compila igual, esté o no en los defaults mínimos
+del paquete. El aviso comparaba contra las claves de `DEFAULT_THEME` —
+que es un fallback para no romper en zero-config, no un catálogo de
+nombres permitidos — así que cualquier tema con una paleta más rica que
+las 4 roles por defecto (o una fuente propia, o un tag tipográfico
+propio) recibía en cada build un aviso incorrecto de que su tema "no se
+compilará", sin flag que lo pidiera.
+
+No hay pasos de migración: si veías esos avisos, desaparecen. Lo que
+sigue igual:
+
+- el aviso de familia top-level desconocida (`palete` por `palette`)
+  sigue existiendo — ese conjunto sí es cerrado;
+- un campo mal escrito dentro de un tag tipográfico (`fontsize` por
+  `fontSize`) sigue siendo error duro `UXD_TYPO_FIELD`, no un aviso;
+- `--strict-theme` y su alcance por familia no cambian.
+
+### Desde beta.6: flags del CLI estrictos (MIG-B6-22)
+
+beta.6 corrige tres formas en las que `uxdsl-cli` aceptaba un flag mal
+escrito o un valor inválido en silencio, en vez de fallar:
+
+- **Un flag desconocido, o de otro comando, ahora falla con sugerencia.**
+  Un script que hoy pasa `--strict-thme` (typo) o `--strict` a `build`
+  (ese flag es de `theme`, la forma correcta es `--strict-theme`) dejaba de
+  aplicar esa opción sin ningún aviso; ahora falla con exit 1 y "Unknown
+  option ... Did you mean ...?". Revisá tus scripts de build/CI si usan
+  flags que nunca existieron o que pertenecen a otro comando — antes
+  "funcionaban" porque `uxdsl` los ignoraba.
+- **`--include-theme=false`/`=true` ahora sí surten efecto.** Antes solo
+  la forma sin `=` (`--include-theme`/`--no-include-theme`) cambiaba algo;
+  `--include-theme=false` se leía como texto y cambiaba, en la práctica,
+  el criterio de omitir la tabla. Si tu build dependía de que
+  `--include-theme=false` **no** desactivara el tema (comportamiento
+  previo, no documentado como contrato), usá `--no-include-theme`
+  explícitamente para conservar el tema.
+- **`--strict-theme=true`/`--strict-theme=false` (y `theme --strict=...`)
+  ahora significan lo mismo que la forma sin `=`.** Antes se interpretaban
+  como una familia de tema llamada literalmente "true"/"false" (que nunca
+  existe, así que el chequeo no hacía nada). Un proyecto que ya pasaba
+  `--strict-theme=true` esperando el chequeo completo empieza a recibirlo
+  de verdad a partir de beta.6 — puede que un build que antes pasaba en
+  silencio ahora falle con una familia parcial real; ver la sección
+  "`--strict-theme` con alcance por familia" arriba para acotarlo.
+- **Un nombre de familia inválido en `--strict-theme`/`--strict`/
+  `strictTheme` falla con sugerencia** (`Unknown theme family "pallete"...
+  Did you mean "palette"?`) en vez de aceptarse y no comprobar nada.
+- **Una coma suelta en la lista de familias también falla.**
+  `--strict-theme=,` o `--strict-theme=palette,,fonts` antes descartaban el
+  elemento vacío en silencio (el primer caso, sin ninguna familia real,
+  terminaba desactivando el chequeo por completo); ahora fallan con "A
+  family list cannot contain an empty entry". `--include-theme=0`/`=1`
+  fallan igual que `=banana` — antes se leían como texto y se ignoraban.
+  Si tu proyecto tiene un `postcss-uxdsl` anterior a beta.6 (sin el
+  registro de familias), acotar `--strict-theme`/`--strict` a familias
+  específicas falla pidiendo actualizar el paquete, en vez de aceptar
+  cualquier nombre sin validarlo; la forma sin acotar (`--strict-theme`
+  a secas, o `=false`) sigue funcionando igual.
+
+Ningún cambio afecta la semántica de `--strict-theme` en sí (qué cuenta
+como "familia parcialmente heredada de los defaults") — solo qué formas de
+escribir el flag el CLI reconoce y valida. Ver la sección "Strict flag
+parsing" del [README de uxdsl-cli](../../uxdsl-cli/README.md) para la
+tabla completa de formas aceptadas por flag.
+
+### Desde beta.6: cero salidas silenciosas del lenguaje (MIG-B6-14)
+
+beta.6 corrige tres casos en los que la salida no reflejaba la entrada, y
+nadie avisaba:
+
+- **Una directiva (`@ds-typo`/`@ds-surface`/`@ds-button`/`@ds-input`) que no
+  es hija directa de la regla que estiliza ahora falla** con
+  `UXD_DIRECTIVE_CONTEXT` en vez de compilar sin cambios y que el navegador
+  la descarte en silencio junto con todo lo que había adentro. Esto incluye
+  la directiva en la raíz del documento y una directiva anidada dentro de
+  `@media`/`@supports` bajo la regla — las directivas no son responsive por
+  sí mismas; poné el valor responsive en cada propiedad
+  (`padding: xs(1rem) md(2rem);`), no en la directiva. Un at-rule del
+  namespace reservado `ds`/`ds-*` que no es ninguna de esas cuatro
+  directivas (un typo, o un alias que nunca existió como `@ds-h1`/`@ds(h1)`)
+  falla como `UXD_DIRECTIVE_UNKNOWN`, con sugerencia cuando hay una
+  directiva real a distancia de edición 1. Si tu build tenía contenido con
+  este error — un componente real de este mismo repo lo tenía
+  (`@ds-surface nombre-de-clase { ... }` en vez de `.nombre-de-clase { ... }`,
+  ver el commit de esta story) — sus estilos nunca llegaron al navegador;
+  corregilo a la sintaxis de regla normal.
+- **Una función de nivel superior que no es un breakpoint configurado ni una
+  función CSS conocida ahora falla** con `UXD_BREAKPOINT_UNKNOWN` cuando
+  aparece junto a una función de breakpoint real en el mismo valor, o está a
+  distancia de edición 1 de un breakpoint configurado —
+  `padding: xs(1rem) xxl(2rem);` con `xxl` no configurado, o
+  `padding: xd(1rem);` a secas. Antes compilaba con el texto inválido tal
+  cual. La lista de funciones CSS conocidas (`KNOWN_CSS_FUNCTIONS` en
+  `./language`) se consulta antes que la distancia de edición, así que
+  `log(...)` nunca se confunde con un typo de `lg`.
+- **`color()` ahora distingue un token de la sintaxis nativa por la forma
+  del primer argumento**, no por una lista fija de espacios de color:
+  `color(from red srgb r g b / 0.5)` y `color(display-p3 1 0 0)` pasan sin
+  cambios; `color(primary)`/`color(blue.500)` siguen siendo tokens. Si tu
+  build fallaba antes con `UXD_TOKEN_KEY: Expected a token key.` al usar
+  sintaxis de color relativo o un espacio de color que esa lista fija no
+  cubría, ahora compila.
+- **Un `$var` con una expresión responsive se expande igual con el plugin
+  usado solo**, no solo desde el CLI: `$gap: xs(1rem) md(2rem); .a { gap:
+  $gap; }` produce el valor base más el `@media`, en vez de compilar el
+  texto sin expandir `gap: xs(1rem) md(2rem);` (CSS inválido, sin error).
+
+Ninguno de los tres primeros cambios altera el resultado de una compilación
+que ya era correcta — solo convierten una salida silenciosamente inválida en
+un error accionable. Revisá tu contenido `.uxdsl` si alguno de estos errores
+aparece al actualizar: probablemente ya estaba mal, solo que nadie lo veía.
+
+### Desde beta.6: un solo `compile()` compartido entre `uxdsl-cli` y `uxdsl-core` (MIG-B6-18)
+
+`uxdsl-cli` ya no arma su propio pipeline PostCSS in-line; ahora llama al
+`compile()` de `uxdsl-core`, el mismo que usará cualquier adaptador de
+bundler futuro (Vite/Webpack). `uxdsl-core` en sí mismo pasó de un inliner
+de `@import` basado en strings (que cortaba comentarios línea por línea,
+sin entender `url(...)` ni bloques `/* */`) a un pipeline real basado en
+`postcss-scss`/`postcss-import`/`postcss-advanced-variables`. Esto no
+cambia la sintaxis `.uxdsl` ni las opciones del CLI — cambia qué builds que
+antes compilaban en silencio ahora fallan, o qué salidas que antes se
+corrompían en silencio ahora salen intactas:
+
+- **Un `@import` inexistente ahora falla** con un error ubicado (archivo y
+  línea de origen, más `Failed to find '...' in [...]`), en vez de dejar la
+  línea `@import` sin resolver en la salida (CSS inválido, sin ningún
+  error).
+- **Un ciclo de `@import` real (`a.uxdsl` → `b.uxdsl` → `a.uxdsl`) ahora
+  falla siempre**, nombrando la cadena completa de archivos, en vez de
+  duplicar el contenido una vez en silencio.
+- **Un `url(...)` sin comillas que contiene `//`** (por ejemplo
+  `background: url(https://ejemplo.com/a.png);`) y **un comentario de
+  bloque `/* ... */` que contiene una URL** ya no se corrompen: el inliner
+  anterior cortaba todo lo que seguía a un `//` en cada línea, sin entender
+  que estaba dentro de un `url()` o de un comentario de bloque.
+- Un comentario `//` real (fuera de cualquier `url()`) se sigue eliminando
+  de la salida, como lo haría un compilador Sass real.
+
+`processUxdsl(source, options)` de `uxdsl-core` conserva su firma y su
+`Promise<string>`; `compile(input, config)` es una exportación nueva. Ver
+[`uxdsl-core`'s README](../../uxdsl-core/README.md#compile-input-config)
+para su contrato completo.
+
+### Desde beta.6: el plugin descubre el tema del proyecto solo, y `init` deja de escribir `breakpoints` (MIG-B6-19)
+
+Usado directamente (por ejemplo desde el `postcss.config.js` propio de un
+proyecto Next.js), el plugin ya no valida siempre contra el tema por
+defecto. Si se omite `theme`, busca un `uxdsl.theme.config.{cjs,js,json}` o
+`uxdsl.theme.json` convencional en `configRoot` (por defecto
+`process.cwd()`) — el mismo descubrimiento que `uxdsl-cli` siempre tuvo,
+ahora compartido vía `postcss-uxdsl/config`. Si tu `postcss.config.js`
+necesitaba pasar `theme` a mano porque el tema real vivía en un archivo así,
+ya no hace falta: quitalo y dejá que el plugin lo descubra, o pasá
+`discoverTheme: false` si preferís seguir validando contra el tema por
+defecto a propósito.
+
+Quien use `postcss-uxdsl/config` directamente (un adaptador de bundler, o
+una integración propia) encuentra ahí `findThemeConfigPath`,
+`loadThemeConfigAsync`/`loadThemeConfigSync`, `discoverThemeAsync`/
+`discoverThemeSync`, `normalizeThemeExport` y `warnIfLooksLikeBuildConfig` —
+la misma resolución que antes vivía sólo dentro de `uxdsl-cli`. La versión
+sync (la que usa el plugin) rechaza un archivo de tema que exporta una
+función async, con un mensaje que indica pasar `theme` ya resuelto en su
+lugar.
+
+Aparte, `uxdsl init` ya no escribe `breakpoints:` en el `uxdsl.config.cjs`
+que genera. Si tenías un `uxdsl.config.cjs` generado por una versión
+anterior con el mapa completo de breakpoints por defecto copiado ahí, y
+también declarás `breakpoints` en tu `uxdsl.theme.config.*`, ese
+`uxdsl.config.cjs` viejo va a seguir ganando clave por clave (sin cambios de
+precedencia) — pero ahora vas a ver un aviso una vez, nombrando los dos
+archivos, en vez de que el valor del tema desaparezca en silencio. Si el
+tema es la fuente real, borrá `breakpoints` de `uxdsl.config.cjs` para que
+el aviso desaparezca y el tema mande.
+
+### Desde beta.6: Vite y Webpack entregan CSS real, no un `<style>` inyectado en runtime (MIG-B6-20)
+
+**`vite-plugin-uxdsl`:** un `import './panel.uxdsl'` ya no compila a un módulo
+JS que inserta un `<style>` en `document.head` en tiempo de ejecución. Ahora
+compila a un id que Vite reconoce como CSS, así que `vite build` extrae un
+`.css` real, el HMR es el nativo de Vite (no uno propio) y SSR recibe un
+módulo vacío en vez de un `typeof document !== 'undefined'` que nunca era
+`true` en el servidor. Si tu código hacía `import css from './panel.uxdsl'`
+esperando el string compilado, cambialo a
+`import css from './panel.uxdsl?inline'` — el mismo sufijo que ya usa
+cualquier import CSS de Vite. Se eliminó también la inyección automática de
+los packs legacy `default-*.css`/`.uxdsl` (tema, spacing, colors,
+typography, densities, radii, shadows, borders, surfaces, inputs, buttons):
+el `compile()` que corre ahora ya emite las mismas definiciones globales
+cuando `includeTheme` es `true` (el default), así que esos packs nunca
+hicieron falta para un proyecto usando el compilador real. El modo
+`scss: 'auto'` (activado en silencio si el proyecto tenía `sass` instalado
+por cualquier motivo) se eliminó; `scss: 'on'` sigue andando igual, ahora
+como opción explícita únicamente. El plugin también descubre
+`uxdsl.theme.config.*`/`uxdsl.theme.json` del proyecto solo, igual que
+`uxdsl-cli` (ver la sección de MIG-B6-19 arriba) — si le pasabas `theme`
+manualmente sólo para que compile contra el tema real, ya no hace falta.
+
+**`uxdsl-webpack-loader`:** encadenalo antes de `css-loader` (con
+`style-loader` o `MiniCssExtractPlugin.loader` delante de ese) — antes
+devolvía `module.exports = "css compilado como string"`, que `css-loader`
+no podía interpretar como CSS real en absoluto. El loader ahora también
+llama a `this.addDependency()` por cada parcial importado (y por el archivo
+de tema descubierto), así que el caché y el modo watch de Webpack ven sus
+ediciones; antes no los veían en absoluto. Las opciones llegan por
+`this.getOptions()` (la API real de Webpack 5), no por `this.query`.
+
+**Los cuatro caminos (CLI, `uxdsl-core` usado directo, Vite, Webpack)**
+ahora comparten exactamente el mismo `compile()` y dan el mismo CSS para la
+misma entrada y el mismo tema — verificado en `fixtures/parity/`. Un efecto
+colateral real de unificar Webpack sobre `compile({ source, from })`: un
+ciclo de `@import` alcanzado sólo por ese camino (nunca por `{ entry }`) no
+fallaba antes de esta story, aunque sí fallaba correctamente vía `{ entry }`
+desde MIG-B6-18 — corregido en el mismo cambio, para los cuatro caminos por
+igual.
+
+### Desde beta.6: `uxdsl watch` sobrevive errores, escribe sólo lo que cambió, y recompila selectivamente (MIG-B6-23)
+
+Antes, un error de compilación inicial (o un `uxdsl.config.cjs`/tema roto
+al arrancar) terminaba el proceso — con `concurrently
+--kill-others-on-fail`, eso además tumbaba el `next dev`/`vite`/etc. que
+corría en paralelo. Ahora `uxdsl watch` (y `uxdsl build --watch`) imprime
+el error y sigue vigilando: un config roto se recupera solo al corregirlo,
+sin reiniciar el proceso. `uxdsl build` sin `--watch` no cambia — sigue
+saliendo con código 1 ante cualquier error, como siempre.
+
+Cada rebuild ahora también:
+
+- **Escribe sólo lo que cambió, atómicamente.** Una entrada cuya salida
+  compilada es idéntica byte a byte a la que ya está en disco no se
+  reescribe — mismo mtime, mismo inode — en vez de reescribirse siempre.
+  Si tenías un flujo que dependía de que el archivo *siempre* se
+  reescribiera (por ejemplo, para forzar un reload en una herramienta que
+  no mira el contenido), ese comportamiento cambió a propósito: es
+  exactamente lo que evita que un HMR externo recargue hojas de estilo que
+  no cambiaron.
+- **Recompila sólo las entradas afectadas** en un `builds` con más de una
+  entrada — editar un parcial que sólo importa la entrada B ya no
+  recompila (ni reescribe) la entrada A. Editar el config, el tema, o
+  cualquier `require()` de cualquiera de los dos sigue recompilando todo,
+  como corresponde a algo compartido entre entradas.
+
+Ninguno de los dos cambios altera qué CSS final produce una entrada dada —
+sólo cuándo y con qué frecuencia se escribe a disco, y cuáles otras
+entradas un cambio dispara.
+
+### Desde beta.6: una entrada `.module.css` que emitiría `:root` ahora falla antes de escribir (MIG-B6-24)
+
+En un `builds` con una entrada de tema y varios paneles CSS Modules, una
+entrada cuyo `outFile` termina en `.module.css` pero cuyo `includeTheme`
+efectivo sigue siendo `true` (u otra vía, como un import legacy, sigue
+introduciendo `:root`/`#uxdsl-bp-meta`) ahora falla, antes de escribir nada,
+en vez de compilar en silencio un archivo que Next.js (u otro loader de CSS
+Modules) rechaza igual en tiempo de build real ("Selector :root is not
+pure"). El mensaje nombra la entrada exacta y sugiere el fix:
+
+```
+[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
+```
+
+Si tu `uxdsl.config.cjs` nombra la entrada de tema compartida con sufijo
+`.module.css` (por ejemplo, `theme.module.css`, para mantener una
+convención de nombres uniforme con los paneles), renombrala sin ese sufijo
+— `theme.css` — y dejá `.module.css` sólo para las entradas
+`includeTheme: false` que de verdad se importan como CSS Modules. La
+detección es sobre el CSS ya compilado (un selector real, vía parseo, no
+una búsqueda de texto), así que un comentario o un `content: ":root"` en
+tu propio CSS nunca la dispara.
+
+Por separado, más de una entrada emitiendo el tema (con cualquier nombre de
+archivo) ahora avisa una sola vez, sin fallar — normalmente es un error de
+configuración, no necesariamente algo que rompa un CSS Modules build:
+
+```
+[uxdsl] Warning: 2 entries emit the theme (builds[0], builds[1]); usually only one theme entry should.
+```
 
 ## Qué hacer si tu build empieza a fallar con `UXD_REFERENCE_MISSING`
 

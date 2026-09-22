@@ -1,0 +1,3 @@
+{
+  "error": "[uxdsl] Error: UXD_IMPORT_CYCLE: Circular import detected: fixtures/parity/cases/import-cycle/entry.uxdsl -> fixtures/parity/cases/import-cycle/cycle-b.uxdsl -> fixtures/parity/cases/import-cycle/entry.uxdsl"
+}

@@ -8,6 +8,9 @@ import { generateShadowCss, getShadowTokens } from './shadows';
 import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
+import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
+import { discoverThemeSync } from './config';
+import { googleFontsImportUrls } from './fonts';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -19,7 +22,7 @@ import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
-import { compileDensityRules, resolveResponsiveValue, getDensityTokens } from './language';
+import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
@@ -51,6 +54,20 @@ interface UxDslOptions {
    */
   includeTheme?: boolean;
   references?: ReferenceOptions;
+  /**
+   * When `theme` is omitted (and this isn't `false`), the plugin looks for
+   * a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
+   * `configRoot` (default `process.cwd()`) and validates/compiles against
+   * it instead of the built-in default theme — the same discovery
+   * uxdsl-cli has always done, now available with the plugin used
+   * directly (e.g. from a project's own `postcss.config.js`). An explicit
+   * `theme` always wins outright; this has no effect when one is given.
+   * Set to `false` to keep the old always-default-theme behavior.
+   */
+  discoverTheme?: boolean;
+  /** Directory theme discovery searches from. Defaults to `process.cwd()`.
+   * Ignored when `theme` is explicit or `discoverTheme` is `false`. */
+  configRoot?: string;
 }
 
 // Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
@@ -98,21 +115,12 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
 }
 
 function uxdslPlugin(opts: UxDslOptions = {}) {
-  // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
-  // caller provided deep-merged on top — is resolved once here and used
-  // everywhere `opts.theme` used to be read directly below, so an omitted
-  // or partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
-  // still produces a fully-defined, strictly-valid effective theme instead
-  // of leaving whichever families the caller didn't mention undefined.
-  const effectiveTheme = resolveTheme(opts.theme);
-  const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
     typeof opts.spaceVar === "function" ? opts.spaceVar : defaultSpaceVar;
   const toColorVar =
     typeof opts.colorVar === "function" ? opts.colorVar : defaultColorVar;
-  const bpNames = new Set(Object.keys(bps));
   const mediaRuleCache = new WeakMap<Rule, Map<string, Rule>>();
   const lastMediaByRule = new WeakMap<Rule, AtRule>();
   // Historical single-entry behavior: one compiled file both defines and
@@ -124,6 +132,53 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
   return {
     postcssPlugin: "postcss-uxdsl",
     Once(root: Root, { result }: { result: Result }) {
+      // MIG-B6-19 (FEAT-008): resolved per compilation (here), not frozen
+      // once when the plugin factory runs — a reused plugin instance
+      // (a long-running dev server, or two projects compiled in the same
+      // process) must not keep serving the first project's discovered
+      // theme, or a stale copy from before an edit to
+      // uxdsl.theme.config.* on disk.
+      const configRoot = opts.configRoot ?? process.cwd();
+      let discovered: ReturnType<typeof discoverThemeSync> = null;
+      if (opts.theme === undefined && opts.discoverTheme !== false) {
+        discovered = discoverThemeSync(configRoot);
+        if (discovered) {
+          for (const file of discovered.dependencies) {
+            result.messages.push({ type: 'dependency', plugin: 'postcss-uxdsl', file, parent: result.opts.from });
+          }
+        }
+      }
+      // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
+      // caller provided (or, absent that, whatever discovery found) deep-
+      // merged on top — is resolved once here and used everywhere
+      // `opts.theme` used to be read directly below, so an omitted or
+      // partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
+      // still produces a fully-defined, strictly-valid effective theme
+      // instead of leaving whichever families the caller didn't mention
+      // undefined.
+      // MIG-B6-29 (FEAT-008): the *unresolved* caller/discovered theme, kept
+      // separate from `effectiveTheme` below. Once DEFAULT_THEME started
+      // carrying its own shadows/borders/radii/surfaces/buttons/inputs
+      // (previously all absent from it), every `effectiveTheme?.<family>`
+      // read further down silently stopped meaning "what the caller
+      // explicitly asked for" and started meaning "that, or the default if
+      // they didn't" — which made a legacy `@theme { shadow-2: ... }`
+      // declaration always lose to DEFAULT_THEME's own shadow-2, even
+      // though the caller never touched shadows.2 at all. `rawTheme` is
+      // used everywhere a legacy `@theme{}` block needs to know whether a
+      // field was genuinely overridden, so "defaults < legacy < explicit
+      // override" (this story's own required precedence) holds regardless
+      // of how populated DEFAULT_THEME is.
+      const rawTheme = (opts.theme ?? discovered?.theme) as Record<string, any> | undefined;
+      const effectiveTheme = resolveTheme(rawTheme);
+      const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
+      const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
+      const bpNames = new Set(Object.keys(bps));
+      const inheritSource = (node: any, source: any) => {
+        node.source = source;
+        for (const child of node.nodes || []) inheritSource(child, source);
+        return node;
+      };
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
@@ -134,20 +189,23 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         root.append(postcss.parse(generateFoundationCss(effectiveTheme)).nodes);
         root.append(postcss.parse(generateTypographyCss(effectiveTheme, bps)).nodes);
 
-        if (effectiveTheme.fonts) {
-            if (effectiveTheme.fonts.google && Array.isArray(effectiveTheme.fonts.google)) {
-                // Reverse order so they end up in correct order when prepended
-                [...effectiveTheme.fonts.google].reverse().forEach((font: string) => {
-                    const url = `https://fonts.googleapis.com/css2?family=${font}&display=swap`;
-                    const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
-                    root.prepend(importRule);
-                });
-            }
-        }
+        // Reverse order so they end up in correct order when prepended (each
+        // prepend inserts at index 0). MIG-B6-29 phase 4: the URL itself
+        // comes from the shared, tested encoder in ./fonts, not a bare
+        // template interpolation — a family name with a space (or any other
+        // character css2's own syntax doesn't use) used to produce an
+        // invalid URL here.
+        [...googleFontsImportUrls(effectiveTheme.fonts?.google)].reverse().forEach((url) => {
+          const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
+          root.prepend(importRule);
+        });
       }
       const vars: Record<string, string> = Object.create(null);
-      // Selector-scoped typography directives
-      // Supports: @ds-typo(h1), @ds(h1), and @ds-h1 (no params)
+      // Selector-scoped typography directives.
+      // MIG-B6-14 (FEAT-008): only @ds-typo(h1) is supported — @ds(h1) and
+      // @ds-h1 were never implemented despite an older comment claiming
+      // otherwise; both now fall through to the final pass below and fail
+      // as UXD_DIRECTIVE_UNKNOWN instead of reaching CSS untouched.
       root.walkRules((rule) => {
         const applyTypo = (at: any, variantRaw: string) => {
           let tag = String(variantRaw || "").trim();
@@ -163,7 +221,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           tag = tag.toLowerCase();
 
           const insert = (prop: string, value: string) => {
-            at.parent.insertBefore(at, { prop, value });
+            at.parent.insertBefore(at, { prop, value, source: at.source });
           };
 
           // Typography Configuration Data
@@ -228,8 +286,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           at.remove();
         };
 
-        // @ds-typo(h1)
-        rule.walkAtRules("ds-typo", (at) => applyTypo(at, at.params || ""));
+        // @ds-typo(h1). MIG-B6-14 (FEAT-008): only a direct child of `rule`,
+        // matching @ds-surface/@ds-button/@ds-input below — otherwise a
+        // @ds-typo nested inside a @media/@supports under this rule would
+        // be silently applied as if it were responsive, instead of being
+        // left for the final UXD_DIRECTIVE_CONTEXT pass to reject.
+        rule.walkAtRules("ds-typo", (at) => { if (at.parent === rule) applyTypo(at, at.params || ""); });
       });
       const densityTokens: Record<string, string> = Object.create(null);
       const radiusTokens: Record<string, string> = Object.create(null);
@@ -531,15 +593,21 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
       // and resolving against the effective theme. Only the `:root`
       // definitions themselves are gated by includeTheme.
-      const shadowTheme = { shadows: { ...shadowTokens, ...effectiveTheme?.shadows } };
+      const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
       if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
 
-      const edgeTheme = { borders: { ...borderTokens, ...effectiveTheme?.borders }, radii: { ...radiusTokens, ...effectiveTheme?.radii } };
+      const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
       if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
 
-      const effectiveDensities = getDensityTokens(effectiveTheme, densityTokens);
+      // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
+      // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
+      // ...legacy, ...theme.densities}` already gives `theme.densities`
+      // top precedence, which is only correct when `theme` is the
+      // *unresolved* override, not `effectiveTheme` (which now always
+      // carries DEFAULT_THEME's own densities too).
+      const effectiveDensities = getDensityTokens(rawTheme, densityTokens);
       // Generate CSS variables for density tokens
       if (includeTheme) {
         for (const compiled of compileDensityRules(effectiveDensities, bps)) {
@@ -557,12 +625,12 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       getSurfaceTokens({ surfaces: effectiveTheme?.surfaces }); // Validate JSON before merging legacy fields.
       const legacySurfaces = (root as any).__surfacePacks || {};
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
-      for (const [role, style] of Object.entries(effectiveTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
+      for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
       if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
-      for (const [role, pack] of Object.entries(effectiveTheme?.buttons || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
         const legacy = buttonOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
@@ -572,7 +640,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
       getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
-      for (const [role, pack] of Object.entries(effectiveTheme?.inputs || {}) as [string, any][]) {
+      for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
         const legacy = inputOverrides[role] || {};
         const states = { ...legacy.states };
         for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
@@ -585,43 +653,55 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       root.walkRules((rule) => {
         rule.walkAtRules('ds-input', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
-          const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
-          const base = generated.nodes.shift() as Rule;
-          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
-          let anchor: any = rule;
-          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
-          at.remove();
+          try {
+            const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
+            const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
+            const base = generated.nodes.shift() as Rule;
+            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
+            let anchor: any = rule;
+            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
         // @ds-surface(variant [tone])
         rule.walkAtRules("ds-surface", (at) => {
           if (at.parent !== rule) return;
-          let inner = String((at.params || "").trim());
-          if (
-            (inner.startsWith('"') && inner.endsWith('"')) ||
-            (inner.startsWith("'") && inner.endsWith("'"))
-          )
-            inner = inner.slice(1, -1);
-          if (inner.startsWith("(") && inner.endsWith(")"))
-            inner = inner.slice(1, -1).trim();
-          const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
-          const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
-          const insert = (prop: string, value: string) => {
-            (rule as any).insertBefore(at, { prop, value });
-          };
-          Object.keys(props).forEach((k) => insert(k, props[k]!));
-          at.remove();
+          try {
+            let inner = String((at.params || "").trim());
+            if (
+              (inner.startsWith('"') && inner.endsWith('"')) ||
+              (inner.startsWith("'") && inner.endsWith("'"))
+            )
+              inner = inner.slice(1, -1);
+            if (inner.startsWith("(") && inner.endsWith(")"))
+              inner = inner.slice(1, -1).trim();
+            const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
+            const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
+            const insert = (prop: string, value: string) => {
+              (rule as any).insertBefore(at, { prop, value, source: at.source });
+            };
+            Object.keys(props).forEach((k) => insert(k, props[k]!));
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
 
         rule.walkAtRules('ds-button', at => {
           if (at.parent !== rule) return;
-          const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
-          const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
-          const base = generated.nodes.shift() as Rule;
-          for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, declaration);
-          let anchor: any = rule;
-          for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, state); anchor = state; }
-          at.remove();
+          try {
+            const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
+            const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
+            const base = generated.nodes.shift() as Rule;
+            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
+            let anchor: any = rule;
+            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
+            at.remove();
+          } catch (error) {
+            throw locateError(error, at);
+          }
         });
       });
 
@@ -638,6 +718,29 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           d.remove();
         }
       });
+
+      // MIG-B6-14 (FEAT-008): $var substitutions must happen BEFORE the
+      // responsive-expansion walk below, not after it. That walk decides
+      // whether a declaration is responsive by looking for a breakpoint
+      // function in its CURRENT value — a declaration whose value is still
+      // the literal string "$gap" never matches, so a $var holding a
+      // responsive expression (`$gap: xs(1rem) md(2rem);`) used to reach
+      // output as the literal, invalid text `gap: xs(1rem) md(2rem);`
+      // instead of being split into media queries the way the CLI (which
+      // resolves $vars via postcss-advanced-variables before this plugin
+      // ever runs) already does.
+      const varNames = Object.keys(vars);
+      if (varNames.length > 0) {
+        const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
+        root.walkDecls((decl) => {
+          if (typeof decl.value !== "string") return;
+          decl.value = decl.value.replace(varRefRE, (_m, name) => {
+            return Object.prototype.hasOwnProperty.call(vars, name)
+              ? vars[name]
+              : _m;
+          });
+        });
+      }
 
       function resolveValueForBp(input: string, targetBp: string): string {
         return resolveResponsiveValue(input, targetBp, bps);
@@ -660,7 +763,9 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
             if (node.value === "density") {
               const key = innerText.trim().replace(/^(['"])(.*)\1$/, '$2');
-              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) throw new Error(`UXD_DENSITY_REFERENCE: Invalid key ${key}; define and use a token key without decimal coercion.`);
+              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) {
+                throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), valueParser.stringify(node));
+              }
               node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
             } else {
               const rawVals = innerText
@@ -696,7 +801,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
               node.value = RADIUS_KEYWORDS[key] || `var(${buildVarName('radius', key)})`;
               return;
             }
-            throw new Error(`UXD_EDGE_REFERENCE: Undefined radius ${key}.`);
+            throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', node.value, key, [...Object.keys(edgeTokens.radii), ...Object.keys(RADIUS_KEYWORDS)]), valueParser.stringify(node));
           }
           // Shadow helpers: shadow(n) or elevation(n)
           if (
@@ -704,7 +809,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             (node.value === "shadow" || node.value === "elevation")
           ) {
             const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw new Error(`UXD_SHADOW_REFERENCE: Undefined shadow ${key}.`);
+            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw diagnostic(missingKeyMessage('UXD_SHADOW_REFERENCE', node.value, key, Object.keys(effectiveShadows)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('shadow', key)})`;
             return;
@@ -712,7 +817,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // Border helper: border(n[, color][, style])
           if (node.type === "function" && node.value === "border") {
             const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
-            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw new Error(`UXD_EDGE_REFERENCE: Undefined border ${key}.`);
+            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', 'border', key, Object.keys(edgeTokens.borders)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('border', key)})`;
             return;
@@ -728,14 +833,38 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 
       // Walk declarations to handle palette()/space() and responsive bp(...) values
       root.walkDecls((decl) => {
-        if (typeof decl.value !== "string") return;
+        try {
+          if (typeof decl.value !== "string") return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
         const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
 
         // Phase 2: extract responsive values
         const parsed = valueParser(phase1Text);
         let hasResponsive = false;
-        parsed.walk(node => { if (node.type === 'function' && bpNames.has(node.value)) hasResponsive = true; });
+        // MIG-B6-14 (FEAT-008): a top-level function that is neither a
+        // configured breakpoint nor a known CSS function used to reach CSS
+        // untouched (e.g. `padding: xs(1rem) xxl(2rem);` -> literal,
+        // invalid `xxl(2rem)` in the output). Only the top-level of the
+        // value counts — a function nested inside e.g. calc(...) is that
+        // function's own argument, never a breakpoint candidate. Collected
+        // in the same pass that finds real breakpoint functions so
+        // `hasResponsive` below is fully known before either condition
+        // (co-occurrence, edit distance) is evaluated for any of them.
+        const suspiciousFunctions: string[] = [];
+        for (const node of parsed.nodes) {
+          if (node.type !== 'function') continue;
+          if (bpNames.has(node.value)) { hasResponsive = true; continue; }
+          if (!(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) suspiciousFunctions.push(node.value);
+        }
+        for (const name of suspiciousFunctions) {
+          const distanceOne = Array.from(bpNames).some(bp => editDistance(name.toLowerCase(), bp.toLowerCase()) === 1);
+          if (hasResponsive || distanceOne) {
+            throw diagnostic(
+              `UXD_BREAKPOINT_UNKNOWN: ${name}(...) is not a configured breakpoint or a known CSS function; ` +
+              `configured breakpoints: ${Array.from(bpNames).join(', ')}.`
+            );
+          }
+        }
         if (!hasResponsive) { decl.value = parsed.toString().trim(); return; }
         const resolved = ordered.map(({name: bp}) => ({ bp, text: rewriteFuncs(resolveResponsiveValue(phase1Text, bp, bps)) }));
         const baseOut = resolved[0]?.text || '';
@@ -759,7 +888,13 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             const cloned = parentFallback?.clone
               ? parentFallback.clone({ nodes: [] })
               : postcss.rule();
-            cloned.append({ prop: decl.prop, value: text });
+            // MIG-B6-15 (FEAT-008): `decl.important` is a separate flag from
+            // `decl.value` (PostCSS already strips the literal `!important`
+            // text out when parsing) — omitting it here silently dropped
+            // `!important` from every breakpoint but the base one, so a
+            // competing, non-responsive `!important` declaration elsewhere
+            // in the cascade could still win at md/lg/xl.
+            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source });
             (at as any).append(cloned);
             if (
               parentFallback &&
@@ -806,32 +941,52 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             bucket.set(bp, cloned);
             targetRule = cloned;
           }
-          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text) });
+          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source });
         });
         if (!baseOut) decl.remove();
+        } catch (error) {
+          throw locateError(error, decl);
+        }
       });
 
-      // $var substitutions across all declarations
-      const varNames = Object.keys(vars);
-      if (varNames.length > 0) {
-        const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
-        root.walkDecls((decl) => {
-          if (typeof decl.value !== "string") return;
-          decl.value = decl.value.replace(varRefRE, (_m, name) => {
-            return Object.prototype.hasOwnProperty.call(vars, name)
-              ? vars[name]
-              : _m;
-          });
-        });
-      }
-
       // Reuse the same resolver after substitutions and media cloning.
-      root.walkDecls(decl => { if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value); });
+      root.walkDecls(decl => {
+        try {
+          if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value);
+        } catch (error) {
+          throw locateError(error, decl);
+        }
+      });
+      // MIG-B6-14 (FEAT-008): a final, generic pass over every reserved-namespace
+      // at-rule (`ds` or `ds-*`) still left in the tree. Every directive handler
+      // above only consumes an occurrence that is a *direct* child of the rule
+      // it's walked from (`if (at.parent !== rule) return;`, or the equivalent
+      // for @ds-typo above) — anything still here is either misspelled/nonexistent
+      // (UXD_DIRECTIVE_UNKNOWN) or a real directive used at the document root or
+      // nested inside another at-rule such as @media/@supports
+      // (UXD_DIRECTIVE_CONTEXT: directives style a whole rule and are not
+      // responsive — D-3). One rule, no per-directive special-casing, so a
+      // browser never silently discards an at-rule this plugin never processed.
+      const knownDirectives: string[] = LANGUAGE_COMPLETIONS.directives.filter(name => name.startsWith('ds-'));
+      root.walkAtRules(at => {
+        if (at.name !== 'ds' && !at.name.startsWith('ds-')) return;
+        if (knownDirectives.includes(at.name)) {
+          throw locateError(diagnostic(
+            'UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; ' +
+            'use responsive values on the properties instead, e.g. padding: xs(…) md(…).'
+          ), at);
+        }
+        const suggestion = closestKey(at.name, knownDirectives);
+        throw locateError(diagnostic(
+          `UXD_DIRECTIVE_UNKNOWN: Unknown directive @${at.name}.${suggestion ? ` Did you mean @${suggestion}?` : ''}`
+        ), at);
+      });
+
       const consumers: Declaration[] = [];
       root.walkDecls(node => {
         if (!originalSources.has(node.source) || dslSources.has(node.source)) consumers.push(node);
       });
-      const references = opts.references || {};
+      const references = effectiveReferences || {};
       // A component validates against its explicitly configured theme without
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];
@@ -839,7 +994,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         css.push(generateThemeCss({ ...effectiveInputTheme, buttons: buttonOverrides, breakpoints: bps }, { mode: 'off' }));
       }
       enforceReferences(root, consumers, { ...references, css,
-        onWarning: issue => { result.warn(issue.message, { plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
+        onWarning: issue => { result.warn(issue.message, { node: (issue as any).node, plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
       });
     },
   };

@@ -11,6 +11,9 @@
   // Ensure the Stylelint VS Code extension validates these languages
   "stylelint.validate": ["css", "scss"],
   // Optional: format on save if you have a formatter
-  "editor.formatOnSave": false
+  "editor.formatOnSave": false,
+  "chat.tools.terminal.autoApprove": {
+    "npm --prefix packages/uxdsl-vscode": true
+  }
 }
 

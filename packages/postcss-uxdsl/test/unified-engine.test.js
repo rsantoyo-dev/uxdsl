@@ -24,6 +24,19 @@ test('Density JSON wins over local legacy definitions and no configuration leaks
  const second=(await compile('',baseline)).css;assert(!second.includes('--uxdsl__density__custom:'));
  assert.deepEqual(variables(second),variables(generateThemeCss(baseline)));
 });
+test('MIG-B6-29: a legacy density-<n> for an already-built-in key wins over DEFAULT_DENSITIES when the caller never touches theme.densities at all',async()=>{
+ // Regression: once DEFAULT_THEME.densities carries real values for every
+ // key 0-15 (previously none of them existed there), a naive
+ // `{...legacy, ...effectiveTheme.densities}` merge always lost to the
+ // now-always-populated default, even for a key the caller's own theme
+ // object never mentions — "defaults < legacy < explicit override" only
+ // holds when the merge is computed against the *unresolved* theme.
+ const legacyOnly=await compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors});
+ assert(legacyOnly.css.includes('--uxdsl__density__4: var(--uxdsl__space__1)'));
+ assert(!legacyOnly.css.includes(`--uxdsl__density__4: ${DEFAULT_DENSITIES['4']}`.replace(/space\((\d+)\)/g,'var(--uxdsl__space__$1)')));
+ const explicitWins=await compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{4:'xs(space(9))'}});
+ assert(explicitWins.css.includes('--uxdsl__density__4: var(--uxdsl__space__9)'));
+});
 test('simple values, named spacing and alpha have one meaning in direct CSS and presets',async()=>{
  for(const expression of ['color(white)','palette(primary)','space(gutter)','palette(primary.main, 0.25)','color(blue.500, 0.125)','color(display-p3 1 0 0)']){
   const css=(await compile(`.x { color: ${expression}; }`,theme)).css;let actual;postcss.parse(css).walkRules('.x',r=>r.walkDecls(d=>actual=d.value));

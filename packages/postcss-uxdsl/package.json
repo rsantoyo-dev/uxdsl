@@ -36,6 +36,14 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "src/theme",
+    "scripts/codemod-size-overrides.js",
+    "scripts/codemod-namespace.js",
+    "README.md",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "test": "npm run build && node --test test/*.test.js",
     "build": "tsc",
@@ -54,6 +62,11 @@
       "require": "./dist/ds-runtime.js",
       "import": "./dist/ds-runtime.js",
       "types": "./dist/ds-runtime.d.ts"
+    },
+    "./config": {
+      "require": "./dist/config.js",
+      "import": "./dist/config.js",
+      "types": "./dist/config.d.ts"
     },
     "./language": {
       "types": "./dist/language.d.ts",

@@ -5,6 +5,10 @@
   "bin": {
     "uxdsl": "./bin/uxdsl.js"
   },
+  "files": [
+    "bin",
+    "README.md"
+  ],
   "scripts": {
     "test": "node --test test/*.test.js"
   },
@@ -45,10 +49,8 @@
     "chokidar": "^3.6.0",
     "minimist": "^1.2.8",
     "postcss": "^8.5.6",
-    "postcss-advanced-variables": "^3.0.0",
-    "postcss-import": "^16.1.0",
-    "postcss-scss": "^4.0.9",
-    "postcss-uxdsl": "0.5.0-beta.5"
+    "postcss-uxdsl": "0.5.0-beta.5",
+    "uxdsl-core": "0.5.0-beta.5"
   },
   "publishConfig": {
     "access": "public",

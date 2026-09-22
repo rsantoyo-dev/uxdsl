@@ -1,16 +1,15 @@
 import { BreakpointMap, DEFAULT_BREAKPOINTS } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
+import { BASE_THEME } from './base-theme';
 
-export const DEFAULT_SHADOWS: Record<string, string> = Object.freeze({
-  0: 'none',
-  1: '0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1)',
-  2: '0 1px 2px rgba(0, 0, 0, 0.05), 0 2px 6px rgba(0, 0, 0, 0.12)',
-  3: '0 2px 4px rgba(0, 0, 0, 0.06), 0 4px 10px rgba(0, 0, 0, 0.14)',
-  4: '0 4px 6px rgba(0, 0, 0, 0.08), 0 10px 15px rgba(0, 0, 0, 0.16)',
-  5: '0 10px 15px rgba(0, 0, 0, 0.1), 0 20px 25px rgba(0, 0, 0, 0.2)',
-});
+// MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
+// independently-maintained literal.
+export const DEFAULT_SHADOWS: Record<string, string> = BASE_THEME.shadows as Record<string, string>;
 export interface ShadowTheme { shadows?: Record<string, string>; breakpoints?: BreakpointMap }
-export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW');
+// MIG-B6-13 (FEAT-008) code-review follow-up: same `keyPathPrefix` fix as
+// edges.ts's radii/borders — `{ shadows: { '1': '' } }` previously threw an
+// unlocated Error.
+export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW', 'shadows');
 export function compileShadowRules(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
   return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW');
 }

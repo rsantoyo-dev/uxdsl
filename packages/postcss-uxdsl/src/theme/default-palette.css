@@ -1,3 +1,8 @@
+/* Deprecated (FEAT-008, MIG-B6-29): a separate, richer, opt-in palette — a
+ * different design direction than postcss-uxdsl/theme/base.json's own
+ * built-in Palette default (imported automatically, no import needed), not
+ * a superset of it. Not removed in 0.5.0-beta.6; see
+ * packages/postcss-uxdsl/README.md. */
 :root {
   /* Primary - Purple (New Default) */
   --uxdsl__palette__primary-main: var(--uxdsl__color__purple-600);

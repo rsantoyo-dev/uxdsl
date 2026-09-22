@@ -24,13 +24,14 @@ accept an optional family scope (`--strict-theme=palette,breakpoints`, or
 the bare flag flags any documented partial theme override — not just in
 `typography_details`, but in the zero-config `palette` example this
 project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme` also now warns about an unrecognized
-entry name inside `typography_details`/`palette`/`fonts.families` (a typo,
-not an incomplete override), and — together with its pre-existing top-level
-"Unknown theme family" warning — actually prints from a real `uxdsl
-build`/`watch` for the first time; previously only the playground's theme
-editor called that function. Entirely additive — no migration steps needed
-from beta.4.
+unchanged. `validateAndNormalizeTheme`'s top-level "Unknown theme family"
+warning also actually prints from a real `uxdsl build`/`watch` for the
+first time; previously only the playground's theme editor called that
+function. Entirely additive — no migration steps needed from beta.4.
+(beta.5 also shipped a parallel warning one level deeper, for entry names
+inside `typography_details`/`palette`/`fonts.families`; MIG-B6-01 of
+[FEAT-007](docs/features/FEAT-007-beta6-pre1-foundations.md) removed it as
+a false positive — those three families are open registries.)
 
 See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
 [published release record](docs/releases/0.5.0-beta.5.md).

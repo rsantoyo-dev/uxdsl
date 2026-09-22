@@ -1,3 +1,7 @@
+/* Deprecated (FEAT-008, MIG-B6-29): a separate, richer, opt-in color
+ * collection — a different design direction than postcss-uxdsl/theme/base.json's
+ * own colors.gray, not a superset of it. Not removed in 0.5.0-beta.6; see
+ * packages/postcss-uxdsl/README.md. */
 :root {
   /* Blue */
   --uxdsl__color__blue-50: #E3F2FD;

@@ -7,6 +7,7 @@ dist/
 build/
 .next/
 out/
+*.vsix
 
 # Logs
 *.log

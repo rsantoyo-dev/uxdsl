@@ -9,6 +9,7 @@ import { generateTypographyCss } from '../typography';
 import postcss, { Declaration } from 'postcss';
 import { enforceReferences, ReferenceOptions } from '../reference-integrity';
 import { resolveTheme } from '../default-theme';
+import { googleFontsImportUrls } from '../fonts';
 
 /** MIG-B2-02: omitted/partial themes resolve against `DEFAULT_THEME`
  * before generating or validating — `generateThemeCss()` with no
@@ -18,7 +19,18 @@ export function generateThemeCss(theme?: Record<string, any>, references: Refere
 
   // Density references and responsive rules are compiled by the shared engine.
 
-  let cssContent = generateFoundationCss(theme);
+  // MIG-B6-29 phase 4: the same shared encoder the PostCSS plugin uses, so a
+  // runtime/SSR consumer of this function gets the identical `@import` a
+  // build-time compile of the same theme would — a project calling this
+  // directly for SSR previously had to hand-roll its own font-link
+  // management (see packages/playground-nextjs's own ThemeContext.tsx) since
+  // this function silently emitted nothing for `theme.fonts.google`.
+  // `@import` rules must lead the stylesheet, before any other rule.
+  let cssContent = googleFontsImportUrls(theme.fonts?.google)
+    .map((url) => `@import url('${url}');`)
+    .join('\n');
+  if (cssContent) cssContent += '\n';
+  cssContent += generateFoundationCss(theme);
   cssContent += '\n' + generateTypographyCss(theme);
   cssContent += '\n' + generateEdgeCss(theme);
   cssContent += '\n' + generateShadowCss(theme);

@@ -4,7 +4,7 @@ import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
 
 // Lazy import runtime utilities similar to App.jsx
 async function withRuntime(cb) {
-  const mod = await import('postcss-uxdsl/runtime');
+  const mod = await import('postcss-uxdsl/ds-runtime');
   return cb(mod);
 }
 

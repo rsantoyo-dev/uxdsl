@@ -1,6 +1,8 @@
 /** Environment-independent semantics shared by build and runtime adapters. */
 import valueParser from 'postcss-value-parser';
 import { buildVarName } from './naming';
+import { themeError } from './diagnostics';
+import { BASE_THEME } from './base-theme';
 
 /** `space-` is a reserved legacy prefix; remove it once, never recursively. */
 export function normalizeSpacingKey(key: string): string {
@@ -26,29 +28,65 @@ export function normalizeSpacingDefinitions<T>(spacing: Record<string, T>): Reco
 }
 
 export type BreakpointMap = Record<string, number>;
-export const DEFAULT_BREAKPOINTS: BreakpointMap = Object.freeze({
-  xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280,
-});
+// MIG-B6-29 (FEAT-008): derived from theme/base.json (via BASE_THEME), not a
+// second, independently-maintained literal — see base-theme.ts for why this
+// direction (engine imports data) never cycles back through the resolver.
+export const DEFAULT_BREAKPOINTS: BreakpointMap = BASE_THEME.breakpoints as BreakpointMap;
 
 export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID') {
   const ordered = Object.entries(bps).sort((a,b) => a[1]-b[1]);
   if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([name,width]) => !/^[a-z][\w-]*$/i.test(name) || !Number.isFinite(width) || width < 0) || new Set(ordered.map(([,width]) => width)).size !== ordered.length) throw new Error(`${prefix}: Expected named, distinct non-negative widths and a zero-width base.`);
   return ordered;
 }
-const NATIVE_VALUE_FUNCTIONS = ['var', 'calc', 'min', 'max', 'clamp', 'space', 'density', 'color', 'palette', 'rgb', 'rgba', 'hsl', 'hsla', 'oklch', 'oklab', 'color-mix', 'light-dark', 'linear-gradient', 'radial-gradient', 'conic-gradient', 'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient', 'url', 'image-set', 'env', 'scale', 'scaleX', 'scaleY', 'translate', 'translateX', 'translateY', 'rotate', 'matrix'];
+// MIG-B6-14 (FEAT-008): every CSS/UXDSL function name a responsive-looking
+// value can legitimately use at its top level, shared by validateResponsiveExpression
+// (theme-level Density/Typography values) and index.ts's own UXD_BREAKPOINT_UNKNOWN
+// check (arbitrary user CSS declarations) — one inventory, not two independently
+// maintained lists that can drift apart. Not an exhaustive CSS grammar: functions
+// nested inside another function's arguments are never top-level breakpoint
+// candidates in the first place, so they don't need to be listed here.
+//
+// Known trap: `log` sits at edit distance 1 from the `lg` breakpoint name. This
+// list is consulted before any edit-distance heuristic runs specifically so a
+// real `log(...)` in a value next to `lg(...)` is never misread as a typo of it.
+export const KNOWN_CSS_FUNCTIONS = [
+  // UXDSL's own value functions.
+  'space', 'density', 'color', 'palette', 'radius', 'rounded', 'border', 'shadow', 'elevation',
+  // Math.
+  'calc', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
+  'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp',
+  // Color.
+  'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color-mix', 'light-dark',
+  // Everything else: references, gradients, grid/sizing, easing, transforms, filters, anchoring.
+  'var', 'env', 'attr', 'url', 'image-set',
+  'linear-gradient', 'radial-gradient', 'conic-gradient',
+  'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient',
+  'fit-content', 'repeat', 'minmax', 'cubic-bezier', 'steps',
+  'translate', 'translateX', 'translateY', 'translateZ', 'translate3d',
+  'scale', 'scaleX', 'scaleY', 'scaleZ', 'scale3d',
+  'rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d',
+  'skew', 'skewX', 'skewY', 'matrix', 'matrix3d', 'perspective',
+  'blur', 'brightness', 'contrast', 'drop-shadow', 'grayscale', 'hue-rotate', 'invert', 'opacity', 'saturate', 'sepia',
+  'anchor', 'anchor-size',
+] as const;
 export function validateResponsiveExpression(expression: string, bps: BreakpointMap, prefix = 'UXD_VALUE') {
   if (typeof expression !== 'string' || !expression.trim() || /[;{}]/.test(expression)) throw new Error(`${prefix}: Expected a nonempty value.`);
   const parsed = valueParser(expression);
   parsed.walk(node => { if ((node as any).unclosed) throw new Error(`${prefix}: Unclosed expression.`); });
-  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !NATIVE_VALUE_FUNCTIONS.includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
+  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
 }
 
-// Density defaults stay inside the shipped 1–16 Spacing scale.
-export const DEFAULT_DENSITIES: Record<number, string> = Object.freeze(
-  { 0: '0', ...Object.fromEntries(Array.from({ length: 15 }, (_, i) => [i + 1,
-    `xs(space(${i + 1})) md(space(${i + 2})) xl(space(${Math.min(i + 3, 16)}))`])) },
-);
+// MIG-B6-29 (FEAT-008): derived from theme/base.json, not computed here —
+// density defaults still stay inside the shipped 1-16 Spacing scale, that
+// shape is just data now instead of a formula.
+export const DEFAULT_DENSITIES: Record<string, string> = BASE_THEME.densities as Record<string, string>;
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
+// `directiveArguments` lists each directive's override-argument function
+// names (`radius(...)`/`shadow(...)`, nested inside e.g. `@ds-button(...)`)
+// — distinct from the role/tone/size argument values themselves, which
+// depend on the effective theme and are composed on top of this in
+// scripts/generate-language-artifacts.js (see getToneFamilies below),
+// not hand-listed here.
 export const LANGUAGE_COMPLETIONS = {
   directiveArguments: {
     'ds-surface': ['radius', 'shadow'],
@@ -59,11 +97,36 @@ export const LANGUAGE_COMPLETIONS = {
   functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
 
+// MIG-B6-26 (FEAT-008): the exact tone predicate control-engine.ts's own
+// button/input tone generation uses (moved here, not duplicated, and
+// re-exported for it to import back) — a tone must be a full color family
+// (main/dark/contrast), not a semantic overlay group like text/divider/
+// action that only defines the sub-keys it actually needs. Lives in
+// language.ts (not control-engine.ts/surfaces.ts) so the vscode
+// extension's completion generator can derive its own tone list from
+// DEFAULT_THEME.palette without importing anything that would create a
+// cycle back through surfaces.ts/control-engine.ts, both of which already
+// import from this module.
+export function getToneFamilies(palette: Record<string, unknown> = {}): string[] {
+  return Object.keys(palette).filter((key) => {
+    const family = (palette as Record<string, unknown>)[key];
+    return (
+      /^[a-z][a-z0-9-]*$/.test(key) &&
+      !!family && typeof family === 'object' && !Array.isArray(family) &&
+      ['main', 'dark', 'contrast'].every((variant) => variant in (family as Record<string, unknown>))
+    );
+  });
+}
+
+// MIG-B6-13 (FEAT-008) code-review follow-up: located with `themeError` the
+// same way typography.ts already is — `{ densities: { x: '' } }` previously
+// threw `UXD_DENSITY_VALUE: Invalid x.` with no `.keyPath`, leaving no way
+// to tell it came from `densities.x` versus a merged default/legacy key.
 /** Effective Density map is local to a compilation: defaults < legacy < JSON. */
 export function getDensityTokens(theme: { densities?: Record<string, string> } = {}, legacy: Record<string, string> = {}): Record<string, string> {
-  if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw new Error('UXD_DENSITY_MAP: Expected an object.');
+  if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw themeError('UXD_DENSITY_MAP', 'Expected an object', 'densities');
   const tokens = { ...DEFAULT_DENSITIES, ...legacy, ...theme.densities };
-  for (const [key, value] of Object.entries(tokens)) if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw new Error(`UXD_DENSITY_VALUE: Invalid ${key}.`);
+  for (const [key, value] of Object.entries(tokens)) if (!/^[\w-]+$/.test(key) || typeof value !== 'string' || !value.trim() || /[;{}]/.test(value)) throw themeError('UXD_DENSITY_VALUE', `Invalid ${key}`, `densities.${key}`);
   return tokens;
 }
 

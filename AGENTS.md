@@ -136,7 +136,10 @@ Both live in the theme JSON.
 - Confirm roles, variants and referenced tokens exist. Inspect mode assignments
   and active overrides before changing them.
 - A variant named `contrast` is not automatic accessibility validation. Check
-  actual foreground/background pairs, states and themes.
+  actual foreground/background pairs, states and themes —
+  `checkThemeContrast(theme, { exceptions })` (`postcss-uxdsl/ds-runtime`,
+  MIG-B6-29) does this for a given effective theme; it is not run
+  automatically as part of resolving or compiling one.
 
 **Colors decision rule:** modify a Color only when its direct and linked consumers
 should receive the change. For “update blue-700 throughout the theme,” edit
@@ -399,6 +402,12 @@ This excerpt assumes its referenced tokens and breakpoints exist.
 
 - Inspect `surfaces`, dependencies, breakpoints and legacy imports before use.
   Reuse a shared role instead of recreating its resolved properties locally.
+- `@ds-surface(...)` (and `@ds-button`/`@ds-input`/`@ds-typo`) must be a
+  direct child of the rule it styles — at the document root, or nested
+  inside `@media`/`@supports` under that rule, it fails as
+  `UXD_DIRECTIVE_CONTEXT` instead of compiling untouched. Directives style a
+  whole rule and are not themselves responsive; put a responsive expression
+  on the individual property instead (`padding: xs(1rem) md(2rem);`).
 - Supported string fields: `padding`, `radius`, `bg`, `color`, `border`, `shadow`.
   Values can be CSS literals, token references or responsive expressions.
 - Default roles are contained, outlined and flat. Partial overrides inherit
@@ -461,7 +470,9 @@ Surfaces own the container composition. HTML/application code own interaction.
   focusvisible, disabled, selected. Defaults supply hover and selected only.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
-  Maintain keyboard focus and validate actual contrast; no automatic guarantee.
+  Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
+  `postcss-uxdsl/ds-runtime`, checks Button text/border pairs specifically —
+  not run automatically, and not a substitute for a real accessibility review).
 - Legacy `button-role` packs in `@theme` share the same engine within a build.
   JSON overrides matching legacy fields, then defaults. No global Button cache.
 - `generateButtonCss`, `inspectButtonTheme`, `buttonComponentCss`, PostCSS and
@@ -534,13 +545,36 @@ The CLI reloads local config dependencies on rebuild; list those files in
 the running watcher. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
-The Next.js playground stores shared configuration in `uxdsl.theme.base.json`.
-Named `uxdsl.theme.{default,green,purple,slate}.json` files contain only overrides.
-Use `packages/playground-nextjs/themes.js` to resolve them with `deepMergeTheme`
-for CLI, SSR, runtime and audits; never pass an override file as a complete theme.
-Nested objects merge; arrays and responsive strings replace the whole field.
-Custom edits merge over the active effective theme; replace starts from the common
-base. Put shared roles and dependencies in the base, and variant changes in overrides.
+The reviewed base theme ships inside `postcss-uxdsl` itself, at
+`postcss-uxdsl/theme/base.json` (`packages/postcss-uxdsl/src/theme/base.json`
+in this repo) — it is `DEFAULT_THEME`, not a playground-only convenience file.
+The Next.js playground no longer keeps its own copy; `packages/playground-nextjs/themes.js`
+requires that same package path as `baseTheme`. Named
+`uxdsl.theme.{default,green,purple,slate}.json` files in the playground remain
+overrides only (the `default` theme's own override file is intentionally empty —
+it *is* the base, unmodified). Use `themes.js` to resolve overrides with
+`deepMergeTheme` for CLI, SSR, runtime and audits; never pass an override file
+as a complete theme. Nested objects merge; arrays and responsive strings
+replace the whole field. Custom edits merge over the active effective theme;
+replace starts from the common base. Put shared roles and dependencies in the
+base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
+history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
+{ exceptions })` (MIG-B6-29 phase 2) to verify text/border colors against
+WCAG for any effective theme, including a project's own. Phase 3 corrected
+16 of `theme/base.json`'s own colors (and the playground's own `green`/
+`slate` named themes) to clear it, in OKLCH, preserving hue and moving only
+lightness; `report.passed` is still honestly `false` — three real,
+disclosed engine/architecture findings remain (a `placeholder` field that
+is never tone-substituted; `light`/`dark`/`surface` used as an accent tone
+reading their own canvas-identity color as text; `warning.main` not dark
+enough for direct text use), each recommended as follow-up work in that
+story's own evidence, not swept into ad hoc exceptions. `postcss-uxdsl/ds-runtime`
+also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
+phase 4, closing that story) — the one shared encoder both the PostCSS
+plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
+now emit byte-identical `@import`s for the same theme instead of only the
+plugin emitting one at all. Put variant changes in the playground's own
+overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
@@ -556,7 +590,11 @@ themeStyle.textContent = css
 ```
 
 Generate successfully before replacing the managed stylesheet. Do not continually
-append stale overrides. Browser edits do not save the source JSON automatically.
+append stale overrides. If the theme sets `fonts.google`, `css` now leads with
+that Google Fonts `@import` (MIG-B6-29 phase 4) — valid inside a `<style>`
+element as long as it stays first, which `generateThemeCss` already
+guarantees; a consumer that itself prepends anything to `css` before
+assigning `textContent` must preserve that ordering. Browser edits do not save the source JSON automatically.
 Changing a token can update its consumers after the theme is applied; it does not
 rewrite independently compiled component media rules automatically. Use the
 supported breakpoint integration and verify actual stylesheet behavior.
@@ -654,3 +692,64 @@ those artifacts as another source of truth.
 
 Human documentation and playground: https://uxdsl.io/
 Density reference: https://uxdsl.io/docs/densities
+
+
+## Beta.6 implementation planning and evidence
+
+MIG-B6-01 in the local beta.6 implementation exports `KNOWN_THEME_FAMILIES`
+from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
+do not copy it or use it as a list of nested roles or complete Palette tones.
+`modes` and legacy `typography` are recognized families; unknown top-level names
+still warn, and invalid Typography fields still fail. This does not add new modes,
+change strict-theme behavior, or imply the unreleased change is on npm.
+
+For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
+`MIG-B6-*.md` before implementation. The parent feature records product decisions;
+the individual story owns its detailed contract; the index owns integration order.
+FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirements.
+
+These documents describe planned APIs, not shipped capabilities. At the
+2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
+the beta.6 gate are pending. MIG-B6-29 (the packaged base JSON, the
+accessibility contrast gate, its color-correction pass, and the shared
+Google Fonts encoder — this guide's own "Build time, runtime and one source
+of truth" section above already reflects all four) is fully landed across
+its 4 phases, closing that story. `checkThemeContrast` still correctly
+reports `passed: false` against `theme/base.json` — three real, disclosed
+engine/architecture gaps remain open (not color choices; see that story's
+own evidence for exactly which ones and the recommended follow-up for
+each), by design, not a bug in the gate. `generateThemeCss` and the PostCSS
+plugin now emit byte-identical Google Fonts `@import`s for the same theme;
+`packages/playground-nextjs`'s own `ThemeContext.tsx` still hand-rolls a
+separate client-side font-link implementation that predates this — removing
+it in favor of the shared encoder is MIG-B6-30's job, not MIG-B6-29's.
+
+For each story, preserve intent, token references, merge precedence and CSS-native
+exceptions. Reproduce the defect, add a regression that fails before the fix, and
+include valid-input controls and failure recovery where relevant. Test public
+entries and packaged consumers, not just internal helpers. Use real browser
+checks for claims about computed styles, modes, interaction states and hydration.
+A DOM stub or CSS snapshot cannot establish those claims.
+
+Record evidence in the story Markdown: base/implementation SHA, criterion-to-test
+mapping, commands, environment, exit status, documentation changes and unverified
+limits. Update package README, CHANGELOG/migration and the affected sections here
+when behavior changes. Do not mark a story integrated before merge or mark a
+missing command, skipped browser check or unperformed external validation as PASS.
+
+Implementation contracts clarified by this plan:
+
+- Runtime application is synchronous; the editor batches input outside the API.
+  Initialize with the project's build/SSR override. Structural component changes
+  require regeneration; variable parity alone is not behavioral parity.
+- Preserve legacy scopes/events/breakpoint behavior through documented adapters;
+  do not silently turn a scoped setter into a global theme change.
+- Extract configurable defaults into the base JSON while retaining defaults <
+  same-compilation legacy < explicit project override precedence.
+- Per-file atomic rename is not a multi-file transaction. Watch must retain
+  last-valid output, recover from missing imports and serialize pending changes.
+- Contrast checks report tested backgrounds, modes, states, responsive intervals,
+  unresolved colors and exact exceptions; they are not a product accessibility
+  certification.
+- Prepublish, browser, external-consumer and postpublish evidence are separate.
+  Planning and verification do not authorize publishing or changing dist-tags.

@@ -101,9 +101,19 @@ async function main() {
 
   const installed = loadInstalled();
   check('installed package.json declares main/types/exports for a consumer to resolve', !!(installed.pkgJson.main && installed.pkgJson.types && installed.pkgJson.exports));
-  for (const doc of ['README.md', 'CHANGELOG.md', 'docs/migration.md']) {
+  for (const doc of ['README.md', 'CHANGELOG.md']) {
     check(`installed tarball includes ${doc}`, fs.existsSync(path.join(installed.pkgDir, doc)));
   }
+  // MIG-B6-28 (FEAT-008): docs/migration.md is deliberately *not* shipped
+  // any more (package.json's new `files` field excludes it — it was 38.8KB
+  // of pure prose bloating every install for something no code path reads
+  // at runtime). That only stays correct if the README's own link to it
+  // was switched from a relative repo path (which would 404 for anyone
+  // reading the installed copy, e.g. via a local file browser or an IDE's
+  // node_modules README preview) to an absolute GitHub URL.
+  check('installed tarball does not include docs/ (moved to an absolute README link instead)', !fs.existsSync(path.join(installed.pkgDir, 'docs')));
+  const installedReadme = fs.readFileSync(path.join(installed.pkgDir, 'README.md'), 'utf8');
+  check('installed README links migration.md via an absolute URL, not a relative path that would 404 once unshipped', /\]\(https:\/\/github\.com\/[^)]*\/docs\/migration\.md\)/.test(installedReadme));
 
   const theme = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'theme.json'), 'utf8'));
 
