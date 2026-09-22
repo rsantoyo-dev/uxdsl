@@ -513,6 +513,45 @@ own `.map`. A file sitting at the same path that is *not* a source map is
 never deleted. In a multi-entry `builds`, a compile failure in any entry
 still writes nothing at all — neither CSS nor maps.
 
+### Verifying a partial override (`theme --diff`, `theme --contrast`)
+
+A theme is the base plus your override, merged key by key — so overriding
+`palette.primary.main` keeps the base's `primary.dark` and `primary.contrast`.
+Your button turns green and its `:hover`, which uses `dark`, stays purple.
+
+`uxdsl theme --diff` labels every value `project` or `default` on stdout, and
+now also prints a summary of the mixed entries on **stderr**:
+
+```text
+$ uxdsl theme --diff
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+stdout is untouched — still one JSON document — so `uxdsl theme --diff | jq`
+keeps working exactly as before.
+
+`uxdsl theme --contrast` answers the question that follows: do the resulting
+pairs meet WCAG? It prints the full report as JSON and exits 1 if any pair
+fails.
+
+```bash
+uxdsl theme --contrast | jq '.failures[] | {tone, state, ratio, required}'
+```
+
+Each failure carries its mode (light/dark), component, tone, state, breakpoint,
+the resolved colors and the ratio, so it points at something you can change.
+It loads the exceptions shipped with the base theme; those match on the
+resolved colors, so overriding one of them stops inheriting its exception and
+reports it as stale instead of silently excusing a pair you changed.
+
+`--contrast` is **not** part of `build` — it is an audit you run when you want
+it — and it cannot be combined with `--diff` or `--strict`, because each prints
+its own document on stdout.
+
+One thing to expect on a first run: the packaged base theme does not pass its
+own gate yet. Those failures are real and disclosed upstream, not a problem
+with your config, so focus on the pairs your own override introduced.
+
 ### 8. Strict flag parsing: accepted values, unknown flags, unknown families
 
 Every flag accepts a fixed, explicit set of forms — anything else is a hard

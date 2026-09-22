@@ -9,6 +9,24 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-16 (partial overrides, made explicit):
+
+- **New (CLI):** `uxdsl theme --diff` now prints a one-line summary on
+  **stderr** for every entry that mixes your values with the base theme's —
+  `[uxdsl] palette.primary mixes your values (main) with base values (light,
+  dark, contrast)`. stdout is unchanged, still a clean JSON document, because
+  scripts already parse it. Merging key by key stays the design; what changes
+  is that it stops being invisible.
+- **New (CLI):** `uxdsl theme --contrast` runs the WCAG check over the
+  effective theme and prints the full report as JSON on stdout, exiting 1 if
+  any pair fails. It loads the exceptions shipped with the base theme, which
+  match on resolved colors — so overriding one of those colors stops
+  inheriting its exception and reports it as stale. Not part of `build`, and
+  refused in combination with `--diff` or `--strict`, since each prints its
+  own document on stdout.
+- Note: the packaged base theme does not pass its own gate yet. Those
+  failures are real and disclosed (MIG-B6-29), not a configuration problem.
+
 FEAT-008, MIG-B6-30 (phase 2/4: migrating off the four legacy storage keys):
 
 - **New:** the first `loadPersistedTheme()` that finds nothing under the

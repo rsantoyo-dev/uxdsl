@@ -795,6 +795,44 @@ se puede restaurar desde el tema. Aplicarlo en el componente si hace falta.
 Tamaño de salida: una fixture con 100 usos de `@ds-typo` sobre 13 roles pasa
 de 63.455 a 40.296 bytes (−36,5%).
 
+## Cómo verificar el contraste de tu override (0.5.0-beta.6)
+
+Sobrescribir `palette.primary.main` conserva el `dark`, el `light` y el
+`contrast` del tema base. Es la filosofía del producto —escribes sólo lo que
+cambia— pero hasta beta.6 no había forma de verlo ni de comprobar el resultado.
+
+```bash
+uxdsl theme --diff       # cada valor, etiquetado "project" o "default"
+uxdsl theme --contrast   # ¿los pares resultantes cumplen WCAG?
+```
+
+`--diff` imprime ahora, por **stderr**, una línea por cada entrada mezclada:
+
+```text
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+stdout no cambia: sigue siendo un único documento JSON, porque ya hay scripts
+que lo parsean.
+
+`--contrast` comprueba el tema efectivo contra WCAG e imprime el reporte
+completo en stdout, saliendo con 1 si algo falla. Un verde `#00aa00` contra el
+`contrast` blanco heredado da ~3,11:1, por debajo del 4,5:1 exigido para texto,
+y el reporte nombra el par con su modo, estado, breakpoint y colores resueltos.
+
+Carga además las excepciones que se publican con el tema base. Como esas
+excepciones casan también por color resuelto, si sobrescribes uno de esos
+colores dejas de heredar la excepción y se reporta como obsoleta, en vez de
+seguir disculpando un par que ya cambiaste.
+
+`--contrast` **no** forma parte de `build`, y no se combina con `--diff` ni con
+`--strict`: cada uno imprime su propio documento en stdout.
+
+Ten en cuenta al ejecutarlo por primera vez que el tema base publicado todavía
+no pasa su propia comprobación. Esos fallos son reales y están documentados
+(MIG-B6-29), no son un problema de tu configuración: fíjate en los pares que
+introduce tu propio override.
+
 ## Tema en runtime: de los setters por token a `applyTheme` (0.5.0-beta.6)
 
 Hasta beta.5, cambiar un tema en el navegador se hacía token a token:

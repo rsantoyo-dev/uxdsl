@@ -192,12 +192,21 @@ Theme Options (theme command only):
                     file mentions, one row per leaf value, each labeled
                     "project" (your value) or "default" (silently
                     inherited from DEFAULT_THEME) instead of the full tree.
+                    A family you override only partly also prints a
+                    one-line summary on stderr ("palette.primary mixes
+                    your values (main) with base values (dark,
+                    contrast)"), so stdout stays clean JSON for scripts.
   --strict          Exit non-zero if any family you declared ended up
                     partially filled from defaults. Combine with --diff to
                     see exactly which leaves triggered it.
                     --strict=<family1>,<family2> scopes the check to only
                     those families — see --strict-theme's own note under
                     build/watch above for why this is usually what you want.
+  --contrast        Check the effective theme's text and border pairs
+                    against WCAG and print a JSON report on stdout, then
+                    exit 1 if any pair fails. Not part of "build", and
+                    cannot be combined with --diff or --strict, since each
+                    prints its own document on stdout.
 
 Build/Watch Options:
   --entry, -e       Entry .uxdsl file that contains @import statements
@@ -255,6 +264,7 @@ Examples:
   uxdsl build --entry src/main.uxdsl --out dist/styles.css
   uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
   uxdsl theme --diff --strict
+  uxdsl theme --contrast
   uxdsl build --strict-theme
 
 Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
@@ -1294,15 +1304,94 @@ function findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, scope) {
   });
 }
 
+// MIG-B6-16 (FEAT-008): decision D-1 is that a theme is a base plus an override
+// merged key by key, and that stays. What was missing is that the merge is
+// *invisible*: override `palette.primary.main` and you keep the base's `dark`
+// and `contrast`, so a green button's hover comes out purple and nothing says
+// so. This reports the mix without changing what `--diff` puts on stdout —
+// scripts already parse that — and without adding noise to `build`, which D-1
+// explicitly rules out.
+//
+// Only the two registries where a partial override silently keeps sibling
+// values that *look* related: a Palette family's variants and a typography
+// role's fields. (Buttons, Inputs and Surfaces have the same shape one level
+// deeper — see this story's follow-up notes.)
+const MIXED_ENTRY_FAMILIES = ['palette', 'typography_details'];
+
+function summarizeMixedEntries(rows) {
+  const entries = new Map();
+  for (const row of rows) {
+    const segments = row.path.split('.');
+    if (segments.length < 3 || !MIXED_ENTRY_FAMILIES.includes(segments[0])) continue;
+    const key = `${segments[0]}.${segments[1]}`;
+    if (!entries.has(key)) entries.set(key, { project: [], default: [] });
+    const bucket = entries.get(key);
+    const leaf = segments.slice(2).join('.');
+    if (row.source === 'project') bucket.project.push(leaf);
+    else bucket.default.push(leaf);
+  }
+  const lines = [];
+  for (const [key, bucket] of entries) {
+    if (!bucket.project.length || !bucket.default.length) continue;
+    lines.push(`${key} mixes your values (${bucket.project.join(', ')}) with base values (${bucket.default.join(', ')})`);
+  }
+  return lines;
+}
+
+/** The exceptions shipped with the packaged base theme: contrast pairs that
+ * are knowingly accepted, each with a recorded reason. They are matched on the
+ * resolved colors too, so a project that overrides one of those colors stops
+ * inheriting the exception — which is the point. Missing file (an older
+ * postcss-uxdsl) is not fatal: the check just runs without them. */
+function packagedContrastExceptions() {
+  try {
+    const loaded = require('postcss-uxdsl/theme/base.contrast-exceptions.json');
+    if (Array.isArray(loaded)) return loaded;
+    return Array.isArray(loaded && loaded.exceptions) ? loaded.exceptions : [];
+  } catch {
+    return [];
+  }
+}
+
 async function themeCommand(argv, cwd = process.cwd()) {
   if (typeof uxdslRuntime.resolveTheme !== 'function') {
     throw new Error('postcss-uxdsl/ds-runtime not found (or too old to export resolveTheme). Install a current postcss-uxdsl in your project or alongside the CLI.');
   }
+  // MIG-B6-16 (FEAT-008): `--contrast` prints a different document on stdout, so
+  // combining it with `--diff` (or with `--strict`, which can throw before the
+  // report is read) would mean two formats on one stream. Refused explicitly
+  // rather than letting one silently win.
+  if (argv.contrast && (argv.diff || argv.strict !== undefined)) {
+    throw new Error(
+      `--contrast cannot be combined with ${argv.diff ? '--diff' : '--strict'}: ` +
+      'each prints its own JSON document on stdout. Run them as separate commands.'
+    );
+  }
+
   const config = await loadConfig(argv, cwd);
   // No build config/theme file/direct args at all is not an error here —
   // it just means "what would a zero-config build use", i.e. DEFAULT_THEME.
   const rawTheme = config ? config.theme : undefined;
   const effectiveTheme = uxdslRuntime.resolveTheme(rawTheme);
+
+  if (argv.contrast) {
+    if (typeof uxdslRuntime.checkThemeContrast !== 'function') {
+      throw new Error('postcss-uxdsl/ds-runtime is too old to export checkThemeContrast (added in 0.5.0-beta.6). Upgrade postcss-uxdsl in this project.');
+    }
+    const report = uxdslRuntime.checkThemeContrast(effectiveTheme, { exceptions: packagedContrastExceptions() });
+    // The full report is printed either way: a failing check is exactly when
+    // its detail is worth having, so it is never truncated to an error line.
+    console.log(JSON.stringify(report, null, 2));
+    if (!report.passed) {
+      const error = new Error(
+        `--contrast: ${report.failures.length} contrast ${report.failures.length === 1 ? 'pair fails' : 'pairs fail'} WCAG for this theme. ` +
+        'The JSON report on stdout lists each one with its mode, component, state, breakpoint and resolved colors.'
+      );
+      error.uxdslQuiet = true;
+      throw error;
+    }
+    return;
+  }
 
   const output = argv.diff ? diffThemeAgainstDefaults(rawTheme, effectiveTheme) : effectiveTheme;
   // Always valid, parseable JSON on stdout — no log lines mixed in — so
@@ -1310,6 +1399,12 @@ async function themeCommand(argv, cwd = process.cwd()) {
   // its own discovery lines, same as `build`; the two are not meant to be
   // combined when a script needs clean JSON.)
   console.log(JSON.stringify(output, null, 2));
+
+  // MIG-B6-16 (FEAT-008): the mix summary goes to stderr precisely so stdout
+  // stays a clean JSON document for `| jq` and scripts.
+  if (argv.diff) {
+    for (const line of summarizeMixedEntries(output)) console.error(`[uxdsl] ${line}`);
+  }
 
   // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
   // `--strict` still means "every touched family" (unchanged);
@@ -1843,7 +1938,7 @@ const COMMAND_FLAG_SPECS = {
   // "bare flag means external" case entirely.
   build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
   watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { entry: 'e', out: 'o', config: 'c' } },
-  theme: { boolean: ['diff'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
+  theme: { boolean: ['diff', 'contrast'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
 };
 
 function canonicalFlagName(rawArg) {
@@ -2007,6 +2102,8 @@ if (require.main === module) {
 // that don't call process.exit, so they can be exercised directly instead
 // of spawning the CLI as a subprocess for every case.
 module.exports = {
+  summarizeMixedEntries,
+  packagedContrastExceptions,
   resolveSourceMap,
   isManagedSourceMap,
   CONFIG_CANDIDATES,

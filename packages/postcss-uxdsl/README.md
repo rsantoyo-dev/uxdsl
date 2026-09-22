@@ -753,6 +753,55 @@ list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 
+## What a partial override actually inherits
+
+A theme is the packaged base plus your override, merged key by key. That is the
+product's design, not an accident — you write only what differs. What is easy to
+miss is that "key by key" reaches all the way down:
+
+```json
+{ "palette": { "primary": { "main": "#00aa00" } } }
+```
+
+You now have a green `primary.main` **and the base theme's purple
+`primary.dark`, `primary.light` and white `primary.contrast`.** Nothing is
+wrong, and nothing warns: your button is green, and its `:hover` — which uses
+`primary.dark` — is purple. To change the hover too, override `dark` as well:
+
+```json
+{ "palette": { "primary": { "main": "#00aa00", "dark": "#007700", "contrast": "#ffffff" } } }
+```
+
+The same applies to a `typography_details` role: setting `h1.fontSize` keeps the
+base's `fontWeight` and `lineHeight` for that role.
+
+Two commands make this visible rather than surprising:
+
+```bash
+uxdsl theme --diff       # every value, labeled "project" or "default"
+uxdsl theme --contrast   # do the resulting pairs meet WCAG?
+```
+
+`--diff` prints a one-line summary on **stderr** for each entry that mixes both
+sources, leaving stdout a clean JSON document:
+
+```text
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+`--contrast` answers the question that actually matters after a partial
+override. The green above against the inherited white `contrast` is about
+3.11:1 — below WCAG's 4.5:1 for text — and the report names the pair, its mode,
+state, breakpoint and resolved colors. It exits 1 when anything fails, and it is
+deliberately **not** part of `build`.
+
+One caveat worth knowing before you run it: the packaged base theme does not
+pass its own contrast gate yet. Those failures are real, disclosed and tracked
+(see MIG-B6-29 in the repository), not a problem with your configuration — so
+read the report for the pairs *your* override introduced.
+
+---
+
 ## Applying a theme at run time (`applyTheme`)
 
 Your theme is JSON: a base plus your override. A build compiles that JSON;
