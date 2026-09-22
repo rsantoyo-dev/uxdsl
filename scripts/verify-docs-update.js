@@ -50,10 +50,13 @@ const VISUAL_DEFAULT_FILES = [
   'packages/postcss-uxdsl/src/typography.ts',
   // MIG-B6-29 (FEAT-008): DEFAULT_THEME is theme/base.json itself now — most
   // future visual-default changes will edit this file directly, not
-  // default-theme.ts (which barely has any literal content left). The
-  // planned base.contrast-exceptions.json (contrast-gate phase of this
-  // same story) belongs here too once it exists.
+  // default-theme.ts (which barely has any literal content left).
   'packages/postcss-uxdsl/src/theme/base.json',
+  // MIG-B6-29 phase 2/4: every accepted contrast exception is itself a
+  // visual-default decision (a specific color pair the theme knowingly
+  // ships despite failing WCAG) — it deserves the same changelog
+  // discipline as the colors it excuses.
+  'packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json',
 ];
 const VISUAL_DEFAULT_CHANGELOG = 'packages/postcss-uxdsl/CHANGELOG.md';
 

@@ -9,7 +9,56 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
-FEAT-008, MIG-B6-29 (part 1 of this story — see "Not yet done" below):
+FEAT-008, MIG-B6-29 (phase 2 of 4 — the accessibility contrast gate):
+
+- **New:** `checkThemeContrast(theme, { exceptions? })`, exported from
+  `postcss-uxdsl/ds-runtime` (MIG-B6-16 uses it for `uxdsl theme
+  --contrast`). Checks every text/placeholder/border color the theme's
+  Surface/Button/Input engines actually define — every role, every real
+  tone family, every state, light and dark mode, every configured
+  breakpoint — against WCAG 4.5:1 (text) / 3:1 (non-text, WCAG 1.4.11).
+  Derives every pair from the same functions the compiler itself calls
+  (`surfaceDeclarations`, `buttonDeclarations`, `inputDeclarations`,
+  `inspectSurfaceTheme`/`inspectButtonTheme`/`inspectInputTheme`), never a
+  hand-written pair list. An unresolvable color reference always fails;
+  a `disabled` state is computed and reported but never blocks the gate
+  on its own. New `theme/base.contrast-exceptions.json` (empty except one
+  entry — see below) holds exact-match exceptions: an exception records
+  the resolved colors it was written against and stops applying the
+  moment either one changes, and a duplicate or stale (no-longer-matching)
+  exception fails the gate too, so an outdated entry can never silently
+  keep "covering" a color that isn't the one it was reviewed for.
+- **Fix (build compatibility):** the first version of `contrast.ts` used a
+  `Map<string, number>` with a bare `for (const [k, v] of map)`. Every file
+  reachable through `postcss-uxdsl/ds-runtime` is compiled a second time by
+  any consumer that aliases that specifier straight to this package's
+  source — the Next.js playground's `next.config.js`/`tsconfig.json` does
+  exactly that, under the playground's own `target: "es5"` with no
+  `downlevelIteration`, where iterating a `Map` this way does not compile
+  (`Type 'Map<string, number>' can only be iterated through when using the
+  '--downlevelIteration' flag or with a '--target' of 'es2015' or
+  higher`). This package's own `tsc` (target ES2019) never caught it; only
+  the playground's real production build did. Fixed by using
+  `Record<string, number>` and `Object.entries(...)`, matching the
+  convention already followed by every other file in this package's `src`.
+  New `test/es5-consumer-compat.test.js` compiles `ds-runtime.ts` with the
+  real TypeScript compiler API under the playground's exact settings so
+  this class of bug is caught locally instead of only by a downstream
+  build; verified to fail before this fix and pass after.
+- Running this gate against the theme this same story's phase 1 shipped
+  (see "Not yet done" below, still true) reproduces this story's own
+  hand-computed reproduction numbers exactly — `tertiary`/contained/hover
+  2.77:1, `warning`/outlined 3.19:1, `light`-tone/outlined 1.10:1 — plus
+  many more once every tone family and state is checked exhaustively
+  instead of by a few illustrative hand-picked examples. One exception is
+  recorded: the `light` palette family (a background role) used as a text
+  color on any role whose background is otherwise transparent is
+  unsupported by the nature of the role, not a color this theme can fix
+  without giving `light` a second, contradictory meaning. Every other
+  failure remains open, real, and undisclosed-as-exception — phase 3 of
+  this story (color correction) is what addresses them, not this phase.
+
+FEAT-008, MIG-B6-29 (phase 1 of 4):
 
 - **Fix (review follow-up):** the first version of this change deep-froze
   `theme/base.json`'s own parsed module object in place. `postcss-uxdsl/theme/base.json`

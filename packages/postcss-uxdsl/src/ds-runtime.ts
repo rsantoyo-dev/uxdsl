@@ -1,6 +1,9 @@
 export * from "./ds-runtime/index";
 export * from "./ds-runtime/theme-generator";
 export * from "./ds-runtime/theme-validate";
+// MIG-B6-29 (FEAT-008), phase 2/4: the accessibility contrast gate.
+// MIG-B6-16 imports `checkThemeContrast` from here for `uxdsl theme --contrast`.
+export * from "./ds-runtime/contrast";
 export * from "./typography";
 export { default } from "./ds-runtime/index";
 

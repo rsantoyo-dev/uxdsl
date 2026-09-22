@@ -436,6 +436,63 @@ import from `language.ts`). It is not re-exported from the public
 extension's completion metadata) already reaches into compiled `dist/*`
 modules directly for several such internals, `getToneFamilies` among them.
 
+### Accessibility contrast gate (`checkThemeContrast`)
+
+**MIG-B6-29 (FEAT-008), phase 2/4.** `postcss-uxdsl/ds-runtime` exports
+`checkThemeContrast(theme, { exceptions? })`, which MIG-B6-16 uses for
+`uxdsl theme --contrast`. It checks every text/placeholder color and every
+border/underline color this theme's Surface/Button/Input engines actually
+define — for every role, every tone `getToneFamilies` recognizes, every
+state (including the implicit base), in light mode and (since `modes.dark`
+is now a real default — see above) dark mode, at every configured
+breakpoint — against WCAG's normal-text ratio (4.5:1) and non-text ratio
+(3:1, WCAG 1.4.11 — the threshold a border needs to stay visible against
+its surroundings).
+
+```js
+const { checkThemeContrast } = require('postcss-uxdsl/ds-runtime')
+const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json')
+
+const report = checkThemeContrast(resolveTheme(myTheme), { exceptions })
+report.passed    // false if any non-excepted pair fails, or any exception is stale/duplicated
+report.failures  // { mode, family, component, tone, state, pair, ratio, required, reason, ... }[]
+report.checked   // every pair actually evaluated, including passes and exempt ones
+```
+
+Every check is derived from the same functions the real compiler calls
+(`surfaceDeclarations`, `buttonDeclarations`, `inputDeclarations`,
+`inspectSurfaceTheme`/`inspectButtonTheme`/`inspectInputTheme`) — never a
+hand-written list of pairs, and never a second color parser independent of
+what PostCSS/the runtime actually emit. An unresolvable color reference
+always fails the check (never a silent pass, never treated as a 0 ratio).
+A `disabled` state is still computed and listed in `report.checked`, but
+never blocks `report.passed` on its own (`exempt: true`) — WCAG itself
+does not hold inactive controls to the normative threshold.
+
+**Exceptions** (`postcss-uxdsl/theme/base.contrast-exceptions.json`) cover
+a specific (mode, family, component, tone, state, pair) combination that
+is unsupported *by the nature of the role* — e.g. the palette's `light`
+family (a background role) used as a text color on a transparent-background
+role, which this JSON file itself documents as its only current entry —
+never a color the theme could reasonably fix instead. Matching is exact:
+an exception also records the resolved foreground/background hex it was
+written against, and stops applying the moment either one changes for any
+reason (a theme override, or a future color correction) — it can never
+silently keep "covering" a color that is not the one it was reviewed for.
+A duplicate exception `id`, or an exception whose recorded colors no
+longer occur anywhere, fails the gate too (`report.exceptionIssues`), so a
+stale entry can't quietly accumulate.
+
+**What this does not check**: it is a compiled-output check, not a DOM or
+browser certification — no real layout, no stacking context, no
+`filter`/`mix-blend-mode`, no arbitrary CSS a project layers on top of
+what these engines emit. Border contrast is only checked against the
+theme's ambient page background (`palette.surface.main`), not also against
+each component's own inner background — a component's border touches both,
+and only the outer, more common failure mode is verified here. Passing
+this gate is not, by itself, an accessibility certification for a real
+page.
+
 ### Legacy opt-in packs (deprecated)
 
 `postcss-uxdsl/theme/*.uxdsl` and `postcss-uxdsl/theme/*.css`

@@ -1,0 +1,14 @@
+[
+  {
+    "id": "surface-outlined-light-tone-base-text-light-mode",
+    "mode": "light",
+    "family": "surface",
+    "component": "outlined",
+    "tone": "light",
+    "state": "base",
+    "pair": "text",
+    "background": "own-bg-or-ambient",
+    "resolved": { "foreground": "#f1f5f9", "background": "#ffffff" },
+    "reason": "palette.light is a background role (a near-white surface, used for light-mode fills and hover backgrounds), not a text role. Applying it as an @ds-surface(outlined light)/@ds-button(outlined light)/@ds-input(outlined light) tone asks for text painted in that same near-white color on the page's own near-white background — the combination is unsupported by the nature of the role, not a color this theme's own palette can fix without giving `light` a second, contradictory meaning as a text color. Story reproduction (MIG-B6-29 'Por qué'): documented as the canonical example of this exact class of exception, ratio 1.10:1."
+  }
+]

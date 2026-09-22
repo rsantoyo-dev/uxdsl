@@ -136,7 +136,10 @@ Both live in the theme JSON.
 - Confirm roles, variants and referenced tokens exist. Inspect mode assignments
   and active overrides before changing them.
 - A variant named `contrast` is not automatic accessibility validation. Check
-  actual foreground/background pairs, states and themes.
+  actual foreground/background pairs, states and themes —
+  `checkThemeContrast(theme, { exceptions })` (`postcss-uxdsl/ds-runtime`,
+  MIG-B6-29) does this for a given effective theme; it is not run
+  automatically as part of resolving or compiling one.
 
 **Colors decision rule:** modify a Color only when its direct and linked consumers
 should receive the change. For “update blue-700 throughout the theme,” edit
@@ -467,7 +470,9 @@ Surfaces own the container composition. HTML/application code own interaction.
   focusvisible, disabled, selected. Defaults supply hover and selected only.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
-  Maintain keyboard focus and validate actual contrast; no automatic guarantee.
+  Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
+  `postcss-uxdsl/ds-runtime`, checks Button text/border pairs specifically —
+  not run automatically, and not a substitute for a real accessibility review).
 - Legacy `button-role` packs in `@theme` share the same engine within a build.
   JSON overrides matching legacy fields, then defaults. No global Button cache.
 - `generateButtonCss`, `inspectButtonTheme`, `buttonComponentCss`, PostCSS and
@@ -553,8 +558,13 @@ as a complete theme. Nested objects merge; arrays and responsive strings
 replace the whole field. Custom edits merge over the active effective theme;
 replace starts from the common base. Put shared roles and dependencies in the
 base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
-history and the still-pending accessibility contrast gate), and variant
-changes in the playground's own overrides.
+history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
+{ exceptions })` (MIG-B6-29 phase 2) to verify text/border colors against
+WCAG for any effective theme, including a project's own; `theme/base.json`
+itself is not yet corrected to pass it (MIG-B6-29 phase 3, still pending —
+see that story for exactly which failures remain open and which one
+exception is already justified and recorded). Put variant changes in the
+playground's own overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
@@ -686,14 +696,17 @@ FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirem
 
 These documents describe planned APIs, not shipped capabilities. At the
 2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
-the beta.6 gate are pending. The packaged base JSON landed in MIG-B6-29 (this
-guide's own "Build time, runtime and one source of truth" section above
-already reflects it) — that story's own accessibility contrast gate and
-color-correction pass have not, so `DEFAULT_THEME` is the full reviewed
-*shape* (14 palette families, `modes.dark`, `fonts.google`, every family a
-component engine needs), not yet a contrast-checked one. Keep the current
-usage guidance above until each remaining piece lands; then replace it in the
-same change, including playground agent guidance.
+the beta.6 gate are pending. The packaged base JSON (MIG-B6-29 phase 1) and
+the accessibility contrast gate itself, `checkThemeContrast` (MIG-B6-29 phase
+2 — this guide's own "Build time, runtime and one source of truth" section
+above already reflects both), have landed. Its color-correction pass (phase
+3, following that story's own documented OKLCH algorithm) and the shared
+Google Fonts encoding helper (phase 4) have not: `theme/base.json` is the
+full reviewed *shape*, and the gate that checks it is real, but the theme's
+own colors have not yet been run through that gate and corrected — running
+it today reports real, open failures, by design, not a bug in the gate.
+Keep the current usage guidance above until each remaining piece lands; then
+replace it in the same change, including playground agent guidance.
 
 For each story, preserve intent, token references, merge precedence and CSS-native
 exceptions. Reproduce the defect, add a regression that fails before the fix, and
