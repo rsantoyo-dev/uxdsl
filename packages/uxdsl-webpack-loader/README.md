@@ -104,6 +104,21 @@ discovered — declares its own), the loader uses UXDSL's shared default map:
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
 
+## Source maps
+
+**Verified end to end** (`fixtures/webpack-adapter/run.js`): with
+`devtool: 'source-map'` and `css-loader`'s own `sourceMap: true`, the map
+this loader produces reaches `css-loader`, `MiniCssExtractPlugin` emits
+`styles.css.map`, and resolving a position in that map lands back on the
+original `.uxdsl` source. The fixture asserts exactly that lookup, not just
+that a map file exists.
+
+The loader follows webpack's own `this.sourceMap` (set from `devtool`), so
+no loader option is needed; pass `sourceMap: true`/`false` in the loader
+options only to override it. The map is handed to the next loader as a real
+object, never as a JSON string or an inline data URI, so `css-loader` can
+compose it with its own.
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

@@ -82,7 +82,7 @@ gets identical `@import`, `$var` and comment handling.
 ```javascript
 const { compile } = require('uxdsl-core');
 
-const { css, dependencies, warnings } = await compile(
+const { css, map, dependencies, warnings } = await compile(
   { entry: './src/uxdsl-entry.uxdsl' },   // or { source, from? } for in-memory input
   {
     theme,               // effective theme, same shape as postcss-uxdsl's `theme` option
@@ -90,7 +90,8 @@ const { css, dependencies, warnings } = await compile(
     breakpoints,         // same shape as postcss-uxdsl's `breakpoints` option
     includeTheme: true,  // append the `/*@uxdsl-bp ...*/` + #uxdsl-bp-meta marker (default: true)
     to: './dist/app.css',
-    sourceMap: false,    // only `false` is implemented; anything else throws (see MIG-B6-21)
+    sourceMap: false,    // false (default) | 'inline' | 'external'
+    sourcesContent: true // embed the original sources in the map (default: true)
   }
 );
 ```
@@ -102,6 +103,23 @@ const { css, dependencies, warnings } = await compile(
   bundler's file-watcher.
 - `warnings`: `{ text, file?, line?, column? }[]` from the underlying
   PostCSS run.
+- `sourceMap` (MIG-B6-21): `'external'` returns the map as a JSON string in
+  `map` and leaves `css` untouched — the caller adds the
+  `sourceMappingURL` comment, since only it knows what the `.map` will be
+  called. `'inline'` appends the map to `css` as a base64 data URI (last in
+  the file, after the breakpoint metadata, so it is the annotation that
+  counts) *and* still returns it in `map`. `false` (the default) returns no
+  map and produces **byte-identical** CSS to omitting the option entirely.
+  Any other value throws rather than silently emitting nothing.
+- `to` is what map `sources` are resolved against, so pass the real output
+  path: an external `.map` lands next to the CSS, making one `to` correct
+  for both modes. Without `to`, PostCSS falls back to `from`'s directory.
+  Paths are kept relative through `to` rather than by trimming prefixes.
+- Generated nodes carry the source of whatever produced them: a declaration
+  rewritten from `density()` maps to the original declaration, and the
+  declarations a `@ds-button` expands into map to the directive's own line.
+  CSS generated purely from the theme (the `:root` token blocks) is
+  deliberately left unmapped rather than pointed at an invented file.
 - `@import` resolution: relative paths (`./x.uxdsl`), bare package
   specifiers (`postcss-uxdsl/theme/default-colors.css`), and `~`-prefixed
   specifiers (`~some-package/x.css`) are all supported — the last two

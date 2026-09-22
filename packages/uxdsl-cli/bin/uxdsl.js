@@ -216,6 +216,14 @@ Build/Watch Options:
                     a separate includeTheme entry already defines — see
                     postcss-uxdsl's includeTheme option. Overrides
                     "includeTheme" in uxdsl.config.cjs when passed.
+  --sourcemap, --sourcemap=inline, --no-sourcemap
+                    Emit a source map so devtools point at your .uxdsl
+                    sources instead of the compiled CSS. Bare --sourcemap
+                    means "external": writes <outFile>.map next to the CSS
+                    and appends a sourceMappingURL comment. =inline embeds
+                    the map as a data URI and writes no .map file.
+                    Defaults to off. Overrides "sourceMap" in
+                    uxdsl.config.cjs when passed.
   --strict-theme, --no-strict-theme
                     Fail the build (before writing anything) if a theme
                     family you declared ended up partially filled from
@@ -336,6 +344,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
   let rawBreakpoints;
   let rawIncludeTheme;
   let rawStrictTheme;
+  let rawSourceMap;
 
   if (directEntry || directOut) {
     resolvedConfig.entry = resolvePath(directEntry, cwd);
@@ -375,6 +384,12 @@ async function loadConfig(argv, cwd = process.cwd()) {
       if (configModule.includeTheme !== undefined && typeof configModule.includeTheme !== 'boolean') {
         throw new Error(`Invalid configuration in ${configPath}: "includeTheme" must be a boolean.`);
       }
+      // MIG-B6-21 (FEAT-008): validated here for the same reason as
+      // includeTheme — a typo'd value ('External', true) must fail loudly
+      // rather than read as "no map" and leave the user hunting for one.
+      if (configModule.sourceMap !== undefined && configModule.sourceMap !== false && configModule.sourceMap !== 'inline' && configModule.sourceMap !== 'external') {
+        throw new Error(`Invalid configuration in ${configPath}: "sourceMap" must be false, "inline" or "external".`);
+      }
       // MIG-B4-01 (FEAT-005): shared across every entry (single or
       // `builds`) — the theme is one thing per build, so this is
       // validated once here regardless of which branch below runs.
@@ -389,6 +404,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
         throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be a boolean or an array of family names.`);
       }
       rawStrictTheme = configModule.strictTheme;
+      rawSourceMap = configModule.sourceMap;
       const baseDir = path.dirname(configPath);
 
       // MIG-B3-02: "builds" is mutually exclusive with top-level entry/
@@ -506,6 +522,9 @@ async function loadConfig(argv, cwd = process.cwd()) {
   // MIG-B4-01: independent of `builds` — the theme is shared across every
   // entry, so this is resolved once here regardless of single/multi mode.
   resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true });
+  // MIG-B6-21 (FEAT-008): shared across every entry, like the theme itself —
+  // one build emits maps or it doesn't; there are no per-entry overrides.
+  resolvedConfig.sourceMap = resolveSourceMap(argv.sourcemap, rawSourceMap);
 
   if (debug) {
     console.log(`[uxdsl:debug] config file: ${configPath || '(none)'}`);
@@ -582,6 +601,27 @@ async function loadConfig(argv, cwd = process.cwd()) {
 // through to the config value/default — silently accepting a value never
 // documented as valid. Checking "not already a real boolean" up front,
 // rather than "is a string", catches every such explicit-but-invalid value.
+// MIG-B6-21 (FEAT-008): `--sourcemap` (bare) means `external`, the mode that
+// actually needs a filename; `--sourcemap=inline` and `--sourcemap=external`
+// name the mode outright, and `--no-sourcemap` turns it off. `=true`/`=false`
+// are accepted as synonyms of the bare/negated forms so the flag behaves like
+// every other boolean-ish flag here (MIG-B6-22 made that consistency a rule),
+// and — for the same reason resolveIncludeTheme checks "not already a real
+// boolean" — a numeric value like `--sourcemap=0`, which minimist parses into
+// the JS number 0, is rejected instead of quietly reading as a mode.
+// Precedence is flag > config > false.
+function resolveSourceMap(flagValue, configValue) {
+  if (flagValue !== undefined) {
+    if (flagValue === true || flagValue === 'true' || flagValue === 'external') return 'external';
+    if (flagValue === false || flagValue === 'false') return false;
+    if (flagValue === 'inline') return 'inline';
+    throw new Error(`Invalid value for --sourcemap: "${flagValue}". Expected "inline" or "external" (bare --sourcemap means external, --no-sourcemap turns it off).`);
+  }
+  if (configValue === 'inline' || configValue === 'external') return configValue;
+  if (configValue === false || configValue === undefined) return false;
+  throw new Error(`Invalid "sourceMap" in configuration: ${JSON.stringify(configValue)}. Expected false, "inline" or "external".`);
+}
+
 function resolveIncludeTheme(flagValue, configValue) {
   if (flagValue !== undefined && typeof flagValue !== 'boolean') {
     if (flagValue === 'true') flagValue = true;
@@ -812,7 +852,11 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // append itself, both moved into core so every compile() caller gets
   // them identically instead of the CLI having its own copy that could
   // drift from core's (the exact bug this story closes).
-  const { css: finalCss, dependencies } = await uxdslCore.compile(
+  // MIG-B6-21 (FEAT-008): `to` is the absolute outFile, which is also where
+  // an external `.map` lands, so PostCSS resolves `sources` relative to the
+  // right place for both modes without any prefix trimming.
+  const sourceMap = sharedConfig.sourceMap || false;
+  const { css: compiledCss, map, dependencies } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
       breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
@@ -820,13 +864,25 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
       references: sharedConfig.references,
       includeTheme,
       to: entryConfig.outFile,
+      sourceMap,
     }
   );
+
+  // 'inline' is already complete (core appended its own data URI). 'external'
+  // needs the annotation only this side can write, since only the CLI knows
+  // the `.map` filename — and it must come last, after core's breakpoint
+  // metadata, because only the final sourceMappingURL in a file counts.
+  let finalCss = compiledCss;
+  let mapFile;
+  if (sourceMap === 'external') {
+    mapFile = `${entryConfig.outFile}.map`;
+    finalCss = `${finalCss}\n/*# sourceMappingURL=${path.basename(mapFile)} */`;
+  }
 
   // MIG-B6-23 (FEAT-008): `dependencies` (entry first, every transitively
   // @import-ed file) lets watch mode rebuild only the entries a changed
   // file actually affects, instead of every entry on every change.
-  return { outFile: entryConfig.outFile, finalCss, dependencies };
+  return { outFile: entryConfig.outFile, finalCss, dependencies, mapFile, mapContent: map };
 }
 
 // MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
@@ -974,29 +1030,75 @@ function commitFileIfChanged(outFile, content) {
 // per-file atomicity composed across files, not one filesystem
 // transaction — a reader could still observe a mix of old/new content
 // while a rollback is in progress.
+// MIG-B6-21 (FEAT-008): `<outFile>.map` is only removed when it really is
+// the map this tool manages for that output — same name *and* recognisable
+// as a source map. Switching an entry from `external` to `inline`/off must
+// retire its own stale map without ever deleting an unrelated file that
+// happens to sit at that path.
+function isManagedSourceMap(file) {
+  let content;
+  try { content = fs.readFileSync(file, 'utf8'); } catch (_) { return false; }
+  try {
+    const parsed = JSON.parse(content);
+    return parsed && parsed.version === 3 && Array.isArray(parsed.sources);
+  } catch (_) { return false; }
+}
+
 function commitCompiled(compiled) {
-  const previousContent = compiled.map(({ outFile }) => {
-    try { return fs.readFileSync(outFile, 'utf8'); } catch (_) { return undefined; }
+  // MIG-B6-21: an entry can own two files now (the CSS and, in `external`
+  // mode, its `.map`). Both go through the same per-file atomic write and
+  // the same rollback, so a failure part-way can never leave a stylesheet
+  // annotated with a map from a previous build. `content: null` means
+  // "retire this entry's own managed map", used when a build that used to
+  // emit `external` no longer does.
+  const targets = [];
+  for (const item of compiled) {
+    targets.push({ file: item.outFile, content: item.finalCss });
+    if (item.mapFile && item.mapContent !== undefined) {
+      targets.push({ file: item.mapFile, content: item.mapContent });
+    } else {
+      const staleMap = `${item.outFile}.map`;
+      if (fs.existsSync(staleMap) && isManagedSourceMap(staleMap)) targets.push({ file: staleMap, content: null });
+    }
+  }
+
+  const previousContent = targets.map(({ file }) => {
+    try { return fs.readFileSync(file, 'utf8'); } catch (_) { return undefined; }
   });
   const statuses = [];
   try {
-    for (const { outFile, finalCss } of compiled) {
-      statuses.push(commitFileIfChanged(outFile, finalCss));
+    for (const { file, content } of targets) {
+      if (content === null) {
+        fs.unlinkSync(file);
+        statuses.push('written');
+        continue;
+      }
+      statuses.push(commitFileIfChanged(file, content));
     }
   } catch (commitErr) {
     for (let i = 0; i < statuses.length; i++) {
       if (statuses[i] !== 'written') continue; // 'unchanged' never touched disk — nothing to roll back.
-      const { outFile } = compiled[i];
+      const { file } = targets[i];
       try {
-        if (previousContent[i] === undefined) fs.unlinkSync(outFile);
-        else fs.writeFileSync(outFile, previousContent[i], 'utf8');
+        if (previousContent[i] === undefined) fs.unlinkSync(file);
+        else fs.writeFileSync(file, previousContent[i], 'utf8');
       } catch (rollbackErr) {
-        commitErr.message += `\n[uxdsl] additionally failed to restore the previous ${path.relative(process.cwd(), outFile)}: ${rollbackErr.message}`;
+        commitErr.message += `\n[uxdsl] additionally failed to restore the previous ${path.relative(process.cwd(), file)}: ${rollbackErr.message}`;
       }
     }
     throw commitErr;
   }
-  return statuses;
+  // The caller logs one line per compiled entry, so report per entry (the
+  // CSS file's own status), not per written file.
+  const byEntry = [];
+  let cursor = 0;
+  for (const item of compiled) {
+    byEntry.push(statuses[cursor]);
+    cursor += 1;
+    if (item.mapFile && item.mapContent !== undefined) cursor += 1;
+    else if (targets[cursor] && targets[cursor].content === null) cursor += 1;
+  }
+  return byEntry;
 }
 
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
@@ -1104,10 +1206,16 @@ async function buildOnce(config, entryIndices) {
   // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
   const statuses = commitCompiled(compiled);
   for (let k = 0; k < compiled.length; k++) {
-    const { outFile, finalCss } = compiled[k];
+    const { outFile, finalCss, mapFile, mapContent } = compiled[k];
     const rel = path.relative(process.cwd(), outFile);
     if (statuses[k] === 'written') {
-      console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)`);
+      // MIG-B6-21 (FEAT-008): CSS and map bytes are reported separately, so
+      // a jump in output size is attributable to one or the other rather
+      // than reading as the stylesheet itself having grown.
+      const mapNote = mapFile && mapContent !== undefined
+        ? ` + ${path.basename(mapFile)} (${mapContent.length} bytes)`
+        : '';
+      console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)${mapNote}`);
     } else {
       console.log(`[uxdsl] unchanged ${rel}`);
     }
@@ -1729,8 +1837,12 @@ const COMMAND_FLAG_SPECS = {
   // `--strict` control case entirely (caught by the manual repro in this
   // story's test file, not by any prior automated test) since `''`
   // normalizes to "no families", not "check everything".
-  build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
-  watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme'], alias: { entry: 'e', out: 'o', config: 'c' } },
+  // MIG-B6-21: `sourcemap` is `manual` for the same reason as
+  // `strict-theme` — a minimist `string`-typed flag turns the bare
+  // `--sourcemap` into `''` instead of `true`, which would lose the
+  // "bare flag means external" case entirely.
+  build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
+  watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { entry: 'e', out: 'o', config: 'c' } },
   theme: { boolean: ['diff'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
 };
 
@@ -1895,6 +2007,8 @@ if (require.main === module) {
 // that don't call process.exit, so they can be exercised directly instead
 // of spawning the CLI as a subprocess for every case.
 module.exports = {
+  resolveSourceMap,
+  isManagedSourceMap,
   CONFIG_CANDIDATES,
   THEME_CANDIDATES,
   DEFAULT_ENTRY_REL,

@@ -153,6 +153,23 @@ silently changing how every file in the project compiled was never safe.
 
 ---
 
+## Source maps
+
+**Not advertised as supported.** When Vite's own `build.sourcemap` (or
+`css.devSourcemap`) is on, this plugin does hand Vite a correct source map
+for the CSS it compiled — but `fixtures/vite-adapter/run.js` checks the
+emitted asset and finds that Vite's CSS pipeline does not carry the
+`.uxdsl` source through to the final `.css.map`. Rather than claim a
+feature the fixture does not prove, the outcome is reported by that fixture
+on every run, so if a future Vite version does chain it, the fixture starts
+asserting the real lookup instead.
+
+The plugin never returns a CSS map as the source map of a JavaScript
+module; the map it returns belongs to the CSS module it just produced.
+
+Use the CLI (`uxdsl build --sourcemap`) or the Webpack loader, both of
+which have verified map support, if source maps are a requirement today.
+
 ## License
 
 MIT © [Ricardo Santoyo](https://github.com/rsantoyo-dev)

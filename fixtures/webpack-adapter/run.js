@@ -62,6 +62,49 @@ async function main() {
   assert.deepEqual(leaks, [], `no dist/ file may contain the build machine's absolute repo path; leaked in: ${leaks.join(', ')}`);
   console.log('  ok  - no dist/ file contains the build machine\'s absolute path');
 
+  // --- MIG-B6-21: source maps, end to end through css-loader ---
+  // The loader reads webpack's own `this.sourceMap` (set from devtool), so
+  // this needs no loader option of its own. Asserted by really resolving a
+  // position in the emitted map, not by checking a map merely exists.
+  write(
+    'webpack.map.config.js',
+    "const path = require('path');\n" +
+    "const MiniCssExtractPlugin = require('mini-css-extract-plugin');\n" +
+    "module.exports = {\n" +
+    "  mode: 'development',\n" +
+    "  devtool: 'source-map',\n" +
+    "  context: __dirname,\n" +
+    "  entry: './main.js',\n" +
+    "  output: { path: path.join(__dirname, 'dist-map'), filename: 'bundle.js' },\n" +
+    "  module: {\n" +
+    "    rules: [{\n" +
+    "      test: /\\.uxdsl$/,\n" +
+    "      use: [MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { sourceMap: true } }, { loader: 'uxdsl-webpack-loader', options: { includeTheme: false, breakpoints: { xs: 0, md: 900 } } }],\n" +
+    "    }],\n" +
+    "  },\n" +
+    "  plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],\n" +
+    "  optimization: { minimize: false },\n" +
+    "};\n"
+  );
+  run(path.join(dir, 'node_modules/.bin/webpack'), ['build', '--config', 'webpack.map.config.js']);
+  const mapPath = path.join(dir, 'dist-map', 'styles.css.map');
+  assert.ok(fs.existsSync(mapPath), 'a source map must be emitted for the extracted CSS when devtool is on');
+  const mapped = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+  assert.ok(
+    mapped.sources.some((src) => String(src).endsWith('panel.uxdsl')),
+    `the map must name the .uxdsl source, got: ${JSON.stringify(mapped.sources)}`
+  );
+  // A real lookup: the line holding `color: red` must resolve back to
+  // panel.uxdsl, which is what a devtools "go to source" actually does.
+  const { SourceMapConsumer } = require(path.join(dir, 'node_modules', 'source-map-js'));
+  const mappedCss = fs.readFileSync(path.join(dir, 'dist-map', 'styles.css'), 'utf8').split('\n');
+  const redLine = mappedCss.findIndex((l) => l.includes('color: red'));
+  assert.notEqual(redLine, -1, 'the mapped build must still contain the compiled rule');
+  const consumer = new SourceMapConsumer(mapped);
+  const original = consumer.originalPositionFor({ line: redLine + 1, column: mappedCss[redLine].indexOf('color: red') });
+  assert.ok(String(original.source).endsWith('panel.uxdsl'), `a mapped position must resolve to panel.uxdsl, got ${original.source}`);
+  console.log('  ok  - source maps reach css-loader and resolve a real position back to the .uxdsl source');
+
   // --- watch mode: editing a partial recompiles ---
   write(
     'check-watch.js',

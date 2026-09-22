@@ -1400,3 +1400,117 @@ test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-inc
   await cli.buildOnce(passing); // Must not throw.
   assert.ok(fs.existsSync(path.join(dir, 'out', 'x.module.css')));
 });
+
+// --- MIG-B6-21 (FEAT-008): source maps ---
+
+function mkSourceMapProject(configExtra = '') {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-map-')));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'entry.uxdsl'), '.plain { color: red; }\n.spaced { padding: density(4); }\n');
+  fs.writeFileSync(
+    path.join(dir, 'uxdsl.config.cjs'),
+    `module.exports = { entry: 'src/entry.uxdsl', outFile: 'dist/css/out.css'${configExtra} };\n`
+  );
+  return dir;
+}
+
+test('MIG-B6-21: --sourcemap writes an external .map, annotates the CSS last, and reports both sizes', () => {
+  const dir = mkSourceMapProject();
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const cssPath = path.join(dir, 'dist', 'css', 'out.css');
+  const mapPath = `${cssPath}.map`;
+  assert.ok(fs.existsSync(mapPath), 'external mode writes <outFile>.map');
+  const css = fs.readFileSync(cssPath, 'utf8');
+  assert.ok(css.trimEnd().endsWith('/*# sourceMappingURL=out.css.map */'), 'the annotation must be the last thing in the file');
+  assert.equal(JSON.parse(fs.readFileSync(mapPath, 'utf8')).version, 3);
+  // The log separates CSS bytes from map bytes.
+  assert.match(result.stdout, /built .*out\.css \(\d+ bytes\) \+ out\.css\.map \(\d+ bytes\)/);
+});
+
+test('MIG-B6-21: --sourcemap=inline embeds a data URI and writes no .map', () => {
+  const dir = mkSourceMapProject();
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap=inline'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  const css = fs.readFileSync(path.join(dir, 'dist', 'css', 'out.css'), 'utf8');
+  assert.match(css, /sourceMappingURL=data:application\/json;charset=utf-8;base64,/);
+  assert.equal(fs.existsSync(path.join(dir, 'dist', 'css', 'out.css.map')), false, 'inline writes no .map file');
+});
+
+test('MIG-B6-21: no sourcemap option produces byte-identical CSS to --no-sourcemap, and no map', () => {
+  const dir = mkSourceMapProject();
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  const plain = fs.readFileSync(path.join(dir, 'dist', 'css', 'out.css'), 'utf8');
+
+  const dir2 = mkSourceMapProject();
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build', '--no-sourcemap'], { cwd: dir2, encoding: 'utf8' }).status, 0);
+  assert.equal(fs.readFileSync(path.join(dir2, 'dist', 'css', 'out.css'), 'utf8'), plain);
+  assert.equal(fs.existsSync(path.join(dir2, 'dist', 'css', 'out.css.map')), false);
+});
+
+test('MIG-B6-21: switching external -> off retires that output\'s own map, but never a foreign file at that path', () => {
+  const dir = mkSourceMapProject();
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  const mapPath = path.join(dir, 'dist', 'css', 'out.css.map');
+  assert.ok(fs.existsSync(mapPath));
+
+  // Ours: retired on the next non-external build.
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build', '--no-sourcemap'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  assert.equal(fs.existsSync(mapPath), false, 'a map this tool wrote is retired when the mode changes');
+
+  // Not ours: same path, but not a source map — must survive untouched.
+  fs.writeFileSync(mapPath, 'notes that happen to live at this path\n');
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build', '--no-sourcemap'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  assert.equal(fs.readFileSync(mapPath, 'utf8'), 'notes that happen to live at this path\n');
+});
+
+test('MIG-B6-21: the config option works and the flag overrides it', () => {
+  const dir = mkSourceMapProject(", sourceMap: 'external'");
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  assert.ok(fs.existsSync(path.join(dir, 'dist', 'css', 'out.css.map')), 'config alone enables it');
+
+  assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build', '--no-sourcemap'], { cwd: dir, encoding: 'utf8' }).status, 0);
+  assert.equal(fs.existsSync(path.join(dir, 'dist', 'css', 'out.css.map')), false, 'the flag wins over the config');
+});
+
+test('MIG-B6-21: an invalid sourcemap value fails loudly instead of silently emitting nothing', () => {
+  const dir = mkSourceMapProject();
+  const flag = spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap=yes'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(flag.status, 1);
+  assert.match(flag.stderr, /Invalid value for --sourcemap: "yes"/);
+
+  const badConfig = mkSourceMapProject(", sourceMap: 'External'");
+  const cfg = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: badConfig, encoding: 'utf8' });
+  assert.equal(cfg.status, 1);
+  assert.match(cfg.stderr, /"sourceMap" must be false, "inline" or "external"/);
+});
+
+test('MIG-B6-21: a multi-entry build that fails writes neither CSS nor map for any entry', () => {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-map-')));
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.ok { color: red; }\n');
+  fs.writeFileSync(path.join(dir, 'src', 'b.uxdsl'), '.bad { padding: density(999); }\n');
+  fs.writeFileSync(
+    path.join(dir, 'uxdsl.config.cjs'),
+    "module.exports = { builds: [\n" +
+    "  { entry: 'src/a.uxdsl', outFile: 'dist/a.css' },\n" +
+    "  { entry: 'src/b.uxdsl', outFile: 'dist/b.css', includeTheme: false },\n" +
+    "] };\n"
+  );
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  const written = fs.existsSync(path.join(dir, 'dist')) ? fs.readdirSync(path.join(dir, 'dist')) : [];
+  assert.deepEqual(written, [], `a failing entry must leave nothing written, found: ${written.join(', ')}`);
+});
+
+test('MIG-B6-21: resolveSourceMap precedence is flag > config > false', () => {
+  const { resolveSourceMap } = require('../bin/uxdsl.js');
+  assert.equal(resolveSourceMap(undefined, undefined), false);
+  assert.equal(resolveSourceMap(undefined, 'inline'), 'inline');
+  assert.equal(resolveSourceMap(true, 'inline'), 'external', 'a bare --sourcemap means external and overrides the config');
+  assert.equal(resolveSourceMap(false, 'external'), false, '--no-sourcemap overrides the config');
+  assert.equal(resolveSourceMap('inline', 'external'), 'inline');
+  // minimist turns `--sourcemap=0` into the number 0, which must not read as a mode.
+  assert.throws(() => resolveSourceMap(0, undefined), /Invalid value for --sourcemap/);
+  assert.throws(() => resolveSourceMap('yes', undefined), /Invalid value for --sourcemap/);
+});

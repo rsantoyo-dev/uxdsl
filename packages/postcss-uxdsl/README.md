@@ -745,6 +745,46 @@ list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 
+## Source maps
+
+This plugin has no source-map option of its own — it works with PostCSS's
+own `map`, so a project that already asks for maps in its
+`postcss.config.js` gets them with no extra configuration:
+
+```js
+postcss([require('postcss-uxdsl')()]).process(css, {
+  from: 'src/panel.uxdsl',
+  to: 'dist/panel.css',
+  map: { inline: false },
+});
+```
+
+Positions point at the `.uxdsl` you wrote, not at the compiled CSS:
+
+| Output | Maps back to |
+| --- | --- |
+| A declaration the plugin rewrote (`density()`, `palette()`, …) | That declaration's own line |
+| A responsive declaration split into `@media` rules | The single original declaration |
+| Every declaration `@ds-button`/`@ds-surface`/`@ds-input`/`@ds-typo` expands into | The directive's own line |
+| A declaration from an `@import`-ed partial | That partial, at its own line |
+
+The theme CSS added by `includeTheme` (the `:root` custom-property blocks,
+the `@media` mode blocks, the generated component classes) is deliberately
+**not** mapped: it is built from your theme JSON and has no origin in any
+`.uxdsl` file, so it lands under PostCSS's own `<no source>` placeholder
+with no `sourcesContent`. Through beta.5 each generated block instead
+became an invented `<input css …>` source with its entire body inlined in
+the map — a handful of authored lines could produce a map several times the
+size of the CSS, listing eight "files" that do not exist. `sources` is now
+limited to files you can actually open.
+
+Compiling through `uxdsl-cli` instead? It exposes this as
+`--sourcemap`/`--no-sourcemap` and a `sourceMap` config option, and writes
+the `.map` file next to the CSS — see the "Source maps" section of
+[`uxdsl-cli`'s README](../uxdsl-cli/README.md).
+
+---
+
 ## Verified from a real install
 
 `fixtures/mig07-consumer/` (in the monorepo, `npm run

@@ -179,6 +179,17 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         for (const child of node.nodes || []) inheritSource(child, source);
         return node;
       };
+      // MIG-B6-21 (FEAT-008): CSS built purely from the theme has no origin in
+      // any `.uxdsl` file. Running it through `postcss.parse()` gives every
+      // node a source pointing at a fresh anonymous `<input css …>` Input,
+      // which PostCSS then lists in a sourcemap's `sources` — with its whole
+      // body in `sourcesContent` — so a small stylesheet ended up advertising
+      // eight source files the user never wrote. Dropping the source leaves
+      // these bytes unmapped, which is the honest answer for generated
+      // globals, and keeps `sources` to files that actually exist. Reference
+      // diagnostics are unaffected: an anonymous Input already has no
+      // `input.file`, so `issue.source` was undefined for these nodes anyway.
+      const themeGenerated = (css: string) => inheritSource(postcss.parse(css), undefined).nodes;
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
@@ -186,8 +197,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
       });
       if (effectiveTheme && includeTheme) {
-        root.append(postcss.parse(generateFoundationCss(effectiveTheme)).nodes);
-        root.append(postcss.parse(generateTypographyCss(effectiveTheme, bps)).nodes);
+        root.append(themeGenerated(generateFoundationCss(effectiveTheme)));
+        root.append(themeGenerated(generateTypographyCss(effectiveTheme, bps)));
 
         // Reverse order so they end up in correct order when prepended (each
         // prepend inserts at index 0). MIG-B6-29 phase 4: the URL itself
@@ -572,11 +583,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // definitions themselves are gated by includeTheme.
       const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
-      if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateShadowCss(shadowTheme, bps)));
 
       const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
-      if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateEdgeCss(edgeTheme, bps)));
 
       // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
       // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
@@ -604,7 +615,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
       for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
-      if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateSurfaceCss(effectiveSurfaceTheme, bps)));
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
@@ -614,7 +625,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
-      if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateButtonCss(effectiveButtonTheme, bps)));
       getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
@@ -624,7 +635,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
-      if (includeTheme) root.append(postcss.parse(generateInputCss(effectiveInputTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateInputCss(effectiveInputTheme, bps)));
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {

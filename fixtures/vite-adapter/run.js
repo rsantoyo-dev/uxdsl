@@ -56,6 +56,45 @@ async function main() {
   assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.config.cjs must be discovered and applied");
   console.log('  ok  - the project theme (uxdsl.theme.config.cjs) is discovered and applied');
 
+  // --- MIG-B6-21: does Vite actually chain our CSS source map? ---
+  // The plugin follows Vite's own `build.sourcemap`, so this builds a second
+  // time with it on and checks whether a real lookup resolves back to the
+  // .uxdsl. This story's rule is that the adapter may only advertise what
+  // this fixture proves, so the outcome is reported either way rather than
+  // assumed.
+  write(
+    'vite.map.config.js',
+    "const { defineConfig } = require('vite');\n" +
+    "const uxdsl = require('vite-plugin-uxdsl');\n" +
+    "module.exports = defineConfig({ plugins: [uxdsl.default ? uxdsl.default() : uxdsl()], build: { outDir: 'dist-map', sourcemap: true } });\n"
+  );
+  run(path.join(dir, 'node_modules/.bin/vite'), ['build', '--config', 'vite.map.config.js']);
+  const mapAssets = path.join(dir, 'dist-map', 'assets');
+  const mapCssFile = fs.readdirSync(mapAssets).find((f) => f.endsWith('.css'));
+  const cssMapFile = fs.readdirSync(mapAssets).find((f) => f.endsWith('.css.map'));
+  let viteMapsSources = false;
+  if (cssMapFile) {
+    const parsed = JSON.parse(fs.readFileSync(path.join(mapAssets, cssMapFile), 'utf8'));
+    viteMapsSources = (parsed.sources || []).some((src) => String(src).endsWith('.uxdsl'));
+    if (viteMapsSources) {
+      const { SourceMapConsumer } = require(path.join(dir, 'node_modules', 'source-map-js'));
+      const lines = fs.readFileSync(path.join(mapAssets, mapCssFile), 'utf8').split('\n');
+      const idx = lines.findIndex((l) => l.includes('color:red'));
+      const consumer = new SourceMapConsumer(parsed);
+      const original = consumer.originalPositionFor({ line: idx + 1, column: lines[idx].indexOf('color:red') });
+      assert.ok(String(original.source).endsWith('.uxdsl'), `a mapped position must resolve to a .uxdsl source, got ${original.source}`);
+      console.log('  ok  - vite chains the CSS source map: a real position resolves back to the .uxdsl source');
+    }
+  }
+  if (!viteMapsSources) {
+    // Not a failure: it is this story's documented outcome. The plugin still
+    // hands Vite a correct map; Vite's own CSS pipeline is what decides
+    // whether it survives into the emitted asset. Recorded so the README
+    // never claims more than this run proves.
+    console.log('  note - vite did not carry the .uxdsl source through to the emitted CSS map; support is NOT advertised (see MIG-B6-21)');
+  }
+  fs.writeFileSync(path.join(dir, 'vite-sourcemap-result.txt'), viteMapsSources ? 'chained' : 'not-chained');
+
   // --- no absolute build-machine paths anywhere in dist/ ---
   const walk = (d) => fs.readdirSync(d, { withFileTypes: true }).flatMap((e) =>
     e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)]

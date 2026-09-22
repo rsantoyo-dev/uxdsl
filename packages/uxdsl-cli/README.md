@@ -437,6 +437,48 @@ and/or `breakpoints`) avoids the conflict while keeping the guarantee
 where it's meaningful. `true` remains available for a project that
 deliberately wants maximum strictness everywhere.
 
+### Source maps (`--sourcemap`, `sourceMap`)
+
+Off by default. Turn it on so devtools point at your `.uxdsl` sources
+instead of the compiled CSS:
+
+```bash
+npx uxdsl build --sourcemap            # external: writes <outFile>.map
+npx uxdsl build --sourcemap=inline     # embeds the map as a data URI
+npx uxdsl build --no-sourcemap         # off (the default)
+```
+
+Or in `uxdsl.config.cjs`, shared by every entry in a `builds` array:
+
+```javascript
+module.exports = { entry: 'src/app.uxdsl', outFile: 'dist/app.css', sourceMap: 'external' };
+```
+
+Precedence is **flag > config > off**. Accepted values are `false`,
+`'inline'` and `'external'`; a bare `--sourcemap` means `external`. Anything
+else fails before the build runs rather than quietly producing no map.
+
+- **`external`** writes `<outFile>.map` next to the CSS and appends
+  `/*# sourceMappingURL=<name>.map */` as the very last line. The build log
+  reports the two sizes separately, e.g.
+  `built dist/app.css (50854 bytes) + app.css.map (8702 bytes)`.
+- **`inline`** embeds the map as a base64 data URI and writes no `.map`.
+- **`false`** produces byte-identical CSS to not passing the option at all.
+
+What the map points at: a plain declaration maps to its own line; a
+declaration the compiler rewrote (`density()`, `palette()`, …) maps to the
+original declaration, not to wherever the generated value landed; the
+declarations a `@ds-button`/`@ds-input`/`@ds-typo` directive expands into
+map to the directive's own line; and a declaration from an `@import`-ed
+partial maps to that partial, with its own line. The `:root` token blocks
+generated purely from the theme are left unmapped rather than pointed at a
+file you never wrote.
+
+Switching an output from `external` to `inline`/off retires that output's
+own `.map`. A file sitting at the same path that is *not* a source map is
+never deleted. In a multi-entry `builds`, a compile failure in any entry
+still writes nothing at all — neither CSS nor maps.
+
 ### 8. Strict flag parsing: accepted values, unknown flags, unknown families
 
 Every flag accepts a fixed, explicit set of forms — anything else is a hard
@@ -445,6 +487,7 @@ error before any build runs, not a silent no-op:
 | Flag | Accepted forms |
 | --- | --- |
 | `--include-theme` | bare (`true`), `--no-include-theme` (`false`), `=true`, `=false`. Any other value (`--include-theme=banana`) fails with `Invalid value for --include-theme: "banana"...`. |
+| `--sourcemap` (build/watch) | bare (`external`), `--no-sourcemap` (off), `=inline`, `=external`, `=true` (same as bare), `=false` (off). Any other value (`--sourcemap=yes`, `--sourcemap=0`) fails with `Invalid value for --sourcemap: ...`. |
 | `--strict-theme` (build/watch) | bare (check every touched family), `--no-strict-theme`/`=false` (off), `=true` (same as bare), `=<family1>,<family2>` (scoped). `=true`/`=false` are recognized as the booleans they mean, not as families literally named "true"/"false". |
 | `--strict` (theme) | same forms and rules as `--strict-theme`. |
 

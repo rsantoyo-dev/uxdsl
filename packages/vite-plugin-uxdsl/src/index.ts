@@ -70,7 +70,7 @@ interface CoreModule {
   compile(
     input: { entry: string } | { source: string; from?: string },
     config?: Record<string, unknown>
-  ): Promise<{ css: string; dependencies: string[]; warnings: Array<{ text: string }> }>;
+  ): Promise<{ css: string; map?: string; dependencies: string[]; warnings: Array<{ text: string }> }>;
 }
 
 interface ConfigModule {
@@ -211,12 +211,17 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
   const core = resolveCore();
   const configModule = resolveConfigModule();
   let projectRoot = process.cwd();
+  // MIG-B6-21 (FEAT-008): follows Vite's own resolved sourcemap settings
+  // rather than adding a plugin option that could disagree with them —
+  // `build.sourcemap` for a build, `css.devSourcemap` for the dev server.
+  let viteSourceMapEnabled = false;
 
   return {
     name: 'vite-plugin-uxdsl',
     enforce: 'pre',
     configResolved(config: ResolvedConfig) {
       projectRoot = config.root || projectRoot;
+      viteSourceMapEnabled = Boolean(config.build?.sourcemap) || Boolean(config.css?.devSourcemap);
     },
     resolveId(id: string, importer: string | undefined) {
       // A leading "/" is ambiguous on POSIX: `path.isAbsolute` can't tell
@@ -272,18 +277,30 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         ? { source: compileWithSass(absPath, userOptions, projectRoot), from: absPath }
         : { entry: absPath };
 
-      const { css, dependencies, warnings } = await core.compile(input, {
+      // MIG-B6-21 (FEAT-008): Vite drives maps from its own `build.sourcemap`
+      // / `css.devSourcemap` settings, so this follows the resolved config
+      // instead of inventing a plugin option. 'external' (never 'inline'):
+      // the map is handed back as a real object for Vite to chain, and an
+      // embedded data URI would instead bury it inside the CSS text where
+      // Vite's own pipeline can't compose it.
+      const wantMap = viteSourceMapEnabled;
+      const { css, map, dependencies, warnings } = await core.compile(input, {
         theme,
         references,
         breakpoints: userOptions.breakpoints,
         includeTheme: userOptions.includeTheme,
+        sourceMap: wantMap ? 'external' : false,
+        to: absPath,
       });
 
       for (const dep of dependencies) this.addWatchFile(dep);
       if (discovered) for (const dep of discovered.dependencies) this.addWatchFile(dep);
       for (const warning of warnings) this.warn(warning.text);
 
-      return { code: css, map: null };
+      // This is the map for the CSS this hook just produced. It is returned
+      // as the module's own map only because the module *is* that CSS —
+      // never as the map of a JavaScript module wrapping it.
+      return { code: css, map: map ? JSON.parse(map) : null };
     },
   };
 }

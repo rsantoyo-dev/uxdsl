@@ -260,9 +260,12 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
   if (input.entry !== undefined && input.source !== undefined) {
     throw new Error('uxdsl-core: compile() accepts either { entry } or { source }, not both.');
   }
+  // MIG-B6-21 (FEAT-008): implemented. Still validated strictly rather than
+  // coerced, so a typo ('External', true) fails loudly instead of silently
+  // producing no map — the same reason this threw while it was unimplemented.
   const sourceMap = config.sourceMap ?? false;
-  if (sourceMap !== false) {
-    throw new Error(`uxdsl-core: sourceMap option "${sourceMap}" is not implemented yet (see MIG-B6-21) — pass \`false\` (the default) instead of silently ignoring it.`);
+  if (sourceMap !== false && sourceMap !== 'inline' && sourceMap !== 'external') {
+    throw new Error(`uxdsl-core: invalid sourceMap option ${JSON.stringify(sourceMap)} — expected false, 'inline' or 'external'.`);
   }
 
   const entry = input.entry !== undefined ? path.resolve(input.entry) : undefined;
@@ -296,11 +299,24 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
     }),
   ];
 
+  // MIG-B6-21: `annotation: false` because this function appends the
+  // breakpoint metadata *after* the stylesheet, so any annotation PostCSS
+  // placed would end up mid-file; 'inline' re-adds its own data URI at the
+  // very end below, and 'external' leaves the annotation to whoever knows
+  // the final `.map` filename (the CLI). `inline: false` keeps the map out
+  // of the CSS in both cases so there is exactly one place that decides.
+  // `sources` are resolved by PostCSS against `to` — the CLI passes the
+  // absolute outFile, which is also where the external `.map` lands, so one
+  // `to` serves both modes. Without `to`, PostCSS falls back to `from`'s
+  // directory; an in-memory compile with neither has no meaningful base and
+  // its `sources` are left exactly as PostCSS reports them.
   const result: Result = await postcss(plugins).process(source, {
     from,
     to: config.to,
     syntax: postcssScss,
-    map: false,
+    map: sourceMap === false
+      ? false
+      : { inline: false, annotation: false, sourcesContent: config.sourcesContent !== false },
   });
 
   // SCSS "//" line comments parse fine under postcss-scss but are not
@@ -321,11 +337,30 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
   // same reason the CLI scoped it: it's global-theme information that
   // belongs to the one entry defining the theme, not to every
   // component/CSS-Module entry compiled against it.
-  let finalCss = result.root.toString(postcssScss);
+  // MIG-B6-21: the map is only produced by PostCSS's own stringification, so
+  // the mapped path has to read `result.css`. The unmapped path keeps calling
+  // `root.toString(postcssScss)` exactly as before, so `sourceMap: false`
+  // stays byte-identical to this same compiler without the option — which is
+  // this story's own acceptance criterion, and why the two are not unified.
+  let finalCss = sourceMap === false ? result.root.toString(postcssScss) : result.css;
   if (includeTheme) {
     const bpMap = normalizeBpMap(config.breakpoints);
     const bpJson = JSON.stringify(bpMap);
     finalCss = `${finalCss}\n/*@uxdsl-bp ${bpJson}*/\n#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
+  }
+
+  // 'inline' is self-contained, so it is finished here — appended last, after
+  // the breakpoint metadata, because a sourceMappingURL comment only counts
+  // when it is the final one in the file. 'external' returns the map instead
+  // and leaves the annotation to the writer, which is the only side that
+  // knows what the `.map` will be called.
+  let map: string | undefined;
+  if (sourceMap !== false) {
+    map = result.map.toString();
+    if (sourceMap === 'inline') {
+      const encoded = Buffer.from(map, 'utf8').toString('base64');
+      finalCss = `${finalCss}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,${encoded} */`;
+    }
   }
 
   const dependencies: string[] = [];
@@ -344,7 +379,7 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
     column: w.column,
   }));
 
-  return { css: finalCss, dependencies, warnings };
+  return { css: finalCss, map, dependencies, warnings };
 }
 
 /** Options accepted by the compatibility entry point. A superset of

@@ -121,11 +121,31 @@ PostCSS):
 
 ## Criterios de aceptación
 
-- [ ] Las cuatro consultas de mapa aciertan en la línea.
-- [ ] `sourceMap: false` es idéntico byte a byte.
-- [ ] Multi-entry no escribe ante error de compilación/preparación; recuperación
+- [x] Las cuatro consultas de mapa aciertan en la línea.
+      **(`uxdsl-core/test/compile.test.js`, "MIG-B6-21: every required map query
+      lands on the right .uxdsl line" — con `SourceMapConsumer` real: declaración
+      normal → línea 4, declaración reescrita por `density()` → línea 8 (la
+      original), declaración generada por `@ds-button` → línea 12 (la directiva),
+      declaración de un parcial importado → `partial.uxdsl` línea 2)**
+- [x] `sourceMap: false` es idéntico byte a byte.
+      **("MIG-B6-21: sourceMap: false is byte-identical to the same compiler
+      without the option" compara `false`, opción omitida y `external` — los tres
+      producen el mismo CSS, porque `external` deja la anotación al escritor.
+      En el CLI, el test "no sourcemap option produces byte-identical CSS to
+      --no-sourcemap" lo comprueba sobre la salida real en disco)**
+- [x] Multi-entry no escribe ante error de compilación/preparación; recuperación
       de commit con mapas probada y límites de 23 documentados.
-- [ ] Vite y Webpack sólo anuncian lo que sus fixtures prueban.
+      **("MIG-B6-21: a multi-entry build that fails writes neither CSS nor map
+      for any entry" — `dist/` queda vacío. `commitCompiled` trata CSS y `.map`
+      como objetivos del mismo commit/rollback por archivo; los límites de 23
+      (atomicidad por archivo, no transacción multi-archivo) siguen vigentes y
+      se repiten en "Límites y seguimiento")**
+- [x] Vite y Webpack sólo anuncian lo que sus fixtures prueban.
+      **(Webpack: soporte verificado end-to-end en `fixtures/webpack-adapter/run.js`
+      con `devtool: 'source-map'` + `css-loader`, resolviendo una posición real
+      hasta `panel.uxdsl`; README lo declara. Vite: su fixture comprueba y
+      **no** encuentra la fuente `.uxdsl` en el `.css.map` emitido, así que el
+      README declara explícitamente que NO se anuncia soporte)**
 
 ## Verificación
 
@@ -143,22 +163,20 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/feat-008-beta6-plan`. Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `5f8cd34` (2026-09-22, HEAD de la rama al iniciar). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | Sobre `5f8cd34`, los dos comandos de la propia ficha: `grep -n "map: false" packages/uxdsl-core/src/index.ts` → línea 303, `map: false` fijo en la llamada a PostCSS; y el CLI no aceptaba ninguna opción de mapa (`sourceMap` estaba *declarada* en `CompileConfig` desde MIG-B6-18 pero lanzaba `sourceMap option "inline" is not implemented yet`). Tres hallazgos al inventariar el estado real, que cambian lo que la ficha daba por pendiente: (a) el paso 2 ya estaba hecho en su mayor parte — MIG-B6-13 introdujo `inheritSource(node, at.source)` y las declaraciones responsive (`cloned.append`/`targetRule.append`, hoy líneas 874/921, no ~762/~809) ya llevaban `source: decl.source`, así que las cuatro consultas de mapa acertaron sin tocar esos sitios; (b) el `rule.append({ prop, value })` de las densidades (línea 592) no lleva `source` **a propósito** y así se deja: son globals sólo-de-tema, el caso que la propia ficha excluye; (c) lo que sí faltaba y la ficha no anticipaba: los siete bloques `postcss.parse(generate*Css(...))` daban a cada nodo un `Input` anónimo, que PostCSS listaba como siete "archivos fuente" con todo su cuerpo en `sourcesContent` — 58.366 bytes de mapa para una hoja de 30 líneas. 2026-09-22 |
+| Criterio → regresión | Las cuatro consultas → `uxdsl-core/test/compile.test.js`, "MIG-B6-21: every required map query lands on the right .uxdsl line" (`SourceMapConsumer` real, una aserción de `source` + `line` por caso). Rutas → "no sources entry is absolute, and theme-only globals invent no source file" (ninguna absoluta; exactamente dos `.uxdsl`; cero `<input css …>`). Byte-identidad → "sourceMap: false is byte-identical to the same compiler without the option". Inline → "inline embeds the map as a data URI, last in the file, and returns it too" (una sola anotación, al final, y el base64 decodifica al mismo mapa devuelto). `sourcesContent` → "sourcesContent is included by default and omitted when turned off". Independencia del cwd → "sources resolve against the map location, from any cwd" (mismo resultado desde dos cwd distintos, resuelto contra la ubicación del mapa). CLI → ocho tests nuevos en `uxdsl-cli/test/uxdsl-cli.test.js` que cubren external/inline/off, el log con ambos tamaños, la precedencia flag > config > off, el rechazo de valores inválidos (incluido `--sourcemap=0`, que minimist convierte en el número 0), la retirada del mapa propio sin borrar un archivo ajeno en la misma ruta, y el multi-entry que falla sin escribir nada. Adaptadores → aserciones nuevas dentro de `fixtures/webpack-adapter/run.js` y `fixtures/vite-adapter/run.js`. El test de MIG-B6-18 que afirmaba "no implementado" se reescribió en vez de borrarse: ahora fija la mitad que no cambió (un valor no reconocido es error duro) y comprueba que los tres valores documentados se aceptan |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, desde el root del monorepo: `npm --prefix packages/uxdsl-core test` (exit 0, **27/27**, +6), `npm --prefix packages/uxdsl-cli test` (exit 0, **163/163**, +8), `node fixtures/vite-adapter/run.js` (exit 0), `node fixtures/webpack-adapter/run.js` (exit 0), `npm run test:parity` (exit 0, 8 casos — CLI, `compile()` y ambos adaptadores siguen coincidiendo con el oráculo), `npm test` (exit 0, 591 líneas `ok`), `npm run verify:beta2`/`beta3`/`beta4`/`beta5` (exit 0), `npm run verify:consumer-fixture` (exit 0), `npm run verify:vscode-extension` (exit 0) |
+| Resultado después / control negativo | Las cuatro consultas aciertan: declaración normal → `entry.uxdsl` 4; `density()` → `entry.uxdsl` 8 (la original, no donde quedó el valor generado); `@ds-button` → `entry.uxdsl` 12 (la directiva); parcial importado → `partial.uxdsl` 2. `sources` pasó de 10 entradas (8 inventadas) a 3, y el mapa de 58.366 a **9.045 bytes (−85%)**. CLI end-to-end: `--sourcemap` → `out.css.map` + anotación final + log `built … (50854 bytes) + out.css.map (8702 bytes)`; `--sourcemap=inline` → data URI y ningún `.map`; sin opción → 50.818 bytes, exactamente los 36 de la anotación menos. **Controles negativos**: un archivo que *no* es un sourcemap colocado en `<outFile>.map` sobrevive intacto al cambiar de modo (sólo se retira un mapa que parsea como `version: 3` con `sources`); un `builds` con una entrada que falla deja `dist/` vacío; `--sourcemap=yes`, `--sourcemap=0` y `sourceMap: 'External'` fallan antes de compilar. **Resultado negativo real y aceptado**: la fixture de Vite comprueba el `.css.map` emitido y **no** encuentra la fuente `.uxdsl`, así que el soporte no se anuncia — la fixture imprime ese resultado en cada corrida en vez de asumirlo |
+| Cambios visuales o API / migración | Sin cambio visual: con la opción apagada (el default) el CSS es byte-idéntico. API aditiva: `compile()` implementa `sourceMap` y devuelve `map`; el CLI gana `--sourcemap`/`--no-sourcemap` y `sourceMap` en config; el loader de Webpack entrega el mapa como objeto por `callback(null, css, map)`; el plugin de Vite devuelve el mapa del módulo CSS. Ningún default cambia, así que no hay receta de migración: un proyecto que no pida mapas compila exactamente igual que antes |
+| README / CHANGELOG / migration | `packages/uxdsl-core/README.md` (`sourceMap`/`sourcesContent`/`to` en `compile()`, qué mapea cada nodo generado y por qué los globals del tema quedan sin mapear); `packages/uxdsl-cli/README.md` (nueva sección "Source maps" con los tres modos, precedencia, el log de dos tamaños, la retirada del mapa propio y el multi-entry, más la fila de `--sourcemap` en la tabla de parseo estricto de flags); `packages/uxdsl-webpack-loader/README.md` (soporte verificado, con qué lo verifica); `packages/vite-plugin-uxdsl/README.md` (declara explícitamente que **no** se anuncia soporte y por qué, y remite a CLI/Webpack); `packages/postcss-uxdsl/CHANGELOG.md` (entrada MIG-B6-21). `docs/migration.md` sin cambios: no hay nada que migrar cuando el default no cambia |
+| AGENTS / guías / arquitectura | Sin cambio de contrato: `AGENTS.md` describe responsabilidades de primitivas y el contrato de tema/runtime, ninguno de los cuales cambia al añadir una opción de mapa opcional y apagada por defecto. No se tocó |
+| Límites y seguimiento | (1) **Vite no propaga el mapa**, verificado, no supuesto: el plugin entrega un mapa correcto pero el pipeline CSS de Vite no lleva la fuente `.uxdsl` hasta el asset emitido. No se anuncia soporte; la fixture deja registro en cada corrida y pasará a afirmar la consulta real si una versión futura lo encadena. (2) **Mapas para el CSS de tema generado en runtime (`ds-runtime`) siguen fuera de alcance**, como dice la ficha. (3) **Sin overrides de mapa por entrada**: `sourceMap` es compartido por todo el build, igual que el tema. (4) **La atomicidad sigue siendo por archivo**, el límite que MIG-B6-23 ya documenta: CSS y `.map` se escriben y revierten juntos dentro del mismo commit, pero un lector concurrente puede observar una mezcla mientras un rollback está en curso; no es una transacción de varios paths. (5) **La retirada del mapa obsoleto usa una heurística deliberada** — mismo nombre *y* que parsee como sourcemap v3 — para no borrar nunca un archivo ajeno; el precio es que un `.map` propio corrupto no se limpia solo. (6) **Sin verificación en un navegador real**: lo verificado son consultas con `SourceMapConsumer` sobre el mapa emitido, que es lo que hace un devtools, pero no se abrió Chromium (limitación ya registrada en otras fichas de esta sesión) |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.
