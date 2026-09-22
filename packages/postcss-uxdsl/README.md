@@ -548,6 +548,50 @@ anything Node-only — both are exported from the same browser-safe
 client-side theme switcher, for example) can reuse the exact same
 encoding instead of drifting from what the compiler itself emits.
 
+### What `@ds-typo` emits
+
+**MIG-B6-17 (FEAT-008).** `@ds-typo(role)` emits exactly one declaration per
+field the effective theme defines for that role — the role's own fields layered
+over `default`'s, the same composition the variable generator uses — and nothing
+else. Every declaration is a bare `var(--uxdsl__typography__<role>-<suffix>)`
+with **no literal fallback**, so the directive can never apply a value your
+theme did not ask for:
+
+```css
+/* theme/base.json defines fontFamily, fontSize, lineHeight, fontWeight,
+   letterSpacing, marginBlockStart and marginBlockEnd for `caption`. */
+.eyebrow { margin: 0; @ds-typo(caption); }
+```
+
+```css
+.eyebrow {
+  margin: 0;
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-size);
+  line-height: var(--uxdsl__typography__caption-line);
+  font-weight: var(--uxdsl__typography__caption-weight);
+  letter-spacing: var(--uxdsl__typography__caption-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+}
+```
+
+A field the theme does not define is simply not emitted — the element keeps
+whatever it inherits, or the browser default. In particular the directive does
+**not** reset `text-transform`, `font-style` or `text-decoration`, and never
+emits `opacity` (not a typography field at all). Define the field in
+`typography_details` when that value is the intended design; see the beta.6
+CHANGELOG entry for the exact before/after list and a recipe to restore the
+previous behaviour.
+
+**Precedence** follows the directive's position in the rule, like any other
+declaration: `.a { @ds-typo(h1); font-size: 3rem; }` keeps `3rem`, while
+`.a { font-size: 3rem; @ds-typo(h1); }` lets the role's size win.
+
+A role the effective theme does not define fails as `UXD_TYPO_REFERENCE`,
+pointing at the directive and listing the roles that do exist — it never
+silently falls back to `default`.
+
 ### Legacy opt-in packs (deprecated)
 
 `postcss-uxdsl/theme/*.uxdsl` and `postcss-uxdsl/theme/*.css`

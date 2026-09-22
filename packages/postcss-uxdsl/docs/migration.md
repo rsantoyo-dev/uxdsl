@@ -741,6 +741,60 @@ responsive usado por el consumidor. Antes de reemplazar una hoja runtime,
 generar el CSS completo correctamente; ante una excepción conservar la hoja
 y el último tema válido.
 
+### Desde beta.6: `@ds-typo` emite sólo lo que define el tema (MIG-B6-17)
+
+`@ds-typo(rol)` emitía 10-11 declaraciones fijas por uso, con valores de
+respaldo que venían de un mapa dentro del compilador, no del tema. Ahora emite
+**una declaración por campo que el tema efectivo define para ese rol**, sin
+ningún respaldo literal.
+
+Cambios visibles, todos deliberados:
+
+- **Los enlaces conservan su subrayado.** Antes se aplicaba
+  `text-decoration: none` a todo uso de `@ds-typo`, incluso sobre un `<a>`
+  (problema de WCAG 1.4.1).
+- **Los márgenes ya no rompen flex ni grid.** `auto` colapsa a `0` en flujo
+  normal pero *absorbe el espacio libre* dentro de un contenedor flex o grid.
+  `theme/base.json` ahora define `marginBlockStart`/`marginBlockEnd` como
+  `"0"`: el render en flujo normal es idéntico, sin la trampa.
+- **`caption` y `small` ya no se atenúan con `opacity: 0.8`.** Reducía el
+  contraste y era imposible de sobrescribir desde el tema, porque `opacity`
+  no es un campo de tipografía. Si se quiere un caption atenuado, expresarlo
+  con un color de palette en el componente.
+- **`text-transform` y `font-style` ya no se resetean.** Sus valores iniciales
+  de CSS ya son `none`/`normal`, así que en aislamiento no cambia nada — pero
+  ambos se heredan, así que un elemento con `@ds-typo` dentro de un padre en
+  mayúsculas o en cursiva ahora hereda ese padre en vez de resetearlo.
+- `code` y `pre` ahora sí emiten `font-weight` y `letter-spacing`: el tema ya
+  los definía, la directiva simplemente nunca los leía.
+- Un rol que el tema efectivo no define falla como `UXD_TYPO_REFERENCE`,
+  señalando la directiva y listando los roles disponibles. Nunca cae en
+  silencio a `default`.
+
+**Para recuperar el aspecto de beta.5**, definir los campos en el propio tema.
+Ahora son campos de tipografía normales, así que además son sobrescribibles,
+cosa que los respaldos hardcodeados nunca fueron:
+
+```json
+{
+  "typography_details": {
+    "default": {
+      "textTransform": "none",
+      "textDecoration": "none",
+      "fontStyle": "normal",
+      "marginBlockStart": "auto",
+      "marginBlockEnd": "auto"
+    }
+  }
+}
+```
+
+`opacity` no tiene equivalente: nunca fue un campo de tipografía, así que no
+se puede restaurar desde el tema. Aplicarlo en el componente si hace falta.
+
+Tamaño de salida: una fixture con 100 usos de `@ds-typo` sobre 13 roles pasa
+de 63.455 a 40.296 bytes (−36,5%).
+
 ## Verificación
 
 Los ejemplos de este documento están verificados contra los tests de este

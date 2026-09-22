@@ -10,6 +10,12 @@ export const DIAGNOSTIC_CODES = new Set([
   'UXD_BP_INVALID', 'UXD_VALUE',
   'UXD_DENSITY_MAP', 'UXD_DENSITY_VALUE', 'UXD_DENSITY_KEY', 'UXD_DENSITY_BASE', 'UXD_DENSITY_REFERENCE',
   'UXD_TYPO_TOKEN', 'UXD_TYPO_BP', 'UXD_TYPO_DETAILS', 'UXD_TYPO_ROLE', 'UXD_TYPO_FIELD', 'UXD_TYPO_BASE', 'UXD_TYPO_NAME_COLLISION',
+  // MIG-B6-17 (FEAT-008): `@ds-typo(role)` naming a role the effective theme
+  // does not define. Distinct from UXD_TYPO_ROLE, which rejects an invalid
+  // role *definition* in the JSON; this one rejects an invalid *reference*
+  // from a directive, the same split every other family already has
+  // (e.g. UXD_SURFACE_ROLE vs UXD_SURFACE_REFERENCE).
+  'UXD_TYPO_REFERENCE',
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',

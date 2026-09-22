@@ -110,9 +110,18 @@ test('packaged data-typo selectors consume all configured properties', async () 
   const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, typography_details: { default: { fontSize: '1rem' }, code: { fontSize: '0.9rem' } } } })]).process(source, { from: undefined });
   const rule = postcss.parse(built.css).nodes.find(n => n.selector === '.ds-typo[data-typo="h1"]');
   const props = Object.fromEntries(rule.nodes.map(d => [d.prop, d.value]));
-  assert.equal(props['text-transform'], 'var(--uxdsl__typography__h1-transform, none)');
-  assert.equal(props['font-style'], 'var(--uxdsl__typography__h1-style, normal)');
-  assert.equal(props['margin-block-end'], 'var(--uxdsl__typography__h1-margin-block-end, auto)');
+  // MIG-B6-17 (FEAT-008): one declaration per field the effective theme
+  // defines for this role, referencing the variable with no literal fallback.
+  // This used to assert the opposite — `var(…, none)`, `var(…, normal)` and
+  // `var(…, auto)` for fields the theme never defined at all.
+  assert.equal(props['margin-block-end'], 'var(--uxdsl__typography__h1-margin-block-end)');
+  assert.equal(props['font-family'], 'var(--uxdsl__typography__h1-font-family)');
+  assert.equal(props['font-size'], 'var(--uxdsl__typography__h1-size)');
+  // The base theme defines no textTransform/fontStyle for h1, so the packaged
+  // selector must not invent them.
+  assert.equal(props['text-transform'], undefined);
+  assert.equal(props['font-style'], undefined);
+  assert.equal(props['text-decoration'], undefined);
 });
 test('switching theme breakpoint maps can remove previous custom names', () => {
   const runtime = require('../dist/ds-runtime/index');
@@ -128,4 +137,111 @@ test('switching theme breakpoint maps can remove previous custom names', () => {
     if (previousDocument === undefined) delete global.document;
     else global.document = previousDocument;
   }
+});
+
+// --- MIG-B6-17 (FEAT-008): @ds-typo emits only what the theme defines ---
+// The directive used to emit a fixed list of 10-11 declarations whose literal
+// fallbacks came from a hardcoded map, not the theme: `auto` margins (which
+// absorb free space in flex/grid instead of collapsing to 0), a
+// `text-decoration: none` that stripped link underlines, `text-transform` /
+// `font-style` resets, and an `opacity` that was impossible to override from
+// JSON because it is not one of TYPOGRAPHY_PROPERTIES' fields at all.
+
+const compileWithBase = (css, options = {}) =>
+  postcss([plugin({ includeTheme: false, ...options })]).process(css, { from: 'typo.uxdsl' });
+
+const emitted = (css) => {
+  const rule = postcss.parse(css).first;
+  return Object.fromEntries(rule.nodes.filter(n => n.type === 'decl').map(d => [d.prop, d.value]));
+};
+
+test('MIG-B6-17: the ficha\'s own reproduction no longer emits auto, an implicit none, or opacity', async () => {
+  const result = await compileWithBase('.eyebrow { margin: 0; @ds-typo(caption); }');
+  const props = emitted(result.css);
+
+  assert.equal(props['opacity'], undefined, 'opacity was never a theme field and must not be invented');
+  assert.equal(props['text-decoration'], undefined, 'inventing text-decoration: none strips link underlines (WCAG 1.4.1)');
+  assert.equal(props['text-transform'], undefined);
+  assert.equal(props['font-style'], undefined);
+  for (const value of Object.values(props)) {
+    assert.doesNotMatch(value, /,/, `no declaration may carry a literal fallback any more: ${value}`);
+  }
+  // The declaration written before the directive keeps its place and value.
+  assert.equal(props['margin'], '0');
+  // Margins are still emitted, but now because theme/base.json genuinely
+  // defines them ("0"), not as an invented `auto`.
+  assert.equal(props['margin-block-start'], 'var(--uxdsl__typography__caption-margin-block-start)');
+});
+
+test('MIG-B6-17: a role the theme does not define fails with a location instead of silently becoming default', async () => {
+  const error = await compileWithBase('.a {\n  @ds-typo(nope);\n}').then(() => null, (caught) => caught);
+  assert.ok(error, 'an unknown role must not compile');
+  assert.match(error.reason, /^UXD_TYPO_REFERENCE: ds-typo\(nope\) does not exist/);
+  assert.equal(error.line, 2);
+});
+
+test('MIG-B6-17: a custom role with only fontSize inherits default\'s other fields, in the directive and the generator alike', async () => {
+  const custom = { typography_details: { 'card-title': { fontSize: '2rem' } } };
+  const result = await compileWithBase('.card h2 { @ds-typo(card-title); }', { theme: custom });
+  const props = emitted(result.css);
+  // Its own field, plus every field `default` contributes.
+  assert.equal(props['font-size'], 'var(--uxdsl__typography__card-title-size)');
+  assert.equal(props['font-weight'], 'var(--uxdsl__typography__card-title-weight)');
+  assert.equal(props['font-family'], 'var(--uxdsl__typography__card-title-font-family)');
+
+  // The generator defines every variable the directive just referenced —
+  // without a fallback, a mismatch here would silently render nothing.
+  const generated = generateThemeCss(custom);
+  for (const value of Object.values(props)) {
+    const name = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+    if (name) assert.ok(generated.includes(`${name}:`), `generator must define ${name}`);
+  }
+});
+
+test('MIG-B6-17: defining textDecoration in the theme makes it emitted again', async () => {
+  const withDecoration = { typography_details: { caption: { textDecoration: 'underline' } } };
+  const result = await compileWithBase('.a { @ds-typo(caption); }', { theme: withDecoration });
+  assert.equal(emitted(result.css)['text-decoration'], 'var(--uxdsl__typography__caption-decoration)');
+  assert.match(generateThemeCss(withDecoration), /--uxdsl__typography__caption-decoration:\s*underline/);
+});
+
+test('MIG-B6-17: a later declaration still overrides the directive, and two directives keep their positions', async () => {
+  const result = await compileWithBase('.a { @ds-typo(h1); font-size: 3rem; }');
+  const order = postcss.parse(result.css).first.nodes.filter(n => n.type === 'decl').map(d => d.prop);
+  assert.equal(order[order.length - 1], 'font-size', 'a declaration written after the directive stays last and wins');
+
+  const two = await compileWithBase('.a { @ds-typo(h1); color: red; @ds-typo(caption); }');
+  const props = postcss.parse(two.css).first.nodes.filter(n => n.type === 'decl').map(d => d.prop);
+  assert.ok(props.indexOf('color') > 0 && props.indexOf('color') < props.length - 1, 'the mid-rule declaration keeps its position between both directives');
+});
+
+test('MIG-B6-17 snapshot: every base-theme role emits exactly its theme-defined fields, and nothing dangles', async () => {
+  const { resolveTheme } = require('../dist/default-theme');
+  const { inspectTypographyTheme } = require('../dist/typography');
+  const base = resolveTheme();
+  const defined = inspectTypographyTheme(base, 0);
+  const roles = Object.keys(base.typography_details).filter(r => r !== 'default').sort();
+
+  // The approved "after" inventory (step 1 of this story): the base theme
+  // defines fontFamily/fontSize/lineHeight/fontWeight/letterSpacing plus the
+  // two margins for every role, so every role emits these seven and no more.
+  const expected = ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing', 'margin-block-start', 'margin-block-end'];
+  for (const role of roles) {
+    const result = await compileWithBase(`.probe { @ds-typo(${role}); }`);
+    const props = emitted(result.css);
+    assert.deepEqual(Object.keys(props), expected, `role ${role}`);
+    for (const [prop, value] of Object.entries(props)) {
+      const name = /^var\((--[\w-]+)\)$/.exec(value)?.[1];
+      assert.ok(name, `${role}.${prop} must be a bare var() reference, got ${value}`);
+      assert.ok(Object.prototype.hasOwnProperty.call(defined, name), `${role}.${prop} references ${name}, which the theme never defines`);
+    }
+  }
+});
+
+test('MIG-B6-17: the CSS-property map and the variable-suffix map cannot drift apart', () => {
+  const { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES } = require('../dist/typography');
+  // applyTypo reads one key from each for the same field, so a field present
+  // in only one of them would either emit a declaration naming a variable the
+  // generator never defines, or silently stop being emitted at all.
+  assert.deepEqual(Object.keys(TYPOGRAPHY_CSS_PROPERTIES).sort(), Object.keys(TYPOGRAPHY_PROPERTIES).sort());
 });

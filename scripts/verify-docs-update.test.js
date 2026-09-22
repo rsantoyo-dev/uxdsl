@@ -94,10 +94,14 @@ test('MIG-B3-05: editing typography.ts with both README and CHANGELOG staged pas
   assert.equal(result.status, 0, result.stderr);
 });
 
-test('MIG-B3-05: default-theme.ts and typography-defaults.ts are covered by the same guard', () => {
+// MIG-B6-17 (FEAT-008) deleted `typography-defaults.ts` (its DEFAULT_TYPOGRAPHY
+// map lost its last importer when @ds-typo stopped inventing values), so this
+// now pairs default-theme.ts with typography.ts — the other visual-default
+// source file that is still real — instead of a path that no longer exists.
+test('MIG-B3-05: default-theme.ts and typography.ts are covered by the same guard', () => {
   const { dir, pkgDir } = mkFakeRepo();
   fs.writeFileSync(path.join(pkgDir, 'src', 'default-theme.ts'), '// default theme\n');
-  fs.writeFileSync(path.join(pkgDir, 'src', 'typography-defaults.ts'), '// typography defaults\n');
+  fs.writeFileSync(path.join(pkgDir, 'src', 'typography.ts'), '// typography\n');
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-q', '-m', 'add visual-default files']);
 

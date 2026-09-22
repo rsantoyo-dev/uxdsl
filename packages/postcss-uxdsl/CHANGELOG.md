@@ -9,6 +9,79 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-17 (`@ds-typo` emits only what the theme defines):
+
+### Visual changes
+
+`@ds-typo(role)` used to emit a fixed list of 10–11 declarations per use,
+whose fallback values came from a hardcoded map in the compiler rather than
+from your theme. It now emits **one declaration per field the effective theme
+actually defines for that role, with no literal fallback**.
+
+What the compiler used to invent, and what happens now:
+
+| Declaration | Before (invented) | After |
+| --- | --- | --- |
+| `margin-block-start` / `-end` | `var(…, auto)` | `var(…)` — `theme/base.json` now defines both as `"0"` |
+| `text-decoration` | `var(…, none)` | not emitted unless the theme defines `textDecoration` |
+| `text-transform` | `var(…, none)` | not emitted unless the theme defines `textTransform` |
+| `font-style` | `var(…, normal)` | not emitted unless the theme defines `fontStyle` |
+| `opacity` (`caption`, `small`) | `var(…, 0.8)` | **removed** |
+| `font-family` | hardcoded `ui` / `ui-2` / `code` chain | `var(…)` — the chains moved into `theme/base.json` |
+| `font-weight`, `letter-spacing` on `code`/`pre` | not emitted at all | now emitted (the theme defined them; the directive just never read them) |
+
+Four of these are deliberate behaviour changes, not just refactors:
+
+- **Links keep their underline.** `text-decoration: none` was applied to
+  every `@ds-typo` use, including on an `<a>` — a WCAG 1.4.1 problem.
+- **Margins no longer break flex and grid.** `auto` collapses to `0` in
+  normal flow but *absorbs free space* in a flex or grid container, pushing
+  the element. `"0"` in the base theme keeps the normal-flow rendering
+  identical while removing that trap.
+- **`caption` and `small` are no longer dimmed to `opacity: 0.8`.** That
+  reduced contrast and could not be overridden from a theme at all, because
+  `opacity` is not one of the typography fields. Express a muted caption with
+  a palette color on the component instead.
+- **`text-transform` and `font-style` are no longer reset.** Their CSS initial
+  values are already `none`/`normal`, so nothing changes in isolation — but
+  both are inherited, so a `@ds-typo` element inside an uppercased or
+  italicised parent now inherits that parent instead of silently resetting.
+
+Other changes in the same story:
+
+- `@ds-typo(role)` with a role the effective theme does not define now fails
+  with `UXD_TYPO_REFERENCE`, pointing at the directive and listing the
+  available roles, instead of silently emitting declarations that referenced
+  variables nothing defined. A missing role never falls back to `default`.
+- Deleted `src/typography-defaults.ts` (`DEFAULT_TYPOGRAPHY`) and
+  `TYPOGRAPHY_DEFAULTS` from `src/typography.ts`; both lost their last
+  consumer here. `typography.ts` gains `TYPOGRAPHY_CSS_PROPERTIES` (JSON field
+  → CSS property) and `resolveTypographyRole` (`default` merged under a role's
+  own fields), the resolver the directive and the generator now share.
+- **Output size:** a fixture of 100 `@ds-typo` uses across 13 roles compiles
+  to **40,296 bytes, down from 63,455 (−36.5%)**.
+
+**To restore the beta.5 appearance**, define the fields in your own theme —
+they are ordinary typography fields now, so they are also overridable, which
+the hardcoded fallbacks never were:
+
+```json
+{
+  "typography_details": {
+    "default": {
+      "textTransform": "none",
+      "textDecoration": "none",
+      "fontStyle": "normal",
+      "marginBlockStart": "auto",
+      "marginBlockEnd": "auto"
+    }
+  }
+}
+```
+
+`opacity` has no equivalent: it was never a typography field, so it cannot be
+restored through the theme. Apply it in the component if you need it.
+
 FEAT-008, MIG-B6-29 (phase 4 of 4 — the shared Google Fonts encoder, this story's own "paso 9". This closes the story):
 
 - **New:** `encodeGoogleFontFamily(spec)` and `googleFontsImportUrls(google)`,

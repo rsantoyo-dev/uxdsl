@@ -23,7 +23,7 @@ import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
 import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
-import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
+import { generateTypographyCss, TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 
 type BreakpointSpec =
@@ -224,13 +224,24 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             at.parent.insertBefore(at, { prop, value, source: at.source });
           };
 
-          // Typography Configuration Data
-          // Defines defaults for each known variant. 
-          // If a variant isn't here, we can still attempt to generate generic vars for it (future proofing).
-          const defaults = TYPOGRAPHY_DEFAULTS;
-
-          const config = defaults[tag] || { weight: "400", family: "ui", line: "1.5", spacing: "normal" };
-          const isCode = tag === "pre" || tag === "code";
+          // MIG-B6-17 (FEAT-008): emit exactly the fields the effective theme
+          // defines for this role, and nothing else. This used to emit a fixed
+          // list of 10-11 declarations whose fallbacks the theme never asked
+          // for — `margin-block-*: auto` (which absorbs free space in a flex or
+          // grid container instead of the 0 it collapses to in normal flow),
+          // `text-decoration: none` (which stripped the underline off any link
+          // it was applied to, WCAG 1.4.1), `text-transform`/`font-style`
+          // resets, and an `opacity` that could not be overridden from the
+          // theme at all, since `opacity` is not one of TYPOGRAPHY_PROPERTIES'
+          // fields. Whatever is worth keeping now lives in theme/base.json.
+          const details = (effectiveTheme?.typography_details || {}) as Record<string, Record<string, string>>;
+          const style = resolveTypographyRole(details, tag);
+          if (!style) {
+            throw locateError(
+              diagnostic(missingKeyMessage('UXD_TYPO_REFERENCE', 'ds-typo', tag, Object.keys(details))),
+              at,
+            );
+          }
 
           // Consumer side of typography.ts's compileTypographyRules, which
           // emits `--uxdsl__typography__<tag>-<field>` (MIG-08: one shared
@@ -238,49 +249,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // name the same way so definition and reference always match.
           const typo = (field: string) => buildVarName('typography', `${tag}-${field}`);
 
-          // 1. Font Family
-          // Logic: var(--uxdsl__typography__tag-font-family, var(--uxdsl__font__configFamily))
-          const fontRef = config.family === "code" ? `var(${buildVarName('font', 'code')})` : (config.family === "ui-2" ? `var(${buildVarName('font', 'ui-2')}, var(${buildVarName('font', 'ui')}))` : `var(${buildVarName('font', 'ui')})`);
-          // Special case: code/pre often append 'monospace' directly in fallback
-          const familyFallback = isCode ? `${fontRef}, monospace` : fontRef;
-          insert("font-family", `var(${typo('font-family')}, ${familyFallback})`);
-
-          // 2. Font Size
-          insert("font-size", `var(${typo('size')})`);
-
-          // 3. Line Height
-          if (config.line) {
-             insert("line-height", `var(${typo('line')}, ${config.line})`);
-          }
-
-          // 4. Font Weight (Skip for code usually, but consistent to add)
-          if (config.weight) {
-             insert("font-weight", `var(${typo('weight')}, ${config.weight})`);
-          }
-
-          // 5. Letter Spacing
-          if (config.spacing) {
-             insert("letter-spacing", `var(${typo('spacing')}, ${config.spacing})`);
-          }
-
-          // 6. Text Transform
-          insert("text-transform", `var(${typo('transform')}, none)`);
-
-          // 7. Text Decoration
-          insert("text-decoration", `var(${typo('decoration')}, none)`);
-
-          // 8. Font Style
-          insert("font-style", `var(${typo('style')}, normal)`);
-
-          // 9. Margin Block Start
-          insert("margin-block-start", `var(${typo('margin-block-start')}, auto)`);
-
-          // 10. Margin Block End
-          insert("margin-block-end", `var(${typo('margin-block-end')}, auto)`);
-
-          // 11. Opacity (Special for caption/small)
-          if (config.opacity) {
-             insert("opacity", `var(${typo('opacity')}, ${config.opacity})`);
+          // Iterating the property map (not the resolved style's own keys)
+          // keeps the emitted order canonical and independent of how the JSON
+          // happened to be authored, and of `default`-vs-role merge order.
+          // No literal fallback: compileTypographyRules defines a variable for
+          // every field of this same resolved set, so the reference always
+          // resolves.
+          for (const [field, cssProperty] of Object.entries(TYPOGRAPHY_CSS_PROPERTIES)) {
+            if (!Object.prototype.hasOwnProperty.call(style, field)) continue;
+            insert(cssProperty, `var(${typo(TYPOGRAPHY_PROPERTIES[field as keyof typeof TYPOGRAPHY_PROPERTIES])})`);
           }
 
           at.remove();

@@ -234,6 +234,21 @@ hardcoding its resolved values. HTML preserves document semantics.
 - Supported structured fields are `fontFamily`, `fontSize`, `lineHeight`,
   `fontWeight`, `letterSpacing`, `textTransform`, `textDecoration`, `fontStyle`,
   `marginBlockStart`, and `marginBlockEnd`. Values are nonempty strings.
+  `opacity` is deliberately not a field: express a muted role with a Palette
+  color on the component, not by dimming the text.
+- `@ds-typo(role)` emits exactly one declaration per field the effective theme
+  defines for that role — the role's own fields over `default`'s — and nothing
+  else (MIG-B6-17). There are no literal fallbacks: a field the theme does not
+  define simply is not emitted, so the element keeps whatever it inherits or
+  the browser default. Do not expect the directive to reset `text-transform`,
+  `font-style` or `text-decoration`, and do not add a field to the theme just
+  to neutralize one — define it only when that value is the intended design.
+- A role the effective theme does not define fails as `UXD_TYPO_REFERENCE` at
+  the directive; it never silently falls back to `default`.
+- The directive emits at its own position in the rule, so a declaration written
+  after it wins: `.eyebrow { @ds-typo(caption); margin: 0; }` keeps `margin: 0`,
+  while `.eyebrow { margin: 0; @ds-typo(caption); }` lets the role's own
+  margins apply.
 - Keep heading levels appropriate to document hierarchy, independently of the
   visual role selected. Styling an element does not change its HTML semantics.
 - Change a shared role only when all its consumers should change. Choose another
