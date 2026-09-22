@@ -568,8 +568,13 @@ disclosed engine/architecture findings remain (a `placeholder` field that
 is never tone-substituted; `light`/`dark`/`surface` used as an accent tone
 reading their own canvas-identity color as text; `warning.main` not dark
 enough for direct text use), each recommended as follow-up work in that
-story's own evidence, not swept into ad hoc exceptions. Put variant changes
-in the playground's own overrides.
+story's own evidence, not swept into ad hoc exceptions. `postcss-uxdsl/ds-runtime`
+also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
+phase 4, closing that story) — the one shared encoder both the PostCSS
+plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
+now emit byte-identical `@import`s for the same theme instead of only the
+plugin emitting one at all. Put variant changes in the playground's own
+overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
@@ -585,7 +590,11 @@ themeStyle.textContent = css
 ```
 
 Generate successfully before replacing the managed stylesheet. Do not continually
-append stale overrides. Browser edits do not save the source JSON automatically.
+append stale overrides. If the theme sets `fonts.google`, `css` now leads with
+that Google Fonts `@import` (MIG-B6-29 phase 4) — valid inside a `<style>`
+element as long as it stays first, which `generateThemeCss` already
+guarantees; a consumer that itself prepends anything to `css` before
+assigning `textContent` must preserve that ordering. Browser edits do not save the source JSON automatically.
 Changing a token can update its consumers after the theme is applied; it does not
 rewrite independently compiled component media rules automatically. Use the
 supported breakpoint integration and verify actual stylesheet behavior.
@@ -701,19 +710,19 @@ FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirem
 
 These documents describe planned APIs, not shipped capabilities. At the
 2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
-the beta.6 gate are pending. The packaged base JSON (MIG-B6-29 phase 1), the
-accessibility contrast gate itself (`checkThemeContrast`, phase 2), and its
-color-correction pass (phase 3 — this guide's own "Build time, runtime and
-one source of truth" section above already reflects all three) have landed.
-Only the shared Google Fonts encoding helper (phase 4) has not. Phase 3
-corrected the colors an automated, minimal, OKLCH-preserving search could
-fix without eroding a color's own identity; `checkThemeContrast` still
-correctly reports `passed: false` against `theme/base.json` — three real,
-disclosed engine/architecture gaps remain open (not color choices; see that
-story's own evidence for exactly which ones and the recommended follow-up
-for each), by design, not a bug in the gate. Keep the current usage guidance
-above until phase 4 lands; then replace it in the same change, including
-playground agent guidance.
+the beta.6 gate are pending. MIG-B6-29 (the packaged base JSON, the
+accessibility contrast gate, its color-correction pass, and the shared
+Google Fonts encoder — this guide's own "Build time, runtime and one source
+of truth" section above already reflects all four) is fully landed across
+its 4 phases, closing that story. `checkThemeContrast` still correctly
+reports `passed: false` against `theme/base.json` — three real, disclosed
+engine/architecture gaps remain open (not color choices; see that story's
+own evidence for exactly which ones and the recommended follow-up for
+each), by design, not a bug in the gate. `generateThemeCss` and the PostCSS
+plugin now emit byte-identical Google Fonts `@import`s for the same theme;
+`packages/playground-nextjs`'s own `ThemeContext.tsx` still hand-rolls a
+separate client-side font-link implementation that predates this — removing
+it in favor of the shared encoder is MIG-B6-30's job, not MIG-B6-29's.
 
 For each story, preserve intent, token references, merge precedence and CSS-native
 exceptions. Reproduce the defect, add a regression that fails before the fix, and

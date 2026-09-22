@@ -9,6 +9,51 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-29 (phase 4 of 4 — the shared Google Fonts encoder, this story's own "paso 9". This closes the story):
+
+- **New:** `encodeGoogleFontFamily(spec)` and `googleFontsImportUrls(google)`,
+  exported from `postcss-uxdsl/ds-runtime`. The one shared, pure, browser-safe
+  encoder both the PostCSS plugin and `generateThemeCss` now use to build a
+  `fonts.google` entry into a Google Fonts css2 `@import` URL — a space
+  becomes `+` (css2's own convention), `:`/`@`/`;`/`,` (the characters css2's
+  own syntax depends on) pass through unescaped, and anything else is
+  percent-encoded per character. Stricter than plain `encodeURIComponent`:
+  that leaves `' ( ) ! ~ *` unescaped by spec, but the result is embedded in
+  a single-quoted `url('...')` CSS string by both callers, where an
+  unescaped `'` would close the string early and corrupt the generated CSS
+  — found while writing this module's own test suite, confirmed to actually
+  produce invalid CSS (`postcss.parse` threw) before being fixed here.
+- **Fix:** the PostCSS plugin's own Google Fonts `@import` builder used a
+  bare `family=${font}` template interpolation with no escaping at all — a
+  family name with a space (e.g. `"Open Sans:wght@400;700"`) produced a
+  literal space in the emitted URL, an invalid `@import`. The shipped
+  default (`"Inter:wght@400;500;600;700"`) has no space and was never
+  affected; any project that had set `fonts.google` to a multi-word family
+  explicitly was.
+- **Fix (build/runtime parity):** `generateThemeCss()` (the runtime/SSR
+  path) previously emitted nothing at all for `theme.fonts.google` — only
+  the PostCSS plugin did. It now emits the identical `@import` (same URL,
+  same order) for the same theme, verified directly by compiling a theme
+  both ways and comparing the two outputs byte-for-byte. A project calling
+  `generateThemeCss` directly for SSR no longer needs to hand-roll its own
+  Google Fonts `<link>`/`@import` to match what a build-time compile of the
+  same theme would produce (`packages/playground-nextjs`'s own
+  `ThemeContext.tsx` still does today — removing that now-redundant,
+  independently hand-rolled implementation in favor of this shared encoder
+  is MIG-B6-30's job, not this story's; until that lands, the playground
+  temporarily has *more* overlapping font-loading paths, not fewer, which
+  is the expected, understood order — paso 9 has to exist before paso 30
+  can safely remove what it was covering for).
+- Covered by `test/fonts.test.js`: the encoding rules themselves (css2
+  syntax characters preserved, spaces, percent-encoding, the apostrophe/
+  quote-corruption case above verified by actually parsing the emitted
+  CSS, not just inspecting the encoded string), plugin/runtime parity,
+  an empty `fonts.google: []` emitting nothing in both paths, and repeated
+  compilation of the same theme producing identical output every time
+  (no accumulation or drift) — this story's own "paso 9" explicitly asks
+  for exactly these cases. `test/default-theme.test.js`'s existing
+  zero-config test now checks the full URL, not just its prefix.
+
 FEAT-008, MIG-B6-29 (phase 3 of 4 — color correction, this story's own "paso 8"):
 
 - **Visual (default theme and every named playground theme):** 16 palette

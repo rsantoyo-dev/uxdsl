@@ -191,7 +191,11 @@ test('MIG-B2-02: default headings and controls compile without legacy imports at
 
 test('MIG-B6-29: DEFAULT_THEME requests Google Fonts by default; fonts: { google: [] } opts out', async () => {
   const zeroConfig = await compile('.x { color: red; }');
-  assert.match(zeroConfig.css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=/);
+  // The full URL, not just the prefix: MIG-B6-29 phase 4's shared encoder
+  // (test/fonts.test.js has its own dedicated coverage of the encoding
+  // rules themselves) must still produce exactly this for the shipped
+  // default (`Inter:wght@400;500;600;700`, from theme/base.json).
+  assert.match(zeroConfig.css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Inter:wght@400;500;600;700&display=swap'\);/);
 
   const optedOut = await compile('.x { color: red; }', { theme: { fonts: { google: [] } } });
   assert.doesNotMatch(optedOut.css, /@import/);

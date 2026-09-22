@@ -10,6 +10,7 @@ import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
 import { discoverThemeSync } from './config';
+import { googleFontsImportUrls } from './fonts';
 // PostCSS plugin for a tiny UX DSL (TypeScript)
 // Features:
 // - Root-level "$var: value;" variable declarations
@@ -188,16 +189,16 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         root.append(postcss.parse(generateFoundationCss(effectiveTheme)).nodes);
         root.append(postcss.parse(generateTypographyCss(effectiveTheme, bps)).nodes);
 
-        if (effectiveTheme.fonts) {
-            if (effectiveTheme.fonts.google && Array.isArray(effectiveTheme.fonts.google)) {
-                // Reverse order so they end up in correct order when prepended
-                [...effectiveTheme.fonts.google].reverse().forEach((font: string) => {
-                    const url = `https://fonts.googleapis.com/css2?family=${font}&display=swap`;
-                    const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
-                    root.prepend(importRule);
-                });
-            }
-        }
+        // Reverse order so they end up in correct order when prepended (each
+        // prepend inserts at index 0). MIG-B6-29 phase 4: the URL itself
+        // comes from the shared, tested encoder in ./fonts, not a bare
+        // template interpolation — a family name with a space (or any other
+        // character css2's own syntax doesn't use) used to produce an
+        // invalid URL here.
+        [...googleFontsImportUrls(effectiveTheme.fonts?.google)].reverse().forEach((url) => {
+          const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
+          root.prepend(importRule);
+        });
       }
       const vars: Record<string, string> = Object.create(null);
       // Selector-scoped typography directives.

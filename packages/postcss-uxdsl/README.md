@@ -375,17 +375,19 @@ compared to any earlier beta:
   of `modes: {}` does **not** disable dark mode — like every other family,
   objects merge by key, so an empty object changes nothing.
 
-Known gaps, both scoped to a later MIG-B6-29 change, not this one: the
-Google Fonts URL isn't yet percent-encoded (a family name with a space,
-e.g. `"Open Sans:wght@400;700"`, produces an invalid URL — the shipped
-default, `"Inter:..."`, has no space and is unaffected); and
-`generateThemeCss()` (the runtime/SSR path) does not emit the `@import`
-at all yet — only the PostCSS plugin does. An app calling `generateThemeCss`
-directly for SSR needs to add the Google Fonts `<link>`/`@import` itself
-until that lands. Neither gap is new: the encoding bug already existed for
-any project that had set `fonts.google` explicitly, and the runtime import
-was never wired up at all — both simply become visible on the *default*
-path now that `fonts.google` ships by default. The theme's colors have
+Both gaps that used to exist here are closed (MIG-B6-29 phase 4): the
+Google Fonts URL is now built by a shared, tested encoder
+(`encodeGoogleFontFamily`/`googleFontsImportUrls`, `postcss-uxdsl/ds-runtime`)
+that safely handles a family name with a space (`"Open Sans:wght@400;700"`
+→ `family=Open+Sans:wght@400;700`) or any other character outside css2's
+own syntax, instead of a bare, unescaped template interpolation; and
+`generateThemeCss()` (the runtime/SSR path) now emits the identical
+`@import` the PostCSS plugin does, for the same theme — an app calling
+`generateThemeCss` directly for SSR no longer needs to add its own Google
+Fonts `<link>`/`@import` to match. See "Google Fonts URL encoding" below
+for the exact rules and how to reuse the encoder for a hand-rolled
+`<link>`, e.g. a client-side theme switcher managing its own tag. The
+theme's colors have
 been run through the accessibility contrast gate and corrected where an
 automated, minimal, hue-preserving fix existed (MIG-B6-29 phase 3 — see
 below); three real, disclosed gaps in the *engine* (not color choices)
@@ -509,6 +511,42 @@ once; `light`/`dark`/`surface` are canvas-identity families whose own
 tone; `warning.main` (light mode) isn't dark enough for direct text/
 border use without losing its own identity. Each is recommended as its
 own follow-up in that story's evidence, not swept into an exception.
+
+### Google Fonts URL encoding (`encodeGoogleFontFamily`, `googleFontsImportUrls`)
+
+**MIG-B6-29 (FEAT-008), phase 4/4.** Both the PostCSS plugin and
+`generateThemeCss` build a theme's `fonts.google` entries into
+`@import url('https://fonts.googleapis.com/css2?family=...&display=swap')`
+through this one shared, pure encoder — never a second, independently
+hand-rolled URL builder — so a build-time compile and a runtime/SSR call
+for the same theme always emit byte-identical imports.
+
+```js
+const { encodeGoogleFontFamily, googleFontsImportUrls } = require('postcss-uxdsl/ds-runtime')
+
+encodeGoogleFontFamily('Open Sans:wght@400;700') // 'Open+Sans:wght@400;700'
+googleFontsImportUrls(['Inter:wght@400;700', 'Playfair Display'])
+// ['https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap',
+//  'https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap']
+```
+
+A space becomes `+` (css2's own convention, not `%20`); `:`, `@`, `;` and
+`,` — the characters css2's own syntax depends on for the family name /
+axis-tag / value-list structure — pass through unescaped; anything else is
+percent-encoded one character at a time. This is stricter than
+`encodeURIComponent` alone: that leaves `' ( ) ! ~ *` unescaped by spec,
+and the result is embedded in a single-quoted `url('...')` CSS string by
+both callers, where an unescaped `'` would close the string early and
+corrupt the generated CSS, not just misencode a character — this module
+explicitly re-escapes all six regardless of what `encodeURIComponent`
+itself considers safe. `googleFontsImportUrls([])` (or `undefined`)
+returns `[]`, matching `fonts: { google: [] }` emitting no import at all.
+Neither function performs the request itself, and neither imports
+anything Node-only — both are exported from the same browser-safe
+`postcss-uxdsl/ds-runtime` entry as `checkThemeContrast` and
+`generateThemeCss`, so a project managing its own font `<link>` (a
+client-side theme switcher, for example) can reuse the exact same
+encoding instead of drifting from what the compiler itself emits.
 
 ### Legacy opt-in packs (deprecated)
 
