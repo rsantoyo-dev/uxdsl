@@ -536,6 +536,13 @@ encodeGoogleFontFamily('Open Sans:wght@400;700') // 'Open+Sans:wght@400;700'
 googleFontsImportUrls(['Inter:wght@400;700', 'Playfair Display'])
 // ['https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap',
 //  'https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap']
+
+// Variable fonts keep their axis syntax intact — the commas separating axis
+// tags and the `..` ranges are structural, not characters to escape:
+encodeGoogleFontFamily('Roboto Flex:opsz,wght@8..144,100..1000')
+// 'Roboto+Flex:opsz,wght@8..144,100..1000'
+encodeGoogleFontFamily('Nunito Sans:ital,wght@0,400;1,400')
+// 'Nunito+Sans:ital,wght@0,400;1,400'
 ```
 
 A space becomes `+` (css2's own convention, not `%20`); `:`, `@`, `;` and

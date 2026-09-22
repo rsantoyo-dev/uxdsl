@@ -125,3 +125,12 @@ test('fonts.ts stays browser-safe: no fs/path/config import, so ds-runtime consu
   assert.doesNotMatch(source, /from ['"](?:fs|path|node:fs|node:path|\.\/config)['"]/);
   assert.doesNotMatch(source, /\bfetch\(/, 'this module only builds URL strings; it must never perform the request itself');
 });
+
+test('MIG-B6-28: the story\'s own example encodes as specified', () => {
+  // `fonts.google: ['Open Sans:wght@400;700']` -> `family=Open+Sans:wght@400;700`:
+  // the space becomes `+`, and neither the `:` nor the `;` separators are
+  // percent-encoded, because Google's css2 endpoint uses them structurally.
+  assert.deepEqual(
+    googleFontsImportUrls(['Open Sans:wght@400;700']),
+    ['https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;700&display=swap']);
+});

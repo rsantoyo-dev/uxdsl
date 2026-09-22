@@ -11,12 +11,35 @@ import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
 import { discoverThemeSync } from './config';
 import { googleFontsImportUrls } from './fonts';
-// PostCSS plugin for a tiny UX DSL (TypeScript)
-// Features:
-// - Root-level "$var: value;" variable declarations
-// - $var substitutions inside declaration values
-// - palette(path-to-token) -> CSS var mapping
-// - Responsive value functions: xs(...), sm(...), md(...), lg(...), xl(...)
+// The UXDSL PostCSS plugin.
+//
+// MIG-B6-28 (FEAT-008): this header described a five-line prototype — "$var
+// declarations, palette(), responsive functions" — for several releases after
+// the plugin had grown most of what it actually does. Rewritten to the real
+// surface, which is:
+//
+//   Values      $var declarations and substitutions; space(), density(),
+//               color(), palette(), radius()/rounded(), border(), shadow()/
+//               elevation(); responsive functions xs() sm() md() lg() xl()
+//               over the theme's own breakpoint map, `!important` preserved
+//               at every breakpoint.
+//   Directives  @ds-surface, @ds-button, @ds-input, @ds-typo — each expanding
+//               to the declarations its role defines, states and
+//               pseudo-elements included. Must be a direct child of the rule
+//               they style, or they fail as UXD_DIRECTIVE_CONTEXT rather than
+//               passing through untouched.
+//   Theme       The effective theme comes from the `theme` option or, when it
+//               is omitted, from conventional theme-file discovery
+//               (`discoverTheme`/`configRoot`). `includeTheme: false` compiles
+//               an entry that only consumes tokens another entry defines.
+//               A theme's `fonts.google` becomes `@import` lines through the
+//               one shared encoder in ./fonts — never a second encoding here.
+//   Integrity   Every emitted var() is checked against a real definition
+//               (`references`), failing the build by default rather than
+//               shipping a dangling token.
+//   Diagnostics Errors carry a UXD_* code and a source position; generated
+//               theme globals deliberately carry no source, so a source map
+//               lists only files the author actually wrote.
 
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
