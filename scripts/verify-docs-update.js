@@ -73,7 +73,15 @@ function isCodeChangeInPackage(relFile, pkgRel) {
     local === 'CHANGELOG.md' ||
     local.startsWith('docs/');
 
-  return !docOnly;
+  // MIG-B6-30 (FEAT-008): a lockfile on its own is a mechanical sync, not a
+  // change an npm consumer needs told about — adding a devDependency to one
+  // package rewrites the lockfile of every sibling that depends on it locally,
+  // and demanding a README note there produces a sentence with nothing to say.
+  // Any dependency change that *does* reach consumers also edits
+  // `package.json`, which is still guarded, so nothing meaningful escapes.
+  const lockfileOnly = local === 'package-lock.json' || local === 'npm-shrinkwrap.json';
+
+  return !docOnly && !lockfileOnly;
 }
 
 function main() {

@@ -753,6 +753,71 @@ list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 
+## Applying a theme at run time (`applyTheme`)
+
+Your theme is JSON: a base plus your override. A build compiles that JSON;
+`applyTheme` applies the *same* JSON in the browser, so changing a value needs
+no rebuild. It is synchronous — when it returns `ok: true`, the stylesheet and
+the reported state already agree; when it returns `ok: false`, nothing moved.
+
+```ts
+import { applyTheme, getAppliedTheme, resetTheme, subscribeTheme } from 'postcss-uxdsl/ds-runtime';
+
+// Once, at startup: hand it the override your project was built with.
+applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' });
+
+// Later: a patch merges over what is applied.
+const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } });
+if (!result.ok) console.error(result.error.message);
+```
+
+The first call has to be the override the project actually compiled with (`{}`
+for a zero-config project). The library cannot infer it: reading compiled CSS
+back does not reconstruct your JSON. That call also fixes the managed
+`<style>` — an element with that id is *adopted*, which is how a
+server-rendered theme tag is taken over without a second one appearing at
+hydration.
+
+| Call | Does |
+| --- | --- |
+| `applyTheme(patch, opts?)` | Merges `patch` over the applied override, or replaces it with `replace: true` |
+| `getAppliedTheme()` | The applied override, as a copy. `{}` before initialization |
+| `resetTheme({ clearPersist? })` | Restores the override you initialized with — not the packaged base |
+| `loadPersistedTheme({ key? })` | Applies a stored override, validated like any other patch |
+| `subscribeTheme(listener)` | Notified after each success; returns the unsubscribe function |
+
+`persist` is per call: persisting once does not make later calls persist.
+Saving happens *after* the visual commit, so a storage failure comes back as
+`ok: true` with an explicit warning rather than pretending the theme did not
+apply — or pretending it was saved.
+
+### What it will refuse, and why
+
+`applyTheme` replaces a stylesheet of custom properties. It cannot rewrite the
+rules your **build** already compiled: the declarations a `@ds-button` expanded
+into, or the `@media` queries baked into a component's responsive declaration.
+So a patch that changes *which declarations a directive would emit* is rejected
+with `UXD_THEME_STRUCTURE`, naming what changed and telling you to rebuild:
+
+| Rejected — rebuild required | Allowed — applied immediately |
+| --- | --- |
+| Adding or removing a `typography_details` field | Changing any token's value |
+| Introducing a state such as `focusvisible` | Responsive expressions over the same thresholds |
+| Changing the Surface a Button or Input composes from | Dark-mode (`modes.dark`) colors |
+| Moving an existing breakpoint threshold | Adding a new token or breakpoint name |
+| A palette family losing `main`/`dark`/`contrast` | A field a role already emits |
+
+The distinction is derived from the engines themselves — the same
+`buttonDeclarations`, `inputDeclarations`, `surfaceDeclarations` and
+`resolveTypographyRole` the compiler emits with — so a field added to an engine
+is accounted for without anyone updating a list.
+
+On the server there is no state to share: call `generateThemeCss(theme)` and
+render the result. `applyTheme` reports `UXD_THEME_ENVIRONMENT` where there is
+no document rather than silently doing nothing.
+
+---
+
 ## Typed config and theme (`defineConfig`, `$schema`)
 
 Most UXDSL mistakes are typos, and they are made while writing configuration —

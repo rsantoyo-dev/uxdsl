@@ -9,6 +9,33 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-30 (phase 1/4: the JSON theme applied at run time):
+
+- **New:** `applyTheme`, `getAppliedTheme`, `resetTheme`, `loadPersistedTheme`
+  and `subscribeTheme` on `postcss-uxdsl/ds-runtime`. The same theme JSON a
+  build compiles can now be applied in the browser, synchronously: on
+  `ok: true` the stylesheet and the reported state already agree, on
+  `ok: false` nothing changed at all. State is per document (a WeakMap keyed
+  by it), not a module singleton, so an iframe or a second document gets its
+  own managed `<style>` and its own applied override.
+- **New:** a structural gate. A patch that changes *which declarations a
+  directive would emit* — a `typography_details` field added or removed, a
+  state such as `focusvisible` introduced, the Surface a Button composes from
+  changed, an existing breakpoint threshold moved, a palette family losing
+  `main`/`dark`/`contrast` — is rejected with `UXD_THEME_STRUCTURE`, naming
+  every change and saying to rebuild, because compiled component rules keep
+  their old shape. Value changes, responsive expressions over the same
+  thresholds, dark-mode colors and new tokens apply normally. The distinction
+  is derived from the engines the compiler emits with, not from a second list.
+- **Fixed:** `validateAndNormalizeTheme` mutated the theme it was given. Its
+  "work on a copy" step was `deepMergeTheme({}, input)`, which shares every
+  nested object by reference (only arrays are copied), so normalization wrote
+  into the caller's object — invisible with a freshly parsed JSON literal, and
+  a hard `TypeError` as soon as the input shared a sub-object with the packaged
+  deep-frozen base. That made `validateAndNormalizeTheme(resolveTheme(x))`,
+  the documented composition, throw outright. It now deep-copies
+  (`cloneThemeValue`, also exported) and leaves the input untouched.
+
 FEAT-008, MIG-B6-27 (exported types, `defineConfig`, generated theme schema):
 
 - **New:** the public type surface is exported from the package root —

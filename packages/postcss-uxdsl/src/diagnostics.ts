@@ -19,6 +19,15 @@ export const DIAGNOSTIC_CODES = new Set([
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
+  // MIG-B6-30 (FEAT-008): the runtime JSON theme API. These are returned on a
+  // `ThemeResult`, never thrown through the compiler, but they are UXD_* codes
+  // a developer will see and search for, so they belong in one catalog.
+  'UXD_THEME_ENVIRONMENT',     // apply/load/reset called where there is no document
+  'UXD_THEME_NOT_INITIALIZED', // load/reset before the project theme was applied once
+  'UXD_THEME_STYLE_ID',        // a second styleId after initialization
+  'UXD_THEME_STYLE_ELEMENT',   // the requested id belongs to something that is not a <style>
+  'UXD_THEME_STRUCTURE',       // the patch changes what the compiler would emit; rebuild
+  'UXD_THEME_PERSIST',         // storage could not be read, written or cleared
   // MIG-B6-14 (FEAT-008): a reserved-namespace at-rule (`ds`/`ds-*`) or a
   // top-level responsive value function left unprocessed at the end of the
   // pipeline — see index.ts's final walkAtRules pass and its responsive

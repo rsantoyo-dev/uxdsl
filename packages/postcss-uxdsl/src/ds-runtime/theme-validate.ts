@@ -92,6 +92,25 @@ function normalizeFontFamily(raw: string): string {
   return [normalizedPrimary, ...rest].join(', ');
 }
 
+/**
+ * MIG-B6-30 (FEAT-008): a real deep copy of theme data.
+ *
+ * `deepMergeTheme({}, input)` reads like one but is not: with an empty base
+ * every key takes the `out[key] = nextVal` branch, so nested objects are shared
+ * with the input by reference (only arrays are sliced). The validator used that
+ * as its "work on a copy" step and therefore normalized *the caller's* object
+ * in place — invisible when the input was a freshly parsed JSON literal, and a
+ * hard `TypeError` the moment the input shared a sub-object with the deep-frozen
+ * packaged base, which is exactly what `resolveTheme()` returns.
+ */
+export function cloneThemeValue<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => cloneThemeValue(item)) as any;
+  if (!isPlainObject(value)) return value;
+  const out: Record<string, any> = {};
+  for (const key of Object.keys(value as any)) out[key] = cloneThemeValue((value as any)[key]);
+  return out as any;
+}
+
 export function deepMergeTheme<TBase extends Record<string, any>, TOverride extends Record<string, any>>(
   base: TBase,
   override: TOverride
@@ -130,7 +149,11 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
 
   // Kept in the public options for compatibility; Typography now always needs a base.
 
-  const theme: Record<string, any> = isPlainObject(input) ? deepMergeTheme({}, input) : {};
+  // MIG-B6-30 (FEAT-008): a genuine deep copy. This line used to be
+  // `deepMergeTheme({}, input)`, which shares every nested object with the
+  // caller — so normalization below wrote into the caller's theme, and threw
+  // outright on a frozen one.
+  const theme: Record<string, any> = isPlainObject(input) ? cloneThemeValue(input as Record<string, any>) : {};
   if (!isPlainObject(input)) {
     errors.push({ path: 'theme', message: 'Theme must be an object.' });
   }
