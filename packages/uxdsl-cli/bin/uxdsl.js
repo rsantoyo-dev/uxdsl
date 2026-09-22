@@ -2035,18 +2035,33 @@ async function loadAndBuildForWatch(argv, watching) {
   return config;
 }
 
+// MIG-B6-12 (FEAT-008): `process.exitCode` everywhere, never `process.exit()`.
+//
+// Found by the beta.6 release gate: `uxdsl theme --contrast | jq` produced
+// truncated JSON. `process.exit()` terminates immediately, and a write to a
+// *pipe* is asynchronous — so anything still buffered is discarded. Redirected
+// to a file the same command wrote 302,816 bytes; piped, it wrote 65,536 and
+// the JSON ended mid-string. `--contrast` is the command large enough to show
+// it today (302 KB, against 13 KB for `theme` and 5 KB for `theme --diff`),
+// but the defect is in the exit path, not in any one command's size, so every
+// documented `| jq` usage was one large theme away from the same truncation.
+//
+// Setting `exitCode` and returning lets Node exit once stdout has drained,
+// with the same status. Watch mode is unaffected: it keeps the process alive
+// through its own handles, which is what it did before.
 async function main() {
   let cmd, argv;
   try {
     ({ cmd, argv } = parseCommandArgv(process.argv.slice(2)));
   } catch (err) {
     console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
-    process.exit(1);
+    process.exitCode = 1;
+    return;
   }
 
   if (argv.help) {
     printHelp();
-    process.exit(0);
+    return;
   }
 
   try {
@@ -2065,7 +2080,7 @@ async function main() {
           if (!config && !watching) {
             // No config and no command -> Print help
             printHelp();
-            process.exit(0);
+            return;
           }
           if (watching) {
             startWatch(config, argv, process.cwd(), buildOnce);
@@ -2084,13 +2099,14 @@ async function main() {
       default:
         console.error(`Unknown command: ${cmd}`);
         printHelp();
-        process.exit(1);
+        process.exitCode = 1;
+        return;
     }
   } catch (err) {
     console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
     const frame = err && typeof err.showSourceCode === 'function' ? err.showSourceCode(false) : '';
     if (frame) console.error(frame);
-    process.exit(1);
+    process.exitCode = 1;
   }
 }
 

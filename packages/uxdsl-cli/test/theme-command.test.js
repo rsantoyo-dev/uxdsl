@@ -387,3 +387,41 @@ test('MIG-B6-16: --contrast keeps stdout a pure JSON document', async () => {
   assert.doesNotThrow(() => JSON.parse(stdout), 'stdout must parse as one JSON document');
   assert.equal(stderr, '', 'the failure message belongs to the caller, not to stdout or a log line here');
 });
+
+test('MIG-B6-12: a large JSON report is not truncated when stdout is a pipe', async () => {
+  // Found by the beta.6 release gate: `uxdsl theme --contrast | jq` produced
+  // malformed JSON. `process.exit()` terminates immediately and a write to a
+  // *pipe* is asynchronous, so whatever was still buffered was discarded —
+  // the same command redirected to a file wrote 302,816 bytes while piped it
+  // wrote 65,536, ending mid-string.
+  //
+  // `--contrast` is the command that exceeds a pipe buffer today (302 KB, vs
+  // 13 KB for `theme` and 5 KB for `theme --diff`), so it is the one that can
+  // demonstrate the truncation. The others are checked for a parseable
+  // document, which is the property that must hold for `| jq` whatever their
+  // size. Driving the real binary through a pipe is the only way to observe
+  // any of this: an in-process call to themeCommand cannot reproduce it.
+  const { spawnSync } = require('node:child_process');
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };`);
+  const bin = path.join(__dirname, '..', 'bin', 'uxdsl.js');
+
+  for (const [label, args, expectedStatus, mustExceedPipeBuffer] of [
+    ['theme', ['theme'], 0, false],
+    ['theme --diff', ['theme', '--diff'], 0, false],
+    ['theme --contrast', ['theme', '--contrast'], 1, true],
+  ]) {
+    const piped = spawnSync(process.execPath, [bin, ...args], {
+      cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    });
+    assert.equal(piped.status, expectedStatus, `${label}: unexpected exit status`);
+    if (mustExceedPipeBuffer) {
+      assert.ok(piped.stdout.length > 65536,
+        `${label}: this case must be big enough to demonstrate truncation, got ${piped.stdout.length} bytes`);
+    }
+    assert.doesNotThrow(() => JSON.parse(piped.stdout),
+      `${label}: stdout was truncated mid-document at ${piped.stdout.length} bytes`);
+  }
+});

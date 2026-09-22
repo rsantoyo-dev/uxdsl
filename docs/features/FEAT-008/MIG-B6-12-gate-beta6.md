@@ -102,13 +102,22 @@ secretos.
 
 ## Criterios de aceptación
 
-- [ ] `npm run verify:beta6` pasa desde tarballs.
-- [ ] Todas las fixtures anteriores pasan.
-- [ ] Press Craftor está validado y registrado.
-- [ ] La DoD **prepublish** de FEAT-008 está completa con evidencia por casilla;
-      comprobaciones postpublish quedan explícitamente pendientes.
-- [ ] El dueño tiene todo lo necesario para aprobar la publicación: diff, tests,
-      contenido de los tarballs, changelogs y limitaciones conocidas.
+- [x] `npm run verify:beta6` pasa desde tarballs. → 26/26 comprobaciones
+      automatizadas sobre los cinco tarballs instalados.
+- [x] Todas las fixtures anteriores pasan. → `verify:beta2` a `verify:beta5`,
+      `verify:consumer-fixture`, ambos adaptadores, `verify:vscode-extension`
+      y `verify:cssmodules-build`, todas exit 0.
+- [ ] **Press Craftor está validado y registrado.** → Pendiente, y no es
+      ejecutable desde aquí: la corre el dueño o el equipo de ese proyecto.
+      El release record lo lista como sección `external` con los cuatro
+      requisitos exactos. **Este criterio bloquea el cierre de la feature.**
+- [x] La DoD **prepublish** de FEAT-008 está completa con evidencia por casilla;
+      comprobaciones postpublish quedan explícitamente pendientes. → El release
+      record separa `automated`, `browser`, `external` y `postpublish`; ningún
+      paso humano pendiente aparece como PASS ni como skip exitoso.
+- [x] El dueño tiene todo lo necesario para aprobar la publicación: diff, tests,
+      contenido de los tarballs, changelogs y limitaciones conocidas. →
+      `docs/releases/0.5.0-beta.6.md`.
 
 ## Verificación
 
@@ -126,8 +135,23 @@ UXDSL_CHROME_PATH=/ruta/a/chrome npm run verify:cssmodules-build
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/feat-008-beta6-plan`, salvo la validación externa (Press Craftor), que es
+del dueño y bloquea el cierre de la feature. Integración a `main` pendiente.
+
+| Campo | Evidencia |
+| --- | --- |
+| SHA base / entrega / PR | Base `1eb9346` (2026-09-22, HEAD de la rama al iniciar). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir. Los paquetes siguen en `0.5.0-beta.5`: el bump pertenece a la publicación, fuera de alcance |
+| Reproducción antes del cambio | No aplica en el sentido habitual: esta historia no arregla un defecto, construye el gate. Lo que sí se reprodujo es su ausencia — no existía `fixtures/mig-b6-12-release/`, ni `verify:beta6`, ni `docs/releases/0.5.0-beta.6.md`, así que no había forma de ejecutar los hallazgos de la auditoría contra los tarballs. 2026-09-22 |
+| Criterio → regresión | `fixtures/mig-b6-12-release/run.js`, ejecutado por `npm run verify:beta6`: 26 comprobaciones sobre los cinco tarballs instalados, una por hallazgo automatizable (UX-01 a UX-21 y N-01, N-02, N-06, N-07, N-08), más paridad, el runtime de MIG-B6-30 con stub de DOM, y los sourcemaps con consulta de posición real. Los hallazgos que **no** se ejecutan aquí se imprimen en una lista aparte con su dueño y su mecanismo (navegador, adaptadores, VSIX, Press Craftor, dist-tags), nunca como PASS ni como skip |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, Apple M1 Pro, Chrome vía `playwright-core`: `npm run verify:beta6` (exit 0, **26/26**), `npm test` (exit 0), `npm run verify:consumer-fixture`, `verify:beta2`/`beta3`/`beta4`/`beta5`, `verify:vscode-extension`, `verify:pack-budget`, `verify:cssmodules-build`, ambos fixtures de adaptador y `node scripts/generate-language-artifacts.js --check` (todos exit 0) |
+| Resultado después / control negativo | **El gate se verificó revirtiendo dos historias, como pide esta ficha, y esa verificación encontró un defecto en el propio gate**: la primera versión no hacía `await` de sus comprobaciones asíncronas, así que `fn()` devolvía una promesa pendiente —verdadera— y **todas** las comprobaciones async pasaban dijeran lo que dijeran. Sólo se detectó porque revertir MIG-B6-15 dejó el gate en verde. Corregido; con el `await` en su sitio: revertir MIG-B6-15 (el corte de selectores) hace fallar `UX-05` con `split inside :is()`, y revertir MIG-B6-22 (parseo estricto de flags) hace fallar `UX-04` con `nonexistent flag: exited 0`. **Bug de producto encontrado por el gate**: `uxdsl theme --contrast \| jq` devolvía JSON truncado — `process.exit()` descarta lo que queda en el búfer de una tubería. Redirigido a archivo escribía 302.816 bytes; por tubería, 65.536, cortado a mitad de una cadena. Corregido usando `process.exitCode` en todo el CLI, con su propio test de regresión que falla al revertirlo |
+| Cambios visuales o API / migración | Sin cambio visual. Cambio de comportamiento del CLI: todas las salidas terminan de escribirse antes de salir, así que un documento JSON grande ya no se trunca al canalizarlo. Los códigos de salida no cambian (0/1 igual que antes) y `watch` sigue vivo por sus propios handles |
+| README / CHANGELOG / migration | `docs/releases/0.5.0-beta.6.md` (nuevo): qué cambió, procedencia D-1, las cuatro categorías de verificación separadas, las limitaciones conocidas y la demostración de que el gate puede fallar. `README.md` raíz: sección `0.5.0-beta.6 — prepared, not published`. `package.json` raíz: `verify:beta6` |
+| AGENTS / guías / arquitectura | Sin cambio de contrato: el gate no altera el comportamiento de ninguna primitiva. `AGENTS.md` ya se actualizó en MIG-B6-30 para describir el runtime real |
+| Límites y seguimiento | (1) **Press Craftor sigue pendiente y bloquea el cierre de la feature.** No es ejecutable desde aquí; el release record lista los cuatro requisitos exactos. (2) **Nada se publicó**: ni `npm publish`, ni dist-tags, ni consulta al registro real. `verifyDistTags` sigue sin haberse ejecutado nunca contra `registry.npmjs.org`; su primera ejecución real será el release. (3) **Los paquetes siguen en `0.5.0-beta.5`**, así que el gate dice "Gate for 0.5.0-beta.5": el bump es parte de publicar. (4) **El tema base no pasa su propia puerta de contraste** (156 fallos con las excepciones aplicadas). El gate lo ejecuta y **no** afirma `passed`, porque afirmarlo sería mentir; registra el número para que un cambio en cualquier dirección se vea. (5) **CI real no se añadió** (paso 5 de la ficha: jobs, matriz de Node y bundlers). Los comandos existen y están documentados, pero no hay workflow que los ejecute; queda como seguimiento y no se presenta como hecho. (6) **UX-11 (watch atómico) no se ejecuta en el gate**: necesita un watcher de vida larga, no una fixture de una pasada; se cubre en la suite de `uxdsl-cli` y así se declara |
+
+Completar en el mismo PR conforme al
 [protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
 criterios por intención ni confundir una reproducción histórica con prueba actual.
 
