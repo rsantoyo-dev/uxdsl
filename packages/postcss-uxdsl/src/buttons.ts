@@ -2,8 +2,8 @@ import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
 import { BASE_THEME } from './base-theme';
 
-export const BUTTON_PROPERTIES: Record<string, string> = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight' };
-export const BUTTON_STATES: Record<string, string[]> = { hover: [':hover'], active: [':active'], focus: [':focus'], focusvisible: [':focus-visible'], disabled: [':disabled', '[aria-disabled="true"]'], selected: ['.is-selected', '[aria-pressed="true"]', '[aria-selected="true"]'] };
+export const BUTTON_PROPERTIES = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight' };
+export const BUTTON_STATES = { hover: [':hover'], active: [':active'], focus: [':focus'], focusvisible: [':focus-visible'], disabled: [':disabled', '[aria-disabled="true"]'], selected: ['.is-selected', '[aria-pressed="true"]', '[aria-selected="true"]'] };
 export interface ButtonRole extends ControlRole {}
 export interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
 // MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,

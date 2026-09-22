@@ -92,6 +92,40 @@ UXDSL's shared defaults:
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
 
+**Let your editor check it.** An unknown key here is not an error — nothing
+reads it, so `includeThem: false` silently does nothing and the build just
+behaves as if you had never written it. Wrap the object in `defineConfig` and
+add the JSDoc type, and the typo is flagged as you type:
+
+```js
+const { defineConfig } = require('postcss-uxdsl/config');
+
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+module.exports = defineConfig({
+  entry: './src/app/uxdsl-entry.uxdsl',
+  outFile: './src/app/uxdsl.css',
+  watch: ['src/**/*.uxdsl'],
+});
+```
+
+This needs no TypeScript in your project — VS Code type-checks JSDoc in plain
+`.js`/`.cjs` files. The type also knows `entry`/`outFile` and `builds` are
+alternatives, not a combination, which is what the CLI enforces at run time.
+
+For the theme file, point `$schema` at the packaged JSON Schema and get the
+same treatment for family, field and state names:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+See
+[`postcss-uxdsl`'s README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md)
+for which names are closed and which stay open for your own roles.
+
 ### 2. Theme configuration (`uxdsl.theme.config.cjs`)
 
 Keep your theme separate from build settings by adding a theme config file

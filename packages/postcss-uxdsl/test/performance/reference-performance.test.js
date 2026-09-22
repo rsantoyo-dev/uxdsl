@@ -7,6 +7,13 @@
 // absolute numbers live in `npm run bench:references`, with the machine
 // recorded next to them.
 //
+// It lives in `test/performance/` and runs in its own `node --test
+// --test-concurrency=1` pass, after the main suite, because `node --test` runs
+// test *files* in parallel: measured inside that pool this test saw its own
+// absolute times nearly double and reported a x3.04 growth that isolated runs
+// put at x1.78. That was CPU contention, not the algorithm — and a timing test
+// that competes with thirty other files measures the scheduler.
+//
 // Only `inspectReferences` is timed, on a root the compiler itself produced.
 // Timing a whole compile would fold in parsing, theme generation and directive
 // expansion — all linear, all large — and would dilute a regression in the
@@ -16,8 +23,8 @@ const assert = require('node:assert/strict');
 const postcss = require('postcss');
 const postcssScss = require('postcss-scss');
 
-const implementation = require('../dist/reference-integrity');
-const plugin = require('../dist');
+const implementation = require('../../dist/reference-integrity');
+const plugin = require('../../dist');
 
 const BLOCKS = 500;
 const MAX_GROWTH = 2.5;
@@ -62,18 +69,39 @@ async function prepare(blocks) {
   return captured;
 }
 
-function medianOf(run) {
-  const times = [];
-  for (let i = 0; i < SAMPLES; i++) {
-    const started = process.hrtime.bigint();
-    run();
-    times.push(Number(process.hrtime.bigint() - started) / 1e6);
-  }
-  times.sort((a, b) => a - b);
-  return times[Math.floor(times.length / 2)];
+function time(run) {
+  const started = process.hrtime.bigint();
+  run();
+  return Number(process.hrtime.bigint() - started) / 1e6;
 }
 
-test(`MIG-B6-25: reference validation grows near-linearly (${BLOCKS} -> ${BLOCKS * 2} blocks)`, async () => {
+function median(times) {
+  const sorted = [...times].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
+/**
+ * Measures both sizes interleaved (small, large, small, large, …) rather than
+ * all of one and then all of the other.
+ *
+ * Measuring in phases means a slowdown that arrives partway through — another
+ * process waking up, a thermal step — lands entirely on whichever size was
+ * being measured at the time and shows up as a change in the *ratio*, which is
+ * the number under test. Interleaving exposes both sizes to the same
+ * conditions, so noise mostly cancels instead of being attributed to the
+ * algorithm.
+ */
+function interleavedMedians(small, large) {
+  const smallTimes = [];
+  const largeTimes = [];
+  for (let i = 0; i < SAMPLES; i++) {
+    smallTimes.push(time(small));
+    largeTimes.push(time(large));
+  }
+  return [median(smallTimes), median(largeTimes)];
+}
+
+test(`MIG-B6-25: reference validation grows near-linearly (${BLOCKS} -> ${BLOCKS * 2} blocks)`, async (t) => {
   const small = await prepare(BLOCKS);
   const large = await prepare(BLOCKS * 2);
 
@@ -93,10 +121,10 @@ test(`MIG-B6-25: reference validation grows near-linearly (${BLOCKS} -> ${BLOCKS
   check(small)();
   check(large)();
 
-  const smallMs = medianOf(check(small));
-  const largeMs = medianOf(check(large));
+  const [smallMs, largeMs] = interleavedMedians(check(small), check(large));
   const growth = largeMs / smallMs;
 
+  t.diagnostic(`${smallMs.toFixed(1)} ms -> ${largeMs.toFixed(1)} ms, growth x${growth.toFixed(2)} (budget ${MAX_GROWTH})`);
   assert.ok(growth <= MAX_GROWTH,
     `doubling the input multiplied reference validation by ${growth.toFixed(2)} ` +
     `(${smallMs.toFixed(1)} ms -> ${largeMs.toFixed(1)} ms), above the ${MAX_GROWTH} budget. ` +

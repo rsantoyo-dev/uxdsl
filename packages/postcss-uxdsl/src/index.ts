@@ -25,50 +25,13 @@ import { presetValueToCss } from './preset-engine';
 import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { generateTypographyCss, TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
+import type { UxdslBreakpointSpec, UxdslOptions } from './types';
 
-type BreakpointSpec =
-  | Record<string, number>
-  | Array<[string, number]>
-  | Array<{ name: string; min?: number; px?: number }>;
-
-interface UxDslOptions {
-  breakpoints?: BreakpointSpec;
-  themeVar?: (path: string) => string;
-  spaceVar?: (index: string) => string;
-  colorVar?: (path: string) => string;
-  theme?: Record<string, any>;
-  /**
-   * Whether this compilation emits the global `:root` token definitions
-   * (foundations, typography, density, shadows, edges, surfaces, buttons,
-   * inputs). Defaults to `true`, matching the historical single-entry
-   * behavior where one compiled file both defines and consumes tokens.
-   *
-   * Set to `false` for a component/CSS-Module entry that only consumes
-   * tokens a separate `includeTheme: true` entry already defines — for
-   * example, one shared theme import plus several CSS Module files. This
-   * avoids re-emitting duplicate global declarations and the bare `:root`
-   * selector that CSS Modules loaders reject as impure. Token references
-   * (`space()`, `palette()`, `density()`, `@ds-surface`, `@ds-button`,
-   * `@ds-input`, ...) still resolve and validate normally either way —
-   * only the definitions themselves are skipped.
-   */
-  includeTheme?: boolean;
-  references?: ReferenceOptions;
-  /**
-   * When `theme` is omitted (and this isn't `false`), the plugin looks for
-   * a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
-   * `configRoot` (default `process.cwd()`) and validates/compiles against
-   * it instead of the built-in default theme — the same discovery
-   * uxdsl-cli has always done, now available with the plugin used
-   * directly (e.g. from a project's own `postcss.config.js`). An explicit
-   * `theme` always wins outright; this has no effect when one is given.
-   * Set to `false` to keep the old always-default-theme behavior.
-   */
-  discoverTheme?: boolean;
-  /** Directory theme discovery searches from. Defaults to `process.cwd()`.
-   * Ignored when `theme` is explicit or `discoverTheme` is `false`. */
-  configRoot?: string;
-}
+// MIG-B6-27 (FEAT-008): the options interface lives in `./types` now, the
+// public type surface consumers import. It is re-exported from the namespace
+// merged at the bottom of this file, so `import type { UxdslOptions } from
+// 'postcss-uxdsl'` resolves even though this module uses `export =`.
+type BreakpointSpec = UxdslBreakpointSpec;
 
 // Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
 const defaultThemeVar = (path: string) => {
@@ -114,7 +77,7 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
   return { map, ordered };
 }
 
-function uxdslPlugin(opts: UxDslOptions = {}) {
+function uxdslPlugin(opts: UxdslOptions = {}) {
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
@@ -989,5 +952,39 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 }
 
 (uxdslPlugin as any).postcss = true;
+
+// MIG-B6-27 (FEAT-008): this module is `export =` — a PostCSS plugin is a
+// callable, and that cannot change without breaking every existing
+// `require('postcss-uxdsl')` — so the public types are merged into the
+// function's own namespace instead. That is what makes `import type {
+// UxdslTheme } from 'postcss-uxdsl'` resolve for a consumer, under both
+// `require` and `import`, without inventing a second entry point for types.
+// A namespace cannot re-export with `export ... from`, hence the import types.
+declare namespace uxdslPlugin {
+  export type UxdslOptions = import('./types').UxdslOptions;
+  export type UxDslOptions = import('./types').UxDslOptions;
+  export type UxdslTheme = import('./types').UxdslTheme;
+  export type UxdslThemeOverride = import('./types').UxdslThemeOverride;
+  export type UxdslDeepPartial<T> = import('./types').UxdslDeepPartial<T>;
+  export type UxdslBreakpointSpec = import('./types').UxdslBreakpointSpec;
+  export type UxdslTokenValue = import('./types').UxdslTokenValue;
+  export type UxdslPaletteFamily = import('./types').UxdslPaletteFamily;
+  export type UxdslColorFamily = import('./types').UxdslColorFamily;
+  export type UxdslFonts = import('./types').UxdslFonts;
+  export type UxdslMode = import('./types').UxdslMode;
+  export type UxdslTypographyRole = import('./types').UxdslTypographyRole;
+  export type UxdslTypographyField = import('./types').UxdslTypographyField;
+  export type UxdslSurfaceRole = import('./types').UxdslSurfaceRole;
+  export type UxdslSurfaceField = import('./types').UxdslSurfaceField;
+  export type UxdslButtonRole = import('./types').UxdslButtonRole;
+  export type UxdslButtonField = import('./types').UxdslButtonField;
+  export type UxdslButtonState = import('./types').UxdslButtonState;
+  export type UxdslInputRole = import('./types').UxdslInputRole;
+  export type UxdslInputField = import('./types').UxdslInputField;
+  export type UxdslInputState = import('./types').UxdslInputState;
+  export type UxdslConfig = import('./types').UxdslConfig;
+  export type UxdslConfigShared = import('./types').UxdslConfigShared;
+  export type UxdslBuild = import('./types').UxdslBuild;
+}
 
 export = uxdslPlugin;

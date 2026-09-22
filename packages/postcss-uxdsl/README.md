@@ -753,6 +753,75 @@ list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
 
 ---
 
+## Typed config and theme (`defineConfig`, `$schema`)
+
+Most UXDSL mistakes are typos, and they are made while writing configuration —
+where nothing used to help. `includeThem`, `fontsize`, `focusVisible` and
+`palete` all compile to *nothing at all*, with no error, because an unknown key
+is simply not read. Since beta.6 the editor catches them.
+
+**In a plain `uxdsl.config.cjs`**, with no TypeScript in the project:
+
+```js
+const { defineConfig } = require('postcss-uxdsl/config');
+
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+module.exports = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  includeTheme: true,
+});
+```
+
+`defineConfig` returns its argument unchanged — it exists so the object literal
+is checked against `UxdslConfig`. It is deliberately **not** generic: a
+`defineConfig<T extends UxdslConfig>` infers `T` from the literal, extra keys
+and all, which would accept the typo it is supposed to catch.
+
+The check applies to a *fresh object literal*. For a config assembled
+beforehand, annotate it where it is defined, or use
+`satisfies UxdslConfig` — passing an already-widened variable through
+`defineConfig` cannot recover what the earlier assignment discarded.
+
+**In TypeScript**, the types are exported from the package root:
+
+```ts
+import type { UxdslTheme, UxdslThemeOverride, UxdslOptions, UxdslConfig } from 'postcss-uxdsl';
+```
+
+`UxdslTheme` is a complete theme; `UxdslThemeOverride` is the partial patch
+`resolveTheme` merges over the base, with arrays replaced rather than merged.
+`UxDslOptions` still resolves, as a deprecated alias of `UxdslOptions`.
+
+**In a `uxdsl.theme.json`**, point `$schema` at the packaged JSON Schema:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+What is closed and what is open is the same split the compiler makes, because
+the schema and the types are both generated from the engine constants rather
+than hand-written beside them:
+
+| Closed — a typo is an error | Open — a project extends it |
+| --- | --- |
+| Theme family names (`KNOWN_THEME_FAMILIES`) | Palette family names (`palette.brand`) |
+| `typography_details` field names | `typography_details` role names |
+| Surface / Button / Input field names | Surface / Button / Input role names |
+| Button and Input state names | `fonts.families` role names |
+| `modes` (only `dark` is compiled) | Spacing, density, shadow, border, radius keys |
+
+A family that gains a field in a future release appears in both without anyone
+remembering to copy it; one that is removed stops type-checking.
+
+Note that `$schema` itself is metadata, not a family: it compiles to nothing by
+design, and the theme validator does not report it as an unknown family.
+
+---
+
 ## Source maps
 
 This plugin has no source-map option of its own — it works with PostCSS's

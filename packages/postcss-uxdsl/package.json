@@ -39,13 +39,14 @@
   "files": [
     "dist",
     "src/theme",
+    "schema",
     "scripts/codemod-size-overrides.js",
     "scripts/codemod-namespace.js",
     "README.md",
     "CHANGELOG.md"
   ],
   "scripts": {
-    "test": "npm run build && node --test test/*.test.js",
+    "test": "npm run build && node --test test/*.test.js && node --test --test-concurrency=1 test/performance/*.test.js",
     "build": "tsc",
     "dev": "tsc --watch",
     "clean": "rm -rf dist",
@@ -54,25 +55,26 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "require": "./dist/index.js",
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "import": "./dist/index.js"
     },
     "./ds-runtime": {
+      "types": "./dist/ds-runtime.d.ts",
       "require": "./dist/ds-runtime.js",
-      "import": "./dist/ds-runtime.js",
-      "types": "./dist/ds-runtime.d.ts"
+      "import": "./dist/ds-runtime.js"
     },
     "./config": {
+      "types": "./dist/config.d.ts",
       "require": "./dist/config.js",
-      "import": "./dist/config.js",
-      "types": "./dist/config.d.ts"
+      "import": "./dist/config.js"
     },
     "./language": {
       "types": "./dist/language.d.ts",
       "require": "./dist/language.js",
       "import": "./dist/language.js"
     },
+    "./schema/theme.schema.json": "./schema/theme.schema.json",
     "./theme/*": "./src/theme/*",
     "./package.json": "./package.json"
   },
@@ -82,6 +84,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.30",
+    "ajv": "8.20.0",
     "typescript": "^5.6.3"
   },
   "publishConfig": {

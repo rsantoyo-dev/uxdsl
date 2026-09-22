@@ -115,6 +115,50 @@ async function main() {
   const installedReadme = fs.readFileSync(path.join(installed.pkgDir, 'README.md'), 'utf8');
   check('installed README links migration.md via an absolute URL, not a relative path that would 404 once unshipped', /\]\(https:\/\/github\.com\/[^)]*\/docs\/migration\.md\)/.test(installedReadme));
 
+  // MIG-B6-27 (FEAT-008): the types and the JSON Schema are only useful if
+  // they survive `npm pack`. Checking `files` in the repository's package.json
+  // proves intent; this proves delivery.
+  const installedSchemaPath = path.join(installed.pkgDir, 'schema/theme.schema.json');
+  check('installed tarball includes schema/theme.schema.json', fs.existsSync(installedSchemaPath));
+  if (fs.existsSync(installedSchemaPath)) {
+    const Ajv = require(path.join(PACKAGE_DIR, 'node_modules/ajv'));
+    const validateTheme = new Ajv({ allErrors: true, strict: false }).compile(JSON.parse(fs.readFileSync(installedSchemaPath, 'utf8')));
+    const fixtureTheme = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'theme.json'), 'utf8'));
+    check("this fixture's own theme.json validates against the *installed* schema",
+      validateTheme(fixtureTheme) || (console.error(validateTheme.errors), false));
+    check('the installed schema rejects an unknown family', !validateTheme({ palete: {} }));
+  }
+  check('installed tarball includes dist/types.d.ts (the public type surface)',
+    fs.existsSync(path.join(installed.pkgDir, 'dist/types.d.ts')));
+
+  // Type-check a consumer against the *installed* package, under Node16
+  // resolution. This is the check that catches an exports map whose `types`
+  // condition is unreachable: resolution runs against the tarball's own
+  // package.json, not the repository's source tree.
+  const typeDir = path.join(FIXTURE_DIR, '.types');
+  fs.rmSync(typeDir, { recursive: true, force: true });
+  fs.mkdirSync(typeDir, { recursive: true });
+  fs.writeFileSync(path.join(typeDir, 'consumer.ts'), [
+    "import { defineConfig } from 'postcss-uxdsl/config';",
+    "import type { UxdslTheme, UxdslConfig, UxdslOptions } from 'postcss-uxdsl';",
+    "export const config: UxdslConfig = defineConfig({ entry: './a.uxdsl', outFile: './a.css' });",
+    "export const theme: UxdslTheme = { palette: { brand: { main: '#000' } }, typography_details: { h1: { fontSize: '2rem' } } };",
+    "export const options: UxdslOptions = { theme, includeTheme: false };",
+    '// @ts-expect-error the field is `fontSize` — if this stops erroring the directive is unused and tsc fails.',
+    "export const typo: UxdslTheme = { typography_details: { h1: { fontsize: '2rem' } } };",
+  ].join('\n'));
+  fs.writeFileSync(path.join(typeDir, 'tsconfig.json'), JSON.stringify({
+    compilerOptions: { noEmit: true, strict: true, skipLibCheck: true, module: 'node16', moduleResolution: 'node16', target: 'es2022' },
+    files: ['consumer.ts'],
+  }, null, 2));
+  try {
+    execFileSync('node', [path.join(PACKAGE_DIR, 'node_modules/typescript/bin/tsc'), '--project', typeDir], { cwd: FIXTURE_DIR, encoding: 'utf8', stdio: 'pipe' });
+    check('a TypeScript consumer type-checks against the installed tarball (Node16 resolution, exports map, @ts-expect-error used)', true);
+  } catch (err) {
+    check(`a TypeScript consumer type-checks against the installed tarball — FAILED:\n${err.stdout || err.stderr || err.message}`, false);
+  }
+  fs.rmSync(typeDir, { recursive: true, force: true });
+
   const theme = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'theme.json'), 'utf8'));
 
   console.log('\nBuilding: 1 theme entry (includeTheme: true) + 4 CSS-Module panel entries (includeTheme: false)...');

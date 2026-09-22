@@ -32,6 +32,15 @@ export const KNOWN_THEME_FAMILIES = new Set([
   'modes', 'typography',
 ]);
 
+/**
+ * MIG-B6-27 (FEAT-008): JSON Schema metadata, recognized but deliberately
+ * **not** a member of `KNOWN_THEME_FAMILIES` — it names no tokens and compiles
+ * to nothing, so treating it as a family would put it in the schema's own
+ * family list, in strict-theme scopes and in every drift check. It is accepted
+ * where a theme is validated, and ignored everywhere a family is consumed.
+ */
+export const THEME_SCHEMA_KEY = '$schema';
+
 function isPlainObject(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -353,6 +362,12 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
   // doesn't know about yet" from "genuinely unused scratch data".
   if (isPlainObject(input)) {
     Object.keys(input).forEach((key) => {
+      // MIG-B6-27 (FEAT-008): `$schema` is JSON Schema metadata, not a family.
+      // It is the documented way to get editor completion in a
+      // `uxdsl.theme.json`, so warning that "it will not be compiled into any
+      // CSS" would be advising against the thing the README recommends. It is
+      // correct that nothing compiles it — that is what metadata means.
+      if (key === THEME_SCHEMA_KEY) return;
       if (!KNOWN_THEME_FAMILIES.has(key)) {
         warnings.push({ path: key, message: `Unknown theme family "${key}" — it will not be compiled into any CSS.` });
       }

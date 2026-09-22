@@ -23,7 +23,11 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const PLUGIN_SRC = path.resolve(__dirname, '..', '..', 'postcss-uxdsl', 'src', 'index.ts');
+// MIG-B6-27 (FEAT-008): the interface moved out of the plugin's index.ts into
+// its public `types.ts` and was renamed `UxdslOptions` (`UxDslOptions` is now a
+// deprecated alias). This guard is pointed at the new home rather than relaxed:
+// it caught the move on the first run, which is exactly what it is for.
+const PLUGIN_SRC = path.resolve(__dirname, '..', '..', 'postcss-uxdsl', 'src', 'types.ts');
 const CORE_SRC = path.resolve(__dirname, '..', '..', 'uxdsl-core', 'src', 'index.ts');
 const CLI_SRC = path.resolve(__dirname, '..', 'bin', 'uxdsl.js');
 
@@ -68,11 +72,11 @@ function extractObjectLiteralKeys(source, callPattern, describeFor) {
   return keys;
 }
 
-test('MIG-B3-01: every forwardable UxDslOptions key is reachable from uxdsl-core\'s uxdslPlugin(...) call', () => {
+test('MIG-B3-01: every forwardable UxdslOptions key is reachable from uxdsl-core\'s uxdslPlugin(...) call', () => {
   const pluginSource = fs.readFileSync(PLUGIN_SRC, 'utf8');
   const coreSource = fs.readFileSync(CORE_SRC, 'utf8');
 
-  const optionKeys = extractInterfaceKeys(pluginSource, 'UxDslOptions', PLUGIN_SRC);
+  const optionKeys = extractInterfaceKeys(pluginSource, 'UxdslOptions', PLUGIN_SRC);
   const forwardedKeys = new Set(extractObjectLiteralKeys(coreSource, /uxdslPlugin\(\{([\s\S]*?)\}\)/, 'uxdslPlugin({ ... }) in ' + CORE_SRC));
 
   const missing = optionKeys.filter(
@@ -82,16 +86,16 @@ test('MIG-B3-01: every forwardable UxDslOptions key is reachable from uxdsl-core
   assert.deepEqual(
     missing,
     [],
-    `UxDslOptions key(s) ${JSON.stringify(missing)} are not forwarded by uxdsl-core's uxdslPlugin(...) call in ${CORE_SRC}. ` +
+    `UxdslOptions key(s) ${JSON.stringify(missing)} are not forwarded by uxdsl-core's uxdslPlugin(...) call in ${CORE_SRC}. ` +
     'Either forward them in compile(), or add them to KNOWN_UNFORWARDED_PLUGIN_OPTIONS with a reason.'
   );
 });
 
-test('MIG-B6-18: every one of those same UxDslOptions keys is also forwarded by the CLI\'s uxdslCore.compile(...) call', () => {
+test('MIG-B6-18: every one of those same UxdslOptions keys is also forwarded by the CLI\'s uxdslCore.compile(...) call', () => {
   const pluginSource = fs.readFileSync(PLUGIN_SRC, 'utf8');
   const cliSource = fs.readFileSync(CLI_SRC, 'utf8');
 
-  const optionKeys = extractInterfaceKeys(pluginSource, 'UxDslOptions', PLUGIN_SRC);
+  const optionKeys = extractInterfaceKeys(pluginSource, 'UxdslOptions', PLUGIN_SRC);
   // The CLI's compile() call passes { entry } as the first argument and a
   // config object as the second — the second (curly) argument is what a
   // plugin option must appear in.
@@ -108,7 +112,7 @@ test('MIG-B6-18: every one of those same UxDslOptions keys is also forwarded by 
   assert.deepEqual(
     missing,
     [],
-    `UxDslOptions key(s) ${JSON.stringify(missing)} are not forwarded by the CLI's uxdslCore.compile(...) call in ${CLI_SRC}. ` +
+    `UxdslOptions key(s) ${JSON.stringify(missing)} are not forwarded by the CLI's uxdslCore.compile(...) call in ${CLI_SRC}. ` +
     'Either forward them in compileEntryToCss(), or add them to KNOWN_UNFORWARDED_PLUGIN_OPTIONS with a reason.'
   );
 });

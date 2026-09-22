@@ -1,5 +1,11 @@
 import fs from 'fs';
 import path from 'path';
+import type { UxdslConfig } from './types';
+
+// The JSDoc form in a `.cjs` config refers to this entry point by name
+// (`@type {import('postcss-uxdsl/config').UxdslConfig}`), so the types it
+// names have to be reachable from here, not only from the package root.
+export type { UxdslConfig, UxdslConfigShared, UxdslBuild, UxdslTheme, UxdslThemeOverride } from './types';
 
 // MIG-B6-19 (FEAT-008): the one shared theme-config loader — moved here
 // (out of uxdsl-cli, where this logic previously lived alone) so the
@@ -210,4 +216,29 @@ export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme |
   if (!themeConfigPath) return null;
   const { theme, references } = await loadThemeConfigAsync(themeConfigPath);
   return { theme, references, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
+}
+
+// MIG-B6-27 (FEAT-008): identity at run time, a type checkpoint at edit time.
+//
+// Deliberately *not* generic. `defineConfig<T extends UxdslConfig>(config: T)`
+// reads as stricter and is in fact weaker: inference widens `T` to include
+// whatever extra keys the literal has, so `includeThem: false` would be
+// accepted and silently ignored by the CLI — exactly the typo this exists to
+// catch. A plain parameter type gets TypeScript's excess property check on the
+// object literal instead, which is what reports the typo.
+//
+// The check only applies to a *fresh* object literal. For a config assembled
+// beforehand, annotate at the definition site or use
+// `satisfies UxdslConfig` — passing an already-widened variable through here
+// cannot recover information the assignment already discarded.
+/**
+ * Type-checks a `uxdsl.config.cjs` export and returns it unchanged.
+ *
+ * ```js
+ * const { defineConfig } = require('postcss-uxdsl/config');
+ * module.exports = defineConfig({ entry: './src/a.uxdsl', outFile: './out/a.css' });
+ * ```
+ */
+export function defineConfig(config: UxdslConfig): UxdslConfig {
+  return config;
 }

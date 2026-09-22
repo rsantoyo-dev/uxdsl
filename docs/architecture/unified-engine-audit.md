@@ -82,7 +82,7 @@ These are not implied capabilities of the engine:
   indexes (contexts bucketed by selector, memoized resolutions, values parsed
   once) are built and discarded inside `inspectReferences`; like every other
   family, it keeps no process-global cache between builds.
-  `packages/postcss-uxdsl/test/reference-performance.test.js` asserts the growth
+  `packages/postcss-uxdsl/test/performance/reference-performance.test.js` asserts the growth
   ratio, and `npm run bench:references` prints the absolute curve with the
   machine that produced it.
 - Legacy DOM linking/persistence APIs and advanced compiler callback options remain
