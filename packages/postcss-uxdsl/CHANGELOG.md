@@ -9,6 +9,77 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-29 (phase 3 of 4 — color correction, this story's own "paso 8"):
+
+- **Visual (default theme and every named playground theme):** 16 palette
+  colors in `theme/base.json` moved to clear WCAG contrast, following this
+  story's own rules: minimal change in OKLCH (hue and chroma held fixed,
+  only lightness moved, smallest valid step, both directions searched),
+  `dark`/`contrast` touched before `main`, `main` only moved when no
+  white/black `contrast` choice could resolve it alone. Every corrected
+  value already existed as `main`/`dark`/`contrast` for its family; nothing
+  was invented. Light mode: `surface.dark` (`#e2e8f0`→`#8d929a`, its own
+  border against the page background 1.23:1→3.13:1), `tertiary.dark`
+  (`#475569`→`#68778c`, text on `tertiary.dark` as a hover background
+  2.77:1→4.61:1 — the story's own named example), `tertiary.main`
+  (`#94a3b8`→`#68768a`, direct text/border via `outlined`/`flat` tone
+  2.56:1→4.62:1). Dark mode: 6 families that previously redefined only
+  `main`/`contrast` in `modes.dark` now also have their own `dark`
+  (`secondary`, `surface`, `tertiary`, `success`, `info`, `error` — the
+  story's step 8 explicitly asks for this instead of inheriting light
+  mode's `dark` into a dark background), and 7 families' `main` moved to
+  stay readable as `placeholder` text (`palette(neutral.dark)`, the same
+  value regardless of tone) on their own toned `contained`-input
+  background. Every change is a same-hue lightening/darkening, not a hue
+  or identity change; see this story's own evidence for the full per-color
+  table with exact ratios. The Next.js playground's `green` and `slate`
+  named themes received their own, independently-computed corrections
+  (10 and 15 colors respectively) using the same rules and search, since
+  they ship their own literal palette values rather than inheriting the
+  package's — `default` and `purple` needed none, since neither overrides
+  the palette (see this story's evidence for exactly which playground
+  colors changed).
+- **Not fixed, by design — three real, disclosed engine/architecture
+  findings, not color choices:**
+  1. `inputs.*.base.placeholder` is a literal `palette(neutral.dark)`
+     reference in every input role's definition, never tone-substituted
+     the way `bg`/`color`/`border` already are. A single gray cannot
+     simultaneously read on the near-white ambient (works today, untoned)
+     and on a saturated, often-dark toned `contained` background — moving
+     `neutral.dark` to fix one breaks the other; moving a tone's own
+     `main` to fix its own placeholder reading routinely requires erasing
+     that color's identity (verified empirically: doing so in one
+     playground theme's dark mode pushed multiple accent colors to
+     near-white before this was caught and reverted in favor of leaving
+     it open). Affects most tone families' `contained`-input placeholder
+     in light mode. Recommended follow-up: make `placeholder`
+     tone-substituted like the other Surface-composed fields.
+  2. `light`, `dark`, and `surface` are canvas-identity families (their
+     `main`/`dark` are meant to stay near-white or near-black to do their
+     real job as page/recessed backgrounds) used as an explicit `tone=`
+     accent on `outlined`/`flat`/`underline`, which reads that same value
+     directly as text/border against the page's own ambient. This is the
+     same class of finding as the one exception this story already
+     shipped (`light`-as-text) — that shipped exception covers exactly the
+     one case the story's own "Por qué" section names; the others
+     (`light`-as-border, `dark`-as-tone in dark mode, `surface`-as-tone in
+     both modes) remain open. Recommended follow-up: either exception the
+     whole pattern per family once reviewed, or reconsider whether these
+     three families should be valid `tone=` choices for text-bearing
+     roles at all.
+  3. `warning.main` (light mode only) isn't dark/saturated enough to read
+     as direct text/border via `outlined`/`flat`/`underline` tone; fixing
+     it within this story's own rules would require moving it far enough
+     to lose its identity as a vivid, recognizable warning accent, which
+     `main`'s own protection ("last resort, brand identity") is meant to
+     prevent. Recommended follow-up: same as (2) — a reviewed exception,
+     or a deliberate, owner-approved re-pick of `warning.main` itself
+     (out of scope for an automated minimal-change pass).
+  `checkThemeContrast` still correctly reports `passed: false` against
+  `theme/base.json` and every named playground theme — honestly, by
+  design. Phase 4 (this story's remaining scope: the Google Fonts encoding
+  helper) does not touch colors and will not change this.
+
 FEAT-008, MIG-B6-29 (phase 2 of 4 — the accessibility contrast gate):
 
 - **New:** `checkThemeContrast(theme, { exceptions? })`, exported from

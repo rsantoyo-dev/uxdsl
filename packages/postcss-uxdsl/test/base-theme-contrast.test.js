@@ -10,14 +10,21 @@ const exceptions = require('../src/theme/base.contrast-exceptions.json');
 // coverage of the primitives this relies on.
 //
 // This story's own reproduction ("Por qué"/"Reproducción") hand-computed
-// three of these ratios; they are pinned here so a future change to the
-// theme, the engine, or this checker's own math can never silently drift
-// from those documented, independently-verifiable numbers:
-//   - tertiary, contained, hover, light mode: 2.77:1
-//   - warning, outlined, base, light mode: 3.19:1
-//   - light (the palette family), outlined, base, light mode: 1.10:1
-// All three still fail today — phase 3 of this story (color correction
-// per its own step 8) is what's expected to fix them, not this phase.
+// three of these ratios, pinned here originally so a future change could
+// never silently drift from them: tertiary/contained/hover 2.77:1,
+// warning/outlined/base 3.19:1, light-tone/outlined/base 1.10:1. Phase 3
+// (color correction, this same story's step 8) fixed `tertiary.dark`
+// (#475569 -> #68778c), which resolves the first one (now ~4.61:1, see the
+// test below). The other two remain open BY DESIGN, not by omission: both
+// trace to a family's own `main` being read directly as text/border via an
+// `outlined`/`flat`/`underline` tone (warning.main isn't dark enough;
+// `light` is a background-identity family, the same class of finding as
+// its own already-shipped exception) — moving either far enough to pass
+// would erase the family's own recognizable identity, which phase 3's own
+// rules protect ("main" only moves as a last resort, never to the point of
+// losing what makes it that family). Recorded as real, disclosed,
+// out-of-scope architecture findings in this story's evidence, each
+// recommended as its own follow-up MIG, not swept into ad hoc exceptions.
 
 const theme = resolveTheme();
 
@@ -83,20 +90,21 @@ test('every real tone family (getToneFamilies\' own 11) is checked, not just the
   }
 });
 
-test('reproduces the story\'s own hand-computed ratios exactly (a real cross-check, not a coincidence)', () => {
+test('phase 3 fixed the story\'s tertiary/contained/hover example; the other two remain open, at their same documented ratios', () => {
   const report = checkThemeContrast(theme);
+
+  const tertiaryHover = report.checked.find((c) => c.mode === 'light' && c.tone === 'tertiary' && c.state === 'hover' && c.pair === 'text' && c.family === 'button');
+  assert.ok(tertiaryHover, 'expected the tertiary/contained/hover text pair to still be checked');
+  assert.ok(tertiaryHover.ratio >= 4.5, `tertiary.dark's phase-3 correction should have fixed this pair, got ${tertiaryHover.ratio}`);
+  assert.ok(!report.failures.some((f) => f.mode === 'light' && f.tone === 'tertiary' && f.state === 'hover' && f.pair === 'text' && f.family === 'button'), 'must no longer be a failure');
+
   const find = (predicate) => report.failures.find(predicate);
-
-  const tertiaryHover = find((f) => f.mode === 'light' && f.tone === 'tertiary' && f.state === 'hover' && f.pair === 'text' && f.family === 'button');
-  assert.ok(tertiaryHover, 'expected a tertiary/contained/hover text failure in light mode');
-  assert.equal(Number(tertiaryHover.ratio.toFixed(2)), 2.77);
-
   const warningOutlined = find((f) => f.mode === 'light' && f.tone === 'warning' && f.component === 'outlined' && f.state === 'base' && f.pair === 'text');
-  assert.ok(warningOutlined, 'expected a warning/outlined/base text failure in light mode');
+  assert.ok(warningOutlined, 'expected a warning/outlined/base text failure in light mode — open by design (warning.main isn\'t dark enough for direct text use; see this story\'s evidence)');
   assert.equal(Number(warningOutlined.ratio.toFixed(2)), 3.19);
 
   const lightOutlined = find((f) => f.mode === 'light' && f.tone === 'light' && f.component === 'outlined' && f.state === 'base' && f.pair === 'text' && f.family === 'surface');
-  assert.ok(lightOutlined, 'expected a light-tone/outlined/base text failure in light mode');
+  assert.ok(lightOutlined, 'expected a light-tone/outlined/base text failure in light mode — open by design (background-identity family, same class as its own shipped exception)');
   assert.equal(Number(lightOutlined.ratio.toFixed(2)), 1.10);
 });
 
@@ -142,7 +150,7 @@ test('regression: a color change that newly breaks a previously-passing pair in 
   const lightReport = checkThemeContrast(brokenLight);
   assert.ok(lightReport.failures.some((f) => f.mode === 'light' && f.tone === null && f.component === 'contained' && f.family === 'button' && f.pair === 'text'));
 
-  const brokenDark = resolveTheme({ modes: { dark: { palette: { primary: { contrast: '#c084fc' } } } } }); // now identical to dark's own main.
+  const brokenDark = resolveTheme({ modes: { dark: { palette: { primary: { contrast: '#ddbfff' } } } } }); // now identical to dark's own main.
   const darkReport = checkThemeContrast(brokenDark);
   assert.ok(darkReport.failures.some((f) => f.mode === 'dark' && f.tone === null && f.component === 'contained' && f.family === 'button' && f.pair === 'text'));
 });

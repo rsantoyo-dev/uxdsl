@@ -560,11 +560,16 @@ replace starts from the common base. Put shared roles and dependencies in the
 base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
 history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
 { exceptions })` (MIG-B6-29 phase 2) to verify text/border colors against
-WCAG for any effective theme, including a project's own; `theme/base.json`
-itself is not yet corrected to pass it (MIG-B6-29 phase 3, still pending —
-see that story for exactly which failures remain open and which one
-exception is already justified and recorded). Put variant changes in the
-playground's own overrides.
+WCAG for any effective theme, including a project's own. Phase 3 corrected
+16 of `theme/base.json`'s own colors (and the playground's own `green`/
+`slate` named themes) to clear it, in OKLCH, preserving hue and moving only
+lightness; `report.passed` is still honestly `false` — three real,
+disclosed engine/architecture findings remain (a `placeholder` field that
+is never tone-substituted; `light`/`dark`/`surface` used as an accent tone
+reading their own canvas-identity color as text; `warning.main` not dark
+enough for direct text use), each recommended as follow-up work in that
+story's own evidence, not swept into ad hoc exceptions. Put variant changes
+in the playground's own overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
@@ -696,17 +701,19 @@ FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirem
 
 These documents describe planned APIs, not shipped capabilities. At the
 2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
-the beta.6 gate are pending. The packaged base JSON (MIG-B6-29 phase 1) and
-the accessibility contrast gate itself, `checkThemeContrast` (MIG-B6-29 phase
-2 — this guide's own "Build time, runtime and one source of truth" section
-above already reflects both), have landed. Its color-correction pass (phase
-3, following that story's own documented OKLCH algorithm) and the shared
-Google Fonts encoding helper (phase 4) have not: `theme/base.json` is the
-full reviewed *shape*, and the gate that checks it is real, but the theme's
-own colors have not yet been run through that gate and corrected — running
-it today reports real, open failures, by design, not a bug in the gate.
-Keep the current usage guidance above until each remaining piece lands; then
-replace it in the same change, including playground agent guidance.
+the beta.6 gate are pending. The packaged base JSON (MIG-B6-29 phase 1), the
+accessibility contrast gate itself (`checkThemeContrast`, phase 2), and its
+color-correction pass (phase 3 — this guide's own "Build time, runtime and
+one source of truth" section above already reflects all three) have landed.
+Only the shared Google Fonts encoding helper (phase 4) has not. Phase 3
+corrected the colors an automated, minimal, OKLCH-preserving search could
+fix without eroding a color's own identity; `checkThemeContrast` still
+correctly reports `passed: false` against `theme/base.json` — three real,
+disclosed engine/architecture gaps remain open (not color choices; see that
+story's own evidence for exactly which ones and the recommended follow-up
+for each), by design, not a bug in the gate. Keep the current usage guidance
+above until phase 4 lands; then replace it in the same change, including
+playground agent guidance.
 
 For each story, preserve intent, token references, merge precedence and CSS-native
 exceptions. Reproduce the defect, add a regression that fails before the fix, and

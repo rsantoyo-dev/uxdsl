@@ -385,8 +385,11 @@ directly for SSR needs to add the Google Fonts `<link>`/`@import` itself
 until that lands. Neither gap is new: the encoding bug already existed for
 any project that had set `fonts.google` explicitly, and the runtime import
 was never wired up at all — both simply become visible on the *default*
-path now that `fonts.google` ships by default. The theme's colors have not
-yet been run through an accessibility contrast gate (also a later change).
+path now that `fonts.google` ships by default. The theme's colors have
+been run through the accessibility contrast gate and corrected where an
+automated, minimal, hue-preserving fix existed (MIG-B6-29 phase 3 — see
+below); three real, disclosed gaps in the *engine* (not color choices)
+remain open, documented in that story's own evidence.
 
 Merge rules: object keys merge recursively; arrays and scalars (including
 `null`) replace the previous value whole; `undefined` never overwrites a
@@ -438,7 +441,8 @@ modules directly for several such internals, `getToneFamilies` among them.
 
 ### Accessibility contrast gate (`checkThemeContrast`)
 
-**MIG-B6-29 (FEAT-008), phase 2/4.** `postcss-uxdsl/ds-runtime` exports
+**MIG-B6-29 (FEAT-008), phase 2/4 (the gate) and phase 3/4 (color
+correction).** `postcss-uxdsl/ds-runtime` exports
 `checkThemeContrast(theme, { exceptions? })`, which MIG-B6-16 uses for
 `uxdsl theme --contrast`. It checks every text/placeholder color and every
 border/underline color this theme's Surface/Button/Input engines actually
@@ -492,6 +496,19 @@ each component's own inner background — a component's border touches both,
 and only the outer, more common failure mode is verified here. Passing
 this gate is not, by itself, an accessibility certification for a real
 page.
+
+**Current status against `theme/base.json`**: phase 3 corrected 16 colors
+(hue and chroma held fixed, only lightness moved, in both directions,
+smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
+full before/after table). `report.passed` is still honestly `false`:
+three real, disclosed findings remain, none of them a color this pass
+could fix — `inputs.*.base.placeholder` is never tone-substituted (unlike
+`bg`/`color`/`border`), so it can't read on every toned background at
+once; `light`/`dark`/`surface` are canvas-identity families whose own
+`main`/`dark` are asked to double as text/border when used as an explicit
+tone; `warning.main` (light mode) isn't dark enough for direct text/
+border use without losing its own identity. Each is recommended as its
+own follow-up in that story's evidence, not swept into an exception.
 
 ### Legacy opt-in packs (deprecated)
 

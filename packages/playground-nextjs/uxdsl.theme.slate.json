@@ -15,14 +15,14 @@
     "surface": {
       "main": "#FFFFFF",
       "light": "#F5F8FA",
-      "dark": "#DDE5EB",
+      "dark": "#8b9398",
       "contrast": "#102A43"
     },
     "tertiary": {
-      "main": "#BCCCDC",
+      "main": "#677684",
       "light": "#DDE5EB",
       "dark": "#9FB3C8",
-      "contrast": "#102A43"
+      "contrast": "#000000"
     },
     "success": {
       "main": "#166534",
@@ -37,10 +37,10 @@
       "contrast": "#FFFFFF"
     },
     "warning": {
-      "main": "#F59E0B",
+      "main": "#a46802",
       "light": "#FFA726",
       "dark": "#D97706",
-      "contrast": "#0B1220"
+      "contrast": "#000000"
     },
     "error": {
       "main": "#C61625",
@@ -55,7 +55,7 @@
       "contrast": "#FFFFFF"
     },
     "neutral": {
-      "main": "#E2E8F0",
+      "main": "#8d929a",
       "light": "#F8FAFC",
       "dark": "#CBD5E1",
       "contrast": "#0B1220"
@@ -73,18 +73,31 @@
         "primary": {
           "main": "#829AB1",
           "light": "#9FB3C8",
-          "dark": "#627D98",
-          "contrast": "#102A43"
+          "dark": "#7995b1",
+          "contrast": "#000b1c"
         },
         "secondary": {
           "main": "#94A3B8",
-          "contrast": "#0B1220"
+          "dark": "#f8578c",
+          "contrast": "#040917"
         },
         "surface": {
           "main": "#102A43",
           "light": "#2C415C",
-          "dark": "#0A1B2A",
+          "dark": "#627689",
           "contrast": "#FFFFFF"
+        },
+        "tertiary": {
+          "dark": "#8292a8"
+        },
+        "success": {
+          "dark": "#64a075"
+        },
+        "info": {
+          "dark": "#5397c8"
+        },
+        "error": {
+          "dark": "#fa5f54"
         },
         "neutral": {
           "main": "#94A3B8",
