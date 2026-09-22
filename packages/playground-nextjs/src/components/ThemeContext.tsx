@@ -1,10 +1,23 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { deepMergeTheme, generateThemeCss, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme, deepMergeTheme, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
+import { createThemeScheduler } from '../lib/theme-scheduler'
 import { baseTheme, themes } from '../../themes'
 
 const { default: defaultTheme, green: greenTheme, purple: purpleTheme, slate: slateTheme } = themes
+
+// The id `ThemeScript` renders server-side. `applyTheme` *adopts* an existing
+// `<style>` with this id rather than creating a second one, which is what keeps
+// hydration from ending up with two competing theme stylesheets.
+const THEME_STYLE_ID = 'uxdsl-ssr-theme'
+
+// MIG-B6-30 (FEAT-008): elements this provider used to manage and no longer
+// does. `generateThemeCss` emits the Google Fonts `@import` itself (MIG-B6-29),
+// so the hand-rolled <link> here was loading every family a second time, with
+// its own weaker encoding. Only these exact ids are removed — a font link or
+// style the rest of the app owns is left alone.
+const RETIRED_ELEMENT_IDS = ['uxdsl-google-fonts', 'uxdsl-typography-theme', 'uxdsl-typo-overrides']
 
 export type ThemeName = 'default' | 'green' | 'purple' | 'slate' | 'custom'
 
@@ -23,6 +36,31 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined)
 
+function retireOldManagedElements() {
+  for (const id of RETIRED_ELEMENT_IDS) document.getElementById(id)?.remove()
+}
+
+/**
+ * Clears the inline custom properties the *old* per-token setters wrote on
+ * `<html>`.
+ *
+ * `updatePalette`/`updateColor`/`updateSpacing` set them with
+ * `documentElement.style.setProperty`, and an inline declaration beats any
+ * `:root` rule — so a value left over from one theme would keep covering the
+ * stylesheet after switching to another. Only `--uxdsl__*` properties are
+ * removed, because those are the ones this runtime owns; anything else the app
+ * or a demo put inline is left exactly where it is.
+ */
+function clearRuntimeInlineTokens() {
+  const style = document.documentElement.style
+  const owned: string[] = []
+  for (let i = 0; i < style.length; i++) {
+    const property = style.item(i)
+    if (property.startsWith('--uxdsl__')) owned.push(property)
+  }
+  owned.forEach((property) => style.removeProperty(property))
+}
+
 export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<ThemeName>('default')
@@ -31,14 +69,9 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const [customThemeName, setCustomThemeName] = useState<string | null>(null)
   const [backgroundImage, setBackgroundImage] = useState<string | null>('abstract purple curves')
 
-  const lastBaseSignatureRef = useRef<string | null>(null)
-  const lastFontsHrefRef = useRef<string | null>(null)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const lastValidThemeRef = useRef<any>(null)
-
   const activeThemeData = React.useMemo(() => {
     switch (currentTheme) {
-      case 'purple': return purpleTheme; // Same as default now (optional redundancy)
+      case 'purple': return purpleTheme;
       case 'green': return greenTheme;
       case 'slate': return slateTheme;
       case 'custom': return customThemeData || defaultTheme;
@@ -46,148 +79,98 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     }
   }, [currentTheme, customThemeData]);
 
+  /**
+   * Applies a theme through the runtime and reports the outcome.
+   *
+   * `applyTheme` validates, generates, checks that the patch does not change
+   * what the compiler would emit for already-compiled components, and only then
+   * swaps the managed stylesheet. A failure leaves the previous CSS in place,
+   * so there is no "last valid theme" to re-apply by hand any more — the
+   * runtime simply never moved.
+   */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const applyThemeNow = React.useCallback((theme: any) => {
+    const result = applyTheme(theme, { replace: true, styleId: THEME_STYLE_ID })
+    if (result.ok) {
+      clearRuntimeInlineTokens()
+      retireOldManagedElements()
+      if (result.warnings.length > 0) {
+        // eslint-disable-next-line no-console
+        console.warn('UXDSL theme warnings:', result.warnings)
+      }
+    } else {
+      // eslint-disable-next-line no-console
+      console.error('UXDSL theme rejected; the applied theme was kept:', result.error.message)
+    }
+    return result
+  }, [])
+
+  // Rapid editors — a dragged colour picker, a spacing slider — call
+  // `setCustomTheme` on every input event. Coalescing those into one
+  // application per frame happens here, deliberately outside `applyTheme`,
+  // which stays synchronous and un-batched. React state is updated from the
+  // scheduler's callback, *after* the CSS commit succeeded.
+  const schedulerRef = useRef<ReturnType<typeof createThemeScheduler> | null>(null)
+  if (schedulerRef.current === null) {
+    schedulerRef.current = createThemeScheduler({
+      apply: applyThemeNow,
+      merge: deepMergeTheme,
+    })
+  }
+  const pendingCustomRef = useRef<{ name: string; theme: unknown } | null>(null)
+
   useEffect(() => {
-    // Check initial preference
-    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' || 
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark' ||
                        (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)
     setIsDark(isDarkMode)
   }, [])
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const applyThemeEffects = (theme: any) => {
-    if (!theme) return
-
-    // Validate + normalize theme input so invalid JSON can't silently break styling.
-    const validated = validateAndNormalizeTheme(theme, { requireXsForResponsive: true })
-    if (!validated.ok) {
-      // Keep the last known good theme applied.
-      // eslint-disable-next-line no-console
-      console.error('UXDSL theme rejected (validation failed):', {
-        errors: validated.errors,
-        warnings: validated.warnings,
-      })
-
-      if (lastValidThemeRef.current) {
-        theme = lastValidThemeRef.current
-      } else {
-        return
-      }
-    } else {
-      theme = validated.theme
-
-      if (validated.warnings.length > 0) {
-        // eslint-disable-next-line no-console
-        console.warn('UXDSL theme warnings:', validated.warnings)
-      }
-    }
-
-    const ensureStyleTag = (id: string) => {
-      const existing = document.getElementById(id) as HTMLStyleElement | null
-      if (existing) return existing
-      const next = document.createElement('style')
-      next.id = id
-      document.head.appendChild(next)
-      return next
-    }
-
-    const stableStringify = (value: unknown) => {
-      try {
-        return JSON.stringify(value)
-      } catch {
-        return null
-      }
-    }
-
-    const buildFontsHref = (googleFonts: unknown) => {
-      if (!Array.isArray(googleFonts)) return null
-      const families = (googleFonts as Array<unknown>)
-        .filter((f): f is string => typeof f === 'string' && f.trim().length > 0)
-        .map((font) => font.replace(/ /g, '+'))
-        .join('&family=')
-      if (!families) return null
-      return `https://fonts.googleapis.com/css2?family=${families}&display=swap`
-    }
-
-    // Shared engine owns typography generation; this provider only applies theme state.
-    const baseSignature = stableStringify(theme)
-    if (baseSignature && baseSignature !== lastBaseSignatureRef.current) {
-      let css: string
-      try {
-        css = generateThemeCss(theme)
-      } catch (error) {
-        console.error('UXDSL theme generation failed; keeping the applied theme', error)
-        return
-      }
-      ensureStyleTag('uxdsl-ssr-theme').textContent = css
-      lastValidThemeRef.current = theme
-      document.getElementById('uxdsl-typography-theme')?.remove()
-      document.getElementById('uxdsl-typo-overrides')?.remove()
-      lastBaseSignatureRef.current = baseSignature
-    }
-    // 3) Google fonts link - avoid churn if href is unchanged.
-    const nextFontsHref = buildFontsHref(theme.fonts?.google)
-    if (nextFontsHref !== lastFontsHrefRef.current) {
-      const existingLink = document.getElementById('uxdsl-google-fonts') as HTMLLinkElement | null
-      if (!nextFontsHref) {
-        if (existingLink) existingLink.remove()
-      } else {
-        if (existingLink) {
-          existingLink.href = nextFontsHref
-        } else {
-          const link = document.createElement('link')
-          link.id = 'uxdsl-google-fonts'
-          link.rel = 'stylesheet'
-          link.href = nextFontsHref
-          document.head.appendChild(link)
-        }
-      }
-      lastFontsHrefRef.current = nextFontsHref
-    }
-  }
-
-  // Apply theme effects whenever activeThemeData changes
+  // Initialization: hand the runtime the theme this project was built and
+  // server-rendered with, once, before anything can patch it. That call also
+  // establishes the structure every later patch is checked against.
+  const scheduler = schedulerRef.current
   useEffect(() => {
-    if (activeThemeData) {
-      applyThemeEffects(activeThemeData);
-    }
-  }, [activeThemeData]);
+    applyThemeNow(defaultTheme)
+    return () => { scheduler?.cancel() }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const switchTheme = (themeName: ThemeName) => {
+    // A queued edit from the theme being left must not land on the new one.
+    scheduler?.cancel()
+    pendingCustomRef.current = null
+
     let themeToApply;
+    let nextBackground: string | null = null
     switch (themeName) {
-      case 'purple': 
-        themeToApply = purpleTheme; 
-        setBackgroundImage('abstract purple curves');
+      case 'purple':
+        themeToApply = purpleTheme;
+        nextBackground = 'abstract purple curves';
         break;
-      case 'green': 
-        themeToApply = greenTheme; 
-        setBackgroundImage('nature forest texture');
+      case 'green':
+        themeToApply = greenTheme;
+        nextBackground = 'nature forest texture';
         break;
       case 'slate':
         themeToApply = slateTheme;
-        setBackgroundImage('abstract geometric shapes');
+        nextBackground = 'abstract geometric shapes';
         break;
-      case 'purple':
-        themeToApply = purpleTheme;
-        setBackgroundImage('abstract purple curves');
-        break;
-      case 'custom': 
+      case 'custom':
         themeToApply = customThemeData;
-        // Background image for custom is already set in setCustomTheme
-        // But if we are switching back to custom, we need to restore it
-        if (customThemeData?.backgroundImage) {
-          setBackgroundImage(customThemeData.backgroundImage);
-        }
+        if (customThemeData?.backgroundImage) nextBackground = customThemeData.backgroundImage;
         break;
-      case 'default': default: 
-        themeToApply = defaultTheme; 
-        setBackgroundImage('abstract purple curves'); // Default is now Purple-like
+      case 'default': default:
+        themeToApply = defaultTheme;
+        nextBackground = 'abstract purple curves';
         break;
     }
-    
-    if (themeToApply) {
-      setCurrentTheme(themeName)
-    }
+
+    if (!themeToApply) return
+    // Apply first, reflect in React only once it really landed: a rejected
+    // theme must not leave the UI claiming a theme that is not on the page.
+    if (!applyThemeNow(themeToApply).ok) return
+    if (nextBackground) setBackgroundImage(nextBackground)
+    setCurrentTheme(themeName)
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -198,26 +181,31 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
 
     const checked = validateAndNormalizeTheme(merged)
     if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))
-    generateThemeCss(merged) // Validate the exact source used by the compiler and inspector.
-    setCustomThemeData(merged)
-    setCustomThemeName(name)
-    
-    if (themeData?.backgroundImage) {
-      setBackgroundImage(themeData.backgroundImage)
-    }
 
-    // Automatically switch to it
-    setCurrentTheme('custom')
+    pendingCustomRef.current = { name, theme: merged }
+    // Queued rather than applied inline, so sixty picker events in a second
+    // generate one stylesheet instead of sixty. The React state below is set
+    // from the frame callback, after the commit.
+    scheduler?.schedule(merged)
+    const commit = () => {
+      const pending = pendingCustomRef.current
+      if (!pending) return
+      pendingCustomRef.current = null
+      setCustomThemeData(pending.theme)
+      setCustomThemeName(pending.name)
+      if (themeData?.backgroundImage) setBackgroundImage(themeData.backgroundImage)
+      setCurrentTheme('custom')
+    }
+    // `schedule` applies immediately when there is no frame scheduler, so the
+    // commit has to follow the same rule rather than assume a frame exists.
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(commit)
+    else commit()
   }
 
   const toggleDarkMode = () => {
     const newIsDark = !isDark
     setIsDark(newIsDark)
-    if (newIsDark) {
-      document.documentElement.setAttribute('data-theme', 'dark')
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light')
-    }
+    document.documentElement.setAttribute('data-theme', newIsDark ? 'dark' : 'light')
   }
 
   return (

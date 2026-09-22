@@ -20,6 +20,14 @@ export default function ThemeConfigJsonEditor() {
   const syncTimeoutRef = useRef<number | null>(null)
 
   useEffect(() => {
+    // MIG-B6-30 (FEAT-008): drop any edit still waiting on the debounce before
+    // adopting the new theme's JSON. Without this, switching themes (or
+    // resetting) while a keystroke was pending let that keystroke fire ~500ms
+    // later and re-apply an edit belonging to the theme the user just left.
+    if (syncTimeoutRef.current) {
+      window.clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
     const next = prettyJson(activeThemeData)
     setJsonText(next)
     lastAppliedRef.current = next
@@ -57,9 +65,17 @@ export default function ThemeConfigJsonEditor() {
         setError(null)
         setStatus('synced')
         setCustomTheme(customThemeName || 'Custom Theme', validated.theme)
-      } catch {
+      } catch (cause) {
+        // A parse failure and a rejected theme are different problems, and
+        // labelling both "Invalid JSON syntax" sent people hunting for a comma
+        // that was not there — `setCustomTheme` throws with the real reason
+        // (an unknown family, a structural change that needs a rebuild).
         setStatus('invalid')
-        setError('Invalid JSON syntax. Fix the JSON to apply changes.')
+        const message = cause instanceof Error ? cause.message : ''
+        setError(
+          message && !(cause instanceof SyntaxError)
+            ? message
+            : 'Invalid JSON syntax. Fix the JSON to apply changes.')
       }
     }, 500)
 
