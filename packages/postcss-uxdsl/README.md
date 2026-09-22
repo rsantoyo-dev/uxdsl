@@ -397,6 +397,14 @@ exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
 `DEFAULT_THEME` and `getDefaultTheme()` (a mutable copy) directly, for an
 app that needs to build the same effective theme during SSR.
 
+`DEFAULT_THEME` is deep-frozen, but only an internal clone of
+`theme/base.json` — never the module object that path itself resolves to.
+If your own bundler aliases `postcss-uxdsl/*` straight to this package's
+source (rather than its published `dist/`, e.g. for a monorepo dev setup),
+importing `postcss-uxdsl/theme/base.json` directly still gives you a plain,
+mutable object, safe to `deepMergeTheme` and pass around without it being
+affected by anything this package itself froze.
+
 ### Recognized theme families
 
 `postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry

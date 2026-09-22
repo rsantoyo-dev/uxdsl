@@ -11,6 +11,28 @@ for a narrative migration guide covering the same ground.
 
 FEAT-008, MIG-B6-29 (part 1 of this story — see "Not yet done" below):
 
+- **Fix (review follow-up):** the first version of this change deep-froze
+  `theme/base.json`'s own parsed module object in place. `postcss-uxdsl/theme/base.json`
+  is also this package's public export for that same file
+  (`"./theme/*": "./src/theme/*"`); anything else in the same process or
+  bundle that imports that public path — directly, or via a build tool
+  aliasing `postcss-uxdsl/*` straight to this package's own source, which
+  the Next.js playground's `next.config.js` does specifically "to consume
+  current engine source, not a stale local dist" — resolves to the exact
+  same file, and Node's/webpack's module cache is keyed by resolved path,
+  not specifier, so it got back the exact same (now frozen) object. The
+  playground crashed on load with `TypeError: Cannot assign to read only
+  property 'ui' of object` the moment its own theme-editor code
+  (`ThemeContext.tsx`, client-side) deep-merged that shared object and then
+  mutated an untouched, reference-preserved `fonts.families` in place.
+  Fixed by freezing an independent clone instead of the shared import —
+  `DEFAULT_THEME`'s own content is unaffected, but no other code holding a
+  reference to the original parsed JSON is affected by this package
+  choosing to freeze its own copy. Regression test asserts the exact
+  invariant (`base-theme.ts`'s own `require('./theme/base.json')` resolves
+  to `dist/theme/base.json`, an independent second require of that same
+  path must never come back frozen), verified to fail before this fix and
+  pass after.
 - **Visual (default theme, every zero-config project):** `DEFAULT_THEME` is
   now `postcss-uxdsl/theme/base.json` — the full theme previously used only
   by the Next.js playground — instead of a "deliberately minimal" 4-family

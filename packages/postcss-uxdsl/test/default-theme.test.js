@@ -203,6 +203,61 @@ test('MIG-B6-29: resolveTheme(undefined) is deep-equal to theme/base.json, the l
   assert.deepEqual(DEFAULT_THEME, baseThemeJson);
 });
 
+test('MIG-B6-29 (regression): freezing DEFAULT_THEME never freezes the raw theme/base.json module object other consumers share', () => {
+  // Real bug this pins, hit live in the Next.js playground (not caught by
+  // this package's own dist-only test suite): base-theme.ts used to
+  // deep-freeze `baseThemeJson` in place. `dist/base-theme.js`'s own
+  // `require('./theme/base.json')` resolves to dist/theme/base.json (a
+  // tsc-copied file only this package's compiled output ever reads) — but
+  // the *public* export, `postcss-uxdsl/theme/base.json`, always resolves
+  // to this same src/theme/base.json instead (package.json's
+  // "./theme/*": "./src/theme/*"). Node's require cache is keyed by
+  // resolved absolute path, not by specifier: any other code in the same
+  // process/bundle that imports the public path — directly, or via a
+  // bundler alias pointing postcss-uxdsl/* straight at its own source
+  // (exactly what the playground's own next.config.js does, "to consume
+  // current engine source, not a stale local dist") — gets that exact
+  // src/theme/base.json object. Freezing it in place broke every such
+  // consumer the moment it tried to mutate an untouched, reference-
+  // preserved sub-object after its own deepMergeTheme (playground's own
+  // themes.js -> ds-runtime/theme-validate.ts's in-place
+  // `theme.fonts.families[k] = ...`, thrown as
+  // "TypeError: Cannot assign to read only property").
+  //
+  // `dist/base-theme.js` (compiled from src/base-theme.ts's
+  // `import baseThemeJson from './theme/base.json'`) resolves that import
+  // to this exact file, `dist/theme/base.json` — the same absolute path a
+  // build tool aliasing postcss-uxdsl/* to this package's own *source*
+  // would instead resolve to src/theme/base.json for (the two only differ
+  // in whether dist or src is being aliased; the sharing mechanism that
+  // caused the real bug is identical either way). Requiring it a second
+  // time, independently, must not come back frozen just because loading
+  // DEFAULT_THEME already froze *its own* copy.
+  void DEFAULT_THEME;
+  const rawDistBaseJson = require('../dist/theme/base.json');
+  assert.equal(Object.isFrozen(rawDistBaseJson), false, 'the raw, independently-required theme/base.json module object must never be frozen by this package');
+  assert.equal(Object.isFrozen(rawDistBaseJson.fonts), false);
+  assert.equal(Object.isFrozen(rawDistBaseJson.fonts.families), false);
+  // DEFAULT_THEME itself is still real, still frozen, still correct content
+  // — checked before the mutation below, which deliberately changes the
+  // *shared* object DEFAULT_THEME must NOT be affected by.
+  assert.equal(Object.isFrozen(DEFAULT_THEME), true);
+  assert.equal(Object.isFrozen(DEFAULT_THEME.fonts.families), true);
+  assert.deepEqual(DEFAULT_THEME, rawDistBaseJson);
+  // The exact shape of the original crash: an unrelated consumer merges
+  // the raw JSON with its own override, then mutates an untouched,
+  // reference-preserved sub-object in place. `merged.fonts` is still the
+  // *exact same object* as `rawDistBaseJson.fonts` (a shallow spread never
+  // clones nested objects) — this must not throw.
+  const merged = { ...rawDistBaseJson, palette: { ...rawDistBaseJson.palette } };
+  assert.doesNotThrow(() => { merged.fonts.families.ui = 'Custom, sans-serif'; });
+  assert.equal(merged.fonts.families.ui, 'Custom, sans-serif');
+  assert.equal(rawDistBaseJson.fonts.families.ui, 'Custom, sans-serif', 'sanity check: merged.fonts really is the same object, not a copy');
+  // DEFAULT_THEME was cloned before freezing, so mutating the shared raw
+  // object after the fact must never leak into it.
+  assert.notEqual(DEFAULT_THEME.fonts.families.ui, 'Custom, sans-serif');
+});
+
 test('MIG-B6-29: the migration.md beta.5-pinning recipe restores exactly beta.5\'s main/dark/contrast/font values', () => {
   // Pins packages/postcss-uxdsl/docs/migration.md's own documented override
   // literally, so a drift between the doc and resolveTheme's real behavior
