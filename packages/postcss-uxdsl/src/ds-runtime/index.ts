@@ -622,6 +622,7 @@ export {
   DEFAULT_THEME_STORAGE_KEY,
   __resetThemeStateForTests,
 } from './apply-theme';
-export type { ThemeResult, ApplyThemeOptions, ThemeOverride } from './apply-theme';
+export type { ThemeResult, ApplyThemeOptions, LoadPersistedThemeOptions, ThemeOverride } from './apply-theme';
+export { LEGACY_STORAGE_KEYS } from './legacy-storage';
 export { themeStructure, structuralChanges } from './theme-structure';
 export type { ThemeStructure, ControlStructure } from './theme-structure';

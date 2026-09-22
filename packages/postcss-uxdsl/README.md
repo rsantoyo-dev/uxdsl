@@ -791,6 +791,30 @@ Saving happens *after* the visual commit, so a storage failure comes back as
 `ok: true` with an explicit warning rather than pretending the theme did not
 apply — or pretending it was saved.
 
+### Upgrading from the per-token setters
+
+If your users customized a theme through `updatePalette`, `updateColor`,
+`updateSpacing` or `updateBreakpoint`, their work is in four separate keys
+(`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`).
+The first `loadPersistedTheme()` that finds nothing under the managed key
+converts those into one override, applies it, and clears them — in that order,
+and only after reading the new key back. A refused patch, a blocked write or a
+write the browser silently drops leaves all four keys exactly where they were,
+so a failure can never cost the user both copies. Pass
+`{ migrateLegacy: false }` to skip it.
+
+Undoing the old key format needs care, and the migration does not guess: a
+stored `primary-dark-hover` is `primary` + `dark-hover`, while
+`brand-accent-main` is `brand-accent` + `main`, and the string alone cannot
+tell them apart. The split is resolved against the palette and color family
+names your theme actually declares, longest match first; a token matching none
+of them is reported in `warnings` and skipped rather than filed under an
+invented family.
+
+A valid managed key always wins and is never merged with the legacy ones. A
+*corrupt* managed key is an error — it is not quietly replaced with whatever
+the old keys happen to contain.
+
 ### What it will refuse, and why
 
 `applyTheme` replaces a stylesheet of custom properties. It cannot rewrite the

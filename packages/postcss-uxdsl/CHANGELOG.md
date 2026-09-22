@@ -9,6 +9,27 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-30 (phase 2/4: migrating off the four legacy storage keys):
+
+- **New:** the first `loadPersistedTheme()` that finds nothing under the
+  managed key converts `uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing` and
+  `uxdsl:breakpoints` into one theme override, applies it through the same
+  validation and structural check as any other patch, writes the managed key,
+  **reads it back**, and only then removes the old keys. A refused patch, a
+  blocked write, or a write a private-mode/full store silently drops leaves all
+  four legacy keys exactly as they were — a failure can never cost the user
+  both copies. `{ migrateLegacy: false }` opts out.
+- Undoing the old key format is resolved against the family names the theme
+  declares, longest match first, rather than by splitting on a hyphen:
+  `primary-dark-hover` is `primary` + `dark-hover` while `brand-accent-main`
+  is `brand-accent` + `main`, and the string alone cannot tell them apart. A
+  token matching no declared family is reported in `warnings` and skipped, not
+  filed under an invented one.
+- A valid managed key wins outright and is never merged with the legacy keys.
+  A *corrupt* managed key is an error, not a silent fall back to whatever the
+  old keys contain — which would replace the user's theme with a different one
+  and call it success.
+
 FEAT-008, MIG-B6-30 (phase 1/4: the JSON theme applied at run time):
 
 - **New:** `applyTheme`, `getAppliedTheme`, `resetTheme`, `loadPersistedTheme`

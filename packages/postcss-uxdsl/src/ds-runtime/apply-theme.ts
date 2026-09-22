@@ -16,6 +16,7 @@ import { generateThemeCss } from './theme-generator';
 import { validateAndNormalizeTheme, deepMergeTheme } from './theme-validate';
 import { resolveTheme } from '../default-theme';
 import { themeStructure, structuralChanges, structuralChangeError, ThemeStructure } from './theme-structure';
+import { readLegacyThemeStorage, clearLegacyThemeStorage } from './legacy-storage';
 
 export type ThemeOverride = Record<string, any>;
 
@@ -300,7 +301,73 @@ export function resetTheme(options: { clearPersist?: boolean; key?: string } = {
  * other patch. A rejected one leaves the applied theme alone rather than being
  * silently replaced by something else.
  */
-export function loadPersistedTheme(options: { key?: string } = {}): ThemeResult {
+/**
+ * One-time conversion of the four pre-beta.6 keys into the managed one.
+ *
+ * Order matters and is deliberate: convert, apply (which validates and runs the
+ * structural check like any other patch), write the new key, read it back, and
+ * only then remove the old keys. A storage that accepts a write and loses it —
+ * or a converted theme the structural gate refuses — must never cost the user
+ * the only copy of their customizations, so every failure leaves all four
+ * legacy keys exactly where they were.
+ *
+ * Returns `null` when there was nothing to migrate, so the caller can carry on.
+ */
+function migrateLegacyTheme(key: string): ThemeResult | null {
+  if (typeof localStorage === 'undefined') return null;
+  const applied = getAppliedTheme();
+  let legacy;
+  try {
+    legacy = readLegacyThemeStorage(localStorage, resolveTheme(applied as any) as any);
+  } catch {
+    return null;
+  }
+  if (!legacy.found) {
+    return legacy.warnings.length
+      ? { ok: true, override: applied, warnings: legacy.warnings }
+      : null;
+  }
+
+  const result = applyTheme(legacy.override, {});
+  if (!result.ok) {
+    const error = new Error(
+      `UXD_THEME_PERSIST: the values saved by the previous per-token API could not be applied, ` +
+      `so they were left untouched under ${legacy.sourceKeys.join(', ')}.\n${result.error.message}`
+    );
+    (error as any).code = 'UXD_THEME_PERSIST';
+    (error as any).cause = result.error;
+    return { ok: false, error };
+  }
+  result.warnings.push(...legacy.warnings);
+
+  let written = false;
+  try {
+    localStorage.setItem(key, JSON.stringify(result.override));
+    // Read back before deleting anything: a quota-limited or private-mode
+    // store can accept setItem and still not keep it.
+    const verify = localStorage.getItem(key);
+    written = !!verify && JSON.stringify(JSON.parse(verify)) === JSON.stringify(result.override);
+  } catch (cause) {
+    result.warnings.push(
+      `UXD_THEME_PERSIST: migrated values were applied but could not be saved to "${key}" ` +
+      `(${cause instanceof Error ? cause.message : String(cause)}); the previous keys were kept.`
+    );
+  }
+  if (written) clearLegacyThemeStorage(localStorage, legacy.sourceKeys, result.warnings);
+  else if (!result.warnings.some((w) => w.includes(`could not be saved to "${key}"`))) {
+    result.warnings.push(`UXD_THEME_PERSIST: "${key}" did not keep the migrated theme; the previous keys were kept.`);
+  }
+  return result;
+}
+
+export interface LoadPersistedThemeOptions {
+  key?: string;
+  /** Set to `false` to skip reading the pre-beta.6 per-family keys when the
+   * managed key is empty. Default is to migrate them once. */
+  migrateLegacy?: boolean;
+}
+
+export function loadPersistedTheme(options: LoadPersistedThemeOptions = {}): ThemeResult {
   const doc = currentDocument();
   if (!doc) return { ok: false, error: environmentError('loadPersistedTheme') };
   const state = states.get(doc);
@@ -317,6 +384,16 @@ export function loadPersistedTheme(options: { key?: string } = {}): ThemeResult 
     );
     (error as any).code = 'UXD_THEME_PERSIST';
     return { ok: false, error };
+  }
+  // Nothing under the managed key: this may be a project upgrading from the
+  // per-family setters, whose customizations live in four separate keys.
+  // Note the ordering — the managed key is read *first* and, if it exists,
+  // wins outright. A corrupt value there is an error (below), never a silent
+  // fall back to the legacy keys, which would replace the user's theme with a
+  // different one and call it success.
+  if (!raw && options.migrateLegacy !== false) {
+    const migrated = migrateLegacyTheme(key);
+    if (migrated) return migrated;
   }
   if (!raw) return { ok: true, override: getAppliedTheme(), warnings: [`UXD_THEME_PERSIST: nothing stored under "${key}".`] };
 
