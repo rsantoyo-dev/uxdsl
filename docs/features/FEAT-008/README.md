@@ -7,11 +7,22 @@ El documento padre mantiene decisiones/alcance; este índice mantiene coordinaci
 
 ## Estado verificado y cómo empezar
 
-Actualización 2026-09-20: 01 implementada/verificada localmente; 13 en curso con
-pendientes concretos registrados en su ficha. Suite, tarballs beta.5 y build Next
-pasan en el working tree revisado. No hay commit de entrega ni integración aún;
-el guard documental debe repetirse con los README preparados en el índice.
-Los registros de cada historia prevalecen sobre la auditoría histórica siguiente.
+**Actualización 2026-09-22: las 21 fichas están implementadas y verificadas en
+`feat/feat-008-beta6-plan`, cada una con su SHA de entrega en su propio
+registro de evidencia.** Trece se integraron a `main` en el PR #3; el resto
+sigue en la rama, pendiente de integrar. `npm run verify:beta6` ejecuta el gate
+sobre los cinco tarballs (26/26) y `docs/releases/0.5.0-beta.6.md` reúne todo lo
+que el dueño necesita para decidir.
+
+Quedan dos cosas, y ninguna es código: la **validación externa con Press
+Craftor**, que bloquea el cierre de la feature, y la comprobación
+**postpublish** de dist-tags. Los paquetes siguen en `0.5.0-beta.5`: el bump
+pertenece a la publicación. El tema base todavía **no** pasa su propia puerta
+de contraste (156 pares, las tres brechas abiertas y documentadas de
+MIG-B6-29); está registrado como limitación conocida, no resuelto.
+
+Los registros de cada historia prevalecen sobre la auditoría histórica siguiente,
+que se conserva como contexto de por qué existe cada ficha.
 
 Revisión documental contra §60fdd76§, rama §feat/feat-008-beta6-plan§, el
 2026-09-19. Paquetes npm actuales: beta.5. Las nuevas APIs y comandos de las fichas
