@@ -72,6 +72,19 @@ These are not implied capabilities of the engine:
   the browser breakpoint integration or recompilation.
 - Arbitrary CSS variables may be supplied by external stylesheets. This is not a
   complete dependency-graph validator, CSS grammar validator or accessibility audit.
+- Reference validation is expected to cost time roughly proportional to the size
+  of the stylesheet. It is not free, and it is not constant: each consumer is
+  still inspected in every declared context whose selector and conditions can
+  reach it, which is what lets a dependency that only fails at one breakpoint or
+  in one mode be reported at all. What it may not do is grow with the *square* of
+  the input — before MIG-B6-25 it did, because the candidate contexts were
+  recomputed by scanning every declaration once per consumer. Its per-pass
+  indexes (contexts bucketed by selector, memoized resolutions, values parsed
+  once) are built and discarded inside `inspectReferences`; like every other
+  family, it keeps no process-global cache between builds.
+  `packages/postcss-uxdsl/test/reference-performance.test.js` asserts the growth
+  ratio, and `npm run bench:references` prints the absolute curve with the
+  machine that produced it.
 - Legacy DOM linking/persistence APIs and advanced compiler callback options remain
   integration-specific APIs. Whole-theme parity uses the same effective JSON and
   standard serializers; it is not a promise that arbitrary callbacks can run in

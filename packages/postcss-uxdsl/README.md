@@ -238,6 +238,14 @@ while you migrate a theme that only partially covers the defaults. The
 equivalent gap for `border(1..5)`'s `color(gray.*)` dependency is closed —
 see the next section.
 
+**Cost:** validation used to grow with the *square* of the stylesheet, so a
+large module could spend most of a rebuild in it — 24,000 lines took 63 s on
+an M1 Pro, against 1 s with `mode: 'off'`. Since beta.6 the same file takes
+0.79 s, and doubling the input costs about 1.9x rather than up to 6.3x. If
+you turned validation off to keep watch mode usable, turn it back on. The
+reported issues did not change: the previous implementation is kept as a
+frozen fixture and both are required to produce identical output.
+
 ---
 
 ## Spacing keys (`space-1` vs `1`)

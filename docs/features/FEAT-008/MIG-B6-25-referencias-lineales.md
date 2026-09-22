@@ -114,10 +114,18 @@ de la implementación actual.
 
 ## Criterios de aceptación
 
-- [ ] 24.000 líneas en menos de 2 s con referencias activas (hoy tardan 55 s),
-      registrado en el PR con la máquina usada.
-- [ ] La equivalencia con el oráculo es exacta.
-- [ ] El test de escalado pasa en CI.
+- [x] 24.000 líneas en menos de 2 s con referencias activas (hoy tardan 55 s),
+      registrado en el PR con la máquina usada. → **786 ms** (Apple M1 Pro,
+      Node v20.19.0, macOS 25.2.0, mediana de 3 tras warmup), frente a
+      **63.308 ms** de la implementación anterior en la misma máquina y con el
+      mismo comando.
+- [x] La equivalencia con el oráculo es exacta.
+      → `packages/postcss-uxdsl/test/reference-integrity-equivalence.test.js`,
+      10 tests, 39 entradas comparadas, 263 issues coincidentes uno a uno,
+      0 diferencias.
+- [x] El test de escalado pasa en CI.
+      → `packages/postcss-uxdsl/test/reference-performance.test.js`, incluido en
+      `npm --prefix packages/postcss-uxdsl test` y por tanto en `npm test`.
 
 ## Verificación
 
@@ -133,22 +141,20 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/feat-008-beta6-plan`. Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `511da96` (2026-09-22, HEAD de la rama al iniciar). Entrega: commit siguiente en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | `npm run bench:references` sobre `511da96`, en esta máquina y con la mediana de 3 muestras: 3.000 líneas 813 ms, 6.000 → 1.867 ms, 12.000 → 11.813 ms, 24.000 → **63.308 ms**, contra 79/193/296/1.012 ms con `references: { mode: 'off' }`. Duplicar la entrada multiplicaba el tiempo por 2,30 / 6,33 / 5,36: crecimiento claramente superlineal, y el 98 % del tiempo era la validación. La medición aislada de `inspectReferences` sobre un root ya compilado (500 → 1.000 bloques, 11.245 → 21.745 consumidores) daba 1.708 ms → 11.457 ms, **x6,71**, muy por encima del presupuesto de 2,5 de esta ficha. 2026-09-22 |
+| Criterio → regresión | Equivalencia → `packages/postcss-uxdsl/test/reference-integrity-equivalence.test.js`: cada caso ejecuta la implementación nueva y el oráculo congelado sobre la *misma* entrada y compara los arrays de issues elemento a elemento, en orden. Cubre los 6 casos de `reference-integrity.test.js`, medias/modos/selectores repetidos, ámbitos `:root` de modo oscuro, anchos min-width iguales escritos distinto, ciclos compartidos por dos consumidores, ciclo alcanzado a través de un fallback, fallbacks anidados, `!important`, proveedores externos declarados y retirados, el bloque sintético N=50 con tokens inexistentes y ciclos inyectados, las 5 entradas `.uxdsl` de `fixtures/mig07-consumer/entries/` compiladas de verdad por el plugin, y tres compilaciones sucesivas con temas distintos. El hash SHA-256 del oráculo está fijado en el propio test, así que regenerar la fixture para que una discrepancia desaparezca falla primero ahí. Escalado → `packages/postcss-uxdsl/test/reference-performance.test.js`: razón `tiempo(2N)/tiempo(N) <= 2,5` con N = 500 bloques, mediana de 3, midiendo sólo `inspectReferences` sobre un root que produjo el compilador. Umbral absoluto → `npm run bench:references` (no es un test: imprime la curva junto a la máquina que la produjo) |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, Apple M1 Pro, desde el root del monorepo: `npm --prefix packages/postcss-uxdsl test` (exit 0, **321/321**, +11), `npm run bench:references` (exit 0), `npm test` (exit 0, **610** líneas `ok`, antes 599) |
+| Resultado después / control negativo | Después: 3.000 líneas 119 ms, 6.000 → 204 ms, 12.000 → 410 ms, 24.000 → **786 ms** (−98,8 % frente a 63.308 ms; 80x). Duplicar la entrada cuesta ahora x1,72 / x2,01 / x1,92, esencialmente la misma curva que con la validación apagada (x1,88 / x2,05 / x1,94): la validación dejó de ser el término dominante. Aislada, `inspectReferences` pasa de 61,7 ms a 109,7 ms al duplicar (**x1,78**). **Control negativo del test de escalado**: el mismo procedimiento sobre el oráculo congelado da x6,71 y falla el presupuesto, así que el test distingue de verdad las dos implementaciones. **Control negativo de la equivalencia (mutación)**: se introdujeron 8 cambios semánticos uno a uno en la implementación nueva, recompilando cada vez. Seis los detectó la suite (quitar el ámbito `:root` de los modos, `>=` → `>` en min-width, cachear `resolve` sin el contexto, perder el texto del fallback, cachear la lista de contextos por selector en vez de por contexto completo, deduplicar contextos distintos sólo por selector, y cachear el contexto por propiedad en vez de por nodo). Los dos que no se detectan no son huecos: quitar el término `!important` del comparador no cambia nada porque es **código muerto demostrable** (PostCSS deja `decl.important` en `true` o `undefined`, y `Number(a)-Number(b)` sale NaN o 0 en las cuatro combinaciones posibles, siempre falsy), y quitar la deduplicación de contextos sólo duplica trabajo que el `Map` posterior vuelve a deduplicar. Las tres primeras versiones de la suite **sí pasaban** con mutaciones aplicadas; los casos que faltaban se añadieron y están marcados como tales en el test |
+| Cambios visuales o API / migración | Ninguno, y es el punto de la historia: misma API pública, mismos issues, mismo orden, mismos mensajes, misma deduplicación, mismas ubicaciones. No hay nada que migrar. Cambio interno: `conditionsApply` acepta un lector memoizado de min-width como tercer parámetro con default, para no duplicar su lógica |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/CHANGELOG.md` (entrada MIG-B6-25 con la tabla antes/después y la máquina); `packages/postcss-uxdsl/README.md`, sección "Reference integrity (`references`)": nota de coste, con la invitación explícita a volver a activar la validación a quien la había apagado para poder usar watch. `docs/migration.md` sin cambios: no cambia ningún contrato |
+| AGENTS / guías / arquitectura | `docs/architecture/unified-engine-audit.md`, sección "Explicit limits and follow-up scope": qué complejidad se espera de la validación, por qué sigue inspeccionando cada consumidor en cada contexto alcanzable, y que sus índices son por pasada y no una caché global entre builds. `AGENTS.md` sin cambio de contrato: la regla que ya recoge ("No token family should depend on a process-global compile cache") es precisamente la que esta implementación respeta |
+| Límites y seguimiento | (1) **El oráculo es de alcance de release**: `packages/postcss-uxdsl/test/fixtures/reference-integrity-oracle.js` es una copia compilada de la implementación anterior y debe borrarse al publicar 0.5.0-beta.6, como dice el paso 1 de esta ficha. Su cabecera lo indica. (2) **El test de escalado mide tiempo**, con la fragilidad que eso implica en CI; se mitiga con una razón en vez de un presupuesto absoluto, mediana de 3, warmup de ambos tamaños y un margen de 2,5 frente al x1,78 medido — pero no es inmune a un runner muy cargado. (3) **Los números absolutos son de esta máquina**: un Apple M1 Pro. El criterio de "menos de 2 s" se declara sobre ella, como pide la ficha, no como promesa universal. (4) **Hallazgo abierto, fuera de alcance**: el término `!important` del comparador de `resolve` es código muerto (ver control negativo). Arreglarlo *cambiaría* qué definición gana cuando una declaración `!important` precede a otra normal, que es exactamente el tipo de cambio semántico que esta historia excluye. Queda pinchado por un caso de la suite de equivalencia ("important declared before a plain override") que fija el comportamiento actual, para que un arreglo futuro sea una decisión consciente y no un efecto colateral. (5) **Sin paralelizar y sin cambiar qué se considera error**, como pide "Fuera de alcance". (6) **Sin verificación en navegador**: no aplica, es un motor Node/browser-safe sin salida visual; el test que impide reintroducir APIs de Node sigue pasando |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

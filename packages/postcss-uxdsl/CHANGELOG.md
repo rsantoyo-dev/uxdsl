@@ -9,6 +9,41 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-25 (reference validation in near-linear time):
+
+- **Fixed:** strict reference validation — on by default, and one of the
+  reasons to use UXDSL at all — grew quadratically with the size of the
+  stylesheet, which made watch mode unusable on a large module. It is now
+  near-linear. Same inputs, same issues, same order; only the time changes.
+
+  Measured with `npm run bench:references` on an Apple M1 Pro (Node
+  v20.19.0, macOS 25.2.0, median of 3 samples after a warmup), compiling
+  the same synthetic module with `includeTheme: true`:
+
+  | Líneas | Antes | Después | Sin validación |
+  | --- | --- | --- | --- |
+  | 3.000 | 813 ms | 119 ms | 75 ms |
+  | 6.000 | 1.867 ms | 204 ms | 142 ms |
+  | 12.000 | 11.813 ms | 410 ms | 291 ms |
+  | 24.000 | 63.308 ms | 786 ms | 565 ms |
+
+  Doubling the input used to multiply the time by up to 6.3x; it now costs
+  about 1.9x, the same curve the compilation follows with validation
+  switched off entirely — validation is no longer the dominant term.
+
+- **No behavior change.** Every issue's code, message, chain, consumer,
+  source, line, column, dedup and ordering is unchanged. The previous
+  implementation is kept, compiled and frozen, as a test fixture, and
+  `test/reference-integrity-equivalence.test.js` runs both over the same
+  inputs — the repository's own `.uxdsl` entries, media/mode scopes,
+  shared cycles, nested fallbacks, `!important`, external providers,
+  successive compilations with different themes — and requires identical
+  output. Its digest is pinned so the fixture cannot be regenerated to make
+  a disagreement disappear.
+- `test/reference-performance.test.js` keeps the quadratic term from coming
+  back, asserting a growth *ratio* (≤ 2.5x per doubling) rather than a
+  millisecond budget that would only describe one machine.
+
 FEAT-008, MIG-B6-21 (source maps through PostCSS):
 
 - **New:** `compile()` (`uxdsl-core`) implements `sourceMap: false | 'inline'
