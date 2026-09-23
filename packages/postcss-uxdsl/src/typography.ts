@@ -13,21 +13,37 @@ export const TYPOGRAPHY_PROPERTIES = Object.freeze({
 export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
 export type TypographyDetails = Record<string, TypographyStyle>;
 
-// Consumption fallbacks preserve the existing @ds-typo contract.
-export const TYPOGRAPHY_DEFAULTS: Readonly<Record<string, { weight?: string; family: string; line: string; spacing?: string; opacity?: string }>> = Object.freeze({
-  h1: { weight: '700', family: 'ui', line: '1.1', spacing: '-0.02em' },
-  h2: { weight: '700', family: 'ui', line: '1.2', spacing: '-0.01em' },
-  h3: { weight: '600', family: 'ui', line: '1.3', spacing: 'normal' },
-  h4: { weight: '600', family: 'ui', line: '1.4', spacing: 'normal' },
-  h5: { weight: '600', family: 'ui-2', line: '1.4', spacing: 'normal' },
-  h6: { weight: '600', family: 'ui-2', line: '1.4', spacing: 'normal' },
-  p: { weight: '400', family: 'ui', line: '1.6', spacing: 'normal' },
-  span: { weight: '400', family: 'ui', line: '1.5', spacing: 'normal' },
-  body: { weight: '400', family: 'ui', line: '1.6', spacing: 'normal' },
-  small: { opacity: '0.8', family: 'ui-2', line: '1.4', spacing: 'normal' },
-  caption: { opacity: '0.8', family: 'ui-2', line: '1.4', spacing: 'normal' },
-  pre: { family: 'code', line: '1.5' }, code: { family: 'code', line: '1.5' },
+/** The same JSON fields, mapped to the CSS property `@ds-typo` emits for each.
+ * MIG-B6-17 (FEAT-008): `@ds-typo` used to emit a fixed list of declarations
+ * with literal fallbacks the theme never asked for (`auto` margins that break
+ * flex/grid, a `text-decoration: none` that stripped link underlines, an
+ * `opacity` that could not be overridden from JSON at all because it is not a
+ * field here). It now emits one declaration per field the effective theme
+ * actually defines, so this map and TYPOGRAPHY_PROPERTIES must stay key-for-key
+ * identical — test/typography.test.js guards that. The suffix map is the public
+ * variable name (`fontSize` -> `--…-size`); this one is the CSS property
+ * (`fontSize` -> `font-size`). They differ, so neither can be derived from the
+ * other by camelCase conversion. */
+export const TYPOGRAPHY_CSS_PROPERTIES = Object.freeze({
+  fontFamily: 'font-family', fontSize: 'font-size', lineHeight: 'line-height',
+  fontWeight: 'font-weight', letterSpacing: 'letter-spacing',
+  textTransform: 'text-transform', textDecoration: 'text-decoration',
+  fontStyle: 'font-style',
+  marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
 });
+
+/** The effective field set for one role: `default` underneath the role's own
+ * fields, exactly as compileTypographyRules composes it when generating the
+ * variables, so the directive can never consume a field the generator did not
+ * define. Returns `null` for a role the theme does not define — a missing role
+ * must fail with a location, never silently fall back to `default`. */
+export function resolveTypographyRole(details: TypographyDetails, role: string): TypographyStyle | null {
+  if (!details || typeof details !== 'object' || Array.isArray(details)) return null;
+  if (!Object.prototype.hasOwnProperty.call(details, role)) return null;
+  const style = details[role];
+  if (!style || typeof style !== 'object' || Array.isArray(style)) return null;
+  return role === 'default' ? { ...style } : { ...details.default, ...style };
+}
 
 export function typographyValueToCss(input: string): string {
   const parsed = valueParser(input);

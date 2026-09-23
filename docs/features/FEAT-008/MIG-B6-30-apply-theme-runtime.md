@@ -167,14 +167,36 @@ CHANGELOG beta.6 y registro de evidencia en esta ficha según README de FEAT-008
 
 ## Criterios de aceptación
 
-- [ ] API síncrona exportada; fallo no sustituye el último tema válido.
-- [ ] Hidratación mantiene el tema del proyecto y no duplica estilos/fuentes.
-- [ ] Cambios estructurales fallan con instrucción de recompilación.
-- [ ] Paridad de valores/estados/modos verificada desde tarball y navegador.
-- [ ] Setters y sus excepciones legacy conservan comportamiento probado.
-- [ ] Migración idempotente no pierde datos ante errores de storage.
-- [ ] Editor agrupa actualizaciones y cancela pendientes al cambiar de contexto.
-- [ ] Ficha, README, migration, arquitectura y AGENTS describen el contrato real.
+- [x] API síncrona exportada; fallo no sustituye el último tema válido.
+      → `applyTheme`/`getAppliedTheme`/`resetTheme`/`loadPersistedTheme`/
+      `subscribeTheme` en `postcss-uxdsl/ds-runtime`; en `ok: false` no se
+      mueven CSS, estado, persistencia ni suscriptores.
+- [x] Hidratación mantiene el tema del proyecto y no duplica estilos/fuentes.
+      → El runtime **adopta** la etiqueta con el id indicado en vez de crear
+      otra (verificado en navegador: una sola `style#uxdsl-ssr-theme`), y el
+      `<link>` de fuentes del playground se retiró en favor del `@import` que
+      ya emite `generateThemeCss`.
+- [x] Cambios estructurales fallan con instrucción de recompilación.
+      → `UXD_THEME_STRUCTURE`, con cada cambio enumerado; 13 tests en
+      `test/ds-runtime-theme-structure.test.js` más la comprobación en navegador.
+- [x] Paridad de valores/estados/modos verificada desde tarball y navegador.
+      → `fixtures/mig02-nextjs-cssmodules/browser-runtime.js`: 20
+      comprobaciones sobre el runtime **empaquetado** (bundleado desde el
+      tarball instalado), incluyendo hover, foco por teclado, placeholder,
+      `:invalid`, modo oscuro explícito y por `prefers-color-scheme`, y 12
+      fronteras de breakpoint.
+- [x] Setters y sus excepciones legacy conservan comportamiento probado.
+      → No se ha eliminado ni cambiado ningún setter; las tres excepciones que
+      **no** son wrappers equivalentes (scope por elemento, mover umbrales en
+      caliente, links entre tokens) están documentadas en la guía de migración.
+- [x] Migración idempotente no pierde datos ante errores de storage.
+      → 13 tests en `test/ds-runtime-persistence.test.js`, incluidos escritura
+      bloqueada, escritura silenciosamente descartada, `removeItem` que falla,
+      lectura que lanza, JSON corrupto y tres cargas seguidas.
+- [x] Editor agrupa actualizaciones y cancela pendientes al cambiar de contexto.
+      → `src/lib/theme-scheduler.js` con 8 tests; `switchTheme` cancela la cola
+      y el editor JSON cancela su debounce al cambiar de tema.
+- [x] Ficha, README, migration, arquitectura y AGENTS describen el contrato real.
 
 ## Verificación
 
@@ -195,22 +217,20 @@ de la fixture; su ausencia es un bloqueo de esa evidencia, no un PASS.
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/feat-008-beta6-plan`, en 4 fases. Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `8d9ea5f` (2026-09-22, HEAD de la rama al iniciar). Entrega en 4 fases: `13ff49f` (API + puerta estructural), `ed529d7` (migración de las cuatro claves), `f7824ef` (playground), y `4e97969` (navegador y documentación). PR pendiente de abrir |
+| Reproducción antes del cambio | El comando de la propia ficha sobre `8d9ea5f`: `node -e "const r = require('./packages/postcss-uxdsl/dist/ds-runtime'); console.log('applyTheme' in r)"` → `false`, igual que `getAppliedTheme`, `resetTheme`, `loadPersistedTheme` y `subscribeTheme`. El playground generaba CSS y sustituía `#uxdsl-ssr-theme` con su propia copia de «generar y cambiar la etiqueta», mantenía un `<link>` de Google Fonts aparte con un codificador propio más débil, y no cancelaba su debounce al cambiar de tema. 2026-09-22 |
+| Criterio → regresión | API y commit único → `test/ds-runtime-apply-theme.test.js` (19 tests: adopción de la etiqueta SSR, merge/replace/reset, copias defensivas, parche inválido y referencia irresoluble sin mover nada, colisión de `styleId`, elemento que no es `<style>`, listeners con uno que lanza, dos documentos con estado separado, SSR puro, persistencia por llamada, fallo de storage como aviso sobre un éxito real). Puerta estructural → `test/ds-runtime-theme-structure.test.js` (13 tests: los cuatro rechazos obligatorios de la ficha, estados de Input, pérdida de tono, y el lado positivo — valores, modo oscuro, expresiones responsive sobre los mismos umbrales, tokens y breakpoints nuevos). Persistencia → `test/ds-runtime-persistence.test.js` (13 tests). Batching → `packages/playground-nextjs/scripts/test-theme-scheduler.cjs` (8 tests). Navegador → `fixtures/mig02-nextjs-cssmodules/browser-runtime.js` (20 comprobaciones), enganchado en `npm run verify:cssmodules-build` |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0, Apple M1 Pro, Chrome via `playwright-core`: `npm --prefix packages/postcss-uxdsl test` (exit 0, **377 + 1**), `npm test` (exit 0, **668** líneas `ok`, antes 622), `npm --prefix packages/playground-nextjs run build` (35/35 páginas), `npm --prefix packages/playground-nextjs run lint` (limpio), `test:themes` (2), `test:scheduler` (8), `npm run verify:cssmodules-build` (exit 0, incluye las 20 comprobaciones de navegador), `npm run verify:consumer-fixture` y `verify:beta5` (exit 0) |
+| Resultado después / control negativo | **Controles negativos ejecutados, no supuestos**: (1) el mismo procedimiento del navegador con un `styleId` distinto produce de verdad **dos** hojas (`{ssr:1, other:1}`), así que la comprobación «no aparece una segunda hoja» no es vacua; (2) un parche estructural en el navegador deja el `textContent` de la hoja byte a byte idéntico; (3) la suite de persistencia pasó a la primera, así que se aplicaron tres mutaciones —borrar las claves antiguas antes de verificar la escritura (2 fallos), dejar que una clave nueva corrupta caiga a las antiguas (2 fallos), y resolver el corte de familia por coincidencia más corta (1 fallo)— y las tres se detectan; (4) antes de tocar el playground se comprobó que **las doce** transiciones entre sus cuatro temas son cambios de valor puros, así que la puerta estructural no rompe el conmutador del sitio de documentación. **Hallazgo corregido de paso**: `validateAndNormalizeTheme` mutaba el tema recibido — su «copia» era `deepMergeTheme({}, input)`, que comparte todos los objetos anidados por referencia — lo que hacía que `validateAndNormalizeTheme(resolveTheme(x))` lanzara `Cannot assign to read only property 'ui'` contra la base congelada. Ahora copia de verdad (`cloneThemeValue`) y no toca su entrada |
+| Cambios visuales o API / migración | API aditiva: cinco funciones nuevas, ningún setter eliminado ni cambiado. Cambio visual en el playground: ninguno intencionado — el CSS aplicado es el mismo que generaba antes; lo que cambia es quién lo aplica, que ahora se valida y se rechaza en vez de escribirse a ciegas, y que las propiedades inline `--uxdsl__*` dejadas por los setters antiguos se limpian para que no tapen el tema nuevo. Migración documentada en `docs/migration.md` con la tabla setter → JSON y las tres excepciones que **no** son wrappers equivalentes |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md`: nueva sección "Applying a theme at run time (`applyTheme`)" con la tabla de qué se rechaza y qué se aplica, y "Upgrading from the per-token setters". `packages/postcss-uxdsl/CHANGELOG.md`: entradas de fase 1 y fase 2. `packages/postcss-uxdsl/docs/migration.md`: sección "Tema en runtime: de los setters por token a `applyTheme`" |
+| AGENTS / guías / arquitectura | `AGENTS.md`: reescrita la parte de runtime de "Build time, runtime and one source of truth" (contrato síncrono, inicialización, qué se rechaza y por qué, migración de storage, generador puro para SSR), y corregidas dos afirmaciones que quedaban obsoletas — que `applyTheme` estaba pendiente y que el `<link>` de fuentes del playground seguía sin retirar. `docs/architecture/unified-engine-audit.md`: límite explícito de que `applyTheme` aplica valores y no es un compilador, y que su firma estructural sale de los mismos emisores que usa el compilador |
+| Límites y seguimiento | (1) **Sin navegador sobre la app del playground**: lo verificado en Chrome es el runtime empaquetado en un documento controlado —que es donde está la lógica— y la app se verifica con su build de producción y su lint, no abriendo sus 35 páginas. Revisión visual de la web sigue sin cubrirse, como ya declara la fixture. (2) **El playground no tiene arnés de tests de componente**, así que `ThemeContext.tsx` no tiene tests unitarios; por eso la lógica con sustancia (el batching) se extrajo a `src/lib/theme-scheduler.js`, en JS plano, para poder probarla con `node --test`. (3) **Los setters antiguos siguen sin tests** (no los tenían antes y esta historia no los añade); lo que sí está documentado es cuáles de sus capacidades no tienen equivalente. (4) **`BreakpointsProvider` sigue usando el adaptador legacy** de breakpoints, que reescribe media queries por texto: es justo la capacidad que `applyTheme` rechaza a propósito, así que migrarlo exigiría recompilar y queda fuera de alcance. (5) **No se ha medido generación y commit por separado** como sugiere el paso 3 de la ficha; el batching se validó por número de aplicaciones, no por tiempos. (6) **Dos archivos muertos detectados y no tocados** (`src/components/ThemeProvider.tsx`, `src/app/InlineStyles.tsx`): no los importa nadie, borrarlos es limpieza ajena a esta historia |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

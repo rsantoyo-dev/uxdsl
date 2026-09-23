@@ -92,6 +92,40 @@ UXDSL's shared defaults:
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
 
+**Let your editor check it.** An unknown key here is not an error — nothing
+reads it, so `includeThem: false` silently does nothing and the build just
+behaves as if you had never written it. Wrap the object in `defineConfig` and
+add the JSDoc type, and the typo is flagged as you type:
+
+```js
+const { defineConfig } = require('postcss-uxdsl/config');
+
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+module.exports = defineConfig({
+  entry: './src/app/uxdsl-entry.uxdsl',
+  outFile: './src/app/uxdsl.css',
+  watch: ['src/**/*.uxdsl'],
+});
+```
+
+This needs no TypeScript in your project — VS Code type-checks JSDoc in plain
+`.js`/`.cjs` files. The type also knows `entry`/`outFile` and `builds` are
+alternatives, not a combination, which is what the CLI enforces at run time.
+
+For the theme file, point `$schema` at the packaged JSON Schema and get the
+same treatment for family, field and state names:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+See
+[`postcss-uxdsl`'s README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md)
+for which names are closed and which stay open for your own roles.
+
 ### 2. Theme configuration (`uxdsl.theme.config.cjs`)
 
 Keep your theme separate from build settings by adding a theme config file
@@ -437,6 +471,87 @@ and/or `breakpoints`) avoids the conflict while keeping the guarantee
 where it's meaningful. `true` remains available for a project that
 deliberately wants maximum strictness everywhere.
 
+### Source maps (`--sourcemap`, `sourceMap`)
+
+Off by default. Turn it on so devtools point at your `.uxdsl` sources
+instead of the compiled CSS:
+
+```bash
+npx uxdsl build --sourcemap            # external: writes <outFile>.map
+npx uxdsl build --sourcemap=inline     # embeds the map as a data URI
+npx uxdsl build --no-sourcemap         # off (the default)
+```
+
+Or in `uxdsl.config.cjs`, shared by every entry in a `builds` array:
+
+```javascript
+module.exports = { entry: 'src/app.uxdsl', outFile: 'dist/app.css', sourceMap: 'external' };
+```
+
+Precedence is **flag > config > off**. Accepted values are `false`,
+`'inline'` and `'external'`; a bare `--sourcemap` means `external`. Anything
+else fails before the build runs rather than quietly producing no map.
+
+- **`external`** writes `<outFile>.map` next to the CSS and appends
+  `/*# sourceMappingURL=<name>.map */` as the very last line. The build log
+  reports the two sizes separately, e.g.
+  `built dist/app.css (50854 bytes) + app.css.map (8702 bytes)`.
+- **`inline`** embeds the map as a base64 data URI and writes no `.map`.
+- **`false`** produces byte-identical CSS to not passing the option at all.
+
+What the map points at: a plain declaration maps to its own line; a
+declaration the compiler rewrote (`density()`, `palette()`, …) maps to the
+original declaration, not to wherever the generated value landed; the
+declarations a `@ds-button`/`@ds-input`/`@ds-typo` directive expands into
+map to the directive's own line; and a declaration from an `@import`-ed
+partial maps to that partial, with its own line. The `:root` token blocks
+generated purely from the theme are left unmapped rather than pointed at a
+file you never wrote.
+
+Switching an output from `external` to `inline`/off retires that output's
+own `.map`. A file sitting at the same path that is *not* a source map is
+never deleted. In a multi-entry `builds`, a compile failure in any entry
+still writes nothing at all — neither CSS nor maps.
+
+### Verifying a partial override (`theme --diff`, `theme --contrast`)
+
+A theme is the base plus your override, merged key by key — so overriding
+`palette.primary.main` keeps the base's `primary.dark` and `primary.contrast`.
+Your button turns green and its `:hover`, which uses `dark`, stays purple.
+
+`uxdsl theme --diff` labels every value `project` or `default` on stdout, and
+now also prints a summary of the mixed entries on **stderr**:
+
+```text
+$ uxdsl theme --diff
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+stdout is untouched — still one JSON document — so `uxdsl theme --diff | jq`
+keeps working exactly as before.
+
+`uxdsl theme --contrast` answers the question that follows: do the resulting
+pairs meet WCAG? It prints the full report as JSON and exits 1 if any pair
+fails.
+
+```bash
+uxdsl theme --contrast | jq '.failures[] | {tone, state, ratio, required}'
+```
+
+Each failure carries its mode (light/dark), component, tone, state, breakpoint,
+the resolved colors and the ratio, so it points at something you can change.
+It loads the exceptions shipped with the base theme; those match on the
+resolved colors, so overriding one of them stops inheriting its exception and
+reports it as stale instead of silently excusing a pair you changed.
+
+`--contrast` is **not** part of `build` — it is an audit you run when you want
+it — and it cannot be combined with `--diff` or `--strict`, because each prints
+its own document on stdout.
+
+One thing to expect on a first run: the packaged base theme does not pass its
+own gate yet. Those failures are real and disclosed upstream, not a problem
+with your config, so focus on the pairs your own override introduced.
+
 ### 8. Strict flag parsing: accepted values, unknown flags, unknown families
 
 Every flag accepts a fixed, explicit set of forms — anything else is a hard
@@ -445,6 +560,7 @@ error before any build runs, not a silent no-op:
 | Flag | Accepted forms |
 | --- | --- |
 | `--include-theme` | bare (`true`), `--no-include-theme` (`false`), `=true`, `=false`. Any other value (`--include-theme=banana`) fails with `Invalid value for --include-theme: "banana"...`. |
+| `--sourcemap` (build/watch) | bare (`external`), `--no-sourcemap` (off), `=inline`, `=external`, `=true` (same as bare), `=false` (off). Any other value (`--sourcemap=yes`, `--sourcemap=0`) fails with `Invalid value for --sourcemap: ...`. |
 | `--strict-theme` (build/watch) | bare (check every touched family), `--no-strict-theme`/`=false` (off), `=true` (same as bare), `=<family1>,<family2>` (scoped). `=true`/`=false` are recognized as the booleans they mean, not as families literally named "true"/"false". |
 | `--strict` (theme) | same forms and rules as `--strict-theme`. |
 

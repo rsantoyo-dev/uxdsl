@@ -90,9 +90,16 @@ En `packages/uxdsl-cli/test/theme-command.test.js`:
 
 ## Criterios de aceptación
 
-- [ ] La reproducción muestra el resumen de mezcla por stderr, y stdout sigue igual.
-- [ ] `--contrast` lista los pares de `palette.primary` que no cumplen y sale con 1.
-- [ ] La semántica del override está documentada con un ejemplo.
+- [x] La reproducción muestra el resumen de mezcla por stderr, y stdout sigue igual.
+      → `[uxdsl] palette.primary mixes your values (main) with base values (light,
+      dark, contrast)`. Nota: la ficha escribía `(dark, contrast)`; el tema base
+      también define `light`, así que la línea real lo incluye.
+- [x] `--contrast` lista los pares de `palette.primary` que no cumplen y sale con 1.
+      → 18 fallos con `tone: primary`, entre ellos el par ~3,11:1 que la propia
+      ficha predecía, y salida con código 1.
+- [x] La semántica del override está documentada con un ejemplo.
+      → `packages/postcss-uxdsl/README.md`, sección "What a partial override
+      actually inherits", con el caso verde/morado completo.
 
 ## Verificación
 
@@ -107,22 +114,20 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**
-(salvo avances parciales señalados arriba). Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#cobertura-y-evidencia-obligatorias). No marcar
-criterios por intención ni confundir una reproducción histórica con prueba actual.
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/feat-008-beta6-plan`. Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Comando/test, resultado observado y fecha: pendiente |
-| Criterio → regresión | Nombre/path exacto del test por criterio: pendiente |
-| Comandos y entorno | Comando, versión/OS relevante, exit code y log: pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; justificar si no aplica |
-| README / CHANGELOG / migration | Paths y secciones: pendiente |
-| AGENTS / guías / arquitectura | Secciones actualizadas o sin cambio de contrato razonado: pendiente |
-| Límites y seguimiento | Qué no se ejecutó, motivo y efecto sobre cierre: pendiente |
+| SHA base / entrega / PR | Base `80dedad` (2026-09-22, HEAD de la rama al iniciar). Entrega: `4332ea6` en `feat/feat-008-beta6-plan`; PR pendiente de abrir |
+| Reproducción antes del cambio | La reproducción literal de la ficha, ejecutada tal cual: `uxdsl theme --diff` imprime las filas JSON con `palette.primary.main` en `project` y `light`/`dark`/`contrast` en `default`, y **stderr queda vacío** — ninguna señal de que la familia está mezclada. `uxdsl theme --contrast` respondía `Unknown option --contrast` y salía con 1. 2026-09-22 |
+| Criterio → regresión | Ocho tests nuevos en `packages/uxdsl-cli/test/theme-command.test.js`, todos con captura separada de stdout y stderr: el resumen de mezcla aparece en stderr y stdout sigue parseando como JSON; una familia sobrescrita por completo **no** genera línea (control negativo, para que el resumen sea señal y no ruido); los roles tipográficos se resumen igual; `--contrast` sobre el override parcial sale con error, nombra los pares de `primary` y comprueba que cada fallo lleva modo, estado, breakpoint, ratio y razón; `--contrast` sobre el tema base enumera la excepción publicada y la marca `matched: true`; sobrescribir el color exacto de esa excepción la deja `matched: false` y la reporta como obsoleta; combinar `--contrast` con `--diff` o con `--strict` falla sin imprimir nada; y `--contrast` deja stdout como un único documento JSON |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0: `npm --prefix packages/uxdsl-cli test` (exit 0, **171/171**, +8), `npm test` (exit 0, **676** líneas `ok`, antes 668), `npm run verify:beta5` y `npm run verify:consumer-fixture` (exit 0) |
+| Resultado después / control negativo | stderr: `[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)`; stdout sigue dando 52 filas JSON parseables. `--contrast` sale con 1 y reporta 172 pares fallidos para ese tema, 18 de ellos con `tone: primary`, incluido el ~3,11:1 que la ficha predecía. **Controles negativos**: (1) una familia completamente sobrescrita no produce línea de mezcla; (2) `--contrast` combinado con `--diff` o `--strict` falla **antes** de escribir nada en stdout; (3) sobrescribir el color de la excepción publicada la vuelve obsoleta en vez de seguir disculpando un par ya cambiado. **Corrección sobre la marcha**: el primer texto de ayuda que escribí contenía backticks dentro del template literal de `--help` y rompía el parseo del propio CLI (`SyntaxError: missing ) after argument list`); además duplicaba la sección "Theme Options" que ya existía. Ambos corregidos y verificados ejecutando `--help` |
+| Cambios visuales o API / migración | Sin cambio visual. API del CLI aditiva: `--contrast` es nuevo y `--diff` gana una línea en **stderr**, deliberadamente no en stdout, porque el contrato de `uxdsl theme` es que stdout sea JSON limpio para `\| jq` y scripts. Ningún consumidor existente cambia de comportamiento. No aplica migración |
+| README / CHANGELOG / migration | `packages/postcss-uxdsl/README.md`: nueva sección "What a partial override actually inherits" con el ejemplo verde/morado, las dos órdenes y la advertencia de que el tema base aún no pasa su propia puerta. `packages/uxdsl-cli/README.md`: "Verifying a partial override (`theme --diff`, `theme --contrast`)". `packages/postcss-uxdsl/docs/migration.md`: "Cómo verificar el contraste de tu override". `packages/postcss-uxdsl/CHANGELOG.md`: entrada MIG-B6-16. Ayuda del CLI (`--help`) ampliada en la sección "Theme Options" que ya existía, no en una segunda |
+| AGENTS / guías / arquitectura | Sin cambio de contrato: la decisión D-1 (merge por clave, sin derivar variantes ni avisar en `build`) se mantiene intacta; esta historia sólo la hace visible y verificable bajo demanda. `AGENTS.md` ya describe Palette y el contraste (`checkThemeContrast`) correctamente y no necesitaba edición |
+| Límites y seguimiento | (1) **El resumen cubre `palette` y `typography_details`**, las dos familias que la ficha nombra. `surfaces`, `buttons` e `inputs` tienen la misma forma un nivel más abajo (sobrescribir `base` y heredar `states`) y quedan como seguimiento; la lista está en una constante con nombre para que ampliarla sea una línea. (2) **El tema base publicado no pasa `--contrast`**: 156 fallos con las excepciones aplicadas, que son las tres brechas de motor/arquitectura que MIG-B6-29 fase 3 dejó abiertas y documentadas. El test lo fija como está en vez de afirmar `passed: true`, y fallará —obligando a revisarlo— cuando se cierren. Es información real, no un fallo de esta historia, pero significa que un usuario de cero configuración ve fallos ajenos en su primera ejecución; por eso se advierte en los tres documentos. (3) **Sin verificación en navegador**: es una orden de CLI que imprime JSON; no hay salida visual que comprobar |
 
 Al cerrar, reemplazar «Pendiente» por evidencia o «No aplica» justificado. Si cambia
 un contrato del plan, actualizar también índice/dependencias y las fichas consumidoras.

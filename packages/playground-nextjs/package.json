@@ -8,6 +8,7 @@
     "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && uxdsl build --watch",
     "theme:audit": "node scripts/audit-themes.mjs",
     "test:themes": "node --test scripts/test-theme-inheritance.cjs",
+    "test:scheduler": "node --test scripts/test-theme-scheduler.cjs",
     "dev": "npm run local-deps && npm run uxdsl:build && concurrently \"next dev\"",
     "build": "npm run local-deps && npm run uxdsl:build && next build",
     "start": "next start",

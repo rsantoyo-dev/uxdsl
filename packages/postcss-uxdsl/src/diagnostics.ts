@@ -10,9 +10,24 @@ export const DIAGNOSTIC_CODES = new Set([
   'UXD_BP_INVALID', 'UXD_VALUE',
   'UXD_DENSITY_MAP', 'UXD_DENSITY_VALUE', 'UXD_DENSITY_KEY', 'UXD_DENSITY_BASE', 'UXD_DENSITY_REFERENCE',
   'UXD_TYPO_TOKEN', 'UXD_TYPO_BP', 'UXD_TYPO_DETAILS', 'UXD_TYPO_ROLE', 'UXD_TYPO_FIELD', 'UXD_TYPO_BASE', 'UXD_TYPO_NAME_COLLISION',
+  // MIG-B6-17 (FEAT-008): `@ds-typo(role)` naming a role the effective theme
+  // does not define. Distinct from UXD_TYPO_ROLE, which rejects an invalid
+  // role *definition* in the JSON; this one rejects an invalid *reference*
+  // from a directive, the same split every other family already has
+  // (e.g. UXD_SURFACE_ROLE vs UXD_SURFACE_REFERENCE).
+  'UXD_TYPO_REFERENCE',
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
+  // MIG-B6-30 (FEAT-008): the runtime JSON theme API. These are returned on a
+  // `ThemeResult`, never thrown through the compiler, but they are UXD_* codes
+  // a developer will see and search for, so they belong in one catalog.
+  'UXD_THEME_ENVIRONMENT',     // apply/load/reset called where there is no document
+  'UXD_THEME_NOT_INITIALIZED', // load/reset before the project theme was applied once
+  'UXD_THEME_STYLE_ID',        // a second styleId after initialization
+  'UXD_THEME_STYLE_ELEMENT',   // the requested id belongs to something that is not a <style>
+  'UXD_THEME_STRUCTURE',       // the patch changes what the compiler would emit; rebuild
+  'UXD_THEME_PERSIST',         // storage could not be read, written or cleared
   // MIG-B6-14 (FEAT-008): a reserved-namespace at-rule (`ds`/`ds-*`) or a
   // top-level responsive value function left unprocessed at the end of the
   // pipeline — see index.ts's final walkAtRules pass and its responsive

@@ -10,6 +10,13 @@ const { DEFAULT_SHADOWS } = require('../packages/postcss-uxdsl/dist/shadows');
 const { DEFAULT_SURFACES } = require('../packages/postcss-uxdsl/dist/surfaces');
 const { DEFAULT_THEME } = require('../packages/postcss-uxdsl/dist/default-theme');
 const { TYPOGRAPHY_PROPERTIES } = require('../packages/postcss-uxdsl/dist/typography');
+// MIG-B6-27 (FEAT-008): the JSON Schema is generated from the very constants
+// the compiler branches on, so it cannot drift into describing a theme the
+// engine would reject (or rejecting one it accepts).
+const { KNOWN_THEME_FAMILIES } = require('../packages/postcss-uxdsl/dist/ds-runtime');
+const { SURFACE_PROPERTIES } = require('../packages/postcss-uxdsl/dist/surfaces');
+const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/postcss-uxdsl/dist/buttons');
+const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/postcss-uxdsl/dist/inputs');
 const manifestPath = 'packages/postcss-uxdsl/src/theme/theme-manifest.json';
 const manifest = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'));
 manifest.uxdslVersion = require('../packages/postcss-uxdsl/package.json').version;
@@ -119,8 +126,118 @@ for (const [family, prefix, tokens] of [['borders', 'border', DEFAULT_BORDERS], 
 files['packages/postcss-uxdsl/src/theme/default-buttons.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_BUTTONS).map(([role, pack]) => `  button-${role}: {\n    @ds-surface(${pack.surface});\n${Object.entries(pack.states).map(([state, fields]) => `    :${state} {\n${Object.entries(fields).map(([key,value]) => `      ${key}: ${value};`).join('\n')}\n    }`).join('\n')}\n  }`).join('\n') + '\n}\n';
 files['packages/postcss-uxdsl/src/theme/default-inputs.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_INPUTS).map(([role, pack]) => `  input-${role}: {\n    @ds-surface(${pack.surface});\n${Object.entries(pack.base).map(([key,value]) => `    ${key}: ${value};`).join('\n')}\n${Object.entries(pack.states).map(([state, fields]) => `    :${state} {\n${Object.entries(fields).map(([key,value]) => `      ${key}: ${value};`).join('\n')}\n    }`).join('\n')}\n  }`).join('\n') + '\n}\n';
 files['packages/postcss-uxdsl/src/theme/default-surfaces.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_SURFACES).map(([role, style]) => `  surface-${role}: {\n${Object.entries(style).map(([key, value]) => `    ${key}: ${value};`).join('\n')}\n  }`).join('\n') + '\n}\n';
+// --- MIG-B6-27 (FEAT-008): theme JSON Schema -------------------------------
+//
+// Editors read this through `"$schema"` in a `uxdsl.theme.json`, so it has to
+// agree with the compiler on exactly two things: which family names exist, and
+// which fields each engine accepts. Both come from the engines themselves
+// below. The name registries a project extends — palette families, typography
+// roles, font family names, role names — stay open, with only a key *pattern*
+// enforced; closing them would reject `palette.brand`, which is valid.
+const NAME_PATTERN = '^[A-Za-z0-9][A-Za-z0-9_-]*$';
+const stringMap = (pattern = NAME_PATTERN) => ({
+  type: 'object',
+  propertyNames: { pattern },
+  additionalProperties: { type: 'string' },
+});
+const closedFields = (properties) => ({
+  type: 'object',
+  additionalProperties: false,
+  properties: Object.fromEntries(Object.keys(properties).map((field) => [field, { type: 'string' }])),
+});
+const paletteSchema = {
+  type: 'object',
+  propertyNames: { pattern: NAME_PATTERN },
+  // A family needs no `main`: `action` in the base theme has only `disabled`.
+  // The main/dark/contrast trio is the *tone* predicate Buttons and Inputs
+  // apply, not the definition of a valid family.
+  additionalProperties: stringMap(),
+};
+const controlSchema = (properties, states) => ({
+  type: 'object',
+  propertyNames: { pattern: NAME_PATTERN },
+  additionalProperties: {
+    type: 'object',
+    additionalProperties: false,
+    properties: {
+      surface: { type: 'string' },
+      base: closedFields(properties),
+      states: {
+        type: 'object',
+        additionalProperties: false,
+        properties: Object.fromEntries(Object.keys(states).map((state) => [state, closedFields(properties)])),
+      },
+    },
+  },
+});
+const familySchemas = {
+  breakpoints: { type: 'object', propertyNames: { pattern: NAME_PATTERN }, additionalProperties: { type: 'number' } },
+  // `spacing` accepts the bare key (`"1"`) and the prefixed form (`"space-1"`).
+  spacing: stringMap('^(space-)?[A-Za-z0-9][A-Za-z0-9_-]*$'),
+  palette: paletteSchema,
+  fonts: {
+    type: 'object',
+    additionalProperties: false,
+    properties: { families: stringMap(), google: { type: 'array', items: { type: 'string' } } },
+  },
+  colors: {
+    type: 'object',
+    propertyNames: { pattern: NAME_PATTERN },
+    // A standalone color (`white`) or a shade scale (`gray.300`).
+    additionalProperties: { anyOf: [{ type: 'string' }, stringMap()] },
+  },
+  typography_details: {
+    type: 'object',
+    propertyNames: { pattern: NAME_PATTERN },
+    additionalProperties: closedFields(TYPOGRAPHY_PROPERTIES),
+  },
+  densities: stringMap(),
+  inputs: controlSchema(INPUT_PROPERTIES, INPUT_STATES),
+  buttons: controlSchema(BUTTON_PROPERTIES, BUTTON_STATES),
+  surfaces: { type: 'object', propertyNames: { pattern: NAME_PATTERN }, additionalProperties: closedFields(SURFACE_PROPERTIES) },
+  shadows: stringMap(),
+  borders: stringMap(),
+  radii: stringMap(),
+  // Only `modes.dark.palette` is compiled (foundations.ts), so anything else
+  // here would be silently ignored — which is precisely what a schema is for.
+  modes: {
+    type: 'object',
+    additionalProperties: false,
+    properties: { dark: { type: 'object', additionalProperties: false, properties: { palette: paletteSchema } } },
+  },
+  typography: stringMap(),
+};
+const knownFamilies = Array.from(KNOWN_THEME_FAMILIES);
+const missingFamilySchemas = knownFamilies.filter((family) => !familySchemas[family]);
+if (missingFamilySchemas.length) {
+  // A family added to KNOWN_THEME_FAMILIES without a shape here would silently
+  // become "anything goes" in the schema. Fail the generator instead.
+  throw new Error(`generate-language-artifacts: no JSON Schema shape for theme ${missingFamilySchemas.length === 1 ? 'family' : 'families'} ${missingFamilySchemas.join(', ')}. Add one next to the others in familySchemas.`);
+}
+const extraFamilySchemas = Object.keys(familySchemas).filter((family) => !KNOWN_THEME_FAMILIES.has(family));
+if (extraFamilySchemas.length) {
+  throw new Error(`generate-language-artifacts: JSON Schema describes ${extraFamilySchemas.join(', ')}, which KNOWN_THEME_FAMILIES does not list.`);
+}
+const themeSchema = {
+  $schema: 'http://json-schema.org/draft-07/schema#',
+  $id: 'https://uxdsl.io/schema/theme.schema.json',
+  title: 'UXDSL theme',
+  description: 'Generated by scripts/generate-language-artifacts.js from the engine constants. Do not edit.',
+  type: 'object',
+  additionalProperties: false,
+  properties: {
+    // Declared so a theme may point at this schema without the top-level
+    // `additionalProperties: false` rejecting the pointer itself. The runtime
+    // validator skips it for the same reason: it is metadata, not a family.
+    $schema: { type: 'string', description: 'Path or URL of this schema.' },
+    ...Object.fromEntries(knownFamilies.map((family) => [family, familySchemas[family]])),
+  },
+};
+files['packages/postcss-uxdsl/schema/theme.schema.json'] = JSON.stringify(themeSchema, null, 2) + '\n';
+
 for (const [file, content] of Object.entries(files)) {
   const target = path.join(root, file);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
   if (process.argv.includes('--check')) {
     if (!fs.existsSync(target) || fs.readFileSync(target, 'utf8') !== content) {
       console.error(`Generated artifact drift: ${file}`);

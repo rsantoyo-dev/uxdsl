@@ -607,3 +607,22 @@ export const colors = {
   load: loadPersistedColors,
   subscribe,
 };
+
+// MIG-B6-30 (FEAT-008): the JSON theme API. Kept in its own module because it
+// shares nothing with the legacy setters above — those write inline styles on
+// an element and hold module-level singletons; this manages one <style> per
+// document and holds its state in a WeakMap keyed by that document.
+export {
+  applyTheme,
+  getAppliedTheme,
+  resetTheme,
+  loadPersistedTheme,
+  subscribeTheme,
+  DEFAULT_THEME_STYLE_ID,
+  DEFAULT_THEME_STORAGE_KEY,
+  __resetThemeStateForTests,
+} from './apply-theme';
+export type { ThemeResult, ApplyThemeOptions, LoadPersistedThemeOptions, ThemeOverride } from './apply-theme';
+export { LEGACY_STORAGE_KEYS } from './legacy-storage';
+export { themeStructure, structuralChanges } from './theme-structure';
+export type { ThemeStructure, ControlStructure } from './theme-structure';

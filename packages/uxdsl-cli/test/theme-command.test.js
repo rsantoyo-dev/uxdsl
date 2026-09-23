@@ -233,3 +233,195 @@ test('MIG-B6-22: `uxdsl theme --strict=,` (stray comma) fails instead of silentl
     /Invalid value for --strict: ","\. A family list cannot contain an empty entry/
   );
 });
+
+// --- MIG-B6-16 (FEAT-008): explicit partial overrides -----------------------
+//
+// Decision D-1 keeps key-by-key merging: a theme is a base plus an override.
+// The gap was that the merge is invisible — overriding `palette.primary.main`
+// silently keeps the base's `dark` and `contrast`, so a green button's hover
+// comes out purple and nothing says so. These cover making it visible without
+// changing what scripts parse, and the contrast audit that proves the result.
+
+/** Captures stdout and stderr separately: the whole point of the summary is
+ * that it goes to stderr and leaves stdout a clean JSON document. */
+async function captureStreamsAsync(fn) {
+  const originalLog = console.log;
+  const originalError = console.error;
+  const out = [];
+  const err = [];
+  console.log = (...args) => { out.push(args.join(' ')); };
+  console.error = (...args) => { err.push(args.join(' ')); };
+  try {
+    let thrown = null;
+    try { await fn(); } catch (cause) { thrown = cause; }
+    return { stdout: out.join('\n'), stderr: err.join('\n'), thrown };
+  } finally {
+    console.log = originalLog;
+    console.error = originalError;
+  }
+}
+
+function partialPaletteProject() {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };`);
+  return dir;
+}
+
+test('MIG-B6-16: `theme --diff` reports the mixed entry on stderr and leaves stdout untouched', async () => {
+  const dir = partialPaletteProject();
+  const { stdout, stderr, thrown } = await captureStreamsAsync(() => cli.themeCommand({ diff: true }, dir));
+  assert.equal(thrown, null);
+
+  // stdout is still exactly what it was: parseable JSON rows, nothing else.
+  const rows = JSON.parse(stdout);
+  assert.ok(Array.isArray(rows));
+  const primary = rows.filter((r) => r.path.startsWith('palette.primary.'));
+  assert.equal(primary.find((r) => r.path === 'palette.primary.main').source, 'project');
+  assert.equal(primary.find((r) => r.path === 'palette.primary.contrast').source, 'default');
+
+  assert.match(stderr, /\[uxdsl\] palette\.primary mixes your values \(main\) with base values \([^)]*contrast[^)]*\)/,
+    `expected the mix summary on stderr, got: ${stderr}`);
+});
+
+test('MIG-B6-16: a family the project overrides completely produces no mix line', () => {
+  // The negative control: if every entry reported a mix, the summary would be
+  // noise rather than a signal.
+  const mixed = cli.summarizeMixedEntries([
+    { path: 'palette.primary.main', source: 'project' },
+    { path: 'palette.primary.dark', source: 'default' },
+    { path: 'palette.brand.main', source: 'project' },
+    { path: 'palette.brand.dark', source: 'project' },
+    { path: 'colors.gray.300', source: 'project' },
+    { path: 'colors.gray.400', source: 'default' },
+  ]);
+  assert.deepEqual(mixed, ['palette.primary mixes your values (main) with base values (dark)'],
+    'only partially-overridden palette/typography entries are reported');
+});
+
+test('MIG-B6-16: typography roles are summarized the same way', () => {
+  const mixed = cli.summarizeMixedEntries([
+    { path: 'typography_details.h1.fontSize', source: 'project' },
+    { path: 'typography_details.h1.lineHeight', source: 'default' },
+  ]);
+  assert.deepEqual(mixed, ['typography_details.h1 mixes your values (fontSize) with base values (lineHeight)']);
+});
+
+test('MIG-B6-16: `theme --contrast` fails on the partial override and names the failing pair', async () => {
+  const dir = partialPaletteProject();
+  const { stdout, thrown } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
+  assert.ok(thrown, 'a theme with failing pairs must exit non-zero');
+  assert.match(thrown.message, /--contrast: \d+ contrast pairs? fail WCAG/);
+
+  // The report is printed in full even though the command failed: that is when
+  // its detail is worth having.
+  const report = JSON.parse(stdout);
+  assert.equal(report.passed, false);
+  assert.ok(Array.isArray(report.failures) && report.failures.length > 0);
+
+  // The green the project chose against the base's inherited white contrast.
+  const primaryText = report.failures.filter((f) => f.tone === 'primary' && f.pair === 'text');
+  assert.ok(primaryText.length > 0, 'expected the primary tone text pairs to be reported');
+  assert.ok(primaryText.every((f) => f.ratio < f.required));
+  assert.ok(primaryText.some((f) => Math.abs(f.ratio - 3.11) < 0.05),
+    `expected the ~3.11:1 main/contrast pair, got ${JSON.stringify(primaryText.map((f) => f.ratio))}`);
+  // Every failure carries the context needed to act on it.
+  for (const failure of report.failures) {
+    for (const field of ['mode', 'state', 'breakpoint', 'required', 'ratio', 'reason']) {
+      assert.ok(field in failure, `failure is missing ${field}: ${JSON.stringify(failure)}`);
+    }
+  }
+});
+
+test('MIG-B6-16: `theme --contrast` on the base theme enumerates the shipped exception', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const { stdout, thrown } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
+  const report = JSON.parse(stdout);
+
+  assert.equal(report.exceptions.length, 1, 'the packaged exception is loaded and enumerated');
+  assert.equal(report.exceptions[0].matched, true, 'and it matches the base theme it was written for');
+  assert.deepEqual(report.exceptionIssues, [], 'so it is not stale');
+
+  // MIG-B6-29 phase 3 left three engine/architecture gaps open by design, so
+  // the base theme does not pass yet. Asserting `passed: true` here would be
+  // asserting a fiction; this pins the real state instead, and will fail
+  // loudly (forcing this test to be revisited) once those gaps close.
+  assert.equal(report.passed, false);
+  assert.ok(thrown, 'a failing gate exits non-zero even for the base theme');
+  assert.ok(report.failures.length > 0);
+});
+
+test('MIG-B6-16: overriding an excepted pair stops inheriting its exception', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  // The shipped exception records palette.light.main (#f1f5f9) on white.
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { light: { main: '#334155' } } } };`);
+  const { stdout } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
+  const report = JSON.parse(stdout);
+
+  assert.equal(report.exceptions[0].matched, false, 'the recorded colors no longer occur');
+  assert.ok(report.exceptionIssues.some((issue) => /stale exception/.test(issue)),
+    `a no-longer-applicable exception must be reported, got ${JSON.stringify(report.exceptionIssues)}`);
+});
+
+test('MIG-B6-16: --contrast refuses to share stdout with --diff or --strict', async () => {
+  const dir = partialPaletteProject();
+  for (const [label, argv] of [
+    ['--diff', { contrast: true, diff: true }],
+    ['--strict', { contrast: true, strict: true }],
+  ]) {
+    const { thrown, stdout } = await captureStreamsAsync(() => cli.themeCommand(argv, dir));
+    assert.ok(thrown, `${label}: expected a refusal`);
+    assert.match(thrown.message, /--contrast cannot be combined with/);
+    assert.equal(stdout, '', `${label}: nothing should be printed before the refusal`);
+  }
+});
+
+test('MIG-B6-16: --contrast keeps stdout a pure JSON document', async () => {
+  const dir = partialPaletteProject();
+  const { stdout, stderr } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
+  assert.doesNotThrow(() => JSON.parse(stdout), 'stdout must parse as one JSON document');
+  assert.equal(stderr, '', 'the failure message belongs to the caller, not to stdout or a log line here');
+});
+
+test('MIG-B6-12: a large JSON report is not truncated when stdout is a pipe', async () => {
+  // Found by the beta.6 release gate: `uxdsl theme --contrast | jq` produced
+  // malformed JSON. `process.exit()` terminates immediately and a write to a
+  // *pipe* is asynchronous, so whatever was still buffered was discarded —
+  // the same command redirected to a file wrote 302,816 bytes while piped it
+  // wrote 65,536, ending mid-string.
+  //
+  // `--contrast` is the command that exceeds a pipe buffer today (302 KB, vs
+  // 13 KB for `theme` and 5 KB for `theme --diff`), so it is the one that can
+  // demonstrate the truncation. The others are checked for a parseable
+  // document, which is the property that must hold for `| jq` whatever their
+  // size. Driving the real binary through a pipe is the only way to observe
+  // any of this: an in-process call to themeCommand cannot reproduce it.
+  const { spawnSync } = require('node:child_process');
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };`);
+  const bin = path.join(__dirname, '..', 'bin', 'uxdsl.js');
+
+  for (const [label, args, expectedStatus, mustExceedPipeBuffer] of [
+    ['theme', ['theme'], 0, false],
+    ['theme --diff', ['theme', '--diff'], 0, false],
+    ['theme --contrast', ['theme', '--contrast'], 1, true],
+  ]) {
+    const piped = spawnSync(process.execPath, [bin, ...args], {
+      cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024,
+    });
+    assert.equal(piped.status, expectedStatus, `${label}: unexpected exit status`);
+    if (mustExceedPipeBuffer) {
+      assert.ok(piped.stdout.length > 65536,
+        `${label}: this case must be big enough to demonstrate truncation, got ${piped.stdout.length} bytes`);
+    }
+    assert.doesNotThrow(() => JSON.parse(piped.stdout),
+      `${label}: stdout was truncated mid-document at ${piped.stdout.length} bytes`);
+  }
+});

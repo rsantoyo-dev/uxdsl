@@ -360,10 +360,13 @@
   },
   "typography_details": {
     "default": {
+      "fontFamily": "var(--uxdsl__font__ui)",
       "fontSize": "xs(space(5))",
       "fontWeight": "400",
       "lineHeight": "xs(1.6) md(1.7)",
-      "letterSpacing": "normal"
+      "letterSpacing": "normal",
+      "marginBlockStart": "0",
+      "marginBlockEnd": "0"
     },
     "tag": {
       "fontSize": "xs(space(4))",
@@ -397,12 +400,14 @@
       "letterSpacing": "normal"
     },
     "h5": {
+      "fontFamily": "var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))",
       "fontSize": "xs(space(5)) xl(space(6))",
       "fontWeight": "600",
       "lineHeight": "xs(1.4) md(1.5)",
       "letterSpacing": "normal"
     },
     "h6": {
+      "fontFamily": "var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))",
       "fontSize": "xs(space(5))",
       "fontWeight": "600",
       "lineHeight": "xs(1.4) md(1.5)",
@@ -427,24 +432,28 @@
       "letterSpacing": "normal"
     },
     "small": {
+      "fontFamily": "var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))",
       "fontSize": "xs(space(4))",
       "fontWeight": "400",
       "lineHeight": "xs(1.4) md(1.5)",
       "letterSpacing": "0.01em"
     },
     "code": {
+      "fontFamily": "var(--uxdsl__font__code), monospace",
       "fontSize": "xs(space(4))",
       "fontWeight": "400",
       "lineHeight": "xs(1.55) md(1.6)",
       "letterSpacing": "normal"
     },
     "pre": {
+      "fontFamily": "var(--uxdsl__font__code), monospace",
       "fontSize": "xs(space(4))",
       "fontWeight": "400",
       "lineHeight": "xs(1.55) md(1.6)",
       "letterSpacing": "normal"
     },
     "caption": {
+      "fontFamily": "var(--uxdsl__font__ui-2, var(--uxdsl__font__ui))",
       "fontSize": "xs(space(4))",
       "fontWeight": "400",
       "lineHeight": "xs(1.4) md(1.5)",

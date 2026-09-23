@@ -68,6 +68,15 @@ async function main() {
   if (!positive.ok) throw new Error('Positive Next.js build failed.');
   execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
 
+  // MIG-B6-30 (FEAT-008), phase 4: the same browser, now exercising the
+  // runtime theme API from the packed tarball rather than only the compiled
+  // output. The DOM-stub tests prove what applyTheme does; this proves what
+  // it looks like on a page — that the swapped stylesheet wins the cascade,
+  // that a refused patch leaves the pixels alone, and that state selectors
+  // and fonts still resolve afterwards.
+  console.log('\nBrowser: applyTheme against the packaged runtime...');
+  execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser-runtime.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
+
   console.log('\nBuilding (negative control): a :root-bearing file saved as .module.css...');
   fs.copyFileSync(path.join(FIXTURE_DIR, 'styles', 'theme.css'), BAD_STYLE);
   fs.writeFileSync(BAD_PAGE, "import '../styles/bad-theme.module.css';\nexport default function Bad() { return null; }\n");

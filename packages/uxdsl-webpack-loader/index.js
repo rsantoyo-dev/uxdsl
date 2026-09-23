@@ -40,16 +40,36 @@ module.exports = async function uxdslLoader(source) {
       : (discoverTheme ? (discovered ? discovered.theme : {}) : {});
     const references = options.references !== undefined ? options.references : (discovered ? discovered.references : undefined);
 
-    const { css, dependencies, warnings } = await core.compile(
+    // MIG-B6-21 (FEAT-008): webpack sets `this.sourceMap` from the
+    // compilation's own devtool setting, so maps follow the project's
+    // configuration by default rather than needing loader options of their
+    // own; `options.sourceMap` overrides it explicitly either way. Always
+    // 'external' here: webpack wants the map as a separate object, and
+    // embedding a data URI in the CSS would hide it from the next loader
+    // in the chain (css-loader) instead of letting it compose.
+    const wantMap = options.sourceMap !== undefined ? options.sourceMap !== false : this.sourceMap === true;
+
+    const { css, map, dependencies, warnings } = await core.compile(
       { source, from: this.resourcePath },
-      { theme, references, breakpoints: options.breakpoints, includeTheme: options.includeTheme }
+      {
+        theme,
+        references,
+        breakpoints: options.breakpoints,
+        includeTheme: options.includeTheme,
+        sourceMap: wantMap ? 'external' : false,
+        to: this.resourcePath,
+      }
     );
 
     for (const dep of dependencies) this.addDependency(dep);
     if (discovered) for (const dep of discovered.dependencies) this.addDependency(dep);
     for (const warning of warnings) this.emitWarning(new Error(warning.text));
 
-    callback(null, css);
+    // The loader contract wants a map *object*, not the JSON string
+    // compile() returns — passing the string through makes the next loader
+    // silently drop it, which looks like "no map support" rather than a
+    // type mismatch.
+    callback(null, css, map ? JSON.parse(map) : undefined);
   } catch (err) {
     callback(err);
   }

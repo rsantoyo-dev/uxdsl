@@ -11,64 +11,50 @@ import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
 import { discoverThemeSync } from './config';
 import { googleFontsImportUrls } from './fonts';
-// PostCSS plugin for a tiny UX DSL (TypeScript)
-// Features:
-// - Root-level "$var: value;" variable declarations
-// - $var substitutions inside declaration values
-// - palette(path-to-token) -> CSS var mapping
-// - Responsive value functions: xs(...), sm(...), md(...), lg(...), xl(...)
+// The UXDSL PostCSS plugin.
+//
+// MIG-B6-28 (FEAT-008): this header described a five-line prototype — "$var
+// declarations, palette(), responsive functions" — for several releases after
+// the plugin had grown most of what it actually does. Rewritten to the real
+// surface, which is:
+//
+//   Values      $var declarations and substitutions; space(), density(),
+//               color(), palette(), radius()/rounded(), border(), shadow()/
+//               elevation(); responsive functions xs() sm() md() lg() xl()
+//               over the theme's own breakpoint map, `!important` preserved
+//               at every breakpoint.
+//   Directives  @ds-surface, @ds-button, @ds-input, @ds-typo — each expanding
+//               to the declarations its role defines, states and
+//               pseudo-elements included. Must be a direct child of the rule
+//               they style, or they fail as UXD_DIRECTIVE_CONTEXT rather than
+//               passing through untouched.
+//   Theme       The effective theme comes from the `theme` option or, when it
+//               is omitted, from conventional theme-file discovery
+//               (`discoverTheme`/`configRoot`). `includeTheme: false` compiles
+//               an entry that only consumes tokens another entry defines.
+//               A theme's `fonts.google` becomes `@import` lines through the
+//               one shared encoder in ./fonts — never a second encoding here.
+//   Integrity   Every emitted var() is checked against a real definition
+//               (`references`), failing the build by default rather than
+//               shipping a dangling token.
+//   Diagnostics Errors carry a UXD_* code and a source position; generated
+//               theme globals deliberately carry no source, so a source map
+//               lists only files the author actually wrote.
 
 import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
 import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
-import { generateTypographyCss, TYPOGRAPHY_DEFAULTS } from './typography';
+import { generateTypographyCss, TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
+import type { UxdslBreakpointSpec, UxdslOptions } from './types';
 
-type BreakpointSpec =
-  | Record<string, number>
-  | Array<[string, number]>
-  | Array<{ name: string; min?: number; px?: number }>;
-
-interface UxDslOptions {
-  breakpoints?: BreakpointSpec;
-  themeVar?: (path: string) => string;
-  spaceVar?: (index: string) => string;
-  colorVar?: (path: string) => string;
-  theme?: Record<string, any>;
-  /**
-   * Whether this compilation emits the global `:root` token definitions
-   * (foundations, typography, density, shadows, edges, surfaces, buttons,
-   * inputs). Defaults to `true`, matching the historical single-entry
-   * behavior where one compiled file both defines and consumes tokens.
-   *
-   * Set to `false` for a component/CSS-Module entry that only consumes
-   * tokens a separate `includeTheme: true` entry already defines — for
-   * example, one shared theme import plus several CSS Module files. This
-   * avoids re-emitting duplicate global declarations and the bare `:root`
-   * selector that CSS Modules loaders reject as impure. Token references
-   * (`space()`, `palette()`, `density()`, `@ds-surface`, `@ds-button`,
-   * `@ds-input`, ...) still resolve and validate normally either way —
-   * only the definitions themselves are skipped.
-   */
-  includeTheme?: boolean;
-  references?: ReferenceOptions;
-  /**
-   * When `theme` is omitted (and this isn't `false`), the plugin looks for
-   * a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
-   * `configRoot` (default `process.cwd()`) and validates/compiles against
-   * it instead of the built-in default theme — the same discovery
-   * uxdsl-cli has always done, now available with the plugin used
-   * directly (e.g. from a project's own `postcss.config.js`). An explicit
-   * `theme` always wins outright; this has no effect when one is given.
-   * Set to `false` to keep the old always-default-theme behavior.
-   */
-  discoverTheme?: boolean;
-  /** Directory theme discovery searches from. Defaults to `process.cwd()`.
-   * Ignored when `theme` is explicit or `discoverTheme` is `false`. */
-  configRoot?: string;
-}
+// MIG-B6-27 (FEAT-008): the options interface lives in `./types` now, the
+// public type surface consumers import. It is re-exported from the namespace
+// merged at the bottom of this file, so `import type { UxdslOptions } from
+// 'postcss-uxdsl'` resolves even though this module uses `export =`.
+type BreakpointSpec = UxdslBreakpointSpec;
 
 // Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
 const defaultThemeVar = (path: string) => {
@@ -114,7 +100,7 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
   return { map, ordered };
 }
 
-function uxdslPlugin(opts: UxDslOptions = {}) {
+function uxdslPlugin(opts: UxdslOptions = {}) {
   const toVar =
     typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
   const toSpaceVar =
@@ -179,6 +165,17 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         for (const child of node.nodes || []) inheritSource(child, source);
         return node;
       };
+      // MIG-B6-21 (FEAT-008): CSS built purely from the theme has no origin in
+      // any `.uxdsl` file. Running it through `postcss.parse()` gives every
+      // node a source pointing at a fresh anonymous `<input css …>` Input,
+      // which PostCSS then lists in a sourcemap's `sources` — with its whole
+      // body in `sourcesContent` — so a small stylesheet ended up advertising
+      // eight source files the user never wrote. Dropping the source leaves
+      // these bytes unmapped, which is the honest answer for generated
+      // globals, and keeps `sources` to files that actually exist. Reference
+      // diagnostics are unaffected: an anonymous Input already has no
+      // `input.file`, so `issue.source` was undefined for these nodes anyway.
+      const themeGenerated = (css: string) => inheritSource(postcss.parse(css), undefined).nodes;
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
@@ -186,8 +183,8 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
       });
       if (effectiveTheme && includeTheme) {
-        root.append(postcss.parse(generateFoundationCss(effectiveTheme)).nodes);
-        root.append(postcss.parse(generateTypographyCss(effectiveTheme, bps)).nodes);
+        root.append(themeGenerated(generateFoundationCss(effectiveTheme)));
+        root.append(themeGenerated(generateTypographyCss(effectiveTheme, bps)));
 
         // Reverse order so they end up in correct order when prepended (each
         // prepend inserts at index 0). MIG-B6-29 phase 4: the URL itself
@@ -224,13 +221,24 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
             at.parent.insertBefore(at, { prop, value, source: at.source });
           };
 
-          // Typography Configuration Data
-          // Defines defaults for each known variant. 
-          // If a variant isn't here, we can still attempt to generate generic vars for it (future proofing).
-          const defaults = TYPOGRAPHY_DEFAULTS;
-
-          const config = defaults[tag] || { weight: "400", family: "ui", line: "1.5", spacing: "normal" };
-          const isCode = tag === "pre" || tag === "code";
+          // MIG-B6-17 (FEAT-008): emit exactly the fields the effective theme
+          // defines for this role, and nothing else. This used to emit a fixed
+          // list of 10-11 declarations whose fallbacks the theme never asked
+          // for — `margin-block-*: auto` (which absorbs free space in a flex or
+          // grid container instead of the 0 it collapses to in normal flow),
+          // `text-decoration: none` (which stripped the underline off any link
+          // it was applied to, WCAG 1.4.1), `text-transform`/`font-style`
+          // resets, and an `opacity` that could not be overridden from the
+          // theme at all, since `opacity` is not one of TYPOGRAPHY_PROPERTIES'
+          // fields. Whatever is worth keeping now lives in theme/base.json.
+          const details = (effectiveTheme?.typography_details || {}) as Record<string, Record<string, string>>;
+          const style = resolveTypographyRole(details, tag);
+          if (!style) {
+            throw locateError(
+              diagnostic(missingKeyMessage('UXD_TYPO_REFERENCE', 'ds-typo', tag, Object.keys(details))),
+              at,
+            );
+          }
 
           // Consumer side of typography.ts's compileTypographyRules, which
           // emits `--uxdsl__typography__<tag>-<field>` (MIG-08: one shared
@@ -238,49 +246,15 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
           // name the same way so definition and reference always match.
           const typo = (field: string) => buildVarName('typography', `${tag}-${field}`);
 
-          // 1. Font Family
-          // Logic: var(--uxdsl__typography__tag-font-family, var(--uxdsl__font__configFamily))
-          const fontRef = config.family === "code" ? `var(${buildVarName('font', 'code')})` : (config.family === "ui-2" ? `var(${buildVarName('font', 'ui-2')}, var(${buildVarName('font', 'ui')}))` : `var(${buildVarName('font', 'ui')})`);
-          // Special case: code/pre often append 'monospace' directly in fallback
-          const familyFallback = isCode ? `${fontRef}, monospace` : fontRef;
-          insert("font-family", `var(${typo('font-family')}, ${familyFallback})`);
-
-          // 2. Font Size
-          insert("font-size", `var(${typo('size')})`);
-
-          // 3. Line Height
-          if (config.line) {
-             insert("line-height", `var(${typo('line')}, ${config.line})`);
-          }
-
-          // 4. Font Weight (Skip for code usually, but consistent to add)
-          if (config.weight) {
-             insert("font-weight", `var(${typo('weight')}, ${config.weight})`);
-          }
-
-          // 5. Letter Spacing
-          if (config.spacing) {
-             insert("letter-spacing", `var(${typo('spacing')}, ${config.spacing})`);
-          }
-
-          // 6. Text Transform
-          insert("text-transform", `var(${typo('transform')}, none)`);
-
-          // 7. Text Decoration
-          insert("text-decoration", `var(${typo('decoration')}, none)`);
-
-          // 8. Font Style
-          insert("font-style", `var(${typo('style')}, normal)`);
-
-          // 9. Margin Block Start
-          insert("margin-block-start", `var(${typo('margin-block-start')}, auto)`);
-
-          // 10. Margin Block End
-          insert("margin-block-end", `var(${typo('margin-block-end')}, auto)`);
-
-          // 11. Opacity (Special for caption/small)
-          if (config.opacity) {
-             insert("opacity", `var(${typo('opacity')}, ${config.opacity})`);
+          // Iterating the property map (not the resolved style's own keys)
+          // keeps the emitted order canonical and independent of how the JSON
+          // happened to be authored, and of `default`-vs-role merge order.
+          // No literal fallback: compileTypographyRules defines a variable for
+          // every field of this same resolved set, so the reference always
+          // resolves.
+          for (const [field, cssProperty] of Object.entries(TYPOGRAPHY_CSS_PROPERTIES)) {
+            if (!Object.prototype.hasOwnProperty.call(style, field)) continue;
+            insert(cssProperty, `var(${typo(TYPOGRAPHY_PROPERTIES[field as keyof typeof TYPOGRAPHY_PROPERTIES])})`);
           }
 
           at.remove();
@@ -595,11 +569,11 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       // definitions themselves are gated by includeTheme.
       const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
-      if (includeTheme) root.append(postcss.parse(generateShadowCss(shadowTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateShadowCss(shadowTheme, bps)));
 
       const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
-      if (includeTheme) root.append(postcss.parse(generateEdgeCss(edgeTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateEdgeCss(edgeTheme, bps)));
 
       // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
       // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
@@ -627,7 +601,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
       for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
-      if (includeTheme) root.append(postcss.parse(generateSurfaceCss(effectiveSurfaceTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateSurfaceCss(effectiveSurfaceTheme, bps)));
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
@@ -637,7 +611,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
-      if (includeTheme) root.append(postcss.parse(generateButtonCss(effectiveButtonTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateButtonCss(effectiveButtonTheme, bps)));
       getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
@@ -647,7 +621,7 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
         inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
-      if (includeTheme) root.append(postcss.parse(generateInputCss(effectiveInputTheme, bps)).nodes);
+      if (includeTheme) root.append(themeGenerated(generateInputCss(effectiveInputTheme, bps)));
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {
@@ -1001,5 +975,39 @@ function uxdslPlugin(opts: UxDslOptions = {}) {
 }
 
 (uxdslPlugin as any).postcss = true;
+
+// MIG-B6-27 (FEAT-008): this module is `export =` — a PostCSS plugin is a
+// callable, and that cannot change without breaking every existing
+// `require('postcss-uxdsl')` — so the public types are merged into the
+// function's own namespace instead. That is what makes `import type {
+// UxdslTheme } from 'postcss-uxdsl'` resolve for a consumer, under both
+// `require` and `import`, without inventing a second entry point for types.
+// A namespace cannot re-export with `export ... from`, hence the import types.
+declare namespace uxdslPlugin {
+  export type UxdslOptions = import('./types').UxdslOptions;
+  export type UxDslOptions = import('./types').UxDslOptions;
+  export type UxdslTheme = import('./types').UxdslTheme;
+  export type UxdslThemeOverride = import('./types').UxdslThemeOverride;
+  export type UxdslDeepPartial<T> = import('./types').UxdslDeepPartial<T>;
+  export type UxdslBreakpointSpec = import('./types').UxdslBreakpointSpec;
+  export type UxdslTokenValue = import('./types').UxdslTokenValue;
+  export type UxdslPaletteFamily = import('./types').UxdslPaletteFamily;
+  export type UxdslColorFamily = import('./types').UxdslColorFamily;
+  export type UxdslFonts = import('./types').UxdslFonts;
+  export type UxdslMode = import('./types').UxdslMode;
+  export type UxdslTypographyRole = import('./types').UxdslTypographyRole;
+  export type UxdslTypographyField = import('./types').UxdslTypographyField;
+  export type UxdslSurfaceRole = import('./types').UxdslSurfaceRole;
+  export type UxdslSurfaceField = import('./types').UxdslSurfaceField;
+  export type UxdslButtonRole = import('./types').UxdslButtonRole;
+  export type UxdslButtonField = import('./types').UxdslButtonField;
+  export type UxdslButtonState = import('./types').UxdslButtonState;
+  export type UxdslInputRole = import('./types').UxdslInputRole;
+  export type UxdslInputField = import('./types').UxdslInputField;
+  export type UxdslInputState = import('./types').UxdslInputState;
+  export type UxdslConfig = import('./types').UxdslConfig;
+  export type UxdslConfigShared = import('./types').UxdslConfigShared;
+  export type UxdslBuild = import('./types').UxdslBuild;
+}
 
 export = uxdslPlugin;

@@ -46,7 +46,10 @@ function getPublishablePackages() {
 // requirement: the package's actual CHANGELOG.md, not just any README.
 const VISUAL_DEFAULT_FILES = [
   'packages/postcss-uxdsl/src/default-theme.ts',
-  'packages/postcss-uxdsl/src/typography-defaults.ts',
+  // MIG-B6-17 (FEAT-008) removed `typography-defaults.ts` from this list along
+  // with the file itself: its DEFAULT_TYPOGRAPHY map had no importer left once
+  // `@ds-typo` stopped inventing values, so guarding a path that no longer
+  // exists would be exactly the dead entry MIG-B6-28 cleaned up elsewhere.
   'packages/postcss-uxdsl/src/typography.ts',
   // MIG-B6-29 (FEAT-008): DEFAULT_THEME is theme/base.json itself now — most
   // future visual-default changes will edit this file directly, not
@@ -70,7 +73,15 @@ function isCodeChangeInPackage(relFile, pkgRel) {
     local === 'CHANGELOG.md' ||
     local.startsWith('docs/');
 
-  return !docOnly;
+  // MIG-B6-30 (FEAT-008): a lockfile on its own is a mechanical sync, not a
+  // change an npm consumer needs told about — adding a devDependency to one
+  // package rewrites the lockfile of every sibling that depends on it locally,
+  // and demanding a README note there produces a sentence with nothing to say.
+  // Any dependency change that *does* reach consumers also edits
+  // `package.json`, which is still guarded, so nothing meaningful escapes.
+  const lockfileOnly = local === 'package-lock.json' || local === 'npm-shrinkwrap.json';
+
+  return !docOnly && !lockfileOnly;
 }
 
 function main() {

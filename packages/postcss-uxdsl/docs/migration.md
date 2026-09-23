@@ -741,6 +741,183 @@ responsive usado por el consumidor. Antes de reemplazar una hoja runtime,
 generar el CSS completo correctamente; ante una excepción conservar la hoja
 y el último tema válido.
 
+### Desde beta.6: `@ds-typo` emite sólo lo que define el tema (MIG-B6-17)
+
+`@ds-typo(rol)` emitía 10-11 declaraciones fijas por uso, con valores de
+respaldo que venían de un mapa dentro del compilador, no del tema. Ahora emite
+**una declaración por campo que el tema efectivo define para ese rol**, sin
+ningún respaldo literal.
+
+Cambios visibles, todos deliberados:
+
+- **Los enlaces conservan su subrayado.** Antes se aplicaba
+  `text-decoration: none` a todo uso de `@ds-typo`, incluso sobre un `<a>`
+  (problema de WCAG 1.4.1).
+- **Los márgenes ya no rompen flex ni grid.** `auto` colapsa a `0` en flujo
+  normal pero *absorbe el espacio libre* dentro de un contenedor flex o grid.
+  `theme/base.json` ahora define `marginBlockStart`/`marginBlockEnd` como
+  `"0"`: el render en flujo normal es idéntico, sin la trampa.
+- **`caption` y `small` ya no se atenúan con `opacity: 0.8`.** Reducía el
+  contraste y era imposible de sobrescribir desde el tema, porque `opacity`
+  no es un campo de tipografía. Si se quiere un caption atenuado, expresarlo
+  con un color de palette en el componente.
+- **`text-transform` y `font-style` ya no se resetean.** Sus valores iniciales
+  de CSS ya son `none`/`normal`, así que en aislamiento no cambia nada — pero
+  ambos se heredan, así que un elemento con `@ds-typo` dentro de un padre en
+  mayúsculas o en cursiva ahora hereda ese padre en vez de resetearlo.
+- `code` y `pre` ahora sí emiten `font-weight` y `letter-spacing`: el tema ya
+  los definía, la directiva simplemente nunca los leía.
+- Un rol que el tema efectivo no define falla como `UXD_TYPO_REFERENCE`,
+  señalando la directiva y listando los roles disponibles. Nunca cae en
+  silencio a `default`.
+
+**Para recuperar el aspecto de beta.5**, definir los campos en el propio tema.
+Ahora son campos de tipografía normales, así que además son sobrescribibles,
+cosa que los respaldos hardcodeados nunca fueron:
+
+```json
+{
+  "typography_details": {
+    "default": {
+      "textTransform": "none",
+      "textDecoration": "none",
+      "fontStyle": "normal",
+      "marginBlockStart": "auto",
+      "marginBlockEnd": "auto"
+    }
+  }
+}
+```
+
+`opacity` no tiene equivalente: nunca fue un campo de tipografía, así que no
+se puede restaurar desde el tema. Aplicarlo en el componente si hace falta.
+
+Tamaño de salida: una fixture con 100 usos de `@ds-typo` sobre 13 roles pasa
+de 63.455 a 40.296 bytes (−36,5%).
+
+## Cómo verificar el contraste de tu override (0.5.0-beta.6)
+
+Sobrescribir `palette.primary.main` conserva el `dark`, el `light` y el
+`contrast` del tema base. Es la filosofía del producto —escribes sólo lo que
+cambia— pero hasta beta.6 no había forma de verlo ni de comprobar el resultado.
+
+```bash
+uxdsl theme --diff       # cada valor, etiquetado "project" o "default"
+uxdsl theme --contrast   # ¿los pares resultantes cumplen WCAG?
+```
+
+`--diff` imprime ahora, por **stderr**, una línea por cada entrada mezclada:
+
+```text
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+stdout no cambia: sigue siendo un único documento JSON, porque ya hay scripts
+que lo parsean.
+
+`--contrast` comprueba el tema efectivo contra WCAG e imprime el reporte
+completo en stdout, saliendo con 1 si algo falla. Un verde `#00aa00` contra el
+`contrast` blanco heredado da ~3,11:1, por debajo del 4,5:1 exigido para texto,
+y el reporte nombra el par con su modo, estado, breakpoint y colores resueltos.
+
+Carga además las excepciones que se publican con el tema base. Como esas
+excepciones casan también por color resuelto, si sobrescribes uno de esos
+colores dejas de heredar la excepción y se reporta como obsoleta, en vez de
+seguir disculpando un par que ya cambiaste.
+
+`--contrast` **no** forma parte de `build`, y no se combina con `--diff` ni con
+`--strict`: cada uno imprime su propio documento en stdout.
+
+Ten en cuenta al ejecutarlo por primera vez que el tema base publicado todavía
+no pasa su propia comprobación. Esos fallos son reales y están documentados
+(MIG-B6-29), no son un problema de tu configuración: fíjate en los pares que
+introduce tu propio override.
+
+## Tema en runtime: de los setters por token a `applyTheme` (0.5.0-beta.6)
+
+Hasta beta.5, cambiar un tema en el navegador se hacía token a token:
+`updatePalette('primary.main', '#e11d48')`, `updateColor`, `updateSpacing`,
+`breakpoints.update(...)`. Cada uno escribía un *estilo inline* en `<html>` y,
+opcionalmente, una de cuatro claves de `localStorage`.
+
+Desde beta.6 hay un solo modelo: el mismo JSON que compila el build.
+
+```ts
+import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+
+// Una vez, al arrancar: el override con el que se compiló el proyecto.
+applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' })
+
+// Después: un parche se mezcla sobre lo aplicado.
+const result = applyTheme({ palette: { primary: { main: '#e11d48' } } })
+if (!result.ok) console.error(result.error.message)
+```
+
+| Antes | Ahora |
+| --- | --- |
+| `updatePalette('primary.main', v)` | `applyTheme({ palette: { primary: { main: v } } })` |
+| `updateColor('gray.300', v)` | `applyTheme({ colors: { gray: { 300: v } } })` |
+| `updateSpacing(4, v)` | `applyTheme({ spacing: { 4: v } })` |
+| `breakpoints.update('md', 800)` | No equivale: mover un umbral exige recompilar (ver abajo) |
+| `loadPersisted()` y sus tres variantes | `loadPersistedTheme()`, que además migra las cuatro claves |
+| `subscribe(({ type, detail }) => …)` | `subscribeTheme((override) => …)` |
+
+**Nada se ha eliminado en beta.6.** Los setters antiguos, sus getters, el
+`reset` por token, los links entre tokens y el evento `{ type, detail }` de
+`subscribe` siguen exactamente igual. Son dos APIs conviviendo, no un rename.
+
+### Lo que no es un wrapper equivalente
+
+Tres capacidades de los setters antiguos **no** tienen equivalente en
+`applyTheme`, y conviene saberlo antes de migrar:
+
+- **Scope por elemento.** `updatePalette(token, valor, { scope: '#panel' })`
+  escribe en ese elemento. `applyTheme` gestiona una hoja global por documento;
+  no aplica un scope local a `:root`. Si necesitas un valor sólo dentro de un
+  subárbol, sigue usando el setter con `scope`, o escribe tu propia regla CSS.
+- **Mover breakpoints en caliente.** `breakpoints.update('md', 800)` reescribe
+  el texto de las media queries ya compiladas. `applyTheme` **rechaza** mover un
+  umbral con `UXD_THEME_STRUCTURE`, porque las reglas de tus componentes se
+  compilaron con el valor anterior y cambiar sólo las variables las dejaría
+  inconsistentes. El adaptador antiguo sigue disponible para quien acepte esa
+  reescritura textual; la vía soportada es recompilar.
+- **Links entre tokens.** `link(alias, source)` propaga un cambio de un color a
+  los tokens de paleta que lo usan. No hay equivalente: en el modelo JSON eso se
+  expresa escribiendo el valor en los dos sitios, o refiriendo uno al otro con
+  `var()` en el propio tema.
+
+### Qué rechaza `applyTheme`
+
+`applyTheme` sustituye variables; no puede reescribir las reglas que tu build ya
+compiló. Un parche que cambie *qué declaraciones emitiría una directiva* falla
+con `UXD_THEME_STRUCTURE`, nombrando cada cambio y pidiendo recompilar: añadir o
+quitar un campo de `typography_details`, introducir un estado como
+`focusvisible`, cambiar el Surface del que compone un Button o un Input, mover
+un umbral existente, o que una familia de Palette deje de tener
+`main`/`dark`/`contrast`. Cambiar valores, expresiones responsive sobre los
+mismos umbrales, colores de modo oscuro y añadir tokens nuevos se aplica con
+normalidad.
+
+### Migración del almacenamiento
+
+La primera llamada a `loadPersistedTheme()` que no encuentre nada bajo
+`uxdsl:theme` convierte las cuatro claves antiguas en un único override, lo
+aplica, escribe la clave nueva, **la vuelve a leer** y sólo entonces borra las
+antiguas. Un parche rechazado, una escritura bloqueada o una que el navegador
+descarte en silencio dejan las cuatro claves intactas: nunca te quedas sin
+ninguna de las dos copias. `{ migrateLegacy: false }` lo desactiva.
+
+Deshacer el formato antiguo no se hace partiendo por guiones —
+`primary-dark-hover` es `primary` + `dark-hover` mientras que
+`brand-accent-main` es `brand-accent` + `main`, y la cadena sola no lo
+distingue. El corte se resuelve contra los nombres de familia que declara tu
+tema, de más largo a más corto; un token que no case con ninguno se reporta en
+`warnings` y se omite, en vez de archivarse bajo una familia inventada.
+
+Una clave `uxdsl:theme` válida gana siempre y no se mezcla con las antiguas. Una
+clave nueva **corrupta** es un error, no un silencioso volver a las antiguas:
+eso sustituiría tu tema por otro distinto y lo llamaría éxito.
+
 ## Verificación
 
 Los ejemplos de este documento están verificados contra los tests de este

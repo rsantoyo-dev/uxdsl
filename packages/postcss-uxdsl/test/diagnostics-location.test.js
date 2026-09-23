@@ -51,18 +51,27 @@ for (const [directive, code] of [
   });
 }
 
-for (const [css, line] of [
-  ['.a {\n  @ds-typo(nonexistent);\n}', 2],
-  ['.a {\n  @ds-button(contained);\n}', 2],
+// MIG-B6-17 (FEAT-008) changed *which* error the @ds-typo case raises, not
+// what this test is really pinning: `@ds-typo(nonexistent)` used to emit
+// declarations referencing variables no theme defined, so the failure only
+// surfaced downstream as a dangling-variable ReferenceIntegrityError. It now
+// fails at the directive itself, naming the unknown role and listing the real
+// ones. Either way the synthesized output must keep the at-rule's own source,
+// so the reported position is still line 2 and not the top of the file — that
+// is the regression this case exists for, and it is asserted for both.
+for (const [css, line, expectedName, expectedReason] of [
+  ['.a {\n  @ds-typo(nonexistent);\n}', 2, 'CssSyntaxError', /^UXD_TYPO_REFERENCE: /],
+  ['.a {\n  @ds-button(contained);\n}', 2, 'ReferenceIntegrityError', undefined],
 ]) {
   test('MIG-B6-13: generated directive declarations retain the at-rule source', async () => {
     const theme = css.includes('ds-button')
       ? { buttons: { contained: { base: { bg: 'palette(primry)' } } } }
       : undefined;
     const error = await postcss([plugin({ includeTheme: false, theme })]).process(css, { from: file }).then(() => null, caught => caught);
-    assert.equal(error.name, 'ReferenceIntegrityError');
+    assert.equal(error.name, expectedName);
     assert.equal(error.file, file);
     assert.equal(error.line, line);
+    if (expectedReason) assert.match(error.reason, expectedReason);
   });
 }
 

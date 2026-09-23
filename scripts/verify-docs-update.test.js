@@ -94,10 +94,14 @@ test('MIG-B3-05: editing typography.ts with both README and CHANGELOG staged pas
   assert.equal(result.status, 0, result.stderr);
 });
 
-test('MIG-B3-05: default-theme.ts and typography-defaults.ts are covered by the same guard', () => {
+// MIG-B6-17 (FEAT-008) deleted `typography-defaults.ts` (its DEFAULT_TYPOGRAPHY
+// map lost its last importer when @ds-typo stopped inventing values), so this
+// now pairs default-theme.ts with typography.ts — the other visual-default
+// source file that is still real — instead of a path that no longer exists.
+test('MIG-B3-05: default-theme.ts and typography.ts are covered by the same guard', () => {
   const { dir, pkgDir } = mkFakeRepo();
   fs.writeFileSync(path.join(pkgDir, 'src', 'default-theme.ts'), '// default theme\n');
-  fs.writeFileSync(path.join(pkgDir, 'src', 'typography-defaults.ts'), '// typography defaults\n');
+  fs.writeFileSync(path.join(pkgDir, 'src', 'typography.ts'), '// typography\n');
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-q', '-m', 'add visual-default files']);
 
@@ -132,4 +136,22 @@ test('MIG-B3-05: a docs-only change (README/CHANGELOG/docs) never requires furth
   stage(dir, 'packages/postcss-uxdsl/CHANGELOG.md');
   const result = runGuard(dir);
   assert.equal(result.status, 0, result.stderr);
+});
+
+test('MIG-B6-30: a lockfile sync alone does not demand a README note, but package.json still does', () => {
+  const { dir, pkgDir } = mkFakeRepo();
+  fs.writeFileSync(path.join(pkgDir, 'package-lock.json'), '{"lockfileVersion":3}\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add lockfile']);
+
+  // Adding a devDependency to one package rewrites its siblings' lockfiles;
+  // there is no consumer-facing note to write for that.
+  fs.writeFileSync(path.join(pkgDir, 'package-lock.json'), '{"lockfileVersion":3,"synced":true}\n');
+  stage(dir, 'packages/postcss-uxdsl/package-lock.json');
+  assert.equal(runGuard(dir).status, 0, 'a lockfile-only change should not require a README');
+
+  // The real dependency declaration is still guarded.
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.1' }));
+  stage(dir, 'packages/postcss-uxdsl/package.json');
+  assert.notEqual(runGuard(dir).status, 0, 'a package.json change must still require a docs note');
 });

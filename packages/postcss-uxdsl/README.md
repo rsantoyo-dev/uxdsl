@@ -238,6 +238,14 @@ while you migrate a theme that only partially covers the defaults. The
 equivalent gap for `border(1..5)`'s `color(gray.*)` dependency is closed —
 see the next section.
 
+**Cost:** validation used to grow with the *square* of the stylesheet, so a
+large module could spend most of a rebuild in it — 24,000 lines took 63 s on
+an M1 Pro, against 1 s with `mode: 'off'`. Since beta.6 the same file takes
+0.79 s, and doubling the input costs about 1.9x rather than up to 6.3x. If
+you turned validation off to keep watch mode usable, turn it back on. The
+reported issues did not change: the previous implementation is kept as a
+frozen fixture and both are required to produce identical output.
+
 ---
 
 ## Spacing keys (`space-1` vs `1`)
@@ -528,6 +536,13 @@ encodeGoogleFontFamily('Open Sans:wght@400;700') // 'Open+Sans:wght@400;700'
 googleFontsImportUrls(['Inter:wght@400;700', 'Playfair Display'])
 // ['https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap',
 //  'https://fonts.googleapis.com/css2?family=Playfair+Display&display=swap']
+
+// Variable fonts keep their axis syntax intact — the commas separating axis
+// tags and the `..` ranges are structural, not characters to escape:
+encodeGoogleFontFamily('Roboto Flex:opsz,wght@8..144,100..1000')
+// 'Roboto+Flex:opsz,wght@8..144,100..1000'
+encodeGoogleFontFamily('Nunito Sans:ital,wght@0,400;1,400')
+// 'Nunito+Sans:ital,wght@0,400;1,400'
 ```
 
 A space becomes `+` (css2's own convention, not `%20`); `:`, `@`, `;` and
@@ -547,6 +562,50 @@ anything Node-only — both are exported from the same browser-safe
 `generateThemeCss`, so a project managing its own font `<link>` (a
 client-side theme switcher, for example) can reuse the exact same
 encoding instead of drifting from what the compiler itself emits.
+
+### What `@ds-typo` emits
+
+**MIG-B6-17 (FEAT-008).** `@ds-typo(role)` emits exactly one declaration per
+field the effective theme defines for that role — the role's own fields layered
+over `default`'s, the same composition the variable generator uses — and nothing
+else. Every declaration is a bare `var(--uxdsl__typography__<role>-<suffix>)`
+with **no literal fallback**, so the directive can never apply a value your
+theme did not ask for:
+
+```css
+/* theme/base.json defines fontFamily, fontSize, lineHeight, fontWeight,
+   letterSpacing, marginBlockStart and marginBlockEnd for `caption`. */
+.eyebrow { margin: 0; @ds-typo(caption); }
+```
+
+```css
+.eyebrow {
+  margin: 0;
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-size);
+  line-height: var(--uxdsl__typography__caption-line);
+  font-weight: var(--uxdsl__typography__caption-weight);
+  letter-spacing: var(--uxdsl__typography__caption-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+}
+```
+
+A field the theme does not define is simply not emitted — the element keeps
+whatever it inherits, or the browser default. In particular the directive does
+**not** reset `text-transform`, `font-style` or `text-decoration`, and never
+emits `opacity` (not a typography field at all). Define the field in
+`typography_details` when that value is the intended design; see the beta.6
+CHANGELOG entry for the exact before/after list and a recipe to restore the
+previous behaviour.
+
+**Precedence** follows the directive's position in the rule, like any other
+declaration: `.a { @ds-typo(h1); font-size: 3rem; }` keeps `3rem`, while
+`.a { font-size: 3rem; @ds-typo(h1); }` lets the role's size win.
+
+A role the effective theme does not define fails as `UXD_TYPO_REFERENCE`,
+pointing at the directive and listing the roles that do exist — it never
+silently falls back to `default`.
 
 ### Legacy opt-in packs (deprecated)
 
@@ -698,6 +757,253 @@ What *is* still checked for real, one level deeper still, is the set of
 **fields** inside a `typography_details` tag: `fontsize` instead of
 `fontSize` is a hard `UXD_TYPO_FIELD` error, not a warning, because that
 list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
+
+---
+
+## What a partial override actually inherits
+
+A theme is the packaged base plus your override, merged key by key. That is the
+product's design, not an accident — you write only what differs. What is easy to
+miss is that "key by key" reaches all the way down:
+
+```json
+{ "palette": { "primary": { "main": "#00aa00" } } }
+```
+
+You now have a green `primary.main` **and the base theme's purple
+`primary.dark`, `primary.light` and white `primary.contrast`.** Nothing is
+wrong, and nothing warns: your button is green, and its `:hover` — which uses
+`primary.dark` — is purple. To change the hover too, override `dark` as well:
+
+```json
+{ "palette": { "primary": { "main": "#00aa00", "dark": "#007700", "contrast": "#ffffff" } } }
+```
+
+The same applies to a `typography_details` role: setting `h1.fontSize` keeps the
+base's `fontWeight` and `lineHeight` for that role.
+
+Two commands make this visible rather than surprising:
+
+```bash
+uxdsl theme --diff       # every value, labeled "project" or "default"
+uxdsl theme --contrast   # do the resulting pairs meet WCAG?
+```
+
+`--diff` prints a one-line summary on **stderr** for each entry that mixes both
+sources, leaving stdout a clean JSON document:
+
+```text
+[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)
+```
+
+`--contrast` answers the question that actually matters after a partial
+override. The green above against the inherited white `contrast` is about
+3.11:1 — below WCAG's 4.5:1 for text — and the report names the pair, its mode,
+state, breakpoint and resolved colors. It exits 1 when anything fails, and it is
+deliberately **not** part of `build`.
+
+One caveat worth knowing before you run it: the packaged base theme does not
+pass its own contrast gate yet. Those failures are real, disclosed and tracked
+(see MIG-B6-29 in the repository), not a problem with your configuration — so
+read the report for the pairs *your* override introduced.
+
+---
+
+## Applying a theme at run time (`applyTheme`)
+
+Your theme is JSON: a base plus your override. A build compiles that JSON;
+`applyTheme` applies the *same* JSON in the browser, so changing a value needs
+no rebuild. It is synchronous — when it returns `ok: true`, the stylesheet and
+the reported state already agree; when it returns `ok: false`, nothing moved.
+
+```ts
+import { applyTheme, getAppliedTheme, resetTheme, subscribeTheme } from 'postcss-uxdsl/ds-runtime';
+
+// Once, at startup: hand it the override your project was built with.
+applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' });
+
+// Later: a patch merges over what is applied.
+const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } });
+if (!result.ok) console.error(result.error.message);
+```
+
+The first call has to be the override the project actually compiled with (`{}`
+for a zero-config project). The library cannot infer it: reading compiled CSS
+back does not reconstruct your JSON. That call also fixes the managed
+`<style>` — an element with that id is *adopted*, which is how a
+server-rendered theme tag is taken over without a second one appearing at
+hydration.
+
+| Call | Does |
+| --- | --- |
+| `applyTheme(patch, opts?)` | Merges `patch` over the applied override, or replaces it with `replace: true` |
+| `getAppliedTheme()` | The applied override, as a copy. `{}` before initialization |
+| `resetTheme({ clearPersist? })` | Restores the override you initialized with — not the packaged base |
+| `loadPersistedTheme({ key? })` | Applies a stored override, validated like any other patch |
+| `subscribeTheme(listener)` | Notified after each success; returns the unsubscribe function |
+
+`persist` is per call: persisting once does not make later calls persist.
+Saving happens *after* the visual commit, so a storage failure comes back as
+`ok: true` with an explicit warning rather than pretending the theme did not
+apply — or pretending it was saved.
+
+### Upgrading from the per-token setters
+
+If your users customized a theme through `updatePalette`, `updateColor`,
+`updateSpacing` or `updateBreakpoint`, their work is in four separate keys
+(`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`).
+The first `loadPersistedTheme()` that finds nothing under the managed key
+converts those into one override, applies it, and clears them — in that order,
+and only after reading the new key back. A refused patch, a blocked write or a
+write the browser silently drops leaves all four keys exactly where they were,
+so a failure can never cost the user both copies. Pass
+`{ migrateLegacy: false }` to skip it.
+
+Undoing the old key format needs care, and the migration does not guess: a
+stored `primary-dark-hover` is `primary` + `dark-hover`, while
+`brand-accent-main` is `brand-accent` + `main`, and the string alone cannot
+tell them apart. The split is resolved against the palette and color family
+names your theme actually declares, longest match first; a token matching none
+of them is reported in `warnings` and skipped rather than filed under an
+invented family.
+
+A valid managed key always wins and is never merged with the legacy ones. A
+*corrupt* managed key is an error — it is not quietly replaced with whatever
+the old keys happen to contain.
+
+### What it will refuse, and why
+
+`applyTheme` replaces a stylesheet of custom properties. It cannot rewrite the
+rules your **build** already compiled: the declarations a `@ds-button` expanded
+into, or the `@media` queries baked into a component's responsive declaration.
+So a patch that changes *which declarations a directive would emit* is rejected
+with `UXD_THEME_STRUCTURE`, naming what changed and telling you to rebuild:
+
+| Rejected — rebuild required | Allowed — applied immediately |
+| --- | --- |
+| Adding or removing a `typography_details` field | Changing any token's value |
+| Introducing a state such as `focusvisible` | Responsive expressions over the same thresholds |
+| Changing the Surface a Button or Input composes from | Dark-mode (`modes.dark`) colors |
+| Moving an existing breakpoint threshold | Adding a new token or breakpoint name |
+| A palette family losing `main`/`dark`/`contrast` | A field a role already emits |
+
+The distinction is derived from the engines themselves — the same
+`buttonDeclarations`, `inputDeclarations`, `surfaceDeclarations` and
+`resolveTypographyRole` the compiler emits with — so a field added to an engine
+is accounted for without anyone updating a list.
+
+On the server there is no state to share: call `generateThemeCss(theme)` and
+render the result. `applyTheme` reports `UXD_THEME_ENVIRONMENT` where there is
+no document rather than silently doing nothing.
+
+---
+
+## Typed config and theme (`defineConfig`, `$schema`)
+
+Most UXDSL mistakes are typos, and they are made while writing configuration —
+where nothing used to help. `includeThem`, `fontsize`, `focusVisible` and
+`palete` all compile to *nothing at all*, with no error, because an unknown key
+is simply not read. Since beta.6 the editor catches them.
+
+**In a plain `uxdsl.config.cjs`**, with no TypeScript in the project:
+
+```js
+const { defineConfig } = require('postcss-uxdsl/config');
+
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+module.exports = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  includeTheme: true,
+});
+```
+
+`defineConfig` returns its argument unchanged — it exists so the object literal
+is checked against `UxdslConfig`. It is deliberately **not** generic: a
+`defineConfig<T extends UxdslConfig>` infers `T` from the literal, extra keys
+and all, which would accept the typo it is supposed to catch.
+
+The check applies to a *fresh object literal*. For a config assembled
+beforehand, annotate it where it is defined, or use
+`satisfies UxdslConfig` — passing an already-widened variable through
+`defineConfig` cannot recover what the earlier assignment discarded.
+
+**In TypeScript**, the types are exported from the package root:
+
+```ts
+import type { UxdslTheme, UxdslThemeOverride, UxdslOptions, UxdslConfig } from 'postcss-uxdsl';
+```
+
+`UxdslTheme` is a complete theme; `UxdslThemeOverride` is the partial patch
+`resolveTheme` merges over the base, with arrays replaced rather than merged.
+`UxDslOptions` still resolves, as a deprecated alias of `UxdslOptions`.
+
+**In a `uxdsl.theme.json`**, point `$schema` at the packaged JSON Schema:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+What is closed and what is open is the same split the compiler makes, because
+the schema and the types are both generated from the engine constants rather
+than hand-written beside them:
+
+| Closed — a typo is an error | Open — a project extends it |
+| --- | --- |
+| Theme family names (`KNOWN_THEME_FAMILIES`) | Palette family names (`palette.brand`) |
+| `typography_details` field names | `typography_details` role names |
+| Surface / Button / Input field names | Surface / Button / Input role names |
+| Button and Input state names | `fonts.families` role names |
+| `modes` (only `dark` is compiled) | Spacing, density, shadow, border, radius keys |
+
+A family that gains a field in a future release appears in both without anyone
+remembering to copy it; one that is removed stops type-checking.
+
+Note that `$schema` itself is metadata, not a family: it compiles to nothing by
+design, and the theme validator does not report it as an unknown family.
+
+---
+
+## Source maps
+
+This plugin has no source-map option of its own — it works with PostCSS's
+own `map`, so a project that already asks for maps in its
+`postcss.config.js` gets them with no extra configuration:
+
+```js
+postcss([require('postcss-uxdsl')()]).process(css, {
+  from: 'src/panel.uxdsl',
+  to: 'dist/panel.css',
+  map: { inline: false },
+});
+```
+
+Positions point at the `.uxdsl` you wrote, not at the compiled CSS:
+
+| Output | Maps back to |
+| --- | --- |
+| A declaration the plugin rewrote (`density()`, `palette()`, …) | That declaration's own line |
+| A responsive declaration split into `@media` rules | The single original declaration |
+| Every declaration `@ds-button`/`@ds-surface`/`@ds-input`/`@ds-typo` expands into | The directive's own line |
+| A declaration from an `@import`-ed partial | That partial, at its own line |
+
+The theme CSS added by `includeTheme` (the `:root` custom-property blocks,
+the `@media` mode blocks, the generated component classes) is deliberately
+**not** mapped: it is built from your theme JSON and has no origin in any
+`.uxdsl` file, so it lands under PostCSS's own `<no source>` placeholder
+with no `sourcesContent`. Through beta.5 each generated block instead
+became an invented `<input css …>` source with its entire body inlined in
+the map — a handful of authored lines could produce a map several times the
+size of the CSS, listing eight "files" that do not exist. `sources` is now
+limited to files you can actually open.
+
+Compiling through `uxdsl-cli` instead? It exposes this as
+`--sourcemap`/`--no-sourcemap` and a `sourceMap` config option, and writes
+the `.map` file next to the CSS — see the "Source maps" section of
+[`uxdsl-cli`'s README](../uxdsl-cli/README.md).
 
 ---
 

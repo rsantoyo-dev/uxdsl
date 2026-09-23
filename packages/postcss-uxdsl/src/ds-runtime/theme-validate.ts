@@ -32,6 +32,15 @@ export const KNOWN_THEME_FAMILIES = new Set([
   'modes', 'typography',
 ]);
 
+/**
+ * MIG-B6-27 (FEAT-008): JSON Schema metadata, recognized but deliberately
+ * **not** a member of `KNOWN_THEME_FAMILIES` — it names no tokens and compiles
+ * to nothing, so treating it as a family would put it in the schema's own
+ * family list, in strict-theme scopes and in every drift check. It is accepted
+ * where a theme is validated, and ignored everywhere a family is consumed.
+ */
+export const THEME_SCHEMA_KEY = '$schema';
+
 function isPlainObject(value: unknown): value is Record<string, any> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
@@ -83,6 +92,25 @@ function normalizeFontFamily(raw: string): string {
   return [normalizedPrimary, ...rest].join(', ');
 }
 
+/**
+ * MIG-B6-30 (FEAT-008): a real deep copy of theme data.
+ *
+ * `deepMergeTheme({}, input)` reads like one but is not: with an empty base
+ * every key takes the `out[key] = nextVal` branch, so nested objects are shared
+ * with the input by reference (only arrays are sliced). The validator used that
+ * as its "work on a copy" step and therefore normalized *the caller's* object
+ * in place — invisible when the input was a freshly parsed JSON literal, and a
+ * hard `TypeError` the moment the input shared a sub-object with the deep-frozen
+ * packaged base, which is exactly what `resolveTheme()` returns.
+ */
+export function cloneThemeValue<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((item) => cloneThemeValue(item)) as any;
+  if (!isPlainObject(value)) return value;
+  const out: Record<string, any> = {};
+  for (const key of Object.keys(value as any)) out[key] = cloneThemeValue((value as any)[key]);
+  return out as any;
+}
+
 export function deepMergeTheme<TBase extends Record<string, any>, TOverride extends Record<string, any>>(
   base: TBase,
   override: TOverride
@@ -121,7 +149,11 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
 
   // Kept in the public options for compatibility; Typography now always needs a base.
 
-  const theme: Record<string, any> = isPlainObject(input) ? deepMergeTheme({}, input) : {};
+  // MIG-B6-30 (FEAT-008): a genuine deep copy. This line used to be
+  // `deepMergeTheme({}, input)`, which shares every nested object with the
+  // caller — so normalization below wrote into the caller's theme, and threw
+  // outright on a frozen one.
+  const theme: Record<string, any> = isPlainObject(input) ? cloneThemeValue(input as Record<string, any>) : {};
   if (!isPlainObject(input)) {
     errors.push({ path: 'theme', message: 'Theme must be an object.' });
   }
@@ -353,6 +385,12 @@ export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
   // doesn't know about yet" from "genuinely unused scratch data".
   if (isPlainObject(input)) {
     Object.keys(input).forEach((key) => {
+      // MIG-B6-27 (FEAT-008): `$schema` is JSON Schema metadata, not a family.
+      // It is the documented way to get editor completion in a
+      // `uxdsl.theme.json`, so warning that "it will not be compiled into any
+      // CSS" would be advising against the thing the README recommends. It is
+      // correct that nothing compiles it — that is what metadata means.
+      if (key === THEME_SCHEMA_KEY) return;
       if (!KNOWN_THEME_FAMILIES.has(key)) {
         warnings.push({ path: key, message: `Unknown theme family "${key}" — it will not be compiled into any CSS.` });
       }

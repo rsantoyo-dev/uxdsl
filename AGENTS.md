@@ -234,6 +234,21 @@ hardcoding its resolved values. HTML preserves document semantics.
 - Supported structured fields are `fontFamily`, `fontSize`, `lineHeight`,
   `fontWeight`, `letterSpacing`, `textTransform`, `textDecoration`, `fontStyle`,
   `marginBlockStart`, and `marginBlockEnd`. Values are nonempty strings.
+  `opacity` is deliberately not a field: express a muted role with a Palette
+  color on the component, not by dimming the text.
+- `@ds-typo(role)` emits exactly one declaration per field the effective theme
+  defines for that role — the role's own fields over `default`'s — and nothing
+  else (MIG-B6-17). There are no literal fallbacks: a field the theme does not
+  define simply is not emitted, so the element keeps whatever it inherits or
+  the browser default. Do not expect the directive to reset `text-transform`,
+  `font-style` or `text-decoration`, and do not add a field to the theme just
+  to neutralize one — define it only when that value is the intended design.
+- A role the effective theme does not define fails as `UXD_TYPO_REFERENCE` at
+  the directive; it never silently falls back to `default`.
+- The directive emits at its own position in the rule, so a declaration written
+  after it wins: `.eyebrow { @ds-typo(caption); margin: 0; }` keeps `margin: 0`,
+  while `.eyebrow { margin: 0; @ds-typo(caption); }` lets the role's own
+  margins apply.
 - Keep heading levels appropriate to document hierarchy, independently of the
   visual role selected. Styling an element does not change its HTML semantics.
 - Change a shared role only when all its consumers should change. Choose another
@@ -577,19 +592,53 @@ plugin emitting one at all. Put variant changes in the playground's own
 overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
-build/runtime integrations. PostCSS accepts a `theme` option. The runtime exposes
-`generateThemeCss(theme)` from `postcss-uxdsl/ds-runtime` for theme CSS generation:
+build/runtime integrations. PostCSS accepts a `theme` option.
+
+In a browser, `applyTheme(patch, opts)` from `postcss-uxdsl/ds-runtime`
+(MIG-B6-30) is the supported way to apply a theme. It is synchronous: it
+validates, generates and checks the patch against the applied structure before
+touching the DOM, so `ok: true` means the stylesheet and the reported state
+already agree, and `ok: false` means nothing moved — no CSS, no state, no
+persistence, no success notification. State is per document, not a module
+singleton. Initialize once with the override the project was built with
+(`{}` for zero-config); the library cannot infer it, because reading compiled
+CSS back does not reconstruct the JSON.
+
+```ts
+import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+
+applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' })
+const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } })
+if (!result.ok) console.error(result.error.message)
+```
+
+`applyTheme` swaps custom properties; it cannot rewrite rules a build already
+compiled into the host's components. A patch that changes *which declarations a
+directive would emit* — a `typography_details` field added or removed, a state
+such as `focusvisible` introduced, a Button's or Input's Surface changed, an
+existing breakpoint threshold moved, a palette family losing `main`/`dark`/
+`contrast` — is refused with `UXD_THEME_STRUCTURE` and an instruction to
+rebuild. Token values, responsive expressions over the same thresholds,
+dark-mode colors and newly added tokens apply normally. Do not work around a
+refusal by writing CSS by hand; rebuild and reinitialize.
+
+The first `loadPersistedTheme()` with nothing under the managed key migrates the
+four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`,
+`uxdsl:breakpoints`) into one override, and only removes them after the new key
+is written *and* read back. Batching belongs outside `applyTheme`, in the editor
+that produces the patches.
+
+On the server there is no state to share: use `generateThemeCss(theme)`, which
+is pure and per request, and render the result yourself.
 
 ```ts
 import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
 
 // nextTheme is the effective configuration, not an unrelated partial patch.
-// themeStyle is the application's existing managed <style> element.
 const css = generateThemeCss(nextTheme)
-themeStyle.textContent = css
 ```
 
-Generate successfully before replacing the managed stylesheet. Do not continually
+Generate successfully before replacing a stylesheet you manage yourself. Do not continually
 append stale overrides. If the theme sets `fonts.google`, `css` now leads with
 that Google Fonts `@import` (MIG-B6-29 phase 4) — valid inside a `<style>`
 element as long as it stays first, which `generateThemeCss` already
@@ -708,9 +757,12 @@ For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
 the individual story owns its detailed contract; the index owns integration order.
 FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirements.
 
-These documents describe planned APIs, not shipped capabilities. At the
-2026-09-19 review baseline (`60fdd76`), packages are beta.5: `applyTheme` and
-the beta.6 gate are pending. MIG-B6-29 (the packaged base JSON, the
+These documents describe planned APIs, not shipped capabilities. Packages on
+npm are still beta.5; everything below has landed on the beta.6 branch, not in
+a published release. The beta.6 release gate (MIG-B6-12) is still pending.
+`applyTheme` and the rest of the runtime theme API (MIG-B6-30) have landed
+across their 4 phases — see the "Build time, runtime and one source of truth"
+section above, which describes the contract as implemented. MIG-B6-29 (the packaged base JSON, the
 accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
@@ -720,9 +772,10 @@ engine/architecture gaps remain open (not color choices; see that story's
 own evidence for exactly which ones and the recommended follow-up for
 each), by design, not a bug in the gate. `generateThemeCss` and the PostCSS
 plugin now emit byte-identical Google Fonts `@import`s for the same theme;
-`packages/playground-nextjs`'s own `ThemeContext.tsx` still hand-rolls a
-separate client-side font-link implementation that predates this — removing
-it in favor of the shared encoder is MIG-B6-30's job, not MIG-B6-29's.
+`packages/playground-nextjs`'s own `ThemeContext.tsx` used to hand-roll a
+separate client-side font `<link>` with a weaker encoder; MIG-B6-30 phase 3
+retired it, so the playground now gets its fonts from the same generated
+`@import` as everyone else.
 
 For each story, preserve intent, token references, merge precedence and CSS-native
 exceptions. Reproduce the defect, add a regression that fails before the fix, and

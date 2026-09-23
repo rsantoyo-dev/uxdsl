@@ -9,6 +9,253 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.6 — unreleased
 
+FEAT-008, MIG-B6-16 (partial overrides, made explicit):
+
+- **New (CLI):** `uxdsl theme --diff` now prints a one-line summary on
+  **stderr** for every entry that mixes your values with the base theme's —
+  `[uxdsl] palette.primary mixes your values (main) with base values (light,
+  dark, contrast)`. stdout is unchanged, still a clean JSON document, because
+  scripts already parse it. Merging key by key stays the design; what changes
+  is that it stops being invisible.
+- **New (CLI):** `uxdsl theme --contrast` runs the WCAG check over the
+  effective theme and prints the full report as JSON on stdout, exiting 1 if
+  any pair fails. It loads the exceptions shipped with the base theme, which
+  match on resolved colors — so overriding one of those colors stops
+  inheriting its exception and reports it as stale. Not part of `build`, and
+  refused in combination with `--diff` or `--strict`, since each prints its
+  own document on stdout.
+- Note: the packaged base theme does not pass its own gate yet. Those
+  failures are real and disclosed (MIG-B6-29), not a configuration problem.
+
+FEAT-008, MIG-B6-30 (phase 2/4: migrating off the four legacy storage keys):
+
+- **New:** the first `loadPersistedTheme()` that finds nothing under the
+  managed key converts `uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing` and
+  `uxdsl:breakpoints` into one theme override, applies it through the same
+  validation and structural check as any other patch, writes the managed key,
+  **reads it back**, and only then removes the old keys. A refused patch, a
+  blocked write, or a write a private-mode/full store silently drops leaves all
+  four legacy keys exactly as they were — a failure can never cost the user
+  both copies. `{ migrateLegacy: false }` opts out.
+- Undoing the old key format is resolved against the family names the theme
+  declares, longest match first, rather than by splitting on a hyphen:
+  `primary-dark-hover` is `primary` + `dark-hover` while `brand-accent-main`
+  is `brand-accent` + `main`, and the string alone cannot tell them apart. A
+  token matching no declared family is reported in `warnings` and skipped, not
+  filed under an invented one.
+- A valid managed key wins outright and is never merged with the legacy keys.
+  A *corrupt* managed key is an error, not a silent fall back to whatever the
+  old keys contain — which would replace the user's theme with a different one
+  and call it success.
+
+FEAT-008, MIG-B6-30 (phase 1/4: the JSON theme applied at run time):
+
+- **New:** `applyTheme`, `getAppliedTheme`, `resetTheme`, `loadPersistedTheme`
+  and `subscribeTheme` on `postcss-uxdsl/ds-runtime`. The same theme JSON a
+  build compiles can now be applied in the browser, synchronously: on
+  `ok: true` the stylesheet and the reported state already agree, on
+  `ok: false` nothing changed at all. State is per document (a WeakMap keyed
+  by it), not a module singleton, so an iframe or a second document gets its
+  own managed `<style>` and its own applied override.
+- **New:** a structural gate. A patch that changes *which declarations a
+  directive would emit* — a `typography_details` field added or removed, a
+  state such as `focusvisible` introduced, the Surface a Button composes from
+  changed, an existing breakpoint threshold moved, a palette family losing
+  `main`/`dark`/`contrast` — is rejected with `UXD_THEME_STRUCTURE`, naming
+  every change and saying to rebuild, because compiled component rules keep
+  their old shape. Value changes, responsive expressions over the same
+  thresholds, dark-mode colors and new tokens apply normally. The distinction
+  is derived from the engines the compiler emits with, not from a second list.
+- **Fixed:** `validateAndNormalizeTheme` mutated the theme it was given. Its
+  "work on a copy" step was `deepMergeTheme({}, input)`, which shares every
+  nested object by reference (only arrays are copied), so normalization wrote
+  into the caller's object — invisible with a freshly parsed JSON literal, and
+  a hard `TypeError` as soon as the input shared a sub-object with the packaged
+  deep-frozen base. That made `validateAndNormalizeTheme(resolveTheme(x))`,
+  the documented composition, throw outright. It now deep-copies
+  (`cloneThemeValue`, also exported) and leaves the input untouched.
+
+FEAT-008, MIG-B6-27 (exported types, `defineConfig`, generated theme schema):
+
+- **New:** the public type surface is exported from the package root —
+  `UxdslTheme`, `UxdslThemeOverride`, `UxdslOptions`, `UxdslConfig`,
+  `UxdslBuild` and the field/state unions they are built from. `theme` is no
+  longer `Record<string, any>`. `UxDslOptions` remains as a deprecated alias
+  of `UxdslOptions`, unchanged in meaning.
+- **New:** `defineConfig` from `postcss-uxdsl/config`, an identity function
+  that type-checks a `uxdsl.config.cjs` export. It is intentionally not
+  generic — `defineConfig<T extends UxdslConfig>` infers `T` from the literal
+  including its extra keys, so it would accept the very typo it exists to
+  catch. Works with JSDoc alone, no TypeScript needed in the project.
+- **New:** `schema/theme.schema.json`, shipped with the package and exported
+  as `postcss-uxdsl/schema/theme.schema.json`, for `"$schema"` in a
+  `uxdsl.theme.json`. Generated by `scripts/generate-language-artifacts.js`
+  from `KNOWN_THEME_FAMILIES`, `TYPOGRAPHY_PROPERTIES` and the Surface,
+  Button and Input field/state maps, so it cannot drift from what the
+  compiler accepts; `--check` fails on a hand-edited copy.
+- **Fixed:** a theme declaring `"$schema"` — the documented way to get editor
+  completion — was reported by `validateAndNormalizeTheme` as an unknown
+  family that "will not be compiled into any CSS", which argued against the
+  line the README tells you to add. It is metadata and is now recognized as
+  such (`THEME_SCHEMA_KEY`), while a real typo like `palete` still warns.
+- **Fixed:** `exports` listed the `types` condition *after* `require`/`import`
+  for `.`, `./ds-runtime` and `./config`. Conditions match in order, so the
+  types entry was never reached under `node16`/`nodenext` resolution; it now
+  comes first everywhere.
+- `BUTTON_PROPERTIES`, `BUTTON_STATES`, `INPUT_PROPERTIES` and `INPUT_STATES`
+  lost their `Record<string, …>` annotations so their keys are literal types.
+  Same values, same runtime behavior; the public unions derive from them.
+
+FEAT-008, MIG-B6-25 (reference validation in near-linear time):
+
+- **Fixed:** strict reference validation — on by default, and one of the
+  reasons to use UXDSL at all — grew quadratically with the size of the
+  stylesheet, which made watch mode unusable on a large module. It is now
+  near-linear. Same inputs, same issues, same order; only the time changes.
+
+  Measured with `npm run bench:references` on an Apple M1 Pro (Node
+  v20.19.0, macOS 25.2.0, median of 3 samples after a warmup), compiling
+  the same synthetic module with `includeTheme: true`:
+
+  | Líneas | Antes | Después | Sin validación |
+  | --- | --- | --- | --- |
+  | 3.000 | 813 ms | 119 ms | 75 ms |
+  | 6.000 | 1.867 ms | 204 ms | 142 ms |
+  | 12.000 | 11.813 ms | 410 ms | 291 ms |
+  | 24.000 | 63.308 ms | 786 ms | 565 ms |
+
+  Doubling the input used to multiply the time by up to 6.3x; it now costs
+  about 1.9x, the same curve the compilation follows with validation
+  switched off entirely — validation is no longer the dominant term.
+
+- **No behavior change.** Every issue's code, message, chain, consumer,
+  source, line, column, dedup and ordering is unchanged. The previous
+  implementation is kept, compiled and frozen, as a test fixture, and
+  `test/reference-integrity-equivalence.test.js` runs both over the same
+  inputs — the repository's own `.uxdsl` entries, media/mode scopes,
+  shared cycles, nested fallbacks, `!important`, external providers,
+  successive compilations with different themes — and requires identical
+  output. Its digest is pinned so the fixture cannot be regenerated to make
+  a disagreement disappear.
+- `test/performance/reference-performance.test.js` keeps the quadratic term
+  from coming back, asserting a growth *ratio* (≤ 2.5x per doubling) rather
+  than a millisecond budget that would only describe one machine. It runs in
+  its own `--test-concurrency=1` pass after the rest of the suite: measured
+  inside `node --test`'s parallel file pool it was timing the scheduler, not
+  the algorithm.
+
+FEAT-008, MIG-B6-21 (source maps through PostCSS):
+
+- **New:** `compile()` (`uxdsl-core`) implements `sourceMap: false | 'inline'
+  | 'external'`, returning the map as a JSON string in `map`. `'external'`
+  leaves the CSS untouched so the writer can add the `sourceMappingURL`
+  comment; `'inline'` appends a base64 data URI last in the file. `false`
+  (the default) is **byte-identical** to omitting the option. An
+  unrecognised value throws instead of silently emitting nothing.
+- **New (CLI):** `--sourcemap`, `--sourcemap=inline`, `--no-sourcemap`, and
+  `sourceMap` in `uxdsl.config.cjs`, with flag > config > off precedence.
+  `external` writes `<outFile>.map` and annotates the CSS; the build log
+  reports CSS and map bytes separately. Switching an output away from
+  `external` retires that output's own map, and never a foreign file
+  sitting at the same path. A multi-entry build that fails still writes
+  nothing at all.
+- **Mapped positions**, each asserted with a real `SourceMapConsumer`
+  lookup rather than a "a map exists" check: a plain declaration maps to
+  its own line; a declaration rewritten from `density()` maps to the
+  original declaration; the declarations a `@ds-button` expands into map to
+  the directive's own line; and a declaration from an `@import`-ed partial
+  maps to that partial, with its own line.
+- **Theme-generated globals no longer invent source files.** The `:root`
+  token blocks are built from the theme, then parsed with
+  `postcss.parse()`, which gave every node an anonymous `<input css …>`
+  input — PostCSS then listed seven of those in the map's `sources`, each
+  with its whole body in `sourcesContent`. A small stylesheet's map was
+  58,366 bytes, most of it advertising files the user never wrote; it is
+  now 9,045 (−85%), with `sources` limited to the real `.uxdsl` files.
+  Those generated bytes are simply left unmapped, which is the honest
+  answer for them. Reference diagnostics are unaffected — an anonymous
+  input never had a `file` to report in the first place.
+- **Adapters, only what their fixtures prove:** the Webpack loader's map
+  support is verified end to end (`devtool: 'source-map'` + `css-loader`,
+  with a real position resolving back to the `.uxdsl`). The Vite plugin
+  hands Vite a correct map, but its fixture shows Vite's CSS pipeline does
+  not carry the `.uxdsl` source through to the emitted asset, so Vite map
+  support is **not** advertised; the fixture reports that outcome on every
+  run so it flips to a real assertion if Vite ever chains it.
+
+FEAT-008, MIG-B6-17 (`@ds-typo` emits only what the theme defines):
+
+### Visual changes
+
+`@ds-typo(role)` used to emit a fixed list of 10–11 declarations per use,
+whose fallback values came from a hardcoded map in the compiler rather than
+from your theme. It now emits **one declaration per field the effective theme
+actually defines for that role, with no literal fallback**.
+
+What the compiler used to invent, and what happens now:
+
+| Declaration | Before (invented) | After |
+| --- | --- | --- |
+| `margin-block-start` / `-end` | `var(…, auto)` | `var(…)` — `theme/base.json` now defines both as `"0"` |
+| `text-decoration` | `var(…, none)` | not emitted unless the theme defines `textDecoration` |
+| `text-transform` | `var(…, none)` | not emitted unless the theme defines `textTransform` |
+| `font-style` | `var(…, normal)` | not emitted unless the theme defines `fontStyle` |
+| `opacity` (`caption`, `small`) | `var(…, 0.8)` | **removed** |
+| `font-family` | hardcoded `ui` / `ui-2` / `code` chain | `var(…)` — the chains moved into `theme/base.json` |
+| `font-weight`, `letter-spacing` on `code`/`pre` | not emitted at all | now emitted (the theme defined them; the directive just never read them) |
+
+Four of these are deliberate behaviour changes, not just refactors:
+
+- **Links keep their underline.** `text-decoration: none` was applied to
+  every `@ds-typo` use, including on an `<a>` — a WCAG 1.4.1 problem.
+- **Margins no longer break flex and grid.** `auto` collapses to `0` in
+  normal flow but *absorbs free space* in a flex or grid container, pushing
+  the element. `"0"` in the base theme keeps the normal-flow rendering
+  identical while removing that trap.
+- **`caption` and `small` are no longer dimmed to `opacity: 0.8`.** That
+  reduced contrast and could not be overridden from a theme at all, because
+  `opacity` is not one of the typography fields. Express a muted caption with
+  a palette color on the component instead.
+- **`text-transform` and `font-style` are no longer reset.** Their CSS initial
+  values are already `none`/`normal`, so nothing changes in isolation — but
+  both are inherited, so a `@ds-typo` element inside an uppercased or
+  italicised parent now inherits that parent instead of silently resetting.
+
+Other changes in the same story:
+
+- `@ds-typo(role)` with a role the effective theme does not define now fails
+  with `UXD_TYPO_REFERENCE`, pointing at the directive and listing the
+  available roles, instead of silently emitting declarations that referenced
+  variables nothing defined. A missing role never falls back to `default`.
+- Deleted `src/typography-defaults.ts` (`DEFAULT_TYPOGRAPHY`) and
+  `TYPOGRAPHY_DEFAULTS` from `src/typography.ts`; both lost their last
+  consumer here. `typography.ts` gains `TYPOGRAPHY_CSS_PROPERTIES` (JSON field
+  → CSS property) and `resolveTypographyRole` (`default` merged under a role's
+  own fields), the resolver the directive and the generator now share.
+- **Output size:** a fixture of 100 `@ds-typo` uses across 13 roles compiles
+  to **40,296 bytes, down from 63,455 (−36.5%)**.
+
+**To restore the beta.5 appearance**, define the fields in your own theme —
+they are ordinary typography fields now, so they are also overridable, which
+the hardcoded fallbacks never were:
+
+```json
+{
+  "typography_details": {
+    "default": {
+      "textTransform": "none",
+      "textDecoration": "none",
+      "fontStyle": "normal",
+      "marginBlockStart": "auto",
+      "marginBlockEnd": "auto"
+    }
+  }
+}
+```
+
+`opacity` has no equivalent: it was never a typography field, so it cannot be
+restored through the theme. Apply it in the component if you need it.
+
 FEAT-008, MIG-B6-29 (phase 4 of 4 — the shared Google Fonts encoder, this story's own "paso 9". This closes the story):
 
 - **New:** `encodeGoogleFontFamily(spec)` and `googleFontsImportUrls(google)`,

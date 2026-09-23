@@ -2,8 +2,8 @@ import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
 import { BASE_THEME } from './base-theme';
 
-export const INPUT_PROPERTIES: Record<string, string> = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight', caret: 'caret-color', placeholder: 'placeholder', underline: 'border-bottom' };
-export const INPUT_STATES: Record<string, string[]> = { hover: [':hover'], focus: [':focus'], focusvisible: [':focus-visible'], readonly: [':read-only'], invalid: [':invalid', '[aria-invalid="true"]'], disabled: [':disabled', '[aria-disabled="true"]'] };
+export const INPUT_PROPERTIES = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight', caret: 'caret-color', placeholder: 'placeholder', underline: 'border-bottom' };
+export const INPUT_STATES = { hover: [':hover'], focus: [':focus'], focusvisible: [':focus-visible'], readonly: [':read-only'], invalid: [':invalid', '[aria-invalid="true"]'], disabled: [':disabled', '[aria-disabled="true"]'] };
 export interface InputRole extends ControlRole {}
 export interface InputTheme extends SurfaceTheme { inputs?: Record<string, InputRole> }
 // MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
