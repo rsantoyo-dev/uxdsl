@@ -510,15 +510,37 @@ page.
 **Current status against `theme/base.json`**: phase 3 corrected 16 colors
 (hue and chroma held fixed, only lightness moved, in both directions,
 smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
-full before/after table). `report.passed` is still honestly `false`:
-three real, disclosed findings remain, none of them a color this pass
-could fix — `inputs.*.base.placeholder` is never tone-substituted (unlike
-`bg`/`color`/`border`), so it can't read on every toned background at
-once; `light`/`dark`/`surface` are canvas-identity families whose own
-`main`/`dark` are asked to double as text/border when used as an explicit
-tone; `warning.main` (light mode) isn't dark enough for direct text/
-border use without losing its own identity. Each is recommended as its
-own follow-up in that story's evidence, not swept into an exception.
+full before/after table). `report.passed` is still honestly `false`.
+MIG-B7-01 (FEAT-009) closed one of phase 3's three findings:
+`inputs.*.base.placeholder` now follows the requested tone on `contained`
+(the only Input role whose background actually tints), using that tone's
+own `contrast` color instead of the fixed `neutral.dark` gray that could
+not read on every toned background at once. Two of the original three
+remain open, plus a fourth surfaced while closing the first — none of the
+four a color this pass alone could fix: `light`/`dark`/`surface` are
+canvas-identity families whose own `main`/`dark` are asked to double as
+text/border when used as an explicit tone; `warning.main` (light mode)
+isn't dark enough for direct text/border use without losing its own
+identity; and `palette(neutral.dark)`, the Input placeholder's *untoned*
+default (all three roles), is not dark-mode-aware enough against dark
+mode's own background — a plain color choice, not a tone-substitution
+mechanism gap, so MIG-B7-01 deliberately left it open. Each is recommended
+as its own follow-up in the relevant story's evidence, not swept into an
+exception.
+
+**Input placeholder tone (MIG-B7-01, FEAT-009):**
+
+```css
+.field { @ds-input(contained error); }
+```
+
+compiles `.field::placeholder`'s color to `palette(error.contrast)` —
+varying with whichever tone is requested — instead of the fixed
+`palette(neutral.dark)` every role used before this story. `contained` is
+the only role affected, since it is the only one whose background actually
+tints; `@ds-input(outlined error)` and `@ds-input(underline error)` keep the
+plain gray placeholder unchanged, and any role used with no tone at all is
+also unchanged.
 
 ### Google Fonts URL encoding (`encodeGoogleFontFamily`, `googleFontsImportUrls`)
 
