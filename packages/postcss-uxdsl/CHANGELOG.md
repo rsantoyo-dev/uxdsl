@@ -7,6 +7,61 @@ actually happens. See
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for a narrative migration guide covering the same ground.
 
+## 0.5.0-rc.1 — unreleased
+
+FEAT-009, MIG-B7-01 (Input placeholder follows the requested tone):
+
+### Visual changes
+
+- Any `@ds-input(<role> <tone>)` already in use with an explicit tone and a
+  `contained` role: the `::placeholder` color changes from the fixed
+  `palette(neutral.dark)` gray to that tone's own `contrast` color — the same
+  color already used for that role's typed text and border, so a gray that
+  could turn illegible against a saturated tone-colored background now stays
+  readable. `outlined` and `underline` are unchanged (their background never
+  tints, so the gray placeholder already read fine there), and any Input used
+  without an explicit tone is unchanged in all three roles.
+
+FEAT-009, MIG-B7-01 (continued — diagnosis and scope):
+
+- **Fix:** closes finding (1) from MIG-B6-29 phase 3
+  (`inputs.*.base.placeholder` never tone-substituted). The ficha's own
+  written diagnosis undercounted the problem — 3 known failures
+  (`warning`+`contained` only) — and proposed a JSON-only fix: rewrite
+  `placeholder`'s literal value in `theme/base.json` to reuse the
+  `tone-main, primary-main` fallback pattern Button's own states already use.
+  Re-verified against the real contrast gate before writing that JSON: the
+  true count was 42 failures across 3 causal groups, and the proposed pattern
+  reuse has **zero effect** — `compileRules`'s regex substitution only
+  matches a fallback whose literal text is exactly `palette__primary-
+  <variant>`, so any other literal fallback (including `neutral-dark`) is
+  never substituted, tone or no tone. Implemented instead as a TypeScript
+  override in `control-engine.ts`'s `declarations()` — not a `theme/base.json`
+  change — reusing the same `background === 'transparent'` signal
+  `surfaceDeclarations` already computes to tell `contained` (background
+  tints) apart from `outlined`/`flat` (it does not), and substituting the
+  tone's `contrast` variant (matching that role's own already-tinted text),
+  not `main` (which would match the background and make the placeholder
+  invisible). Scoped to `contained` only: `outlined`/`underline` never had a
+  tonalized failure to begin with, and applying the same substitution there
+  would introduce new invisible-placeholder failures for tones whose
+  `contrast` is white against those roles' always-white/transparent
+  background. `compileRules`'s own pattern-substitution mechanism is
+  unchanged — Button's own states and Input's own `caret` still rely on it
+  (regression-tested: Button's 47 pre-existing contrast failures are
+  unchanged in count and in exact signature). Net effect on the full theme:
+  156 → 123 total contrast failures, exactly the 33 tonalized `contained`
+  placeholder failures resolved, zero new failures introduced.
+- **Not fixed, by design — a fourth finding, distinct from MIG-B6-29's three:**
+  `palette(neutral.dark)`, the untoned placeholder default shared by all
+  three Input roles, is not dark-mode-aware enough against dark mode's own
+  background — 9 failures (3 roles × base/focus/invalid), present before and
+  after this fix, all `tone: null`. Out of scope here: this story closes the
+  *tonalized* gap only; the untoned gap is a plain color choice, not a
+  tone-substitution mechanism gap. Recommended follow-up: review
+  `neutral.dark` for dark mode the way MIG-B6-29 phase 3 reviewed other
+  colors.
+
 ## 0.5.0-beta.6 — unreleased
 
 FEAT-008, MIG-B6-16 (partial overrides, made explicit):

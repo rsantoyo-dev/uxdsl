@@ -57,7 +57,7 @@ entrada en `packages/postcss-uxdsl/CHANGELOG.md` con sección `Visual changes`.
 
 | ID | Ficha | Prioridad · Tamaño | Depende de | Estado |
 | --- | --- | --- | --- | --- |
-| MIG-B7-01 | [Contraste: placeholder de Input](MIG-B7-01-placeholder-tone.md) | P0 · M | — | Pendiente |
+| MIG-B7-01 | [Contraste: placeholder de Input](MIG-B7-01-placeholder-tone.md) | P0 · M | — | Implementada, PR pendiente de abrir |
 | MIG-B7-02 | [Contraste: light/dark/surface como tone](MIG-B7-02-tono-identidad-fondo.md) | P0 · M | D-8 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-03 | [Contraste: warning.main](MIG-B7-03-warning-main.md) | P0 · S | D-9 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-04 | [CI real](MIG-B7-04-ci-real.md) | P0 · M | — | Pendiente |

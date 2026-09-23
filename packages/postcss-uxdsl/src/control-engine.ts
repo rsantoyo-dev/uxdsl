@@ -101,6 +101,27 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   if (radiusOverride) base['border-radius'] = composed['border-radius'];
   if (shadowOverride) base['box-shadow'] = composed['box-shadow'];
   if (tone) for (const variant of ['main','dark','contrast']) base[buildVarName(family, `tone-${variant}`)] = `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`;
+  // MIG-B7-01 (FEAT-009): `placeholder` (Input only — no other family defines
+  // this field) needs a *different* tone rule than every other field, not
+  // just a copy of the existing one. The regex-substitution mechanism above
+  // (compileRules, the one that already tone-varies hover.bg/caret/etc.)
+  // hard-codes its untoned fallback to the `primary` family — exactly right
+  // for a control whose whole design is "primary-colored unless told
+  // otherwise", but wrong for a placeholder, whose untoned default must stay
+  // a neutral gray, not silently become `primary`. So this field is handled
+  // here instead, in TypeScript, the same way surfaceDeclarations already
+  // decides bg/color/border — and for the same reason: `composed.background`
+  // already tells us, per role, whether the background is tone-colored
+  // ('transparent' for outlined/flat means it is not). A gray placeholder
+  // already reads fine on the untinted outlined/flat surfaces (nothing here
+  // changes for them); it stops reading once the whole surface — including
+  // outlined/flat's own tone-colored *text* — turns saturated, which is
+  // exactly the `contained`-shaped case this substitutes for: the same
+  // tone-contrast already used for that role's own text, so a typed value
+  // and its placeholder share one legible color instead of two competing ones.
+  if (tone && pack.base.placeholder !== undefined && base.background !== 'transparent') {
+    base.placeholder = `var(${buildNamespacedVarName('palette', `${tone}-contrast`)})`;
+  }
   return { base, states: Object.fromEntries(Object.entries(pack.states).map(([state, style]) => [state, refs(state, style)])) };
 }
 // MIG-05: radius()/shadow() override arguments are extracted before the
