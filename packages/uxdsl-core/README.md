@@ -128,6 +128,15 @@ const { css, map, dependencies, warnings } = await compile(
   [...]`), not a silently-untouched `@import` line in the output.
 - An import cycle (`a.uxdsl` → `b.uxdsl` → `a.uxdsl`) always fails, naming
   the full file chain, rather than silently duplicating content.
+- **Every `@import` in the output precedes every other rule** (after an
+  `@charset`, if you have one) — the theme's Google Fonts import first, then
+  yours in the order you wrote them, then the theme's `:root`. A browser
+  discards an `@import` that follows a style rule, and through `0.5.0-beta.6`
+  a `:root` block was emitted above them, so the font request was never made
+  and your own remote imports were dropped. Nothing you wrote is reordered.
+  A remote `@import url(…)` inside a partial you import is inlined into the
+  file and covered by the same guarantee. `includeTheme: false` emits no
+  theme `:root` and no theme import.
 - `//` line comments are stripped from the compiled output (as a real Sass
   compiler would); `/* ... */` block comments, including ones containing a
   URL, and `url(...)` values containing `//`, are left completely intact.

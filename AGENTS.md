@@ -592,7 +592,11 @@ also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
 now emit byte-identical `@import`s for the same theme instead of only the
-plugin emitting one at all. Put variant changes in the playground's own
+plugin emitting one at all. Byte-identical URLs did not mean the same
+placement: until FEAT-009's MIG-B7-14 the plugin/CLI output put that `@import`
+behind a `:root` block, where a browser discards it, and only `generateThemeCss`
+led with it. Compiled output now puts every `@import` — the theme's and the
+author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
