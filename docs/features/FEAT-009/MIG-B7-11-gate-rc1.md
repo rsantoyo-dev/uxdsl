@@ -46,6 +46,19 @@ tarballs reales de los cinco paquetes, cubriendo:
    D-8/D-9 se responden antes de este gate, el número baja de 156; fijar el
    número real en ese momento, no 156 a ciegas.
 3. CI real en verde (MIG-B7-04) sobre el candidato exacto.
+4. Editor support (MIG-B7-12): `uxdsl init` desde los **tarballs reales**
+   deja el scaffold documentado y el `$schema` que el README del CLI cita
+   resuelve dentro del paquete instalado. Que VS Code real resalte y complete
+   se lista aparte como comprobación manual del dueño — nunca como PASS. Si
+   D-11 = (a), añadir aquí lo que MIG-B7-13 defina.
+5. **`@import` de Google Fonts primero (MIG-B7-14):** desde los tarballs
+   reales, el CSS que produce el CLI empieza por el `@import`, y el job de
+   navegador comprueba que se hace la petición a `fonts.googleapis.com`. Este
+   gate no puede darse por bueno si esta comprobación sólo mira texto: beta.6
+   pasó su gate de 26 comprobaciones con este defecto dentro.
+6. **Flujo de actualización (MIG-B7-15):** el procedimiento documentado
+   (`uxdsl theme` antes y después) se ejecuta desde dos tarballs y se registra
+   su salida, no sólo su prosa.
 
 ## Implementación
 

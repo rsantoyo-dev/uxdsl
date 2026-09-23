@@ -7,7 +7,7 @@ actually happens. See
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for a narrative migration guide covering the same ground.
 
-## 0.5.0-rc.1 — unreleased
+## 0.5.0-beta.7 — unreleased
 
 FEAT-009, MIG-B7-01 (Input placeholder follows the requested tone):
 
