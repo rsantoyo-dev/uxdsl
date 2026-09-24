@@ -280,7 +280,7 @@ evidencia manual a una cadena que no existe.
 ### Fase B, primera rebanada — `@media` a mano → funciones responsivas (2026-09-24)
 
 Rama `feat/mig-b7-17b-dogfooding` (apilada sobre `feat/mig-b7-17a-capability-matrix`, PR #12,
-que a su vez va sobre #11). Orden de merge: #11 → #12 → esta. SHA de entrega: pendiente (se fija en un commit posterior).
+que a su vez va sobre #11). Orden de merge: #11 → #12 → esta. SHA de entrega: `a3c594a`.
 
 **Qué se cambió.** 19 bloques `@media (min-width: …)` escritos a mano en 13 archivos `.uxdsl`
 pasan a la función responsiva de UXDSL sobre la propiedad, con el breakpoint configurado que
