@@ -155,3 +155,75 @@ test('MIG-B6-30: a lockfile sync alone does not demand a README note, but packag
   stage(dir, 'packages/postcss-uxdsl/package.json');
   assert.notEqual(runGuard(dir).status, 0, 'a package.json change must still require a docs note');
 });
+
+// --- MIG-B7-16 (FEAT-009): engines are covered, and the classification is complete ---
+
+const { VISUAL_DEFAULT_FILES, NON_VISUAL_SOURCE_FILES } = require('./verify-docs-update.js');
+const REPO_ROOT = path.resolve(__dirname, '..');
+const SRC_DIR = 'packages/postcss-uxdsl/src';
+
+function sourceFiles(dir = SRC_DIR) {
+  // Hidden files (.DS_Store) are not source. Untracked files still count, so a new
+  // engine is caught before it is ever staged.
+  return fs.readdirSync(path.join(REPO_ROOT, dir), { withFileTypes: true }).filter((entry) => !entry.name.startsWith('.')).flatMap((entry) => {
+    const rel = `${dir}/${entry.name}`;
+    return entry.isDirectory() ? sourceFiles(rel) : [rel];
+  });
+}
+
+test('MIG-B7-16: every file under postcss-uxdsl/src is classified — visual or not-visual, never neither, never both', () => {
+  const visual = new Set(VISUAL_DEFAULT_FILES);
+  const nonVisual = new Set(Object.keys(NON_VISUAL_SOURCE_FILES));
+  const unclassified = sourceFiles().filter((file) => !visual.has(file) && !nonVisual.has(file));
+  assert.deepEqual(unclassified, [], 'a new source file must be added to VISUAL_DEFAULT_FILES, or to NON_VISUAL_SOURCE_FILES with a reason, in scripts/verify-docs-update.js');
+  assert.deepEqual([...visual].filter((file) => nonVisual.has(file)), [], 'a file cannot be both');
+});
+
+test('MIG-B7-16: neither list carries a dead entry (a path that no longer exists guards nothing)', () => {
+  for (const file of [...VISUAL_DEFAULT_FILES, ...Object.keys(NON_VISUAL_SOURCE_FILES)]) {
+    assert.ok(fs.existsSync(path.join(REPO_ROOT, file)), `${file} is listed but does not exist`);
+  }
+});
+
+test('MIG-B7-16: every not-visual file says why, in terms of compiled output', () => {
+  for (const [file, reason] of Object.entries(NON_VISUAL_SOURCE_FILES)) {
+    assert.ok(typeof reason === 'string' && reason.trim().length >= 20, `${file} needs a reason`);
+  }
+});
+
+test('MIG-B7-16: the engines that turn defaults into CSS are guarded — the files whose changes went unannounced', () => {
+  for (const engine of ['control-engine.ts', 'index.ts', 'fonts.ts', 'surfaces.ts', 'ds-runtime/theme-generator.ts']) {
+    assert.ok(VISUAL_DEFAULT_FILES.includes(`${SRC_DIR}/${engine}`), `${engine} must be a guarded visual-default file`);
+  }
+});
+
+test('MIG-B7-16: editing an engine with README staged but no CHANGELOG fails; with the CHANGELOG it passes', () => {
+  const { dir, pkgDir } = mkFakeRepo();
+  fs.writeFileSync(path.join(pkgDir, 'src', 'control-engine.ts'), '// engine\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add engine']);
+
+  fs.appendFileSync(path.join(pkgDir, 'src', 'control-engine.ts'), '// edit\n');
+  fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
+  stage(dir, 'packages/postcss-uxdsl/src/control-engine.ts', 'packages/postcss-uxdsl/README.md');
+  const blocked = runGuard(dir);
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /Visual-default change without a CHANGELOG note/);
+  assert.match(blocked.stderr, /control-engine\.ts/);
+
+  fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');
+  stage(dir, 'packages/postcss-uxdsl/CHANGELOG.md');
+  assert.equal(runGuard(dir).status, 0);
+});
+
+test('MIG-B7-16: a not-visual file (diagnostics.ts) still needs only a README, as before', () => {
+  const { dir, pkgDir } = mkFakeRepo();
+  fs.writeFileSync(path.join(pkgDir, 'src', 'diagnostics.ts'), '// diagnostics\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add diagnostics']);
+
+  fs.appendFileSync(path.join(pkgDir, 'src', 'diagnostics.ts'), '// edit\n');
+  fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
+  stage(dir, 'packages/postcss-uxdsl/src/diagnostics.ts', 'packages/postcss-uxdsl/README.md');
+  assert.equal(runGuard(dir).status, 0);
+});

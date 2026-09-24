@@ -64,6 +64,7 @@ npm test
 node scripts/generate-language-artifacts.js --check
 npm run verify:beta6
 npm run verify:docs
+npm run verify:doc-examples
 ```
 
 Si una story toca `theme/base.json`, `default-theme.ts` o cualquier archivo de
@@ -89,7 +90,7 @@ entrada en `packages/postcss-uxdsl/CHANGELOG.md` con sección `Visual changes`.
 | MIG-B7-13 | [Editor: completado y hover según el tema del proyecto](MIG-B7-13-editor-tema-del-proyecto.md) | `rc.1` | P2 · L | D-11 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-14 | [`@import` de Google Fonts tras `:root`](MIG-B7-14-google-fonts-import-orden.md) | `beta.7` | **P0** · S | — | **Implementada, PR pendiente de mergear** — defecto de beta.6 publicada |
 | MIG-B7-15 | [Actualizar sin sorpresas](MIG-B7-15-actualizar-sin-sorpresas.md) | `beta.7` | P1 · S | — (su paso 3 espera D-12) | Pendiente |
-| MIG-B7-16 | [Documentación ejecutable y revisión de todas las superficies](MIG-B7-16-documentacion-ejecutable.md) | `beta.7` | P1 · L | — (coordinar con 12 y 15) | Pendiente |
+| MIG-B7-16 | [Documentación ejecutable y revisión de todas las superficies](MIG-B7-16-documentacion-ejecutable.md) | `beta.7` | P1 · L | — (coordinar con 12 y 15) | **Parcial** — arnés y guard hechos; revisión de prosa pendiente |
 | MIG-B7-17 | [Playground: mejor implementador y prueba viva de cada capacidad](MIG-B7-17-playground-referencia.md) | `beta.7` | P1 · **XL** (por fases) | 09 y 16 | Pendiente |
 | MIG-B7-18 | [Gate de `0.5.0-beta.7`](MIG-B7-18-gate-beta7.md) | `beta.7` | P0 · M | 01, 09, 12, 14, 15, 16, 17 | Pendiente |
 

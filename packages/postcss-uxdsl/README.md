@@ -748,13 +748,17 @@ consulted before any edit-distance check, so a real `log(...)` next to
 `lg(...)` is never misread as a typo of it.
 
 `color()` is a token reference only when its first argument looks like one
-(`color(primary)`, `color(blue.500)`); native CSS forms — relative color
-syntax, an explicit color space — pass through untouched:
+(`color(gray-300)`, `color(gray.300)`); native CSS forms — relative color
+syntax, an explicit color space — pass through untouched. The token must
+exist: `gray` is the only color collection the default theme defines, so
+`color(brand-500)` fails as `UXD_REFERENCE_MISSING` until your theme's
+`colors` defines `brand`:
 
 ```css
 .a { color: color(from red srgb r g b / 0.5); }  /* untouched */
 .a { color: color(display-p3 1 0 0); }           /* untouched */
-.a { color: color(primary); }                    /* var(--uxdsl__color__primary) */
+.a { color: color(gray-300); }                   /* var(--uxdsl__color__gray-300) */
+.a { color: color(brand-500); }                  /* UXD_REFERENCE_MISSING: not in the default theme */
 ```
 
 A `$var` holding a responsive expression now expands correctly when this
