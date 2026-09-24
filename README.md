@@ -2,25 +2,25 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## 0.5.0-beta.6 — prepared, not published
+## 0.5.0-beta.6 — published
 
-[FEAT-008](docs/features/FEAT-008/README.md) is complete on
-`feat/feat-008-beta6-plan`: one shared compiler behind the CLI, `compile()`,
-Vite and Webpack; located diagnostics with `UXD_*` codes; strict flag parsing;
-the reviewed base theme shipped as the library default; `@ds-typo` emitting
-only what the theme defines; source maps; `applyTheme(json)` at run time;
-exported types, `defineConfig` and a generated theme JSON Schema; and
-reference validation that no longer grows quadratically (24,000 lines: 63.3 s
-→ 0.79 s).
+Published to npm on 2026-09-23, with `latest` and `beta` on it; the
+[release record](docs/releases/0.5.0-beta.6.md) has the registry reads, the
+checksums and what was verified. [FEAT-008](docs/features/FEAT-008/README.md)
+delivered it: one shared compiler behind the CLI, `compile()`, Vite and Webpack;
+located diagnostics with `UXD_*` codes; strict flag parsing; the reviewed base
+theme shipped as the library default; `@ds-typo` emitting only what the theme
+defines; source maps; `applyTheme(json)` at run time; exported types,
+`defineConfig` and a generated theme JSON Schema; and reference validation that
+no longer grows quadratically (24,000 lines: 63.3 s → 0.79 s).
 
-The packages still carry `0.5.0-beta.5` — the version bump belongs to
-publishing. `npm run verify:beta6` runs the release gate against real
-tarballs. Two things remain before it can be published, and neither is a
-code change: external validation against a real consumer project, and the
-postpublish dist-tag check. Both are listed, with everything else, in the
-[prepublish release record](docs/releases/0.5.0-beta.6.md) — including the
-known limitations, of which the most important is that the packaged base
-theme does not yet pass its own contrast gate.
+`npm run verify:beta6` runs the release gate against real tarballs. Its
+automated portion passed; external validation against a real consumer project
+is still pending and is listed, with the known limitations, in the release
+record — the most important being that the packaged base theme does not yet
+pass its own contrast gate. What comes next is planned in
+[FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md): `0.5.0-beta.7` first, then
+`0.5.0-rc.1`.
 
 ## 0.5.0-beta.5 — published
 

@@ -127,6 +127,46 @@ los CHANGELOG · `docs/releases/`.
    sincronizado con los archivos reales (hoy coincide, ver punto 5 del estado) y,
    si el arnés lo permite, verificarlo con un test en vez de a ojo.
 
+## Lo que realmente pasó (durante la implementación, 2026-09-23)
+
+1. **La primera pasada del arnés no encontraba ningún excerpt de tema (0 de 25).**
+   `KNOWN_THEME_FAMILIES` es un `Set` y lo traté como un array; el `.includes`
+   lanzaba un `TypeError` que mi propio `try/catch` se tragaba, así que todo excerpt
+   parecía "no es un tema" y los ejemplos que dependían de uno fallaban sin causa
+   real. Se quitó el `try/catch` que ocultaba el error (ahora sólo protege el
+   `JSON.parse`). Es exactamente la clase de fallo que MIG-B6-12 descubrió en su
+   gate (un `await` que faltaba): un chequeo que no puede fallar por la razón
+   correcta también es decoración.
+2. **El emparejamiento con el excerpt resolvió 4 de los 12 fallos de la medición
+   previa**, y sacó a la luz los que sí eran reales. Con el arnés funcionando, los
+   ejemplos que fallan son exactamente los defectos de documentación, no ruido.
+3. **Defectos reales encontrados y corregidos** — todos en superficies que ya
+   estaban mal *antes* de este trabajo:
+   - `AGENTS.md`, sección Colors and Palette: el excerpt enseñaba
+     `var(--ds__color__blue-700)` y `var(--ds__color__white)`, con el prefijo
+     `--ds__` que la propia guía de migración lista como el nombre **antiguo**.
+     Es el mismo tipo de "trampa" que un consumidor externo reportó en su copia de
+     la guía; estaba también en la nuestra. (Corregido: `--uxdsl__color__…`.)
+   - `AGENTS.md`, sección Typography: `"fontFamily": "var(--font-ui)"`, una variable
+     que no existe; el tema base usa `var(--uxdsl__font__ui)`. (Corregido.)
+   - `packages/postcss-uxdsl/README.md`: `color(primary)` con la salida
+     `var(--uxdsl__color__primary)`, que no compila con el tema por defecto
+     (`gray` es la única colección de colores que trae). (Corregido; el bloque
+     ahora también documenta el error real, `UXD_REFERENCE_MISSING`, y el arnés lo
+     verifica.)
+4. **El guard, decisión distinta de la que preveía la ficha.** La ficha pedía
+   evaluar ampliar `VISUAL_DEFAULT_FILES`. Se consideró invertir la regla (todo lo de
+   `src/` es visual salvo lo declarado) y se descartó: cambiaría la política para
+   todos los contribuyentes y rompe un test existente que codifica que un cambio
+   "ordinario" sólo pide README. Se hizo lo que pedía la ficha (ampliar con los
+   motores) **más** un test de completitud: todo archivo bajo `src/` está en la lista
+   visual o en una lista no visual **con motivo**, así que un motor nuevo no puede
+   quedar sin decidir. Esto sí cambia el comportamiento del hook: tocar un motor
+   ahora exige tener el CHANGELOG en el commit.
+5. **La clasificación es un juicio, no una medición.** Se leyó el código de cada
+   archivo; no se probó mutando cada uno. Una búsqueda por texto de "quién emite
+   CSS" se descartó como evidencia por demasiado tosca.
+
 ## Fuera de alcance
 
 - Reescribir la prosa por estilo, traducir, o rediseñar la estructura de la
@@ -151,15 +191,24 @@ intencional. CHANGELOG sólo si el guard cambia lo que exige a los contribuyente
 
 ## Criterios de aceptación
 
-- [ ] Todo ejemplo UXDSL de las superficies del inventario compila en `npm test`,
-      o está marcado como error intencional con su código verificado.
-- [ ] El ejemplo de `color(primary)` deja de presentar como salida real algo que
+- [x] Todo ejemplo UXDSL de las superficies del inventario compila en `npm test`,
+      o está marcado como error intencional con su código verificado. (45
+      ejemplos y 29 excerpts de tema, en 14 archivos de 110 superficies.)
+- [x] El ejemplo de `color(primary)` deja de presentar como salida real algo que
       no compila por defecto.
-- [ ] Romper un ejemplo hace fallar el test (control negativo registrado).
-- [ ] Las afirmaciones numéricas/de estado de las superficies tienen test, comando
-      o fecha.
-- [ ] La decisión sobre ampliar `VISUAL_DEFAULT_FILES` queda registrada con su
-      evidencia (hecha o descartada con motivo).
+- [x] Romper un ejemplo hace fallar el test (control negativo registrado: con las
+      tres correcciones de documentación revertidas, el test falla con los 5
+      problemas originales).
+- [ ] **Parcial, no cerrado:** las afirmaciones numéricas/de estado de las
+      superficies tienen test, comando o fecha. Se buscaron por texto las de estado
+      de release en los 9 documentos principales y se corrigieron las tres que
+      estaban desactualizadas (README raíz, `AGENTS.md`, rótulo del CHANGELOG); la
+      cifra de contraste de `AGENTS.md` ahora lleva fecha pero **no tiene test**
+      (lo fijará MIG-B7-11). **No** se hizo una revisión línea a línea de la prosa de
+      los README de paquete, la guía de migración, las páginas MDX ni la
+      arquitectura.
+- [x] La decisión sobre ampliar `VISUAL_DEFAULT_FILES` queda registrada con su
+      evidencia: ampliada, más un test de completitud (punto 4 de arriba).
 
 ## Verificación
 
@@ -175,18 +224,19 @@ node scripts/generate-language-artifacts.js --check
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**.
-Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#protocolo-de-implementación).
+Estado de esta revisión documental: **Implementada parcialmente y verificada
+localmente** en `feat/mig-b7-16-executable-docs`: el arnés, sus correcciones y el
+guard están hechos; la revisión línea a línea de la prosa **no** (ver criterio 4).
+Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Hecha el 2026-09-23 (ver "Estado verificado"); repetir sobre el SHA base con el arnés ya escrito |
-| Criterio → regresión | Pendiente |
-| Comandos y entorno | Pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; sin cambio visual. Cambia lo que se exige al contribuir si se amplía el guard |
-| README / CHANGELOG / migration | Pendiente |
-| AGENTS / guías / arquitectura | Pendiente — `AGENTS.md` cambia en esta ficha |
-| Límites y seguimiento | Pendiente — declarar las superficies no revisadas |
+| SHA base / entrega / PR | Base `bdcc997` (rama sobre `main` `c09be61`). Entrega: `ecdf995` en `feat/mig-b7-16-executable-docs`. PR: pendiente de mergear; el SHA se fijó en un commit posterior, mismo patrón que MIG-B6-21 |
+| Reproducción antes del cambio | Medición del 2026-09-23 (ver "Estado verificado"): 19 bloques en README/`AGENTS.md`, 21 en el playground; sin ningún test que los compile |
+| Criterio → regresión | `scripts/doc-examples.test.js` (13 tests: extractor de markdown y JSX, ejemplo válido/inválido, emparejado con excerpt y su control sin excerpt, error documentado exacto / código equivocado / no falla, resto de sentencias, salida reclamada, y los tres de superficies reales: ejemplos, excerpts válidos, lista de alineación de `AGENTS.md`). Guard → `scripts/verify-docs-update.test.js` (+6: completitud de la clasificación, sin entradas muertas, motivo obligatorio, motores cubiertos, motor exige CHANGELOG, archivo no visual sigue pidiendo sólo README) |
+| Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0. `node scripts/verify-doc-examples.js` → 45 ejemplos, 29 excerpts, 110 archivos, sin problemas. `node --test scripts/doc-examples.test.js` → 13/13. `node --test scripts/verify-docs-update.test.js` → 14/14. `npm test` (raíz) → exit 0, **719 ok / 0 not ok** (700 + 13 + 6) |
+| Resultado después / control negativo | Antes de las correcciones el arnés reportaba 5 problemas: los dos excerpts de `AGENTS.md` y tres ejemplos. Control negativo: revertir sólo `AGENTS.md` y el README (`git stash`) hace fallar los tests 11 y 12 con esos 5 problemas; restaurados, 13/13. Además, cada uno de los casos de fallo del arnés tiene su test (token desconocido, sin excerpt, código de error equivocado, error documentado que compila, salida reclamada que no aparece) |
+| Cambios visuales o API / migración | Sin cambio visual. **Cambia el hook de pre-commit**: tocar cualquiera de los 14 motores/archivos de defaults recién cubiertos exige el CHANGELOG en el commit. `package.json` raíz: `npm test` ejecuta el test nuevo y hay un `verify:doc-examples` |
+| README / CHANGELOG / migration | `README.md` raíz (sección de beta.6: publicada, no "prepared"); `packages/postcss-uxdsl/README.md` (bloque de `color()`); `packages/postcss-uxdsl/CHANGELOG.md` (rótulo de beta.6 con su fecha). `docs/migration.md`: sin cambios |
+| AGENTS / guías / arquitectura | `AGENTS.md`: los dos excerpts corregidos; párrafos de estado de beta.6 actualizados (publicada, gate automatizado pasó, validación externa pendiente); nueva sección sobre cómo se ejecutan los ejemplos y cómo marcar un error intencional; cifra de contraste fechada |
+| Límites y seguimiento | (1) **Revisión línea a línea no hecha** (criterio 4): prosa de los README de paquete, guía de migración, MDX y arquitectura. (2) **Alcance de la extracción de ejemplos del playground:** `language-css`/`uxdsl`/`json` como plantilla, constante `{name}` y `JSON.stringify` de un literal, y `CodeBlock`; **no** los `<pre>{…}</pre>` sin clase de lenguaje (6) ni los que se generan en runtime (`{usage}` calculado, `buttonComponentCss(...)`) — estos últimos ya son salida del compilador. (3) Los ejemplos de tipo pipeline (`@mixin`) sólo verifican que compilan, y en el README del CLI el `@mixin` no se incluye, así que su cuerpo no se ejercita. (4) **La clasificación visual/no visual del guard es un juicio, no una medición.** (5) El guard sólo protege lo que se commitea con el hook; nada obliga a que el CHANGELOG diga algo *correcto* (pide que esté en el commit, no su contenido). (6) La cifra de contraste de `AGENTS.md` sigue sin test |

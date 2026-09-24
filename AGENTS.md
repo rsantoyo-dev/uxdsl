@@ -111,8 +111,8 @@ Both live in the theme JSON.
   },
   "palette": {
     "primary": {
-      "main": "var(--ds__color__blue-700)",
-      "contrast": "var(--ds__color__white)"
+      "main": "var(--uxdsl__color__blue-700)",
+      "contrast": "var(--uxdsl__color__white)"
     }
   }
 }
@@ -147,7 +147,7 @@ should receive the change. For “update blue-700 throughout the theme,” edit
 
 **Palette decision rule:** reassign a role when its purpose stays the same but its
 visual color should change. For “make primary actions blue-500,” change
-`palette.primary.main` to `var(--ds__color__blue-500)` and keep components using
+`palette.primary.main` to `var(--uxdsl__color__blue-500)` and keep components using
 `palette(primary.main)`. Direct blue-700 consumers retain their token.
 
 ## Breakpoints
@@ -202,7 +202,7 @@ hardcoding its resolved values. HTML preserves document semantics.
   "fonts": { "families": { "ui": "Inter, sans-serif" } },
   "typography_details": {
     "default": {
-      "fontFamily": "var(--font-ui)",
+      "fontFamily": "var(--uxdsl__font__ui)",
       "fontWeight": "400",
       "lineHeight": "1.5"
     },
@@ -728,6 +728,27 @@ replace obsolete instructions rather than accumulating contradictory rules.
 On documentation pages, place the AI implementation guide last, after the
 interactive demo. Keep human explanations before the demo.
 
+Documentation examples are compiled, not just written. `npm test` runs every
+UXDSL example in the README files, this guide, `migration.md` and the playground
+documentation components through the real compiler (`scripts/doc-examples.test.js`;
+`npm run verify:doc-examples` prints the report). What an example may rely on:
+
+- A theme excerpt (a JSON block) applies to the CSS that follows it, until the
+  next `#`/`##` heading; the CSS is compiled against that excerpt merged over
+  the defaults. An excerpt must itself be a valid theme, references included —
+  a `var(--…)` in it has to resolve.
+- To document an error, end the statement's line with a comment that begins with
+  the code: `.a { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN: … */`.
+  The example must fail with exactly that code. Every other statement must compile.
+- A trailing comment that is a single `var(--…)` claims that output, and the
+  compiled CSS must contain it.
+- `<!-- doc-example: output -->` on the line before a block marks compiled output
+  being shown rather than input (markdown only).
+
+A new file under `packages/postcss-uxdsl/src` must be classified in
+`scripts/verify-docs-update.js` — a guarded visual-default file, or a not-visual
+file with its reason — or `npm test` fails.
+
 Review these documentation sources for alignment:
 
 - `packages/playground-nextjs/src/components/DensityAgentGuidance.tsx`
@@ -753,21 +774,24 @@ Density reference: https://uxdsl.io/docs/densities
 
 ## Beta.6 implementation planning and evidence
 
-MIG-B6-01 in the local beta.6 implementation exports `KNOWN_THEME_FAMILIES`
+MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
 from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
-still warn, and invalid Typography fields still fail. This does not add new modes,
-change strict-theme behavior, or imply the unreleased change is on npm.
+still warn, and invalid Typography fields still fail. This does not add new modes
+or change strict-theme behavior.
 
 For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
 `MIG-B6-*.md` before implementation. The parent feature records product decisions;
 the individual story owns its detailed contract; the index owns integration order.
 FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirements.
 
-These documents describe planned APIs, not shipped capabilities. Packages on
-npm are still beta.5; everything below has landed on the beta.6 branch, not in
-a published release. The beta.6 release gate (MIG-B6-12) is still pending.
+FEAT-008's documents describe what shipped in `0.5.0-beta.6`, published to npm
+on 2026-09-23 (`docs/releases/0.5.0-beta.6.md`). That release's automated gate
+(MIG-B6-12) passed; its external validation against a real consumer project is
+still pending. FEAT-009 (`docs/features/FEAT-009-path-to-0.5.0.md`) plans what
+follows — `0.5.0-beta.7`, then `0.5.0-rc.1` — and its stories describe planned
+work, not shipped capabilities.
 `applyTheme` and the rest of the runtime theme API (MIG-B6-30) have landed
 across their 4 phases — see the "Build time, runtime and one source of truth"
 section above, which describes the contract as implemented. MIG-B6-29 (the packaged base JSON, the
@@ -775,8 +799,8 @@ accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
 its 4 phases, closing that story. `checkThemeContrast` still correctly
-reports `passed: false` against `theme/base.json` (123 failing pairs after
-FEAT-009's MIG-B7-01, down from 156) — the remaining gaps are engine/
+reports `passed: false` against `theme/base.json` (123 failing pairs as of
+2026-09-23, after FEAT-009's MIG-B7-01, down from 156; MIG-B7-11 will pin the exact set) — the remaining gaps are engine/
 architecture findings, not color choices; see MIG-B6-29's and MIG-B7-01's own
 evidence for exactly which ones and the recommended follow-up for each. That
 is by design, not a bug in the gate. `generateThemeCss` and the PostCSS
