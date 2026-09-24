@@ -99,7 +99,7 @@ las evasiones: `@media` a mano → funciones de breakpoint donde la regla sea un
 declaración (si es una regla anidada, justificarla); literales → `palette()`/
 `color()`/`border()`/`radius()`/`shadow()`/`density()`/`@ds-typo()`; los 5
 `.module.css` → `.uxdsl`; `style={{` estático → CSS; retirar el código comentado
-muerto. **Regla dura: ningún cambio visual involuntario** — antes/después de cada
+muerto. Incluye `scripts/audit-themes.mjs`, que reimplementa parseo responsive, px y luminancia en vez de usar el motor compartido y hoy da un veredicto más estrecho que `checkThemeContrast` (hallazgo de MIG-B7-09; sustituirla lo volvería FAIL con los fallos conocidos). **Regla dura: ningún cambio visual involuntario** — antes/después de cada
 área (comparación de estilos computados o capturas), y si algo cambia a propósito
 se declara.
 
