@@ -87,15 +87,9 @@
   /* Grid Layout */
   .breakpoints-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: xs(1fr) md(2fr 1fr);
+    align-items: md(start);
     gap: density(6);
-  }
-
-  @media (min-width: 768px) {
-    .breakpoints-grid {
-      grid-template-columns: 2fr 1fr;
-      align-items: start;
-    }
   }
 
   /* Controls Column */

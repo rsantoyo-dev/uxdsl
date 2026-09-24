@@ -70,7 +70,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
-| handWrittenMediaQueries | 21 | 21 |
+| handWrittenMediaQueries | 2 | 2 |
 | hexColorsInUxdsl | 21 | 21 |
 | rgbHslInUxdsl | 17 | 17 |
 | cssModuleFiles | 5 | 5 |
@@ -106,17 +106,17 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `lg` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/components/DemoProductivity.uxdsl` |
-| `md` | live | live | `src/app/layout.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/DemoBreakpointsCards.uxdsl` |
+| `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/DemoProductivity.uxdsl` |
 | `xl` | live | documented ⚠ | `src/app/docs/quick-start/page.mdx`, `src/components/BreakpointDocumentation.tsx`, `src/components/DensityAgentGuidance.tsx` |
-| `xs` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/components/AppHeader.uxdsl` |
+| `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
 ## Theme families
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `borders` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
-| `breakpoints` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/components/AppHeader.uxdsl` |
+| `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `buttons` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/DemoProductivity.uxdsl` |
 | `colors` | live | live | `src/components/DemoColors.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |

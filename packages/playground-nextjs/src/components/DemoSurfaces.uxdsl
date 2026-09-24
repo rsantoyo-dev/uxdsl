@@ -212,18 +212,12 @@
 
   .surface-playground {
     display: flex;
-    flex-direction: column;
+    flex-direction: xs(column) md(row);
+    align-items: md(flex-start);
     gap: density(3);
     @ds-surface(outlined);
     padding: density(3);
     background: palette(surface-light, 0.3);
-  }
-
-  @media (min-width: 768px) {
-    .surface-playground {
-      flex-direction: row;
-      align-items: flex-start;
-    }
   }
 
   .surface-playground__controls {

@@ -1,12 +1,8 @@
 .demos-grid {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: xs(1fr) lg(repeat(2, 1fr));
   gap: density(4);
   width: 100%;
-
-  @media (min-width: 1024px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 .demo-item {
@@ -14,9 +10,7 @@
 }
 
 .demo-item-full {
-  @media (min-width: 1024px) {
-    grid-column: span 2;
-  }
+  grid-column: lg(span 2);
 }
 
 .home-demos {

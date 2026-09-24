@@ -65,10 +65,14 @@ test('manual evidence is a pointer a test can hold to: the file exists, contains
   }
 });
 
-test('dogfooding: the styling written around UXDSL may not grow (the baseline only goes down)', () => {
+test('dogfooding: the styling written around UXDSL may not grow, and an improvement is locked in at once', () => {
   const now = dogfoodingCounts();
   assert.deepEqual(Object.keys(evidence.dogfoodingBaseline).sort(), Object.keys(now).sort(), 'baseline and measures must name the same things');
-  for (const [name, value] of Object.entries(now)) assert.ok(value <= evidence.dogfoodingBaseline[name], `${name} grew from ${evidence.dogfoodingBaseline[name]} to ${value}: use the UXDSL token or function instead, or justify the increase and raise the baseline deliberately`);
+  for (const [name, value] of Object.entries(now)) {
+    const baseline = evidence.dogfoodingBaseline[name];
+    assert.ok(value <= baseline, `${name} grew from ${baseline} to ${value}: use the UXDSL token or function instead, or justify the increase and raise the baseline deliberately`);
+    assert.equal(value, baseline, `${name} improved from ${baseline} to ${value}: lower "${name}" in packages/playground-nextjs/capability-evidence.json so the gain cannot be lost`);
+  }
 });
 
 test('the committed matrix is up to date with the sources (node scripts/generate-capability-matrix.js)', () => {

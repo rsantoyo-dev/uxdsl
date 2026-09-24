@@ -779,18 +779,19 @@ html, body {
 }
 }
 .layout__nav {
-  /* Mobile: Remove from flow to prevent grid gap/spacing */
+  /* Mobile: remove from flow to prevent grid gap/spacing. Desktop (lg): restore to grid flow. */
   position: absolute;
   width: 0;
   height: 0;
-
-  /* Desktop: Restore to grid flow */
-  @media (min-width: 1024px) {
+  min-width: auto;
+}
+@media (min-width: 1024px) {
+.layout__nav {
     position: static;
     width: auto;
     height: auto;
     min-width: 0;
-  }
+}
 }
 .layout__content {
   min-width: 0;
@@ -1290,10 +1291,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .playground {
+
+  .playground {
       display: grid;
       grid-template-columns: 300px 1fr;
-    }
+  }
   }
 
   .controls {
@@ -1458,12 +1460,11 @@ html, body {
     grid-template-columns: 1fr;
     gap: var(--uxdsl__density__6);
   }
-
   @media (min-width: 768px) {
-    .breakpoints-grid {
+  .breakpoints-grid {
       grid-template-columns: 2fr 1fr;
       align-items: start;
-    }
+  }
   }
 
   /* Controls Column */
@@ -1743,10 +1744,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -2612,10 +2614,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -3161,11 +3164,10 @@ html, body {
     grid-template-columns: 1fr;
     gap: var(--uxdsl__density__4);
   }
-
   @media (min-width: 1024px) {
-    .prod-container {
+  .prod-container {
       grid-template-columns: 1fr 1fr;
-    }
+  }
   }
 
   .prod-card {
@@ -3643,10 +3645,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .playground {
+
+  .playground {
       display: grid;
       grid-template-columns: 300px 1fr;
-    }
+  }
   }
 
   .controls {
@@ -3897,28 +3900,25 @@ html, body {
     color: var(--uxdsl__surface__outlined-color);
     border: var(--uxdsl__surface__outlined-border);
     box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__2);
+    padding: var(--uxdsl__density__2); /* more compact vertical padding on desktop */
     display: grid;
     gap: var(--uxdsl__density__2);
     border-radius: var(--uxdsl__radius__2);
     transition: all 0.2s ease;
     align-items: center;
-    
-    /* Mobile Layout: 2 Rows */
+
+    /* Mobile layout: 2 rows. Desktop (md): 3 columns. */
     grid-template-columns: auto 1fr;
-    grid-template-areas: 
-      "token input"
-      "sep sep"
-      "preview preview";
+    grid-template-areas: "token input" "sep sep" "preview preview";
   }
 
-  /* Desktop Layout: 3 Columns */
   @media (min-width: 768px) {
-    .spacing-card {
+
+  .spacing-card {
+      padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
       grid-template-columns: 120px 1fr auto;
       grid-template-areas: "token input preview";
-      padding: var(--uxdsl__density__1) var(--uxdsl__density__3); /* More compact vertical padding on desktop */
-    }
+  }
   }
 
   .spacing-card:hover {
@@ -3946,6 +3946,13 @@ html, body {
     justify-content: flex-end;
   }
 
+  @media (min-width: 768px) {
+
+  .spacing-card__input-wrapper {
+      justify-content: flex-start;
+  }
+  }
+
   .spacing-card__input {
     width: 100%;
     max-width: 120px;
@@ -3960,14 +3967,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .spacing-card__input-wrapper {
-      justify-content: flex-start;
-    }
-    
-    .spacing-card__input {
-      text-align: left;
+
+  .spacing-card__input {
       max-width: 200px;
-    }
+      text-align: left;
+  }
   }
 
   .spacing-card__input:focus {
@@ -3984,9 +3988,10 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .spacing-card__separator {
+
+  .spacing-card__separator {
       display: none;
-    }
+  }
   }
 
   .spacing-card__preview {
@@ -3996,15 +4001,16 @@ html, body {
     align-items: center;
     padding: var(--uxdsl__density__1) 0;
     /* Ensure it takes space but allows growth */
-    min-height: 40px;
+    min-height: 40px; /* Minimum width for small squares */
   }
 
   @media (min-width: 768px) {
-    .spacing-card__preview {
+
+  .spacing-card__preview {
       justify-content: flex-end;
       padding: 0;
-      min-width: 60px; /* Minimum width for small squares */
-    }
+      min-width: 60px;
+  }
   }
 
   .spacing-box {
@@ -4323,10 +4329,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -5986,18 +5993,21 @@ html, body {
   grid-template-columns: 1fr;
   gap: var(--uxdsl__density__4);
   width: 100%;
-
-  @media (min-width: 1024px) {
+}
+@media (min-width: 1024px) {
+.demos-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
+}
 }
 .demo-item {
   min-width: 0;
 }
 .demo-item-full {
-  @media (min-width: 1024px) {
+}
+@media (min-width: 1024px) {
+.demo-item-full {
     grid-column: span 2;
-  }
+}
 }
 .home-demos {
   width: 100%;
@@ -6378,10 +6388,12 @@ html, body {
   color: var(--uxdsl__palette__secondary-dark);
   background: transparent;
 }
+#PageToolbar .page-toolbar__burger {
+}
 @media (min-width: 1024px) {
-  #PageToolbar .page-toolbar__burger {
+#PageToolbar .page-toolbar__burger {
     display: none;
-  }
+}
 }
 /* Right Side - Row Layout */
 #PageToolbar .page-toolbar__right {
@@ -6444,11 +6456,12 @@ html, body {
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
   opacity: 0.7;
   line-height: 1;
-  display: none; /* Hide on small screens */
-
-  @media (min-width: 768px) {
-    display: block; /* Show on md and up */
-  }
+  display: none; /* hidden on small screens, shown on md and up */
+}
+@media (min-width: 768px) {
+#PageToolbar .page-toolbar__width {
+    display: block;
+}
 }
 /* Mini Theme Buttons */
 #PageToolbar .mini-theme-btn {
@@ -7928,9 +7941,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   }
 
   @media (min-width: 768px) {
-    .demo-grid-2 {
+
+  .demo-grid-2 {
       grid-template-columns: 1fr 1fr;
-    }
+  }
   }
 
   .demo-code {
@@ -8313,6 +8327,8 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   max-width: 700px;
   margin-top: var(--uxdsl__density__4);
 }
+/* A local threshold for this card list, deliberately not `sm` (480) or `md` (768): moving it
+   to a configured breakpoint would change the layout between 600 and 767px. */
 @media (min-width: 600px) {
   .nav-grid {
     grid-template-columns: 1fr 1fr;
@@ -8408,22 +8424,29 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .hero-content {
     display: flex;
-    flex-direction: column; /* Default to column on mobile */
+    flex-direction: column; /* column on mobile, row on larger screens */
     align-items: center;
     gap: var(--uxdsl__density__4);
-    text-align: center;
+    text-align: center; /* left-aligned within the row layout */ /* center the row content */
 
-    @media (min-width: 768px) { /* On larger screens, switch to row */
-      flex-direction: row;
-      justify-content: center; /* Center the row content */
-      text-align: left; /* Align text within the content to the left */
-      
-      .welcome-page-title {
-        .page-title__text {
-          margin-bottom: 0; /* Remove bottom margin when in row layout */
-        }
+    .welcome-page-title {
+      .page-title__text { /* remove bottom margin when in row layout */
+      }
+      @media (min-width: 768px) {
+      .page-title__text {
+          margin-bottom: 0;
+      }
       }
     }
+  }
+
+  @media (min-width: 768px) {
+
+  .hero-content {
+      flex-direction: row;
+      text-align: left;
+      justify-content: center
+  }
   }
 
   .logo-container {
@@ -8536,12 +8559,13 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     margin-top: var(--uxdsl__density__2);
     margin-bottom: var(--uxdsl__density__2);
     box-sizing: border-box;
+  }
 
-    @media (min-width: 768px) {
+  @media (min-width: 768px) {
+
+  .nav-grid {
       grid-template-columns: repeat(2, 1fr);
-    }
-
-
+  }
   }
 
   .demo-section {

@@ -4,7 +4,7 @@
       "id": "package-export:.",
       "file": "packages/playground-nextjs/package.json",
       "needle": "uxdsl build",
-      "why": "the site's own stylesheet is compiled by `uxdsl build`, which runs the PostCSS plugin — there is no `import` of it to find"
+      "why": "the site's own stylesheet is compiled by `uxdsl build`, which runs the PostCSS plugin \u2014 there is no `import` of it to find"
     }
   ],
   "knownGaps": [
@@ -47,7 +47,7 @@
     "runtime:updateSpacing"
   ],
   "dogfoodingBaseline": {
-    "handWrittenMediaQueries": 21,
+    "handWrittenMediaQueries": 2,
     "hexColorsInUxdsl": 21,
     "rgbHslInUxdsl": 17,
     "cssModuleFiles": 5,
