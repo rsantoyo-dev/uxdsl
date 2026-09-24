@@ -202,6 +202,8 @@ Completar por fase conforme al
 
 ### Fase A — hecha (2026-09-24)
 
+Entrega: `1d0d697` en `feat/mig-b7-17a-capability-matrix` (apilada sobre `feat/mig-b7-09-playground-cleanup`, PR #11). PR: pendiente de mergear; el SHA se fijó en un commit posterior, mismo patrón que MIG-B6-21.
+
 **Qué se construyó.** `scripts/lib/capabilities.js` deriva las capacidades de las fuentes de
 UXDSL — nunca de una lista escrita a mano — y detecta dónde las muestra el playground;
 `scripts/generate-capability-matrix.js` escribe
