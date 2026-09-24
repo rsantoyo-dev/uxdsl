@@ -110,11 +110,15 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // application per frame happens here, deliberately outside `applyTheme`,
   // which stays synchronous and un-batched. React state is updated from the
   // scheduler's callback, *after* the CSS commit succeeded.
+  // MIG-B7-09 (FEAT-009): the outcome of the last application. The frame callback
+  // below reads it to decide whether the edit may reach React state at all.
+  const lastApplyRef = useRef<{ ok: boolean } | null>(null)
   const schedulerRef = useRef<ReturnType<typeof createThemeScheduler> | null>(null)
   if (schedulerRef.current === null) {
     schedulerRef.current = createThemeScheduler({
       apply: applyThemeNow,
       merge: deepMergeTheme,
+      onResult: (result: { ok: boolean }) => { lastApplyRef.current = result },
     })
   }
   const pendingCustomRef = useRef<{ name: string; theme: unknown } | null>(null)
@@ -176,7 +180,11 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const setCustomTheme = (name: string, themeData: any, options?: { replace?: boolean }) => {
     // Edits layer over the active theme; replace resets overrides to the common base.
-    const base = options?.replace ? baseTheme : (activeThemeData || defaultTheme)
+    // MIG-B7-09: an edit still waiting for its frame is part of what this one layers
+    // over. `activeThemeData` only catches up when the frame commits, so two
+    // independent edits inside one frame (a colour and a spacing value) were each
+    // built from the same stale theme and the first one was lost.
+    const base = options?.replace ? baseTheme : (pendingCustomRef.current?.theme || activeThemeData || defaultTheme)
     const merged = deepMergeTheme(base, themeData || {})
 
     const checked = validateAndNormalizeTheme(merged)
@@ -191,6 +199,12 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
       const pending = pendingCustomRef.current
       if (!pending) return
       pendingCustomRef.current = null
+      // MIG-B7-09: reflect an edit in React only once the runtime accepted it. A
+      // refused edit leaves the previous CSS on the page (applyTheme guarantees
+      // it), so claiming "custom" here made the UI disagree with the page — and
+      // stored the refused theme as the base every later edit layered over, so
+      // one refusal made all the following edits refuse too.
+      if (lastApplyRef.current && !lastApplyRef.current.ok) return
       setCustomThemeData(pending.theme)
       setCustomThemeName(pending.name)
       if (themeData?.backgroundImage) setBackgroundImage(themeData.backgroundImage)

@@ -99,7 +99,7 @@ las evasiones: `@media` a mano → funciones de breakpoint donde la regla sea un
 declaración (si es una regla anidada, justificarla); literales → `palette()`/
 `color()`/`border()`/`radius()`/`shadow()`/`density()`/`@ds-typo()`; los 5
 `.module.css` → `.uxdsl`; `style={{` estático → CSS; retirar el código comentado
-muerto. **Regla dura: ningún cambio visual involuntario** — antes/después de cada
+muerto. Incluye `scripts/audit-themes.mjs`, que reimplementa parseo responsive, px y luminancia en vez de usar el motor compartido y hoy da un veredicto más estrecho que `checkThemeContrast` (hallazgo de MIG-B7-09; sustituirla lo volvería FAIL con los fallos conocidos). **Regla dura: ningún cambio visual involuntario** — antes/después de cada
 área (comparación de estilos computados o capturas), y si algo cambia a propósito
 se declara.
 
@@ -155,8 +155,10 @@ historia aparte (como MIG-B7-14), con su reproducción.
 
 ## Criterios de aceptación
 
-- [ ] La matriz capacidad → ejemplo se genera, cubre todas las capacidades
-      derivadas, y un test la exige.
+- [x] La matriz capacidad → ejemplo se genera, cubre todas las capacidades
+      derivadas, y un test la exige. **(Fase A.)** Ojo: "la exige" significa que las
+      brechas están registradas y sólo pueden encogerse; **no** que ya no haya brechas
+      (hay 37, todas para las fases B y C).
 - [ ] Los candidatos de la Fase B están clasificados uno a uno; ninguna evasión
       de token queda sin sustituir o sin justificar.
 - [ ] Cada capacidad ausente hoy tiene un ejemplo vivo que llama a la API real.
@@ -182,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**.
+Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); B, C, D y E pendientes**.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -197,6 +199,82 @@ Completar por fase conforme al
 | README / CHANGELOG / migration | Pendiente |
 | AGENTS / guías / arquitectura | Pendiente |
 | Límites y seguimiento | Pendiente — qué rutas/componentes quedaron sin revisar y por qué |
+
+### Fase A — hecha (2026-09-24)
+
+Entrega: `1d0d697` en `feat/mig-b7-17a-capability-matrix` (apilada sobre `feat/mig-b7-09-playground-cleanup`, PR #11). PR: pendiente de mergear; el SHA se fijó en un commit posterior, mismo patrón que MIG-B6-21.
+
+**Qué se construyó.** `scripts/lib/capabilities.js` deriva las capacidades de las fuentes de
+UXDSL — nunca de una lista escrita a mano — y detecta dónde las muestra el playground;
+`scripts/generate-capability-matrix.js` escribe
+[`docs/architecture/playground-capability-matrix.md`](../../architecture/playground-capability-matrix.md)
+(con `--check`); `scripts/capability-matrix.test.js` sostiene tres ratchets; y
+`packages/playground-nextjs/capability-evidence.json` guarda la evidencia manual, las
+brechas registradas y el baseline de dogfooding.
+
+| Fuente de UXDSL | Capacidades derivadas |
+| --- | --- |
+| Directivas y funciones (`LANGUAGE_COMPLETIONS`) | 5 directivas, 9 funciones de valor, 5 de breakpoint |
+| Familias de tema (`KNOWN_THEME_FAMILIES`) | 15 |
+| Roles y estados que declara cada motor | 9 roles, 12 estados |
+| API de runtime que la documentación del paquete nombra | 35 |
+| `--help` del CLI | 5 comandos, 12 flags |
+| `exports` del `package.json` | 5 subrutas |
+| Diagnósticos | 1 (los códigos `UXD_*`) |
+
+**Resultado: 113 capacidades, 76 mostradas al nivel que exigen, 37 brechas.** Las brechas: 19 de
+la API de runtime (`checkThemeContrast`, `resetTheme`, `getAppliedTheme`, `loadPersistedTheme`,
+`subscribeTheme`, `resolveTheme`, `getDefaultTheme`, `inspectReferences`, los setters
+`updatePalette`/`updateColor`/`updateSpacing`/`updateBreakpoint`…), 12 del CLI (10 flags y 2
+comandos), 2 exports (`./config`, `./schema/theme.schema.json`), los alias `elevation()` y
+`rounded()`, `xl()`, y los códigos `UXD_*`.
+
+**Lo que se corrigió leyendo el código, no el texto** (la primera versión del detector daba 43
+brechas, 6 de ellas falsas):
+- `DemoButtons`, `ButtonDemo` e `InputDemo` **no contienen ninguna directiva `@ds-button` ni
+  `@ds-input`**: renderizan con `buttonComponentCss()`/`inputComponentCss()` en tiempo de
+  ejecución y enumeran los roles con `Object.keys(getButtonTokens(theme)).map(…)`. Así
+  que todos los roles, incluidos los personalizados, están vivos aunque ninguno aparezca como
+  literal. El detector conoce ahora esas dos vías.
+- `postcss-uxdsl` (el plugin) no se importa en ningún sitio: el sitio se compila con
+  `uxdsl build`. Es evidencia manual verificable (`package.json` contiene `uxdsl build`).
+- La `uxdsl.config.cjs` del propio playground es un objeto plano sin `defineConfig`: brecha
+  real de dogfooding, no del detector.
+- `xl()` no se usa nunca fuera de comentarios en un `.uxdsl` (las apariciones que ve un
+  `grep` están en bloques comentados).
+- Las demos de paleta, color y espaciado escriben las variables CSS con `setProperty` a
+  mano en vez de llamar a `updatePalette`/`updateColor`/`updateSpacing`.
+
+**Confirmado a mano contra las páginas** (las ausencias que la ficha medía por texto):
+el quick-start sólo enseña `init`, `build --watch` y `generate-entry`; el playground importa de
+`ds-runtime` decenas de generadores e inspectores pero no `checkThemeContrast`, `resetTheme`,
+`getAppliedTheme`, `loadPersistedTheme` ni `subscribeTheme`; `ThemeContext.tsx` sólo importa
+`applyTheme`, `deepMergeTheme` y `validateAndNormalizeTheme`.
+
+**Los tres ratchets** (`scripts/capability-matrix.test.js`, 7 tests):
+1. Una capacidad sin ejemplo vivo que no está registrada **falla** (una capacidad nueva no
+   puede quedar sin mostrar), y un registro que ya se muestra **también falla** hasta
+   quitarlo — la lista sólo encoge, y la Fase C tiene una meta medible: lista vacía.
+2. Una familia de tema sin regla de consumo **falla** (no puede saltarse una familia nueva).
+3. Los seis conteos de estilo que el playground escribe fuera de UXDSL (`@media` a mano 21,
+   hex en `.uxdsl` 21, `rgb()`/`hsl()` 17, `.module.css` 5, `style={{` 177, hex en `.tsx` 30,
+   **sin comentarios**) **no pueden crecer**: es la meta de la Fase B.
+
+**Control negativo, ejecutado a mano contra el playground real** (cada uno falla en el test
+correcto y se restauró): quitar una brecha conocida; registrar como brecha algo ya mostrado;
+añadir un `@media` a mano en un `.uxdsl`; quitar la evidencia manual del plugin; apuntar la
+evidencia manual a una cadena que no existe.
+
+**Límites de la Fase A.**
+- **Es una cota inferior.** Lee texto fuente, no páginas renderizadas: "vivo" quiere decir que
+  el código lo ejecuta, no que se haya visto en pantalla (eso es la Fase E). Para roles y
+  estados se apoya en que un archivo use el generador *y* lo enumere o lo nombre, no en que
+  la página lo muestre.
+- Los estados de interacción (`hover`, `focus`…) cuentan como vivos si existe una demo que
+  renderiza el componente: el lector puede pasar el ratón, pero no hay una guía que lo pida.
+- Las brechas registradas **no están aceptadas**: son el trabajo de las fases B y C.
+- Los flags del CLI sólo pueden ser "vivos" si tienen un equivalente de runtime (hoy sólo
+  `--contrast` ↔ `checkThemeContrast`); el resto queda en "documentado" como máximo.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 
