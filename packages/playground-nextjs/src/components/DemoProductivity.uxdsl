@@ -2,14 +2,8 @@
 #DemoProductivity {
   .prod-container {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: xs(1fr) lg(1fr 1fr);
     gap: density(4);
-  }
-
-  @media (min-width: 1024px) {
-    .prod-container {
-      grid-template-columns: 1fr 1fr;
-    }
   }
 
   .prod-card {

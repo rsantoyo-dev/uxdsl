@@ -745,6 +745,14 @@ documentation components through the real compiler (`scripts/doc-examples.test.j
 - `<!-- doc-example: output -->` on the line before a block marks compiled output
   being shown rather than input (markdown only).
 
+What the playground has to show is derived, not listed by hand:
+`docs/architecture/playground-capability-matrix.md` is generated from UXDSL's own
+sources (`npm run generate:capabilities`), and `scripts/capability-matrix.test.js`
+fails when a capability has no live example and is not on the recorded list of gaps,
+or when a recorded gap has been closed and is still on the list. A new directive,
+function, theme family, role, state or documented runtime function therefore shows up
+there by itself.
+
 A new file under `packages/postcss-uxdsl/src` must be classified in
 `scripts/verify-docs-update.js` — a guarded visual-default file, or a not-visual
 file with its reason — or `npm test` fails.

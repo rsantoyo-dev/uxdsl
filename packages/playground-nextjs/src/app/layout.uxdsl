@@ -41,18 +41,11 @@ html, body {
 }
 
 .layout__nav {
-  /* Mobile: Remove from flow to prevent grid gap/spacing */
-  position: absolute;
-  width: 0;
-  height: 0;
-
-  /* Desktop: Restore to grid flow */
-  @media (min-width: 1024px) {
-    position: static;
-    width: auto;
-    height: auto;
-    min-width: 0;
-  }
+  /* Mobile: remove from flow to prevent grid gap/spacing. Desktop (lg): restore to grid flow. */
+  position: xs(absolute) lg(static);
+  width: xs(0) lg(auto);
+  height: xs(0) lg(auto);
+  min-width: xs(auto) lg(0);
 }
 
 .layout__content {

@@ -1,0 +1,57 @@
+{
+  "manual": [
+    {
+      "id": "package-export:.",
+      "file": "packages/playground-nextjs/package.json",
+      "needle": "uxdsl build",
+      "why": "the site's own stylesheet is compiled by `uxdsl build`, which runs the PostCSS plugin \u2014 there is no `import` of it to find"
+    }
+  ],
+  "knownGaps": [
+    "breakpoint-function:xl",
+    "cli-command:theme",
+    "cli-command:watch",
+    "cli-flag:--config",
+    "cli-flag:--contrast",
+    "cli-flag:--diff",
+    "cli-flag:--entry",
+    "cli-flag:--exclude",
+    "cli-flag:--include-theme",
+    "cli-flag:--sourcemap",
+    "cli-flag:--src",
+    "cli-flag:--strict",
+    "cli-flag:--strict-theme",
+    "diagnostics:UXD_* error codes",
+    "function:elevation",
+    "function:rounded",
+    "package-export:./config",
+    "package-export:./schema/theme.schema.json",
+    "runtime:buttonDeclarations",
+    "runtime:checkThemeContrast",
+    "runtime:encodeGoogleFontFamily",
+    "runtime:getAppliedTheme",
+    "runtime:getDefaultTheme",
+    "runtime:getPalette",
+    "runtime:googleFontsImportUrls",
+    "runtime:inputDeclarations",
+    "runtime:loadPersistedTheme",
+    "runtime:resetPalette",
+    "runtime:resetTheme",
+    "runtime:resolveTheme",
+    "runtime:resolveTypographyRole",
+    "runtime:subscribe",
+    "runtime:subscribeTheme",
+    "runtime:updateBreakpoint",
+    "runtime:updateColor",
+    "runtime:updatePalette",
+    "runtime:updateSpacing"
+  ],
+  "dogfoodingBaseline": {
+    "handWrittenMediaQueries": 2,
+    "hexColorsInUxdsl": 21,
+    "rgbHslInUxdsl": 17,
+    "cssModuleFiles": 5,
+    "inlineStyleObjects": 177,
+    "hexColorsInTsx": 30
+  }
+}

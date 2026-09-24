@@ -99,7 +99,7 @@ las evasiones: `@media` a mano → funciones de breakpoint donde la regla sea un
 declaración (si es una regla anidada, justificarla); literales → `palette()`/
 `color()`/`border()`/`radius()`/`shadow()`/`density()`/`@ds-typo()`; los 5
 `.module.css` → `.uxdsl`; `style={{` estático → CSS; retirar el código comentado
-muerto. **Regla dura: ningún cambio visual involuntario** — antes/después de cada
+muerto. Incluye `scripts/audit-themes.mjs`, que reimplementa parseo responsive, px y luminancia en vez de usar el motor compartido y hoy da un veredicto más estrecho que `checkThemeContrast` (hallazgo de MIG-B7-09; sustituirla lo volvería FAIL con los fallos conocidos). **Regla dura: ningún cambio visual involuntario** — antes/después de cada
 área (comparación de estilos computados o capturas), y si algo cambia a propósito
 se declara.
 
@@ -155,8 +155,10 @@ historia aparte (como MIG-B7-14), con su reproducción.
 
 ## Criterios de aceptación
 
-- [ ] La matriz capacidad → ejemplo se genera, cubre todas las capacidades
-      derivadas, y un test la exige.
+- [x] La matriz capacidad → ejemplo se genera, cubre todas las capacidades
+      derivadas, y un test la exige. **(Fase A.)** Ojo: "la exige" significa que las
+      brechas están registradas y sólo pueden encogerse; **no** que ya no haya brechas
+      (hay 37, todas para las fases B y C).
 - [ ] Los candidatos de la Fase B están clasificados uno a uno; ninguna evasión
       de token queda sin sustituir o sin justificar.
 - [ ] Cada capacidad ausente hoy tiene un ejemplo vivo que llama a la API real.
@@ -182,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**.
+Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B, primera rebanada (`@media` → funciones responsivas) hecha; resto de B, C, D y E pendientes**.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -197,6 +199,149 @@ Completar por fase conforme al
 | README / CHANGELOG / migration | Pendiente |
 | AGENTS / guías / arquitectura | Pendiente |
 | Límites y seguimiento | Pendiente — qué rutas/componentes quedaron sin revisar y por qué |
+
+### Fase A — hecha (2026-09-24)
+
+Entrega: `1d0d697` en `feat/mig-b7-17a-capability-matrix` (apilada sobre `feat/mig-b7-09-playground-cleanup`, PR #11). PR: pendiente de mergear; el SHA se fijó en un commit posterior, mismo patrón que MIG-B6-21.
+
+**Qué se construyó.** `scripts/lib/capabilities.js` deriva las capacidades de las fuentes de
+UXDSL — nunca de una lista escrita a mano — y detecta dónde las muestra el playground;
+`scripts/generate-capability-matrix.js` escribe
+[`docs/architecture/playground-capability-matrix.md`](../../architecture/playground-capability-matrix.md)
+(con `--check`); `scripts/capability-matrix.test.js` sostiene tres ratchets; y
+`packages/playground-nextjs/capability-evidence.json` guarda la evidencia manual, las
+brechas registradas y el baseline de dogfooding.
+
+| Fuente de UXDSL | Capacidades derivadas |
+| --- | --- |
+| Directivas y funciones (`LANGUAGE_COMPLETIONS`) | 5 directivas, 9 funciones de valor, 5 de breakpoint |
+| Familias de tema (`KNOWN_THEME_FAMILIES`) | 15 |
+| Roles y estados que declara cada motor | 9 roles, 12 estados |
+| API de runtime que la documentación del paquete nombra | 35 |
+| `--help` del CLI | 5 comandos, 12 flags |
+| `exports` del `package.json` | 5 subrutas |
+| Diagnósticos | 1 (los códigos `UXD_*`) |
+
+**Resultado: 113 capacidades, 76 mostradas al nivel que exigen, 37 brechas.** Las brechas: 19 de
+la API de runtime (`checkThemeContrast`, `resetTheme`, `getAppliedTheme`, `loadPersistedTheme`,
+`subscribeTheme`, `resolveTheme`, `getDefaultTheme`, `inspectReferences`, los setters
+`updatePalette`/`updateColor`/`updateSpacing`/`updateBreakpoint`…), 12 del CLI (10 flags y 2
+comandos), 2 exports (`./config`, `./schema/theme.schema.json`), los alias `elevation()` y
+`rounded()`, `xl()`, y los códigos `UXD_*`.
+
+**Lo que se corrigió leyendo el código, no el texto** (la primera versión del detector daba 43
+brechas, 6 de ellas falsas):
+- `DemoButtons`, `ButtonDemo` e `InputDemo` **no contienen ninguna directiva `@ds-button` ni
+  `@ds-input`**: renderizan con `buttonComponentCss()`/`inputComponentCss()` en tiempo de
+  ejecución y enumeran los roles con `Object.keys(getButtonTokens(theme)).map(…)`. Así
+  que todos los roles, incluidos los personalizados, están vivos aunque ninguno aparezca como
+  literal. El detector conoce ahora esas dos vías.
+- `postcss-uxdsl` (el plugin) no se importa en ningún sitio: el sitio se compila con
+  `uxdsl build`. Es evidencia manual verificable (`package.json` contiene `uxdsl build`).
+- La `uxdsl.config.cjs` del propio playground es un objeto plano sin `defineConfig`: brecha
+  real de dogfooding, no del detector.
+- `xl()` no se usa nunca fuera de comentarios en un `.uxdsl` (las apariciones que ve un
+  `grep` están en bloques comentados).
+- Las demos de paleta, color y espaciado escriben las variables CSS con `setProperty` a
+  mano en vez de llamar a `updatePalette`/`updateColor`/`updateSpacing`.
+
+**Confirmado a mano contra las páginas** (las ausencias que la ficha medía por texto):
+el quick-start sólo enseña `init`, `build --watch` y `generate-entry`; el playground importa de
+`ds-runtime` decenas de generadores e inspectores pero no `checkThemeContrast`, `resetTheme`,
+`getAppliedTheme`, `loadPersistedTheme` ni `subscribeTheme`; `ThemeContext.tsx` sólo importa
+`applyTheme`, `deepMergeTheme` y `validateAndNormalizeTheme`.
+
+**Los tres ratchets** (`scripts/capability-matrix.test.js`, 7 tests):
+1. Una capacidad sin ejemplo vivo que no está registrada **falla** (una capacidad nueva no
+   puede quedar sin mostrar), y un registro que ya se muestra **también falla** hasta
+   quitarlo — la lista sólo encoge, y la Fase C tiene una meta medible: lista vacía.
+2. Una familia de tema sin regla de consumo **falla** (no puede saltarse una familia nueva).
+3. Los seis conteos de estilo que el playground escribe fuera de UXDSL (`@media` a mano 21,
+   hex en `.uxdsl` 21, `rgb()`/`hsl()` 17, `.module.css` 5, `style={{` 177, hex en `.tsx` 30,
+   **sin comentarios**) **no pueden crecer**: es la meta de la Fase B. (Desde la Fase B
+   tampoco pueden quedarse por encima de lo real: una mejora obliga a bajar el baseline.)
+
+**Control negativo, ejecutado a mano contra el playground real** (cada uno falla en el test
+correcto y se restauró): quitar una brecha conocida; registrar como brecha algo ya mostrado;
+añadir un `@media` a mano en un `.uxdsl`; quitar la evidencia manual del plugin; apuntar la
+evidencia manual a una cadena que no existe.
+
+**Límites de la Fase A.**
+- **Es una cota inferior.** Lee texto fuente, no páginas renderizadas: "vivo" quiere decir que
+  el código lo ejecuta, no que se haya visto en pantalla (eso es la Fase E). Para roles y
+  estados se apoya en que un archivo use el generador *y* lo enumere o lo nombre, no en que
+  la página lo muestre.
+- Los estados de interacción (`hover`, `focus`…) cuentan como vivos si existe una demo que
+  renderiza el componente: el lector puede pasar el ratón, pero no hay una guía que lo pida.
+- Las brechas registradas **no están aceptadas**: son el trabajo de las fases B y C.
+- Los flags del CLI sólo pueden ser "vivos" si tienen un equivalente de runtime (hoy sólo
+  `--contrast` ↔ `checkThemeContrast`); el resto queda en "documentado" como máximo.
+
+### Fase B, primera rebanada — `@media` a mano → funciones responsivas (2026-09-24)
+
+Rama `feat/mig-b7-17b-dogfooding` (apilada sobre `feat/mig-b7-17a-capability-matrix`, PR #12,
+que a su vez va sobre #11). Orden de merge: #11 → #12 → esta. SHA de entrega: `a3c594a`.
+
+**Qué se cambió.** 19 bloques `@media (min-width: …)` escritos a mano en 13 archivos `.uxdsl`
+pasan a la función responsiva de UXDSL sobre la propiedad, con el breakpoint configurado que
+ya tenían por valor: 14 de `768px` → `md(…)` y 5 de `1024px` → `lg(…)`. El patrón:
+
+```css
+/* antes */
+.hero-content { flex-direction: column; }
+@media (min-width: 768px) { .hero-content { flex-direction: row; } }
+/* después */
+.hero-content { flex-direction: xs(column) md(row); }
+```
+
+Archivos: `app/layout`, `app/page`, `app/docs/breakpoints/breakpoints`, `HomeInteractiveDemos`,
+`PageToolbar`, `DemoColors`, `DemoPalette`, `DemoSurfaces`, `DemoShadows`, `DemoBorders`,
+`DemoProductivity`, `DemoSpacing`, `DemoBreakpoints`. `@media` a mano en `.uxdsl`: **21 → 2**.
+
+**Lo que se dejó, y por qué (clasificado, no omitido).**
+
+| Candidato | Decisión |
+| --- | --- |
+| `app/not-found.uxdsl` `@media (min-width: 600px)` | **Excepción intencionada.** 600px no es `sm` (480) ni `md` (768); pasarlo a un breakpoint configurado cambiaría el diseño entre 600 y 767px. Se documentó con un comentario en el propio archivo. Es una excepción CSS-nativa local, como pide AGENTS.md. |
+| `components/SideNav.uxdsl` `@media (min-width: 1024px)` | **Diferido.** Es un bloque anidado grande (varias reglas, estados); convertirlo propiedad a propiedad es un cambio de otro tamaño y lo acompaña su propia comparación. |
+| 5 `.module.css` | Diferidos a la siguiente rebanada (usar `space()` sólo donde el valor coincide exactamente; conservar el literal donde no hay token). |
+| Hex/`rgb()` en `.uxdsl` y `.tsx` | Pendiente de clasificar uno a uno. Ya se sabe que son legítimos los colores de la maqueta de VS Code en `DemoProductivity.uxdsl` y `HomeDemo.uxdsl` (imitan otra aplicación) y los blancos con alfa de superposición en `AppHeader`. **Deriva real, no arreglada aquí:** los círculos de tema de `PageToolbar` usan `#2C415C`, `#15803D` y `#7b1fa2`; el morado no es el primario del tema (`#7e22ce`). |
+| 177 `style={{…}}` | 152 son literales estáticos (46 sólo en `PalettePlayground.tsx`); los otros 25 dependen de estado o props y hay que revisarlos uno a uno. Los estáticos pasan a CSS en una rebanada propia. |
+| 329 líneas comentadas en `.uxdsl` | Código muerto por retirar, sin cambio de comportamiento. |
+| `scripts/audit-themes.mjs` | Duplica parsers que el motor ya expone (AGENTS.md: no añadir parsers aparte). Seguimiento propio. |
+
+**Evidencia — cómo se sabe que no cambió el aspecto.** Un `@media` a mano y una función
+responsiva compilan a CSS distinto, así que "se ve igual" no se puede afirmar leyendo el diff.
+Se construyó un arnés que lo mide en Chrome real
+([`fixtures/playground-browser`](../../../fixtures/playground-browser/README.md)): sirve la
+build de producción, visita **28 rutas × 10 anchos** (390, 479, 480, 767, 768, 1023, 1024,
+1279, 1280, 1440 — a ambos lados de cada umbral) y guarda, por cada elemento del `<body>`, su
+caja y 68 propiedades calculadas: **193,930 registros por snapshot**.
+
+| Comprobación | Resultado |
+| --- | --- |
+| **Ruido**: dos snapshots de la misma build (antes) | **0 diferencias** — el arnés es determinista (animaciones congeladas, `Math.random` con semilla, `Date.now` fijo, red local, `requestAnimationFrame` avanzado a mano; sin ello las manchas animadas de la portada diferían) |
+| **Después**: build con los 19 bloques convertidos vs. la línea base | **0 diferencias** sobre los mismos 193,930 registros (dos ejecuciones: tras convertir, y de nuevo tras el resto de la rebanada) |
+| **Control negativo**: `md` → `lg` a propósito en un componente (`DemoColors`) | **3,146 diferencias**, en `/colors` y `/docs/colors` a 768 y 1023 px (`flexDirection row -> column`) — y sólo ahí. Se revirtió y se volvió a medir: 0 |
+
+CSS compilado: bloques `@media` en `src/app/uxdsl.css` (archivo versionado): **50 en HEAD → 52**.
+Es un cambio de forma del CSS generado; el comportamiento lo cubre la tabla anterior.
+
+**El ratchet ahora fija también las mejoras.** `capability-matrix.test.js` pedía que los
+conteos de dogfooding no crecieran; ahora exige además que **coincidan** con el baseline: si
+mejoran, el test falla hasta que se baje la cifra en `capability-evidence.json`, y la mejora
+ya no se puede perder en silencio. Baseline nuevo: `handWrittenMediaQueries` 21 → **2**; el
+resto sin cambios (`hexColorsInUxdsl` 21, `rgbHslInUxdsl` 17, `cssModuleFiles` 5,
+`inlineStyleObjects` 177, `hexColorsInTsx` 30).
+
+**Límites de esta rebanada.**
+- El arnés compara estilos calculados y cajas, no píxeles; sólo Chrome, sólo tema claro, sin
+  estados `hover`/`focus`, y sin abrir el editor de tema (eso es la Fase E).
+- Cubre las 28 rutas que existen como archivos; no rutas dinámicas ni `api`.
+- Sólo se probó que no cambia nada; no se ha vuelto a revisar el resultado *con una persona
+  mirándolo* — es la Fase E.
+- Cinco de las seis métricas de dogfooding siguen sin mover (hex en `.uxdsl` y en `.tsx`,
+  `rgb`/`hsl`, `.module.css`, `style={{}}`): son las siguientes rebanadas de la Fase B.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 

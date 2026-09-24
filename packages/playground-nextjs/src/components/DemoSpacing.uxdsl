@@ -99,28 +99,16 @@
 
   .spacing-card {
     @ds-surface(outlined);
-    padding: density(2);
+    padding: xs(density(2)) md(density(1) density(3)); /* more compact vertical padding on desktop */
     display: grid;
     gap: density(2);
     border-radius: radius(2);
     transition: all 0.2s ease;
     align-items: center;
-    
-    /* Mobile Layout: 2 Rows */
-    grid-template-columns: auto 1fr;
-    grid-template-areas: 
-      "token input"
-      "sep sep"
-      "preview preview";
-  }
 
-  /* Desktop Layout: 3 Columns */
-  @media (min-width: 768px) {
-    .spacing-card {
-      grid-template-columns: 120px 1fr auto;
-      grid-template-areas: "token input preview";
-      padding: density(1) density(3); /* More compact vertical padding on desktop */
-    }
+    /* Mobile layout: 2 rows. Desktop (md): 3 columns. */
+    grid-template-columns: xs(auto 1fr) md(120px 1fr auto);
+    grid-template-areas: xs("token input" "sep sep" "preview preview") md("token input preview");
   }
 
   .spacing-card:hover {
@@ -139,31 +127,20 @@
   .spacing-card__input-wrapper {
     grid-area: input;
     display: flex;
-    justify-content: flex-end;
+    justify-content: xs(flex-end) md(flex-start);
   }
 
   .spacing-card__input {
     width: 100%;
-    max-width: 120px;
+    max-width: xs(120px) md(200px);
     padding: space(1) density(1);
     background: transparent;
     border: 1px solid palette(neutral-main);
     border-radius: radius(1);
     font-family: monospace;
     font-size: 0.85rem;
-    text-align: right;
+    text-align: xs(right) md(left);
     color: palette(surface-contrast);
-  }
-
-  @media (min-width: 768px) {
-    .spacing-card__input-wrapper {
-      justify-content: flex-start;
-    }
-    
-    .spacing-card__input {
-      text-align: left;
-      max-width: 200px;
-    }
   }
 
   .spacing-card__input:focus {
@@ -173,34 +150,22 @@
 
   .spacing-card__separator {
     grid-area: sep;
+    display: md(none);
     height: 1px;
     background: palette(neutral-light, 0.5);
     width: 100%;
     margin: space(1) 0;
   }
 
-  @media (min-width: 768px) {
-    .spacing-card__separator {
-      display: none;
-    }
-  }
-
   .spacing-card__preview {
     grid-area: preview;
     display: flex;
-    justify-content: center;
+    justify-content: xs(center) md(flex-end);
     align-items: center;
-    padding: density(1) 0;
+    padding: xs(density(1) 0) md(0);
     /* Ensure it takes space but allows growth */
     min-height: 40px;
-  }
-
-  @media (min-width: 768px) {
-    .spacing-card__preview {
-      justify-content: flex-end;
-      padding: 0;
-      min-width: 60px; /* Minimum width for small squares */
-    }
+    min-width: md(60px); /* Minimum width for small squares */
   }
 
   .spacing-box {

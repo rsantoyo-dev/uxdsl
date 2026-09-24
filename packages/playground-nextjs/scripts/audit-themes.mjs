@@ -1,8 +1,19 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { createRequire } from 'node:module';
+import { fileURLToPath } from 'node:url';
 import themeConfig from '../themes.js';
 
-const ROOT = path.resolve(process.cwd());
+// MIG-B7-09 (FEAT-009): resolved from this file, not from the caller's cwd — run
+// from the repo root (as the ficha's own verification command does) it used to
+// read `uxdsl.theme.*.json` from the wrong directory.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// The shared WCAG gate (MIG-B6-29). This script's own checks below are a narrow
+// subset of it; the gate is only consulted to say how narrow.
+const require = createRequire(import.meta.url);
+const { checkThemeContrast, resolveTheme } = require('postcss-uxdsl/ds-runtime');
+const contrastExceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json');
 
 const THEME_FILES = [
   'uxdsl.theme.default.json',
@@ -102,7 +113,7 @@ function get(obj, dotted) {
 function parseResponsive(value) {
   const val = String(value || '').trim();
   if (!val) return { kind: 'missing' };
-+
+
   const map = {};
   const parts = val.split(/\s+(?![^(]*\))/g).filter(Boolean);
   let has = false;
@@ -311,6 +322,7 @@ function auditTypography(themeName, theme) {
 
 function main() {
   let totalFailures = 0;
+  let gateFailures = 0;
 
   for (const file of THEME_FILES) {
     const theme = themeConfig.themes[file.split('.')[2]];
@@ -329,10 +341,12 @@ function main() {
     const warnings = [...lightRes.warnings, ...darkRes.warnings, ...typoRes.warnings];
 
     console.log(`\n=== Theme: ${name} ===`);
+    const gate = checkThemeContrast(resolveTheme(theme), { exceptions: contrastExceptions });
+    gateFailures += gate.failures.length;
     if (failures.length === 0) {
-      console.log('Palette contrast: OK');
+      console.log('Palette main/contrast pairs: OK');
     } else {
-      console.log('Palette contrast: FAIL');
+      console.log('Palette main/contrast pairs: FAIL');
       for (const f of failures) console.log(`- ${f}`);
       totalFailures += failures.length;
     }
@@ -341,13 +355,21 @@ function main() {
       console.log('Warnings:');
       for (const w of warnings) console.log(`- ${w}`);
     }
+    console.log(`Full WCAG gate (checkThemeContrast, shipped exceptions applied): ${gate.failures.length} failing pair(s).`);
   }
 
   if (totalFailures > 0) {
-    console.error(`\nAccessibility audit FAILED with ${totalFailures} contrast issues.`);
+    console.error(`\nPalette audit FAILED with ${totalFailures} contrast issues.`);
     process.exitCode = 1;
   } else {
-    console.log('\nAccessibility audit PASSED (no contrast failures).');
+    console.log('\nPalette audit PASSED: every checked main/contrast pair meets 4.5:1.');
+  }
+  // A green line above must not be read as "accessible". The pairs this script
+  // checks are a small subset of what the shared gate checks — every role, tone,
+  // state and both modes, plus borders and placeholders — and the shipped themes
+  // do not pass that gate yet.
+  if (gateFailures > 0) {
+    console.log(`Not the full accessibility gate: it reports ${gateFailures} failing pair(s) across these themes. See \`uxdsl theme --contrast\`.`);
   }
 }
 
