@@ -7,7 +7,50 @@ actually happens. See
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for a narrative migration guide covering the same ground.
 
-## 0.5.0-rc.1 — unreleased
+## 0.5.0-beta.7 — unreleased
+
+FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
+
+### Visual changes
+
+Two things happen in a browser that did not happen with `0.5.0-beta.6`, both
+because a stylesheet's `@import` is now where CSS requires it to be:
+
+- **Inter is requested from Google Fonts and used.** The default theme sets
+  `fonts.google`, so every stylesheet compiled with `includeTheme: true` (the
+  default) carries a `@import url('https://fonts.googleapis.com/…')`. In beta.6
+  that line sat behind a `:root` block, where a browser silently discards it:
+  the font was never requested and text rendered in whatever `Inter, sans-serif`
+  resolved to on the visitor's machine. Now it is requested, so **typography can
+  visibly change** for anyone without Inter installed, and **visitors' browsers
+  start making a request to `fonts.googleapis.com`** that they were not making
+  before — which matters for privacy notices and for a strict
+  Content-Security-Policy (`style-src`/`font-src`). To keep the previous
+  behavior, opt out in the theme: `fonts: { google: [] }`.
+- **An `@import` you wrote yourself now applies.** With `includeTheme: true`, an
+  `@import url(…)` at the top of your own source was pushed behind the same
+  `:root` and discarded too. It is honored now, so a stylesheet you imported
+  and never saw take effect will start to.
+
+- **Fixed:** in beta.6, the CSS the CLI, `compile()`, Vite and Webpack produce
+  put the density `:root` block above everything — above the theme's
+  `fonts.google` `@import` and above any `@import` or `@charset` the author
+  wrote — and CSS only honors an `@import` that precedes every other rule (and
+  `@charset` only as the very first thing). Only `generateThemeCss`, the
+  runtime/SSR path, had it right. Theme emission used to `prepend` its own
+  nodes; it now inserts them *after* the author's leading `@charset`, body-less
+  `@layer` statements, `@import`s and comments, so the theme's imports come
+  first (after `@charset`), then yours in their written order, then the `:root`.
+- **Why insert instead of hoisting the imports up:** moving the author's nodes
+  is not safe. `@layer y, x; @import url(a) layer(x);` hoisted the other way
+  would name layer `x` before the statement that orders it after `y`, and
+  silently reverse the cascade. Nothing the author wrote is reordered.
+- The URL tests added with MIG-B6-29 phase 4 compared the emitted `@import` by
+  regex and never looked at where it sat; the new tests assert on the position
+  of the parsed node, in `postcss-uxdsl` and through `uxdsl-core`'s `compile()`,
+  and a Chrome check (`fixtures/mig02-nextjs-cssmodules/browser-import-order.js`)
+  asserts the browser actually issues the request — with a control that loads the
+  beta.6 ordering and confirms the browser ignores it.
 
 FEAT-009, MIG-B7-01 (Input placeholder follows the requested tone):
 

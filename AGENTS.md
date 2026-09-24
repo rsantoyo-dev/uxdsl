@@ -578,17 +578,25 @@ history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
 WCAG for any effective theme, including a project's own. Phase 3 corrected
 16 of `theme/base.json`'s own colors (and the playground's own `green`/
 `slate` named themes) to clear it, in OKLCH, preserving hue and moving only
-lightness; `report.passed` is still honestly `false` — three real,
-disclosed engine/architecture findings remain (a `placeholder` field that
-is never tone-substituted; `light`/`dark`/`surface` used as an accent tone
-reading their own canvas-identity color as text; `warning.main` not dark
-enough for direct text use), each recommended as follow-up work in that
-story's own evidence, not swept into ad hoc exceptions. `postcss-uxdsl/ds-runtime`
+lightness; `report.passed` is still honestly `false`. Of the three real,
+disclosed engine/architecture findings that phase 3 left, one is closed
+(FEAT-009's MIG-B7-01: the Input `placeholder` now follows the requested
+tone on `contained`, the only role whose background tints). Two remain
+(`light`/`dark`/`surface` used as an accent tone reading their own
+canvas-identity color as text; `warning.main` not dark enough for direct
+text use), plus one that MIG-B7-01 itself surfaced: the *untoned*
+placeholder default `neutral.dark` is not dark-mode-aware enough (9
+failures, `tone: null`). Each is recommended as follow-up work in its own
+story's evidence, not swept into ad hoc exceptions. `postcss-uxdsl/ds-runtime`
 also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
 now emit byte-identical `@import`s for the same theme instead of only the
-plugin emitting one at all. Put variant changes in the playground's own
+plugin emitting one at all. Byte-identical URLs did not mean the same
+placement: until FEAT-009's MIG-B7-14 the plugin/CLI output put that `@import`
+behind a `:root` block, where a browser discards it, and only `generateThemeCss`
+led with it. Compiled output now puts every `@import` — the theme's and the
+author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -767,10 +775,11 @@ accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
 its 4 phases, closing that story. `checkThemeContrast` still correctly
-reports `passed: false` against `theme/base.json` — three real, disclosed
-engine/architecture gaps remain open (not color choices; see that story's
-own evidence for exactly which ones and the recommended follow-up for
-each), by design, not a bug in the gate. `generateThemeCss` and the PostCSS
+reports `passed: false` against `theme/base.json` (123 failing pairs after
+FEAT-009's MIG-B7-01, down from 156) — the remaining gaps are engine/
+architecture findings, not color choices; see MIG-B6-29's and MIG-B7-01's own
+evidence for exactly which ones and the recommended follow-up for each. That
+is by design, not a bug in the gate. `generateThemeCss` and the PostCSS
 plugin now emit byte-identical Google Fonts `@import`s for the same theme;
 `packages/playground-nextjs`'s own `ThemeContext.tsx` used to hand-roll a
 separate client-side font `<link>` with a weaker encoder; MIG-B6-30 phase 3

@@ -68,6 +68,11 @@ async function main() {
   if (!positive.ok) throw new Error('Positive Next.js build failed.');
   execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
 
+  // MIG-B7-14 (FEAT-009): what a *build* emits, in real Chrome — that the
+  // Google Fonts @import is honored (browser.js above uses the runtime path).
+  console.log('\nBrowser: compiled @import order (Google Fonts request, author @import)...');
+  execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser-import-order.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
+
   // MIG-B6-30 (FEAT-008), phase 4: the same browser, now exercising the
   // runtime theme API from the packed tarball rather than only the compiled
   // output. The DOM-stub tests prove what applyTheme does; this proves what

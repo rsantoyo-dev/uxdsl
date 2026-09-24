@@ -551,6 +551,18 @@ through this one shared, pure encoder — never a second, independently
 hand-rolled URL builder — so a build-time compile and a runtime/SSR call
 for the same theme always emit byte-identical imports.
 
+**Placement (MIG-B7-14, FEAT-009).** CSS only honors an `@import` that comes
+before every other rule (and an `@charset` only as the very first thing);
+a browser silently discards one that follows a style rule. Through
+`0.5.0-beta.6` compiled output — the CLI, `compile()`, the plugin — put the
+theme's `:root` block above every import, so the font request was never made.
+Now the theme's imports come first (after your `@charset`, if you have one),
+then any `@import` you wrote yourself in the order you wrote it, then the
+theme's `:root`. Nothing you wrote is reordered. Two consequences worth
+knowing: Inter is now actually requested (and your visitors' browsers contact
+`fonts.googleapis.com`), and an `@import` of your own that used to be silently
+dropped now applies. `fonts: { google: [] }` still opts out of the theme's.
+
 ```js
 const { encodeGoogleFontFamily, googleFontsImportUrls } = require('postcss-uxdsl/ds-runtime')
 

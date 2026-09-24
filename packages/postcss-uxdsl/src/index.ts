@@ -41,7 +41,7 @@ import { googleFontsImportUrls } from './fonts';
 //               theme globals deliberately carry no source, so a source map
 //               lists only files the author actually wrote.
 
-import type { AtRule, Declaration, Result, Root, Rule } from "postcss";
+import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
@@ -98,6 +98,35 @@ function normalizeBreakpoints(input?: BreakpointSpec) {
     .map((k) => ({ name: k, px: Number(map[k]) }))
     .sort((a, b) => a.px - b.px);
   return { map, ordered };
+}
+
+// MIG-B7-14 (FEAT-009): CSS honors an `@import` only when it precedes every
+// other rule, and `@charset` only when it is the very first thing in the
+// sheet; a browser silently discards either one otherwise. Theme emission used
+// to `root.prepend` its own nodes (the `fonts.google` imports, then the density
+// `:root` block, which ran last and so ended up on top), which put a `:root`
+// above every import — the theme's and the author's — and above the author's
+// `@charset`. The theme now inserts *after* the author's leading prelude
+// (`@charset`, body-less `@layer` statements, `@import`s, and comments), so
+// nothing the author wrote is ever reordered: not their imports relative to
+// each other, and not an `@import ... layer(x)` relative to the `@layer` order
+// statement that precedes it. Moving author nodes was the alternative and was
+// rejected because that last case changes the cascade.
+const atRuleName = (node: ChildNode) => (node.type === "atrule" ? node.name.toLowerCase() : "");
+const isCharsetOrComment = (node: ChildNode) => node.type === "comment" || atRuleName(node) === "charset";
+const isPrelude = (node: ChildNode) =>
+  isCharsetOrComment(node) || atRuleName(node) === "import" || (atRuleName(node) === "layer" && !(node as AtRule).nodes);
+
+/** Inserts `nodes`, in order, after the leading run of nodes satisfying `keep`. */
+function insertAfterLeading(root: Root, keep: (node: ChildNode) => boolean, nodes: ChildNode[]) {
+  let end = 0;
+  while (end < root.nodes.length && keep(root.nodes[end])) end++;
+  let anchor: ChildNode | undefined = end > 0 ? root.nodes[end - 1] : undefined;
+  for (const node of nodes) {
+    if (anchor) anchor.after(node);
+    else root.prepend(node);
+    anchor = node;
+  }
 }
 
 function uxdslPlugin(opts: UxdslOptions = {}) {
@@ -186,16 +215,14 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         root.append(themeGenerated(generateFoundationCss(effectiveTheme)));
         root.append(themeGenerated(generateTypographyCss(effectiveTheme, bps)));
 
-        // Reverse order so they end up in correct order when prepended (each
-        // prepend inserts at index 0). MIG-B6-29 phase 4: the URL itself
-        // comes from the shared, tested encoder in ./fonts, not a bare
-        // template interpolation — a family name with a space (or any other
-        // character css2's own syntax doesn't use) used to produce an
-        // invalid URL here.
-        [...googleFontsImportUrls(effectiveTheme.fonts?.google)].reverse().forEach((url) => {
-          const importRule = postcss.atRule({ name: 'import', params: `url('${url}')` });
-          root.prepend(importRule);
-        });
+        // MIG-B6-29 phase 4: the URL itself comes from the shared, tested
+        // encoder in ./fonts, not a bare template interpolation — a family
+        // name with a space (or any other character css2's own syntax doesn't
+        // use) used to produce an invalid URL here. MIG-B7-14: inserted after
+        // the author's `@charset` (which must stay first), in configured order,
+        // and before everything else — see `insertAfterLeading`.
+        insertAfterLeading(root, isCharsetOrComment, [...googleFontsImportUrls(effectiveTheme.fonts?.google)].map(
+          (url) => postcss.atRule({ name: 'import', params: `url('${url}')` })));
       }
       const vars: Record<string, string> = Object.create(null);
       // Selector-scoped typography directives.
@@ -587,7 +614,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         for (const compiled of compileDensityRules(effectiveDensities, bps)) {
           const rule = postcss.rule({ selector: ':root' });
           for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
-          if (compiled.minWidth === null) root.prepend(rule);
+          if (compiled.minWidth === null) insertAfterLeading(root, isPrelude, [rule]);
           else {
             const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
             media.append(rule);
