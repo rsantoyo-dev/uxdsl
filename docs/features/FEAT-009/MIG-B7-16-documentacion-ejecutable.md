@@ -231,7 +231,7 @@ Integración a `main` pendiente.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Base `bdcc997` (rama sobre `main` `c09be61`). Entrega y PR: pendiente de commitear |
+| SHA base / entrega / PR | Base `bdcc997` (rama sobre `main` `c09be61`). Entrega: `ecdf995` en `feat/mig-b7-16-executable-docs`. PR: pendiente de mergear; el SHA se fijó en un commit posterior, mismo patrón que MIG-B6-21 |
 | Reproducción antes del cambio | Medición del 2026-09-23 (ver "Estado verificado"): 19 bloques en README/`AGENTS.md`, 21 en el playground; sin ningún test que los compile |
 | Criterio → regresión | `scripts/doc-examples.test.js` (13 tests: extractor de markdown y JSX, ejemplo válido/inválido, emparejado con excerpt y su control sin excerpt, error documentado exacto / código equivocado / no falla, resto de sentencias, salida reclamada, y los tres de superficies reales: ejemplos, excerpts válidos, lista de alineación de `AGENTS.md`). Guard → `scripts/verify-docs-update.test.js` (+6: completitud de la clasificación, sin entradas muertas, motivo obligatorio, motores cubiertos, motor exige CHANGELOG, archivo no visual sigue pidiendo sólo README) |
 | Comandos y entorno | macOS (Darwin 25.2.0), Node v20.19.0. `node scripts/verify-doc-examples.js` → 45 ejemplos, 29 excerpts, 110 archivos, sin problemas. `node --test scripts/doc-examples.test.js` → 13/13. `node --test scripts/verify-docs-update.test.js` → 14/14. `npm test` (raíz) → exit 0, **719 ok / 0 not ok** (700 + 13 + 6) |
