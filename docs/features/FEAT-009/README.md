@@ -83,7 +83,7 @@ entrada en `packages/postcss-uxdsl/CHANGELOG.md` con sección `Visual changes`.
 | MIG-B7-06 | [Sourcemaps de Vite](MIG-B7-06-vite-sourcemaps.md) | `rc.1` | P1 · M | — | Pendiente |
 | MIG-B7-07 | [Higiene de paquetes, ronda 2](MIG-B7-07-higiene-ronda-2.md) | `rc.1` | P2 · S | — | Pendiente |
 | MIG-B7-08 | [`theme --diff` extendido](MIG-B7-08-diff-surfaces-buttons-inputs.md) | `rc.1` | P2 · S | — | Pendiente |
-| MIG-B7-09 | [Limpieza del playground](MIG-B7-09-limpieza-playground.md) | `beta.7` | P2 · S-M | — | Pendiente |
+| MIG-B7-09 | [Limpieza del playground](MIG-B7-09-limpieza-playground.md) | `beta.7` | P2 · S-M | — | **Implementada, PR pendiente de mergear** |
 | MIG-B7-10 | [Decisión sobre `!important`](MIG-B7-10-important-comparador.md) | `rc.1` | P2 · S | D-10 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-11 | [Gate hacia `0.5.0-rc.1`](MIG-B7-11-gate-rc1.md) | `rc.1` | P0 · M | todas las demás (12 a 17 siempre; 13 sólo si D-11 = (a)) | Pendiente |
 | MIG-B7-12 | [Editor support para apps consumidoras](MIG-B7-12-editor-support-consumidores.md) | `beta.7` | P1 · M | — (su paso de `.vscode/extensions.json` espera a 05) | Pendiente |
