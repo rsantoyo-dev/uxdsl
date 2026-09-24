@@ -36,3 +36,12 @@ document rather than resetting the previous one.
   the accessibility gate: the script says how many pairs the shared gate reports failing
   for the same themes. For the real check use `uxdsl theme --contrast` (see the
   `postcss-uxdsl` README).
+
+## Capability coverage
+
+`capability-evidence.json` holds what a text search cannot find (each entry names a file and a
+string a test checks), the capabilities that still have no live example, and the baseline for
+styling written outside UXDSL. `scripts/capability-matrix.test.js` (run from the repository
+root) keeps all three honest; the derived matrix is
+`docs/architecture/playground-capability-matrix.md`. When you close a gap, remove it from
+`knownGaps` and run `npm run generate:capabilities`.
