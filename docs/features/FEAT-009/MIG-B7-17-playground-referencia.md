@@ -163,7 +163,7 @@ historia aparte (como MIG-B7-14), con su reproducción.
       de token queda sin sustituir o sin justificar.
 - [x] Cada capacidad ausente hoy tiene un ejemplo vivo que llama a la API real.
 - [ ] Los 11 componentes de documentación y las 35 rutas tienen su fila revisada.
-- [ ] Recorrido en Chrome real sin errores de consola, sin `var()` sin resolver ni
+- [x] Recorrido en Chrome real sin errores de consola, sin `var()` sin resolver ni
       avisos de UXDSL, en claro y oscuro y en los umbrales de breakpoint.
 - [x] Sin cambio visual involuntario, comprobado y registrado.
 
@@ -184,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **En curso — Fases A, B (cinco rebanadas, `audit-themes.mjs` incluido) y C hechas (2026-09-28); E en la misma rama, en su propio commit; queda la Fase D (revisión por página y componente), que se hará con el dueño.** La matriz no tiene brechas (113/113).
+Estado de esta revisión documental: **En curso — Fases A, B (cinco rebanadas, `audit-themes.mjs` incluido), C y E hechas (2026-09-28); queda la Fase D (revisión por página y componente), que se hará con el dueño.** La matriz no tiene brechas (113/113) y el recorrido en Chrome real de las 32 rutas pasa, con sus controles negativos.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -754,6 +754,61 @@ equivalente de runtime, aunque lo que se muestra es su salida real. `--sourcemap
 capturan (no eran brechas). El sandbox reproduce un proyecto compilado, no esta aplicación: lo que
 demuestra de `updateBreakpoint` vale para cualquier hoja etiquetada, pero el adaptador de breakpoints del
 propio sitio (`/docs/breakpoints`) no se recorrió con el ratón.
+
+### Fase E — el playground conducido en Chrome real (2026-09-28)
+
+Rama `feat/mig-b7-17c-capabilities`, SHA fijado al mergear. **Cierra el límite 6 de beta.6** ("the
+playground app itself was not driven in a browser").
+
+**Qué se construyó.** `fixtures/playground-browser/walk.js` (raíz: `npm run verify:playground-browser`,
+que construye y recorre). Sirve la build de producción (`next start`) y, para **cada ruta que la app
+tiene** (leídas de su árbol de archivos: las 4 nuevas entran solas), en **claro y oscuro**
+(`prefers-color-scheme`) y a **10 anchos** (390, 479, 480, 767, 768, 1023, 1024, 1279, 1280, 1440 — a
+ambos lados de cada umbral, 767/768 y 1023/1024 incluidos):
+
+- ningún error de consola ni excepción no capturada;
+- ningún aviso de UXDSL en consola (`warning` que mencione `uxdsl`/`UXD_`);
+- **ningún `var()` sin resolver**: por cada regla aplicable (con sus `@media`/`@supports` que casan) que
+  lee una custom property sin *fallback*, se comprueba en el **estilo calculado** de los elementos que
+  casan que la propiedad resuelve (una cadena rota `--a: var(--b)` también se detecta, porque `--a`
+  calcula vacío);
+- **foco visible** (a 390 y 1280): `Tab` hasta dar la vuelta; cada elemento que recibe el foco debe casar
+  `:focus-visible` y **verse distinto** que sin foco (contorno dibujado, sombra, color de borde o de fondo,
+  subrayado — comparando el mismo elemento enfocado y desenfocado);
+- **`/docs/contrast` = Node**: el resumen y la lista ordenada de pares que fallan que pinta la página son
+  los de `checkThemeContrast(resolveTheme(themes[name]), { exceptions })` en Node, para el tema *default* y
+  otra vez **tras cambiar a *green*** con el botón de la cabecera.
+
+**Resultado final: PASS.** 32 rutas × 2 esquemas × 10 anchos = **640 páginas cargadas**, **3,029 elementos
+enfocables** comprobados; contraste página = Node para *default* (824 pares, 123 fallan) y *green* (737,
+142), en claro y en oscuro. Única exención, por ruta exacta y listada en la salida (2,572 mensajes): los
+dos scripts de Vercel (`/_vercel/insights/script.js`, `/_vercel/speed-insights/script.js`) responden 404
+fuera del hosting de Vercel; las peticiones externas (fuentes) se contestan en local, como en `snapshot.js`.
+
+**Fallos encontrados y cómo se resolvieron.** La primera pasada (28 rutas existentes, 390 y 1280, claro y
+oscuro) dio **44 fallos, todos de foco invisible**, en tres causas — sin errores de consola, sin `var()`
+sin resolver, sin avisos:
+
+| Causa | Dónde | Arreglo (cambio visual declarado, sólo en estado de foco de teclado) |
+| --- | --- | --- |
+| La regla global `input[type="range"]` quitaba el contorno (`outline: none`) | todos los sliders: `/`, `/densities`, `/docs/breakpoints`, `/docs/densities`, `/productivity`, `/docs/productivity`, `/spacing`, `/docs/spacing` | `input[type="range"]:focus-visible { outline: 2px solid palette(primary-main); outline-offset: 4px; }` en `app.uxdsl` |
+| `.ai-input` con `outline: none` | `/` (el prompt de IA) | `&:focus-visible` con el mismo anillo en `AIPrompt.uxdsl` |
+| Las muestras editables (`contentEditable`) con `outline: none` | `/typography`, `/docs/typography` | `.editable-typography-element:focus-visible { outline: 2px dashed palette(primary-main); … }` en `ResponsiveSyntaxExplainer.uxdsl` |
+
+Tras el arreglo, el recorrido completo pasa. El arnés de *snapshot* (sin foco) no ve estos estados, así
+que no cambian su comparación.
+
+**Controles negativos** (el propio `walk.js` los ejecuta al final y falla si alguno no se detecta):
+un `var(--uxdsl__palette__does-not-exist)` inyectado → `unresolved-var`; un `console.error` inyectado →
+`console-error`; un estilo que quita todo indicador de foco → `focus-invisible` (en `/docs/runtime`, el
+botón *green* de la cabecera); la comparación de contraste contra el tema equivocado (*slate*) →
+`contrast-mismatch`. **Los cuatro, detectados.**
+
+**Límites.** Sin estados `:hover` ni puntero, sin táctil, sin lector de pantalla, sin píxeles; el orden
+del foco se comprueba en visibilidad, no en si es el orden correcto. Los dos scripts de Vercel se eximen
+(no se prueba el hosting). No se abren diálogos ni se usan editores (el de breakpoints, el JSON de
+`/docs/config`, los pasos del sandbox): los pasos del sandbox se ejercitaron en Chrome aparte, a mano con
+un script, y dieron los resultados que describe la Fase C, pero el recorrido no los repite. Sólo Chrome.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 

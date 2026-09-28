@@ -701,6 +701,13 @@ input[type="range"] {
 input[type="range"]:hover {
   opacity: 1;
 }
+/* MIG-B7-17 phase E: the rule above removes the native outline; the browser walk found every
+   range slider reachable by Tab with no visible focus. Keyboard focus gets a ring again. */
+input[type="range"]:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -915,6 +922,12 @@ html, body {
 
   &::placeholder {
     color: var(--uxdsl__palette__text-secondary);
+  }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
   }
 }
 .ai-submit-btn { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
@@ -8028,6 +8041,12 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 /* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
 .responsive-syntax-explainer {
   height: 100%;
+}
+/* MIG-B7-17 phase E: the editable samples are reachable by Tab (contentEditable) and their
+   `outline: none` hid keyboard focus. */
+.editable-typography-element:focus-visible {
+  outline: 2px dashed var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
 }
 /* SideNav Styles - CSS Driven Responsiveness - Scoped */
 #SideNav {

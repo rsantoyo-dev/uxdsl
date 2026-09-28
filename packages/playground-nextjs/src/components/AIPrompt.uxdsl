@@ -44,6 +44,12 @@
   &::placeholder {
     color: palette(text-secondary);
   }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid palette(primary-main);
+    outline-offset: 2px;
+  }
 }
 
 .ai-submit-btn {
