@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**113 capabilities · 76 shown at the level they require · 37 gaps.**
+**113 capabilities · 75 shown at the level they require · 38 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -18,7 +18,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
 | Runtime API (named in the package docs) | 35 | 16 | 4 | 15 | 19 |
 | CLI commands | 5 | 0 | 3 | 2 | 2 |
-| CLI flags | 12 | 0 | 2 | 10 | 10 |
+| CLI flags | 12 | 0 | 1 | 11 | 11 |
 | Package exports | 5 | 3 | 0 | 2 | 2 |
 | Diagnostics | 1 | 0 | 0 | 1 | 1 |
 
@@ -33,6 +33,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 - `cli-flag:--entry` — none, requires documented
 - `cli-flag:--exclude` — none, requires documented
 - `cli-flag:--include-theme` — none, requires documented
+- `cli-flag:--out` — none, requires documented
 - `cli-flag:--sourcemap` — none, requires documented
 - `cli-flag:--src` — none, requires documented
 - `cli-flag:--strict` — none, requires documented
@@ -62,7 +63,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 - `runtime:updatePalette` — documented, requires live
 - `runtime:updateSpacing` — documented, requires live
 
-Recorded as accepted in `capability-evidence.json`: 37.
+Recorded as accepted in `capability-evidence.json`: 38.
 
 ## Dogfooding: styling in the playground that bypasses UXDSL
 
@@ -71,10 +72,10 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
 | handWrittenMediaQueries | 2 | 2 |
-| hexColorsInUxdsl | 17 | 17 |
-| rgbHslInUxdsl | 2 | 2 |
+| hexColorsInUxdsl | 12 | 12 |
+| rgbHslInUxdsl | 1 | 1 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 50 | 50 |
+| inlineStyleObjects | 28 | 28 |
 | hexColorsInTsx | 27 | 27 |
 
 ## Directives
@@ -149,11 +150,11 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `button.active` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/HomeDemo.tsx` |
+| `button.active` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
 | `button.disabled` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
-| `button.focus` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/HomeDemo.tsx` |
-| `button.focusvisible` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/HomeDemo.tsx` |
-| `button.hover` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/HomeDemo.tsx` |
+| `button.focus` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
+| `button.focusvisible` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
+| `button.hover` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
 | `button.selected` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
 | `input.disabled` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
 | `input.focus` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
@@ -206,7 +207,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `build` | documented | documented | `src/app/docs/quick-start/page.mdx` |
+| `build` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/theming/page.tsx` |
 | `generate-entry` | documented | documented | `src/app/docs/quick-start/page.mdx` |
 | `init` | documented | documented | `src/app/docs/quick-start/page.mdx` |
 | `theme` | documented | none ⚠ | — |
@@ -222,7 +223,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `--entry` | documented | none ⚠ | — |
 | `--exclude` | documented | none ⚠ | — |
 | `--include-theme` | documented | none ⚠ | — |
-| `--out` | documented | documented | `src/components/ButtonDemo.tsx` |
+| `--out` | documented | none ⚠ | — |
 | `--sourcemap` | documented | none ⚠ | — |
 | `--src` | documented | none ⚠ | — |
 | `--strict` | documented | none ⚠ | — |

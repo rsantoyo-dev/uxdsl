@@ -497,7 +497,10 @@
   padding-left: 2ch;
 }
 
+/* font-weight used to come from a global .json-key rule in DensityPlayground.uxdsl, a component
+   nothing rendered (removed in MIG-B7-17 phase B (5)); it now lives with the only consumer. */
 .json-key {
+  font-weight: 600;
   color: palette(secondary-main);
 }
 

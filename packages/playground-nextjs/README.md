@@ -32,10 +32,12 @@ document rather than resetting the previous one.
 
 ## Scripts worth knowing
 
-- `npm run theme:audit` — a **narrow** check of palette `main`/`contrast` pairs. It is not
-  the accessibility gate: the script says how many pairs the shared gate reports failing
-  for the same themes. For the real check use `uxdsl theme --contrast` (see the
-  `postcss-uxdsl` README).
+- `npm run theme:audit` — runs the shared WCAG gate (`checkThemeContrast`, with the
+  shipped exceptions, the same call as `uxdsl theme --contrast`) over the four named themes,
+  summarizes the failing pairs per mode/family/pair, and checks typography progressions
+  with the engine's own resolvers (`resolveTypographyRole`, `resolveResponsiveValue`). It
+  exits 1 while the gate fails — which it does today for every shipped theme (MIG-B6-29);
+  that is the honest verdict, not a broken script. Per-pair detail: `uxdsl theme --contrast`.
 
 ## Capability coverage
 

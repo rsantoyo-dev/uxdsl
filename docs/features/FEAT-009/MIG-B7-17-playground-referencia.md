@@ -600,6 +600,69 @@ nuevos pasan salvo ese.
 luminancia en vez de usar el motor): no se tocó en estas rebanadas. Por eso el criterio de la
 Fase B sigue sin marcar: los candidatos del playground están clasificados, pero ese script no.
 
+### Fase B, rebanada 5 — `audit-themes.mjs` sobre el motor, componentes muertos, `/theming`, círculo *default* (2026-09-28)
+
+Rama `feat/mig-b7-17c-capabilities` (apilada sobre `feat/mig-b7-17b2-dogfooding`); SHA fijado al mergear.
+
+**`scripts/audit-themes.mjs` usa el motor compartido.** Se retiraron sus parsers propios
+(`parseResponsive`/`resolveResponsive`, `parsePx` con su `calc()`, `hexToRgb`, `srgbToLin`/`relLuminance`/
+`contrastRatio`, `deepMerge`) y los 11 pares `main`/`contrast` que comprobaba. Ahora:
+
+- **Contraste:** `checkThemeContrast(resolveTheme(theme), { exceptions })` con las excepciones
+  empaquetadas — la misma llamada que `uxdsl theme --contrast` — por cada tema con nombre, con el
+  resumen por modo/familia/par. **Es el veredicto**: el script sale con 1 mientras el gate falle,
+  como el CLI. Hoy: `default` 123, `green` 142, `purple` 123, `slate` 124 → 512 pares, **exit 1**
+  (antes decía `PASSED` y salía con 0). Es el "se volvería FAIL con los fallos conocidos" que
+  anotó MIG-B7-09: se acepta, porque es la verdad. Además deja ver algo que antes no se veía:
+  la excepción empaquetada `surface-outlined-light-tone-base-text-light-mode` queda **obsoleta** en
+  `green` y `slate` (sus colores resueltos ya no aparecen), lo que el gate cuenta como fallo.
+- **Tipografía:** `resolveTypographyRole` (los campos del rol sobre `default`, igual que emite
+  `@ds-typo`) y `resolveResponsiveValue` (el valor de cada breakpoint, con persistencia). Sólo se
+  comparan tamaños que resuelven a `space(n)` o a `px`/`rem` literales; lo demás se informa como
+  "no comparable" en vez de adivinarse. Resultado igual al anterior: sin avisos en los cuatro temas.
+- `test-audit-themes.cjs` (4 tests): parsea; audita los 4 temas desde el paquete y desde la raíz con
+  exit 1 y el total igual al de `checkThemeContrast`; el recuento por tema coincide; y el script no
+  vuelve a definir un parser propio (y sigue llamando a las cuatro funciones del motor).
+  **Controles negativos** ejecutados: forzar `exitCode = 0` hace fallar el segundo test; añadir un
+  `function relLuminance` hace fallar el cuarto.
+
+**Componentes muertos retirados** (búsqueda de importaciones estáticas, `import()` y `.mdx` desde
+cada `page`/`layout`/`error`/`not-found`/`mdx-components`, con un grafo de alcanzabilidad):
+`ButtonDemo`, `DemoTypography`, `DensityPlayground`, `HomeDemo` (con sus `.uxdsl`) y, además de los que
+listaba la rebanada 4, **`CardDemo`** (+ `.uxdsl`) y **`HomeTypographyDemo`**, que el grafo encontró
+también inalcanzables; y el `src/uxdsl-entry.uxdsl` suelto (una salida vieja de `generate-entry` que
+nada compila: la entrada real es `src/app/uxdsl-entry.uxdsl`). **`EditTypographyDialog`** estaba
+importado (por `TypographyInteractivePlayground`, que sí se usa en la portada y `/typography`), pero
+sólo se montaba con un `editingTag` que únicamente ponía `DemoTypography`: inalcanzable en ejecución.
+Se retiró junto con su montaje; el hallazgo de la rebanada 2 ("sólo lo abre `DemoTypography`") era
+correcto en efecto, no en el grafo.
+
+**Una regla compartida escondida en código muerto.** La comparación detectó que
+`DensityPlayground.uxdsl` (global, sin `#id`) daba `font-weight: 600` a `.json-key`, que usa el editor de
+`ResponsiveSyntaxExplainer`: al retirarlo, 320 diferencias `fontWeight 600 → 400` en `/` y `/typography`.
+La regla se movió a su único consumidor (`ResponsiveSyntaxExplainer.uxdsl`) y volvió a medirse: 0.
+
+**`/theming`** dejaba de ser cierta (mandaba a `theme-def.uxdsl` y `--primary-main`, código muerto
+retirado en la rebanada 4). Ahora describe lo que existe: base empaquetada + un override por tema
+fusionados con `deepMergeTheme` en `themes.js`, `uxdsl build` con `uxdsl.config.cjs`, y `applyTheme`
+para cambiar de tema sin recompilar. **Cambio de contenido declarado.**
+
+**Cambio visual declarado:** el círculo *default* de `PageToolbar` pasa de `color(slate-800)` (el
+primario de *slate*) a `color(purple-600)` = `#7e22ce`, el primario real del tema *default* — el mismo que
+ya usa el botón *default* de `AppHeader`. Consecuencia honesta: los círculos *default* y *purple* de la
+barra son ahora del mismo color, porque el override *purple* no cambia el primario de la base.
+
+**Evidencia** (arnés de la rebanada 1, build de la rebanada 4 contra esta, 28 rutas × 10 anchos + 3
+diálogos, claro y oscuro): **1,248 diferencias en claro y 1,248 en oscuro**: 276 son el círculo
+declarado (27 rutas × 10 anchos + 3 diálogos × 2; el de `/theming` cuenta dentro de su página) y 972
+están en `/theming` (866 cajas, 90 elementos nuevos, 10 del círculo y 6 `top`/`bottom` del texto nuevo).
+Ninguna en otra ruta ni propiedad.
+
+**Métricas del ratchet:** `hexColorsInUxdsl` 17 → **12**, `rgbHslInUxdsl` 2 → **1**,
+`inlineStyleObjects` 50 → **28** (los 22 de componentes inalcanzables de la rebanada 4 se fueron con
+ellos). Y una brecha **nueva, registrada a propósito**: `cli-flag:--out` — `HomeDemo`, código muerto,
+era el único sitio que nombraba `--out`; la cierra la página del CLI de la Fase C.
+
 ### Tabla de revisión por componente/ruta (Fase D)
 
 Pendiente. Una fila por ítem: tokens · responsive · estados · oscuro · contraste ·

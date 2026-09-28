@@ -1,42 +1,20 @@
 'use client';
 
 import React from 'react';
-import { TypographyDemoProvider, initialTypographyItems, useTypographyDemo } from './TypographyDemoContext';
+import { TypographyDemoProvider } from './TypographyDemoContext';
 import { ResponsiveSyntaxExplainer } from './ResponsiveSyntaxExplainer';
-import { EditDialog } from './EditTypographyDialog';
 
+// MIG-B7-17 phase B (5): this used to mount EditTypographyDialog whenever the context had
+// an `editingTag`, but only DemoTypography (imported by no route) ever set one, so the dialog
+// could not open. Both were removed; ResponsiveSyntaxExplainer is the typography editor.
 type TypographyInteractivePlaygroundProps = {
   action?: React.ReactNode;
-  showEditDialog?: boolean;
 };
 
-function TypographyInteractivePlaygroundContent({
-  action,
-  showEditDialog,
-}: TypographyInteractivePlaygroundProps) {
-  const { editingTag, setEditingTag } = useTypographyDemo();
-  const editingItem = initialTypographyItems.find((i) => i.tag === editingTag);
-
-  return (
-    <>
-      <ResponsiveSyntaxExplainer action={action} />
-      {showEditDialog && editingItem && (
-        <EditDialog item={editingItem} onClose={() => setEditingTag(null)} />
-      )}
-    </>
-  );
-}
-
-export function TypographyInteractivePlayground({
-  action,
-  showEditDialog = true,
-}: TypographyInteractivePlaygroundProps) {
+export function TypographyInteractivePlayground({ action }: TypographyInteractivePlaygroundProps) {
   return (
     <TypographyDemoProvider>
-      <TypographyInteractivePlaygroundContent
-        action={action}
-        showEditDialog={showEditDialog}
-      />
+      <ResponsiveSyntaxExplainer action={action} />
     </TypographyDemoProvider>
   );
 }

@@ -17,6 +17,7 @@
     "cli-flag:--entry",
     "cli-flag:--exclude",
     "cli-flag:--include-theme",
+    "cli-flag:--out",
     "cli-flag:--sourcemap",
     "cli-flag:--src",
     "cli-flag:--strict",
@@ -48,10 +49,10 @@
   ],
   "dogfoodingBaseline": {
     "handWrittenMediaQueries": 2,
-    "hexColorsInUxdsl": 17,
-    "rgbHslInUxdsl": 2,
+    "hexColorsInUxdsl": 12,
+    "rgbHslInUxdsl": 1,
     "cssModuleFiles": 0,
-    "inlineStyleObjects": 50,
+    "inlineStyleObjects": 28,
     "hexColorsInTsx": 27
   }
 }
