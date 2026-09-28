@@ -59,6 +59,23 @@ const DELEGATED = [
 
 const contrastSignature = (f) => [f.mode, f.family, f.component, f.tone, f.state, f.pair, f.background, f.breakpoint].join('|');
 
+function assertContrastBaseline(report, pinnedSignatures) {
+  // Known failing pairs are deliberately pinned, but a stale or duplicate
+  // exception is a separate failure of the shared contrast checker.
+  if (report.exceptionIssues.length) {
+    throw new Error(`contrast exceptions invalid: ${report.exceptionIssues.join('; ')}`);
+  }
+  const pinned = new Set(pinnedSignatures);
+  const actual = report.failures.map(contrastSignature);
+  const added = actual.filter((s) => !pinned.has(s));
+  const actualSet = new Set(actual);
+  const closed = [...pinned].filter((s) => !actualSet.has(s));
+  if (added.length || closed.length) {
+    throw new Error(`${added.length} new (e.g. ${added[0] || '—'}), ${closed.length} closed (e.g. ${closed[0] || '—'}); re-pin deliberately`);
+  }
+  return `${actual.length} known failures, unchanged`;
+}
+
 function contrastReport(runtime, req) {
   let exceptions = [];
   try { exceptions = req('postcss-uxdsl/theme/base.contrast-exceptions.json'); } catch { /* optional */ }
@@ -107,7 +124,9 @@ async function main() {
   const postcss = req('postcss');
 
   if (args.has('--write-contrast-baseline')) {
-    const signatures = contrastReport(runtime, req).failures.map(contrastSignature).sort();
+    const report = contrastReport(runtime, req);
+    if (report.exceptionIssues.length) throw new Error(`contrast exceptions invalid: ${report.exceptionIssues.join('; ')}`);
+    const signatures = report.failures.map(contrastSignature).sort();
     fs.writeFileSync(BASELINE, `${JSON.stringify({ version, count: signatures.length, signatures }, null, 2)}\n`);
     console.log(`Pinned ${signatures.length} known contrast failures to ${path.relative(REPO_ROOT, BASELINE)}.`);
     return;
@@ -214,15 +233,8 @@ async function main() {
   // --- Contrast: the exact known set, not "> 0" -------------------------------
   await check('contrast', 'contrast failures are exactly the pinned set', () => {
     if (!fs.existsSync(BASELINE)) throw new Error('no baseline — run with --write-contrast-baseline and review it');
-    const pinned = new Set(JSON.parse(fs.readFileSync(BASELINE, 'utf8')).signatures);
-    const actual = contrastReport(runtime, req).failures.map(contrastSignature);
-    const added = actual.filter((s) => !pinned.has(s));
-    const actualSet = new Set(actual);
-    const closed = [...pinned].filter((s) => !actualSet.has(s));
-    if (added.length || closed.length) {
-      throw new Error(`${added.length} new (e.g. ${added[0] || '—'}), ${closed.length} closed (e.g. ${closed[0] || '—'}); re-pin deliberately`);
-    }
-    return `${actual.length} known failures, unchanged`;
+    const pinned = JSON.parse(fs.readFileSync(BASELINE, 'utf8')).signatures;
+    return assertContrastBaseline(contrastReport(runtime, req), pinned);
   });
 
   await check('B7-01', 'a toned contained Input placeholder has no contrast failure', () => {
@@ -281,6 +293,6 @@ async function main() {
   console.log('PASS: beta.7 gate (automated portion). The items listed above remain.');
 }
 
-main().catch((error) => { console.error(error); process.exitCode = 1; });
+if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature };
+module.exports = { contrastSignature, assertContrastBaseline };

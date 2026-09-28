@@ -167,29 +167,42 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'
 // difference from HEAD is those fields counts as mechanical, like a lockfile.
 // Anything else in the same file — a new dependency, a changed `exports` — is
 // still a code change.
-function withoutVersionFields(json, relFile, internalNames) {
-  const copy = JSON.parse(JSON.stringify(json));
+function withoutVersionFields(before, after, relFile, internalVersions) {
+  const oldCopy = JSON.parse(JSON.stringify(before));
+  const newCopy = JSON.parse(JSON.stringify(after));
   if (relFile.endsWith('theme-manifest.json')) {
-    delete copy.uxdslVersion;
-    return copy;
+    delete oldCopy.uxdslVersion;
+    delete newCopy.uxdslVersion;
+    return [oldCopy, newCopy];
   }
-  delete copy.version;
+  delete oldCopy.version;
+  delete newCopy.version;
   for (const field of DEPENDENCY_FIELDS) {
-    if (!copy[field]) continue;
-    for (const name of internalNames) delete copy[field][name];
+    for (const [name, versions] of internalVersions) {
+      const oldRange = oldCopy[field]?.[name];
+      const newRange = newCopy[field]?.[name];
+      // Ignore only a release bump of the same dependency in the same field.
+      // A new, removed or moved sibling dependency must still demand docs.
+      if (typeof oldRange !== 'string' || typeof newRange !== 'string') continue;
+      for (const prefix of ['', '^', '~']) {
+        if (oldRange === `${prefix}${versions.before}` && newRange === `${prefix}${versions.after}`) {
+          delete oldCopy[field][name];
+          delete newCopy[field][name];
+          break;
+        }
+      }
+    }
   }
-  return copy;
+  return [oldCopy, newCopy];
 }
 
-function isVersionBumpOnly(relFile, internalNames) {
+function isVersionBumpOnly(relFile, internalVersions) {
   if (!relFile.endsWith('/package.json') && !relFile.endsWith('/theme-manifest.json')) return false;
   const before = readJsonAt(`HEAD:${relFile}`);
   const after = readJsonAt(`:${relFile}`);
   if (!before || !after) return false;
-  return (
-    stableJson(withoutVersionFields(before, relFile, internalNames)) ===
-    stableJson(withoutVersionFields(after, relFile, internalNames))
-  );
+  const [oldCopy, newCopy] = withoutVersionFields(before, after, relFile, internalVersions);
+  return stableJson(oldCopy) === stableJson(newCopy);
 }
 
 function main() {
@@ -212,17 +225,16 @@ function main() {
   const rootReadmeChanged = stagedFiles.includes('README.md');
   const violations = [];
   const touchedPackages = [];
-  const internalNames = publishablePackages.map((pkg) => {
-    try {
-      return JSON.parse(fs.readFileSync(path.join(rootDir, pkg.rel, 'package.json'), 'utf8')).name;
-    } catch {
-      return null;
-    }
-  }).filter(Boolean);
+  const internalVersions = new Map(publishablePackages.flatMap((pkg) => {
+    const before = readJsonAt(`HEAD:${pkg.rel}/package.json`);
+    const after = readJsonAt(`:${pkg.rel}/package.json`);
+    return before?.name && before.name === after?.name && typeof before.version === 'string' && typeof after.version === 'string'
+      ? [[before.name, { before: before.version, after: after.version }]] : [];
+  }));
 
   publishablePackages.forEach((pkg) => {
     const hasCodeChange = stagedFiles.some(
-      (f) => isCodeChangeInPackage(f, pkg.rel) && !isVersionBumpOnly(f, internalNames)
+      (f) => isCodeChangeInPackage(f, pkg.rel) && !isVersionBumpOnly(f, internalVersions)
     );
     if (!hasCodeChange) return;
 

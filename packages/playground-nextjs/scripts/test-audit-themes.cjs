@@ -48,6 +48,15 @@ test('audit-themes.mjs reports each theme\'s own count, the same as checkThemeCo
   }
 });
 
+test('audit-themes.mjs rejects an invalid exception even when no ordinary contrast failures remain', async () => {
+  const { contrastVerdict } = await import('./audit-themes.mjs');
+  assert.deepEqual(contrastVerdict([{ passed: false, failures: [], exceptionIssues: ['stale exception'] }]), {
+    failures: 0,
+    exceptionIssues: 1,
+    passed: false,
+  });
+});
+
 test('audit-themes.mjs keeps using the engine: no private responsive parser, luminance or hex parser', () => {
   const source = fs.readFileSync(SCRIPT, 'utf8');
   for (const name of ['parseResponsive', 'resolveResponsive(', 'relLuminance', 'srgbToLin', 'hexToRgb', 'contrastRatio', 'deepMerge(']) {

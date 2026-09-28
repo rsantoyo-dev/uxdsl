@@ -88,12 +88,18 @@ function summarize(report) {
   return [...groups.entries()].sort((a, b) => b[1] - a[1]).map(([key, n]) => `${key}: ${n}`);
 }
 
+export function contrastVerdict(reports) {
+  const failures = reports.reduce((sum, report) => sum + report.failures.length, 0);
+  const exceptionIssues = reports.reduce((sum, report) => sum + report.exceptionIssues.length, 0);
+  return { failures, exceptionIssues, passed: reports.every((report) => report.passed) };
+}
+
 function main() {
-  let failing = 0;
+  const reports = [];
   for (const name of Object.keys(themes)) {
     const theme = themes[name];
     const report = checkThemeContrast(resolveTheme(theme), { exceptions: contrastExceptions });
-    failing += report.failures.length;
+    reports.push(report);
     console.log(`\n=== Theme: ${name} ===`);
     console.log(`Contrast (checkThemeContrast, shipped exceptions applied): ${report.passed ? 'PASS' : 'FAIL'} — ${report.checked.length} pairs checked, ${report.failures.length} failing.`);
     for (const line of summarize(report)) console.log(`  - ${line}`);
@@ -106,12 +112,13 @@ function main() {
       console.log('Typography: sizes grow across breakpoints and headings keep their order.');
     }
   }
-  if (failing > 0) {
-    console.error(`\nTheme audit FAILED: ${failing} failing contrast pair(s) across these themes. Details per pair: \`uxdsl theme --contrast\`.`);
+  const verdict = contrastVerdict(reports);
+  if (!verdict.passed) {
+    console.error(`\nTheme audit FAILED: ${verdict.failures} failing contrast pair(s), ${verdict.exceptionIssues} exception issue(s) across these themes. Details per pair: \`uxdsl theme --contrast\`.`);
     process.exitCode = 1;
   } else {
     console.log('\nTheme audit PASSED.');
   }
 }
 
-main();
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) main();
