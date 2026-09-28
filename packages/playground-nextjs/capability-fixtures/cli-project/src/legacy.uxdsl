@@ -1,0 +1,4 @@
+/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */
+.old-banner {
+  color: palette(primary-main);
+}

@@ -53,19 +53,13 @@
   }
 
   .playground {
-    display: flex;
+    display: xs(flex) md(grid);
     flex-direction: column;
+    grid-template-columns: md(300px 1fr);
     background: palette(surface-main);
     padding: space(6);
     border-radius: radius(3);
     border: border(1, palette(neutral-main));
-  }
-
-  @media (min-width: 768px) {
-    .playground {
-      display: grid;
-      grid-template-columns: 300px 1fr;
-    }
   }
 
   .controls {

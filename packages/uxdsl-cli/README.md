@@ -20,13 +20,14 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 - **Watch Mode**: Includes a robust file watcher that recompiles your styles instantly as you edit your `.uxdsl` files.
 
 The CLI's `@import`/`$var`/theme compilation pipeline is the shared
-[`compile()`](../uxdsl-core#compile-input-config) from `uxdsl-core` — the
-same pipeline any future Vite/Webpack adapter will use, so behavior can't
+[`compile()`](../uxdsl-core/README.md#compileinput-config) from `uxdsl-core` — the
+same pipeline the Vite plugin and the Webpack loader use, so behavior can't
 silently drift between them. Two related, user-visible fixes came with
-that: a missing `@import` now always fails with a located error instead of
-silently passing the `@import` line through untouched, and an import cycle
-(`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) now always fails naming
-the file chain instead of silently duplicating content once.
+that in `0.5.0-beta.6`: a missing `@import` always fails with a located error
+instead of silently passing the `@import` line through untouched, and an
+import cycle (`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) always fails
+(`UXD_IMPORT_CYCLE`) naming the file chain instead of silently duplicating
+content once.
 
 ---
 
@@ -47,7 +48,8 @@ npx uxdsl init
 npm run uxdsl:build
 ```
 
-`init` creates `uxdsl.config.cjs` and `src/uxdsl-entry.uxdsl`, adds the
+`init` creates `uxdsl.config.cjs` and `src/uxdsl-entry.uxdsl` (and, in a
+Next.js project without one, a `postcss.config.js`), adds the
 `uxdsl:build` and `uxdsl:watch` scripts when they are missing, and never
 overwrites existing project configuration. The generated entry gets the
 canonical default theme from `postcss-uxdsl`; it does not need to import the
@@ -61,6 +63,185 @@ component entry (`src/panel-a.uxdsl`, `includeTheme: false`) — instead of
 starting from the single-entry form and hand-writing `builds` from the
 "Multiple entries, one shared theme" section below. Add more entries to the
 array as the project grows.
+
+## Editor support
+
+Three kinds of help, from two mechanisms. None of them changes what compiles.
+
+| What you get | In which file | How you get it |
+| --- | --- | --- |
+| Types, completion and typo detection | `uxdsl.config.cjs` | `init` already writes it, since `0.5.0-beta.7` (TypeScript types, through JSDoc) |
+| Completion and validation of families, fields and states | your theme JSON | one `$schema` line (JSON Schema shipped in `postcss-uxdsl`) |
+| Highlighting and completion | `.uxdsl` files | the `uxdsl-vscode` extension, installed from a `.vsix` |
+
+### The build config: types from `init`
+
+Since `0.5.0-beta.7`, the config `init` writes starts like this (its comments
+omitted):
+
+```js
+// @ts-check
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+const config = {
+  entry: './src/uxdsl-entry.uxdsl',
+  outFile: './src/uxdsl.css',
+  watch: ['src/**/*.uxdsl', 'src/**/*.css'],
+};
+
+module.exports = config;
+```
+
+A mistyped key (`includeThem: false`, which the CLI would silently ignore) or a
+wrong value type is then underlined as you type, in VS Code with no extension
+and no TypeScript in the project. Each of the three details is load-bearing,
+and each was measured against TypeScript 5.9 before `init` adopted it:
+
+- **`// @ts-check`.** Editors do not check plain JavaScript by default; without
+  this line the type only completes, it does not report the typo.
+- **The type sits on a `const`.** Written as `/** @type {…} */` directly above
+  `module.exports = {…}`, TypeScript checks nothing — not a typo, not even
+  `entry: 123`.
+- **It is a type import, not a `require`.** Nothing runs at build time. If the
+  editor cannot resolve `postcss-uxdsl` from the project root, you lose the type
+  (the editor reports *Cannot find module*); the build is unaffected.
+
+To get the types, install `postcss-uxdsl` as a direct dependency of the project,
+as the installation step above does. Under pnpm's strict `node_modules`, a
+project that installed only `uxdsl-cli` cannot resolve it from its root. This is
+also why `init` does not use `defineConfig`: `require('postcss-uxdsl/config')` in
+that project **fails the build** instead of only losing the type (tested under
+npm 10.8, pnpm 9.15 and Yarn 1.22). An existing config can adopt the same form by
+hand; `init` never rewrites one that exists.
+
+### The theme JSON: `$schema`
+
+`init` does not create a theme file. A `uxdsl.theme.json` containing only
+`$schema` compiles to byte-identical CSS, but it makes every build print
+`[uxdsl] Theme config detected` — so the line is yours to add, in the theme file
+you create when you first override something:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+The path is relative to the theme file itself. It is correct when the theme sits
+at the project root next to a `node_modules` that contains `postcss-uxdsl` (npm,
+Yarn, and pnpm with the package as a direct dependency). In a monorepo whose
+`node_modules` is hoisted to the workspace root, point it there instead (for
+example `../../node_modules/postcss-uxdsl/schema/theme.schema.json`), or map the
+schema once in the editor instead of in the file — in VS Code,
+`.vscode/settings.json`:
+
+```jsonc
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["uxdsl.theme.json"],
+      "url": "./node_modules/postcss-uxdsl/schema/theme.schema.json"
+    }
+  ]
+}
+```
+
+`$schema` is metadata: it compiles to nothing, and the theme validator does not
+report it as an unknown family. `uxdsl theme --diff` does list it as a value
+from your project, like any other key in the file. The `uxdsl.theme.config.cjs`
+form has no `$schema`; see
+[`postcss-uxdsl`'s "Typed config and theme"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md#typed-config-and-theme-defineconfig-schema)
+for its TypeScript types and for which names the schema closes and which it
+leaves open for your own roles.
+
+### `.uxdsl` files: the VS Code extension
+
+`uxdsl-vscode` highlights `.uxdsl` files and completes, by context: functions
+(`palette()`, `density()`, `radius()`, the breakpoints…) inside a declaration
+value, directives after `@`, and roles, tones and sizes inside
+`@ds-surface(`/`@ds-button(`/`@ds-input(`. It also contributes CSS custom data
+for the `@ds-*` directives to VS Code's CSS language service.
+
+What it does **not** do (as of 2026-09-28): complete the roles and tones of
+**your** theme (its suggestions come from the built-in default theme — accurate
+until you add or rename roles), live diagnostics, hover, or go-to-definition.
+
+As of 2026-09-28 it is not published to a marketplace; it is installed from a
+`.vsix` built from this repository:
+
+```bash
+git clone https://github.com/rsantoyo-dev/uxdsl.git
+cd uxdsl/packages/uxdsl-vscode
+npm install
+npm run package                               # writes uxdsl-vscode-<version>.vsix
+code --install-extension uxdsl-vscode-*.vsix  # or: Extensions: Install from VSIX...
+```
+
+The extension's own
+[README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-vscode/README.md)
+covers the `files.associations → scss` alternative and its trade-off.
+
+### Other editors
+
+As of 2026-09-28, only VS Code has been tested. The config types are ordinary TypeScript types and
+the theme schema an ordinary JSON Schema, so an editor with a TypeScript language
+server or JSON Schema support should be able to use them, and the extension's
+`uxdsl.custom-data.json` follows VS Code's CSS custom data format — but none of
+that has been verified in WebStorm, Neovim or any other editor.
+
+## Before you upgrade
+
+A new version can change a default in a family your theme never mentions — and
+`theme --diff` and `--strict` only look at families you declared (see
+[Theme introspection](#6-theme-introspection-uxdsl-theme)). `uxdsl theme` with no
+flags prints the **effective** theme, every family included, as JSON on stdout.
+Save it before upgrading, save it again after, and compare:
+
+```bash
+npx uxdsl theme > effective.before.json
+npm install -D uxdsl-cli@<next> postcss-uxdsl@<next>
+npx uxdsl theme > effective.after.json
+diff effective.before.json effective.after.json
+```
+
+Keep both packages on the same version. What this shows, measured with one
+project whose theme sets only `typography_details.h1.fontWeight`, upgraded from
+`0.5.0-beta.5` to `0.5.0-beta.6` from the registry:
+
+| | beta.5 | beta.6 |
+| --- | --- | --- |
+| bytes of `uxdsl theme` | 8 438 | 13 159 |
+| top-level families | 4 | 15 |
+
+Leaf keys per family, beta.6 against beta.5:
+
+| Family | added | changed | removed |
+| --- | --- | --- | --- |
+| `modes` | 33 | — | — |
+| `palette` | 43 | 5 | — |
+| `inputs` | 23 | — | — |
+| `surfaces` | 18 | — | — |
+| `buttons` | 14 | — | — |
+| `densities` | 16 | — | — |
+| `fonts` | 1 | 2 | 1 |
+| `typography_details` | 24 | 18 | 69 |
+
+(plus `colors` 4, `breakpoints` 5, `borders` 5, `radii` 6, `shadows` 6 and
+`typography` 1, all added). `theme --diff` on the same project, after the
+upgrade, lists only the 78 `typography_details` rows.
+
+**What this cannot show:** it compares the *theme*, not the compiled CSS. A
+change in how the compiler emits CSS from the same theme — for example the order
+of the Google Fonts `@import` fixed in `0.5.0-beta.7` — leaves both files
+identical. Those changes are announced only in `postcss-uxdsl`'s
+[CHANGELOG](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/CHANGELOG.md):
+read every `### Visual changes` section between your version and the new one.
+If the project keeps local patches of UXDSL packages (`patches/`, via
+patch-package), check them too — see "Antes de actualizar" in the
+[migration guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md).
+
+`UXDSL_DEBUG=1` adds discovery lines to stdout; leave it unset when saving the
+snapshots.
 
 ## Usage
 
@@ -94,37 +275,31 @@ UXDSL's shared defaults:
 
 **Let your editor check it.** An unknown key here is not an error — nothing
 reads it, so `includeThem: false` silently does nothing and the build just
-behaves as if you had never written it. Wrap the object in `defineConfig` and
-add the JSDoc type, and the typo is flagged as you type:
+behaves as if you had never written it. The config `init` writes (since
+`0.5.0-beta.7`) is already typed so the typo is flagged as you type; for a config you write by hand, use
+the same form:
 
 ```js
-const { defineConfig } = require('postcss-uxdsl/config');
-
+// @ts-check
 /** @type {import('postcss-uxdsl/config').UxdslConfig} */
-module.exports = defineConfig({
+const config = {
   entry: './src/app/uxdsl-entry.uxdsl',
   outFile: './src/app/uxdsl.css',
   watch: ['src/**/*.uxdsl'],
-});
+};
+
+module.exports = config;
 ```
 
-This needs no TypeScript in your project — VS Code type-checks JSDoc in plain
-`.js`/`.cjs` files. The type also knows `entry`/`outFile` and `builds` are
-alternatives, not a combination, which is what the CLI enforces at run time.
-
-For the theme file, point `$schema` at the packaged JSON Schema and get the
-same treatment for family, field and state names:
-
-```json
-{
-  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
-  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
-}
-```
-
-See
-[`postcss-uxdsl`'s README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md)
-for which names are closed and which stay open for your own roles.
+This needs no TypeScript in your project, but it does need the `// @ts-check`
+line (editors do not check plain JavaScript by default) and the type on a
+`const` (on `module.exports = {…}` it checks nothing). The type also knows
+`entry`/`outFile` and `builds` are alternatives, not a combination, which is
+what the CLI enforces at run time. `defineConfig` from `postcss-uxdsl/config`
+checks the same way, at the cost of a run-time `require` that fails the build
+where `postcss-uxdsl` is not resolvable from the project root. See
+[Editor support](#editor-support) for why each detail matters, and for the
+theme file's `$schema`.
 
 ### 2. Theme configuration (`uxdsl.theme.config.cjs`)
 
@@ -228,9 +403,10 @@ $ npx uxdsl build
 [uxdsl] Error: uxdsl.theme.config.cjs: UXD_EDGE_VALUE: Invalid token 1 (at radii.1).
 ```
 
-Surfaces, Densities, Radii, Borders, Shadows and Typography details theme
-errors all carry this key path today; Button/Input role/state errors and a
-few lower-level theme-map checks do not yet.
+As of 2026-09-28, Surfaces, Densities, Radii, Borders, Shadows and Typography
+details theme errors carry this key path; Button/Input role/state errors (for
+example `UXD_BUTTON_SURFACE: Unknown nope.`) and a few lower-level theme-map
+checks do not.
 
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 
@@ -265,8 +441,8 @@ module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaul
 ```
 
 Prefer declaring `breakpoints` in the theme file, not `uxdsl.config.cjs` — the
-theme is the one thing `uxdsl-cli`, the plugin used directly, and any future
-bundler adapter all discover and agree on, while `uxdsl.config.cjs` is
+theme is the one thing `uxdsl-cli`, the plugin used directly, the Vite plugin
+and the Webpack loader all discover and agree on, while `uxdsl.config.cjs` is
 build-orchestration specific to this CLI. `init` never writes `breakpoints:`
 into `uxdsl.config.cjs` for exactly this reason (MIG-B6-19, FEAT-008): a full
 copy of the defaults there used to permanently shadow every key the theme
@@ -351,7 +527,7 @@ don't change between rebuilds.
 
 **Watch survives errors** (MIG-B6-23, FEAT-008): an initial build that fails
 to compile, or a config/theme file that fails to load at all (a syntax
-error, for instance), no longer ends the process — the error prints and
+error, for instance), does not end the process — the error prints and
 `watch` keeps running, watching `uxdsl.config.cjs`/`uxdsl.theme.config.*`'s
 usual candidate names (plus any explicit `--config`/`--entry`) until one
 loads successfully. A plain `uxdsl build` (no `--watch`) is unaffected —
@@ -367,11 +543,24 @@ target just created) also rebuilds everything, as the safe fallback.
 
 **Writes only what changed, atomically:** an entry whose compiled output is
 byte-identical to what's already on disk is left completely alone — same
-mtime, same inode — instead of being rewritten every rebuild (previously
-every entry was rewritten unconditionally, so a dev server watching the
+mtime, same inode — instead of being rewritten every rebuild (before
+`0.5.0-beta.6` every entry was rewritten unconditionally, so a dev server watching the
 output directory reloaded stylesheets nothing had actually changed in). A
 real write goes to a temp file in the same directory first, then an atomic
 rename — a reader can never observe a truncated or empty output file mid-write.
+
+That is what the log line means, in `build` and `watch` alike (the text in
+parentheses was added in `0.5.0-beta.7`; earlier versions print only
+`[uxdsl] unchanged <file>`):
+
+```text
+[uxdsl] unchanged src/uxdsl.css (compiled output identical to the file on disk; not rewritten)
+```
+
+"Unchanged" is about the **output**, not the inputs: you may well have edited
+the theme or a `.uxdsl` file, but it compiled to exactly the bytes already on
+disk (or another process — a running `watch` — had already written them).
+`[uxdsl] built <file> (<n> bytes)` means the file was written.
 
 ### 5. CLI Arguments (No Config)
 
@@ -394,7 +583,12 @@ npx uxdsl theme
 `--diff` prints only the families your own `uxdsl.config.cjs`/theme file
 mentions, one row per leaf, each labeled `"project"` (you supplied that
 value) or `"default"` (silently inherited from `postcss-uxdsl`'s
-`DEFAULT_THEME`) — instead of the full resolved tree:
+`DEFAULT_THEME`) — instead of the full resolved tree. **A family you never
+declared does not appear at all**, even though your build uses it in full from
+the defaults: with a theme that only sets `typography_details.h1.fontWeight`,
+`--diff` lists 78 `typography_details` rows and nothing from `modes`, `fonts`
+or `palette`. So it cannot tell you that an upgrade changed one of those; for
+that, see [Before you upgrade](#before-you-upgrade).
 
 ```bash
 npx uxdsl theme --diff
@@ -403,7 +597,9 @@ npx uxdsl theme --diff
 ```json
 [
   { "path": "palette.primary.main", "value": "#123456", "source": "project" },
-  { "path": "palette.primary.dark", "value": "#581c87", "source": "default" }
+  { "path": "palette.primary.light", "value": "#a855f7", "source": "default" },
+  { "path": "palette.primary.dark", "value": "#581c87", "source": "default" },
+  { "path": "palette.primary.contrast", "value": "#ffffff", "source": "default" }
 ]
 ```
 
@@ -414,6 +610,12 @@ distinguish from "this value happens to match the default anyway":
 ```bash
 npx uxdsl theme --strict
 ```
+
+A family you did not declare is not "partially filled" — it is entirely
+inherited — so `--strict` never fails on it, and naming it does not change
+that: `--strict=modes` exits 0 when `modes` comes wholly from the defaults. The
+same holds for `build --strict-theme`. Changes to undeclared families across
+versions are what the [Before you upgrade](#before-you-upgrade) snapshot shows.
 
 `--strict=palette,breakpoints` scopes the check to only those families —
 see `--strict-theme`'s own note below for why this is usually what you
@@ -516,11 +718,12 @@ still writes nothing at all — neither CSS nor maps.
 ### Verifying a partial override (`theme --diff`, `theme --contrast`)
 
 A theme is the base plus your override, merged key by key — so overriding
-`palette.primary.main` keeps the base's `primary.dark` and `primary.contrast`.
+`palette.primary.main` keeps the base's `primary.light`, `primary.dark` and
+`primary.contrast`.
 Your button turns green and its `:hover`, which uses `dark`, stays purple.
 
 `uxdsl theme --diff` labels every value `project` or `default` on stdout, and
-now also prints a summary of the mixed entries on **stderr**:
+(since `0.5.0-beta.6`) also prints a summary of the mixed entries on **stderr**:
 
 ```text
 $ uxdsl theme --diff
@@ -538,8 +741,9 @@ fails.
 uxdsl theme --contrast | jq '.failures[] | {tone, state, ratio, required}'
 ```
 
-Each failure carries its mode (light/dark), component, tone, state, breakpoint,
-the resolved colors and the ratio, so it points at something you can change.
+Each failure carries its mode (light/dark), component, tone, state, pair,
+breakpoint and the measured and required ratio, so it points at something you
+can change. It does not include the resolved hex colors (as of 2026-09-28).
 It loads the exceptions shipped with the base theme; those match on the
 resolved colors, so overriding one of them stops inheriting its exception and
 reports it as stale instead of silently excusing a pair you changed.
@@ -549,7 +753,8 @@ it — and it cannot be combined with `--diff` or `--strict`, because each print
 its own document on stdout.
 
 One thing to expect on a first run: the packaged base theme does not pass its
-own gate yet. Those failures are real and disclosed upstream, not a problem
+own gate (as of 2026-09-28, `uxdsl theme --contrast` in a project with no theme
+override reports 123 failing pairs). Those failures are real and disclosed upstream, not a problem
 with your config, so focus on the pairs your own override introduced.
 
 ### 8. Strict flag parsing: accepted values, unknown flags, unknown families

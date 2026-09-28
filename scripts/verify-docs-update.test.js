@@ -151,9 +151,52 @@ test('MIG-B6-30: a lockfile sync alone does not demand a README note, but packag
   assert.equal(runGuard(dir).status, 0, 'a lockfile-only change should not require a README');
 
   // The real dependency declaration is still guarded.
-  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.1' }));
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.0', dependencies: { chalk: '^5.0.0' } }));
   stage(dir, 'packages/postcss-uxdsl/package.json');
   assert.notEqual(runGuard(dir).status, 0, 'a package.json change must still require a docs note');
+});
+
+test('a release version bump (version, sibling ranges, theme manifest) needs no README; anything more still does', () => {
+  const { dir, pkgDir } = mkFakeRepo();
+  const cliDir = path.join(dir, 'packages', 'uxdsl-cli');
+  const coreDir = path.join(dir, 'packages', 'uxdsl-core');
+  fs.mkdirSync(cliDir, { recursive: true });
+  fs.mkdirSync(coreDir, { recursive: true });
+  fs.writeFileSync(path.join(cliDir, 'README.md'), '# cli\n');
+  fs.writeFileSync(path.join(coreDir, 'README.md'), '# core\n');
+  fs.writeFileSync(path.join(coreDir, 'package.json'), JSON.stringify({ name: 'uxdsl-core', version: '0.0.0' }));
+  const cliPkg = (version, deps) => JSON.stringify({ name: 'uxdsl-cli', version, dependencies: deps });
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.0', { 'postcss-uxdsl': '0.0.0', minimist: '^1.2.8' }));
+  fs.mkdirSync(path.join(pkgDir, 'src', 'theme'), { recursive: true });
+  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'theme-manifest.json'), JSON.stringify({ uxdslVersion: '0.0.0', theme: { name: 'Default' } }));
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add cli and manifest']);
+
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.1' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', minimist: '^1.2.8' }));
+  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'theme-manifest.json'), JSON.stringify({ uxdslVersion: '0.0.1', theme: { name: 'Default' } }));
+  stage(dir, '-A');
+  assert.equal(runGuard(dir).status, 0, 'a version bump alone should not require a README');
+
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', minimist: '^1.3.0' }));
+  stage(dir, '-A');
+  assert.notEqual(runGuard(dir).status, 0, 'an external dependency change alongside the bump still requires a README');
+
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', 'uxdsl-core': '0.0.0', minimist: '^1.2.8' }));
+  stage(dir, '-A');
+  assert.notEqual(runGuard(dir).status, 0, 'adding an internal dependency is not a release range bump');
+
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { minimist: '^1.2.8' }));
+  stage(dir, '-A');
+  assert.notEqual(runGuard(dir).status, 0, 'removing an internal dependency still requires docs');
+
+  fs.writeFileSync(path.join(cliDir, 'package.json'), JSON.stringify({ name: 'uxdsl-cli', version: '0.0.1', dependencies: { minimist: '^1.2.8' }, devDependencies: { 'postcss-uxdsl': '0.0.1' } }));
+  stage(dir, '-A');
+  assert.notEqual(runGuard(dir).status, 0, 'moving an internal dependency to another field still requires docs');
+
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '99.0.0', minimist: '^1.2.8' }));
+  stage(dir, '-A');
+  assert.notEqual(runGuard(dir).status, 0, 'an unrelated internal range change still requires docs');
 });
 
 // --- MIG-B7-16 (FEAT-009): engines are covered, and the classification is complete ---

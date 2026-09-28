@@ -8,7 +8,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: color(black, 0.5);
     z-index: 1100; /* Above AppHeader (1000) */
     opacity: 0;
     pointer-events: none;
@@ -110,6 +110,9 @@
   }
 
   /* --- Desktop Overrides (Media Query) --- */
+  /* A hand-written @media on purpose (MIG-B7-17 phase B): from lg the whole component becomes a
+     sticky sidebar and takes @ds-surface(flat), and a directive cannot be responsive, so this
+     cannot be lg() on each property. Keep 1024px equal to the theme's lg. */
   @media (min-width: 1024px) {
     /* Restore to visible and in flow on desktop */
     display: block;

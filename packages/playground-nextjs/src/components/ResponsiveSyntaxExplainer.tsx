@@ -642,7 +642,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   );
 
   return (
-    <div ref={containerRef} style={{ height: '100%' }}>
+    <div ref={containerRef} className="responsive-syntax-explainer">
       <InteractiveDemoContainer
         title="Interactive Demo: Typography"
         action={action}

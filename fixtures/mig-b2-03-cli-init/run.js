@@ -21,6 +21,12 @@
  * (theme entry + one example component entry) — build succeeds
  * immediately, only the theme entry defines `:root`, a second run is
  * idempotent (hash comparison), and plain `init` (no flag) is unaffected.
+ *
+ * (10) MIG-B7-12 (FEAT-009): from a real `npm pack` tarball of postcss-uxdsl
+ * (not this checkout's directory), the `$schema` path the READMEs document
+ * exists inside the installed package, is exported, and is the JSON Schema;
+ * and the config `init` writes type-checks against that installed package —
+ * a typo in it is reported, and it resolves the type rather than failing to.
  */
 
 const fs = require('fs');
@@ -30,6 +36,7 @@ const crypto = require('crypto');
 const { execFileSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
+const { packAndInstall } = require('../lib/tarball-consumer');
 const CLI_BIN = path.join(REPO_ROOT, 'packages', 'uxdsl-cli', 'bin', 'uxdsl.js');
 const POSTCSS_UXDSL_DIR = path.join(REPO_ROOT, 'packages', 'postcss-uxdsl');
 
@@ -178,6 +185,38 @@ async function main() {
   check('running init --multi a second time changes no existing file (hash comparison)', JSON.stringify(multiBefore) === JSON.stringify(multiAfter));
 
   check('plain "init" (no --multi) still produces the single-entry form, unaffected by this story', !/builds:\s*\[/.test(configContent));
+
+  // --- 10 (MIG-B7-12, FEAT-009): editor support from a real tarball ---
+  const tarball = packAndInstall({ names: ['postcss-uxdsl'], tmpPrefix: 'uxdsl-cli-init-tarball-' });
+  const DOCUMENTED_SCHEMA = './node_modules/postcss-uxdsl/schema/theme.schema.json';
+  const schemaFile = path.join(tarball.dir, DOCUMENTED_SCHEMA);
+  check('the documented $schema path exists inside the installed tarball', fs.existsSync(schemaFile));
+  let schema = null;
+  try { schema = JSON.parse(fs.readFileSync(schemaFile, 'utf8')); } catch (_) {}
+  check('the documented $schema file is a JSON Schema', !!schema && typeof schema.$schema === 'string' && /json-schema/.test(schema.$schema));
+  let exported = null;
+  try { exported = tarball.req.resolve('postcss-uxdsl/schema/theme.schema.json'); } catch (_) {}
+  check('postcss-uxdsl/schema/theme.schema.json is reachable through the exports map', exported === fs.realpathSync(schemaFile));
+  check('the installed tarball ships the config types the JSDoc imports', fs.existsSync(path.join(tarball.dir, 'node_modules', 'postcss-uxdsl', 'dist', 'config.d.ts')));
+
+  const tarballInit = runCli(['init'], tarball.dir);
+  check('init exits 0 in the tarball-installed project', tarballInit.ok);
+  const tsc = path.join(POSTCSS_UXDSL_DIR, 'node_modules', 'typescript', 'bin', 'tsc');
+  const typeCheck = () => {
+    try {
+      execFileSync(process.execPath, [tsc, '--noEmit', '--allowJs', '--skipLibCheck', '--target', 'es2022', '--module', 'preserve', '--moduleResolution', 'bundler', 'uxdsl.config.cjs'], { cwd: tarball.dir, encoding: 'utf8', stdio: 'pipe' });
+      return { ok: true, output: '' };
+    } catch (err) {
+      return { ok: false, output: `${err.stdout || ''}${err.stderr || ''}` };
+    }
+  };
+  const cleanCheck = typeCheck();
+  check('the config init writes type-checks clean against the installed package', cleanCheck.ok);
+  if (!cleanCheck.ok) console.log(cleanCheck.output);
+  const tarballConfig = path.join(tarball.dir, 'uxdsl.config.cjs');
+  fs.writeFileSync(tarballConfig, fs.readFileSync(tarballConfig, 'utf8').replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  includeThem: false,\n"));
+  const typoCheck = typeCheck();
+  check('a typo in that config is reported (TS2561), not a missing module (TS2307)', !typoCheck.ok && /TS2561/.test(typoCheck.output) && !/TS2307/.test(typoCheck.output));
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   if (failures.length) {

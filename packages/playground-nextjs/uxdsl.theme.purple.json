@@ -1,4 +1,5 @@
 {
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
   "typography_details": {
     "h1": {
       "lineHeight": "xs(1.1) md(1.2)"

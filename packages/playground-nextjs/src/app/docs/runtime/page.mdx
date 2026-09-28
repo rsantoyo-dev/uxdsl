@@ -1,0 +1,47 @@
+import { PageTitle } from '@/components/PageTitle'
+import { SiteThemeState, RuntimeSandbox } from '@/components/RuntimeLab'
+import { ThemeResolution, DirectiveDeclarations, FontsImport } from '@/components/RuntimeEngines'
+
+<PageTitle
+  title="Runtime API"
+  subtitle="postcss-uxdsl/ds-runtime, called for real on this page."
+  subtext="Nothing below is a description of a call: each panel runs the exported function and shows what it returned."
+/>
+
+<div className="doc-section">
+
+## The theme this site applied
+
+The site initializes the runtime once, in `ThemeContext`, with `applyTheme(themes.default, { replace: true, styleId: 'uxdsl-ssr-theme' })` — the override it was built with — and applies the other named themes the same way when you pick one in the header. The calls here only read that state: `getAppliedTheme()` returns the applied override, `subscribeTheme(listener)` is notified after each successful application, and `getPalette('primary-main')` reads the computed custom property.
+
+</div>
+
+<SiteThemeState />
+
+<div className="doc-section">
+
+## Calls that change state run in a sandbox
+
+`applyTheme`, `resetTheme` and `loadPersistedTheme` manage one stylesheet per document; the per-token setters (`updatePalette`, `updateColor`, `updateSpacing`, `updateBreakpoint`) write inline custom properties and rewrite compiled media queries. On this page they would compete with `ThemeContext`, so they run in the frame below: a page compiled with this site's default theme (by the real compiler, at build time), with its own document and its own copy of the runtime. Run the steps in order, watch the frame and the report, and reload the sandbox to undo everything.
+
+Two results are worth reading closely, because they are the honest edges of the old API rather than bugs in this page. After `updatePalette`, a later `applyTheme` returns `ok: true` and the color does not change: the inline value beats any stylesheet (this site's `ThemeContext` clears those inline values after each application for exactly that reason). And after `updateBreakpoint('md', 900)`, `getBreakpoints()` says 900 while `getAppliedTheme()` still says 768: the legacy API rewrote the compiled rules, not the theme, and `applyTheme` itself refuses to move a threshold (`UXD_THEME_STRUCTURE`) — moving one is a rebuild.
+
+`loadPersistedTheme` is always called here with the lab's own `key` and `migrateLegacy: false`. A default call migrates, and then deletes, the four pre-beta.6 storage keys — which this site's older demos still write.
+
+</div>
+
+<RuntimeSandbox />
+
+<div className="doc-section">
+
+## Resolution, engines and fonts
+
+These functions are pure: they take a theme and return a value, so they run on this page against the active theme. `resolveTheme` is the one place an effective theme is built (the base with an override merged over it); `buttonDeclarations`, `inputDeclarations` and `resolveTypographyRole` are what `@ds-button`, `@ds-input` and `@ds-typo` expand to — the compiler calls the same functions; `googleFontsImportUrls` and `encodeGoogleFontFamily` build the Google Fonts `@import` both the compiler and `generateThemeCss` emit.
+
+</div>
+
+<div className="cap-grid">
+  <ThemeResolution />
+  <DirectiveDeclarations />
+  <FontsImport />
+</div>

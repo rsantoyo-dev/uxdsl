@@ -28,7 +28,7 @@
   .color-token:hover { transform: scale(1.05); z-index: 1; box-shadow: shadow(2); }
 
   .token-shade { @ds-typo (caption); font-weight: bold; opacity: 0.9; pointer-events: none; }
-  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: density(1); right: density(1); pointer-events: none; }
+  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: space(1); position: absolute; bottom: density(1); right: density(1); pointer-events: none; }
   .token-hex { @ds-typo (caption); font-family: monospace; font-weight: bold; font-size: 0.75em; }
   .token-rgb { @ds-typo (tag); font-family: monospace; opacity: 0.7; font-size: 0.65em; }
 
@@ -41,18 +41,12 @@
 
   .surface-playground {
     display: flex;
-    flex-direction: column;
+    flex-direction: xs(column) md(row);
+    align-items: md(flex-start);
     gap: density(3);
     @ds-surface(outlined);
     padding: density(3);
     background: palette(surface-light, 0.3);
-  }
-
-  @media (min-width: 768px) {
-    .surface-playground {
-      flex-direction: row;
-      align-items: flex-start;
-    }
   }
 
   .surface-playground__controls {
@@ -112,4 +106,29 @@
       }
     }
   }
+}
+
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoColors.tsx (the text color of each chip
+   and of the live preview is computed at runtime and stays inline). */
+#DemoColors .color-token {
+  position: relative;
+}
+
+.color-picker-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.color-live-preview {
+  padding: space(4);
+  border-radius: space(2);
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
 }

@@ -11,3 +11,8 @@
     text-decoration: underline;
   }
 }
+
+/* MIG-B7-17 phase B (4): was inline style={{}} in app/productivity/page.tsx. */
+#ProductivityPage .back-link-row {
+  margin-bottom: space(5);
+}

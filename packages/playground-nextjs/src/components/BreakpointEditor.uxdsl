@@ -11,3 +11,26 @@
   flex-direction: column;
   gap: density(2);
 }
+
+/* MIG-B7-17 phase B (4): the dialog's frame was inline style={{}} in BreakpointEditor.tsx. */
+.breakpoint-editor__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color(black, 0.5);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+}
+
+.breakpoint-editor__dialog {
+  background: palette(surface-main);
+  padding: space(7);
+  border-radius: 1rem;
+  width: min(560px, 90vw);
+}
+
+.breakpoint-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: space(5);
+}

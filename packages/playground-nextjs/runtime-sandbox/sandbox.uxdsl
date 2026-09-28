@@ -1,0 +1,70 @@
+/* MIG-B7-17 phase C: the stylesheet of the runtime sandbox (public/runtime-sandbox/),
+   compiled by scripts/build-runtime-sandbox.js with the real compiler and the site's own
+   default theme. It lives outside src/ on purpose: it is not part of the site's global
+   stylesheet, it is the "compiled project" the runtime functions act on inside an iframe. */
+
+html,
+body {
+  margin: 0;
+  background: palette(surface-main);
+  color: palette(surface-contrast);
+  font-family: var(--uxdsl__font__ui, system-ui, sans-serif);
+}
+
+.lab {
+  display: grid;
+  gap: space(3);
+  padding: space(3);
+}
+
+.lab-row {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: space(3);
+}
+
+.lab-swatch {
+  padding: space(3);
+  border-radius: rounded(2);
+  box-shadow: elevation(1);
+  font-size: 0.8125rem;
+}
+
+.lab-swatch--palette {
+  background: palette(primary-main);
+  color: palette(primary-contrast);
+}
+
+.lab-swatch--color {
+  background: color(gray-300);
+  color: palette(surface-contrast);
+}
+
+.lab-box {
+  border: 1px dashed palette(neutral-main);
+  border-radius: radius(1);
+  font-size: 0.8125rem;
+}
+
+.lab-box--space {
+  padding: space(4);
+}
+
+.lab-box--density {
+  padding: density(4);
+}
+
+.lab-layout {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: space(2);
+}
+
+.lab-layout > div {
+  flex: 1;
+  padding: space(2);
+  background: palette(surface-light);
+  border: 1px solid palette(neutral-light);
+  border-radius: radius(1);
+  font-size: 0.8125rem;
+}

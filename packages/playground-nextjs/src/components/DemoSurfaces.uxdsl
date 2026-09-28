@@ -151,7 +151,7 @@
   }
 
   .surface-card__edit-btn {
-    padding: 4px 12px;
+    padding: space(2) space(4);
     font-size: 0.8rem;
     cursor: pointer;
     background: palette(surface-light);
@@ -188,7 +188,7 @@
   .surface-props-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: space(2);
     font-family: monospace;
     font-size: 0.8rem;
     color: palette(neutral-dark);
@@ -196,7 +196,7 @@
 
   .surface-prop {
     display: flex;
-    gap: 8px;
+    gap: space(3);
   }
 
   .surface-prop-key {
@@ -212,18 +212,12 @@
 
   .surface-playground {
     display: flex;
-    flex-direction: column;
+    flex-direction: xs(column) md(row);
+    align-items: md(flex-start);
     gap: density(3);
     @ds-surface(outlined);
     padding: density(3);
     background: palette(surface-light, 0.3);
-  }
-
-  @media (min-width: 768px) {
-    .surface-playground {
-      flex-direction: row;
-      align-items: flex-start;
-    }
   }
 
   .surface-playground__controls {

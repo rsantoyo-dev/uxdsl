@@ -1,8 +1,7 @@
 import AgentGuidance from './AgentGuidance'
-import styles from './BreakpointDocumentation.module.css'
 
 export default function ShadowDocumentation() {
-  return <div className={styles.content}>
+  return <div className="doc-section">
     <section aria-labelledby="shadows-explained">
       <h2 id="shadows-explained">Define shared depth. Let components choose the treatment.</h2>
       <p><strong>Responsibility: maintain shared shadow treatments and their responsive behavior.</strong> Shadows describe visual depth or an inset effect. A preset can contain several layers, remain stable or change across breakpoints. Its number is a key, not a pixel value, a z-index or a guarantee that higher numbers always look stronger.</p>
@@ -16,7 +15,7 @@ export default function ShadowDocumentation() {
   }
 }`}</code></pre>
       <p>These are illustrative values. Inspect the active configuration and overrides. Shared defaults are supplied for omitted presets. Shadow 0 explicitly means no shadow. Each configured value can be plain CSS or a responsive progression with a base value.</p>
-      <div className={styles.comparison}>
+      <div className="doc-section__comparison">
         <div><h4>UXDSL</h4><pre><code className="language-css">{`.card {
   box-shadow: shadow(2);
 }

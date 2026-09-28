@@ -701,6 +701,13 @@ input[type="range"] {
 input[type="range"]:hover {
   opacity: 1;
 }
+/* MIG-B7-17 phase E: the rule above removes the native outline; the browser walk found every
+   range slider reachable by Tab with no visible focus. Keyboard focus gets a ring again. */
+input[type="range"]:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -731,6 +738,13 @@ input[type="range"]::-moz-range-thumb:hover {
   background: var(--uxdsl__palette__primary-light);
   transform: scale(1.1);
 }
+/* A full-width monospace textarea for the theme/JSON editors in the demos (DemoBorders,
+   DemoButtons, DemoShadows, DemoSurfaces, InputDemo, BreakpointEditor). MIG-B7-17 phase B (4):
+   was the same inline style={{}} in all six. */
+.code-textarea {
+  width: 100%;
+  font-family: monospace;
+}
 /* Global layout primitives for Next.js app */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { 
@@ -741,7 +755,7 @@ html, body {
   font-family: var(--uxdsl__font__ui, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   background: var(--uxdsl__palette__surface-main);
   color: var(--uxdsl__palette__surface-contrast);
-  /* overflow-x: hidden; Removed to fix sticky positioning context */
+  /* No overflow-x here: it would break the sticky positioning context. */
 }
 .main {
   display: block;
@@ -779,143 +793,94 @@ html, body {
 }
 }
 .layout__nav {
-  /* Mobile: Remove from flow to prevent grid gap/spacing */
+  /* Mobile: remove from flow to prevent grid gap/spacing. Desktop (lg): restore to grid flow. */
   position: absolute;
   width: 0;
   height: 0;
-
-  /* Desktop: Restore to grid flow */
-  @media (min-width: 1024px) {
+  min-width: auto;
+}
+@media (min-width: 1024px) {
+.layout__nav {
     position: static;
     width: auto;
     height: auto;
     min-width: 0;
-  }
+}
 }
 .layout__content {
   min-width: 0;
 }
-/* App-level theme overrides (hyphen alias variables). These override the
-   default palette injected by the plugin. You can tweak any tokens here. */
-:root {
-  /* =============================
-     Palette aliases (brand example)
-     ============================= */
-  /*
-  --primary-main: #0d5c63;
-  --primary-light: #33a0a8;
-  --primary-dark: #063539;
-  --primary-contrast: #f5fbff;
+/* App-level theme overrides.
 
-  --secondary-main: #f97316;
-  --secondary-light: #ffab66;
-  --secondary-dark: #c2410c;
-  --secondary-contrast: #1a0b02;
-
-  --success-main: #1f7a4c;
-  --success-light: #4ade80;
-  --success-dark: #145532;
-  --success-contrast: #f0fff4;
-
-  --warning-main: #facc15;
-  --warning-light: #fde047;
-  --warning-dark: #a16207;
-  --warning-contrast: #1f1300;
-
-  --uxdsl__surface__main: #fdfcf8;
-  --uxdsl__surface__light: #ffffff;
-  --uxdsl__surface__dark: #e7e1cf;
-  --uxdsl__surface__contrast: #0f172a;
-  */
-
-  /* Bridge aliases to canonical DS tokens */
-  /*
-  --uxdsl__palette__primary-main: var(--primary-main);
-  --uxdsl__palette__primary-light: var(--primary-light);
-  --uxdsl__palette__primary-dark: var(--primary-dark);
-  --uxdsl__palette__primary-contrast: var(--primary-contrast);
-
-  --uxdsl__palette__secondary-main: var(--secondary-main);
-  --uxdsl__palette__secondary-light: var(--secondary-light);
-  --uxdsl__palette__secondary-dark: var(--secondary-dark);
-  --uxdsl__palette__secondary-contrast: var(--secondary-contrast);
-
-  --uxdsl__palette__success-main: var(--success-main);
-  --uxdsl__palette__success-light: var(--success-light);
-  --uxdsl__palette__success-dark: var(--success-dark);
-  --uxdsl__palette__success-contrast: var(--success-contrast);
-
-  --uxdsl__palette__warning-main: var(--warning-main);
-  --uxdsl__palette__warning-light: var(--warning-light);
-  --uxdsl__palette__warning-dark: var(--warning-dark);
-  --uxdsl__palette__warning-contrast: var(--warning-contrast);
-
-  --uxdsl__palette__surface-main: var(--uxdsl__surface__main);
-  --uxdsl__palette__surface-light: var(--uxdsl__surface__light);
-  --uxdsl__palette__surface-dark: var(--uxdsl__surface__dark);
-  --uxdsl__palette__surface-contrast: var(--uxdsl__surface__contrast);
-  */
-
-  /* =============================
-     Typography + font families
-     ============================= */
-  /*
-  --uxdsl__font__ui: cursive, "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --uxdsl__font__ui-2: fantasy, "Segoe UI", system-ui, -apple-system, sans-serif;
-  */
-  --uxdsl__font__code: "JetBrains Mono", "SF Mono", Menlo, monospace;
-
-  /*
-  --uxdsl__typography__h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
-  --uxdsl__typography__h1-weight: 700;
-  --uxdsl__typography__h1-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
-  --uxdsl__typography__h2-weight: 700;
-  --uxdsl__typography__h2-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
-  --uxdsl__typography__h3-weight: 600;
-  --uxdsl__typography__h3-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
-  --uxdsl__typography__h4-weight: 600;
-  --uxdsl__typography__h4-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
-  --uxdsl__typography__h5-weight: 600;
-  --uxdsl__typography__h5-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-
-  --uxdsl__typography__h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
-  --uxdsl__typography__h6-weight: 600;
-  --uxdsl__typography__h6-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-  */
-
-  /* =============================
-     Custom spacing scale (1–12)
-     ============================= */
-  /* Moved to uxdsl.theme.json */
-  /*
-  --uxdsl__space__1: 0.175rem;
-  --uxdsl__space__2: 0.35rem;
-  --uxdsl__space__3: 0.55rem;
-  --uxdsl__space__4: 0.8rem;
-  --uxdsl__space__5: 1rem;
-  --uxdsl__space__6: 1.35rem;
-  --uxdsl__space__7: 1.75rem;
-  --uxdsl__space__8: 2.25rem;
-  --uxdsl__space__9: 2.75rem;
-  --uxdsl__space__10: 3.5rem;
-  --uxdsl__space__11: 4.25rem;
-  --uxdsl__space__12: 5rem;
-  */
-
-  /* Radius overrides */
-  --uxdsl__radius__full: 9999px;
+   Nothing lives here any more (MIG-B7-17 phase B): the playground's theme is the JSON in
+   uxdsl.theme.*.json, merged over postcss-uxdsl/theme/base.json by themes.js. What this file
+   held was dead:
+   - about 95 lines of commented-out palette aliases, font families, a typography scale and a
+     spacing scale from before the theme moved to JSON;
+   - `--uxdsl__font__code` and `--uxdsl__radius__full` on :root. The generated theme's own
+     :root comes later in the same stylesheet and sets --uxdsl__font__code back to the theme's
+     value (checked in Chrome: the computed value was `monospace`, never the JetBrains Mono
+     written here), and nothing reads --uxdsl__radius__full (radius(full) compiles to 9999px);
+   - an @theme block of density-1..6 overrides, which the JSON densities replace (JSON
+     overrides legacy @theme; the compiled Density rules follow the JSON progression).
+   To change a token, change the theme JSON. The file stays because generate-uxdsl-entry.js
+   imports it first, by name. */
+/* The "AI implementation guide" section that closes each documentation page.
+   Was AgentGuidance.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl is
+   global. Stable spacing uses space(); the code panel and edge use Color identities, dark
+   in both modes on purpose. Font sizes are this section's own prose scale, not a role. */
+.agent-guidance {
+  margin-block: 3rem;
+  padding: clamp(var(--uxdsl__space__5), 3vw, var(--uxdsl__space__7));
+  border: 1px solid var(--uxdsl__color__gray-400);
+  border-radius: 0.75rem;
+  min-width: 0;
+  line-height: 1.7;
+  scroll-margin-top: 5rem;
 }
-/* =============================
-   Density tokens (sample overrides)
-   ============================= */
+.agent-guidance__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.agent-guidance h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__3) var(--uxdsl__space__5);
+}
+.agent-guidance h3 {
+  font-size: 1.15rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.agent-guidance p {
+  margin-block: var(--uxdsl__space__4);
+}
+.agent-guidance ul, .agent-guidance ol {
+  padding-inline-start: var(--uxdsl__space__6);
+  margin-block: var(--uxdsl__space__5);
+}
+.agent-guidance ul {
+  list-style: disc;
+}
+.agent-guidance ol {
+  list-style: decimal;
+}
+.agent-guidance li {
+  margin-block: var(--uxdsl__space__3);
+}
+.agent-guidance pre {
+  overflow-x: auto;
+  padding: var(--uxdsl__space__5);
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.agent-guidance blockquote {
+  border-inline-start: 3px solid var(--uxdsl__color__gray-400);
+  padding-inline-start: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}
 .ai-prompt-container {
   margin-top: var(--uxdsl__space__4);
   width: 100%;
@@ -958,6 +923,12 @@ html, body {
   &::placeholder {
     color: var(--uxdsl__palette__text-secondary);
   }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
+  }
 }
 .ai-submit-btn { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
   
@@ -982,7 +953,7 @@ html, body {
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.7);
+  background: color-mix(in srgb, var(--uxdsl__color__black) 70%, transparent); /* a modal scrim: black whatever the mode */
   backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
@@ -993,7 +964,7 @@ html, body {
   flex-direction: column;
   align-items: center;
   gap: var(--uxdsl__space__4);
-  color: #ffffff;
+  color: var(--uxdsl__color__white);
 }
 .loading-spinner {
   animation: spin 1s linear infinite;
@@ -1002,12 +973,12 @@ html, body {
 .loading-text {
   font-size: 1.25rem;
   font-weight: 500;
-  color: #ffffff;
+  color: var(--uxdsl__color__white);
   text-align: center;
 }
 .loading-theme-name {
   font-family: monospace;
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--uxdsl__color__white) 10%, transparent);
   padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
   border-radius: var(--uxdsl__radius__2);
   color: var(--uxdsl__palette__primary-light);
@@ -1060,7 +1031,7 @@ html, body {
   display: flex;
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
-  gap: 8px; /* Adjusted gap for row layout */
+  gap: var(--uxdsl__space__3); /* stable, not responsive: the logo row keeps one gap */
   background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 90%, transparent); /* Corrected alpha */
   text-decoration: none;
   cursor: pointer;
@@ -1134,7 +1105,7 @@ html, body {
   height: 32px;
   border-radius: 50%;
   border: 3px solid var(--theme-color);
-  background: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--uxdsl__color__white) 10%, transparent);
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
@@ -1142,25 +1113,25 @@ html, body {
 }
 #AppHeader .theme-color-btn:hover {
   transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--uxdsl__color__white) 20%, transparent);
 }
 #AppHeader .theme-color-btn.is-active {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--uxdsl__color__white) 80%, transparent);
+  background: color-mix(in srgb, var(--uxdsl__color__white) 15%, transparent);
 }
 #AppHeader .divider-vertical {
   width: 1px;
   height: 20px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: color-mix(in srgb, var(--uxdsl__color__white) 20%, transparent);
   margin: 0 var(--uxdsl__density__1);
 }
 #AppHeader .theme-toggle {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: color-mix(in srgb, var(--uxdsl__color__white) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__white) 30%, transparent);
+  color: var(--uxdsl__color__white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1170,8 +1141,19 @@ html, body {
   box-sizing: border-box;
 }
 #AppHeader .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: color-mix(in srgb, var(--uxdsl__color__white) 20%, transparent);
   transform: scale(1.05);
+}
+/* MIG-B7-17 phase B (4): each theme button's ring color was an inline --theme-color with a hex
+   literal. They are swatches of *other* themes, which the active Palette cannot give: Colors. */
+#AppHeader .theme-color-btn--default {
+  --theme-color: var(--uxdsl__color__purple-600);
+}
+#AppHeader .theme-color-btn--green {
+  --theme-color: var(--uxdsl__color__green-600);
+}
+#AppHeader .theme-color-btn--slate {
+  --theme-color: var(--uxdsl__color__slate-800);
 }
 .editor-content {
   padding: var(--uxdsl__density__6);
@@ -1185,46 +1167,442 @@ html, body {
   flex-direction: column;
   gap: var(--uxdsl__density__2);
 }
-/* ButtonDemo component styles - Scoped */
-#ButtonDemo {
-  .btn { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); cursor: pointer; transition: all 0.2s ease; }
-.btn:hover { background: var(--uxdsl__button__contained-hover-bg); color: var(--uxdsl__button__contained-hover-color); }
-.btn.is-selected, .btn[aria-pressed="true"], .btn[aria-selected="true"] { background: var(--uxdsl__button__contained-selected-bg); color: var(--uxdsl__button__contained-selected-color); }
-  .btn:hover { transform: translateY(-1px); }
-
-  .btn--outlined { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--outlined:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
-.btn--outlined.is-selected, .btn--outlined[aria-pressed="true"], .btn--outlined[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
-  .btn--flat { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--flat:hover { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
-.btn--flat.is-selected, .btn--flat[aria-pressed="true"], .btn--flat[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
-
-  .btn--secondary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--secondary:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--secondary.is-selected, .btn--secondary[aria-pressed="true"], .btn--secondary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--outlined.btn--secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--outlined.btn--secondary:hover { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
-.btn--outlined.btn--secondary.is-selected, .btn--outlined.btn--secondary[aria-pressed="true"], .btn--outlined.btn--secondary[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-secondary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-secondary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-secondary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
-  .btn--flat.btn--secondary { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--flat.btn--secondary:hover { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
-.btn--flat.btn--secondary.is-selected, .btn--flat.btn--secondary[aria-pressed="true"], .btn--flat.btn--secondary[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-secondary-selected-color, var(--uxdsl__button__flat-selected-color)); }
-
-  .btn--sm { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--sm:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--sm.is-selected, .btn--sm[aria-pressed="true"], .btn--sm[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--md { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--md:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--md.is-selected, .btn--md[aria-pressed="true"], .btn--md[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--lg { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--lg:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--lg.is-selected, .btn--lg[aria-pressed="true"], .btn--lg[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+/* MIG-B7-17 phase B (4): the dialog's frame was inline style={{}} in BreakpointEditor.tsx. */
+.breakpoint-editor__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
+  z-index: 100;
+  display: grid;
+  place-items: center;
 }
-/* CardDemo component styles - Scoped */
-#CardDemo {
-  .card { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); padding: var(--uxdsl__space__4); border-radius: var(--uxdsl__radius__2); transition: all 0.3s ease; }
-  .card:hover { transform: translateY(-2px); box-shadow: var(--uxdsl__shadow__3); }
-  .card__title { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0 0 var(--uxdsl__space__2) 0; }
-  .card__content { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 80%, transparent); }
+.breakpoint-editor__dialog {
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__space__7);
+  border-radius: 1rem;
+  width: min(560px, 90vw);
+}
+.breakpoint-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--uxdsl__space__5);
+}
+/* MIG-B7-17 phase C: the pages that call UXDSL's own tools for real — Runtime, Contrast, CLI,
+   Diagnostics. One stylesheet for the four, written in UXDSL: Density for component spacing,
+   Palette roles for interface color, Surfaces/Buttons/Inputs as roles, configured breakpoints.
+   The terminal panels are dark in both modes on purpose (a terminal), with Color identities,
+   like the code panels of DocumentationSection.uxdsl. */
+.cap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
+}
+@media (min-width: 1024px) {
+.cap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* Small figures (the contrast summary): two across on a phone, three from xl. */
+.cap-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
+}
+@media (min-width: 1280px) {
+.cap-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+}
+.cap-card {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__surface__outlined-radius);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: grid;
+  align-content: start;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
+  margin-block: var(--uxdsl__density__4);
+}
+.cap-card__title {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-size);
+  line-height: var(--uxdsl__typography__h5-line);
+  font-weight: var(--uxdsl__typography__h5-weight);
+  letter-spacing: var(--uxdsl__typography__h5-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  margin: 0;
+}
+.cap-card__subtitle {
+  font-family: var(--uxdsl__typography__h6-font-family);
+  font-size: var(--uxdsl__typography__h6-size);
+  line-height: var(--uxdsl__typography__h6-line);
+  font-weight: var(--uxdsl__typography__h6-weight);
+  letter-spacing: var(--uxdsl__typography__h6-spacing);
+  margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
+  margin: 0;
+}
+.cap-note {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+  margin: 0;
+}
+.cap-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__space__2) var(--uxdsl__density__3);
+  margin: 0;
+}
+@media (min-width: 768px) {
+.cap-facts {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+}
+.cap-facts dt {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cap-facts__row {
+  display: contents;
+}
+.cap-block {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.cap-label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-field { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+}
+.cap-field::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+.cap-field:focus { border: var(--uxdsl__input__outlined-focus-border); }
+.cap-field:invalid, .cap-field[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+.cap-field:disabled, .cap-field[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); }
+.cap-field--code {
+  font-family: var(--uxdsl__font__code, monospace);
+  resize: vertical;
+}
+.cap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+}
+.cap-button { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  text-align: left;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.cap-button:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.cap-button.is-selected, .cap-button[aria-pressed="true"], .cap-button[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+.cap-button--reset { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+}
+.cap-button--reset:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.cap-button--reset.is-selected, .cap-button--reset[aria-pressed="true"], .cap-button--reset[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+.cap-steps {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-steps li {
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-log {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+  overflow-wrap: anywhere;
+}
+.cap-log li.is-invalid {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-event {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-result {
+  color: var(--uxdsl__palette__success-main);
+  font-weight: 600;
+}
+.cap-result--error {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-sandbox {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+}
+.cap-sandbox__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+.cap-sandbox__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
+   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+.cap-frame-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__2);
+  box-shadow: var(--uxdsl__shadow__1);
+}
+.cap-frame {
+  display: block;
+  width: 820px;
+  height: 340px;
+  border: 0;
+}
+.cap-stat {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-stat__label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+}
+.cap-stat__value {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-size);
+  line-height: var(--uxdsl__typography__h4-line);
+  font-weight: var(--uxdsl__typography__h4-weight);
+  letter-spacing: var(--uxdsl__typography__h4-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  margin: 0;
+}
+.cap-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+.cap-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cap-table-wrap caption {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  text-align: left;
+  font-weight: 600;
+  padding-block: var(--uxdsl__space__2);
+}
+.cap-table-wrap th,
+.cap-table-wrap td {
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
+  vertical-align: top;
+}
+.cap-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__3);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+}
+.cap-run {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0 0 var(--uxdsl__density__4);
+  min-width: 0;
+}
+.cap-run__title {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+}
+.cap-terminal {
+  margin: 0;
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__radius__1);
+  font-family: var(--uxdsl__font__code, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+.cap-terminal__prompt {
+  color: var(--uxdsl__color__green-300);
+}
+.cap-terminal__err {
+  color: var(--uxdsl__color__red-300);
+}
+.cap-exit {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  padding: 0 var(--uxdsl__space__3);
+  border-radius: 9999px;
+}
+.cap-exit--ok {
+  background: var(--uxdsl__palette__success-main);
+  color: var(--uxdsl__palette__success-contrast);
+}
+.cap-exit--fail {
+  background: var(--uxdsl__palette__error-main);
+  color: var(--uxdsl__palette__error-contrast);
+}
+.cap-transcript {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-alias-demo {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+  align-content: start;
+}
+.cap-alias-box {
+  padding: var(--uxdsl__surface__flat-padding);
+  border-radius: var(--uxdsl__surface__flat-radius);
+  background: var(--uxdsl__surface__flat-bg);
+  color: var(--uxdsl__surface__flat-color);
+  border: var(--uxdsl__surface__flat-border);
+  box-shadow: var(--uxdsl__surface__flat-shadow);
+  padding: var(--uxdsl__density__4);
+  background: var(--uxdsl__palette__surface-main);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+}
+/* The aliases under test: these two rules must render identically. */
+.cap-alias-box--alias {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
+}
+.cap-alias-box--name {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
+}
+/* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
+   CodeBlock.tsx. */
+.code-block-frame {
+  border-radius: var(--uxdsl__radius__2);
+  overflow: hidden;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  font-size: 0.9rem;
+}
+/* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
+   classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
+   uses Color identities, dark in both modes on purpose. */
+.color-documentation {
+  min-width: 0;
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+}
+.color-documentation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.color-documentation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.color-documentation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.color-documentation p {
+  margin-block: var(--uxdsl__space__4);
+}
+.color-documentation ul {
+  list-style: disc;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.color-documentation li {
+  margin-block: var(--uxdsl__space__3);
+}
+.color-documentation a {
+  text-decoration: underline;
+}
+.color-documentation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.color-documentation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.color-documentation__comparison > div {
+  min-width: 0;
 }
 /* DemoBorders styles - Scoped */
 #DemoBorders {
@@ -1290,10 +1668,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .playground {
+
+  .playground {
       display: grid;
       grid-template-columns: 300px 1fr;
-    }
+  }
   }
 
   .controls {
@@ -1458,12 +1837,11 @@ html, body {
     grid-template-columns: 1fr;
     gap: var(--uxdsl__density__6);
   }
-
   @media (min-width: 768px) {
-    .breakpoints-grid {
+  .breakpoints-grid {
       grid-template-columns: 2fr 1fr;
       align-items: start;
-    }
+  }
   }
 
   /* Controls Column */
@@ -1519,7 +1897,7 @@ html, body {
 
   .breakpoints-input-val {
     width: 80px;
-    padding: 4px 8px;
+    padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
     border: 1px solid var(--uxdsl__palette__neutral-light);
     border-radius: var(--uxdsl__radius__1);
     font-family: font(code);
@@ -1717,7 +2095,7 @@ html, body {
   .color-token:hover { transform: scale(1.05); z-index: 1; box-shadow: var(--uxdsl__shadow__2); }
 
   .token-shade { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-weight: bold; opacity: 0.9; pointer-events: none; }
-  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: var(--uxdsl__density__1); right: var(--uxdsl__density__1); pointer-events: none; }
+  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: var(--uxdsl__space__1); position: absolute; bottom: var(--uxdsl__density__1); right: var(--uxdsl__density__1); pointer-events: none; }
   .token-hex { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-family: monospace; font-weight: bold; font-size: 0.75em; }
   .token-rgb { font-family: var(--uxdsl__typography__tag-font-family); font-size: var(--uxdsl__typography__tag-size); line-height: var(--uxdsl__typography__tag-line); font-weight: var(--uxdsl__typography__tag-weight); letter-spacing: var(--uxdsl__typography__tag-spacing); margin-block-start: var(--uxdsl__typography__tag-margin-block-start); margin-block-end: var(--uxdsl__typography__tag-margin-block-end); font-family: monospace; opacity: 0.7; font-size: 0.65em; }
 
@@ -1743,10 +2121,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -2140,6 +2519,28 @@ html, body {
         background: var(--uxdsl__color__gray-900);
       }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoColors.tsx (the text color of each chip
+   and of the live preview is computed at runtime and stays inline). */
+#DemoColors .color-token {
+  position: relative;
+}
+.color-picker-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.color-live-preview {
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__space__2);
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
 /* DemoDensity styles - Scoped */
 #DemoDensity {
   .density-section { display: flex; flex-direction: column; gap: var(--uxdsl__density__4); }
@@ -2399,7 +2800,7 @@ html, body {
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 2px;
+    gap: var(--uxdsl__space__1);
   }
 
   .density-card__viz {
@@ -2430,16 +2831,16 @@ html, body {
   .density-def-list {
     display: flex;
     flex-direction: column;
-    gap: 2px; /* Smaller gap */
+    gap: var(--uxdsl__space__1); /* Smaller gap */
   }
 
   .density-def-item {
     display: flex;
-    gap: 4px;
+    gap: var(--uxdsl__space__2);
     font-family: monospace;
     font-size: 0.75rem;
     background: color-mix(in srgb, var(--uxdsl__palette__neutral-light) 30%, transparent);
-    padding: 2px 4px;
+    padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
     border-radius: 2px;
     transition: all 0.2s ease;
   }
@@ -2469,7 +2870,7 @@ html, body {
   .density-metric-item {
     display: flex;
     align-items: baseline;
-    gap: 4px;
+    gap: var(--uxdsl__space__2);
     font-family: monospace;
     font-size: 0.9rem;
   }
@@ -2564,6 +2965,24 @@ html, body {
     z-index: 10; /* Ensure it's on top if possible, or at least prominent */
     box-shadow: 0 0 0 1px var(--uxdsl__palette__surface-main); /* Small outline to separate */
   }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoDensity.tsx. */
+  .density-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--uxdsl__space__7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: var(--uxdsl__space__6);
+  }
 }
 /* Simplified DemoPalette styles - Scoped */
 #DemoPalette,
@@ -2586,7 +3005,7 @@ html, body {
   .palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--uxdsl__density__2); gap: var(--uxdsl__density__1); }
   .palette-token:last-child .token-values { position: static; align-items: flex-start; }
   .token-name { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); opacity: 0.8; }
-  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; position: absolute; bottom: var(--uxdsl__density__1); right: var(--uxdsl__density__1); }
+  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: var(--uxdsl__space__1); position: absolute; bottom: var(--uxdsl__density__1); right: var(--uxdsl__density__1); }
   .token-hex { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-family: monospace; opacity: 0.8; }
   .token-rgb { font-family: var(--uxdsl__typography__tag-font-family); font-size: var(--uxdsl__typography__tag-size); line-height: var(--uxdsl__typography__tag-line); font-weight: var(--uxdsl__typography__tag-weight); letter-spacing: var(--uxdsl__typography__tag-spacing); margin-block-start: var(--uxdsl__typography__tag-margin-block-start); margin-block-end: var(--uxdsl__typography__tag-margin-block-end); font-family: monospace; opacity: 0.7; font-size: 0.7em; }
 
@@ -2612,10 +3031,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -3154,6 +3574,28 @@ html, body {
         color: var(--uxdsl__palette__surface-dark)
     }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPalette.tsx. */
+#DemoPalette .palette-section__block {
+  margin-bottom: 3rem;
+}
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPaletteConfig.tsx (each chip's text color
+   is computed at runtime and stays inline). .color-picker-overlay lives in DemoColors.uxdsl. */
+.palette-token {
+  position: relative;
+}
+.palette-token .token-match {
+  position: absolute;
+  top: var(--uxdsl__space__3);
+  right: var(--uxdsl__space__3);
+  font-size: 0.65em;
+  opacity: 0.8;
+  font-weight: bold;
+  pointer-events: none;
+}
+.demo-toolbar-hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
 /* DemoProductivity styles - Scoped */
 #DemoProductivity {
   .prod-container {
@@ -3161,11 +3603,10 @@ html, body {
     grid-template-columns: 1fr;
     gap: var(--uxdsl__density__4);
   }
-
   @media (min-width: 1024px) {
-    .prod-container {
+  .prod-container {
       grid-template-columns: 1fr 1fr;
-    }
+  }
   }
 
   .prod-card {
@@ -3579,6 +4020,24 @@ html, body {
     max-width: 600px; /* Thinner code block */
   }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoProductivity.tsx. */
+.productivity-controls {
+  margin-bottom: var(--uxdsl__space__7);
+}
+.productivity-controls__label {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__5);
+}
+.productivity-controls__range {
+  flex: 1;
+}
+.demo-code-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__7);
+  margin-bottom: var(--uxdsl__space__7);
+}
 /* DemoShadows styles - Scoped */
 #DemoShadows {
   .demo-shadows {
@@ -3643,10 +4102,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .playground {
+
+  .playground {
       display: grid;
       grid-template-columns: 300px 1fr;
-    }
+  }
   }
 
   .controls {
@@ -3781,8 +4241,7 @@ html, body {
   .concentric-ring.is-hovered {
     border-color: var(--uxdsl__palette__secondary-main);
     background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 10%, transparent);
-    /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
-    /* z-index: 50 !important; */
+    /* No z-index boost: it let outer rings obscure inner rings on hover. */
     box-shadow: 0 0 0 1px var(--uxdsl__palette__secondary-main);
   }
 
@@ -3897,28 +4356,25 @@ html, body {
     color: var(--uxdsl__surface__outlined-color);
     border: var(--uxdsl__surface__outlined-border);
     box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__2);
+    padding: var(--uxdsl__density__2); /* more compact vertical padding on desktop */
     display: grid;
     gap: var(--uxdsl__density__2);
     border-radius: var(--uxdsl__radius__2);
     transition: all 0.2s ease;
     align-items: center;
-    
-    /* Mobile Layout: 2 Rows */
+
+    /* Mobile layout: 2 rows. Desktop (md): 3 columns. */
     grid-template-columns: auto 1fr;
-    grid-template-areas: 
-      "token input"
-      "sep sep"
-      "preview preview";
+    grid-template-areas: "token input" "sep sep" "preview preview";
   }
 
-  /* Desktop Layout: 3 Columns */
   @media (min-width: 768px) {
-    .spacing-card {
+
+  .spacing-card {
+      padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
       grid-template-columns: 120px 1fr auto;
       grid-template-areas: "token input preview";
-      padding: var(--uxdsl__density__1) var(--uxdsl__density__3); /* More compact vertical padding on desktop */
-    }
+  }
   }
 
   .spacing-card:hover {
@@ -3946,6 +4402,13 @@ html, body {
     justify-content: flex-end;
   }
 
+  @media (min-width: 768px) {
+
+  .spacing-card__input-wrapper {
+      justify-content: flex-start;
+  }
+  }
+
   .spacing-card__input {
     width: 100%;
     max-width: 120px;
@@ -3960,14 +4423,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .spacing-card__input-wrapper {
-      justify-content: flex-start;
-    }
-    
-    .spacing-card__input {
-      text-align: left;
+
+  .spacing-card__input {
       max-width: 200px;
-    }
+      text-align: left;
+  }
   }
 
   .spacing-card__input:focus {
@@ -3984,9 +4444,10 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .spacing-card__separator {
+
+  .spacing-card__separator {
       display: none;
-    }
+  }
   }
 
   .spacing-card__preview {
@@ -3996,15 +4457,16 @@ html, body {
     align-items: center;
     padding: var(--uxdsl__density__1) 0;
     /* Ensure it takes space but allows growth */
-    min-height: 40px;
+    min-height: 40px; /* Minimum width for small squares */
   }
 
   @media (min-width: 768px) {
-    .spacing-card__preview {
+
+  .spacing-card__preview {
       justify-content: flex-end;
       padding: 0;
-      min-width: 60px; /* Minimum width for small squares */
-    }
+      min-width: 60px;
+  }
   }
 
   .spacing-box {
@@ -4079,6 +4541,24 @@ html, body {
       width: var(--uxdsl__space__16);
       height: var(--uxdsl__space__16);
     }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoSpacing.tsx. */
+  .spacing-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--uxdsl__space__7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: var(--uxdsl__space__6);
+  }
 }
 /* DemoSurfaces styles - Scoped */
 #DemoSurfaces {
@@ -4249,7 +4729,7 @@ html, body {
   }
 
   .surface-card__edit-btn {
-    padding: 4px 12px;
+    padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
     font-size: 0.8rem;
     cursor: pointer;
     background: var(--uxdsl__palette__surface-light);
@@ -4286,7 +4766,7 @@ html, body {
   .surface-props-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--uxdsl__space__2);
     font-family: monospace;
     font-size: 0.8rem;
     color: var(--uxdsl__palette__neutral-dark);
@@ -4294,7 +4774,7 @@ html, body {
 
   .surface-prop {
     display: flex;
-    gap: 8px;
+    gap: var(--uxdsl__space__3);
   }
 
   .surface-prop-key {
@@ -4323,10 +4803,11 @@ html, body {
   }
 
   @media (min-width: 768px) {
-    .surface-playground {
+
+  .surface-playground {
       flex-direction: row;
       align-items: flex-start;
-    }
+  }
   }
 
   .surface-playground__controls {
@@ -5569,249 +6050,267 @@ html, body {
         box-shadow: var(--uxdsl__shadow__5) !important
     }
 }
-/* DemoTypography styles - Scoped */
-#DemoTypography {
-  .typo-section { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
-  .typo-header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
-  .demo-title { font-family: var(--uxdsl__typography__h4-font-family); font-size: var(--uxdsl__typography__h4-size); line-height: var(--uxdsl__typography__h4-line); font-weight: var(--uxdsl__typography__h4-weight); letter-spacing: var(--uxdsl__typography__h4-spacing); margin-block-start: var(--uxdsl__typography__h4-margin-block-start); margin-block-end: var(--uxdsl__typography__h4-margin-block-end); margin: 0; }
-  .demo-subtitle { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); opacity: 0.75; margin: 0; max-width: 720px; }
-
-  .typo-stack { display: flex; flex-direction: column; gap: 0; } /* Removed gap for tighter table look */
-
-  .typo-row {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--uxdsl__density__4);
-    padding: var(--uxdsl__density__3) 0;
-    border-bottom: 1px solid var(--uxdsl__palette__surface-dark);
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  .typo-row__meta {
-    width: 50px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--uxdsl__space__1); /* Tighter gap */
-    border-right: 1px solid var(--uxdsl__palette__surface-dark);
-    padding-right: var(--uxdsl__density__1); /* Reduced padding */
-  }
-
-  .typo-row__label {
-    font-family: var(--uxdsl__typography__caption-font-family);
-    font-size: var(--uxdsl__typography__caption-size);
-    line-height: var(--uxdsl__typography__caption-line);
-    font-weight: var(--uxdsl__typography__caption-weight);
-    letter-spacing: var(--uxdsl__typography__caption-spacing);
-    margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__caption-margin-block-end); /* Base caption style */
-    font-size: 0.6rem;
-    font-weight: 400;
-    color: var(--uxdsl__palette__text-secondary);
-    opacity: 0.6;
-    line-height: 1.2;
-    text-transform: none; /* Ensure lowercase/normal */
-  }
-
-  .typo-row__edit {
-    background: transparent;
-    border: none; /* No border */
-    cursor: pointer;
-    padding: 0; /* No padding */
-    color: var(--uxdsl__palette__secondary-main);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.6;
-    transition: all 0.2s;
-    margin-top: var(--uxdsl__space__2); /* Explicit stable spacing. */
-    
-    &:hover {
-      opacity: 1;
-      border-color: var(--uxdsl__palette__secondary-main);
-      background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 10%, transparent);
-    }
-  }
-
-  .typo-row__content {
-    flex: 1;
-    /* Allow font to flow naturally */
-  }
-
-  /* Typography samples */
-  .sample-h1 { font-family: var(--uxdsl__typography__h1-font-family); font-size: var(--uxdsl__typography__h1-size); line-height: var(--uxdsl__typography__h1-line); font-weight: var(--uxdsl__typography__h1-weight); letter-spacing: var(--uxdsl__typography__h1-spacing); margin-block-start: var(--uxdsl__typography__h1-margin-block-start); margin-block-end: var(--uxdsl__typography__h1-margin-block-end); margin: 0; }
-  .sample-h2 { 
-    font-family: var(--uxdsl__typography__h2-font-family); 
-    font-size: var(--uxdsl__typography__h2-size); 
-    line-height: var(--uxdsl__typography__h2-line); 
-    font-weight: var(--uxdsl__typography__h2-weight); 
-    letter-spacing: var(--uxdsl__typography__h2-spacing); 
-    margin-block-start: var(--uxdsl__typography__h2-margin-block-start); 
-    margin-block-end: var(--uxdsl__typography__h2-margin-block-end); 
-    margin: 0; 
-    font-size: var(--uxdsl__typography__h3-size); /* Use H3 size for a smaller look */
-    font-weight: var(--uxdsl__typography__p-weight); /* Use paragraph weight for not bold */
-  }
-  .sample-h3 { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0; }
-  .sample-h4 { font-family: var(--uxdsl__typography__h4-font-family); font-size: var(--uxdsl__typography__h4-size); line-height: var(--uxdsl__typography__h4-line); font-weight: var(--uxdsl__typography__h4-weight); letter-spacing: var(--uxdsl__typography__h4-spacing); margin-block-start: var(--uxdsl__typography__h4-margin-block-start); margin-block-end: var(--uxdsl__typography__h4-margin-block-end); margin: 0; }
-  .sample-h5 { font-family: var(--uxdsl__typography__h5-font-family); font-size: var(--uxdsl__typography__h5-size); line-height: var(--uxdsl__typography__h5-line); font-weight: var(--uxdsl__typography__h5-weight); letter-spacing: var(--uxdsl__typography__h5-spacing); margin-block-start: var(--uxdsl__typography__h5-margin-block-start); margin-block-end: var(--uxdsl__typography__h5-margin-block-end); margin: 0; }
-  .sample-h6 { font-family: var(--uxdsl__typography__h6-font-family); font-size: var(--uxdsl__typography__h6-size); line-height: var(--uxdsl__typography__h6-line); font-weight: var(--uxdsl__typography__h6-weight); letter-spacing: var(--uxdsl__typography__h6-spacing); margin-block-start: var(--uxdsl__typography__h6-margin-block-start); margin-block-end: var(--uxdsl__typography__h6-margin-block-end); margin: 0; }
-  .sample-p { font-family: var(--uxdsl__typography__p-font-family); font-size: var(--uxdsl__typography__p-size); line-height: var(--uxdsl__typography__p-line); font-weight: var(--uxdsl__typography__p-weight); letter-spacing: var(--uxdsl__typography__p-spacing); margin-block-start: var(--uxdsl__typography__p-margin-block-start); margin-block-end: var(--uxdsl__typography__p-margin-block-end); margin: 0; }
-  .sample-span { font-family: var(--uxdsl__typography__span-font-family); font-size: var(--uxdsl__typography__span-size); line-height: var(--uxdsl__typography__span-line); font-weight: var(--uxdsl__typography__span-weight); letter-spacing: var(--uxdsl__typography__span-spacing); margin-block-start: var(--uxdsl__typography__span-margin-block-start); margin-block-end: var(--uxdsl__typography__span-margin-block-end); }
-  .sample-body { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; }
-  .sample-caption { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); margin: 0; }
-  .sample-small { font-family: var(--uxdsl__typography__small-font-family); font-size: var(--uxdsl__typography__small-size); line-height: var(--uxdsl__typography__small-line); font-weight: var(--uxdsl__typography__small-weight); letter-spacing: var(--uxdsl__typography__small-spacing); margin-block-start: var(--uxdsl__typography__small-margin-block-start); margin-block-end: var(--uxdsl__typography__small-margin-block-end); margin: 0; }
-  .sample-pre { font-family: var(--uxdsl__typography__pre-font-family); font-size: var(--uxdsl__typography__pre-size); line-height: var(--uxdsl__typography__pre-line); font-weight: var(--uxdsl__typography__pre-weight); letter-spacing: var(--uxdsl__typography__pre-spacing); margin-block-start: var(--uxdsl__typography__pre-margin-block-start); margin-block-end: var(--uxdsl__typography__pre-margin-block-end); margin: 0; background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 5%, transparent); padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__1); }
+/* Density explanation on /densities and /docs/densities.
+   Was DensityExplanation.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl
+   is global. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
+   3rem are not on it); the diagram and code panel use Color identities on purpose. The live
+   boxes now take their padding from density(4) / space(4) here instead of an inline style. */
+.density-explanation {
+  display: grid;
+  gap: var(--uxdsl__space__7);
+  margin: var(--uxdsl__space__7) 0 3rem;
+  min-width: 0;
 }
-/* Density Playground Styles */
-.level-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--uxdsl__density__4);
-  padding: 0 var(--uxdsl__density__2);
-  margin-left: auto;
+.density-explanation section {
+  min-width: 0;
 }
-.level-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--uxdsl__palette__text-secondary);
-  text-transform: uppercase;
+.density-explanation h3 {
+  font-size: 1.5rem;
+  margin: 0 0 var(--uxdsl__space__5);
 }
-.level-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--uxdsl__density__2);
+.density-explanation h4 {
+  font-size: 1.2rem;
+  margin: 1.25rem 0 var(--uxdsl__space__5);
 }
-.level-value {
-  font-family: font(code);
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: var(--uxdsl__palette__primary-main);
-  min-width: 20px;
-  text-align: center;
+.density-explanation h5 {
+  font-size: 1rem;
+  margin: 0 0 var(--uxdsl__space__4);
 }
-.playground-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: var(--uxdsl__density__6);
+.density-explanation p {
+  line-height: 1.7;
+  margin: var(--uxdsl__space__4) 0;
 }
-.viz-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  background: var(--uxdsl__palette__surface-dark);
-  border-radius: var(--uxdsl__radius__2);
-  padding: var(--uxdsl__density__8) var(--uxdsl__density__4);
-  overflow: hidden;
-  min-height: 300px;
-}
-.density-playground-wrapper {
-  width: 100%;
-  transition: width 0.3s ease;
-  border-left: 1px solid var(--uxdsl__palette__divider-main);
-  border-right: 1px solid var(--uxdsl__palette__divider-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  container-type: inline-size;
-}
-.auto-width-label {
-  position: absolute;
-  top: -1.5rem;
-  font-size: 0.7rem;
-  color: var(--uxdsl__palette__text-disabled);
-  text-transform: uppercase;
-}
-.density-doll-wrapper {
-  border: none;
-  background: transparent;
-}
-.json-editor {
-  background: var(--uxdsl__palette__surface-main);
-  padding: var(--uxdsl__density__4);
-  border-radius: var(--uxdsl__radius__1);
-  border: 1px dashed var(--uxdsl__palette__neutral-main);
-  font-family: font(code);
-  font-size: 0.9rem;
-  color: var(--uxdsl__palette__primary-dark);
+.density-explanation__code {
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
   overflow-x: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__1);
+  font-size: 0.85rem;
+  line-height: 1.7;
 }
-.json-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+.density-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
 }
-.json-key {
+.density-explanation__comparison > div {
+  min-width: 0;
+}
+.density-explanation__table-wrap {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+.density-explanation__table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.density-explanation__table-wrap caption {
+  text-align: left;
+  margin-bottom: var(--uxdsl__space__4);
   font-weight: 600;
 }
-.json-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-left: 2ch;
+.density-explanation__table-wrap th, .density-explanation__table-wrap td {
+  padding: var(--uxdsl__space__4);
+  border-bottom: 1px solid var(--uxdsl__color__gray-400);
 }
-.json-value-wrapper {
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+.density-explanation__definition {
+  overflow-wrap: anywhere;
 }
-.json-prop-key {
-  color: var(--uxdsl__palette__secondary-main);
-}
-.edit-button {
-  background: transparent;
-  border: 1px solid var(--uxdsl__palette__divider-main);
-  border-radius: var(--uxdsl__radius__1);
-  padding: var(--uxdsl__density__1);
+.density-explanation__edit {
+  background: var(--uxdsl__color__blue-500);
+  color: var(--uxdsl__color__white);
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.65rem var(--uxdsl__space__5);
   cursor: pointer;
-  color: var(--uxdsl__palette__text-secondary);
+  font: inherit;
+}
+.density-explanation__edit:hover {
+  background: var(--uxdsl__color__blue-900);
+}
+.density-explanation__edit:focus-visible {
+  outline: 3px solid var(--uxdsl__color__blue-300);
+  outline-offset: 3px;
+}
+.density-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--uxdsl__space__5);
+  margin: var(--uxdsl__space__6) 0;
+}
+.density-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+.density-explanation__boxes figcaption {
+  display: grid;
+  gap: var(--uxdsl__space__3);
+  margin-bottom: var(--uxdsl__space__4);
+}
+.density-explanation__boxes figcaption code {
+  font-size: 0.85rem;
+}
+.density-explanation__responsive {
+  background: var(--uxdsl__color__blue-100);
+  border: 1px solid var(--uxdsl__color__blue-500);
+  border-radius: 0.5rem;
+  padding: var(--uxdsl__density__4);
+}
+.density-explanation__fixed {
+  background: var(--uxdsl__color__gray-200);
+  border: 1px solid var(--uxdsl__color__gray-500);
+  border-radius: 0.5rem;
+  padding: var(--uxdsl__space__4);
+}
+.density-explanation__content {
+  background: var(--uxdsl__color__white);
+  color: var(--uxdsl__color__slate-900);
+  border: 1px dashed var(--uxdsl__color__gray-500);
+  text-align: center;
+  padding: var(--uxdsl__space__3);
+}
+/* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
+   documentation. Was BreakpointDocumentation.module.css, which those five components all
+   imported (MIG-B7-17 phase B): classes are prefixed because .uxdsl is global; stable spacing
+   uses space(); the code panel and table rules use Color identities, dark in both modes on
+   purpose. */
+.doc-section {
+  min-width: 0;
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+}
+.doc-section h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.doc-section h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.doc-section h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.doc-section p {
+  margin-block: var(--uxdsl__space__4);
+}
+.doc-section pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.doc-section__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.doc-section__comparison > div {
+  min-width: 0;
+}
+.doc-section__table-wrap {
+  overflow-x: auto;
+  margin-block: var(--uxdsl__space__5);
+}
+.doc-section__table-wrap table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+.doc-section__table-wrap caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: var(--uxdsl__space__3);
+}
+.doc-section__table-wrap th, .doc-section__table-wrap td {
+  padding: var(--uxdsl__space__4);
+  border-bottom: 1px solid var(--uxdsl__color__gray-400);
+}
+/* The Density and Space edit dialogs (DemoDensity.tsx, DemoSpacing.tsx). MIG-B7-17 phase B (4):
+   these rules were inline style={{}} in both components, written twice. Values on the scale use
+   space(); the scrim and shadow use Color identities. Still a hand-styled dialog, button and
+   input rather than @ds-surface/@ds-button/@ds-input: adopting the roles changes how it looks and
+   is a design decision for the page review (phase D). */
+.edit-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  margin-left: var(--uxdsl__density__4);
-
-  &:hover {
-    color: var(--uxdsl__palette__primary-main);
-    border-color: var(--uxdsl__palette__primary-main);
-  }
+  z-index: 100;
 }
-.level-range-input {
-  width: 100px;
+.edit-dialog {
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__space__7);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--uxdsl__color__black) 20%, transparent);
+}
+.edit-dialog--scroll {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.edit-dialog .edit-dialog__title {
+  margin-top: 0;
+}
+.edit-dialog__field {
+  margin-bottom: var(--uxdsl__space__6);
+}
+.edit-dialog__label {
+  display: block;
+  margin-bottom: var(--uxdsl__space__3);
+  font-weight: bold;
+}
+.edit-dialog__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__5);
+}
+.edit-dialog__row {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__5);
+}
+.edit-dialog__breakpoint {
+  width: 30px;
+  font-weight: bold;
+  opacity: 0.7;
+}
+.edit-dialog__input {
+  padding: var(--uxdsl__space__3);
+  border-radius: 4px;
+  border: 1px solid var(--uxdsl__color__gray-300);
+}
+.edit-dialog__input--full {
+  width: 100%;
+}
+.edit-dialog__input--grow {
+  flex: 1;
+}
+.edit-dialog__actions {
+  display: flex;
+  gap: var(--uxdsl__space__5);
+  justify-content: flex-end;
+}
+.edit-dialog__actions--spaced {
+  margin-top: var(--uxdsl__space__7);
+}
+.edit-dialog__cancel {
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__5);
   cursor: pointer;
 }
-.highlighter-base {
-  color: var(--uxdsl__palette__info-main);
-}
-.highlighter-active {
-  color: var(--uxdsl__palette__secondary-light);
-  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
-  font-weight: bold;
-  text-decoration: underline;
-}
-.level-range-input {
-  width: 100px;
+.edit-dialog__save {
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__5);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__color__white);
+  border: none;
+  border-radius: 4px;
   cursor: pointer;
-}
-.highlighter-base {
-  color: var(--uxdsl__palette__info-main);
-}
-.highlighter-active {
-  color: var(--uxdsl__palette__secondary-light);
-  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
-  font-weight: bold;
-  text-decoration: underline;
 }
 .hero-background {
   position: absolute;
@@ -5856,148 +6355,26 @@ html, body {
   backdrop-filter: blur(20px);
   opacity: 0.5;
 }
-/* HomeDemo styles - Scoped */
-#HomeDemo {
-  .home-demo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--uxdsl__density__6);
-    margin-top: var(--uxdsl__density__6);
-  }
-
-  .home-code {
-    background: #1e1e1e;
-    border-radius: var(--uxdsl__radius__3);
-    overflow: hidden;
-    color: #d4d4d4;
-    font-family: monospace;
-    font-size: 0.85rem;
-    border: 1px solid var(--uxdsl__palette__neutral-light);
-    box-shadow: var(--uxdsl__shadow__2);
-    width: 100%;
-    max-width: 500px;
-  }
-
-  .code-header {
-    background: #252526;
-    padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-  }
-
-  .code-lang {
-    font-size: 0.75rem;
-    color: #9cdcfe;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .home-code pre {
-    margin: 0;
-    padding: var(--uxdsl__density__3);
-    overflow-x: auto;
-    line-height: 1.5;
-  }
-
-  /* Mind-Blowing Demo Component Styles */
-  .mb-card {
-    /* 1. Theming & Responsive Layout (The Magic) */
-    padding: var(--uxdsl__surface__contained-padding);
-    border-radius: var(--uxdsl__surface__contained-radius);
-    background: var(--uxdsl__surface__contained-bg);
-    color: var(--uxdsl__surface__contained-color);
-    border: var(--uxdsl__surface__contained-border);
-    box-shadow: var(--uxdsl__surface__contained-shadow);
-    width: 100%;
-    padding: var(--uxdsl__density__3);
-    gap: var(--uxdsl__density__4);
-    display: flex; flex-direction: column;
-    
-    /* 2. Nested SCSS for Structure */
-    .mb-header { 
-      display: flex; justify-content: space-between; align-items: center;
-      h3 { font-family: var(--uxdsl__typography__h5-font-family); font-size: var(--uxdsl__typography__h5-size); line-height: var(--uxdsl__typography__h5-line); font-weight: var(--uxdsl__typography__h5-weight); letter-spacing: var(--uxdsl__typography__h5-spacing); margin-block-start: var(--uxdsl__typography__h5-margin-block-start); margin-block-end: var(--uxdsl__typography__h5-margin-block-end); margin: 0; }
-    }
-    
-    .mb-badge {
-      font-family: var(--uxdsl__typography__caption-font-family);
-      font-size: var(--uxdsl__typography__caption-size);
-      line-height: var(--uxdsl__typography__caption-line);
-      font-weight: var(--uxdsl__typography__caption-weight);
-      letter-spacing: var(--uxdsl__typography__caption-spacing);
-      margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-      margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-      background: color-mix(in srgb, var(--uxdsl__palette__success-light) 20%, transparent);
-      color: var(--uxdsl__palette__success-dark);
-      padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
-      border-radius: 9999px;
-      font-weight: 700;
-      margin-left: var(--uxdsl__density__2);
-    }
-
-    .mb-title-group { display: flex; align-items: center; }
-    
-    .mb-status-dot {
-      width: 12px; height: 12px;
-      background: var(--uxdsl__palette__success-main);
-      border-radius: 9999px;
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--uxdsl__palette__success-light) 20%, transparent);
-      animation: pulse 2s infinite;
-    }
-
-    .mb-stat {
-      display: flex; flex-direction: column; gap: var(--uxdsl__density__1); margin-bottom: var(--uxdsl__density__3);
-      .mb-stat-header { display: flex; justify-content: space-between; font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-weight: 600; }
-    }
-
-    .mb-bar {
-      height: 8px;
-      background: var(--uxdsl__palette__neutral-light);
-      border-radius: 9999px;
-      overflow: hidden;
-      div { height: 100%; background: var(--uxdsl__palette__primary-main); border-radius: 9999px; }
-    }
-
-    .mb-action { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
-      width: 100%;
-      justify-content: center;
-    }
-.mb-action:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.mb-action.is-selected, .mb-action[aria-pressed="true"], .mb-action[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  }
-  @media (min-width: 768px) {
-  .mb-card {
-      width: 420px;
-      padding: var(--uxdsl__density__5)
-  }
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--uxdsl__palette__success-light) 40%, transparent); }
-    70% { box-shadow: 0 0 0 10px rgba(0,0,0,0); }
-    100% { box-shadow: 0 0 0 0 rgba(0,0,0,0); }
-  }
-}
 .demos-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--uxdsl__density__4);
   width: 100%;
-
-  @media (min-width: 1024px) {
+}
+@media (min-width: 1024px) {
+.demos-grid {
     grid-template-columns: repeat(2, 1fr);
-  }
+}
 }
 .demo-item {
   min-width: 0;
 }
 .demo-item-full {
-  @media (min-width: 1024px) {
+}
+@media (min-width: 1024px) {
+.demo-item-full {
     grid-column: span 2;
-  }
+}
 }
 .home-demos {
   width: 100%;
@@ -6020,6 +6397,16 @@ html, body {
 }
 .home-demos__toggle:hover { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
 .home-demos__toggle.is-selected, .home-demos__toggle[aria-pressed="true"], .home-demos__toggle[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-secondary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+/* MIG-B7-17 phase B (4): was inline style={{}} on DocsLink in HomeInteractiveDemos.tsx. */
+a.docs-link {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__2);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__primary-main);
+  text-decoration: none;
+  font-weight: 600;
+}
 /* Demo layout only; input visuals and states come from the shared engine. */
 #InputDemo {
   .section { margin-block: var(--uxdsl__density__3); }
@@ -6109,6 +6496,11 @@ html, body {
 .InteractiveDemoContainer__bodyInner {
   padding: var(--uxdsl__density__4);
   flex: 1;
+}
+/* MIG-B7-17 phase B (4): was inline style={{}} in InteractiveLogo.tsx. The particles may move
+   slightly outside the SVG box. */
+svg.interactive-logo {
+  overflow: visible;
 }
 /* NavigationCardLink Styles */
 .navigation-card-link {
@@ -6378,10 +6770,12 @@ html, body {
   color: var(--uxdsl__palette__secondary-dark);
   background: transparent;
 }
+#PageToolbar .page-toolbar__burger {
+}
 @media (min-width: 1024px) {
-  #PageToolbar .page-toolbar__burger {
+#PageToolbar .page-toolbar__burger {
     display: none;
-  }
+}
 }
 /* Right Side - Row Layout */
 #PageToolbar .page-toolbar__right {
@@ -6444,18 +6838,19 @@ html, body {
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
   opacity: 0.7;
   line-height: 1;
-  display: none; /* Hide on small screens */
-
-  @media (min-width: 768px) {
-    display: block; /* Show on md and up */
-  }
+  display: none; /* hidden on small screens, shown on md and up */
+}
+@media (min-width: 768px) {
+#PageToolbar .page-toolbar__width {
+    display: block;
+}
 }
 /* Mini Theme Buttons */
 #PageToolbar .mini-theme-btn {
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  border: 1px solid rgba(0,0,0,0.1); /* Subtle border for light mode */
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 10%, transparent); /* Subtle border for light mode */
   padding: 0;
   cursor: pointer;
   opacity: 0.5;
@@ -6467,9 +6862,9 @@ html, body {
     border-color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 50%, transparent);
   }
 
-  &.default { background: #2C415C; }
-  &.green { background: #15803D; }
-  &.purple { background: #7b1fa2; }
+  &.default { background: var(--uxdsl__color__purple-600); }
+  &.green { background: var(--uxdsl__color__green-600); }
+  &.purple { background: var(--uxdsl__color__purple-600); }
 }
 #PageToolbar .mini-theme-toggle {
   width: 12px;
@@ -6492,6 +6887,8 @@ html, body {
 }
 /* Palette Playground Scoped Styles */
 #PalettePlayground {
+    height: 100%; /* MIG-B7-17 phase B (4): was inline style={{}} on the root */
+
     .playground-wrapper {
         display: flex;
         flex-direction: column;
@@ -6598,6 +6995,137 @@ html, body {
         font-family: monospace;
         color: var(--uxdsl__palette__neutral-light);
     }
+
+  /* MIG-B7-17 phase B (4): the toolbar, the preview's static half and the "CSS Usage" panel were
+     inline style={{}} in PalettePlayground.tsx (the preview's two colors are chosen at runtime and
+     stay inline). Values on the scale use space(), palette reads use palette(). */
+  .pp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--uxdsl__space__5);
+    width: 100%;
+  }
+
+  .pp-toolbar__column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__3);
+    flex: 1 1 200px;
+  }
+
+  .pp-toolbar__heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--uxdsl__palette__text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-toolbar__row {
+    display: flex;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .control-group.pp-toolbar__control {
+    flex: 1;
+  }
+
+  .control-label.pp-toolbar__label {
+    font-size: 0.7rem;
+  }
+
+  .control-select.pp-toolbar__select {
+    padding: var(--uxdsl__space__2);
+    font-size: 0.8rem;
+  }
+
+  .live-preview.pp-preview {
+    padding: var(--uxdsl__space__4);
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .pp-usage {
+    margin-top: var(--uxdsl__space__6);
+    padding: var(--uxdsl__space__5);
+    background: var(--uxdsl__palette__surface-light);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    border-radius: 6px;
+    text-align: left;
+  }
+
+  .pp-usage__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__title {
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-code {
+    background: var(--uxdsl__palette__surface-dark);
+    padding: var(--uxdsl__space__4);
+    border-radius: 6px;
+    font-family: var(--uxdsl__font__code);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__2);
+    overflow-x: auto;
+    border: 1px solid var(--uxdsl__palette__neutral-dark);
+  }
+
+  .pp-code__line {
+    display: flex;
+    align-items: center;
+  }
+
+  .pp-code__indent {
+    padding-left: var(--uxdsl__space__5);
+  }
+
+  .pp-code__selector {
+    color: var(--uxdsl__palette__secondary-light);
+  }
+
+  .pp-code__property {
+    color: var(--uxdsl__palette__primary-light);
+  }
+
+  .pp-code__function {
+    color: var(--uxdsl__palette__text-primary);
+  }
+
+  .pp-code__argument {
+    color: var(--uxdsl__palette__warning-light);
+  }
+
+  .pp-code__punct {
+    color: var(--uxdsl__palette__text-disabled);
+  }
+
+  .pp-code__gap {
+    margin-left: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__note {
+    margin-top: var(--uxdsl__space__4);
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    line-height: 1.5;
+  }
+
+  .pp-usage__note strong {
+    color: var(--uxdsl__palette__text-primary);
+  }
 }
 .inspector-grid {
   display: grid;
@@ -6626,6 +7154,110 @@ html, body {
   display: flex;
   gap: var(--uxdsl__density__2);
   align-items: center;
+}
+/* MIG-B7-17 phase B (4): these rules were inline style={{}} in PaletteThemeExplorer.tsx; each
+   swatch's color is read from the token at runtime and stays inline, and the selected option's
+   border/opacity ternary is now .is-selected. */
+.pte {
+  padding-top: var(--uxdsl__space__6);
+}
+.pte-detail {
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 8px;
+  padding: var(--uxdsl__space__6);
+  margin-bottom: var(--uxdsl__space__7);
+}
+.pte-detail__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--uxdsl__space__4);
+  margin-bottom: var(--uxdsl__space__5);
+}
+.pte-detail h3.pte-detail__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--uxdsl__palette__text-primary);
+  margin: 0;
+}
+.pte-detail__subtitle {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-detail p.pte-detail__hint {
+  margin-top: var(--uxdsl__space__4);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.pte-swatch__color {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 10%, transparent);
+}
+.pte-swatch__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pte-item__variant {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pte-item__hex {
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-item__rgb {
+  font-size: 0.6rem;
+  color: var(--uxdsl__palette__text-disabled);
+}
+.pte h5.pte-selector__heading {
+  font-size: 0.7rem;
+  color: var(--uxdsl__palette__text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: var(--uxdsl__space__4);
+}
+.pte-selector__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uxdsl__space__5);
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 6px;
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__4);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+.pte-selector__option.is-selected {
+  border-color: var(--uxdsl__palette__primary-main);
+  opacity: 1;
+}
+.pte-selector__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--uxdsl__palette__text-primary);
+}
+.pte-selector__strip {
+  display: flex;
+  gap: var(--uxdsl__space__1);
+  width: 100px;
+}
+.pte-selector__chip {
+  flex: 1;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 5%, transparent);
 }
 .live-preview-box {
   background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 5%, transparent);
@@ -6836,14 +7468,14 @@ html, body {
   align-items: center;
   gap: 0.25rem;
   background: var(--uxdsl__palette__surface-main);
-  padding: 2px;
+  padding: var(--uxdsl__space__1);
   border-radius: 6px;
   border: 1px solid var(--uxdsl__palette__neutral-main);
   flex: 1 1 auto;
   min-width: 0;
 }
 .control-button {
-  padding: 4px 12px;
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
   background: transparent;
   color: var(--uxdsl__palette__text-secondary);
   border: none;
@@ -6860,7 +7492,7 @@ html, body {
   }
   
   &.is-default {
-    padding: 4px 8px;
+    padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
   }
 }
 .element-select-group {
@@ -6909,7 +7541,7 @@ select:disabled, select[aria-disabled="true"] { opacity: var(--uxdsl__input__out
       cursor: pointer;
       color: var(--uxdsl__palette__neutral-main);
       opacity: 0.5;
-      padding: 2px;
+      padding: var(--uxdsl__space__1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -7077,170 +7709,128 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   position: relative;
   z-index: 2;
     &.default {
-      font-size: var(--uxdsl__typography__default-size);
       font-family: var(--uxdsl__typography__default-font-family);
-      font-weight: var(--uxdsl__typography__default-weight);
+      font-size: var(--uxdsl__typography__default-size);
       line-height: var(--uxdsl__typography__default-line);
+      font-weight: var(--uxdsl__typography__default-weight);
       letter-spacing: var(--uxdsl__typography__default-spacing);
-      text-transform: var(--uxdsl__typography__default-transform);
-      text-decoration: var(--uxdsl__typography__default-decoration);
-      font-style: var(--uxdsl__typography__default-style);
       margin-block-start: var(--uxdsl__typography__default-margin-block-start);
       margin-block-end: var(--uxdsl__typography__default-margin-block-end);
     }
     &.h1 {
-      font-size: var(--uxdsl__typography__h1-size);
       font-family: var(--uxdsl__typography__h1-font-family);
-      font-weight: var(--uxdsl__typography__h1-weight);
+      font-size: var(--uxdsl__typography__h1-size);
       line-height: var(--uxdsl__typography__h1-line);
+      font-weight: var(--uxdsl__typography__h1-weight);
       letter-spacing: var(--uxdsl__typography__h1-spacing);
-      text-transform: var(--uxdsl__typography__h1-transform);
-      text-decoration: var(--uxdsl__typography__h1-decoration);
-      font-style: var(--uxdsl__typography__h1-style);
       margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
     }
     &.h2 {
-      font-size: var(--uxdsl__typography__h2-size);
       font-family: var(--uxdsl__typography__h2-font-family);
-      font-weight: var(--uxdsl__typography__h2-weight);
+      font-size: var(--uxdsl__typography__h2-size);
       line-height: var(--uxdsl__typography__h2-line);
+      font-weight: var(--uxdsl__typography__h2-weight);
       letter-spacing: var(--uxdsl__typography__h2-spacing);
-      text-transform: var(--uxdsl__typography__h2-transform);
-      text-decoration: var(--uxdsl__typography__h2-decoration);
-      font-style: var(--uxdsl__typography__h2-style);
       margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
     }
     &.h3 {
-      font-size: var(--uxdsl__typography__h3-size);
       font-family: var(--uxdsl__typography__h3-font-family);
-      font-weight: var(--uxdsl__typography__h3-weight);
+      font-size: var(--uxdsl__typography__h3-size);
       line-height: var(--uxdsl__typography__h3-line);
+      font-weight: var(--uxdsl__typography__h3-weight);
       letter-spacing: var(--uxdsl__typography__h3-spacing);
-      text-transform: var(--uxdsl__typography__h3-transform);
-      text-decoration: var(--uxdsl__typography__h3-decoration);
-      font-style: var(--uxdsl__typography__h3-style);
       margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
     }
     &.h4 {
-      font-size: var(--uxdsl__typography__h4-size);
       font-family: var(--uxdsl__typography__h4-font-family);
-      font-weight: var(--uxdsl__typography__h4-weight);
+      font-size: var(--uxdsl__typography__h4-size);
       line-height: var(--uxdsl__typography__h4-line);
+      font-weight: var(--uxdsl__typography__h4-weight);
       letter-spacing: var(--uxdsl__typography__h4-spacing);
-      text-transform: var(--uxdsl__typography__h4-transform);
-      text-decoration: var(--uxdsl__typography__h4-decoration);
-      font-style: var(--uxdsl__typography__h4-style);
       margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
     }
     &.h5 {
-      font-size: var(--uxdsl__typography__h5-size);
       font-family: var(--uxdsl__typography__h5-font-family);
-      font-weight: var(--uxdsl__typography__h5-weight);
+      font-size: var(--uxdsl__typography__h5-size);
       line-height: var(--uxdsl__typography__h5-line);
+      font-weight: var(--uxdsl__typography__h5-weight);
       letter-spacing: var(--uxdsl__typography__h5-spacing);
-      text-transform: var(--uxdsl__typography__h5-transform);
-      text-decoration: var(--uxdsl__typography__h5-decoration);
-      font-style: var(--uxdsl__typography__h5-style);
       margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
     }
     &.h6 {
-      font-size: var(--uxdsl__typography__h6-size);
       font-family: var(--uxdsl__typography__h6-font-family);
-      font-weight: var(--uxdsl__typography__h6-weight);
+      font-size: var(--uxdsl__typography__h6-size);
       line-height: var(--uxdsl__typography__h6-line);
+      font-weight: var(--uxdsl__typography__h6-weight);
       letter-spacing: var(--uxdsl__typography__h6-spacing);
-      text-transform: var(--uxdsl__typography__h6-transform);
-      text-decoration: var(--uxdsl__typography__h6-decoration);
-      font-style: var(--uxdsl__typography__h6-style);
       margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
     }
     &.p {
-      font-size: var(--uxdsl__typography__p-size);
       font-family: var(--uxdsl__typography__p-font-family);
-      font-weight: var(--uxdsl__typography__p-weight);
+      font-size: var(--uxdsl__typography__p-size);
       line-height: var(--uxdsl__typography__p-line);
+      font-weight: var(--uxdsl__typography__p-weight);
       letter-spacing: var(--uxdsl__typography__p-spacing);
-      text-transform: var(--uxdsl__typography__p-transform);
-      text-decoration: var(--uxdsl__typography__p-decoration);
-      font-style: var(--uxdsl__typography__p-style);
       margin-block-start: var(--uxdsl__typography__p-margin-block-start);
       margin-block-end: var(--uxdsl__typography__p-margin-block-end);
     }
     &.body {
-      font-size: var(--uxdsl__typography__body-size);
       font-family: var(--uxdsl__typography__body-font-family);
-      font-weight: var(--uxdsl__typography__body-weight);
+      font-size: var(--uxdsl__typography__body-size);
       line-height: var(--uxdsl__typography__body-line);
+      font-weight: var(--uxdsl__typography__body-weight);
       letter-spacing: var(--uxdsl__typography__body-spacing);
-      text-transform: var(--uxdsl__typography__body-transform);
-      text-decoration: var(--uxdsl__typography__body-decoration);
-      font-style: var(--uxdsl__typography__body-style);
       margin-block-start: var(--uxdsl__typography__body-margin-block-start);
       margin-block-end: var(--uxdsl__typography__body-margin-block-end);
     }
     &.caption {
-      font-size: var(--uxdsl__typography__caption-size);
       font-family: var(--uxdsl__typography__caption-font-family);
-      font-weight: var(--uxdsl__typography__caption-weight);
+      font-size: var(--uxdsl__typography__caption-size);
       line-height: var(--uxdsl__typography__caption-line);
+      font-weight: var(--uxdsl__typography__caption-weight);
       letter-spacing: var(--uxdsl__typography__caption-spacing);
-      text-transform: var(--uxdsl__typography__caption-transform);
-      text-decoration: var(--uxdsl__typography__caption-decoration);
-      font-style: var(--uxdsl__typography__caption-style);
       margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
       margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
     }
     &.span {
-      font-size: var(--uxdsl__typography__span-size);
       font-family: var(--uxdsl__typography__span-font-family);
-      font-weight: var(--uxdsl__typography__span-weight);
+      font-size: var(--uxdsl__typography__span-size);
       line-height: var(--uxdsl__typography__span-line);
+      font-weight: var(--uxdsl__typography__span-weight);
       letter-spacing: var(--uxdsl__typography__span-spacing);
-      text-transform: var(--uxdsl__typography__span-transform);
-      text-decoration: var(--uxdsl__typography__span-decoration);
-      font-style: var(--uxdsl__typography__span-style);
       margin-block-start: var(--uxdsl__typography__span-margin-block-start);
       margin-block-end: var(--uxdsl__typography__span-margin-block-end);
     }
     &.small {
-      font-size: var(--uxdsl__typography__small-size);
       font-family: var(--uxdsl__typography__small-font-family);
-      font-weight: var(--uxdsl__typography__small-weight);
+      font-size: var(--uxdsl__typography__small-size);
       line-height: var(--uxdsl__typography__small-line);
+      font-weight: var(--uxdsl__typography__small-weight);
       letter-spacing: var(--uxdsl__typography__small-spacing);
-      text-transform: var(--uxdsl__typography__small-transform);
-      text-decoration: var(--uxdsl__typography__small-decoration);
-      font-style: var(--uxdsl__typography__small-style);
       margin-block-start: var(--uxdsl__typography__small-margin-block-start);
       margin-block-end: var(--uxdsl__typography__small-margin-block-end);
     }
     &.pre {
-      font-size: var(--uxdsl__typography__pre-size);
       font-family: var(--uxdsl__typography__pre-font-family);
-      font-weight: var(--uxdsl__typography__pre-weight);
+      font-size: var(--uxdsl__typography__pre-size);
       line-height: var(--uxdsl__typography__pre-line);
+      font-weight: var(--uxdsl__typography__pre-weight);
       letter-spacing: var(--uxdsl__typography__pre-spacing);
-      text-transform: var(--uxdsl__typography__pre-transform);
-      text-decoration: var(--uxdsl__typography__pre-decoration);
-      font-style: var(--uxdsl__typography__pre-style);
       margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
       margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
     }
     &.code {
-      font-size: var(--uxdsl__typography__code-size);
       font-family: var(--uxdsl__typography__code-font-family);
-      font-weight: var(--uxdsl__typography__code-weight);
+      font-size: var(--uxdsl__typography__code-size);
       line-height: var(--uxdsl__typography__code-line);
+      font-weight: var(--uxdsl__typography__code-weight);
       letter-spacing: var(--uxdsl__typography__code-spacing);
-      text-transform: var(--uxdsl__typography__code-transform);
-      text-decoration: var(--uxdsl__typography__code-decoration);
-      font-style: var(--uxdsl__typography__code-style);
       margin-block-start: var(--uxdsl__typography__code-margin-block-start);
       margin-block-end: var(--uxdsl__typography__code-margin-block-end);
     }
@@ -7249,183 +7839,138 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 }
 .showcase-text {
     &.sample-default {
-      font-size: var(--uxdsl__typography__default-size);
       font-family: var(--uxdsl__typography__default-font-family);
-      font-weight: var(--uxdsl__typography__default-weight);
+      font-size: var(--uxdsl__typography__default-size);
       line-height: var(--uxdsl__typography__default-line);
+      font-weight: var(--uxdsl__typography__default-weight);
       letter-spacing: var(--uxdsl__typography__default-spacing);
-      text-transform: var(--uxdsl__typography__default-transform);
-      text-decoration: var(--uxdsl__typography__default-decoration);
-      font-style: var(--uxdsl__typography__default-style);
       margin-block-start: var(--uxdsl__typography__default-margin-block-start);
       margin-block-end: var(--uxdsl__typography__default-margin-block-end);
     }
     &.sample-h1 {
-      font-size: var(--uxdsl__typography__h1-size);
       font-family: var(--uxdsl__typography__h1-font-family);
-      font-weight: var(--uxdsl__typography__h1-weight);
+      font-size: var(--uxdsl__typography__h1-size);
       line-height: var(--uxdsl__typography__h1-line);
+      font-weight: var(--uxdsl__typography__h1-weight);
       letter-spacing: var(--uxdsl__typography__h1-spacing);
-      text-transform: var(--uxdsl__typography__h1-transform);
-      text-decoration: var(--uxdsl__typography__h1-decoration);
-      font-style: var(--uxdsl__typography__h1-style);
       margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
     }
     &.sample-h2 {
-      font-size: var(--uxdsl__typography__h2-size);
       font-family: var(--uxdsl__typography__h2-font-family);
-      font-weight: var(--uxdsl__typography__h2-weight);
+      font-size: var(--uxdsl__typography__h2-size);
       line-height: var(--uxdsl__typography__h2-line);
+      font-weight: var(--uxdsl__typography__h2-weight);
       letter-spacing: var(--uxdsl__typography__h2-spacing);
-      text-transform: var(--uxdsl__typography__h2-transform);
-      text-decoration: var(--uxdsl__typography__h2-decoration);
-      font-style: var(--uxdsl__typography__h2-style);
       margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
     }
     &.sample-h3 {
-      font-size: var(--uxdsl__typography__h3-size);
       font-family: var(--uxdsl__typography__h3-font-family);
-      font-weight: var(--uxdsl__typography__h3-weight);
+      font-size: var(--uxdsl__typography__h3-size);
       line-height: var(--uxdsl__typography__h3-line);
+      font-weight: var(--uxdsl__typography__h3-weight);
       letter-spacing: var(--uxdsl__typography__h3-spacing);
-      text-transform: var(--uxdsl__typography__h3-transform);
-      text-decoration: var(--uxdsl__typography__h3-decoration);
-      font-style: var(--uxdsl__typography__h3-style);
       margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
     }
     &.sample-h4 {
-      font-size: var(--uxdsl__typography__h4-size);
       font-family: var(--uxdsl__typography__h4-font-family);
-      font-weight: var(--uxdsl__typography__h4-weight);
+      font-size: var(--uxdsl__typography__h4-size);
       line-height: var(--uxdsl__typography__h4-line);
+      font-weight: var(--uxdsl__typography__h4-weight);
       letter-spacing: var(--uxdsl__typography__h4-spacing);
-      text-transform: var(--uxdsl__typography__h4-transform);
-      text-decoration: var(--uxdsl__typography__h4-decoration);
-      font-style: var(--uxdsl__typography__h4-style);
       margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
     }
     &.sample-h5 {
-      font-size: var(--uxdsl__typography__h5-size);
       font-family: var(--uxdsl__typography__h5-font-family);
-      font-weight: var(--uxdsl__typography__h5-weight);
+      font-size: var(--uxdsl__typography__h5-size);
       line-height: var(--uxdsl__typography__h5-line);
+      font-weight: var(--uxdsl__typography__h5-weight);
       letter-spacing: var(--uxdsl__typography__h5-spacing);
-      text-transform: var(--uxdsl__typography__h5-transform);
-      text-decoration: var(--uxdsl__typography__h5-decoration);
-      font-style: var(--uxdsl__typography__h5-style);
       margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
     }
     &.sample-h6 {
-      font-size: var(--uxdsl__typography__h6-size);
       font-family: var(--uxdsl__typography__h6-font-family);
-      font-weight: var(--uxdsl__typography__h6-weight);
+      font-size: var(--uxdsl__typography__h6-size);
       line-height: var(--uxdsl__typography__h6-line);
+      font-weight: var(--uxdsl__typography__h6-weight);
       letter-spacing: var(--uxdsl__typography__h6-spacing);
-      text-transform: var(--uxdsl__typography__h6-transform);
-      text-decoration: var(--uxdsl__typography__h6-decoration);
-      font-style: var(--uxdsl__typography__h6-style);
       margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
       margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
     }
     &.sample-p {
-      font-size: var(--uxdsl__typography__p-size);
       font-family: var(--uxdsl__typography__p-font-family);
-      font-weight: var(--uxdsl__typography__p-weight);
+      font-size: var(--uxdsl__typography__p-size);
       line-height: var(--uxdsl__typography__p-line);
+      font-weight: var(--uxdsl__typography__p-weight);
       letter-spacing: var(--uxdsl__typography__p-spacing);
-      text-transform: var(--uxdsl__typography__p-transform);
-      text-decoration: var(--uxdsl__typography__p-decoration);
-      font-style: var(--uxdsl__typography__p-style);
       margin-block-start: var(--uxdsl__typography__p-margin-block-start);
       margin-block-end: var(--uxdsl__typography__p-margin-block-end);
     }
     &.sample-body {
-      font-size: var(--uxdsl__typography__body-size);
       font-family: var(--uxdsl__typography__body-font-family);
-      font-weight: var(--uxdsl__typography__body-weight);
+      font-size: var(--uxdsl__typography__body-size);
       line-height: var(--uxdsl__typography__body-line);
+      font-weight: var(--uxdsl__typography__body-weight);
       letter-spacing: var(--uxdsl__typography__body-spacing);
-      text-transform: var(--uxdsl__typography__body-transform);
-      text-decoration: var(--uxdsl__typography__body-decoration);
-      font-style: var(--uxdsl__typography__body-style);
       margin-block-start: var(--uxdsl__typography__body-margin-block-start);
       margin-block-end: var(--uxdsl__typography__body-margin-block-end);
     }
     &.sample-caption {
-      font-size: var(--uxdsl__typography__caption-size);
       font-family: var(--uxdsl__typography__caption-font-family);
-      font-weight: var(--uxdsl__typography__caption-weight);
+      font-size: var(--uxdsl__typography__caption-size);
       line-height: var(--uxdsl__typography__caption-line);
+      font-weight: var(--uxdsl__typography__caption-weight);
       letter-spacing: var(--uxdsl__typography__caption-spacing);
-      text-transform: var(--uxdsl__typography__caption-transform);
-      text-decoration: var(--uxdsl__typography__caption-decoration);
-      font-style: var(--uxdsl__typography__caption-style);
       margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
       margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
     }
     &.sample-span {
-      font-size: var(--uxdsl__typography__span-size);
       font-family: var(--uxdsl__typography__span-font-family);
-      font-weight: var(--uxdsl__typography__span-weight);
+      font-size: var(--uxdsl__typography__span-size);
       line-height: var(--uxdsl__typography__span-line);
+      font-weight: var(--uxdsl__typography__span-weight);
       letter-spacing: var(--uxdsl__typography__span-spacing);
-      text-transform: var(--uxdsl__typography__span-transform);
-      text-decoration: var(--uxdsl__typography__span-decoration);
-      font-style: var(--uxdsl__typography__span-style);
       margin-block-start: var(--uxdsl__typography__span-margin-block-start);
       margin-block-end: var(--uxdsl__typography__span-margin-block-end);
     }
     &.sample-small {
-      font-size: var(--uxdsl__typography__small-size);
       font-family: var(--uxdsl__typography__small-font-family);
-      font-weight: var(--uxdsl__typography__small-weight);
+      font-size: var(--uxdsl__typography__small-size);
       line-height: var(--uxdsl__typography__small-line);
+      font-weight: var(--uxdsl__typography__small-weight);
       letter-spacing: var(--uxdsl__typography__small-spacing);
-      text-transform: var(--uxdsl__typography__small-transform);
-      text-decoration: var(--uxdsl__typography__small-decoration);
-      font-style: var(--uxdsl__typography__small-style);
       margin-block-start: var(--uxdsl__typography__small-margin-block-start);
       margin-block-end: var(--uxdsl__typography__small-margin-block-end);
     }
     &.sample-pre {
-      font-size: var(--uxdsl__typography__pre-size);
       font-family: var(--uxdsl__typography__pre-font-family);
-      font-weight: var(--uxdsl__typography__pre-weight);
+      font-size: var(--uxdsl__typography__pre-size);
       line-height: var(--uxdsl__typography__pre-line);
+      font-weight: var(--uxdsl__typography__pre-weight);
       letter-spacing: var(--uxdsl__typography__pre-spacing);
-      text-transform: var(--uxdsl__typography__pre-transform);
-      text-decoration: var(--uxdsl__typography__pre-decoration);
-      font-style: var(--uxdsl__typography__pre-style);
       margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
       margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
     }
     &.sample-code {
-      font-size: var(--uxdsl__typography__code-size);
       font-family: var(--uxdsl__typography__code-font-family);
-      font-weight: var(--uxdsl__typography__code-weight);
+      font-size: var(--uxdsl__typography__code-size);
       line-height: var(--uxdsl__typography__code-line);
+      font-weight: var(--uxdsl__typography__code-weight);
       letter-spacing: var(--uxdsl__typography__code-spacing);
-      text-transform: var(--uxdsl__typography__code-transform);
-      text-decoration: var(--uxdsl__typography__code-decoration);
-      font-style: var(--uxdsl__typography__code-style);
       margin-block-start: var(--uxdsl__typography__code-margin-block-start);
       margin-block-end: var(--uxdsl__typography__code-margin-block-end);
     }
 
   &.sample-code {
-    font-size: var(--uxdsl__typography__pre-size);
     font-family: var(--uxdsl__typography__pre-font-family);
-    font-weight: var(--uxdsl__typography__pre-weight);
+    font-size: var(--uxdsl__typography__pre-size);
     line-height: var(--uxdsl__typography__pre-line);
+    font-weight: var(--uxdsl__typography__pre-weight);
     letter-spacing: var(--uxdsl__typography__pre-spacing);
-    text-transform: var(--uxdsl__typography__pre-transform);
-    text-decoration: var(--uxdsl__typography__pre-decoration);
-    font-style: var(--uxdsl__typography__pre-style);
     margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
     margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
   }
@@ -7437,7 +7982,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   width: 100%;
   padding-left: 2ch;
 }
+/* font-weight used to come from a global .json-key rule in DensityPlayground.uxdsl, a component
+   nothing rendered (removed in MIG-B7-17 phase B (5)); it now lives with the only consumer. */
 .json-key {
+  font-weight: 600;
   color: var(--uxdsl__palette__secondary-main);
 }
 .json-value-inherited {
@@ -7456,7 +8004,7 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   background: transparent;
   border: 1px solid var(--uxdsl__palette__divider-main);
   border-radius: 4px;
-  padding: 4px;
+  padding: var(--uxdsl__space__2);
   cursor: pointer;
   color: var(--uxdsl__palette__text-secondary);
   display: flex;
@@ -7490,6 +8038,16 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   position: relative;
   z-index: 2;
 }
+/* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
+.responsive-syntax-explainer {
+  height: 100%;
+}
+/* MIG-B7-17 phase E: the editable samples are reachable by Tab (contentEditable) and their
+   `outline: none` hid keyboard focus. */
+.editable-typography-element:focus-visible {
+  outline: 2px dashed var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
+}
 /* SideNav Styles - CSS Driven Responsiveness - Scoped */
 #SideNav {
   /* --- Base Styles (Mobile Default) --- */
@@ -7500,7 +8058,7 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
     z-index: 1100; /* Above AppHeader (1000) */
     opacity: 0;
     pointer-events: none;
@@ -7626,6 +8184,9 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   }
 
   /* --- Desktop Overrides (Media Query) --- */
+  /* A hand-written @media on purpose (MIG-B7-17 phase B): from lg the whole component becomes a
+     sticky sidebar and takes @ds-surface(flat), and a directive cannot be responsive, so this
+     cannot be lg() on each property. Keep 1024px equal to the theme's lg. */
   @media (min-width: 1024px) {
     /* Restore to visible and in flow on desktop */
     display: block;
@@ -7671,6 +8232,95 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
       border-radius: var(--uxdsl__radius__2);
     }
   }
+}
+/* Spacing explanation. Was SpacingExplanation.module.css (MIG-B7-17 phase B): classes are
+   prefixed because .uxdsl is global; stable spacing uses space(); the code panel uses Color
+   identities, dark in both modes on purpose. The __boxes/__padding/__gap/__content/__edit rules
+   are the live "Try it" boxes that DemoSpacing.tsx renders with this same stylesheet. */
+.spacing-explanation {
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+  min-width: 0;
+}
+.spacing-explanation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.spacing-explanation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.spacing-explanation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.spacing-explanation p {
+  margin-block: var(--uxdsl__space__4);
+}
+.spacing-explanation a {
+  text-decoration: underline;
+}
+.spacing-explanation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.spacing-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.spacing-explanation__comparison > div {
+  min-width: 0;
+}
+.spacing-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}
+.spacing-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+.spacing-explanation__boxes figcaption {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.spacing-explanation__padding, .spacing-explanation__gap {
+  background: var(--uxdsl__color__blue-100);
+  border: 1px solid var(--uxdsl__color__blue-500);
+  border-radius: 0.5rem;
+}
+.spacing-explanation__padding {
+  padding: var(--uxdsl__space__4);
+}
+.spacing-explanation__gap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__space__4);
+  padding: var(--uxdsl__space__2);
+}
+.spacing-explanation__content {
+  background: var(--uxdsl__color__white);
+  color: var(--uxdsl__color__slate-900);
+  padding: var(--uxdsl__space__3);
+  border: 1px dashed var(--uxdsl__color__gray-500);
+  text-align: center;
+}
+.spacing-explanation__edit {
+  padding: 0.65rem var(--uxdsl__space__5);
+  background: var(--uxdsl__color__blue-500);
+  color: var(--uxdsl__color__white);
+  border: 0;
+  border-radius: 0.5rem;
+  font: inherit;
+  cursor: pointer;
+}
+.spacing-explanation__edit:focus-visible {
+  outline: 3px solid var(--uxdsl__color__blue-300);
+  outline-offset: 3px;
 }
 .theme-background-container {
   position: absolute;
@@ -7726,6 +8376,68 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 @keyframes pulse {
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
+}
+/* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
+   style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
+   The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
+.config-editor__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--uxdsl__space__3);
+  flex-wrap: wrap;
+}
+.config-editor__hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__buttons {
+  display: flex;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__button {
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  background: var(--uxdsl__palette__surface-light);
+  color: var(--uxdsl__palette__text-primary);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.config-editor__button--primary {
+  border-color: var(--uxdsl__palette__primary-main);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+}
+.config-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__textarea {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__3);
+  background: var(--uxdsl__palette__surface-main);
+  color: var(--uxdsl__palette__text-primary);
+}
+.config-editor__textarea.is-invalid {
+  border-color: var(--uxdsl__palette__error-main);
+}
+.config-editor__status {
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__status.is-invalid {
+  color: var(--uxdsl__palette__error-main);
 }
 /* UXDSLCardDemo styles - Scoped */
 .uxdsl-demo-wrapper {
@@ -7873,6 +8585,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     color: var(--uxdsl__palette__neutral-light);
   }
 }
+/* MIG-B7-17 phase B (4): was inline style={{ marginLeft: 8 }} on the ArrowRight icon. */
+.btn-primary__icon {
+  margin-left: var(--uxdsl__space__3);
+}
 /* Breakpoints Page Styles - Scoped */
 #BreakpointsPage {
   .demo-section {
@@ -7928,9 +8644,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   }
 
   @media (min-width: 768px) {
-    .demo-grid-2 {
+
+  .demo-grid-2 {
       grid-template-columns: 1fr 1fr;
-    }
+  }
   }
 
   .demo-code {
@@ -7972,6 +8689,13 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     font-size: 0.85em;
     color: var(--uxdsl__palette__primary-dark);
   }
+}
+/* /docs/palette. MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. */
+.palette-docs__usage {
+  margin-bottom: 3rem;
+}
+.palette-docs__legacy-editor {
+  margin-top: 3rem;
 }
 /* QuickStart styles - Scoped - Sober & Futuristic */
 #QuickStartPage {
@@ -8105,6 +8829,52 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     border-radius: var(--uxdsl__radius__1);
     margin-bottom: var(--uxdsl__density__8);
     color: var(--uxdsl__palette__text-primary);
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. #646cff is Vite's own brand color
+     (another product's identity, not this theme's): kept literal on purpose. */
+  .warning-blockquote__title {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .warning-blockquote__body {
+    margin: var(--uxdsl__space__3) 0 0 0;
+    font-size: 0.9rem;
+  }
+
+  .step-title.integrations-title {
+    margin-top: var(--uxdsl__space__7);
+    margin-bottom: var(--uxdsl__space__5);
+  }
+
+  .integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--uxdsl__space__5);
+    margin-bottom: 3rem;
+  }
+
+  .step-card.step-card--vite {
+    border-left-color: #646cff;
+  }
+
+  .section-rule {
+    border-color: var(--uxdsl__palette__neutral-main);
+    opacity: 0.3;
+    margin: var(--uxdsl__space__7) 0;
+  }
+
+  .section-rule--wide {
+    margin: 3rem 0;
+  }
+
+  .inline-link {
+    color: var(--uxdsl__palette__primary-main);
+    text-decoration: underline;
   }
 }
 /* Typography Docs Page Styles - Scoped */
@@ -8313,6 +9083,8 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   max-width: 700px;
   margin-top: var(--uxdsl__density__4);
 }
+/* A local threshold for this card list, deliberately not `sm` (480) or `md` (768): moving it
+   to a configured breakpoint would change the layout between 600 and 767px. */
 @media (min-width: 600px) {
   .nav-grid {
     grid-template-columns: 1fr 1fr;
@@ -8408,22 +9180,29 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .hero-content {
     display: flex;
-    flex-direction: column; /* Default to column on mobile */
+    flex-direction: column; /* column on mobile, row on larger screens */
     align-items: center;
     gap: var(--uxdsl__density__4);
-    text-align: center;
+    text-align: center; /* left-aligned within the row layout */ /* center the row content */
 
-    @media (min-width: 768px) { /* On larger screens, switch to row */
-      flex-direction: row;
-      justify-content: center; /* Center the row content */
-      text-align: left; /* Align text within the content to the left */
-      
-      .welcome-page-title {
-        .page-title__text {
-          margin-bottom: 0; /* Remove bottom margin when in row layout */
-        }
+    .welcome-page-title {
+      .page-title__text { /* remove bottom margin when in row layout */
+      }
+      @media (min-width: 768px) {
+      .page-title__text {
+          margin-bottom: 0;
+      }
       }
     }
+  }
+
+  @media (min-width: 768px) {
+
+  .hero-content {
+      flex-direction: row;
+      text-align: left;
+      justify-content: center
+  }
   }
 
   .logo-container {
@@ -8511,7 +9290,6 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .intro-section {
     width: 100%;
-    /* max-width: 800px;  Optional: constrain text width for readability if needed, but user asked for full available */
     margin: 0;
   }
 
@@ -8536,12 +9314,13 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     margin-top: var(--uxdsl__density__2);
     margin-bottom: var(--uxdsl__density__2);
     box-sizing: border-box;
+  }
 
-    @media (min-width: 768px) {
+  @media (min-width: 768px) {
+
+  .nav-grid {
       grid-template-columns: repeat(2, 1fr);
-    }
-
-
+  }
   }
 
   .demo-section {
@@ -8569,8 +9348,6 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .demo-wrapper-scale {
     width: 100%;
-    /* Optional: Scale down slightly if it feels too big for the welcome page */
-    /* transform: scale(0.9); */
   }
 
   .welcome-footer {
@@ -8616,6 +9393,25 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
     color: var(--uxdsl__palette__text-disabled);
   }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in app/page.tsx. */
+  .hero-surface {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-prompt {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
 }
 /* Productivity Page styles - Scoped */
 #ProductivityPage {
@@ -8636,6 +9432,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     text-decoration: underline;
   }
 }
+/* MIG-B7-17 phase B (4): was inline style={{}} in app/productivity/page.tsx. */
+#ProductivityPage .back-link-row {
+  margin-bottom: var(--uxdsl__space__5);
+}
 /* Theming page styles (UXDSL) - Scoped */
 #ThemingPage {
   /* Reuse the same palette grid/swatches styling as DemoPalette */
@@ -8647,6 +9447,11 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   .palette-swatch .row { display: flex; align-items: baseline; justify-content: space-between; }
   .palette-swatch .label { font-family: var(--uxdsl__typography__small-font-family); font-size: var(--uxdsl__typography__small-size); line-height: var(--uxdsl__typography__small-line); font-weight: var(--uxdsl__typography__small-weight); letter-spacing: var(--uxdsl__typography__small-spacing); margin-block-start: var(--uxdsl__typography__small-margin-block-start); margin-block-end: var(--uxdsl__typography__small-margin-block-end); opacity: 0.75; }
   .palette-swatch .value { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); }
+}
+/* /typography. MIG-B7-17 phase B (4): was inline style={{}} in app/typography/page.tsx. */
+.typography-page__documentation {
+  margin-top: 4rem;
+  max-width: 800px;
 }
 :root { --uxdsl__palette__primary-main: #7e22ce; --uxdsl__palette__primary-light: #a855f7; --uxdsl__palette__primary-dark: #581c87; --uxdsl__palette__primary-contrast: #ffffff; --uxdsl__palette__secondary-main: #db2777; --uxdsl__palette__secondary-light: #f472b6; --uxdsl__palette__secondary-dark: #be185d; --uxdsl__palette__secondary-contrast: #ffffff; --uxdsl__palette__surface-main: #ffffff; --uxdsl__palette__surface-light: #f8fafc; --uxdsl__palette__surface-dark: #8d929a; --uxdsl__palette__surface-contrast: #0f172a; --uxdsl__palette__surface-paper: var(--uxdsl__palette__surface-light); --uxdsl__palette__surface-subtle: var(--uxdsl__palette__surface-dark); --uxdsl__palette__tertiary-main: #68768a; --uxdsl__palette__tertiary-light: #cbd5e1; --uxdsl__palette__tertiary-dark: #68778c; --uxdsl__palette__tertiary-contrast: #000000; --uxdsl__palette__success-main: #15803d; --uxdsl__palette__success-light: #16a34a; --uxdsl__palette__success-dark: #14532d; --uxdsl__palette__success-contrast: #ffffff; --uxdsl__palette__info-main: #0369a1; --uxdsl__palette__info-light: #0284c7; --uxdsl__palette__info-dark: #075985; --uxdsl__palette__info-contrast: #ffffff; --uxdsl__palette__warning-main: #d97706; --uxdsl__palette__warning-light: #fbbf24; --uxdsl__palette__warning-dark: #c25e0a; --uxdsl__palette__warning-contrast: #000000; --uxdsl__palette__error-main: #dc2626; --uxdsl__palette__error-light: #ef4444; --uxdsl__palette__error-dark: #b91c1c; --uxdsl__palette__error-contrast: #ffffff; --uxdsl__palette__dark-main: #0f172a; --uxdsl__palette__dark-light: #1e293b; --uxdsl__palette__dark-dark: #020617; --uxdsl__palette__dark-contrast: #ffffff; --uxdsl__palette__neutral-main: #64748b; --uxdsl__palette__neutral-light: #cbd5e1; --uxdsl__palette__neutral-dark: #334155; --uxdsl__palette__neutral-contrast: #ffffff; --uxdsl__palette__light-main: #f1f5f9; --uxdsl__palette__light-light: #ffffff; --uxdsl__palette__light-dark: #e2e8f0; --uxdsl__palette__light-contrast: #0f172a; --uxdsl__palette__text-main: var(--uxdsl__palette__text-primary); --uxdsl__palette__text-primary: var(--uxdsl__palette__surface-contrast); --uxdsl__palette__text-secondary: var(--uxdsl__palette__neutral-dark); --uxdsl__palette__text-disabled: var(--uxdsl__palette__tertiary-main); --uxdsl__palette__divider-main: var(--uxdsl__palette__surface-dark); --uxdsl__palette__action-disabled: var(--uxdsl__palette__text-disabled); --uxdsl__color__gray-300: #CBD5E1; --uxdsl__color__gray-400: #94A3B8; --uxdsl__color__gray-500: #64748B; --uxdsl__color__gray-600: #475569; --uxdsl__space__1: 0.125rem; --uxdsl__space__2: 0.25rem; --uxdsl__space__3: 0.5rem; --uxdsl__space__4: 0.75rem; --uxdsl__space__5: 1rem; --uxdsl__space__6: 1.5rem; --uxdsl__space__7: 2rem; --uxdsl__space__8: 2.5rem; --uxdsl__space__9: 3.125rem; --uxdsl__space__10: 3.875rem; --uxdsl__space__11: 4.875rem; --uxdsl__space__12: 6.125rem; --uxdsl__space__13: 7.75rem; --uxdsl__space__14: 9.75rem; --uxdsl__space__15: 12.25rem; --uxdsl__space__16: 15.375rem; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --uxdsl__palette__primary-main: #ddbfff; --uxdsl__palette__primary-light: #d8b4fe; --uxdsl__palette__primary-dark: #a855f7; --uxdsl__palette__primary-contrast: #000000; --uxdsl__palette__secondary-main: #ffb7d8; --uxdsl__palette__secondary-dark: #db3b74; --uxdsl__palette__secondary-contrast: #000000; --uxdsl__palette__surface-main: #020617; --uxdsl__palette__surface-light: #0f172a; --uxdsl__palette__surface-dark: #606060; --uxdsl__palette__surface-contrast: #f8fafc; --uxdsl__palette__neutral-main: #c0cfe5; --uxdsl__palette__neutral-light: #cbd5e1; --uxdsl__palette__neutral-dark: #475569; --uxdsl__palette__neutral-contrast: #000000; --uxdsl__palette__tertiary-main: #bccce2; --uxdsl__palette__tertiary-dark: #6b7a8f; --uxdsl__palette__tertiary-contrast: #000000; --uxdsl__palette__success-main: #52e586; --uxdsl__palette__success-dark: #4c875e; --uxdsl__palette__success-contrast: #000000; --uxdsl__palette__info-main: #82d4ff; --uxdsl__palette__info-dark: #3a7fae; --uxdsl__palette__info-contrast: #000000; --uxdsl__palette__warning-main: #fbbf24; --uxdsl__palette__warning-contrast: #000000; --uxdsl__palette__error-main: #ffb9b6; --uxdsl__palette__error-dark: #dd443c; --uxdsl__palette__error-contrast: #000000; --uxdsl__palette__light-main: #1e293b; --uxdsl__palette__light-contrast: #f8fafc; --uxdsl__palette__dark-main: #000000; --uxdsl__palette__dark-contrast: #f8fafc; } }

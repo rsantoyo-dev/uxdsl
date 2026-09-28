@@ -10,26 +10,29 @@ Language support for **UXDSL** (User Experience Design System Language)
   so it can't silently drift from what actually compiles:
   - Directives: `@theme`, `@ds-surface`, `@ds-typo`, `@ds-button`, `@ds-input`.
   - Functions: `palette()`, `color()`, `space()`, `density()`, `radius()`,
-    `rounded()`, `border()`, `shadow()`, `elevation()`, and the configured
-    breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()` by default).
+    `rounded()`, `border()`, `shadow()`, `elevation()`, and the built-in
+    default breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()`) — a
+    breakpoint name your project's own theme adds is not highlighted as a
+    UXDSL function or completed.
   - Standard CSS syntax, via the built-in `source.css` grammar.
 - **Context-aware completion** — functions only inside a declaration's
   value, directives only after `@`, and role/tone/size/override arguments
   once inside `@ds-surface(`/`@ds-button(`/`@ds-input(`. Nothing is
   suggested inside a selector, a comment, or a string.
 - **CSS IntelliSense** for the same directives via `uxdsl.custom-data.json`
-  (VS Code's built-in CSS language service reads this directly — hover and
-  completion for `@ds-*` work in any editor that supports the CSS custom
-  data format, not just this extension's own completion provider).
+  (VS Code's built-in CSS language service reads this directly). The file
+  follows VS Code's CSS custom data format; other editors that read that
+  format may be able to use it, but only VS Code has been tested.
 
 ### Known gaps (out of scope for this release)
 
 Completion based on your project's *own* theme (roles/tones/sizes it
 actually resolves to), live diagnostics, breakpoint hover, go-to-definition,
 and real CSS IntelliSense *inside* `.uxdsl` files (e.g. property-value
-validation) are not implemented yet — planned as a future story (MIG-B6-08,
-post-0.5.0; see `docs/features/FEAT-008/MIG-B6-26-*.md`'s own "Fuera de
-alcance" section). Today's role/tone/size completions are generated from
+validation) are not implemented yet — deferred by FEAT-008 to MIG-B6-08,
+post-0.5.0 (see `docs/features/FEAT-008/MIG-B6-26-*.md`'s own "Fuera de
+alcance" section); as of 2026-09-28 its project-theme completion/hover part is
+MIG-B7-13 in FEAT-009, blocked on an owner decision (D-11). Today's role/tone/size completions are generated from
 the compiler's *built-in default* theme — accurate for a project that
 hasn't customized those families, not necessarily for one that has.
 MIG-B6-29 (FEAT-008) grew that built-in default theme from 4 to 14 palette
@@ -53,15 +56,24 @@ complete correctly under the `scss` grammar, since none of it is real SCSS.
 
 ## Installation (from source)
 
-Not yet published to the Marketplace or Open VSX (see
-`docs/features/FEAT-008/MIG-B6-26-*.md` for status). Package it yourself:
+As of 2026-09-28, not published to the Marketplace or Open VSX (publishing
+is tracked in `docs/features/FEAT-009/MIG-B7-05-publicar-extension.md`).
+Package it yourself:
 
 ```bash
 npm install
 npm run package        # produces uxdsl-vscode-<version>.vsix
 ```
 
-Then in VS Code: Command Palette → "Extensions: Install from VSIX...".
+Then in VS Code: Command Palette → "Extensions: Install from VSIX...", or
+`code --install-extension uxdsl-vscode-<version>.vsix`. A `.vsix` built and
+validated by CI will replace "package it yourself" once that pipeline exists
+(MIG-B7-04, FEAT-009).
+
+For a consuming app, this extension is one of two mechanisms: the typed
+`uxdsl.config.cjs` that `uxdsl init` writes and the theme JSON `$schema` work
+without it. See
+[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
 
 ## Development
 

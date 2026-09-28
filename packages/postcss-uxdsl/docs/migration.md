@@ -1,6 +1,63 @@
-# Migración a UXDSL 0.5.0-beta.2
+# Migración a las betas de UXDSL 0.5.0
 
-## Adelanto beta.6 — MIG-B6-29: el tema por defecto cambió (sin publicar)
+## Antes de actualizar (cualquier versión)
+
+Un cambio de versión puede cambiar defaults en familias que tu tema **nunca
+declaró**, y ni `uxdsl theme --diff` ni `--strict` lo muestran: los dos sólo miran
+las familias que tu proyecto menciona (así está documentado; no es un defecto).
+`uxdsl theme` sin flags imprime el tema **efectivo** completo, todas las familias,
+como JSON por stdout. Guárdalo antes y después, y compara:
+
+```bash
+npx uxdsl theme > effective.before.json
+npm install -D uxdsl-cli@<siguiente> postcss-uxdsl@<siguiente>
+npx uxdsl theme > effective.after.json
+diff effective.before.json effective.after.json
+```
+
+Medido con un proyecto cuyo tema sólo fija `typography_details.h1.fontWeight`,
+actualizado de `0.5.0-beta.5` a `0.5.0-beta.6` desde el registro: la salida pasa
+de 8 438 a 13 159 bytes y de 4 a 15 familias; el `diff` muestra, por ejemplo,
+33 claves nuevas en `modes`, 43 nuevas y 5 cambiadas en `palette`, y en `fonts`
+1 nueva, 2 cambiadas y 1 quitada — mientras `theme --diff` sólo lista las 78
+filas de `typography_details`. (Tabla completa en el README de `uxdsl-cli`,
+"Before you upgrade".)
+
+**Lo que este flujo no ve:** compara el *tema*, no el CSS compilado. Un cambio en
+cómo el compilador emite CSS a partir del mismo tema — por ejemplo el orden del
+`@import` de Google Fonts corregido en `0.5.0-beta.7` (sin publicar a
+2026-09-28) — deja los dos archivos
+idénticos. Esos cambios sólo los anuncia el
+[CHANGELOG](../CHANGELOG.md): leer cada sección `### Visual changes` entre tu
+versión y la nueva.
+
+Con `UXDSL_DEBUG=1` definido, `uxdsl theme` añade líneas de descubrimiento a
+stdout; no lo definas al guardar las instantáneas.
+
+### Parches locales que ya no hacen falta
+
+Si el proyecto parchea paquetes de UXDSL localmente (`patches/` con
+patch-package, o similar), revisa esos parches al actualizar: un parche que
+compensaba un defecto ya corregido deja de aplicar — y `patch-package` falla —
+o, peor, sigue aplicando sobre código que ya cambió.
+
+1. Antes de actualizar, lista `patches/` y anota qué corrige cada parche de un
+   paquete `uxdsl-*` o `postcss-uxdsl`.
+2. Después, si `patch-package` falla o el parche ya no tiene sentido, comprueba
+   en la fuente **publicada** de la nueva versión (en `node_modules/`) si el
+   comportamiento que parcheabas ya está ahí. Si lo está, borra el parche.
+
+Ejemplo verificado: un parche para `uxdsl-cli@0.5.0-beta.1` que reenviaba
+`includeTheme` y `references` de `uxdsl.config.cjs` al plugin sobra desde
+beta.6 — el `compile()` de `uxdsl-core` publicado los reenvía. Comprobado con
+`uxdsl-cli@0.5.0-beta.6` desde el registro: una config con
+`includeTheme: false` compila sin `:root`, y un tema cuyo
+`palette.primary.main` es `var(--host-token)` falla con `UXD_REFERENCE_MISSING`
+sin `references` y compila con `references: { externalTokens: ['--host-token'] }`.
+Esto no dice nada de otros parches: cada uno se comprueba igual, contra la
+versión que instalas.
+
+## beta.6 — MIG-B6-29: el tema por defecto cambió (publicado el 2026-09-23)
 
 `DEFAULT_THEME` pasó de un subconjunto mínimo (4 familias de palette, 3
 familias de fuente, sin `modes.dark` ni `fonts.google`) al JSON base completo
@@ -17,10 +74,14 @@ siete familias densities/borders/radii/shadows/surfaces/buttons/inputs,
 sin cambio de valor respecto a beta.5— sigue disponible pero simplemente
 no lo usa ningún componente que sólo referencie
 `primary`/`surface`/`neutral`/`error`). No es bit-a-bit idéntico a beta.5:
-`primary`/`surface`/`neutral`/`error` ganan además un `light` que beta.5
-nunca definió (mezcla por clave, no hay forma de quitarlo) — una variable
-CSS más por familia, sin efecto visual salvo que el propio proyecto
-empiece a referenciar `palette(<familia>.light)` a propósito):
+`primary`/`surface`/`neutral`/`error` ganan además variantes que beta.5
+nunca definió (mezcla por clave, no hay forma de quitarlas): `light` en las
+cuatro, más `contrast` en `neutral`, `dark`/`contrast` en `error` y
+`paper`/`subtle` en `surface` — variables CSS de más, sin efecto visual
+salvo que el propio proyecto empiece a referenciarlas a propósito. Tampoco
+restaura el gris de `border(1..5)`: `colors.gray` 300/400/500/600 pasa de
+`#d1d5db`/`#9ca3af`/`#6b7280`/`#4b5563` a `#CBD5E1`/`#94A3B8`/`#64748B`/
+`#475569`; para conservarlo, añadir `colors.gray` con los valores de beta.5):
 
 ```json
 {
@@ -47,13 +108,12 @@ evita la petición real a Google Fonts que el nuevo default hace por defecto.
 **Esta receta no cubre `typography_details`.** `DEFAULT_THEME.typography_details`
 ya no viene de `typography-defaults.ts`'s `DEFAULT_TYPOGRAPHY` (ver más abajo);
 viene del JSON base, con una forma de campos distinta (por ejemplo, `h1.lineHeight`
-pasa de `xs(1.1) md(1.1)` a `xs(1.2) md(1.3)`, y ningún rol trae ya
-`fontFamily`/`textTransform`/`textDecoration`/`fontStyle`/`marginBlockStart`/
-`marginBlockEnd` por defecto salvo que el propio rol los declare). Reconciliar
-esa forma es responsabilidad explícita de MIG-B6-17, no de esta receta — un
-proyecto que también quiera fijar `typography_details` exactamente como en
-beta.5 debe copiar el bloque completo desde la versión de `typography-defaults.ts`
-de beta.5 a su propio override.
+pasa de `xs(1.1) md(1.1)` a `xs(1.2) md(1.3)`; ningún rol trae ya
+`textTransform`/`textDecoration`/`fontStyle`, y `fontFamily`/`marginBlockStart`/
+`marginBlockEnd` llegan del rol `default` del JSON base — márgenes `"0"` — salvo
+que el propio rol los declare). `typography-defaults.ts` se eliminó en beta.6
+(MIG-B6-17); para recuperar el aspecto de beta.5, ver "`@ds-typo` emite sólo lo
+que define el tema" más abajo.
 
 **`modes.dark` no tiene receta de eliminación.** `deepMergeTheme` mezcla
 objetos por clave y nunca borra una clave — no existe un valor de override
@@ -70,25 +130,25 @@ del dueño de esta historia, no un vacío de esta guía. Lo único soportado:
   `palette.<familia>` correspondiente — sigue emitiéndose el CSS, deja de
   cambiar nada visible.
 
-## Adelanto beta.6 — MIG-B6-01 (sin publicar)
+## beta.6 — MIG-B6-01 (publicado el 2026-09-23)
 
 No requiere cambiar el JSON ni el CSS: `modes` y `typography` legacy dejan de
 producir avisos falsos de familia desconocida. Los roles custom de Palette,
 fuentes y Typography siguen abiertos; `palete` sigue avisando y `fontsize`
 en un rol tipográfico sigue fallando. No cambia `--strict-theme`.
 Las herramientas pueden importar `KNOWN_THEME_FAMILIES` desde
-`postcss-uxdsl/ds-runtime` en la implementación beta.6, sin duplicar la lista.
-Esto no implica disponibilidad en la versión beta.5 publicada.
+`postcss-uxdsl/ds-runtime` desde beta.6, sin duplicar la lista. beta.5 no
+lo exporta.
 
 ## Contexto beta.2
 
-Beta.2 está preparada en este checkout; la publicación en npm es un paso separado.
+Beta.2 se publicó en npm el 2026-09-16.
 El namespace `--uxdsl__` ya se introdujo en beta.1. Beta.2 añade defaults y
 temas parciales; los helpers `space(7)`, `density(2)` y las directivas no cambian.
 
 ## De beta.1 a beta.2
 
-1. Tras publicar beta.2, instalar versiones coordinadas:
+1. Instalar versiones coordinadas:
 
    ```bash
    npm install -D uxdsl-cli@0.5.0-beta.2 postcss-uxdsl@0.5.0-beta.2
@@ -158,7 +218,8 @@ Sin overrides, ambas entradas usan defaults. No cargar CSS precompilado de
 otra versión junto al tema nuevo.
 
 > **Alcance de este documento:** describe la migración desde las versiones
-> anteriores hacia beta.1 (publicada) y beta.2 (preparada). Ver el
+> anteriores hacia beta.1 y las betas siguientes (beta.1 a beta.6 publicadas;
+> beta.7 sin publicar a 2026-09-28). Ver el
 > historial de cambios en [`CHANGELOG.md`](../CHANGELOG.md) y el contexto
 > completo (hallazgos, prioridades, estado de cada mejora) en el
 > [monorepo, FEAT-002](https://github.com/rsantoyo-dev/uxdsl/blob/main/docs/features/FEAT-002-beta-migration-hardening.md).
@@ -176,7 +237,7 @@ actualizar.
 | Área | Antes | Ahora | Cambio de comportamiento |
 | --- | --- | --- | --- |
 | Spacing keys | `"space-1"` y `"1"` en el JSON emiten variables distintas (`--uxdsl__space__space-1` vs `--uxdsl__space__1`); density/radius apuntan solo a la forma sin prefijo | Ambas formas emiten `--uxdsl__space__1`; usar ambas en la misma config lanza `UXD_SPACING_COLLISION` | Corrección de bug, no sintaxis nueva |
-| Entradas múltiples | Cada archivo compilado emite siempre `:root` completo (foundations, density, shadows, edges, surfaces, buttons, inputs) | `includeTheme: false` en la opción del plugin desactiva esos ocho emisores para una entrada que solo consume tokens de otra | Opt-in; por defecto (`true`) no cambia nada |
+| Entradas múltiples | Cada archivo compilado emite siempre `:root` completo (foundations, typography, density, shadows, edges, surfaces, buttons, inputs) | `includeTheme: false` en la opción del plugin desactiva esos ocho emisores para una entrada que solo consume tokens de otra | Opt-in; por defecto (`true`) no cambia nada |
 | Referencias indefinidas | `var(--token-inexistente)` se emitía igual; el navegador simplemente no aplicaba la propiedad | Falla el build con `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`, indicando la cadena completa de dependencia | Ver "Qué hacer si tu build empieza a fallar" abajo |
 | `border(1..5)` | Requería que el tema definiera `colors.gray.{300,400,500,600}` manualmente, o las propiedades quedaban inválidas en silencio | Ese `gray` por defecto se mezcla automáticamente (tus shades ganan por clave si los definís) | Nadie necesita cambiar código; los temas que ya definían `colors.gray` siguen ganando |
 | Tamaño de surface/button/input | `@ds-surface(role size)` fija padding y radius juntos; para radio/sombra distintos había que sobreescribir la propiedad a mano después del mixin | `@ds-surface(role size radius(key) shadow(key))` fija radio/sombra de forma independiente | Sintaxis nueva, opt-in; ver tabla de sintaxis abajo |
@@ -229,9 +290,10 @@ nombre lo elegiste vos, no este compilador.
 
 - **Tamaños compuestos o "recetas" configurables** (por ejemplo, un `size`
   que además ajuste tipografía o densidad de ícono) no están soportados.
-  Solo `radius()`/`shadow()` son overridables hoy.
-- **`includeTheme: false` sin pasar `theme`** usa defaults desde beta.2.
-  Si hay overrides, compartirlos con la entrada global para que ambas
+  Solo `radius()`/`shadow()` son overridables (a 2026-09-28).
+- **`includeTheme: false` sin pasar `theme`** usa defaults desde beta.2; desde
+  beta.6, el plugin antes descubre el tema del proyecto en `configRoot` (ver
+  MIG-B6-19 abajo). Si hay overrides, compartirlos con la entrada global para que ambas
   compilaciones validen contra el mismo tema efectivo.
 - **Migración automática cuando el manual override no es una llamada
   `radius()`/`shadow()` pura** (un literal, `calc()`, o una expresión
@@ -319,8 +381,8 @@ no cambia contratos existentes — es aditivo y opt-in en los tres puntos:
 
 beta.5 ([FEAT-006](../../../docs/features/FEAT-006-beta5-scoped-strict-theme.md))
 corrige un falso positivo real de `--strict-theme`/`uxdsl theme --strict`:
-declarar solo `typography_details.h2.fontSize` (el patrón documentado en
-"Guía de 5 entradas" arriba) marcaba **toda** la familia como incompleta —
+declarar solo `typography_details.h2.fontSize` (un override parcial por
+clave, el uso previsto) marcaba **toda** la familia como incompleta —
 y lo mismo le pasa al ejemplo de `palette.primary.main` de la sección
 "Zero-config defaults" del README de este paquete. Si usás `--strict-theme`
 en CI, acotalo a las familias que de verdad querés completas:
@@ -366,11 +428,12 @@ sigue igual:
 beta.6 corrige tres formas en las que `uxdsl-cli` aceptaba un flag mal
 escrito o un valor inválido en silencio, en vez de fallar:
 
-- **Un flag desconocido, o de otro comando, ahora falla con sugerencia.**
+- **Un flag desconocido, o de otro comando, ahora falla.**
   Un script que hoy pasa `--strict-thme` (typo) o `--strict` a `build`
   (ese flag es de `theme`, la forma correcta es `--strict-theme`) dejaba de
   aplicar esa opción sin ningún aviso; ahora falla con exit 1 y "Unknown
-  option ... Did you mean ...?". Revisá tus scripts de build/CI si usan
+  option ...", más "Did you mean ...?" cuando hay un flag cercano (`--strict`
+  en `build` no lo tiene). Revisá tus scripts de build/CI si usan
   flags que nunca existieron o que pertenecen a otro comando — antes
   "funcionaban" porque `uxdsl` los ignoraba.
 - **`--include-theme=false`/`=true` ahora sí surten efecto.** Antes solo
@@ -412,7 +475,7 @@ tabla completa de formas aceptadas por flag.
 ### Desde beta.6: cero salidas silenciosas del lenguaje (MIG-B6-14)
 
 beta.6 corrige tres casos en los que la salida no reflejaba la entrada, y
-nadie avisaba:
+nadie avisaba (los dos primeros puntos), y cambia dos cosas más:
 
 - **Una directiva (`@ds-typo`/`@ds-surface`/`@ds-button`/`@ds-input`) que no
   es hija directa de la regla que estiliza ahora falla** con
@@ -451,7 +514,7 @@ nadie avisaba:
   $gap; }` produce el valor base más el `@media`, en vez de compilar el
   texto sin expandir `gap: xs(1rem) md(2rem);` (CSS inválido, sin error).
 
-Ninguno de los tres primeros cambios altera el resultado de una compilación
+Ninguno de esos tres casos (los dos primeros puntos) altera el resultado de una compilación
 que ya era correcta — solo convierten una salida silenciosamente inválida en
 un error accionable. Revisá tu contenido `.uxdsl` si alguno de estos errores
 aparece al actualizar: probablemente ya estaba mal, solo que nadie lo veía.
@@ -459,8 +522,8 @@ aparece al actualizar: probablemente ya estaba mal, solo que nadie lo veía.
 ### Desde beta.6: un solo `compile()` compartido entre `uxdsl-cli` y `uxdsl-core` (MIG-B6-18)
 
 `uxdsl-cli` ya no arma su propio pipeline PostCSS in-line; ahora llama al
-`compile()` de `uxdsl-core`, el mismo que usará cualquier adaptador de
-bundler futuro (Vite/Webpack). `uxdsl-core` en sí mismo pasó de un inliner
+`compile()` de `uxdsl-core`, el mismo que usan desde beta.6 los
+adaptadores de Vite y Webpack (MIG-B6-20, abajo). `uxdsl-core` en sí mismo pasó de un inliner
 de `@import` basado en strings (que cortaba comentarios línea por línea,
 sin entender `url(...)` ni bloques `/* */`) a un pipeline real basado en
 `postcss-scss`/`postcss-import`/`postcss-advanced-variables`. Esto no
@@ -485,7 +548,7 @@ corrompían en silencio ahora salen intactas:
 
 `processUxdsl(source, options)` de `uxdsl-core` conserva su firma y su
 `Promise<string>`; `compile(input, config)` es una exportación nueva. Ver
-[`uxdsl-core`'s README](../../uxdsl-core/README.md#compile-input-config)
+[`uxdsl-core`'s README](../../uxdsl-core/README.md#compileinput-config)
 para su contrato completo.
 
 ### Desde beta.6: el plugin descubre el tema del proyecto solo, y `init` deja de escribir `breakpoints` (MIG-B6-19)
@@ -627,9 +690,9 @@ configuración, no necesariamente algo que rompa un CSS Modules build:
 1. Leé la cadena completa del mensaje (`consumer -> ... -> token`): te dice
    exactamente qué propiedad, en qué archivo/línea, depende de qué
    variable indefinida.
-2. Si el token es tuyo (por ejemplo `--uxdsl__palette__text-secondary` de un
-   `palette(text-secondary)` que escribiste), definilo en el tema
-   (`theme.palette.text = { secondary: '...' }`).
+2. Si el token es tuyo (por ejemplo `--uxdsl__palette__brand-secondary` de un
+   `palette(brand-secondary)` que escribiste), definilo en el tema
+   (`theme.palette.brand = { secondary: '...' }`).
 3. Si el token lo genera un preset por defecto que no usás con esa forma
    (por ejemplo cambiaste todos los `borders[1..5]` pero uno quedó sin
    override), revisá que el override esté completo.
@@ -655,6 +718,9 @@ npm run codemod:size-overrides -- --write src/**/*.uxdsl
 
 # Equivalente directo
 node scripts/codemod-size-overrides.js [--write] <archivos...>
+
+# Desde un proyecto que tiene el paquete instalado (rutas relativas al proyecto)
+node node_modules/postcss-uxdsl/scripts/codemod-size-overrides.js [--write] <archivos...>
 ```
 
 Qué hace: busca `@ds-surface(role size)` (o `@ds-button`/`@ds-input`)
@@ -818,7 +884,8 @@ que lo parsean.
 `--contrast` comprueba el tema efectivo contra WCAG e imprime el reporte
 completo en stdout, saliendo con 1 si algo falla. Un verde `#00aa00` contra el
 `contrast` blanco heredado da ~3,11:1, por debajo del 4,5:1 exigido para texto,
-y el reporte nombra el par con su modo, estado, breakpoint y colores resueltos.
+y el reporte nombra el par con su modo, componente, tono, estado, breakpoint y
+ratio medido (no incluye los colores resueltos).
 
 Carga además las excepciones que se publican con el tema base. Como esas
 excepciones casan también por color resuelto, si sobrescribes uno de esos
@@ -828,8 +895,9 @@ seguir disculpando un par que ya cambiaste.
 `--contrast` **no** forma parte de `build`, y no se combina con `--diff` ni con
 `--strict`: cada uno imprime su propio documento en stdout.
 
-Ten en cuenta al ejecutarlo por primera vez que el tema base publicado todavía
-no pasa su propia comprobación. Esos fallos son reales y están documentados
+Ten en cuenta al ejecutarlo por primera vez que el tema base no pasa su propia
+comprobación (a 2026-09-28, `uxdsl theme --contrast` en un proyecto sin override
+reporta 123 pares fallidos y sale con 1). Esos fallos son reales y están documentados
 (MIG-B6-29), no son un problema de tu configuración: fíjate en los pares que
 introduce tu propio override.
 
@@ -920,8 +988,10 @@ eso sustituiría tu tema por otro distinto y lo llamaría éxito.
 
 ## Verificación
 
-Los ejemplos de este documento están verificados contra los tests de este
-checkout (`postcss-uxdsl@0.5.0-beta.2`):
+Los bloques de tema JSON (y cualquier bloque CSS/UXDSL) de este documento se
+validan con el compilador real en `npm test` (`scripts/doc-examples.test.js`; `npm run
+verify:doc-examples` desde la raíz del monorepo imprime el reporte). Los
+casos de las primeras secciones tienen además tests propios:
 `test/spacing-normalization.test.js`, `test/include-theme.test.js`,
 `test/border-colors.test.js`, `test/size-overrides.test.js`,
 `test/codemod-size-overrides.test.js`, `test/naming.test.js` — `npm test`

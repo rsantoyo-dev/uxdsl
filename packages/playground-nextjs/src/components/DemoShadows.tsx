@@ -40,7 +40,7 @@ export default function DemoShadows() {
       <h2 className="section-title">Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test transitions. The preview uses the active theme and shared engine defaults. Edits below are scoped to this demo and do not save source JSON.</p>
       <label htmlFor="shadow-theme">Shadows and breakpoint configuration</label>
-      <textarea id="shadow-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} style={{ width: '100%', fontFamily: 'monospace' }} />
+      <textarea id="shadow-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className="code-textarea" />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={() => { setOverrides(null); setDraft(JSON.stringify({ breakpoints: activeThemeData.breakpoints, shadows: getShadowTokens(activeThemeData) }, null, 2)); setError('') }}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}

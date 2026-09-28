@@ -1,5 +1,4 @@
 import AgentGuidance from './AgentGuidance'
-import styles from './BreakpointDocumentation.module.css'
 
 const definition = `.card {
   border: border(1);
@@ -17,7 +16,7 @@ const equivalent = `.card {
 }`
 
 export default function BorderDocumentation() {
-  return <div className={styles.content}>
+  return <div className="doc-section">
     <section aria-labelledby="borders-explained">
       <h2 id="borders-explained">Define shared edges and corners. Select them in components.</h2>
       <p><strong>Borders define the edge; Radii define the corner shape.</strong> A border preset combines width, style and color. A radius preset defines corner rounding. Either can include a responsive progression, but neither has to change with viewport width. Standard CSS remains available for deliberate local exceptions.</p>
@@ -31,7 +30,7 @@ export default function BorderDocumentation() {
   "borders": { "1": "xs(1px solid #64748b) md(2px solid #64748b)" }
 }`}</code></pre>
       <p>This illustrative example uses <code>xs: 0</code> and <code>md: 768</code>. It uses literal values to isolate the behavior; shared definitions can also reference configured Spacing and Palette tokens.</p>
-      <div className={styles.comparison}>
+      <div className="doc-section__comparison">
         <div><h4>UXDSL</h4><pre><code className="language-css">{definition}</code></pre></div>
         <div><h4>Equivalent CSS behavior</h4><pre><code className="language-css">{equivalent}</code></pre></div>
       </div>
@@ -44,7 +43,7 @@ export default function BorderDocumentation() {
 }`}</code></pre>
       <p>Spacing supplies reusable measurements; Palette supplies a semantic color role. A 1px hairline can intentionally remain stable. Prefer Density for component spacing, but do not automatically apply Density to border widths or corner radii: choose the intended edge and shape behavior.</p>
       <h3>Radius keywords</h3>
-      <div className={styles.tableWrap}><table>
+      <div className="doc-section__table-wrap"><table>
         <thead><tr><th>Expression</th><th>Current compiler result</th></tr></thead>
         <tbody>
           <tr><td><code>radius(2)</code></td><td>The configured radius-2 preset</td></tr>

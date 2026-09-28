@@ -87,15 +87,9 @@
   /* Grid Layout */
   .breakpoints-grid {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: xs(1fr) md(2fr 1fr);
+    align-items: md(start);
     gap: density(6);
-  }
-
-  @media (min-width: 768px) {
-    .breakpoints-grid {
-      grid-template-columns: 2fr 1fr;
-      align-items: start;
-    }
   }
 
   /* Controls Column */
@@ -151,7 +145,7 @@
 
   .breakpoints-input-val {
     width: 80px;
-    padding: 4px 8px;
+    padding: space(2) space(3);
     border: 1px solid palette(neutral-light);
     border-radius: radius(1);
     font-family: font(code);

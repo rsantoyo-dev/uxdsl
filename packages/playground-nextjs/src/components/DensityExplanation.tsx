@@ -1,6 +1,5 @@
 'use client'
 
-import styles from './DensityExplanation.module.css'
 import SpacingPrinciple from './SpacingPrinciple'
 
 const theme = `{
@@ -44,15 +43,15 @@ export default function DensityExplanation({ definition, onEdit }: {
   onEdit: () => void
 }) {
   return (
-    <div className={styles.explanation}>
+    <div className="density-explanation">
       <section>
         <h3>One token. Responsive spacing everywhere.</h3>
         <SpacingPrinciple />
         <p>A Density token maps a level to spacing values at different breakpoints. The <code>4</code> in <code>density(4)</code> identifies a token; it does not mean four pixels or a multiplier. You define its progression.</p>
         <h4>1. Define the behavior in your theme JSON</h4>
         <p>This example is a theme excerpt. Density reuses the spacing scale instead of introducing a separate set of measurements.</p>
-        <pre className={styles.code}><code>{theme}</code></pre>
-        <div className={styles.tableWrap}>
+        <pre className="density-explanation__code"><code>{theme}</code></pre>
+        <div className="density-explanation__table-wrap">
           <table>
             <caption>How this example resolves at each viewport width</caption>
             <thead><tr><th>Viewport</th><th>density(4)</th><th>space(4)</th></tr></thead>
@@ -68,10 +67,10 @@ export default function DensityExplanation({ definition, onEdit }: {
 
       <section>
         <h4>2. Use it in your components</h4>
-        <div className={styles.comparison}>
-          <div><h5>UXDSL you write</h5><pre className={styles.code}><code>{uxdsl}</code></pre>
+        <div className="density-explanation__comparison">
+          <div><h5>UXDSL you write</h5><pre className="density-explanation__code"><code>{uxdsl}</code></pre>
             <p>The card and panel choose a token. Its responsive behavior lives in the theme.</p></div>
-          <div><h5>Equivalent plain CSS</h5><pre className={styles.code}><code>{css}</code></pre></div>
+          <div><h5>Equivalent plain CSS</h5><pre className="density-explanation__code"><code>{css}</code></pre></div>
         </div>
         <p>You can build this same behavior in plain CSS using responsive custom properties. UXDSL generates those rules from the theme, so you maintain one mapping instead of repeating breakpoint decisions in each component. Less repeated source code does not necessarily mean less generated CSS.</p>
       </section>
@@ -79,15 +78,14 @@ export default function DensityExplanation({ definition, onEdit }: {
       <section>
         <h4>3. Change one token. Update both boxes.</h4>
         <p>These live boxes use this page’s current theme and actual browser viewport. The colored area is padding. Edit the active rule for Density 4 to see both responsive boxes change; the fixed box continues to use <code>space(4)</code>.</p>
-        <p className={styles.definition}><strong>Live density(4):</strong> <code>{definition}</code></p>
-        <button type="button" className={styles.edit} onClick={onEdit}>Edit density(4)</button>
-        <div className={styles.boxes}>
+        <p className="density-explanation__definition"><strong>Live density(4):</strong> <code>{definition}</code></p>
+        <button type="button" className="density-explanation__edit" onClick={onEdit}>Edit density(4)</button>
+        <div className="density-explanation__boxes">
           {['Card', 'Panel', 'Fixed spacing'].map((name, index) => (
             <figure key={name}>
               <figcaption><strong>{name}</strong><code>padding: {index === 2 ? 'space(4)' : 'density(4)'}</code></figcaption>
-              <div className={index === 2 ? styles.fixed : styles.responsive}
-                style={{ padding: index === 2 ? 'var(--uxdsl__space__4)' : 'var(--uxdsl__density__4)' }}>
-                <div className={styles.content}>Content</div>
+              <div className={index === 2 ? 'density-explanation__fixed' : 'density-explanation__responsive'}>
+                <div className="density-explanation__content">Content</div>
               </div>
             </figure>
           ))}

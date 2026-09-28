@@ -43,14 +43,8 @@
 
   .demo-grid-2 {
     display: grid;
-    grid-template-columns: 1fr;
+    grid-template-columns: xs(1fr) md(1fr 1fr);
     gap: density(4);
-  }
-
-  @media (min-width: 768px) {
-    .demo-grid-2 {
-      grid-template-columns: 1fr 1fr;
-    }
   }
 
   .demo-code {

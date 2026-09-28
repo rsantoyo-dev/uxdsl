@@ -1,0 +1,30 @@
+import { PageTitle } from '@/components/PageTitle'
+import { DiagnosticsList, AliasComparison } from '@/components/DiagnosticsCaptures'
+
+<PageTitle
+  title="Diagnostics"
+  subtitle="Real UXD_* errors from the compiler, and the aliases it accepts."
+  subtext="Each example was compiled by uxdsl build; the error under it is what the build printed."
+/>
+
+<div className="doc-section">
+
+## Every error has a code
+
+A UXDSL error names a `UXD_*` code, the file, line and column, and shows the line. The code is stable and searchable; the message says what exists instead (the configured breakpoints, the available preset keys, a close name). Nothing falls back silently: an unknown breakpoint, preset, role or reference stops the build.
+
+These are captured by `scripts/capture-capabilities.js`, which also fails when a case stops producing the code it is listed under — so a change to a diagnostic cannot leave this page showing the old one. The runtime reports its own codes on a result instead of throwing: `UXD_THEME_NOT_INITIALIZED` and `UXD_THEME_STRUCTURE` are produced live by the sandbox on the Runtime page.
+
+</div>
+
+<DiagnosticsList />
+
+<div className="doc-section">
+
+## `elevation()` and `rounded()`
+
+Two aliases the language accepts: `elevation(n)` is `shadow(n)` and `rounded(n)` is `radius(n)`. An alias does not change stacking order or add a scale — it is the same reference under another name. Compiled both ways, and measured in this page's own stylesheet:
+
+</div>
+
+<AliasComparison />

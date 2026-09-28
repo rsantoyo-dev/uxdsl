@@ -1,9 +1,8 @@
-import styles from './SpacingExplanation.module.css'
 import SpacingPrinciple from './SpacingPrinciple'
 
 export default function SpacingExplanation() {
   return (
-    <section className={styles.explanation} aria-labelledby="spacing-explained">
+    <section className="spacing-explanation" aria-labelledby="spacing-explained">
       <h2 id="spacing-explained">One spacing scale. Consistent decisions everywhere.</h2>
       <SpacingPrinciple />
       <p>Spacing tokens are named entries in your theme’s spacing scale. Use them for padding inside a box, margins around it, and gaps between items. Components choose a token; the theme supplies its value.</p>
@@ -19,7 +18,7 @@ export default function SpacingExplanation() {
 }`}</code></pre>
       <h3>2. Use Spacing directly when stable spacing is intentional</h3>
       <p>In this example, the card padding and actions gap intentionally keep the same spacing value across breakpoints. For ordinary component spacing, prefer an appropriate Density token.</p>
-      <div className={styles.comparison}>
+      <div className="spacing-explanation__comparison">
         <div><h4>UXDSL you write</h4><pre><code className="language-css">{`.card, .panel {
   padding: space(4);
 }

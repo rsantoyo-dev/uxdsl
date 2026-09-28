@@ -63,11 +63,11 @@ Press Craftor, y los dist-tags postpublicación.
 
 ## Criterios de aceptación
 
-- [ ] `npm run verify:beta7` pasa desde tarballs reales.
-- [ ] `verify:beta6` sigue pasando.
-- [ ] El gate falla de verdad al revertir al menos dos fichas cerradas.
-- [ ] Lo no automatizable está listado aparte, nunca como PASS.
-- [ ] El dueño tiene todo lo necesario para decidir la publicación.
+- [x] `npm run verify:beta7` pasa desde tarballs reales.
+- [x] `verify:beta6` sigue pasando.
+- [x] El gate falla de verdad al revertir al menos dos fichas cerradas.
+- [x] Lo no automatizable está listado aparte, nunca como PASS.
+- [ ] El dueño tiene todo lo necesario para decidir la publicación. (Falta la fase D de MIG-B7-17, que se hace con el dueño.)
 
 ## Verificación
 
@@ -83,16 +83,16 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**.
+Estado de esta revisión documental: **Implementada y verificada localmente** (2026-09-28); PR pendiente de mergear.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
+| SHA base / entrega / PR | Rama `feat/mig-b7-18-gate-beta7`, sobre `feat/mig-b7-17b-dogfooding`, con las ramas de #14–#19 integradas por merge local para correr el gate sobre beta.7 completa. SHA fijado al mergear |
 | Reproducción antes del cambio | No aplica — story de construcción de gate |
-| Criterio → regresión | Pendiente |
-| Comandos y entorno | Pendiente |
-| Resultado después / control negativo | Pendiente — mínimo 2 reversiones probadas |
+| Criterio → regresión | `fixtures/mig-b7-18-release/run.js`: B7-12a/b/c (MIG-B7-12), B7-14a/b (MIG-B7-14, Chrome real), B7-15a/b (MIG-B7-15, contra la beta.6 publicada), `contrast` (123 firmas fijadas en `contrast-baseline.json`, re-fijables sólo con `--write-contrast-baseline`), B7-01, B7-16, B7-17 (matriz sin brechas registradas), B7-17E (`verify:playground-browser`), beta6 |
+| Comandos y entorno | `npm run verify:beta7` exit 0, 13/13; `npm test` exit 0 (784/0 after PR review fixes); `npm run verify:doc-examples` exit 0. macOS 27.0, Node v20.19.0, Chrome 153.0.8010.53 |
+| Resultado después / control negativo | Con MIG-B7-14 y MIG-B7-01 revertidos fallan B7-14a, B7-14b, contrast y B7-01. La primera versión de B7-01 filtraba por `inputs` (la familia es `input`) y quedó verde con el arreglo revertido; corregido. B7-17 falló mientras quedaban las 37 brechas. Tras el review del PR, una prueba duplica la excepción de contraste y confirma que el gate falla aunque las 123 firmas ordinarias sean idénticas |
 | Cambios visuales o API / migración | No aplica |
-| README / CHANGELOG / migration | Pendiente |
+| README / CHANGELOG / migration | `docs/releases/0.5.0-beta.7.md` (release record); script `verify:beta7` en el `package.json` raíz |
 | AGENTS / guías / arquitectura | No aplica |
-| Límites y seguimiento | Pendiente |
+| Límites y seguimiento | Lo no automatizable se lista aparte en la salida del gate y en el release record (VS Code real, fase D con el dueño, validación externa, dist-tags). B7-16/B7-17/B7-17E leen el repositorio, no los tarballs, y lo dicen en su etiqueta. B7-15a necesita red (instala la beta.6 del registro) |

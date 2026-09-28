@@ -23,6 +23,14 @@ input[type="range"]:hover {
   opacity: 1;
 }
 
+/* MIG-B7-17 phase E: the rule above removes the native outline; the browser walk found every
+   range slider reachable by Tab with no visible focus. Keyboard focus gets a ring again. */
+input[type="range"]:focus-visible {
+  opacity: 1;
+  outline: 2px solid palette(primary-main);
+  outline-offset: 4px;
+}
+
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -55,4 +63,12 @@ input[type="range"]::-moz-range-thumb {
 input[type="range"]::-moz-range-thumb:hover {
   background: palette(primary-light);
   transform: scale(1.1);
+}
+
+/* A full-width monospace textarea for the theme/JSON editors in the demos (DemoBorders,
+   DemoButtons, DemoShadows, DemoSurfaces, InputDemo, BreakpointEditor). MIG-B7-17 phase B (4):
+   was the same inline style={{}} in all six. */
+.code-textarea {
+  width: 100%;
+  font-family: monospace;
 }

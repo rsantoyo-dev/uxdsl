@@ -56,6 +56,8 @@
   margin-top: density(4);
 }
 
+/* A local threshold for this card list, deliberately not `sm` (480) or `md` (768): moving it
+   to a configured breakpoint would change the layout between 600 and 767px. */
 @media (min-width: 600px) {
   .nav-grid {
     grid-template-columns: 1fr 1fr;

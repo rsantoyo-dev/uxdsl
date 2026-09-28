@@ -1227,7 +1227,10 @@ async function buildOnce(config, entryIndices) {
         : '';
       console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)${mapNote}`);
     } else {
-      console.log(`[uxdsl] unchanged ${rel}`);
+      // MIG-B7-15 (FEAT-009): say what "unchanged" is about — the compiled
+      // output equals the file already on disk (writeIfChanged compares
+      // content), so it was not rewritten. It does not mean no input changed.
+      console.log(`[uxdsl] unchanged ${rel} (compiled output identical to the file on disk; not rewritten)`);
     }
   }
 
@@ -1741,6 +1744,26 @@ async function generateEntry(argv) {
 
 // --- Command: Init ---
 
+// MIG-B7-12 (FEAT-009): the config `init` writes is type-checked by the
+// editor, with nothing added at run time. Three details, each measured
+// (see docs/features/FEAT-009/MIG-B7-12-*.md):
+// - JSDoc only, no `require('postcss-uxdsl/config')`: under pnpm's strict
+//   node_modules a project that installed only uxdsl-cli cannot resolve
+//   postcss-uxdsl from its root, and that `require` failed the build
+//   ("Cannot find module"); a type import there only loses the type.
+// - The annotation sits on a `const`, not on `module.exports = {…}`:
+//   TypeScript checks nothing through the latter — not a typo, not even
+//   `entry: 123`.
+// - `// @ts-check`: editors do not check plain JavaScript by default
+//   (VS Code's `checkJs` is off), so without it the type only completes.
+// The object itself is unchanged, so the compiled CSS is byte-identical.
+const CONFIG_TYPE_HEADER = `// @ts-check
+// Checked by your editor against UXDSL's config type (a mistyped key such as
+// "includeThem" is flagged as you type). Type-only: nothing is loaded at build
+// time. See "Editor support" in the uxdsl-cli README.
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+`;
+
 async function init(argv) {
   const cwd = process.cwd();
   const isNext = ['next.config.js', 'next.config.mjs', 'next.config.ts'].some(file => fs.existsSync(path.join(cwd, file)));
@@ -1766,8 +1789,8 @@ async function init(argv) {
     // including ones it never touched. Breakpoints belong in the theme;
     // this config only overrides one when a project deliberately wants a
     // build-specific value the theme doesn't have.
-    const configContent = isMulti
-      ? `module.exports = {
+    const configContent = CONFIG_TYPE_HEADER + (isMulti
+      ? `const config = {
   // A theme entry (emits the shared :root definitions once) plus any
   // number of component/CSS-Module entries — includeTheme: false, no
   // :root of their own — compiled together from this one config. Add
@@ -1781,7 +1804,7 @@ async function init(argv) {
   watch: ['src/**/*.uxdsl']
 };
 `
-      : `module.exports = {
+      : `const config = {
   // Entry point for your styles (generated or manual)
   entry: './src/uxdsl-entry.uxdsl',
   // Output CSS file
@@ -1789,7 +1812,7 @@ async function init(argv) {
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl', 'src/**/*.css']
 };
-`;
+`) + '\nmodule.exports = config;\n';
     fs.writeFileSync(configPath, configContent);
     console.log(`  -> Created uxdsl.config.cjs`);
   } else {
@@ -1903,6 +1926,11 @@ async function init(argv) {
     console.log('\nTry adding a file named "src/components/Button.uxdsl" and run:');
     console.log('  npx uxdsl generate-entry');
   }
+  // MIG-B7-12 (FEAT-009): only what is true today — the extension ships as
+  // a .vsix built from the repository, not from a marketplace (MIG-B7-05).
+  console.log('\nEditor support: uxdsl.config.cjs is type-checked by your editor (// @ts-check).');
+  console.log('For .uxdsl highlighting and completion (VS Code extension, installed from a .vsix)');
+  console.log('and theme JSON completion ("$schema"), see "Editor support" in the uxdsl-cli README.');
 }
 
 const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'watch', 'theme'];

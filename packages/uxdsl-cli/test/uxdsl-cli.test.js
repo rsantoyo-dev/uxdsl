@@ -1514,3 +1514,21 @@ test('MIG-B6-21: resolveSourceMap precedence is flag > config > false', () => {
   assert.throws(() => resolveSourceMap(0, undefined), /Invalid value for --sourcemap/);
   assert.throws(() => resolveSourceMap('yes', undefined), /Invalid value for --sourcemap/);
 });
+
+test('MIG-B7-15: a rebuild with identical output says what "unchanged" means, and a changed output still says "built"', () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };\n");
+  write(dir, 'src/entry.uxdsl', '.a { color: red; }\n');
+  const build = () => spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+  const first = build();
+  assert.equal(first.status, 0, first.stderr);
+  assert.match(first.stdout, /\[uxdsl\] built src[\\/]out\.css \(\d+ bytes\)/);
+  const second = build();
+  assert.equal(second.status, 0, second.stderr);
+  assert.match(second.stdout, /^\[uxdsl\] unchanged src[\\/]out\.css \(compiled output identical to the file on disk; not rewritten\)$/m);
+  // Control: a hand-edited output file is not "unchanged" — it is rebuilt.
+  fs.appendFileSync(path.join(dir, 'src', 'out.css'), '/* edited by hand */\n');
+  const third = build();
+  assert.match(third.stdout, /\[uxdsl\] built src[\\/]out\.css/);
+  assert.doesNotMatch(third.stdout, /unchanged/);
+});
