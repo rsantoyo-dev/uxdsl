@@ -115,6 +115,66 @@ async function main() {
 
   console.log(`\nGate for ${version}, from tarballs in ${dir}\n`);
 
+  // --- MIG-B7-12: init leaves a typed config and the $schema it cites exists --
+  await check('B7-12a', '`uxdsl init` writes a type-checked config and says where editor support is', () => {
+    const out = command('init');
+    const config = read('uxdsl.config.cjs');
+    if (!/^\/\/ @ts-check/m.test(config)) throw new Error('no // @ts-check');
+    if (!config.includes("@type {import('postcss-uxdsl/config').UxdslConfig}")) throw new Error('no @type on the config');
+    if (!/Editor support/.test(out)) throw new Error('"Next steps" does not mention editor support');
+    return 'typed config + next-steps line';
+  });
+
+  await check('B7-12b', 'the generated config type-checks against the installed package, and a typo is caught', () => {
+    const tsc = path.join(REPO_ROOT, 'packages/postcss-uxdsl/node_modules/typescript/bin/tsc');
+    const typecheck = () => spawnSync(process.execPath, [tsc, '--noEmit', '--allowJs', '--checkJs', '--module', 'node16', '--moduleResolution', 'node16', 'uxdsl.config.cjs'], { cwd: dir, encoding: 'utf8' });
+    const clean = typecheck();
+    if (clean.status !== 0) throw new Error(`clean config fails: ${(clean.stdout || clean.stderr).split('\n')[0]}`);
+    const original = read('uxdsl.config.cjs');
+    write('uxdsl.config.cjs', original.replace("entry: './src/uxdsl-entry.uxdsl'", "entry: './src/uxdsl-entry.uxdsl', includeThem: false"));
+    const typo = typecheck();
+    write('uxdsl.config.cjs', original);
+    if (typo.status === 0) throw new Error('negative control: `includeThem` was not reported');
+    return 'clean passes, typo reported';
+  });
+
+  await check('B7-12c', 'the $schema path the README cites exists in the installed package', () => {
+    const schemaPath = path.join(dir, 'node_modules/postcss-uxdsl/schema/theme.schema.json');
+    const schema = JSON.parse(fs.readFileSync(schemaPath, 'utf8'));
+    if (!schema.properties || !schema.properties.palette) throw new Error('schema has no palette property');
+    req.resolve('postcss-uxdsl/schema/theme.schema.json');
+    return `${Object.keys(schema.properties).length} top-level properties`;
+  });
+
+  // --- MIG-B7-15: the "before you upgrade" flow, between two real releases ----
+  await check('B7-15a', '`uxdsl theme` before (published beta.6) and after (these tarballs) can be compared', () => {
+    const override = "module.exports = { theme: { typography_details: { h1: { fontWeight: '800' } } } };\n";
+    const before = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'uxdsl-beta7-upgrade-before-'));
+    fs.writeFileSync(path.join(before, 'package.json'), JSON.stringify({ name: 'before', version: '1.0.0', private: true }));
+    fs.writeFileSync(path.join(before, 'uxdsl.theme.config.cjs'), override);
+    fs.mkdirSync(path.join(before, 'src'));
+    fs.writeFileSync(path.join(before, 'src/uxdsl-entry.uxdsl'), '.a { color: palette(primary.main); }\n');
+    run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', 'uxdsl-cli@0.5.0-beta.6', 'postcss-uxdsl@0.5.0-beta.6'], before);
+    const themeOf = (cwd, bin) => JSON.parse(execFileSync(process.execPath, [bin, 'theme'], { cwd, encoding: 'utf8', maxBuffer: 1 << 26 }));
+    const previous = themeOf(before, path.join(before, 'node_modules/uxdsl-cli/bin/uxdsl.js'));
+    write('uxdsl.theme.config.cjs', override);
+    const current = themeOf(dir, cli);
+    fs.rmSync(path.join(dir, 'uxdsl.theme.config.cjs'));
+    const leaves = (obj, prefix = '') => Object.entries(obj || {}).flatMap(([k, v]) =>
+      v && typeof v === 'object' && !Array.isArray(v) ? leaves(v, `${prefix}${k}.`) : [[`${prefix}${k}`, JSON.stringify(v)]]);
+    const a = new Map(leaves(previous));
+    const b = new Map(leaves(current));
+    // A comparison of two near-empty objects would pass vacuously.
+    if (a.size < 100 || b.size < 100) throw new Error(`too few keys to compare (${a.size} / ${b.size})`);
+    const changed = [...b].filter(([k, v]) => a.has(k) && a.get(k) !== v).length;
+    const added = [...b.keys()].filter((k) => !a.has(k)).length;
+    const removed = [...a.keys()].filter((k) => !b.has(k)).length;
+    const record = path.join(dir, 'upgrade-diff.json');
+    fs.writeFileSync(record, JSON.stringify({ before: previous, after: current }, null, 2));
+    if (current.typography_details.h1.fontWeight !== '800') throw new Error('the override did not survive into the effective theme');
+    return `${added} added, ${changed} changed, ${removed} removed leaf keys (recorded in ${path.basename(record)})`;
+  });
+
   // --- MIG-B7-14: what the CLI writes starts with the fonts @import ----------
   write('uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };\n");
   write('src/entry.uxdsl', '.a { padding: density(2); color: palette(primary.main); }\n');
@@ -128,6 +188,12 @@ async function main() {
     }
     if (!/fonts\.googleapis\.com/.test(first.params)) throw new Error(`first @import is not Google Fonts: ${first.params}`);
     return first.params.slice(0, 70);
+  });
+
+  await check('B7-15b', 'an unchanged rebuild says what "unchanged" means', () => {
+    const out = command('build');
+    if (!/unchanged .*compiled output identical to the file on disk/.test(out)) throw new Error(`got: ${out.trim().split('\n').pop()}`);
+    return 'clarified message';
   });
 
   await check('B7-14b', 'real Chrome requests Google Fonts from that file; the beta.6 ordering does not', async () => {
