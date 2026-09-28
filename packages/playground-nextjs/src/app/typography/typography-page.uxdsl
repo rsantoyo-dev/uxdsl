@@ -1,0 +1,5 @@
+/* /typography. MIG-B7-17 phase B (4): was inline style={{}} in app/typography/page.tsx. */
+.typography-page__documentation {
+  margin-top: 4rem;
+  max-width: 800px;
+}

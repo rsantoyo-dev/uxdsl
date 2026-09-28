@@ -56,3 +56,11 @@ input[type="range"]::-moz-range-thumb:hover {
   background: palette(primary-light);
   transform: scale(1.1);
 }
+
+/* A full-width monospace textarea for the theme/JSON editors in the demos (DemoBorders,
+   DemoButtons, DemoShadows, DemoSurfaces, InputDemo, BreakpointEditor). MIG-B7-17 phase B (4):
+   was the same inline style={{}} in all six. */
+.code-textarea {
+  width: 100%;
+  font-family: monospace;
+}

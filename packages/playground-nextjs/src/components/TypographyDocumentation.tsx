@@ -1,5 +1,4 @@
 import AgentGuidance from './AgentGuidance'
-import styles from './BreakpointDocumentation.module.css'
 
 const theme = `{
   "breakpoints": { "xs": 0, "md": 768, "xl": 1280 },
@@ -31,7 +30,7 @@ const css = `/* Equivalent size behavior, shown in isolation */
 }`
 
 export default function TypographyDocumentation() {
-  return <div className={styles.content}>
+  return <div className="doc-section">
     <section aria-labelledby="typography-system">
       <h2 id="typography-system">Define the text style once. Let the system adapt it.</h2>
       <p>Typography is a configured text style with responsive behavior. A component chooses a style such as <code>h1</code>; the theme defines its size, weight, line height and other properties across breakpoints. Like Density, it keeps shared responsive decisions in the system.</p>
@@ -40,13 +39,13 @@ export default function TypographyDocumentation() {
       <p>This illustrative theme defines the complete progression. Omitted built-in breakpoint names retain the library defaults; custom names can also be configured.</p>
       <pre><code className="language-json">{theme}</code></pre>
       <p><code>typography_details.default</code> supplies missing fields to each configured style. A style’s own field replaces that default field as a whole; it does not merge individual breakpoint expressions. A responsive field needs a base value. The most recent applicable rule remains active until another breakpoint overrides it.</p>
-      <div className={styles.tableWrap}><table>
+      <div className="doc-section__table-wrap"><table>
         <caption>How this h1 behaves</caption>
         <thead><tr><th>Viewport</th><th>Font size</th><th>Line height</th></tr></thead>
         <tbody><tr><td>Below 768px</td><td>space(7) → 1.75rem</td><td>1.2</td></tr><tr><td>768px to below 1280px</td><td>space(8) → 2rem</td><td>1.3</td></tr><tr><td>1280px and above</td><td>space(10) → 2.5rem</td><td>1.3, inherited from md</td></tr></tbody>
       </table></div>
       <h3>Choose a style in the component</h3>
-      <div className={styles.comparison}><div><h4>UXDSL</h4><pre><code className="language-css">{usage}</code></pre></div><div><h4>Pure CSS: the size progression</h4><pre><code className="language-css">{css}</code></pre></div></div>
+      <div className="doc-section__comparison"><div><h4>UXDSL</h4><pre><code className="language-css">{usage}</code></pre></div><div><h4>Pure CSS: the size progression</h4><pre><code className="language-css">{css}</code></pre></div></div>
       <p>The mixin consumes CSS variables such as <code>--uxdsl__typography__h1-size</code> and <code>--uxdsl__typography__h1-line</code>. The compiler generates their responsive definitions from the JSON. Pure CSS can centralize the same behavior with variables and media queries; UXDSL provides the reusable configuration and compilation layer.</p>
       <p>Keep HTML semantics independent of visual styling: use the appropriate heading level for the document, even when its visual style comes from another Typography role. Custom configured names, such as <code>label</code>, can also be consumed with <code>@ds-typo(label)</code>.</p>
       <h3>Change the system, update its consumers</h3>

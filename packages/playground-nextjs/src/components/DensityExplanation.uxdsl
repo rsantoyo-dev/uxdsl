@@ -1,0 +1,145 @@
+/* Density explanation on /densities and /docs/densities.
+   Was DensityExplanation.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl
+   is global. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
+   3rem are not on it); the diagram and code panel use Color identities on purpose. The live
+   boxes now take their padding from density(4) / space(4) here instead of an inline style. */
+
+.density-explanation {
+  display: grid;
+  gap: space(7);
+  margin: space(7) 0 3rem;
+  min-width: 0;
+}
+
+.density-explanation section {
+  min-width: 0;
+}
+
+.density-explanation h3 {
+  font-size: 1.5rem;
+  margin: 0 0 space(5);
+}
+
+.density-explanation h4 {
+  font-size: 1.2rem;
+  margin: 1.25rem 0 space(5);
+}
+
+.density-explanation h5 {
+  font-size: 1rem;
+  margin: 0 0 space(4);
+}
+
+.density-explanation p {
+  line-height: 1.7;
+  margin: space(4) 0;
+}
+
+.density-explanation__code {
+  background: color(gray-900);
+  color: color(gray-200);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+
+.density-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+
+.density-explanation__comparison > div {
+  min-width: 0;
+}
+
+.density-explanation__table-wrap {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+
+.density-explanation__table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.density-explanation__table-wrap caption {
+  text-align: left;
+  margin-bottom: space(4);
+  font-weight: 600;
+}
+
+.density-explanation__table-wrap th, .density-explanation__table-wrap td {
+  padding: space(4);
+  border-bottom: 1px solid color(gray-400);
+}
+
+.density-explanation__definition {
+  overflow-wrap: anywhere;
+}
+
+.density-explanation__edit {
+  background: color(blue-500);
+  color: color(white);
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.65rem space(5);
+  cursor: pointer;
+  font: inherit;
+}
+
+.density-explanation__edit:hover {
+  background: color(blue-900);
+}
+
+.density-explanation__edit:focus-visible {
+  outline: 3px solid color(blue-300);
+  outline-offset: 3px;
+}
+
+.density-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: space(5);
+  margin: space(6) 0;
+}
+
+.density-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.density-explanation__boxes figcaption {
+  display: grid;
+  gap: space(3);
+  margin-bottom: space(4);
+}
+
+.density-explanation__boxes figcaption code {
+  font-size: 0.85rem;
+}
+
+.density-explanation__responsive {
+  background: color(blue-100);
+  border: 1px solid color(blue-500);
+  border-radius: 0.5rem;
+  padding: density(4);
+}
+
+.density-explanation__fixed {
+  background: color(gray-200);
+  border: 1px solid color(gray-500);
+  border-radius: 0.5rem;
+  padding: space(4);
+}
+
+.density-explanation__content {
+  background: color(white);
+  color: color(slate-900);
+  border: 1px dashed color(gray-500);
+  text-align: center;
+  padding: space(3);
+}

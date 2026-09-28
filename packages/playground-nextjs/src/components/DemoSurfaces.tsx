@@ -49,7 +49,7 @@ export default function DemoSurfaces() {
       <h2 className="section-title">Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test transitions. The preview uses the active theme and shared engine defaults. Edits below are scoped to this demo and do not save source JSON.</p>
       <label htmlFor="surface-theme">Surfaces and breakpoint configuration</label>
-      <textarea id="surface-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} style={{ width: '100%', fontFamily: 'monospace' }} />
+      <textarea id="surface-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className="code-textarea" />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={() => { setOverrides(null); setSize(''); setTone(''); setDraft(JSON.stringify({ breakpoints: activeThemeData.breakpoints, surfaces: getSurfaceTokens(activeThemeData) }, null, 2)); setError('') }}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}

@@ -18,10 +18,20 @@ both sides of each configured breakpoint (390, 479, 480, 767, 768, 1023, 1024, 1
 carry the visual result. `compare.js` reports which properties changed, on which routes and
 at which widths.
 
-Options: `--widths 390,768`, `--routes /,/colors`, `--port` (snapshot.js); `--noise <another
-snapshot of the *before* build>` (subtract what an unchanged build already differs by) and
-`--max <n>` (how many differences to print) (compare.js). A comparison covers the routes and
-widths both snapshots share.
+Options: `--widths 390,768`, `--routes /,/colors`, `--port`, `--scheme dark` (emulate
+`prefers-color-scheme: dark`, which the playground follows when no `data-theme` is stored) and
+`--no-interactions` (snapshot.js); `--noise <another snapshot of the *before* build>` (subtract
+what an unchanged build already differs by), `--max <n>` (how many differences to print) and
+`--exact` (compare.js). A comparison covers the routes and widths both snapshots share.
+
+Besides every route, snapshot.js opens a few dialogs that only exist after a click (the Density
+and Space edit dialogs, the typography breakpoint editor) and records them under
+`<route>#<name>` at 390 and 1280px.
+
+compare.js writes every color as one 8-bit `rgba()` before comparing: a literal
+`rgba(0, 0, 0, 0.5)` and the `color(srgb 0 0 0 / 0.5)` that `palette(x, 0.5)`/`color(x, 0.5)`
+compile to (`color-mix(…, transparent)`) are the same paint, so moving a literal onto a token is
+not reported, while a real difference of 1/255 or more still is. `--exact` turns this off.
 
 ## What makes it trustworthy
 
@@ -37,7 +47,7 @@ widths both snapshots share.
 
 It compares computed styles and boxes, not pixels: a change that leaves every recorded
 property equal but paints differently (a canvas, an image replaced behind the same URL)
-is outside it. It runs Chrome only, in the light theme, without hover
+is outside it. It runs Chrome only, in the light or the dark scheme (one per snapshot), without hover
 or focus states, and does not open the theme editor — that is the browser walk of phase E.
 Nothing here replaces looking at the page.
 

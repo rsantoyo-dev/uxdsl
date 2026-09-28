@@ -95,7 +95,7 @@ export default function UXDSLCardDemo() {
             Documentation
           </Link>
           <Link href="/docs/quick-start" className="btn-primary">
-            Get Started <ArrowRight size={16} style={{ marginLeft: 8 }} />
+            Get Started <ArrowRight size={16} className="btn-primary__icon" />
           </Link>
         </div>
       </div>

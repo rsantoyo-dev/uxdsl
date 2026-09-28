@@ -150,19 +150,3 @@
   font-weight: bold;
   text-decoration: underline;
 }
-
-.level-range-input {
-  width: 100px;
-  cursor: pointer;
-}
-
-.highlighter-base {
-  color: palette(info-main);
-}
-
-.highlighter-active {
-  color: palette(secondary-light);
-  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
-  font-weight: bold;
-  text-decoration: underline;
-}

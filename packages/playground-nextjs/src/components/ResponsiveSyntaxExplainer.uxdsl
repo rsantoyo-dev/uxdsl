@@ -219,7 +219,7 @@
   align-items: center;
   gap: 0.25rem;
   background: palette(surface-main);
-  padding: 2px;
+  padding: space(1);
   border-radius: 6px;
   border: 1px solid palette(neutral-main);
   flex: 1 1 auto;
@@ -227,7 +227,7 @@
 }
 
 .control-button {
-  padding: 4px 12px;
+  padding: space(2) space(4);
   background: transparent;
   color: palette(text-secondary);
   border: none;
@@ -244,7 +244,7 @@
   }
   
   &.is-default {
-    padding: 4px 8px;
+    padding: space(2) space(3);
   }
 }
 
@@ -292,7 +292,7 @@
       cursor: pointer;
       color: palette(neutral-main);
       opacity: 0.5;
-      padding: 2px;
+      padding: space(1);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -468,16 +468,7 @@
 
   @each $tag in $tags {
     &.#{$tag} {
-      font-size: var(--uxdsl__typography__#{$tag}-size);
-      font-family: var(--uxdsl__typography__#{$tag}-font-family);
-      font-weight: var(--uxdsl__typography__#{$tag}-weight);
-      line-height: var(--uxdsl__typography__#{$tag}-line);
-      letter-spacing: var(--uxdsl__typography__#{$tag}-spacing);
-      text-transform: var(--uxdsl__typography__#{$tag}-transform);
-      text-decoration: var(--uxdsl__typography__#{$tag}-decoration);
-      font-style: var(--uxdsl__typography__#{$tag}-style);
-      margin-block-start: var(--uxdsl__typography__#{$tag}-margin-block-start);
-      margin-block-end: var(--uxdsl__typography__#{$tag}-margin-block-end);
+      @ds-typo(#{$tag});
     }
   }
 
@@ -489,30 +480,12 @@
 
   @each $tag in $tags {
     &.sample-#{$tag} {
-      font-size: var(--uxdsl__typography__#{$tag}-size);
-      font-family: var(--uxdsl__typography__#{$tag}-font-family);
-      font-weight: var(--uxdsl__typography__#{$tag}-weight);
-      line-height: var(--uxdsl__typography__#{$tag}-line);
-      letter-spacing: var(--uxdsl__typography__#{$tag}-spacing);
-      text-transform: var(--uxdsl__typography__#{$tag}-transform);
-      text-decoration: var(--uxdsl__typography__#{$tag}-decoration);
-      font-style: var(--uxdsl__typography__#{$tag}-style);
-      margin-block-start: var(--uxdsl__typography__#{$tag}-margin-block-start);
-      margin-block-end: var(--uxdsl__typography__#{$tag}-margin-block-end);
+      @ds-typo(#{$tag});
     }
   }
 
   &.sample-code {
-    font-size: var(--uxdsl__typography__pre-size);
-    font-family: var(--uxdsl__typography__pre-font-family);
-    font-weight: var(--uxdsl__typography__pre-weight);
-    line-height: var(--uxdsl__typography__pre-line);
-    letter-spacing: var(--uxdsl__typography__pre-spacing);
-    text-transform: var(--uxdsl__typography__pre-transform);
-    text-decoration: var(--uxdsl__typography__pre-decoration);
-    font-style: var(--uxdsl__typography__pre-style);
-    margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
+    @ds-typo(pre);
   }
 }
 
@@ -547,7 +520,7 @@
   background: transparent;
   border: 1px solid palette(divider);
   border-radius: 4px;
-  padding: 4px;
+  padding: space(2);
   cursor: pointer;
   color: palette(text-secondary);
   display: flex;
@@ -581,4 +554,9 @@
   width: 100%;
   position: relative;
   z-index: 2;
+}
+
+/* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
+.responsive-syntax-explainer {
+  height: 100%;
 }

@@ -74,8 +74,8 @@ export default function DemoProductivity() {
         </p>
       </div>
 
-      <div className="productivity-controls" style={{ marginBottom: '2rem' }}>
-        <label style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+      <div className="productivity-controls">
+        <label className="productivity-controls__label">
           <span>Card Count: <strong>{count}</strong></span>
           <input 
             type="range" 
@@ -84,7 +84,7 @@ export default function DemoProductivity() {
             step="100"
             value={count} 
             onChange={e => setCount(Number(e.target.value))}
-            style={{ flex: 1 }}
+            className="productivity-controls__range"
           />
         </label>
       </div>
@@ -92,7 +92,7 @@ export default function DemoProductivity() {
       <div className="demo-layout">
         
         {/* Code Section - Stacked */}
-        <div className="demo-code-stack" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', marginBottom: '2rem' }}>
+        <div className="demo-code-stack">
           <div className="demo-code-block-wrapper">
              <h4 className="demo-subtitle">SCSS / UXDSL Source</h4>
              <div className="demo-code-block">

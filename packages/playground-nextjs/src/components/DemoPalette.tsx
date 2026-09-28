@@ -7,11 +7,11 @@ import PaletteThemeExplorer from './PaletteThemeExplorer'
 export default function DemoPalette() {
   return (
     <section id="DemoPalette" className="palette-section demo-section">
-      <div style={{ marginBottom: '3rem' }}>
+      <div className="palette-section__block">
         <PalettePlayground />
       </div>
 
-      <div style={{ marginBottom: '3rem' }}>
+      <div className="palette-section__block">
         <PaletteThemeExplorer />
       </div>
 

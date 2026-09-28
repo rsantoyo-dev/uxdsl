@@ -50,7 +50,7 @@ export default function InputDemo() {
       <h2 className="section-title">Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test responsive values. Hover or focus a field with the keyboard to inspect configured states. Try typing; readonly and disabled use native attributes. JSON edits are scoped to this demo and do not save source files.</p>
       <label htmlFor="input-theme">Inputs and breakpoint configuration</label>
-      <textarea id="input-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} style={{ width: '100%', fontFamily: 'monospace' }} />
+      <textarea id="input-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} className="code-textarea" />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={reset}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}

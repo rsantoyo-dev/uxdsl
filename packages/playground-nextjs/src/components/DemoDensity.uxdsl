@@ -173,7 +173,7 @@
     display: flex;
     flex-direction: column;
     align-items: flex-end;
-    gap: 2px;
+    gap: space(1);
   }
 
   .density-card__viz {
@@ -198,16 +198,16 @@
   .density-def-list {
     display: flex;
     flex-direction: column;
-    gap: 2px; /* Smaller gap */
+    gap: space(1); /* Smaller gap */
   }
 
   .density-def-item {
     display: flex;
-    gap: 4px;
+    gap: space(2);
     font-family: monospace;
     font-size: 0.75rem;
     background: palette(neutral-light, 0.3);
-    padding: 2px 4px;
+    padding: space(1) space(2);
     border-radius: 2px;
     transition: all 0.2s ease;
   }
@@ -236,7 +236,7 @@
   .density-metric-item {
     display: flex;
     align-items: baseline;
-    gap: 4px;
+    gap: space(2);
     font-family: monospace;
     font-size: 0.9rem;
   }
@@ -330,5 +330,23 @@
     background: palette(secondary-main, 0.15);
     z-index: 10; /* Ensure it's on top if possible, or at least prominent */
     box-shadow: 0 0 0 1px palette(surface-main); /* Small outline to separate */
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoDensity.tsx. */
+  .density-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: space(3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: space(7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: space(6);
   }
 }

@@ -37,7 +37,6 @@ export default function Home() {
         onMouseUp={handleMouseUp}
         onTouchStart={handleMouseDown}
         onTouchEnd={handleMouseUp}
-        style={{ position: "relative", overflow: "hidden" }}
       >
         <ThemeBackground />
         <HeroBackground
@@ -48,7 +47,6 @@ export default function Home() {
 
         <div
           className="hero-content"
-          style={{ position: "relative", zIndex: 1 }}
         >
           <div className="logo-container">
             <InteractiveLogo
@@ -63,7 +61,7 @@ export default function Home() {
             className="welcome-page-title"
           />
         </div>
-        <div style={{ position: 'relative', zIndex: 20, width: '100%', display: 'flex', justifyContent: 'center' }}>
+        <div className="hero-prompt">
           <AIPrompt />
         </div>
       </div>

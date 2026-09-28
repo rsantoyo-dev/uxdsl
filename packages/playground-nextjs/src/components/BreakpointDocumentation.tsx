@@ -1,7 +1,6 @@
 import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/language'
 import AgentGuidance from './AgentGuidance'
 import DemoBreakpointsCards from './DemoBreakpointsCards'
-import styles from './BreakpointDocumentation.module.css'
 
 const theme = JSON.stringify({ breakpoints: DEFAULT_BREAKPOINTS }, null, 2)
 const usage = `.layout {
@@ -22,7 +21,7 @@ function Principle() {
 
 function RulePersistence() {
   return (
-    <div className={styles.tableWrap}>
+    <div className="doc-section__table-wrap">
       <table>
         <caption>How this example keeps its most recent applicable value</caption>
         <thead><tr><th>Viewport width</th><th>flex-direction</th><th>Supplying rule</th></tr></thead>
@@ -38,21 +37,21 @@ function RulePersistence() {
 
 export function BreakpointExplanation() {
   return (
-    <section className={styles.content} aria-labelledby="breakpoints-explained">
+    <section className="doc-section" aria-labelledby="breakpoints-explained">
       <h2 id="breakpoints-explained">One set of thresholds for responsive decisions.</h2>
       <Principle />
       <p>A name such as <code>md</code> identifies a configured threshold. It does not detect a tablet, orientation or input device. These examples use viewport width, not container width.</p>
       <h3>1. Define breakpoints in your theme JSON</h3>
       <p>This excerpt uses the shared engine defaults. Your theme can configure different values:</p>
       <pre><code className="language-json">{theme}</code></pre>
-      <div className={styles.tableWrap}><table>
+      <div className="doc-section__table-wrap"><table>
         <caption>Default minimum viewport widths</caption>
         <thead><tr><th>Name</th><th>Minimum width</th></tr></thead>
         <tbody>{Object.entries(DEFAULT_BREAKPOINTS).map(([name, width]) => <tr key={name}><td><code>{name}</code></td><td>{width}px</td></tr>)}</tbody>
       </table></div>
       <p>Keep <code>xs</code> at zero for these examples and use ordered, distinct thresholds. Feed the configured map into your build/runtime integration so the generated CSS and active theme use the same definitions.</p>
       <h3>2. Declare what changes at a threshold</h3>
-      <div className={styles.comparison}>
+      <div className="doc-section__comparison">
         <div><h4>UXDSL you write</h4><pre><code className="language-css">{usage}</code></pre></div>
         <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{css}</code></pre></div>
       </div>
@@ -81,7 +80,7 @@ export function BreakpointExplanation() {
 
 export function BreakpointLiveExample() {
   return (
-    <section className={styles.content} aria-labelledby="breakpoint-live-layout">
+    <section className="doc-section" aria-labelledby="breakpoint-live-layout">
       <h2 id="breakpoint-live-layout">Live layout example</h2>
       <p>The cards below switch from column to row at <code>md</code>. This excerpt matches their responsive declarations. Their spacing is a deliberate local progression for this demonstration; prefer Density for shared component spacing.</p>
       <pre><code className="language-css">{`#DemoBreakpointsCards {

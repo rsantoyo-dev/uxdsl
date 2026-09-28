@@ -90,21 +90,13 @@ function ColorScaleToken({
     <li
       ref={ref}
       className={`color-token chip--${family}-${shade}`}
-      style={{ color: colorValues.textColor, position: 'relative' }}
+      style={{ color: colorValues.textColor }}
     >
-      <input 
-        type="color" 
+      <input
+        type="color"
         value={colorValues.hex}
         onChange={handleColorChange}
-        style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          opacity: 0, 
-          cursor: 'pointer' 
-        }}
+        className="color-picker-overlay"
         aria-label={`Change color for ${family}-${shade}`}
       />
       <span className="token-shade">{shade}</span>
@@ -183,15 +175,9 @@ export default function DemoColors() {
            </div>
 
            <div className="surface-playground__preview">
-             <div style={{
+             <div className="color-live-preview" style={{
                backgroundColor: `var(--uxdsl__color__${bgFamily}-${bgShade})`,
                color: `var(--uxdsl__color__${textFamily}-${textShade})`,
-               padding: 'var(--uxdsl__space__4)',
-               borderRadius: 'var(--uxdsl__space__2)',
-               textAlign: 'center',
-               fontWeight: 'bold',
-               fontSize: '1.2rem',
-               transition: 'all 0.2s ease'
              }}>
                Live Color Preview
              </div>

@@ -21,20 +21,17 @@ export default function AppHeader() {
             <button 
               onClick={() => switchTheme('default')}
               title="Default (Purple) Theme"
-              className={`theme-color-btn ${currentTheme === 'default' ? 'is-active' : ''}`}
-              style={{ '--theme-color': '#7e22ce' } as React.CSSProperties}
+              className={`theme-color-btn theme-color-btn--default ${currentTheme === 'default' ? 'is-active' : ''}`}
             />
             <button 
               onClick={() => switchTheme('green')}
               title="Green Theme"
-              className={`theme-color-btn ${currentTheme === 'green' ? 'is-active' : ''}`}
-              style={{ '--theme-color': '#15803D' } as React.CSSProperties}
+              className={`theme-color-btn theme-color-btn--green ${currentTheme === 'green' ? 'is-active' : ''}`}
             />
             <button 
               onClick={() => switchTheme('slate')}
               title="Slate Theme (Classic)"
-              className={`theme-color-btn ${currentTheme === 'slate' ? 'is-active' : ''}`}
-              style={{ '--theme-color': '#2C415C' } as React.CSSProperties}
+              className={`theme-color-btn theme-color-btn--slate ${currentTheme === 'slate' ? 'is-active' : ''}`}
             />
 
             {customThemeName && (

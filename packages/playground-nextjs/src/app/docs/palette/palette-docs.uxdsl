@@ -1,0 +1,8 @@
+/* /docs/palette. MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. */
+.palette-docs__usage {
+  margin-bottom: 3rem;
+}
+
+.palette-docs__legacy-editor {
+  margin-top: 3rem;
+}

@@ -1,0 +1,71 @@
+/* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
+   style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
+   The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
+.config-editor__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: space(3);
+  flex-wrap: wrap;
+}
+
+.config-editor__hint {
+  font-size: 0.8rem;
+  color: palette(text-secondary);
+}
+
+.config-editor__buttons {
+  display: flex;
+  gap: space(2);
+}
+
+.config-editor__button {
+  border: 1px solid palette(neutral-light);
+  background: palette(surface-light);
+  color: palette(text-primary);
+  border-radius: radius(1);
+  padding: space(2) space(3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.config-editor__button--primary {
+  border-color: palette(primary-main);
+  background: palette(primary-main);
+  color: palette(primary-contrast);
+}
+
+.config-editor {
+  display: flex;
+  flex-direction: column;
+  gap: space(2);
+}
+
+.config-editor__textarea {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  border: 1px solid palette(neutral-light);
+  border-radius: radius(1);
+  padding: space(3);
+  background: palette(surface-main);
+  color: palette(text-primary);
+}
+
+.config-editor__textarea.is-invalid {
+  border-color: palette(error-main);
+}
+
+.config-editor__status {
+  font-size: 0.75rem;
+  color: palette(text-secondary);
+}
+
+.config-editor__status.is-invalid {
+  color: palette(error-main);
+}

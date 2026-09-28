@@ -1,5 +1,4 @@
 import AgentGuidance from './AgentGuidance'
-import styles from './ColorDocumentation.module.css'
 
 type Topic = 'colors' | 'palette'
 
@@ -28,7 +27,7 @@ function ColorPrinciple() {
 export function ColorExplanation({ topic }: { topic: Topic }) {
   const isPalette = topic === 'palette'
   return (
-    <section className={styles.explanation} aria-labelledby={`${topic}-explained`}>
+    <section className="color-documentation" aria-labelledby={`${topic}-explained`}>
       <h2 id={`${topic}-explained`}>{isPalette ? 'Give colors a role in your UI.' : 'Define your colors once. Build palettes from them.'}</h2>
       <ColorPrinciple />
       <p>{isPalette ? 'A palette describes what a color is used for. Primary does not have to mean blue: another theme can assign a different color while components keep the same role.' : 'Colors are a collection of reusable color values. You can organize them into families and shades, or define individual named entries. The shade number is a key, not a computed brightness or a guarantee of contrast.'}</p>
@@ -38,7 +37,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
       <p>The nested entry <code>{'colors.blue["700"]'}</code> produces <code>--uxdsl__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--uxdsl__palette__primary-main</code>.</p>
       <p><strong>References preserve the connection.</strong> In this JSON, <code>primary.main</code> references <code>blue-700</code>. Changing that color updates the role once the theme is compiled or applied. A literal hex value in a palette is also valid, but copying a color’s hex value does not create a reference to that color token.</p>
       <h3>2. Express the intended role in components</h3>
-      <div className={styles.comparison}>
+      <div className="color-documentation__comparison">
         <div><h4>UXDSL you write</h4><pre><code className="language-css">{`.primary-action {
   background: palette(primary.main);
   color: palette(primary.contrast);

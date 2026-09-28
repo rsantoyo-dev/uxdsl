@@ -35,3 +35,14 @@
     opacity: 1;
   }
 }
+
+/* MIG-B7-17 phase B (4): was inline style={{}} on DocsLink in HomeInteractiveDemos.tsx. */
+a.docs-link {
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  font-size: 0.75rem;
+  color: palette(primary-main);
+  text-decoration: none;
+  font-weight: 600;
+}
