@@ -184,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B: rebanada 1 (`@media` → funciones responsivas) y rebanada 2 (colores, `var()` y `px` en `.uxdsl`) hechas; resto de B (`.module.css`, `style={{}}`, código muerto), C, D y E pendientes**.
+Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B: rebanadas 1 (`@media` → funciones responsivas), 2 (colores, `var()` y `px` en `.uxdsl`) y 3 (`.module.css` → `.uxdsl`) hechas; resto de B (`style={{}}`, código muerto), C, D y E pendientes**.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -449,6 +449,66 @@ total, de 385 a 336.
 
 **Límites.** Los del arnés (sin píxeles, sin `hover`/`focus`, sin editor de tema); los estados
 `hover` de `AppHeader` (`color(white, 0.2)`, idéntico por construcción) no se midieron.
+
+### Fase B, rebanada 3 — los 5 `.module.css` pasan a `.uxdsl` (2026-09-28)
+
+Misma rama; SHA fijado al mergear. `.module.css` en el playground: **5 → 0**.
+
+**Qué se cambió.** Cada módulo pasa a un `.uxdsl` del componente, con las clases prefijadas
+porque un `.uxdsl` es global (el nombre con hash de CSS Modules ya no las aísla):
+
+| Antes | Después | Lo importan |
+| --- | --- | --- |
+| `AgentGuidance.module.css` | `AgentGuidance.uxdsl` (`.agent-guidance*`) | `AgentGuidance` |
+| `DensityExplanation.module.css` | `DensityExplanation.uxdsl` (`.density-explanation*`) | `DensityExplanation` |
+| `ColorDocumentation.module.css` | `ColorDocumentation.uxdsl` (`.color-documentation*`) | `ColorDocumentation` |
+| `SpacingExplanation.module.css` | `SpacingExplanation.uxdsl` (`.spacing-explanation*`) | `SpacingExplanation` **y `DemoSpacing`** (sus cajas "Try it" y el botón *Edit space(4)* usaban este módulo) |
+| `BreakpointDocumentation.module.css` | `DocumentationSection.uxdsl` (`.doc-section*`) | `BreakpointDocumentation`, `BorderDocumentation`, `ShadowDocumentation`, `SurfaceDocumentation`, `TypographyDocumentation` — era de las cinco, así que se nombra por lo que es |
+
+Dentro, los valores pasan a tokens **sólo cuando son exactos**: márgenes, `padding` y `gap` en
+`rem` que están en la escala → `space(n)` (0.5rem = `space(3)`, 0.75 = 4, 1 = 5, 1.5 = 6, 2 = 7);
+los que no (1.25rem, 0.65rem, 3rem, 5rem) quedan literales; los tamaños de letra son la escala de
+prosa propia de estas secciones, no un rol (cambiarlos a `@ds-typo` es de la Fase D). Colores:
+`#94a3b8` → `color(gray-400)`, `#e2e8f0` → `color(gray-200)`, `#64748b` → `color(gray-500)`,
+`#2563eb` → `color(blue-500)`, `#fff`/`white` → `color(white)` (iguales). La caja de
+`DensityExplanation` tomaba su `padding` de un `style={{}}` con un ternario; ahora cada variante
+lo declara en su clase (`density(4)` / `space(4)`).
+
+**Cambios visuales declarados** — los hex del módulo que no tienen un Color igual se llevan al más
+cercano, en vez de dejar literales nuevos en un `.uxdsl`:
+
+| Uso | Antes | Después | Diferencias medidas (claro = oscuro) |
+| --- | --- | --- | --- |
+| Fondo de los bloques de código | `#101827` | `color(gray-900)` `#0B1220` | 824 (`backgroundColor`) |
+| Texto de las cajas "Content" | `#172554` | `color(slate-900)` `#102A43` | 154 (`color`) |
+| Fondo de las cajas responsivas | `#bfdbfe` | `color(blue-100)` `#BBDEFB` | 110 (`backgroundColor`) |
+| Botón *Edit density(4)* / *Edit space(4)* | `#1d4ed8` | `color(blue-500)` `#2563EB` | 44 (`backgroundColor`) |
+| Su `:hover` / anillo `:focus-visible` | `#1e40af` / `#60a5fa` | `color(blue-900)` / `color(blue-300)` | (estados, no medidos) |
+
+El botón *Edit* sigue siendo un botón estilado a mano, no `@ds-button`: adoptarlo cambia forma y
+color (a primario morado) — decisión de diseño para la Fase D, anotada.
+
+**Evidencia.** Snapshot de la build de la rebanada 2 (ahora con los tres diálogos abiertos, ver
+abajo) contra la build de esta rebanada, 28 rutas × 10 anchos + 3 diálogos × 2 anchos, claro y
+oscuro: **1,132 diferencias en claro y 1,132 en oscuro, todas y sólo las cuatro de la tabla**
+— ninguna de caja, margen, `padding`, tipografía ni orden de la cascada. (La primera versión
+llevaba `#172554` a `indigo-900`; se cambió a `slate-900`, más cercano, y se volvió a medir en
+`/densities`, `/docs/densities`, `/spacing` y `/docs/spacing`: la única diferencia con la anterior
+son esas 154, con el valor nuevo.) Control cruzado: las builds de las rebanadas 1→2 comparadas
+dos veces por separado (claro 193,930 y oscuro 192,554 registros) dan 0 — el snapshot es
+reproducible entre builds, no sólo dentro de una.
+
+**Arnés.** `snapshot.js` ahora abre también tres diálogos que sólo existen tras un clic (editar
+Density, editar Space, el editor de breakpoints de tipografía) y los guarda como
+`<ruta>#<nombre>` a 390 y 1280px. Se comprobó que se abren: cada uno añade sus 9–22 elementos
+(fondo `position: fixed`, el diálogo, su `h3`…).
+
+**Formato.** Los cinco `.uxdsl` nuevos pasan `stylelint` sin problemas (se expandieron los
+bloques de una línea del módulo; el CSS compilado es idéntico ignorando espacios y comentarios).
+
+**Comandos:** `npm test` → exit 0 (ratchet con `cssModuleFiles` 0 e `inlineStyleObjects` 176 — el
+`style={{}}` de `DensityExplanation` —, matriz regenerada); `npm run verify:doc-examples` → exit 0;
+`node scripts/generate-language-artifacts.js --check` → exit 0.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 

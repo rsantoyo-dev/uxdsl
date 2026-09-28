@@ -1,8 +1,7 @@
 import AgentGuidance from './AgentGuidance'
-import styles from './BreakpointDocumentation.module.css'
 
 export function SurfaceDocumentation() {
-  return <div className={styles.content}>
+  return <div className="doc-section">
     <section aria-labelledby="surfaces-explained">
       <h2 id="surfaces-explained">Give containers a shared visual role.</h2>
       <p><strong>Surfaces compose existing design decisions into a container treatment.</strong> A Surface brings together padding, corner shape, background, foreground, border and shadow. Components choose the role; the theme owns the shared appearance and responsive behavior. A Surface does not define layout, document semantics, interaction logic or z-index.</p>
@@ -22,7 +21,7 @@ export function SurfaceDocumentation() {
 }`}</code></pre>
       <p>This excerpt assumes referenced Density, Radius, Palette, Border and Shadow tokens exist in the effective theme. The six supported fields are <code>padding</code>, <code>radius</code>, <code>bg</code>, <code>color</code>, <code>border</code> and <code>shadow</code>. Each accepts a nonempty CSS string or a responsive progression with a base value.</p>
       <p>Built-in roles are <code>contained</code>, <code>outlined</code> and <code>flat</code>. Partial overrides inherit missing fields from that role&apos;s defaults. A new custom role inherits the contained defaults for missing fields. A supplied field replaces the entire inherited expression; breakpoint fragments are not merged.</p>
-      <div className={styles.comparison}>
+      <div className="doc-section__comparison">
         <div><h4>Component intent</h4><pre><code className="language-css">{`.card {
   @ds-surface(contained);
 }`}</code></pre></div>

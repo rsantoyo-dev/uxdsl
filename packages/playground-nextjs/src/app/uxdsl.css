@@ -917,6 +917,62 @@ html, body {
 /* =============================
    Density tokens (sample overrides)
    ============================= */
+/* The "AI implementation guide" section that closes each documentation page.
+   Was AgentGuidance.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl is
+   global. Stable spacing uses space(); the code panel and edge use Color identities, dark
+   in both modes on purpose. Font sizes are this section's own prose scale, not a role. */
+.agent-guidance {
+  margin-block: 3rem;
+  padding: clamp(var(--uxdsl__space__5), 3vw, var(--uxdsl__space__7));
+  border: 1px solid var(--uxdsl__color__gray-400);
+  border-radius: 0.75rem;
+  min-width: 0;
+  line-height: 1.7;
+  scroll-margin-top: 5rem;
+}
+.agent-guidance__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.agent-guidance h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__3) var(--uxdsl__space__5);
+}
+.agent-guidance h3 {
+  font-size: 1.15rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.agent-guidance p {
+  margin-block: var(--uxdsl__space__4);
+}
+.agent-guidance ul, .agent-guidance ol {
+  padding-inline-start: var(--uxdsl__space__6);
+  margin-block: var(--uxdsl__space__5);
+}
+.agent-guidance ul {
+  list-style: disc;
+}
+.agent-guidance ol {
+  list-style: decimal;
+}
+.agent-guidance li {
+  margin-block: var(--uxdsl__space__3);
+}
+.agent-guidance pre {
+  overflow-x: auto;
+  padding: var(--uxdsl__space__5);
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.agent-guidance blockquote {
+  border-inline-start: 3px solid var(--uxdsl__color__gray-400);
+  padding-inline-start: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}
 .ai-prompt-container {
   margin-top: var(--uxdsl__space__4);
   width: 100%;
@@ -1226,6 +1282,54 @@ html, body {
   .card:hover { transform: translateY(-2px); box-shadow: var(--uxdsl__shadow__3); }
   .card__title { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0 0 var(--uxdsl__space__2) 0; }
   .card__content { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 80%, transparent); }
+}
+/* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
+   classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
+   uses Color identities, dark in both modes on purpose. */
+.color-documentation {
+  min-width: 0;
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+}
+.color-documentation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.color-documentation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.color-documentation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.color-documentation p {
+  margin-block: var(--uxdsl__space__4);
+}
+.color-documentation ul {
+  list-style: disc;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.color-documentation li {
+  margin-block: var(--uxdsl__space__3);
+}
+.color-documentation a {
+  text-decoration: underline;
+}
+.color-documentation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.color-documentation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.color-documentation__comparison > div {
+  min-width: 0;
 }
 /* DemoBorders styles - Scoped */
 #DemoBorders {
@@ -5674,6 +5778,127 @@ html, body {
   .sample-small { font-family: var(--uxdsl__typography__small-font-family); font-size: var(--uxdsl__typography__small-size); line-height: var(--uxdsl__typography__small-line); font-weight: var(--uxdsl__typography__small-weight); letter-spacing: var(--uxdsl__typography__small-spacing); margin-block-start: var(--uxdsl__typography__small-margin-block-start); margin-block-end: var(--uxdsl__typography__small-margin-block-end); margin: 0; }
   .sample-pre { font-family: var(--uxdsl__typography__pre-font-family); font-size: var(--uxdsl__typography__pre-size); line-height: var(--uxdsl__typography__pre-line); font-weight: var(--uxdsl__typography__pre-weight); letter-spacing: var(--uxdsl__typography__pre-spacing); margin-block-start: var(--uxdsl__typography__pre-margin-block-start); margin-block-end: var(--uxdsl__typography__pre-margin-block-end); margin: 0; background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 5%, transparent); padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__1); }
 }
+/* Density explanation on /densities and /docs/densities.
+   Was DensityExplanation.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl
+   is global. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
+   3rem are not on it); the diagram and code panel use Color identities on purpose. The live
+   boxes now take their padding from density(4) / space(4) here instead of an inline style. */
+.density-explanation {
+  display: grid;
+  gap: var(--uxdsl__space__7);
+  margin: var(--uxdsl__space__7) 0 3rem;
+  min-width: 0;
+}
+.density-explanation section {
+  min-width: 0;
+}
+.density-explanation h3 {
+  font-size: 1.5rem;
+  margin: 0 0 var(--uxdsl__space__5);
+}
+.density-explanation h4 {
+  font-size: 1.2rem;
+  margin: 1.25rem 0 var(--uxdsl__space__5);
+}
+.density-explanation h5 {
+  font-size: 1rem;
+  margin: 0 0 var(--uxdsl__space__4);
+}
+.density-explanation p {
+  line-height: 1.7;
+  margin: var(--uxdsl__space__4) 0;
+}
+.density-explanation__code {
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.density-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: 1.25rem;
+}
+.density-explanation__comparison > div {
+  min-width: 0;
+}
+.density-explanation__table-wrap {
+  overflow-x: auto;
+  margin: 1.25rem 0;
+}
+.density-explanation__table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.density-explanation__table-wrap caption {
+  text-align: left;
+  margin-bottom: var(--uxdsl__space__4);
+  font-weight: 600;
+}
+.density-explanation__table-wrap th, .density-explanation__table-wrap td {
+  padding: var(--uxdsl__space__4);
+  border-bottom: 1px solid var(--uxdsl__color__gray-400);
+}
+.density-explanation__definition {
+  overflow-wrap: anywhere;
+}
+.density-explanation__edit {
+  background: var(--uxdsl__color__blue-500);
+  color: var(--uxdsl__color__white);
+  border: 0;
+  border-radius: 0.5rem;
+  padding: 0.65rem var(--uxdsl__space__5);
+  cursor: pointer;
+  font: inherit;
+}
+.density-explanation__edit:hover {
+  background: var(--uxdsl__color__blue-900);
+}
+.density-explanation__edit:focus-visible {
+  outline: 3px solid var(--uxdsl__color__blue-300);
+  outline-offset: 3px;
+}
+.density-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--uxdsl__space__5);
+  margin: var(--uxdsl__space__6) 0;
+}
+.density-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+.density-explanation__boxes figcaption {
+  display: grid;
+  gap: var(--uxdsl__space__3);
+  margin-bottom: var(--uxdsl__space__4);
+}
+.density-explanation__boxes figcaption code {
+  font-size: 0.85rem;
+}
+.density-explanation__responsive {
+  background: var(--uxdsl__color__blue-100);
+  border: 1px solid var(--uxdsl__color__blue-500);
+  border-radius: 0.5rem;
+  padding: var(--uxdsl__density__4);
+}
+.density-explanation__fixed {
+  background: var(--uxdsl__color__gray-200);
+  border: 1px solid var(--uxdsl__color__gray-500);
+  border-radius: 0.5rem;
+  padding: var(--uxdsl__space__4);
+}
+.density-explanation__content {
+  background: var(--uxdsl__color__white);
+  color: var(--uxdsl__color__slate-900);
+  border: 1px dashed var(--uxdsl__color__gray-500);
+  text-align: center;
+  padding: var(--uxdsl__space__3);
+}
 /* Density Playground Styles */
 .level-controls {
   display: flex;
@@ -5806,6 +6031,64 @@ html, body {
   text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
   font-weight: bold;
   text-decoration: underline;
+}
+/* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
+   documentation. Was BreakpointDocumentation.module.css, which those five components all
+   imported (MIG-B7-17 phase B): classes are prefixed because .uxdsl is global; stable spacing
+   uses space(); the code panel and table rules use Color identities, dark in both modes on
+   purpose. */
+.doc-section {
+  min-width: 0;
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+}
+.doc-section h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.doc-section h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.doc-section h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.doc-section p {
+  margin-block: var(--uxdsl__space__4);
+}
+.doc-section pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.doc-section__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.doc-section__comparison > div {
+  min-width: 0;
+}
+.doc-section__table-wrap {
+  overflow-x: auto;
+  margin-block: var(--uxdsl__space__5);
+}
+.doc-section__table-wrap table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+.doc-section__table-wrap caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: var(--uxdsl__space__3);
+}
+.doc-section__table-wrap th, .doc-section__table-wrap td {
+  padding: var(--uxdsl__space__4);
+  border-bottom: 1px solid var(--uxdsl__color__gray-400);
 }
 .hero-background {
   position: absolute;
@@ -7587,6 +7870,95 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
       border-radius: var(--uxdsl__radius__2);
     }
   }
+}
+/* Spacing explanation. Was SpacingExplanation.module.css (MIG-B7-17 phase B): classes are
+   prefixed because .uxdsl is global; stable spacing uses space(); the code panel uses Color
+   identities, dark in both modes on purpose. The __boxes/__padding/__gap/__content/__edit rules
+   are the live "Try it" boxes that DemoSpacing.tsx renders with this same stylesheet. */
+.spacing-explanation {
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+  min-width: 0;
+}
+.spacing-explanation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+.spacing-explanation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+.spacing-explanation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.spacing-explanation p {
+  margin-block: var(--uxdsl__space__4);
+}
+.spacing-explanation a {
+  text-decoration: underline;
+}
+.spacing-explanation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+.spacing-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+.spacing-explanation__comparison > div {
+  min-width: 0;
+}
+.spacing-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}
+.spacing-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+.spacing-explanation__boxes figcaption {
+  margin-bottom: var(--uxdsl__space__4);
+}
+.spacing-explanation__padding, .spacing-explanation__gap {
+  background: var(--uxdsl__color__blue-100);
+  border: 1px solid var(--uxdsl__color__blue-500);
+  border-radius: 0.5rem;
+}
+.spacing-explanation__padding {
+  padding: var(--uxdsl__space__4);
+}
+.spacing-explanation__gap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__space__4);
+  padding: var(--uxdsl__space__2);
+}
+.spacing-explanation__content {
+  background: var(--uxdsl__color__white);
+  color: var(--uxdsl__color__slate-900);
+  padding: var(--uxdsl__space__3);
+  border: 1px dashed var(--uxdsl__color__gray-500);
+  text-align: center;
+}
+.spacing-explanation__edit {
+  padding: 0.65rem var(--uxdsl__space__5);
+  background: var(--uxdsl__color__blue-500);
+  color: var(--uxdsl__color__white);
+  border: 0;
+  border-radius: 0.5rem;
+  font: inherit;
+  cursor: pointer;
+}
+.spacing-explanation__edit:focus-visible {
+  outline: 3px solid var(--uxdsl__color__blue-300);
+  outline-offset: 3px;
 }
 .theme-background-container {
   position: absolute;

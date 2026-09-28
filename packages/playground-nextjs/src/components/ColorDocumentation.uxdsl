@@ -1,0 +1,59 @@
+/* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
+   classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
+   uses Color identities, dark in both modes on purpose. */
+
+.color-documentation {
+  min-width: 0;
+  margin-block: space(7);
+  line-height: 1.7;
+}
+
+.color-documentation h2 {
+  font-size: 1.5rem;
+  margin-block: space(5);
+}
+
+.color-documentation h3 {
+  font-size: 1.2rem;
+  margin-block: space(6) space(4);
+}
+
+.color-documentation h4 {
+  margin-bottom: space(4);
+}
+
+.color-documentation p {
+  margin-block: space(4);
+}
+
+.color-documentation ul {
+  list-style: disc;
+  padding-inline-start: space(6);
+}
+
+.color-documentation li {
+  margin-block: space(3);
+}
+
+.color-documentation a {
+  text-decoration: underline;
+}
+
+.color-documentation pre {
+  overflow-x: auto;
+  background: color(gray-900);
+  color: color(gray-200);
+  padding: space(5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.color-documentation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: space(5);
+}
+
+.color-documentation__comparison > div {
+  min-width: 0;
+}

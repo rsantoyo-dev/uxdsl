@@ -18,11 +18,13 @@
 @import './app.uxdsl';
 @import './layout.uxdsl';
 @import './theme-def.uxdsl';
+@import '../components/AgentGuidance.uxdsl';
 @import '../components/AIPrompt.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/BreakpointEditor.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';
+@import '../components/ColorDocumentation.uxdsl';
 @import '../components/DemoBorders.uxdsl';
 @import '../components/DemoBreakpoints.uxdsl';
 @import '../components/DemoBreakpointsCards.uxdsl';
@@ -35,7 +37,9 @@
 @import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
 @import '../components/DemoTypography.uxdsl';
+@import '../components/DensityExplanation.uxdsl';
 @import '../components/DensityPlayground.uxdsl';
+@import '../components/DocumentationSection.uxdsl';
 @import '../components/HeroBackground.uxdsl';
 @import '../components/HomeDemo.uxdsl';
 @import '../components/HomeInteractiveDemos.uxdsl';
@@ -49,6 +53,7 @@
 @import '../components/ResponsiveSyntaxExplainer.uxdsl';
 @import '../components/RussianDoll.uxdsl';
 @import '../components/SideNav.uxdsl';
+@import '../components/SpacingExplanation.uxdsl';
 @import '../components/ThemeBackground.uxdsl';
 @import '../components/UXDSLCardDemo.uxdsl';
 @import './docs/breakpoints/breakpoints.uxdsl';

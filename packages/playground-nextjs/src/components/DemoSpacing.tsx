@@ -5,7 +5,6 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import runtime from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
-import styles from './SpacingExplanation.module.css'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -152,18 +151,18 @@ export default function DemoSpacing() {
         </p>
       </div>
 
-      <div className={styles.explanation}>
+      <div className="spacing-explanation">
         <h3>Try it: one token, two paddings and a gap</h3>
         <p>This demonstration uses direct Spacing to show the base scale: these paddings and gaps intentionally keep a stable value across breakpoints. Prefer Density when building ordinary component spacing.</p>
         <p>The colored areas below use the page’s actual CSS variables. Edit <code>space(4)</code> to update both boxes and the gap between the action items.</p>
-        <button type="button" className={styles.edit} onClick={() => setEditingLevel(4)}>Edit space(4)</button>
-        <div className={styles.boxes}>
+        <button type="button" className="spacing-explanation__edit" onClick={() => setEditingLevel(4)}>Edit space(4)</button>
+        <div className="spacing-explanation__boxes">
           {['Card', 'Panel'].map(name => <figure key={name}>
             <figcaption>{name}: <code>padding: space(4)</code></figcaption>
-            <div className={styles.padding}><div className={styles.content}>Content</div></div>
+            <div className="spacing-explanation__padding"><div className="spacing-explanation__content">Content</div></div>
           </figure>)}
           <figure><figcaption>Actions: <code>gap: space(4)</code></figcaption>
-            <div className={styles.gap}><span className={styles.content}>First</span><span className={styles.content}>Second</span></div>
+            <div className="spacing-explanation__gap"><span className="spacing-explanation__content">First</span><span className="spacing-explanation__content">Second</span></div>
           </figure>
         </div>
         <p>These edits update the playground’s custom theme and persist spacing overrides in this browser when storage is available. Other UI using the token may also change. They do not write to your source JSON file. The reference examples above stay unchanged.</p>

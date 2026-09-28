@@ -50,8 +50,8 @@
     "handWrittenMediaQueries": 2,
     "hexColorsInUxdsl": 16,
     "rgbHslInUxdsl": 2,
-    "cssModuleFiles": 5,
-    "inlineStyleObjects": 177,
+    "cssModuleFiles": 0,
+    "inlineStyleObjects": 176,
     "hexColorsInTsx": 30
   }
 }
