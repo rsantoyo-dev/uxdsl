@@ -71,8 +71,8 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
 | handWrittenMediaQueries | 2 | 2 |
-| hexColorsInUxdsl | 21 | 21 |
-| rgbHslInUxdsl | 17 | 17 |
+| hexColorsInUxdsl | 16 | 16 |
+| rgbHslInUxdsl | 2 | 2 |
 | cssModuleFiles | 5 | 5 |
 | inlineStyleObjects | 177 | 177 |
 | hexColorsInTsx | 30 | 30 |
@@ -92,7 +92,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `border` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
-| `color` | live | live | `src/components/DemoColors.uxdsl` |
+| `color` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `density` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `elevation` | live | documented ⚠ | `src/components/ShadowDocumentation.tsx` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
@@ -118,7 +118,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `borders` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
 | `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `buttons` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/DemoProductivity.uxdsl` |
-| `colors` | live | live | `src/components/DemoColors.uxdsl` |
+| `colors` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `fonts` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/layout.uxdsl` |
 | `inputs` | live | live | `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl`, `src/components/DemoPalette.uxdsl` |

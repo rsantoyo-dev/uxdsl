@@ -48,8 +48,8 @@
   ],
   "dogfoodingBaseline": {
     "handWrittenMediaQueries": 2,
-    "hexColorsInUxdsl": 21,
-    "rgbHslInUxdsl": 17,
+    "hexColorsInUxdsl": 16,
+    "rgbHslInUxdsl": 2,
     "cssModuleFiles": 5,
     "inlineStyleObjects": 177,
     "hexColorsInTsx": 30

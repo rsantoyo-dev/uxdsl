@@ -31,7 +31,7 @@
   display: flex;
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
-  gap: 8px; /* Adjusted gap for row layout */
+  gap: space(3); /* stable, not responsive: the logo row keeps one gap */
   background: palette(surface-light, 0.9); /* Corrected alpha */
   text-decoration: none;
   cursor: pointer;
@@ -87,7 +87,7 @@
   height: 32px;
   border-radius: 50%;
   border: 3px solid var(--theme-color);
-  background: rgba(255, 255, 255, 0.1);
+  background: color(white, 0.1);
   cursor: pointer;
   transition: all 0.2s ease;
   padding: 0;
@@ -96,18 +96,18 @@
 
 #AppHeader .theme-color-btn:hover {
   transform: scale(1.1);
-  background: rgba(255, 255, 255, 0.2);
+  background: color(white, 0.2);
 }
 
 #AppHeader .theme-color-btn.is-active {
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 0 2px color(white, 0.8);
+  background: color(white, 0.15);
 }
 
 #AppHeader .divider-vertical {
   width: 1px;
   height: 20px;
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: color(white, 0.2);
   margin: 0 density(1);
 }
 
@@ -115,9 +115,9 @@
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  color: white;
+  background: color(white, 0.1);
+  border: 1px solid color(white, 0.3);
+  color: color(white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -128,6 +128,6 @@
 }
 
 #AppHeader .theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: color(white, 0.2);
   transform: scale(1.05);
 }

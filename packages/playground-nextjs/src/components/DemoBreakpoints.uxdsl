@@ -145,7 +145,7 @@
 
   .breakpoints-input-val {
     width: 80px;
-    padding: 4px 8px;
+    padding: space(2) space(3);
     border: 1px solid palette(neutral-light);
     border-radius: radius(1);
     font-family: font(code);

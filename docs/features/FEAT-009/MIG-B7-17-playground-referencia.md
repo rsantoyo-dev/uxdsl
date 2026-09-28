@@ -184,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B, primera rebanada (`@media` → funciones responsivas) hecha; resto de B, C, D y E pendientes**.
+Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B: rebanada 1 (`@media` → funciones responsivas) y rebanada 2 (colores, `var()` y `px` en `.uxdsl`) hechas; resto de B (`.module.css`, `style={{}}`, código muerto), C, D y E pendientes**.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -342,6 +342,113 @@ resto sin cambios (`hexColorsInUxdsl` 21, `rgbHslInUxdsl` 17, `cssModuleFiles` 5
   mirándolo* — es la Fase E.
 - Cinco de las seis métricas de dogfooding siguen sin mover (hex en `.uxdsl` y en `.tsx`,
   `rgb`/`hsl`, `.module.css`, `style={{}}`): son las siguientes rebanadas de la Fase B.
+
+### Fase B, rebanada 2 — `@media` restantes, colores literales, `var()` leídas a mano y `px` en los `.uxdsl` (2026-09-28)
+
+Rama `feat/mig-b7-17b2-dogfooding` (apilada sobre `feat/mig-b7-17b-dogfooding`, PR #13); SHA
+fijado al mergear.
+
+**Qué se cambió** (sólo `.uxdsl`; recuento sin comentarios, con el mismo contador del ratchet):
+
+| Métrica | Antes | Después |
+| --- | --- | --- |
+| `@media` a mano | 2 | 2 (los dos clasificados intencionales, abajo) |
+| Hex en `.uxdsl` | 21 | **16** |
+| `rgb()`/`hsl()` en `.uxdsl` | 17 | **2** |
+| Líneas con `var(--uxdsl__…)` leída a mano en `.uxdsl` | 38 | **6** (abajo, por qué quedan) |
+| `padding`/`gap` en `px` con un valor exacto de la escala | 17 | **0** |
+
+- **Superposiciones blancas/negras → `color(white, α)` / `color(black, α)`** (18): la velo del
+  modal de carga (`AIPrompt`), la del menú móvil (`SideNav`), los botones translúcidos de la
+  cabecera sobre el degradado primario (`AppHeader`, 8) y el borde sutil de `PageToolbar`. Son
+  una *identidad* de color intencional (AGENTS.md: "`color(token)` for an intentional color
+  identity"), no un rol de Palette: pasarlas a `palette(primary-contrast, α)` cambiaría el modo
+  oscuro — ver hallazgos. `color: white` y `#ffffff` → `color(white)`.
+- **Círculos de tema de `PageToolbar` → `color(slate-800)`, `color(green-600)`,
+  `color(purple-600)`**: son muestras de *otro* tema, que la Palette del tema activo no puede
+  dar; un Color es el token correcto.
+- `HomeDemo` `@keyframes pulse`: `rgba(0,0,0,0)` → `transparent` (es el mismo valor).
+- **Lecturas de tipografía a mano → `@ds-typo()`**: los dos bucles `@each` de
+  `ResponsiveSyntaxExplainer` (`.editable-typography-element.<rol>` y `.showcase-text.sample-<rol>`,
+  14 roles × 10 campos) y `.sample-code` pasan a `@ds-typo(#{$tag})` / `@ds-typo(pre)`. Antes
+  emitían también `text-transform`/`text-decoration`/`font-style` de variables que el tema no
+  define (el navegador las trataba como `unset`); `@ds-typo` sólo emite lo definido (MIG-B6-17).
+- `PaletteThemeExplorer`: `var(--uxdsl__palette__surface-main)` / `…neutral-light` →
+  `palette(surface-main)` / `palette(neutral-light)` (compilan a lo mismo).
+- **`px` → `space(n)`** en 17 `padding`/`gap` cuyo valor está exactamente en la escala
+  (2 = `space(1)`, 4 = `space(2)`, 8 = `space(3)`, 12 = `space(4)`): chips, etiquetas y
+  separaciones pequeñas que deben ser estables — por eso `space()` y no `density()`, que
+  cambiaría su valor en los umbrales. `DemoBreakpoints`, `DemoColors`, `DemoPalette`,
+  `DemoDensity` (5), `DemoSurfaces` (3), `ResponsiveSyntaxExplainer` (5), `AppHeader`.
+- `DensityPlayground.uxdsl` tenía tres reglas repetidas dos veces, idénticas; se quitó la copia.
+
+**Clasificación de lo que queda (intencional, una línea cada una):**
+
+| Candidato | Por qué se queda |
+| --- | --- |
+| `app/not-found.uxdsl` `@media (min-width: 600px)` | Umbral local deliberado (ya justificado en la rebanada 1). |
+| `SideNav.uxdsl` `@media (min-width: 1024px)` | Cambia el componente entero de cajón a barra fija **y aplica `@ds-surface(flat)` sólo desde `lg`**: una directiva no es responsiva (AGENTS.md: "Directives style a whole rule and are not themselves responsive"), así que pasarlo a funciones obligaría a desplegar a mano los campos del Surface — una evasión peor. Límite: no seguirá un `breakpoints.update` de `lg` (ver hallazgos). |
+| 11 hex en `DemoProductivity.uxdsl`, 5 en `HomeDemo.uxdsl` | Imitan el tema *Dark+* de VS Code (`#1e1e1e`, `#252526`, `#d4d4d4`, `#9cdcfe`, `#ce9178`, `#6a9955`, `#333`): son la identidad de otra aplicación, no de este tema. |
+| `page.uxdsl` `filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1))` | Es un `filter`, no un `box-shadow`: AGENTS.md avisa de que los presets de Shadow no valen para `drop-shadow`. |
+| `DensityPlayground.uxdsl` `text-shadow: 0 0 8px rgba(255,77,77,0.4)` | Brillo decorativo del resaltado; no es un rol de UI ni hay token. (El componente, además, no se usa: ver hallazgos.) |
+| `var(--uxdsl__font__ui, …)` (`layout`) y `var(--uxdsl__font__code, monospace)` (`ThemeBackground`) | No existe una función de fuente: el propio `theme/base.json` referencia las familias así (`"fontFamily": "var(--uxdsl__font__ui)"`). |
+| `DemoTypography.uxdsl` `.sample-h2`: `var(--uxdsl__typography__h3-size)` y `…p-weight` | Mezcla deliberada de campos de dos roles sobre `@ds-typo(h2)`; no hay función que lea *un* campo de un rol. (Componente sin uso: ver hallazgos.) |
+| `var(--uxdsl__density__#{$i})` en `DemoDensity`/`RussianDoll` (`inset: calc(… * -1)`) | Negar un token dentro de `calc()` en un bucle: `density()` no se puede interpolar ahí con `#{$i}` y el valor es el mismo. |
+| `var(--theme-color)`, `var(--blob-opacity)`, `var(--side-nav-sticky-top)` | Propiedades propias del componente (las fija el TSX o el propio archivo), no tokens. |
+| `border: 1px/2px solid palette(…)` (≈75) | Trazo fino con el color **ya** en Palette. `border(n)` trae su propio color (`gray-300`), así que usarlo exigiría un `border-color` en cada uno; el ancho de 1–2px es una medida estable, no una decisión del sistema de bordes. |
+| `border-radius` en `px` (≈17: 2, 4, 6, 8px) | Esquinas pequeñas estables; los presets `radius(n)` son responsivos (cambian en `lg`), así que ninguno es igual. Adoptarlos es un cambio de diseño, para la Fase D. |
+| `box-shadow: 0 0 0 Npx palette(…)` (anillos, ≈10) | Técnica de anillo/contorno con color de Palette, no una elevación: ningún preset de Shadow es un anillo. |
+| `padding` con 1px, 6px, 10px o 30px (10) | No existen en la escala (`space(1)` = 2px); mezclar `space()` y `px` en la misma declaración no aclara nada. |
+
+**Cambio visual declarado (uno):** el círculo "purple" de `PageToolbar` pasa de `#7b1fa2` a
+`color(purple-600)` = `#7e22ce`, que es el primario real del tema *purple* (y el que ya usa el
+botón equivalente de `AppHeader`). En el snapshot es exactamente eso: 280 diferencias = 1
+elemento × `backgroundColor` × 28 rutas × 10 anchos, `rgb(123,31,162)` → `rgb(126,34,206)`.
+
+**Evidencia — cómo se sabe que no cambió nada más.** El arnés de la rebanada 1
+([`fixtures/playground-browser`](../../../fixtures/playground-browser/README.md)), ahora también
+en **modo oscuro** (`--scheme dark`, que emula `prefers-color-scheme: dark`; `ThemeContext` lo
+sigue cuando no hay `data-theme` guardado) — comprobado que el snapshot oscuro es oscuro (la
+cabecera pasa a `rgb(221,191,255)` con texto negro).
+
+| Comprobación (28 rutas × 10 anchos) | Resultado |
+| --- | --- |
+| Claro: base vs. después | **280 diferencias, todas el círculo declarado**; nada más |
+| Oscuro: base vs. después | **280 diferencias, las mismas** (el círculo declarado); nada más |
+| Ruido oscuro: dos snapshots oscuros de la misma build | **0 diferencias** sobre 189,510 registros |
+
+`compare.js` ahora **normaliza la serialización del color**: `rgba(0, 0, 0, 0.5)` (un literal)
+y `color(srgb 0 0 0 / 0.5)` (lo que da el `color-mix(…, transparent)` al que compilan
+`palette(x, α)`/`color(x, α)`) se escriben como un único `rgba()` de 8 bits con α a 3
+decimales; una diferencia real de 1/255 sigue saliendo. Sin normalizar (`--exact`) la
+comparación clara da 5,470 diferencias, todas de esa serialización.
+
+**Hallazgos (registrados, no arreglados aquí):**
+- **Modo oscuro de `AppHeader`**: en oscuro el primario es `#ddbfff` y su contraste negro, pero
+  los botones translúcidos, el separador y el icono del tema siguen siendo blancos (antes
+  literal, ahora `color(white)`: mismo aspecto). Semánticamente son "sobre primario" y deberían
+  ser `palette(primary-contrast, α)`; hacerlo cambia el modo oscuro. Para la Fase D (oscuro/contraste).
+- **Círculo "default" de `PageToolbar`**: es `slate-800` (`#2C415C`), el primario del tema *slate*;
+  el tema *default* es el base, cuyo primario es morado. Deriva de diseño; decisión del dueño.
+- **Componentes sin uso**: `DensityPlayground.tsx` y `DemoTypography.tsx` no se importan en
+  ningún sitio, pero sus `.uxdsl` se compilan en la hoja global; y `EditTypographyDialog` sólo lo
+  abre `DemoTypography`, así que es inalcanzable. MIG-B7-09 no los detectó. Seguimiento: retirarlos
+  (con su propia comparación, porque sus clases podrían estar compartidas).
+- **Posible hueco del motor (no un bug):** no hay forma de aplicar una regla ni una directiva
+  "desde el breakpoint `lg`" con un nombre configurado; `SideNav` necesita un `@media` con
+  `1024px` literal que no seguirá un `breakpoints.update`. Repro: `.a { @media (min-width: 1024px)
+  { @ds-surface(flat); } }` es la única forma de expresarlo. Candidato a historia propia.
+
+**Comandos** (macOS, Node 20, Chrome estable): `npm test` → exit 0; `npm run
+verify:doc-examples` → exit 0 (45 ejemplos, 29 extractos de tema); `node
+scripts/generate-language-artifacts.js --check` → exit 0; ratchet de dogfooding bajado a
+`hexColorsInUxdsl` 16 y `rgbHslInUxdsl` 2 y matriz regenerada. `npm run stylelint` del
+playground **ya fallaba antes** (385 problemas en HEAD, casi todos de formato: líneas vacías,
+`rgba` → `rgb`…); no es parte del pre-commit. En los 13 archivos tocados baja de 225 a 176; el
+total, de 385 a 336.
+
+**Límites.** Los del arnés (sin píxeles, sin `hover`/`focus`, sin editor de tema); los estados
+`hover` de `AppHeader` (`color(white, 0.2)`, idéntico por construcción) no se midieron.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 
