@@ -1,5 +1,61 @@
 # Migración a UXDSL 0.5.0-beta.2
 
+## Antes de actualizar (cualquier versión)
+
+Un cambio de versión puede cambiar defaults en familias que tu tema **nunca
+declaró**, y ni `uxdsl theme --diff` ni `--strict` lo muestran: los dos sólo miran
+las familias que tu proyecto menciona (así está documentado; no es un defecto).
+`uxdsl theme` sin flags imprime el tema **efectivo** completo, todas las familias,
+como JSON por stdout. Guárdalo antes y después, y compara:
+
+```bash
+npx uxdsl theme > effective.before.json
+npm install -D uxdsl-cli@<siguiente> postcss-uxdsl@<siguiente>
+npx uxdsl theme > effective.after.json
+diff effective.before.json effective.after.json
+```
+
+Medido con un proyecto cuyo tema sólo fija `typography_details.h1.fontWeight`,
+actualizado de `0.5.0-beta.5` a `0.5.0-beta.6` desde el registro: la salida pasa
+de 8 438 a 13 159 bytes y de 4 a 15 familias; el `diff` muestra, por ejemplo,
+33 claves nuevas en `modes`, 43 nuevas y 5 cambiadas en `palette`, y en `fonts`
+1 nueva, 2 cambiadas y 1 quitada — mientras `theme --diff` sólo lista las 78
+filas de `typography_details`. (Tabla completa en el README de `uxdsl-cli`,
+"Before you upgrade".)
+
+**Lo que este flujo no ve:** compara el *tema*, no el CSS compilado. Un cambio en
+cómo el compilador emite CSS a partir del mismo tema — por ejemplo el orden del
+`@import` de Google Fonts corregido en `0.5.0-beta.7` — deja los dos archivos
+idénticos. Esos cambios sólo los anuncia el
+[CHANGELOG](../CHANGELOG.md): leer cada sección `### Visual changes` entre tu
+versión y la nueva.
+
+Con `UXDSL_DEBUG=1` definido, `uxdsl theme` añade líneas de descubrimiento a
+stdout; no lo definas al guardar las instantáneas.
+
+### Parches locales que ya no hacen falta
+
+Si el proyecto parchea paquetes de UXDSL localmente (`patches/` con
+patch-package, o similar), revisa esos parches al actualizar: un parche que
+compensaba un defecto ya corregido deja de aplicar — y `patch-package` falla —
+o, peor, sigue aplicando sobre código que ya cambió.
+
+1. Antes de actualizar, lista `patches/` y anota qué corrige cada parche de un
+   paquete `uxdsl-*` o `postcss-uxdsl`.
+2. Después, si `patch-package` falla o el parche ya no tiene sentido, comprueba
+   en la fuente **publicada** de la nueva versión (en `node_modules/`) si el
+   comportamiento que parcheabas ya está ahí. Si lo está, borra el parche.
+
+Ejemplo verificado: un parche para `uxdsl-cli@0.5.0-beta.1` que reenviaba
+`includeTheme` y `references` de `uxdsl.config.cjs` al plugin sobra desde
+beta.6 — el `compile()` de `uxdsl-core` publicado los reenvía. Comprobado con
+`uxdsl-cli@0.5.0-beta.6` desde el registro: una config con
+`includeTheme: false` compila sin `:root`, y un tema cuyo
+`palette.primary.main` es `var(--host-token)` falla con `UXD_REFERENCE_MISSING`
+sin `references` y compila con `references: { externalTokens: ['--host-token'] }`.
+Esto no dice nada de otros parches: cada uno se comprueba igual, contra la
+versión que instalas.
+
 ## Adelanto beta.6 — MIG-B6-29: el tema por defecto cambió (sin publicar)
 
 `DEFAULT_THEME` pasó de un subconjunto mínimo (4 familias de palette, 3

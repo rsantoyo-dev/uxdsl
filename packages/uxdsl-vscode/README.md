@@ -18,9 +18,9 @@ Language support for **UXDSL** (User Experience Design System Language)
   once inside `@ds-surface(`/`@ds-button(`/`@ds-input(`. Nothing is
   suggested inside a selector, a comment, or a string.
 - **CSS IntelliSense** for the same directives via `uxdsl.custom-data.json`
-  (VS Code's built-in CSS language service reads this directly — hover and
-  completion for `@ds-*` work in any editor that supports the CSS custom
-  data format, not just this extension's own completion provider).
+  (VS Code's built-in CSS language service reads this directly). The file
+  follows VS Code's CSS custom data format; other editors that read that
+  format may be able to use it, but only VS Code has been tested.
 
 ### Known gaps (out of scope for this release)
 
@@ -61,7 +61,15 @@ npm install
 npm run package        # produces uxdsl-vscode-<version>.vsix
 ```
 
-Then in VS Code: Command Palette → "Extensions: Install from VSIX...".
+Then in VS Code: Command Palette → "Extensions: Install from VSIX...", or
+`code --install-extension uxdsl-vscode-<version>.vsix`. A `.vsix` built and
+validated by CI will replace "package it yourself" once that pipeline exists
+(MIG-B7-04, FEAT-009).
+
+For a consuming app, this extension is one of two mechanisms: the typed
+`uxdsl.config.cjs` that `uxdsl init` writes and the theme JSON `$schema` work
+without it. See
+[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
 
 ## Development
 
