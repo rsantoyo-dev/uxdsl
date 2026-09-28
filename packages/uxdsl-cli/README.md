@@ -186,6 +186,60 @@ server or JSON Schema support should be able to use them, and the extension's
 `uxdsl.custom-data.json` follows VS Code's CSS custom data format — but none of
 that has been verified in WebStorm, Neovim or any other editor.
 
+## Before you upgrade
+
+A new version can change a default in a family your theme never mentions — and
+`theme --diff` and `--strict` only look at families you declared (see
+[Theme introspection](#6-theme-introspection-uxdsl-theme)). `uxdsl theme` with no
+flags prints the **effective** theme, every family included, as JSON on stdout.
+Save it before upgrading, save it again after, and compare:
+
+```bash
+npx uxdsl theme > effective.before.json
+npm install -D uxdsl-cli@<next> postcss-uxdsl@<next>
+npx uxdsl theme > effective.after.json
+diff effective.before.json effective.after.json
+```
+
+Keep both packages on the same version. What this shows, measured with one
+project whose theme sets only `typography_details.h1.fontWeight`, upgraded from
+`0.5.0-beta.5` to `0.5.0-beta.6` from the registry:
+
+| | beta.5 | beta.6 |
+| --- | --- | --- |
+| bytes of `uxdsl theme` | 8 438 | 13 159 |
+| top-level families | 4 | 15 |
+
+Leaf keys per family, beta.6 against beta.5:
+
+| Family | added | changed | removed |
+| --- | --- | --- | --- |
+| `modes` | 33 | — | — |
+| `palette` | 43 | 5 | — |
+| `inputs` | 23 | — | — |
+| `surfaces` | 18 | — | — |
+| `buttons` | 14 | — | — |
+| `densities` | 16 | — | — |
+| `fonts` | 1 | 2 | 1 |
+| `typography_details` | 24 | 18 | 69 |
+
+(plus `colors` 4, `breakpoints` 5, `borders` 5, `radii` 6, `shadows` 6 and
+`typography` 1, all added). `theme --diff` on the same project, after the
+upgrade, lists only the 78 `typography_details` rows.
+
+**What this cannot show:** it compares the *theme*, not the compiled CSS. A
+change in how the compiler emits CSS from the same theme — for example the order
+of the Google Fonts `@import` fixed in `0.5.0-beta.7` — leaves both files
+identical. Those changes are announced only in `postcss-uxdsl`'s
+[CHANGELOG](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/CHANGELOG.md):
+read every `### Visual changes` section between your version and the new one.
+If the project keeps local patches of UXDSL packages (`patches/`, via
+patch-package), check them too — see "Antes de actualizar" in the
+[migration guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md).
+
+`UXDSL_DEBUG=1` adds discovery lines to stdout; leave it unset when saving the
+snapshots.
+
 ## Usage
 
 ### 1. Configuration (Recommended)
@@ -491,6 +545,17 @@ output directory reloaded stylesheets nothing had actually changed in). A
 real write goes to a temp file in the same directory first, then an atomic
 rename — a reader can never observe a truncated or empty output file mid-write.
 
+That is what the log line means, in `build` and `watch` alike:
+
+```text
+[uxdsl] unchanged src/uxdsl.css (compiled output identical to the file on disk; not rewritten)
+```
+
+"Unchanged" is about the **output**, not the inputs: you may well have edited
+the theme or a `.uxdsl` file, but it compiled to exactly the bytes already on
+disk (or another process — a running `watch` — had already written them).
+`[uxdsl] built <file> (<n> bytes)` means the file was written.
+
 ### 5. CLI Arguments (No Config)
 
 You can also skip the config file and pass paths directly via command line arguments:
@@ -512,7 +577,12 @@ npx uxdsl theme
 `--diff` prints only the families your own `uxdsl.config.cjs`/theme file
 mentions, one row per leaf, each labeled `"project"` (you supplied that
 value) or `"default"` (silently inherited from `postcss-uxdsl`'s
-`DEFAULT_THEME`) — instead of the full resolved tree:
+`DEFAULT_THEME`) — instead of the full resolved tree. **A family you never
+declared does not appear at all**, even though your build uses it in full from
+the defaults: with a theme that only sets `typography_details.h1.fontWeight`,
+`--diff` lists 78 `typography_details` rows and nothing from `modes`, `fonts`
+or `palette`. So it cannot tell you that an upgrade changed one of those; for
+that, see [Before you upgrade](#before-you-upgrade).
 
 ```bash
 npx uxdsl theme --diff
@@ -532,6 +602,12 @@ distinguish from "this value happens to match the default anyway":
 ```bash
 npx uxdsl theme --strict
 ```
+
+A family you did not declare is not "partially filled" — it is entirely
+inherited — so `--strict` never fails on it, and naming it does not change
+that: `--strict=modes` exits 0 when `modes` comes wholly from the defaults. The
+same holds for `build --strict-theme`. Changes to undeclared families across
+versions are what the [Before you upgrade](#before-you-upgrade) snapshot shows.
 
 `--strict=palette,breakpoints` scopes the check to only those families —
 see `--strict-theme`'s own note below for why this is usually what you

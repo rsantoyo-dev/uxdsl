@@ -1227,7 +1227,10 @@ async function buildOnce(config, entryIndices) {
         : '';
       console.log(`[uxdsl] built ${rel} (${finalCss.length} bytes)${mapNote}`);
     } else {
-      console.log(`[uxdsl] unchanged ${rel}`);
+      // MIG-B7-15 (FEAT-009): say what "unchanged" is about — the compiled
+      // output equals the file already on disk (writeIfChanged compares
+      // content), so it was not rewritten. It does not mean no input changed.
+      console.log(`[uxdsl] unchanged ${rel} (compiled output identical to the file on disk; not rewritten)`);
     }
   }
 

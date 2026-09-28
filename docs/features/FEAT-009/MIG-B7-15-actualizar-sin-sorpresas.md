@@ -110,7 +110,8 @@ efectivo antes, (2) actualizar, (3) comparar, (4) leer las secciones
    que sirve. Decir el límite del punto 5 con todas las letras.
 2. **Hacer explícita la consecuencia** en los párrafos de `--diff` y `--strict`
    del README: no ven las familias que no declaraste; apuntar al flujo.
-3. **D-12 (opcional).** Sólo si el dueño elige (b): un modo de `theme --diff` que
+3. **D-12 (opcional).** — **D-12 = (a), decidida por el dueño 2026-09-28: no se
+   implementa.** Sólo si el dueño elige (b): un modo de `theme --diff` que
    liste también las familias no declaradas. Ojo con lo que aporta: muestra lo
    heredado **hoy**, no lo que cambió **entre versiones**; para eso hace falta
    comparar dos salidas de todos modos.
@@ -153,15 +154,16 @@ efectivo antes, (2) actualizar, (3) comparar, (4) leer las secciones
 
 ## Criterios de aceptación
 
-- [ ] La guía de migración abre con "antes de actualizar" y el flujo funciona
+- [x] La guía de migración abre con "antes de actualizar" y el flujo funciona
       entre dos versiones publicadas, con evidencia registrada.
-- [ ] Los README de `--diff`/`--strict` dicen qué no ven.
-- [ ] La guía de migración lista los parches locales a revisar, con el ejemplo
+- [x] Los README de `--diff`/`--strict` dicen qué no ven.
+- [x] La guía de migración lista los parches locales a revisar, con el ejemplo
       verificado.
-- [ ] El mensaje `unchanged` explica lo que significa.
-- [ ] D-12 respondida y, si es (b), implementada; si es (a), registrada.
-- [ ] La decisión sobre publicar la guía dentro del paquete queda registrada
-      (hecha o descartada con motivo).
+- [x] El mensaje `unchanged` explica lo que significa.
+- [x] D-12 respondida y, si es (b), implementada; si es (a), registrada. —
+      **D-12 = (a), decidida por el dueño 2026-09-28.**
+- [x] La decisión sobre publicar la guía dentro del paquete queda registrada
+      (hecha o descartada con motivo). — **Hecha** (ver evaluación del paso 6).
 
 ## Verificación
 
@@ -178,18 +180,40 @@ npm test
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Pendiente de implementación/verificación**.
-Completar en el mismo PR conforme al
-[protocolo de agentes](README.md#protocolo-de-implementación).
+Estado de esta revisión documental: **Implementada y verificada localmente** en
+`feat/mig-b7-15-upgrade-flow` (apilada sobre `feat/mig-b7-12-editor-support`).
+Integración a `main` pendiente. Pasos 1, 2, 4, 5 y 6 hechos; **paso 3 no aplica:
+D-12 = (a), decidida por el dueño 2026-09-28** — sólo documentación, sin flag
+nuevo de CLI.
+
+### Evaluación del paso 6 (guía de agentes dentro del paquete)
+
+Las dos condiciones se cumplen, así que se implementó:
+
+- **Generada, nunca segunda fuente:** `scripts/generate-agent-guide.js` escribe
+  `packages/postcss-uxdsl/docs/agent-guide.md` = cabecera generada + `AGENTS.md`
+  byte a byte; `--check` sale con 1 ante cualquier deriva y corre en `npm test`
+  (igual que `generate-language-artifacts.js --check`). Copia literal, sin
+  filtrar secciones: filtrar habría sido un segundo formato a mantener, y la guía
+  ya pedía copiarla entera.
+- **Presupuesto:** `npm run verify:pack-budget` → `postcss-uxdsl` **165,0 KB /
+  250 KB** (149,2 KB sin la guía, con MIG-B7-12 incluida; +15,8 KB empaquetados).
+- Sólo `docs/agent-guide.md` entra en `files`; `docs/migration.md` sigue siendo
+  sólo del repositorio (el test lo comprueba). Sin entrada en `exports`: se lee
+  por ruta, no se importa.
+- `AGENTS.md` ("Using this guide in another project") recomienda ahora apuntar a
+  `node_modules/postcss-uxdsl/docs/agent-guide.md`; la copia local queda como
+  alternativa, con su advertencia de que envejece. "Maintaining this guide" dice
+  cómo regenerarla.
 
 | Campo | Evidencia |
 | --- | --- |
-| SHA base / entrega / PR | Pendiente |
-| Reproducción antes del cambio | Hecha el 2026-09-23 (ver "Estado verificado"); repetir sobre el SHA base |
-| Criterio → regresión | Pendiente |
-| Comandos y entorno | Pendiente |
-| Resultado después / control negativo | Pendiente |
-| Cambios visuales o API / migración | Pendiente; sin cambio visual. Si D-12 = (b), API nueva de CLI |
-| README / CHANGELOG / migration | Pendiente |
-| AGENTS / guías / arquitectura | Pendiente |
-| Límites y seguimiento | Pendiente |
+| SHA base / entrega / PR | Base: `feat/mig-b7-12-editor-support` (sobre `main` `dcd8a26`). Entrega: rama `feat/mig-b7-15-upgrade-flow`, SHA fijado al mergear. PR: pendiente de mergear (base `feat/mig-b7-12-editor-support`) |
+| Reproducción antes del cambio | Repetida el 2026-09-28. **Flujo del paso 1 desde el registro** (tarballs publicados, un solo proyecto limpio actualizado en sitio): `uxdsl-cli`+`postcss-uxdsl@0.5.0-beta.5`, tema `{ typography_details: { h1: { fontWeight: "800" } } }` → `uxdsl theme > effective.before.json` (8 438 bytes, 4 familias, stderr vacío); `npm install -D …@0.5.0-beta.6` → `effective.after.json` (13 159 bytes, 15 familias); `diff` exit 1, 566 líneas. Recuento por familia (añadidas/cambiadas/quitadas) idéntico a la tabla del "Estado verificado": `modes` 33/0/0, `palette` 43/5/0, `inputs` 23/0/0, `surfaces` 18/0/0, `buttons` 14/0/0, `densities` 16/0/0, `fonts` 1/2/1, `typography_details` 24/18/69, más `colors` 4, `breakpoints` 5, `borders` 5, `radii` 6, `shadows` 6, `typography` 1. **Sobre el SHA base** (CLI del checkout, mismo proyecto): `theme --diff` → 78 filas, todas `typography_details`; `theme --strict=modes` → exit 0; beta.6 publicada, también 78 filas. **Reenvío de `includeTheme`/`references`** (ejemplo del paso 4), con `uxdsl-cli@0.5.0-beta.6` del registro: `includeTheme: false` → 0 `:root`; tema con `palette.primary.main: "var(--host-token)"` y `.p { color: palette(primary.main); }` → sin `references` **falla** con `UXD_REFERENCE_MISSING` (exit 1), con `references.externalTokens: ['--host-token']` compila (exit 0). **Mensaje `unchanged`:** `[uxdsl] unchanged src/uxdsl.css`, sin explicación |
+| Criterio → regresión | Flujo de actualización → ejecutado y registrado arriba (la story pide ejecutarlo, no testear prosa). Mensaje → `packages/uxdsl-cli/test/uxdsl-cli.test.js` "MIG-B7-15: a rebuild with identical output says what "unchanged" means…" (build real dos veces: `built` y luego el texto nuevo completo; control: salida editada a mano → `built`, sin `unchanged`) y la aserción añadida al test de watch "MIG-B6-23: a rebuild triggered by an unrelated watched file…". Guía empaquetada → `scripts/agent-guide.test.js` (3 tests: copia = cabecera + `AGENTS.md` byte a byte; `--check` falla con una copia editada, con una de otra versión de `AGENTS.md` y con el archivo ausente — control negativo; `npm pack --dry-run` de `postcss-uxdsl` contiene `docs/agent-guide.md` y ningún otro `docs/*`) + `node scripts/generate-agent-guide.js --check` en `npm test`. D-12 (a) → sin código, registrado aquí |
+| Comandos y entorno | macOS (Darwin 27.0.0), Node v20.19.0, npm 10.8.2, registro público de npm (`0.5.0-beta.5` y `0.5.0-beta.6`). `node --test --test-name-pattern "MIG-B7-15\|MIG-B6-23" packages/uxdsl-cli/test/{uxdsl-cli,watch-mode}.test.js` → 18/18. `node --test scripts/agent-guide.test.js` → 3/3. `node scripts/generate-agent-guide.js --check` → exit 0. `npm run verify:pack-budget` → exit 0 (`postcss-uxdsl` 165,0 KB / 250 KB). `npm run verify:doc-examples` → exit 0. `node scripts/generate-language-artifacts.js --check` → exit 0. `npm test` (raíz) → ver fila siguiente |
+| Resultado después / control negativo | `npm test` (raíz) → exit 0, **742 pass / 0 fail** en los tests `node --test` (738 tras MIG-B7-12 + 1 del mensaje + 3 de la guía), más fixtures y los dos `--check` en PASS. **Control negativo del mensaje:** con el texto anterior (`[uxdsl] unchanged ${rel}`), el test nuevo y la aserción de watch fallan (su regex exige el sufijo); el de `built` tras editar la salida es el control de que el cambio es sólo de texto. **Control negativo de la guía:** los tres casos de deriva de `agent-guide.test.js` |
+| Cambios visuales o API / migración | Sin cambio visual. **Texto de CLI:** `[uxdsl] unchanged <archivo> (compiled output identical to the file on disk; not rewritten)`; cuándo se escribe o no, igual. Un script que compare la línea exacta necesita el sufijo (en `CHANGELOG`). **Paquete:** `postcss-uxdsl` gana `docs/agent-guide.md` en `files` (sin `exports`). Sin flag nuevo (D-12 = (a)) |
+| README / CHANGELOG / migration | `packages/uxdsl-cli/README.md`: sección **"Before you upgrade"** (flujo, las dos tablas medidas, el límite "compara el tema, no el CSS" con el ejemplo de MIG-B7-14 y el puntero a `Visual changes`, parches locales, `UXDSL_DEBUG`); párrafos de `--diff` y `--strict` con lo que no ven (78 filas; `--strict=modes` exit 0) y enlace al flujo; explicación de `unchanged` junto a "Writes only what changed". `packages/postcss-uxdsl/docs/migration.md`: abre con **"Antes de actualizar (cualquier versión)"** y **"Parches locales que ya no hacen falta"** (procedimiento + ejemplo verificado del reenvío `includeTheme`/`references`). `packages/postcss-uxdsl/README.md`: "Guide for AI agents". `packages/postcss-uxdsl/CHANGELOG.md` `0.5.0-beta.7`: entrada MIG-B7-15 |
+| AGENTS / guías / arquitectura | `AGENTS.md`: "Using this guide in another project" recomienda la copia empaquetada; "Maintaining this guide…" explica `npm run generate:agent-guide` y el `--check`. `packages/postcss-uxdsl/docs/agent-guide.md` regenerado (no editado a mano). Scripts nuevos en `package.json` raíz: `generate:agent-guide`; `npm test` añade `scripts/agent-guide.test.js` y el `--check` |
+| Límites y seguimiento | (1) El flujo se ejecutó entre **beta.5 y beta.6** (las dos últimas publicadas); no entre beta.6 y beta.7, que no está publicada. (2) El flujo compara el tema; los cambios del compilador sólo los anuncia el CHANGELOG — dicho en ambos documentos. (3) La guía empaquetada llega a los consumidores **con la próxima publicación** (beta.7); hasta entonces el texto de `AGENTS.md` que la recomienda describe algo que ningún paquete publicado contiene todavía — por eso dice "Since `0.5.0-beta.7`". (4) Las rutas internas de la guía (`docs/features/…`, `packages/…`) son del repositorio, no del paquete; la cabecera generada lo dice. (5) Sólo se verificó el ejemplo de parche descrito en el feedback (reenvío de `includeTheme`/`references`); la guía no promete nada de otros parches. (6) `[uxdsl] unchanged` con el archivo cambiado sigue sin reproducirse; el cambio es sólo de texto, como pedía la story |

@@ -1086,6 +1086,13 @@ theme-file-only `breakpoints.xl`, zero duplicate `:root`/`#uxdsl-bp-meta`
 across the five outputs, and both negative controls (an unknown token still
 fails; `--no-include-theme` overrides every entry).
 
+## Guide for AI agents
+
+The package ships the UXDSL agent guide at `docs/agent-guide.md`, generated from
+the repository's `AGENTS.md` for this exact version. Point a consuming project's
+agent instructions at `node_modules/postcss-uxdsl/docs/agent-guide.md` rather
+than keeping a copy that ages with each upgrade.
+
 ---
 
 ## License
