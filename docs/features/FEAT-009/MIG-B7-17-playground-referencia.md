@@ -184,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B: rebanadas 1 (`@media` → funciones responsivas), 2 (colores, `var()` y `px` en `.uxdsl`) y 3 (`.module.css` → `.uxdsl`) hechas; resto de B (`style={{}}`, código muerto), C, D y E pendientes**.
+Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B hecha en cuatro rebanadas (1 `@media` → funciones responsivas; 2 colores, `var()` y `px` en `.uxdsl`; 3 `.module.css` → `.uxdsl`; 4 `style={{}}` estáticos a CSS y código muerto), con cada candidato clasificado y los cambios visuales declarados — **salvo `scripts/audit-themes.mjs`**, que sigue pendiente —; C, D y E pendientes**.
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -509,6 +509,96 @@ bloques de una línea del módulo; el CSS compilado es idéntico ignorando espac
 **Comandos:** `npm test` → exit 0 (ratchet con `cssModuleFiles` 0 e `inlineStyleObjects` 176 — el
 `style={{}}` de `DensityExplanation` —, matriz regenerada); `npm run verify:doc-examples` → exit 0;
 `node scripts/generate-language-artifacts.js --check` → exit 0.
+
+### Fase B, rebanada 4 — `style={{}}` estáticos a CSS y código muerto (2026-09-28)
+
+Misma rama; SHA fijado al mergear.
+
+| Métrica (ratchet, sin comentarios) | Antes | Después |
+| --- | --- | --- |
+| `style={{` en `.tsx` | 176 | **50** (todos clasificados, abajo) |
+| `style={{` en `.mdx` (el ratchet no los cuenta) | 12 | **0** |
+| Hex en `.tsx` | 30 | **27** |
+| Hex en `.uxdsl` | 16 | **17** — subida deliberada, ver abajo |
+| Líneas de comentario con código muerto en `.uxdsl` | 99 | **0** (queda un falso positivo del contador: un comentario que cita `style={{}}`) |
+
+**Qué se cambió.** 126 objetos `style={{}}` estáticos de 24 archivos `.tsx` (y los 12 de dos `.mdx`) pasan a clases en el `.uxdsl`
+del componente (o a uno nuevo: `EditDialog`, `ThemeConfigJsonEditor`, `CodeBlock`,
+`InteractiveLogo`, `app/typography/typography-page`, `app/docs/palette/palette-docs`), con los
+valores a token donde son exactos (`rem` de la escala → `space(n)`, `var(--uxdsl__palette__x)` →
+`palette(x)`, `var(--uxdsl__space__n)` → `space(n)`, `var(--uxdsl__radius__1, 6px)` → `radius(1)` —
+el *fallback* nunca se usaba —, `rgba(0,0,0,α)` → `color(black, α)`). Los más grandes:
+`PalettePlayground` (46: barra de controles, panel "CSS Usage"), `PaletteThemeExplorer` (15),
+los diálogos de edición de Density y de Space (19, **escritos dos veces**: ahora comparten
+`EditDialog.uxdsl`), `ThemeConfigJsonEditor` (8), el `textarea` JSON de seis demos (una sola
+`.code-textarea` en `app.uxdsl`), `quick-start.mdx` (10) y los tres círculos de tema de
+`AppHeader`, cuyo `--theme-color` hex pasa a `color(purple-600|green-600|slate-800)`. Donde el
+objeto mezclaba estado y constantes, las constantes van a CSS y sólo el valor calculado queda en
+línea (el color de cada muestra de paleta); donde era un ternario sobre estado, pasa a una clase
+de estado (`.is-selected`, `.is-invalid`).
+
+**Lo que queda en línea (50), clasificado:**
+
+| Qué | Cuántos | Por qué se queda |
+| --- | --- | --- |
+| Calculados en runtime | 22 | Color de cada token/preview elegido por el usuario (`DemoColors` 2, `DemoPaletteConfig`, `PalettePlayground`, `PaletteThemeExplorer` 2), un preset enumerado del tema (`DemoBorders` 3, `DemoShadows`), anchos y `padding` medidos (`DemoBreakpoints`, `DemoDensity`, `DemoSpacing`, `ResponsiveSyntaxExplainer`), la posición de las partículas (`InteractiveLogo` 3), la opacidad de carga (`ThemeBackground`), el color del breakpoint activo (`ResponsiveSyntaxExplainer` 3) y el degradado del tema *custom* de `AppHeader` (sólo existe con un tema del usuario; sin token) |
+| Componentes inalcanzables | 22 | `EditTypographyDialog` (13; sólo lo abre `DemoTypography`, que no se importa), `ButtonDemo` (6) y `HomeDemo` (3) no se importan en ninguna ruta: no hay página donde medir un cambio. Ver hallazgos |
+| Páginas de error | 6 | `global-error.tsx` (2) sustituye al layout raíz y se pinta aunque la hoja no cargue: debe llevar su estilo. `error.tsx` (4) lleva *fallbacks* (`red`, `#333`) a propósito y el arnés no puede provocarlo |
+
+Hex que quedan en `.tsx` (27): ejemplos de código dentro de cadenas (`BorderDocumentation`,
+`ColorDocumentation`), el negro/blanco que devuelve el cálculo de contraste YIQ (`DemoColors`,
+`DemoPaletteConfig`), la hoja de "salida compilada" que inyecta la demo de estrés de
+`DemoProductivity` (paleta propia de la demo), el valor por defecto de un `<input type="color">`
+y el rojo del breakpoint activo (`ResponsiveSyntaxExplainer`), y el degradado *custom*. **Subida
+deliberada de hex en `.uxdsl` (16 → 17):** el borde de la tarjeta de Vite en `quick-start`
+(`#646cff`, el color de marca de Vite, identidad de otro producto) salió de un `style={{}}` de
+`.mdx` — que ningún contador mide — a CSS; el número de literales no crece, sólo pasa a ser visible.
+
+**Código muerto retirado.** `app/theme-def.uxdsl` era todo muerto y se verificó uno a uno:
+~95 líneas comentadas (alias de paleta, familias de fuente, una escala tipográfica y otra de
+espaciado de antes del JSON); `--uxdsl__font__code: "JetBrains Mono"…` en `:root`, **sin efecto**
+— el `:root` del tema generado va después en la misma hoja y lo devuelve a `monospace`
+(comprobado en Chrome leyendo el valor calculado) —; `--uxdsl__radius__full`, que nada lee; y un
+bloque `@theme` de `density-1..6` que el JSON de densidades reemplaza (el CSS compilado de Density
+no cambia al quitarlo). El archivo queda con un comentario que lo explica, porque
+`generate-uxdsl-entry.js` lo importa por nombre. Además, cuatro declaraciones comentadas sueltas
+(`layout`, `page` ×2, `DemoSpacing`); donde había un motivo, queda el motivo sin el código.
+
+**Cambio visual declarado (uno):** el borde de los `input` de los diálogos de Density y Space,
+`#ccc` → `color(gray-300)` `#CBD5E1`. Son `input` estilados a mano; pasarlos a `@ds-input` es
+de la Fase D.
+
+**Evidencia.** Build de la rebanada 3 contra esta, 28 rutas × 10 anchos + los 3 diálogos
+abiertos, claro y oscuro: **48 diferencias en claro y 48 en oscuro, todas el borde declarado**
+(6 `input` × 4 lados × 2 anchos); cero en cualquier otra propiedad, incluidos la portada, las
+páginas de paleta, `/docs/config`, `quick-start` y los tres diálogos. Después se fusionaron los
+bloques añadidos con el `#Id {` que ya abría cada archivo (para no duplicar el selector) y se
+volvió a medir en las 8 rutas afectadas: 0 diferencias con la medición anterior.
+
+**Comandos:** `npm test` → exit 0 (ratchet: `inlineStyleObjects` 50, `hexColorsInTsx` 27,
+`hexColorsInUxdsl` 17; matriz regenerada); `npm run verify:doc-examples` → exit 0; `node
+scripts/generate-language-artifacts.js --check` → exit 0; la build de producción (`next build`,
+con su comprobación de tipos) pasó en cada snapshot `--build` y en el pre-commit.
+
+**Límites.** No se midieron estados (`:hover`, `.is-invalid` del editor JSON, el botón del tema
+*custom*), ni `error.tsx`. `stylelint` en los archivos tocados: 192 → 204 problemas; los nuevos
+son la convención del repo de IDs en PascalCase (`#AppHeader`, `#WelcomePage`… contra
+`selector-id-pattern`) y el `var(--uxdsl__font__code)` que no tiene función; los seis `.uxdsl`
+nuevos pasan salvo ese.
+
+**Hallazgos de esta rebanada:**
+- **Más componentes sin uso**: `ButtonDemo.tsx` y `HomeDemo.tsx` tampoco se importan (se suman a
+  `DensityPlayground`, `DemoTypography` y, por arrastre, `EditTypographyDialog`).
+- **La página `/theming` miente**: dice que los *overrides* viven en `theme-def.uxdsl` y que se
+  cambian con `--primary-main`; eso es el código comentado que se acaba de retirar. Contenido para la
+  Fase D.
+- **`theme-def.uxdsl` no podía hacer lo que prometía** (un `:root` del autor pierde contra el
+  `:root` del tema generado, que va después). Es la precedencia documentada (el tema JSON manda),
+  no un bug del motor; si se quisiera JetBrains Mono, va en `fonts.families.code` del JSON.
+
+**Lo que queda de la Fase B.** `scripts/audit-themes.mjs` (reimplementa parseo responsivo, `px` y
+luminancia en vez de usar el motor): no se tocó en estas rebanadas. Por eso el criterio de la
+Fase B sigue sin marcar: los candidatos del playground están clasificados, pero ese script no.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 

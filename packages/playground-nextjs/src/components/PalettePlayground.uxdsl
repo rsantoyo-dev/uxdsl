@@ -1,5 +1,7 @@
 /* Palette Playground Scoped Styles */
 #PalettePlayground {
+    height: 100%; /* MIG-B7-17 phase B (4): was inline style={{}} on the root */
+
     .playground-wrapper {
         display: flex;
         flex-direction: column;
@@ -89,4 +91,135 @@
         font-family: monospace;
         color: palette(neutral-light);
     }
+
+  /* MIG-B7-17 phase B (4): the toolbar, the preview's static half and the "CSS Usage" panel were
+     inline style={{}} in PalettePlayground.tsx (the preview's two colors are chosen at runtime and
+     stay inline). Values on the scale use space(), palette reads use palette(). */
+  .pp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: space(5);
+    width: 100%;
+  }
+
+  .pp-toolbar__column {
+    display: flex;
+    flex-direction: column;
+    gap: space(3);
+    flex: 1 1 200px;
+  }
+
+  .pp-toolbar__heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: palette(text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-toolbar__row {
+    display: flex;
+    gap: space(3);
+  }
+
+  .control-group.pp-toolbar__control {
+    flex: 1;
+  }
+
+  .control-label.pp-toolbar__label {
+    font-size: 0.7rem;
+  }
+
+  .control-select.pp-toolbar__select {
+    padding: space(2);
+    font-size: 0.8rem;
+  }
+
+  .live-preview.pp-preview {
+    padding: space(4);
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .pp-usage {
+    margin-top: space(6);
+    padding: space(5);
+    background: palette(surface-light);
+    border: 1px solid palette(neutral-light);
+    border-radius: 6px;
+    text-align: left;
+  }
+
+  .pp-usage__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: space(3);
+  }
+
+  .pp-usage__title {
+    font-size: 0.8rem;
+    color: palette(text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-code {
+    background: palette(surface-dark);
+    padding: space(4);
+    border-radius: 6px;
+    font-family: var(--uxdsl__font__code);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: space(2);
+    overflow-x: auto;
+    border: 1px solid palette(neutral-dark);
+  }
+
+  .pp-code__line {
+    display: flex;
+    align-items: center;
+  }
+
+  .pp-code__indent {
+    padding-left: space(5);
+  }
+
+  .pp-code__selector {
+    color: palette(secondary-light);
+  }
+
+  .pp-code__property {
+    color: palette(primary-light);
+  }
+
+  .pp-code__function {
+    color: palette(text-primary);
+  }
+
+  .pp-code__argument {
+    color: palette(warning-light);
+  }
+
+  .pp-code__punct {
+    color: palette(text-disabled);
+  }
+
+  .pp-code__gap {
+    margin-left: space(3);
+  }
+
+  .pp-usage__note {
+    margin-top: space(4);
+    font-size: 0.8rem;
+    color: palette(text-secondary);
+    line-height: 1.5;
+  }
+
+  .pp-usage__note strong {
+    color: palette(text-primary);
+  }
 }

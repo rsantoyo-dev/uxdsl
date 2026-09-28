@@ -555,3 +555,8 @@
   position: relative;
   z-index: 2;
 }
+
+/* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
+.responsive-syntax-explainer {
+  height: 100%;
+}

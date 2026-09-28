@@ -11,16 +11,8 @@ import PaletteThemeExplorer from './PaletteThemeExplorer'
 function DocsLink({ href }: { href: string }) {
   return (
     <Link 
-      href={href} 
-      style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '0.25rem', 
-        fontSize: '0.75rem', 
-        color: 'var(--uxdsl__palette__primary-main)',
-        textDecoration: 'none',
-        fontWeight: 600
-      }}
+      href={href}
+      className="docs-link"
     >
       Docs <ArrowRight size={12} />
     </Link>

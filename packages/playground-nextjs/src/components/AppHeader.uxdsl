@@ -131,3 +131,17 @@
   background: color(white, 0.2);
   transform: scale(1.05);
 }
+
+/* MIG-B7-17 phase B (4): each theme button's ring color was an inline --theme-color with a hex
+   literal. They are swatches of *other* themes, which the active Palette cannot give: Colors. */
+#AppHeader .theme-color-btn--default {
+  --theme-color: color(purple-600);
+}
+
+#AppHeader .theme-color-btn--green {
+  --theme-color: color(green-600);
+}
+
+#AppHeader .theme-color-btn--slate {
+  --theme-color: color(slate-800);
+}

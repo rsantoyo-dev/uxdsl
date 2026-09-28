@@ -30,3 +30,125 @@
   gap: density(2);
   align-items: center;
 }
+
+/* MIG-B7-17 phase B (4): these rules were inline style={{}} in PaletteThemeExplorer.tsx; each
+   swatch's color is read from the token at runtime and stays inline, and the selected option's
+   border/opacity ternary is now .is-selected. */
+.pte {
+  padding-top: space(6);
+}
+
+.pte-detail {
+  background: palette(surface-light);
+  border: 1px solid palette(neutral-light);
+  border-radius: 8px;
+  padding: space(6);
+  margin-bottom: space(7);
+}
+
+.pte-detail__header {
+  display: flex;
+  align-items: baseline;
+  gap: space(4);
+  margin-bottom: space(5);
+}
+
+.pte-detail h3.pte-detail__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: palette(text-primary);
+  margin: 0;
+}
+
+.pte-detail__subtitle {
+  font-size: 0.8rem;
+  color: palette(text-secondary);
+}
+
+.pte-detail p.pte-detail__hint {
+  margin-top: space(4);
+  font-size: 0.75rem;
+  color: palette(text-secondary);
+}
+
+.pte-swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.pte-swatch__color {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid color(black, 0.1);
+}
+
+.pte-swatch__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pte-item__variant {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pte-item__hex {
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: palette(text-secondary);
+}
+
+.pte-item__rgb {
+  font-size: 0.6rem;
+  color: palette(text-disabled);
+}
+
+.pte h5.pte-selector__heading {
+  font-size: 0.7rem;
+  color: palette(text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: space(4);
+}
+
+.pte-selector__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: space(5);
+  background: palette(surface-light);
+  border: 1px solid palette(neutral-light);
+  border-radius: 6px;
+  padding: space(3) space(4);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+
+.pte-selector__option.is-selected {
+  border-color: palette(primary-main);
+  opacity: 1;
+}
+
+.pte-selector__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: palette(text-primary);
+}
+
+.pte-selector__strip {
+  display: flex;
+  gap: space(1);
+  width: 100px;
+}
+
+.pte-selector__chip {
+  flex: 1;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid color(black, 0.05);
+}

@@ -1,131 +1,15 @@
-/* App-level theme overrides (hyphen alias variables). These override the
-   default palette injected by the plugin. You can tweak any tokens here. */
+/* App-level theme overrides.
 
-:root {
-  /* =============================
-     Palette aliases (brand example)
-     ============================= */
-  /*
-  --primary-main: #0d5c63;
-  --primary-light: #33a0a8;
-  --primary-dark: #063539;
-  --primary-contrast: #f5fbff;
-
-  --secondary-main: #f97316;
-  --secondary-light: #ffab66;
-  --secondary-dark: #c2410c;
-  --secondary-contrast: #1a0b02;
-
-  --success-main: #1f7a4c;
-  --success-light: #4ade80;
-  --success-dark: #145532;
-  --success-contrast: #f0fff4;
-
-  --warning-main: #facc15;
-  --warning-light: #fde047;
-  --warning-dark: #a16207;
-  --warning-contrast: #1f1300;
-
-  --uxdsl__surface__main: #fdfcf8;
-  --uxdsl__surface__light: #ffffff;
-  --uxdsl__surface__dark: #e7e1cf;
-  --uxdsl__surface__contrast: #0f172a;
-  */
-
-  /* Bridge aliases to canonical DS tokens */
-  /*
-  --uxdsl__palette__primary-main: var(--primary-main);
-  --uxdsl__palette__primary-light: var(--primary-light);
-  --uxdsl__palette__primary-dark: var(--primary-dark);
-  --uxdsl__palette__primary-contrast: var(--primary-contrast);
-
-  --uxdsl__palette__secondary-main: var(--secondary-main);
-  --uxdsl__palette__secondary-light: var(--secondary-light);
-  --uxdsl__palette__secondary-dark: var(--secondary-dark);
-  --uxdsl__palette__secondary-contrast: var(--secondary-contrast);
-
-  --uxdsl__palette__success-main: var(--success-main);
-  --uxdsl__palette__success-light: var(--success-light);
-  --uxdsl__palette__success-dark: var(--success-dark);
-  --uxdsl__palette__success-contrast: var(--success-contrast);
-
-  --uxdsl__palette__warning-main: var(--warning-main);
-  --uxdsl__palette__warning-light: var(--warning-light);
-  --uxdsl__palette__warning-dark: var(--warning-dark);
-  --uxdsl__palette__warning-contrast: var(--warning-contrast);
-
-  --uxdsl__palette__surface-main: var(--uxdsl__surface__main);
-  --uxdsl__palette__surface-light: var(--uxdsl__surface__light);
-  --uxdsl__palette__surface-dark: var(--uxdsl__surface__dark);
-  --uxdsl__palette__surface-contrast: var(--uxdsl__surface__contrast);
-  */
-
-  /* =============================
-     Typography + font families
-     ============================= */
-  /*
-  --uxdsl__font__ui: cursive, "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --uxdsl__font__ui-2: fantasy, "Segoe UI", system-ui, -apple-system, sans-serif;
-  */
-  --uxdsl__font__code: "JetBrains Mono", "SF Mono", Menlo, monospace;
-
-  /*
-  --uxdsl__typography__h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
-  --uxdsl__typography__h1-weight: 700;
-  --uxdsl__typography__h1-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
-  --uxdsl__typography__h2-weight: 700;
-  --uxdsl__typography__h2-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
-  --uxdsl__typography__h3-weight: 600;
-  --uxdsl__typography__h3-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
-  --uxdsl__typography__h4-weight: 600;
-  --uxdsl__typography__h4-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
-  --uxdsl__typography__h5-weight: 600;
-  --uxdsl__typography__h5-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-
-  --uxdsl__typography__h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
-  --uxdsl__typography__h6-weight: 600;
-  --uxdsl__typography__h6-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-  */
-
-  /* =============================
-     Custom spacing scale (1–12)
-     ============================= */
-  /* Moved to uxdsl.theme.json */
-  /*
-  --uxdsl__space__1: 0.175rem;
-  --uxdsl__space__2: 0.35rem;
-  --uxdsl__space__3: 0.55rem;
-  --uxdsl__space__4: 0.8rem;
-  --uxdsl__space__5: 1rem;
-  --uxdsl__space__6: 1.35rem;
-  --uxdsl__space__7: 1.75rem;
-  --uxdsl__space__8: 2.25rem;
-  --uxdsl__space__9: 2.75rem;
-  --uxdsl__space__10: 3.5rem;
-  --uxdsl__space__11: 4.25rem;
-  --uxdsl__space__12: 5rem;
-  */
-
-  /* Radius overrides */
-  --uxdsl__radius__full: 9999px;
-}
-
-/* =============================
-   Density tokens (sample overrides)
-   ============================= */
-@theme {
-  density-1: xs(space(1)) lg(space(2));
-  density-2: xs(space(2)) lg(space(3));
-  density-3: xs(space(3)) lg(space(4));
-  density-4: xs(space(4)) lg(space(5));
-  density-5: xs(space(5)) lg(space(6));
-  density-6: xs(space(6)) lg(space(7));
-}
+   Nothing lives here any more (MIG-B7-17 phase B): the playground's theme is the JSON in
+   uxdsl.theme.*.json, merged over postcss-uxdsl/theme/base.json by themes.js. What this file
+   held was dead:
+   - about 95 lines of commented-out palette aliases, font families, a typography scale and a
+     spacing scale from before the theme moved to JSON;
+   - `--uxdsl__font__code` and `--uxdsl__radius__full` on :root. The generated theme's own
+     :root comes later in the same stylesheet and sets --uxdsl__font__code back to the theme's
+     value (checked in Chrome: the computed value was `monospace`, never the JetBrains Mono
+     written here), and nothing reads --uxdsl__radius__full (radius(full) compiles to 9999px);
+   - an @theme block of density-1..6 overrides, which the JSON densities replace (JSON
+     overrides legacy @theme; the compiled Density rules follow the JSON progression).
+   To change a token, change the theme JSON. The file stays because generate-uxdsl-entry.js
+   imports it first, by name. */

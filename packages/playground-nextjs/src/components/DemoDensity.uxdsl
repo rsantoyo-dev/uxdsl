@@ -331,4 +331,22 @@
     z-index: 10; /* Ensure it's on top if possible, or at least prominent */
     box-shadow: 0 0 0 1px palette(surface-main); /* Small outline to separate */
   }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoDensity.tsx. */
+  .density-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: space(3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: space(7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: space(6);
+  }
 }

@@ -45,37 +45,28 @@ function EditDensityDialog({
   }
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-    }} onClick={onClose}>
-      <div style={{
-        background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '8px',
-        width: '400px', maxWidth: '90%', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>Edit Density {level}</h3>
-        
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+    <div className="edit-dialog__backdrop" onClick={onClose}>
+      <div className="edit-dialog edit-dialog--scroll" onClick={e => e.stopPropagation()}>
+        <h3 className="edit-dialog__title">Edit Density {level}</h3>
+
+        <div className="edit-dialog__fields">
           {bpOrder.map(bp => (
-            <label key={bp} style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ width: '30px', fontWeight: 'bold', opacity: 0.7 }}>{bp}</span>
+            <label key={bp} className="edit-dialog__row">
+              <span className="edit-dialog__breakpoint">{bp}</span>
               <input 
                 type="text"
                 value={breakpointValues[bp] || ''}
                 onChange={e => setBreakpointValues(prev => ({ ...prev, [bp]: e.target.value }))}
                 placeholder="e.g. space(2), 16px"
-                style={{ flex: 1, padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+                className="edit-dialog__input edit-dialog__input--grow"
               />
             </label>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={handleSave} style={{ 
-            padding: '0.5rem 1rem', background: 'var(--uxdsl__palette__primary-main)', 
-            color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' 
-          }}>Save</button>
+        <div className="edit-dialog__actions edit-dialog__actions--spaced">
+          <button onClick={onClose} className="edit-dialog__cancel">Cancel</button>
+          <button onClick={handleSave} className="edit-dialog__save">Save</button>
         </div>
       </div>
     </div>
@@ -161,7 +152,7 @@ export default function DemoDensity() {
       <div className="density-doll-container">
         <h4 className="demo-subtitle">Russian Doll Visualization</h4>
         <div className="density-doll-controls">
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label className="density-doll-controls__label">
             Density level:
             <input
               type="range"
@@ -182,7 +173,7 @@ export default function DemoDensity() {
           />
         </div>
 
-        <div className="demo-code-block" style={{ marginTop: '2rem', width: '100%', maxWidth: '600px', margin: '2rem auto 0' }}>
+        <div className="demo-code-block demo-code-block--usage">
           <div className="code-header">
             <span className="code-file">DensityUsage.uxdsl</span>
           </div>
@@ -199,7 +190,7 @@ export default function DemoDensity() {
         </div>
       </div>
 
-      <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
+      <div className="demo-header demo-header--tokens">
         <h3 className="demo-title">Global Density Tokens</h3>
         <p className="demo-subtitle">
           Update the tokens below to reflect changes in the UI.

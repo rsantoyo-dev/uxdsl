@@ -107,3 +107,8 @@
     color: palette(neutral-light);
   }
 }
+
+/* MIG-B7-17 phase B (4): was inline style={{ marginLeft: 8 }} on the ArrowRight icon. */
+.btn-primary__icon {
+  margin-left: space(3);
+}

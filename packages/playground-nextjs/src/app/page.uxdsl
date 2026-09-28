@@ -104,7 +104,6 @@
 
   .intro-section {
     width: 100%;
-    /* max-width: 800px;  Optional: constrain text width for readability if needed, but user asked for full available */
     margin: 0;
   }
 
@@ -144,8 +143,6 @@
 
   .demo-wrapper-scale {
     width: 100%;
-    /* Optional: Scale down slightly if it feels too big for the welcome page */
-    /* transform: scale(0.9); */
   }
 
   .welcome-footer {
@@ -184,5 +181,24 @@
   .footer-copy {
     @ds-typo (caption);
     color: palette(text-disabled);
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in app/page.tsx. */
+  .hero-surface {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-prompt {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 }

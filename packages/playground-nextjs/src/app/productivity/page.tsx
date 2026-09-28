@@ -9,7 +9,7 @@ export default function ProductivityPage() {
     <main id="ProductivityPage" className="main">
       <div className="container">
         <header className="header">
-          <div style={{ marginBottom: '1rem' }}>
+          <div className="back-link-row">
             <Link href="/" className="back-link">← Back to Playground</Link>
           </div>
           <PageTitle 

@@ -71,11 +71,11 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
 | handWrittenMediaQueries | 2 | 2 |
-| hexColorsInUxdsl | 16 | 16 |
+| hexColorsInUxdsl | 17 | 17 |
 | rgbHslInUxdsl | 2 | 2 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 176 | 176 |
-| hexColorsInTsx | 30 | 30 |
+| inlineStyleObjects | 50 | 50 |
+| hexColorsInTsx | 27 | 27 |
 
 ## Directives
 
@@ -99,13 +99,13 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `radius` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `rounded` | live | documented ⚠ | `src/components/BorderDocumentation.tsx` |
 | `shadow` | live | live | `src/app/app.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
-| `space` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/app/theming/page.uxdsl` |
+| `space` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/productivity/page.uxdsl` |
 
 ## Breakpoint functions
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `lg` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/components/DemoProductivity.uxdsl` |
+| `lg` | live | live | `src/app/layout.uxdsl`, `src/components/DemoProductivity.uxdsl`, `src/components/HomeInteractiveDemos.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/DemoProductivity.uxdsl` |
 | `xl` | live | documented ⚠ | `src/app/docs/quick-start/page.mdx`, `src/components/BreakpointDocumentation.tsx`, `src/components/DensityAgentGuidance.tsx` |
@@ -126,7 +126,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `shadows` | live | live | `src/app/app.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
-| `spacing` | live | live | `src/app/layout.uxdsl`, `src/app/theme-def.uxdsl`, `src/app/theming/page.uxdsl` |
+| `spacing` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/productivity/page.uxdsl` |
 | `surfaces` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 | `typography` | documented | documented | `src/app/docs/quick-start/page.mdx` |
 | `typography_details` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/not-found.uxdsl` |

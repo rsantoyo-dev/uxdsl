@@ -13,7 +13,7 @@ export default function TypographyPage() {
           subtitle="Type scale, font families, and text styles."
         />
         <TypographyDemos />
-        <div style={{ marginTop: '4rem', maxWidth: '800px' }}>
+        <div className="typography-page__documentation">
           <Documentation />
         </div>
       </div>

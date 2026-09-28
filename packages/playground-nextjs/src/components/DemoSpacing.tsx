@@ -23,35 +23,26 @@ function EditSpacingDialog({
   const [value, setValue] = useState(initialValue)
 
   return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-      background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100
-    }} onClick={onClose}>
-      <div style={{
-        background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '8px',
-        width: '400px', maxWidth: '90%', boxShadow: '0 4px 20px rgba(0,0,0,0.2)'
-      }} onClick={e => e.stopPropagation()}>
-        <h3 style={{ marginTop: 0 }}>Edit Space {level}</h3>
-        
-        <div style={{ marginBottom: '1.5rem' }}>
-          <label htmlFor="edit-spacing-value" style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 'bold' }}>Value</label>
+    <div className="edit-dialog__backdrop" onClick={onClose}>
+      <div className="edit-dialog" onClick={e => e.stopPropagation()}>
+        <h3 className="edit-dialog__title">Edit Space {level}</h3>
+
+        <div className="edit-dialog__field">
+          <label htmlFor="edit-spacing-value" className="edit-dialog__label">Value</label>
           <input 
             id="edit-spacing-value"
             type="text"
             value={value}
             onChange={e => setValue(e.target.value)}
             placeholder="e.g. 1rem, 16px"
-            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="edit-dialog__input edit-dialog__input--full"
             autoFocus
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end' }}>
-          <button onClick={onClose} style={{ padding: '0.5rem 1rem', cursor: 'pointer' }}>Cancel</button>
-          <button onClick={() => onSave(value)} style={{ 
-            padding: '0.5rem 1rem', background: 'var(--uxdsl__palette__primary-main)', 
-            color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer' 
-          }}>Save</button>
+        <div className="edit-dialog__actions">
+          <button onClick={onClose} className="edit-dialog__cancel">Cancel</button>
+          <button onClick={() => onSave(value)} className="edit-dialog__save">Save</button>
         </div>
       </div>
     </div>
@@ -172,7 +163,7 @@ export default function DemoSpacing() {
         <h4 className="demo-subtitle">Concentric Spacing Visualization</h4>
         <p>Each ring shows a spacing level measured from the same content. These are alternative distances, not nested paddings added together. Click a ring to edit its token, or use the labeled token fields below. Custom values determine ring size; token numbers alone do not guarantee size order.</p>
         <div className="spacing-doll-controls">
-           <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+           <label className="spacing-doll-controls__label">
              Visible Rings: 
              <input 
                type="range" 
@@ -192,7 +183,7 @@ export default function DemoSpacing() {
           />
         </div>
 
-        <div className="demo-code-block" style={{ marginTop: '2rem', width: '100%', maxWidth: '600px', margin: '2rem auto 0' }}>
+        <div className="demo-code-block demo-code-block--usage">
           <div className="code-header">
             <span className="code-file">SpacingUsage.uxdsl</span>
           </div>
@@ -209,7 +200,7 @@ export default function DemoSpacing() {
         </div>
       </div>
 
-      <div className="demo-header" style={{ marginTop: '3rem', marginBottom: '1.5rem' }}>
+      <div className="demo-header demo-header--tokens">
         <h3 className="demo-title">Global Spacing Tokens</h3>
         <p className="demo-subtitle">
           Update the tokens below to reflect changes in the UI.

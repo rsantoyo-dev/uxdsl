@@ -731,6 +731,13 @@ input[type="range"]::-moz-range-thumb:hover {
   background: var(--uxdsl__palette__primary-light);
   transform: scale(1.1);
 }
+/* A full-width monospace textarea for the theme/JSON editors in the demos (DemoBorders,
+   DemoButtons, DemoShadows, DemoSurfaces, InputDemo, BreakpointEditor). MIG-B7-17 phase B (4):
+   was the same inline style={{}} in all six. */
+.code-textarea {
+  width: 100%;
+  font-family: monospace;
+}
 /* Global layout primitives for Next.js app */
 *, *::before, *::after { box-sizing: border-box; }
 html, body { 
@@ -741,7 +748,7 @@ html, body {
   font-family: var(--uxdsl__font__ui, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
   background: var(--uxdsl__palette__surface-main);
   color: var(--uxdsl__palette__surface-contrast);
-  /* overflow-x: hidden; Removed to fix sticky positioning context */
+  /* No overflow-x here: it would break the sticky positioning context. */
 }
 .main {
   display: block;
@@ -796,127 +803,21 @@ html, body {
 .layout__content {
   min-width: 0;
 }
-/* App-level theme overrides (hyphen alias variables). These override the
-   default palette injected by the plugin. You can tweak any tokens here. */
-:root {
-  /* =============================
-     Palette aliases (brand example)
-     ============================= */
-  /*
-  --primary-main: #0d5c63;
-  --primary-light: #33a0a8;
-  --primary-dark: #063539;
-  --primary-contrast: #f5fbff;
+/* App-level theme overrides.
 
-  --secondary-main: #f97316;
-  --secondary-light: #ffab66;
-  --secondary-dark: #c2410c;
-  --secondary-contrast: #1a0b02;
-
-  --success-main: #1f7a4c;
-  --success-light: #4ade80;
-  --success-dark: #145532;
-  --success-contrast: #f0fff4;
-
-  --warning-main: #facc15;
-  --warning-light: #fde047;
-  --warning-dark: #a16207;
-  --warning-contrast: #1f1300;
-
-  --uxdsl__surface__main: #fdfcf8;
-  --uxdsl__surface__light: #ffffff;
-  --uxdsl__surface__dark: #e7e1cf;
-  --uxdsl__surface__contrast: #0f172a;
-  */
-
-  /* Bridge aliases to canonical DS tokens */
-  /*
-  --uxdsl__palette__primary-main: var(--primary-main);
-  --uxdsl__palette__primary-light: var(--primary-light);
-  --uxdsl__palette__primary-dark: var(--primary-dark);
-  --uxdsl__palette__primary-contrast: var(--primary-contrast);
-
-  --uxdsl__palette__secondary-main: var(--secondary-main);
-  --uxdsl__palette__secondary-light: var(--secondary-light);
-  --uxdsl__palette__secondary-dark: var(--secondary-dark);
-  --uxdsl__palette__secondary-contrast: var(--secondary-contrast);
-
-  --uxdsl__palette__success-main: var(--success-main);
-  --uxdsl__palette__success-light: var(--success-light);
-  --uxdsl__palette__success-dark: var(--success-dark);
-  --uxdsl__palette__success-contrast: var(--success-contrast);
-
-  --uxdsl__palette__warning-main: var(--warning-main);
-  --uxdsl__palette__warning-light: var(--warning-light);
-  --uxdsl__palette__warning-dark: var(--warning-dark);
-  --uxdsl__palette__warning-contrast: var(--warning-contrast);
-
-  --uxdsl__palette__surface-main: var(--uxdsl__surface__main);
-  --uxdsl__palette__surface-light: var(--uxdsl__surface__light);
-  --uxdsl__palette__surface-dark: var(--uxdsl__surface__dark);
-  --uxdsl__palette__surface-contrast: var(--uxdsl__surface__contrast);
-  */
-
-  /* =============================
-     Typography + font families
-     ============================= */
-  /*
-  --uxdsl__font__ui: cursive, "Space Grotesk", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --uxdsl__font__ui-2: fantasy, "Segoe UI", system-ui, -apple-system, sans-serif;
-  */
-  --uxdsl__font__code: "JetBrains Mono", "SF Mono", Menlo, monospace;
-
-  /*
-  --uxdsl__typography__h1-size: xs(36px) sm(40px) md(48px) lg(56px) xl(64px);
-  --uxdsl__typography__h1-weight: 700;
-  --uxdsl__typography__h1-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h2-size: xs(30px) sm(32px) md(40px) lg(48px) xl(56px);
-  --uxdsl__typography__h2-weight: 700;
-  --uxdsl__typography__h2-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h3-size: xs(24px) sm(28px) md(32px) lg(36px) xl(40px);
-  --uxdsl__typography__h3-weight: 600;
-  --uxdsl__typography__h3-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h4-size: xs(20px) sm(22px) md(24px) lg(28px) xl(32px);
-  --uxdsl__typography__h4-weight: 600;
-  --uxdsl__typography__h4-font-family: var(--uxdsl__font__ui);
-
-  --uxdsl__typography__h5-size: xs(18px) sm(20px) md(22px) lg(24px) xl(28px);
-  --uxdsl__typography__h5-weight: 600;
-  --uxdsl__typography__h5-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-
-  --uxdsl__typography__h6-size: xs(16px) sm(18px) md(20px) lg(22px) xl(24px);
-  --uxdsl__typography__h6-weight: 600;
-  --uxdsl__typography__h6-font-family: var(--uxdsl__font__ui-2, var(--uxdsl__font__ui));
-  */
-
-  /* =============================
-     Custom spacing scale (1–12)
-     ============================= */
-  /* Moved to uxdsl.theme.json */
-  /*
-  --uxdsl__space__1: 0.175rem;
-  --uxdsl__space__2: 0.35rem;
-  --uxdsl__space__3: 0.55rem;
-  --uxdsl__space__4: 0.8rem;
-  --uxdsl__space__5: 1rem;
-  --uxdsl__space__6: 1.35rem;
-  --uxdsl__space__7: 1.75rem;
-  --uxdsl__space__8: 2.25rem;
-  --uxdsl__space__9: 2.75rem;
-  --uxdsl__space__10: 3.5rem;
-  --uxdsl__space__11: 4.25rem;
-  --uxdsl__space__12: 5rem;
-  */
-
-  /* Radius overrides */
-  --uxdsl__radius__full: 9999px;
-}
-/* =============================
-   Density tokens (sample overrides)
-   ============================= */
+   Nothing lives here any more (MIG-B7-17 phase B): the playground's theme is the JSON in
+   uxdsl.theme.*.json, merged over postcss-uxdsl/theme/base.json by themes.js. What this file
+   held was dead:
+   - about 95 lines of commented-out palette aliases, font families, a typography scale and a
+     spacing scale from before the theme moved to JSON;
+   - `--uxdsl__font__code` and `--uxdsl__radius__full` on :root. The generated theme's own
+     :root comes later in the same stylesheet and sets --uxdsl__font__code back to the theme's
+     value (checked in Chrome: the computed value was `monospace`, never the JetBrains Mono
+     written here), and nothing reads --uxdsl__radius__full (radius(full) compiles to 9999px);
+   - an @theme block of density-1..6 overrides, which the JSON densities replace (JSON
+     overrides legacy @theme; the compiled Density rules follow the JSON progression).
+   To change a token, change the theme JSON. The file stays because generate-uxdsl-entry.js
+   imports it first, by name. */
 /* The "AI implementation guide" section that closes each documentation page.
    Was AgentGuidance.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl is
    global. Stable spacing uses space(); the code panel and edge use Color identities, dark
@@ -1230,6 +1131,17 @@ html, body {
   background: color-mix(in srgb, var(--uxdsl__color__white) 20%, transparent);
   transform: scale(1.05);
 }
+/* MIG-B7-17 phase B (4): each theme button's ring color was an inline --theme-color with a hex
+   literal. They are swatches of *other* themes, which the active Palette cannot give: Colors. */
+#AppHeader .theme-color-btn--default {
+  --theme-color: var(--uxdsl__color__purple-600);
+}
+#AppHeader .theme-color-btn--green {
+  --theme-color: var(--uxdsl__color__green-600);
+}
+#AppHeader .theme-color-btn--slate {
+  --theme-color: var(--uxdsl__color__slate-800);
+}
 .editor-content {
   padding: var(--uxdsl__density__6);
   display: grid;
@@ -1241,6 +1153,26 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: var(--uxdsl__density__2);
+}
+/* MIG-B7-17 phase B (4): the dialog's frame was inline style={{}} in BreakpointEditor.tsx. */
+.breakpoint-editor__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+}
+.breakpoint-editor__dialog {
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__space__7);
+  border-radius: 1rem;
+  width: min(560px, 90vw);
+}
+.breakpoint-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--uxdsl__space__5);
 }
 /* ButtonDemo component styles - Scoped */
 #ButtonDemo {
@@ -1282,6 +1214,14 @@ html, body {
   .card:hover { transform: translateY(-2px); box-shadow: var(--uxdsl__shadow__3); }
   .card__title { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0 0 var(--uxdsl__space__2) 0; }
   .card__content { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 80%, transparent); }
+}
+/* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
+   CodeBlock.tsx. */
+.code-block-frame {
+  border-radius: var(--uxdsl__radius__2);
+  overflow: hidden;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  font-size: 0.9rem;
 }
 /* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
    classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
@@ -2246,6 +2186,28 @@ html, body {
         background: var(--uxdsl__color__gray-900);
       }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoColors.tsx (the text color of each chip
+   and of the live preview is computed at runtime and stays inline). */
+#DemoColors .color-token {
+  position: relative;
+}
+.color-picker-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+.color-live-preview {
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__space__2);
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  transition: all 0.2s ease;
+}
 /* DemoDensity styles - Scoped */
 #DemoDensity {
   .density-section { display: flex; flex-direction: column; gap: var(--uxdsl__density__4); }
@@ -2669,6 +2631,24 @@ html, body {
     background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 15%, transparent);
     z-index: 10; /* Ensure it's on top if possible, or at least prominent */
     box-shadow: 0 0 0 1px var(--uxdsl__palette__surface-main); /* Small outline to separate */
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoDensity.tsx. */
+  .density-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--uxdsl__space__7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: var(--uxdsl__space__6);
   }
 }
 /* Simplified DemoPalette styles - Scoped */
@@ -3261,6 +3241,28 @@ html, body {
         color: var(--uxdsl__palette__surface-dark)
     }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPalette.tsx. */
+#DemoPalette .palette-section__block {
+  margin-bottom: 3rem;
+}
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPaletteConfig.tsx (each chip's text color
+   is computed at runtime and stays inline). .color-picker-overlay lives in DemoColors.uxdsl. */
+.palette-token {
+  position: relative;
+}
+.palette-token .token-match {
+  position: absolute;
+  top: var(--uxdsl__space__3);
+  right: var(--uxdsl__space__3);
+  font-size: 0.65em;
+  opacity: 0.8;
+  font-weight: bold;
+  pointer-events: none;
+}
+.demo-toolbar-hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
 /* DemoProductivity styles - Scoped */
 #DemoProductivity {
   .prod-container {
@@ -3685,6 +3687,24 @@ html, body {
     max-width: 600px; /* Thinner code block */
   }
 }
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoProductivity.tsx. */
+.productivity-controls {
+  margin-bottom: var(--uxdsl__space__7);
+}
+.productivity-controls__label {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__5);
+}
+.productivity-controls__range {
+  flex: 1;
+}
+.demo-code-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__7);
+  margin-bottom: var(--uxdsl__space__7);
+}
 /* DemoShadows styles - Scoped */
 #DemoShadows {
   .demo-shadows {
@@ -3888,8 +3908,7 @@ html, body {
   .concentric-ring.is-hovered {
     border-color: var(--uxdsl__palette__secondary-main);
     background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 10%, transparent);
-    /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
-    /* z-index: 50 !important; */
+    /* No z-index boost: it let outer rings obscure inner rings on hover. */
     box-shadow: 0 0 0 1px var(--uxdsl__palette__secondary-main);
   }
 
@@ -4189,6 +4208,24 @@ html, body {
       width: var(--uxdsl__space__16);
       height: var(--uxdsl__space__16);
     }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoSpacing.tsx. */
+  .spacing-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--uxdsl__space__7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: var(--uxdsl__space__6);
+  }
 }
 /* DemoSurfaces styles - Scoped */
 #DemoSurfaces {
@@ -6090,6 +6127,89 @@ html, body {
   padding: var(--uxdsl__space__4);
   border-bottom: 1px solid var(--uxdsl__color__gray-400);
 }
+/* The Density and Space edit dialogs (DemoDensity.tsx, DemoSpacing.tsx). MIG-B7-17 phase B (4):
+   these rules were inline style={{}} in both components, written twice. Values on the scale use
+   space(); the scrim and shadow use Color identities. Still a hand-styled dialog, button and
+   input rather than @ds-surface/@ds-button/@ds-input: adopting the roles changes how it looks and
+   is a design decision for the page review (phase D). */
+.edit-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.edit-dialog {
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__space__7);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--uxdsl__color__black) 20%, transparent);
+}
+.edit-dialog--scroll {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.edit-dialog .edit-dialog__title {
+  margin-top: 0;
+}
+.edit-dialog__field {
+  margin-bottom: var(--uxdsl__space__6);
+}
+.edit-dialog__label {
+  display: block;
+  margin-bottom: var(--uxdsl__space__3);
+  font-weight: bold;
+}
+.edit-dialog__fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__5);
+}
+.edit-dialog__row {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__5);
+}
+.edit-dialog__breakpoint {
+  width: 30px;
+  font-weight: bold;
+  opacity: 0.7;
+}
+.edit-dialog__input {
+  padding: var(--uxdsl__space__3);
+  border-radius: 4px;
+  border: 1px solid var(--uxdsl__color__gray-300);
+}
+.edit-dialog__input--full {
+  width: 100%;
+}
+.edit-dialog__input--grow {
+  flex: 1;
+}
+.edit-dialog__actions {
+  display: flex;
+  gap: var(--uxdsl__space__5);
+  justify-content: flex-end;
+}
+.edit-dialog__actions--spaced {
+  margin-top: var(--uxdsl__space__7);
+}
+.edit-dialog__cancel {
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__5);
+  cursor: pointer;
+}
+.edit-dialog__save {
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__5);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__color__white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
 .hero-background {
   position: absolute;
   inset: 0;
@@ -6300,6 +6420,16 @@ html, body {
 }
 .home-demos__toggle:hover { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
 .home-demos__toggle.is-selected, .home-demos__toggle[aria-pressed="true"], .home-demos__toggle[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-secondary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+/* MIG-B7-17 phase B (4): was inline style={{}} on DocsLink in HomeInteractiveDemos.tsx. */
+a.docs-link {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__space__2);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__primary-main);
+  text-decoration: none;
+  font-weight: 600;
+}
 /* Demo layout only; input visuals and states come from the shared engine. */
 #InputDemo {
   .section { margin-block: var(--uxdsl__density__3); }
@@ -6389,6 +6519,11 @@ html, body {
 .InteractiveDemoContainer__bodyInner {
   padding: var(--uxdsl__density__4);
   flex: 1;
+}
+/* MIG-B7-17 phase B (4): was inline style={{}} in InteractiveLogo.tsx. The particles may move
+   slightly outside the SVG box. */
+svg.interactive-logo {
+  overflow: visible;
 }
 /* NavigationCardLink Styles */
 .navigation-card-link {
@@ -6775,6 +6910,8 @@ html, body {
 }
 /* Palette Playground Scoped Styles */
 #PalettePlayground {
+    height: 100%; /* MIG-B7-17 phase B (4): was inline style={{}} on the root */
+
     .playground-wrapper {
         display: flex;
         flex-direction: column;
@@ -6881,6 +7018,137 @@ html, body {
         font-family: monospace;
         color: var(--uxdsl__palette__neutral-light);
     }
+
+  /* MIG-B7-17 phase B (4): the toolbar, the preview's static half and the "CSS Usage" panel were
+     inline style={{}} in PalettePlayground.tsx (the preview's two colors are chosen at runtime and
+     stay inline). Values on the scale use space(), palette reads use palette(). */
+  .pp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--uxdsl__space__5);
+    width: 100%;
+  }
+
+  .pp-toolbar__column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__3);
+    flex: 1 1 200px;
+  }
+
+  .pp-toolbar__heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--uxdsl__palette__text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-toolbar__row {
+    display: flex;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .control-group.pp-toolbar__control {
+    flex: 1;
+  }
+
+  .control-label.pp-toolbar__label {
+    font-size: 0.7rem;
+  }
+
+  .control-select.pp-toolbar__select {
+    padding: var(--uxdsl__space__2);
+    font-size: 0.8rem;
+  }
+
+  .live-preview.pp-preview {
+    padding: var(--uxdsl__space__4);
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .pp-usage {
+    margin-top: var(--uxdsl__space__6);
+    padding: var(--uxdsl__space__5);
+    background: var(--uxdsl__palette__surface-light);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    border-radius: 6px;
+    text-align: left;
+  }
+
+  .pp-usage__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__title {
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-code {
+    background: var(--uxdsl__palette__surface-dark);
+    padding: var(--uxdsl__space__4);
+    border-radius: 6px;
+    font-family: var(--uxdsl__font__code);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__2);
+    overflow-x: auto;
+    border: 1px solid var(--uxdsl__palette__neutral-dark);
+  }
+
+  .pp-code__line {
+    display: flex;
+    align-items: center;
+  }
+
+  .pp-code__indent {
+    padding-left: var(--uxdsl__space__5);
+  }
+
+  .pp-code__selector {
+    color: var(--uxdsl__palette__secondary-light);
+  }
+
+  .pp-code__property {
+    color: var(--uxdsl__palette__primary-light);
+  }
+
+  .pp-code__function {
+    color: var(--uxdsl__palette__text-primary);
+  }
+
+  .pp-code__argument {
+    color: var(--uxdsl__palette__warning-light);
+  }
+
+  .pp-code__punct {
+    color: var(--uxdsl__palette__text-disabled);
+  }
+
+  .pp-code__gap {
+    margin-left: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__note {
+    margin-top: var(--uxdsl__space__4);
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    line-height: 1.5;
+  }
+
+  .pp-usage__note strong {
+    color: var(--uxdsl__palette__text-primary);
+  }
 }
 .inspector-grid {
   display: grid;
@@ -6909,6 +7177,110 @@ html, body {
   display: flex;
   gap: var(--uxdsl__density__2);
   align-items: center;
+}
+/* MIG-B7-17 phase B (4): these rules were inline style={{}} in PaletteThemeExplorer.tsx; each
+   swatch's color is read from the token at runtime and stays inline, and the selected option's
+   border/opacity ternary is now .is-selected. */
+.pte {
+  padding-top: var(--uxdsl__space__6);
+}
+.pte-detail {
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 8px;
+  padding: var(--uxdsl__space__6);
+  margin-bottom: var(--uxdsl__space__7);
+}
+.pte-detail__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--uxdsl__space__4);
+  margin-bottom: var(--uxdsl__space__5);
+}
+.pte-detail h3.pte-detail__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--uxdsl__palette__text-primary);
+  margin: 0;
+}
+.pte-detail__subtitle {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-detail p.pte-detail__hint {
+  margin-top: var(--uxdsl__space__4);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+.pte-swatch__color {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 10%, transparent);
+}
+.pte-swatch__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.pte-item__variant {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+.pte-item__hex {
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.pte-item__rgb {
+  font-size: 0.6rem;
+  color: var(--uxdsl__palette__text-disabled);
+}
+.pte h5.pte-selector__heading {
+  font-size: 0.7rem;
+  color: var(--uxdsl__palette__text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: var(--uxdsl__space__4);
+}
+.pte-selector__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uxdsl__space__5);
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 6px;
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__4);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.2s;
+}
+.pte-selector__option.is-selected {
+  border-color: var(--uxdsl__palette__primary-main);
+  opacity: 1;
+}
+.pte-selector__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--uxdsl__palette__text-primary);
+}
+.pte-selector__strip {
+  display: flex;
+  gap: var(--uxdsl__space__1);
+  width: 100px;
+}
+.pte-selector__chip {
+  flex: 1;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 5%, transparent);
 }
 .live-preview-box {
   background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 5%, transparent);
@@ -7686,6 +8058,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   position: relative;
   z-index: 2;
 }
+/* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
+.responsive-syntax-explainer {
+  height: 100%;
+}
 /* SideNav Styles - CSS Driven Responsiveness - Scoped */
 #SideNav {
   /* --- Base Styles (Mobile Default) --- */
@@ -8015,6 +8391,68 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   0%, 100% { opacity: 0.5; }
   50% { opacity: 1; }
 }
+/* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
+   style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
+   The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
+.config-editor__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--uxdsl__space__3);
+  flex-wrap: wrap;
+}
+.config-editor__hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__buttons {
+  display: flex;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__button {
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  background: var(--uxdsl__palette__surface-light);
+  color: var(--uxdsl__palette__text-primary);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.config-editor__button--primary {
+  border-color: var(--uxdsl__palette__primary-main);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+}
+.config-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__textarea {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__3);
+  background: var(--uxdsl__palette__surface-main);
+  color: var(--uxdsl__palette__text-primary);
+}
+.config-editor__textarea.is-invalid {
+  border-color: var(--uxdsl__palette__error-main);
+}
+.config-editor__status {
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__status.is-invalid {
+  color: var(--uxdsl__palette__error-main);
+}
 /* UXDSLCardDemo styles - Scoped */
 .uxdsl-demo-wrapper {
   display: flex;
@@ -8161,6 +8599,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     color: var(--uxdsl__palette__neutral-light);
   }
 }
+/* MIG-B7-17 phase B (4): was inline style={{ marginLeft: 8 }} on the ArrowRight icon. */
+.btn-primary__icon {
+  margin-left: var(--uxdsl__space__3);
+}
 /* Breakpoints Page Styles - Scoped */
 #BreakpointsPage {
   .demo-section {
@@ -8261,6 +8703,13 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     font-size: 0.85em;
     color: var(--uxdsl__palette__primary-dark);
   }
+}
+/* /docs/palette. MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. */
+.palette-docs__usage {
+  margin-bottom: 3rem;
+}
+.palette-docs__legacy-editor {
+  margin-top: 3rem;
 }
 /* QuickStart styles - Scoped - Sober & Futuristic */
 #QuickStartPage {
@@ -8394,6 +8843,52 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     border-radius: var(--uxdsl__radius__1);
     margin-bottom: var(--uxdsl__density__8);
     color: var(--uxdsl__palette__text-primary);
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. #646cff is Vite's own brand color
+     (another product's identity, not this theme's): kept literal on purpose. */
+  .warning-blockquote__title {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .warning-blockquote__body {
+    margin: var(--uxdsl__space__3) 0 0 0;
+    font-size: 0.9rem;
+  }
+
+  .step-title.integrations-title {
+    margin-top: var(--uxdsl__space__7);
+    margin-bottom: var(--uxdsl__space__5);
+  }
+
+  .integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: var(--uxdsl__space__5);
+    margin-bottom: 3rem;
+  }
+
+  .step-card.step-card--vite {
+    border-left-color: #646cff;
+  }
+
+  .section-rule {
+    border-color: var(--uxdsl__palette__neutral-main);
+    opacity: 0.3;
+    margin: var(--uxdsl__space__7) 0;
+  }
+
+  .section-rule--wide {
+    margin: 3rem 0;
+  }
+
+  .inline-link {
+    color: var(--uxdsl__palette__primary-main);
+    text-decoration: underline;
   }
 }
 /* Typography Docs Page Styles - Scoped */
@@ -8809,7 +9304,6 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .intro-section {
     width: 100%;
-    /* max-width: 800px;  Optional: constrain text width for readability if needed, but user asked for full available */
     margin: 0;
   }
 
@@ -8868,8 +9362,6 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 
   .demo-wrapper-scale {
     width: 100%;
-    /* Optional: Scale down slightly if it feels too big for the welcome page */
-    /* transform: scale(0.9); */
   }
 
   .welcome-footer {
@@ -8915,6 +9407,25 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
     color: var(--uxdsl__palette__text-disabled);
   }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in app/page.tsx. */
+  .hero-surface {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-prompt {
+    position: relative;
+    z-index: 20;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
 }
 /* Productivity Page styles - Scoped */
 #ProductivityPage {
@@ -8935,6 +9446,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     text-decoration: underline;
   }
 }
+/* MIG-B7-17 phase B (4): was inline style={{}} in app/productivity/page.tsx. */
+#ProductivityPage .back-link-row {
+  margin-bottom: var(--uxdsl__space__5);
+}
 /* Theming page styles (UXDSL) - Scoped */
 #ThemingPage {
   /* Reuse the same palette grid/swatches styling as DemoPalette */
@@ -8946,6 +9461,11 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   .palette-swatch .row { display: flex; align-items: baseline; justify-content: space-between; }
   .palette-swatch .label { font-family: var(--uxdsl__typography__small-font-family); font-size: var(--uxdsl__typography__small-size); line-height: var(--uxdsl__typography__small-line); font-weight: var(--uxdsl__typography__small-weight); letter-spacing: var(--uxdsl__typography__small-spacing); margin-block-start: var(--uxdsl__typography__small-margin-block-start); margin-block-end: var(--uxdsl__typography__small-margin-block-end); opacity: 0.75; }
   .palette-swatch .value { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); }
+}
+/* /typography. MIG-B7-17 phase B (4): was inline style={{}} in app/typography/page.tsx. */
+.typography-page__documentation {
+  margin-top: 4rem;
+  max-width: 800px;
 }
 :root { --uxdsl__palette__primary-main: #7e22ce; --uxdsl__palette__primary-light: #a855f7; --uxdsl__palette__primary-dark: #581c87; --uxdsl__palette__primary-contrast: #ffffff; --uxdsl__palette__secondary-main: #db2777; --uxdsl__palette__secondary-light: #f472b6; --uxdsl__palette__secondary-dark: #be185d; --uxdsl__palette__secondary-contrast: #ffffff; --uxdsl__palette__surface-main: #ffffff; --uxdsl__palette__surface-light: #f8fafc; --uxdsl__palette__surface-dark: #8d929a; --uxdsl__palette__surface-contrast: #0f172a; --uxdsl__palette__surface-paper: var(--uxdsl__palette__surface-light); --uxdsl__palette__surface-subtle: var(--uxdsl__palette__surface-dark); --uxdsl__palette__tertiary-main: #68768a; --uxdsl__palette__tertiary-light: #cbd5e1; --uxdsl__palette__tertiary-dark: #68778c; --uxdsl__palette__tertiary-contrast: #000000; --uxdsl__palette__success-main: #15803d; --uxdsl__palette__success-light: #16a34a; --uxdsl__palette__success-dark: #14532d; --uxdsl__palette__success-contrast: #ffffff; --uxdsl__palette__info-main: #0369a1; --uxdsl__palette__info-light: #0284c7; --uxdsl__palette__info-dark: #075985; --uxdsl__palette__info-contrast: #ffffff; --uxdsl__palette__warning-main: #d97706; --uxdsl__palette__warning-light: #fbbf24; --uxdsl__palette__warning-dark: #c25e0a; --uxdsl__palette__warning-contrast: #000000; --uxdsl__palette__error-main: #dc2626; --uxdsl__palette__error-light: #ef4444; --uxdsl__palette__error-dark: #b91c1c; --uxdsl__palette__error-contrast: #ffffff; --uxdsl__palette__dark-main: #0f172a; --uxdsl__palette__dark-light: #1e293b; --uxdsl__palette__dark-dark: #020617; --uxdsl__palette__dark-contrast: #ffffff; --uxdsl__palette__neutral-main: #64748b; --uxdsl__palette__neutral-light: #cbd5e1; --uxdsl__palette__neutral-dark: #334155; --uxdsl__palette__neutral-contrast: #ffffff; --uxdsl__palette__light-main: #f1f5f9; --uxdsl__palette__light-light: #ffffff; --uxdsl__palette__light-dark: #e2e8f0; --uxdsl__palette__light-contrast: #0f172a; --uxdsl__palette__text-main: var(--uxdsl__palette__text-primary); --uxdsl__palette__text-primary: var(--uxdsl__palette__surface-contrast); --uxdsl__palette__text-secondary: var(--uxdsl__palette__neutral-dark); --uxdsl__palette__text-disabled: var(--uxdsl__palette__tertiary-main); --uxdsl__palette__divider-main: var(--uxdsl__palette__surface-dark); --uxdsl__palette__action-disabled: var(--uxdsl__palette__text-disabled); --uxdsl__color__gray-300: #CBD5E1; --uxdsl__color__gray-400: #94A3B8; --uxdsl__color__gray-500: #64748B; --uxdsl__color__gray-600: #475569; --uxdsl__space__1: 0.125rem; --uxdsl__space__2: 0.25rem; --uxdsl__space__3: 0.5rem; --uxdsl__space__4: 0.75rem; --uxdsl__space__5: 1rem; --uxdsl__space__6: 1.5rem; --uxdsl__space__7: 2rem; --uxdsl__space__8: 2.5rem; --uxdsl__space__9: 3.125rem; --uxdsl__space__10: 3.875rem; --uxdsl__space__11: 4.875rem; --uxdsl__space__12: 6.125rem; --uxdsl__space__13: 7.75rem; --uxdsl__space__14: 9.75rem; --uxdsl__space__15: 12.25rem; --uxdsl__space__16: 15.375rem; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --uxdsl__palette__primary-main: #ddbfff; --uxdsl__palette__primary-light: #d8b4fe; --uxdsl__palette__primary-dark: #a855f7; --uxdsl__palette__primary-contrast: #000000; --uxdsl__palette__secondary-main: #ffb7d8; --uxdsl__palette__secondary-dark: #db3b74; --uxdsl__palette__secondary-contrast: #000000; --uxdsl__palette__surface-main: #020617; --uxdsl__palette__surface-light: #0f172a; --uxdsl__palette__surface-dark: #606060; --uxdsl__palette__surface-contrast: #f8fafc; --uxdsl__palette__neutral-main: #c0cfe5; --uxdsl__palette__neutral-light: #cbd5e1; --uxdsl__palette__neutral-dark: #475569; --uxdsl__palette__neutral-contrast: #000000; --uxdsl__palette__tertiary-main: #bccce2; --uxdsl__palette__tertiary-dark: #6b7a8f; --uxdsl__palette__tertiary-contrast: #000000; --uxdsl__palette__success-main: #52e586; --uxdsl__palette__success-dark: #4c875e; --uxdsl__palette__success-contrast: #000000; --uxdsl__palette__info-main: #82d4ff; --uxdsl__palette__info-dark: #3a7fae; --uxdsl__palette__info-contrast: #000000; --uxdsl__palette__warning-main: #fbbf24; --uxdsl__palette__warning-contrast: #000000; --uxdsl__palette__error-main: #ffb9b6; --uxdsl__palette__error-dark: #dd443c; --uxdsl__palette__error-contrast: #000000; --uxdsl__palette__light-main: #1e293b; --uxdsl__palette__light-contrast: #f8fafc; --uxdsl__palette__dark-main: #000000; --uxdsl__palette__dark-contrast: #f8fafc; } }

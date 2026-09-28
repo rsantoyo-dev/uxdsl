@@ -24,6 +24,7 @@
 @import '../components/BreakpointEditor.uxdsl';
 @import '../components/ButtonDemo.uxdsl';
 @import '../components/CardDemo.uxdsl';
+@import '../components/CodeBlock.uxdsl';
 @import '../components/ColorDocumentation.uxdsl';
 @import '../components/DemoBorders.uxdsl';
 @import '../components/DemoBreakpoints.uxdsl';
@@ -40,11 +41,13 @@
 @import '../components/DensityExplanation.uxdsl';
 @import '../components/DensityPlayground.uxdsl';
 @import '../components/DocumentationSection.uxdsl';
+@import '../components/EditDialog.uxdsl';
 @import '../components/HeroBackground.uxdsl';
 @import '../components/HomeDemo.uxdsl';
 @import '../components/HomeInteractiveDemos.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/InteractiveDemoContainer.uxdsl';
+@import '../components/InteractiveLogo.uxdsl';
 @import '../components/NavigationCardLink.uxdsl';
 @import '../components/PageTitle.uxdsl';
 @import '../components/PageToolbar.uxdsl';
@@ -55,11 +58,14 @@
 @import '../components/SideNav.uxdsl';
 @import '../components/SpacingExplanation.uxdsl';
 @import '../components/ThemeBackground.uxdsl';
+@import '../components/ThemeConfigJsonEditor.uxdsl';
 @import '../components/UXDSLCardDemo.uxdsl';
 @import './docs/breakpoints/breakpoints.uxdsl';
+@import './docs/palette/palette-docs.uxdsl';
 @import './docs/quick-start/quick-start.uxdsl';
 @import './docs/typography/typography.uxdsl';
 @import './not-found.uxdsl';
 @import './page.uxdsl';
 @import './productivity/page.uxdsl';
 @import './theming/page.uxdsl';
+@import './typography/typography-page.uxdsl';

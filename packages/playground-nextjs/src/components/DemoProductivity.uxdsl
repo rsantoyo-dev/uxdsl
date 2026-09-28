@@ -322,3 +322,25 @@
     max-width: 600px; /* Thinner code block */
   }
 }
+
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoProductivity.tsx. */
+.productivity-controls {
+  margin-bottom: space(7);
+}
+
+.productivity-controls__label {
+  display: flex;
+  align-items: center;
+  gap: space(5);
+}
+
+.productivity-controls__range {
+  flex: 1;
+}
+
+.demo-code-stack {
+  display: flex;
+  flex-direction: column;
+  gap: space(7);
+  margin-bottom: space(7);
+}

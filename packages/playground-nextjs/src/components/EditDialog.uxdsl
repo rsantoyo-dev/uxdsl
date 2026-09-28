@@ -1,0 +1,98 @@
+/* The Density and Space edit dialogs (DemoDensity.tsx, DemoSpacing.tsx). MIG-B7-17 phase B (4):
+   these rules were inline style={{}} in both components, written twice. Values on the scale use
+   space(); the scrim and shadow use Color identities. Still a hand-styled dialog, button and
+   input rather than @ds-surface/@ds-button/@ds-input: adopting the roles changes how it looks and
+   is a design decision for the page review (phase D). */
+.edit-dialog__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color(black, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.edit-dialog {
+  background: palette(surface-main);
+  padding: space(7);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 4px 20px color(black, 0.2);
+}
+
+.edit-dialog--scroll {
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.edit-dialog .edit-dialog__title {
+  margin-top: 0;
+}
+
+.edit-dialog__field {
+  margin-bottom: space(6);
+}
+
+.edit-dialog__label {
+  display: block;
+  margin-bottom: space(3);
+  font-weight: bold;
+}
+
+.edit-dialog__fields {
+  display: flex;
+  flex-direction: column;
+  gap: space(5);
+}
+
+.edit-dialog__row {
+  display: flex;
+  align-items: center;
+  gap: space(5);
+}
+
+.edit-dialog__breakpoint {
+  width: 30px;
+  font-weight: bold;
+  opacity: 0.7;
+}
+
+.edit-dialog__input {
+  padding: space(3);
+  border-radius: 4px;
+  border: 1px solid color(gray-300);
+}
+
+.edit-dialog__input--full {
+  width: 100%;
+}
+
+.edit-dialog__input--grow {
+  flex: 1;
+}
+
+.edit-dialog__actions {
+  display: flex;
+  gap: space(5);
+  justify-content: flex-end;
+}
+
+.edit-dialog__actions--spaced {
+  margin-top: space(7);
+}
+
+.edit-dialog__cancel {
+  padding: space(3) space(5);
+  cursor: pointer;
+}
+
+.edit-dialog__save {
+  padding: space(3) space(5);
+  background: palette(primary-main);
+  color: color(white);
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
