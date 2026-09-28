@@ -943,12 +943,35 @@ where nothing used to help. `includeThem`, `fontsize`, `focusVisible` and
 `palete` all compile to *nothing at all*, with no error, because an unknown key
 is simply not read. Since beta.6 the editor catches them.
 
-**In a plain `uxdsl.config.cjs`**, with no TypeScript in the project:
+Setting this up in a consuming app — which of these `uxdsl init` already writes,
+the `$schema` path in a monorepo, and the VS Code extension for `.uxdsl` files —
+is covered from the start in
+[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
+
+**In a plain `uxdsl.config.cjs`**, with no TypeScript in the project — the form
+`uxdsl init` writes, type-only, nothing loaded at run time:
 
 ```js
+// @ts-check
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+const config = {
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  includeTheme: true,
+};
+
+module.exports = config;
+```
+
+`// @ts-check` is what makes the editor report errors in plain JavaScript, and
+the type has to sit on the `const`: placed directly above `module.exports = {…}`
+it checks nothing. Or, with a run-time `require` that needs `postcss-uxdsl`
+resolvable from the project root (under pnpm, a direct dependency):
+
+```js
+// @ts-check
 const { defineConfig } = require('postcss-uxdsl/config');
 
-/** @type {import('postcss-uxdsl/config').UxdslConfig} */
 module.exports = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',

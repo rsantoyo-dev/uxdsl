@@ -105,6 +105,27 @@ FEAT-009, MIG-B7-01 (continued — diagnosis and scope):
   `neutral.dark` for dark mode the way MIG-B6-29 phase 3 reviewed other
   colors.
 
+FEAT-009, MIG-B7-12 (editor support for consuming apps; no visual change):
+
+- **Changed (CLI):** the `uxdsl.config.cjs` that `uxdsl init` writes (plain,
+  `--multi`, Next.js and Vite alike) is now typed: `// @ts-check` plus a JSDoc
+  `@type {import('postcss-uxdsl/config').UxdslConfig}` on a `const`, exported
+  with `module.exports = config`. The exported object is the same as before, so
+  the compiled CSS and the build log are byte-identical (tested per branch). It
+  is type-only: no `require('postcss-uxdsl/config')`, because under pnpm's strict
+  `node_modules` a project that installed only `uxdsl-cli` cannot resolve it
+  from its root, and that `require` failed the build. An existing config is
+  never touched.
+- **Changed (CLI):** `init`'s "Next steps" end with where to find editor
+  support. `init` still writes no theme file and no `.vscode/`: a
+  `uxdsl.theme.json` holding only `$schema` compiles to identical CSS but adds
+  `[uxdsl] Theme config detected` to every build.
+- **Docs:** the form previously documented for a hand-written config —
+  `/** @type {…} */` directly above `module.exports = defineConfig({…})` — works
+  because of `defineConfig`; the `@type` in that position checks nothing on its
+  own, and without `// @ts-check` (or `checkJs`) an editor reports nothing at
+  all. The uxdsl-cli README has a new "Editor support" section.
+
 ## 0.5.0-beta.6 — 2026-09-23
 
 FEAT-008, MIG-B6-16 (partial overrides, made explicit):

@@ -82,7 +82,11 @@ release script accepts beta versions and updates the CLI's actual dependency
 on `postcss-uxdsl`.
 
 VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
-and Input directives using generated shared-language metadata. CLI consumers
+and Input directives using generated shared-language metadata. That comes from
+the `uxdsl-vscode` extension, which is not on a marketplace yet: it is installed
+from a `.vsix` built from `packages/uxdsl-vscode`. How to install it, and the
+typed config and theme `$schema` that work without it, are in
+[uxdsl-cli's "Editor support"](packages/uxdsl-cli/README.md#editor-support). CLI consumers
 must use the same theme overrides across integrations and regenerate their CSS when
 adopting the namespace; no automatic legacy aliases are provided.
 

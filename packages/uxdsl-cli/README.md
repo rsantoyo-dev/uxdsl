@@ -62,6 +62,130 @@ starting from the single-entry form and hand-writing `builds` from the
 "Multiple entries, one shared theme" section below. Add more entries to the
 array as the project grows.
 
+## Editor support
+
+Three kinds of help, from two mechanisms. None of them changes what compiles.
+
+| What you get | In which file | How you get it |
+| --- | --- | --- |
+| Types, completion and typo detection | `uxdsl.config.cjs` | `init` already writes it (TypeScript types, through JSDoc) |
+| Completion and validation of families, fields and states | your theme JSON | one `$schema` line (JSON Schema shipped in `postcss-uxdsl`) |
+| Highlighting and completion | `.uxdsl` files | the `uxdsl-vscode` extension, installed from a `.vsix` |
+
+### The build config: types from `init`
+
+The config `init` writes starts like this:
+
+```js
+// @ts-check
+/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+const config = {
+  entry: './src/uxdsl-entry.uxdsl',
+  outFile: './src/uxdsl.css',
+  watch: ['src/**/*.uxdsl', 'src/**/*.css'],
+};
+
+module.exports = config;
+```
+
+A mistyped key (`includeThem: false`, which the CLI would silently ignore) or a
+wrong value type is then underlined as you type, in VS Code with no extension
+and no TypeScript in the project. Each of the three details is load-bearing,
+and each was measured against TypeScript 5.9 before `init` adopted it:
+
+- **`// @ts-check`.** Editors do not check plain JavaScript by default; without
+  this line the type only completes, it does not report the typo.
+- **The type sits on a `const`.** Written as `/** @type {…} */` directly above
+  `module.exports = {…}`, TypeScript checks nothing — not a typo, not even
+  `entry: 123`.
+- **It is a type import, not a `require`.** Nothing runs at build time. If the
+  editor cannot resolve `postcss-uxdsl` from the project root, you lose the type
+  (the editor reports *Cannot find module*); the build is unaffected.
+
+To get the types, install `postcss-uxdsl` as a direct dependency of the project,
+as the installation step above does. Under pnpm's strict `node_modules`, a
+project that installed only `uxdsl-cli` cannot resolve it from its root. This is
+also why `init` does not use `defineConfig`: `require('postcss-uxdsl/config')` in
+that project **fails the build** instead of only losing the type (tested under
+npm 10.8, pnpm 9.15 and Yarn 1.22). An existing config can adopt the same form by
+hand; `init` never rewrites one that exists.
+
+### The theme JSON: `$schema`
+
+`init` does not create a theme file. A `uxdsl.theme.json` containing only
+`$schema` compiles to byte-identical CSS, but it makes every build print
+`[uxdsl] Theme config detected` — so the line is yours to add, in the theme file
+you create when you first override something:
+
+```json
+{
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
+}
+```
+
+The path is relative to the theme file itself. It is correct when the theme sits
+at the project root next to a `node_modules` that contains `postcss-uxdsl` (npm,
+Yarn, and pnpm with the package as a direct dependency). In a monorepo whose
+`node_modules` is hoisted to the workspace root, point it there instead (for
+example `../../node_modules/postcss-uxdsl/schema/theme.schema.json`), or map the
+schema once in the editor instead of in the file — in VS Code,
+`.vscode/settings.json`:
+
+```jsonc
+{
+  "json.schemas": [
+    {
+      "fileMatch": ["uxdsl.theme.json"],
+      "url": "./node_modules/postcss-uxdsl/schema/theme.schema.json"
+    }
+  ]
+}
+```
+
+`$schema` is metadata: it compiles to nothing, and the theme validator does not
+report it as an unknown family. `uxdsl theme --diff` does list it as a value
+from your project, like any other key in the file. The `uxdsl.theme.config.cjs`
+form has no `$schema`; see
+[`postcss-uxdsl`'s "Typed config and theme"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md#typed-config-and-theme-defineconfig-schema)
+for its TypeScript types and for which names the schema closes and which it
+leaves open for your own roles.
+
+### `.uxdsl` files: the VS Code extension
+
+`uxdsl-vscode` highlights `.uxdsl` files and completes, by context: functions
+(`palette()`, `density()`, `radius()`, the breakpoints…) inside a declaration
+value, directives after `@`, and roles, tones and sizes inside
+`@ds-surface(`/`@ds-button(`/`@ds-input(`. It also contributes CSS custom data
+for the `@ds-*` directives to VS Code's CSS language service.
+
+What it does **not** do yet: complete the roles and tones of **your** theme (its
+suggestions come from the built-in default theme — accurate until you add or
+rename roles), live diagnostics, hover, or go-to-definition.
+
+It is not published to a marketplace yet. Today it is installed from a `.vsix`
+built from this repository:
+
+```bash
+git clone https://github.com/rsantoyo-dev/uxdsl.git
+cd uxdsl/packages/uxdsl-vscode
+npm install
+npm run package                               # writes uxdsl-vscode-<version>.vsix
+code --install-extension uxdsl-vscode-*.vsix  # or: Extensions: Install from VSIX...
+```
+
+The extension's own
+[README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-vscode/README.md)
+covers the `files.associations → scss` alternative and its trade-off.
+
+### Other editors
+
+Only VS Code has been tested. The config types are ordinary TypeScript types and
+the theme schema an ordinary JSON Schema, so an editor with a TypeScript language
+server or JSON Schema support should be able to use them, and the extension's
+`uxdsl.custom-data.json` follows VS Code's CSS custom data format — but none of
+that has been verified in WebStorm, Neovim or any other editor.
+
 ## Usage
 
 ### 1. Configuration (Recommended)
@@ -94,37 +218,31 @@ UXDSL's shared defaults:
 
 **Let your editor check it.** An unknown key here is not an error — nothing
 reads it, so `includeThem: false` silently does nothing and the build just
-behaves as if you had never written it. Wrap the object in `defineConfig` and
-add the JSDoc type, and the typo is flagged as you type:
+behaves as if you had never written it. The config `init` writes is already
+typed so the typo is flagged as you type; for a config you write by hand, use
+the same form:
 
 ```js
-const { defineConfig } = require('postcss-uxdsl/config');
-
+// @ts-check
 /** @type {import('postcss-uxdsl/config').UxdslConfig} */
-module.exports = defineConfig({
+const config = {
   entry: './src/app/uxdsl-entry.uxdsl',
   outFile: './src/app/uxdsl.css',
   watch: ['src/**/*.uxdsl'],
-});
+};
+
+module.exports = config;
 ```
 
-This needs no TypeScript in your project — VS Code type-checks JSDoc in plain
-`.js`/`.cjs` files. The type also knows `entry`/`outFile` and `builds` are
-alternatives, not a combination, which is what the CLI enforces at run time.
-
-For the theme file, point `$schema` at the packaged JSON Schema and get the
-same treatment for family, field and state names:
-
-```json
-{
-  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
-  "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
-}
-```
-
-See
-[`postcss-uxdsl`'s README](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/README.md)
-for which names are closed and which stay open for your own roles.
+This needs no TypeScript in your project, but it does need the `// @ts-check`
+line (editors do not check plain JavaScript by default) and the type on a
+`const` (on `module.exports = {…}` it checks nothing). The type also knows
+`entry`/`outFile` and `builds` are alternatives, not a combination, which is
+what the CLI enforces at run time. `defineConfig` from `postcss-uxdsl/config`
+checks the same way, at the cost of a run-time `require` that fails the build
+where `postcss-uxdsl` is not resolvable from the project root. See
+[Editor support](#editor-support) for why each detail matters, and for the
+theme file's `$schema`.
 
 ### 2. Theme configuration (`uxdsl.theme.config.cjs`)
 

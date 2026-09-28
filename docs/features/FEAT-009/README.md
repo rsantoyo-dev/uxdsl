@@ -86,7 +86,7 @@ entrada en `packages/postcss-uxdsl/CHANGELOG.md` con sección `Visual changes`.
 | MIG-B7-09 | [Limpieza del playground](MIG-B7-09-limpieza-playground.md) | `beta.7` | P2 · S-M | — | Pendiente |
 | MIG-B7-10 | [Decisión sobre `!important`](MIG-B7-10-important-comparador.md) | `rc.1` | P2 · S | D-10 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-11 | [Gate hacia `0.5.0-rc.1`](MIG-B7-11-gate-rc1.md) | `rc.1` | P0 · M | todas las demás (12 a 17 siempre; 13 sólo si D-11 = (a)) | Pendiente |
-| MIG-B7-12 | [Editor support para apps consumidoras](MIG-B7-12-editor-support-consumidores.md) | `beta.7` | P1 · M | — (su paso de `.vscode/extensions.json` espera a 05) | Pendiente |
+| MIG-B7-12 | [Editor support para apps consumidoras](MIG-B7-12-editor-support-consumidores.md) | `beta.7` | P1 · M | — (su paso de `.vscode/extensions.json` espera a 05) | **Implementada, PR pendiente de mergear** — paso 5 diferido hasta 05 |
 | MIG-B7-13 | [Editor: completado y hover según el tema del proyecto](MIG-B7-13-editor-tema-del-proyecto.md) | `rc.1` | P2 · L | D-11 | **Bloqueada — esperando decisión del dueño** |
 | MIG-B7-14 | [`@import` de Google Fonts tras `:root`](MIG-B7-14-google-fonts-import-orden.md) | `beta.7` | **P0** · S | — | **Implementada, PR pendiente de mergear** — defecto de beta.6 publicada |
 | MIG-B7-15 | [Actualizar sin sorpresas](MIG-B7-15-actualizar-sin-sorpresas.md) | `beta.7` | P1 · S | — (su paso 3 espera D-12) | Pendiente |

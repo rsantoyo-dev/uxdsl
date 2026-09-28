@@ -700,6 +700,23 @@ different responsibilities; use the shared kind-aware normalizer.
 - **Package integration:** verify the installed version exports the APIs used.
   Avoid stale compiled output masking source changes in a monorepo demo.
 
+## Editor support in a consuming project
+
+`uxdsl init` writes a typed `uxdsl.config.cjs`: `// @ts-check`, then
+`/** @type {import('postcss-uxdsl/config').UxdslConfig} */` on a `const` that is
+exported (FEAT-009's MIG-B7-12). Keep that shape when editing the file: the
+`@type` placed directly above `module.exports = {…}` checks nothing, removing
+`// @ts-check` silences every error, and adding a run-time
+`require('postcss-uxdsl/config')` can fail the build where `postcss-uxdsl` is
+not resolvable from the project root (pnpm, installed only as a dependency of
+`uxdsl-cli`). Do not create a theme file just to hold `$schema`: it compiles to
+the same CSS but adds `[uxdsl] Theme config detected` to every build. Add
+`$schema` to a theme file the project already has or is creating. `.uxdsl`
+highlighting and completion come from the `uxdsl-vscode` extension, which is
+installed from a `.vsix` and completes the built-in default theme's roles, not
+the project's own. The uxdsl-cli README's "Editor support" section is the
+consumer-facing reference.
+
 ## Using this guide in another project
 
 Installing UXDSL from npm does not guarantee an agent reads this repository's
