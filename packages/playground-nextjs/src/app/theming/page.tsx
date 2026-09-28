@@ -18,7 +18,7 @@ export default function ThemingPage() {
         <p>
           To customize a role, change the JSON — for example <code>palette.primary.main</code> — and
           every <code>palette(primary-main)</code> below follows. The Config page edits the active
-          theme&apos;s JSON live.
+          theme&apos;s JSON live; the Runtime page calls the functions behind it.
         </p>
         <div className="palette-grid">
           {['primary','secondary','success','info','warning','error','dark','neutral','light'].map((t) => (

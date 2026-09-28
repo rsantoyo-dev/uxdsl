@@ -21,6 +21,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/docs/borders',
     '/docs/shadows',
     '/docs/productivity',
+    '/docs/runtime',
+    '/docs/contrast',
+    '/docs/cli',
+    '/docs/diagnostics',
   ]
 
   return routes.map((route) => ({

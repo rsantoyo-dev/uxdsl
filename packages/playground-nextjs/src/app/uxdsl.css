@@ -1174,6 +1174,367 @@ html, body {
   justify-content: flex-end;
   gap: var(--uxdsl__space__5);
 }
+/* MIG-B7-17 phase C: the pages that call UXDSL's own tools for real — Runtime, Contrast, CLI,
+   Diagnostics. One stylesheet for the four, written in UXDSL: Density for component spacing,
+   Palette roles for interface color, Surfaces/Buttons/Inputs as roles, configured breakpoints.
+   The terminal panels are dark in both modes on purpose (a terminal), with Color identities,
+   like the code panels of DocumentationSection.uxdsl. */
+.cap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
+}
+@media (min-width: 1024px) {
+.cap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* Small figures (the contrast summary): two across on a phone, three from xl. */
+.cap-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
+}
+@media (min-width: 1280px) {
+.cap-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+}
+.cap-card {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__surface__outlined-radius);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: grid;
+  align-content: start;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
+  margin-block: var(--uxdsl__density__4);
+}
+.cap-card__title {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-size);
+  line-height: var(--uxdsl__typography__h5-line);
+  font-weight: var(--uxdsl__typography__h5-weight);
+  letter-spacing: var(--uxdsl__typography__h5-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  margin: 0;
+}
+.cap-card__subtitle {
+  font-family: var(--uxdsl__typography__h6-font-family);
+  font-size: var(--uxdsl__typography__h6-size);
+  line-height: var(--uxdsl__typography__h6-line);
+  font-weight: var(--uxdsl__typography__h6-weight);
+  letter-spacing: var(--uxdsl__typography__h6-spacing);
+  margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
+  margin: 0;
+}
+.cap-note {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+  margin: 0;
+}
+.cap-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__space__2) var(--uxdsl__density__3);
+  margin: 0;
+}
+@media (min-width: 768px) {
+.cap-facts {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+}
+.cap-facts dt {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cap-facts__row {
+  display: contents;
+}
+.cap-block {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.cap-label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-field { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+}
+.cap-field::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+.cap-field:focus { border: var(--uxdsl__input__outlined-focus-border); }
+.cap-field:invalid, .cap-field[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+.cap-field:disabled, .cap-field[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); }
+.cap-field--code {
+  font-family: var(--uxdsl__font__code, monospace);
+  resize: vertical;
+}
+.cap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+}
+.cap-button { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  text-align: left;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.cap-button:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.cap-button.is-selected, .cap-button[aria-pressed="true"], .cap-button[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+.cap-button--reset { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+}
+.cap-button--reset:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.cap-button--reset.is-selected, .cap-button--reset[aria-pressed="true"], .cap-button--reset[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+.cap-steps {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-steps li {
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-log {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+  overflow-wrap: anywhere;
+}
+.cap-log li.is-invalid {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-event {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-result {
+  color: var(--uxdsl__palette__success-main);
+  font-weight: 600;
+}
+.cap-result--error {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-sandbox {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+}
+.cap-sandbox__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+.cap-sandbox__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
+   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+.cap-frame-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__2);
+  box-shadow: var(--uxdsl__shadow__1);
+}
+.cap-frame {
+  display: block;
+  width: 820px;
+  height: 340px;
+  border: 0;
+}
+.cap-stat {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-stat__label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+}
+.cap-stat__value {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-size);
+  line-height: var(--uxdsl__typography__h4-line);
+  font-weight: var(--uxdsl__typography__h4-weight);
+  letter-spacing: var(--uxdsl__typography__h4-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  margin: 0;
+}
+.cap-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+.cap-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cap-table-wrap caption {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  text-align: left;
+  font-weight: 600;
+  padding-block: var(--uxdsl__space__2);
+}
+.cap-table-wrap th,
+.cap-table-wrap td {
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
+  vertical-align: top;
+}
+.cap-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__3);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+}
+.cap-run {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0 0 var(--uxdsl__density__4);
+  min-width: 0;
+}
+.cap-run__title {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+}
+.cap-terminal {
+  margin: 0;
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__radius__1);
+  font-family: var(--uxdsl__font__code, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+.cap-terminal__prompt {
+  color: var(--uxdsl__color__green-300);
+}
+.cap-terminal__err {
+  color: var(--uxdsl__color__red-300);
+}
+.cap-exit {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  padding: 0 var(--uxdsl__space__3);
+  border-radius: 9999px;
+}
+.cap-exit--ok {
+  background: var(--uxdsl__palette__success-main);
+  color: var(--uxdsl__palette__success-contrast);
+}
+.cap-exit--fail {
+  background: var(--uxdsl__palette__error-main);
+  color: var(--uxdsl__palette__error-contrast);
+}
+.cap-transcript {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-alias-demo {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+  align-content: start;
+}
+.cap-alias-box {
+  padding: var(--uxdsl__surface__flat-padding);
+  border-radius: var(--uxdsl__surface__flat-radius);
+  background: var(--uxdsl__surface__flat-bg);
+  color: var(--uxdsl__surface__flat-color);
+  border: var(--uxdsl__surface__flat-border);
+  box-shadow: var(--uxdsl__surface__flat-shadow);
+  padding: var(--uxdsl__density__4);
+  background: var(--uxdsl__palette__surface-main);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+}
+/* The aliases under test: these two rules must render identically. */
+.cap-alias-box--alias {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
+}
+.cap-alias-box--name {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
+}
 /* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
    CodeBlock.tsx. */
 .code-block-frame {

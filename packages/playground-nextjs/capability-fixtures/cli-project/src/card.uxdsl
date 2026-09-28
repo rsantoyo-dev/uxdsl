@@ -1,0 +1,6 @@
+.card {
+  @ds-surface(contained);
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: density(4);
+}

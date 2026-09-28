@@ -159,13 +159,13 @@ historia aparte (como MIG-B7-14), con su reproducción.
       derivadas, y un test la exige. **(Fase A.)** Ojo: "la exige" significa que las
       brechas están registradas y sólo pueden encogerse; **no** que ya no haya brechas
       (hay 37, todas para las fases B y C).
-- [ ] Los candidatos de la Fase B están clasificados uno a uno; ninguna evasión
+- [x] Los candidatos de la Fase B están clasificados uno a uno; ninguna evasión
       de token queda sin sustituir o sin justificar.
-- [ ] Cada capacidad ausente hoy tiene un ejemplo vivo que llama a la API real.
+- [x] Cada capacidad ausente hoy tiene un ejemplo vivo que llama a la API real.
 - [ ] Los 11 componentes de documentación y las 35 rutas tienen su fila revisada.
 - [ ] Recorrido en Chrome real sin errores de consola, sin `var()` sin resolver ni
       avisos de UXDSL, en claro y oscuro y en los umbrales de breakpoint.
-- [ ] Sin cambio visual involuntario, comprobado y registrado.
+- [x] Sin cambio visual involuntario, comprobado y registrado.
 
 ## Verificación
 
@@ -173,7 +173,7 @@ historia aparte (como MIG-B7-14), con su reproducción.
 npm --prefix packages/playground-nextjs run build
 npm --prefix packages/playground-nextjs run stylelint
 npm --prefix packages/playground-nextjs run test:themes
-UXDSL_CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" node <smoke de la Fase E>
+UXDSL_CHROME_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run verify:playground-browser   # Fase E: fixtures/playground-browser/walk.js --build
 npm test
 ```
 
@@ -184,7 +184,7 @@ matrix`, … cada una con su propio registro. La ficha cierra cuando la Fase E p
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **En curso — Fase A hecha (2026-09-24); Fase B hecha en cuatro rebanadas (1 `@media` → funciones responsivas; 2 colores, `var()` y `px` en `.uxdsl`; 3 `.module.css` → `.uxdsl`; 4 `style={{}}` estáticos a CSS y código muerto), con cada candidato clasificado y los cambios visuales declarados — **salvo `scripts/audit-themes.mjs`**, que sigue pendiente —; C, D y E pendientes**.
+Estado de esta revisión documental: **En curso — Fases A, B (cinco rebanadas, `audit-themes.mjs` incluido) y C hechas (2026-09-28); E en la misma rama, en su propio commit; queda la Fase D (revisión por página y componente), que se hará con el dueño.** La matriz no tiene brechas (113/113).
 Completar por fase conforme al
 [protocolo de agentes](README.md#protocolo-de-implementación).
 
@@ -662,6 +662,98 @@ Ninguna en otra ruta ni propiedad.
 `inlineStyleObjects` 50 → **28** (los 22 de componentes inalcanzables de la rebanada 4 se fueron con
 ellos). Y una brecha **nueva, registrada a propósito**: `cli-flag:--out` — `HomeDemo`, código muerto,
 era el único sitio que nombraba `--out`; la cierra la página del CLI de la Fase C.
+
+### Fase C — las 37 brechas cerradas llamando a la API real (2026-09-28)
+
+Rama `feat/mig-b7-17c-capabilities`, SHA fijado al mergear. **`knownGaps` vacío: 113 capacidades, 113
+mostradas al nivel que exigen, 0 brechas** (`docs/architecture/playground-capability-matrix.md`
+regenerada; `node --test scripts/capability-matrix.test.js` 7/7). La brecha `cli-flag:--out` que abrió
+la rebanada 5 también se cerró (38 en total).
+
+**Cuatro páginas nuevas en `/docs` (con entrada en el menú lateral y en `sitemap.ts`):**
+
+| Página | Qué ejecuta de verdad |
+| --- | --- |
+| `/docs/runtime` | Lectura del sitio: `getAppliedTheme`, `subscribeTheme`, `getPalette` sobre lo que aplicó `ThemeContext` (no cambian nada). **Sandbox**: un `iframe` (`public/runtime-sandbox/`, generado por `scripts/build-runtime-sandbox.js` en `uxdsl:build`) con su propio documento y **su propio realm** — la hoja se compila con `uxdsl-core` y el tema por defecto del sitio; el script (`src/runtime-sandbox/sandbox-entry.ts`) se empaqueta con esbuild y expone las funciones reales. Ahí corren los 15 pasos que cambian estado: `loadPersistedTheme` antes de iniciar (`UXD_THEME_NOT_INITIALIZED`), `applyTheme` de inicio, con `persist`, un umbral movido (`UXD_THEME_STRUCTURE`), `resetTheme`, `loadPersistedTheme`, `getAppliedTheme`, `resetTheme({ clearPersist })`; y los setters `updatePalette`/`getPalette`/`resetPalette`/`updateColor`/`updateSpacing`/`updateBreakpoint` con `subscribe`. Cada paso muestra el valor devuelto, lo que oyeron las suscripciones y lo que mide el sandbox después (variable calculada, muestras, `padding`, `flex-direction`, `md` legacy vs aplicado). Recargar el iframe lo deshace todo. Puras, sobre el tema activo: `resolveTheme` + `getDefaultTheme` (un override editable, con qué hoja viene de dónde), `buttonDeclarations`/`inputDeclarations`/`resolveTypographyRole` (lo que emite cada directiva, por rol y tono), `googleFontsImportUrls` (y si la hoja del tema de la página importa exactamente esa URL) y `encodeGoogleFontFamily` |
+| `/docs/contrast` | `checkThemeContrast(resolveTheme(tema activo), { exceptions })` con las excepciones empaquetadas — la llamada de `uxdsl theme --contrast` —; se recalcula al cambiar de tema; resumen, grupos y cada par que falla, filtrable por modo |
+| `/docs/cli` | Salida real del CLI (stdout, stderr, exit) sobre `capability-fixtures/cli-project`: `generate-entry --src --out --exclude`, `build`, `--config`, `--entry --out`, `--include-theme`/`--no-include-theme`, `--sourcemap` (con el `.map`), `--strict-theme` (falla) y `--strict-theme=breakpoints` (pasa), `theme`, `theme --diff`, `theme --strict`, `--strict=breakpoints`, `theme --contrast`, y una sesión de `uxdsl watch` (arranque, edición, error `UXD_BREAKPOINT_UNKNOWN`, recuperación) |
+| `/docs/diagnostics` | 12 `UXD_*` reales impresos por `uxdsl build` sobre fuentes y temas rotos (`UXD_BREAKPOINT_UNKNOWN`, `_SHADOW_REFERENCE`, `_EDGE_REFERENCE`, `_DENSITY_REFERENCE`, `_TYPO_REFERENCE`, `_SURFACE_REFERENCE`, `_DIRECTIVE_CONTEXT`, `_DIRECTIVE_UNKNOWN`, `_TOKEN_ALPHA`, `_TYPO_BP`, `_TYPO_FIELD`, `_REFERENCE_MISSING`); y los alias `elevation()`/`rounded()` compilados contra `shadow()`/`radius()` y **medidos en la página** (estilo calculado idéntico) |
+
+**Salida capturada que no puede quedarse vieja.** `packages/playground-nextjs/scripts/capture-capabilities.js`
+ejecuta el CLI real (con el `postcss-uxdsl` local) sobre una copia del proyecto de ejemplo y escribe
+`src/generated/cli-captures.json` y `compiler-captures.json` (rutas normalizadas a `<project>`; nada
+depende de hora ni máquina). Cada caso de diagnóstico declara el código que debe producir y la captura
+**falla** si produce otro. `npm test` lo ejecuta con `--check` (script `test:captures` del playground):
+si el CLI o el compilador cambian lo que imprimen, el test falla hasta regenerar. Probado: dos
+`--check` seguidos sin cambios → 0; la sesión de `watch` es determinista (espera líneas concretas, no
+tiempos).
+
+**Dónde se demuestra cada brecha y a qué nivel** (el detector lo confirma; los dos `manual` son punteros
+comprobados):
+
+| Brechas | Dónde | Nivel |
+| --- | --- | --- |
+| `function:elevation`, `function:rounded`, `breakpoint-function:xl` | `CapabilityDocs.uxdsl` (hoja de las cuatro páginas: cajas de alias medidas, marco del sandbox; `xl()` en la rejilla del resumen de contraste) | live |
+| 19 de runtime (`checkThemeContrast`, `resolveTheme`, `getDefaultTheme`, `getAppliedTheme`, `subscribeTheme`, `getPalette`, `resetTheme`, `loadPersistedTheme`, `updatePalette`, `resetPalette`, `updateColor`, `updateSpacing`, `updateBreakpoint`, `subscribe`, `buttonDeclarations`, `inputDeclarations`, `resolveTypographyRole`, `googleFontsImportUrls`, `encodeGoogleFontFamily`) | `ContrastReport.tsx`, `RuntimeEngines.tsx`, `RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` | live (importación nombrada y llamada ejecutada) |
+| `cli-flag:--contrast` | `ContrastReport.tsx` (mismo motor) + salida real en `/docs/cli` | live |
+| `cli-command:theme`, `cli-command:watch`, 10 flags (`--config`, `--diff`, `--entry`, `--exclude`, `--include-theme`, `--out`, `--sourcemap`, `--src`, `--strict`, `--strict-theme`) | `/docs/cli` (prosa + salida capturada) | documented (lo que exige el detector para flags sin equivalente de runtime); la salida es real |
+| `package-export:./config` | `uxdsl.config.cjs` del propio playground usa `defineConfig` de `postcss-uxdsl/config` (antes objeto plano) | live |
+| `package-export:./schema/theme.schema.json` | **manual**: `uxdsl.theme.{green,purple,slate}.json` declaran `"$schema"` apuntando al esquema empaquetado; `test-theme-inheritance.cjs` resuelve el export y comprueba cada puntero y que las claves de primer nivel estén en el esquema (control negativo: un puntero roto falla) | live (manual) |
+| `diagnostics:UXD_* error codes` | **manual**: `src/generated/compiler-captures.json` (capturado y comprobado) + `UXD_THEME_*` en vivo en el sandbox | live (manual) |
+
+**Corrección del detector (no se relajó):** `scripts/lib/capabilities.js` listaba `uxdsl.config.cjs` pero
+sólo leía `.ts/.tsx/.js/.jsx`, así que nunca lo leía; ahora lee `.cjs/.mjs`. Y deja de contar como código
+el JSON capturado de `src/generated/` (citaba el `require('postcss-uxdsl/config')` del proyecto de
+ejemplo, un falso positivo que habría "cerrado" `./config` sin que el playground lo usara).
+
+**Ratchet:** `hexColorsInTsx` 27 → **32, subida deliberada**: cinco literales son los valores que los
+pasos del laboratorio pasan al runtime (`#0f766e`, `#e11d48`, `#1d4ed8`, `#fde68a` y el del override de
+ejemplo) — datos de tema, no estilo de la página; se declararon una vez como constantes para no contar
+cada uno dos veces. `inlineStyleObjects` no sube (el laboratorio no usa `style={{}}`).
+
+**Setters antiguos y `applyTheme`: el conflicto se enseña, no se esconde.** Llamados en la página
+competirían con `ThemeContext` (`resetTheme` devolvería el tema de inicio a sus espaldas;
+`updateBreakpoint` notifica al adaptador `BreakpointsProvider`, que lo reenvía a `setCustomTheme` y
+`applyTheme` lo rechaza). Por eso van al sandbox, donde se ven tal cual: tras `updatePalette`, un
+`applyTheme` posterior devuelve `ok: true` y el color **no cambia** (el valor en línea gana; es lo que
+`clearRuntimeInlineTokens` de `ThemeContext` corrige); tras `updateBreakpoint('md', 900)`,
+`getBreakpoints().md` = 900 y `getAppliedTheme().breakpoints.md` = 768, y a 820px el layout compilado ya
+está por debajo de `md` mientras Density sigue en su valor de `md`. `loadPersistedTheme` se llama siempre
+con la clave del laboratorio y `migrateLegacy: false`: por defecto migraría **y borraría** las cuatro
+claves legacy que las demos antiguas del playground (`DemoColors`, `DemoSpacing`, `DemoPaletteConfig`,
+`DemoBreakpoints`) todavía escriben con `persist: true`.
+
+**Hallazgos del motor/CLI (registrados, no arreglados aquí; candidatos a historia propia):**
+
+1. **`updateBreakpoint` no reescribe la hoja que gestiona `applyTheme`.** Repro (en el sandbox, 820px):
+   `applyTheme(project, { replace: true })` → `updateBreakpoint('md', 900)` → `.lab-layout` pasa a
+   `column` (hoja compilada `style[data-uxdsl]`, reescrita) pero `density(4)` sigue valiendo lo de `md`
+   (la hoja del tema lleva `data-uxdsl-theme`, que `allUxdslStyleTags()` no selecciona). Dos verdades
+   sobre el mismo umbral. Es el API legacy; el nuevo lo rechaza por diseño.
+2. **Un `palette` con una referencia inexistente produce ~20 `UXD_REFERENCE_MISSING` en cascada**
+   (cada variable de Button/Input que depende de ella), visible en `/docs/diagnostics`. Correcto pero
+   ruidoso: la causa es una.
+3. **Un breakpoint negativo en el tema se informa como `UXD_TYPO_BP`** ("Typography requires distinct
+   non-negative breakpoint widths…"): lo valida primero el motor de tipografía, no `validateBreakpoints`
+   (`UXD_BP_INVALID`). El mensaje nombra la tipografía para un error del mapa de breakpoints.
+4. **`$schema` aparece como hoja `project` en `uxdsl theme --diff`** (y en la lista de familias de
+   `uxdsl theme`): es metadato, no un valor del tema.
+5. (Del script de auditoría, rebanada 5) la excepción empaquetada
+   `surface-outlined-light-tone-base-text-light-mode` está obsoleta para `green` y `slate`.
+
+**Sin cambio visual involuntario en las páginas existentes** (arnés de *snapshot*, build de la rebanada 5
+contra esta, 28 rutas existentes × 10 anchos + 3 diálogos): **1,786 diferencias en claro y 1,786 en oscuro**, todas
+declaradas — 1,530 son el menú lateral de las 15 páginas `/docs/*` existentes (102 cada una: los cuatro
+enlaces nuevos, `li`/`a` presentes, y la caja y `gridTemplateRows` del `nav` que crece) y 256 son
+`/theming` (la frase nueva que enlaza la página Runtime). Ninguna en otra ruta ni propiedad. El `$schema`
+de los overrides y `defineConfig` no cambian nada visible (el tema efectivo lleva `$schema`, que
+`applyTheme` y `generateThemeCss` ignoran).
+
+**Límites.** Los flags del CLI quedan en "documented" porque así lo exige el detector para opciones sin
+equivalente de runtime, aunque lo que se muestra es su salida real. `--sourcemap=inline` y `init` no se
+capturan (no eran brechas). El sandbox reproduce un proyecto compilado, no esta aplicación: lo que
+demuestra de `updateBreakpoint` vale para cualquier hoja etiquetada, pero el adaptador de breakpoints del
+propio sitio (`/docs/breakpoints`) no se recorrió con el ratón.
 
 ### Tabla de revisión por componente/ruta (Fase D)
 
