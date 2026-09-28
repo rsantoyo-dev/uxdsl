@@ -116,8 +116,8 @@ uxdsl({
 ### Project theme (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted, the plugin looks for a conventional
-`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` next to your Vite
-project root and compiles against it — no extra option needed for a normal
+`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in your Vite
+project root (Vite's resolved `root`) and compiles against it — no extra option needed for a normal
 project. `configRoot` points discovery somewhere else (a monorepo running
 Vite with a non-default `root`, for instance); `discoverTheme: false`
 always validates against the built-in default theme instead, matching
@@ -146,7 +146,7 @@ the CLI/core/Webpack parity guarantee** the rest of this plugin has:
 Sass runs first, then the exact same `compile()` pipeline everything else
 uses runs on its output.
 
-There used to be an `'auto'` mode that activated silently whenever the
+Through `0.5.0-beta.5` there was an `'auto'` mode that activated silently whenever the
 *host project* happened to have `sass` installed, for any reason — removed:
 a `.uxdsl` file's own syntax is not valid SCSS, so an unrelated dependency
 silently changing how every file in the project compiled was never safe.

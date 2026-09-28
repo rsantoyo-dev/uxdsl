@@ -37,7 +37,7 @@ loader.
 npm install uxdsl-webpack-loader uxdsl-core --save-dev
 ```
 
-MIG-B6-28 (FEAT-008): the published tarball now declares an explicit `files`
+MIG-B6-28 (FEAT-008, `0.5.0-beta.6`): the published tarball declares an explicit `files`
 field (`index.js`, `README.md`) instead of shipping everything not
 gitignored — this loader has no build step and no other runtime file, so
 nothing else was ever needed.
@@ -88,8 +88,8 @@ import './styles.uxdsl';
 ### Project theme (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted, the loader looks for a conventional
-`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in `rootContext` (your
-webpack config's own directory, by default) and compiles against it — no
+`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in `rootContext` (webpack's
+`context` option, which defaults to the current working directory) and compiles against it — no
 extra option needed for a normal project. `configRoot` points discovery
 somewhere else; `discoverTheme: false` always validates against the
 built-in default theme instead. An explicit `theme` always wins outright,

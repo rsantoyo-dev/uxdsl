@@ -93,7 +93,9 @@ FEAT-009, MIG-B7-01 (continued — diagnosis and scope):
   unchanged — Button's own states and Input's own `caret` still rely on it
   (regression-tested: Button's 47 pre-existing contrast failures are
   unchanged in count and in exact signature). Net effect on the full theme:
-  156 → 123 total contrast failures, exactly the 33 tonalized `contained`
+  156 → 123 total contrast failures (counted with the shipped
+  `theme/base.contrast-exceptions.json` applied, as `uxdsl theme --contrast`
+  does; 157 → 124 without it), exactly the 33 tonalized `contained`
   placeholder failures resolved, zero new failures introduced.
 - **Not fixed, by design — a fourth finding, distinct from MIG-B6-29's three:**
   `palette(neutral.dark)`, the untoned placeholder default shared by all

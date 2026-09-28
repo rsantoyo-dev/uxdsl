@@ -32,7 +32,8 @@ npx uxdsl init
 npx uxdsl build
 ```
 
-`init` scaffolds a starter theme and entry file; `build` compiles it once
+`init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
+default theme is built in); `build` compiles it once
 to a plain `.css` file you import from your app like any other stylesheet.
 `npx uxdsl build --watch` recompiles as you edit. See
 [`uxdsl-cli`'s README](../uxdsl-cli/README.md) for the full setup
@@ -188,7 +189,8 @@ uxdsl({ theme, includeTheme: false })
 ```
 
 `includeTheme: false` affects only the foundations, typography, density,
-shadow, edge, surface, button and input `:root` emitters. Token references
+shadow, edge, surface, button and input `:root` emitters, plus the theme's
+`fonts.google` `@import`. Token references
 and validation are unchanged — an entry compiled with `includeTheme: false`
 still rejects an undefined `@ds-surface(missing)` or `shadow(missing)` the
 same way a full entry does; it just relies on the theme entry's output being
@@ -200,7 +202,7 @@ generated variable names can diverge.
 
 ## Reference integrity (`references`)
 
-Every compilation now validates that every `var(--token)` it emits resolves
+Every compilation validates that every `var(--token)` it emits resolves
 to an actual definition — in this compilation, in a declared dependency
 (`references.css`), or in an explicitly declared external token
 (`references.externalTokens`). An unresolved reference fails the build by
@@ -228,20 +230,20 @@ With `includeTheme: false`, the plugin already validates against the theme
 entry's output automatically — you do not need to pass `references.css`
 yourself for that case.
 
-**Known caveat:** the shipped default Density scale (`DEFAULT_DENSITIES`)
-references `space(1)` through `space(16)`. If your theme's `spacing` does
-not cover that full range, compiling with density active (it always is,
-unless `includeTheme: false`) will fail reference validation for the
-uncovered keys. Either configure a full spacing scale, override the
-specific density tokens you use, or set `references: { mode: 'warn' }`
-while you migrate a theme that only partially covers the defaults. The
-equivalent gap for `border(1..5)`'s `color(gray.*)` dependency is closed —
-see the next section.
+**Density and a partial spacing scale:** the shipped default Density scale
+(`DEFAULT_DENSITIES`) references `space(1)` through `space(16)`. A theme that
+defines only some spacing keys does not break it: the plugin resolves your
+theme over the packaged base (`resolveTheme`), so the base's `spacing` 1–16
+stay defined unless you override them — `theme: { spacing: { 1: '4px' } }`
+compiles with no reference error. The same resolution covers
+`border(1..5)`'s `color(gray.*)` dependency (the base defines `colors.gray`).
 
 **Cost:** validation used to grow with the *square* of the stylesheet, so a
 large module could spend most of a rebuild in it — 24,000 lines took 63 s on
 an M1 Pro, against 1 s with `mode: 'off'`. Since beta.6 the same file takes
-0.79 s, and doubling the input costs about 1.9x rather than up to 6.3x. If
+0.79 s on that machine (measured for MIG-B6-25, 2026-09-22; reproduce with
+`npm run bench:references` from the repository root), and doubling the input
+costs about 1.9x rather than up to 6.3x. If
 you turned validation off to keep watch mode usable, turn it back on. The
 reported issues did not change: the previous implementation is kept as a
 frozen fixture and both are required to produce identical output.
@@ -278,8 +280,10 @@ token key the standalone `radius()`/`shadow()` value functions accept:
 
 The override replaces only that one property — `size`'s padding is
 untouched, and the two overrides are independent of each other. Each may
-appear once; a repeated `radius()`/`radius()` or an undefined key throws
-the same diagnostics as the standalone functions. A later plain CSS
+appear once: a repeated `radius()` or `shadow()` fails as
+`UXD_SURFACE_ARGUMENT`/`UXD_BUTTON_ARGUMENT`/`UXD_INPUT_ARGUMENT`, and an
+undefined key as `UXD_SURFACE_REFERENCE` (the standalone functions report
+`UXD_EDGE_REFERENCE`/`UXD_SHADOW_REFERENCE` instead). A later plain CSS
 declaration in the same rule still wins last, as always. See
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
@@ -313,11 +317,12 @@ The one exception is a flat `theme.typography` entry (as opposed to the
 structured `theme.typography_details`): its JSON key becomes the variable
 name verbatim (`{ typography: { "h1-size": "2rem" } }` emits
 `--h1-size: 2rem;`), since that key is a name you chose yourself, not one
-this compiler assigns from a family/key pair.
+this compiler assigns from a family/key pair. The packaged base theme has one
+such entry, `font-code`, so even a zero-config build emits `--font-code`.
 
 `postcss-uxdsl/ds-runtime`'s `updatePalette`/`getPalette`/`resetPalette`
-read and write only this canonical name — they no longer also
-write/read a second, bare `--<token>` alias. If you were reading or
+read and write only this canonical name — since 0.5.0-beta.1 they no
+longer also write/read a second, bare `--<token>` alias. If you were reading or
 setting a Palette token's CSS variable directly (outside these runtime
 functions), use `--uxdsl__palette__<token>`.
 
@@ -327,10 +332,12 @@ Every generated CSS variable name is built from a logical identifier —
 a family and a key (`surface.contained.padding`), or a namespace and a key
 (`palette.primary-main`). Two different identifiers can concatenate to the
 identical name (a palette key literally named `"primary-main"` collides
-with the structured `palette.primary.main`; a surface role named
-`"contained-shadow"` field `"x"` collides with role `"contained"` field
-`"shadow-x"`). When that happens, compiling throws
-`UXD_FOUNDATION_NAME_COLLISION` or `UXD_PRESET_NAME_COLLISION` naming both
+with the structured `palette.primary.main`; a `colors` key `"gray-300"`
+with `colors.gray.300`). When that happens, compiling throws a
+`*_NAME_COLLISION` error — `UXD_FOUNDATION_NAME_COLLISION` for Palette/Colors,
+`UXD_TYPO_NAME_COLLISION` for Typography, and the preset engines' own
+`UXD_EDGE_`/`UXD_SHADOW_`/`UXD_SURFACE_`/`UXD_BUTTON_`/`UXD_INPUT_NAME_COLLISION`
+— naming both
 identifiers and the variable they both produce, instead of one silently
 overwriting the other. Rename whichever one you didn't intend to share
 that variable.
@@ -398,8 +405,8 @@ for the exact rules and how to reuse the encoder for a hand-rolled
 theme's colors have
 been run through the accessibility contrast gate and corrected where an
 automated, minimal, hue-preserving fix existed (MIG-B6-29 phase 3 — see
-below); three real, disclosed gaps in the *engine* (not color choices)
-remain open, documented in that story's own evidence.
+below); the findings still open are listed under
+"Current status against `theme/base.json`" below.
 
 Merge rules: object keys merge recursively; arrays and scalars (including
 `null`) replace the previous value whole; `undefined` never overwrites a
@@ -443,8 +450,9 @@ partial semantic group (e.g. a `divider`-only role) does not qualify. This
 was previously duplicated inline inside `control-engine.ts`; both now import
 the single implementation from `language.ts` (chosen to avoid a circular
 import, since `default-theme.ts`/`surfaces.ts`/`control-engine.ts` already
-import from `language.ts`). It is not re-exported from the public
-`postcss-uxdsl/ds-runtime` entry point; the repository's own
+import from `language.ts`). It is not re-exported from the
+`postcss-uxdsl/ds-runtime` entry point, but it is exported by the public
+`postcss-uxdsl/language` entry (the package `exports` map); the repository's own
 `scripts/generate-language-artifacts.js` (which builds the VS Code
 extension's completion metadata) already reaches into compiled `dist/*`
 modules directly for several such internals, `getToneFamilies` among them.
@@ -464,7 +472,7 @@ breakpoint — against WCAG's normal-text ratio (4.5:1) and non-text ratio
 its surroundings).
 
 ```js
-const { checkThemeContrast } = require('postcss-uxdsl/ds-runtime')
+const { checkThemeContrast, resolveTheme } = require('postcss-uxdsl/ds-runtime')
 const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json')
 
 const report = checkThemeContrast(resolveTheme(myTheme), { exceptions })
@@ -510,14 +518,18 @@ page.
 **Current status against `theme/base.json`**: phase 3 corrected 16 colors
 (hue and chroma held fixed, only lightness moved, in both directions,
 smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
-full before/after table). `report.passed` is still honestly `false`.
-MIG-B7-01 (FEAT-009) closed one of phase 3's three findings:
-`inputs.*.base.placeholder` now follows the requested tone on `contained`
+full before/after table). `report.passed` is still honestly `false`: as
+of 2026-09-28, `checkThemeContrast(resolveTheme(), { exceptions })` with the
+shipped exceptions file reports 123 failing pairs (124 without it) —
+`uxdsl theme --contrast` in a project with no theme override reports the same
+123. MIG-B7-01 (FEAT-009, in `0.5.0-beta.7`, unreleased as of 2026-09-28)
+closed one of phase 3's three findings:
+`inputs.*.base.placeholder` follows the requested tone on `contained`
 (the only Input role whose background actually tints), using that tone's
 own `contrast` color instead of the fixed `neutral.dark` gray that could
 not read on every toned background at once. Two of the original three
-remain open, plus a fourth surfaced while closing the first — none of the
-four a color this pass alone could fix: `light`/`dark`/`surface` are
+remain open, plus a fourth surfaced while closing the first — three open
+findings in all: `light`/`dark`/`surface` are
 canvas-identity families whose own `main`/`dark` are asked to double as
 text/border when used as an explicit tone; `warning.main` (light mode)
 isn't dark enough for direct text/border use without losing its own
@@ -528,7 +540,8 @@ mechanism gap, so MIG-B7-01 deliberately left it open. Each is recommended
 as its own follow-up in the relevant story's evidence, not swept into an
 exception.
 
-**Input placeholder tone (MIG-B7-01, FEAT-009):**
+**Input placeholder tone (MIG-B7-01, FEAT-009 — `0.5.0-beta.7`, unreleased as
+of 2026-09-28; `0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
 
 ```css
 .field { @ds-input(contained error); }
@@ -556,12 +569,12 @@ before every other rule (and an `@charset` only as the very first thing);
 a browser silently discards one that follows a style rule. Through
 `0.5.0-beta.6` compiled output — the CLI, `compile()`, the plugin — put the
 theme's `:root` block above every import, so the font request was never made.
-Now the theme's imports come first (after your `@charset`, if you have one),
+From `0.5.0-beta.7` (unreleased as of 2026-09-28) the theme's imports come first (after your `@charset`, if you have one),
 then any `@import` you wrote yourself in the order you wrote it, then the
 theme's `:root`. Nothing you wrote is reordered. Two consequences worth
-knowing: Inter is now actually requested (and your visitors' browsers contact
+knowing: Inter is actually requested (and your visitors' browsers contact
 `fonts.googleapis.com`), and an `@import` of your own that used to be silently
-dropped now applies. `fonts: { google: [] }` still opts out of the theme's.
+dropped applies. `fonts: { google: [] }` still opts out of the theme's.
 
 ```js
 const { encodeGoogleFontFamily, googleFontsImportUrls } = require('postcss-uxdsl/ds-runtime')
@@ -655,15 +668,15 @@ built-in preset already reads its defaults from `DEFAULT_THEME`
 generated from the exact same engine defaults (except `default-colors`/
 `default-palette`, a deliberately separate, richer, opt-in palette — a
 different design direction, not a superset of `DEFAULT_THEME.palette`), for
-a project that already imports one of them explicitly. Not scheduled for
-removal in 0.5.0-beta.6.
+a project that already imports one of them explicitly. Still shipped in
+0.5.0-beta.6 and on `main` as of 2026-09-28; no removal is scheduled.
 
 ### Theme discovery (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks
 for a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
 `configRoot` (default `process.cwd()`) — the exact same discovery `uxdsl-cli`
-has always done, now available with the plugin used directly, e.g. from a
+does, available with the plugin used directly since 0.5.0-beta.6, e.g. from a
 project's own `postcss.config.js`:
 
 ```js
@@ -685,8 +698,8 @@ is **synchronous** (the plugin factory and its compilation pass both are), so
 an `uxdsl.theme.config.cjs` exporting an async factory function
 (`module.exports = async () => ({...})`) throws a clear error naming the
 file — pass a resolved `theme` object to the plugin directly instead, or use
-an integration that supports async config (`uxdsl-cli`, or a future bundler
-adapter). The discovered theme file (and anything it locally `require()`s)
+an integration that supports async config (`uxdsl-cli`, `vite-plugin-uxdsl`
+or `uxdsl-webpack-loader`, which all use `discoverThemeAsync`). The discovered theme file (and anything it locally `require()`s)
 is reported as a real PostCSS `dependency` message, so a bundler's own
 watcher picks up an edit to it.
 
@@ -703,13 +716,12 @@ source location. Theme validators name a key path (`.keyPath`, e.g.
 one — `uxdsl-cli` prepends the theme file's own path when it resolved one, so
 `uxdsl build` names both the file and the exact key. Button/Input theme
 errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) and a few lower-level theme-map checks
-do not yet carry a key path; they still preserve their code and message.
+do not carry a key path (as of 2026-09-28); they still preserve their code and message.
 
-Radius, Shadow, Border, Surface, Button and Input shapes already had their
-own defaults (`DEFAULT_RADII`, `DEFAULT_SHADOWS`, `DEFAULT_BORDERS`/
-`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`, `DEFAULT_BUTTONS`,
-`DEFAULT_INPUTS`) before this — `DEFAULT_THEME` only adds the two families
-(Spacing, Palette) those defaults depend on but that had none of their own.
+The per-family default constants (`DEFAULT_RADII`, `DEFAULT_SHADOWS`,
+`DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`,
+`DEFAULT_BUTTONS`, `DEFAULT_INPUTS`) are read from the same
+`theme/base.json` as `DEFAULT_THEME` (MIG-B6-29), not maintained separately.
 
 ### Zero silent output: leftover directives and unknown breakpoints (MIG-B6-14)
 
@@ -743,7 +755,7 @@ away from a configured breakpoint name:
 ```
 
 The known-function list (math, color, gradients, transforms, filters, and
-UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `./language` —
+UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `postcss-uxdsl/language` —
 consulted before any edit-distance check, so a real `log(...)` next to
 `lg(...)` is never misread as a typo of it.
 
@@ -761,7 +773,7 @@ exist: `gray` is the only color collection the default theme defines, so
 .a { color: color(brand-500); }                  /* UXD_REFERENCE_MISSING: not in the default theme */
 ```
 
-A `$var` holding a responsive expression now expands correctly when this
+A `$var` holding a responsive expression expands correctly when this
 plugin runs standalone (not only via a build that resolves `$var`s first):
 `$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
 plus `@media` block as writing the responsive value inline.
@@ -837,12 +849,14 @@ sources, leaving stdout a clean JSON document:
 `--contrast` answers the question that actually matters after a partial
 override. The green above against the inherited white `contrast` is about
 3.11:1 — below WCAG's 4.5:1 for text — and the report names the pair, its mode,
-state, breakpoint and resolved colors. It exits 1 when anything fails, and it is
+state, breakpoint and ratio. It exits 1 when anything fails, and it is
 deliberately **not** part of `build`.
 
-One caveat worth knowing before you run it: the packaged base theme does not
-pass its own contrast gate yet. Those failures are real, disclosed and tracked
-(see MIG-B6-29 in the repository), not a problem with your configuration — so
+One caveat worth knowing before you run it: as of 2026-09-28 the packaged base
+theme does not pass its own contrast gate (123 failing pairs with no override —
+see "Current status against `theme/base.json`" above). Those failures are real,
+disclosed and tracked (see MIG-B6-29 and MIG-B7-01 in the repository), not a
+problem with your configuration — so
 read the report for the pairs *your* override introduced.
 
 ---
@@ -939,9 +953,11 @@ no document rather than silently doing nothing.
 ## Typed config and theme (`defineConfig`, `$schema`)
 
 Most UXDSL mistakes are typos, and they are made while writing configuration —
-where nothing used to help. `includeThem`, `fontsize`, `focusVisible` and
-`palete` all compile to *nothing at all*, with no error, because an unknown key
-is simply not read. Since beta.6 the editor catches them.
+where nothing used to help. `includeThem` and `palete` compile to *nothing at
+all*, with no compile error, because an unknown key is simply not read (only
+the theme validator's unknown-family warning flags `palete`); `fontsize` and
+`focusVisible` do fail (`UXD_TYPO_FIELD`, `UXD_BUTTON_STATE`), but only once
+you build. Since beta.6 the editor catches all four as you type.
 
 Setting this up in a consuming app — which of these `uxdsl init` already writes,
 the `$schema` path in a monorepo, and the VS Code extension for `.uxdsl` files —
@@ -949,7 +965,8 @@ is covered from the start in
 [uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
 
 **In a plain `uxdsl.config.cjs`**, with no TypeScript in the project — the form
-`uxdsl init` writes, type-only, nothing loaded at run time:
+`uxdsl init` writes since `0.5.0-beta.7` (unreleased as of 2026-09-28),
+type-only, nothing loaded at run time:
 
 ```js
 // @ts-check
@@ -1058,7 +1075,7 @@ the `@media` mode blocks, the generated component classes) is deliberately
 with no `sourcesContent`. Through beta.5 each generated block instead
 became an invented `<input css …>` source with its entire body inlined in
 the map — a handful of authored lines could produce a map several times the
-size of the CSS, listing eight "files" that do not exist. `sources` is now
+size of the CSS, listing eight "files" that do not exist. Since 0.5.0-beta.6 `sources` is
 limited to files you can actually open.
 
 Compiling through `uxdsl-cli` instead? It exposes this as
@@ -1076,7 +1093,7 @@ tarball — never the monorepo's TypeScript source — and compiles a theme
 entry plus four CSS-Module-style panel entries against it. That check is
 what caught `package.json`'s `exports` map missing `"./package.json"`,
 which broke `require("postcss-uxdsl/package.json")` for any consumer that
-reads a dependency's own version that way; now fixed.
+reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 
 `fixtures/mig-b3-06-release/` (`npm run verify:beta3`) does the same from
 fresh tarballs of all five coordinated packages, exercising `uxdsl-cli`'s
@@ -1088,7 +1105,8 @@ fails; `--no-include-theme` overrides every entry).
 
 ## Guide for AI agents
 
-The package ships the UXDSL agent guide at `docs/agent-guide.md`, generated from
+Since `0.5.0-beta.7` (unreleased as of 2026-09-28), the package ships the UXDSL
+agent guide at `docs/agent-guide.md`, generated from
 the repository's `AGENTS.md` for this exact version. Point a consuming project's
 agent instructions at `node_modules/postcss-uxdsl/docs/agent-guide.md` rather
 than keeping a copy that ages with each upgrade.

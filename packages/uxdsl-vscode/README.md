@@ -10,8 +10,10 @@ Language support for **UXDSL** (User Experience Design System Language)
   so it can't silently drift from what actually compiles:
   - Directives: `@theme`, `@ds-surface`, `@ds-typo`, `@ds-button`, `@ds-input`.
   - Functions: `palette()`, `color()`, `space()`, `density()`, `radius()`,
-    `rounded()`, `border()`, `shadow()`, `elevation()`, and the configured
-    breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()` by default).
+    `rounded()`, `border()`, `shadow()`, `elevation()`, and the built-in
+    default breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()`) — a
+    breakpoint name your project's own theme adds is not highlighted as a
+    UXDSL function or completed.
   - Standard CSS syntax, via the built-in `source.css` grammar.
 - **Context-aware completion** — functions only inside a declaration's
   value, directives only after `@`, and role/tone/size/override arguments
@@ -27,9 +29,10 @@ Language support for **UXDSL** (User Experience Design System Language)
 Completion based on your project's *own* theme (roles/tones/sizes it
 actually resolves to), live diagnostics, breakpoint hover, go-to-definition,
 and real CSS IntelliSense *inside* `.uxdsl` files (e.g. property-value
-validation) are not implemented yet — planned as a future story (MIG-B6-08,
-post-0.5.0; see `docs/features/FEAT-008/MIG-B6-26-*.md`'s own "Fuera de
-alcance" section). Today's role/tone/size completions are generated from
+validation) are not implemented yet — deferred by FEAT-008 to MIG-B6-08,
+post-0.5.0 (see `docs/features/FEAT-008/MIG-B6-26-*.md`'s own "Fuera de
+alcance" section); as of 2026-09-28 its project-theme completion/hover part is
+MIG-B7-13 in FEAT-009, blocked on an owner decision (D-11). Today's role/tone/size completions are generated from
 the compiler's *built-in default* theme — accurate for a project that
 hasn't customized those families, not necessarily for one that has.
 MIG-B6-29 (FEAT-008) grew that built-in default theme from 4 to 14 palette
@@ -53,8 +56,9 @@ complete correctly under the `scss` grammar, since none of it is real SCSS.
 
 ## Installation (from source)
 
-Not yet published to the Marketplace or Open VSX (see
-`docs/features/FEAT-008/MIG-B6-26-*.md` for status). Package it yourself:
+As of 2026-09-28, not published to the Marketplace or Open VSX (publishing
+is tracked in `docs/features/FEAT-009/MIG-B7-05-publicar-extension.md`).
+Package it yourself:
 
 ```bash
 npm install
