@@ -280,7 +280,7 @@ Legacy `border-n` and `radius-n` declarations in `@theme` remain supported in th
 same compilation. JSON overrides matching legacy entries; both override shared
 defaults. Import legacy definitions in each compilation that needs them. There
 is no cross-compilation Borders/Radii cache. The default .uxdsl files are generated
-from the shared module. Components consume `var(--border-n)`/`var(--radius-n)`;
+from the shared module. Components consume `var(--uxdsl__border__n)`/`var(--uxdsl__radius__n)`;
 replacing the generated theme stylesheet updates their responsive behavior.
 
 ```css
@@ -313,7 +313,7 @@ for component spacing, not automatically for border width or corner rounding.
   compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
   Keywords are built-ins, not editable numbered presets. Border radius alone
   does not clip child content.
-- Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references now fail instead of inventing fallback
+- Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references fail instead of inventing fallback
   values. Define the token before using it; do not rely on old fallback behavior.
 - For local independent shapes, use intentional native CSS or per-corner values.
   Trace Spacing and Palette dependencies before changing foundational tokens.
@@ -356,7 +356,7 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
 ```
 
 - Select an existing suitable preset. Preserve its reference instead of copying
-  the current resolved value. Components consume `var(--shadow-key)`.
+  the current resolved value. Components consume `var(--uxdsl__shadow__key)`.
 - Values can be static or responsive. Include a base value; the most recent
   applicable declaration persists until overridden. `elevation()` is an alias
   for `shadow()` and does not change stacking order.
@@ -547,7 +547,7 @@ keep interaction/validation semantics in HTML and application code.
 
 ## Build time, runtime and one source of truth
 
-FEAT-002 targets explicit migration to `--uxdsl__<family>__<key>` in
+FEAT-002 moved every emitted variable to `--uxdsl__<family>__<key>` in
 0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped
 `scripts/codemod-namespace.js` previews migration of selected consumer files;
 use explicit mappings for custom typography roles or host-owned prefix matches.
@@ -580,14 +580,16 @@ WCAG for any effective theme, including a project's own. Phase 3 corrected
 `slate` named themes) to clear it, in OKLCH, preserving hue and moving only
 lightness; `report.passed` is still honestly `false`. Of the three real,
 disclosed engine/architecture findings that phase 3 left, one is closed
-(FEAT-009's MIG-B7-01: the Input `placeholder` now follows the requested
-tone on `contained`, the only role whose background tints). Two remain
-(`light`/`dark`/`surface` used as an accent tone reading their own
-canvas-identity color as text; `warning.main` not dark enough for direct
-text use), plus one that MIG-B7-01 itself surfaced: the *untoned*
-placeholder default `neutral.dark` is not dark-mode-aware enough (9
-failures, `tone: null`). Each is recommended as follow-up work in its own
-story's evidence, not swept into ad hoc exceptions. `postcss-uxdsl/ds-runtime`
+(FEAT-009's MIG-B7-01, unreleased as of 2026-09-28: the Input `placeholder`
+follows the requested tone on `contained`, the only role whose background
+tints). As of 2026-09-28 two remain (`light`/`dark`/`surface` used as an
+accent tone reading their own canvas-identity color as text; `warning.main`
+not dark enough for direct text use), plus one that MIG-B7-01 itself
+surfaced: the *untoned* placeholder default `neutral.dark` is not
+dark-mode-aware enough (9 failures, `tone: null`, pinned by
+`packages/postcss-uxdsl/test/input-placeholder-tone.test.js`). Each is
+recommended as follow-up work in its own story's evidence, not swept into ad
+hoc exceptions. `postcss-uxdsl/ds-runtime`
 also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
@@ -595,8 +597,9 @@ now emit byte-identical `@import`s for the same theme instead of only the
 plugin emitting one at all. Byte-identical URLs did not mean the same
 placement: until FEAT-009's MIG-B7-14 the plugin/CLI output put that `@import`
 behind a `:root` block, where a browser discards it, and only `generateThemeCss`
-led with it. Compiled output now puts every `@import` — the theme's and the
-author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
+led with it. From `0.5.0-beta.7` (unreleased as of 2026-09-28; `0.5.0-beta.6`
+still has the old placement), compiled output puts every `@import` — the
+theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
@@ -672,7 +675,8 @@ CSS value or accessibility requirement was validated. Inspect actual output.
 The active engine ownership and verification contract is documented in
 `docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective
 Density defaults and overrides. No token family should depend on a process-global
-compile cache. Use `responsiveEntries`/`resolveResponsiveValue` for inspection and
+compile cache. Use `responsiveEntries`/`resolveResponsiveValue` (exported from
+`postcss-uxdsl/language`) for inspection and
 editing rather than writing demo parsers. Buttons and Inputs share
 `control-engine.ts`; their modules define family-specific schema and defaults.
 Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
@@ -704,7 +708,8 @@ different responsibilities; use the shared kind-aware normalizer.
 
 `uxdsl init` writes a typed `uxdsl.config.cjs`: `// @ts-check`, then
 `/** @type {import('postcss-uxdsl/config').UxdslConfig} */` on a `const` that is
-exported (FEAT-009's MIG-B7-12). Keep that shape when editing the file: the
+exported (FEAT-009's MIG-B7-12, in `0.5.0-beta.7`, unreleased as of
+2026-09-28). Keep that shape when editing the file: the
 `@type` placed directly above `module.exports = {…}` checks nothing, removing
 `// @ts-check` silences every error, and adding a run-time
 `require('postcss-uxdsl/config')` can fail the build where `postcss-uxdsl` is
@@ -722,7 +727,8 @@ consumer-facing reference.
 Installing UXDSL from npm does not guarantee an agent reads this guide. Agent
 discovery depends on the tool and project setup.
 
-Since `0.5.0-beta.7` the guide ships inside `postcss-uxdsl`, at
+Since `0.5.0-beta.7` (unreleased as of 2026-09-28; the published
+`0.5.0-beta.6` tarball does not contain it) the guide ships inside `postcss-uxdsl`, at
 `node_modules/postcss-uxdsl/docs/agent-guide.md` — generated from this file,
 so it is the guide for the version the project actually has installed and it
 updates with every upgrade. Point the consuming project's existing `AGENTS.md`
@@ -814,7 +820,8 @@ MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
 from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
-still warn, and invalid Typography fields still fail. This does not add new modes
+still warn (a warning from `validateAndNormalizeTheme`, printed by the CLI; the
+PostCSS plugin itself reports none), and invalid Typography fields still fail. This does not add new modes
 or change strict-theme behavior.
 
 For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
@@ -824,10 +831,12 @@ FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirem
 
 FEAT-008's documents describe what shipped in `0.5.0-beta.6`, published to npm
 on 2026-09-23 (`docs/releases/0.5.0-beta.6.md`). That release's automated gate
-(MIG-B6-12) passed; its external validation against a real consumer project is
-still pending. FEAT-009 (`docs/features/FEAT-009-path-to-0.5.0.md`) plans what
-follows — `0.5.0-beta.7`, then `0.5.0-rc.1` — and its stories describe planned
-work, not shipped capabilities.
+(MIG-B6-12) passed; its external validation against a real consumer project was
+still pending as of 2026-09-28. FEAT-009 (`docs/features/FEAT-009-path-to-0.5.0.md`)
+plans what follows — `0.5.0-beta.7`, then `0.5.0-rc.1`. Its stories are not
+shipped capabilities: some are already merged to `main` but none is published
+until its release is; the package CHANGELOG's `unreleased` section, not a
+story's status, says what a given build contains.
 `applyTheme` and the rest of the runtime theme API (MIG-B6-30) have landed
 across their 4 phases — see the "Build time, runtime and one source of truth"
 section above, which describes the contract as implemented. MIG-B6-29 (the packaged base JSON, the
@@ -835,8 +844,13 @@ accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
 its 4 phases, closing that story. `checkThemeContrast` still correctly
-reports `passed: false` against `theme/base.json` (123 failing pairs as of
-2026-09-23, after FEAT-009's MIG-B7-01, down from 156; MIG-B7-11 will pin the exact set) — the remaining gaps are engine/
+reports `passed: false` against `theme/base.json`: as of 2026-09-28, 123
+failing pairs with the shipped `theme/base.contrast-exceptions.json` applied
+(124 without it; 156 with it before FEAT-009's MIG-B7-01). Reproduce after
+building `postcss-uxdsl`, from the repository root:
+`node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); console.log(r.checkThemeContrast(r.resolveTheme(), { exceptions: x }).failures.length)"`.
+No test pins that total yet; MIG-B7-11 (pending) is planned to pin the exact
+set — the remaining gaps are engine/
 architecture findings, not color choices; see MIG-B6-29's and MIG-B7-01's own
 evidence for exactly which ones and the recommended follow-up for each. That
 is by design, not a bug in the gate. `generateThemeCss` and the PostCSS

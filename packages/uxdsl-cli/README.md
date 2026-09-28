@@ -20,13 +20,14 @@ While UXDSL has plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-
 - **Watch Mode**: Includes a robust file watcher that recompiles your styles instantly as you edit your `.uxdsl` files.
 
 The CLI's `@import`/`$var`/theme compilation pipeline is the shared
-[`compile()`](../uxdsl-core#compile-input-config) from `uxdsl-core` — the
-same pipeline any future Vite/Webpack adapter will use, so behavior can't
+[`compile()`](../uxdsl-core/README.md#compileinput-config) from `uxdsl-core` — the
+same pipeline the Vite plugin and the Webpack loader use, so behavior can't
 silently drift between them. Two related, user-visible fixes came with
-that: a missing `@import` now always fails with a located error instead of
-silently passing the `@import` line through untouched, and an import cycle
-(`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) now always fails naming
-the file chain instead of silently duplicating content once.
+that in `0.5.0-beta.6`: a missing `@import` always fails with a located error
+instead of silently passing the `@import` line through untouched, and an
+import cycle (`a.uxdsl` importing `b.uxdsl` importing `a.uxdsl`) always fails
+(`UXD_IMPORT_CYCLE`) naming the file chain instead of silently duplicating
+content once.
 
 ---
 
@@ -47,7 +48,8 @@ npx uxdsl init
 npm run uxdsl:build
 ```
 
-`init` creates `uxdsl.config.cjs` and `src/uxdsl-entry.uxdsl`, adds the
+`init` creates `uxdsl.config.cjs` and `src/uxdsl-entry.uxdsl` (and, in a
+Next.js project without one, a `postcss.config.js`), adds the
 `uxdsl:build` and `uxdsl:watch` scripts when they are missing, and never
 overwrites existing project configuration. The generated entry gets the
 canonical default theme from `postcss-uxdsl`; it does not need to import the
@@ -68,13 +70,14 @@ Three kinds of help, from two mechanisms. None of them changes what compiles.
 
 | What you get | In which file | How you get it |
 | --- | --- | --- |
-| Types, completion and typo detection | `uxdsl.config.cjs` | `init` already writes it (TypeScript types, through JSDoc) |
+| Types, completion and typo detection | `uxdsl.config.cjs` | `init` already writes it, since `0.5.0-beta.7` (TypeScript types, through JSDoc) |
 | Completion and validation of families, fields and states | your theme JSON | one `$schema` line (JSON Schema shipped in `postcss-uxdsl`) |
 | Highlighting and completion | `.uxdsl` files | the `uxdsl-vscode` extension, installed from a `.vsix` |
 
 ### The build config: types from `init`
 
-The config `init` writes starts like this:
+Since `0.5.0-beta.7`, the config `init` writes starts like this (its comments
+omitted):
 
 ```js
 // @ts-check
@@ -159,12 +162,12 @@ value, directives after `@`, and roles, tones and sizes inside
 `@ds-surface(`/`@ds-button(`/`@ds-input(`. It also contributes CSS custom data
 for the `@ds-*` directives to VS Code's CSS language service.
 
-What it does **not** do yet: complete the roles and tones of **your** theme (its
-suggestions come from the built-in default theme — accurate until you add or
-rename roles), live diagnostics, hover, or go-to-definition.
+What it does **not** do (as of 2026-09-28): complete the roles and tones of
+**your** theme (its suggestions come from the built-in default theme — accurate
+until you add or rename roles), live diagnostics, hover, or go-to-definition.
 
-It is not published to a marketplace yet. Today it is installed from a `.vsix`
-built from this repository:
+As of 2026-09-28 it is not published to a marketplace; it is installed from a
+`.vsix` built from this repository:
 
 ```bash
 git clone https://github.com/rsantoyo-dev/uxdsl.git
@@ -180,7 +183,7 @@ covers the `files.associations → scss` alternative and its trade-off.
 
 ### Other editors
 
-Only VS Code has been tested. The config types are ordinary TypeScript types and
+As of 2026-09-28, only VS Code has been tested. The config types are ordinary TypeScript types and
 the theme schema an ordinary JSON Schema, so an editor with a TypeScript language
 server or JSON Schema support should be able to use them, and the extension's
 `uxdsl.custom-data.json` follows VS Code's CSS custom data format — but none of
@@ -272,8 +275,8 @@ UXDSL's shared defaults:
 
 **Let your editor check it.** An unknown key here is not an error — nothing
 reads it, so `includeThem: false` silently does nothing and the build just
-behaves as if you had never written it. The config `init` writes is already
-typed so the typo is flagged as you type; for a config you write by hand, use
+behaves as if you had never written it. The config `init` writes (since
+`0.5.0-beta.7`) is already typed so the typo is flagged as you type; for a config you write by hand, use
 the same form:
 
 ```js
@@ -400,9 +403,10 @@ $ npx uxdsl build
 [uxdsl] Error: uxdsl.theme.config.cjs: UXD_EDGE_VALUE: Invalid token 1 (at radii.1).
 ```
 
-Surfaces, Densities, Radii, Borders, Shadows and Typography details theme
-errors all carry this key path today; Button/Input role/state errors and a
-few lower-level theme-map checks do not yet.
+As of 2026-09-28, Surfaces, Densities, Radii, Borders, Shadows and Typography
+details theme errors carry this key path; Button/Input role/state errors (for
+example `UXD_BUTTON_SURFACE: Unknown nope.`) and a few lower-level theme-map
+checks do not.
 
 ### 3. Multiple entries, one shared theme (`includeTheme`)
 
@@ -437,8 +441,8 @@ module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaul
 ```
 
 Prefer declaring `breakpoints` in the theme file, not `uxdsl.config.cjs` — the
-theme is the one thing `uxdsl-cli`, the plugin used directly, and any future
-bundler adapter all discover and agree on, while `uxdsl.config.cjs` is
+theme is the one thing `uxdsl-cli`, the plugin used directly, the Vite plugin
+and the Webpack loader all discover and agree on, while `uxdsl.config.cjs` is
 build-orchestration specific to this CLI. `init` never writes `breakpoints:`
 into `uxdsl.config.cjs` for exactly this reason (MIG-B6-19, FEAT-008): a full
 copy of the defaults there used to permanently shadow every key the theme
@@ -523,7 +527,7 @@ don't change between rebuilds.
 
 **Watch survives errors** (MIG-B6-23, FEAT-008): an initial build that fails
 to compile, or a config/theme file that fails to load at all (a syntax
-error, for instance), no longer ends the process — the error prints and
+error, for instance), does not end the process — the error prints and
 `watch` keeps running, watching `uxdsl.config.cjs`/`uxdsl.theme.config.*`'s
 usual candidate names (plus any explicit `--config`/`--entry`) until one
 loads successfully. A plain `uxdsl build` (no `--watch`) is unaffected —
@@ -539,13 +543,15 @@ target just created) also rebuilds everything, as the safe fallback.
 
 **Writes only what changed, atomically:** an entry whose compiled output is
 byte-identical to what's already on disk is left completely alone — same
-mtime, same inode — instead of being rewritten every rebuild (previously
-every entry was rewritten unconditionally, so a dev server watching the
+mtime, same inode — instead of being rewritten every rebuild (before
+`0.5.0-beta.6` every entry was rewritten unconditionally, so a dev server watching the
 output directory reloaded stylesheets nothing had actually changed in). A
 real write goes to a temp file in the same directory first, then an atomic
 rename — a reader can never observe a truncated or empty output file mid-write.
 
-That is what the log line means, in `build` and `watch` alike:
+That is what the log line means, in `build` and `watch` alike (the text in
+parentheses was added in `0.5.0-beta.7`; earlier versions print only
+`[uxdsl] unchanged <file>`):
 
 ```text
 [uxdsl] unchanged src/uxdsl.css (compiled output identical to the file on disk; not rewritten)
@@ -591,7 +597,9 @@ npx uxdsl theme --diff
 ```json
 [
   { "path": "palette.primary.main", "value": "#123456", "source": "project" },
-  { "path": "palette.primary.dark", "value": "#581c87", "source": "default" }
+  { "path": "palette.primary.light", "value": "#a855f7", "source": "default" },
+  { "path": "palette.primary.dark", "value": "#581c87", "source": "default" },
+  { "path": "palette.primary.contrast", "value": "#ffffff", "source": "default" }
 ]
 ```
 
@@ -710,11 +718,12 @@ still writes nothing at all — neither CSS nor maps.
 ### Verifying a partial override (`theme --diff`, `theme --contrast`)
 
 A theme is the base plus your override, merged key by key — so overriding
-`palette.primary.main` keeps the base's `primary.dark` and `primary.contrast`.
+`palette.primary.main` keeps the base's `primary.light`, `primary.dark` and
+`primary.contrast`.
 Your button turns green and its `:hover`, which uses `dark`, stays purple.
 
 `uxdsl theme --diff` labels every value `project` or `default` on stdout, and
-now also prints a summary of the mixed entries on **stderr**:
+(since `0.5.0-beta.6`) also prints a summary of the mixed entries on **stderr**:
 
 ```text
 $ uxdsl theme --diff
@@ -732,8 +741,9 @@ fails.
 uxdsl theme --contrast | jq '.failures[] | {tone, state, ratio, required}'
 ```
 
-Each failure carries its mode (light/dark), component, tone, state, breakpoint,
-the resolved colors and the ratio, so it points at something you can change.
+Each failure carries its mode (light/dark), component, tone, state, pair,
+breakpoint and the measured and required ratio, so it points at something you
+can change. It does not include the resolved hex colors (as of 2026-09-28).
 It loads the exceptions shipped with the base theme; those match on the
 resolved colors, so overriding one of them stops inheriting its exception and
 reports it as stale instead of silently excusing a pair you changed.
@@ -743,7 +753,8 @@ it — and it cannot be combined with `--diff` or `--strict`, because each print
 its own document on stdout.
 
 One thing to expect on a first run: the packaged base theme does not pass its
-own gate yet. Those failures are real and disclosed upstream, not a problem
+own gate (as of 2026-09-28, `uxdsl theme --contrast` in a project with no theme
+override reports 123 failing pairs). Those failures are real and disclosed upstream, not a problem
 with your config, so focus on the pairs your own override introduced.
 
 ### 8. Strict flag parsing: accepted values, unknown flags, unknown families

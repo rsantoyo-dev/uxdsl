@@ -199,14 +199,15 @@ intencional. CHANGELOG sólo si el guard cambia lo que exige a los contribuyente
 - [x] Romper un ejemplo hace fallar el test (control negativo registrado: con las
       tres correcciones de documentación revertidas, el test falla con los 5
       problemas originales).
-- [ ] **Parcial, no cerrado:** las afirmaciones numéricas/de estado de las
-      superficies tienen test, comando o fecha. Se buscaron por texto las de estado
-      de release en los 9 documentos principales y se corrigieron las tres que
-      estaban desactualizadas (README raíz, `AGENTS.md`, rótulo del CHANGELOG); la
-      cifra de contraste de `AGENTS.md` ahora lleva fecha pero **no tiene test**
-      (lo fijará MIG-B7-11). **No** se hizo una revisión línea a línea de la prosa de
-      los README de paquete, la guía de migración, las páginas MDX ni la
-      arquitectura.
+- [x] Las afirmaciones numéricas/de estado de las superficies de consumidor
+      tienen test, comando o fecha (paso 4, 2026-09-28, ver "Paso 4" abajo):
+      `README.md` raíz, `AGENTS.md` (y su copia generada), los seis README de
+      paquete y `docs/migration.md`, revisados línea a línea contra el código; el
+      CHANGELOG sólo contra contradicciones. **Fuera de este paso, decidido por el
+      dueño:** las páginas MDX y componentes del playground (los revisa él tras
+      MIG-B7-17), `docs/architecture/`, `docs/releases/` y las demás fichas. La
+      cifra total de contraste (123) tiene comando reproducible y fecha, **no
+      test** — lo fijará MIG-B7-11.
 - [x] La decisión sobre ampliar `VISUAL_DEFAULT_FILES` queda registrada con su
       evidencia: ampliada, más un test de completitud (punto 4 de arriba).
 
@@ -224,10 +225,11 @@ node scripts/generate-language-artifacts.js --check
 
 ## Registro de implementación y evidencia
 
-Estado de esta revisión documental: **Implementada parcialmente y verificada
-localmente** en `feat/mig-b7-16-executable-docs`: el arnés, sus correcciones y el
-guard están hechos; la revisión línea a línea de la prosa **no** (ver criterio 4).
-Integración a `main` pendiente.
+Estado de esta revisión documental: **Implementada y verificada localmente;
+paso 4 con PR pendiente de mergear.** Arnés, correcciones y guard (pasos 1–3, 5,
+6) integrados en `main` (PR #10). Paso 4 (revisión línea a línea, 2026-09-28) en
+`feat/mig-b7-16-prose-review`, apilada sobre `feat/mig-b7-15-upgrade-flow`; ver
+"Paso 4" al final.
 
 | Campo | Evidencia |
 | --- | --- |
@@ -239,4 +241,133 @@ Integración a `main` pendiente.
 | Cambios visuales o API / migración | Sin cambio visual. **Cambia el hook de pre-commit**: tocar cualquiera de los 14 motores/archivos de defaults recién cubiertos exige el CHANGELOG en el commit. `package.json` raíz: `npm test` ejecuta el test nuevo y hay un `verify:doc-examples` |
 | README / CHANGELOG / migration | `README.md` raíz (sección de beta.6: publicada, no "prepared"); `packages/postcss-uxdsl/README.md` (bloque de `color()`); `packages/postcss-uxdsl/CHANGELOG.md` (rótulo de beta.6 con su fecha). `docs/migration.md`: sin cambios |
 | AGENTS / guías / arquitectura | `AGENTS.md`: los dos excerpts corregidos; párrafos de estado de beta.6 actualizados (publicada, gate automatizado pasó, validación externa pendiente); nueva sección sobre cómo se ejecutan los ejemplos y cómo marcar un error intencional; cifra de contraste fechada |
-| Límites y seguimiento | (1) **Revisión línea a línea no hecha** (criterio 4): prosa de los README de paquete, guía de migración, MDX y arquitectura. (2) **Alcance de la extracción de ejemplos del playground:** `language-css`/`uxdsl`/`json` como plantilla, constante `{name}` y `JSON.stringify` de un literal, y `CodeBlock`; **no** los `<pre>{…}</pre>` sin clase de lenguaje (6) ni los que se generan en runtime (`{usage}` calculado, `buttonComponentCss(...)`) — estos últimos ya son salida del compilador. (3) Los ejemplos de tipo pipeline (`@mixin`) sólo verifican que compilan, y en el README del CLI el `@mixin` no se incluye, así que su cuerpo no se ejercita. (4) **La clasificación visual/no visual del guard es un juicio, no una medición.** (5) El guard sólo protege lo que se commitea con el hook; nada obliga a que el CHANGELOG diga algo *correcto* (pide que esté en el commit, no su contenido). (6) La cifra de contraste de `AGENTS.md` sigue sin test |
+| Límites y seguimiento | (1) **Revisión línea a línea:** hecha en el paso 4 (2026-09-28, ver abajo) para los README, `AGENTS.md` y la guía de migración; MDX, componentes del playground y arquitectura quedan fuera por decisión del dueño. (2) **Alcance de la extracción de ejemplos del playground:** `language-css`/`uxdsl`/`json` como plantilla, constante `{name}` y `JSON.stringify` de un literal, y `CodeBlock`; **no** los `<pre>{…}</pre>` sin clase de lenguaje (6) ni los que se generan en runtime (`{usage}` calculado, `buttonComponentCss(...)`) — estos últimos ya son salida del compilador. (3) Los ejemplos de tipo pipeline (`@mixin`) sólo verifican que compilan, y en el README del CLI el `@mixin` no se incluye, así que su cuerpo no se ejercita. (4) **La clasificación visual/no visual del guard es un juicio, no una medición.** (5) El guard sólo protege lo que se commitea con el hook; nada obliga a que el CHANGELOG diga algo *correcto* (pide que esté en el commit, no su contenido). (6) La cifra de contraste de `AGENTS.md` sigue sin test |
+
+### Paso 4 — revisión línea a línea (2026-09-28)
+
+Rama `feat/mig-b7-16-prose-review` (base `origin/feat/mig-b7-15-upgrade-flow`
+`d8c185e`, que apila MIG-B7-12 y MIG-B7-15 sobre `main` `dcd8a26`); SHA fijado al
+mergear. Es una revisión de exactitud, no de estilo: no se reestructuró ni se
+cambió alcance o voz. Cada afirmación se comprobó leyendo el código o
+ejecutándolo: el plugin sobre `dist/` recién compilado, el CLI en directorios
+temporales, los tarballs publicados de 0.4.0, beta.1, beta.5 y beta.6 vía
+`npm pack`, `npm view … dist-tags` y el historial de git.
+
+**Criterio para lo que envejece:**
+
+- Un número o estado pasa a tener (a) un comando reproducible o un test citado,
+  o (b) una fecha ("as of 2026-09-28").
+- Un "now", "ya no" o "yet" que sólo marca un cambio pasado se reemplaza por la
+  versión en que ocurrió (`since 0.5.0-beta.6`), comprobada contra el commit y el
+  orden de releases.
+- Lo de `0.5.0-beta.7` se rotula "unreleased as of 2026-09-28".
+- La cifra de contraste es la misma en todas las superficies: **123 pares con
+  `theme/base.contrast-exceptions.json`** (el que usa `uxdsl theme --contrast`),
+  **124 sin él**. Antes de MIG-B7-01 eran 156 y 157. Ambos pares se midieron
+  compilando el commit anterior y el propio `88828d5`.
+
+| Superficie | Errores de hecho corregidos | Afirmaciones que envejecen | Ejemplos |
+| --- | --- | --- | --- |
+| `AGENTS.md` (+ `packages/postcss-uxdsl/docs/agent-guide.md` regenerado) | `var(--border-n)`, `var(--radius-n)` y `var(--shadow-key)` pasan a los nombres que se compilan de verdad (`--uxdsl__border__n`, `--uxdsl__radius__n`, `--uxdsl__shadow__key`). FEAT-002 "targets" → "moved … in beta.1". `responsiveEntries` y `resolveResponsiveValue` se exportan desde `postcss-uxdsl/language`, no desde `ds-runtime`. La advertencia de familia desconocida la emiten `validateAndNormalizeTheme` y el CLI; el plugin, no | Cifra de contraste fechada, con comando reproducible y la aclaración 123/124. MIG-B7-11 "will pin" → pendiente. Los 9 fallos de placeholder citan el test que los fija. MIG-B7-01, 12 y 14 y "la guía viaja en el paquete" quedan rotulados como beta.7 sin publicar: se comprobó que el tarball de beta.6 no trae `agent-guide.md` y que su `init` no escribe `@ts-check`. Validación externa de beta.6 fechada. "stories describe planned work" → no publicadas, aunque algunas ya estén en `main` | — |
+| `README.md` raíz | Los defaults de breakpoints se definen en `theme/base.json`; `ds-runtime/breakpoints.ts` sólo los reexporta. `generate:language` genera más de lo listado (schema, grammar, CSS custom data). "Density-15 → space-17 se preserva" era falso: se reconcilió antes de beta.1. "buttons/inputs no unificados" era falso desde beta.1. Faltaba la regla del hook que exige el CHANGELOG | Dist-tags fechados (hoy apuntan a beta.6). "next release" → `0.5.0-beta.1`, verificado en los tarballs de 0.4.0 y beta.1. Extensión fuera de Marketplace y Open VSX, fechado, con MIG-B7-05. Contraste con 123/124 | — |
+| `packages/postcss-uxdsl/README.md` | `init` no crea tema. `includeTheme: false` también suprime el `@import` de Google Fonts. El "Known caveat" de spacing parcial era falso: `resolveTheme` conserva 1–16 y `{ spacing: { 1: '4px' } }` compila. Códigos reales de argumentos repetidos o indefinidos (`UXD_SURFACE_ARGUMENT`, `UXD_SURFACE_REFERENCE`). El ejemplo de colisión era imposible; se reemplazó por uno real (`colors['gray-300']` → `UXD_FOUNDATION_NAME_COLLISION`), con los códigos `*_NAME_COLLISION` por familia. El tema base emite `--font-code` sin prefijo. `getToneFamilies` sí es público vía `postcss-uxdsl/language`. Los `DEFAULT_*` se leen de `base.json`. `fontsize` y `focusVisible` sí fallan al compilar. El informe de `--contrast` no incluye colores resueltos. Vite y Webpack sí soportan el tema asíncrono | Contraste fechado con 123/124. MIG-B7-01 y MIG-B7-14 rotulados beta.7. El coste de validación lleva máquina, fecha y `npm run bench:references`. Packs legacy sin retiro programado (fechado). Versiones para el alias de palette (beta.1), `exports` (beta.1), el discovery del plugin (beta.6) y `sources` de los mapas (beta.6); key paths de diagnóstico fechados | El snippet de `checkThemeContrast` usaba `resolveTheme` sin importarlo |
+| `packages/uxdsl-cli/README.md` | "futuro adaptador Vite/Webpack" → ya usan `compile()` y el discovery. `init` también crea `postcss.config.js` en un proyecto Next.js que no lo tiene. Un override parcial conserva también `light`. El informe de `--contrast` no incluye colores resueltos. Ancla rota `#compile-input-config` → `#compileinput-config` | Versiones para `UXD_IMPORT_CYCLE`, las escrituras atómicas y el resumen de `--diff` (beta.6), y para la config tipada y el mensaje "unchanged" (beta.7). Límites de la extensión y de los key paths fechados. Contraste con 123 | Al JSON de `--diff` le faltaban las filas reales `light` y `contrast` |
+| `packages/postcss-uxdsl/docs/migration.md` | La receta de MIG-B6-29 omitía variantes nuevas y el cambio de `colors.gray` (el gris de `border()`). El párrafo de tipografía decía que ningún rol trae `fontFamily` ni márgenes (el rol `default` los trae) y mandaba copiar `typography-defaults.ts`, que se borró en beta.6. "ocho emisores" listaba siete. `includeTheme: false` sin `theme` omitía el discovery de beta.6. Citaba un patrón que nunca se documentó. "Did you mean" sólo aparece cuando hay un flag cercano. Decía "tres casos" sobre cuatro puntos. Ancla rota. El informe de contraste no trae colores | Título "0.5.0-beta.2" → las betas de 0.5.0. "Adelanto beta.6 (sin publicar)" → publicada el 2026-09-23. beta.2 "preparada" → publicada el 2026-09-16. beta.7 marcada sin publicar. Contraste con 123. "hoy" fechado. "Verificación" apunta al arnés en vez de a "este checkout beta.2" | `palette(text-secondary)` ya no fallaba porque el base define `text.secondary`; pasa a `palette(brand-secondary)`. Se añadió la forma de uso del codemod `size-overrides` desde un proyecto consumidor |
+| `packages/uxdsl-core/README.md` | `fileId` lee el archivo e **ignora `source`** (reproducido). Vite y Webpack ya usan `compile()`. `includeTheme` también controla los tokens `:root`. La nota "v0.1.9" corresponde a una versión que nunca se publicó. La nota "v0.3.0" era en realidad de beta.1: commit `ee645d8`, posterior a 0.4.0 y anterior a `133f4a8` | MIG-B6-28 rotulado beta.6 | — |
+| `packages/vite-plugin-uxdsl/README.md` | El discovery busca en el `root` de Vite, no "junto a" él | Modo `'auto'` "used to" → hasta beta.5 | — |
+| `packages/uxdsl-webpack-loader/README.md` | `rootContext` es la opción `context` de webpack (por defecto `process.cwd()`), no el directorio del config | MIG-B6-28 rotulado beta.6 | — |
+| `packages/uxdsl-vscode/README.md` | Sólo resalta y completa los breakpoints por defecto, no los del tema del proyecto | Estado de publicación fechado y apuntando a MIG-B7-05. El completado del tema del proyecto → MIG-B7-13, bloqueada por D-11 | — |
+| `packages/postcss-uxdsl/CHANGELOG.md` | Sin contradicciones con las demás superficies. No se reescribió historia; sólo se aclaró en la sección `unreleased` de beta.7 que "156 → 123" se cuenta con el archivo de excepciones (157 → 124 sin él) | — | — |
+
+**Comprobado y sin cambios** (muestra):
+
+- Existen los 11 archivos que `AGENTS.md` manda alinear.
+- Coinciden con el código:
+  - las listas de campos y estados de Typography, Surface, Button e Input;
+  - los keywords de radius;
+  - los roles y estados por defecto;
+  - los códigos `UXD_*` citados y las opciones de `applyTheme`;
+  - las claves de almacenamiento legacy.
+- Salidas que coinciden al ejecutarlas:
+  - la de "See it in 60 seconds";
+  - la del codificador de Google Fonts;
+  - los flags y mensajes del CLI;
+  - el ratio 3.11:1 del ejemplo verde.
+- El base tiene 14 familias de palette, 11 de ellas en modo oscuro.
+
+**Hallazgos en el código (registrados, no corregidos):**
+
+1. **Validación de tema: valores no-string aceptados en silencio.** Un tema con
+   `palette.primary.main: 5` o `spacing: { "1": {} }` compila con exit 0, sin
+   advertencia, y emite CSS inválido. Reproducción, en un directorio vacío
+   (`$REPO` = raíz del monorepo):
+
+   ```bash
+   mkdir -p src
+   printf '.a { color: palette(primary.main); padding: space(1); }\n' > src/a.uxdsl
+   printf "module.exports = { entry: './src/a.uxdsl', outFile: './out.css' };\n" > uxdsl.config.cjs
+   printf '{ "palette": { "primary": { "main": 5 } }, "spacing": { "1": {} } }\n' > uxdsl.theme.json
+   node "$REPO/packages/uxdsl-cli/bin/uxdsl.js" build   # exit 0
+   grep -o -- '--uxdsl__space__1:[^;]*;' out.css         # --uxdsl__space__1: [object Object];
+   ```
+
+   `out.css` contiene `--uxdsl__palette__primary-main: 5;` y
+   `--uxdsl__space__1: [object Object];`.
+2. **`{ modes: { dark: null } }` (o `modes: null`) elimina todo el CSS de modo
+   oscuro**, porque `deepMergeTheme` asigna `null`. Contradice dos textos:
+   `docs/migration.md` ("no existe un valor de override que quite
+   `modes.dark`") y un comentario de `test/default-theme.test.js`. Falta decidir
+   si `null` es una forma soportada de quitarlo o un hueco que debería
+   rechazarse. La prosa no se cambió hasta esa decisión.
+3. **Mensajes de código desactualizados:**
+   - El error de `uxdsl theme --contrast` dice que el informe lista "resolved
+     colors" (`packages/uxdsl-cli/bin/uxdsl.js`, ~l. 1390), pero
+     `ContrastFailure` no los trae.
+   - `src/config.ts` (~l. 171) todavía sugiere "a future bundler adapter" para
+     un tema asíncrono, cuando Vite y Webpack ya lo soportan.
+4. **`processUxdsl(source, { fileId })` ignora `source`** (lee el archivo). Ahora
+   está documentado; queda anotado por si no es lo que un llamador espera.
+5. `test/fixtures/reference-integrity-oracle.js` sigue en el repo, aunque la
+   ficha de MIG-B6-25 pedía borrarlo al publicar beta.6. El README dice que
+   existe, lo cual hoy es cierto.
+
+**Fuera de alcance, anotado y sin tocar:**
+
+- `docs/releases/0.5.0-beta.6.md` dice "not published" (se corrige en el PR #14).
+- La fila de MIG-B7-14 del índice dice "PR pendiente", aunque `43c3e18` ya está
+  en `main`.
+
+**Recomendaciones editoriales (no hechas):**
+
+1. `AGENTS.md` y el README raíz cargan mucha historia de release: las fases de
+   MIG-B6-29, la sección "Beta.6 implementation planning" y el historial de
+   beta.1 a beta.5. Podría vivir en las fichas y los release records, dejando
+   sólo el contrato en la guía.
+2. La URL de la documentación es inconsistente: `uxdsl.vercel.app` en los README,
+   `uxdsl.io` en `AGENTS.md` y en el `$id` del schema. Ambas responden 200.
+3. Los README describen `main` (beta.7) mientras `@beta` instala beta.6. Una
+   línea "este README describe la versión X" ayudaría.
+4. "See it in 60 seconds" invita a escribir en el entry que genera `init`, que
+   está marcado "AUTO-GENERATED — DO NOT EDIT" y que `generate-entry`
+   sobrescribe.
+5. El anidamiento cronológico de `migration.md` y la numeración de secciones del
+   README del CLI son irregulares.
+
+**No verificado:**
+
+- Comportamiento en navegador.
+- `import type` desde `postcss-uxdsl` con `tsc`: sólo se leyó el `.d.ts`.
+- Las cifras de registry de beta.5 frente a beta.6 del README del CLI.
+- npm 10.8, pnpm 9.15 y Yarn 1.22.
+- Los pasos de build del `.vsix`.
+- Una sesión real de `watch`: se confió en `test/watch-mode.test.js`.
+- La rotura de `postcss-advanced-variables` ^4/^5.
+
+**Comandos (macOS 27.0, Darwin 27.0.0, Node v20.19.0), desde la raíz:**
+
+- `npm run verify:doc-examples` → exit 0 (45 ejemplos, 29 excerpts, 110 archivos).
+- `node scripts/generate-agent-guide.js` → exit 0; `--check` → exit 0.
+- `node scripts/generate-language-artifacts.js --check` → exit 0.
+- `npm test` → exit 0, **742 `# pass` / 0 `# fail`** (antes hay que `npm install` en `vite-plugin-uxdsl`, `uxdsl-webpack-loader` y `uxdsl-vscode` de un worktree nuevo: sin ello el primer intento terminó en exit 127, `tsc: command not found`; sus lockfiles no se commitean).
+- `uxdsl theme --contrast` sin override → exit 1, con 123 pares, como se
+  documenta.
