@@ -785,6 +785,14 @@ documentation components through the real compiler (`scripts/doc-examples.test.j
 - `<!-- doc-example: output -->` on the line before a block marks compiled output
   being shown rather than input (markdown only).
 
+What the playground has to show is derived, not listed by hand:
+`docs/architecture/playground-capability-matrix.md` is generated from UXDSL's own
+sources (`npm run generate:capabilities`), and `scripts/capability-matrix.test.js`
+fails when a capability has no live example and is not on the recorded list of gaps,
+or when a recorded gap has been closed and is still on the list. A new directive,
+function, theme family, role, state or documented runtime function therefore shows up
+there by itself.
+
 A new file under `packages/postcss-uxdsl/src` must be classified in
 `scripts/verify-docs-update.js` — a guarded visual-default file, or a not-visual
 file with its reason — or `npm test` fails.
@@ -802,6 +810,13 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/SurfaceDocumentation.tsx`
 - `packages/playground-nextjs/src/components/ButtonDocumentation.tsx`
 - `packages/playground-nextjs/src/components/InputDocumentation.tsx`
+
+The pages that call UXDSL's own tools for real (MIG-B7-17 phase C) are kept aligned with the
+runtime API, the CLI and the diagnostics catalog rather than with one primitive:
+
+- `packages/playground-nextjs/src/components/RuntimeLab.tsx` and `RuntimeEngines.tsx` (`/docs/runtime`; state-changing calls run in the iframe sandbox, `src/runtime-sandbox/sandbox-entry.ts`)
+- `packages/playground-nextjs/src/components/ContrastReport.tsx` (`/docs/contrast`)
+- `packages/playground-nextjs/src/components/CliCaptures.tsx` and `DiagnosticsCaptures.tsx` (`/docs/cli`, `/docs/diagnostics`), which render output captured by `packages/playground-nextjs/scripts/capture-capabilities.js` — refresh it with that script when the CLI or a diagnostic changes; `npm test` fails while it is stale.
 
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run

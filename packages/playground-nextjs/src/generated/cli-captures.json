@@ -52,7 +52,7 @@
         "uxdsl.config.cjs"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] unchanged dist/app.css\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] unchanged dist/app.css (compiled output identical to the file on disk; not rewritten)\n",
       "stderr": ""
     },
     {
@@ -160,7 +160,7 @@
         "--strict-theme=breakpoints"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] unchanged dist/app.css\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] unchanged dist/app.css (compiled output identical to the file on disk; not rewritten)\n",
       "stderr": ""
     },
     {

@@ -251,6 +251,12 @@ async function main() {
     return 'matrix complete, no recorded gaps';
   });
 
+  await check('B7-17E', '[repo] real Chrome walk of the built playground (verify:playground-browser)', () => {
+    const out = repoNode('verify:playground-browser', ['fixtures/playground-browser/walk.js', '--build'], 1800000);
+    const line = out.trim().split('\n').reverse().find((l) => /PASS|pages|routes/.test(l));
+    return line ? line.trim().slice(0, 160) : 'passed';
+  });
+
   // --- Everything the beta.6 gate proves still holds --------------------------
   if (args.has('--skip-beta6')) {
     DELEGATED.push(['beta6', 'skipped by flag', 'Run without --skip-beta6, or `npm run verify:beta6`.']);

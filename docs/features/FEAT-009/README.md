@@ -92,7 +92,7 @@ entrada en `packages/postcss-uxdsl/CHANGELOG.md` con sección `Visual changes`.
 | MIG-B7-15 | [Actualizar sin sorpresas](MIG-B7-15-actualizar-sin-sorpresas.md) | `beta.7` | P1 · S | — (su paso 3 espera D-12) | **Implementada, PR pendiente de mergear** — D-12 = (a), sin flag |
 | MIG-B7-16 | [Documentación ejecutable y revisión de todas las superficies](MIG-B7-16-documentacion-ejecutable.md) | `beta.7` | P1 · L | — (coordinar con 12 y 15) | **Implementada, paso 4 con PR pendiente de mergear** — arnés y guard integrados (PR #10); revisión línea a línea de README, `AGENTS.md` y migración hecha el 2026-09-28 |
 | MIG-B7-17 | [Playground: mejor implementador y prueba viva de cada capacidad](MIG-B7-17-playground-referencia.md) | `beta.7` | P1 · **XL** (por fases) | 09 y 16 | **En curso — Fases A, B, C y E hechas** (rama `feat/mig-b7-17c-capabilities`: 0 brechas en la matriz, recorrido en Chrome real en verde con controles negativos); **queda la Fase D**, con el dueño |
-| MIG-B7-18 | [Gate de `0.5.0-beta.7`](MIG-B7-18-gate-beta7.md) | `beta.7` | P0 · M | 01, 09, 12, 14, 15, 16, 17 | Pendiente |
+| MIG-B7-18 | [Gate de `0.5.0-beta.7`](MIG-B7-18-gate-beta7.md) | `beta.7` | P0 · M | 01, 09, 12, 14, 15, 16, 17 | **Implementada, PR pendiente de mergear** — `verify:beta7` 13/13 sobre beta.7 integrada |
 
 01, 04, 07, 08, 09, 10, 12, 14, 15 y 16 no dependen entre sí. **17 depende de 09 y
 de 16** (limpieza primero; arnés de ejemplos después). 05 depende de que el VSIX ya
