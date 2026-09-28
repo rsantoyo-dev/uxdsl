@@ -140,6 +140,58 @@ function isCodeChangeInPackage(relFile, pkgRel) {
   return !docOnly && !lockfileOnly;
 }
 
+function readJsonAt(spec) {
+  const result = spawnSync('git', ['show', spec], { cwd: rootDir, encoding: 'utf8' });
+  if (result.status !== 0) return null;
+  try {
+    return JSON.parse(result.stdout);
+  } catch {
+    return null;
+  }
+}
+
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(',')}]`;
+  if (value && typeof value === 'object') {
+    return `{${Object.keys(value).sort().map((k) => `${JSON.stringify(k)}:${stableJson(value[k])}`).join(',')}}`;
+  }
+  return JSON.stringify(value);
+}
+
+const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
+
+// A release bumps every package's `version`, the ranges on its sibling
+// packages, and the theme manifest's `uxdslVersion` — and nothing else. There
+// is no consumer-facing behavior to document there (the release record in
+// docs/releases/ is where a version is described), so a staged file whose only
+// difference from HEAD is those fields counts as mechanical, like a lockfile.
+// Anything else in the same file — a new dependency, a changed `exports` — is
+// still a code change.
+function withoutVersionFields(json, relFile, internalNames) {
+  const copy = JSON.parse(JSON.stringify(json));
+  if (relFile.endsWith('theme-manifest.json')) {
+    delete copy.uxdslVersion;
+    return copy;
+  }
+  delete copy.version;
+  for (const field of DEPENDENCY_FIELDS) {
+    if (!copy[field]) continue;
+    for (const name of internalNames) delete copy[field][name];
+  }
+  return copy;
+}
+
+function isVersionBumpOnly(relFile, internalNames) {
+  if (!relFile.endsWith('/package.json') && !relFile.endsWith('/theme-manifest.json')) return false;
+  const before = readJsonAt(`HEAD:${relFile}`);
+  const after = readJsonAt(`:${relFile}`);
+  if (!before || !after) return false;
+  return (
+    stableJson(withoutVersionFields(before, relFile, internalNames)) ===
+    stableJson(withoutVersionFields(after, relFile, internalNames))
+  );
+}
+
 function main() {
   const stagedOutput = runGit(['diff', '--cached', '--name-only', '--diff-filter=ACMR']);
   if (!stagedOutput) {
@@ -160,9 +212,18 @@ function main() {
   const rootReadmeChanged = stagedFiles.includes('README.md');
   const violations = [];
   const touchedPackages = [];
+  const internalNames = publishablePackages.map((pkg) => {
+    try {
+      return JSON.parse(fs.readFileSync(path.join(rootDir, pkg.rel, 'package.json'), 'utf8')).name;
+    } catch {
+      return null;
+    }
+  }).filter(Boolean);
 
   publishablePackages.forEach((pkg) => {
-    const hasCodeChange = stagedFiles.some((f) => isCodeChangeInPackage(f, pkg.rel));
+    const hasCodeChange = stagedFiles.some(
+      (f) => isCodeChangeInPackage(f, pkg.rel) && !isVersionBumpOnly(f, internalNames)
+    );
     if (!hasCodeChange) return;
 
     touchedPackages.push(pkg.dir);

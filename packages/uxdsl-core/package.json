@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-core",
-  "version": "0.5.0-beta.5",
+  "version": "0.5.0-beta.6",
   "description": "Core processing engine for UXDSL - a lightweight CSS DSL for design systems",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -53,7 +53,7 @@
     "postcss-import": "^16.1.0",
     "postcss-scss": "^4.0.9",
     "postcss-value-parser": "^4.2.0",
-    "postcss-uxdsl": "0.5.0-beta.5"
+    "postcss-uxdsl": "0.5.0-beta.6"
   },
   "publishConfig": {
     "access": "public",
