@@ -1,0 +1,3 @@
+.save {
+  @ds-button(contained primary 2);
+}

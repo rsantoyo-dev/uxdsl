@@ -701,6 +701,13 @@ input[type="range"] {
 input[type="range"]:hover {
   opacity: 1;
 }
+/* MIG-B7-17 phase E: the rule above removes the native outline; the browser walk found every
+   range slider reachable by Tab with no visible focus. Keyboard focus gets a ring again. */
+input[type="range"]:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
+}
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
@@ -915,6 +922,12 @@ html, body {
 
   &::placeholder {
     color: var(--uxdsl__palette__text-secondary);
+  }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
   }
 }
 .ai-submit-btn { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
@@ -1174,46 +1187,366 @@ html, body {
   justify-content: flex-end;
   gap: var(--uxdsl__space__5);
 }
-/* ButtonDemo component styles - Scoped */
-#ButtonDemo {
-  .btn { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); cursor: pointer; transition: all 0.2s ease; }
-.btn:hover { background: var(--uxdsl__button__contained-hover-bg); color: var(--uxdsl__button__contained-hover-color); }
-.btn.is-selected, .btn[aria-pressed="true"], .btn[aria-selected="true"] { background: var(--uxdsl__button__contained-selected-bg); color: var(--uxdsl__button__contained-selected-color); }
-  .btn:hover { transform: translateY(-1px); }
-
-  .btn--outlined { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--outlined:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
-.btn--outlined.is-selected, .btn--outlined[aria-pressed="true"], .btn--outlined[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
-  .btn--flat { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--flat:hover { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
-.btn--flat.is-selected, .btn--flat[aria-pressed="true"], .btn--flat[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
-
-  .btn--secondary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--secondary:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--secondary.is-selected, .btn--secondary[aria-pressed="true"], .btn--secondary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--outlined.btn--secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--outlined.btn--secondary:hover { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
-.btn--outlined.btn--secondary.is-selected, .btn--outlined.btn--secondary[aria-pressed="true"], .btn--outlined.btn--secondary[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-secondary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-secondary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-secondary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
-  .btn--flat.btn--secondary { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); }
-.btn--flat.btn--secondary:hover { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
-.btn--flat.btn--secondary.is-selected, .btn--flat.btn--secondary[aria-pressed="true"], .btn--flat.btn--secondary[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-secondary-selected-color, var(--uxdsl__button__flat-selected-color)); }
-
-  .btn--sm { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--sm:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--sm.is-selected, .btn--sm[aria-pressed="true"], .btn--sm[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--md { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--md:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--md.is-selected, .btn--md[aria-pressed="true"], .btn--md[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  .btn--lg { padding: var(--uxdsl__density__3); border-radius: var(--uxdsl__radius__3); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
-.btn--lg:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.btn--lg.is-selected, .btn--lg[aria-pressed="true"], .btn--lg[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+/* MIG-B7-17 phase C: the pages that call UXDSL's own tools for real — Runtime, Contrast, CLI,
+   Diagnostics. One stylesheet for the four, written in UXDSL: Density for component spacing,
+   Palette roles for interface color, Surfaces/Buttons/Inputs as roles, configured breakpoints.
+   The terminal panels are dark in both modes on purpose (a terminal), with Color identities,
+   like the code panels of DocumentationSection.uxdsl. */
+.cap-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
 }
-/* CardDemo component styles - Scoped */
-#CardDemo {
-  .card { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); padding: var(--uxdsl__space__4); border-radius: var(--uxdsl__radius__2); transition: all 0.3s ease; }
-  .card:hover { transform: translateY(-2px); box-shadow: var(--uxdsl__shadow__3); }
-  .card__title { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0 0 var(--uxdsl__space__2) 0; }
-  .card__content { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 80%, transparent); }
+@media (min-width: 1024px) {
+.cap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* Small figures (the contrast summary): two across on a phone, three from xl. */
+.cap-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--uxdsl__density__3);
+  margin-block: var(--uxdsl__density__4);
+}
+@media (min-width: 1280px) {
+.cap-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+}
+.cap-card {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__surface__outlined-radius);
+  background: var(--uxdsl__surface__outlined-bg);
+  color: var(--uxdsl__surface__outlined-color);
+  border: var(--uxdsl__surface__outlined-border);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  display: grid;
+  align-content: start;
+  gap: var(--uxdsl__density__2);
+  min-width: 0;
+  margin-block: var(--uxdsl__density__4);
+}
+.cap-card__title {
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-size);
+  line-height: var(--uxdsl__typography__h5-line);
+  font-weight: var(--uxdsl__typography__h5-weight);
+  letter-spacing: var(--uxdsl__typography__h5-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  margin: 0;
+}
+.cap-card__subtitle {
+  font-family: var(--uxdsl__typography__h6-font-family);
+  font-size: var(--uxdsl__typography__h6-size);
+  line-height: var(--uxdsl__typography__h6-line);
+  font-weight: var(--uxdsl__typography__h6-weight);
+  letter-spacing: var(--uxdsl__typography__h6-spacing);
+  margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
+  margin: 0;
+}
+.cap-note {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+  margin: 0;
+}
+.cap-facts {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__space__2) var(--uxdsl__density__3);
+  margin: 0;
+}
+@media (min-width: 768px) {
+.cap-facts {
+    grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+}
+}
+.cap-facts dt {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.cap-facts__row {
+  display: contents;
+}
+.cap-block {
+  display: block;
+  overflow-wrap: anywhere;
+}
+.cap-label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-field { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: var(--uxdsl__surface__outlined-bg); color: var(--uxdsl__surface__outlined-color); border: var(--uxdsl__surface__outlined-border); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-base-caret);
+}
+.cap-field::placeholder { color: var(--uxdsl__input__outlined-base-placeholder); }
+.cap-field:focus { border: var(--uxdsl__input__outlined-focus-border); }
+.cap-field:invalid, .cap-field[aria-invalid="true"] { border: var(--uxdsl__input__outlined-invalid-border); }
+.cap-field:disabled, .cap-field[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-disabled-opacity); }
+.cap-field--code {
+  font-family: var(--uxdsl__font__code, monospace);
+  resize: vertical;
+}
+.cap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__2);
+}
+.cap-button { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: 1px solid var(--uxdsl__palette__primary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+  text-align: left;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.cap-button:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.cap-button.is-selected, .cap-button[aria-pressed="true"], .cap-button[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+.cap-button--reset { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+}
+.cap-button--reset:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.cap-button--reset.is-selected, .cap-button--reset[aria-pressed="true"], .cap-button--reset[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+.cap-steps {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-steps li {
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-log {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+  padding-inline-start: var(--uxdsl__space__6);
+  overflow-wrap: anywhere;
+}
+.cap-log li.is-invalid {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-event {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  color: var(--uxdsl__palette__text-secondary);
+}
+.cap-result {
+  color: var(--uxdsl__palette__success-main);
+  font-weight: 600;
+}
+.cap-result--error {
+  color: var(--uxdsl__palette__error-main);
+}
+.cap-sandbox {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+}
+.cap-sandbox__controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--uxdsl__density__3);
+  align-items: start;
+}
+@media (min-width: 1024px) {
+.cap-sandbox__controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+}
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
+   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+.cap-frame-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__2);
+  box-shadow: var(--uxdsl__shadow__1);
+}
+.cap-frame {
+  display: block;
+  width: 820px;
+  height: 340px;
+  border: 0;
+}
+.cap-stat {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: grid;
+  gap: var(--uxdsl__space__1);
+}
+.cap-stat__label {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+}
+.cap-stat__value {
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-size);
+  line-height: var(--uxdsl__typography__h4-line);
+  font-weight: var(--uxdsl__typography__h4-weight);
+  letter-spacing: var(--uxdsl__typography__h4-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  margin: 0;
+}
+.cap-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+.cap-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+.cap-table-wrap caption {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  text-align: left;
+  font-weight: 600;
+  padding-block: var(--uxdsl__space__2);
+}
+.cap-table-wrap th,
+.cap-table-wrap td {
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
+  vertical-align: top;
+}
+.cap-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__density__3);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+}
+.cap-run {
+  display: grid;
+  gap: var(--uxdsl__space__2);
+  margin: 0 0 var(--uxdsl__density__4);
+  min-width: 0;
+}
+.cap-run__title {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uxdsl__space__2);
+  margin: 0;
+}
+.cap-terminal {
+  margin: 0;
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__radius__1);
+  font-family: var(--uxdsl__font__code, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+.cap-terminal__prompt {
+  color: var(--uxdsl__color__green-300);
+}
+.cap-terminal__err {
+  color: var(--uxdsl__color__red-300);
+}
+.cap-exit {
+  font-family: var(--uxdsl__typography__small-font-family);
+  font-size: var(--uxdsl__typography__small-size);
+  line-height: var(--uxdsl__typography__small-line);
+  font-weight: var(--uxdsl__typography__small-weight);
+  letter-spacing: var(--uxdsl__typography__small-spacing);
+  margin-block-start: var(--uxdsl__typography__small-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__small-margin-block-end);
+  padding: 0 var(--uxdsl__space__3);
+  border-radius: 9999px;
+}
+.cap-exit--ok {
+  background: var(--uxdsl__palette__success-main);
+  color: var(--uxdsl__palette__success-contrast);
+}
+.cap-exit--fail {
+  background: var(--uxdsl__palette__error-main);
+  color: var(--uxdsl__palette__error-contrast);
+}
+.cap-transcript {
+  display: grid;
+  gap: var(--uxdsl__density__2);
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.cap-alias-demo {
+  display: grid;
+  gap: var(--uxdsl__density__3);
+  align-content: start;
+}
+.cap-alias-box {
+  padding: var(--uxdsl__surface__flat-padding);
+  border-radius: var(--uxdsl__surface__flat-radius);
+  background: var(--uxdsl__surface__flat-bg);
+  color: var(--uxdsl__surface__flat-color);
+  border: var(--uxdsl__surface__flat-border);
+  box-shadow: var(--uxdsl__surface__flat-shadow);
+  padding: var(--uxdsl__density__4);
+  background: var(--uxdsl__palette__surface-main);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+}
+/* The aliases under test: these two rules must render identically. */
+.cap-alias-box--alias {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
+}
+.cap-alias-box--name {
+  box-shadow: var(--uxdsl__shadow__2);
+  border-radius: var(--uxdsl__radius__2);
 }
 /* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
    CodeBlock.tsx. */
@@ -5717,104 +6050,6 @@ html, body {
         box-shadow: var(--uxdsl__shadow__5) !important
     }
 }
-/* DemoTypography styles - Scoped */
-#DemoTypography {
-  .typo-section { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
-  .typo-header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
-  .demo-title { font-family: var(--uxdsl__typography__h4-font-family); font-size: var(--uxdsl__typography__h4-size); line-height: var(--uxdsl__typography__h4-line); font-weight: var(--uxdsl__typography__h4-weight); letter-spacing: var(--uxdsl__typography__h4-spacing); margin-block-start: var(--uxdsl__typography__h4-margin-block-start); margin-block-end: var(--uxdsl__typography__h4-margin-block-end); margin: 0; }
-  .demo-subtitle { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); opacity: 0.75; margin: 0; max-width: 720px; }
-
-  .typo-stack { display: flex; flex-direction: column; gap: 0; } /* Removed gap for tighter table look */
-
-  .typo-row {
-    display: flex;
-    align-items: flex-start;
-    gap: var(--uxdsl__density__4);
-    padding: var(--uxdsl__density__3) 0;
-    border-bottom: 1px solid var(--uxdsl__palette__surface-dark);
-    
-    &:last-child {
-      border-bottom: none;
-    }
-  }
-
-  .typo-row__meta {
-    width: 50px;
-    flex-shrink: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--uxdsl__space__1); /* Tighter gap */
-    border-right: 1px solid var(--uxdsl__palette__surface-dark);
-    padding-right: var(--uxdsl__density__1); /* Reduced padding */
-  }
-
-  .typo-row__label {
-    font-family: var(--uxdsl__typography__caption-font-family);
-    font-size: var(--uxdsl__typography__caption-size);
-    line-height: var(--uxdsl__typography__caption-line);
-    font-weight: var(--uxdsl__typography__caption-weight);
-    letter-spacing: var(--uxdsl__typography__caption-spacing);
-    margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__caption-margin-block-end); /* Base caption style */
-    font-size: 0.6rem;
-    font-weight: 400;
-    color: var(--uxdsl__palette__text-secondary);
-    opacity: 0.6;
-    line-height: 1.2;
-    text-transform: none; /* Ensure lowercase/normal */
-  }
-
-  .typo-row__edit {
-    background: transparent;
-    border: none; /* No border */
-    cursor: pointer;
-    padding: 0; /* No padding */
-    color: var(--uxdsl__palette__secondary-main);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.6;
-    transition: all 0.2s;
-    margin-top: var(--uxdsl__space__2); /* Explicit stable spacing. */
-    
-    &:hover {
-      opacity: 1;
-      border-color: var(--uxdsl__palette__secondary-main);
-      background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 10%, transparent);
-    }
-  }
-
-  .typo-row__content {
-    flex: 1;
-    /* Allow font to flow naturally */
-  }
-
-  /* Typography samples */
-  .sample-h1 { font-family: var(--uxdsl__typography__h1-font-family); font-size: var(--uxdsl__typography__h1-size); line-height: var(--uxdsl__typography__h1-line); font-weight: var(--uxdsl__typography__h1-weight); letter-spacing: var(--uxdsl__typography__h1-spacing); margin-block-start: var(--uxdsl__typography__h1-margin-block-start); margin-block-end: var(--uxdsl__typography__h1-margin-block-end); margin: 0; }
-  .sample-h2 { 
-    font-family: var(--uxdsl__typography__h2-font-family); 
-    font-size: var(--uxdsl__typography__h2-size); 
-    line-height: var(--uxdsl__typography__h2-line); 
-    font-weight: var(--uxdsl__typography__h2-weight); 
-    letter-spacing: var(--uxdsl__typography__h2-spacing); 
-    margin-block-start: var(--uxdsl__typography__h2-margin-block-start); 
-    margin-block-end: var(--uxdsl__typography__h2-margin-block-end); 
-    margin: 0; 
-    font-size: var(--uxdsl__typography__h3-size); /* Use H3 size for a smaller look */
-    font-weight: var(--uxdsl__typography__p-weight); /* Use paragraph weight for not bold */
-  }
-  .sample-h3 { font-family: var(--uxdsl__typography__h3-font-family); font-size: var(--uxdsl__typography__h3-size); line-height: var(--uxdsl__typography__h3-line); font-weight: var(--uxdsl__typography__h3-weight); letter-spacing: var(--uxdsl__typography__h3-spacing); margin-block-start: var(--uxdsl__typography__h3-margin-block-start); margin-block-end: var(--uxdsl__typography__h3-margin-block-end); margin: 0; }
-  .sample-h4 { font-family: var(--uxdsl__typography__h4-font-family); font-size: var(--uxdsl__typography__h4-size); line-height: var(--uxdsl__typography__h4-line); font-weight: var(--uxdsl__typography__h4-weight); letter-spacing: var(--uxdsl__typography__h4-spacing); margin-block-start: var(--uxdsl__typography__h4-margin-block-start); margin-block-end: var(--uxdsl__typography__h4-margin-block-end); margin: 0; }
-  .sample-h5 { font-family: var(--uxdsl__typography__h5-font-family); font-size: var(--uxdsl__typography__h5-size); line-height: var(--uxdsl__typography__h5-line); font-weight: var(--uxdsl__typography__h5-weight); letter-spacing: var(--uxdsl__typography__h5-spacing); margin-block-start: var(--uxdsl__typography__h5-margin-block-start); margin-block-end: var(--uxdsl__typography__h5-margin-block-end); margin: 0; }
-  .sample-h6 { font-family: var(--uxdsl__typography__h6-font-family); font-size: var(--uxdsl__typography__h6-size); line-height: var(--uxdsl__typography__h6-line); font-weight: var(--uxdsl__typography__h6-weight); letter-spacing: var(--uxdsl__typography__h6-spacing); margin-block-start: var(--uxdsl__typography__h6-margin-block-start); margin-block-end: var(--uxdsl__typography__h6-margin-block-end); margin: 0; }
-  .sample-p { font-family: var(--uxdsl__typography__p-font-family); font-size: var(--uxdsl__typography__p-size); line-height: var(--uxdsl__typography__p-line); font-weight: var(--uxdsl__typography__p-weight); letter-spacing: var(--uxdsl__typography__p-spacing); margin-block-start: var(--uxdsl__typography__p-margin-block-start); margin-block-end: var(--uxdsl__typography__p-margin-block-end); margin: 0; }
-  .sample-span { font-family: var(--uxdsl__typography__span-font-family); font-size: var(--uxdsl__typography__span-size); line-height: var(--uxdsl__typography__span-line); font-weight: var(--uxdsl__typography__span-weight); letter-spacing: var(--uxdsl__typography__span-spacing); margin-block-start: var(--uxdsl__typography__span-margin-block-start); margin-block-end: var(--uxdsl__typography__span-margin-block-end); }
-  .sample-body { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; }
-  .sample-caption { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); margin: 0; }
-  .sample-small { font-family: var(--uxdsl__typography__small-font-family); font-size: var(--uxdsl__typography__small-size); line-height: var(--uxdsl__typography__small-line); font-weight: var(--uxdsl__typography__small-weight); letter-spacing: var(--uxdsl__typography__small-spacing); margin-block-start: var(--uxdsl__typography__small-margin-block-start); margin-block-end: var(--uxdsl__typography__small-margin-block-end); margin: 0; }
-  .sample-pre { font-family: var(--uxdsl__typography__pre-font-family); font-size: var(--uxdsl__typography__pre-size); line-height: var(--uxdsl__typography__pre-line); font-weight: var(--uxdsl__typography__pre-weight); letter-spacing: var(--uxdsl__typography__pre-spacing); margin-block-start: var(--uxdsl__typography__pre-margin-block-start); margin-block-end: var(--uxdsl__typography__pre-margin-block-end); margin: 0; background: color-mix(in srgb, var(--uxdsl__palette__surface-dark) 5%, transparent); padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__1); }
-}
 /* Density explanation on /densities and /docs/densities.
    Was DensityExplanation.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl
    is global. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
@@ -5935,139 +6170,6 @@ html, body {
   border: 1px dashed var(--uxdsl__color__gray-500);
   text-align: center;
   padding: var(--uxdsl__space__3);
-}
-/* Density Playground Styles */
-.level-controls {
-  display: flex;
-  align-items: center;
-  gap: var(--uxdsl__density__4);
-  padding: 0 var(--uxdsl__density__2);
-  margin-left: auto;
-}
-.level-label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  color: var(--uxdsl__palette__text-secondary);
-  text-transform: uppercase;
-}
-.level-input-wrapper {
-  display: flex;
-  align-items: center;
-  gap: var(--uxdsl__density__2);
-}
-.level-value {
-  font-family: font(code);
-  font-size: 0.9rem;
-  font-weight: bold;
-  color: var(--uxdsl__palette__primary-main);
-  min-width: 20px;
-  text-align: center;
-}
-.playground-layout {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  gap: var(--uxdsl__density__6);
-}
-.viz-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  background: var(--uxdsl__palette__surface-dark);
-  border-radius: var(--uxdsl__radius__2);
-  padding: var(--uxdsl__density__8) var(--uxdsl__density__4);
-  overflow: hidden;
-  min-height: 300px;
-}
-.density-playground-wrapper {
-  width: 100%;
-  transition: width 0.3s ease;
-  border-left: 1px solid var(--uxdsl__palette__divider-main);
-  border-right: 1px solid var(--uxdsl__palette__divider-main);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-  container-type: inline-size;
-}
-.auto-width-label {
-  position: absolute;
-  top: -1.5rem;
-  font-size: 0.7rem;
-  color: var(--uxdsl__palette__text-disabled);
-  text-transform: uppercase;
-}
-.density-doll-wrapper {
-  border: none;
-  background: transparent;
-}
-.json-editor {
-  background: var(--uxdsl__palette__surface-main);
-  padding: var(--uxdsl__density__4);
-  border-radius: var(--uxdsl__radius__1);
-  border: 1px dashed var(--uxdsl__palette__neutral-main);
-  font-family: font(code);
-  font-size: 0.9rem;
-  color: var(--uxdsl__palette__primary-dark);
-  overflow-x: auto;
-  display: flex;
-  flex-direction: column;
-  gap: var(--uxdsl__density__1);
-}
-.json-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-.json-key {
-  font-weight: 600;
-}
-.json-line {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  width: 100%;
-  padding-left: 2ch;
-}
-.json-value-wrapper {
-  flex: 1;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-.json-prop-key {
-  color: var(--uxdsl__palette__secondary-main);
-}
-.edit-button {
-  background: transparent;
-  border: 1px solid var(--uxdsl__palette__divider-main);
-  border-radius: var(--uxdsl__radius__1);
-  padding: var(--uxdsl__density__1);
-  cursor: pointer;
-  color: var(--uxdsl__palette__text-secondary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-  margin-left: var(--uxdsl__density__4);
-
-  &:hover {
-    color: var(--uxdsl__palette__primary-main);
-    border-color: var(--uxdsl__palette__primary-main);
-  }
-}
-.level-range-input {
-  width: 100px;
-  cursor: pointer;
-}
-.highlighter-base {
-  color: var(--uxdsl__palette__info-main);
-}
-.highlighter-active {
-  color: var(--uxdsl__palette__secondary-light);
-  text-shadow: 0 0 8px rgba(255, 77, 77, 0.4);
-  font-weight: bold;
-  text-decoration: underline;
 }
 /* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
    documentation. Was BreakpointDocumentation.module.css, which those five components all
@@ -6252,131 +6354,6 @@ html, body {
   inset: 0;
   backdrop-filter: blur(20px);
   opacity: 0.5;
-}
-/* HomeDemo styles - Scoped */
-#HomeDemo {
-  .home-demo {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--uxdsl__density__6);
-    margin-top: var(--uxdsl__density__6);
-  }
-
-  .home-code {
-    background: #1e1e1e;
-    border-radius: var(--uxdsl__radius__3);
-    overflow: hidden;
-    color: #d4d4d4;
-    font-family: monospace;
-    font-size: 0.85rem;
-    border: 1px solid var(--uxdsl__palette__neutral-light);
-    box-shadow: var(--uxdsl__shadow__2);
-    width: 100%;
-    max-width: 500px;
-  }
-
-  .code-header {
-    background: #252526;
-    padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-  }
-
-  .code-lang {
-    font-size: 0.75rem;
-    color: #9cdcfe;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .home-code pre {
-    margin: 0;
-    padding: var(--uxdsl__density__3);
-    overflow-x: auto;
-    line-height: 1.5;
-  }
-
-  /* Mind-Blowing Demo Component Styles */
-  .mb-card {
-    /* 1. Theming & Responsive Layout (The Magic) */
-    padding: var(--uxdsl__surface__contained-padding);
-    border-radius: var(--uxdsl__surface__contained-radius);
-    background: var(--uxdsl__surface__contained-bg);
-    color: var(--uxdsl__surface__contained-color);
-    border: var(--uxdsl__surface__contained-border);
-    box-shadow: var(--uxdsl__surface__contained-shadow);
-    width: 100%;
-    padding: var(--uxdsl__density__3);
-    gap: var(--uxdsl__density__4);
-    display: flex; flex-direction: column;
-    
-    /* 2. Nested SCSS for Structure */
-    .mb-header { 
-      display: flex; justify-content: space-between; align-items: center;
-      h3 { font-family: var(--uxdsl__typography__h5-font-family); font-size: var(--uxdsl__typography__h5-size); line-height: var(--uxdsl__typography__h5-line); font-weight: var(--uxdsl__typography__h5-weight); letter-spacing: var(--uxdsl__typography__h5-spacing); margin-block-start: var(--uxdsl__typography__h5-margin-block-start); margin-block-end: var(--uxdsl__typography__h5-margin-block-end); margin: 0; }
-    }
-    
-    .mb-badge {
-      font-family: var(--uxdsl__typography__caption-font-family);
-      font-size: var(--uxdsl__typography__caption-size);
-      line-height: var(--uxdsl__typography__caption-line);
-      font-weight: var(--uxdsl__typography__caption-weight);
-      letter-spacing: var(--uxdsl__typography__caption-spacing);
-      margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
-      margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
-      background: color-mix(in srgb, var(--uxdsl__palette__success-light) 20%, transparent);
-      color: var(--uxdsl__palette__success-dark);
-      padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
-      border-radius: 9999px;
-      font-weight: 700;
-      margin-left: var(--uxdsl__density__2);
-    }
-
-    .mb-title-group { display: flex; align-items: center; }
-    
-    .mb-status-dot {
-      width: 12px; height: 12px;
-      background: var(--uxdsl__palette__success-main);
-      border-radius: 9999px;
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--uxdsl__palette__success-light) 20%, transparent);
-      animation: pulse 2s infinite;
-    }
-
-    .mb-stat {
-      display: flex; flex-direction: column; gap: var(--uxdsl__density__1); margin-bottom: var(--uxdsl__density__3);
-      .mb-stat-header { display: flex; justify-content: space-between; font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-weight: 600; }
-    }
-
-    .mb-bar {
-      height: 8px;
-      background: var(--uxdsl__palette__neutral-light);
-      border-radius: 9999px;
-      overflow: hidden;
-      div { height: 100%; background: var(--uxdsl__palette__primary-main); border-radius: 9999px; }
-    }
-
-    .mb-action { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
-      width: 100%;
-      justify-content: center;
-    }
-.mb-action:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
-.mb-action.is-selected, .mb-action[aria-pressed="true"], .mb-action[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
-  }
-  @media (min-width: 768px) {
-  .mb-card {
-      width: 420px;
-      padding: var(--uxdsl__density__5)
-  }
-  }
-
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--uxdsl__palette__success-light) 40%, transparent); }
-    70% { box-shadow: 0 0 0 10px transparent; }
-    100% { box-shadow: 0 0 0 0 transparent; }
-  }
 }
 .demos-grid {
   display: grid;
@@ -6885,7 +6862,7 @@ svg.interactive-logo {
     border-color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 50%, transparent);
   }
 
-  &.default { background: var(--uxdsl__color__slate-800); }
+  &.default { background: var(--uxdsl__color__purple-600); }
   &.green { background: var(--uxdsl__color__green-600); }
   &.purple { background: var(--uxdsl__color__purple-600); }
 }
@@ -8005,7 +7982,10 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   width: 100%;
   padding-left: 2ch;
 }
+/* font-weight used to come from a global .json-key rule in DensityPlayground.uxdsl, a component
+   nothing rendered (removed in MIG-B7-17 phase B (5)); it now lives with the only consumer. */
 .json-key {
+  font-weight: 600;
   color: var(--uxdsl__palette__secondary-main);
 }
 .json-value-inherited {
@@ -8061,6 +8041,12 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 /* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
 .responsive-syntax-explainer {
   height: 100%;
+}
+/* MIG-B7-17 phase E: the editable samples are reachable by Tab (contentEditable) and their
+   `outline: none` hid keyboard focus. */
+.editable-typography-element:focus-visible {
+  outline: 2px dashed var(--uxdsl__palette__primary-main);
+  outline-offset: 4px;
 }
 /* SideNav Styles - CSS Driven Responsiveness - Scoped */
 #SideNav {

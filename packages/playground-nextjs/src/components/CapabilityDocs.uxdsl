@@ -1,0 +1,304 @@
+/* MIG-B7-17 phase C: the pages that call UXDSL's own tools for real — Runtime, Contrast, CLI,
+   Diagnostics. One stylesheet for the four, written in UXDSL: Density for component spacing,
+   Palette roles for interface color, Surfaces/Buttons/Inputs as roles, configured breakpoints.
+   The terminal panels are dark in both modes on purpose (a terminal), with Color identities,
+   like the code panels of DocumentationSection.uxdsl. */
+
+.cap-grid {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(repeat(2, minmax(0, 1fr)));
+  gap: density(3);
+  margin-block: density(4);
+}
+
+/* Small figures (the contrast summary): two across on a phone, three from xl. */
+.cap-stats {
+  display: grid;
+  grid-template-columns: xs(repeat(2, minmax(0, 1fr))) xl(repeat(3, minmax(0, 1fr)));
+  gap: density(3);
+  margin-block: density(4);
+}
+
+.cap-card {
+  @ds-surface(outlined);
+  display: grid;
+  align-content: start;
+  gap: density(2);
+  min-width: 0;
+  margin-block: density(4);
+}
+
+.cap-card__title {
+  @ds-typo(h5);
+  margin: 0;
+}
+
+.cap-card__subtitle {
+  @ds-typo(h6);
+  margin: 0;
+}
+
+.cap-note {
+  @ds-typo(small);
+  color: palette(text-secondary);
+  margin: 0;
+}
+
+.cap-facts {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 2fr) minmax(0, 3fr));
+  gap: space(2) density(3);
+  margin: 0;
+}
+
+.cap-facts dt {
+  @ds-typo(small);
+  color: palette(text-secondary);
+}
+
+.cap-facts dd {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.cap-facts__row {
+  display: contents;
+}
+
+.cap-block {
+  display: block;
+  overflow-wrap: anywhere;
+}
+
+.cap-label {
+  @ds-typo(small);
+  display: grid;
+  gap: space(1);
+}
+
+.cap-field {
+  @ds-input(outlined);
+}
+
+.cap-field--code {
+  font-family: var(--uxdsl__font__code, monospace);
+  resize: vertical;
+}
+
+.cap-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(2);
+}
+
+.cap-button {
+  @ds-button(outlined primary);
+  text-align: left;
+  justify-self: start;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.cap-button--reset {
+  @ds-button(contained secondary);
+}
+
+.cap-steps {
+  display: grid;
+  gap: density(2);
+  margin: 0;
+  padding-inline-start: space(6);
+}
+
+.cap-steps li {
+  display: grid;
+  gap: space(1);
+}
+
+.cap-log {
+  display: grid;
+  gap: space(2);
+  margin: 0;
+  padding-inline-start: space(6);
+  overflow-wrap: anywhere;
+}
+
+.cap-log li.is-invalid {
+  color: palette(error-main);
+}
+
+.cap-event {
+  @ds-typo(small);
+  color: palette(text-secondary);
+}
+
+.cap-result {
+  color: palette(success-main);
+  font-weight: 600;
+}
+
+.cap-result--error {
+  color: palette(error-main);
+}
+
+.cap-sandbox {
+  display: grid;
+  gap: density(3);
+}
+
+.cap-sandbox__controls {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(repeat(2, minmax(0, 1fr)));
+  gap: density(3);
+  align-items: start;
+}
+
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
+   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+.cap-frame-wrap {
+  overflow-x: auto;
+  border: 1px solid palette(neutral-light);
+  border-radius: rounded(2);
+  box-shadow: elevation(1);
+}
+
+.cap-frame {
+  display: block;
+  width: 820px;
+  height: 340px;
+  border: 0;
+}
+
+.cap-stat {
+  @ds-surface(contained);
+  display: grid;
+  gap: space(1);
+}
+
+.cap-stat__label {
+  @ds-typo(small);
+}
+
+.cap-stat__value {
+  @ds-typo(h4);
+  margin: 0;
+}
+
+.cap-table-wrap {
+  overflow-x: auto;
+  min-width: 0;
+}
+
+.cap-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.cap-table-wrap caption {
+  @ds-typo(small);
+  text-align: left;
+  font-weight: 600;
+  padding-block: space(2);
+}
+
+.cap-table-wrap th,
+.cap-table-wrap td {
+  padding: space(2) space(3);
+  border-bottom: 1px solid palette(neutral-light);
+  vertical-align: top;
+}
+
+.cap-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: density(3);
+  border: 1px solid palette(neutral-light);
+  border-radius: radius(1);
+  padding: space(2) space(4);
+}
+
+.cap-run {
+  display: grid;
+  gap: space(2);
+  margin: 0 0 density(4);
+  min-width: 0;
+}
+
+.cap-run__title {
+  @ds-typo(small);
+  font-weight: 600;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: space(2);
+  margin: 0;
+}
+
+.cap-terminal {
+  margin: 0;
+  overflow-x: auto;
+  background: color(gray-900);
+  color: color(gray-200);
+  padding: space(4);
+  border-radius: radius(1);
+  font-family: var(--uxdsl__font__code, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  white-space: pre;
+}
+
+.cap-terminal__prompt {
+  color: color(green-300);
+}
+
+.cap-terminal__err {
+  color: color(red-300);
+}
+
+.cap-exit {
+  @ds-typo(small);
+  padding: 0 space(3);
+  border-radius: radius(pill);
+}
+
+.cap-exit--ok {
+  background: palette(success-main);
+  color: palette(success-contrast);
+}
+
+.cap-exit--fail {
+  background: palette(error-main);
+  color: palette(error-contrast);
+}
+
+.cap-transcript {
+  display: grid;
+  gap: density(2);
+  padding-inline-start: space(6);
+}
+
+.cap-alias-demo {
+  display: grid;
+  gap: density(3);
+  align-content: start;
+}
+
+.cap-alias-box {
+  @ds-surface(flat);
+  padding: density(4);
+  background: palette(surface-main);
+  border: 1px solid palette(neutral-light);
+}
+
+/* The aliases under test: these two rules must render identically. */
+.cap-alias-box--alias {
+  box-shadow: elevation(2);
+  border-radius: rounded(2);
+}
+
+.cap-alias-box--name {
+  box-shadow: shadow(2);
+  border-radius: radius(2);
+}

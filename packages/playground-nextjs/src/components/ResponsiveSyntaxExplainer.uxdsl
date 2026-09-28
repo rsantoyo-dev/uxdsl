@@ -497,7 +497,10 @@
   padding-left: 2ch;
 }
 
+/* font-weight used to come from a global .json-key rule in DensityPlayground.uxdsl, a component
+   nothing rendered (removed in MIG-B7-17 phase B (5)); it now lives with the only consumer. */
 .json-key {
+  font-weight: 600;
   color: palette(secondary-main);
 }
 
@@ -559,4 +562,11 @@
 /* MIG-B7-17 phase B (4): was inline style={{ height: '100%' }} on the root. */
 .responsive-syntax-explainer {
   height: 100%;
+}
+
+/* MIG-B7-17 phase E: the editable samples are reachable by Tab (contentEditable) and their
+   `outline: none` hid keyboard focus. */
+.editable-typography-element:focus-visible {
+  outline: 2px dashed palette(primary-main);
+  outline-offset: 4px;
 }

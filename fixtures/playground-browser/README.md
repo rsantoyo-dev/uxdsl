@@ -53,3 +53,30 @@ Nothing here replaces looking at the page.
 
 It needs `playwright-core`, which it takes from `fixtures/mig02-nextjs-cssmodules`
 (`npm install` there), and Google Chrome at its macOS default path or at `UXDSL_CHROME_PATH`.
+
+## The browser walk (`walk.js`, phase E)
+
+```sh
+npm run verify:playground-browser          # builds, then walks (from the repository root)
+node fixtures/playground-browser/walk.js   # walks the existing production build
+```
+
+Every route (read from the app's file tree), in the light and the dark scheme, at the same ten
+widths as the snapshot. On each page: no console error or uncaught exception, no UXDSL warning, and
+no unresolved `var()` — every custom property a matching rule reads without a fallback must resolve
+on the elements the rule applies to, read from computed style. At 390 and 1280px it presses Tab
+through the page and requires every element that takes focus to match `:focus-visible` and to look
+different from the same element unfocused (outline, shadow, border, background or underline). On
+`/docs/contrast` it compares the report the page renders with `checkThemeContrast` run in Node for the
+same theme — the default one, and again after switching theme in the header.
+
+It then runs four negative controls, each of which must be reported: an injected undefined `var()`,
+an injected `console.error`, a focus style that removes the indicator, and a contrast comparison
+against the wrong theme. Exit 1 when the walk or a control fails.
+
+One exemption, by exact path and always listed in the output: the two Vercel scripts the layout adds
+(`/_vercel/insights/script.js`, `/_vercel/speed-insights/script.js`) answer 404 outside Vercel's
+hosting. External requests (fonts) are answered locally, as in `snapshot.js`.
+
+What it does not prove: hover and pointer states, touch, screen readers, and pixels. Focus order is
+checked for visibility, not for being the right order.

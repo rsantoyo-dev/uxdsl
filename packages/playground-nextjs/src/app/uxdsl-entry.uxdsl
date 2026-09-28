@@ -22,8 +22,7 @@
 @import '../components/AIPrompt.uxdsl';
 @import '../components/AppHeader.uxdsl';
 @import '../components/BreakpointEditor.uxdsl';
-@import '../components/ButtonDemo.uxdsl';
-@import '../components/CardDemo.uxdsl';
+@import '../components/CapabilityDocs.uxdsl';
 @import '../components/CodeBlock.uxdsl';
 @import '../components/ColorDocumentation.uxdsl';
 @import '../components/DemoBorders.uxdsl';
@@ -37,13 +36,10 @@
 @import '../components/DemoShadows.uxdsl';
 @import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
-@import '../components/DemoTypography.uxdsl';
 @import '../components/DensityExplanation.uxdsl';
-@import '../components/DensityPlayground.uxdsl';
 @import '../components/DocumentationSection.uxdsl';
 @import '../components/EditDialog.uxdsl';
 @import '../components/HeroBackground.uxdsl';
-@import '../components/HomeDemo.uxdsl';
 @import '../components/HomeInteractiveDemos.uxdsl';
 @import '../components/InputDemo.uxdsl';
 @import '../components/InteractiveDemoContainer.uxdsl';

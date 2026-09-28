@@ -168,7 +168,7 @@
     border-color: palette(surface-contrast, 0.5);
   }
 
-  &.default { background: color(slate-800); }
+  &.default { background: color(purple-600); }
   &.green { background: color(green-600); }
   &.purple { background: color(purple-600); }
 }
