@@ -389,6 +389,8 @@ test('MIG-B6-23: a rebuild triggered by an unrelated watched file produces byte-
   fs.writeFileSync(path.join(dir, 'src', 'unused.uxdsl'), '/* edited, still unused by anything */');
   await waitFor(() => output.includes('unused.uxdsl'));
   await waitFor(() => /\[uxdsl\] unchanged /.test(output));
+  // MIG-B7-15 (FEAT-009): the message says what "unchanged" means.
+  assert.match(output, /\[uxdsl\] unchanged src[\\/]uxdsl\.css \(compiled output identical to the file on disk; not rewritten\)/);
   await delay(300);
 
   const statAfter = fs.statSync(cssPath);

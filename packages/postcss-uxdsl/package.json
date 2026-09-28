@@ -40,6 +40,7 @@
     "dist",
     "src/theme",
     "schema",
+    "docs/agent-guide.md",
     "scripts/codemod-size-overrides.js",
     "scripts/codemod-namespace.js",
     "README.md",
