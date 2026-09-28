@@ -36,20 +36,20 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
 
 
   const toolbarContent = (
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', width: '100%' }}>
+      <div className="pp-toolbar">
          {/* Background Column */}
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
-           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--uxdsl__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Background</div>
-           <div style={{ display: 'flex', gap: '0.5rem' }}>
-             <div className="control-group" style={{ flex: 1 }}>
-               <label className="control-label" style={{ fontSize: '0.7rem' }}>Tone</label>
-               <select className="control-select" style={{ padding: '4px', fontSize: '0.8rem' }} value={bgTone} onChange={e => setBgTone(e.target.value)}>
+         <div className="pp-toolbar__column">
+           <div className="pp-toolbar__heading">Background</div>
+           <div className="pp-toolbar__row">
+             <div className="control-group pp-toolbar__control">
+               <label className="control-label pp-toolbar__label">Tone</label>
+               <select className="control-select pp-toolbar__select" value={bgTone}onChange={e => setBgTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
-             <div className="control-group" style={{ flex: 1 }}>
-               <label className="control-label" style={{ fontSize: '0.7rem' }}>Variant</label>
-               <select className="control-select" style={{ padding: '4px', fontSize: '0.8rem' }} value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
+             <div className="control-group pp-toolbar__control">
+               <label className="control-label pp-toolbar__label">Variant</label>
+               <select className="control-select pp-toolbar__select" value={bgVariant}onChange={e => setBgVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -57,18 +57,18 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
          </div>
 
          {/* Text Column */}
-         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: '1 1 200px' }}>
-           <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--uxdsl__palette__text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Text</div>
-           <div style={{ display: 'flex', gap: '0.5rem' }}>
-             <div className="control-group" style={{ flex: 1 }}>
-               <label className="control-label" style={{ fontSize: '0.7rem' }}>Tone</label>
-               <select className="control-select" style={{ padding: '4px', fontSize: '0.8rem' }} value={textTone} onChange={e => setTextTone(e.target.value)}>
+         <div className="pp-toolbar__column">
+           <div className="pp-toolbar__heading">Text</div>
+           <div className="pp-toolbar__row">
+             <div className="control-group pp-toolbar__control">
+               <label className="control-label pp-toolbar__label">Tone</label>
+               <select className="control-select pp-toolbar__select" value={textTone}onChange={e => setTextTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
-             <div className="control-group" style={{ flex: 1 }}>
-               <label className="control-label" style={{ fontSize: '0.7rem' }}>Variant</label>
-               <select className="control-select" style={{ padding: '4px', fontSize: '0.8rem' }} value={textVariant} onChange={e => setTextVariant(e.target.value)}>
+             <div className="control-group pp-toolbar__control">
+               <label className="control-label pp-toolbar__label">Variant</label>
+               <select className="control-select pp-toolbar__select" value={textVariant}onChange={e => setTextVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -79,7 +79,7 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
 
 
   return (
-    <div id="PalettePlayground" style={{ height: '100%' }}>
+    <div id="PalettePlayground">
       <InteractiveDemoContainer 
         title="Interactive Demo: Palette"
         toolbar={toolbarContent}
@@ -87,81 +87,48 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
       >
         <div className="playground-wrapper">
            <div className="preview-container">
-             <div className="live-preview" style={{
+             <div className="live-preview pp-preview" style={{
                backgroundColor: `var(--uxdsl__palette__${bgTone}-${bgVariant})`,
                color: `var(--uxdsl__palette__${textTone}-${textVariant})`,
-               padding: 'var(--uxdsl__space__4)',
-               textAlign: 'center',
-               fontWeight: 'bold',
-               fontSize: '1.2rem',
              }}>
                Live Palette Preview
              </div>
              
-             <div style={{
-                 marginTop: '1.5rem',
-                 padding: '1rem',
-                 background: 'var(--uxdsl__palette__surface-light)',
-                 border: '1px solid var(--uxdsl__palette__neutral-light)',
-                 borderRadius: '6px',
-                 textAlign: 'left'
-             }}>
-                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                   <span style={{ 
-                       fontSize: '0.8rem', 
-                       color: 'var(--uxdsl__palette__text-secondary)',
-                       fontWeight: 600,
-                       textTransform: 'uppercase',
-                       letterSpacing: '0.05em'
-                   }}>
+             <div className="pp-usage">
+                 <div className="pp-usage__header">
+                   <span className="pp-usage__title">
                        CSS Usage
                    </span>
                  </div>
-                 <div style={{
-                     background: 'var(--uxdsl__palette__surface-dark)',
-                     padding: '0.75rem',
-                     borderRadius: '6px',
-                     fontFamily: 'var(--uxdsl__font__code)',
-                     fontSize: '0.85rem',
-                     display: 'flex',
-                     flexDirection: 'column',
-                     gap: '0.25rem',
-                     overflowX: 'auto',
-                     border: '1px solid var(--uxdsl__palette__neutral-dark)'
-                 }}>
-                     <div style={{ display: 'flex', alignItems: 'center' }}>
-                        <span style={{ color: 'var(--uxdsl__palette__secondary-light)' }}>.my-element</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-disabled)' }}>{`{`}</span>
+                 <div className="pp-code">
+                     <div className="pp-code__line">
+                        <span className="pp-code__selector">.my-element</span>
+                        <span className="pp-code__punct pp-code__gap">{`{`}</span>
                      </div>
-                     <div style={{ paddingLeft: '1rem' }}>
-                        <span style={{ color: 'var(--uxdsl__palette__primary-light)' }}>background</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>:</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-primary)' }}>palette</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>(</span>
-                        <span style={{ color: 'var(--uxdsl__palette__warning-light)' }}>{bgTone}-{bgVariant}</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>)</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>;</span>
+                     <div className="pp-code__indent">
+                        <span className="pp-code__property">background</span>
+                        <span className="pp-code__punct">:</span>
+                        <span className="pp-code__function pp-code__gap">palette</span>
+                        <span className="pp-code__punct">(</span>
+                        <span className="pp-code__argument">{bgTone}-{bgVariant}</span>
+                        <span className="pp-code__punct">)</span>
+                        <span className="pp-code__punct">;</span>
                      </div>
-                     <div style={{ paddingLeft: '1rem' }}>
-                        <span style={{ color: 'var(--uxdsl__palette__primary-light)' }}>color</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>:</span>
-                        <span style={{ marginLeft: '0.5rem', color: 'var(--uxdsl__palette__text-primary)' }}>palette</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>(</span>
-                        <span style={{ color: 'var(--uxdsl__palette__warning-light)' }}>{textTone}-{textVariant}</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>)</span>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>;</span>
+                     <div className="pp-code__indent">
+                        <span className="pp-code__property">color</span>
+                        <span className="pp-code__punct">:</span>
+                        <span className="pp-code__function pp-code__gap">palette</span>
+                        <span className="pp-code__punct">(</span>
+                        <span className="pp-code__argument">{textTone}-{textVariant}</span>
+                        <span className="pp-code__punct">)</span>
+                        <span className="pp-code__punct">;</span>
                      </div>
                      <div>
-                        <span style={{ color: 'var(--uxdsl__palette__text-disabled)' }}>{`}`}</span>
+                        <span className="pp-code__punct">{`}`}</span>
                      </div>
                  </div>
-                 <p style={{ 
-                     marginTop: '0.75rem', 
-                     fontSize: '0.8rem', 
-                     color: 'var(--uxdsl__palette__text-secondary)',
-                     lineHeight: 1.5
-                 }}>
-                     <strong style={{ color: 'var(--uxdsl__palette__text-primary)' }}>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
+                 <p className="pp-usage__note">
+                     <strong>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
                  </p>
              </div>
              </div>

@@ -31,17 +31,17 @@ export function BreakpointEditor({ isOpen, onClose, initialValue = '', onSave, t
       setError(cause instanceof Error ? cause.message : String(cause));
     }
   };
-  return <div role="presentation" onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.5)', zIndex: 100, display: 'grid', placeItems: 'center' }}>
-    <section role="dialog" aria-modal="true" aria-labelledby="typography-expression-title" onClick={event => event.stopPropagation()} style={{ background: 'var(--uxdsl__palette__surface-main)', padding: '2rem', borderRadius: '1rem', width: 'min(560px, 90vw)' }}>
+  return <div role="presentation" onClick={onClose} className="breakpoint-editor__backdrop">
+    <section role="dialog" aria-modal="true" aria-labelledby="typography-expression-title" onClick={event => event.stopPropagation()} className="breakpoint-editor__dialog">
       <h3 id="typography-expression-title">Edit {tagName}</h3>
       <p>Edit the theme expression. Tokens and native CSS remain intact.</p>
       <label htmlFor="typography-expression">Value or responsive progression</label>
-      <textarea id="typography-expression" value={value} onChange={event => setValue(event.target.value)} rows={4} style={{ width: '100%', fontFamily: 'monospace' }} />
+      <textarea id="typography-expression" value={value} onChange={event => setValue(event.target.value)} rows={4} className="code-textarea" />
       <p>Configured breakpoints: {Object.entries(bps).sort((a, b) => Number(a[1]) - Number(b[1])).map(([name, width]) => `${name}: ${width}px`).join(' · ')}</p>
       <p>A rule remains active until another breakpoint overrides it.</p>
       {options.length > 0 && <select aria-label="Suggested value" value="" onChange={event => setValue(event.target.value)}><option value="">Choose a value</option>{options.map(option => <option key={option}>{option}</option>)}</select>}
       {error && <p role="alert">{error}</p>}
-      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}><button onClick={onClose}>Cancel</button><button onClick={save}>Save to theme</button></div>
+      <div className="breakpoint-editor__actions"><button onClick={onClose}>Cancel</button><button onClick={save}>Save to theme</button></div>
     </section>
   </div>;
 }

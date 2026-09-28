@@ -1,0 +1,70 @@
+/* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
+   documentation. Was BreakpointDocumentation.module.css, which those five components all
+   imported (MIG-B7-17 phase B): classes are prefixed because .uxdsl is global; stable spacing
+   uses space(); the code panel and table rules use Color identities, dark in both modes on
+   purpose. */
+
+.doc-section {
+  min-width: 0;
+  margin-block: space(7);
+  line-height: 1.7;
+}
+
+.doc-section h2 {
+  font-size: 1.5rem;
+  margin-block: space(5);
+}
+
+.doc-section h3 {
+  font-size: 1.2rem;
+  margin-block: space(6) space(4);
+}
+
+.doc-section h4 {
+  margin-bottom: space(4);
+}
+
+.doc-section p {
+  margin-block: space(4);
+}
+
+.doc-section pre {
+  overflow-x: auto;
+  background: color(gray-900);
+  color: color(gray-200);
+  padding: space(5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.doc-section__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: space(5);
+}
+
+.doc-section__comparison > div {
+  min-width: 0;
+}
+
+.doc-section__table-wrap {
+  overflow-x: auto;
+  margin-block: space(5);
+}
+
+.doc-section__table-wrap table {
+  width: 100%;
+  text-align: left;
+  border-collapse: collapse;
+}
+
+.doc-section__table-wrap caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: space(3);
+}
+
+.doc-section__table-wrap th, .doc-section__table-wrap td {
+  padding: space(4);
+  border-bottom: 1px solid color(gray-400);
+}

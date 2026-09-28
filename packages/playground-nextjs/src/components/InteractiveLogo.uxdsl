@@ -1,0 +1,5 @@
+/* MIG-B7-17 phase B (4): was inline style={{}} in InteractiveLogo.tsx. The particles may move
+   slightly outside the SVG box. */
+svg.interactive-logo {
+  overflow: visible;
+}

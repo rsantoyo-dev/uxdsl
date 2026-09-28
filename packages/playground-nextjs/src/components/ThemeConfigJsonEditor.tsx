@@ -114,42 +114,22 @@ export default function ThemeConfigJsonEditor() {
     <InteractiveDemoContainer
       title="Runtime Config JSON"
       toolbar={
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 'var(--uxdsl__space__3)', flexWrap: 'wrap' }}>
-          <div style={{ fontSize: '0.8rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
+        <div className="config-editor__toolbar">
+          <div className="config-editor__hint">
             Edit JSON to update UI live. UI changes also sync back here.
           </div>
-          <div style={{ display: 'flex', gap: 'var(--uxdsl__space__2)' }}>
+          <div className="config-editor__buttons">
             <button
               type="button"
               onClick={handleReset}
-              style={{
-                border: '1px solid var(--uxdsl__palette__neutral-light)',
-                background: 'var(--uxdsl__palette__surface-light)',
-                color: 'var(--uxdsl__palette__text-primary)',
-                borderRadius: 'var(--uxdsl__radius__1, 6px)',
-                padding: 'var(--uxdsl__space__2) var(--uxdsl__space__3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer'
-              }}
+              className="config-editor__button"
             >
               <RefreshCcw size={14} /> Reset
             </button>
             <button
               type="button"
               onClick={handleExport}
-              style={{
-                border: '1px solid var(--uxdsl__palette__primary-main)',
-                background: 'var(--uxdsl__palette__primary-main)',
-                color: 'var(--uxdsl__palette__primary-contrast)',
-                borderRadius: 'var(--uxdsl__radius__1, 6px)',
-                padding: 'var(--uxdsl__space__2) var(--uxdsl__space__3)',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '6px',
-                cursor: 'pointer'
-              }}
+              className="config-editor__button config-editor__button--primary"
             >
               <Download size={14} /> Export
             </button>
@@ -157,27 +137,15 @@ export default function ThemeConfigJsonEditor() {
         </div>
       }
     >
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--uxdsl__space__2)' }}>
+      <div className="config-editor">
         <textarea
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
           spellCheck={false}
           aria-label="Theme runtime JSON editor"
-          style={{
-            width: '100%',
-            minHeight: '460px',
-            resize: 'vertical',
-            fontFamily: 'var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace)',
-            fontSize: '0.82rem',
-            lineHeight: 1.5,
-            border: `1px solid ${error ? 'var(--uxdsl__palette__error-main)' : 'var(--uxdsl__palette__neutral-light)'}`,
-            borderRadius: 'var(--uxdsl__radius__1, 8px)',
-            padding: 'var(--uxdsl__space__3)',
-            background: 'var(--uxdsl__palette__surface-main)',
-            color: 'var(--uxdsl__palette__text-primary)'
-          }}
+          className={`config-editor__textarea${error ? ' is-invalid' : ''}`}
         />
-        <div style={{ fontSize: '0.75rem', color: error ? 'var(--uxdsl__palette__error-main)' : 'var(--uxdsl__palette__text-secondary)' }}>
+        <div className={`config-editor__status${error ? ' is-invalid' : ''}`}>
           {error
             ? error
             : status === 'synced'

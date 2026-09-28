@@ -43,12 +43,7 @@ export default function CodeBlock({ language = 'bash', children, code }: CodeBlo
   }, [])
 
   return (
-    <div style={{ 
-      borderRadius: 'var(--uxdsl__radius__2)', 
-      overflow: 'hidden',
-      border: '1px solid var(--uxdsl__palette__neutral-light)',
-      fontSize: '0.9rem'
-    }}>
+    <div className="code-block-frame">
       <SyntaxHighlighter
         language={language}
         style={isDark ? vscDarkPlus : vs}

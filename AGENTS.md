@@ -805,6 +805,13 @@ Review these documentation sources for alignment:
 - `packages/playground-nextjs/src/components/ButtonDocumentation.tsx`
 - `packages/playground-nextjs/src/components/InputDocumentation.tsx`
 
+The pages that call UXDSL's own tools for real (MIG-B7-17 phase C) are kept aligned with the
+runtime API, the CLI and the diagnostics catalog rather than with one primitive:
+
+- `packages/playground-nextjs/src/components/RuntimeLab.tsx` and `RuntimeEngines.tsx` (`/docs/runtime`; state-changing calls run in the iframe sandbox, `src/runtime-sandbox/sandbox-entry.ts`)
+- `packages/playground-nextjs/src/components/ContrastReport.tsx` (`/docs/contrast`)
+- `packages/playground-nextjs/src/components/CliCaptures.tsx` and `DiagnosticsCaptures.tsx` (`/docs/cli`, `/docs/diagnostics`), which render output captured by `packages/playground-nextjs/scripts/capture-capabilities.js` — refresh it with that script when the CLI or a diagnostic changes; `npm test` fails while it is stale.
+
 For changes to shared engine behavior, run the relevant tests and `npm test` from
 repository root. If language defaults or completion metadata change, run
 `npm run generate:language` and include the generated artifacts. Do not hand-edit

@@ -54,9 +54,13 @@ function playgroundSources() {
     let text;
     try { text = read(file); } catch { continue; }
     if (file.endsWith('.uxdsl')) sources.uxdsl.push({ file, text: stripLineComments(stripBlockComments(text)) });
-    else if (/\.(tsx?|jsx?)$/.test(file)) { const t = stripLineComments(stripBlockComments(text)); sources.code.push({ file, text: t }); if (file.endsWith('.tsx')) sources.docs.push({ file, text }); }
+    // .cjs/.mjs too: the playground's own uxdsl.config.cjs is on the list above, and was
+    // silently never read (MIG-B7-17 phase C found it when it started using defineConfig).
+    else if (/\.(tsx?|[cm]?jsx?)$/.test(file)) { const t = stripLineComments(stripBlockComments(text)); sources.code.push({ file, text: t }); if (file.endsWith('.tsx')) sources.docs.push({ file, text }); }
     else if (file.endsWith('.mdx')) sources.docs.push({ file, text });
-    else if (file.endsWith('.json')) sources.code.push({ file, text });
+    // Captured tool output (src/generated/, MIG-B7-17 phase C) quotes other files' source —
+    // an `import` inside a CLI transcript is not the playground importing anything.
+    else if (file.endsWith('.json') && !file.includes('/src/generated/')) sources.code.push({ file, text });
   }
   for (const key of Object.keys(sources)) sources[key].sort((a, b) => a.file.localeCompare(b.file));
   return sources;

@@ -61,8 +61,7 @@
   .concentric-ring.is-hovered {
     border-color: palette(secondary-main);
     background: palette(secondary-main, 0.1);
-    /* z-index boost removed to prevent outer rings from obscuring inner rings on hover */
-    /* z-index: 50 !important; */
+    /* No z-index boost: it let outer rings obscure inner rings on hover. */
     box-shadow: 0 0 0 1px palette(secondary-main);
   }
 
@@ -181,5 +180,23 @@
       width: space($i);
       height: space($i);
     }
+  }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoSpacing.tsx. */
+  .spacing-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: space(3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: space(7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: space(6);
   }
 }

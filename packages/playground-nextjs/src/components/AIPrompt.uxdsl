@@ -44,6 +44,12 @@
   &::placeholder {
     color: palette(text-secondary);
   }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid palette(primary-main);
+    outline-offset: 2px;
+  }
 }
 
 .ai-submit-btn {
@@ -70,7 +76,7 @@
   position: fixed;
   inset: 0;
   z-index: 9999;
-  background: rgba(0, 0, 0, 0.7);
+  background: color(black, 0.7); /* a modal scrim: black whatever the mode */
   backdrop-filter: blur(4px);
   display: grid;
   place-items: center;
@@ -82,7 +88,7 @@
   flex-direction: column;
   align-items: center;
   gap: space(4);
-  color: #ffffff;
+  color: color(white);
 }
 
 .loading-spinner {
@@ -93,13 +99,13 @@
 .loading-text {
   font-size: 1.25rem;
   font-weight: 500;
-  color: #ffffff;
+  color: color(white);
   text-align: center;
 }
 
 .loading-theme-name {
   font-family: monospace;
-  background: rgba(255, 255, 255, 0.1);
+  background: color(white, 0.1);
   padding: space(1) space(2);
   border-radius: radius(2);
   color: palette(primary-light);

@@ -92,4 +92,50 @@
     margin-bottom: density(8);
     color: palette(text-primary);
   }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. #646cff is Vite's own brand color
+     (another product's identity, not this theme's): kept literal on purpose. */
+  .warning-blockquote__title {
+    display: flex;
+    align-items: center;
+    gap: space(3);
+    margin: 0;
+    font-weight: 600;
+  }
+
+  .warning-blockquote__body {
+    margin: space(3) 0 0 0;
+    font-size: 0.9rem;
+  }
+
+  .step-title.integrations-title {
+    margin-top: space(7);
+    margin-bottom: space(5);
+  }
+
+  .integrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: space(5);
+    margin-bottom: 3rem;
+  }
+
+  .step-card.step-card--vite {
+    border-left-color: #646cff;
+  }
+
+  .section-rule {
+    border-color: palette(neutral-main);
+    opacity: 0.3;
+    margin: space(7) 0;
+  }
+
+  .section-rule--wide {
+    margin: 3rem 0;
+  }
+
+  .inline-link {
+    color: palette(primary-main);
+    text-decoration: underline;
+  }
 }

@@ -15,7 +15,7 @@
 // requests to the network are answered locally, and compare.js can subtract the
 // noise found by snapshotting the SAME build twice.
 //
-//   node fixtures/playground-browser/snapshot.js --out /tmp/before.json.gz [--widths 390,768,1280] [--routes /,/buttons] [--build]
+//   node fixtures/playground-browser/snapshot.js --out /tmp/before.json.gz [--widths 390,768,1280] [--routes /,/buttons] [--scheme dark] [--no-interactions] [--build]
 
 const fs = require('node:fs');
 const path = require('node:path');
@@ -34,6 +34,9 @@ const flag = (name) => process.argv.includes(`--${name}`);
 // Widths on both sides of the configured thresholds (480, 768, 1024, 1280).
 const WIDTHS = arg('widths', '390,479,480,767,768,1023,1024,1279,1280,1440').split(',').map(Number);
 const PORT = Number(arg('port', 3917));
+// `--scheme dark` emulates prefers-color-scheme: dark, which the playground follows when no
+// data-theme is stored (ThemeContext), so the dark palette can be compared too.
+const SCHEME = arg('scheme', 'light');
 
 /** Every route the app serves, from its own file tree (no dynamic segments, no API). */
 function discoverRoutes() {
@@ -49,6 +52,15 @@ function discoverRoutes() {
   walk(appDir);
   return [...new Set(routes)].sort();
 }
+
+// Styles that only exist once something is opened. Each entry is measured after one click,
+// stored under the key `<route>#<name>`, at OPEN_WIDTHS only. Selectors are the app's own.
+const INTERACTIONS = [
+  { route: '/densities', name: 'edit-density-dialog', click: '.density-card__edit-btn' },
+  { route: '/spacing', name: 'edit-space-dialog', click: 'button:has-text("Edit space(4)")' },
+  { route: '/typography', name: 'breakpoint-editor', click: 'button.json-action-button[title="Edit Font Size"]' },
+];
+const OPEN_WIDTHS = [390, 1280];
 
 const PROPS = [
   'display', 'position', 'top', 'right', 'bottom', 'left', 'zIndex', 'overflowX', 'overflowY', 'opacity', 'transform', 'filter',
@@ -110,10 +122,10 @@ async function main() {
   const routes = arg('routes') ? arg('routes').split(',') : discoverRoutes();
   const server = spawn('npx', ['next', 'start', '-p', String(PORT)], { cwd: PLAYGROUND, stdio: 'ignore' });
   const browser = await chromium.launch({ executablePath: process.env.UXDSL_CHROME_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true });
-  const snapshot = { widths: WIDTHS, props: PROPS, routes: {} };
+  const snapshot = { widths: WIDTHS, props: PROPS, scheme: SCHEME, routes: {} };
   try {
     await waitForServer(PORT);
-    const context = await browser.newContext({ deviceScaleFactor: 1, reducedMotion: 'reduce' });
+    const context = await browser.newContext({ deviceScaleFactor: 1, reducedMotion: 'reduce', colorScheme: SCHEME });
     await context.addInitScript(() => {
       let seed = 123456789;
       Math.random = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 4294967296;
@@ -147,6 +159,24 @@ async function main() {
         snapshot.routes[route][width] = await page.evaluate(collect, PROPS);
       }
       process.stdout.write(`  ${route}\n`);
+    }
+    if (!flag('no-interactions')) {
+      for (const { route, name, click } of INTERACTIONS.filter((i) => !arg('routes') || routes.includes(i.route))) {
+        const key = `${route}#${name}`;
+        snapshot.routes[key] = {};
+        for (const width of OPEN_WIDTHS.filter((w) => WIDTHS.includes(w))) {
+          await page.setViewportSize({ width, height: 900 });
+          await page.goto(`http://localhost:${PORT}${route}`, { waitUntil: 'load' });
+          await page.addStyleTag({ content: '*,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}' });
+          await page.evaluate(() => document.fonts && document.fonts.ready);
+          await page.waitForTimeout(350);
+          await page.locator(click).first().click();
+          await page.waitForTimeout(200);
+          await page.evaluate(() => window.__stepFrames(8));
+          snapshot.routes[key][width] = await page.evaluate(collect, PROPS);
+        }
+        process.stdout.write(`  ${key}\n`);
+      }
     }
     snapshot.pageErrors = [...new Set(errors)];
   } finally { await browser.close(); server.kill('SIGTERM'); }

@@ -244,34 +244,18 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
     <li
       ref={ref}
       className={`palette-token palette-card-${tone}-${variant}`}
-      style={{ color: colorValues.textColor, position: 'relative' }}
+      style={{ color: colorValues.textColor }}
     >
-      <input 
-        type="color" 
+      <input
+        type="color"
         value={colorValues.hex}
         onChange={handleColorChange}
-        style={{ 
-          position: 'absolute', 
-          top: 0, 
-          left: 0, 
-          width: '100%', 
-          height: '100%', 
-          opacity: 0, 
-          cursor: 'pointer' 
-        }}
+        className="color-picker-overlay"
         aria-label={`Change color for ${tone}-${variant}`}
       />
       <span className="token-name">{tone}-{variant}</span>
       {displayToken && (
-        <span className="token-match" style={{ 
-          position: 'absolute', 
-          top: '0.5rem', 
-          right: '0.5rem', 
-          fontSize: '0.65em', 
-          opacity: 0.8,
-          fontWeight: 'bold',
-          pointerEvents: 'none'
-        }}>
+        <span className="token-match">
           {displayToken}
         </span>
       )}
@@ -294,7 +278,7 @@ export default function DemoPaletteConfig() {
       <InteractiveDemoContainer
         title="Global Palette"
         toolbar={
-          <div style={{ fontSize: '0.8rem', color: 'var(--uxdsl__palette__text-secondary)' }}>
+          <div className="demo-toolbar-hint">
             Click on any color swatch to update the UX-DSL token.
           </div>
         }
