@@ -1,0 +1,6 @@
+@mixin pad($v) { padding: $v; }
+.a { @include pad(density(2)); }
+.b { @include pad(xs(1px) md(2px)); }
+.c { &__elem { color: red; } &--mod { color: blue; } }
+%base { color: green; }
+.d { @extend %base; width: darken(#fff, 10%); height: 10px * 2; }

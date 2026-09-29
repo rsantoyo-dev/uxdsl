@@ -1,0 +1,109 @@
+.a { @ds-surface(contained); }
+----
+.a { @ds-surface (contained); }
+----
+.a { @ds-surface contained; }
+----
+.a { @ds-surface("contained"); }
+----
+.a { @ds-surface(contained primary 2); }
+----
+.a { @ds-surface(primary contained 2); }
+----
+.a { @ds-surface(2 primary contained); }
+----
+.a { @ds-surface(contained, primary, 2); }
+----
+.a { @ds-surface(primary); }
+----
+.a { @ds-surface(2); }
+----
+.a { @ds-surface(); }
+----
+.a { @ds-surface; }
+----
+.a { @ds-surface(contained bogus); }
+----
+.a { @ds-surface(bogus); }
+----
+.a { @ds-surface(contained primary secondary); }
+----
+.a { @ds-surface(contained 2 3); }
+----
+.a { @ds-surface(contained text); }
+----
+.a { @ds-surface(contained divider); }
+----
+.a { @ds-surface(contained 99); }
+----
+.a { @ds-surface(contained 0); }
+----
+.a { @ds-surface(contained radius(pill)); }
+----
+.a { @ds-surface(contained radius(pill) radius(2)); }
+----
+.a { @ds-surface(contained radius(99)); }
+----
+.a { @ds-surface(contained shadow(9)); }
+----
+.a { @ds-surface(contained rounded(2)); }
+----
+.a { @ds-surface(contained elevation(2)); }
+----
+.a { @ds-surface(Contained); }
+----
+.a { @DS-SURFACE(contained); }
+----
+.a { @ds-Surface(contained); }
+----
+.a { @ds-button(contained); }
+----
+.a { @ds-button(contained primary 2); }
+----
+.a { @ds-button(primary); }
+----
+.a { @ds-button(2); }
+----
+.a { @ds-button(); }
+----
+.a { @ds-button(contained bogus); }
+----
+.a { @ds-button(contained text); }
+----
+.a { @ds-button(contained primary secondary); }
+----
+.a { @ds-button(contained 2 3); }
+----
+.a { @ds-button(contained, primary, 2); }
+----
+.a { @ds-button("contained primary"); }
+----
+.a { @ds-button(contained primary primary); }
+----
+.a { @ds-input(outlined); }
+----
+.a { @ds-input(underline primary); }
+----
+.a { @ds-input(contained error 2); }
+----
+.a { @ds-input(bogus); }
+----
+.a { @ds-typo(h1); }
+----
+.a { @ds-typo("h1"); }
+----
+.a { @ds-typo(H1); }
+----
+.a { @ds-typo h1; }
+----
+.a { @ds-typo(h1 h2); }
+----
+.a { @ds-typo(h7); }
+----
+.a { @ds-typo(default); }
+----
+.a { @ds-typo(); }
+----
+.a { @ds-typo(h1, 2); }
+----
+.a { @ds-typo(h1 radius(2)); }

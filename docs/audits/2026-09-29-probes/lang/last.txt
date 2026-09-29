@@ -1,0 +1,25 @@
+.a { padding: xs(1px) md(2px); } .a { padding: xs(3px) md(4px); }
+----
+.a { padding: xs(1px) md(2px); color: xs(red) md(blue); } .b { color: xs(red) md(blue); }
+----
+@font-face { font-family: X; src: xs(url(a.woff)) md(url(b.woff)); }
+----
+.a { @ds-button(contained); @ds-button(contained); }
+----
+.a { @ds-surface(contained); border-color: red; }
+----
+.a { @ds-surface(contained); border: none; }
+----
+.a { @ds-button(contained); } .a:hover { background: red; }
+----
+.btn { @ds-button(contained); } .btn:disabled { opacity: 0.5; }
+----
+@opts {"theme":{"buttons":{"contained":{"states":{"disabled":{"opacity":"0.5"},"focusvisible":{"outline":"2px solid palette(primary)"}}}}}}
+.btn { @ds-button(contained); }
+----
+@opts {"theme":{"buttons":{"contained":{"states":{"hover":{"bg":"red"}}}}}}
+.btn { @ds-button(contained secondary); }
+----
+.a { width: xs(100%) md(50%) !important; height: xs(1px); }
+----
+.a { padding: xs(1px) md(2px) lg(3px); } @media (min-width: 1024px) { .a { padding: 9px; } }
