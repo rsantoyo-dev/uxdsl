@@ -86,8 +86,8 @@ export default function UXDSLCardDemo() {
         <div className="card-body">
           <h5 className="card-title">UX-DSL</h5>
           <p className="card-desc">
-            A type-safe, compile-time design system language that bridges the
-            gap between design tokens and CSS implementation.
+            A build-time design system language that keeps components connected
+            to shared tokens and semantic roles.
           </p>
         </div>
         <div className="card-actions">

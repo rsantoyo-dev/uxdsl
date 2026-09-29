@@ -1,0 +1,399 @@
+/* Compiled to DemoSpacing.module.css; CSS Modules scopes these classes. */
+.spacing-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__4);
+  .spacing-header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+
+  .spacing-doll-container { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .spacing-doll-controls { display: flex; gap: var(--uxdsl__density__2); align-items: center; }
+  .spacing-doll-wrapper { 
+    display: flex; 
+    justify-content: center; 
+    align-items: center;
+    /* min-height removed to adapt to content */
+    overflow: auto; 
+    padding: var(--uxdsl__density__4);
+    background: var(--uxdsl__palette__surface-light);
+    border-radius: var(--uxdsl__radius__2);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    position: relative;
+    transition: all 0.3s ease; /* Smooth transition when resizing */
+  }
+
+  .concentric-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .concentric-content {
+    position: relative;
+    z-index: 100;
+    background: var(--uxdsl__palette__surface-main);
+    padding: var(--uxdsl__density__2);
+    border-radius: var(--uxdsl__radius__1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 80px;
+    min-height: 40px;
+    box-shadow: var(--uxdsl__shadow__2);
+    font-family: var(--uxdsl__typography__caption-font-family);
+    font-size: var(--uxdsl__typography__caption-size);
+    line-height: var(--uxdsl__typography__caption-line);
+    font-weight: var(--uxdsl__typography__caption-weight);
+    letter-spacing: var(--uxdsl__typography__caption-spacing);
+    margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+    font-weight: bold;
+    color: var(--uxdsl__palette__primary-dark);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+  }
+
+  .concentric-ring {
+    position: absolute;
+    border-radius: var(--uxdsl__radius__2);
+    border: 1px solid color-mix(in srgb, var(--uxdsl__palette__primary-main) 20%, transparent);
+    background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 3%, transparent); /* Very subtle fill */
+    pointer-events: auto; /* Allow hovering */
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Label at top */
+    cursor: pointer;
+    padding: 0;
+    font: inherit;
+  }
+
+  .concentric-ring:hover,
+  .concentric-ring:focus-visible,
+  .concentric-ring.is-hovered {
+    border-color: var(--uxdsl__palette__secondary-main);
+    background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 10%, transparent);
+    /* No z-index boost: it let outer rings obscure inner rings on hover. */
+    box-shadow: 0 0 0 1px var(--uxdsl__palette__secondary-main);
+  }
+
+  .ring-label {
+    background: var(--uxdsl__palette__secondary-main);
+    color: var(--uxdsl__palette__secondary-contrast);
+    font-size: 0.6rem;
+    padding: 1px 4px;
+    border-radius: 0 0 4px 4px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    margin-top: -1px; /* Attach to border */
+  }
+
+  .concentric-ring:hover .ring-label,
+  .concentric-ring:focus-visible .ring-label,
+  .concentric-ring.is-hovered .ring-label {
+    opacity: 1;
+  }
+
+  .concentric-ring:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__secondary-main);
+    outline-offset: 2px;
+  }
+
+  /* Generate inset classes for rings */
+    .concentric-ring--1 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__1) * -1);
+      z-index: calc(20 - 1); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--2 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__2) * -1);
+      z-index: calc(20 - 2); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--3 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__3) * -1);
+      z-index: calc(20 - 3); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--4 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__4) * -1);
+      z-index: calc(20 - 4); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--5 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__5) * -1);
+      z-index: calc(20 - 5); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--6 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__6) * -1);
+      z-index: calc(20 - 6); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--7 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__7) * -1);
+      z-index: calc(20 - 7); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--8 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__8) * -1);
+      z-index: calc(20 - 8); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--9 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__9) * -1);
+      z-index: calc(20 - 9); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--10 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__10) * -1);
+      z-index: calc(20 - 10); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--11 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__11) * -1);
+      z-index: calc(20 - 11); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--12 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__12) * -1);
+      z-index: calc(20 - 12); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--13 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__13) * -1);
+      z-index: calc(20 - 13); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--14 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__14) * -1);
+      z-index: calc(20 - 14); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--15 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__15) * -1);
+      z-index: calc(20 - 15); /* Smaller rings on top of larger rings */
+    }
+    .concentric-ring--16 {
+      /* Negative inset expands from the center content */
+      inset: calc(var(--uxdsl__space__16) * -1);
+      z-index: calc(20 - 16); /* Smaller rings on top of larger rings */
+    }
+
+  .spacing-grid {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__1);
+  }
+
+  .spacing-card {
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__2); /* more compact vertical padding on desktop */
+    display: grid;
+    gap: var(--uxdsl__density__2);
+    border-radius: var(--uxdsl__radius__2);
+    transition: all 0.2s ease;
+    align-items: center;
+
+    /* Mobile layout: 2 rows. Desktop (md): 3 columns. */
+    grid-template-columns: auto 1fr;
+    grid-template-areas: "token input" "sep sep" "preview preview";
+  }
+
+  @media (min-width: 768px) {
+
+  .spacing-card {
+      padding: var(--uxdsl__density__1) var(--uxdsl__density__3);
+      grid-template-columns: 120px 1fr auto;
+      grid-template-areas: "token input preview";
+  }
+  }
+
+  .spacing-card:hover {
+    border-color: var(--uxdsl__palette__primary-main);
+    box-shadow: var(--uxdsl__shadow__1);
+  }
+
+  .spacing-card__token {
+    grid-area: token;
+    font-family: var(--uxdsl__typography__subtitle2-font-family);
+    font-size: var(--uxdsl__typography__subtitle2-size);
+    line-height: var(--uxdsl__typography__subtitle2-line);
+    font-weight: var(--uxdsl__typography__subtitle2-weight);
+    letter-spacing: var(--uxdsl__typography__subtitle2-spacing);
+    margin-block-start: var(--uxdsl__typography__subtitle2-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__subtitle2-margin-block-end);
+    font-family: monospace;
+    font-weight: bold;
+    color: var(--uxdsl__palette__primary-dark);
+  }
+
+  .spacing-card__input-wrapper {
+    grid-area: input;
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  @media (min-width: 768px) {
+
+  .spacing-card__input-wrapper {
+      justify-content: flex-start;
+  }
+  }
+
+  .spacing-card__input {
+    width: 100%;
+    max-width: 120px;
+    padding: var(--uxdsl__space__1) var(--uxdsl__density__1);
+    background: transparent;
+    border: 1px solid var(--uxdsl__palette__neutral-main);
+    border-radius: var(--uxdsl__radius__1);
+    font-family: monospace;
+    font-size: 0.85rem;
+    text-align: right;
+    color: var(--uxdsl__palette__surface-contrast);
+  }
+
+  @media (min-width: 768px) {
+
+  .spacing-card__input {
+      max-width: 200px;
+      text-align: left;
+  }
+  }
+
+  .spacing-card__input:focus {
+    border-color: var(--uxdsl__palette__primary-main);
+    outline: none;
+  }
+
+  .spacing-card__separator {
+    grid-area: sep;
+    height: 1px;
+    background: color-mix(in srgb, var(--uxdsl__palette__neutral-light) 50%, transparent);
+    width: 100%;
+    margin: var(--uxdsl__space__1) 0;
+  }
+
+  @media (min-width: 768px) {
+
+  .spacing-card__separator {
+      display: none;
+  }
+  }
+
+  .spacing-card__preview {
+    grid-area: preview;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--uxdsl__density__1) 0;
+    /* Ensure it takes space but allows growth */
+    min-height: 40px; /* Minimum width for small squares */
+  }
+
+  @media (min-width: 768px) {
+
+  .spacing-card__preview {
+      justify-content: flex-end;
+      padding: 0;
+      min-width: 60px;
+  }
+  }
+
+  .spacing-box {
+    background: var(--uxdsl__palette__primary-main);
+    border-radius: 2px;
+    /* Box shadow to make it visible if white */
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--uxdsl__palette__primary-main) 20%, transparent);
+  }
+
+  /* Generate size classes for all 16 levels */
+    .spacing-box--1 {
+      width: var(--uxdsl__space__1);
+      height: var(--uxdsl__space__1);
+    }
+    .spacing-box--2 {
+      width: var(--uxdsl__space__2);
+      height: var(--uxdsl__space__2);
+    }
+    .spacing-box--3 {
+      width: var(--uxdsl__space__3);
+      height: var(--uxdsl__space__3);
+    }
+    .spacing-box--4 {
+      width: var(--uxdsl__space__4);
+      height: var(--uxdsl__space__4);
+    }
+    .spacing-box--5 {
+      width: var(--uxdsl__space__5);
+      height: var(--uxdsl__space__5);
+    }
+    .spacing-box--6 {
+      width: var(--uxdsl__space__6);
+      height: var(--uxdsl__space__6);
+    }
+    .spacing-box--7 {
+      width: var(--uxdsl__space__7);
+      height: var(--uxdsl__space__7);
+    }
+    .spacing-box--8 {
+      width: var(--uxdsl__space__8);
+      height: var(--uxdsl__space__8);
+    }
+    .spacing-box--9 {
+      width: var(--uxdsl__space__9);
+      height: var(--uxdsl__space__9);
+    }
+    .spacing-box--10 {
+      width: var(--uxdsl__space__10);
+      height: var(--uxdsl__space__10);
+    }
+    .spacing-box--11 {
+      width: var(--uxdsl__space__11);
+      height: var(--uxdsl__space__11);
+    }
+    .spacing-box--12 {
+      width: var(--uxdsl__space__12);
+      height: var(--uxdsl__space__12);
+    }
+    .spacing-box--13 {
+      width: var(--uxdsl__space__13);
+      height: var(--uxdsl__space__13);
+    }
+    .spacing-box--14 {
+      width: var(--uxdsl__space__14);
+      height: var(--uxdsl__space__14);
+    }
+    .spacing-box--15 {
+      width: var(--uxdsl__space__15);
+      height: var(--uxdsl__space__15);
+    }
+    .spacing-box--16 {
+      width: var(--uxdsl__space__16);
+      height: var(--uxdsl__space__16);
+    }
+
+  /* MIG-B7-17 phase B (4): were inline style={{}} in DemoSpacing.tsx. */
+  .spacing-doll-controls__label {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .demo-code-block--usage {
+    width: 100%;
+    max-width: 600px;
+    margin: var(--uxdsl__space__7) auto 0;
+  }
+
+  .demo-header--tokens {
+    margin-top: 3rem;
+    margin-bottom: var(--uxdsl__space__6);
+  }
+}

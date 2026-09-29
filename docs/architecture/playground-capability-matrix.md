@@ -30,16 +30,16 @@ Recorded as accepted in `capability-evidence.json`: 0.
 
 ## Dogfooding: styling in the playground that bypasses UXDSL
 
-Counted on comment-stripped source. **Candidates to classify, not defects**: a `px` or a hex can be an intentional stable value. The baseline may only go down.
+Counted on comment-stripped source. **Candidates to classify, not defects**: a `px` or a hex can be an intentional stable value. `cssModuleFiles` counts handwritten modules; outputs compiled from the `.uxdsl` entries in `uxdsl-module-entries.json` are excluded. The baseline may only go down.
 
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
 | handWrittenMediaQueries | 2 | 2 |
-| hexColorsInUxdsl | 12 | 12 |
+| hexColorsInUxdsl | 1 | 1 |
 | rgbHslInUxdsl | 1 | 1 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 28 | 28 |
-| hexColorsInTsx | 32 | 32 |
+| inlineStyleObjects | 27 | 27 |
+| hexColorsInTsx | 23 | 23 |
 
 ## Directives
 
@@ -69,9 +69,9 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `lg` | live | live | `src/app/layout.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoProductivity.uxdsl` |
+| `lg` | live | live | `src/app/layout.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/HomeInteractiveDemos.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/DemoProductivity.uxdsl` |
+| `sm` | live | live | `src/components/AppHeader.uxdsl` |
 | `xl` | live | live | `src/components/CapabilityDocs.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
@@ -92,7 +92,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `shadows` | live | live | `src/app/app.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 | `spacing` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/productivity/page.uxdsl` |
 | `surfaces` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
-| `typography` | documented | documented | `src/app/docs/quick-start/page.mdx` |
+| `typography` | documented | documented | `src/components/TypographyDocumentation.tsx` |
 | `typography_details` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/not-found.uxdsl` |
 
 ## Roles
@@ -101,7 +101,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `button.contained` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
 | `button.flat` | live | live | `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
-| `button.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/DemoProductivity.uxdsl` |
+| `button.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
@@ -130,7 +130,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `applyTheme` | live | live | `src/components/ThemeContext.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
+| `applyTheme` | live | live | `src/components/ThemeContext.tsx`, `src/components/TypographyDocumentation.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `buttonComponentCss` | live | live | `src/components/DemoButtons.tsx` |
 | `buttonDeclarations` | live | live | `src/components/RuntimeEngines.tsx` |
 | `checkThemeContrast` | live | live | `src/components/ContrastReport.tsx` |
@@ -140,7 +140,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `generateEdgeCss` | live | live | `src/components/DemoBorders.tsx`, `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx` |
 | `generateShadowCss` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoShadows.tsx`, `src/components/DemoSurfaces.tsx` |
 | `generateSurfaceCss` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/InputDemo.tsx` |
-| `generateThemeCss` | live | live | `src/components/ThemeScript.tsx`, `src/components/TypographyDocumentation.tsx` |
+| `generateThemeCss` | live | live | `src/components/ThemeScript.tsx` |
 | `getAppliedTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `getDefaultTheme` | live | live | `src/components/RuntimeEngines.tsx` |
 | `getDensityTokens` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/InputDemo.tsx` |
@@ -200,7 +200,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `.` | live | live | `package.json` |
 | `./config` | live | live | `uxdsl.config.cjs` |
 | `./ds-runtime` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointEditor.tsx`, `src/components/BreakpointsProvider.tsx` |
-| `./language` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/DemoDensity.tsx`, `src/components/ResponsiveSyntaxExplainer.tsx` |
+| `./language` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/DemoDensity.tsx` |
 | `./schema/theme.schema.json` | live | live | `uxdsl.theme.green.json` |
 
 ## Diagnostics

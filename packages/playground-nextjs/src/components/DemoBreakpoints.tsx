@@ -107,8 +107,9 @@ export default function DemoBreakpoints() {
               <h3 className="breakpoints-subtitle">Adjust Breakpoints</h3>
               {keys.map(key => (
                 <div key={key} className="breakpoints-control-row">
-                  <div className="breakpoints-control-label">{key}</div>
+                  <label className="breakpoints-control-label" htmlFor={`breakpoint-slider-${key}`}>{key}</label>
                   <input
+                    id={`breakpoint-slider-${key}`}
                     type="range"
                     min="0"
                     max="1600"
@@ -117,14 +118,17 @@ export default function DemoBreakpoints() {
                     onMouseUp={commitUpdate}
                     onTouchEnd={commitUpdate}
                     disabled={key === 'xs'}
+                    aria-label={`${key} breakpoint slider`}
                     className="breakpoints-slider"
                   />
                   <div className="breakpoints-input-wrapper">
                     <input
                       type="number"
+                      aria-label={`${key} breakpoint width in pixels`}
                       value={localBreakpoints[key]}
                       onChange={(e) => handleLocalUpdate(key, Number(e.target.value))}
                       onBlur={commitUpdate}
+                      onPointerUp={commitUpdate}
                       onKeyDown={(e) => e.key === 'Enter' && commitUpdate()}
                       disabled={key === 'xs'}
                       className="breakpoints-input-val"

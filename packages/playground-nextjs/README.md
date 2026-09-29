@@ -30,6 +30,20 @@ behavior deliberately broken and require the test to fail (`negative control:` i
 The runtime keeps its state per document, so each scenario installs a fresh jsdom
 document rather than resetting the previous one.
 
+## Component style scope
+
+The generated `src/app/uxdsl.css` is global. An imported `.uxdsl` filename does not
+scope selectors. For a component that needs isolated classes, add its source and
+generated `.module.css` path to `uxdsl-module-entries.json`. The shared build then
+compiles it with `includeTheme: false`, excludes it from the global entry, and leaves
+the theme variables in `uxdsl.css`. Import the generated CSS Module in the component
+and use its `styles` map for each local class, including dynamically selected classes.
+
+`DemoSpacing.uxdsl` is the working example. It needs no `#DemoSpacing` selector for
+isolation. Shared page styles and the design tokens remain global by design. Run
+`npm run uxdsl:build` after adding a module entry; the capability gate verifies that
+declared modules come from UXDSL and that handwritten CSS Modules stay at zero.
+
 ## Scripts worth knowing
 
 - `npm run theme:audit` — runs the shared WCAG gate (`checkThemeContrast`, with the

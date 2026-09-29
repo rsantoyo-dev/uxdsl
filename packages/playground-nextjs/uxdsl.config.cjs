@@ -3,11 +3,21 @@ const path = require('path');
 // ships (`postcss-uxdsl/config`), as it recommends to every project — it was a plain object.
 const { defineConfig } = require('postcss-uxdsl/config');
 const { themes } = require('./themes');
+const moduleEntries = require('./uxdsl-module-entries.json');
 const theme = themes.default;
 
 module.exports = defineConfig({
-  entry: path.join(process.cwd(), 'src/app/uxdsl-entry.uxdsl'),
-  outFile: path.join(process.cwd(), 'src/app/uxdsl.css'),
+  builds: [
+    {
+      entry: path.join(process.cwd(), 'src/app/uxdsl-entry.uxdsl'),
+      outFile: path.join(process.cwd(), 'src/app/uxdsl.css'),
+    },
+    ...moduleEntries.map(({ source, output }) => ({
+      entry: path.join(process.cwd(), source),
+      outFile: path.join(process.cwd(), output),
+      includeTheme: false,
+    })),
+  ],
   breakpoints: theme.breakpoints,
   watch: ['src/**/*.uxdsl', 'src/**/*.css', 'uxdsl.theme.*.json', 'themes.js'],
   theme,

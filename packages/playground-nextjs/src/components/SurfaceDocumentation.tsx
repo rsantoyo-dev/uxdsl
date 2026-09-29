@@ -38,7 +38,7 @@ export function SurfaceDocumentation() {
       <h3>Choose the scope of your change</h3>
       <ul>
         <li><strong>One container:</strong> select another configured Surface or add an intentional CSS override after the directive.</li>
-        <li><strong>Every consumer of a Surface:</strong> edit its definition, then rebuild or apply the theme with <code>generateThemeCss(nextTheme)</code>.</li>
+        <li><strong>Every consumer of a Surface:</strong> edit its definition, then rebuild or use <code>applyTheme</code> for compatible live value changes.</li>
         <li><strong>A foundational decision:</strong> change Density, Radius, Palette, Border or Shadow only when all direct and linked consumers should follow.</li>
       </ul>
       <pre><code className="language-css">{`.special-card {

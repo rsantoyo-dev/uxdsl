@@ -1,0 +1,6 @@
+[
+  {
+    "source": "src/components/DemoSpacing.uxdsl",
+    "output": "src/components/DemoSpacing.module.css"
+  }
+]

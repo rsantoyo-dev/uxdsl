@@ -244,7 +244,10 @@ function deriveCapabilities() {
 function dogfoodingCounts() {
   const sources = playgroundSources();
   const count = (list, re) => list.reduce((sum, { text }) => sum + (text.match(re) || []).length, 0);
-  const cssModules = walk(`${PLAYGROUND}/src`).filter((f) => f.endsWith('.module.css')).length;
+  // These outputs are compiled from .uxdsl entries, not styling authored around UXDSL.
+  const moduleEntries = JSON.parse(read(`${PLAYGROUND}/uxdsl-module-entries.json`));
+  const generatedModules = new Set(moduleEntries.map(({ output }) => `${PLAYGROUND}/${output}`));
+  const cssModules = walk(`${PLAYGROUND}/src`).filter((f) => f.endsWith('.module.css') && !generatedModules.has(f)).length;
   return {
     handWrittenMediaQueries: count(sources.uxdsl, /@media[^{]*\(\s*min-width/g),
     hexColorsInUxdsl: count(sources.uxdsl, /#[0-9a-fA-F]{3,8}\b/g),

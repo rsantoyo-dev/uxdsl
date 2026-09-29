@@ -1,6 +1,6 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { useTheme } from './ThemeContext'
 import { breakpoints as runtimeBreakpoints, DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime'
 
@@ -20,10 +20,8 @@ const BreakpointsContext = createContext<{
 })
 
 export function BreakpointsProvider({ children }: { children: ReactNode }) {
-  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
+  const { activeThemeData } = useTheme()
   const [breakpoints, setBreakpointsState] = useState(defaultBreakpoints)
-  const currentTheme = useRef({ activeThemeData, setCustomTheme, customThemeName })
-  currentTheme.current = { activeThemeData, setCustomTheme, customThemeName }
   const configured = JSON.stringify({ ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints })
   useEffect(() => {
     const map = JSON.parse(configured)
@@ -52,11 +50,6 @@ export function BreakpointsProvider({ children }: { children: ReactNode }) {
       if (event.type === 'breakpoint') {
         const updated = runtimeBreakpoints.get()
         setBreakpointsState(prev => ({ ...prev, ...updated }))
-        const current = currentTheme.current
-        const configuredMap = { ...DEFAULT_BREAKPOINTS, ...current.activeThemeData?.breakpoints }
-        if (Object.entries(updated).some(([name, width]) => configuredMap[name] !== width)) {
-          current.setCustomTheme(current.customThemeName || 'Custom Theme', { breakpoints: updated })
-        }
       }
     })
 

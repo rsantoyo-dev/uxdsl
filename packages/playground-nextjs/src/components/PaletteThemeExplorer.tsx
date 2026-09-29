@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { useTheme } from './ThemeContext'
-import runtime from 'postcss-uxdsl/ds-runtime'
 
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
@@ -44,11 +43,13 @@ function TokenInspectorItem({
     tone,
     variant,
     valueHint,
+    isDark,
     onColorChange,
 }: {
     tone: string
     variant: string
     valueHint?: string
+    isDark: boolean
     onColorChange: (variant: string, nextHex: string) => void
 }) {
   const [colorInfo, setColorInfo] = useState({ hex: '', rgb: '' })
@@ -65,7 +66,7 @@ function TokenInspectorItem({
         })
 
         return () => cancelAnimationFrame(frame)
-    }, [tone, variant, valueHint])
+    }, [tone, variant, valueHint, isDark])
   
     const handleColorInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const nextHex = e.target.value.toUpperCase()
@@ -107,26 +108,15 @@ function TokenInspectorItem({
 }
 
 export default function PaletteThemeExplorer({ action }: { action?: React.ReactNode }) {
-    const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
+    const { activeThemeData, setCustomTheme, customThemeName, isDark } = useTheme()
   const [inspectorTone, setInspectorTone] = useState('primary')
 
     const handleTokenColorChange = (variant: string, nextHex: string) => {
-        const token = `${inspectorTone}-${variant}`
-
-        try {
-            runtime.updatePalette(token, nextHex, { persist: true })
-        } catch {
-            document.documentElement.style.setProperty(`--${token}`, nextHex)
-            document.documentElement.style.setProperty(`--uxdsl__palette__${token}`, nextHex)
-        }
-
-        const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
-        if (!nextTheme.palette) nextTheme.palette = {}
-        if (!nextTheme.palette[inspectorTone] || typeof nextTheme.palette[inspectorTone] !== 'object') {
-            nextTheme.palette[inspectorTone] = {}
-        }
-        nextTheme.palette[inspectorTone][variant] = nextHex
-        setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
+        const palette = { [inspectorTone]: { [variant]: nextHex } }
+        const hasDarkAssignment = activeThemeData?.modes?.dark?.palette?.[inspectorTone]?.[variant] !== undefined
+        setCustomTheme(customThemeName || 'Custom Theme', isDark && hasDarkAssignment
+            ? { modes: { dark: { palette } } }
+            : { palette })
     }
 
   return (
@@ -150,7 +140,8 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                                                              key={variant.id}
                                                              tone={inspectorTone}
                                                              variant={variant.id}
-                                                             valueHint={activeThemeData?.palette?.[inspectorTone]?.[variant.id]}
+                                                             valueHint={(isDark ? activeThemeData?.modes?.dark?.palette?.[inspectorTone]?.[variant.id] : undefined) ?? activeThemeData?.palette?.[inspectorTone]?.[variant.id]}
+                                                             isDark={isDark}
                                                              onColorChange={handleTokenColorChange}
                                                          />
                          ))}
@@ -166,19 +157,20 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                  </h5>
                  <div className="selector-grid">
                          {paletteCards.map(tone => (
-                             <div key={tone.id} 
+                             <button key={tone.id} type="button"
                                 onClick={() => setInspectorTone(tone.id)}
+                                aria-pressed={tone.id === inspectorTone}
                                 className={`pte-selector__option${tone.id === inspectorTone ? ' is-selected' : ''}`}>
                                  <span className="pte-selector__name">{tone.title}</span>
-                                 <div className="pte-selector__strip">
+                                 <span className="pte-selector__strip">
                                      {variants.map(variant => (
-                                         <div key={variant.id} 
+                                         <span key={variant.id}
                                               className="pte-selector__chip"
                                               style={{ background: `var(--uxdsl__palette__${tone.id}-${variant.id})` }} 
                                          />
                                      ))}
-                                 </div>
-                             </div>
+                                 </span>
+                             </button>
                          ))}
                      </div>
              </div>

@@ -21,7 +21,7 @@ export function RussianDoll({
         <span className="concentric-label">Content</span>
         
         {Array.from({ length: Math.max(0, densityIndex) }, (_, i) => i + 1).map(level => (
-          <div 
+          <button type="button"
             key={level}
             className={`concentric-ring concentric-ring--uxdsl__density__${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
             onMouseEnter={() => setHoveredLevel(level)}
@@ -32,10 +32,12 @@ export function RussianDoll({
                 onLayerClick(level)
               }
             }}
+            disabled={!onLayerClick}
+            aria-label={`Edit density(${level})`}
             style={onLayerClick ? { cursor: 'pointer' } : undefined}
           >
             <span className="ring-label">density({level})</span>
-          </div>
+          </button>
         ))}
       </div>
     </div>

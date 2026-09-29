@@ -127,6 +127,13 @@
   cursor: pointer;
   opacity: 0.8;
   transition: all 0.2s;
+  font: inherit;
+  text-align: left;
+}
+
+.pte-selector__option:focus-visible {
+  outline: 2px solid palette(primary-main);
+  outline-offset: 2px;
 }
 
 .pte-selector__option.is-selected {

@@ -20,7 +20,7 @@ export function ButtonDocumentation() {
   outline: var(--uxdsl__button__checkout-focusvisible-outline);
   outline-offset: var(--uxdsl__button__checkout-focusvisible-outline-offset);
 }`}</code></pre>
-    <p>At md, the example selected shadow changes to shadow-3 and persists until overridden. Padding follows Density independently. The component retains references instead of copying the current pixels. Replace managed theme CSS with <code>generateThemeCss(nextTheme)</code> to update existing token values. Adding or removing state fields, changing the selected Surface, or changing role structure requires regenerating component CSS too; <code>buttonComponentCss</code> does this in the demo.</p>
+    <p>At md, the example selected shadow changes to shadow-3 and persists until overridden. Padding follows Density independently. The component retains references instead of copying the current pixels. Use <code>applyTheme</code> to update compatible token values in a browser. Adding or removing state fields, changing the selected Surface, or changing role structure requires regenerating component CSS too; <code>buttonComponentCss</code> does this in the demo.</p>
     <h3>Tones, sizes and states</h3>
     <pre><code className="language-css">{`.save { @ds-button(contained primary 2); }
 .special { @ds-button(outlined); border-style: dashed; }`}</code></pre>

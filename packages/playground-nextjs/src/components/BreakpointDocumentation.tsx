@@ -73,7 +73,7 @@ export function BreakpointExplanation() {
       <p>The component defines its layout transition; Density defines its spacing progression. Changing <code>md</code> changes when both rules apply after the configuration is compiled or applied. Changing only a Density mapping changes spacing without moving the layout threshold.</p>
       <p>Do not repeat a Density progression locally merely because it produces the same result today. Use <code>space()</code> for intentional stable spacing, explicit responsive values for deliberate local exceptions, and standard CSS when finer control is needed.</p>
       <h3>Explore the current viewport</h3>
-      <p>The playground below reports the actual browser viewport and edits its breakpoint configuration. Moving a threshold does not resize the browser. Move <code>md</code> across the current viewport width to inspect the transition. Editor constraints keep thresholds ordered; browser overrides may persist. These edits do not write your source JSON file.</p>
+      <p>The playground below reports the actual browser viewport and edits compiled media queries through the legacy breakpoint runtime. Moving a threshold does not resize the browser. Move <code>md</code> across the current viewport width to inspect the card layout transition. The managed theme stylesheet still uses its original thresholds for Density and Typography; rebuild from source to move those together. Editor constraints keep thresholds ordered; browser overrides may persist. These edits do not write your source JSON file.</p>
     </section>
   )
 }
@@ -105,7 +105,7 @@ const unsubscribe = breakpoints.subscribe((event) => {
 
 // Call during cleanup when the subscriber is no longer needed.
 unsubscribe()`}</code></pre>
-      <p>The subscription reports configuration updates; it is not a viewport-resize subscription. A runtime change does not edit the JSON file. Verify the resulting media rules in your integration, especially when stylesheets or overrides are loaded separately.</p>
+      <p>The subscription reports configuration updates; it is not a viewport-resize subscription. A runtime change does not edit the JSON file or rewrite the managed stylesheet from <code>applyTheme</code>. Verify the resulting media rules in your integration, especially when Density or Typography shares the threshold. For a system-wide change, edit the source theme and rebuild.</p>
     </section>
   )
 }
@@ -135,7 +135,7 @@ export function BreakpointAgentGuidance() {
       <ol>
         <li>Inspect the active configuration and confirm 800px fits between the intended neighboring thresholds.</li>
         <li>Find component rules and Density mappings referencing <code>md</code>. Confirm the request includes these consumers.</li>
-        <li>Update <code>breakpoints.md</code> in the source JSON and apply it through the project’s build or runtime integration.</li>
+        <li>Update <code>breakpoints.md</code> in the source JSON and rebuild the project so compiled component rules and managed theme CSS agree.</li>
         <li>Verify the column layout at 799px and row layout at 800px and 801px. Check Density transitions and consumers without an explicit <code>md()</code> rule.</li>
         <li>Check a later breakpoint to confirm the row value persists unless another declaration overrides it.</li>
       </ol>

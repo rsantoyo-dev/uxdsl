@@ -7,8 +7,8 @@ export default function DocsConfigPage() {
       <div className="container">
         <PageTitle
           title="Config JSON"
-          subtitle="Single source of truth for runtime theme tokens."
-          subtext="Changes from demos update this JSON. Editing this JSON updates the UI runtime."
+          subtitle="Inspect and edit the theme currently applied in this playground."
+          subtext="Changes from demos appear here. Edits update the browser preview; export JSON to save them to a project."
         />
         <ThemeConfigJsonEditor />
       </div>

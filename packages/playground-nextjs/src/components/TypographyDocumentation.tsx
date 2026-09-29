@@ -46,24 +46,30 @@ export default function TypographyDocumentation() {
       </table></div>
       <h3>Choose a style in the component</h3>
       <div className="doc-section__comparison"><div><h4>UXDSL</h4><pre><code className="language-css">{usage}</code></pre></div><div><h4>Pure CSS: the size progression</h4><pre><code className="language-css">{css}</code></pre></div></div>
-      <p>The mixin consumes CSS variables such as <code>--uxdsl__typography__h1-size</code> and <code>--uxdsl__typography__h1-line</code>. The compiler generates their responsive definitions from the JSON. Pure CSS can centralize the same behavior with variables and media queries; UXDSL provides the reusable configuration and compilation layer.</p>
+      <p>The directive emits one declaration for each field defined by the role or its defaults, using variables such as <code>--uxdsl__typography__h1-size</code> and <code>--uxdsl__typography__h1-line</code>. It does not add literal fallbacks for undefined fields. The compiler generates responsive variable definitions from the JSON. Pure CSS can centralize the same behavior with variables and media queries; UXDSL provides the reusable configuration and compilation layer.</p>
       <p>Keep HTML semantics independent of visual styling: use the appropriate heading level for the document, even when its visual style comes from another Typography role. Custom configured names, such as <code>label</code>, can also be consumed with <code>@ds-typo(label)</code>.</p>
       <h3>Change the system, update its consumers</h3>
       <ul><li>Change a Typography progression to update every component consuming that style.</li><li>Change a Spacing token to update its direct consumers and the Typography or Density definitions referencing it.</li><li>Change a breakpoint threshold to move transitions using that name.</li><li>Choose another configured style or use a deliberate local CSS override when only one component should change.</li></ul>
       <h3>One generator for build time and runtime</h3>
-      <p>PostCSS accepts the JSON as its <code>theme</code> option. SSR and browser applications use <code>generateThemeCss(theme)</code> from <code>postcss-uxdsl/ds-runtime</code>. Both call the same Typography generator. For live changes, regenerate and replace the managed theme stylesheet rather than appending overrides:</p>
-      <pre><code className="language-ts">{`import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+      <p>PostCSS accepts the JSON as its <code>theme</code> option. Browser applications use <code>applyTheme</code> from <code>postcss-uxdsl/ds-runtime</code> for live changes. It validates and generates before replacing its managed stylesheet:</p>
+      <pre><code className="language-ts">{`import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+import projectTheme from './uxdsl.theme.json'
 
-// themeStyle is the application's existing managed <style> element.
-// Generate first so an invalid update cannot clear the active stylesheet.
-const css = generateThemeCss(nextTheme)
-themeStyle.textContent = css`}</code></pre>
-      <p>The playground edits the JSON and applies this same generator. Its breakpoint buttons inspect a simulated viewport width using the shared resolver; they do not resize the browser. Default mode follows the actual viewport.</p>
+// Initialize with the theme used to compile the component CSS.
+const initial = applyTheme(projectTheme, { replace: true })
+if (!initial.ok) throw initial.error
+const result = applyTheme({ typography_details: { h1: { fontWeight: '600' } } })
+if (!result.ok) console.error(result.error)`}</code></pre>
+      <p>The playground applies live theme edits through that API. Its breakpoint buttons inspect a simulated viewport width using the shared resolver; they do not resize the browser. Default mode follows the actual viewport.</p>
       <h3>Supported fields and validation</h3>
       <p>Configured fields are <code>fontFamily</code>, <code>fontSize</code>, <code>lineHeight</code>, <code>fontWeight</code>, <code>letterSpacing</code>, <code>textTransform</code>, <code>textDecoration</code>, <code>fontStyle</code>, <code>marginBlockStart</code> and <code>marginBlockEnd</code>. Each accepts a nonempty string containing a CSS value or a configured responsive progression.</p>
-      <p>The shared compiler checks role names, fields, base values and breakpoint widths. It preserves nested CSS expressions and Spacing references. It does not yet validate every CSS value, token dependency or accessibility requirement. Legacy flat <code>typography</code> variables remain supported; use <code>typography_details</code> for structured responsive styles.</p>
+      <p>The shared compiler checks role names, fields, base values and breakpoint widths. It preserves nested CSS expressions and Spacing references. It does not yet validate every CSS value, token dependency or accessibility requirement. Legacy flat <code>typography</code> variables remain supported, for example <code>{'{ "typography": { "font-code": "monospace" } }'}</code>; use <code>typography_details</code> for structured responsive styles.</p>
     </section>
-    <AgentGuidance id="ai-typography-guide" title="How an AI agent should use Typography">
+  </div>
+}
+
+export function TypographyAgentGuidance() {
+  return <AgentGuidance id="ai-typography-guide" title="How an AI agent should use Typography">
       <p><strong>Responsibility: maintain shared text roles and their responsive behavior.</strong> Typography defines reusable visual text styles; components select the appropriate role without hardcoding the resolved values. HTML preserves document semantics.</p>
       <p>Typography is the preferred shared abstraction for text styling. <strong>Preserve intent, not just the current computed value.</strong> Keep the configured role and its responsive behavior intact, just as you would preserve a Density token or a semantic Palette reference.</p>
       <ul>
@@ -90,5 +96,4 @@ themeStyle.textContent = css`}</code></pre>
       <blockquote>Make page titles follow the application’s responsive typography.</blockquote>
       <ol><li>Inspect the existing title styles and their responsive mappings.</li><li>Choose the appropriate configured style, such as <code>h1</code>.</li><li>Apply <code>@ds-typo(h1)</code> to the title selector while preserving appropriate HTML semantics.</li><li>Verify the full progression instead of copying the font size visible on one screen.</li></ol>
     </AgentGuidance>
-  </div>
 }

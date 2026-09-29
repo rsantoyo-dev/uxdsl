@@ -1,346 +1,41 @@
-/* DemoProductivity styles - Scoped */
+/* The preview uses these compiled rules. Card count changes only the DOM. */
 #DemoProductivity {
-  .prod-container {
+  .productivity-controls { margin-bottom: density(4); }
+  .productivity-controls__label { display: flex; align-items: center; gap: density(2); }
+  .productivity-controls__range { flex: 1; }
+  .demo-code-stack { display: grid; gap: density(4); margin-bottom: density(4); }
+
+  .stress-grid {
     display: grid;
-    grid-template-columns: xs(1fr) lg(1fr 1fr);
-    gap: density(4);
-  }
-
-  .prod-card {
-    /* Complex Hero Card */
-    @ds-surface(contained);
-    
-    display: flex;
-    flex-direction: column;
-    gap: density(4);
-    
-    /* Responsive Sizing & Spacing */
-    width: xs(100%) md(480px);
-    padding: xs(density(3)) md(density(5));
-    margin: 0 auto;
-  }
-
-  .prod-header {
-    display: flex;
-    flex-direction: xs(column) sm(row);
-    align-items: center;
-    text-align: xs(center) sm(left);
-    gap: density(3);
-  }
-
-  .prod-avatar {
-    width: 80px;
-    height: 80px;
-    border-radius: radius(full);
-    background: palette(primary-main);
-    color: palette(primary-contrast);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 2rem;
-    box-shadow: shadow(2);
-    border: 4px solid palette(surface-main);
-  }
-
-  .prod-info {
-    display: flex;
-    flex-direction: column;
-    gap: density(1);
-  }
-
-  .prod-title {
-    @ds-typo(h4);
-    color: palette(text-primary);
-    margin: 0;
-  }
-
-  .prod-subtitle {
-    @ds-typo(body-sm);
-    color: palette(text-secondary);
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-weight: 600;
-  }
-
-  .prod-stats {
-    display: flex;
-    justify-content: space-around;
-    padding: density(3) 0;
-    border-top: 1px solid palette(neutral-light);
-    border-bottom: 1px solid palette(neutral-light);
-    background: palette(surface-subtle);
-    border-radius: radius(2);
-  }
-
-  .prod-stat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: density(1);
-  }
-
-  .prod-stat-val {
-    @ds-typo(h5);
-    color: palette(primary-main);
-    margin: 0;
-    line-height: 1;
-  }
-
-  .prod-stat-label {
-    @ds-typo(caption);
-    color: palette(text-secondary);
-    font-weight: 600;
-  }
-
-  .prod-actions {
-    display: flex;
-    flex-direction: xs(column) sm(row);
+    grid-template-columns: xs(1fr) md(repeat(auto-fill, minmax(120px, 1fr)));
     gap: density(2);
+    padding: density(3) 0;
   }
 
-  .prod-btn-primary {
-    @ds-button(contained primary);
-    flex: 1;
+  .stress-card {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
-    padding: density(3);
-  }
-
-  .prod-btn-secondary {
-    @ds-button(outlined secondary);
-    flex: 1;
-    justify-content: center;
-    padding: density(3);
-  }
-
-  .prod-code-block {
-    background: #1e1e1e;
-    color: #d4d4d4;
+    gap: density(1);
+    text-align: center;
+    min-width: 0;
     padding: density(2);
     border-radius: radius(2);
-    font-family: monospace;
-    font-size: 0.85rem;
-    overflow-x: auto;
-    border: 1px solid #333;
+    box-shadow: shadow(1);
   }
 
-  .prod-code-title {
-    color: #9cdcfe;
-    font-weight: bold;
-    margin-bottom: density(1);
-    display: block;
-  }
-
-  .prod-highlight {
-    color: #ce9178;
-  }
-
-  .prod-comment {
-    color: #6a9955;
-  }
-
-  .prod-tabs {
-    display: flex;
-    gap: density(2);
-    margin-bottom: density(4);
-    border-bottom: 1px solid palette(neutral-light);
-    padding-bottom: density(2);
-  }
-
-  .prod-tab-btn {
-    background: none;
-    border: none;
-    padding: density(2) density(4);
-    font-size: 1rem;
-    font-weight: 600;
-    color: palette(text-secondary);
-    cursor: pointer;
-    border-radius: radius(2);
-    transition: all 0.2s ease;
-  }
-
-  .prod-tab-btn:hover {
-    background: palette(surface-subtle);
-    color: palette(text-primary);
-  }
-
-  .prod-tab-btn.active {
-    background: palette(primary-light);
-    color: palette(primary-dark);
-  }
-
-  .prod-code-section {
-    display: flex;
-    flex-direction: column;
-    gap: density(3);
-  }
-
-  .prod-tab-content {
-    margin-top: density(3);
-  }
-
-  .prod-form {
-    margin-top: density(3);
-    padding: density(3);
-    border: 1px solid palette(neutral-light);
-    border-radius: radius(2);
-    background: palette(surface-light);
-    display: flex;
-    flex-direction: column;
-    /* Explicit responsive gap: small on mobile, large on desktop */
-    gap: xs(space(2)) md(space(4));
-  }
-
-  .prod-form-title {
-    @ds-typo(h6);
-    margin: 0;
-    color: palette(text-primary);
-  }
-
-  .prod-form-row {
-    display: flex;
-    /* Responsive direction: stack on mobile, row on desktop */
-    flex-direction: xs(column) md(row);
-    gap: density(2);
-  }
-
-  .prod-input-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: space(1);
-  }
-
-  .prod-label {
+  .stress-card-title { @ds-typo(body); font-weight: 700; }
+  .stress-card-badge {
+    @ds-surface(contained surface);
     @ds-typo(caption);
-    font-weight: bold;
-    color: palette(text-secondary);
+    padding: density(1);
+    border-radius: radius(pill);
   }
 
-  .prod-input {
-    @ds-input(outlined neutral);
-    /* Responsive font size explicitly */
-    font-size: xs(0.875rem) md(1rem);
+  $tones: primary, secondary, tertiary, success, info;
+  @each $tone in $tones {
+    .stress-tone-#{$tone} { @ds-surface(contained #{$tone}); }
   }
-
-  /* Layout Styles for the Demo */
-  .demo-grid-hero {
-    display: grid;
-    grid-template-columns: xs(1fr) lg(1fr 1fr);
-    align-items: start;
-    gap: density(4);
-    margin-top: density(4);
-  }
-
-  .demo-preview {
-    display: flex;
-    justify-content: center;
-    padding: density(4);
-    background: palette(surface-subtle);
-    border-radius: radius(3);
-    border: 1px solid palette(neutral-light);
-  }
-
-  /* Removed duplicate .demo-code block since it's now defined below with max-width */
-
-  .code-header {
-    background: #252526;
-    padding: density(2) density(3);
-    border-bottom: 1px solid #333;
-    display: flex;
-    align-items: center;
-  }
-
-  .code-lang {
-    font-size: 0.8rem;
-    color: #9cdcfe;
-    font-weight: bold;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .demo-code pre {
-    margin: 0;
-    padding: density(3);
-    overflow-x: auto;
-    line-height: 1.5;
-  }
-
-  .demo-code code {
-    font-family: 'Fira Code', 'Consolas', monospace;
-  }
-
-  /* Tabbed Interface Styles */
-  .prod-tabs {
-    display: flex;
-    gap: density(2);
-    margin-bottom: density(4);
-    border-bottom: 1px solid palette(neutral-light);
-    padding-bottom: density(2);
-  }
-
-  .prod-tab-btn {
-    background: none;
-    border: none;
-    padding: density(2) density(4);
-    font-size: 1rem;
-    font-weight: 600;
-    color: palette(text-secondary);
-    cursor: pointer;
-    border-radius: radius(2);
-    transition: all 0.2s ease;
-  }
-
-  .prod-tab-btn:hover {
-    background: palette(surface-subtle);
-    color: palette(primary-main);
-  }
-
-  .prod-tab-btn.active {
-    background: palette(primary-light);
-    color: palette(primary-dark);
-  }
-
-  .prod-comparison-grid {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: density(4);
-  }
-
-  .demo-code {
-    background: #1e1e1e;
-    border-radius: radius(3);
-    overflow: hidden;
-    color: #d4d4d4;
-    font-family: monospace;
-    font-size: 0.9rem;
-    border: 1px solid palette(neutral-light);
-    box-shadow: shadow(2);
-    width: 100%;
-    max-width: 600px; /* Thinner code block */
-  }
-}
-
-/* MIG-B7-17 phase B (4): were inline style={{}} in DemoProductivity.tsx. */
-.productivity-controls {
-  margin-bottom: space(7);
-}
-
-.productivity-controls__label {
-  display: flex;
-  align-items: center;
-  gap: space(5);
-}
-
-.productivity-controls__range {
-  flex: 1;
-}
-
-.demo-code-stack {
-  display: flex;
-  flex-direction: column;
-  gap: space(7);
-  margin-bottom: space(7);
 }

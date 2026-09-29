@@ -57,16 +57,6 @@ import { Info, Star, Layers, Package } from 'lucide-react'
 
     <hr className="section-rule" />
 
-    <h2 className="step-title">Starter Template</h2>
-    <p className="step-desc">The fastest way to get started is using our official <a href="https://github.com/rsantoyo-dev/uxdsl-react-starter" target="_blank" rel="noopener noreferrer" className="inline-link">React starter template</a>:</p>
-
-    <CodeBlock language="bash" code={`git clone https://github.com/rsantoyo-dev/uxdsl-react-starter.git my-uxdsl-app
-cd my-uxdsl-app
-npm install
-npm run dev`} />
-
-    <hr className="section-rule" />
-
     <h2 className="step-title">Option 1: Vite (Recommended)</h2>
     
     <div className="step-card">
@@ -115,7 +105,7 @@ import './styles.uxdsl';`} />
         <span className="step-number">04</span>
         <h3 className="step-title">VS Code Support</h3>
       </div>
-      <div className="step-desc">Enable syntax highlighting by updating <code>.vscode/settings.json</code>:</div>
+      <div className="step-desc">The repository includes a VS Code extension for .uxdsl highlighting and completion, distributed as a .vsix. If it is not installed, associate .uxdsl with SCSS for basic highlighting in <code>.vscode/settings.json</code>:</div>
       <div className="code-wrapper">
         <CodeBlock language="json" code={`{
   "files.associations": {
@@ -157,12 +147,14 @@ import './styles.uxdsl';`} />
         <h3 className="step-title">Connect & Run</h3>
       </div>
       <div className="step-desc">
-        1. Import <code>./src/uxdsl.css</code> in your root <code>layout.tsx</code>.<br/>
-        2. Update your <code>package.json</code> dev script:
+        1. Import <code>../uxdsl.css</code> from <code>src/app/layout.tsx</code>.<br/>
+        2. Build once before starting Next.js, then run the generated <code>uxdsl:watch</code> script (<code>uxdsl build --watch</code>) alongside it:
       </div>
       <div className="code-wrapper">
+        <CodeBlock language="bash" code="npm run uxdsl:build" />
         <CodeBlock language="json" code={`"scripts": {
-  "dev": "concurrently \\"npx uxdsl build --watch\\" \\"next dev\\""
+  "dev": "concurrently \\"npm run uxdsl:watch\\" \\"next dev\\"",
+  "build": "npm run uxdsl:build && next build"
 }`} />
       </div>
     </div>
@@ -182,178 +174,31 @@ import './styles.uxdsl';`} />
     <hr className="section-rule section-rule--wide" />
 
     <h2 className="step-title">Theme Configuration Reference</h2>
-    <p className="step-desc">A complete example of a `uxdsl.theme.json` configuration file:</p>
-
+    <p className="step-desc">The packaged base theme supplies the shared defaults. Keep your project file focused on the values you intentionally change. This example changes one semantic role and its dark-mode assignment:</p>
     <div className="code-wrapper">
       <CodeBlock language="json" code={`{
-  "fonts": {
-    "google": [
-      "Inter:wght@400;500;600;700"
-    ],
-    "families": {
-      "ui": "Inter, sans-serif",
-      "code": "monospace"
-    }
-  },
-  "breakpoints": { "xs": 0, "sm": 480, "md": 768, "lg": 1024, "xl": 1280 },
+  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
   "palette": {
     "primary": {
-      "main": "#7e22ce",
-      "light": "#a855f7",
-      "dark": "#581c87",
+      "main": "#0f766e",
+      "light": "#14b8a6",
+      "dark": "#115e59",
       "contrast": "#ffffff"
-    },
-    "secondary": {
-      "main": "#db2777",
-      "light": "#f472b6",
-      "dark": "#be185d",
-      "contrast": "#ffffff"
-    },
-    "surface": {
-      "main": "#ffffff",
-      "light": "#f8fafc",
-      "dark": "#e2e8f0",
-      "contrast": "#0f172a"
-    },
-    "tertiary": {
-      "main": "#94a3b8",
-      "light": "#cbd5e1",
-      "dark": "#475569",
-      "contrast": "#000000"
-    },
-    "success": {
-      "main": "#15803d",
-      "light": "#16a34a",
-      "dark": "#14532d",
-      "contrast": "#ffffff"
-    },
-    "info": {
-      "main": "#0284c7",
-      "light": "#38bdf8",
-      "dark": "#0369a1",
-      "contrast": "#ffffff"
-    },
-    "warning": {
-      "main": "#d97706",
-      "light": "#fbbf24",
-      "dark": "#b45309",
-      "contrast": "#ffffff"
-    },
-    "error": {
-      "main": "#dc2626",
-      "light": "#ef4444",
-      "dark": "#b91c1c",
-      "contrast": "#ffffff"
-    },
-    "dark": {
-      "main": "#0f172a",
-      "light": "#1e293b",
-      "dark": "#020617",
-      "contrast": "#ffffff"
-    },
-    "neutral": {
-      "main": "#64748b",
-      "light": "#cbd5e1",
-      "dark": "#334155",
-      "contrast": "#ffffff"
-    },
-    "light": {
-      "main": "#f1f5f9",
-      "light": "#ffffff",
-      "dark": "#e2e8f0",
-      "contrast": "#0f172a"
     }
   },
   "modes": {
     "dark": {
       "palette": {
         "primary": {
-          "main": "#c084fc",
-          "light": "#d8b4fe",
-          "dark": "#a855f7",
-          "contrast": "#000000"
-        },
-        "secondary": {
-          "main": "#f472b6",
-          "contrast": "#000000"
-        },
-        "surface": {
-          "main": "#020617",
-          "light": "#0f172a",
-          "dark": "#000000",
-          "contrast": "#f8fafc"
-        },
-        "neutral": {
-          "main": "#94a3b8",
-          "light": "#cbd5e1",
-          "dark": "#475569",
-          "contrast": "#000000"
-        },
-        "tertiary": {
-          "main": "#94a3b8",
-          "contrast": "#000000"
-        },
-        "success": {
-          "main": "#4ade80",
-          "contrast": "#000000"
-        },
-        "info": {
-          "main": "#38bdf8",
-          "contrast": "#000000"
-        },
-        "warning": {
-          "main": "#fbbf24",
-          "contrast": "#000000"
-        },
-        "error": {
-          "main": "#f87171",
-          "contrast": "#000000"
-        },
-        "light": {
-          "main": "#1e293b",
-          "contrast": "#f8fafc"
-        },
-        "dark": {
-          "main": "#000000",
-          "contrast": "#f8fafc"
+          "main": "#5eead4",
+          "contrast": "#042f2e"
         }
       }
     }
-  },
-  "spacing": {
-    "1": "0.125rem",
-    "2": "0.25rem",
-    "3": "0.5rem",
-    "4": "0.75rem",
-    "5": "1rem",
-    "6": "1.5rem",
-    "7": "2rem",
-    "8": "2.5rem",
-    "9": "3.125rem",
-    "10": "3.875rem",
-    "11": "4.875rem",
-    "12": "6.125rem",
-    "13": "7.75rem",
-    "14": "9.75rem",
-    "15": "12.25rem",
-    "16": "15.375rem"
-  },
-  "typography": {
-    "font-code": "\\"JetBrains Mono\\", \\"SF Mono\\", Menlo, monospace"
-	  },
-		  "typography_details": {
-		    "h1": { "fontSize": "xs(space(7)) md(space(8)) lg(space(9)) xl(space(10))", "fontWeight": "700", "lineHeight": "1.1", "letterSpacing": "-0.02em" },
-		    "h2": { "fontSize": "xs(space(6)) sm(space(7)) lg(space(8)) xl(space(9))", "fontWeight": "700", "lineHeight": "1.2", "letterSpacing": "-0.01em" },
-		    "h3": { "fontSize": "xs(space(6)) md(space(7)) xl(space(8))", "fontWeight": "600", "lineHeight": "1.3", "letterSpacing": "normal" },
-		    "h4": { "fontSize": "xs(space(5)) md(space(6)) xl(space(7))", "fontWeight": "600", "lineHeight": "1.4", "letterSpacing": "normal" },
-		    "h5": { "fontSize": "xs(space(5)) xl(space(6))", "fontWeight": "600", "lineHeight": "1.4", "letterSpacing": "normal" },
-		    "h6": { "fontSize": "xs(space(5))", "fontWeight": "600", "lineHeight": "1.4", "letterSpacing": "normal" },
-		    "p": { "fontSize": "xs(space(5))", "fontWeight": "400", "lineHeight": "1.6", "letterSpacing": "normal" },
-		    "body": { "fontSize": "xs(space(5))", "fontWeight": "400", "lineHeight": "1.6", "letterSpacing": "normal" },
-		    "caption": { "fontSize": "xs(space(4))", "fontWeight": "400", "lineHeight": "1.4", "letterSpacing": "0.01em" }
-		  }
+  }
 }`} />
-	    </div>
+    </div>
+    <p className="step-desc">Name the file <code>uxdsl.theme.json</code>. The CLI and Vite plugin discover it from the project root and resolve omitted values from the packaged base. See <a href="/docs/config">Config JSON</a> for the active playground theme and <a href="/docs/contrast">Contrast</a> to check the resulting color pairs.</p>
 
   </section>
 </div>

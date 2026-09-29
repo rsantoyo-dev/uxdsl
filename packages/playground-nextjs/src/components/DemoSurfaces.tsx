@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { generateSurfaceCss, getSurfaceTokens, inspectSurfaceTheme, surfaceDeclarations, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
 import { generateDensityCss, DEFAULT_BREAKPOINTS, getDensityTokens } from 'postcss-uxdsl/ds-runtime'
+import { getToneFamilies } from 'postcss-uxdsl/language'
 import { useTheme } from './ThemeContext'
 
 export default function DemoSurfaces() {
@@ -58,7 +59,7 @@ export default function DemoSurfaces() {
       <label htmlFor="surface-tone">Palette tone (optional)</label>
       <select id="surface-tone" value={tone} onChange={e => setTone(e.target.value)}>
         <option value="">Use configured Surface colors</option>
-        {Object.keys(activeThemeData.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key) && typeof activeThemeData.palette[key] === 'object').map(key => <option key={key} value={key}>{key}</option>)}
+        {getToneFamilies(theme.palette || {}).map(key => <option key={key} value={key}>{key}</option>)}
       </select>
       <label htmlFor="surface-size">Size (Density and Radius)</label>
       <select id="surface-size" value={size} onChange={e => setSize(e.target.value)}>

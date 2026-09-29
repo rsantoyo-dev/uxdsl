@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import runtime from 'postcss-uxdsl/ds-runtime'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from './ThemeContext'
@@ -26,11 +25,12 @@ function getContrastColor(rgb: string) {
   if (!rgb || rgb === 'rgba(0, 0, 0, 0)') return 'inherit';
   const values = rgb.match(/\d+/g);
   if (!values || values.length < 3) return 'inherit';
-  const r = parseInt(values[0]);
-  const g = parseInt(values[1]);
-  const b = parseInt(values[2]);
-  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-  return yiq >= 128 ? '#000000' : '#ffffff';
+  const linear = values.slice(0, 3).map(value => {
+    const channel = Number(value) / 255;
+    return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+  return luminance > 0.179 ? '#000000' : '#ffffff';
 }
 
 function hexToRgbString(hex: string) {
@@ -44,10 +44,14 @@ function ColorScaleToken({
   family,
   shade,
   onTokenChange,
+  valueHint,
+  isDark,
 }: {
   family: string;
   shade: string;
   onTokenChange: (token: string, value: string) => void;
+  valueHint?: string;
+  isDark: boolean;
 }) {
   const ref = useRef<HTMLLIElement>(null)
   const [colorValues, setColorValues] = useState({ hex: '', rgb: '', textColor: 'inherit' })
@@ -62,21 +66,12 @@ function ColorScaleToken({
         textColor: getContrastColor(bgColor)
       })
     }
-  }, [family, shade])
+  }, [family, shade, valueHint, isDark])
 
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
-    // Update CSS variables globally via runtime
-    // This will also update any linked palette tokens
-    runtime.updateColor(`${family}-${shade}`, newHex, { persist: true })
     onTokenChange(`${family}-${shade}`, newHex)
-    
-    // Dispatch event for other components (UI updates only)
-    console.log(`[DemoColors] Dispatching event: ${family}-${shade} -> ${newHex}`);
-    window.dispatchEvent(new CustomEvent('uxdsl:color-change', { 
-      detail: { token: `${family}-${shade}`, value: newHex } 
-    }));
     
     // Update local state
     setColorValues({
@@ -109,29 +104,17 @@ function ColorScaleToken({
 }
 
 export default function DemoColors() {
-  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
+  const { activeThemeData, setCustomTheme, customThemeName, isDark } = useTheme()
   const [bgFamily, setBgFamily] = useState('blue')
   const [bgShade, setBgShade] = useState('600')
   const [textFamily, setTextFamily] = useState('gray')
   const [textShade, setTextShade] = useState('50')
 
-  useEffect(() => {
-    try {
-      runtime.loadPersistedColors()
-    } catch {}
-  }, [])
-
   const handleTokenChange = (token: string, value: string) => {
     const [family, shade] = token.split('-')
     if (!family || !shade) return
 
-    const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
-    if (!nextTheme.colors) nextTheme.colors = {}
-    if (!nextTheme.colors[family] || typeof nextTheme.colors[family] !== 'object') {
-      nextTheme.colors[family] = {}
-    }
-    nextTheme.colors[family][shade] = value
-    setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
+    setCustomTheme(customThemeName || 'Custom Theme', { colors: { [family]: { [shade]: value } } })
   }
 
   return (
@@ -220,6 +203,8 @@ export default function DemoColors() {
                   family={fam}
                   shade={shade}
                   onTokenChange={handleTokenChange}
+                  valueHint={activeThemeData?.colors?.[fam]?.[shade]}
+                  isDark={isDark}
                 />
               ))}
             </ul>

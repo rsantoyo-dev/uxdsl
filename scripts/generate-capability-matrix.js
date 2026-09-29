@@ -38,7 +38,7 @@ function render() {
   out.push(gaps.length ? gaps.map((r) => `- \`${r.id}\` — ${r.level}, requires ${r.required}${r.note ? ` (${r.note})` : ''}`).join('\n') : '_None._', '');
   out.push(`Recorded as accepted in \`capability-evidence.json\`: ${knownGaps.length}.`, '');
   out.push('## Dogfooding: styling in the playground that bypasses UXDSL', '');
-  out.push('Counted on comment-stripped source. **Candidates to classify, not defects**: a `px` or a hex can be an intentional stable value. The baseline may only go down.', '');
+  out.push('Counted on comment-stripped source. **Candidates to classify, not defects**: a `px` or a hex can be an intentional stable value. `cssModuleFiles` counts handwritten modules; outputs compiled from the `.uxdsl` entries in `uxdsl-module-entries.json` are excluded. The baseline may only go down.', '');
   out.push('| Measure | Now | Baseline |', '| --- | ---: | ---: |');
   for (const [name, value] of Object.entries(counts)) out.push(`| ${name} | ${value} | ${(dogfoodingBaseline || {})[name] ?? '—'} |`);
   out.push('');

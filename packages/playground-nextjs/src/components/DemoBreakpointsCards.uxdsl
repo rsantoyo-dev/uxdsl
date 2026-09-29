@@ -1,10 +1,10 @@
 /* DemoBreakpointsCards styles - Scoped */
 #DemoBreakpointsCards {
+  @ds-surface(contained light);
   display: flex;
   flex-direction: xs(column) md(row);
   gap: xs(space(2)) md(space(4));
   padding: xs(space(3)) md(space(6));
-  @ds-surface (light);
   border: 1px solid palette(surface-contrast);
   border-radius: radius(3);
 

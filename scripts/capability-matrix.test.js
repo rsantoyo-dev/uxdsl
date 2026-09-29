@@ -75,6 +75,24 @@ test('dogfooding: the styling written around UXDSL may not grow, and an improvem
   }
 });
 
+test('declared CSS Modules are compiled from UXDSL and absent from the global entry', () => {
+  const playground = path.join(ROOT, 'packages/playground-nextjs');
+  const entries = JSON.parse(fs.readFileSync(path.join(playground, 'uxdsl-module-entries.json'), 'utf8'));
+  const globalEntry = fs.readFileSync(path.join(playground, 'src/app/uxdsl-entry.uxdsl'), 'utf8');
+  const sources = new Set(), outputs = new Set();
+  for (const { source, output } of entries) {
+    assert.match(source, /^src\/.*\.uxdsl$/);
+    assert.match(output, /^src\/.*\.module\.css$/);
+    assert.ok(!sources.has(source) && !outputs.has(output), 'module entries must be unique');
+    sources.add(source); outputs.add(output);
+    assert.ok(fs.existsSync(path.join(playground, source)), `${source} is missing`);
+    const css = fs.readFileSync(path.join(playground, output), 'utf8');
+    assert.doesNotMatch(css, /:root|#uxdsl-bp-meta/, `${output} must consume the global theme`);
+    assert.match(css, /var\(--uxdsl__/, `${output} should contain compiled UXDSL token references`);
+    assert.ok(!globalEntry.includes(`@import '../${source.slice(4)}';`), `${source} must not also enter the global sheet`);
+  }
+});
+
 test('the committed matrix is up to date with the sources (node scripts/generate-capability-matrix.js)', () => {
   assert.equal(fs.readFileSync(path.join(ROOT, OUT), 'utf8'), render());
 });

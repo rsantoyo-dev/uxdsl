@@ -121,6 +121,11 @@ function extractJsx(text) {
     const constant = new RegExp(`(?:const|let)\\s+${m[2]}\\s*=\\s*\`((?:[^\`\\\\]|\\\\.)*)\``).exec(text);
     if (constant && !constant[1].includes('${')) add(m.index, m[1], unescapeTemplate(constant[1]));
   }
+  // Prism SyntaxHighlighter renders static UXDSL examples in the playground too.
+  for (const m of text.matchAll(/<SyntaxHighlighter\b[^>]*\blanguage="(css|uxdsl|scss|json)"[^>]*>\s*\{(\w+)\}\s*<\/SyntaxHighlighter>/g)) {
+    const constant = new RegExp(`(?:const|let)\\s+${m[2]}\\s*=\\s*\`((?:[^\`\\\\]|\\\\.)*)\``).exec(text);
+    if (constant && !constant[1].includes('${')) add(m.index, m[1], unescapeTemplate(constant[1]));
+  }
   // A theme excerpt written as an object literal: JSON.stringify({...}, null, 2).
   for (const m of text.matchAll(/language-json">\{JSON\.stringify\(/g)) {
     const args = balanced(text, m.index + m[0].length - 1);

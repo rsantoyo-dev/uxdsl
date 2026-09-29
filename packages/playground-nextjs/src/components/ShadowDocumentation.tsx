@@ -40,7 +40,7 @@ export default function ShadowDocumentation() {
       <h3>Change the correct scope</h3>
       <ul>
         <li>For one card, select another suitable existing Shadow preset.</li>
-        <li>For all consumers of a shared treatment, edit its theme definition and rebuild or apply the updated theme through <code>generateThemeCss(nextTheme)</code>.</li>
+        <li>For all consumers of a shared treatment, edit its theme definition and rebuild or apply a compatible live value change through <code>applyTheme</code>.</li>
         <li>For an intentional independent effect, use native CSS. Use <code>box-shadow: none</code> to remove a shadow locally, or <code>shadow(0)</code> to stay connected to the configured zero preset.</li>
       </ul>
       <p>Do not replace <code>shadow(2)</code> with today&apos;s computed value when the component should follow future theme changes. Changing the token updates every consumer after the configuration is applied. Inspect active overrides, clipping ancestors, backgrounds, focus indicators and interaction states.</p>
@@ -53,6 +53,11 @@ export default function ShadowDocumentation() {
       <p>JSON entries override matching legacy declarations, which override defaults. Include legacy definitions in every compilation that needs them; they no longer leak between builds through a global cache. Undefined Shadow references now report errors instead of silently selecting a fallback. Validation is not a complete CSS grammar or accessibility checker.</p>
       <p>The live editor below starts from the active theme and shared defaults. Its changes affect only the preview, not your source JSON. It uses the real viewport and shared inspector. An invalid edit retains the last valid preview; Reset restores the active theme.</p>
     </section>
+  </div>
+}
+
+export function ShadowAgentGuidance() {
+  return <div className="doc-section">
     <AgentGuidance id="ai-shadows-guide" title="How an AI agent should use Shadows">
       <p><strong>Responsibility: maintain shared depth treatments and their responsive behavior.</strong> Preserve intent, not just the current computed value.</p>
       <ul>

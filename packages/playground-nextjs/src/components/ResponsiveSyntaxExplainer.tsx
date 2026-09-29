@@ -26,53 +26,11 @@ const SyntaxHighlighter = ({ value, viewportWidth, themeBreakpoints, baseColor }
   if (!value) return <span style={{ color }}>&quot;&quot;</span>;
 
   const bpValues = { ...DEFAULT_BREAKPOINTS, ...themeBreakpoints };
-  const activeBp = inspectResponsiveValue(value, viewportWidth, bpValues).applied || 'static';
-
-  if (activeBp === 'static') {
-    return <span style={{ color }}>&quot;{value}&quot;</span>;
-  }
-
-  // Parse string into segments (supports nested parentheses like xs(space(2))).
-  const parts: { text: string; type: 'text' | 'bp'; bp?: string }[] = value
-    .split(/\s+(?![^(]*\))/g)
-    .filter(Boolean)
-    .map((token) => {
-      const openParen = token.indexOf('(');
-      const closeParen = token.lastIndexOf(')');
-      if (openParen > 0 && closeParen === token.length - 1) {
-        const bp = token.substring(0, openParen);
-        if (Object.prototype.hasOwnProperty.call(bpValues, bp)) {
-          return { text: token, type: 'bp', bp };
-        }
-      }
-      return { text: token, type: 'text' };
-    });
-
-  return (
-    <span style={{ color }}>
-      &quot;
-      {parts.map((part, i) => {
-        const prefix = i === 0 ? '' : ' ';
-        if (part.type === 'bp') {
-          const isActive = part.bp === activeBp;
-          return (
-            <span 
-              key={i} 
-              style={isActive ? { 
-                color: '#ff4d4d', 
-                textShadow: '0 0 8px rgba(255, 77, 77, 0.4)',
-                fontWeight: 600
-              } : {}}
-            >
-              {prefix}{part.text}
-            </span>
-          );
-        }
-        return <span key={i}>{prefix}{part.text}</span>;
-      })}
-      &quot;
-    </span>
-  );
+  const resolved = inspectResponsiveValue(value, viewportWidth, bpValues);
+  return <span style={{ color }}>
+    &quot;{value}&quot;
+    {resolved.applied && <span className="json-comment"> {`// ${resolved.applied} → ${resolved.value}`}</span>}
+  </span>;
 };
 
 export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode }) {

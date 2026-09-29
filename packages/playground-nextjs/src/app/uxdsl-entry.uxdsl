@@ -34,7 +34,6 @@
 @import '../components/DemoPalette.uxdsl';
 @import '../components/DemoProductivity.uxdsl';
 @import '../components/DemoShadows.uxdsl';
-@import '../components/DemoSpacing.uxdsl';
 @import '../components/DemoSurfaces.uxdsl';
 @import '../components/DensityExplanation.uxdsl';
 @import '../components/DocumentationSection.uxdsl';

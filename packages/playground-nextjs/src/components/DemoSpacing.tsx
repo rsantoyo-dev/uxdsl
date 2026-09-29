@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import runtime from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
+import styles from './DemoSpacing.module.css'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -66,8 +66,8 @@ function ConcentricSpacing({
   const maxSpace = computedValues[maxLevel] || '0px'
 
   return (
-    <div className="concentric-wrapper" style={{ padding: maxSpace }}>
-      <div className="concentric-content">
+    <div className={styles['concentric-wrapper']} style={{ padding: maxSpace }}>
+      <div className={styles['concentric-content']}>
         <span className="concentric-label">Content</span>
         
         {/* Render rings from largest to smallest so z-index stacking is natural? 
@@ -75,18 +75,19 @@ function ConcentricSpacing({
             We can control z-index explicitly.
         */}
         {Array.from({ length: maxLevel }, (_, i) => i + 1).map(level => (
-          <div 
+          <button type="button"
             key={level}
-            className={`concentric-ring concentric-ring--${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
+            className={`${styles['concentric-ring']} ${styles[`concentric-ring--${level}`]} ${hoveredLevel === level ? styles['is-hovered'] : ''}`}
             onMouseEnter={() => setHoveredLevel(level)}
             onMouseLeave={() => setHoveredLevel(null)}
+            aria-label={`Edit space(${level})`}
             onClick={(e) => {
               e.stopPropagation()
               onLayerClick(level)
             }}
           >
-            <span className="ring-label">space({level})</span>
-          </div>
+            <span className={styles['ring-label']}>space({level})</span>
+          </button>
         ))}
       </div>
     </div>
@@ -98,45 +99,39 @@ export default function DemoSpacing() {
   const [dollLevels, setDollLevels] = useState(4)
   const [computedValues, setComputedValues] = useState<Record<number, string>>({})
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    try {
-      runtime.loadPersistedSpacing()
-    } catch {}
-
     const style = getComputedStyle(document.documentElement)
     const values: Record<number, string> = {}
     spaces.forEach(s => {
       values[s] = style.getPropertyValue(`--uxdsl__space__${s}`).trim()
     })
     setComputedValues(values)
-  }, [])
+  }, [activeThemeData])
 
   const handleSpaceChange = (level: number, value: string) => {
-    setComputedValues(prev => ({ ...prev, [level]: value }))
     try {
-      runtime.updateSpacing(level, value, { persist: true })
-    } catch {
-      document.documentElement.style.setProperty(`--uxdsl__space__${level}`, value)
+      if (!CSS.supports('padding', value)) throw new Error(`Invalid spacing value: ${value}`)
+      setCustomTheme(customThemeName || 'Custom Theme', { spacing: { [String(level)]: value } })
+      setError('')
+      return true
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause))
+      setComputedValues(prev => ({ ...prev, [level]: activeThemeData?.spacing?.[String(level)] || '' }))
+      return false
     }
-
-    // Keep JSON theme model aligned with runtime token updates.
-    const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
-    if (!nextTheme.spacing) nextTheme.spacing = {}
-    nextTheme.spacing[String(level)] = value
-    setCustomTheme(customThemeName || 'Custom Theme', nextTheme)
   }
 
   const handleSaveDialog = (val: string) => {
     if (editingLevel !== null) {
-      handleSpaceChange(editingLevel, val)
-      setEditingLevel(null)
+      if (handleSpaceChange(editingLevel, val)) setEditingLevel(null)
     }
   }
 
   return (
-    <section id="DemoSpacing" className="spacing-section demo-section">
-      <div className="spacing-header">
+    <section id="DemoSpacing" className={`${styles['spacing-section']} demo-section`}>
+      <div className={styles['spacing-header']}>
         <p className="demo-subtitle">
           Edit a shared spacing token and see its consumers update together.
         </p>
@@ -156,14 +151,14 @@ export default function DemoSpacing() {
             <div className="spacing-explanation__gap"><span className="spacing-explanation__content">First</span><span className="spacing-explanation__content">Second</span></div>
           </figure>
         </div>
-        <p>These edits update the playground’s custom theme and persist spacing overrides in this browser when storage is available. Other UI using the token may also change. They do not write to your source JSON file. The reference examples above stay unchanged.</p>
+        <p>These edits update the playground’s active browser theme. Other UI using the token may also change. They do not write to your source JSON file. The reference examples above stay unchanged.</p>
       </div>
 
-      <div className="spacing-doll-container">
+      <div className={styles['spacing-doll-container']}>
         <h4 className="demo-subtitle">Concentric Spacing Visualization</h4>
         <p>Each ring shows a spacing level measured from the same content. These are alternative distances, not nested paddings added together. Click a ring to edit its token, or use the labeled token fields below. Custom values determine ring size; token numbers alone do not guarantee size order.</p>
-        <div className="spacing-doll-controls">
-           <label className="spacing-doll-controls__label">
+        <div className={styles['spacing-doll-controls']}>
+           <label className={styles['spacing-doll-controls__label']}>
              Visible Rings: 
              <input 
                type="range" 
@@ -175,7 +170,7 @@ export default function DemoSpacing() {
              <span>{dollLevels}</span>
            </label>
         </div>
-        <div className="spacing-doll-wrapper">
+        <div className={styles['spacing-doll-wrapper']}>
           <ConcentricSpacing 
             maxLevel={dollLevels} 
             computedValues={computedValues} 
@@ -183,7 +178,7 @@ export default function DemoSpacing() {
           />
         </div>
 
-        <div className="demo-code-block demo-code-block--usage">
+        <div className={`demo-code-block ${styles['demo-code-block--usage']}`}>
           <div className="code-header">
             <span className="code-file">SpacingUsage.uxdsl</span>
           </div>
@@ -200,33 +195,36 @@ export default function DemoSpacing() {
         </div>
       </div>
 
-      <div className="demo-header demo-header--tokens">
+      <div className={`demo-header ${styles['demo-header--tokens']}`}>
         <h3 className="demo-title">Global Spacing Tokens</h3>
         <p className="demo-subtitle">
           Update the tokens below to reflect changes in the UI.
         </p>
       </div>
+      {error && <p role="alert">{error}</p>}
 
       <div className="spacing-grid-container">
-         <div className="spacing-grid">
+         <div className={styles['spacing-grid']}>
             {spaces.map(s => (
-              <div key={s} className="spacing-card">
-                <div className="spacing-card__token">space({s})</div>
+              <div key={s} className={styles['spacing-card']}>
+                <div className={styles['spacing-card__token']}>space({s})</div>
                 
-                <div className="spacing-card__input-wrapper">
+                <div className={styles['spacing-card__input-wrapper']}>
                   <input 
-                    className="spacing-card__input"
+                    className={styles['spacing-card__input']}
                     aria-label={`Value for space(${s})`}
                     value={computedValues[s] || ''}
-                    onChange={(e) => handleSpaceChange(s, e.target.value)}
+                    onChange={(e) => setComputedValues(prev => ({ ...prev, [s]: e.target.value }))}
+                    onBlur={(e) => handleSpaceChange(s, e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') e.currentTarget.blur() }}
                     placeholder="e.g. 1rem"
                   />
                 </div>
                 
-                <div className="spacing-card__separator" />
+                <div className={styles['spacing-card__separator']} />
 
-                <div className="spacing-card__preview">
-                  <div className={`spacing-box spacing-box--${s}`} />
+                <div className={styles['spacing-card__preview']}>
+                  <div className={`${styles['spacing-box']} ${styles[`spacing-box--${s}`]}`} />
                 </div>
               </div>
             ))}

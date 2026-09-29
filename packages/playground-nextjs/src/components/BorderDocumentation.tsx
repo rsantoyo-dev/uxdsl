@@ -34,7 +34,7 @@ export default function BorderDocumentation() {
         <div><h4>UXDSL</h4><pre><code className="language-css">{definition}</code></pre></div>
         <div><h4>Equivalent CSS behavior</h4><pre><code className="language-css">{equivalent}</code></pre></div>
       </div>
-      <p>Below 768px, the card has a 1px border and 8px corners. At 768px and above, it has a 2px border and 12px corners. The most recent applicable value persists until another rule overrides it. Reusing the presets on another component shares that progression. The component consumes variables such as --uxdsl__border__1 and --uxdsl__radius__2. Edit and rebuild the source theme, or replace the managed theme stylesheet through generateThemeCss(nextTheme), to update consumers. The plain CSS example isolates the equivalent visual behavior.</p>
+      <p>Below 768px, the card has a 1px border and 8px corners. At 768px and above, it has a 2px border and 12px corners. The most recent applicable value persists until another rule overrides it. Reusing the presets on another component shares that progression. The component consumes variables such as --uxdsl__border__1 and --uxdsl__radius__2. Edit and rebuild the source theme, or use <code>applyTheme(nextTheme, {'{ replace: true }'})</code> for a compatible live value change. The plain CSS example isolates the equivalent visual behavior.</p>
       <h3>Connect edges to the design system</h3>
       <pre><code className="language-css">{`/* Assumes spacing 2/3 and palette primary.main are configured. */
 @theme {
@@ -65,6 +65,11 @@ export default function BorderDocumentation() {
       <h3>What the interactive demo changes</h3>
       <p>The editor below reads the active theme and shared defaults. It generates scoped CSS and reports resolved token references using the same engine as PostCSS and runtime. Edits affect only this preview and do not save your source JSON. Invalid updates retain the last valid preview. Reset restores the active theme; resize the real browser to inspect transitions.</p>
     </section>
+  </div>
+}
+
+export function BorderAgentGuidance() {
+  return <div className="doc-section">
     <AgentGuidance id="ai-borders-guide" title="How an AI agent should use Borders">
       <p><strong>Responsibility: maintain shared edge treatments.</strong> Borders combine width, style and color. Components select a preset; Palette can preserve the semantic color dependency.</p>
       <ul>

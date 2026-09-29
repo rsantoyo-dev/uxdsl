@@ -47,6 +47,11 @@ test('jsx: a template literal, a constant rendered as {name}, and a JSON.stringi
   assert.deepEqual(JSON.parse(found[2].code), { spacing: { 2: '2px' } });
 });
 
+test('jsx: a static SyntaxHighlighter example is compiled as documentation', () => {
+  const text = 'const source = `.a { padding: density(2); }`\n<SyntaxHighlighter language="scss" style={vscDarkPlus}>{source}</SyntaxHighlighter>';
+  assert.deepEqual(extractJsx(text).map(block => block.code), ['.a { padding: density(2); }']);
+});
+
 test('a valid example holds; an unknown token fails, and says so', async () => {
   assert.deepEqual(await runExample({ code: '.a { padding: density(2); }', theme: null }), []);
   const problems = await runExample({ code: '.a { background: palette(nope.main); }', theme: null });

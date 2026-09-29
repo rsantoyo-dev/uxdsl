@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { generateInputCss, getInputTokens, inspectInputTheme, inputComponentCss, generateSurfaceCss, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
 import { generateDensityCss, DEFAULT_BREAKPOINTS, getDensityTokens } from 'postcss-uxdsl/ds-runtime'
+import { getToneFamilies } from 'postcss-uxdsl/language'
 import { useTheme } from './ThemeContext'
 
 export default function InputDemo() {
@@ -57,7 +58,7 @@ export default function InputDemo() {
     </section>
     <section className="section">
       <label htmlFor="input-tone">Palette tone (optional)</label>
-      <select id="input-tone" value={tone} onChange={e => setTone(e.target.value)}><option value="">Use configured colors</option>{Object.keys(theme.palette || {}).filter(key => /^[a-z][a-z0-9-]*$/.test(key) && typeof theme.palette[key] === 'object').map(key => <option key={key}>{key}</option>)}</select>
+      <select id="input-tone" value={tone} onChange={e => setTone(e.target.value)}><option value="">Use configured colors</option>{getToneFamilies(theme.palette || {}).map(key => <option key={key}>{key}</option>)}</select>
       <label htmlFor="input-size">Size (Density and Radius)</label>
       <select id="input-size" value={size} onChange={e => setSize(e.target.value)}><option value="">Use configured size</option>{Object.keys(getEdgeTokens(theme).radii).filter(key => /^\d+$/.test(key) && (getDensityTokens(theme))[key]).map(key => <option key={key}>{key}</option>)}</select>
       <label><input type="checkbox" checked={invalid} onChange={e => setInvalid(e.target.checked)} />Invalid (aria-invalid)</label>

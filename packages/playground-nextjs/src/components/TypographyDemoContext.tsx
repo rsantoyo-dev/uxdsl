@@ -11,12 +11,12 @@ export const initialTypographyItems = [
   { tag: 'h5', label: 'H5', text: 'Runtime adaptability', className: 'sample-h5' },
   { tag: 'h6', label: 'H6', text: 'Future of CSS generation', className: 'sample-h6' },
   { tag: 'p', label: 'P', text: 'UXDSL bridges the gap between design tokens and CSS generation, allowing for a truly semantic and adaptable design system that scales with your application.', className: 'sample-p' },
-  { tag: 'body', label: 'BODY', text: 'UXDSL provides a type-safe, token-aware styling experience that integrates seamlessly with modern frameworks.', className: 'sample-body' },
+  { tag: 'body', label: 'BODY', text: 'UXDSL keeps shared design decisions in theme tokens while components use familiar CSS syntax.', className: 'sample-body' },
   { tag: 'span', label: 'SPAN', text: 'Inline token usage', className: 'sample-span' },
   { tag: 'caption', label: 'CAPTION', text: 'Figure 1: Token dependency graph', className: 'sample-caption' },
-  { tag: 'small', label: 'SMALL', text: 'v1.0.0-beta', className: 'sample-small' },
+  { tag: 'small', label: 'SMALL', text: 'A short note for supporting text.', className: 'sample-small' },
   { tag: 'code', label: 'CODE', text: 'const answer = 42;', className: 'sample-code' },
-  { tag: 'pre', label: 'PRE', text: 'const theme = { colors: { primary: \'blue\' } };', className: 'sample-pre' },
+  { tag: 'pre', label: 'PRE', text: 'const theme = { spacing: { 4: "0.75rem" } };', className: 'sample-pre' },
   { tag: 'default', label: 'Default', text: 'The quick brown fox jumps over the lazy dog.', className: 'sample-default' },
 ];
 

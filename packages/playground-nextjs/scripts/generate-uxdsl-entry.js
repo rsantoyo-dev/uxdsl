@@ -3,7 +3,12 @@ const path = require('path');
 
 const SRC_DIR = path.join(__dirname, '../src');
 const OUTPUT_FILE = path.join(SRC_DIR, 'app/uxdsl-entry.uxdsl');
-const EXCLUDED_FILES = ['uxdsl-entry.uxdsl'];
+const MODULE_ENTRIES = require('../uxdsl-module-entries.json');
+// Component entries compiled as CSS Modules must not also enter the global sheet.
+const EXCLUDED_FILES = new Set([
+  'app/uxdsl-entry.uxdsl',
+  ...MODULE_ENTRIES.map(({ source }) => source.replace(/^src\//, '')),
+]);
 
 const CORE_IMPORTS = [
   "@import 'postcss-uxdsl/theme/default-colors.css';",
@@ -43,7 +48,8 @@ function generateEntryFile() {
   const allUxdslFiles = findFiles(SRC_DIR, '.uxdsl');
   
   const validFiles = allUxdslFiles.filter(file => {
-    return !EXCLUDED_FILES.includes(path.basename(file));
+    const relative = path.relative(SRC_DIR, file).split(path.sep).join('/');
+    return !EXCLUDED_FILES.has(relative);
   });
 
   const outputDir = path.dirname(OUTPUT_FILE);

@@ -42,14 +42,14 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
            <div className="pp-toolbar__heading">Background</div>
            <div className="pp-toolbar__row">
              <div className="control-group pp-toolbar__control">
-               <label className="control-label pp-toolbar__label">Tone</label>
-               <select className="control-select pp-toolbar__select" value={bgTone}onChange={e => setBgTone(e.target.value)}>
+               <label htmlFor="palette-background-tone" className="control-label pp-toolbar__label">Tone</label>
+               <select id="palette-background-tone" className="control-select pp-toolbar__select" value={bgTone} onChange={e => setBgTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
              <div className="control-group pp-toolbar__control">
-               <label className="control-label pp-toolbar__label">Variant</label>
-               <select className="control-select pp-toolbar__select" value={bgVariant}onChange={e => setBgVariant(e.target.value)}>
+               <label htmlFor="palette-background-variant" className="control-label pp-toolbar__label">Variant</label>
+               <select id="palette-background-variant" className="control-select pp-toolbar__select" value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -61,14 +61,14 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
            <div className="pp-toolbar__heading">Text</div>
            <div className="pp-toolbar__row">
              <div className="control-group pp-toolbar__control">
-               <label className="control-label pp-toolbar__label">Tone</label>
-               <select className="control-select pp-toolbar__select" value={textTone}onChange={e => setTextTone(e.target.value)}>
+               <label htmlFor="palette-text-tone" className="control-label pp-toolbar__label">Tone</label>
+               <select id="palette-text-tone" className="control-select pp-toolbar__select" value={textTone} onChange={e => setTextTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
              <div className="control-group pp-toolbar__control">
-               <label className="control-label pp-toolbar__label">Variant</label>
-               <select className="control-select pp-toolbar__select" value={textVariant}onChange={e => setTextVariant(e.target.value)}>
+               <label htmlFor="palette-text-variant" className="control-label pp-toolbar__label">Variant</label>
+               <select id="palette-text-variant" className="control-select pp-toolbar__select" value={textVariant} onChange={e => setTextVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -137,4 +137,3 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
     </div>
   )
 }
-

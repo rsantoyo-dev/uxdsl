@@ -26,7 +26,7 @@ The site initializes the runtime once, in `ThemeContext`, with `applyTheme(theme
 
 Two results are worth reading closely, because they are the honest edges of the old API rather than bugs in this page. After `updatePalette`, a later `applyTheme` returns `ok: true` and the color does not change: the inline value beats any stylesheet (this site's `ThemeContext` clears those inline values after each application for exactly that reason). And after `updateBreakpoint('md', 900)`, `getBreakpoints()` says 900 while `getAppliedTheme()` still says 768: the legacy API rewrote the compiled rules, not the theme, and `applyTheme` itself refuses to move a threshold (`UXD_THEME_STRUCTURE`) — moving one is a rebuild.
 
-`loadPersistedTheme` is always called here with the lab's own `key` and `migrateLegacy: false`. A default call migrates, and then deletes, the four pre-beta.6 storage keys — which this site's older demos still write.
+`loadPersistedTheme` is always called here with the lab's own `key` and `migrateLegacy: false`. A default call may migrate and delete four pre-beta.6 storage keys from an earlier session, so the lab keeps its storage isolated from the rest of the site.
 
 </div>
 
