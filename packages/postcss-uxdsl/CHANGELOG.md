@@ -9,6 +9,69 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 1 (audit of 2026-09-29, `docs/audits/2026-09-29-auditoria-estabilidad.md`;
+findings T2, T3, T4, R6 and L12 — one theme validator):
+
+### Visual changes
+
+None. The compiled CSS of the packaged base theme and of every theme that
+already validated is byte-identical before and after this change
+(`test/theme-validation-matrix.test.js` pins the accepted cases; the default
+output's size is unchanged). What changes is what is *refused*: a theme that
+used to compile with a literal `8`, `null` or `[object Object]` in a custom
+property now fails instead.
+
+- **One validator.** `validateTheme(theme, { references? })`
+  (`postcss-uxdsl/ds-runtime`) is now the single answer to "is this theme
+  valid?", and the PostCSS plugin (on the effective theme, before any engine
+  runs), `generateThemeCss`, `applyTheme` and `uxdsl-cli` all call it. The
+  audit found five different answers: the plugin, `generateThemeCss` and
+  `applyTheme` emitted a numeric, `null` or object leaf literally
+  (`--uxdsl__space__1: 8;`, `null;`, `[object Object]`), `applyTheme` coerced
+  `breakpoints.md: "768"` and `fontWeight: 700` where the plugin refused them,
+  and only the JSON Schema rejected any of it.
+- **Rules.** Every leaf is a nonempty string, never coerced (`UXD_THEME_INVALID`
+  with `.keyPath`: `spacing.1`, `palette.primary.main`, `breakpoints.md`, …);
+  `fonts` is closed to `families`/`google` (`google`: a string array, no empty
+  strings); `modes` is closed to `dark` and `modes.dark` to `palette`; a palette
+  family is an object, never a single color string; role/family/breakpoint
+  names match `^[a-z][a-z0-9-]*$` and token keys `^[a-z0-9][a-z0-9-]*$`
+  (`H1`, `Brand`, `call_to_action` are refused — they used to compile to
+  variables no directive could ever reference). A value cannot contain `;`,
+  `{` or `}` and its parentheses must balance: `typography: { 'font-x': 'a; }
+  .hack { color: blue' }` used to emit a `.hack` rule (audit T3).
+- **Breakpoints, once.** The effective map is checked once as `UXD_BP_INVALID`
+  (zero-width base, distinct, finite, non-negative). **Removed codes:**
+  `UXD_TYPO_BP`, `UXD_EDGE_BP`, `UXD_SHADOW_BP`, `UXD_SURFACE_BP`,
+  `UXD_BUTTON_BP`, `UXD_INPUT_BP`, `UXD_PRESET_BP` — the engines no longer
+  restate the same rules under their own family. A theme value naming a
+  breakpoint the map does not have (`radii: { 1: 'tablet(8px)' }`) is now that
+  family's `_VALUE` error (`UXD_EDGE_VALUE`), which is what it is.
+- **New warning code** `UXD_THEME_FAMILY` for an unknown top-level family. The
+  PostCSS plugin now reports it through `result.warn` (it used to report
+  nothing at all); the CLI prints it and `applyTheme` returns it, as before.
+- **`applyTheme` never throws on a bad patch.** A patch that is not an object
+  (an array, a string) is an ordinary `{ ok: false, error }` with
+  `UXD_THEME_INVALID`, not an exception out of `resolveTheme`.
+- **No normalization.** `validateTheme` returns a deep copy of its input,
+  unchanged. `fonts.families` are emitted exactly as written by both paths —
+  `Inter Tight, sans-serif` stays unquoted (valid CSS); the runtime used to
+  quote it while the plugin did not (audit T4). Color-format hints and the
+  "breakpoints are not ascending" warning are gone.
+- **Deprecated:** `validateAndNormalizeTheme` is an alias of `validateTheme`
+  and will be removed in the next minor; its dead `requireXsForResponsive`
+  option is ignored.
+- **Schema.** `schema/theme.schema.json` is regenerated from the validator's
+  own patterns (`THEME_NAME_PATTERN`, `THEME_KEY_PATTERN`,
+  `THEME_VALUE_PATTERN`, exported from `postcss-uxdsl/ds-runtime`): leaves
+  are nonempty strings without `;`/`{`/`}`, names are lowercase, breakpoints
+  are non-negative numbers, `fonts`/`modes` are closed. What a regex cannot
+  say (balanced parentheses, a zero-width base, a dangling reference) the
+  validator still checks.
+- **New:** `renderThemeCss(effectiveTheme)` (`postcss-uxdsl/ds-runtime`), the
+  pure, unvalidated theme stylesheet `generateThemeCss` returns after
+  validating; for callers that already validated.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

@@ -5,7 +5,7 @@ const exported = require('../dist/index');
 const plugin = exported.default || exported;
 const { generateEdgeCss, inspectEdgeTheme, RADIUS_KEYWORDS } = require('../dist/edges');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
-const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
+const { validateTheme } = require('../dist/ds-runtime/theme-validate');
 // Full 1-16 spacing so the always-on density/edge defaults (not just what
 // this file's own source uses) pass strict reference validation. See
 // docs/features/FEAT-002-beta-migration-hardening.md.
@@ -48,7 +48,7 @@ test('literal values, nested CSS, shape keywords and references are preserved', 
 test('invalid updates fail before CSS is emitted', async () => {
   for (const bad of [{ radii: [] }, { radii: { 2: '' } }, { radii: { 2: 'md(12px)' } }, { borders: { 1: 'tablet(1px solid red)' } }]) {
     assert.throws(() => generateEdgeCss(bad));
-    assert.equal(validateAndNormalizeTheme(bad).ok, false);
+    assert.equal(validateTheme(bad).ok, false);
   }
   await assert.rejects(compile('.bad { border-radius: radius(234); }'));
 });

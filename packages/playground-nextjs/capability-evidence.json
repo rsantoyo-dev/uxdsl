@@ -19,7 +19,9 @@
       "why": "the green, purple and slate theme overrides declare the packaged schema as their $schema, so an editor validates and completes them; scripts/test-theme-inheritance.cjs resolves the export and checks each pointer reaches it. A JSON $schema is not an import, so the detector cannot see it."
     }
   ],
-  "knownGaps": [],
+  "knownGaps": [
+    "runtime:validateAndNormalizeTheme"
+  ],
   "dogfoodingBaseline": {
     "handWrittenMediaQueries": 2,
     "hexColorsInUxdsl": 12,

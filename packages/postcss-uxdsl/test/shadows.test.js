@@ -5,7 +5,7 @@ const exported = require('../dist/index');
 const plugin = exported.default || exported;
 const { generateShadowCss, inspectShadowTheme } = require('../dist/shadows');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
-const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
+const { validateTheme } = require('../dist/ds-runtime/theme-validate');
 // Full 1-16 spacing plus the palette families the always-on density/surface/
 // button/input defaults need, so strict reference validation (every :root
 // block the plugin always emits, not just what this file's source uses)
@@ -48,7 +48,7 @@ test('invalid Shadow updates fail without mutating the input', async () => {
   for (const shadows of [[], {2:''}, {2:'md(none)'}, {2:'tablet(none)'}, {2:'xs(rgba(0,0,0,.2)'}, {2:42}]) {
     const bad={shadows};const before=JSON.stringify(bad);
     assert.throws(()=>generateShadowCss(bad));assert.equal(JSON.stringify(bad),before);
-    assert.equal(validateAndNormalizeTheme(bad).ok,false);
+    assert.equal(validateTheme(bad).ok,false);
   }
   await assert.rejects(compile('.bad {box-shadow: shadow(99)}'));
   assert.throws(()=>inspectShadowTheme(theme,-1));

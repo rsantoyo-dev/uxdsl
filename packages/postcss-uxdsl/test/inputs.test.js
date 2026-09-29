@@ -7,7 +7,7 @@ const plugin=exported.default||exported;
 const {generateInputCss,getInputTokens,inputDeclarations,inputComponentCss,inspectInputTheme,parseInputArguments}=require('../dist/inputs');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
 const {resolveTheme}=require('../dist/default-theme');
-const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
+const {validateTheme}=require('../dist/ds-runtime/theme-validate');
 // Full 1-16 spacing plus the palette families the always-on density/surface/
 // button/input defaults need, so strict reference validation (every :root
 // block the plugin always emits, not just what this file's source uses)
@@ -66,7 +66,7 @@ test('underline maps to bottom border and preserves local CSS ordering',async()=
 test('invalid Input configuration fails before CSS emission in runtime and PostCSS',async()=>{
  for(const inputs of [null,{x:null},{x:{extra:'red'}},{x:{surface:'missing'}},{x:{base:null}},{x:{states:null}},{x:{states:{focus:null}}},{x:{states:{selected:{color:'red'}}}},{x:{base:{padding:'md(8px)'}}}]){
   assert.throws(()=>generateInputCss({inputs}));await assert.rejects(()=>compile('.x { @ds-input(contained); }',{inputs}));
-  assert.equal(validateAndNormalizeTheme({inputs}).ok,false);
+  assert.equal(validateTheme({inputs}).ok,false);
  }
  assert.throws(()=>parseInputArguments({},'(invented)'));
  assert.throws(()=>parseInputArguments({},'(contained density(2))'));

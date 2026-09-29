@@ -1,6 +1,7 @@
 import { generateFoundationCss } from './foundations';
 import { enforceReferences, ReferenceOptions } from './reference-integrity';
 import { generateThemeCss } from './ds-runtime/theme-generator';
+import { validateTheme, themeValidationError } from './ds-runtime/theme-validate';
 import { getInputTokens, generateInputCss, inputComponentCss, parseInputArguments } from './inputs';
 import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
 import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
@@ -186,6 +187,15 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // of how populated DEFAULT_THEME is.
       const rawTheme = (opts.theme ?? discovered?.theme) as Record<string, any> | undefined;
       const effectiveTheme = resolveTheme(rawTheme);
+      // Stability phase 1: the one validator, on the effective theme, before
+      // any engine reads it — the same call `generateThemeCss` and
+      // `applyTheme` make, so a numeric leaf, a `"768"` breakpoint or an
+      // unknown `fonts` key is refused here with the same code and key path.
+      // References are checked once, at the end, on the stylesheet actually
+      // emitted (legacy `@theme` packs included), not here.
+      const validated = validateTheme(effectiveTheme, { references: false });
+      if (!validated.ok) throw themeValidationError(validated.errors);
+      for (const warning of validated.warnings) result.warn(warning.message, { plugin: 'postcss-uxdsl' });
       const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
       const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
       const bpNames = new Set(Object.keys(bps));

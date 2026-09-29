@@ -602,6 +602,27 @@ still has the old placement), compiled output puts every `@import` — the
 theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
+There is one theme validator, `validateTheme(theme, { references? })` from
+`postcss-uxdsl/ds-runtime` (stability phase 1; `validateAndNormalizeTheme` is a
+deprecated alias that no longer normalizes anything). The PostCSS plugin calls
+it on the effective theme before any engine runs, `generateThemeCss` and
+`applyTheme` call it, the CLI calls it, and the packaged JSON Schema is
+generated from its patterns. Its rules: every leaf is a nonempty string —
+numbers, `null`, arrays and objects where a string belongs are
+`UXD_THEME_INVALID` with the key path, and nothing is coerced (`"768"` is not
+a breakpoint, `700` is not a font weight); a theme value cannot contain `;`,
+`{` or `}` and its parentheses balance; `fonts` is closed to
+`families`/`google`, `modes` to `dark`, `modes.dark` to `palette`; a palette
+family is an object; role, family and breakpoint names match
+`^[a-z][a-z0-9-]*$` and token keys may also start with a digit. The breakpoint
+map is validated once as `UXD_BP_INVALID` (zero-width base, distinct, finite,
+non-negative widths); engines no longer restate it under their own code.
+Closed field sets stay the engines' own errors (`UXD_TYPO_FIELD`,
+`UXD_BUTTON_STATE`, …). An unknown top-level family is a warning
+(`UXD_THEME_FAMILY`), not an error. When generating a theme, write lowercase
+names and string leaves only; do not rely on any path to quote, number-coerce
+or clean a value for you.
+
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option.
 
@@ -827,9 +848,10 @@ MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
 from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
-still warn (a warning from `validateAndNormalizeTheme`, printed by the CLI; the
-PostCSS plugin itself reports none), and invalid Typography fields still fail. This does not add new modes
-or change strict-theme behavior.
+still warn (`UXD_THEME_FAMILY`, a warning from `validateTheme`, printed by the
+CLI and reported by the PostCSS plugin through `result.warn`), and invalid
+Typography fields still fail. This does not add new modes or change strict-theme
+behavior.
 
 For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
 `MIG-B6-*.md` before implementation. The parent feature records product decisions;

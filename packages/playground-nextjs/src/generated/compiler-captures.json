@@ -137,8 +137,8 @@
       "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_TOKEN_ALPHA: Expected a number between 0 and 1.\n  1 | .overlay {\n> 2 |   background: palette(primary-main, 2);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
-      "code": "UXD_TYPO_BP",
-      "title": "A negative breakpoint in the theme (reported by the first engine that validates the map: Typography)",
+      "code": "UXD_BP_INVALID",
+      "title": "A negative breakpoint in the theme (validated once, before any engine runs)",
       "source": ".a {\n  padding: space(3);\n}\n",
       "theme": {
         "breakpoints": {
@@ -157,7 +157,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_TYPO_BP: Typography requires distinct non-negative breakpoint widths and a zero-width base (at breakpoints).\n"
+      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_BP_INVALID: Expected named, distinct non-negative widths and a zero-width base.\n"
     },
     {
       "code": "UXD_TYPO_FIELD",

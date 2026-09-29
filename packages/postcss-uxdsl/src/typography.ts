@@ -1,5 +1,5 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue, validateBreakpoints } from './language';
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
@@ -59,10 +59,10 @@ export function typographyValueToCss(input: string): string {
 
 export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS) {
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
-  const ordered = Object.entries(breakpoints).sort((a, b) => a[1] - b[1]);
-  if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([, width]) => !Number.isFinite(width) || width < 0) || new Set(ordered.map(([, width]) => width)).size !== ordered.length) {
-    throw themeError('UXD_TYPO_BP', 'Typography requires distinct non-negative breakpoint widths and a zero-width base', 'breakpoints');
-  }
+  // Stability phase 1: the breakpoint map has one owner and one code
+  // (`UXD_BP_INVALID`, language.ts); this engine no longer restates the
+  // same rules under `UXD_TYPO_BP`.
+  const ordered = validateBreakpoints(breakpoints);
   if (!details || typeof details !== 'object' || Array.isArray(details)) throw themeError('UXD_TYPO_DETAILS', 'Expected an object', 'typography_details');
   for (const [role, style] of Object.entries(details)) {
     if (!/^[a-z][a-z0-9-]*$/.test(role) || !style || typeof style !== 'object' || Array.isArray(style)) throw themeError('UXD_TYPO_ROLE', `Invalid style ${role}`, `typography_details.${role}`);

@@ -134,23 +134,40 @@ files['packages/postcss-uxdsl/src/theme/default-surfaces.uxdsl'] = banner + '@th
 // below. The name registries a project extends — palette families, typography
 // roles, font family names, role names — stay open, with only a key *pattern*
 // enforced; closing them would reject `palette.brand`, which is valid.
-const NAME_PATTERN = '^[A-Za-z0-9][A-Za-z0-9_-]*$';
-const stringMap = (pattern = NAME_PATTERN) => ({
+//
+// Stability phase 1: the patterns are `validateTheme`'s own
+// (THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN in
+// ds-runtime/theme-validate.ts), so the schema and the compiler reject the
+// same names and the same leaves — a number, `null` or object where a string
+// belongs, an empty string, `;`/`{`/`}` in a value. What a regex cannot say
+// (balanced parentheses, a zero-width base breakpoint, a dangling reference)
+// the validator still checks and the schema documents in `description`.
+const { THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN } = require('../packages/postcss-uxdsl/dist/ds-runtime');
+const NAME_PATTERN = THEME_NAME_PATTERN.source;
+const KEY_PATTERN = THEME_KEY_PATTERN.source;
+const leaf = {
+  type: 'string',
+  minLength: 1,
+  pattern: THEME_VALUE_PATTERN.source,
+  description: 'A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no ";", "{" or "}"; parentheses must balance.',
+};
+const stringMap = (pattern = KEY_PATTERN) => ({
   type: 'object',
   propertyNames: { pattern },
-  additionalProperties: { type: 'string' },
+  additionalProperties: leaf,
 });
 const closedFields = (properties) => ({
   type: 'object',
   additionalProperties: false,
-  properties: Object.fromEntries(Object.keys(properties).map((field) => [field, { type: 'string' }])),
+  properties: Object.fromEntries(Object.keys(properties).map((field) => [field, leaf])),
 });
 const paletteSchema = {
   type: 'object',
   propertyNames: { pattern: NAME_PATTERN },
   // A family needs no `main`: `action` in the base theme has only `disabled`.
   // The main/dark/contrast trio is the *tone* predicate Buttons and Inputs
-  // apply, not the definition of a valid family.
+  // apply, not the definition of a valid family. A family is always an
+  // object of variants, never a single color string.
   additionalProperties: stringMap(),
 };
 const controlSchema = (properties, states) => ({
@@ -160,7 +177,7 @@ const controlSchema = (properties, states) => ({
     type: 'object',
     additionalProperties: false,
     properties: {
-      surface: { type: 'string' },
+      surface: leaf,
       base: closedFields(properties),
       states: {
         type: 'object',
@@ -171,20 +188,24 @@ const controlSchema = (properties, states) => ({
   },
 });
 const familySchemas = {
-  breakpoints: { type: 'object', propertyNames: { pattern: NAME_PATTERN }, additionalProperties: { type: 'number' } },
+  breakpoints: {
+    type: 'object',
+    propertyNames: { pattern: NAME_PATTERN },
+    additionalProperties: { type: 'number', minimum: 0, description: 'Viewport width in pixels. Widths must be distinct and one breakpoint must be 0.' },
+  },
   // `spacing` accepts the bare key (`"1"`) and the prefixed form (`"space-1"`).
-  spacing: stringMap('^(space-)?[A-Za-z0-9][A-Za-z0-9_-]*$'),
+  spacing: stringMap(`^(space-)?${KEY_PATTERN.slice(1)}`),
   palette: paletteSchema,
   fonts: {
     type: 'object',
     additionalProperties: false,
-    properties: { families: stringMap(), google: { type: 'array', items: { type: 'string' } } },
+    properties: { families: stringMap(NAME_PATTERN), google: { type: 'array', items: { type: 'string', minLength: 1, pattern: '\\S', description: 'A Google Fonts css2 family spec, e.g. "Inter:wght@400;700". Percent-encoded into the @import URL, never emitted as CSS.' } } },
   },
   colors: {
     type: 'object',
     propertyNames: { pattern: NAME_PATTERN },
     // A standalone color (`white`) or a shade scale (`gray.300`).
-    additionalProperties: { anyOf: [{ type: 'string' }, stringMap()] },
+    additionalProperties: { anyOf: [leaf, stringMap()] },
   },
   typography_details: {
     type: 'object',
@@ -205,7 +226,7 @@ const familySchemas = {
     additionalProperties: false,
     properties: { dark: { type: 'object', additionalProperties: false, properties: { palette: paletteSchema } } },
   },
-  typography: stringMap(),
+  typography: stringMap(NAME_PATTERN),
 };
 const knownFamilies = Array.from(KNOWN_THEME_FAMILIES);
 const missingFamilySchemas = knownFamilies.filter((family) => !familySchemas[family]);

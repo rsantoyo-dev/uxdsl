@@ -714,13 +714,15 @@ Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and
 with their stylesheet location; direct expansion failures are PostCSS
 `CssSyntaxError`s, while post-expansion reference failures retain
 `ReferenceIntegrityError` and its issues. Imported partials retain their own
-source location. Theme validators name a key path (`.keyPath`, e.g.
-`surfaces.contained.bogus`, `densities.x`, `radii.1`, `shadows.1`,
-`borders.1`, `typography_details.h1.fontSize`) where that validator provides
-one — `uxdsl-cli` prepends the theme file's own path when it resolved one, so
-`uxdsl build` names both the file and the exact key. Button/Input theme
-errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) and a few lower-level theme-map checks
-do not carry a key path (as of 2026-09-28); they still preserve their code and message.
+source location. A theme error names a key path (`.keyPath`, e.g.
+`palette.primary.main`, `surfaces.contained.bogus`, `densities.x`, `radii.1`,
+`breakpoints.md`, `typography_details.h1.fontSize`) where the validator
+provides one — `uxdsl-cli` prepends the theme file's own path when it resolved
+one, so `uxdsl build` names both the file and the exact key. Every structural
+problem is `UXD_THEME_INVALID` with a key path (see "One theme validator"
+below); a breakpoint-map problem is `UXD_BP_INVALID`, reported once.
+Button/Input closed-set errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) do not carry a
+key path (as of 2026-09-29); they still preserve their code and message.
 
 The per-family default constants (`DEFAULT_RADII`, `DEFAULT_SHADOWS`,
 `DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`,
@@ -782,35 +784,72 @@ plugin runs standalone (not only via a build that resolves `$var`s first):
 `$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
 plus `@media` block as writing the responsive value inline.
 
-### Unknown theme families and keys (`validateAndNormalizeTheme`)
+### One theme validator (`validateTheme`)
 
-`postcss-uxdsl/ds-runtime`'s `validateAndNormalizeTheme(theme)` — the
-validator behind the playground's theme editor, and behind `uxdsl-cli`'s
-own build-time warnings — warns (`result.warnings`, not `result.errors`)
-about any top-level key it doesn't recognize (`breakpoints`, `spacing`,
-`palette`, `fonts`, `colors`, `typography_details`, `densities`, `inputs`,
-`buttons`, `surfaces`, `shadows`, `borders`, `radii`, `modes`, `typography`). An unrecognized key
-is silently unused — nothing compiles it into CSS — so this catches a typo
-(`color` instead of `colors`) or a stray field left over from
-copy-pasting the wrong file, that would otherwise produce no error and no
-visible effect at all.
+There is one answer to "is this theme valid?", and every path asks the same
+function for it: the PostCSS plugin (on the effective theme, before any engine
+reads it), `generateThemeCss`, `applyTheme` and `uxdsl-cli` all call
+`validateTheme(theme, { references? })` from `postcss-uxdsl/ds-runtime`. The
+packaged JSON Schema is generated from the validator's own patterns, so an
+editor rejects the same names and leaves. The result is
+`{ ok, theme, errors, warnings }`; each issue is `{ code, path, message }`, and
+`theme` is a deep copy of the input, **unchanged** — nothing is normalized or
+coerced.
 
-That check stops at the top level. The three families whose own design
-is a registry of named entries — `typography_details` (tags), `palette`
-(roles) and `fonts.families` (roles) — are **open registries**: every
-entry name your theme declares is compiled, whether or not it appears in
-this package's own defaults, so `palette.brand`,
-`fonts.families.marketing` or `typography_details.display-xl` are all
-ordinary valid names. beta.5 briefly warned on entry names outside
-`DEFAULT_THEME`'s minimal fallback set; beta.6 removed that check as a
-false positive — `DEFAULT_THEME` is a zero-crash fallback, not a catalog
-of permitted names, and no closed set of entry names exists anywhere in
-the compiler to check against.
+What it checks, in order:
 
-What *is* still checked for real, one level deeper still, is the set of
-**fields** inside a `typography_details` tag: `fontsize` instead of
-`fontSize` is a hard `UXD_TYPO_FIELD` error, not a warning, because that
-list (`TYPOGRAPHY_PROPERTIES`) genuinely is closed.
+- **Structure — `UXD_THEME_INVALID`, with the key path.** Every leaf is a
+  nonempty string; a number, boolean, `null`, array or object where a string
+  belongs is an error (`spacing.1: 8`, `fontWeight: 700`, `palette.primary.light:
+  null` all fail — none of them is coerced, and none reaches CSS as `8`, `null`
+  or `[object Object]`). A `breakpoints` value is a finite number, never
+  `"768"`. `fonts` is closed to `families` and `google` (`google` is an array of
+  nonempty Google Fonts specs); `modes` is closed to `dark`, and `modes.dark` to
+  `palette`. A palette family is an object of variants, never a single color.
+  Role, family and breakpoint names (typography roles, surfaces, buttons,
+  inputs, palette and color families, `fonts.families`, breakpoints) match
+  `^[a-z][a-z0-9-]*$`; token keys (spacing, densities, radii, borders, shadows,
+  color shades, palette variants) may also start with a digit. A value cannot
+  contain `;`, `{` or `}`, and its parentheses must balance — a theme string is
+  compiled into a stylesheet, so a value carrying `; } .hack {` used to inject
+  a rule.
+- **Breakpoints, once — `UXD_BP_INVALID`.** The effective map (the base theme's
+  plus yours) needs a zero-width base and distinct, finite, non-negative widths.
+  The engines no longer restate this under their own family (`UXD_TYPO_BP`,
+  `UXD_EDGE_BP`, … are gone); a theme value naming a breakpoint the map does not
+  have is that family's `_VALUE` error.
+- **Engines.** The same `compile*Rules` the CSS paths run: closed field sets
+  (`fontsize` is `UXD_TYPO_FIELD`, `focusVisible` is `UXD_BUTTON_STATE`),
+  Surface references, responsive expressions — each judged by its owner, with
+  its own code.
+- **References**, unless `references: false`: the generated theme's `var()`
+  graph, as `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`. The plugin passes
+  `false` here because it checks the references of the exact stylesheet it
+  emits, legacy `@theme` packs included, once at the end.
+
+An unknown **top-level** family is a warning (`UXD_THEME_FAMILY`), never an
+error: nothing compiles it into CSS, so this catches a typo (`color` instead of
+`colors`) or a stray field from copy-pasting the wrong file — but the validator
+cannot tell a typo from a family a newer version knows about. The PostCSS plugin
+reports it through `result.warn`, `uxdsl-cli` prints it, `applyTheme` returns it
+in `warnings`. The recognized families are `KNOWN_THEME_FAMILIES`
+(`breakpoints`, `spacing`, `palette`, `fonts`, `colors`, `typography_details`,
+`densities`, `inputs`, `buttons`, `surfaces`, `shadows`, `borders`, `radii`,
+`modes`, `typography`); `$schema` is metadata and is ignored.
+
+The families whose own design is a registry of named entries —
+`typography_details` (roles), `palette` (families), `fonts.families`, and the
+Surface/Button/Input roles — are **open**: every name your theme declares is
+compiled, whether or not it appears in this package's own defaults, so
+`palette.brand`, `fonts.families.marketing` or `typography_details.display-xl`
+are ordinary valid names. Only their *shape* (the pattern above) is checked.
+
+`validateAndNormalizeTheme` still exists as a deprecated alias of
+`validateTheme` and will be removed in the next minor. It no longer normalizes
+anything: multi-word font families are emitted exactly as written by both the
+plugin and `generateThemeCss` (`Inter Tight, sans-serif` stays unquoted, which is
+valid CSS), and its former `requireXsForResponsive` option — dead since a base
+value became mandatory — is ignored.
 
 ---
 

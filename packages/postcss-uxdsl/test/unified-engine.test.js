@@ -3,7 +3,7 @@ const postcss=require('postcss');const plugin=require('../dist');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
 const {getDensityTokens,compileDensityRules,DEFAULT_DENSITIES,responsiveEntries}=require('../dist/language');
 const {surfaceValueToCss}=require('../dist/surfaces');const {presetValueToCss}=require('../dist/preset-engine');
-const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
+const {validateTheme}=require('../dist/ds-runtime/theme-validate');
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function variables(css){const result={};postcss.parse(css).walkDecls(/^--/,d=>{let parent=d.parent;const path=[];while(parent.type!=='root'){path.unshift(parent.type==='atrule'?`@${parent.name} ${parent.params}`:parent.selector);parent=parent.parent}result[path.join('/')+'/'+d.prop]=d.value});return result;}
 // Full 1-16 spacing (this file's own 1/2/3 win) plus the palette families
@@ -46,7 +46,7 @@ test('simple values, named spacing and alpha have one meaning in direct CSS and 
 });
 test('Density validation is consistent between generation, validation and PostCSS',async()=>{
  for(const densities of [null,{bad:'md(space(1))'},{bad:'xs(space(1)) tablet(space(2))'},{bad:'xs(space(1)'},{bad:''}]){
-  assert.throws(()=>generateThemeCss({densities}));assert.equal(validateAndNormalizeTheme({densities}).ok,false);await assert.rejects(()=>compile('',{densities}));
+  assert.throws(()=>generateThemeCss({densities}));assert.equal(validateTheme({densities}).ok,false);await assert.rejects(()=>compile('',{densities}));
  }
  assert.throws(()=>compileDensityRules({}, {xs:0,sm:0}));
 });

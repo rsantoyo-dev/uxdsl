@@ -70,7 +70,10 @@ export function mergePresetTokens(defaults: Record<string, string>, input: Recor
 }
 
 export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix = 'UXD_PRESET') {
-  const ordered = validateBreakpoints(breakpoints, `${errorPrefix}_BP`);
+  // Stability phase 1: the breakpoint map has one owner and one code
+  // (`UXD_BP_INVALID`), not one `<FAMILY>_BP` restatement per engine. A value
+  // naming a breakpoint the map does not have is a value error, `_VALUE`.
+  const ordered = validateBreakpoints(breakpoints);
   const rules = ordered.map(([breakpoint, width], i) => ({ breakpoint, minWidth: i ? width : null as number | null, values: {} as Record<string, string> }));
   // MIG-08: two different (family, key) pairs — e.g. surface role
   // "contained-shadow" with no field suffix, and role "contained" field
@@ -80,7 +83,7 @@ export function compilePresetRules(tokens: Record<string, Record<string, string>
   const names = new NameRegistry(errorPrefix);
   for (const family of Object.keys(tokens)) {
     for (const [key, expression] of Object.entries(tokens[family])) {
-      validateResponsiveExpression(expression, breakpoints, `${errorPrefix}_BP`);
+      validateResponsiveExpression(expression, breakpoints, `${errorPrefix}_VALUE`);
       const varName = names.claim(buildVarName(family, key), `${family}.${key}`);
       let previous: string | undefined;
       ordered.forEach(([bp], i) => {
