@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (52381 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (52379 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 52381,
+        "bytes": 52379,
         "rootBlocks": 17,
         "mediaQueries": 9
       }
@@ -66,10 +66,10 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (51359 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (51207 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 51359,
+        "bytes": 51207,
         "rootBlocks": 17
       }
     },
@@ -85,10 +85,10 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (51359 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (51207 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 51359,
+        "bytes": 51207,
         "rootBlocks": 17
       }
     },
@@ -104,14 +104,14 @@
         "--no-include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] built dist/card-only.css (466 bytes)\n",
+      "stdout": "[uxdsl] built dist/card-only.css (464 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 466,
+        "bytes": 464,
         "rootBlocks": 0
       },
       "files": {
-        "dist/card-only.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n    flex-direction: row;\n}\n}\n"
+        "dist/card-only.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n"
       }
     },
     {
@@ -127,10 +127,10 @@
         "--sourcemap"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] built dist/card-mapped.css (510 bytes) + card-mapped.css.map (408 bytes)\n",
+      "stdout": "[uxdsl] built dist/card-mapped.css (508 bytes) + card-mapped.css.map (408 bytes)\n",
       "stderr": "",
       "files": {
-        "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n    flex-direction: row;\n}\n}\n\n/*# sourceMappingURL=card-mapped.css.map */"
+        "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n\n/*# sourceMappingURL=card-mapped.css.map */"
       },
       "facts": {
         "mapSources": [
@@ -284,7 +284,7 @@
         "action": "start: uxdsl watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52381 bytes)",
+          "[uxdsl] built dist/app.css (52379 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -293,7 +293,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52423 bytes)"
+          "[uxdsl] built dist/app.css (52421 bytes)"
         ]
       },
       {
@@ -309,12 +309,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52381 bytes)"
+          "[uxdsl] built dist/app.css (52379 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 52381
+      "finalBytes": 52379
     }
   }
 }

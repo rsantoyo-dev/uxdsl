@@ -1,5 +1,4 @@
-import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue, validateBreakpoints } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
@@ -45,16 +44,11 @@ export function resolveTypographyRole(details: TypographyDetails, role: string):
   return role === 'default' ? { ...style } : { ...details.default, ...style };
 }
 
+/** Stability phase 1: the one value grammar. A typography field may reference
+ * any token (`palette(primary)` in `letterSpacing`, `radius(2)`…), not only
+ * `space()`/`density()`; the reference pass judges whether it exists. */
 export function typographyValueToCss(input: string): string {
-  const parsed = valueParser(input);
-  parsed.walk(node => {
-    if (node.type !== 'function' || !['space', 'density'].includes(node.value)) return;
-    const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-    if (!/^[\w.-]+$/.test(key)) throw themeError('UXD_TYPO_TOKEN', `Invalid ${node.value} reference`, 'typography');
-    Object.assign(node, { type: 'word', value: `var(${buildVarName(node.value === 'space' ? 'space' : 'density', key)})` });
-    return false;
-  });
-  return parsed.toString();
+  return tokenValueToCss(input);
 }
 
 export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS) {
@@ -98,7 +92,7 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
 /** Pure generation used identically by PostCSS, SSR and browser applications. */
 export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
   const base: Record<string, string> = {};
-  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = String(value);
+  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value));
   const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
   const output = Object.keys(base).length ? [serialize(base)] : [];
   // Legacy flat variables share the same responsive resolver as structured fields.

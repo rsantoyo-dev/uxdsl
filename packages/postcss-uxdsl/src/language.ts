@@ -171,17 +171,85 @@ export function resolveResponsiveValue(input: string, target: string, bps: Break
   return valueParser.stringify(output).trim();
 }
 
-export function spacingValueToCss(input: string): string {
+// --- The value grammar (stability phase 1, audit finding T1) ---------------
+//
+// One grammar for every theme value, in every family, on both CSS paths: a
+// literal CSS value; a token function — `space(k)`, `density(k)`,
+// `color(family.shade[, alpha])`, `palette(family[.variant][, alpha])`,
+// `radius(k | pill | full | circle)`, `border(k)`, `shadow(k)` (and the
+// aliases `rounded()`/`elevation()`); a responsive expression over the
+// theme's breakpoints (`xs(…) md(…)`, resolved by resolveResponsiveValue
+// before this runs); and `var()` as the escape hatch, passed through. The
+// engines (foundations, typography, densities, presets, surfaces, controls)
+// all serialize through `tokenValueToCss`, so `generateThemeCss` and the
+// PostCSS plugin emit the identical variable for `radii.x: 'radius(2)'` or
+// `palette.brand.main: 'color(gray.300)'`. Before this, only presets resolved
+// `space/density/color/palette` and the plugin's final pass over *every*
+// declaration papered over the rest at build time only.
+
+/** `radius(pill)`/`radius(full)` compile to `9999px`, `radius(circle)` to `50%`. */
+export const RADIUS_KEYWORDS: Record<string, string> = Object.freeze({ pill: '9999px', full: '9999px', circle: '50%' });
+
+/** The token functions the grammar rewrites, alias → family. */
+export const TOKEN_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
+  space: 'space', density: 'density', color: 'color', palette: 'palette',
+  radius: 'radius', rounded: 'radius', border: 'border', shadow: 'shadow', elevation: 'shadow',
+});
+
+export function normalizeTokenKey(kind: string, input: string): string {
+  let key = input.trim().replace(/^(['"])(.*)\1$/, '$2');
+  if (!/^[\w.-]+$/.test(key)) throw new Error('UXD_TOKEN_KEY: Expected a token key.');
+  if (kind === 'palette' || kind === 'color') key = key.replace(/\./g, '-');
+  if (kind === 'palette' && !key.includes('-')) key += '-main';
+  return key;
+}
+
+/** Per-family overrides of the emitted reference, keyed by family. */
+export type TokenSerializers = Partial<Record<string, (key: string) => string>>;
+
+/**
+ * Rewrites every token function in `input` to its `var(--uxdsl__<family>__<key>)`
+ * reference (or a radius keyword's literal), leaving everything else — native
+ * CSS, `var()`, a native `color(display-p3 …)` — untouched. Does not check
+ * that the token exists: the reference-integrity pass over the emitted
+ * stylesheet does, on both paths, and the plugin's own author-side pass adds
+ * "did you mean" hints before delegating here.
+ */
+export function tokenValueToCss(input: string, serializers: TokenSerializers = {}): string {
   const parsed = valueParser(input);
   parsed.walk(node => {
-    if (node.type === 'function' && node.value === 'space') {
-      const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-      Object.assign(node, { type: 'word', value: `var(${buildVarName('space', key)})` });
-      return false;
+    if (node.type !== 'function' || !Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, node.value)) return;
+    const kind = TOKEN_FUNCTIONS[node.value];
+    const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());
+    // MIG-B6-14 (FEAT-008): `color()` is the one UXDSL token function that
+    // collides with a real native CSS function of the same name (relative
+    // color syntax `color(from red srgb r g b / 0.5)`, an explicit color
+    // space `color(display-p3 1 0 0)`). A token's own key always matches
+    // `normalizeTokenKey`'s shape (`/^[\w.-]+$/`, no spaces); any native
+    // form's first "argument" (there's no comma to split on) contains a
+    // space or slash and never does. This replaces a fixed, incomplete list
+    // of known color-space keywords — CSS keeps adding spaces (rec2100-pq,
+    // etc.) that list would need to track forever — with a shape check that
+    // needs no such list at all.
+    if (kind === 'color' && !/^[\w.-]+$/.test(args[0].replace(/^(['"])(.*)\1$/, '$2'))) return;
+    const key = normalizeTokenKey(kind, args[0]);
+    let value = kind === 'radius' && RADIUS_KEYWORDS[key] ? RADIUS_KEYWORDS[key] : serializers[kind]?.(key) || `var(${buildVarName(kind, key)})`;
+    // `border(k[, color][, style])`: the configured preset wins and the
+    // optional arguments are ignored (documented); every other function takes
+    // one key, plus an alpha for `palette`/`color` only.
+    if (args.length > 1 && kind !== 'border') {
+      const alpha = Number(args[1]);
+      if (!['palette', 'color'].includes(kind) || args.length !== 2 || !args[1] || !Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error('UXD_TOKEN_ALPHA: Expected a number between 0 and 1.');
+      value = `color-mix(in srgb, ${value} ${alpha * 100}%, transparent)`;
     }
+    Object.assign(node, { type: 'word', value });
+    return false;
   });
   return parsed.toString();
 }
+
+/** @deprecated The grammar is one function now; this is `tokenValueToCss`. */
+export const spacingValueToCss = (input: string): string => tokenValueToCss(input);
 
 /** Inspection for a single responsive token; shares the production resolver. */
 export function inspectResponsiveValue(input: string, width: number, bps: BreakpointMap) {
@@ -202,7 +270,7 @@ export type DensityRule = { minWidth: number | null; breakpoint: string; values:
 export function compileDensityRules(
   definitions: Record<string, string>,
   breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS,
-  rewrite: (value: string) => string = spacingValueToCss,
+  rewrite: (value: string) => string = tokenValueToCss,
 ): DensityRule[] {
   const ordered = validateBreakpoints(breakpoints);
   const rules: DensityRule[] = ordered.map(([breakpoint, px], i) => ({ breakpoint, minWidth: i ? px : null, values: {} }));

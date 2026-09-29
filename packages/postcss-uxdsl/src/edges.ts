@@ -1,6 +1,10 @@
-import { compilePresetRules, mergePresetTokens, presetValueToCss } from './preset-engine';
-import { BreakpointMap, DEFAULT_BREAKPOINTS } from './language';
+import { compilePresetRules, mergePresetTokens } from './preset-engine';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, tokenValueToCss } from './language';
 import { BASE_THEME } from './base-theme';
+
+// Stability phase 1: the radius keywords are part of the one value grammar
+// (language.ts); re-exported here for the callers that import them from edges.
+export { RADIUS_KEYWORDS } from './language';
 
 // MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
 // independently-maintained literal.
@@ -16,10 +20,9 @@ export const DEFAULT_BORDERS: Record<string, string> = BASE_THEME.borders as Rec
  * Now derived from the same `theme/base.json` every other default comes
  * from, so there is exactly one `colors.gray` in the whole package. */
 export const DEFAULT_BORDER_COLORS: Record<string, Record<string, string>> = Object.freeze({ gray: BASE_THEME.colors.gray });
-export const RADIUS_KEYWORDS: Record<string, string> = Object.freeze({ pill: '9999px', full: '9999px', circle: '50%' });
 export interface EdgeTheme { borders?: Record<string, string>; radii?: Record<string, string>; breakpoints?: BreakpointMap }
 
-export const edgeValueToCss = (input: string) => presetValueToCss(input, 'UXD_EDGE');
+export const edgeValueToCss = (input: string) => tokenValueToCss(input);
 
 export function getEdgeTokens(theme: EdgeTheme = {}) {
   return {

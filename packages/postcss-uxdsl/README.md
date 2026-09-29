@@ -300,6 +300,50 @@ interleaved `all` reset, or an interleaved nested rule/at-rule such as
 
 ---
 
+## Theme values: one grammar, both paths (`tokenValueToCss`)
+
+Every string value in the theme JSON — in every family, whichever path compiles
+it — is read by one grammar:
+
+- a **literal CSS value**: `1rem`, `#7e22ce`, `0 1px 2px rgba(0, 0, 0, 0.1)`,
+  `Inter, sans-serif`, `none`;
+- a **token function**: `space(k)`, `density(k)`, `color(family.shade[, alpha])`,
+  `palette(family[.variant][, alpha])` (no variant means `.main`),
+  `radius(k | pill | full | circle)`, `border(k)`, `shadow(k)` — and the aliases
+  `rounded()`/`elevation()`. Each compiles to its `var(--uxdsl__<family>__<key>)`
+  reference; a radius keyword to its literal (`9999px`, `50%`); an alpha, allowed
+  on `palette()`/`color()` only, to `color-mix(in srgb, <ref> N%, transparent)`
+  (a value outside 0–1 is `UXD_TOKEN_ALPHA`);
+- a **responsive expression** over the theme's breakpoints, `xs(…) md(…)`, whose
+  groups hold any of the above (Spacing, Colors, Palette and `fonts.families`
+  are not responsive; every other family is);
+- **`var(--…)`** as the escape hatch, passed through untouched.
+
+So a Palette value may say `palette(surface.contrast)` or `color(gray.300)` just
+as a Surface field may say `radius(2)`; the compiled variable name is never
+something you have to know to write a theme. Whether the token *exists* is the
+reference pass's question (`UXD_REFERENCE_MISSING`), asked of the emitted
+stylesheet on both paths.
+
+Before stability phase 1 (audit finding T1) only the preset families resolved
+these functions; a Palette, Color, Spacing or `fonts.families` value was emitted
+raw, and the PostCSS plugin's *final* pass — which rewrote every declaration in
+the tree, generated `:root` blocks included — papered over that at build time
+only. `radii: { x: 'radius(2)' }` therefore compiled to `var(--uxdsl__radius__2)`
+in a build and stayed the literal `radius(2)` in `generateThemeCss` and
+`applyTheme`, which reported `ok: true`. Now the engines every path shares
+(foundations, typography, densities, the preset engine, Surfaces, Buttons,
+Inputs) resolve the grammar themselves through `tokenValueToCss`
+(`postcss-uxdsl/language`), and the plugin's own value passes run over the
+author's declarations only. `test/build-runtime-parity.test.js` pins it: for the
+packaged base theme, each of the playground's themes and a synthetic theme that
+uses every function in every family, each top-level block of the plugin's theme
+CSS is byte-identical to a block of `generateThemeCss(resolveTheme(theme))`.
+
+`presetValueToCss`, `spacingValueToCss` and the per-family `*_ALPHA`/
+`UXD_TYPO_TOKEN` codes are deprecated or gone in favour of the one function and
+its two codes, `UXD_TOKEN_ALPHA` and `UXD_TOKEN_KEY`.
+
 ## Generated variable names (`--uxdsl__<family>__<key>`)
 
 Every custom property this compiler emits or consumes carries the shared

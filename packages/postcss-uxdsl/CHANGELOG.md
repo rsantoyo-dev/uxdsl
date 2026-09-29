@@ -72,6 +72,72 @@ property now fails instead.
   pure, unvalidated theme stylesheet `generateThemeCss` returns after
   validating; for callers that already validated.
 
+Stability phase 1, finding T1 (P0: build and runtime emitted different CSS for
+the same theme) — one value grammar:
+
+### Visual changes
+
+None for the packaged base theme: its compiled custom properties are
+byte-identical before and after (the base theme never used a token function
+outside the preset families). Two things change for other themes, both from
+wrong to right: a token function inside a Palette, Color, Spacing or
+`fonts.families` value — `palette: { brand: { main: 'color(gray.300)' } }` —
+used to reach `generateThemeCss`/`applyTheme`'s stylesheet as the literal
+`color(gray.300)` (an invalid value the browser ignored) while the build
+resolved it; and `radii`/`shadows`/`borders`/Surface/Button/Input values
+that referenced another preset (`radii: { x: 'radius(2)' }`) had the same
+split. Both paths now resolve every token function identically. The density
+`:root` blocks the plugin emits are now formatted like every other generated
+block (`:root { --a: b; --c: d; }` on one line, the way `generateThemeCss`
+already wrote them) instead of PostCSS's default multi-line layout — a
+formatting change (+2 bytes on the default output: 50,608 → 50,610 for a
+one-rule entry, same 745 declarations), not a visual one. Through the CLI,
+`compile()` and the adapters (which stringify with `postcss-scss`) every
+generated block is now written on one line too. And the `@media` blocks the
+compiler creates for an author's responsive declaration now carry the
+author's own formatting: PostCSS infers the layout of a node created without
+`raws` from the first formatted node in the tree, which used to be the
+author's first rule and is now a generated block, so the cloned declarations
+copy the source declaration's `raws` instead — `.a { gap: xs(1rem) md(2rem); }`
+now clones `gap: 2rem` with the author's two-space indent rather than a
+depth-computed four (`fixtures/parity/expected/vars-responsive.json` was
+updated for exactly that whitespace).
+
+- **One grammar, resolved by the engines.** `tokenValueToCss(value)`
+  (`postcss-uxdsl/language`) is the one serializer for every theme value:
+  literal CSS, the token functions `space/density/color/palette/radius/
+  border/shadow` (plus `rounded`/`elevation`, the radius keywords, an alpha on
+  `palette`/`color`), responsive expressions, and `var()` passed through.
+  `foundations.ts` (Palette, Colors, Spacing, `modes.dark.palette`),
+  `typography.ts` (`typography_details`, legacy `typography`,
+  `fonts.families`), densities, the preset engine and the Surface/Button/
+  Input engines all call it, so the PostCSS plugin and `generateThemeCss`
+  produce the same block for the same value. `typography_details` fields may
+  now reference any token, not only `space()`/`density()`.
+- **The plugin rewrites the author's declarations only.** Every generated
+  theme node is marked, and the `$var`, responsive and token passes skip it.
+  The final pass that used to rewrite the generated `:root` blocks — the
+  reason the two paths diverged — no longer touches them.
+- **Parity test.** `test/build-runtime-parity.test.js`: for the packaged base
+  theme, each of the playground's four themes (merged exactly as
+  `themes.js` does) and a synthetic theme using every token function in every
+  family, every top-level block of the plugin's theme CSS (with the author's
+  rules removed) is byte-identical to a block of
+  `generateThemeCss(resolveTheme(theme))`, and vice versa; plus the audit's
+  twelve probe cases, an `applyTheme` check, and idempotency of the theme
+  output through the compiler. Block order still differs between the two
+  paths (the plugin appends most families after the author's rules); phase
+  1's next step, one insertion point, makes the whole string identical.
+- **Removed codes:** `UXD_TYPO_TOKEN` and the composed `UXD_EDGE_ALPHA`,
+  `UXD_SHADOW_ALPHA`, `UXD_SURFACE_ALPHA`, `UXD_BUTTON_ALPHA`,
+  `UXD_INPUT_ALPHA`, `UXD_PRESET_ALPHA`. A bad alpha is `UXD_TOKEN_ALPHA` and
+  a malformed key `UXD_TOKEN_KEY`, whichever family the value belongs to.
+- **Deprecated:** `presetValueToCss` and `spacingValueToCss` (both now call
+  `tokenValueToCss`); `RADIUS_KEYWORDS` and `normalizeTokenKey` move to
+  `language.ts` and stay re-exported from `edges`/`preset-engine`.
+- **`fonts.families` quoting** is the same on both paths: as written (the
+  runtime used to add quotes around a multi-word primary family).
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

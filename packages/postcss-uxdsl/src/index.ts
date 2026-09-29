@@ -46,7 +46,7 @@ import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
 import { presetValueToCss } from './preset-engine';
-import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { generateDensityCss, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { generateTypographyCss, TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 import type { UxdslBreakpointSpec, UxdslOptions } from './types';
@@ -214,7 +214,19 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // globals, and keeps `sources` to files that actually exist. Reference
       // diagnostics are unaffected: an anonymous Input already has no
       // `input.file`, so `issue.source` was undefined for these nodes anyway.
-      const themeGenerated = (css: string) => inheritSource(postcss.parse(css), undefined).nodes;
+      // Stability phase 1 (audit T1): every generated theme node is marked, and
+      // the value passes below (`$var` substitution, responsive expansion,
+      // token rewriting) run over the author's nodes only. The engines resolve
+      // the one value grammar themselves now, so the same `renderThemeCss`
+      // string `generateThemeCss` returns is what this plugin inserts — a
+      // final pass that also rewrote the generated `:root` blocks is what made
+      // the two paths differ (`radius(2)` resolved at build time only).
+      const generated = new WeakSet<ChildNode>();
+      const markGenerated = (nodes: ChildNode[]) => {
+        for (const node of nodes) { generated.add(node); (node as any).walk?.((child: ChildNode) => { generated.add(child); }); }
+        return nodes;
+      };
+      const themeGenerated = (css: string) => markGenerated(inheritSource(postcss.parse(css), undefined).nodes);
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
@@ -619,17 +631,16 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // *unresolved* override, not `effectiveTheme` (which now always
       // carries DEFAULT_THEME's own densities too).
       const effectiveDensities = getDensityTokens(rawTheme, densityTokens);
-      // Generate CSS variables for density tokens
+      // Generate CSS variables for density tokens. Stability phase 1: through
+      // the same string generator `generateThemeCss` uses, so the block is
+      // byte-identical on both paths (it used to be built node by node here,
+      // with PostCSS's own default formatting).
       if (includeTheme) {
-        for (const compiled of compileDensityRules(effectiveDensities, bps)) {
-          const rule = postcss.rule({ selector: ':root' });
-          for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
-          if (compiled.minWidth === null) insertAfterLeading(root, isPrelude, [rule]);
-          else {
-            const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
-            media.append(rule);
-            root.append(media);
-          }
+        // A copy: moving a node into `root` removes it from the parsed
+        // root's own live `nodes` array, which would skip its neighbour.
+        for (const node of [...themeGenerated(generateDensityCss(effectiveDensities, bps))]) {
+          if (node.type === 'rule') insertAfterLeading(root, isPrelude, [node]);
+          else root.append(node);
         }
       }
 
@@ -744,7 +755,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       if (varNames.length > 0) {
         const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
         root.walkDecls((decl) => {
-          if (typeof decl.value !== "string") return;
+          if (typeof decl.value !== "string" || generated.has(decl)) return;
           decl.value = decl.value.replace(varRefRE, (_m, name) => {
             return Object.prototype.hasOwnProperty.call(vars, name)
               ? vars[name]
@@ -842,10 +853,10 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         return p.toString().trim();
       }
 
-      // Walk declarations to handle palette()/space() and responsive bp(...) values
+      // Walk the author's declarations to handle palette()/space() and responsive bp(...) values
       root.walkDecls((decl) => {
         try {
-          if (typeof decl.value !== "string") return;
+          if (typeof decl.value !== "string" || generated.has(decl)) return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
         const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
 
@@ -905,7 +916,12 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             // `!important` from every breakpoint but the base one, so a
             // competing, non-responsive `!important` declaration elsewhere
             // in the cascade could still win at md/lg/xl.
-            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source });
+            // Stability phase 1: a declaration derived from the author's keeps
+            // the author's own formatting (`raws`). Without them PostCSS infers
+            // the style from the first formatted node in the tree — a generated
+            // one-line `:root` block now — and the author's media clones would
+            // silently follow the theme's layout instead of the author's.
+            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source, raws: { ...decl.raws } });
             (at as any).append(cloned);
             if (
               parentFallback &&
@@ -952,7 +968,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             bucket.set(bp, cloned);
             targetRule = cloned;
           }
-          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source });
+          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source, raws: { ...decl.raws } });
         });
         if (!baseOut) decl.remove();
         } catch (error) {
@@ -960,10 +976,11 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         }
       });
 
-      // Reuse the same resolver after substitutions and media cloning.
+      // Reuse the same resolver after substitutions and media cloning — over
+      // the author's nodes only; the generated theme is already resolved.
       root.walkDecls(decl => {
         try {
-          if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value);
+          if (typeof decl.value === 'string' && !generated.has(decl)) decl.value = rewriteFuncs(decl.value);
         } catch (error) {
           throw locateError(error, decl);
         }

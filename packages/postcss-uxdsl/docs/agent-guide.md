@@ -608,6 +608,20 @@ still has the old placement), compiled output puts every `@import` — the
 theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
+Theme values have one grammar, in every family and on both CSS paths
+(stability phase 1, audit T1): a literal CSS value; a token function —
+`space(k)`, `density(k)`, `color(family.shade[, alpha])`,
+`palette(family[.variant][, alpha])`, `radius(k|pill|full|circle)`,
+`border(k)`, `shadow(k)` — compiling to its `var(--uxdsl__<family>__<key>)`
+reference; a responsive expression over the theme's breakpoints (not in
+Spacing, Colors, Palette or `fonts.families`); and `var(--…)` as the escape
+hatch. Write `palette(surface.contrast)` in a theme, not the compiled name
+`var(--uxdsl__palette__surface-contrast)`; the reference pass checks that the
+token exists. The engines resolve this grammar themselves (`tokenValueToCss`,
+`postcss-uxdsl/language`), so the PostCSS plugin and `generateThemeCss` emit
+byte-identical blocks for the same theme — do not rely on a compiler pass to
+fix up a theme value, and do not add a second serializer.
+
 There is one theme validator, `validateTheme(theme, { references? })` from
 `postcss-uxdsl/ds-runtime` (stability phase 1; `validateAndNormalizeTheme` is a
 deprecated alias that no longer normalizes anything). The PostCSS plugin calls
