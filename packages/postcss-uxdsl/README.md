@@ -113,15 +113,19 @@ comma-separated list, including one with functional pseudo-classes —
 ### Live theming — change it with no rebuild at all
 
 ```ts
-import { updatePalette } from 'postcss-uxdsl/ds-runtime';
+import { applyTheme } from 'postcss-uxdsl/ds-runtime';
 
-updatePalette('primary.main', '#e11d48');
+applyTheme({}, { replace: true });                          // once: the override the project was built with
+applyTheme({ palette: { primary: { main: '#e11d48' } } });  // then: any value, any time
 ```
 
 Every `.btn` and every `palette(primary)` reference above updates
 instantly in the browser — no CSS rebuild, no page reload. The compiler
-only ever emitted `var(--uxdsl__palette__primary-main)`; this just
-changes that one custom property, and the cascade does the rest.
+only ever emitted `var(--uxdsl__palette__primary-main)`; `applyTheme`
+replaces that one custom property in the stylesheet it manages, and the
+cascade does the rest. It is the same JSON the build compiled, so a value
+that works in the theme file works here — see
+[Applying a theme at run time](#applying-a-theme-at-run-time-applytheme).
 
 <p align="center">
   <a href="https://uxdsl.vercel.app/">
@@ -147,19 +151,17 @@ Canonical defaults:
 
 Use this exported constant in integrations instead of duplicating literal values.
 
-### Runtime breakpoint API
+### Thresholds are compiled, not applied at run time
 
-The runtime supports live breakpoint updates by rewriting generated media queries:
-
-```ts
-import { breakpoints } from 'postcss-uxdsl/ds-runtime'
-
-breakpoints.get()                     // current map
-breakpoints.set({ md: 900 })         // apply new values
-breakpoints.update('lg', 1200)       // update one token
-breakpoints.reset()                  // reset to initial map
-breakpoints.load()                   // load persisted map from localStorage
-```
+A threshold is baked into every component's `@media` rule at build time, so
+there is no runtime call that moves one: `applyTheme({ breakpoints: { md:
+900 } })` is refused with `UXD_THEME_STRUCTURE`, and the fix is to change
+`breakpoints` in the theme file and rebuild. (The `breakpoints.update()`
+rewriter that used to exist regex-edited the compiled media queries of some
+stylesheets and left the theme's own untouched, so the two disagreed; it is
+gone.) To ask what a responsive value resolves to at a given width without a
+document — an editor, an inspector — use `inspectResponsiveValue` from
+`postcss-uxdsl/language`.
 
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
@@ -324,11 +326,9 @@ name verbatim (`{ typography: { "h1-size": "2rem" } }` emits
 this compiler assigns from a family/key pair. The packaged base theme has one
 such entry, `font-code`, so even a zero-config build emits `--font-code`.
 
-`postcss-uxdsl/ds-runtime`'s `updatePalette`/`getPalette`/`resetPalette`
-read and write only this canonical name — since 0.5.0-beta.1 they no
-longer also write/read a second, bare `--<token>` alias. If you were reading or
-setting a Palette token's CSS variable directly (outside these runtime
-functions), use `--uxdsl__palette__<token>`.
+`applyTheme` writes only this canonical name too; if you read a Palette
+token's CSS variable directly (`getComputedStyle(...).getPropertyValue`),
+use `--uxdsl__palette__<token>` — there is no bare `--<token>` alias.
 
 ## Naming collisions
 
@@ -903,29 +903,18 @@ Saving happens *after* the visual commit, so a storage failure comes back as
 `ok: true` with an explicit warning rather than pretending the theme did not
 apply — or pretending it was saved.
 
-### Upgrading from the per-token setters
+### One runtime API
 
-If your users customized a theme through `updatePalette`, `updateColor`,
-`updateSpacing` or `updateBreakpoint`, their work is in four separate keys
-(`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`).
-The first `loadPersistedTheme()` that finds nothing under the managed key
-converts those into one override, applies it, and clears them — in that order,
-and only after reading the new key back. A refused patch, a blocked write or a
-write the browser silently drops leaves all four keys exactly where they were,
-so a failure can never cost the user both copies. Pass
-`{ migrateLegacy: false }` to skip it.
-
-Undoing the old key format needs care, and the migration does not guess: a
-stored `primary-dark-hover` is `primary` + `dark-hover`, while
-`brand-accent-main` is `brand-accent` + `main`, and the string alone cannot
-tell them apart. The split is resolved against the palette and color family
-names your theme actually declares, longest match first; a token matching none
-of them is reported in `warnings` and skipped rather than filed under an
-invented family.
-
-A valid managed key always wins and is never merged with the legacy ones. A
-*corrupt* managed key is an error — it is not quietly replaced with whatever
-the old keys happen to contain.
+`applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and
+`loadPersistedTheme` are the whole browser API. The per-token setters that
+predated it (`updatePalette`, `updateColor`, `updateSpacing`, the
+`breakpoints`/`spacing`/`colors` objects, `link`/`subscribe`) are removed:
+they wrote inline styles on `<html>`, which beat any stylesheet, so a page
+that used both could call `applyTheme`, get `ok: true`, and see nothing
+change. Every value they could set is one `applyTheme` patch — the mapping is
+in the CHANGELOG under "Removed" — and `loadPersistedTheme({ key })` reads
+exactly that one key: it no longer converts the four keys the old setters
+persisted under.
 
 ### What it will refuse, and why
 
@@ -1103,7 +1092,7 @@ reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 fresh tarballs of all five coordinated packages, exercising `uxdsl-cli`'s
 `builds` array end to end: a theme entry and four component entries built
 from one `uxdsl.config.cjs`, a partial theme with `externalTokens` and a
-theme-file-only `breakpoints.xl`, zero duplicate `:root`/`#uxdsl-bp-meta`
+theme-file-only `breakpoints.xl`, exactly one entry defining `:root`
 across the five outputs, and both negative controls (an unknown token still
 fails; `--no-include-theme` overrides every entry).
 

@@ -65,8 +65,9 @@ async function main() {
   const initialPanel = read('panel-a.css');
   assert.match(initialTheme, /:root/, 'the theme entry must define :root');
   assert.doesNotMatch(initialPanel, /:root/, 'the component entry (includeTheme: false) must not define :root');
-  const bpMetaCount = (initialTheme + initialPanel).match(/#uxdsl-bp-meta/g)?.length || 0;
-  assert.equal(bpMetaCount, 1, 'expected exactly one #uxdsl-bp-meta across both entries');
+  // Stability phase 2: the `#uxdsl-bp-meta` marker is gone; ":root in exactly
+  // one entry" is asserted directly above instead of through the marker.
+  assert.doesNotMatch(initialTheme + initialPanel, /#uxdsl-bp-meta|@uxdsl-bp/, 'no entry carries the removed breakpoint marker');
   console.log('PASS: init --multi scaffolds a working builds project from the installed CLI.');
 
   // --- Phase 2 (MIG-B4-02 + MIG-B4-01): the build config itself (not a

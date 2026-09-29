@@ -425,9 +425,8 @@ npx uxdsl build --entry src/panel-a.uxdsl --out src/panel-a.css --no-include-the
 omitted, and `true` is the default when neither is set. With
 `--no-include-theme`, the entry still validates every `space()`/`palette()`/
 `@ds-surface`/`@ds-button`/`@ds-input` reference against the theme — it just
-skips writing the global `:root` definitions and the runtime breakpoint
-marker (`#uxdsl-bp-meta`), both of which belong to the one entry that does
-define the theme.
+skips writing the global `:root` definitions, which belong to the one entry
+that does define the theme.
 
 ### Breakpoints and the theme file
 
@@ -480,13 +479,13 @@ than leaving some freshly rebuilt and others missing or stale.
 **A `.module.css` entry must never define `:root`** (MIG-B6-24, FEAT-008):
 a CSS Modules loader (Next.js's own included) rejects a bare `:root`
 selector outright ("Selector :root is not pure"). An entry whose `outFile`
-ends in `.module.css` and would still emit `:root`/`#uxdsl-bp-meta` — its
-own `includeTheme` resolving to `true`, or a legacy import/explicit native
-CSS reintroducing either selector even with `includeTheme: false` — fails
-**before anything is written**, naming the entry:
+ends in `.module.css` and would still emit `:root` — its own `includeTheme`
+resolving to `true`, or a legacy import/explicit native CSS reintroducing the
+selector even with `includeTheme: false` — fails **before anything is
+written**, naming the entry:
 
 ```
-[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
+[uxdsl] Error: builds[1] (src/panel.module.css): this entry would emit :root, which CSS Modules reject ("Selector :root is not pure"). Set includeTheme: false for component entries.
 ```
 
 The fix is almost always `includeTheme: false` on that entry — name the

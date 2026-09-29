@@ -312,7 +312,7 @@ test('MIG-B3-01: uxdsl.config.cjs breakpoints win over the theme file\'s on the 
   assert.equal(config.breakpoints.xl, 1600);
 });
 
-test('MIG-B3-01: buildOnce with includeTheme: false emits no :root and no #uxdsl-bp-meta marker', async () => {
+test('MIG-B3-01: buildOnce with includeTheme: false emits no :root', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
   write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
@@ -321,11 +321,9 @@ test('MIG-B3-01: buildOnce with includeTheme: false emits no :root and no #uxdsl
   await cli.buildOnce(config);
   const css = fs.readFileSync(config.outFile, 'utf8');
   assert.doesNotMatch(css, /:root/);
-  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
-  assert.doesNotMatch(css, /@uxdsl-bp/);
 });
 
-test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root and the #uxdsl-bp-meta marker', async () => {
+test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root — and no breakpoint marker (stability phase 2)', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
@@ -334,7 +332,10 @@ test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root a
   await cli.buildOnce(config);
   const css = fs.readFileSync(config.outFile, 'utf8');
   assert.match(css, /:root/);
-  assert.match(css, /#uxdsl-bp-meta/);
+  // The `/*@uxdsl-bp …*/` trailer and `#uxdsl-bp-meta` rule fed the removed
+  // breakpoint rewriter; a theme entry ends with its last real rule now.
+  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
+  assert.doesNotMatch(css, /@uxdsl-bp/);
 });
 
 test('MIG-B3-01: a theme entry and a component entry compiled separately compose without any duplicate definitions', async () => {
@@ -350,11 +351,10 @@ test('MIG-B3-01: a theme entry and a component entry compiled separately compose
   panelConfig.includeTheme = false;
   await cli.buildOnce(panelConfig);
 
-  const combined = fs.readFileSync(themeConfig.outFile, 'utf8') + '\n' + fs.readFileSync(panelConfig.outFile, 'utf8');
-  const rootCount = (combined.match(/:root/g) || []).length;
-  const bpMetaCount = (combined.match(/#uxdsl-bp-meta/g) || []).length;
-  assert.ok(rootCount > 0, 'the theme entry must still define :root');
-  assert.equal(bpMetaCount, 1, `expected exactly one #uxdsl-bp-meta across both entries; got ${bpMetaCount}`);
+  const themeCss = fs.readFileSync(themeConfig.outFile, 'utf8');
+  const panelCss = fs.readFileSync(panelConfig.outFile, 'utf8');
+  assert.match(themeCss, /:root/, 'the theme entry must still define :root');
+  assert.doesNotMatch(panelCss, /:root/, 'the component entry must not define it a second time');
   // The component entry's own reference (@ds-surface) must still resolve —
   // includeTheme: false only skips emitting definitions, not validation.
   assert.match(panelConfig && fs.readFileSync(panelConfig.outFile, 'utf8'), /background/);
@@ -510,9 +510,7 @@ test('MIG-B3-02: buildOnce compiles a theme entry and a component entry from one
   const themeCss = fs.readFileSync(config.builds[0].outFile, 'utf8');
   const panelCss = fs.readFileSync(config.builds[1].outFile, 'utf8');
   assert.match(themeCss, /:root/);
-  assert.match(themeCss, /#uxdsl-bp-meta/);
   assert.doesNotMatch(panelCss, /:root/);
-  assert.doesNotMatch(panelCss, /#uxdsl-bp-meta/);
   assert.match(panelCss, /background/);
 });
 
@@ -1324,14 +1322,14 @@ test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a compile failure but
   assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')), false, 'nothing should have been written for a build that failed to compile');
 });
 
-// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root/
-// #uxdsl-bp-meta into a *.module.css output fails before anything is
-// written; more than one entry emitting the theme at all is a warning,
-// not an error.
+// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root into a
+// *.module.css output fails before anything is written; more than one entry
+// emitting the theme at all is a warning, not an error.
 
 test('MIG-B6-24: findThemeLeakSelector finds a real :root rule, not text inside a string or comment', () => {
   assert.equal(cli.findThemeLeakSelector(':root { --x: 1; }'), ':root');
-  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), '#uxdsl-bp-meta');
+  // The removed breakpoint marker is an ordinary rule now, not a theme leak.
+  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), null);
   assert.equal(cli.findThemeLeakSelector('.a, :root { color: red; }'), ':root', 'must catch :root inside a compound comma-separated selector');
   assert.equal(cli.findThemeLeakSelector('/* mentions :root in a comment */\n.a { color: red; }'), null);
   assert.equal(cli.findThemeLeakSelector('.a::before { content: ":root example"; }'), null);
@@ -1349,7 +1347,7 @@ test('MIG-B6-24: the exact reproduction fails before writing, naming the offendi
   const config = await cli.loadConfig({}, dir);
   await assert.rejects(
     () => cli.buildOnce(config),
-    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
+    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
   );
   assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing must be written, including the other, unrelated entry');
 });
@@ -1372,7 +1370,7 @@ test('MIG-B6-24: includeTheme: false does not exempt a .module.css entry whose o
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false };`);
   write(dir, 'src/panel.uxdsl', ':root { --leaked: 1; }\n.p { color: red; }');
   const config = await cli.loadConfig({}, dir);
-  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root and #uxdsl-bp-meta/);
+  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root, which CSS Modules reject/);
 });
 
 test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, naming both', async () => {
@@ -1394,7 +1392,7 @@ test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-inc
   const dir = mkTmpDir();
   write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
   const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
-  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root and #uxdsl-bp-meta/);
+  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root, which CSS Modules reject/);
 
   const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);
   await cli.buildOnce(passing); // Must not throw.

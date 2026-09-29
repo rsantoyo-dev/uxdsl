@@ -1,3 +1,6 @@
+// The browser runtime (`applyTheme` and friends) — the only part of this module
+// that touches a document. Everything below it is isomorphic: theme resolution,
+// validation, generation, the contrast gate and the per-family engines.
 export * from "./ds-runtime/index";
 export * from "./ds-runtime/theme-generator";
 export * from "./ds-runtime/theme-validate";
@@ -5,7 +8,6 @@ export * from "./ds-runtime/theme-validate";
 // MIG-B6-16 imports `checkThemeContrast` from here for `uxdsl theme --contrast`.
 export * from "./ds-runtime/contrast";
 export * from "./typography";
-export { default } from "./ds-runtime/index";
 
 export * from './edges';
 export * from './shadows';

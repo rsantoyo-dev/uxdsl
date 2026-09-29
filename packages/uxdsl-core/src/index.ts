@@ -30,37 +30,6 @@ const postcssAdvancedVariables = require('postcss-advanced-variables');
 // ever need to know it's running inside this monorepo.
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const uxdslPlugin = require('postcss-uxdsl');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const { DEFAULT_BREAKPOINTS } = require('postcss-uxdsl/ds-runtime');
-
-/** Accepts the same shapes `uxdsl-cli` already normalizes breakpoints
- * from: a plain `{ name: px }` map, `[name, px][]` pairs, or
- * `{ name, min|px }[]`. Kept here (not imported) because it's a pure,
- * ~15-line normalizer with no dependency of its own — duplicating it is
- * cheaper and safer than adding a cross-package import for it alone; the
- * CLI's own copy is being removed in favor of this one (see uxdsl.js's
- * `compileEntryToCss`, which now calls `compile()` instead). */
-function normalizeBpMap(input: unknown): Record<string, number> {
-  if (!input) return { ...DEFAULT_BREAKPOINTS };
-  const map: Record<string, number> = {};
-  if (Array.isArray(input)) {
-    input.forEach((it: any) => {
-      if (Array.isArray(it)) {
-        map[String(it[0])] = Number(it[1]);
-      } else if (it && typeof it === 'object') {
-        const name = String(it.name || '').trim();
-        const px = Number(it.min ?? it.px);
-        if (name && !Number.isNaN(px)) map[name] = px;
-      }
-    });
-    return map;
-  }
-  Object.keys(input as Record<string, unknown>).forEach((k) => {
-    const v = (input as Record<string, unknown>)[k];
-    if (typeof v === 'number' && !Number.isNaN(v)) map[k] = v;
-  });
-  return map;
-}
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssImportDefaultResolveId = require('postcss-import/lib/resolve-id');
@@ -299,9 +268,7 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
     }),
   ];
 
-  // MIG-B6-21: `annotation: false` because this function appends the
-  // breakpoint metadata *after* the stylesheet, so any annotation PostCSS
-  // placed would end up mid-file; 'inline' re-adds its own data URI at the
+  // MIG-B6-21: `annotation: false` — 'inline' adds its own data URI at the
   // very end below, and 'external' leaves the annotation to whoever knows
   // the final `.map` filename (the CLI). `inline: false` keeps the map out
   // of the CSS in both cases so there is exactly one place that decides.
@@ -329,31 +296,24 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
     if (comment.raws.inline) comment.remove();
   });
 
-  // MIG-B6-18 item 1: the same breakpoint metadata `uxdsl-cli` used to
-  // append only from its own build path (`/*@uxdsl-bp …*/` + a
-  // `#uxdsl-bp-meta` marker rule, read back by the runtime to detect the
-  // active breakpoint from the CSSOM) — moved here so every `compile()`
-  // caller gets it, not just the CLI. Scoped to `includeTheme` for the
-  // same reason the CLI scoped it: it's global-theme information that
-  // belongs to the one entry defining the theme, not to every
-  // component/CSS-Module entry compiled against it.
   // MIG-B6-21: the map is only produced by PostCSS's own stringification, so
   // the mapped path has to read `result.css`. The unmapped path keeps calling
   // `root.toString(postcssScss)` exactly as before, so `sourceMap: false`
   // stays byte-identical to this same compiler without the option — which is
   // this story's own acceptance criterion, and why the two are not unified.
+  //
+  // Nothing is appended after the stylesheet any more. The `/*@uxdsl-bp …*/`
+  // comment and `#uxdsl-bp-meta` rule that used to follow it existed only for
+  // the removed breakpoint rewriter (stability phase 2): the runtime no longer
+  // reads breakpoints back from CSS, and a marker that named thresholds the
+  // theme could override anyway was one more thing that could lie.
   let finalCss = sourceMap === false ? result.root.toString(postcssScss) : result.css;
-  if (includeTheme) {
-    const bpMap = normalizeBpMap(config.breakpoints);
-    const bpJson = JSON.stringify(bpMap);
-    finalCss = `${finalCss}\n/*@uxdsl-bp ${bpJson}*/\n#uxdsl-bp-meta { --bp: '${bpJson}'; display: none; }`;
-  }
 
-  // 'inline' is self-contained, so it is finished here — appended last, after
-  // the breakpoint metadata, because a sourceMappingURL comment only counts
-  // when it is the final one in the file. 'external' returns the map instead
-  // and leaves the annotation to the writer, which is the only side that
-  // knows what the `.map` will be called.
+  // 'inline' is self-contained, so it is finished here — appended last,
+  // because a sourceMappingURL comment only counts when it is the final one
+  // in the file. 'external' returns the map instead and leaves the annotation
+  // to the writer, which is the only side that knows what the `.map` will be
+  // called.
   let map: string | undefined;
   if (sourceMap !== false) {
     map = result.map.toString();

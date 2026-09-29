@@ -182,9 +182,8 @@ test('watch mode reloads when the build config (not the theme file) delegates to
   const dir = mkProject();
   installPostcssUxdsl(dir);
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  // A real responsive declaration is required — the breakpoint value alone
-  // (e.g. via the #uxdsl-bp-meta marker) is serialized as `"xl":1280`, with
-  // no "px" suffix, so only an actual @media rule proves the value changed.
+  // A real responsive declaration is required: only an actual @media rule
+  // proves the breakpoint value reached the compiled output.
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.card { width: xs(100%) xl(50%); }');
   fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1280 } };\n");
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = require('./real-config.js');\n");

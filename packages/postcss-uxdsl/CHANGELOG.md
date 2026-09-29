@@ -9,6 +9,52 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 2 (1): one runtime API.
+
+### Removed
+
+The per-token runtime is gone. `postcss-uxdsl/ds-runtime`'s browser API is
+now exactly `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme`,
+`loadPersistedTheme({ key })`, `DEFAULT_THEME_STYLE_ID`,
+`DEFAULT_THEME_STORAGE_KEY` and their types. Why: the old setters wrote inline
+custom properties on `<html>` and held module-level singletons, while
+`applyTheme` writes one `<style>` per document — and an inline declaration beats
+any stylesheet, so a page that had called `updatePalette` could then call
+`applyTheme`, get `ok: true`, and see nothing change. Two state models for one
+theme is one too many. Every removed call is one `applyTheme` patch:
+
+| Removed | Use instead |
+| --- | --- |
+| `updatePalette('primary.main', v)`, `applyPalette({...})` | `applyTheme({ palette: { primary: { main: v } } })` |
+| `updateColor('gray.300', v)`, `applyColors({...})` | `applyTheme({ colors: { gray: { 300: v } } })` |
+| `updateSpacing(4, v)`, `applySpacing({...})` | `applyTheme({ spacing: { 4: v } })` |
+| `getPalette(t)`, `getColor(t)`, `getSpacing(t)` | `getAppliedTheme()` for the override; `getComputedStyle(el).getPropertyValue('--uxdsl__palette__primary-main')` for the computed value |
+| `resetPalette()`, `resetColors()`, `resetSpacing()` | `resetTheme()` (restores the override the project initialized with) |
+| `loadPersisted()`, `loadPersistedColors()`, `loadPersistedSpacing()`, `loadPersistedBreakpoints()` | `loadPersistedTheme({ key })` |
+| `subscribe(listener)` | `subscribeTheme(listener)` — notified with the applied override after each success |
+| `link(alias, source)`, `unlink(...)` | none: express the dependency in the theme (`palette.primary.main: "var(--uxdsl__color__blue-700)"`) |
+| `updateBreakpoint('md', 900)`, `applyBreakpoints`, `getBreakpoints`, `resetBreakpoints`, the `breakpoints` object | none: a threshold is compiled into every component's media queries. `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`; edit the theme file and rebuild. For inspection at a width, `inspectResponsiveValue` (`postcss-uxdsl/language`) |
+| the `spacing` and `colors` objects, the default export (`import runtime from 'postcss-uxdsl/ds-runtime'`) | named imports of the API above |
+| `LEGACY_STORAGE_KEYS`, `loadPersistedTheme({ migrateLegacy })` | none: the four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`) are no longer read, converted or removed. `loadPersistedTheme` reads its one key and nothing else |
+| `__resetThemeStateForTests` (public barrel) | still exists on the internal `ds-runtime/apply-theme` module for this package's own tests; it was never part of the API |
+
+- **Removed (uxdsl-core, CLI):** compiled output no longer ends with the
+  `/*@uxdsl-bp {…}*/` comment and the `#uxdsl-bp-meta { --bp: '…'; display:
+  none; }` rule. They existed so the removed breakpoint rewriter could read the
+  thresholds back from the CSSOM, and they named thresholds a theme could
+  override anyway (`compile({ source }, { theme: { breakpoints: { md: 800 } } })`
+  emitted `@media (min-width: 800px)` while the marker said 768). A theme
+  entry now ends with its last real rule; a component entry (`includeTheme:
+  false`) is unchanged. The CLI's CSS-Modules guard accordingly reports
+  "this entry would emit :root" (no longer ":root and #uxdsl-bp-meta").
+- `DEFAULT_BREAKPOINTS` is still exported from `postcss-uxdsl/ds-runtime` and
+  `postcss-uxdsl/language`: it is data, not the rewriter.
+- **Playground:** the breakpoints demo no longer edits thresholds (the runtime
+  never could, honestly); it simulates a width with `inspectResponsiveValue`.
+  The palette, colors and spacing editors write the theme JSON only, which
+  `ThemeContext` applies through `applyTheme`; nothing writes inline styles on
+  `<html>` any more, so `ThemeContext` no longer has to clear them.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

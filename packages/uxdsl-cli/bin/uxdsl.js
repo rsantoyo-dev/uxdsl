@@ -942,9 +942,8 @@ function findThemeLeakSelector(css) {
   postcss.parse(css).walkRules((rule) => {
     if (found) return;
     for (const selector of postcss.list.comma(rule.selector)) {
-      const trimmed = selector.trim();
-      if (trimmed === ':root' || trimmed === '#uxdsl-bp-meta') {
-        found = trimmed;
+      if (selector.trim() === ':root') {
+        found = ':root';
         return;
       }
     }
@@ -954,21 +953,20 @@ function findThemeLeakSelector(css) {
 
 // MIG-B6-24 (FEAT-008): before writing anything (called from buildOnce
 // against each entry's already-compiled, in-memory CSS), refuses an entry
-// whose outFile is named like a CSS Module and would still define :root/
-// #uxdsl-bp-meta — Next.js (and other CSS Modules loaders) reject a bare
-// `:root` selector ("Selector :root is not pure"), and the CLI previously
-// never noticed. `includeTheme: false` is the normal way to avoid this;
-// this only catches the actual output, not just the config flag, since a
-// legacy import or explicit native CSS could still reintroduce either
-// selector even with `includeTheme: false`. Not a general CSS Modules
-// purity validator — only these two known selectors this compiler itself
-// can produce.
+// whose outFile is named like a CSS Module and would still define :root —
+// Next.js (and other CSS Modules loaders) reject a bare `:root` selector
+// ("Selector :root is not pure"), and the CLI previously never noticed.
+// `includeTheme: false` is the normal way to avoid this; this only catches
+// the actual output, not just the config flag, since a legacy import or
+// explicit native CSS could still reintroduce the selector even with
+// `includeTheme: false`. Not a general CSS Modules purity validator — only
+// the one selector this compiler itself produces for the theme.
 function assertNoThemeLeakIntoCssModule(outFile, css, label) {
   if (!/\.module\.css$/i.test(outFile)) return;
   const leaked = findThemeLeakSelector(css);
   if (!leaked) return;
   throw new Error(
-    `${label}this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ` +
+    `${label}this entry would emit :root, which CSS Modules reject ` +
     '("Selector :root is not pure"). Set includeTheme: false for component entries.'
   );
 }
@@ -1191,7 +1189,7 @@ async function buildOnce(config, entryIndices) {
 
   // MIG-B6-24 (FEAT-008): checked against every entry's actual compiled
   // output, before any of them are written — a CSS-Module-named outFile
-  // that would still define :root/#uxdsl-bp-meta fails the whole build
+  // that would still define :root fails the whole build
   // here, same as any other compile error (item 4: nothing partial gets
   // written). More than one entry emitting the theme at all (regardless
   // of outFile name) is a warning, not an error — usually intentional to

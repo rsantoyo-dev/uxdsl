@@ -186,6 +186,14 @@ test('MIG-B6-18: a bare package-specifier @import (not relative, not "~") resolv
 // UXDSL-specific to do — a positive control that this pipeline doesn't
 // touch ordinary CSS it doesn't need to. ---
 
+test('stability phase 2: a theme entry ends with its last rule — no /*@uxdsl-bp*/ trailer and no #uxdsl-bp-meta rule', async () => {
+  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: true });
+  assert.doesNotMatch(css, /@uxdsl-bp/);
+  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
+  assert.match(css, /:root/, 'control: the theme itself is still emitted');
+  assert.ok(css.trimEnd().endsWith('}'), 'nothing is appended after the stylesheet');
+});
+
 test('MIG-B6-18 (positive control): plain native CSS with no UXDSL functions compiles unchanged', async () => {
   const css = await core('.a {\n  color: red;\n  margin: 0 auto;\n}\n', { includeTheme: false });
   assert.match(css, /\.a\s*\{\s*color:\s*red;\s*margin:\s*0 auto;?\s*\}/);

@@ -28,7 +28,7 @@ async function main() {
   // the exact "theme + N CSS Module panels" shape from the origin report.
   // MIG-B6-24 (FEAT-008): the theme entry's own outFile deliberately does
   // NOT end in .module.css — that combination (a CSS-Modules-named file
-  // that still defines :root/#uxdsl-bp-meta) is exactly what that story
+  // that still defines :root) is exactly what that story
   // makes the CLI refuse, matching real Next.js CSS Modules behavior
   // ("Selector :root is not pure"). Only the four component panels, which
   // compile with includeTheme: false and never define :root themselves,
@@ -78,15 +78,16 @@ async function main() {
     d: read('panel-d.module.css'),
   };
 
-  // --- Central assertion: no duplicate :root/#uxdsl-bp-meta across entries ---
+  // --- Central assertion: exactly one entry defines :root ---
   for (const key of ['a', 'b', 'c', 'd']) {
     assert.doesNotMatch(outputs[key], /:root/, `panel-${key} (includeTheme: false) must not define :root`);
   }
   assert.match(outputs.theme, /:root/, 'the theme entry must still define :root');
+  // Stability phase 2: the `#uxdsl-bp-meta` marker that used to trail a theme
+  // entry (and was counted here as a proxy for "one theme entry") is gone.
   const combined = Object.values(outputs).join('\n');
-  const bpMetaCount = (combined.match(/#uxdsl-bp-meta/g) || []).length;
-  assert.equal(bpMetaCount, 1, `expected exactly one #uxdsl-bp-meta across all 5 entries; got ${bpMetaCount}`);
-  console.log('PASS: zero duplicate :root/#uxdsl-bp-meta across 5 tarball-installed CLI-built entries.');
+  assert.doesNotMatch(combined, /#uxdsl-bp-meta|@uxdsl-bp/, 'no entry carries the removed breakpoint marker');
+  console.log('PASS: exactly one of 5 tarball-installed CLI-built entries defines :root, and none carries a breakpoint marker.');
 
   // --- Breakpoint declared only in the theme file reaches every entry ---
   assert.match(outputs.a, /@media \(min-width: 1440px\)/, 'theme-only breakpoints.xl must reach a component entry\'s own responsive declarations');

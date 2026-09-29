@@ -639,11 +639,15 @@ rebuild. Token values, responsive expressions over the same thresholds,
 dark-mode colors and newly added tokens apply normally. Do not work around a
 refusal by writing CSS by hand; rebuild and reinitialize.
 
-The first `loadPersistedTheme()` with nothing under the managed key migrates the
-four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`,
-`uxdsl:breakpoints`) into one override, and only removes them after the new key
-is written *and* read back. Batching belongs outside `applyTheme`, in the editor
-that produces the patches.
+`applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and
+`loadPersistedTheme({ key })` are the whole browser API. The per-token setters
+(`updatePalette`, `updateColor`, `updateSpacing`, `updateBreakpoint`, the
+`breakpoints`/`spacing`/`colors` objects, `link`/`subscribe`) are removed
+(stability phase 2): they wrote inline styles on `<html>`, which beat the
+managed stylesheet. Express any of them as one `applyTheme` patch —
+`applyTheme({ spacing: { 4: '1rem' } })` for what `updateSpacing(4, '1rem')`
+did. `loadPersistedTheme` reads exactly one key and converts nothing.
+Batching belongs outside `applyTheme`, in the editor that produces the patches.
 
 On the server there is no state to share: use `generateThemeCss(theme)`, which
 is pure and per request, and render the result yourself.
@@ -662,14 +666,15 @@ element as long as it stays first, which `generateThemeCss` already
 guarantees; a consumer that itself prepends anything to `css` before
 assigning `textContent` must preserve that ordering. Browser edits do not save the source JSON automatically.
 Changing a token can update its consumers after the theme is applied; it does not
-rewrite independently compiled component media rules automatically. Use the
-supported breakpoint integration and verify actual stylesheet behavior.
-
-The browser `breakpoints` API exposes `get()`, `update(name, width)` and
-`subscribe(listener)`; the returned unsubscribe function is used for cleanup.
-Its configuration notifications are not viewport-resize notifications.
-Playground breakpoint simulation is inspection at a supplied width, not an actual
-browser resize. Validate real layouts with a real viewport too.
+rewrite independently compiled component media rules — which is why a
+threshold cannot be moved at run time at all: `applyTheme({ breakpoints:
+{ md: 900 } })` is refused with `UXD_THEME_STRUCTURE`. Moving one is an edit
+to the theme file and a rebuild. There is no runtime breakpoint API.
+Simulating a width is inspection, not a change: `inspectResponsiveValue`
+(`postcss-uxdsl/language`) reports the active breakpoint and the resolved
+value at a supplied width without a document; that is what the playground's
+breakpoint demo does, not an actual browser resize. Validate real layouts
+with a real viewport too.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
@@ -891,8 +896,6 @@ Implementation contracts clarified by this plan:
 - Runtime application is synchronous; the editor batches input outside the API.
   Initialize with the project's build/SSR override. Structural component changes
   require regeneration; variable parity alone is not behavioral parity.
-- Preserve legacy scopes/events/breakpoint behavior through documented adapters;
-  do not silently turn a scoped setter into a global theme change.
 - Extract configurable defaults into the base JSON while retaining defaults <
   same-compilation legacy < explicit project override precedence.
 - Per-file atomic rename is not a multi-file transaction. Watch must retain

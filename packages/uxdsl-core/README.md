@@ -96,7 +96,7 @@ const { css, map, dependencies, warnings } = await compile(
     theme,               // effective theme, same shape as postcss-uxdsl's `theme` option
     references,          // same shape as postcss-uxdsl's `references` option
     breakpoints,         // same shape as postcss-uxdsl's `breakpoints` option
-    includeTheme: true,  // emit the theme's :root tokens and append the `/*@uxdsl-bp ...*/` + #uxdsl-bp-meta marker (default: true)
+    includeTheme: true,  // emit the theme's :root tokens (default: true)
     to: './dist/app.css',
     sourceMap: false,    // false (default) | 'inline' | 'external'
     sourcesContent: true // embed the original sources in the map (default: true)
