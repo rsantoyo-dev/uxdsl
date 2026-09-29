@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './NavigationCardLink.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import React from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -24,20 +27,20 @@ export default function NavigationCardLink({
   return (
     <Link 
       href={href} 
-      className={`navigation-card-link variant-${variant} ${className}`}
+      className={scopedClasses(`navigation-card-link variant-${variant} ${className}`, styles)}
     >
-      <div className="nav-card-content">
+      <div className={scopedClasses("nav-card-content", styles)}>
         {icon && (
-          <div className={`nav-card-icon ${variant}`}>
+          <div className={scopedClasses(`nav-card-icon ${variant}`, styles)}>
             {icon}
           </div>
         )}
-        <div className="nav-card-text">
-          <h3 className="nav-card-title">{title}</h3>
-          {description && <p className="nav-card-desc">{description}</p>}
+        <div className={scopedClasses("nav-card-text", styles)}>
+          <h3 className={scopedClasses("nav-card-title", styles)}>{title}</h3>
+          {description && <p className={scopedClasses("nav-card-desc", styles)}>{description}</p>}
         </div>
       </div>
-      <div className="nav-card-arrow">
+      <div className={scopedClasses("nav-card-arrow", styles)}>
         <ArrowRight size={20} />
       </div>
     </Link>

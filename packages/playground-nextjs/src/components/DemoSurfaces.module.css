@@ -1,0 +1,1490 @@
+/* DemoSurfaces styles - Scoped */
+.module-root {
+  .surfaces-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__4);
+    /* Polyfill for missing 0 space token in some builds */
+    --uxdsl__space__0: 0px;
+  }
+  .surfaces-header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+
+  .surfaces-viz-container { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .surfaces-viz-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--uxdsl__density__4);
+    background: var(--uxdsl__palette__surface-light);
+    border-radius: var(--uxdsl__radius__2);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    min-height: 300px;
+  }
+
+  .surfaces-stack {
+    position: relative;
+    width: 300px;
+    height: 200px;
+  }
+
+  .surface-card-viz {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .surface-card-viz:hover {
+    transform: translateY(-5px);
+  }
+
+  .surface-card-viz--contained {
+    top: 0;
+    left: 0;
+    z-index: 1;
+  }
+
+  .surface-card-viz--outlined {
+    top: 20px;
+    left: 20px;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+  }
+
+  .surface-card-viz--flat {
+    top: 40px;
+    left: 40px;
+    z-index: 3;
+  }
+
+  .surfaces-grid-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .surfaces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: var(--uxdsl__density__2);
+  }
+
+  .surface-card {
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__2);
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+    border-radius: var(--uxdsl__radius__1);
+  }
+
+  .surface-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding-bottom: var(--uxdsl__density__1);
+    border-bottom: 1px solid color-mix(in srgb, var(--uxdsl__palette__neutral-light) 50%, transparent);
+  }
+
+  .surface-card__title-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__1);
+  }
+
+  .surface-card__desc {
+    font-size: 0.85rem;
+    color: var(--uxdsl__palette__neutral-dark);
+    line-height: 1.4;
+    max-width: 90%;
+  }
+
+  .surface-card__token {
+    font-family: var(--uxdsl__typography__body-font-family);
+    font-size: var(--uxdsl__typography__body-size);
+    line-height: var(--uxdsl__typography__body-line);
+    font-weight: var(--uxdsl__typography__body-weight);
+    letter-spacing: var(--uxdsl__typography__body-spacing);
+    margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+    font-weight: bold;
+    font-family: monospace;
+    color: var(--uxdsl__palette__primary-main);
+    background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 10%, transparent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    width: fit-content;
+  }
+
+  .surfaces-doc-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .surface-doc-card {
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__3);
+    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 30%, transparent);
+  }
+
+  .surface-doc-intro {
+    margin-bottom: var(--uxdsl__density__2);
+    line-height: 1.5;
+  }
+
+  .surface-doc-subtitle {
+    font-weight: bold;
+    margin-bottom: var(--uxdsl__density__1);
+    color: var(--uxdsl__palette__primary-dark);
+  }
+
+  .surface-doc-list {
+    list-style: disc;
+    padding-left: var(--uxdsl__density__3);
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: var(--uxdsl__density__1);
+  }
+
+  .surface-doc-list li {
+    font-size: 0.9rem;
+  }
+
+  .surface-card__edit-btn {
+    padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+    font-size: 0.8rem;
+    cursor: pointer;
+    background: var(--uxdsl__palette__surface-light);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    border-radius: var(--uxdsl__radius__1);
+    transition: all 0.2s ease;
+  }
+
+  .surface-card__edit-btn:hover {
+    border-color: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  .surface-card__preview {
+    height: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: color-mix(in srgb, var(--uxdsl__palette__neutral-light) 10%, transparent);
+    border-radius: var(--uxdsl__radius__1);
+    padding: var(--uxdsl__density__2);
+  }
+
+  .surface-preview-box {
+    min-width: 120px;
+    min-height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .surface-props-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__2);
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__neutral-dark);
+  }
+
+  .surface-prop {
+    display: flex;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .surface-prop-key {
+    opacity: 0.7;
+    min-width: 60px;
+  }
+
+  .surfaces-playground-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .surface-playground {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__3);
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__3);
+    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 30%, transparent);
+  }
+
+  @media (min-width: 768px) {
+
+  .surface-playground {
+      flex-direction: row;
+      align-items: flex-start;
+  }
+  }
+
+  .surface-playground__controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+    min-width: 250px;
+  }
+
+  .surface-playground__controls label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__1);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .surface-playground__controls select { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-tone-neutral-base-caret, var(--uxdsl__input__outlined-base-caret)); --uxdsl__input__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__input__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__input__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+    padding: var(--uxdsl__density__1);
+  }
+.surface-playground__controls select::placeholder { color: var(--uxdsl__input__outlined-tone-neutral-base-placeholder, var(--uxdsl__input__outlined-base-placeholder)); }
+.surface-playground__controls select:focus { border: var(--uxdsl__input__outlined-tone-neutral-focus-border, var(--uxdsl__input__outlined-focus-border)); }
+.surface-playground__controls select:invalid, .surface-playground__controls select[aria-invalid="true"] { border: var(--uxdsl__input__outlined-tone-neutral-invalid-border, var(--uxdsl__input__outlined-invalid-border)); }
+.surface-playground__controls select:disabled, .surface-playground__controls select[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-tone-neutral-disabled-opacity, var(--uxdsl__input__outlined-disabled-opacity)); }
+
+  .surface-playground__preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--uxdsl__palette__neutral-light) 10%, transparent);
+    border-radius: var(--uxdsl__radius__2);
+    padding: var(--uxdsl__density__4);
+    min-height: 300px;
+  }
+
+  .surface-playground__box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--uxdsl__density__2);
+  }
+
+  /* Base Surface Classes (Variant + Tone + Density) */
+        .surface-playground__box--contained-primary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-primary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-primary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-primary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-primary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-primary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__primary-main);
+          color: var(--uxdsl__palette__primary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-secondary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__secondary-main);
+          color: var(--uxdsl__palette__secondary-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-success-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__success-main);
+          color: var(--uxdsl__palette__success-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-info-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__info-main);
+          color: var(--uxdsl__palette__info-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-warning-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__warning-main);
+          color: var(--uxdsl__palette__warning-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-error-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__error-main);
+          color: var(--uxdsl__palette__error-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+        .surface-playground__box--contained-neutral-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: var(--uxdsl__palette__neutral-main);
+          color: var(--uxdsl__palette__neutral-contrast);
+          border: var(--uxdsl__surface__contained-border);
+          box-shadow: var(--uxdsl__surface__contained-shadow);
+        }
+    /* Handle 'none' tone */
+      .surface-playground__box--contained-none-0 {
+        padding: var(--uxdsl__density__0);
+        border-radius: var(--uxdsl__radius__0);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+      .surface-playground__box--contained-none-1 {
+        padding: var(--uxdsl__density__1);
+        border-radius: var(--uxdsl__radius__1);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+      .surface-playground__box--contained-none-2 {
+        padding: var(--uxdsl__density__2);
+        border-radius: var(--uxdsl__radius__2);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+      .surface-playground__box--contained-none-3 {
+        padding: var(--uxdsl__density__3);
+        border-radius: var(--uxdsl__radius__3);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+      .surface-playground__box--contained-none-4 {
+        padding: var(--uxdsl__density__4);
+        border-radius: var(--uxdsl__radius__4);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+      .surface-playground__box--contained-none-5 {
+        padding: var(--uxdsl__density__5);
+        border-radius: var(--uxdsl__radius__5);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+      }
+        .surface-playground__box--outlined-primary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-primary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-primary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-primary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-primary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-primary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: 1px solid var(--uxdsl__palette__primary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-secondary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: 1px solid var(--uxdsl__palette__secondary-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-success-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: 1px solid var(--uxdsl__palette__success-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-info-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: 1px solid var(--uxdsl__palette__info-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-warning-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: 1px solid var(--uxdsl__palette__warning-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-error-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: 1px solid var(--uxdsl__palette__error-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+        .surface-playground__box--outlined-neutral-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: 1px solid var(--uxdsl__palette__neutral-main);
+          box-shadow: var(--uxdsl__surface__outlined-shadow);
+        }
+    /* Handle 'none' tone */
+      .surface-playground__box--outlined-none-0 {
+        padding: var(--uxdsl__density__0);
+        border-radius: var(--uxdsl__radius__0);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+      .surface-playground__box--outlined-none-1 {
+        padding: var(--uxdsl__density__1);
+        border-radius: var(--uxdsl__radius__1);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+      .surface-playground__box--outlined-none-2 {
+        padding: var(--uxdsl__density__2);
+        border-radius: var(--uxdsl__radius__2);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+      .surface-playground__box--outlined-none-3 {
+        padding: var(--uxdsl__density__3);
+        border-radius: var(--uxdsl__radius__3);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+      .surface-playground__box--outlined-none-4 {
+        padding: var(--uxdsl__density__4);
+        border-radius: var(--uxdsl__radius__4);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+      .surface-playground__box--outlined-none-5 {
+        padding: var(--uxdsl__density__5);
+        border-radius: var(--uxdsl__radius__5);
+        background: var(--uxdsl__surface__outlined-bg);
+        color: var(--uxdsl__surface__outlined-color);
+        border: var(--uxdsl__surface__outlined-border);
+        box-shadow: var(--uxdsl__surface__outlined-shadow);
+      }
+        .surface-playground__box--flat-primary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-primary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-primary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-primary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-primary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-primary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__primary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-secondary-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__secondary-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-success-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__success-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-info-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__info-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-warning-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__warning-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-error-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__error-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-0 {
+          padding: var(--uxdsl__density__0);
+          border-radius: var(--uxdsl__radius__0);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-1 {
+          padding: var(--uxdsl__density__1);
+          border-radius: var(--uxdsl__radius__1);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-2 {
+          padding: var(--uxdsl__density__2);
+          border-radius: var(--uxdsl__radius__2);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-3 {
+          padding: var(--uxdsl__density__3);
+          border-radius: var(--uxdsl__radius__3);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-4 {
+          padding: var(--uxdsl__density__4);
+          border-radius: var(--uxdsl__radius__4);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+        .surface-playground__box--flat-neutral-5 {
+          padding: var(--uxdsl__density__5);
+          border-radius: var(--uxdsl__radius__5);
+          background: transparent;
+          color: var(--uxdsl__palette__neutral-main);
+          border: var(--uxdsl__surface__flat-border);
+          box-shadow: var(--uxdsl__surface__flat-shadow);
+        }
+    /* Handle 'none' tone */
+      .surface-playground__box--flat-none-0 {
+        padding: var(--uxdsl__density__0);
+        border-radius: var(--uxdsl__radius__0);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+      .surface-playground__box--flat-none-1 {
+        padding: var(--uxdsl__density__1);
+        border-radius: var(--uxdsl__radius__1);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+      .surface-playground__box--flat-none-2 {
+        padding: var(--uxdsl__density__2);
+        border-radius: var(--uxdsl__radius__2);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+      .surface-playground__box--flat-none-3 {
+        padding: var(--uxdsl__density__3);
+        border-radius: var(--uxdsl__radius__3);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+      .surface-playground__box--flat-none-4 {
+        padding: var(--uxdsl__density__4);
+        border-radius: var(--uxdsl__radius__4);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+      .surface-playground__box--flat-none-5 {
+        padding: var(--uxdsl__density__5);
+        border-radius: var(--uxdsl__radius__5);
+        background: var(--uxdsl__surface__flat-bg);
+        color: var(--uxdsl__surface__flat-color);
+        border: var(--uxdsl__surface__flat-border);
+        box-shadow: var(--uxdsl__surface__flat-shadow);
+      }
+
+  /* Radius Utility Classes */
+    .demo-radius-0 {
+        border-radius: 0 !important
+    }
+    .demo-radius-1 {
+        border-radius: var(--uxdsl__radius__1) !important
+    }
+    .demo-radius-2 {
+        border-radius: var(--uxdsl__radius__2) !important
+    }
+    .demo-radius-3 {
+        border-radius: var(--uxdsl__radius__3) !important
+    }
+    .demo-radius-4 {
+        border-radius: var(--uxdsl__radius__4) !important
+    }
+    .demo-radius-5 {
+        border-radius: var(--uxdsl__radius__5) !important
+    }
+
+  /* Shadow Utility Classes */
+    .demo-shadow-0 {
+        box-shadow: none !important
+    }
+    .demo-shadow-1 {
+        box-shadow: var(--uxdsl__shadow__1) !important
+    }
+    .demo-shadow-2 {
+        box-shadow: var(--uxdsl__shadow__2) !important
+    }
+    .demo-shadow-3 {
+        box-shadow: var(--uxdsl__shadow__3) !important
+    }
+    .demo-shadow-4 {
+        box-shadow: var(--uxdsl__shadow__4) !important
+    }
+    .demo-shadow-5 {
+        box-shadow: var(--uxdsl__shadow__5) !important
+    }
+}

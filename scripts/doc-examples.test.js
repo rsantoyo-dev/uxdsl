@@ -52,6 +52,15 @@ test('jsx: a static SyntaxHighlighter example is compiled as documentation', () 
   assert.deepEqual(extractJsx(text).map(block => block.code), ['.a { padding: density(2); }']);
 });
 
+test('jsx: CSS Module class mapping does not hide documentation examples', () => {
+  const text = [
+    'const theme = `{ "spacing": { "1": "1px" } }`',
+    '<pre><code className={scopedClasses("language-json", styles)}>{theme}</code></pre>',
+    '<pre><code className={scopedClasses("language-css", styles)}>{`.a { padding: space(1); }`}</code></pre>',
+  ].join('\n');
+  assert.deepEqual(extractJsx(text).map(block => block.lang), ['json', 'css']);
+});
+
 test('a valid example holds; an unknown token fails, and says so', async () => {
   assert.deepEqual(await runExample({ code: '.a { padding: density(2); }', theme: null }), []);
   const problems = await runExample({ code: '.a { background: palette(nope.main); }', theme: null });

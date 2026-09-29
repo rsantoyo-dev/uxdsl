@@ -1,0 +1,58 @@
+/* The preview uses these compiled rules. Card count changes only the DOM. */
+.module-root {
+  .productivity-controls { margin-bottom: var(--uxdsl__density__4); }
+  .productivity-controls__label { display: flex; align-items: center; gap: var(--uxdsl__density__2); }
+  .productivity-controls__range { flex: 1; }
+  .demo-code-stack { display: grid; gap: var(--uxdsl__density__4); margin-bottom: var(--uxdsl__density__4); }
+
+  .stress-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--uxdsl__density__2);
+    padding: var(--uxdsl__density__3) 0;
+  }
+
+  @media (min-width: 768px) {
+
+  .stress-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  }
+  }
+
+  .stress-card {
+    aspect-ratio: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--uxdsl__density__1);
+    text-align: center;
+    min-width: 0;
+    padding: var(--uxdsl__density__2);
+    border-radius: var(--uxdsl__radius__2);
+    box-shadow: var(--uxdsl__shadow__1);
+  }
+
+  .stress-card-title { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); font-weight: 700; }
+  .stress-card-badge {
+    padding: var(--uxdsl__surface__contained-padding);
+    border-radius: var(--uxdsl__surface__contained-radius);
+    background: var(--uxdsl__palette__surface-main);
+    color: var(--uxdsl__palette__surface-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+    font-family: var(--uxdsl__typography__caption-font-family);
+    font-size: var(--uxdsl__typography__caption-size);
+    line-height: var(--uxdsl__typography__caption-line);
+    font-weight: var(--uxdsl__typography__caption-weight);
+    letter-spacing: var(--uxdsl__typography__caption-spacing);
+    margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+    padding: var(--uxdsl__density__1);
+    border-radius: 9999px;
+  }
+    .stress-tone-primary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+    .stress-tone-secondary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+    .stress-tone-tertiary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__tertiary-main); color: var(--uxdsl__palette__tertiary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+    .stress-tone-success { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__success-main); color: var(--uxdsl__palette__success-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+    .stress-tone-info { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__info-main); color: var(--uxdsl__palette__info-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+}

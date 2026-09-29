@@ -32,17 +32,20 @@ document rather than resetting the previous one.
 
 ## Component style scope
 
-The generated `src/app/uxdsl.css` is global. An imported `.uxdsl` filename does not
-scope selectors. For a component that needs isolated classes, add its source and
-generated `.module.css` path to `uxdsl-module-entries.json`. The shared build then
-compiles it with `includeTheme: false`, excludes it from the global entry, and leaves
-the theme variables in `uxdsl.css`. Import the generated CSS Module in the component
-and use its `styles` map for each local class, including dynamically selected classes.
+The generated `src/app/uxdsl.css` is global. A `.uxdsl` filename alone does not
+scope selectors. Every component-owned `.uxdsl` sheet is listed in
+`uxdsl-module-entries.json` and compiled to a `.module.css` file with
+`includeTheme: false`. Components import that file and apply its exported classes. `scopedClasses`
+keeps the original class names where shared page rules or browser controls use them
+and adds the module classes. Dynamic classes need the same mapping.
 
-`DemoSpacing.uxdsl` is the working example. It needs no `#DemoSpacing` selector for
-isolation. Shared page styles and the design tokens remain global by design. Run
-`npm run uxdsl:build` after adding a module entry; the capability gate verifies that
-declared modules come from UXDSL and that handwritten CSS Modules stay at zero.
+The component styles use local classes for scope; their `id` attributes are still
+available to runtime demos that generate CSS against a specific preview. Only the
+three sheets shared across components (`CapabilityDocs`, `DocumentationSection`,
+`EditDialog`), page styles and design tokens enter the global sheet. Run
+`npm run uxdsl:build` after adding a module entry. The capability gate checks that
+every component-owned sheet is registered and imported, and that handwritten CSS
+Modules stay at zero.
 
 ## Scripts worth knowing
 

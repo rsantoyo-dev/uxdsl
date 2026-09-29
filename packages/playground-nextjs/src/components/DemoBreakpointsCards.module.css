@@ -1,0 +1,63 @@
+/* DemoBreakpointsCards styles - Scoped */
+.module-root {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__palette__light-main);
+  color: var(--uxdsl__palette__light-contrast);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__2);
+  padding: var(--uxdsl__space__3);
+  border: 1px solid var(--uxdsl__palette__surface-contrast);
+  border-radius: var(--uxdsl__radius__3);
+
+  .demo-breakpoints-card-item {
+    padding: var(--uxdsl__surface__contained-padding);
+    border-radius: var(--uxdsl__surface__contained-radius);
+    background: var(--uxdsl__surface__contained-bg);
+    color: var(--uxdsl__surface__contained-color);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+    flex: 1;
+    padding: var(--uxdsl__space__6);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--uxdsl__space__3);
+    border: 1px solid var(--uxdsl__palette__surface-dark);
+    border-radius: var(--uxdsl__radius__2);
+    box-shadow: var(--uxdsl__shadow__1);
+  }
+
+  .demo-breakpoints-card-title {
+    font-weight: 600;
+    color: var(--uxdsl__palette__surface-contrast);
+  }
+
+  .demo-breakpoints-card-text {
+    font-size: 0.875rem;
+    color: var(--uxdsl__palette__tertiary-dark);
+  }
+
+  .demo-breakpoints-card-icon--primary {
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  .demo-breakpoints-card-icon--secondary {
+    color: var(--uxdsl__palette__secondary-main);
+  }
+
+  .demo-breakpoints-card-icon--info {
+    color: var(--uxdsl__palette__info-main);
+  }
+}
+@media (min-width: 768px) {
+.module-root {
+    flex-direction: row;
+    gap: var(--uxdsl__space__4);
+    padding: var(--uxdsl__space__6)
+}
+}

@@ -1,6 +1,6 @@
 /* AppHeader styles - Scoped - Flattened to avoid compiler nesting bugs */
 
-#AppHeader {
+.module-root {
   width: 100%;
   margin: 0;
   padding: 0;
@@ -14,7 +14,7 @@
   border-bottom: 1px solid palette(primary-light, 0.3);
 }
 
-#AppHeader .app-header__container {
+.module-root .app-header__container {
   max-width: 1400px;
   margin: 0 auto;
   padding: density(2) xs(space(2)) md(space(4));
@@ -26,7 +26,7 @@
 }
 
 /* Logo Container - 120px Centered */
-#AppHeader .app-header__inner {
+.module-root .app-header__inner {
   @ds-surface (contained light);
   display: flex;
   flex-direction: row; /* Changed to row */
@@ -43,13 +43,13 @@
   }
 }
 
-#AppHeader .app-header__logo-img {
+.module-root .app-header__logo-img {
   display: block;
   width: xs(40px) sm(50px) md(60px);
   height: xs(40px) sm(50px) md(60px);
 }
 
-#AppHeader .app-header__title-text {
+.module-root .app-header__title-text {
   @ds-typo (h6);
   color: palette(primary-dark);
   font-weight: 800;
@@ -59,7 +59,7 @@
   margin-bottom: space(1); /* Adjusted to align with logo bottom, using 8px as 'spacing 3' */
 }
 
-#AppHeader .app-header__subtitle-text {
+.module-root .app-header__subtitle-text {
   @ds-typo(caption);
   opacity: 0.8;
   font-weight: 500;
@@ -70,19 +70,19 @@
   white-space: nowrap; /* Ensure it fits or scales */
 }
 
-#AppHeader .app-header__actions {
+.module-root .app-header__actions {
   display: flex;
   align-items: center;
   gap: density(2);
 }
 
-#AppHeader .app-header__settings {
+.module-root .app-header__settings {
   display: flex;
   align-items: center;
   gap: density(2);
 }
 
-#AppHeader .theme-color-btn {
+.module-root .theme-color-btn {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -94,24 +94,24 @@
   box-sizing: border-box;
 }
 
-#AppHeader .theme-color-btn:hover {
+.module-root .theme-color-btn:hover {
   transform: scale(1.1);
   background: color(white, 0.2);
 }
 
-#AppHeader .theme-color-btn.is-active {
+.module-root .theme-color-btn.is-active {
   box-shadow: 0 0 0 2px color(white, 0.8);
   background: color(white, 0.15);
 }
 
-#AppHeader .divider-vertical {
+.module-root .divider-vertical {
   width: 1px;
   height: 20px;
   background-color: color(white, 0.2);
   margin: 0 density(1);
 }
 
-#AppHeader .theme-toggle {
+.module-root .theme-toggle {
   width: 32px;
   height: 32px;
   border-radius: 50%;
@@ -127,21 +127,21 @@
   box-sizing: border-box;
 }
 
-#AppHeader .theme-toggle:hover {
+.module-root .theme-toggle:hover {
   background: color(white, 0.2);
   transform: scale(1.05);
 }
 
 /* MIG-B7-17 phase B (4): each theme button's ring color was an inline --theme-color with a hex
    literal. They are swatches of *other* themes, which the active Palette cannot give: Colors. */
-#AppHeader .theme-color-btn--default {
+.module-root .theme-color-btn--default {
   --theme-color: color(purple-600);
 }
 
-#AppHeader .theme-color-btn--green {
+.module-root .theme-color-btn--green {
   --theme-color: color(green-600);
 }
 
-#AppHeader .theme-color-btn--slate {
+.module-root .theme-color-btn--slate {
   --theme-color: color(slate-800);
 }

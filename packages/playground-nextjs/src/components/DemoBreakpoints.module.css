@@ -1,0 +1,249 @@
+/* DemoBreakpoints styles - Scoped */
+.module-root {
+  .breakpoints-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__4);
+  }
+
+  .breakpoints-playground-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .breakpoints-playground-container {
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__4);
+    border-radius: var(--uxdsl__radius__3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__6);
+    background: var(--uxdsl__palette__surface-light);
+  }
+
+  .breakpoints-viz-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .breakpoints-bar-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: var(--uxdsl__density__2);
+  }
+
+  .breakpoints-bar {
+    display: flex;
+    height: 60px;
+    width: 100%;
+    min-width: 600px;
+    border-radius: var(--uxdsl__radius__2);
+    overflow: hidden;
+    box-shadow: var(--uxdsl__shadow__1);
+  }
+
+  .breakpoints-segment {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: bold;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 0 var(--uxdsl__density__1);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .breakpoints-segment.is-active {
+    box-shadow: inset 0 0 0 2px var(--uxdsl__palette__surface-main);
+    z-index: 1;
+  }
+
+  .breakpoints-segment-label {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+  }
+
+  .breakpoints-segment-val {
+    font-size: 0.7rem;
+    opacity: 0.9;
+    font-family: font(code);
+    margin-top: 2px;
+  }
+
+  /* Segment Colors - Using requested palette */
+  .breakpoints-segment--xs { background: var(--uxdsl__palette__tertiary-light); color: var(--uxdsl__palette__tertiary-dark); }
+  .breakpoints-segment--sm { background: var(--uxdsl__palette__secondary-light); color: var(--uxdsl__palette__secondary-dark); }
+  .breakpoints-segment--md { background: var(--uxdsl__palette__primary-light); color: var(--uxdsl__palette__primary-dark); }
+  .breakpoints-segment--lg { background: var(--uxdsl__palette__info-light); color: var(--uxdsl__palette__info-dark); }
+  .breakpoints-segment--xl { background: var(--uxdsl__palette__error-light); color: var(--uxdsl__palette__error-dark); }
+
+  /* Grid Layout */
+  .breakpoints-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--uxdsl__density__6);
+  }
+  @media (min-width: 768px) {
+  .breakpoints-grid {
+      grid-template-columns: 2fr 1fr;
+      align-items: start;
+  }
+  }
+
+  /* Controls Column */
+  .breakpoints-controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__3);
+  }
+
+  .breakpoints-subtitle {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--uxdsl__palette__text-secondary);
+    margin-bottom: var(--uxdsl__density__1);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .breakpoints-control-row {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__density__3);
+    padding: var(--uxdsl__density__2);
+    background: var(--uxdsl__palette__surface-main);
+    border-radius: var(--uxdsl__radius__2);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    transition: border-color 0.2s;
+  }
+
+  .breakpoints-control-row:hover {
+    border-color: var(--uxdsl__palette__primary-light);
+  }
+
+  .breakpoints-control-label {
+    width: 30px;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.85rem;
+    color: var(--uxdsl__palette__text-secondary);
+  }
+
+  .breakpoints-slider {
+    flex: 1;
+    cursor: pointer;
+    margin: 0 var(--uxdsl__density__2);
+  }
+
+  .breakpoints-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: var(--uxdsl__density__1);
+  }
+
+  .breakpoints-input-val {
+    width: 80px;
+    padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    border-radius: var(--uxdsl__radius__1);
+    font-family: font(code);
+    text-align: right;
+    font-size: 0.9rem;
+    color: var(--uxdsl__palette__text-main);
+    background: transparent;
+  }
+
+  .breakpoints-unit {
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+  }
+
+  /* Info Panel Column */
+  .breakpoints-info-panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__3);
+    padding: var(--uxdsl__density__4);
+    background: var(--uxdsl__palette__surface-main);
+    border-radius: var(--uxdsl__radius__2);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    height: 100%;
+  }
+
+  .breakpoints-info-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--uxdsl__density__3);
+    border-radius: var(--uxdsl__radius__2);
+    background: var(--uxdsl__palette__surface-light);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    text-align: center;
+  }
+
+  .breakpoints-info-card.is-compact {
+    flex-direction: row;
+    gap: var(--uxdsl__density__3);
+    padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
+  }
+
+  .breakpoints-icon {
+    color: var(--uxdsl__palette__text-secondary);
+  }
+
+  .breakpoints-info-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .breakpoints-info-card.is-highlighted {
+    background: var(--uxdsl__palette__primary-light);
+    border-color: var(--uxdsl__palette__primary-main);
+    color: var(--uxdsl__palette__primary-contrast);
+  }
+
+  .breakpoints-info-card.is-highlighted .breakpoints-info-label {
+    color: var(--uxdsl__palette__primary-contrast);
+    opacity: 0.9;
+  }
+
+  .breakpoints-info-label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--uxdsl__palette__text-secondary);
+    margin-bottom: 2px;
+  }
+
+  .breakpoints-info-value {
+    font-family: font(code);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .breakpoints-info-value.is-large {
+    font-size: 2rem;
+  }
+
+  .breakpoints-info-desc {
+    font-size: 0.85rem;
+    color: var(--uxdsl__palette__text-secondary);
+    text-align: center;
+    line-height: 1.5;
+    margin-top: auto;
+  }
+}

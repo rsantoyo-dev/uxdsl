@@ -1,5 +1,8 @@
 "use client"
 
+
+import styles from './DemoColors.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useRef, useState } from "react"
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -84,20 +87,20 @@ function ColorScaleToken({
   return (
     <li
       ref={ref}
-      className={`color-token chip--${family}-${shade}`}
+      className={scopedClasses(`color-token chip--${family}-${shade}`, styles)}
       style={{ color: colorValues.textColor }}
     >
       <input
         type="color"
         value={colorValues.hex}
         onChange={handleColorChange}
-        className="color-picker-overlay"
+        className={scopedClasses("color-picker-overlay", styles)}
         aria-label={`Change color for ${family}-${shade}`}
       />
-      <span className="token-shade">{shade}</span>
-      <div className="token-values">
-        <span className="token-hex">{colorValues.hex}</span>
-        <span className="token-rgb">{colorValues.rgb}</span>
+      <span className={scopedClasses("token-shade", styles)}>{shade}</span>
+      <div className={scopedClasses("token-values", styles)}>
+        <span className={scopedClasses("token-hex", styles)}>{colorValues.hex}</span>
+        <span className={scopedClasses("token-rgb", styles)}>{colorValues.rgb}</span>
       </div>
     </li>
   )
@@ -118,19 +121,19 @@ export default function DemoColors() {
   }
 
   return (
-    <section id="DemoColors" className="demo-section">
-      <div className="demo-header">
-        <p className="demo-subtitle">
+    <section id="DemoColors" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("demo-section", styles)}>
+      <div className={scopedClasses("demo-header", styles)}>
+        <p className={scopedClasses("demo-subtitle", styles)}>
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.
           <br />
           Usage example: <code>background: color(blue-500)</code>
         </p>
       </div>
 
-      <div className="surfaces-playground-container">
-        <h4 className="demo-subtitle">Interactive Playground</h4>
-        <div className="surface-playground">
-           <div className="surface-playground__controls">
+      <div className={scopedClasses("surfaces-playground-container", styles)}>
+        <h4 className={scopedClasses("demo-subtitle", styles)}>Interactive Playground</h4>
+        <div className={scopedClasses("surface-playground", styles)}>
+           <div className={scopedClasses("surface-playground__controls", styles)}>
              <label>
                <span>Background Family</span>
                <select value={bgFamily} onChange={e => setBgFamily(e.target.value)}>
@@ -157,17 +160,17 @@ export default function DemoColors() {
              </label>
            </div>
 
-           <div className="surface-playground__preview">
-             <div className="color-live-preview" style={{
+           <div className={scopedClasses("surface-playground__preview", styles)}>
+             <div className={scopedClasses("color-live-preview", styles)} style={{
                backgroundColor: `var(--uxdsl__color__${bgFamily}-${bgShade})`,
                color: `var(--uxdsl__color__${textFamily}-${textShade})`,
              }}>
                Live Color Preview
              </div>
              
-             <div className="demo-code-block" >
-               <div className="code-header">
-                 <span className="code-file">ColorUsage.uxdsl</span>
+             <div className={scopedClasses("demo-code-block", styles)} >
+               <div className={scopedClasses("code-header", styles)}>
+                 <span className={scopedClasses("code-file", styles)}>ColorUsage.uxdsl</span>
                </div>
                <SyntaxHighlighter 
                  language="scss" 
@@ -185,18 +188,18 @@ export default function DemoColors() {
         </div>
       </div>
 
-      <div className="demo-header">
-        <h3 className="demo-title">Global Palette</h3>
-        <p className="demo-subtitle">
+      <div className={scopedClasses("demo-header", styles)}>
+        <h3 className={scopedClasses("demo-title", styles)}>Global Palette</h3>
+        <p className={scopedClasses("demo-subtitle", styles)}>
           Click on any color swatch to update the UX-DSL token.
         </p>
       </div>
 
-      <div className="colors-stack">
+      <div className={scopedClasses("colors-stack", styles)}>
         {families.map((fam) => (
-          <article key={fam} className="color-family">
-            <h4 className="family-title">{fam}</h4>
-            <ul className="family-grid">
+          <article key={fam} className={scopedClasses("color-family", styles)}>
+            <h4 className={scopedClasses("family-title", styles)}>{fam}</h4>
+            <ul className={scopedClasses("family-grid", styles)}>
               {shades.map((shade) => (
                 <ColorScaleToken
                   key={shade}

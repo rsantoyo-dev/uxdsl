@@ -1,0 +1,53 @@
+/* PageTitle styles - Scoped */
+.module-root {
+  .page-title {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+    padding: var(--uxdsl__density__6) 0 var(--uxdsl__density__4);
+  }
+
+  .page-title__text {
+    font-family: var(--uxdsl__typography__h1-font-family);
+    font-size: var(--uxdsl__typography__h1-size);
+    line-height: var(--uxdsl__typography__h1-line);
+    font-weight: var(--uxdsl__typography__h1-weight);
+    letter-spacing: var(--uxdsl__typography__h1-spacing);
+    margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+    margin: 0;
+    /* Gradient Text Effect */
+    background: linear-gradient(135deg, var(--uxdsl__palette__primary-main) 0%, var(--uxdsl__palette__primary-light) 50%, var(--uxdsl__palette__secondary-main) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  .page-title__subtitle {
+    font-family: var(--uxdsl__typography__h4-font-family);
+    font-size: var(--uxdsl__typography__h4-size);
+    line-height: var(--uxdsl__typography__h4-line);
+    font-weight: var(--uxdsl__typography__h4-weight);
+    letter-spacing: var(--uxdsl__typography__h4-spacing);
+    margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+    color: var(--uxdsl__palette__surface-contrast); /* Maximum contrast */
+    margin: 0;
+    line-height: 1.4;
+    font-weight: 400; /* Ensure regular weight, not bold, not light */
+  }
+
+  .page-title__subtext {
+    font-family: var(--uxdsl__typography__body-font-family);
+    font-size: var(--uxdsl__typography__body-size);
+    line-height: var(--uxdsl__typography__body-line);
+    font-weight: var(--uxdsl__typography__body-weight);
+    letter-spacing: var(--uxdsl__typography__body-spacing);
+    margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+    color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 85%, transparent); /* High contrast, slight hierarchy */
+    margin-top: var(--uxdsl__density__1);
+    display: block; /* Ensure it breaks to new line properly if inline wasn't doing it */
+  }
+}

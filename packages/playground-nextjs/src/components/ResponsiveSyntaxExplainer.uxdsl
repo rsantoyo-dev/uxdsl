@@ -10,7 +10,7 @@
   /* Subtle top/bottom dashed lines to define line-height visually */
   border-top: 1px dashed palette(neutral-light, 0.5);
   border-bottom: 1px dashed palette(neutral-light, 0.5);
-  
+
   /* Architectonic Corner Marks */
   &::before, &::after, .top-right-corner::before, .bottom-left-corner::after {
     content: '';
@@ -242,7 +242,7 @@
     background: palette(primary-light);
     color: palette(primary-contrast);
   }
-  
+
   &.is-default {
     padding: space(2) space(3);
   }
@@ -254,19 +254,19 @@
   gap: 0.5rem;
   flex: 1 1 180px;
   min-width: 0;
-  
-  label {
-    font-size: 0.8rem;
-    opacity: 0.7;
-  }
-  
-  select {
-    @ds-input(outlined 2);
-    width: auto;
-    cursor: pointer;
-    min-width: 120px;
-    max-width: 100%;
-  }
+}
+
+.element-select-group label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.element-select-group select {
+  @ds-input(outlined 2);
+  width: auto;
+  cursor: pointer;
+  min-width: 120px;
+  max-width: 100%;
 }
 
 .ai-prompt-group {
@@ -276,14 +276,14 @@
   width: 100%;
   min-width: 0;
   flex-wrap: nowrap;
-  
+
   .input-wrapper {
     position: relative;
     flex: 0 1 66%;
     min-width: 0;
     display: flex;
     align-items: center;
-    
+
     .ai-icon-btn {
       position: absolute;
       left: 4px;
@@ -303,22 +303,16 @@
         color: palette(primary-main);
       }
     }
-    
-    input {
-      min-width: 0;
-      @ds-input(outlined 2);
-      height: 32px;
-      padding-left: 30px;
-    }
+
   }
-  
+
   .actions {
     display: flex;
     gap: 0.25rem;
     flex-shrink: 0;
     flex: 0 0 33%;
     justify-content: flex-end;
-    
+
     button.fix-single {
        background: palette(primary-main);
        color: palette(primary-contrast);
@@ -330,7 +324,7 @@
        font-weight: 600;
        white-space: nowrap;
     }
-    
+
     button.fix-all {
        background: transparent;
        color: palette(primary-main);
@@ -343,7 +337,7 @@
        white-space: nowrap;
     }
   }
-  
+
   .loading {
     display: flex;
     align-items: center;
@@ -351,6 +345,13 @@
     color: palette(primary-main);
     font-size: 0.8rem;
   }
+}
+
+.ai-prompt-group .input-wrapper input {
+  min-width: 0;
+  @ds-input(outlined 2);
+  height: 32px;
+  padding-left: 30px;
 }
 
 .json-preview-container {
@@ -372,14 +373,14 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.5rem;
+}
 
-  span {
-    font-size: 0.8rem;
-    color: palette(text-secondary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+.json-preview-header span {
+  font-size: 0.8rem;
+  color: palette(text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .css-usage-container {
@@ -395,14 +396,14 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 0.5rem;
-  
-  span {
-    font-size: 0.8rem;
-    color: palette(text-secondary);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
+}
+
+.css-usage-header span {
+  font-size: 0.8rem;
+  color: palette(text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
 }
 
 .css-code-block {
@@ -447,10 +448,10 @@
   font-size: 0.8rem;
   color: palette(text-secondary);
   line-height: 1.5;
-  
-  strong {
-    color: palette(text-primary);
-  }
+}
+
+.css-usage-description strong {
+  color: palette(text-primary);
 }
 
 .editable-typography-element {

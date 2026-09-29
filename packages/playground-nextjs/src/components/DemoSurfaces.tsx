@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoSurfaces.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useMemo, useState } from 'react'
 import { generateSurfaceCss, getSurfaceTokens, inspectSurfaceTheme, surfaceDeclarations, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
 import { generateDensityCss, DEFAULT_BREAKPOINTS, getDensityTokens } from 'postcss-uxdsl/ds-runtime'
@@ -44,18 +47,18 @@ export default function DemoSurfaces() {
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
-  return <div id="DemoSurfaces" className="surfaces-section demo-section">
+  return <div id="DemoSurfaces" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("surfaces-section demo-section", styles)}>
     <style>{css}</style>
-    <section className="section">
-      <h2 className="section-title">Shared engine playground</h2>
+    <section className={scopedClasses("section", styles)}>
+      <h2 className={scopedClasses("section-title", styles)}>Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test transitions. The preview uses the active theme and shared engine defaults. Edits below are scoped to this demo and do not save source JSON.</p>
       <label htmlFor="surface-theme">Surfaces and breakpoint configuration</label>
-      <textarea id="surface-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className="code-textarea" />
+      <textarea id="surface-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className={scopedClasses("code-textarea", styles)} />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={() => { setOverrides(null); setSize(''); setTone(''); setDraft(JSON.stringify({ breakpoints: activeThemeData.breakpoints, surfaces: getSurfaceTokens(activeThemeData) }, null, 2)); setError('') }}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}
     </section>
-    <section className="section">
+    <section className={scopedClasses("section", styles)}>
       <label htmlFor="surface-tone">Palette tone (optional)</label>
       <select id="surface-tone" value={tone} onChange={e => setTone(e.target.value)}>
         <option value="">Use configured Surface colors</option>
@@ -67,11 +70,11 @@ export default function DemoSurfaces() {
         {Object.keys(getEdgeTokens(theme).radii).filter(key => /^\d+$/.test(key) && (getDensityTokens(theme))[key]).map(key => <option key={key}>{key}</option>)}
       </select>
       <h3>Surface presets</h3>
-      <div className="surfaces-grid">{Object.keys(tokens).map(key => {
+      <div className={scopedClasses("surfaces-grid", styles)}>{Object.keys(tokens).map(key => {
         const declarations = surfaceDeclarations(theme, key, tone, size)
         const style = Object.fromEntries(Object.entries(declarations).map(([property, value]) => [property.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase()), value]))
-        return <div key={key} className="surface-example">
-          <div className="surface-preview" data-surface-role={key} style={style}>
+        return <div key={key} className={scopedClasses("surface-example", styles)}>
+          <div className={scopedClasses("surface-preview", styles)} data-surface-role={key} style={style}>
             <h4>{key}</h4><p>A shared container treatment.</p>
           </div>
           <pre>{`.card { @ds-surface(${key}${tone ? ` ${tone}` : ''}${size ? ` ${size}` : ''}); }`}</pre>

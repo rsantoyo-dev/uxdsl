@@ -1,0 +1,13 @@
+/* Demo layout only; input visuals and states come from the shared engine. */
+.module-root {
+
+  .section { margin-block: var(--uxdsl__density__3); }
+  .surfaces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--uxdsl__density__3);
+    margin-block: var(--uxdsl__density__3);
+  }
+}
+.inputs-section pre { overflow-x: auto; }
+.inputs-section label { margin-inline-end: var(--uxdsl__density__2); }

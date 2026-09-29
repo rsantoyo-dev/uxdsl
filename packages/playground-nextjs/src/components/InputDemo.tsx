@@ -1,4 +1,7 @@
- 'use client'
+'use client'
+
+import styles from './InputDemo.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 
 import { useEffect, useMemo, useState } from 'react'
 import { generateInputCss, getInputTokens, inspectInputTheme, inputComponentCss, generateSurfaceCss, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
@@ -45,18 +48,18 @@ export default function InputDemo() {
       setOverrides(next); setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
-  return <div id="InputDemo" className="inputs-section demo-section">
+  return <div id="InputDemo" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("inputs-section demo-section", styles)}>
     <style dangerouslySetInnerHTML={{ __html: css.replace(/</g, '\\3c ') }} />
-    <section className="section">
-      <h2 className="section-title">Shared engine playground</h2>
+    <section className={scopedClasses("section", styles)}>
+      <h2 className={scopedClasses("section-title", styles)}>Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test responsive values. Hover or focus a field with the keyboard to inspect configured states. Try typing; readonly and disabled use native attributes. JSON edits are scoped to this demo and do not save source files.</p>
       <label htmlFor="input-theme">Inputs and breakpoint configuration</label>
-      <textarea id="input-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} className="code-textarea" />
+      <textarea id="input-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} className={scopedClasses("code-textarea", styles)} />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={reset}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}
     </section>
-    <section className="section">
+    <section className={scopedClasses("section", styles)}>
       <label htmlFor="input-tone">Palette tone (optional)</label>
       <select id="input-tone" value={tone} onChange={e => setTone(e.target.value)}><option value="">Use configured colors</option>{getToneFamilies(theme.palette || {}).map(key => <option key={key}>{key}</option>)}</select>
       <label htmlFor="input-size">Size (Density and Radius)</label>
@@ -64,7 +67,7 @@ export default function InputDemo() {
       <label><input type="checkbox" checked={invalid} onChange={e => setInvalid(e.target.checked)} />Invalid (aria-invalid)</label>
       <label><input type="checkbox" checked={readOnly} onChange={e => setReadOnly(e.target.checked)} />Read only</label>
       <label><input type="checkbox" checked={disabled} onChange={e => setDisabled(e.target.checked)} />Disabled</label>
-      <div className="surfaces-grid">{Object.keys(tokens).map(role => <div key={role}>
+      <div className={scopedClasses("surfaces-grid", styles)}>{Object.keys(tokens).map(role => <div key={role}>
         <label htmlFor={`preview-${role}`}>{role} field</label>
         <input id={`preview-${role}`} type="text" data-input-role={role} aria-invalid={invalid} aria-describedby={`help-${role}`} readOnly={readOnly} disabled={disabled} placeholder="Enter a value" />
         <p id={`help-${role}`}>{invalid ? 'Example error: check this value.' : 'Visible label and help text remain separate from styling.'}</p>

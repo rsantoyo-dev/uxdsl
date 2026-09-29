@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './CodeBlock.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus, vs } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -43,7 +46,7 @@ export default function CodeBlock({ language = 'bash', children, code }: CodeBlo
   }, [])
 
   return (
-    <div className="code-block-frame">
+    <div className={scopedClasses("code-block-frame", styles)}>
       <SyntaxHighlighter
         language={language}
         style={isDark ? vscDarkPlus : vs}

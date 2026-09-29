@@ -1,0 +1,162 @@
+.inspector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--uxdsl__density__4);
+}
+
+.selector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--uxdsl__density__3);
+}
+
+.inspector-item {
+  display: flex;
+  align-items: center;
+  gap: var(--uxdsl__density__4);
+  background: var(--uxdsl__palette__surface-main);
+  padding: 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+}
+
+.inspector-item-details {
+  display: flex;
+  flex-direction: column;
+}
+
+.inspector-item-meta {
+  display: flex;
+  gap: var(--uxdsl__density__2);
+  align-items: center;
+}
+
+/* MIG-B7-17 phase B (4): these rules were inline style={{}} in PaletteThemeExplorer.tsx; each
+   swatch's color is read from the token at runtime and stays inline, and the selected option's
+   border/opacity ternary is now .is-selected. */
+
+.pte {
+  padding-top: var(--uxdsl__space__6);
+}
+
+.pte-detail {
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 8px;
+  padding: var(--uxdsl__space__6);
+  margin-bottom: var(--uxdsl__space__7);
+}
+
+.pte-detail__header {
+  display: flex;
+  align-items: baseline;
+  gap: var(--uxdsl__space__4);
+  margin-bottom: var(--uxdsl__space__5);
+}
+
+.pte-detail h3.pte-detail__title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--uxdsl__palette__text-primary);
+  margin: 0;
+}
+
+.pte-detail__subtitle {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.pte-detail p.pte-detail__hint {
+  margin-top: var(--uxdsl__space__4);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.pte-swatch {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.pte-swatch__color {
+  width: 40px;
+  height: 40px;
+  border-radius: 4px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 10%, transparent);
+}
+
+.pte-swatch__input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.pte-item__variant {
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.pte-item__hex {
+  font-size: 0.7rem;
+  font-family: monospace;
+  color: var(--uxdsl__palette__text-secondary);
+}
+
+.pte-item__rgb {
+  font-size: 0.6rem;
+  color: var(--uxdsl__palette__text-disabled);
+}
+
+.pte h5.pte-selector__heading {
+  font-size: 0.7rem;
+  color: var(--uxdsl__palette__text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: var(--uxdsl__space__4);
+}
+
+.pte-selector__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uxdsl__space__5);
+  background: var(--uxdsl__palette__surface-light);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: 6px;
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__4);
+  cursor: pointer;
+  opacity: 0.8;
+  transition: all 0.2s;
+  font: inherit;
+  text-align: left;
+}
+
+.pte-selector__option:focus-visible {
+  outline: 2px solid var(--uxdsl__palette__primary-main);
+  outline-offset: 2px;
+}
+
+.pte-selector__option.is-selected {
+  border-color: var(--uxdsl__palette__primary-main);
+  opacity: 1;
+}
+
+.pte-selector__name {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--uxdsl__palette__text-primary);
+}
+
+.pte-selector__strip {
+  display: flex;
+  gap: var(--uxdsl__space__1);
+  width: 100px;
+}
+
+.pte-selector__chip {
+  flex: 1;
+  height: 18px;
+  border-radius: 2px;
+  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 5%, transparent);
+}

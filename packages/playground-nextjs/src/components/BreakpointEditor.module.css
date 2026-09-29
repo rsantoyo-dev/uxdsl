@@ -1,0 +1,37 @@
+.editor-content {
+  padding: var(--uxdsl__density__6);
+  display: grid;
+  gap: var(--uxdsl__density__4);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.font-selector {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__density__2);
+}
+
+/* MIG-B7-17 phase B (4): the dialog's frame was inline style={{}} in BreakpointEditor.tsx. */
+
+.breakpoint-editor__backdrop {
+  position: fixed;
+  inset: 0;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent);
+  z-index: 100;
+  display: grid;
+  place-items: center;
+}
+
+.breakpoint-editor__dialog {
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__space__7);
+  border-radius: 1rem;
+  width: min(560px, 90vw);
+}
+
+.breakpoint-editor__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--uxdsl__space__5);
+}

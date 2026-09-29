@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './ThemeConfigJsonEditor.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useRef, useState } from 'react'
 import { Download, RefreshCcw } from 'lucide-react'
 import { validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
@@ -114,22 +117,22 @@ export default function ThemeConfigJsonEditor() {
     <InteractiveDemoContainer
       title="Runtime Config JSON"
       toolbar={
-        <div className="config-editor__toolbar">
-          <div className="config-editor__hint">
+        <div className={scopedClasses("config-editor__toolbar", styles)}>
+          <div className={scopedClasses("config-editor__hint", styles)}>
             Edit JSON to update UI live. UI changes also sync back here.
           </div>
-          <div className="config-editor__buttons">
+          <div className={scopedClasses("config-editor__buttons", styles)}>
             <button
               type="button"
               onClick={handleReset}
-              className="config-editor__button"
+              className={scopedClasses("config-editor__button", styles)}
             >
               <RefreshCcw size={14} /> Reset
             </button>
             <button
               type="button"
               onClick={handleExport}
-              className="config-editor__button config-editor__button--primary"
+              className={scopedClasses("config-editor__button config-editor__button--primary", styles)}
             >
               <Download size={14} /> Export
             </button>
@@ -137,15 +140,15 @@ export default function ThemeConfigJsonEditor() {
         </div>
       }
     >
-      <div className="config-editor">
+      <div className={scopedClasses("config-editor", styles)}>
         <textarea
           value={jsonText}
           onChange={(e) => setJsonText(e.target.value)}
           spellCheck={false}
           aria-label="Theme runtime JSON editor"
-          className={`config-editor__textarea${error ? ' is-invalid' : ''}`}
+          className={scopedClasses(`config-editor__textarea${error ? ' is-invalid' : ''}`, styles)}
         />
-        <div className={`config-editor__status${error ? ' is-invalid' : ''}`}>
+        <div className={scopedClasses(`config-editor__status${error ? ' is-invalid' : ''}`, styles)}>
           {error
             ? error
             : status === 'synced'

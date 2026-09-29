@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './PaletteThemeExplorer.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useRef, useState } from 'react'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { useTheme } from './ThemeContext'
@@ -80,11 +83,11 @@ function TokenInspectorItem({
     const inputValue = /^#[0-9A-Fa-f]{6}$/.test(colorInfo.hex) ? colorInfo.hex : '#000000'
 
   return (
-      <div className="inspector-item">
-                     <div className="pte-swatch">
+      <div className={scopedClasses("inspector-item", styles)}>
+                     <div className={scopedClasses("pte-swatch", styles)}>
                          <div
                              ref={swatchRef}
-                             className="pte-swatch__color"
+                             className={scopedClasses("pte-swatch__color", styles)}
                              style={{ background: `var(--uxdsl__palette__${tone}-${variant})` }}
                          />
                          <input
@@ -93,14 +96,14 @@ function TokenInspectorItem({
                              onChange={handleColorInputChange}
                              aria-label={`Change ${tone}-${variant} color`}
                              title={`Edit ${tone}-${variant}`}
-                             className="pte-swatch__input"
+                             className={scopedClasses("pte-swatch__input", styles)}
                          />
                      </div>
-           <div className="inspector-item-details">
-               <span className="pte-item__variant">{variant}</span>
-               <div className="inspector-item-meta">
-                   <span className="pte-item__hex">{colorInfo.hex}</span>
-                   <span className="pte-item__rgb">{colorInfo.rgb}</span>
+           <div className={scopedClasses("inspector-item-details", styles)}>
+               <span className={scopedClasses("pte-item__variant", styles)}>{variant}</span>
+               <div className={scopedClasses("inspector-item-meta", styles)}>
+                   <span className={scopedClasses("pte-item__hex", styles)}>{colorInfo.hex}</span>
+                   <span className={scopedClasses("pte-item__rgb", styles)}>{colorInfo.rgb}</span>
                </div>
            </div>
       </div>
@@ -121,20 +124,20 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
 
   return (
     <InteractiveDemoContainer title="Palette Explorer" action={action}>
-             <div className="pte">
+             <div className={scopedClasses("pte", styles)}>
 
                  {/* Detail Panel */}
-                 <div className="pte-detail">
-                     <div className="pte-detail__header">
-                        <h3 className="pte-detail__title">
+                 <div className={scopedClasses("pte-detail", styles)}>
+                     <div className={scopedClasses("pte-detail__header", styles)}>
+                        <h3 className={scopedClasses("pte-detail__title", styles)}>
                             {paletteCards.find(t => t.id === inspectorTone)?.title}
                         </h3>
-                        <span className="pte-detail__subtitle">
+                        <span className={scopedClasses("pte-detail__subtitle", styles)}>
                             {paletteCards.find(t => t.id === inspectorTone)?.detail}
                         </span>
                      </div>
                      
-                     <div className="inspector-grid">
+                     <div className={scopedClasses("inspector-grid", styles)}>
                          {variants.map(variant => (
                                                          <TokenInspectorItem
                                                              key={variant.id}
@@ -146,26 +149,26 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
                                                          />
                          ))}
                      </div>
-                                        <p className="pte-detail__hint">
+                                        <p className={scopedClasses("pte-detail__hint", styles)}>
                                             Click any swatch above to edit and apply the selected color.
                                         </p>
                  </div>
 
                  {/* Selector Grid */}
-                 <h5 className="pte-selector__heading">
+                 <h5 className={scopedClasses("pte-selector__heading", styles)}>
                     Select Tone
                  </h5>
-                 <div className="selector-grid">
+                 <div className={scopedClasses("selector-grid", styles)}>
                          {paletteCards.map(tone => (
                              <button key={tone.id} type="button"
                                 onClick={() => setInspectorTone(tone.id)}
                                 aria-pressed={tone.id === inspectorTone}
-                                className={`pte-selector__option${tone.id === inspectorTone ? ' is-selected' : ''}`}>
-                                 <span className="pte-selector__name">{tone.title}</span>
-                                 <span className="pte-selector__strip">
+                                className={scopedClasses(`pte-selector__option${tone.id === inspectorTone ? ' is-selected' : ''}`, styles)}>
+                                 <span className={scopedClasses("pte-selector__name", styles)}>{tone.title}</span>
+                                 <span className={scopedClasses("pte-selector__strip", styles)}>
                                      {variants.map(variant => (
                                          <span key={variant.id}
-                                              className="pte-selector__chip"
+                                              className={scopedClasses("pte-selector__chip", styles)}
                                               style={{ background: `var(--uxdsl__palette__${tone.id}-${variant.id})` }} 
                                          />
                                      ))}

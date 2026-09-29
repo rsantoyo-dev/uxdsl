@@ -1,5 +1,8 @@
 'use client';
 
+
+import styles from './ResponsiveSyntaxExplainer.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
@@ -29,7 +32,7 @@ const SyntaxHighlighter = ({ value, viewportWidth, themeBreakpoints, baseColor }
   const resolved = inspectResponsiveValue(value, viewportWidth, bpValues);
   return <span style={{ color }}>
     &quot;{value}&quot;
-    {resolved.applied && <span className="json-comment"> {`// ${resolved.applied} → ${resolved.value}`}</span>}
+    {resolved.applied && <span className={scopedClasses("json-comment", styles)}> {`// ${resolved.applied} → ${resolved.value}`}</span>}
   </span>;
 };
 
@@ -66,7 +69,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   useEffect(() => {
     // Initialize immediately on mount
     setWindowWidth(window.innerWidth);
-    
+
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -98,14 +101,14 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
   // Safe access to the typography details
   const defaultDetails = activeThemeData?.typography_details?.default || {};
-  
+
   const tagDetails = activeThemeData?.typography_details?.[selectedTag] || {};
-  
+
   // Resolve values (Inheritance logic)
   const isDefault = selectedTag === 'default';
-  
-  const fontSizeString = isDefault 
-    ? (tagDetails.fontSize || defaultDetails.fontSize) 
+
+  const fontSizeString = isDefault
+    ? (tagDetails.fontSize || defaultDetails.fontSize)
     : (tagDetails.fontSize || defaultDetails.fontSize); // Font size usually specific, but fallback to default if missing
 
   const fontFamilyString = tagDetails.fontFamily || defaultDetails.fontFamily || 'Inter';
@@ -186,7 +189,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     // Add to Google Fonts list logic...
     const systemFonts = ["System UI", "Monospace", "Serif", "Sans-Serif", "Arial", "Helvetica", "Times New Roman", "Courier New"];
     const singleWeightFonts = ["Pacifico", "Creepster", "Rye", "Spirax", "Lobster", "Abril Fatface", "Fredoka One"];
-    
+
     if (!systemFonts.includes(rawSelection) && primaryFont) {
       if (!newTheme.fonts) newTheme.fonts = {};
       if (!newTheme.fonts.google) newTheme.fonts.google = [];
@@ -463,7 +466,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
 
     CURRENT typography_details (baseline to improve; preserve intent and only adjust what's needed):
     ${JSON.stringify(currentTypographyDetails, null, 2)}
-    
+
     SYSTEM CONTEXT & RULES:
     1. You MUST return ONLY JSON (no markdown).
     2. Return a JSON object with this shape:
@@ -478,7 +481,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     5. lineHeight MUST be responsive and include at least xs(...) and md(...).
     6. Keep hierarchy sane (h1 >= h2 >= ... >= h6) and never shrink h1 unless explicitly asked.
     7. Available Fonts: ${availableFonts}.
-    
+
     CRITICAL INSTRUCTION:
     You are an expert typographer. Based on the USER INSTRUCTION (e.g., "crazy", "elegant", "brutal", "minimal"), you MUST:
     - Choose the most appropriate font from the Available Fonts list.
@@ -488,12 +491,12 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
     - Adjust 'fontStyle' (italic, normal).
     - Adjust 'textDecoration' (underline, line-through, none).
     - Adjust 'lineHeight'. CRITICAL: Ensure line height is sufficient to prevent clipping. Script/Display fonts (like Pacifico, Lobster) often need larger line heights (1.3-1.5) even for headings to accommodate ascenders/descenders. Standard fonts can be tighter (1.1-1.2).
-    
+
     If the user asks for a "crazy" font, pick something like Creepster, Rye, or Bangers.
     If the user asks for "elegant", pick Playfair Display, Cinzel, or Cormorant Garamond.
-    
+
     TASK:
-    ${mode === 'single' 
+    ${mode === 'single'
       ? `Optimize ONLY the '${selectedTag}' element. Return typography_details with ONLY '${selectedTag}'.`
       : 'Optimize ALL typography elements (h1-h6, p, body, caption). Return the full typography_details object.'}
 
@@ -521,7 +524,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         try {
           const generatedTheme = JSON.parse(data.text);
           const newTheme = JSON.parse(JSON.stringify(activeThemeData));
-          
+
           if (!newTheme.typography_details) newTheme.typography_details = {};
 
           const detailsPatch = generatedTheme?.typography_details || generatedTheme;
@@ -543,7 +546,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             if (!newTheme.typography_details[selectedTag]) newTheme.typography_details[selectedTag] = {};
             Object.assign(newTheme.typography_details[selectedTag], detailsPatch[selectedTag]);
           }
-          
+
           setCustomTheme(customThemeName || 'Custom Theme', newTheme, { replace: true });
         } catch (parseError) {
           console.error("Failed to parse AI response:", parseError);
@@ -559,10 +562,10 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   };
 
   const aiToolbar = (
-    <div className="ai-prompt-group">
-      <div className="input-wrapper">
+    <div className={scopedClasses("ai-prompt-group", styles)}>
+      <div className={scopedClasses("input-wrapper", styles)}>
         <button
-          className="ai-icon-btn"
+          className={scopedClasses("ai-icon-btn", styles)}
           type="button"
           title="AI Assistant"
           onClick={() => aiInputRef.current?.focus()}
@@ -579,19 +582,19 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       </div>
 
       {isOptimizing ? (
-        <div className="loading">
-          <Loader2 className="animate-spin" size={16} />
+        <div className={scopedClasses("loading", styles)}>
+          <Loader2 className={scopedClasses("animate-spin", styles)} size={16} />
         </div>
       ) : (
-        <div className="actions">
+        <div className={scopedClasses("actions", styles)}>
           <button
             onClick={() => handleOptimize('single')}
             title={`AI Fix ${selectedTag.toUpperCase()}`}
-            className="fix-single"
+            className={scopedClasses("fix-single", styles)}
           >
             AI {selectedTag.toUpperCase()}
           </button>
-          <button onClick={() => handleOptimize('all')} title="AI Fix All" className="fix-all">
+          <button onClick={() => handleOptimize('all')} title="AI Fix All" className={scopedClasses("fix-all", styles)}>
             AI All
           </button>
         </div>
@@ -600,34 +603,34 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
   );
 
   return (
-    <div ref={containerRef} className="responsive-syntax-explainer">
+    <div ref={containerRef} className={scopedClasses("responsive-syntax-explainer", styles)}>
       <InteractiveDemoContainer
         title="Interactive Demo: Typography"
         action={action}
         toolbar={aiToolbar}
       >
-        <div className="controls-section">
-            <div className="controls-row-bottom">
-              <div className="controls-group">
+        <div className={scopedClasses("controls-section", styles)}>
+            <div className={scopedClasses("controls-row-bottom", styles)}>
+              <div className={scopedClasses("controls-group", styles)}>
                 {BPS.map(bp => (
                   <button key={bp.name}
                     onClick={() => setSelectedBreakpoint(bp.name)}
                     aria-pressed={selected?.name === bp.name}
                     title={`${bp.label}: simulated ${bp.pixels}px viewport`}
-                    className={`control-button ${selected?.name === bp.name ? 'active' : ''}`}>
+                    className={scopedClasses(`control-button ${selected?.name === bp.name ? 'active' : ''}`, styles)}>
                     {bp.label}
                   </button>
                 ))}
                 <button onClick={() => setSelectedBreakpoint(null)} aria-pressed={isAutoMode}
                   title="Current Screen Size" aria-label="Current Screen Size"
-                  className={`control-button is-default ${isAutoMode ? 'active' : ''}`}>
+                  className={scopedClasses(`control-button is-default ${isAutoMode ? 'active' : ''}`, styles)}>
                   <Monitor size={14} />
                 </button>
               </div>
 
-              <div className="element-select-group">
+              <div className={scopedClasses("element-select-group", styles)}>
                 <label htmlFor="tag-select">Element:</label>
-                <select 
+                <select
                   id="tag-select"
                   value={selectedTag}
                   onChange={(e) => {
@@ -639,7 +642,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 </select>
               </div>
 
-              <div className="element-select-group">
+              <div className={scopedClasses("element-select-group", styles)}>
                 <label htmlFor="align-select">Align:</label>
                 <select
                   id="align-select"
@@ -654,7 +657,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 </select>
               </div>
 
-              <div className="element-select-group">
+              <div className={scopedClasses("element-select-group", styles)}>
                 <label htmlFor="case-select">Case:</label>
                 <select
                   id="case-select"
@@ -669,7 +672,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
                 </select>
               </div>
 
-              <div className="element-select-group">
+              <div className={scopedClasses("element-select-group", styles)}>
                 <label htmlFor="sample-text-select">Text:</label>
                 <select
                   id="sample-text-select"
@@ -698,35 +701,35 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
             </div>
         </div>
 
-        <p role="status" className="typography-viewport-status">
+        <p role="status" className={scopedClasses("typography-viewport-status", styles)}>
           {isAutoMode ? 'Current viewport' : 'Simulated viewport'}: {Math.round(previewViewport)}px
           {selected ? ` · ${selected.label}` : ''}. The theme defines which text properties change at this width.
         </p>
         {/* Live Preview Section */}
-        <div className="live-preview-section">
-        
-        <div 
-          className="live-preview-box" 
+        <div className={scopedClasses("live-preview-section", styles)}>
+
+        <div
+          className={scopedClasses("live-preview-box", styles)}
           ref={previewBoxRef}
-          style={{ 
+          style={{
             width: `${previewWidth}%`
           }}
         >
           {/* Architectural Guides */}
-          <div className="architectural-guide-center" />
-          
+          <div className={scopedClasses("architectural-guide-center", styles)} />
+
           {/* Text Container with Architectural Bounds */}
-          <div className="text-container-wrapper">
-            
+          <div className={scopedClasses("text-container-wrapper", styles)}>
+
             {/* Line Height Indicator (Left) */}
-            <div className="line-height-indicator" />
+            <div className={scopedClasses("line-height-indicator", styles)} />
 
             {/* Content Bounds (Dashed Box) */}
-            <div className="content-bounds-indicator" />
+            <div className={scopedClasses("content-bounds-indicator", styles)} />
 
             {React.createElement(
               selectedTag === 'body' || selectedTag === 'caption' || selectedTag === 'default' ? 'p' : selectedTag,
-              { 
+              {
                 className: `ds-typo ${selectedTag} editable-typography-element`,
                 'data-typo': selectedTag,
                 ref: editableRef,
@@ -746,123 +749,123 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         </div>
       </div>
 
-      <div className="demo-layout-grid">
-        <div className="demo-logic-column">
+      <div className={scopedClasses("demo-layout-grid", styles)}>
+        <div className={scopedClasses("demo-logic-column", styles)}>
 
 
-      <div className="json-preview-container ds-typo pre" data-typo="pre">
-      <div className="json-preview-header">
+      <div className={scopedClasses("json-preview-container ds-typo pre", styles)} data-typo="pre">
+      <div className={scopedClasses("json-preview-header", styles)}>
         <span>Theme Config (Live Typography)</span>
       </div>
         <div>{selectedTag}: {'{'}</div>
-        
-        <div className="json-property-row">
+
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />,
+            <span className={scopedClasses("json-key", styles)}>&quot;fontSize&quot;</span>: <SyntaxHighlighter value={fontSizeString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />,
           </div>
-          <button 
+          <button
             onClick={() => setIsEditorOpen(true)}
             title="Edit Font Size"
-            className="json-action-button"
+            className={scopedClasses("json-action-button", styles)}
           >
             <Edit2 size={16} />
           </button>
         </div>
 
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className="json-value-inherited">&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isFontFamilyInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;fontFamily&quot;</span>: {isFontFamilyInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{fontFamilyString}&quot;</span> : <SyntaxHighlighter value={fontFamilyString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isFontFamilyInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isFontFamilyInherited && (
               <button
                 onClick={() => handleRemoveProperty('fontFamily')}
                 title="Reset to Default"
-                className="json-action-button delete-button"
+                className={scopedClasses("json-action-button delete-button", styles)}
               >
                 <Trash2 size={14} />
               </button>
             )}
-            <button 
+            <button
               onClick={() => setIsFontFamilyEditorOpen(true)}
               title="Edit Font Family"
-              className="json-action-button"
+              className={scopedClasses("json-action-button", styles)}
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className="json-value-inherited">&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isFontWeightInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;fontWeight&quot;</span>: {isFontWeightInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{fontWeightString}&quot;</span> : <SyntaxHighlighter value={fontWeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isFontWeightInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isFontWeightInherited && (
               <button
                 onClick={() => handleRemoveProperty('fontWeight')}
                 title="Reset to Default"
-                className="json-action-button delete-button"
+                className={scopedClasses("json-action-button delete-button", styles)}
               >
                 <Trash2 size={14} />
               </button>
             )}
-            <button 
+            <button
               onClick={() => setIsFontWeightEditorOpen(true)}
               title="Edit Font Weight"
-              className="json-action-button"
+              className={scopedClasses("json-action-button", styles)}
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className="json-value-inherited">&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isLineHeightInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;lineHeight&quot;</span>: {isLineHeightInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{lineHeightString}&quot;</span> : <SyntaxHighlighter value={lineHeightString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isLineHeightInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isLineHeightInherited && (
               <button
                 onClick={() => handleRemoveProperty('lineHeight')}
                 title="Reset to Default"
-                className="json-action-button delete-button"
+                className={scopedClasses("json-action-button delete-button", styles)}
               >
                 <Trash2 size={14} />
               </button>
             )}
-            <button 
+            <button
               onClick={() => setIsLineHeightEditorOpen(true)}
               title="Edit Line Height"
-              className="json-action-button"
+              className={scopedClasses("json-action-button", styles)}
             >
               <Edit2 size={16} />
             </button>
           </div>
         </div>
 
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className="json-value-inherited">&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isLetterSpacingInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;letterSpacing&quot;</span>: {isLetterSpacingInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{letterSpacingString}&quot;</span> : <SyntaxHighlighter value={letterSpacingString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isLetterSpacingInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isLetterSpacingInherited && (
               <button
                 onClick={() => handleRemoveProperty('letterSpacing')}
                 title="Reset to Default"
-                className="json-action-button delete-button"
+                className={scopedClasses("json-action-button delete-button", styles)}
               >
                 <Trash2 size={14} />
               </button>
             )}
-            <button 
+            <button
               onClick={() => setIsLetterSpacingEditorOpen(true)}
               title="Edit Letter Spacing"
-              className="json-action-button"
+              className={scopedClasses("json-action-button", styles)}
             >
               <Edit2 size={16} />
             </button>
@@ -870,96 +873,96 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         </div>
 
         {/* Text Transform */}
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className="json-value-inherited">&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isTextTransformInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;textTransform&quot;</span>: {isTextTransformInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{textTransformString}&quot;</span> : <SyntaxHighlighter value={textTransformString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isTextTransformInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isTextTransformInherited && (
-              <button onClick={() => handleRemoveProperty('textTransform')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('textTransform')} title="Reset to Default" className={scopedClasses("json-action-button delete-button", styles)}><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsTextTransformEditorOpen(true)} title="Edit Text Transform" className="json-action-button"><Edit2 size={16} /></button>
+            <button onClick={() => setIsTextTransformEditorOpen(true)} title="Edit Text Transform" className={scopedClasses("json-action-button", styles)}><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Text Decoration */}
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className="json-value-inherited">&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isTextDecorationInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;textDecoration&quot;</span>: {isTextDecorationInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{textDecorationString}&quot;</span> : <SyntaxHighlighter value={textDecorationString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isTextDecorationInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isTextDecorationInherited && (
-              <button onClick={() => handleRemoveProperty('textDecoration')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('textDecoration')} title="Reset to Default" className={scopedClasses("json-action-button delete-button", styles)}><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsTextDecorationEditorOpen(true)} title="Edit Text Decoration" className="json-action-button"><Edit2 size={16} /></button>
+            <button onClick={() => setIsTextDecorationEditorOpen(true)} title="Edit Text Decoration" className={scopedClasses("json-action-button", styles)}><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Font Style */}
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className="json-value-inherited">&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isFontStyleInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;fontStyle&quot;</span>: {isFontStyleInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{fontStyleString}&quot;</span> : <SyntaxHighlighter value={fontStyleString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isFontStyleInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isFontStyleInherited && (
-              <button onClick={() => handleRemoveProperty('fontStyle')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('fontStyle')} title="Reset to Default" className={scopedClasses("json-action-button delete-button", styles)}><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsFontStyleEditorOpen(true)} title="Edit Font Style" className="json-action-button"><Edit2 size={16} /></button>
+            <button onClick={() => setIsFontStyleEditorOpen(true)} title="Edit Font Style" className={scopedClasses("json-action-button", styles)}><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Margin Block Start */}
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className="json-value-inherited">&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isMarginBlockStartInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;marginBlockStart&quot;</span>: {isMarginBlockStartInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{marginBlockStartString}&quot;</span> : <SyntaxHighlighter value={marginBlockStartString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isMarginBlockStartInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isMarginBlockStartInherited && (
-              <button onClick={() => handleRemoveProperty('marginBlockStart')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('marginBlockStart')} title="Reset to Default" className={scopedClasses("json-action-button delete-button", styles)}><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsMarginBlockStartEditorOpen(true)} title="Edit Margin Block Start" className="json-action-button"><Edit2 size={16} /></button>
+            <button onClick={() => setIsMarginBlockStartEditorOpen(true)} title="Edit Margin Block Start" className={scopedClasses("json-action-button", styles)}><Edit2 size={16} /></button>
           </div>
         </div>
 
         {/* Margin Block End */}
-        <div className="json-property-row">
+        <div className={scopedClasses("json-property-row", styles)}>
           <div>
-            <span className="json-key">&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className="json-value-inherited">&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
-            {isMarginBlockEndInherited && <span className="json-comment">{`// inherited`}</span>}
+            <span className={scopedClasses("json-key", styles)}>&quot;marginBlockEnd&quot;</span>: {isMarginBlockEndInherited ? <span className={scopedClasses("json-value-inherited", styles)}>&quot;{marginBlockEndString}&quot;</span> : <SyntaxHighlighter value={marginBlockEndString} viewportWidth={previewViewport} themeBreakpoints={themeBreakpoints} />}
+            {isMarginBlockEndInherited && <span className={scopedClasses("json-comment", styles)}>{`// inherited`}</span>}
           </div>
-          <div className="json-action-group">
+          <div className={scopedClasses("json-action-group", styles)}>
             {!isDefault && !isMarginBlockEndInherited && (
-              <button onClick={() => handleRemoveProperty('marginBlockEnd')} title="Reset to Default" className="json-action-button delete-button"><Trash2 size={14} /></button>
+              <button onClick={() => handleRemoveProperty('marginBlockEnd')} title="Reset to Default" className={scopedClasses("json-action-button delete-button", styles)}><Trash2 size={14} /></button>
             )}
-            <button onClick={() => setIsMarginBlockEndEditorOpen(true)} title="Edit Margin Block End" className="json-action-button"><Edit2 size={16} /></button>
+            <button onClick={() => setIsMarginBlockEndEditorOpen(true)} title="Edit Margin Block End" className={scopedClasses("json-action-button", styles)}><Edit2 size={16} /></button>
           </div>
         </div>
-        
+
         <div>{'}'}</div>
       </div>
 
-      <div className="css-usage-container">
-          <div className="css-usage-header">
+      <div className={scopedClasses("css-usage-container", styles)}>
+          <div className={scopedClasses("css-usage-header", styles)}>
             <span>
                 CSS Usage
             </span>
           </div>
-          <div className="css-code-block ds-typo pre" data-typo="pre">
-              <span className="selector">.any-class</span>
-              <span className="bracket">{`{`}</span>
-              <span className="mixin">@ds-typo</span>
-              <span className="paren">(</span>
-              <span className="argument">{selectedTag}</span>
-              <span className="paren">)</span>
-              <span className="semicolon">;</span>
-              <span className="bracket">{`}`}</span>
+          <div className={scopedClasses("css-code-block ds-typo pre", styles)} data-typo="pre">
+              <span className={scopedClasses("selector", styles)}>.any-class</span>
+              <span className={scopedClasses("bracket", styles)}>{`{`}</span>
+              <span className={scopedClasses("mixin", styles)}>@ds-typo</span>
+              <span className={scopedClasses("paren", styles)}>(</span>
+              <span className={scopedClasses("argument", styles)}>{selectedTag}</span>
+              <span className={scopedClasses("paren", styles)}>)</span>
+              <span className={scopedClasses("semicolon", styles)}>;</span>
+              <span className={scopedClasses("bracket", styles)}>{`}`}</span>
           </div>
-          <p className="css-usage-description">
-              <strong>Theme Configuration:</strong> The settings below define your JSON theme. 
+          <p className={scopedClasses("css-usage-description", styles)}>
+              <strong>Theme Configuration:</strong> The settings below define your JSON theme.
               Once configured in <code>uxdsl.theme.json</code>, the mixin above applies these responsive rules automatically.
           </p>
       </div>
@@ -967,15 +970,15 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       </div>
 
       {/* Typography Showcase */}
-      <div className="typography-showcase">
-        <div className="showcase-title">Typography Showcase</div>
-        <div className="showcase-grid">
+      <div className={scopedClasses("typography-showcase", styles)}>
+        <div className={scopedClasses("showcase-title", styles)}>Typography Showcase</div>
+        <div className={scopedClasses("showcase-grid", styles)}>
           {TAGS.filter(tag => tag !== 'default').map(tag => (
-            <div key={tag} className="showcase-item">
-              <span className="showcase-tag">{tag}</span>
+            <div key={tag} className={scopedClasses("showcase-item", styles)}>
+              <span className={scopedClasses("showcase-tag", styles)}>{tag}</span>
               {React.createElement(
                 tag === 'body' || tag === 'caption' ? 'p' : tag,
-                { 
+                {
                   className: `showcase-text sample-${tag}`
                 },
                 textMap[tag] || initialTypographyItems.find(i => i.tag === tag)?.text
@@ -986,7 +989,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
       </div>
       </InteractiveDemoContainer>
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isEditorOpen}
         onClose={() => setIsEditorOpen(false)}
         initialValue={fontSizeString}
@@ -995,7 +998,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="text"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isFontFamilyEditorOpen}
         onClose={() => setIsFontFamilyEditorOpen(false)}
         initialValue={fontFamilyString}
@@ -1004,7 +1007,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="font"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isFontWeightEditorOpen}
         onClose={() => setIsFontWeightEditorOpen(false)}
         initialValue={fontWeightString}
@@ -1013,7 +1016,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="text"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isLineHeightEditorOpen}
         onClose={() => setIsLineHeightEditorOpen(false)}
         initialValue={lineHeightString}
@@ -1022,7 +1025,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="text"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isLetterSpacingEditorOpen}
         onClose={() => setIsLetterSpacingEditorOpen(false)}
         initialValue={letterSpacingString}
@@ -1031,7 +1034,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="text"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isTextTransformEditorOpen}
         onClose={() => setIsTextTransformEditorOpen(false)}
         initialValue={textTransformString}
@@ -1041,7 +1044,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         options={['none', 'capitalize', 'uppercase', 'lowercase']}
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isTextDecorationEditorOpen}
         onClose={() => setIsTextDecorationEditorOpen(false)}
         initialValue={textDecorationString}
@@ -1051,7 +1054,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         options={['none', 'underline', 'line-through', 'overline']}
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isFontStyleEditorOpen}
         onClose={() => setIsFontStyleEditorOpen(false)}
         initialValue={fontStyleString}
@@ -1061,7 +1064,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         options={['normal', 'italic', 'oblique']}
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isMarginBlockStartEditorOpen}
         onClose={() => setIsMarginBlockStartEditorOpen(false)}
         initialValue={marginBlockStartString}
@@ -1070,7 +1073,7 @@ export function ResponsiveSyntaxExplainer({ action }: { action?: React.ReactNode
         editorType="numeric"
       />
 
-      <BreakpointEditor 
+      <BreakpointEditor
         isOpen={isMarginBlockEndEditorOpen}
         onClose={() => setIsMarginBlockEndEditorOpen(false)}
         initialValue={marginBlockEndString}

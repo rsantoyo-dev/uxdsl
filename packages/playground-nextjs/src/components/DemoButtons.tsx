@@ -1,4 +1,7 @@
- 'use client'
+'use client'
+
+import styles from './DemoButtons.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 
 import { useEffect, useMemo, useState } from 'react'
 import { generateButtonCss, getButtonTokens, inspectButtonTheme, buttonComponentCss, generateSurfaceCss, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
@@ -44,25 +47,25 @@ export default function DemoButtons() {
       setOverrides(next); setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
-  return <div id="DemoButtons" className="buttons-section demo-section">
+  return <div id="DemoButtons" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("buttons-section demo-section", styles)}>
     <style dangerouslySetInnerHTML={{ __html: css.replace(/</g, '\\3c ') }} />
-    <section className="section">
-      <h2 className="section-title">Shared engine playground</h2>
+    <section className={scopedClasses("section", styles)}>
+      <h2 className={scopedClasses("section-title", styles)}>Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test responsive values. Hover, focus with the keyboard, or press a preview button to inspect configured states. JSON edits are scoped to this demo and do not save source files.</p>
       <label htmlFor="button-theme">Buttons and breakpoint configuration</label>
-      <textarea id="button-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} className="code-textarea" />
+      <textarea id="button-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={18} className={scopedClasses("code-textarea", styles)} />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={reset}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}
     </section>
-    <section className="section">
+    <section className={scopedClasses("section", styles)}>
       <label htmlFor="button-tone">Palette tone (optional)</label>
       <select id="button-tone" value={tone} onChange={e => setTone(e.target.value)}><option value="">Use configured colors</option>{getToneFamilies(theme.palette || {}).map(key => <option key={key}>{key}</option>)}</select>
       <label htmlFor="button-size">Size (Density and Radius)</label>
       <select id="button-size" value={size} onChange={e => setSize(e.target.value)}><option value="">Use configured size</option>{Object.keys(getEdgeTokens(theme).radii).filter(key => /^\d+$/.test(key) && (getDensityTokens(theme))[key]).map(key => <option key={key}>{key}</option>)}</select>
       <label><input type="checkbox" checked={selected} onChange={e => setSelected(e.target.checked)} />Selected (aria-pressed)</label>
       <label><input type="checkbox" checked={disabled} onChange={e => setDisabled(e.target.checked)} />Disabled</label>
-      <div className="surfaces-grid">{Object.keys(tokens).map(role => <div key={role}>
+      <div className={scopedClasses("surfaces-grid", styles)}>{Object.keys(tokens).map(role => <div key={role}>
         <button type="button" data-button-role={role} aria-pressed={selected} disabled={disabled}>{role} action</button>
         <pre>{`.action { @ds-button(${role}${tone ? ` ${tone}` : ''}${size ? ` ${size}` : ''}); }`}</pre>
         <details><summary>CSS from the shared engine</summary><pre>{buttonComponentCss(theme, '.action', role, tone, size)}</pre><pre>{JSON.stringify(Object.fromEntries(Object.entries(values).filter(([key]) => key.startsWith(`--uxdsl__button__${role}-`))), null, 2)}</pre></details>

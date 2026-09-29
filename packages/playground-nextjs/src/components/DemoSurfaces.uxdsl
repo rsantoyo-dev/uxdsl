@@ -1,11 +1,11 @@
 /* DemoSurfaces styles - Scoped */
-#DemoSurfaces {
-  .surfaces-section { 
-    display: flex; 
-    flex-direction: column; 
+.module-root {
+  .surfaces-section {
+    display: flex;
+    flex-direction: column;
     gap: density(4);
     /* Polyfill for missing 0 space token in some builds */
-    --uxdsl__space__0: 0px; 
+    --uxdsl__space__0: 0px;
   }
   .surfaces-header { display: flex; flex-direction: column; gap: density(2); }
 

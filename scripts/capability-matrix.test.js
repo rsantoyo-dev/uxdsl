@@ -86,10 +86,26 @@ test('declared CSS Modules are compiled from UXDSL and absent from the global en
     assert.ok(!sources.has(source) && !outputs.has(output), 'module entries must be unique');
     sources.add(source); outputs.add(output);
     assert.ok(fs.existsSync(path.join(playground, source)), `${source} is missing`);
+    const uxdsl = fs.readFileSync(path.join(playground, source), 'utf8');
+    const component = path.basename(source, '.uxdsl');
+    assert.ok(!uxdsl.includes(`#${component}`), `${source} should use module classes for scope`);
     const css = fs.readFileSync(path.join(playground, output), 'utf8');
     assert.doesNotMatch(css, /:root|#uxdsl-bp-meta/, `${output} must consume the global theme`);
-    assert.match(css, /var\(--uxdsl__/, `${output} should contain compiled UXDSL token references`);
+    assert.match(css, /\{[^}]*:/, `${output} should contain compiled CSS declarations`);
     assert.ok(!globalEntry.includes(`@import '../${source.slice(4)}';`), `${source} must not also enter the global sheet`);
+    const tsx = fs.readFileSync(path.join(playground, 'src/components', `${component}.tsx`), 'utf8');
+    assert.ok(tsx.includes(`./${component}.module.css`), `${component}.tsx must import its compiled module`);
+  }
+  const shared = new Set(['CapabilityDocs.uxdsl', 'DocumentationSection.uxdsl', 'EditDialog.uxdsl']);
+  const componentFiles = fs.readdirSync(path.join(playground, 'src/components'))
+    .filter(file => file.endsWith('.uxdsl'));
+  assert.deepEqual(
+    [...sources].sort(),
+    componentFiles.filter(file => !shared.has(file)).map(file => `src/components/${file}`).sort(),
+    'each component-owned UXDSL sheet must be a module; only cross-component sheets stay global',
+  );
+  for (const file of shared) {
+    assert.ok(globalEntry.includes(`@import '../components/${file}';`), `${file} must stay in the shared global sheet`);
   }
 });
 

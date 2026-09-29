@@ -1,0 +1,125 @@
+.ai-prompt-container {
+  margin-top: var(--uxdsl__space__4);
+  width: 100%;
+  max-width: 600px;
+  background: transparent;
+  position: relative;
+  z-index: 10;
+}
+
+.ai-prompt-form {
+  width: 100%;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  padding: var(--uxdsl__space__2);
+  border-radius: 9999px;
+  background: var(--uxdsl__palette__surface-paper);
+  border: 1px solid var(--uxdsl__palette__divider-main);
+  transition: border-color 0.2s ease;
+  position: relative;
+  z-index: 1;
+
+  &:focus-within {
+    border-color: var(--uxdsl__palette__primary-main);
+    box-shadow: 0 0 0 2px var(--uxdsl__palette__primary-light);
+  }
+}
+
+.ai-icon {
+  color: var(--uxdsl__palette__primary-main);
+  margin-right: var(--uxdsl__space__2);
+}
+
+.ai-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  color: var(--uxdsl__palette__text-primary);
+  font-size: 1rem;
+  outline: none;
+
+  &::placeholder {
+    color: var(--uxdsl__palette__text-secondary);
+  }
+
+  /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
+  }
+}
+
+.ai-submit-btn { padding: var(--uxdsl__surface__flat-padding); border-radius: var(--uxdsl__surface__flat-radius); background: transparent; color: var(--uxdsl__palette__primary-main); border: var(--uxdsl__surface__flat-border); box-shadow: var(--uxdsl__surface__flat-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+
+  &:disabled {
+    color: var(--uxdsl__palette__action-disabled);
+    border-color: var(--uxdsl__palette__action-disabled);
+  }
+}
+
+.ai-submit-btn:hover { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+
+.ai-submit-btn.is-selected, .ai-submit-btn[aria-pressed="true"], .ai-submit-btn[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
+
+.ai-response {
+  margin-top: var(--uxdsl__space__4);
+  padding: var(--uxdsl__space__4);
+  border-radius: var(--uxdsl__radius__3);
+  background: var(--uxdsl__palette__surface-paper);
+  border: 1px solid var(--uxdsl__palette__divider-main);
+  color: var(--uxdsl__palette__text-primary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+.theme-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: color-mix(in srgb, var(--uxdsl__color__black) 70%, transparent); /* a modal scrim: black whatever the mode */
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--uxdsl__space__4);
+  color: var(--uxdsl__color__white);
+}
+
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  color: var(--uxdsl__palette__primary-light);
+}
+
+.loading-text {
+  font-size: 1.25rem;
+  font-weight: 500;
+  color: var(--uxdsl__color__white);
+  text-align: center;
+}
+
+.loading-theme-name {
+  font-family: monospace;
+  background: color-mix(in srgb, var(--uxdsl__color__white) 10%, transparent);
+  padding: var(--uxdsl__space__1) var(--uxdsl__space__2);
+  border-radius: var(--uxdsl__radius__2);
+  color: var(--uxdsl__palette__primary-light);
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}

@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 // MIG-B7-17 phase C: the playground's own build config uses the typed helper the package
 // ships (`postcss-uxdsl/config`), as it recommends to every project — it was a plain object.
 const { defineConfig } = require('postcss-uxdsl/config');
@@ -19,6 +20,12 @@ module.exports = defineConfig({
     })),
   ],
   breakpoints: theme.breakpoints,
+  // Component entries consume the richer legacy Color/Palette sheets emitted by
+  // the global entry. Give strict reference validation those exact definitions.
+  references: {
+    css: ['default-colors.css', 'default-palette.css'].map(name =>
+      fs.readFileSync(require.resolve(`postcss-uxdsl/theme/${name}`), 'utf8')),
+  },
   watch: ['src/**/*.uxdsl', 'src/**/*.css', 'uxdsl.theme.*.json', 'themes.js'],
   theme,
 });

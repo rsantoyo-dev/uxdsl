@@ -1,15 +1,18 @@
+import styles from './SpacingExplanation.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
+
 import SpacingPrinciple from './SpacingPrinciple'
 
 export default function SpacingExplanation() {
   return (
-    <section className="spacing-explanation" aria-labelledby="spacing-explained">
+    <section className={scopedClasses("spacing-explanation", styles)} aria-labelledby="spacing-explained">
       <h2 id="spacing-explained">One spacing scale. Consistent decisions everywhere.</h2>
       <SpacingPrinciple />
       <p>Spacing tokens are named entries in your theme’s spacing scale. Use them for padding inside a box, margins around it, and gaps between items. Components choose a token; the theme supplies its value.</p>
       <p><code>space(4)</code> references entry <code>4</code>. It does not mean four pixels or four times a base unit. The theme defines the measurement.</p>
       <h3>1. Define the scale in your theme JSON</h3>
       <p>This reference excerpt defines three reusable values:</p>
-      <pre><code className="language-json">{`{
+      <pre><code className={scopedClasses("language-json", styles)}>{`{
   "spacing": {
     "2": "0.25rem",
     "4": "0.75rem",
@@ -18,8 +21,8 @@ export default function SpacingExplanation() {
 }`}</code></pre>
       <h3>2. Use Spacing directly when stable spacing is intentional</h3>
       <p>In this example, the card padding and actions gap intentionally keep the same spacing value across breakpoints. For ordinary component spacing, prefer an appropriate Density token.</p>
-      <div className="spacing-explanation__comparison">
-        <div><h4>UXDSL you write</h4><pre><code className="language-css">{`.card, .panel {
+      <div className={scopedClasses("spacing-explanation__comparison", styles)}>
+        <div><h4>UXDSL you write</h4><pre><code className={scopedClasses("language-css", styles)}>{`.card, .panel {
   padding: space(4);
 }
 
@@ -27,7 +30,7 @@ export default function SpacingExplanation() {
   display: flex;
   gap: space(4);
 }`}</code></pre></div>
-        <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{`:root {
+        <div><h4>Equivalent plain CSS</h4><pre><code className={scopedClasses("language-css", styles)}>{`:root {
   --uxdsl__space__2: 0.25rem;
   --uxdsl__space__4: 0.75rem;
   --uxdsl__space__6: 1.5rem;

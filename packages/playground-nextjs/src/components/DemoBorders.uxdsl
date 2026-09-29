@@ -1,5 +1,5 @@
 /* DemoBorders styles - Scoped */
-#DemoBorders {
+.module-root {
   .demo-borders {
     display: flex;
     flex-direction: column;

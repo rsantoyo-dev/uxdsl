@@ -1,0 +1,175 @@
+/* Shared Russian Doll Visualization Styles */
+
+.concentric-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.concentric-content {
+  position: relative;
+  z-index: 100;
+  background: var(--uxdsl__palette__surface-main);
+  padding: var(--uxdsl__density__2);
+  border-radius: var(--uxdsl__radius__1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 80px;
+  min-height: 40px;
+  box-shadow: var(--uxdsl__shadow__2);
+  font-family: var(--uxdsl__typography__caption-font-family);
+  font-size: var(--uxdsl__typography__caption-size);
+  line-height: var(--uxdsl__typography__caption-line);
+  font-weight: var(--uxdsl__typography__caption-weight);
+  letter-spacing: var(--uxdsl__typography__caption-spacing);
+  margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+  font-weight: bold;
+  color: var(--uxdsl__palette__primary-dark);
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+}
+
+.concentric-ring {
+  position: absolute;
+  border-radius: var(--uxdsl__radius__2);
+  border: 1px solid color-mix(in srgb, var(--uxdsl__palette__primary-main) 20%, transparent);
+  background: color-mix(in srgb, var(--uxdsl__palette__primary-main) 3%, transparent);
+  pointer-events: auto;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  cursor: pointer;
+  padding: 0;
+  font: inherit;
+}
+
+.concentric-ring:hover,
+.concentric-ring:focus-visible,
+.concentric-ring.is-hovered {
+  border-color: var(--uxdsl__palette__secondary-main);
+  background: color-mix(in srgb, var(--uxdsl__palette__secondary-main) 10%, transparent);
+  box-shadow: 0 0 0 1px var(--uxdsl__palette__secondary-main);
+}
+
+.ring-label {
+  background: var(--uxdsl__palette__secondary-main);
+  color: var(--uxdsl__palette__secondary-contrast);
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  border-radius: 0 0 4px 4px;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-top: -1px;
+}
+
+.concentric-ring:hover .ring-label,
+.concentric-ring:focus-visible .ring-label,
+.concentric-ring.is-hovered .ring-label {
+  opacity: 1;
+}
+
+.concentric-ring:focus-visible {
+  outline: 2px solid var(--uxdsl__palette__secondary-main);
+  outline-offset: 2px;
+}
+
+/* Generate inset classes for density rings */
+
+.concentric-ring--uxdsl__density__1 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__1) * -1);
+    z-index: calc(20 - 1);
+  }
+
+.concentric-ring--uxdsl__density__2 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__2) * -1);
+    z-index: calc(20 - 2);
+  }
+
+.concentric-ring--uxdsl__density__3 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__3) * -1);
+    z-index: calc(20 - 3);
+  }
+
+.concentric-ring--uxdsl__density__4 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__4) * -1);
+    z-index: calc(20 - 4);
+  }
+
+.concentric-ring--uxdsl__density__5 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__5) * -1);
+    z-index: calc(20 - 5);
+  }
+
+.concentric-ring--uxdsl__density__6 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__6) * -1);
+    z-index: calc(20 - 6);
+  }
+
+.concentric-ring--uxdsl__density__7 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__7) * -1);
+    z-index: calc(20 - 7);
+  }
+
+.concentric-ring--uxdsl__density__8 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__8) * -1);
+    z-index: calc(20 - 8);
+  }
+
+.concentric-ring--uxdsl__density__9 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__9) * -1);
+    z-index: calc(20 - 9);
+  }
+
+.concentric-ring--uxdsl__density__10 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__10) * -1);
+    z-index: calc(20 - 10);
+  }
+
+.concentric-ring--uxdsl__density__11 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__11) * -1);
+    z-index: calc(20 - 11);
+  }
+
+.concentric-ring--uxdsl__density__12 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__12) * -1);
+    z-index: calc(20 - 12);
+  }
+
+.concentric-ring--uxdsl__density__13 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__13) * -1);
+    z-index: calc(20 - 13);
+  }
+
+.concentric-ring--uxdsl__density__14 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__14) * -1);
+    z-index: calc(20 - 14);
+  }
+
+.concentric-ring--uxdsl__density__15 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__15) * -1);
+    z-index: calc(20 - 15);
+  }
+
+.concentric-ring--uxdsl__density__16 {
+    /* Negative inset expands from the center content based on density value */
+    inset: calc(var(--uxdsl__density__16) * -1);
+    z-index: calc(20 - 16);
+  }

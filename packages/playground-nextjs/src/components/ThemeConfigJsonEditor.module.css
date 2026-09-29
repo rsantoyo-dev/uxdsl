@@ -1,0 +1,62 @@
+/* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
+   style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
+   The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
+.config-editor__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--uxdsl__space__3);
+  flex-wrap: wrap;
+}
+.config-editor__hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__buttons {
+  display: flex;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__button {
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  background: var(--uxdsl__palette__surface-light);
+  color: var(--uxdsl__palette__text-primary);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__3);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.config-editor__button--primary {
+  border-color: var(--uxdsl__palette__primary-main);
+  background: var(--uxdsl__palette__primary-main);
+  color: var(--uxdsl__palette__primary-contrast);
+}
+.config-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uxdsl__space__2);
+}
+.config-editor__textarea {
+  width: 100%;
+  min-height: 460px;
+  resize: vertical;
+  font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__3);
+  background: var(--uxdsl__palette__surface-main);
+  color: var(--uxdsl__palette__text-primary);
+}
+.config-editor__textarea.is-invalid {
+  border-color: var(--uxdsl__palette__error-main);
+}
+.config-editor__status {
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+}
+.config-editor__status.is-invalid {
+  color: var(--uxdsl__palette__error-main);
+}

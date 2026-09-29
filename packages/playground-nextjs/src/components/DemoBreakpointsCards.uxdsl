@@ -1,5 +1,5 @@
 /* DemoBreakpointsCards styles - Scoped */
-#DemoBreakpointsCards {
+.module-root {
   @ds-surface(contained light);
   display: flex;
   flex-direction: xs(column) md(row);

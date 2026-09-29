@@ -1,0 +1,59 @@
+/* Color / Palette explanation. Compiled as a CSS Module from UXDSL.
+   Stable spacing uses space(); the code panel
+   uses Color identities, dark in both modes on purpose. */
+
+.color-documentation {
+  min-width: 0;
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+}
+
+.color-documentation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+
+.color-documentation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+
+.color-documentation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+
+.color-documentation p {
+  margin-block: var(--uxdsl__space__4);
+}
+
+.color-documentation ul {
+  list-style: disc;
+  padding-inline-start: var(--uxdsl__space__6);
+}
+
+.color-documentation li {
+  margin-block: var(--uxdsl__space__3);
+}
+
+.color-documentation a {
+  text-decoration: underline;
+}
+
+.color-documentation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.color-documentation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+
+.color-documentation__comparison > div {
+  min-width: 0;
+}

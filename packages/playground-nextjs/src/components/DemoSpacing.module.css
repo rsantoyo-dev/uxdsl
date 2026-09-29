@@ -7,12 +7,12 @@
 
   .spacing-doll-container { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
   .spacing-doll-controls { display: flex; gap: var(--uxdsl__density__2); align-items: center; }
-  .spacing-doll-wrapper { 
-    display: flex; 
-    justify-content: center; 
+  .spacing-doll-wrapper {
+    display: flex;
+    justify-content: center;
     align-items: center;
     /* min-height removed to adapt to content */
-    overflow: auto; 
+    overflow: auto;
     padding: var(--uxdsl__density__4);
     background: var(--uxdsl__palette__surface-light);
     border-radius: var(--uxdsl__radius__2);

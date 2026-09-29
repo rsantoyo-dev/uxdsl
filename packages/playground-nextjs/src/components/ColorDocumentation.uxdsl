@@ -1,5 +1,5 @@
-/* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
-   classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
+/* Color / Palette explanation. Compiled as a CSS Module from UXDSL.
+   Stable spacing uses space(); the code panel
    uses Color identities, dark in both modes on purpose. */
 
 .color-documentation {

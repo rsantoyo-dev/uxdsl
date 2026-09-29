@@ -1,6 +1,5 @@
 /* Density explanation on /densities and /docs/densities.
-   Was DensityExplanation.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl
-   is global. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
+   Compiled as a CSS Module from UXDSL. Stable spacing uses space() where the scale has the value (1.25rem, 0.65rem and
    3rem are not on it); the diagram and code panel use Color identities on purpose. The live
    boxes now take their padding from density(4) / space(4) here instead of an inline style. */
 

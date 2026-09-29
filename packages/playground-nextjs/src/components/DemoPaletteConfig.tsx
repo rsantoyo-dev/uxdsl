@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoPalette.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
@@ -68,14 +71,14 @@ function ColorToken({ tone, variant }: { tone: string; variant: string }) {
   }
 
   return (
-    <li ref={ref} className={`palette-token palette-card-${tone}-${variant}`} style={{ color: color.text }}>
+    <li ref={ref} className={scopedClasses(`palette-token palette-card-${tone}-${variant}`, styles)} style={{ color: color.text }}>
       <input type="color" value={color.hex || '#000000'} onChange={changeColor}
-        className="color-picker-overlay" aria-label={`Change color for ${tone}-${variant}`} />
-      <span className="token-name">{tone}-{variant}</span>
-      {linkedColor && <span className="token-match">color({linkedColor})</span>}
-      <div className="token-values">
-        <span className="token-hex">{color.hex}</span>
-        <span className="token-rgb">{color.rgb}</span>
+        className={scopedClasses("color-picker-overlay", styles)} aria-label={`Change color for ${tone}-${variant}`} />
+      <span className={scopedClasses("token-name", styles)}>{tone}-{variant}</span>
+      {linkedColor && <span className={scopedClasses("token-match", styles)}>color({linkedColor})</span>}
+      <div className={scopedClasses("token-values", styles)}>
+        <span className={scopedClasses("token-hex", styles)}>{color.hex}</span>
+        <span className={scopedClasses("token-rgb", styles)}>{color.rgb}</span>
       </div>
     </li>
   )
@@ -83,18 +86,18 @@ function ColorToken({ tone, variant }: { tone: string; variant: string }) {
 
 export default function DemoPaletteConfig() {
   return (
-    <section className="demo-palette">
+    <section className={scopedClasses("demo-palette", styles)}>
       <InteractiveDemoContainer title="Global Palette" toolbar={
-        <div className="demo-toolbar-hint">Link labels come from explicit references. Editing changes the selected mode&apos;s assignment; an inherited value is shared with light mode.</div>
+        <div className={scopedClasses("demo-toolbar-hint", styles)}>Link labels come from explicit references. Editing changes the selected mode&apos;s assignment; an inherited value is shared with light mode.</div>
       }>
-        <div className="palette-stack">
+        <div className={scopedClasses("palette-stack", styles)}>
           {paletteCards.map(tone => (
-            <article key={tone.id} className="palette-card">
-              <header className="palette-card__header">
-                <h4 className="palette-card__title">{tone.title}</h4>
-                <p className="palette-card__detail">{tone.detail}</p>
+            <article key={tone.id} className={scopedClasses("palette-card", styles)}>
+              <header className={scopedClasses("palette-card__header", styles)}>
+                <h4 className={scopedClasses("palette-card__title", styles)}>{tone.title}</h4>
+                <p className={scopedClasses("palette-card__detail", styles)}>{tone.detail}</p>
               </header>
-              <ul className="palette-token-list">
+              <ul className={scopedClasses("palette-token-list", styles)}>
                 {variants.map(variant => <ColorToken key={variant} tone={tone.id} variant={variant} />)}
               </ul>
             </article>

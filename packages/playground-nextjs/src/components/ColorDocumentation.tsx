@@ -1,3 +1,6 @@
+import styles from './ColorDocumentation.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
+
 import AgentGuidance from './AgentGuidance'
 
 type Topic = 'colors' | 'palette'
@@ -27,18 +30,18 @@ function ColorPrinciple() {
 export function ColorExplanation({ topic }: { topic: Topic }) {
   const isPalette = topic === 'palette'
   return (
-    <section className="color-documentation" aria-labelledby={`${topic}-explained`}>
+    <section className={scopedClasses("color-documentation", styles)} aria-labelledby={`${topic}-explained`}>
       <h2 id={`${topic}-explained`}>{isPalette ? 'Give colors a role in your UI.' : 'Define your colors once. Build palettes from them.'}</h2>
       <ColorPrinciple />
       <p>{isPalette ? 'A palette describes what a color is used for. Primary does not have to mean blue: another theme can assign a different color while components keep the same role.' : 'Colors are a collection of reusable color values. You can organize them into families and shades, or define individual named entries. The shade number is a key, not a computed brightness or a guarantee of contrast.'}</p>
       <h3>1. Define Colors and Palette in the theme JSON</h3>
       <p>This reference excerpt defines a color collection and connects palette roles to it using CSS variable references:</p>
-      <pre><code className="language-json">{theme}</code></pre>
+      <pre><code className={scopedClasses("language-json", styles)}>{theme}</code></pre>
       <p>The nested entry <code>{'colors.blue["700"]'}</code> produces <code>--uxdsl__color__blue-700</code>. The nested role <code>palette.primary.main</code> produces <code>--uxdsl__palette__primary-main</code>.</p>
       <p><strong>References preserve the connection.</strong> In this JSON, <code>primary.main</code> references <code>blue-700</code>. Changing that color updates the role once the theme is compiled or applied. A literal hex value in a palette is also valid, but copying a color’s hex value does not create a reference to that color token.</p>
       <h3>2. Express the intended role in components</h3>
-      <div className="color-documentation__comparison">
-        <div><h4>UXDSL you write</h4><pre><code className="language-css">{`.primary-action {
+      <div className={scopedClasses("color-documentation__comparison", styles)}>
+        <div><h4>UXDSL you write</h4><pre><code className={scopedClasses("language-css", styles)}>{`.primary-action {
   background: palette(primary.main);
   color: palette(primary.contrast);
 }
@@ -47,7 +50,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
 .blue-swatch {
   background: color(blue-700);
 }`}</code></pre></div>
-        <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{`:root {
+        <div><h4>Equivalent plain CSS</h4><pre><code className={scopedClasses("language-css", styles)}>{`:root {
   --uxdsl__color__blue-700: #1d4ed8;
   --uxdsl__color__white: #ffffff;
   --uxdsl__palette__primary-main: var(--uxdsl__color__blue-700);
@@ -111,8 +114,8 @@ export function ColorAgentGuidance({ topic }: { topic: Topic }) {
       </>}
       <p><strong>Preserve intent, not just the current computed value.</strong> A Palette role and a Color token can look identical today while responding differently to tomorrow’s theme changes.</p>
       <h3>Configuration and usage example</h3>
-      <pre><code className="language-json">{theme}</code></pre>
-      <pre><code className="language-css">{topic === 'colors' ? `/* A swatch intentionally represents this Color token */
+      <pre><code className={scopedClasses("language-json", styles)}>{theme}</code></pre>
+      <pre><code className={scopedClasses("language-css", styles)}>{topic === 'colors' ? `/* A swatch intentionally represents this Color token */
 .blue-swatch {
   background: color(blue-700);
 }` : `.primary-action {

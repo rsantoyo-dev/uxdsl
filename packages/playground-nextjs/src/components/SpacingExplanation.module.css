@@ -1,0 +1,107 @@
+/* Spacing explanation. Compiled as a CSS Module from UXDSL.
+   Stable spacing uses space(); the code panel uses Color
+   identities, dark in both modes on purpose. The __boxes/__padding/__gap/__content/__edit rules
+   are the live "Try it" boxes that DemoSpacing.tsx renders with this same stylesheet. */
+
+.spacing-explanation {
+  margin-block: var(--uxdsl__space__7);
+  line-height: 1.7;
+  min-width: 0;
+}
+
+.spacing-explanation h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__5);
+}
+
+.spacing-explanation h3 {
+  font-size: 1.2rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+
+.spacing-explanation h4 {
+  margin-bottom: var(--uxdsl__space__4);
+}
+
+.spacing-explanation p {
+  margin-block: var(--uxdsl__space__4);
+}
+
+.spacing-explanation a {
+  text-decoration: underline;
+}
+
+.spacing-explanation pre {
+  overflow-x: auto;
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  padding: var(--uxdsl__space__5);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.spacing-explanation__comparison {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
+  gap: var(--uxdsl__space__5);
+}
+
+.spacing-explanation__comparison > div {
+  min-width: 0;
+}
+
+.spacing-explanation__boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+  gap: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}
+
+.spacing-explanation__boxes figure {
+  margin: 0;
+  min-width: 0;
+}
+
+.spacing-explanation__boxes figcaption {
+  margin-bottom: var(--uxdsl__space__4);
+}
+
+.spacing-explanation__padding, .spacing-explanation__gap {
+  background: var(--uxdsl__color__blue-100);
+  border: 1px solid var(--uxdsl__color__blue-500);
+  border-radius: 0.5rem;
+}
+
+.spacing-explanation__padding {
+  padding: var(--uxdsl__space__4);
+}
+
+.spacing-explanation__gap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__space__4);
+  padding: var(--uxdsl__space__2);
+}
+
+.spacing-explanation__content {
+  background: var(--uxdsl__color__white);
+  color: var(--uxdsl__color__slate-900);
+  padding: var(--uxdsl__space__3);
+  border: 1px dashed var(--uxdsl__color__gray-500);
+  text-align: center;
+}
+
+.spacing-explanation__edit {
+  padding: 0.65rem var(--uxdsl__space__5);
+  background: var(--uxdsl__color__blue-500);
+  color: var(--uxdsl__color__white);
+  border: 0;
+  border-radius: 0.5rem;
+  font: inherit;
+  cursor: pointer;
+}
+
+.spacing-explanation__edit:focus-visible {
+  outline: 3px solid var(--uxdsl__color__blue-300);
+  outline-offset: 3px;
+}

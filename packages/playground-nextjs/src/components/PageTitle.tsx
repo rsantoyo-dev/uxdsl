@@ -1,3 +1,6 @@
+import styles from './PageTitle.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
+
 import React from 'react'
 
 interface PageTitleProps {
@@ -9,15 +12,15 @@ interface PageTitleProps {
 
 export const PageTitle = ({ title, subtitle, subtext, className = '' }: PageTitleProps) => {
   return (
-    <div id="PageTitle" className={`page-title ${className}`}>
-      <h1 className="page-title__text">{title}</h1>
+    <div id="PageTitle" className={scopedClasses('module-root', styles) + ' ' + scopedClasses(`page-title ${className}`, styles)}>
+      <h1 className={scopedClasses("page-title__text", styles)}>{title}</h1>
       {subtitle && (
-        <div className="page-title__subtitle">
+        <div className={scopedClasses("page-title__subtitle", styles)}>
           {subtitle}
           {subtext && (
             <>
               <br />
-              <span className="page-title__subtext">{subtext}</span>
+              <span className={scopedClasses("page-title__subtext", styles)}>{subtext}</span>
             </>
           )}
         </div>

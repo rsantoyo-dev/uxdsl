@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './HeroBackground.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useRef } from 'react'
 
 interface HeroBackgroundProps {
@@ -122,29 +125,29 @@ export const HeroBackground = ({ mouseX, mouseY, isPressed = false }: HeroBackgr
   return (
     <div 
       ref={containerRef} 
-      className="hero-background"
+      className={scopedClasses("hero-background", styles)}
     >
       {/* Secondary Blob (Behind) */}
       <div 
         ref={blob2Ref}
-        className="hero-background__blob hero-background__blob--secondary"
+        className={scopedClasses("hero-background__blob hero-background__blob--secondary", styles)}
       />
       
       {/* Primary Blob (Front) */}
       <div 
         ref={blob1Ref}
-        className="hero-background__blob hero-background__blob--primary"
+        className={scopedClasses("hero-background__blob hero-background__blob--primary", styles)}
       />
 
       {/* Dark Center Blob (Click Effect) */}
       <div 
         ref={blobDarkRef}
-        className="hero-background__blob hero-background__blob--dark"
+        className={scopedClasses("hero-background__blob hero-background__blob--dark", styles)}
       />
       
       {/* Overlay for texture/noise if desired, or just to smooth things out */}
       <div 
-        className="hero-background__overlay"
+        className={scopedClasses("hero-background__overlay", styles)}
       />
     </div>
   )

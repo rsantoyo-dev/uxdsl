@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './RussianDoll.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState } from 'react'
 export { generateDensityCss, spacingValueToCss as parseDensityValue, DEFAULT_DENSITIES } from 'postcss-uxdsl/language'
 
@@ -16,14 +19,14 @@ export function RussianDoll({
   const paddingStyle = { padding: `var(--uxdsl__density__${densityIndex})` }
 
   return (
-    <div className="concentric-wrapper" style={paddingStyle}>
-      <div className="concentric-content">
-        <span className="concentric-label">Content</span>
+    <div className={scopedClasses("concentric-wrapper", styles)} style={paddingStyle}>
+      <div className={scopedClasses("concentric-content", styles)}>
+        <span className={scopedClasses("concentric-label", styles)}>Content</span>
         
         {Array.from({ length: Math.max(0, densityIndex) }, (_, i) => i + 1).map(level => (
           <button type="button"
             key={level}
-            className={`concentric-ring concentric-ring--uxdsl__density__${level} ${hoveredLevel === level ? 'is-hovered' : ''}`}
+            className={scopedClasses(`concentric-ring concentric-ring--uxdsl__density__${level} ${hoveredLevel === level ? 'is-hovered' : ''}`, styles)}
             onMouseEnter={() => setHoveredLevel(level)}
             onMouseLeave={() => setHoveredLevel(null)}
             onClick={(e) => {
@@ -36,7 +39,7 @@ export function RussianDoll({
             aria-label={`Edit density(${level})`}
             style={onLayerClick ? { cursor: 'pointer' } : undefined}
           >
-            <span className="ring-label">density({level})</span>
+            <span className={scopedClasses("ring-label", styles)}>density({level})</span>
           </button>
         ))}
       </div>

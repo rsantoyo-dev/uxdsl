@@ -37,7 +37,7 @@
   position: absolute;
   inset: 0;
   background: palette(primary-main);
-  opacity: 0.5; 
+  opacity: 0.5;
   mix-blend-mode: color;
   z-index: 2;
 }
@@ -45,11 +45,12 @@
 .theme-background-overlay {
   position: absolute;
   inset: 0;
+  /* The gradient keeps a lighter top and bottom with a nearly transparent middle. */
   background: linear-gradient(
     to bottom,
-    palette(surface-light, 0.5) 0%, /* Reduced top opacity */
-    palette(surface-main, 0.05) 50%, /* Much lower middle opacity */
-    palette(surface-main, 0.5) 100% /* Reduced bottom opacity */
+    palette(surface-light, 0.5) 0%,
+    palette(surface-main, 0.05) 50%,
+    palette(surface-main, 0.5) 100%
   );
   z-index: 3;
 }

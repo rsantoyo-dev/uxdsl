@@ -1,0 +1,14 @@
+/* Demo layout only. Button visuals and states come from the shared engine. */
+.module-root {
+  background: transparent;
+
+  .section { margin-block: var(--uxdsl__density__3); }
+  .surfaces-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--uxdsl__density__3);
+    margin-block: var(--uxdsl__density__3);
+  }
+}
+.buttons-section pre { overflow-x: auto; }
+.buttons-section label { margin-inline-end: var(--uxdsl__density__2); }

@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './InteractiveLogo.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import React, { useId, useRef, useEffect, useState } from 'react'
 
 interface InteractiveLogoProps {
@@ -133,7 +136,7 @@ export const InteractiveLogo = ({
       viewBox="0 0 64 64"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      className={`interactive-logo ${className ?? ''}`}
+      className={scopedClasses(`interactive-logo ${className ?? ''}`, styles)}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >

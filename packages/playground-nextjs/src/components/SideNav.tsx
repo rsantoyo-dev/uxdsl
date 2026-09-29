@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './SideNav.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect } from 'react'
@@ -36,10 +39,10 @@ export default function SideNav({ docsLinks = [] }: SideNavProps) {
   const renderLink = (l: { href: string; label: string }) => {
     const active = pathname === l.href
     return (
-      <li key={l.href} className="side-nav__item">
+      <li key={l.href} className={scopedClasses("side-nav__item", styles)}>
         <Link
           href={l.href}
-          className="side-nav__link"
+          className={scopedClasses("side-nav__link", styles)}
           aria-current={active ? 'page' : undefined}
           onClick={() => setIsOpen(false)}
         >
@@ -50,36 +53,36 @@ export default function SideNav({ docsLinks = [] }: SideNavProps) {
   }
 
   return (
-    <div id="SideNav">
-      <nav className="side-nav" aria-label="Sections">
+    <div id="SideNav" className={scopedClasses('module-root', styles)}>
+      <nav className={scopedClasses("side-nav", styles)} aria-label="Sections">
         {/* Mobile Backdrop */}
         <div
-          className={`side-nav__backdrop ${isOpen ? 'is-open' : ''}`}
+          className={scopedClasses(`side-nav__backdrop ${isOpen ? 'is-open' : ''}`, styles)}
           onClick={() => setIsOpen(false)}
         />
 
         {/* Menu Container (Drawer on mobile, Sidebar on desktop) */}
-        <div className={`side-nav__menu ${isOpen ? 'is-open' : ''}`}>
-          <div className="side-nav__header">
-            <div className="side-nav__title">Menu</div>
-            <button className="side-nav__close" onClick={() => setIsOpen(false)} aria-label="Close menu">
+        <div className={scopedClasses(`side-nav__menu ${isOpen ? 'is-open' : ''}`, styles)}>
+          <div className={scopedClasses("side-nav__header", styles)}>
+            <div className={scopedClasses("side-nav__title", styles)}>Menu</div>
+            <button className={scopedClasses("side-nav__close", styles)} onClick={() => setIsOpen(false)} aria-label="Close menu">
               ✕
             </button>
           </div>
 
           {staticLinks.length > 0 && (
-            <div className="side-nav__section">
-              <div className="side-nav__section-title">Playground</div>
-              <ul className="side-nav__list">
+            <div className={scopedClasses("side-nav__section", styles)}>
+              <div className={scopedClasses("side-nav__section-title", styles)}>Playground</div>
+              <ul className={scopedClasses("side-nav__list", styles)}>
                 {staticLinks.map(renderLink)}
               </ul>
             </div>
           )}
 
           {docsLinks.length > 0 && (
-            <div className="side-nav__section">
-              <div className="side-nav__section-title">Documentation</div>
-              <ul className="side-nav__list">
+            <div className={scopedClasses("side-nav__section", styles)}>
+              <div className={scopedClasses("side-nav__section-title", styles)}>Documentation</div>
+              <ul className={scopedClasses("side-nav__list", styles)}>
                 {docsLinks.map(renderLink)}
               </ul>
             </div>

@@ -1,0 +1,242 @@
+/* Palette Playground Scoped Styles */
+.module-root {
+    height: 100%; /* MIG-B7-17 phase B (4): was inline style={{}} on the root */
+
+    .playground-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: var(--uxdsl__density__3);
+    }
+
+    .playground-controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--uxdsl__density__2);
+        align-items: center;
+        width: 100%;
+    }
+
+    .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: var(--uxdsl__density__1);
+        flex: 1;
+        min-width: 140px;
+    }
+
+    .control-label {
+        font-family: var(--uxdsl__typography__caption-font-family);
+        font-size: var(--uxdsl__typography__caption-size);
+        line-height: var(--uxdsl__typography__caption-line);
+        font-weight: var(--uxdsl__typography__caption-weight);
+        letter-spacing: var(--uxdsl__typography__caption-spacing);
+        margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+        margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+        color: var(--uxdsl__palette__neutral-dark);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .control-select {
+        padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+        border: 1px solid var(--uxdsl__palette__neutral-light);
+        border-radius: var(--uxdsl__radius__1);
+        background: var(--uxdsl__palette__surface-main);
+        color: var(--uxdsl__palette__surface-contrast);
+        font-size: 0.9rem;
+        cursor: pointer;
+        width: 100%;
+
+        &:hover {
+            border-color: var(--uxdsl__palette__primary-main);
+        }
+
+        &:focus {
+            outline: none;
+            border-color: var(--uxdsl__palette__primary-main);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--uxdsl__palette__primary-main) 20%, transparent);
+        }
+    }
+
+    .preview-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--uxdsl__density__3);
+        background: var(--uxdsl__palette__surface-light);
+        padding: var(--uxdsl__density__3);
+        border: 1px dashed var(--uxdsl__palette__neutral-light);
+        border-radius: var(--uxdsl__radius__2);
+    }
+
+    .live-preview {
+        /* These will be set inline by React, but we provide defaults */
+        min-height: 120px;
+        display: grid;
+        place-items: center;
+        border-radius: var(--uxdsl__radius__2);
+        box-shadow: var(--uxdsl__shadow__1);
+        transition: all 0.3s ease;
+    }
+
+    .code-block {
+        padding: var(--uxdsl__surface__contained-padding);
+        border-radius: var(--uxdsl__surface__contained-radius);
+        background: var(--uxdsl__surface__contained-bg);
+        color: var(--uxdsl__surface__contained-color);
+        border: var(--uxdsl__surface__contained-border);
+        box-shadow: var(--uxdsl__surface__contained-shadow);
+        background: var(--uxdsl__palette__neutral-dark); /* Force dark background for code */
+        border-radius: var(--uxdsl__radius__2);
+        overflow: hidden;
+    }
+
+    .code-header {
+         background: color-mix(in srgb, var(--uxdsl__palette__neutral-dark) 50%, transparent); /* Slightly lighter than main bg */
+         padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+         border-bottom: 1px solid color-mix(in srgb, var(--uxdsl__palette__neutral-main) 10%, transparent);
+    }
+
+    .code-filename {
+        font-family: var(--uxdsl__typography__caption-font-family);
+        font-size: var(--uxdsl__typography__caption-size);
+        line-height: var(--uxdsl__typography__caption-line);
+        font-weight: var(--uxdsl__typography__caption-weight);
+        letter-spacing: var(--uxdsl__typography__caption-spacing);
+        margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+        margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+        font-family: monospace;
+        color: var(--uxdsl__palette__neutral-light);
+    }
+
+  /* MIG-B7-17 phase B (4): the toolbar, the preview's static half and the "CSS Usage" panel were
+     inline style={{}} in PalettePlayground.tsx (the preview's two colors are chosen at runtime and
+     stay inline). Values on the scale use space(), palette reads use palette(). */
+  .pp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--uxdsl__space__5);
+    width: 100%;
+  }
+
+  .pp-toolbar__column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__3);
+    flex: 1 1 200px;
+  }
+
+  .pp-toolbar__heading {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--uxdsl__palette__text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-toolbar__row {
+    display: flex;
+    gap: var(--uxdsl__space__3);
+  }
+
+  .control-group.pp-toolbar__control {
+    flex: 1;
+  }
+
+  .control-label.pp-toolbar__label {
+    font-size: 0.7rem;
+  }
+
+  .control-select.pp-toolbar__select {
+    padding: var(--uxdsl__space__2);
+    font-size: 0.8rem;
+  }
+
+  .live-preview.pp-preview {
+    padding: var(--uxdsl__space__4);
+    text-align: center;
+    font-weight: bold;
+    font-size: 1.2rem;
+  }
+
+  .pp-usage {
+    margin-top: var(--uxdsl__space__6);
+    padding: var(--uxdsl__space__5);
+    background: var(--uxdsl__palette__surface-light);
+    border: 1px solid var(--uxdsl__palette__neutral-light);
+    border-radius: 6px;
+    text-align: left;
+  }
+
+  .pp-usage__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__title {
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .pp-code {
+    background: var(--uxdsl__palette__surface-dark);
+    padding: var(--uxdsl__space__4);
+    border-radius: 6px;
+    font-family: var(--uxdsl__font__code);
+    font-size: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__space__2);
+    overflow-x: auto;
+    border: 1px solid var(--uxdsl__palette__neutral-dark);
+  }
+
+  .pp-code__line {
+    display: flex;
+    align-items: center;
+  }
+
+  .pp-code__indent {
+    padding-left: var(--uxdsl__space__5);
+  }
+
+  .pp-code__selector {
+    color: var(--uxdsl__palette__secondary-light);
+  }
+
+  .pp-code__property {
+    color: var(--uxdsl__palette__primary-light);
+  }
+
+  .pp-code__function {
+    color: var(--uxdsl__palette__text-primary);
+  }
+
+  .pp-code__argument {
+    color: var(--uxdsl__palette__warning-light);
+  }
+
+  .pp-code__punct {
+    color: var(--uxdsl__palette__text-disabled);
+  }
+
+  .pp-code__gap {
+    margin-left: var(--uxdsl__space__3);
+  }
+
+  .pp-usage__note {
+    margin-top: var(--uxdsl__space__4);
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__text-secondary);
+    line-height: 1.5;
+  }
+
+  .pp-usage__note strong {
+    color: var(--uxdsl__palette__text-primary);
+  }
+}

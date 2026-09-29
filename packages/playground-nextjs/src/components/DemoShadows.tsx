@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoShadows.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useMemo, useState } from 'react'
 import { generateShadowCss, getShadowTokens, inspectShadowTheme } from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
@@ -34,21 +37,21 @@ export default function DemoShadows() {
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
-  return <div id="DemoShadows" className="demo-shadows">
+  return <div id="DemoShadows" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("demo-shadows", styles)}>
     <style>{css}</style>
-    <section className="section">
-      <h2 className="section-title">Shared engine playground</h2>
+    <section className={scopedClasses("section", styles)}>
+      <h2 className={scopedClasses("section-title", styles)}>Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test transitions. The preview uses the active theme and shared engine defaults. Edits below are scoped to this demo and do not save source JSON.</p>
       <label htmlFor="shadow-theme">Shadows and breakpoint configuration</label>
-      <textarea id="shadow-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className="code-textarea" />
+      <textarea id="shadow-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className={scopedClasses("code-textarea", styles)} />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={() => { setOverrides(null); setDraft(JSON.stringify({ breakpoints: activeThemeData.breakpoints, shadows: getShadowTokens(activeThemeData) }, null, 2)); setError('') }}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}
     </section>
-    <section className="section">
+    <section className={scopedClasses("section", styles)}>
       <h3>Shadow presets</h3>
-      <div className="grid">{Object.keys(tokens).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ boxShadow: `var(--uxdsl__shadow__${key})` }}>Shadow {key}</div>
+      <div className={scopedClasses("grid", styles)}>{Object.keys(tokens).map(key => <div key={key} className={scopedClasses("card", styles)}>
+        <div className={scopedClasses("preview-box", styles)} style={{ boxShadow: `var(--uxdsl__shadow__${key})` }}>Shadow {key}</div>
         <pre>{`box-shadow: shadow(${key});`}</pre><code>{values[`--uxdsl__shadow__${key}`]}</code>
       </div>)}</div>
     </section>

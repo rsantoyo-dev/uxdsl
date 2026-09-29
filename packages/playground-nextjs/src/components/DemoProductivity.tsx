@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoProductivity.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useMemo, useState } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
@@ -47,31 +50,31 @@ export default function DemoProductivity() {
   const cards = useMemo(() => Array.from({ length: count }, (_, i) => i), [count])
 
   return (
-    <section id="DemoProductivity" className="demo-section">
-      <div className="demo-header">
-        <h2 className="demo-title">One stylesheet, many cards</h2>
-        <p className="demo-subtitle">
+    <section id="DemoProductivity" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("demo-section", styles)}>
+      <div className={scopedClasses("demo-header", styles)}>
+        <h2 className={scopedClasses("demo-title", styles)}>One stylesheet, many cards</h2>
+        <p className={scopedClasses("demo-subtitle", styles)}>
           The CSS below comes from this playground&apos;s .uxdsl source. Changing the card count changes the DOM;
           the five semantic tone rules and shared token references stay the same. This is a CSS reuse example, not a rendering benchmark.
         </p>
       </div>
 
-      <div className="productivity-controls">
-        <label className="productivity-controls__label">
+      <div className={scopedClasses("productivity-controls", styles)}>
+        <label className={scopedClasses("productivity-controls__label", styles)}>
           <span>Card count: <strong>{count}</strong></span>
           <input type="range" min="100" max="5000" step="100" value={count}
-            onChange={e => setCount(Number(e.target.value))} className="productivity-controls__range" />
+            onChange={e => setCount(Number(e.target.value))} className={scopedClasses("productivity-controls__range", styles)} />
         </label>
       </div>
 
-      <div className="demo-code-stack">
-        <div className="demo-code-block-wrapper">
-          <h3 className="demo-subtitle">DemoProductivity.uxdsl (source excerpt)</h3>
-          <div className="demo-code-block"><SyntaxHighlighter language="scss" style={vscDarkPlus}>{source}</SyntaxHighlighter></div>
+      <div className={scopedClasses("demo-code-stack", styles)}>
+        <div className={scopedClasses("demo-code-block-wrapper", styles)}>
+          <h3 className={scopedClasses("demo-subtitle", styles)}>DemoProductivity.uxdsl (source excerpt)</h3>
+          <div className={scopedClasses("demo-code-block", styles)}><SyntaxHighlighter language="scss" style={vscDarkPlus}>{source}</SyntaxHighlighter></div>
         </div>
-        <div className="demo-code-block-wrapper">
-          <h3 className="demo-subtitle">Component usage</h3>
-          <div className="demo-code-block"><SyntaxHighlighter language="tsx" style={vscDarkPlus}>{`<div className="stress-grid">
+        <div className={scopedClasses("demo-code-block-wrapper", styles)}>
+          <h3 className={scopedClasses("demo-subtitle", styles)}>Component usage</h3>
+          <div className={scopedClasses("demo-code-block", styles)}><SyntaxHighlighter language="tsx" style={vscDarkPlus}>{`<div className="stress-grid">
   {cards.map((i) => (
     <div key={i} className={\`stress-card stress-tone-\${tones[i % tones.length]}\`}>
       <span className="stress-card-title">Item {i + 1}</span>
@@ -82,13 +85,13 @@ export default function DemoProductivity() {
         </div>
       </div>
 
-      <div className="demo-preview-full">
-        <h3 className="demo-subtitle">Live render ({count} cards)</h3>
-        <div className="stress-grid">
+      <div className={scopedClasses("demo-preview-full", styles)}>
+        <h3 className={scopedClasses("demo-subtitle", styles)}>Live render ({count} cards)</h3>
+        <div className={scopedClasses("stress-grid", styles)}>
           {cards.map(i => (
-            <div key={i} className={`stress-card stress-tone-${tones[i % tones.length]}`}>
-              <span className="stress-card-title">Item {i + 1}</span>
-              <span className="stress-card-badge">#{i % tones.length}</span>
+            <div key={i} className={scopedClasses(`stress-card stress-tone-${tones[i % tones.length]}`, styles)}>
+              <span className={scopedClasses("stress-card-title", styles)}>Item {i + 1}</span>
+              <span className={scopedClasses("stress-card-badge", styles)}>#{i % tones.length}</span>
             </div>
           ))}
         </div>

@@ -1,5 +1,5 @@
 /* DemoBreakpoints styles - Scoped */
-#DemoBreakpoints {
+.module-root {
   .breakpoints-section {
     display: flex;
     flex-direction: column;

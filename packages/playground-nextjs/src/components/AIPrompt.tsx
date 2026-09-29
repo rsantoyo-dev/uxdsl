@@ -1,5 +1,8 @@
 'use client';
 
+
+import styles from './AIPrompt.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState } from 'react';
 import { Sparkles, Brush, Loader2 } from 'lucide-react';
 import { useTheme } from '@/components/ThemeContext';
@@ -61,37 +64,37 @@ export function AIPrompt() {
   return (
     <>
       {isLoading && (
-        <div className="theme-loading-overlay">
-          <div className="loading-content">
-            <Loader2 className="loading-spinner" size={48} />
-            <p className="loading-text">
-              Updating theme to... <span className="loading-theme-name">&quot;{prompt}&quot;</span>
+        <div className={scopedClasses("theme-loading-overlay", styles)}>
+          <div className={scopedClasses("loading-content", styles)}>
+            <Loader2 className={scopedClasses("loading-spinner", styles)} size={48} />
+            <p className={scopedClasses("loading-text", styles)}>
+              Updating theme to... <span className={scopedClasses("loading-theme-name", styles)}>&quot;{prompt}&quot;</span>
             </p>
           </div>
         </div>
       )}
 
-      <div className="ai-prompt-container">
-        <form onSubmit={handleSubmit} className="ai-prompt-form">
-          <div className="input-wrapper">
-            <Sparkles className="ai-icon" size={20} />
+      <div className={scopedClasses("ai-prompt-container", styles)}>
+        <form onSubmit={handleSubmit} className={scopedClasses("ai-prompt-form", styles)}>
+          <div className={scopedClasses("input-wrapper", styles)}>
+            <Sparkles className={scopedClasses("ai-icon", styles)} size={20} />
             <input
               type="text"
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
               placeholder="Name your theme..."
               maxLength={100}
-              className="ai-input"
+              className={scopedClasses("ai-input", styles)}
               disabled={isLoading}
             />
-            <button type="submit" className="ai-submit-btn" disabled={isLoading || !prompt.trim()}>
+            <button type="submit" className={scopedClasses("ai-submit-btn", styles)} disabled={isLoading || !prompt.trim()}>
               <Brush size={18} />
             </button>
           </div>
         </form>
         
         {currentTheme === 'custom' && customThemeName && !isLoading && (
-          <div className="ai-response">
+          <div className={scopedClasses("ai-response", styles)}>
              <p>Active Theme: <strong>{customThemeName}</strong></p>
           </div>
         )}

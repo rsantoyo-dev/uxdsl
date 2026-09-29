@@ -1,0 +1,61 @@
+.theme-background-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0; /* Behind content but check parent context */
+  overflow: hidden;
+  pointer-events: none;
+  background: var(--uxdsl__palette__surface-main);
+}
+
+.theme-background-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Opacity is controlled by inline style in component for fade-in */
+  filter: saturate(1.1);
+  transition: opacity 1s ease-in-out, transform 1s ease;
+}
+
+.theme-background-loading {
+  position: absolute;
+  top: 65%; /* Adjusted vertical position */
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: var(--uxdsl__font__code, monospace);
+  font-size: 0.75rem;
+  color: var(--uxdsl__palette__text-secondary);
+  z-index: 1;
+  opacity: 0.8;
+  animation: pulse 1.5s ease-in-out infinite;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.theme-background-tint {
+  position: absolute;
+  inset: 0;
+  background: var(--uxdsl__palette__primary-main);
+  opacity: 0.5;
+  mix-blend-mode: color;
+  z-index: 2;
+}
+
+.theme-background-overlay {
+  position: absolute;
+  inset: 0;
+  /* The gradient keeps a lighter top and bottom with a nearly transparent middle. */
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--uxdsl__palette__surface-light) 50%, transparent) 0%,
+    color-mix(in srgb, var(--uxdsl__palette__surface-main) 5%, transparent) 50%,
+    color-mix(in srgb, var(--uxdsl__palette__surface-main) 50%, transparent) 100%
+  );
+  z-index: 3;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}

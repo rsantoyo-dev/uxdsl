@@ -1,0 +1,610 @@
+/* Simplified DemoPalette styles - Scoped */
+.module-root,
+.demo-palette {
+  .palette-section { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .palette-header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .demo-title { font-family: var(--uxdsl__typography__h4-font-family); font-size: var(--uxdsl__typography__h4-size); line-height: var(--uxdsl__typography__h4-line); font-weight: var(--uxdsl__typography__h4-weight); letter-spacing: var(--uxdsl__typography__h4-spacing); margin-block-start: var(--uxdsl__typography__h4-margin-block-start); margin-block-end: var(--uxdsl__typography__h4-margin-block-end); margin: 0; }
+  .demo-subtitle { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); opacity: 0.75; margin: 0; max-width: 720px; }
+
+  .palette-stack { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .palette-card { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__surface-main); color: var(--uxdsl__palette__surface-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); display: flex; flex-direction: column; gap: var(--uxdsl__density__1); }
+  .palette-card__header { display: flex; flex-direction: column; gap: var(--uxdsl__density__2); }
+  .palette-card__title { font-family: var(--uxdsl__typography__h5-font-family); font-size: var(--uxdsl__typography__h5-size); line-height: var(--uxdsl__typography__h5-line); font-weight: var(--uxdsl__typography__h5-weight); letter-spacing: var(--uxdsl__typography__h5-spacing); margin-block-start: var(--uxdsl__typography__h5-margin-block-start); margin-block-end: var(--uxdsl__typography__h5-margin-block-end); margin: 0; }
+  .palette-card__detail { font-family: var(--uxdsl__typography__body-font-family); font-size: var(--uxdsl__typography__body-size); line-height: var(--uxdsl__typography__body-line); font-weight: var(--uxdsl__typography__body-weight); letter-spacing: var(--uxdsl__typography__body-spacing); margin-block-start: var(--uxdsl__typography__body-margin-block-start); margin-block-end: var(--uxdsl__typography__body-margin-block-end); margin: 0; opacity: 0.85; }
+
+  .palette-token-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--uxdsl__density__2); }
+  .palette-token { border-radius: var(--uxdsl__radius__1); padding: var(--uxdsl__density__1); background: color-mix(in srgb, var(--uxdsl__palette__surface-main) 20%, transparent); display: flex; flex-direction: column; justify-content: center; align-items: center; position: relative; height: var(--uxdsl__density__11); min-width: 0; transition: transform 0.2s ease, box-shadow 0.2s ease; }
+  /* Force rebuild */
+  .palette-token:hover { transform: scale(1.02); z-index: 1; box-shadow: var(--uxdsl__shadow__2); }
+  .palette-token:last-child { grid-column: 1 / -1; height: auto; flex-direction: column; justify-content: center; align-items: flex-start; padding: var(--uxdsl__density__2); gap: var(--uxdsl__density__1); }
+  .palette-token:last-child .token-values { position: static; align-items: flex-start; }
+  .token-name { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); opacity: 0.8; }
+  .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: var(--uxdsl__space__1); position: absolute; bottom: var(--uxdsl__density__1); right: var(--uxdsl__density__1); }
+  .token-hex { font-family: var(--uxdsl__typography__caption-font-family); font-size: var(--uxdsl__typography__caption-size); line-height: var(--uxdsl__typography__caption-line); font-weight: var(--uxdsl__typography__caption-weight); letter-spacing: var(--uxdsl__typography__caption-spacing); margin-block-start: var(--uxdsl__typography__caption-margin-block-start); margin-block-end: var(--uxdsl__typography__caption-margin-block-end); font-family: monospace; opacity: 0.8; }
+  .token-rgb { font-family: var(--uxdsl__typography__tag-font-family); font-size: var(--uxdsl__typography__tag-size); line-height: var(--uxdsl__typography__tag-line); font-weight: var(--uxdsl__typography__tag-weight); letter-spacing: var(--uxdsl__typography__tag-spacing); margin-block-start: var(--uxdsl__typography__tag-margin-block-start); margin-block-end: var(--uxdsl__typography__tag-margin-block-end); font-family: monospace; opacity: 0.7; font-size: 0.7em; }
+
+  /* Interactive Playground */
+  .surfaces-playground-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .surface-playground {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__3);
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    padding: var(--uxdsl__density__3);
+    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 30%, transparent);
+  }
+
+  @media (min-width: 768px) {
+
+  .surface-playground { flex-direction: row; align-items: flex-start;
+  }
+  }
+
+  .surface-playground__controls {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+    min-width: 250px;
+  }
+
+  .surface-playground__controls label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__1);
+    font-size: 0.9rem;
+    font-weight: 500;
+  }
+
+  .surface-playground__controls select { box-sizing: border-box; font: inherit; width: 100%; padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); caret-color: var(--uxdsl__input__outlined-tone-neutral-base-caret, var(--uxdsl__input__outlined-base-caret)); --uxdsl__input__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__input__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__input__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+    padding: var(--uxdsl__density__1);
+  }
+.surface-playground__controls select::placeholder { color: var(--uxdsl__input__outlined-tone-neutral-base-placeholder, var(--uxdsl__input__outlined-base-placeholder)); }
+.surface-playground__controls select:focus { border: var(--uxdsl__input__outlined-tone-neutral-focus-border, var(--uxdsl__input__outlined-focus-border)); }
+.surface-playground__controls select:invalid, .surface-playground__controls select[aria-invalid="true"] { border: var(--uxdsl__input__outlined-tone-neutral-invalid-border, var(--uxdsl__input__outlined-invalid-border)); }
+.surface-playground__controls select:disabled, .surface-playground__controls select[aria-disabled="true"] { opacity: var(--uxdsl__input__outlined-tone-neutral-disabled-opacity, var(--uxdsl__input__outlined-disabled-opacity)); }
+
+  .surface-playground__preview {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .demo-code-block {
+    padding: var(--uxdsl__surface__outlined-padding);
+    border-radius: var(--uxdsl__surface__outlined-radius);
+    background: var(--uxdsl__surface__outlined-bg);
+    color: var(--uxdsl__surface__outlined-color);
+    border: var(--uxdsl__surface__outlined-border);
+    box-shadow: var(--uxdsl__surface__outlined-shadow);
+    border-radius: var(--uxdsl__radius__2);
+    overflow: hidden;
+  }
+
+  .code-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--uxdsl__density__1) var(--uxdsl__density__2);
+    background: var(--uxdsl__palette__neutral-dark);
+    color: var(--uxdsl__palette__neutral-contrast);
+  }
+
+  .code-file {
+    font-family: var(--uxdsl__typography__caption-font-family);
+    font-size: var(--uxdsl__typography__caption-size);
+    line-height: var(--uxdsl__typography__caption-line);
+    font-weight: var(--uxdsl__typography__caption-weight);
+    letter-spacing: var(--uxdsl__typography__caption-spacing);
+    margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
+    opacity: 0.8;
+  }
+
+  /* MAIN + LIGHT + DARK */
+    .palette-card-primary-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__primary-main);
+      color: var(--uxdsl__palette__primary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__primary-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-primary-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__primary-main);
+      color: var(--uxdsl__palette__primary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__primary-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-primary-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__primary-main);
+      color: var(--uxdsl__palette__primary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__primary-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-primary-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__primary-main);
+      color: var(--uxdsl__palette__primary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__primary-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__primary-dark)
+    }
+    .palette-card-secondary-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__secondary-main);
+      color: var(--uxdsl__palette__secondary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__secondary-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-secondary-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__secondary-main);
+      color: var(--uxdsl__palette__secondary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__secondary-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-secondary-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__secondary-main);
+      color: var(--uxdsl__palette__secondary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__secondary-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-secondary-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__secondary-main);
+      color: var(--uxdsl__palette__secondary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__secondary-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__secondary-dark)
+    }
+    .palette-card-tertiary-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__tertiary-main);
+      color: var(--uxdsl__palette__tertiary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__tertiary-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-tertiary-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__tertiary-main);
+      color: var(--uxdsl__palette__tertiary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__tertiary-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-tertiary-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__tertiary-main);
+      color: var(--uxdsl__palette__tertiary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__tertiary-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-tertiary-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__tertiary-main);
+      color: var(--uxdsl__palette__tertiary-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__tertiary-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__tertiary-dark)
+    }
+    .palette-card-success-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__success-main);
+      color: var(--uxdsl__palette__success-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__success-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-success-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__success-main);
+      color: var(--uxdsl__palette__success-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__success-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-success-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__success-main);
+      color: var(--uxdsl__palette__success-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__success-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-success-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__success-main);
+      color: var(--uxdsl__palette__success-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__success-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__success-dark)
+    }
+    .palette-card-info-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__info-main);
+      color: var(--uxdsl__palette__info-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__info-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-info-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__info-main);
+      color: var(--uxdsl__palette__info-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__info-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-info-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__info-main);
+      color: var(--uxdsl__palette__info-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__info-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-info-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__info-main);
+      color: var(--uxdsl__palette__info-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__info-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__info-dark)
+    }
+    .palette-card-warning-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__warning-main);
+      color: var(--uxdsl__palette__warning-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__warning-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-warning-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__warning-main);
+      color: var(--uxdsl__palette__warning-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__warning-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-warning-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__warning-main);
+      color: var(--uxdsl__palette__warning-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__warning-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-warning-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__warning-main);
+      color: var(--uxdsl__palette__warning-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__warning-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__warning-dark)
+    }
+    .palette-card-error-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__error-main);
+      color: var(--uxdsl__palette__error-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__error-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-error-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__error-main);
+      color: var(--uxdsl__palette__error-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__error-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-error-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__error-main);
+      color: var(--uxdsl__palette__error-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__error-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-error-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__error-main);
+      color: var(--uxdsl__palette__error-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__error-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__error-dark)
+    }
+    .palette-card-dark-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__dark-main);
+      color: var(--uxdsl__palette__dark-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__dark-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-dark-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__dark-main);
+      color: var(--uxdsl__palette__dark-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__dark-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-dark-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__dark-main);
+      color: var(--uxdsl__palette__dark-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__dark-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-dark-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__dark-main);
+      color: var(--uxdsl__palette__dark-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__dark-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__dark-dark)
+    }
+    .palette-card-neutral-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__neutral-main);
+      color: var(--uxdsl__palette__neutral-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__neutral-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-neutral-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__neutral-main);
+      color: var(--uxdsl__palette__neutral-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__neutral-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-neutral-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__neutral-main);
+      color: var(--uxdsl__palette__neutral-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__neutral-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-neutral-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__neutral-main);
+      color: var(--uxdsl__palette__neutral-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__neutral-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__neutral-dark)
+    }
+    .palette-card-light-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__light-main);
+      color: var(--uxdsl__palette__light-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__light-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-light-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__light-main);
+      color: var(--uxdsl__palette__light-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__light-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-light-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__light-main);
+      color: var(--uxdsl__palette__light-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__light-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-light-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__light-main);
+      color: var(--uxdsl__palette__light-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__light-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__light-dark)
+    }
+    .palette-card-surface-main {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__surface-main);
+      color: var(--uxdsl__palette__surface-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__surface-main);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-surface-light {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__surface-main);
+      color: var(--uxdsl__palette__surface-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__surface-light);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+    .palette-card-surface-dark {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__surface-main);
+      color: var(--uxdsl__palette__surface-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__surface-dark);
+      box-shadow: var(--uxdsl__shadow__1)
+    }
+
+    /* CONTRAST variant (with text color) */
+    .palette-card-surface-contrast {
+      padding: var(--uxdsl__density__1);
+      border-radius: var(--uxdsl__radius__1);
+      background: var(--uxdsl__palette__surface-main);
+      color: var(--uxdsl__palette__surface-contrast);
+      border: var(--uxdsl__surface__contained-border);
+      box-shadow: var(--uxdsl__surface__contained-shadow);
+      background: var(--uxdsl__palette__surface-contrast);
+      box-shadow: var(--uxdsl__shadow__1);
+        color: var(--uxdsl__palette__surface-dark)
+    }
+}
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPalette.tsx. */
+.module-root .palette-section__block {
+  margin-bottom: 3rem;
+}
+/* MIG-B7-17 phase B (4): were inline style={{}} in DemoPaletteConfig.tsx (each chip's text color
+   is computed at runtime and stays inline). .color-picker-overlay lives in DemoColors.uxdsl. */
+.palette-token {
+  position: relative;
+}
+.palette-token .token-match {
+  position: absolute;
+  top: var(--uxdsl__space__3);
+  right: var(--uxdsl__space__3);
+  font-size: 0.65em;
+  opacity: 0.8;
+  font-weight: bold;
+  pointer-events: none;
+}
+.demo-toolbar-hint {
+  font-size: 0.8rem;
+  color: var(--uxdsl__palette__text-secondary);
+}

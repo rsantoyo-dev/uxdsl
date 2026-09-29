@@ -1,5 +1,5 @@
 /* DemoDensity styles - Scoped */
-#DemoDensity {
+.module-root {
   .density-section { display: flex; flex-direction: column; gap: density(4); }
   .density-header { display: flex; flex-direction: column; gap: density(2); }
 
@@ -15,9 +15,9 @@
   }
 
   .density-doll-container { display: flex; flex-direction: column; gap: density(2); }
-  .density-doll-controls { 
-    display: flex; 
-    gap: density(2); 
+  .density-doll-controls {
+    display: flex;
+    gap: density(2);
     align-items: center;
     position: relative;
     z-index: 10; /* Ensure controls stay above expanding rings */
@@ -42,7 +42,7 @@
     z-index: 0;
   }
 
-  /* Reuse concentric styles from spacing demo but scoped if needed, 
+  /* Reuse concentric styles from spacing demo but scoped if needed,
      or just duplicate for isolation */
   .concentric-wrapper {
     position: relative;

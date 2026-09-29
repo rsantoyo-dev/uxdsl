@@ -1,0 +1,150 @@
+/* UXDSLCardDemo styles - Scoped */
+.uxdsl-demo-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--uxdsl__density__6);
+  width: 100%;
+  margin-top: var(--uxdsl__density__4);
+
+  .uxdsl-card {
+    padding: var(--uxdsl__surface__contained-padding);
+    border-radius: var(--uxdsl__surface__contained-radius);
+    background: var(--uxdsl__surface__contained-bg);
+    color: var(--uxdsl__surface__contained-color);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+    width: 100%;
+    border-radius: var(--uxdsl__radius__3);
+    box-shadow: var(--uxdsl__shadow__3);
+    transition: all 0.2s;
+    overflow: hidden;
+  }
+
+  @media (min-width: 768px) {
+
+  .uxdsl-card {
+      width: 400px;
+  }
+  }
+
+  .card-header {
+    background: linear-gradient(135deg, var(--uxdsl__palette__primary-main), var(--uxdsl__palette__primary-dark));
+    padding: var(--uxdsl__density__6);
+    display: grid;
+    place-items: center;
+  }
+
+  .logo-circle {
+    padding: var(--uxdsl__surface__contained-padding);
+    border-radius: var(--uxdsl__surface__contained-radius);
+    background: var(--uxdsl__palette__light-main);
+    color: var(--uxdsl__palette__light-contrast);
+    border: var(--uxdsl__surface__contained-border);
+    box-shadow: var(--uxdsl__surface__contained-shadow);
+    width: var(--uxdsl__density__10);
+    height: var(--uxdsl__density__10);
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    box-shadow: var(--uxdsl__shadow__2);
+  }
+
+  .card-logo {
+    width: 60%;
+    height: auto;
+  }
+
+  .card-body {
+    padding: var(--uxdsl__density__5);
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: var(--uxdsl__density__3);
+  }
+
+  .card-title {
+    font-family: var(--uxdsl__typography__h5-font-family);
+    font-size: var(--uxdsl__typography__h5-size);
+    line-height: var(--uxdsl__typography__h5-line);
+    font-weight: var(--uxdsl__typography__h5-weight);
+    letter-spacing: var(--uxdsl__typography__h5-spacing);
+    margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  .card-desc {
+    font-family: var(--uxdsl__typography__body-font-family);
+    font-size: var(--uxdsl__typography__body-size);
+    line-height: var(--uxdsl__typography__body-line);
+    font-weight: var(--uxdsl__typography__body-weight);
+    letter-spacing: var(--uxdsl__typography__body-spacing);
+    margin-block-start: var(--uxdsl__typography__body-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__body-margin-block-end);
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  .card-actions {
+    padding: var(--uxdsl__density__4);
+    border-top: var(--uxdsl__border__1);
+    display: flex;
+    gap: var(--uxdsl__density__2);
+  }
+
+  .btn-primary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+    width: 100%;
+    justify-content: center;
+  }
+.btn-primary:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.btn-primary.is-selected, .btn-primary[aria-pressed="true"], .btn-primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+  .btn-secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
+    width: 100%;
+    justify-content: center;
+  }
+.btn-secondary:hover { color: var(--uxdsl__button__outlined-tone-neutral-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-neutral-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.btn-secondary.is-selected, .btn-secondary[aria-pressed="true"], .btn-secondary[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-neutral-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-neutral-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-neutral-selected-border, var(--uxdsl__button__outlined-selected-border)); }
+
+  .demo-code-block {
+    width: 100%;
+    max-width: 600px;
+    background: var(--uxdsl__palette__surface-main);
+    border-radius: var(--uxdsl__radius__2);
+    overflow: hidden;
+    border: var(--uxdsl__border__1);
+    box-shadow: var(--uxdsl__shadow__2);
+  }
+
+  .code-header {
+    background: var(--uxdsl__palette__primary-main);
+    padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
+    border-bottom: var(--uxdsl__border__1);
+    display: flex;
+    align-items: center;
+  }
+
+  .code-file {
+    font-family: monospace;
+    font-size: 0.8rem;
+    color: var(--uxdsl__palette__neutral-light);
+    font-weight: bold;
+  }
+
+  .code-content {
+    font-family: var(--uxdsl__typography__pre-font-family);
+    font-size: var(--uxdsl__typography__pre-size);
+    line-height: var(--uxdsl__typography__pre-line);
+    font-weight: var(--uxdsl__typography__pre-weight);
+    letter-spacing: var(--uxdsl__typography__pre-spacing);
+    margin-block-start: var(--uxdsl__typography__pre-margin-block-start);
+    margin-block-end: var(--uxdsl__typography__pre-margin-block-end);
+    padding: var(--uxdsl__density__4);
+    overflow-x: auto;
+    color: var(--uxdsl__palette__neutral-light);
+  }
+}
+/* MIG-B7-17 phase B (4): was inline style={{ marginLeft: 8 }} on the ArrowRight icon. */
+.btn-primary__icon {
+  margin-left: var(--uxdsl__space__3);
+}

@@ -7,12 +7,12 @@
 
   .spacing-doll-container { display: flex; flex-direction: column; gap: density(2); }
   .spacing-doll-controls { display: flex; gap: density(2); align-items: center; }
-  .spacing-doll-wrapper { 
-    display: flex; 
-    justify-content: center; 
+  .spacing-doll-wrapper {
+    display: flex;
+    justify-content: center;
     align-items: center;
     /* min-height removed to adapt to content */
-    overflow: auto; 
+    overflow: auto;
     padding: density(4);
     background: palette(surface-light);
     border-radius: radius(2);

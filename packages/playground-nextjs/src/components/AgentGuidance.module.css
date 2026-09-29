@@ -1,0 +1,67 @@
+/* The "AI implementation guide" section that closes each documentation page.
+   Compiled as a CSS Module from UXDSL. Stable spacing uses space();
+   the code panel and edge use Color identities, dark
+   in both modes on purpose. Font sizes are this section's own prose scale, not a role. */
+
+.agent-guidance {
+  margin-block: 3rem;
+  padding: clamp(var(--uxdsl__space__5), 3vw, var(--uxdsl__space__7));
+  border: 1px solid var(--uxdsl__color__gray-400);
+  border-radius: 0.75rem;
+  min-width: 0;
+  line-height: 1.7;
+  scroll-margin-top: 5rem;
+}
+
+.agent-guidance__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.agent-guidance h2 {
+  font-size: 1.5rem;
+  margin-block: var(--uxdsl__space__3) var(--uxdsl__space__5);
+}
+
+.agent-guidance h3 {
+  font-size: 1.15rem;
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+}
+
+.agent-guidance p {
+  margin-block: var(--uxdsl__space__4);
+}
+
+.agent-guidance ul, .agent-guidance ol {
+  padding-inline-start: var(--uxdsl__space__6);
+  margin-block: var(--uxdsl__space__5);
+}
+
+.agent-guidance ul {
+  list-style: disc;
+}
+
+.agent-guidance ol {
+  list-style: decimal;
+}
+
+.agent-guidance li {
+  margin-block: var(--uxdsl__space__3);
+}
+
+.agent-guidance pre {
+  overflow-x: auto;
+  padding: var(--uxdsl__space__5);
+  background: var(--uxdsl__color__gray-900);
+  color: var(--uxdsl__color__gray-200);
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.agent-guidance blockquote {
+  border-inline-start: 3px solid var(--uxdsl__color__gray-400);
+  padding-inline-start: var(--uxdsl__space__5);
+  margin-block: var(--uxdsl__space__5);
+}

@@ -1,5 +1,8 @@
 'use client';
 
+
+import styles from './ThemeBackground.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { memo, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import Image from 'next/image';
@@ -23,10 +26,10 @@ export const ThemeBackground = memo(function ThemeBackground() {
   if (!imageUrl) return null;
 
   return (
-    <div className="theme-background-container">
+    <div className={scopedClasses("theme-background-container", styles)}>
       {/* Loading Text - Visible only when image is loading */}
       {!imageLoaded && !imageFailed && (
-        <div className="theme-background-loading">
+        <div className={scopedClasses("theme-background-loading", styles)}>
           Creating background art...
         </div>
       )}
@@ -38,7 +41,7 @@ export const ThemeBackground = memo(function ThemeBackground() {
           fill
           priority
           unoptimized
-          className="theme-background-image"
+          className={scopedClasses("theme-background-image", styles)}
           style={{ opacity: imageLoaded ? 0.24 : 0 }}
           onLoadingComplete={() => setImageLoaded(true)}
           onError={() => {
@@ -47,8 +50,8 @@ export const ThemeBackground = memo(function ThemeBackground() {
           }}
         />
       )}
-      <div className="theme-background-tint" />
-      <div className="theme-background-overlay" />
+      <div className={scopedClasses("theme-background-tint", styles)} />
+      <div className={scopedClasses("theme-background-overlay", styles)} />
     </div>
   );
 });

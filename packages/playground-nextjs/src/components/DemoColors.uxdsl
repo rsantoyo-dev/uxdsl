@@ -1,5 +1,5 @@
 /* DemoColors styles - Scoped */
-#DemoColors {
+.module-root {
   .demo-section { display: flex; flex-direction: column; gap: density(3); }
   .demo-header { display: flex; flex-direction: column; gap: density(2); }
   .demo-title { @ds-typo (h4); margin: 0; }
@@ -11,18 +11,18 @@
 
   .family-grid { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: density(1); }
 
-  .color-token { 
-    border-radius: radius(1); 
-    padding: density(1); 
-    background: palette(surface-main, 0.2); 
-    display: flex; 
-    flex-direction: column; 
-    justify-content: center; 
-    align-items: center; 
-    position: relative; 
-    height: density(8); 
-    min-width: 0; 
-    transition: transform 0.2s ease, box-shadow 0.2s ease; 
+  .color-token {
+    border-radius: radius(1);
+    padding: density(1);
+    background: palette(surface-main, 0.2);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    height: density(8);
+    min-width: 0;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
   }
 
   .color-token:hover { transform: scale(1.05); z-index: 1; box-shadow: shadow(2); }
@@ -110,7 +110,7 @@
 
 /* MIG-B7-17 phase B (4): were inline style={{}} in DemoColors.tsx (the text color of each chip
    and of the live preview is computed at runtime and stays inline). */
-#DemoColors .color-token {
+.module-root .color-token {
   position: relative;
 }
 

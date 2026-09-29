@@ -1,6 +1,6 @@
 /* The "AI implementation guide" section that closes each documentation page.
-   Was AgentGuidance.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl is
-   global. Stable spacing uses space(); the code panel and edge use Color identities, dark
+   Compiled as a CSS Module from UXDSL. Stable spacing uses space();
+   the code panel and edge use Color identities, dark
    in both modes on purpose. Font sizes are this section's own prose scale, not a role. */
 
 .agent-guidance {

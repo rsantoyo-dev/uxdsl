@@ -1,5 +1,5 @@
 /* PageTitle styles - Scoped */
-#PageTitle {
+.module-root {
   .page-title {
     text-align: center;
     display: flex;

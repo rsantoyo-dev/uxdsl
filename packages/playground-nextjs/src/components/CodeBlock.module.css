@@ -1,0 +1,8 @@
+/* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
+   CodeBlock.tsx. */
+.code-block-frame {
+  border-radius: var(--uxdsl__radius__2);
+  overflow: hidden;
+  border: 1px solid var(--uxdsl__palette__neutral-light);
+  font-size: 0.9rem;
+}

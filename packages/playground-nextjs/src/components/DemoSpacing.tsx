@@ -5,6 +5,8 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from './ThemeContext'
 import styles from './DemoSpacing.module.css'
+import spacingExplanationStyles from './SpacingExplanation.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 
 const MAX_LAYERS = 16
 const spaces = Array.from({ length: MAX_LAYERS }, (_, i) => i + 1)
@@ -137,18 +139,18 @@ export default function DemoSpacing() {
         </p>
       </div>
 
-      <div className="spacing-explanation">
+      <div className={scopedClasses('spacing-explanation', spacingExplanationStyles)}>
         <h3>Try it: one token, two paddings and a gap</h3>
         <p>This demonstration uses direct Spacing to show the base scale: these paddings and gaps intentionally keep a stable value across breakpoints. Prefer Density when building ordinary component spacing.</p>
         <p>The colored areas below use the page’s actual CSS variables. Edit <code>space(4)</code> to update both boxes and the gap between the action items.</p>
-        <button type="button" className="spacing-explanation__edit" onClick={() => setEditingLevel(4)}>Edit space(4)</button>
-        <div className="spacing-explanation__boxes">
+        <button type="button" className={scopedClasses('spacing-explanation__edit', spacingExplanationStyles)} onClick={() => setEditingLevel(4)}>Edit space(4)</button>
+        <div className={scopedClasses('spacing-explanation__boxes', spacingExplanationStyles)}>
           {['Card', 'Panel'].map(name => <figure key={name}>
             <figcaption>{name}: <code>padding: space(4)</code></figcaption>
-            <div className="spacing-explanation__padding"><div className="spacing-explanation__content">Content</div></div>
+            <div className={scopedClasses('spacing-explanation__padding', spacingExplanationStyles)}><div className={scopedClasses('spacing-explanation__content', spacingExplanationStyles)}>Content</div></div>
           </figure>)}
           <figure><figcaption>Actions: <code>gap: space(4)</code></figcaption>
-            <div className="spacing-explanation__gap"><span className="spacing-explanation__content">First</span><span className="spacing-explanation__content">Second</span></div>
+            <div className={scopedClasses('spacing-explanation__gap', spacingExplanationStyles)}><span className={scopedClasses('spacing-explanation__content', spacingExplanationStyles)}>First</span><span className={scopedClasses('spacing-explanation__content', spacingExplanationStyles)}>Second</span></div>
           </figure>
         </div>
         <p>These edits update the playground’s active browser theme. Other UI using the token may also change. They do not write to your source JSON file. The reference examples above stay unchanged.</p>

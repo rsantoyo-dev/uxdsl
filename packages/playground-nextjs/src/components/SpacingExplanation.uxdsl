@@ -1,5 +1,5 @@
-/* Spacing explanation. Was SpacingExplanation.module.css (MIG-B7-17 phase B): classes are
-   prefixed because .uxdsl is global; stable spacing uses space(); the code panel uses Color
+/* Spacing explanation. Compiled as a CSS Module from UXDSL.
+   Stable spacing uses space(); the code panel uses Color
    identities, dark in both modes on purpose. The __boxes/__padding/__gap/__content/__edit rules
    are the live "Try it" boxes that DemoSpacing.tsx renders with this same stylesheet. */
 

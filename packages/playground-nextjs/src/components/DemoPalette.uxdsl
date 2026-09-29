@@ -1,5 +1,5 @@
 /* Simplified DemoPalette styles - Scoped */
-#DemoPalette,
+.module-root,
 .demo-palette {
   .palette-section { display: flex; flex-direction: column; gap: density(2); }
   .palette-header { display: flex; flex-direction: column; gap: density(2); }
@@ -113,7 +113,7 @@
 }
 
 /* MIG-B7-17 phase B (4): were inline style={{}} in DemoPalette.tsx. */
-#DemoPalette .palette-section__block {
+.module-root .palette-section__block {
   margin-bottom: 3rem;
 }
 

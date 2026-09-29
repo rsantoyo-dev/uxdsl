@@ -54,7 +54,7 @@
 
 .ai-submit-btn {
  @ds-button (flat primary);
-  
+
   &:disabled {
     color: palette(action-disabled);
     border-color: palette(action-disabled);

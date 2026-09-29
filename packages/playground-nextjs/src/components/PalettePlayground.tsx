@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './PalettePlayground.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState } from 'react'
 
 
@@ -36,20 +39,20 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
 
 
   const toolbarContent = (
-      <div className="pp-toolbar">
+      <div className={scopedClasses("pp-toolbar", styles)}>
          {/* Background Column */}
-         <div className="pp-toolbar__column">
-           <div className="pp-toolbar__heading">Background</div>
-           <div className="pp-toolbar__row">
-             <div className="control-group pp-toolbar__control">
-               <label htmlFor="palette-background-tone" className="control-label pp-toolbar__label">Tone</label>
-               <select id="palette-background-tone" className="control-select pp-toolbar__select" value={bgTone} onChange={e => setBgTone(e.target.value)}>
+         <div className={scopedClasses("pp-toolbar__column", styles)}>
+           <div className={scopedClasses("pp-toolbar__heading", styles)}>Background</div>
+           <div className={scopedClasses("pp-toolbar__row", styles)}>
+             <div className={scopedClasses("control-group pp-toolbar__control", styles)}>
+               <label htmlFor="palette-background-tone" className={scopedClasses("control-label pp-toolbar__label", styles)}>Tone</label>
+               <select id="palette-background-tone" className={scopedClasses("control-select pp-toolbar__select", styles)} value={bgTone} onChange={e => setBgTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
-             <div className="control-group pp-toolbar__control">
-               <label htmlFor="palette-background-variant" className="control-label pp-toolbar__label">Variant</label>
-               <select id="palette-background-variant" className="control-select pp-toolbar__select" value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
+             <div className={scopedClasses("control-group pp-toolbar__control", styles)}>
+               <label htmlFor="palette-background-variant" className={scopedClasses("control-label pp-toolbar__label", styles)}>Variant</label>
+               <select id="palette-background-variant" className={scopedClasses("control-select pp-toolbar__select", styles)} value={bgVariant} onChange={e => setBgVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -57,18 +60,18 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
          </div>
 
          {/* Text Column */}
-         <div className="pp-toolbar__column">
-           <div className="pp-toolbar__heading">Text</div>
-           <div className="pp-toolbar__row">
-             <div className="control-group pp-toolbar__control">
-               <label htmlFor="palette-text-tone" className="control-label pp-toolbar__label">Tone</label>
-               <select id="palette-text-tone" className="control-select pp-toolbar__select" value={textTone} onChange={e => setTextTone(e.target.value)}>
+         <div className={scopedClasses("pp-toolbar__column", styles)}>
+           <div className={scopedClasses("pp-toolbar__heading", styles)}>Text</div>
+           <div className={scopedClasses("pp-toolbar__row", styles)}>
+             <div className={scopedClasses("control-group pp-toolbar__control", styles)}>
+               <label htmlFor="palette-text-tone" className={scopedClasses("control-label pp-toolbar__label", styles)}>Tone</label>
+               <select id="palette-text-tone" className={scopedClasses("control-select pp-toolbar__select", styles)} value={textTone} onChange={e => setTextTone(e.target.value)}>
                  {paletteCards.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
                </select>
              </div>
-             <div className="control-group pp-toolbar__control">
-               <label htmlFor="palette-text-variant" className="control-label pp-toolbar__label">Variant</label>
-               <select id="palette-text-variant" className="control-select pp-toolbar__select" value={textVariant} onChange={e => setTextVariant(e.target.value)}>
+             <div className={scopedClasses("control-group pp-toolbar__control", styles)}>
+               <label htmlFor="palette-text-variant" className={scopedClasses("control-label pp-toolbar__label", styles)}>Variant</label>
+               <select id="palette-text-variant" className={scopedClasses("control-select pp-toolbar__select", styles)} value={textVariant} onChange={e => setTextVariant(e.target.value)}>
                  {variants.map(v => <option key={v.id} value={v.id}>{v.id}</option>)}
                </select>
              </div>
@@ -79,55 +82,55 @@ export default function PalettePlayground({ action }: { action?: React.ReactNode
 
 
   return (
-    <div id="PalettePlayground">
+    <div id="PalettePlayground" className={scopedClasses('module-root', styles)}>
       <InteractiveDemoContainer 
         title="Interactive Demo: Palette"
         toolbar={toolbarContent}
         action={action}
       >
-        <div className="playground-wrapper">
-           <div className="preview-container">
-             <div className="live-preview pp-preview" style={{
+        <div className={scopedClasses("playground-wrapper", styles)}>
+           <div className={scopedClasses("preview-container", styles)}>
+             <div className={scopedClasses("live-preview pp-preview", styles)} style={{
                backgroundColor: `var(--uxdsl__palette__${bgTone}-${bgVariant})`,
                color: `var(--uxdsl__palette__${textTone}-${textVariant})`,
              }}>
                Live Palette Preview
              </div>
              
-             <div className="pp-usage">
-                 <div className="pp-usage__header">
-                   <span className="pp-usage__title">
+             <div className={scopedClasses("pp-usage", styles)}>
+                 <div className={scopedClasses("pp-usage__header", styles)}>
+                   <span className={scopedClasses("pp-usage__title", styles)}>
                        CSS Usage
                    </span>
                  </div>
-                 <div className="pp-code">
-                     <div className="pp-code__line">
-                        <span className="pp-code__selector">.my-element</span>
-                        <span className="pp-code__punct pp-code__gap">{`{`}</span>
+                 <div className={scopedClasses("pp-code", styles)}>
+                     <div className={scopedClasses("pp-code__line", styles)}>
+                        <span className={scopedClasses("pp-code__selector", styles)}>.my-element</span>
+                        <span className={scopedClasses("pp-code__punct pp-code__gap", styles)}>{`{`}</span>
                      </div>
-                     <div className="pp-code__indent">
-                        <span className="pp-code__property">background</span>
-                        <span className="pp-code__punct">:</span>
-                        <span className="pp-code__function pp-code__gap">palette</span>
-                        <span className="pp-code__punct">(</span>
-                        <span className="pp-code__argument">{bgTone}-{bgVariant}</span>
-                        <span className="pp-code__punct">)</span>
-                        <span className="pp-code__punct">;</span>
+                     <div className={scopedClasses("pp-code__indent", styles)}>
+                        <span className={scopedClasses("pp-code__property", styles)}>background</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>:</span>
+                        <span className={scopedClasses("pp-code__function pp-code__gap", styles)}>palette</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>(</span>
+                        <span className={scopedClasses("pp-code__argument", styles)}>{bgTone}-{bgVariant}</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>)</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>;</span>
                      </div>
-                     <div className="pp-code__indent">
-                        <span className="pp-code__property">color</span>
-                        <span className="pp-code__punct">:</span>
-                        <span className="pp-code__function pp-code__gap">palette</span>
-                        <span className="pp-code__punct">(</span>
-                        <span className="pp-code__argument">{textTone}-{textVariant}</span>
-                        <span className="pp-code__punct">)</span>
-                        <span className="pp-code__punct">;</span>
+                     <div className={scopedClasses("pp-code__indent", styles)}>
+                        <span className={scopedClasses("pp-code__property", styles)}>color</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>:</span>
+                        <span className={scopedClasses("pp-code__function pp-code__gap", styles)}>palette</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>(</span>
+                        <span className={scopedClasses("pp-code__argument", styles)}>{textTone}-{textVariant}</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>)</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>;</span>
                      </div>
                      <div>
-                        <span className="pp-code__punct">{`}`}</span>
+                        <span className={scopedClasses("pp-code__punct", styles)}>{`}`}</span>
                      </div>
                  </div>
-                 <p className="pp-usage__note">
+                 <p className={scopedClasses("pp-usage__note", styles)}>
                      <strong>Token-Aware Colors:</strong> Use <code>palette()</code> to access semantic colors (primary, success, surface) and their variants (main, light, dark).
                  </p>
              </div>

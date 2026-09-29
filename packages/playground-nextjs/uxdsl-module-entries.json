@@ -1,6 +1,142 @@
 [
   {
+    "source": "src/components/AIPrompt.uxdsl",
+    "output": "src/components/AIPrompt.module.css"
+  },
+  {
+    "source": "src/components/AgentGuidance.uxdsl",
+    "output": "src/components/AgentGuidance.module.css"
+  },
+  {
+    "source": "src/components/AppHeader.uxdsl",
+    "output": "src/components/AppHeader.module.css"
+  },
+  {
+    "source": "src/components/BreakpointEditor.uxdsl",
+    "output": "src/components/BreakpointEditor.module.css"
+  },
+  {
+    "source": "src/components/CodeBlock.uxdsl",
+    "output": "src/components/CodeBlock.module.css"
+  },
+  {
+    "source": "src/components/ColorDocumentation.uxdsl",
+    "output": "src/components/ColorDocumentation.module.css"
+  },
+  {
+    "source": "src/components/DemoBorders.uxdsl",
+    "output": "src/components/DemoBorders.module.css"
+  },
+  {
+    "source": "src/components/DemoBreakpoints.uxdsl",
+    "output": "src/components/DemoBreakpoints.module.css"
+  },
+  {
+    "source": "src/components/DemoBreakpointsCards.uxdsl",
+    "output": "src/components/DemoBreakpointsCards.module.css"
+  },
+  {
+    "source": "src/components/DemoButtons.uxdsl",
+    "output": "src/components/DemoButtons.module.css"
+  },
+  {
+    "source": "src/components/DemoColors.uxdsl",
+    "output": "src/components/DemoColors.module.css"
+  },
+  {
+    "source": "src/components/DemoDensity.uxdsl",
+    "output": "src/components/DemoDensity.module.css"
+  },
+  {
+    "source": "src/components/DemoPalette.uxdsl",
+    "output": "src/components/DemoPalette.module.css"
+  },
+  {
+    "source": "src/components/DemoProductivity.uxdsl",
+    "output": "src/components/DemoProductivity.module.css"
+  },
+  {
+    "source": "src/components/DemoShadows.uxdsl",
+    "output": "src/components/DemoShadows.module.css"
+  },
+  {
     "source": "src/components/DemoSpacing.uxdsl",
     "output": "src/components/DemoSpacing.module.css"
+  },
+  {
+    "source": "src/components/DemoSurfaces.uxdsl",
+    "output": "src/components/DemoSurfaces.module.css"
+  },
+  {
+    "source": "src/components/DensityExplanation.uxdsl",
+    "output": "src/components/DensityExplanation.module.css"
+  },
+  {
+    "source": "src/components/HeroBackground.uxdsl",
+    "output": "src/components/HeroBackground.module.css"
+  },
+  {
+    "source": "src/components/HomeInteractiveDemos.uxdsl",
+    "output": "src/components/HomeInteractiveDemos.module.css"
+  },
+  {
+    "source": "src/components/InputDemo.uxdsl",
+    "output": "src/components/InputDemo.module.css"
+  },
+  {
+    "source": "src/components/InteractiveDemoContainer.uxdsl",
+    "output": "src/components/InteractiveDemoContainer.module.css"
+  },
+  {
+    "source": "src/components/InteractiveLogo.uxdsl",
+    "output": "src/components/InteractiveLogo.module.css"
+  },
+  {
+    "source": "src/components/NavigationCardLink.uxdsl",
+    "output": "src/components/NavigationCardLink.module.css"
+  },
+  {
+    "source": "src/components/PageTitle.uxdsl",
+    "output": "src/components/PageTitle.module.css"
+  },
+  {
+    "source": "src/components/PageToolbar.uxdsl",
+    "output": "src/components/PageToolbar.module.css"
+  },
+  {
+    "source": "src/components/PalettePlayground.uxdsl",
+    "output": "src/components/PalettePlayground.module.css"
+  },
+  {
+    "source": "src/components/PaletteThemeExplorer.uxdsl",
+    "output": "src/components/PaletteThemeExplorer.module.css"
+  },
+  {
+    "source": "src/components/ResponsiveSyntaxExplainer.uxdsl",
+    "output": "src/components/ResponsiveSyntaxExplainer.module.css"
+  },
+  {
+    "source": "src/components/RussianDoll.uxdsl",
+    "output": "src/components/RussianDoll.module.css"
+  },
+  {
+    "source": "src/components/SideNav.uxdsl",
+    "output": "src/components/SideNav.module.css"
+  },
+  {
+    "source": "src/components/SpacingExplanation.uxdsl",
+    "output": "src/components/SpacingExplanation.module.css"
+  },
+  {
+    "source": "src/components/ThemeBackground.uxdsl",
+    "output": "src/components/ThemeBackground.module.css"
+  },
+  {
+    "source": "src/components/ThemeConfigJsonEditor.uxdsl",
+    "output": "src/components/ThemeConfigJsonEditor.module.css"
+  },
+  {
+    "source": "src/components/UXDSLCardDemo.uxdsl",
+    "output": "src/components/UXDSLCardDemo.module.css"
   }
 ]

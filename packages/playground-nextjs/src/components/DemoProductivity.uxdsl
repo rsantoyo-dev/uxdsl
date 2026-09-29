@@ -1,5 +1,5 @@
 /* The preview uses these compiled rules. Card count changes only the DOM. */
-#DemoProductivity {
+.module-root {
   .productivity-controls { margin-bottom: density(4); }
   .productivity-controls__label { display: flex; align-items: center; gap: density(2); }
   .productivity-controls__range { flex: 1; }

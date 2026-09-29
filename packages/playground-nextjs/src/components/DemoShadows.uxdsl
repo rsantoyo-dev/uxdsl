@@ -1,5 +1,5 @@
 /* DemoShadows styles - Scoped */
-#DemoShadows {
+.module-root {
   .demo-shadows {
     display: flex;
     flex-direction: column;

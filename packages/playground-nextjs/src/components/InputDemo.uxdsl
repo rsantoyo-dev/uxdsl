@@ -1,5 +1,6 @@
 /* Demo layout only; input visuals and states come from the shared engine. */
-#InputDemo {
+.module-root {
+
   .section { margin-block: density(3); }
   .surfaces-grid {
     display: grid;
@@ -7,6 +8,6 @@
     gap: density(3);
     margin-block: density(3);
   }
-  pre { overflow-x: auto; }
-  label { margin-inline-end: density(2); }
 }
+.inputs-section pre { overflow-x: auto; }
+.inputs-section label { margin-inline-end: density(2); }

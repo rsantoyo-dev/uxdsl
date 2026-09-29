@@ -1,6 +1,7 @@
 /* Demo layout only. Button visuals and states come from the shared engine. */
-#DemoButtons {
+.module-root {
   background: transparent;
+
   .section { margin-block: density(3); }
   .surfaces-grid {
     display: grid;
@@ -8,6 +9,6 @@
     gap: density(3);
     margin-block: density(3);
   }
-  pre { overflow-x: auto; }
-  label { margin-inline-end: density(2); }
 }
+.buttons-section pre { overflow-x: auto; }
+.buttons-section label { margin-inline-end: density(2); }

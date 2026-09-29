@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoDensity.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState, useEffect } from 'react'
 import { useBreakpoints } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
@@ -45,28 +48,28 @@ function EditDensityDialog({
   }
 
   return (
-    <div className="edit-dialog__backdrop" onClick={onClose}>
-      <div className="edit-dialog edit-dialog--scroll" onClick={e => e.stopPropagation()}>
-        <h3 className="edit-dialog__title">Edit Density {level}</h3>
+    <div className={scopedClasses("edit-dialog__backdrop", styles)} onClick={onClose}>
+      <div className={scopedClasses("edit-dialog edit-dialog--scroll", styles)} onClick={e => e.stopPropagation()}>
+        <h3 className={scopedClasses("edit-dialog__title", styles)}>Edit Density {level}</h3>
 
-        <div className="edit-dialog__fields">
+        <div className={scopedClasses("edit-dialog__fields", styles)}>
           {bpOrder.map(bp => (
-            <label key={bp} className="edit-dialog__row">
-              <span className="edit-dialog__breakpoint">{bp}</span>
+            <label key={bp} className={scopedClasses("edit-dialog__row", styles)}>
+              <span className={scopedClasses("edit-dialog__breakpoint", styles)}>{bp}</span>
               <input 
                 type="text"
                 value={breakpointValues[bp] || ''}
                 onChange={e => setBreakpointValues(prev => ({ ...prev, [bp]: e.target.value }))}
                 placeholder="e.g. space(2), 16px"
-                className="edit-dialog__input edit-dialog__input--grow"
+                className={scopedClasses("edit-dialog__input edit-dialog__input--grow", styles)}
               />
             </label>
           ))}
         </div>
 
-        <div className="edit-dialog__actions edit-dialog__actions--spaced">
-          <button onClick={onClose} className="edit-dialog__cancel">Cancel</button>
-          <button onClick={handleSave} className="edit-dialog__save">Save</button>
+        <div className={scopedClasses("edit-dialog__actions edit-dialog__actions--spaced", styles)}>
+          <button onClick={onClose} className={scopedClasses("edit-dialog__cancel", styles)}>Cancel</button>
+          <button onClick={handleSave} className={scopedClasses("edit-dialog__save", styles)}>Save</button>
         </div>
       </div>
     </div>
@@ -130,10 +133,10 @@ export default function DemoDensity() {
   }
 
   return (
-    <section id="DemoDensity" className="density-section demo-section">
+    <section id="DemoDensity" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("density-section demo-section", styles)}>
       {error && <p role="alert">{error}</p>}
-      <div className="density-header">
-        <p className="demo-subtitle">
+      <div className={scopedClasses("density-header", styles)}>
+        <p className={scopedClasses("demo-subtitle", styles)}>
           Spacing defines a value; Density defines how spacing responds to the viewport.
           Prefer <code>density(n)</code> for component spacing using the theme’s responsive mapping.
           Use <code>space(n)</code> directly when a stable value across breakpoints is intentional.
@@ -149,10 +152,10 @@ export default function DemoDensity() {
 
       <DensityExplanation definition={densityDefinitions[4]} onEdit={() => setEditingLevel(4)} />
 
-      <div className="density-doll-container">
-        <h4 className="demo-subtitle">Russian Doll Visualization</h4>
-        <div className="density-doll-controls">
-          <label className="density-doll-controls__label">
+      <div className={scopedClasses("density-doll-container", styles)}>
+        <h4 className={scopedClasses("demo-subtitle", styles)}>Russian Doll Visualization</h4>
+        <div className={scopedClasses("density-doll-controls", styles)}>
+          <label className={scopedClasses("density-doll-controls__label", styles)}>
             Density level:
             <input
               type="range"
@@ -160,22 +163,22 @@ export default function DemoDensity() {
               max={MAX_LAYERS}
               value={dollLevels}
               onChange={(e) => setDollLevels(Number(e.target.value))}
-              className="density-slider"
+              className={scopedClasses("density-slider", styles)}
             />
             <span>{dollLevels}</span>
           </label>
         </div>
         <p>Each ring compares a Density level measured from the same content. The rings are not nested component paddings added together. Click a ring to edit its token. This diagram responds to the main browser viewport.</p>
-        <div className="density-doll-wrapper">
+        <div className={scopedClasses("density-doll-wrapper", styles)}>
           <RussianDoll 
             densityIndex={dollLevels} 
             onLayerClick={(level) => setEditingLevel(level)}
           />
         </div>
 
-        <div className="demo-code-block demo-code-block--usage">
-          <div className="code-header">
-            <span className="code-file">DensityUsage.uxdsl</span>
+        <div className={scopedClasses("demo-code-block demo-code-block--usage", styles)}>
+          <div className={scopedClasses("code-header", styles)}>
+            <span className={scopedClasses("code-file", styles)}>DensityUsage.uxdsl</span>
           </div>
           <SyntaxHighlighter 
             language="scss" 
@@ -190,15 +193,15 @@ export default function DemoDensity() {
         </div>
       </div>
 
-      <div className="demo-header demo-header--tokens">
-        <h3 className="demo-title">Global Density Tokens</h3>
-        <p className="demo-subtitle">
+      <div className={scopedClasses("demo-header demo-header--tokens", styles)}>
+        <h3 className={scopedClasses("demo-title", styles)}>Global Density Tokens</h3>
+        <p className={scopedClasses("demo-subtitle", styles)}>
           Update the tokens below to reflect changes in the UI.
         </p>
       </div>
 
-      <div className="density-grid-container">
-        <div className="density-grid">
+      <div className={scopedClasses("density-grid-container", styles)}>
+        <div className={scopedClasses("density-grid", styles)}>
           {densities.map((s) => {
             const def = densityDefinitions[s]
             if (!def) return null
@@ -220,33 +223,33 @@ export default function DemoDensity() {
             }
 
             return (
-              <div key={s} className="density-card">
-                                <div className="density-card__header">
+              <div key={s} className={scopedClasses("density-card", styles)}>
+                                <div className={scopedClasses("density-card__header", styles)}>
                   {/* Col 1: Token & Active Rule */}
-                  <div className="density-card__header-col density-card__header-col--main">
-                    <div className="density-card__token">density({s})</div>
-                    <div className="density-metric-value density-metric-value--highlight">{activeDef}</div>
+                  <div className={scopedClasses("density-card__header-col density-card__header-col--main", styles)}>
+                    <div className={scopedClasses("density-card__token", styles)}>density({s})</div>
+                    <div className={scopedClasses("density-metric-value density-metric-value--highlight", styles)}>{activeDef}</div>
                   </div>
 
                   {/* Col 2: Breakpoints (Stacked) */}
-                  <div className="density-card__header-col density-card__header-col--bps">
-                    <div className="density-def-list">
+                  <div className={scopedClasses("density-card__header-col density-card__header-col--bps", styles)}>
+                    <div className={scopedClasses("density-def-list", styles)}>
                       {sortedBps.map((bp) => (
                         <div 
                           key={bp} 
-                          className={`density-def-item ${bp === activeBpKey ? 'density-def-item--active' : ''}`}
+                          className={scopedClasses(`density-def-item ${bp === activeBpKey ? 'density-def-item--active' : ''}`, styles)}
                         >
-                          <span className="density-def-bp">{bp}:</span>
-                          <span className="density-def-val">{parsedDef[bp]}</span>
+                          <span className={scopedClasses("density-def-bp", styles)}>{bp}:</span>
+                          <span className={scopedClasses("density-def-val", styles)}>{parsedDef[bp]}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Col 3: Edit (Flex) */}
-                  <div className="density-card__header-col density-card__header-col--right">
+                  <div className={scopedClasses("density-card__header-col density-card__header-col--right", styles)}>
                     <button
-                      className="density-card__edit-btn"
+                      className={scopedClasses("density-card__edit-btn", styles)}
                       onClick={() => setEditingLevel(s)}
                     >
                       Edit
@@ -255,10 +258,10 @@ export default function DemoDensity() {
                 </div>
 
                 {/* Visualization Row */}
-                <div className="density-card__viz">
-                  <div className="density-concentric-viz">
+                <div className={scopedClasses("density-card__viz", styles)}>
+                  <div className={scopedClasses("density-concentric-viz", styles)}>
                     {/* Center anchor */}
-                    <div className="density-concentric-center" />
+                    <div className={scopedClasses("density-concentric-center", styles)} />
                     
                     {/* Concentric boxes */}
                     {sortedBps.map((bp, i) => {
@@ -266,13 +269,13 @@ export default function DemoDensity() {
                       return (
                         <div 
                           key={bp} 
-                          className={`density-concentric-box density-concentric-box--${i % 3} ${isActive ? 'density-concentric-box--active' : ''}`}
+                          className={scopedClasses(`density-concentric-box density-concentric-box--${i % 3} ${isActive ? 'density-concentric-box--active' : ''}`, styles)}
                           style={{ padding: parseDensityValue(parsedDef[bp]) }}
                           title={`${bp}: ${parsedDef[bp]}`}
                         >
                           {/* Inner div to define the content box size (matches center) */}
-                          <div className="density-concentric-inner" />
-                          <span className="density-concentric-label">{bp}</span>
+                          <div className={scopedClasses("density-concentric-inner", styles)} />
+                          <span className={scopedClasses("density-concentric-label", styles)}>{bp}</span>
                         </div>
                       )
                     })}

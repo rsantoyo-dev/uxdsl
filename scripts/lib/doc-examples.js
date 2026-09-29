@@ -110,14 +110,14 @@ function extractJsx(text) {
   const found = [];
   const add = (index, lang, code) => found.push({ type: 'block', lang, line: lineOf(text, index), code, index });
 
-  for (const m of text.matchAll(/language-(css|uxdsl|scss|json)">\{`((?:[^`\\]|\\.)*)`\}<\/code>/g)) {
+  for (const m of text.matchAll(/<code\b[^>]*\blanguage-(css|uxdsl|scss|json)\b[^>]*>\{`((?:[^`\\]|\\.)*)`\}<\/code>/g)) {
     if (!m[2].includes('${')) add(m.index, m[1], unescapeTemplate(m[2]));
   }
   for (const m of text.matchAll(/<CodeBlock\s+language="(css|uxdsl|scss|json)"\s+code=\{`((?:[^`\\]|\\.)*)`\}/g)) {
     if (!m[2].includes('${')) add(m.index, m[1], unescapeTemplate(m[2]));
   }
   // An example kept in a top-level constant and rendered as `{name}`.
-  for (const m of text.matchAll(/language-(css|uxdsl|scss|json)">\{(\w+)\}<\/code>/g)) {
+  for (const m of text.matchAll(/<code\b[^>]*\blanguage-(css|uxdsl|scss|json)\b[^>]*>\{(\w+)\}<\/code>/g)) {
     const constant = new RegExp(`(?:const|let)\\s+${m[2]}\\s*=\\s*\`((?:[^\`\\\\]|\\\\.)*)\``).exec(text);
     if (constant && !constant[1].includes('${')) add(m.index, m[1], unescapeTemplate(constant[1]));
   }
@@ -127,7 +127,7 @@ function extractJsx(text) {
     if (constant && !constant[1].includes('${')) add(m.index, m[1], unescapeTemplate(constant[1]));
   }
   // A theme excerpt written as an object literal: JSON.stringify({...}, null, 2).
-  for (const m of text.matchAll(/language-json">\{JSON\.stringify\(/g)) {
+  for (const m of text.matchAll(/<code\b[^>]*\blanguage-json\b[^>]*>\{JSON\.stringify\(/g)) {
     const args = balanced(text, m.index + m[0].length - 1);
     if (args === null) continue;
     try {

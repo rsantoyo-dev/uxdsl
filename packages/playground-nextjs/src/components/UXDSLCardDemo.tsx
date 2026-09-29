@@ -1,4 +1,7 @@
 'use client'
+
+import styles from './UXDSLCardDemo.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import React from 'react'
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
@@ -76,33 +79,33 @@ const DEMO_CODE = `.uxdsl-card {
 
 export default function UXDSLCardDemo() {
   return (
-    <div className="uxdsl-demo-wrapper">
-      <div className="uxdsl-card">
-        <div className="card-header">
-          <div className="logo-circle">
-            <UXDSLLogo className="card-logo" />
+    <div className={scopedClasses("uxdsl-demo-wrapper", styles)}>
+      <div className={scopedClasses("uxdsl-card", styles)}>
+        <div className={scopedClasses("card-header", styles)}>
+          <div className={scopedClasses("logo-circle", styles)}>
+            <UXDSLLogo className={scopedClasses("card-logo", styles)} />
           </div>
         </div>
-        <div className="card-body">
-          <h5 className="card-title">UX-DSL</h5>
-          <p className="card-desc">
+        <div className={scopedClasses("card-body", styles)}>
+          <h5 className={scopedClasses("card-title", styles)}>UX-DSL</h5>
+          <p className={scopedClasses("card-desc", styles)}>
             A build-time design system language that keeps components connected
             to shared tokens and semantic roles.
           </p>
         </div>
-        <div className="card-actions">
-          <Link href="/docs/quick-start" className="btn-secondary">
+        <div className={scopedClasses("card-actions", styles)}>
+          <Link href="/docs/quick-start" className={scopedClasses("btn-secondary", styles)}>
             Documentation
           </Link>
-          <Link href="/docs/quick-start" className="btn-primary">
-            Get Started <ArrowRight size={16} className="btn-primary__icon" />
+          <Link href="/docs/quick-start" className={scopedClasses("btn-primary", styles)}>
+            Get Started <ArrowRight size={16} className={scopedClasses("btn-primary__icon", styles)} />
           </Link>
         </div>
       </div>
 
-      <div className="demo-code-block">
-        <div className="code-header">
-          <span className="code-file">CardComponent.uxdsl</span>
+      <div className={scopedClasses("demo-code-block", styles)}>
+        <div className={scopedClasses("code-header", styles)}>
+          <span className={scopedClasses("code-file", styles)}>CardComponent.uxdsl</span>
         </div>
         <SyntaxHighlighter
           language="scss"

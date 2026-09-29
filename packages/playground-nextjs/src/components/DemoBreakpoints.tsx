@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoBreakpoints.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useState, useEffect } from 'react'
 import { useBreakpoints, BreakpointKey } from '@/components/BreakpointsProvider'
 import { Monitor } from 'lucide-react'
@@ -76,24 +79,24 @@ export default function DemoBreakpoints() {
   }
 
   return (
-    <section id="DemoBreakpoints" className="breakpoints-section demo-section">
-      <div className="breakpoints-playground-wrapper">
-        <h4 className="demo-subtitle">Interactive Playground</h4>
+    <section id="DemoBreakpoints" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("breakpoints-section demo-section", styles)}>
+      <div className={scopedClasses("breakpoints-playground-wrapper", styles)}>
+        <h4 className={scopedClasses("demo-subtitle", styles)}>Interactive Playground</h4>
         
-        <div className="breakpoints-playground-container">
+        <div className={scopedClasses("breakpoints-playground-container", styles)}>
           {/* Top: Visualization Bar */}
-          <div className="breakpoints-viz-container">
-            <div className="breakpoints-bar-wrapper">
-              <div className="breakpoints-bar">
+          <div className={scopedClasses("breakpoints-viz-container", styles)}>
+            <div className={scopedClasses("breakpoints-bar-wrapper", styles)}>
+              <div className={scopedClasses("breakpoints-bar", styles)}>
                 {keys.map(key => (
                   <div 
                     key={key} 
-                    className={`breakpoints-segment breakpoints-segment--${key} ${activeBp === key ? 'is-active' : ''}`}
+                    className={scopedClasses(`breakpoints-segment breakpoints-segment--${key} ${activeBp === key ? 'is-active' : ''}`, styles)}
                     style={{ width: getSegmentWidth(key) }}
                     title={`${key}: ${localBreakpoints[key]}px`}
                   >
-                    <span className="breakpoints-segment-label">{key}</span>
-                    <span className="breakpoints-segment-val">≥ {localBreakpoints[key]}px</span>
+                    <span className={scopedClasses("breakpoints-segment-label", styles)}>{key}</span>
+                    <span className={scopedClasses("breakpoints-segment-val", styles)}>≥ {localBreakpoints[key]}px</span>
                   </div>
                 ))}
               </div>
@@ -101,13 +104,13 @@ export default function DemoBreakpoints() {
           </div>
 
           {/* Bottom: Grid Layout */}
-          <div className="breakpoints-grid">
+          <div className={scopedClasses("breakpoints-grid", styles)}>
             {/* Left: Controls */}
-            <div className="breakpoints-controls">
-              <h3 className="breakpoints-subtitle">Adjust Breakpoints</h3>
+            <div className={scopedClasses("breakpoints-controls", styles)}>
+              <h3 className={scopedClasses("breakpoints-subtitle", styles)}>Adjust Breakpoints</h3>
               {keys.map(key => (
-                <div key={key} className="breakpoints-control-row">
-                  <label className="breakpoints-control-label" htmlFor={`breakpoint-slider-${key}`}>{key}</label>
+                <div key={key} className={scopedClasses("breakpoints-control-row", styles)}>
+                  <label className={scopedClasses("breakpoints-control-label", styles)} htmlFor={`breakpoint-slider-${key}`}>{key}</label>
                   <input
                     id={`breakpoint-slider-${key}`}
                     type="range"
@@ -119,9 +122,9 @@ export default function DemoBreakpoints() {
                     onTouchEnd={commitUpdate}
                     disabled={key === 'xs'}
                     aria-label={`${key} breakpoint slider`}
-                    className="breakpoints-slider"
+                    className={scopedClasses("breakpoints-slider", styles)}
                   />
-                  <div className="breakpoints-input-wrapper">
+                  <div className={scopedClasses("breakpoints-input-wrapper", styles)}>
                     <input
                       type="number"
                       aria-label={`${key} breakpoint width in pixels`}
@@ -131,28 +134,28 @@ export default function DemoBreakpoints() {
                       onPointerUp={commitUpdate}
                       onKeyDown={(e) => e.key === 'Enter' && commitUpdate()}
                       disabled={key === 'xs'}
-                      className="breakpoints-input-val"
+                      className={scopedClasses("breakpoints-input-val", styles)}
                     />
-                    <span className="breakpoints-unit">px</span>
+                    <span className={scopedClasses("breakpoints-unit", styles)}>px</span>
                   </div>
                 </div>
               ))}
             </div>
 
             {/* Right: Info Panel */}
-            <div className="breakpoints-info-panel">
-              <div className="breakpoints-info-card is-compact">
-                <Monitor size={20} className="breakpoints-icon" />
-                <div className="breakpoints-info-content">
-                  <span className="breakpoints-info-label">Window Width</span>
-                  <strong className="breakpoints-info-value">{windowWidth}px</strong>
+            <div className={scopedClasses("breakpoints-info-panel", styles)}>
+              <div className={scopedClasses("breakpoints-info-card is-compact", styles)}>
+                <Monitor size={20} className={scopedClasses("breakpoints-icon", styles)} />
+                <div className={scopedClasses("breakpoints-info-content", styles)}>
+                  <span className={scopedClasses("breakpoints-info-label", styles)}>Window Width</span>
+                  <strong className={scopedClasses("breakpoints-info-value", styles)}>{windowWidth}px</strong>
                 </div>
               </div>
-              <div className="breakpoints-info-card is-highlighted">
-                <span className="breakpoints-info-label">Active Token</span>
-                <strong className="breakpoints-info-value is-large">{String(activeBp).toUpperCase()}</strong>
+              <div className={scopedClasses("breakpoints-info-card is-highlighted", styles)}>
+                <span className={scopedClasses("breakpoints-info-label", styles)}>Active Token</span>
+                <strong className={scopedClasses("breakpoints-info-value is-large", styles)}>{String(activeBp).toUpperCase()}</strong>
               </div>
-              <p className="breakpoints-info-desc">
+              <p className={scopedClasses("breakpoints-info-desc", styles)}>
                 Resize your browser window to see the active token change in real-time.
               </p>
             </div>

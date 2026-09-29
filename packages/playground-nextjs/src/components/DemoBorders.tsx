@@ -1,5 +1,8 @@
 'use client'
 
+
+import styles from './DemoBorders.module.css'
+import { scopedClasses } from '../lib/uxdsl-module-classes'
 import { useEffect, useMemo, useState } from 'react'
 import { generateEdgeCss, getEdgeTokens, inspectEdgeTheme, RADIUS_KEYWORDS } from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
@@ -34,30 +37,30 @@ export default function DemoBorders() {
       setError('')
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }
-  return <div id="DemoBorders" className="demo-borders">
+  return <div id="DemoBorders" className={scopedClasses('module-root', styles) + ' ' + scopedClasses("demo-borders", styles)}>
     <style>{css}</style>
-    <section className="section">
-      <h2 className="section-title">Shared engine playground</h2>
+    <section className={scopedClasses("section", styles)}>
+      <h2 className={scopedClasses("section-title", styles)}>Shared engine playground</h2>
       <p>Actual viewport: {viewport}px. Resize the browser to test transitions. The preview uses the active theme and shared engine defaults. Edits below are scoped to this demo and do not save source JSON.</p>
       <label htmlFor="edge-theme">Borders, Radii and breakpoint configuration</label>
-      <textarea id="edge-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className="code-textarea" />
+      <textarea id="edge-theme" value={draft} onChange={e => setDraft(e.target.value)} rows={16} className={scopedClasses("code-textarea", styles)} />
       <button type="button" onClick={apply}>Apply preview</button>
       <button type="button" onClick={() => { setOverrides(null); setDraft(JSON.stringify({ breakpoints: activeThemeData.breakpoints, ...getEdgeTokens(activeThemeData) }, null, 2)); setError('') }}>Reset to active theme</button>
       {error && <p role="alert">{error} The last valid preview remains active.</p>}
     </section>
-    <section className="section">
+    <section className={scopedClasses("section", styles)}>
       <h3>Border presets</h3>
-      <div className="grid">{Object.keys(tokens.borders).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ border: `var(--uxdsl__border__${key})`, borderRadius: 'var(--uxdsl__radius__2)' }}>Border {key}</div>
+      <div className={scopedClasses("grid", styles)}>{Object.keys(tokens.borders).map(key => <div key={key} className={scopedClasses("card", styles)}>
+        <div className={scopedClasses("preview-box", styles)} style={{ border: `var(--uxdsl__border__${key})`, borderRadius: 'var(--uxdsl__radius__2)' }}>Border {key}</div>
         <pre>{`border: border(${key});`}</pre><code>{values[`--uxdsl__border__${key}`]}</code>
       </div>)}</div>
       <h3>Radius presets</h3>
-      <div className="grid">{Object.keys(tokens.radii).map(key => <div key={key} className="card">
-        <div className="preview-box" style={{ border: 'var(--uxdsl__border__1)', borderRadius: `var(--uxdsl__radius__${key})` }}>Radius {key}</div>
+      <div className={scopedClasses("grid", styles)}>{Object.keys(tokens.radii).map(key => <div key={key} className={scopedClasses("card", styles)}>
+        <div className={scopedClasses("preview-box", styles)} style={{ border: 'var(--uxdsl__border__1)', borderRadius: `var(--uxdsl__radius__${key})` }}>Radius {key}</div>
         <pre>{`border-radius: radius(${key});`}</pre><code>{values[`--uxdsl__radius__${key}`]}</code>
       </div>)}</div>
       <h3>Built-in shapes</h3>
-      <div className="grid">{Object.entries(RADIUS_KEYWORDS).map(([key, value]) => <div key={key} className="card"><div className="preview-box" style={{ border: 'var(--uxdsl__border__1)', borderRadius: value }}>{key}</div><code>{`radius(${key}) → ${value}`}</code></div>)}</div>
+      <div className={scopedClasses("grid", styles)}>{Object.entries(RADIUS_KEYWORDS).map(([key, value]) => <div key={key} className={scopedClasses("card", styles)}><div className={scopedClasses("preview-box", styles)} style={{ border: 'var(--uxdsl__border__1)', borderRadius: value }}>{key}</div><code>{`radius(${key}) → ${value}`}</code></div>)}</div>
     </section>
   </div>
 }
