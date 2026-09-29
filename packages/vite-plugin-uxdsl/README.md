@@ -42,6 +42,9 @@ actively supported integration** for UXDSL in modern frontend projects.
 npm install vite-plugin-uxdsl uxdsl-core --save-dev
 ```
 
+Works with Vite 4 and later (`peerDependencies.vite: ">=4.0.0"`, verified through
+Vite 8). `postcss` is a peer dependency that Vite already brings.
+
 ## Usage
 
 ### 1. Configure the Plugin

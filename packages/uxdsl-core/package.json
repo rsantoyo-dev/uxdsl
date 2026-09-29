@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-core",
-  "version": "0.5.0-beta.6",
+  "version": "0.5.0-beta.7-dev",
   "description": "Core processing engine for UXDSL - a lightweight CSS DSL for design systems",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -48,15 +48,20 @@
   },
   "homepage": "https://github.com/rsantoyo-dev/uxdsl#readme",
   "dependencies": {
-    "postcss": "^8.5.6",
     "postcss-advanced-variables": "^3.0.0",
     "postcss-import": "^16.1.0",
     "postcss-scss": "^4.0.9",
     "postcss-value-parser": "^4.2.0",
-    "postcss-uxdsl": "0.5.0-beta.6"
+    "postcss-uxdsl": "0.5.0-beta.7-dev"
   },
   "publishConfig": {
     "access": "public",
     "tag": "latest"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31"
+  },
+  "devDependencies": {
+    "postcss": "^8.5.6"
   }
 }
