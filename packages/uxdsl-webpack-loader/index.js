@@ -38,7 +38,10 @@ module.exports = async function uxdslLoader(source) {
     const theme = options.theme !== undefined
       ? options.theme
       : (discoverTheme ? (discovered ? discovered.theme : {}) : {});
-    const references = options.references !== undefined ? options.references : (discovered ? discovered.references : undefined);
+    // A theme file carries no `references` (stability phase 2): they come from
+    // the loader options or nowhere. Breakpoints are the theme's `breakpoints`
+    // family; there is no loader option for them.
+    const references = options.references;
 
     // MIG-B6-21 (FEAT-008): webpack sets `this.sourceMap` from the
     // compilation's own devtool setting, so maps follow the project's
@@ -54,7 +57,6 @@ module.exports = async function uxdslLoader(source) {
       {
         theme,
         references,
-        breakpoints: options.breakpoints,
         includeTheme: options.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: this.resourcePath,

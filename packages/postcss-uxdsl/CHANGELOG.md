@@ -55,6 +55,33 @@ theme is one too many. Every removed call is one `applyTheme` patch:
   `ThemeContext` applies through `applyTheme`; nothing writes inline styles on
   `<html>` any more, so `ThemeContext` no longer has to clear them.
 
+Stability plan, phase 2 (2): two files, two jobs — the build config and the theme file.
+
+### Removed
+
+Seven ways to hand over a theme, three build-config names, two theme-file
+export shapes, `references` in two places and `breakpoints` in three (audit
+I8, DE-10) are now one of each:
+
+| Removed | Use instead |
+| --- | --- |
+| `uxdsl.config.json` as a build config (discovered, or named with `--config`) | `uxdsl.config.cjs` or `uxdsl.config.js`. JSON is for the theme: `uxdsl.theme.json` |
+| `uxdsl.theme.config.json` as a theme-file name | `uxdsl.theme.json` (the other names, `uxdsl.theme.config.js`/`.cjs`, are unchanged) |
+| the `{ theme, references }` export of a theme file; `normalizeThemeExport` (`postcss-uxdsl/config`) | the theme file exports the theme itself; `references` goes in the build config or the plugin/adapter option. The wrapper is refused with an error naming both homes, not read as a theme with two unknown families |
+| `theme:` inline in the build config | the theme file next to the config |
+| `themeFile:` in the build config | the theme file is discovered by name next to the config; there is no pointer to it |
+| `breakpoints:` in the build config; the `breakpoints` option of `uxdsl-core`'s `compile()`, `vite-plugin-uxdsl` and `uxdsl-webpack-loader` | `breakpoints` in the theme (file or `theme` option), the one source every integration reads. The CLI, `compile()` and both adapters no longer forward a separate value to the plugin |
+| `output:` as an alias of `outFile` (top level and inside `builds[]`), and the `UxdslOutTarget` type | `outFile` |
+| `require('uxdsl-core')` as a callable (`processUxdsl(source, { fileId, … })` → `Promise<string>`) | `compile({ entry } \| { source, from }, config)` — the module now exports `compile` only |
+| `vite-plugin-uxdsl`'s `scss` / `scssLoadPaths` options (the Sass pre-pass) | none: `$var`, `@each`, `@mixin` and `@if` are handled by the shared pipeline; a `.uxdsl` file is not valid SCSS, so a Sass pass over it was a second compiler with no parity guarantee |
+
+Each removed build-config key is a hard error at load time naming its new
+home (`"theme" is not a build-config key any more — put the theme in a theme
+file next to this config …`), never a silently ignored key. The types follow:
+`UxdslConfigShared` lost `theme`, `themeFile` and `breakpoints`; `UxdslBuild`
+is `{ entry, outFile, includeTheme? }`. The playground's own `uxdsl.config.cjs`
+moved its theme into `uxdsl.theme.config.cjs` accordingly.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

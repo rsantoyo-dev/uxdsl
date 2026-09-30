@@ -162,7 +162,7 @@ function checkImportCycles(
   stack.pop();
 }
 
-interface CompileInput {
+export interface CompileInput {
   /** Absolute or cwd-relative path to the entry `.uxdsl` file. Mutually
    * exclusive with `source`. */
   entry?: string;
@@ -179,13 +179,14 @@ interface CompileInput {
   from?: string;
 }
 
-interface CompileConfig {
+export interface CompileConfig {
+  /** The theme override, same shape as postcss-uxdsl's `theme` option. Its
+   * `breakpoints` family is the one source of thresholds; there is no
+   * separate `breakpoints` option here. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   theme?: Record<string, any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   references?: Record<string, any>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  breakpoints?: any;
   includeTheme?: boolean;
   to?: string;
   sourcesContent?: boolean;
@@ -196,14 +197,14 @@ interface CompileConfig {
   sourceMap?: false | 'inline' | 'external';
 }
 
-interface CompileWarning {
+export interface CompileWarning {
   text: string;
   file?: string;
   line?: number;
   column?: number;
 }
 
-interface CompileResult {
+export interface CompileResult {
   css: string;
   map?: string;
   /** Every file this compilation actually read, entry first, in a stable
@@ -219,10 +220,11 @@ interface CompileResult {
  * for `$var` resolution — *before* `postcss-uxdsl` ever sees the source,
  * so a `$var` holding a responsive expression expands the same way
  * MIG-B6-14 made the plugin-used-alone case work — and finally
- * `postcss-uxdsl` itself. Used identically by `processUxdsl()` below (the
- * CLI's compatibility entry point) and by `uxdsl-cli`'s own `build`/`watch`.
+ * `postcss-uxdsl` itself. `compile()` is this package's whole API: the
+ * callable `processUxdsl(source, { fileId })` default export it used to
+ * carry was a second signature for the same pipeline (stability phase 2).
  */
-async function compileImpl(input: CompileInput, config: CompileConfig = {}): Promise<CompileResult> {
+export async function compile(input: CompileInput, config: CompileConfig = {}): Promise<CompileResult> {
   if (!input || (typeof input.entry !== 'string' && typeof input.source !== 'string')) {
     throw new Error('uxdsl-core: compile() requires either { entry } or { source }.');
   }
@@ -261,7 +263,6 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
     postcssImport(resolveImport ? { resolve: resolveImport } : {}),
     postcssAdvancedVariables(),
     uxdslPlugin({
-      breakpoints: config.breakpoints,
       theme: config.theme,
       references: config.references,
       includeTheme,
@@ -341,44 +342,3 @@ async function compileImpl(input: CompileInput, config: CompileConfig = {}): Pro
 
   return { css: finalCss, map, dependencies, warnings };
 }
-
-/** Options accepted by the compatibility entry point. A superset of
- * `CompileConfig` — `fileId` is `processUxdsl`'s historical name for
- * `compile()`'s `entry`/`from`, kept so no existing caller (the CLI, this
- * package's own tests, any external consumer) has to change. */
-interface CoreOptions extends CompileConfig {
-  /** Absolute path of the file being processed. When set, enables
-   * `@import` inlining and cycle detection, exactly like `compile()`'s
-   * `entry`. When absent, `source` is compiled standalone (relative
-   * `@import`s still resolve against `process.cwd()` via postcss-import's
-   * own default). */
-  fileId?: string;
-}
-
-/**
- * `processUxdsl(source, options)` — the callable default export's
- * historical contract (D3 of FEAT-007): a `Promise<string>` wrapper
- * around `compile()`, unchanged in signature or return type so every
- * existing caller keeps working untouched.
- */
-async function processUxdsl(source: string, options: CoreOptions = {}): Promise<string> {
-  const { fileId, ...config } = options;
-  const input: CompileInput = fileId !== undefined ? { entry: fileId } : { source };
-  const { css } = await compileImpl(input, config);
-  return css;
-}
-
-// CommonJS export so consumers can do `require('uxdsl-core')` and call it
-// directly, with `compile` reachable — and correctly *typed* — as a
-// property on that same export: `module.exports = processUxdsl;
-// module.exports.compile = compile;`. TS's supported way to add a typed
-// property to a function value it also does `export =` on is a namespace
-// declaration-merged with the function's name; `export const compile = …` inside
-// it both types `processUxdsl.compile` for a TS consumer and compiles to
-// the real `processUxdsl.compile = compile;` assignment a JS consumer needs.
-// eslint-disable-next-line @typescript-eslint/no-namespace
-namespace processUxdsl {
-  export const compile = compileImpl;
-}
-
-export = processUxdsl;

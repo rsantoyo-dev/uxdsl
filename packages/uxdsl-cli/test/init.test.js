@@ -149,7 +149,7 @@ for (const branch of Object.keys(BRANCHES)) {
     const first = snapshot(dir);
     assert.equal(run(BRANCHES[branch].args, dir).status, 0);
     assert.deepEqual(snapshot(dir), first);
-    for (const name of ['uxdsl.theme.json', 'uxdsl.theme.config.cjs', 'uxdsl.theme.config.js', 'uxdsl.theme.config.json', '.vscode']) {
+    for (const name of ['uxdsl.theme.json', 'uxdsl.theme.config.cjs', 'uxdsl.theme.config.js', '.vscode']) {
       assert.equal(fs.existsSync(path.join(dir, name)), false, `${name} must not be scaffolded`);
     }
   });

@@ -4,66 +4,44 @@ import { createRequire } from 'module';
 import type { Plugin, ResolvedConfig } from 'vite';
 
 // MIG-B6-20 (FEAT-008), decision D-4: the bundler delivers real CSS through
-// its own pipeline; UXDSL only compiles. This plugin used to convert every
-// `.uxdsl` file into a JS module that injected a runtime <style> tag
-// (`typeof document !== 'undefined'`) — no extraction in `vite build`, no
-// styles at all during SSR (that check is false on the server), and the
-// absolute build-machine file path baked unconditionally into the
-// `data-uxdsl` attribute of every production bundle. It also injected ten
-// legacy `default-*.css`/`.uxdsl` packs on every single module regardless
-// of whether the project used them, silently pre-processed every `.uxdsl`
-// file through Sass whenever the *host project* happened to have `sass`
-// installed for an unrelated reason, and never read the project's own
-// theme file at all.
+// its own pipeline; UXDSL only compiles. `resolveId` turns `./panel.uxdsl`
+// into an id Vite's own `CSS_LANGS_RE` recognizes as CSS (ending in `.css`,
+// `?inline` preserved verbatim so Vite's *own* css plugin honors it exactly as
+// it would for a real `.css?inline` import — this plugin does not special-case
+// it). `load` calls uxdsl-core's `compile()` (the same pipeline the CLI and the
+// Webpack loader use) and hands back plain CSS text; Vite's built-in
+// `vite:css`/`vite:css-post` plugins take it from there — extraction in
+// `vite build`, native HMR, and an empty/no-op SSR module, all for free.
 //
-// The rewrite: `resolveId` turns `./panel.uxdsl` into an id Vite's own
-// `CSS_LANGS_RE` recognizes as CSS (ending in `.css`, `?inline` preserved
-// verbatim so Vite's *own* css plugin honors it exactly as it would for a
-// real `.css?inline` import — this plugin does not special-case it).
-// `load` calls uxdsl-core's `compile()` (the same pipeline the CLI and
-// uxdsl-core's own tests exercise) and hands back plain CSS text; Vite's
-// built-in `vite:css`/`vite:css-post` plugins take it from there —
-// extraction in `vite build`, native HMR, and an empty/no-op SSR module,
-// all for free, instead of reimplemented here.
+// Stability phase 2: the `scss`/`scssLoadPaths` pre-pass and the `breakpoints`
+// option are gone. A `.uxdsl` file's own syntax is not valid SCSS, so a Sass
+// pass over it was a second, unguaranteed compiler; `$var`, `@each` and
+// `@mixin` are handled by the shared pipeline itself. Breakpoints are a theme
+// family: declare them under `breakpoints` in the theme file (or the `theme`
+// option), the one place every integration reads them from.
 
 const nodeRequire = createRequire(__filename);
 
-type BreakpointSpec =
-  | Record<string, number>
-  | Array<[string, number]>
-  | Array<{ name: string; min?: number; px?: number }>;
-
 export interface UxDslPluginOptions {
+  /** Explicit theme override — skips discovery entirely when given. Its
+   * `breakpoints` family is where thresholds are declared. */
   theme?: Record<string, unknown>;
+  /** Same shape as postcss-uxdsl's `references` option. Always taken from
+   * here (or left undefined): a theme file carries no references. */
   references?: Record<string, unknown>;
-  breakpoints?: BreakpointSpec;
   /** Same meaning as postcss-uxdsl's own option: emit (or skip) the
    * global `:root` token definitions. Defaults to `true`. */
   includeTheme?: boolean;
   /** MIG-B6-19 parity: when `theme` is omitted, discover
-   * `uxdsl.theme.config.*`/`uxdsl.theme.json` from `configRoot` — the same
-   * discovery uxdsl-cli and the plugin used directly both do. Default
+   * `uxdsl.theme.json`/`uxdsl.theme.config.{js,cjs}` from `configRoot` — the
+   * same discovery uxdsl-cli and the plugin used directly both do. Default
    * `true`. Set `false` to always validate against the built-in default
-   * theme, as every version of this plugin before this story did. */
+   * theme. */
   discoverTheme?: boolean;
   /** Directory theme discovery searches from. Defaults to Vite's resolved
    * project root (`config.root`), not `process.cwd()` — the two commonly
    * differ (a monorepo running Vite with a non-default `root`). */
   configRoot?: string;
-  /**
-   * Explicit-only SCSS pre-pass. The previous `'auto'` mode (silently
-   * activated whenever the *host project* had `sass` installed, for any
-   * reason) is removed: a `.uxdsl` file's own syntax ($var, xs()/md(),
-   * palette(), @ds-*) is not valid SCSS, so an unrelated dependency
-   * silently changing how every `.uxdsl` file compiles was never safe.
-   * `'on'` keeps working exactly as before and is opt-in only. Plain
-   * `$var`, `@each` and `@mixin` don't need this at all —
-   * postcss-advanced-variables (already inside `compile()`) covers them.
-   * Not covered by this story's CLI/core/Webpack parity guarantee.
-   */
-  scss?: 'on' | 'off';
-  /** Additional Sass load paths. Only consulted when `scss: 'on'`. */
-  scssLoadPaths?: string[];
 }
 
 interface CoreModule {
@@ -74,7 +52,7 @@ interface CoreModule {
 }
 
 interface ConfigModule {
-  discoverThemeAsync(dir: string): Promise<{ theme: unknown; references: unknown; dependencies: string[] } | null>;
+  discoverThemeAsync(dir: string): Promise<{ theme: unknown; dependencies: string[] } | null>;
 }
 
 function resolveCore(): CoreModule {
@@ -135,76 +113,6 @@ function realPathFromVirtualId(id: string): string {
 // exactly as it would for a real `.css?inline` import.
 function buildVirtualId(absPath: string, inline: boolean): string {
   return `${absPath}?uxdsl${inline ? '&inline' : ''}&lang.css`;
-}
-
-// MIG-B6-20 item 2 (Sass): preserved near-verbatim from the previous
-// implementation, adapted to feed `compile({ source, from })` instead of
-// the old bare `processUxdsl` call. Explicit opt-in only (`scss: 'on'`) —
-// see UxDslPluginOptions.scss's own doc for why 'auto' is gone.
-function inlineUxdslImportsForSass(content: string, filePath: string, seen: Set<string> = new Set()): string {
-  const dir = path.dirname(filePath);
-  const importRe = /^\s*@import\s+["']([^"']+\.uxdsl)["']\s*;?\s*$/;
-  const lines = content.split(/\r?\n/);
-  const out: string[] = [];
-  for (const line of lines) {
-    const m = line.match(importRe);
-    if (m) {
-      const dep = path.resolve(dir, m[1]);
-      if (fs.existsSync(dep) && !seen.has(dep)) {
-        seen.add(dep);
-        out.push(inlineUxdslImportsForSass(fs.readFileSync(dep, 'utf-8'), dep, seen));
-        continue;
-      }
-    }
-    out.push(line);
-  }
-  return out.join('\n');
-}
-
-function compileWithSass(absPath: string, options: UxDslPluginOptions, projectRoot: string): string {
-  const rawSource = fs.readFileSync(absPath, 'utf-8');
-  let sass: unknown;
-  try {
-    sass = createRequire(path.join(projectRoot, 'package.json'))('sass');
-  } catch {
-    // Fall through — try the plugin's own resolution below.
-  }
-  if (!sass) {
-    try {
-      sass = nodeRequire('sass');
-    } catch {
-      throw new Error("vite-plugin-uxdsl: scss: 'on' requires 'sass' to be installed. Install it, or set scss: 'off'/omit the option.");
-    }
-  }
-  const basedir = path.dirname(absPath);
-  const loadPaths = [basedir, ...(options.scssLoadPaths || [])];
-  const preInlined = inlineUxdslImportsForSass(rawSource, absPath);
-  const importer = {
-    canonicalize(urlStr: string, opts2: { containingUrl?: URL }) {
-      if (!/\.uxdsl($|\?|#)/.test(urlStr)) return null;
-      const { pathToFileURL } = require('url');
-      const tryResolve = (from: string) => {
-        const abs = path.isAbsolute(urlStr) ? urlStr : path.resolve(from, urlStr);
-        return fs.existsSync(abs) ? pathToFileURL(abs) : null;
-      };
-      for (const lp of loadPaths) {
-        const u = tryResolve(lp);
-        if (u) return u;
-      }
-      const containing = opts2?.containingUrl?.pathname ? path.dirname(opts2.containingUrl.pathname) : basedir;
-      return tryResolve(containing);
-    },
-    load(canonicalUrl: URL) {
-      try {
-        return { contents: fs.readFileSync(canonicalUrl.pathname, 'utf-8'), syntax: 'scss' as const };
-      } catch {
-        return null;
-      }
-    },
-  };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const result = (sass as any).compileString(preInlined, { syntax: 'scss', loadPaths, importers: [importer] });
-  return result.css as string;
 }
 
 export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
@@ -269,13 +177,6 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       const theme = userOptions.theme !== undefined
         ? userOptions.theme
         : (discoverTheme ? (discovered ? discovered.theme : {}) : {});
-      const references = userOptions.references !== undefined
-        ? userOptions.references
-        : discovered?.references;
-
-      const input = userOptions.scss === 'on'
-        ? { source: compileWithSass(absPath, userOptions, projectRoot), from: absPath }
-        : { entry: absPath };
 
       // MIG-B6-21 (FEAT-008): Vite drives maps from its own `build.sourcemap`
       // / `css.devSourcemap` settings, so this follows the resolved config
@@ -284,10 +185,9 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // embedded data URI would instead bury it inside the CSS text where
       // Vite's own pipeline can't compose it.
       const wantMap = viteSourceMapEnabled;
-      const { css, map, dependencies, warnings } = await core.compile(input, {
+      const { css, map, dependencies, warnings } = await core.compile({ entry: absPath }, {
         theme,
-        references,
-        breakpoints: userOptions.breakpoints,
+        references: userOptions.references,
         includeTheme: userOptions.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: absPath,

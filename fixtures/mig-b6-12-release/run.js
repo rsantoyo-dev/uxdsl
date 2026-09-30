@@ -222,7 +222,7 @@ async function main() {
   const spawn = (...args) => require('node:child_process').spawnSync(
     process.execPath, [cli, ...args], { cwd: dir, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   await check('UX-08', 'theme --diff summarises a mixed entry on stderr, stdout stays JSON', () => {
-    write('uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };\n");
+    write('uxdsl.theme.config.cjs', "module.exports = { palette: { primary: { main: '#00aa00' } } };\n");
     const spawned = spawn('theme', '--diff');
     if (spawned.status !== 0) throw new Error(`theme --diff exited ${spawned.status}`);
     JSON.parse(spawned.stdout); // stdout must still be one JSON document

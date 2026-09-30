@@ -264,14 +264,12 @@ module.exports = {
 };
 ```
 
-`init` never writes `breakpoints:` here (MIG-B6-19, FEAT-008) — see "Breakpoints
-and the theme file" below for why, and where they actually belong. If
-`breakpoints` is omitted everywhere (here and in the theme file), the CLI uses
-UXDSL's shared defaults:
-
-```ts
-{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
-```
+The build config is a JavaScript module — `uxdsl.config.cjs` or
+`uxdsl.config.js` — and it says what to compile and where. It never carries
+the theme: that lives in the theme file next to it (next section), which is
+also where `breakpoints` belong. A config that still has a `theme`,
+`themeFile`, `breakpoints` or `output` key fails the build with a message
+naming where each now goes.
 
 **Let your editor check it.** An unknown key here is not an error — nothing
 reads it, so `includeThem: false` silently does nothing and the build just
@@ -301,81 +299,65 @@ where `postcss-uxdsl` is not resolvable from the project root. See
 [Editor support](#editor-support) for why each detail matters, and for the
 theme file's `$schema`.
 
-### 2. Theme configuration (`uxdsl.theme.config.cjs`)
+### 2. The theme file (`uxdsl.theme.json` / `uxdsl.theme.config.{js,cjs}`)
 
-Keep your theme separate from build settings by adding a theme config file
-next to `uxdsl.config.cjs`. The CLI discovers it automatically — no import
-needed in `uxdsl.config.cjs`:
+The theme lives in its own file next to `uxdsl.config.cjs`, and the CLI —
+like the PostCSS plugin, the Vite plugin and the Webpack loader — discovers
+it by name. Three names are recognized, in this order:
 
 ```text
-uxdsl.theme.config.cjs   (or .js / .json, or uxdsl.theme.json)
+uxdsl.theme.config.cjs   uxdsl.theme.config.js   uxdsl.theme.json
 ```
 
-It can export the theme directly:
+The file exports the theme itself and nothing else — a JSON object, or a
+module exporting that object (or a function, sync or async, returning it):
 
 ```js
+// uxdsl.theme.config.cjs
 module.exports = {
+  breakpoints: { xl: 1440 },
   fonts: { families: { ui: 'var(--font-geist-sans, Arial, sans-serif)' } },
 };
 ```
 
-...or `{ theme, references }` explicitly — the recommended form once you
-reference a host variable UXDSL doesn't define itself, such as a
-framework-injected font variable:
+`breakpoints` belong here, and only here: the theme is the one thing every
+integration reads, so a threshold declared in it reaches the CLI's output and
+a Vite or Webpack build alike. Keys the theme file does not mention keep
+UXDSL's defaults (`{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }` for
+breakpoints).
 
-```js
-module.exports = {
-  theme: {
-    fonts: { families: { ui: 'var(--font-geist-sans)' } },
-  },
-  references: {
-    externalTokens: ['--font-geist-sans'],
-  },
-};
-```
-
-`references.externalTokens` tells the reference-integrity check (on by
-default — see `postcss-uxdsl`'s README) that a variable with no fallback is
-guaranteed by the host, instead of failing the build with
-`UXD_REFERENCE_MISSING`. If `references` is declared in **both**
-`uxdsl.config.cjs` and the theme file, the build config's value wins
-completely (they are not merged):
+`references` — for a variable UXDSL does not define itself, such as a
+framework-injected font — goes in the build config:
 
 ```js
 // uxdsl.config.cjs
 module.exports = {
   entry: './src/uxdsl-entry.uxdsl',
   outFile: './src/uxdsl.css',
-  references: { externalTokens: ['--font-geist-sans', '--font-geist-mono'] },
+  references: { externalTokens: ['--font-geist-sans'] },
 };
 ```
 
-A custom path can be pointed to explicitly with `themeFile` in
-`uxdsl.config.cjs` (resolved relative to that config file, taking priority
-over the conventional name):
+`references.externalTokens` tells the reference-integrity check (on by
+default — see `postcss-uxdsl`'s README) that a variable with no fallback is
+guaranteed by the host, instead of failing the build with
+`UXD_REFERENCE_MISSING`. A theme file exporting the former
+`{ theme, references }` wrapper fails the build with a message saying where
+each half goes.
 
-```js
-module.exports = {
-  entry: './src/uxdsl-entry.uxdsl',
-  outFile: './src/uxdsl.css',
-  themeFile: './config/brand-theme.cjs',
-};
-```
-
-The theme file is added to the watch list automatically. Set `UXDSL_DEBUG=1`
-to see which config and theme files were discovered, and which external
-tokens were loaded (never their values):
+The theme file — and every local module it `require()`s — is added to the
+watch list automatically. Set `UXDSL_DEBUG=1` to see which config and theme
+files were discovered, and which external tokens were loaded (never their
+values):
 
 ```bash
 UXDSL_DEBUG=1 npx uxdsl build
 ```
 
-If a theme file has no `theme` or `references` key, its entire export is
-treated as theme data (see the two forms above). If that export also has
-build-config-shaped keys (`entry`, `outFile`, `watch`, `themeFile`,
-`plugins`, `builds`) — typically a `uxdsl.config.cjs` accidentally saved
-under the theme-file name — the CLI prints a warning naming the file and
-the stray keys instead of silently ignoring them as unknown tokens.
+If the theme file's export has build-config-shaped keys (`entry`, `outFile`,
+`watch`, `plugins`, `builds`) — typically a `uxdsl.config.cjs` accidentally
+saved under the theme-file name — the CLI prints a warning naming the file
+and the stray keys instead of silently ignoring them as unknown tokens.
 
 `build`/`watch` also warn about an unrecognized top-level theme family
 (`color` instead of `colors`) — a typo that would otherwise compile into
@@ -428,34 +410,12 @@ omitted, and `true` is the default when neither is set. With
 skips writing the global `:root` definitions, which belong to the one entry
 that does define the theme.
 
-### Breakpoints and the theme file
-
-`breakpoints` can come from either `uxdsl.config.cjs` or the theme
-file — both merge onto the shared defaults (config wins key-for-key), the
-same partial-override contract the theme itself already has:
-
-```js
-// uxdsl.theme.config.cjs
-module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep their defaults
-```
-
-Prefer declaring `breakpoints` in the theme file, not `uxdsl.config.cjs` — the
-theme is the one thing `uxdsl-cli`, the plugin used directly, the Vite plugin
-and the Webpack loader all discover and agree on, while `uxdsl.config.cjs` is
-build-orchestration specific to this CLI. `init` never writes `breakpoints:`
-into `uxdsl.config.cjs` for exactly this reason (MIG-B6-19, FEAT-008): a full
-copy of the defaults there used to permanently shadow every key the theme
-file declared, since the config wins key-for-key on any name it repeats —
-including the ones it never meant to override. If both files declare the
-same key with genuinely different values, the build still lets
-`uxdsl.config.cjs` win (unchanged), but warns once, naming both files, so the
-shadowing is visible instead of a silent "why isn't my theme's breakpoint
-taking effect".
+### Several entries from one config
 
 Running the CLI once per entry works, but a `builds` array in
-`uxdsl.config.cjs` compiles all of them — against the one shared
-`theme`/`references`/`breakpoints` — from a single `build`/`watch`
-invocation and a single watcher, instead:
+`uxdsl.config.cjs` compiles all of them — against the one shared theme and
+`references` — from a single `build`/`watch` invocation and a single
+watcher, instead:
 
 ```js
 module.exports = {
@@ -517,7 +477,7 @@ rebuild — editing either while `watch` is running takes effect on the next
 save. The output file (`outFile`) is automatically excluded from the watch
 list even if a broader glob like `src/**/*.css` would otherwise match it,
 so the CLI's own write never re-triggers itself, including after changing
-`outFile`. Changes to `watch` patterns or `themeFile` update the active watcher
+`outFile`. Changes to `watch` patterns or the entry update the active watcher
 without restarting the CLI. Local modules the config or theme file
 `require()`s — transitively, at any depth — are watched automatically too;
 editing one of them alone (without touching the file that requires it)

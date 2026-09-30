@@ -93,13 +93,34 @@ export const optionsThemeTypo: UxdslOptions = {
   theme: { palete: {} },
 };
 
-export const bothOutSpellings = defineConfig(
-  // @ts-expect-error `outFile` and `output` are two spellings of one field.
-  {
-    entry: './src/app.uxdsl',
-    outFile: './dist/app.css',
-    output: './dist/app.css',
-  });
+// Stability phase 2: the build config lost `output`, `theme`, `themeFile` and
+// `breakpoints`. Each is now a type error, as it is a run-time error in the CLI.
+export const removedOutput = defineConfig({
+  entry: './src/app.uxdsl',
+  // @ts-expect-error `output` was an alias of `outFile`; only `outFile` exists.
+  output: './dist/app.css',
+});
+
+export const removedInlineTheme = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  // @ts-expect-error the theme lives in the theme file, never in the build config.
+  theme: { palette: { primary: { main: '#000' } } },
+});
+
+export const removedThemeFile = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  // @ts-expect-error the theme file is discovered by name; there is no pointer to it.
+  themeFile: './theme.cjs',
+});
+
+export const removedBreakpoints = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  // @ts-expect-error breakpoints are a theme family, declared in the theme file.
+  breakpoints: { md: 800 },
+});
 
 export const noOutputAtAll = defineConfig(
   // @ts-expect-error an entry needs somewhere to be written.

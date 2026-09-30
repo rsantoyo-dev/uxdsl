@@ -70,17 +70,19 @@ async function main() {
   assert.doesNotMatch(initialTheme + initialPanel, /#uxdsl-bp-meta|@uxdsl-bp/, 'no entry carries the removed breakpoint marker');
   console.log('PASS: init --multi scaffolds a working builds project from the installed CLI.');
 
-  // --- Phase 2 (MIG-B4-02 + MIG-B4-01): the build config itself (not a
-  // separate theme file) delegates its `theme` to a nested require() —
-  // the exact shape a real consumer reported as never triggering a
-  // rebuild — combined with --strict-theme on a partial theme. ---
+  // --- Phase 2 (MIG-B4-02 + MIG-B4-01): the theme file delegates to a
+  // nested require() — the exact shape a real consumer reported as never
+  // triggering a rebuild — combined with --strict-theme on a partial theme.
+  // (Stability phase 2: a build config no longer carries `theme`, so the
+  // delegation lives in the theme file; the nested-require watch guarantee
+  // is the same.) ---
   write('theme-data.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  write('uxdsl.theme.config.cjs', "module.exports = require('./theme-data.json');\n");
   write('uxdsl.config.cjs', `module.exports = {
     builds: [
       { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
       { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
     ],
-    theme: require('./theme-data.json'),
     watch: ['src/**/*.uxdsl'],
   };\n`);
 

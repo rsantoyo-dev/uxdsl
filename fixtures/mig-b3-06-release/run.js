@@ -41,21 +41,19 @@ async function main() {
       { entry: './src/panel-c.uxdsl', outFile: './src/panel-c.module.css', includeTheme: false },
       { entry: './src/panel-d.uxdsl', outFile: './src/panel-d.module.css', includeTheme: false },
     ],
+    references: { externalTokens: ['--font-geist-sans'] },
     watch: ['src/**/*.uxdsl'],
   };\n`);
 
-  // Partial theme override + externalTokens, exactly the shape MIG-B2-01/
-  // MIG-B2-02 introduced — and `breakpoints.xl` declared *only* here, never
-  // in uxdsl.config.cjs, to exercise MIG-B3-01's theme-breakpoints fix.
-  // Every other family (spacing, the rest of palette, typography_details,
-  // densities, ...) is left to DEFAULT_THEME entirely.
+  // Partial theme override; `references` sits in uxdsl.config.cjs above
+  // (stability phase 2: a theme file exports the theme itself). `breakpoints`
+  // is a theme family, so it is declared here and nowhere else. Every other
+  // family (spacing, the rest of palette, typography_details, densities, ...)
+  // is left to DEFAULT_THEME entirely.
   write('uxdsl.theme.config.cjs', `module.exports = {
-    theme: {
-      palette: { primary: { main: '#123456' } },
-      fonts: { families: { ui: 'var(--font-geist-sans)' } },
-      breakpoints: { xl: 1440 },
-    },
-    references: { externalTokens: ['--font-geist-sans'] },
+    palette: { primary: { main: '#123456' } },
+    fonts: { families: { ui: 'var(--font-geist-sans)' } },
+    breakpoints: { xl: 1440 },
   };\n`);
 
   write('src/theme.uxdsl', '/* theme-only entry — no component rules of its own */');

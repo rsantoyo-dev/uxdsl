@@ -12,8 +12,7 @@ export const single = defineConfig({
   includeTheme: true,
   strictTheme: ['palette', 'spacing'],
   sourceMap: 'external',
-  watch: ['./uxdsl.theme.json'],
-  themeFile: './uxdsl.theme.json',
+  watch: ['./tokens.json'],
   references: { mode: 'warn', externalTokens: ['--host-accent'] },
 });
 
@@ -86,7 +85,6 @@ export const override: UxdslThemeOverride = {
 export const options: UxdslOptions = {
   theme: override,
   includeTheme: false,
-  breakpoints: { xs: 0, md: 768 },
   discoverTheme: false,
   // A literal, not `process.cwd()`: this fixture is compiled in a project
   // without `@types/node`, which is the situation of a consumer that only has
@@ -97,14 +95,3 @@ export const options: UxdslOptions = {
 
 // The pre-beta.6 spelling still resolves, to the same type.
 export const legacyAlias: UxDslOptions = options;
-
-// The CLI still accepts the older `output` spelling, so a working config that
-// uses it must keep type-checking once the annotation is added.
-export const legacyOutput = defineConfig({
-  entry: './src/app.uxdsl',
-  output: './dist/app.css',
-});
-
-export const legacyOutputInBuilds = defineConfig({
-  builds: [{ entry: './src/panel.uxdsl', output: './dist/panel.css' }],
-});

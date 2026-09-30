@@ -24,9 +24,9 @@ loader.
 - **Real dependency tracking**: every `@import`-ed partial (and the
   discovered theme file) is registered via `this.addDependency()`, so
   webpack's cache and watch mode actually see an edit to either.
-- **Project theme discovery**: reads `uxdsl.theme.config.*`/
-  `uxdsl.theme.json` from `rootContext` automatically, the same way
-  `uxdsl-cli` always has.
+- **Project theme discovery**: reads `uxdsl.theme.json` /
+  `uxdsl.theme.config.{js,cjs}` from `rootContext` automatically, the same
+  way `uxdsl-cli` does.
 - **Configurable**: options arrive via webpack 5's real `this.getOptions()`.
 
 ---
@@ -77,7 +77,6 @@ import './styles.uxdsl';
   options: {
     theme,            // explicit theme object — skips discovery entirely when given
     references,       // same shape as postcss-uxdsl's `references` option
-    breakpoints,       // same shape as postcss-uxdsl's `breakpoints` option
     includeTheme,      // emit (or skip) the global :root token definitions — default true
     discoverTheme,     // default true; see "Project theme" below
     configRoot,        // directory theme discovery searches from — default webpack's rootContext
@@ -87,22 +86,24 @@ import './styles.uxdsl';
 
 ### Project theme (`discoverTheme`, `configRoot`)
 
-When `theme` is omitted, the loader looks for a conventional
-`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in `rootContext` (webpack's
-`context` option, which defaults to the current working directory) and compiles against it — no
-extra option needed for a normal project. `configRoot` points discovery
-somewhere else; `discoverTheme: false` always validates against the
-built-in default theme instead. An explicit `theme` always wins outright,
-regardless of `discoverTheme`.
+When `theme` is omitted, the loader looks for the project's theme file —
+`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+object (or a function returning it) — in `rootContext` (webpack's `context`
+option, which defaults to the current working directory) and compiles
+against it; no extra option needed for a normal project. `configRoot` points
+discovery somewhere else; `discoverTheme: false` always validates against
+the built-in default theme instead. An explicit `theme` always wins
+outright, regardless of `discoverTheme`.
 
-### `breakpoints` default
+A theme file exports the theme and nothing else. `references` is a loader
+option, never something the theme file carries — a file exporting the former
+`{ theme, references }` wrapper fails the compilation with a message saying so.
 
-If you do not provide `breakpoints` (and no theme — explicit or
-discovered — declares its own), the loader uses UXDSL's shared default map:
+### Breakpoints
 
-```ts
-{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
-```
+Thresholds are the theme's own `breakpoints` family, declared in the theme
+file (or the `theme` option); there is no `breakpoints` loader option. With
+no theme at all, the defaults are `{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }`.
 
 ## Source maps
 

@@ -265,7 +265,7 @@ function partialPaletteProject() {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };`);
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#00aa00' } } };`);
   return dir;
 }
 
@@ -359,7 +359,7 @@ test('MIG-B6-16: overriding an excepted pair stops inheriting its exception', as
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   // The shipped exception records palette.light.main (#f1f5f9) on white.
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { light: { main: '#334155' } } } };`);
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { light: { main: '#334155' } } };`);
   const { stdout } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
   const report = JSON.parse(stdout);
 
@@ -405,7 +405,7 @@ test('MIG-B6-12: a large JSON report is not truncated when stdout is a pipe', as
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };`);
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#00aa00' } } };`);
   const bin = path.join(__dirname, '..', 'bin', 'uxdsl.js');
 
   for (const [label, args, expectedStatus, mustExceedPipeBuffer] of [

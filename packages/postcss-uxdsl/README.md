@@ -678,9 +678,10 @@ a project that already imports one of them explicitly. Still shipped in
 ### Theme discovery (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks
-for a conventional `uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in
-`configRoot` (default `process.cwd()`) — the exact same discovery `uxdsl-cli`
-does, available with the plugin used directly since 0.5.0-beta.6, e.g. from a
+for the project's theme file — `uxdsl.theme.json`, or
+`uxdsl.theme.config.js`/`.cjs` exporting the theme object — in `configRoot`
+(default `process.cwd()`) — the exact same discovery `uxdsl-cli` does,
+available with the plugin used directly since 0.5.0-beta.6, e.g. from a
 project's own `postcss.config.js`:
 
 ```js
@@ -694,18 +695,22 @@ uxdsl({ discoverTheme: false })            // opt out — validates against DEFA
 uxdsl({ configRoot: '/path/to/project' })  // search a directory other than process.cwd()
 ```
 
-The theme file's export shape (`{ theme, references }` or a bare theme
-object), the async-factory support, and the "looks like a build config"
-warning are exactly `uxdsl-cli`'s own — both share `postcss-uxdsl/config`, so
-they can never quietly disagree. One difference: discovery inside the plugin
-is **synchronous** (the plugin factory and its compilation pass both are), so
-an `uxdsl.theme.config.cjs` exporting an async factory function
-(`module.exports = async () => ({...})`) throws a clear error naming the
-file — pass a resolved `theme` object to the plugin directly instead, or use
-an integration that supports async config (`uxdsl-cli`, `vite-plugin-uxdsl`
-or `uxdsl-webpack-loader`, which all use `discoverThemeAsync`). The discovered theme file (and anything it locally `require()`s)
-is reported as a real PostCSS `dependency` message, so a bundler's own
-watcher picks up an edit to it.
+A theme file exports the theme itself and nothing else — `breakpoints`
+included, since thresholds are a theme family. `references` is the plugin
+option (or the build config's key), never something the theme file carries:
+a file exporting the former `{ theme, references }` wrapper is refused with a
+message saying where each half goes. The loader, the factory-export support
+and the "looks like a build config" warning are exactly `uxdsl-cli`'s own —
+both share `postcss-uxdsl/config`, so they can never quietly disagree. One
+difference: discovery inside the plugin is **synchronous** (the plugin
+factory and its compilation pass both are), so an `uxdsl.theme.config.cjs`
+exporting an async factory function (`module.exports = async () => ({...})`)
+throws a clear error naming the file — pass a resolved `theme` object to the
+plugin directly instead, or use an integration that supports async config
+(`uxdsl-cli`, `vite-plugin-uxdsl` or `uxdsl-webpack-loader`, which all use
+`discoverThemeAsync`). The discovered theme file (and anything it locally
+`require()`s) is reported as a real PostCSS `dependency` message, so a
+bundler's own watcher picks up an edit to it.
 
 ### Diagnostics
 

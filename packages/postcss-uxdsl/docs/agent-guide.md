@@ -562,8 +562,15 @@ emitted presets. In beta.2, `resolveTheme` merges partial overrides with canonic
 defaults for PostCSS, CLI and `generateThemeCss`. Use that resolver rather than
 inventing Spacing or disabling validation. Unknown references still fail.
 The CLI reloads local config dependencies on rebuild; list those files in
-`watch` to observe their edits. Changing `themeFile` or watch patterns updates
-the running watcher. Generate CSS successfully before recording a runtime
+`watch` to observe their edits. Changing the entry or the watch patterns
+updates the running watcher. Two files, two jobs: `uxdsl.config.js`/`.cjs`
+says what to compile and where (`entry`/`outFile` or `builds`, `watch`,
+`references`, `strictTheme`, `sourceMap`); the theme file next to it —
+`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+object — holds the theme, `breakpoints` included. A build config that
+carries `theme`, `themeFile`, `breakpoints` or `output` is rejected with the
+new home of each; a theme file exporting `{ theme, references }` is refused
+the same way. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
 The reviewed base theme ships inside `postcss-uxdsl` itself, at

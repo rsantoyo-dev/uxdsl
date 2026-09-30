@@ -33,35 +33,36 @@ const { spawn, execFileSync } = require('node:child_process');
 const CLI_BIN = path.resolve(__dirname, '..', 'bin', 'uxdsl.js');
 const POSTCSS_UXDSL_DIR = path.resolve(__dirname, '..', '..', 'postcss-uxdsl');
 
-test('watch retargets themeFile and source globs without restarting the CLI', async t => {
+test('watch retargets the entry and source globs without restarting the CLI, and keeps following the theme file', async t => {
   const dir = mkProject();
   installPostcssUxdsl(dir);
   fs.mkdirSync(path.join(dir, 'old'));
   fs.mkdirSync(path.join(dir, 'next'));
   const put = (file, text) => fs.writeFileSync(path.join(dir, file), text);
-  const config = (folder, theme) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl'],themeFile:'./${theme}.json'};`;
+  // The theme file is discovered by name next to the config (there is no
+  // `themeFile` pointer); what a config reload retargets is the entry and the
+  // watch globs.
+  const config = (folder) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl']};`;
   put('old/entry.uxdsl', '.old { color: red; }');
   put('next/entry.uxdsl', '.next { color: blue; }');
-  put('first.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
-  put('second.json', JSON.stringify({ palette: { primary: { main: '#abcdef' } } }));
-  put('uxdsl.config.cjs', config('old', 'first'));
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  put('uxdsl.config.cjs', config('old'));
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let logs = '';
   child.stdout.on('data', data => { logs += data; });
   child.stderr.on('data', data => { logs += data; });
   const css = () => fs.existsSync(path.join(dir, 'out.css')) ? fs.readFileSync(path.join(dir, 'out.css'), 'utf8') : '';
-  await waitFor(() => css().includes('#123456'));
+  await waitFor(() => css().includes('#123456') && css().includes('.old'));
   await delay(WATCHER_SETTLE_MS);
-  put('uxdsl.config.cjs', config('next', 'second'));
-  await waitFor(() => css().includes('#abcdef'));
-  put('second.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
+  put('uxdsl.config.cjs', config('next'));
+  await waitFor(() => css().includes('.next'));
+  put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
   await waitFor(() => css().includes('#fedcba'));
   put('next/entry.uxdsl', '.updated { color: green; }');
   await waitFor(() => css().includes('.updated'));
   await delay(300);
   const before = (logs.match(/\[uxdsl\] built/g) || []).length;
-  put('first.json', '{}');
   put('old/entry.uxdsl', '.unused {}');
   await delay(700);
   assert.equal((logs.match(/\[uxdsl\] built/g) || []).length, before, logs);
@@ -182,27 +183,29 @@ test('watch mode reloads when the build config (not the theme file) delegates to
   const dir = mkProject();
   installPostcssUxdsl(dir);
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  // A real responsive declaration is required: only an actual @media rule
-  // proves the breakpoint value reached the compiled output.
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.card { width: xs(100%) xl(50%); }');
-  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1280 } };\n");
+  // The nested module decides which entry is compiled — the one build-config
+  // value whose effect is unmistakable in the output. (It used to carry
+  // `breakpoints`, which a build config no longer accepts.)
+  fs.writeFileSync(path.join(dir, 'src', 'first.uxdsl'), '.first { color: red; }');
+  fs.writeFileSync(path.join(dir, 'src', 'second.uxdsl'), '.second { color: blue; }');
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/first.uxdsl', outFile: './src/uxdsl.css' };\n");
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = require('./real-config.js');\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
 
-  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('1280px'));
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('.first'));
   await delay(WATCHER_SETTLE_MS);
 
   // Only real-config.js changes — uxdsl.config.cjs's own content is
   // untouched, so this exercises the config's own nested require(), the
   // exact case a real consumer reported as never triggering a rebuild.
-  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1440 } };\n");
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/second.uxdsl', outFile: './src/uxdsl.css' };\n");
 
-  await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('1440px'));
-  assert.ok(fs.readFileSync(cssPath, 'utf8').includes('1440px'), 'rebuilt CSS must carry the new breakpoint from the nested require()');
-  assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('1280px'), 'rebuilt CSS must not still carry the stale nested value');
+  await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('.second'));
+  assert.ok(fs.readFileSync(cssPath, 'utf8').includes('.second'), 'rebuilt CSS must come from the entry the nested require() now names');
+  assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('.first'), 'rebuilt CSS must not still carry the stale entry');
 });
 
 test('watch mode does not treat its own output file as a source change (no self-triggered rebuild loop)', async (t) => {

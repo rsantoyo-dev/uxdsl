@@ -25,7 +25,7 @@ test('overrides preserve siblings and replace whole responsive fields and arrays
   assert.equal(merged.typography_details.body.fontSize, 'xs(1rem) md(2rem)');
   assert.deepEqual(merged.fonts.google, ['Example']);
   assert.equal(JSON.stringify(baseTheme), snapshot);
-  assert.deepEqual(require('../uxdsl.config.cjs').theme, themes.default);
+  assert.deepEqual(require('../uxdsl.theme.config.cjs'), themes.default);
 });
 
 // MIG-B7-17 phase C: the named overrides declare the packaged JSON Schema as their `$schema`,
