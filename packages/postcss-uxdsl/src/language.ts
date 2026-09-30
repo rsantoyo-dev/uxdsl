@@ -50,8 +50,10 @@ export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID
 // list is consulted before any edit-distance heuristic runs specifically so a
 // real `log(...)` in a value next to `lg(...)` is never misread as a typo of it.
 export const KNOWN_CSS_FUNCTIONS = [
-  // UXDSL's own value functions.
-  'space', 'density', 'color', 'palette', 'radius', 'rounded', 'border', 'shadow', 'elevation',
+  // UXDSL's own value functions. `tone` is valid in Button/Input theme values
+  // only; it is listed so the grammar, not the breakpoint heuristic, reports
+  // it elsewhere (UXD_TONE_CONTEXT, with the reason).
+  'space', 'density', 'color', 'palette', 'radius', 'rounded', 'border', 'shadow', 'elevation', 'tone',
   // Math.
   'calc', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
   'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp',
@@ -218,6 +220,10 @@ export type TokenSerializers = Partial<Record<string, (key: string) => string>>;
 export function tokenValueToCss(input: string, serializers: TokenSerializers = {}): string {
   const parsed = valueParser(input);
   parsed.walk(node => {
+    // `tone()` belongs to Button/Input theme values only; control-engine.ts
+    // substitutes it before any value reaches this grammar, so one still
+    // here is in a family (or an author's stylesheet) that has no tone.
+    if (node.type === 'function' && node.value === 'tone') throw new Error('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it.');
     if (node.type !== 'function' || !Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, node.value)) return;
     const kind = TOKEN_FUNCTIONS[node.value];
     const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());

@@ -463,7 +463,7 @@ choose a role; theme JSON defines `buttons[role]` with `surface`, `base`, `state
 Surfaces own the container composition. HTML/application code own interaction.
 
 ```json
-{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
+{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"hover":{"bg":"tone(dark)","color":"tone(contrast)"},"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
 ```
 
 ```css
@@ -477,9 +477,17 @@ Surfaces own the container composition. HTML/application code own interaction.
   supplied responsive strings replace a whole field. `surface` must exist.
 - Automatic Button/Input tone generation requires a Palette family with `main`,
   `dark` and `contrast`; partial semantic groups such as `divider` are not tones.
+  Palette aliases in a theme reference other roles with `palette(surface.light)`,
+  never with the compiled `var(--uxdsl__palette__…)` name.
 - Base fields override Surface composition, including optional tone and numeric
-  size. Size selects Density and Radius. Default state colors follow the optional
-  Palette tone; explicit Palette references retain their configured meaning.
+  size. Size selects Density and Radius. A value follows the component's optional
+  Palette tone by saying `tone(main|dark|contrast)` (falling back to `primary`
+  when no tone is given); an explicit Palette reference such as
+  `palette(primary.dark)` retains its configured meaning whichever tone is
+  requested. `tone()` is valid only in Button/Input values (`UXD_TONE_CONTEXT`
+  elsewhere); the former hand-written fallback chain
+  `var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))` is
+  deprecated and still substituted for one release.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
   focusvisible, disabled, selected. Defaults supply hover and selected only.
@@ -526,8 +534,10 @@ labels, validation and errors. Preserve intent, not just the current computed va
   pseudo-element, including within states. Underline maps to border-bottom; the
   built-in underline role explicitly clears full borders and shadows.
 - Tone overrides Surface colors and default caret/focus treatment when the effective
-  theme supplies that Palette family. Explicit assignments remain explicit; invalid
-  defaults retain the error role. Numeric size selects Density and Radius tokens.
+  theme supplies that Palette family; a field follows it by saying
+  `tone(main|dark|contrast)` (the base theme's caret and focus border do). Explicit
+  assignments remain explicit; invalid defaults retain the error role. Numeric
+  size selects Density and Radius tokens.
 - Use native labels, correct types, disabled/readOnly and associated help/error
   messages. Placeholder is not a label. aria-disabled does not prevent editing;
   aria-invalid does not validate data. Native :invalid may match before interaction.

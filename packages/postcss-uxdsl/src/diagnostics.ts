@@ -25,6 +25,9 @@ export const DIAGNOSTIC_CODES = new Set([
   // (e.g. UXD_SURFACE_ROLE vs UXD_SURFACE_REFERENCE).
   'UXD_TYPO_REFERENCE',
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
+  // Stability phase 1 (audit T6): `tone(main|dark|contrast)` outside a
+  // Button/Input theme value (language.ts's grammar, index.ts's author pass).
+  'UXD_TONE_CONTEXT',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
   // MIG-B6-30 (FEAT-008): the runtime JSON theme API. These are returned on a
@@ -59,7 +62,7 @@ export const DIAGNOSTIC_CODES = new Set([
   // analysis this check doesn't do, so this narrower case is flagged as a
   // known gap rather than fixed here.
   ...['MAP', 'VALUE', 'BASE', 'NAME_COLLISION'].map(suffix => `UXD_PRESET_${suffix}`),
-  ...['UXD_BUTTON', 'UXD_INPUT'].flatMap(prefix => ['MAP', 'ROLE', 'FIELD', 'FIELDS', 'SURFACE', 'STATES', 'STATE', 'VALUE', 'BASE', 'NAME_COLLISION', 'ARGUMENT', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
+  ...['UXD_BUTTON', 'UXD_INPUT'].flatMap(prefix => ['MAP', 'ROLE', 'FIELD', 'FIELDS', 'SURFACE', 'STATES', 'STATE', 'TONE', 'VALUE', 'BASE', 'NAME_COLLISION', 'ARGUMENT', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
 ]);
 
 export function diagnostic(message: string, word?: string): Error {

@@ -505,6 +505,42 @@ import from `language.ts`). It is not re-exported from the
 extension's completion metadata) already reaches into compiled `dist/*`
 modules directly for several such internals, `getToneFamilies` among them.
 
+### `tone()` in Button and Input values
+
+A Button or Input theme value says "the tone the component asks for" with
+`tone(main)`, `tone(dark)` or `tone(contrast)`:
+
+```json
+{ "buttons": { "cta": { "surface": "contained", "states": { "hover": { "bg": "tone(dark)", "color": "tone(contrast)" } } } } }
+```
+
+```css
+.cta { @ds-button(cta); }            /* hover: primary's dark and contrast */
+.save { @ds-button(cta success); }   /* hover: success's dark and contrast */
+```
+
+`tone(dark)` compiles to the fallback chain the components already consume —
+`var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))` in the
+role's own variable (`--uxdsl__button__cta-hover-bg`), and to the family's own
+variant, `var(--uxdsl__palette__success-dark)`, in the per-tone variable
+(`--uxdsl__button__cta-tone-success-hover-bg`) that `@ds-button(cta success)`
+references first. An explicit Palette reference keeps its configured meaning:
+`"bg": "palette(primary.dark)"` is primary's dark whichever tone the component
+asks for. `tone()` is valid only inside `buttons`/`inputs` values (a Surface,
+Palette or Typography value, or an author's own declaration, has no tone to
+supply it: `UXD_TONE_CONTEXT`); a variant other than the three is
+`UXD_BUTTON_TONE`/`UXD_INPUT_TONE`.
+
+Before stability phase 1 (audit finding T6) the substitution was a regex over
+that exact literal chain, which the base theme spelled out by hand 17 times, and
+nothing else varied by tone. `theme/base.json` now says `tone(…)`, and its
+palette aliases say `palette(surface.light)` rather than the compiled
+`var(--uxdsl__palette__surface-light)`; its compiled CSS is byte-identical
+before and after (`test/tone-function.test.js` compiles the former spelling as
+an override and compares). **Deprecated:** the literal chain is still recognised
+in a theme value for one release and will stop being substituted in the next
+minor — write `tone(…)`.
+
 ### Accessibility contrast gate (`checkThemeContrast`)
 
 **MIG-B6-29 (FEAT-008), phase 2/4 (the gate) and phase 3/4 (color

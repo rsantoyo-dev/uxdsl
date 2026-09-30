@@ -66,7 +66,7 @@ test('MIG-B6-14 (positive control): every function in the known-CSS-functions li
     skew: '10deg', skewX: '10deg', skewY: '10deg', matrix: '1, 0, 0, 1, 0, 0', matrix3d: '1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1', perspective: '10px',
     blur: '2px', brightness: '1.2', contrast: '1.2', 'drop-shadow': '2px 2px red', grayscale: '50%', 'hue-rotate': '90deg', invert: '50%', opacity: '50%', saturate: '150%', sepia: '50%',
     anchor: '--x', 'anchor-size': '--x',
-    space: '1', density: '1', color: 'primary', palette: 'primary', radius: '1', rounded: '1', border: '1', shadow: '1', elevation: '1',
+    space: '1', density: '1', color: 'primary', palette: 'primary', radius: '1', rounded: '1', border: '1', shadow: '1', elevation: '1', tone: 'main',
     calc: '1px + 1px', min: '1px, 2px', max: '1px, 2px', clamp: '1px, 2px, 3px',
   };
   for (const name of KNOWN_CSS_FUNCTIONS) {
@@ -77,6 +77,14 @@ test('MIG-B6-14 (positive control): every function in the known-CSS-functions li
     // UXD_BREAKPOINT_UNKNOWN false-fires on a known function; palette()/
     // color() token references aren't declared in any theme here, which
     // would otherwise fail for the unrelated reason of an undefined token.
+    //
+    // Stability phase 1: `tone()` is known to the grammar but valid only in
+    // Button/Input theme values, so in an author declaration it is rejected
+    // with its own reason — never mistaken for an unknown breakpoint.
+    if (name === 'tone') {
+      await assert.rejects(() => compile(css, { references: { mode: 'off' } }), (error) => /UXD_TONE_CONTEXT/.test(error.message) && !/UXD_BREAKPOINT_UNKNOWN/.test(error.message));
+      continue;
+    }
     await assert.doesNotReject(() => compile(css, { references: { mode: 'off' } }), `${name}(${args}) must not be flagged as UXD_BREAKPOINT_UNKNOWN`);
   }
 });

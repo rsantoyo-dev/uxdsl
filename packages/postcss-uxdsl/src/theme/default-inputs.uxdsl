@@ -6,10 +6,10 @@
 @theme {
   input-contained: {
     @ds-surface(contained);
-    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+    caret: tone(main);
     placeholder: palette(neutral.dark);
     :focus {
-      border: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+      border: 1px solid tone(main);
       shadow: shadow(2);
     }
     :invalid {
@@ -22,10 +22,10 @@
   }
   input-outlined: {
     @ds-surface(outlined);
-    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+    caret: tone(main);
     placeholder: palette(neutral.dark);
     :focus {
-      border: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+      border: 1px solid tone(main);
     }
     :invalid {
       border: 1px solid palette(error.main);
@@ -39,10 +39,10 @@
     border: none;
     shadow: none;
     underline: 1px solid palette(neutral.dark);
-    caret: var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+    caret: tone(main);
     placeholder: palette(neutral.dark);
     :focus {
-      underline: 1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main));
+      underline: 1px solid tone(main);
     }
     :invalid {
       underline: 1px solid palette(error.main);

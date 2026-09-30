@@ -1,4 +1,5 @@
 import postcss from 'postcss';
+import valueParser from 'postcss-value-parser';
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
 import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
@@ -6,6 +7,46 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
 export interface ControlRole { surface?: string; base?: Record<string, string>; states?: Record<string, Record<string, string>> }
 export interface ControlTheme extends SurfaceTheme { [key: string]: any }
+
+/** The three Palette variants a tone supplies; `tone(<variant>)` names one. */
+export const TONE_VARIANTS = ['main', 'dark', 'contrast'] as const;
+
+/**
+ * Stability phase 1 (audit T6): `tone(main|dark|contrast)` is the value
+ * function a Button/Input theme value uses to say "the requested tone's
+ * variant, else primary's". It compiles to exactly the fallback chain the base
+ * theme used to spell out by hand:
+ *
+ *   tone(dark)  ->  var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))
+ *
+ * and, in the per-tone variant of the same value (`<role>-tone-<family>-…`),
+ * straight to that family's own variant. The literal chain is still recognised
+ * for one release (deprecated): the regex substitution it relied on only ever
+ * matched that exact text, which is why `states.hover.bg: 'palette(primary.dark)'`
+ * never varied by tone — it was not the magic literal.
+ */
+export function toneReferences(value: string, family: 'input' | 'button', tone: string | null, fail: (message: string) => Error): string {
+  const parsed = valueParser(value);
+  parsed.walk(node => {
+    if (node.type !== 'function' || node.value !== 'tone') return;
+    const variant = valueParser.stringify(node.nodes).trim();
+    if (!(TONE_VARIANTS as readonly string[]).includes(variant)) throw fail(`UXD_INPUT_TONE: tone(${variant}) is not a tone variant; use tone(main), tone(dark) or tone(contrast).`);
+    Object.assign(node, { type: 'word', value: tone
+      ? `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`
+      : `var(${buildVarName(family, `tone-${variant}`)}, var(${buildNamespacedVarName('palette', `primary-${variant}`)}))` });
+    return false;
+  });
+  let out = parsed.toString();
+  if (tone) {
+    // Deprecated literal form. buildVarName/buildNamespacedVarName output has
+    // no regex-special characters (letters, digits, hyphens, underscores)
+    // other than the literal backreference placeholder appended below, so
+    // it's safe to splice straight into the pattern.
+    const literal = `var\\(${buildVarName(family, 'tone-')}(main|dark|contrast), var\\(${buildNamespacedVarName('palette', 'primary')}-\\1\\)\\)`;
+    out = out.replace(new RegExp(literal, 'g'), (_, variant) => `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`);
+  }
+  return out;
+}
 
 /** Shared role inheritance, responsive compilation, tone composition and state emitter. */
 export function createControlEngine(spec: {
@@ -62,18 +103,13 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
   const put = (comboKey: string, identifier: string, value: string) => { bucket[names.claim(comboKey, identifier)] = value; };
   for (const [role, pack] of Object.entries(getTokens(theme))) {
     for (const [state, style] of Object.entries({ base: pack.base, ...pack.states })) {
-      for (const [key, value] of Object.entries(style)) put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(value, theme));
+      for (const [key, value] of Object.entries(style)) put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(toneReferences(value, family, null, fail), theme));
       // MIG-B6-26 (FEAT-008): moved to language.ts as getToneFamilies, so
       // the vscode extension's completion generator can derive the exact
       // same tone list without duplicating this predicate by hand.
       for (const tone of getToneFamilies(theme.palette)) {
-        // buildVarName/buildNamespacedVarName output has no regex-special
-        // characters (letters, digits, hyphens, underscores) other than the
-        // literal backreference placeholder appended below, so it's safe to
-        // splice straight into the pattern.
-        const primaryTonePattern = `var\\(${buildVarName(family, 'tone-')}(main|dark|contrast), var\\(${buildNamespacedVarName('palette', 'primary')}-\\1\\)\\)`;
         for (const [key, value] of Object.entries(style)) {
-          put(`${role}-tone-${tone}-${state}-${key}`, `${role}.tone.${tone}.${state}.${key}`, surfaceValueToCss(value.replace(new RegExp(primaryTonePattern, 'g'), (_, variant) => `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`), theme));
+          put(`${role}-tone-${tone}-${state}-${key}`, `${role}.tone.${tone}.${state}.${key}`, surfaceValueToCss(toneReferences(value, family, tone, fail), theme));
         }
       }
     }

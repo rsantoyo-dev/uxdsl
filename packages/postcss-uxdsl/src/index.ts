@@ -844,6 +844,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             node.value = `var(${buildVarName('border', key)})`;
             return;
           }
+          if (node.type === 'function' && node.value === 'tone') {
+            throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', valueParser.stringify(node));
+          }
           if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {
             node.type = 'word';
             node.value = presetValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`, 'UXD_TOKEN', { palette: toVar, color: toColorVar, space: toSpaceVar });

@@ -138,6 +138,43 @@ updated for exactly that whitespace).
 - **`fonts.families` quoting** is the same on both paths: as written (the
   runtime used to add quotes around a multi-word primary family).
 
+Stability phase 1, finding T6 (`tone()` instead of a regex over a magic
+literal) and T5 (the base theme wrote compiled variable names):
+
+### Visual changes
+
+None. `theme/base.json` is rewritten — its 17 hand-written
+`var(--uxdsl__button__tone-X, var(--uxdsl__palette__primary-X))` /
+`var(--uxdsl__input__tone-X, …)` chains become `tone(X)`, and its palette
+aliases (`surface.paper`, `surface.subtle`, `text.*`, `divider.main`,
+`action.disabled`) become `palette(surface.light)`-style references instead of
+`var(--uxdsl__palette__…)` — and the compiled CSS is byte-identical before and
+after: `generateThemeCss` of the base theme, the plugin's default output and
+the playground's rebuilt `src/app/uxdsl.css` all compare equal (`cmp`, and
+`test/tone-function.test.js` compiles the former spelling as an override and
+asserts equality on both paths).
+
+- **New value function `tone(main|dark|contrast)`**, valid inside
+  `buttons`/`inputs` theme values only. In the role's own variable it compiles
+  to the fallback chain the components already consume
+  (`var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))`); in
+  the per-tone variant to that family's own variant
+  (`var(--uxdsl__palette__success-dark)`). Anywhere else — a Surface, Palette
+  or Typography value, an author's declaration — it is `UXD_TONE_CONTEXT`; an
+  unknown variant is `UXD_BUTTON_TONE`/`UXD_INPUT_TONE`.
+- **Why:** the substitution was a regex that matched only that exact literal,
+  so `states.hover.bg: 'palette(primary.dark)'` never varied by tone and the
+  only way to get tone-following state colors was to know the compiled
+  variable names. An explicit Palette reference keeps its configured meaning.
+- **Deprecated:** the literal chain is still substituted for one release and
+  will stop being recognised in the next minor; write `tone(…)`. The generated
+  legacy packs (`default-buttons.uxdsl`, `default-inputs.uxdsl`) now say
+  `tone(…)` too, and a `@theme` pack may use it.
+- `uxdsl theme` prints the effective theme JSON, so its output now shows
+  `tone(dark)` and `palette(surface.light)` where it showed the compiled
+  names (1,104 bytes shorter for the base theme); the CSS it compiles to is
+  unchanged.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes
