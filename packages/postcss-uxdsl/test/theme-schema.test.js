@@ -154,7 +154,13 @@ test('MIG-B6-27: the schema is generated, and --check detects drift', () => {
   const original = fs.readFileSync(schemaPath, 'utf8');
   try {
     const tampered = JSON.parse(original);
-    tampered.properties.typography_details.additionalProperties.properties.fontsize = { type: 'string' };
+    // This rewrites the real schema on disk for as long as `--check` runs, and
+    // the test files run in parallel processes: another file that loads the
+    // schema in that window sees the tampered one. The tampered key is
+    // therefore one no validation case anywhere exercises — it used to be
+    // `fontsize`, which theme-validation-matrix.test.js checks is *rejected*,
+    // and that case failed at random about one run in three.
+    tampered.properties.typography_details.additionalProperties.properties['tamper-only-this-test-uses'] = { type: 'string' };
     fs.writeFileSync(schemaPath, JSON.stringify(tampered, null, 2) + '\n');
     const drifted = spawnSync(process.execPath, [generator, '--check'], { cwd: repoRoot, encoding: 'utf8' });
     assert.notEqual(drifted.status, 0, '--check must fail on a hand-edited schema');

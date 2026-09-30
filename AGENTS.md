@@ -615,6 +615,15 @@ still has the old placement), compiled output puts every `@import` — the
 theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
+In compiled output the generated theme is one contiguous run, inserted after
+the author's prelude (`@charset`, leading comments, the theme's `@import`s,
+then the author's `@layer` statements and `@import`s) and before the author's
+rules (stability phase 1, audit T10) — the exact string `generateThemeCss`
+returns for the same theme, so build and runtime are byte-identical. An
+author's own `:root { --uxdsl__… }` therefore follows the theme's declaration
+and wins the cascade; to override a token in a stylesheet, write that rule
+rather than editing generated CSS.
+
 Theme values have one grammar, in every family and on both CSS paths
 (stability phase 1, audit T1): a literal CSS value; a token function —
 `space(k)`, `density(k)`, `color(family.shade[, alpha])`,

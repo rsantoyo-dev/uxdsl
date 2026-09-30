@@ -205,6 +205,41 @@ failures (47 for Buttons) as before, with nothing unresolved.
   emitted; resolve a component's reference through its fallback, as the
   contrast gate does.
 
+Stability phase 1, finding T10 (the theme is inserted at one place):
+
+### Visual changes
+
+None for a stylesheet that does not itself redeclare a theme variable. One
+for a stylesheet that does: an author's own `:root { --uxdsl__palette__primary-main:
+… }` (or any other `--uxdsl__…` declaration in `:root`) now **applies** — it
+follows the theme's declaration of the same name in the compiled output and
+wins the cascade. Until now only the theme's `@import`s and the density block
+were placed after the author's prelude; every other family was appended
+*after* the author's rules, so such an override silently lost to the theme.
+If a project relied on the theme winning over its own `:root` (an override
+left in place because it "did nothing"), that override now takes effect.
+
+- **One insertion point.** The whole generated theme is one string —
+  `renderThemeCss`, the exact bytes `generateThemeCss` returns for the same
+  effective theme with the compilation's legacy `@theme` packs merged in —
+  parsed once and inserted after the author's prelude (`@charset`, leading
+  comments, body-less `@layer` statements, `@import`s) and before the
+  author's rules; the theme's Google Fonts `@import`s still go right after
+  `@charset`/comments, ahead of the author's imports (MIG-B7-14). Every
+  generated block is on one line, and the order is `generateThemeCss`'s:
+  foundations, typography, edges, shadows, surfaces, buttons, inputs,
+  densities. The density block, which used to lead the output, now closes
+  the run.
+- **Parity, byte for byte.** `test/build-runtime-parity.test.js` now asserts
+  the plugin's theme CSS (theme-only entry, or an entry with the author's
+  rules removed) equals `generateThemeCss(resolveTheme(theme))` as one
+  string, for the packaged base theme, the playground's four themes and a
+  synthetic theme; `test/theme-insertion.test.js` pins the placement and the
+  author-override case. The `includeTheme: false` reference check validates
+  against the same rendered string.
+- `uxdsl-core`, the CLI and the adapters produce the same order (they run
+  this plugin); the playground's compiled `src/app/uxdsl.css` was rebuilt.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

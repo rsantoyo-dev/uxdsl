@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39761 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39760 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 39761,
+        "bytes": 39760,
         "rootBlocks": 17,
         "mediaQueries": 9
       }
@@ -66,10 +66,10 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38589 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38594 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38589,
+        "bytes": 38594,
         "rootBlocks": 17
       }
     },
@@ -85,10 +85,10 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38589 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38594 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38589,
+        "bytes": 38594,
         "rootBlocks": 17
       }
     },
@@ -284,7 +284,7 @@
         "action": "start: uxdsl watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39761 bytes)",
+          "[uxdsl] built dist/app.css (39760 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -293,7 +293,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39803 bytes)"
+          "[uxdsl] built dist/app.css (39802 bytes)"
         ]
       },
       {
@@ -309,12 +309,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39761 bytes)"
+          "[uxdsl] built dist/app.css (39760 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 39761
+      "finalBytes": 39760
     }
   }
 }

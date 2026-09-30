@@ -204,6 +204,37 @@ generated variable names can diverge.
 
 ---
 
+## Where the theme goes in the compiled output
+
+With `includeTheme: true` (the default) the compiled stylesheet is, in order:
+
+1. the author's `@charset`, if any, and leading comments;
+2. the theme's Google Fonts `@import`s (from `fonts.google`);
+3. the rest of the author's prelude — body-less `@layer` statements and the
+   author's own `@import`s, in written order;
+4. **the whole generated theme, as one contiguous run** — the exact string
+   `generateThemeCss` returns for the same theme: foundations (`:root` with
+   Palette, Colors, Spacing, then the dark-mode scopes), `fonts.families` and
+   Typography, Borders and Radii, Shadows, Surfaces, Buttons, Inputs,
+   Densities, each family's `:root` followed by its `@media (min-width)`
+   blocks, every block on one line;
+5. the author's rules, in written order, with the `@media` blocks the compiler
+   creates for their responsive declarations right after each rule.
+
+So an author's own `:root { --uxdsl__palette__primary-main: … }` comes
+**after** the theme's declaration of the same name and wins the cascade, the
+way any later declaration of a custom property does. Before stability phase 1
+(audit finding T10) only the imports and the density block were placed at
+the prelude and every other family was appended *after* the author's rules,
+so that override silently lost. Legacy `@theme { … }` packs are consumed from
+wherever they appear and contribute to the same run.
+
+`test/theme-insertion.test.js` pins the order, and
+`test/build-runtime-parity.test.js` asserts that a theme-only entry compiles
+to a string byte-identical to `generateThemeCss(resolveTheme(theme))` — for
+the packaged base theme, each playground theme and a synthetic theme using
+every token function in every family.
+
 ## Reference integrity (`references`)
 
 Every compilation validates that every `var(--token)` it emits resolves

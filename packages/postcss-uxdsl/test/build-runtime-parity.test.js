@@ -84,7 +84,9 @@ function sameTheme(label, pluginCss, generated) {
   const onlyGenerated = b.filter((block) => !a.includes(block));
   assert.deepEqual(onlyPlugin, [], `${label}: blocks only the plugin emits (byte-exact comparison)`);
   assert.deepEqual(onlyGenerated, [], `${label}: blocks only generateThemeCss emits (byte-exact comparison)`);
-  assert.deepEqual([...a].sort(), [...b].sort(), `${label}: the two paths differ`);
+  // Phase 1's one insertion point (theme-insertion.test.js): the whole
+  // string, in order — not just the multiset of blocks.
+  assert.equal(pluginCss, generated, `${label}: the plugin's theme CSS is not byte-identical to generateThemeCss`);
 }
 
 for (const [label, theme] of Object.entries(THEMES)) {
