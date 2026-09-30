@@ -541,6 +541,16 @@ an override and compares). **Deprecated:** the literal chain is still recognised
 in a theme value for one release and will stop being substituted in the next
 minor — write `tone(…)`.
 
+A per-tone variable is emitted only when the tone changes the value: a field
+that says `tone(…)` gets one per tone family, a field that says
+`palette(error.main)`, `0.6` or `shadow(2)` gets none, and the component's
+reference — always `var(<per-tone>, var(<role's own>))` — falls back to the
+role's own variable. That halves the size of the theme block for the base
+theme (745 → 591 declarations; the 154 dropped ones were byte-identical
+copies). Read a component's value through that fallback, never by looking
+up the per-tone name alone.
+
+
 ### Accessibility contrast gate (`checkThemeContrast`)
 
 **MIG-B6-29 (FEAT-008), phase 2/4 (the gate) and phase 3/4 (color

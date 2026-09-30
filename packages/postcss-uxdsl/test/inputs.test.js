@@ -37,7 +37,10 @@ test('Input tone, size, base precedence and native defaults match both adapters'
  const actual={};postcss.parse(css).walkRules('.x',r=>r.walkDecls(d=>actual[d.prop]=d.value));assert.deepEqual(actual,{...expected,width:'auto'});
  assert.equal(expected.font,'inherit');assert(!('outline' in expected));assert(!('appearance' in expected));
  assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-tone-brand-blue-base-caret'],'var(--uxdsl__palette__brand-blue-main)');
- assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-tone-brand-blue-invalid-border'],'1px solid var(--uxdsl__palette__error-main)');
+ // Stability phase 1 (T8): the invalid border names error explicitly, so no
+ // tone changes it and no per-tone copy is emitted; the reference falls back.
+ assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-invalid-border'],'1px solid var(--uxdsl__palette__error-main)');
+ assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-tone-brand-blue-invalid-border'],undefined);
 });
 test('Input legacy packs merge JSON fields and do not leak into another compilation',async()=>{
  const source='@theme { input-search: { @ds-surface(outlined); padding: 7px; :focus { bg: red; placeholder: gray; } } } .x { @ds-input(search); }';

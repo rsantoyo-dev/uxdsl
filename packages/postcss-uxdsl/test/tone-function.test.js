@@ -130,3 +130,72 @@ test('tone(): a legacy @theme pack may use it too, and compiles like the JSON fo
   assert.equal(viaPack.match(/\.b:hover \{[^}]*\}/)[0], viaJson.match(/\.b:hover \{[^}]*\}/)[0]);
   assert.match(viaJson, /--uxdsl__button__cta-hover-bg: var\(--uxdsl__button__tone-dark, var\(--uxdsl__palette__primary-dark\)\);/);
 });
+
+// --- Audit T8: a per-tone variant only when the tone changes the value --------
+
+test('T8: a per-tone variant is emitted only when the tone changes the value', () => {
+  const theme = { palette: { brand: { main: '#111', dark: '#000', contrast: '#fff' } }, buttons: { cta: { base: { opacity: '0.9' }, states: { hover: { bg: 'tone(dark)', opacity: '0.6', border: '1px solid palette(error.main)' } } } } };
+  const values = inspectButtonTheme(theme, 0);
+  assert.equal(values['--uxdsl__button__cta-tone-brand-hover-bg'], 'var(--uxdsl__palette__brand-dark)');
+  for (const name of ['--uxdsl__button__cta-tone-brand-hover-opacity', '--uxdsl__button__cta-tone-brand-hover-border', '--uxdsl__button__cta-tone-brand-base-opacity']) {
+    assert.equal(values[name], undefined, `${name} is an identical copy and must not be emitted`);
+  }
+  assert.equal(values['--uxdsl__button__cta-hover-opacity'], '0.6');
+  // The consumer keeps referencing the variant with the untoned fallback, so
+  // an omitted variant resolves to the value the copy used to carry.
+  const { states } = buttonDeclarations(theme, 'cta', 'brand');
+  assert.equal(states.hover.opacity, 'var(--uxdsl__button__cta-tone-brand-hover-opacity, var(--uxdsl__button__cta-hover-opacity))');
+});
+
+test('T8: the default output loses every identical tone copy and nothing else', () => {
+  const css = generateThemeCss(resolveTheme({}));
+  const declarations = css.match(/--[\w-]+\s*:/g) || [];
+  const toneDeclarations = declarations.filter((d) => /-tone-/.test(d));
+  // Before T8: 745 declarations, 341 of them tone variants, 617 unique names.
+  assert.equal(declarations.length, 745 - 341 + toneDeclarations.length);
+  assert.ok(toneDeclarations.length > 0 && toneDeclarations.length < 341, `expected fewer than 341 tone variants, got ${toneDeclarations.length}`);
+  // Every remaining variant differs from its untoned sibling.
+  const map = Object.fromEntries([...css.matchAll(/(--uxdsl__(?:button|input)__[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));
+  let checked = 0;
+  for (const [name, value] of Object.entries(map)) {
+    const match = name.match(/^(--uxdsl__(?:button|input)__[a-z0-9]+)-tone-[a-z0-9-]+?-(base|hover|active|focus|focusvisible|disabled|selected|readonly|invalid)-([\w-]+)$/);
+    if (!match) continue;
+    const untoned = `${match[1]}-${match[2]}-${match[3]}`;
+    assert.ok(untoned in map, `${name} has no untoned sibling ${untoned}`);
+    assert.notEqual(value, map[untoned], `${name} is identical to ${untoned} and should have been omitted`);
+    checked++;
+  }
+  assert.ok(checked > 0);
+});
+
+test('T8: the contrast gate resolves through the fallback, so its verdict on the base theme is unchanged', () => {
+  const { checkThemeContrast } = require('../dist/ds-runtime');
+  const exceptions = require('../src/theme/base.contrast-exceptions.json');
+  const report = checkThemeContrast(resolveTheme(), { exceptions });
+  assert.equal(report.failures.filter((f) => f.family === 'button').length, 47);
+  assert.equal(report.failures.length, 123);
+  assert.deepEqual(report.failures.filter((f) => /unresolved/.test(f.reason || '')), []);
+});
+
+test('T8: making a value tone-independent at run time is a value change, not a structural one', () => {
+  const runtime = require('../dist/ds-runtime');
+  const byId = new Map();
+  const previous = globalThis.document;
+  globalThis.document = {
+    createElement(tag) { const attributes = {}; return { tagName: tag.toUpperCase(), id: '', textContent: '', setAttribute(n, v) { attributes[n] = v; }, getAttribute(n) { return n in attributes ? attributes[n] : null; } }; },
+    getElementById(id) { return byId.get(id) || null; },
+    head: { appendChild(node) { if (node.id) byId.set(node.id, node); return node; } },
+  };
+  try {
+    runtime.__resetThemeStateForTests();
+    assert.equal(runtime.applyTheme({}, { replace: true }).ok, true);
+    // contained.hover.bg goes from tone(dark) (a variant per tone family) to
+    // a fixed color (none): the variants disappear, and every compiled
+    // reference falls back to the role's own variable.
+    const result = runtime.applyTheme({ buttons: { contained: { states: { hover: { bg: '#123456' } } } } });
+    assert.equal(result.ok, true, result.ok ? '' : result.error.message);
+    assert.doesNotMatch(byId.get('uxdsl-theme').textContent, /--uxdsl__button__contained-tone-[a-z]+-hover-bg:/);
+  } finally {
+    globalThis.document = previous;
+  }
+});

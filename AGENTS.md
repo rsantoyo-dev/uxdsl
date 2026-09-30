@@ -487,7 +487,10 @@ Surfaces own the container composition. HTML/application code own interaction.
   requested. `tone()` is valid only in Button/Input values (`UXD_TONE_CONTEXT`
   elsewhere); the former hand-written fallback chain
   `var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))` is
-  deprecated and still substituted for one release.
+  deprecated and still substituted for one release. A per-tone variable
+  (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) exists only where the
+  tone changes the value; a component always references it with the role's
+  own variable as the `var()` fallback, so resolve through that fallback.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
   focusvisible, disabled, selected. Defaults supply hover and selected only.

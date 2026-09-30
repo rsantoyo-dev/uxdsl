@@ -103,13 +103,26 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
   const put = (comboKey: string, identifier: string, value: string) => { bucket[names.claim(comboKey, identifier)] = value; };
   for (const [role, pack] of Object.entries(getTokens(theme))) {
     for (const [state, style] of Object.entries({ base: pack.base, ...pack.states })) {
-      for (const [key, value] of Object.entries(style)) put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(toneReferences(value, family, null, fail), theme));
+      const untoned: Record<string, string> = {};
+      for (const [key, value] of Object.entries(style)) {
+        untoned[key] = toneReferences(value, family, null, fail);
+        put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(untoned[key], theme));
+      }
       // MIG-B6-26 (FEAT-008): moved to language.ts as getToneFamilies, so
       // the vscode extension's completion generator can derive the exact
       // same tone list without duplicating this predicate by hand.
+      //
+      // Stability phase 1 (audit T8): a per-tone variant is emitted only when
+      // the tone changes the value. Every compiled reference to one carries
+      // the untoned variable as its var() fallback, so an omitted variant
+      // resolves to exactly what the identical copy used to say — 341 of the
+      // default output's 745 declarations were such copies
+      // (`…-tone-<family>-disabled-opacity: 0.6`, eleven times over).
       for (const tone of getToneFamilies(theme.palette)) {
         for (const [key, value] of Object.entries(style)) {
-          put(`${role}-tone-${tone}-${state}-${key}`, `${role}.tone.${tone}.${state}.${key}`, surfaceValueToCss(toneReferences(value, family, tone, fail), theme));
+          const toned = toneReferences(value, family, tone, fail);
+          if (toned === untoned[key]) continue;
+          put(`${role}-tone-${tone}-${state}-${key}`, `${role}.tone.${tone}.${state}.${key}`, surfaceValueToCss(toned, theme));
         }
       }
     }

@@ -175,6 +175,36 @@ asserts equality on both paths).
   names (1,104 bytes shorter for the base theme); the CSS it compiles to is
   unchanged.
 
+Stability phase 1, finding T8 (a Button/Input per-tone variant only when the
+tone changes the value):
+
+### Visual changes
+
+None: every compiled reference to a per-tone variable already carries the
+role's own variable as its `var()` fallback (`var(--uxdsl__button__contained-
+tone-success-hover-bg, var(--uxdsl__button__contained-hover-bg))`), so a
+variant that is not emitted resolves to exactly the value the identical copy
+used to carry. `checkThemeContrast` on the base theme reports the same 123
+failures (47 for Buttons) as before, with nothing unresolved.
+
+- **Emission.** `compileButtonRules`/`compileInputRules` emit
+  `--uxdsl__<family>__<role>-tone-<palette family>-<state>-<key>` only when
+  substituting the tone changes the value — that is, when the value says
+  `tone(…)` (or the deprecated literal). A value that names a family
+  explicitly (`palette(error.main)`), a literal (`0.6`) or a token (`shadow(2)`)
+  gets no per-tone copy. The default output (one rule, `includeTheme: true`)
+  goes from **50,610 to 37,992 bytes (−25%)**, from **745 to 591
+  declarations** and from 617 to 463 distinct names; 154 of the 341 per-tone
+  variants were identical copies (`…-tone-<family>-disabled-opacity: 0.6`
+  eleven times over), 187 genuinely differ and remain. `generateThemeCss`
+  shows the same figures (50,594 → 37,976 bytes).
+- **`applyTheme`'s structural gate** no longer counts per-tone variants among
+  the defined properties: a patch that makes a value tone-independent (its
+  variants disappear) is a value change, not a rebuild.
+- `inspectButtonTheme`/`inspectInputTheme` return only the variants that are
+  emitted; resolve a component's reference through its fallback, as the
+  contrast gate does.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes
