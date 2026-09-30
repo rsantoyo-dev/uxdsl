@@ -1077,8 +1077,8 @@ size of the CSS, listing eight "files" that do not exist. Since 0.5.0-beta.6 `so
 limited to files you can actually open.
 
 Compiling through `uxdsl-cli` instead? It exposes this as
-`--sourcemap`/`--no-sourcemap` and a `sourceMap` config option, and writes
-the `.map` file next to the CSS — see the "Source maps" section of
+`--sourcemap`/`--no-sourcemap` and a `sourcemap` config option (spelled like
+the flag), and writes the `.map` file next to the CSS — see
 [`uxdsl-cli`'s README](../uxdsl-cli/README.md).
 
 ---

@@ -82,6 +82,28 @@ file next to this config …`), never a silently ignored key. The types follow:
 is `{ entry, outFile, includeTheme? }`. The playground's own `uxdsl.config.cjs`
 moved its theme into `uxdsl.theme.config.cjs` accordingly.
 
+Stability plan, phase 2 (3): CLI hygiene (`uxdsl-cli`; audit I3, I5, I10, I11).
+
+### Removed
+
+| Removed | Use instead |
+| --- | --- |
+| the `watch` command | `uxdsl build --watch` (it was an alias of it). `uxdsl watch` now fails with that one line |
+| `theme --strict` and the bare `--strict-theme` / `--strict-theme=true` / `strictTheme: true` | `--strict-theme=<family,...>` on `build` and `theme` alike, or `strictTheme: ['palette', …]`. A scope is required: the unscoped check treated every partial override — the theme model itself — as incomplete, so it flagged the documented usage and had no correct use. The bare flag is refused with the scoped form spelled out; `--strict-theme=false` points at `--no-strict-theme`, which still turns a config's `strictTheme` off for one run |
+| the `sourceMap` config key | `sourcemap`, spelled like the `--sourcemap` flag. `sourceMap` is rejected with the spelling |
+| `theme --entry` / `theme --out` | nothing: `theme` reads a theme, not an entry. It runs from a theme file alone, with no build config, and prints the same unknown-family warning `build` prints (on stderr; stdout stays one JSON document) |
+| `$schema` as a `theme --diff` row | nothing: `$schema` (any `$`-prefixed key) is editor metadata, not a family, and `--strict-theme` never counts it |
+| bare `uxdsl` compiling silently; a flag with no command (`uxdsl --entry a --out b`) compiling | bare `uxdsl` prints the help and exits 0; a flag with no command is an error pointing at `uxdsl build …` |
+| the one-page help | `uxdsl --help` (commands and global flags) and `uxdsl <command> --help` (that command's options only) |
+
+### Added
+
+- `uxdsl --version` (`-v`): the versions of `uxdsl-cli` and the `postcss-uxdsl` / `uxdsl-core` it resolved.
+- An unknown command is one line with a hint (`did you mean "uxdsl build"?`, or the command that replaced it), not the whole help.
+- `init` scaffolds `src/styles.uxdsl` — the file the user edits — and the generated `src/uxdsl-entry.uxdsl` imports it, so `generate-entry` rewriting the entry never discards hand-written styles. "Next steps" prints exactly one import path.
+- `init` for Next.js writes a `postcss.config.js` that names Next's own default plugins (`next/dist/compiled/postcss-flexbugs-fixes`, `next/dist/compiled/postcss-preset-env` with Next's options: `autoprefixer: { flexbox: 'no-2009' }`, `stage: 3`, `custom-properties: false`) ahead of `postcss-uxdsl`. A custom `postcss.config.js` replaces Next's defaults, so the previous file silently switched autoprefixing off (`user-select: none` lost its `-webkit-` prefix after `init`).
+- The `uxdsl-cli` README now describes the surface as it is — commands and flags tables, two files two jobs, watch, strict theme, source maps, diagnostics, editor support — and no longer carries per-release history.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

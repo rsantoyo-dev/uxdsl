@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**106 capabilities · 106 shown at the level they require · 0 gaps.**
+**107 capabilities · 107 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -17,8 +17,8 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
 | Runtime API (named in the package docs) | 28 | 28 | 0 | 0 | 0 |
-| CLI commands | 5 | 0 | 5 | 0 | 0 |
-| CLI flags | 12 | 1 | 11 | 0 | 0 |
+| CLI commands | 4 | 0 | 4 | 0 | 0 |
+| CLI flags | 14 | 1 | 13 | 0 | 0 |
 | Package exports | 5 | 5 | 0 | 0 | 0 |
 | Diagnostics | 1 | 1 | 0 | 0 | 0 |
 
@@ -165,9 +165,8 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `build` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/diagnostics/page.mdx`, `src/app/docs/quick-start/page.mdx` |
 | `generate-entry` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
-| `init` | documented | documented | `src/app/docs/quick-start/page.mdx` |
+| `init` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
 | `theme` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/contrast/page.mdx`, `src/components/ContrastReport.tsx` |
-| `watch` | documented | documented | `src/app/docs/cli/page.mdx` |
 
 ## CLI flags
 
@@ -178,13 +177,15 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `--diff` | documented | documented | `src/app/docs/cli/page.mdx`, `src/components/RuntimeEngines.tsx` |
 | `--entry` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--exclude` | documented | documented | `src/app/docs/cli/page.mdx` |
+| `--help` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--include-theme` | documented | documented | `src/app/docs/cli/page.mdx` |
+| `--multi` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--out` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--sourcemap` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--src` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--strict` | documented | documented | `src/app/docs/cli/page.mdx` |
 | `--strict-theme` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--watch` | documented | documented | `src/app/docs/quick-start/page.mdx` |
+| `--version` | documented | documented | `src/app/docs/cli/page.mdx` |
+| `--watch` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
 
 ## Package exports
 

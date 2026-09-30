@@ -151,7 +151,7 @@ async function main() {
   await check('UX-04', 'unknown flags and bad flag values fail with a message', () => {
     expectFailure(['build', '--strict-thme'], /Unknown option|Did you mean/, 'nonexistent flag');
     expectFailure(['build', '--strict-theme=pallete'], /pallete|Did you mean/, 'unknown family');
-    expectFailure(['theme', '--strict=,'], /strict/i, 'stray comma');
+    expectFailure(['theme', '--strict-theme=,'], /strict/i, 'stray comma');
     return 'all three rejected';
   });
   await check('UX-12', '--no-include-theme really suppresses :root', () => {

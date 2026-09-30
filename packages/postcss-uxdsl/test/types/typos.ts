@@ -20,11 +20,25 @@ export const bothEntryAndBuilds = defineConfig(
     builds: [{ entry: './src/panel.uxdsl', outFile: './dist/panel.css' }],
   });
 
-export const wrongSourceMap = defineConfig({
+export const wrongSourcemap = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
   // @ts-expect-error only false, 'inline' and 'external' are accepted.
-  sourceMap: 'External',
+  sourcemap: 'External',
+});
+
+export const sourcemapSpelling = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  // @ts-expect-error the key is spelled `sourcemap`, like the flag.
+  sourceMap: 'external',
+});
+
+export const unscopedStrictTheme = defineConfig({
+  entry: './src/app.uxdsl',
+  outFile: './dist/app.css',
+  // @ts-expect-error a scope is required: an array of family names, never `true`.
+  strictTheme: true,
 });
 
 export const buildMissingOut: UxdslConfig = {

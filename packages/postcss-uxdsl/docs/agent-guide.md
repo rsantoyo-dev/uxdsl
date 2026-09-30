@@ -565,7 +565,7 @@ The CLI reloads local config dependencies on rebuild; list those files in
 `watch` to observe their edits. Changing the entry or the watch patterns
 updates the running watcher. Two files, two jobs: `uxdsl.config.js`/`.cjs`
 says what to compile and where (`entry`/`outFile` or `builds`, `watch`,
-`references`, `strictTheme`, `sourceMap`); the theme file next to it —
+`references`, `strictTheme`, `sourcemap`); the theme file next to it —
 `uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
 object — holds the theme, `breakpoints` included. A build config that
 carries `theme`, `themeFile`, `breakpoints` or `output` is rejected with the

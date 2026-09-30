@@ -129,109 +129,146 @@ test('MIG-B3-04: `uxdsl theme --diff` output is parseable JSON limited to the to
   assert.equal(projectRows[0].value, 'var(--font-geist-sans)');
 });
 
-test('MIG-B3-04: `uxdsl theme --strict` fails with a non-zero-signaling throw when a declared family is partially defaulted', async () => {
+test('MIG-B3-04: `uxdsl theme --strict-theme=palette` fails with a non-zero-signaling throw when palette is partially defaulted', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#111111' } } };`);
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: true }, dir)),
-    /--strict:.*palette/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'palette' }, dir)),
+    /--strict-theme \(scoped to: palette\):.*palette/
   );
 });
 
-test('MIG-B3-04: `uxdsl theme --strict` passes when every key of a declared family is explicit', async () => {
+test('MIG-B3-04: `uxdsl theme --strict-theme=palette` passes when every key of palette is explicit', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: ${JSON.stringify(DEFAULT_THEME.palette)} };`);
   // Must not throw.
-  await captureStdoutAsync(() => cli.themeCommand({ strict: true }, dir));
+  await captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'palette' }, dir));
 });
 
-// --- MIG-B5-01 (FEAT-006): `--strict` scoped by family, same as build's ---
-// `--strict-theme` — a project names which families it wants completeness
-// enforced for, instead of the tool checking every touched family
-// unconditionally (which conflicts with typography_details' own
-// documented partial-override pattern).
+// --- MIG-B5-01 (FEAT-006): the scope names which families a project wants
+// completeness enforced for, instead of the tool checking every touched
+// family (which conflicts with typography_details' own documented
+// partial-override pattern). Same flag as build's, same rule.
 
-test('MIG-B5-01: `uxdsl theme --strict=palette` passes despite a partial typography_details override', async () => {
+test('MIG-B5-01: `uxdsl theme --strict-theme=palette` passes despite a partial typography_details override', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: ${JSON.stringify(DEFAULT_THEME.palette)}, typography_details: { h2: { fontSize: '2.2rem' } } };`);
   // Must not throw — the exact reported repro, scoped out.
-  await captureStdoutAsync(() => cli.themeCommand({ strict: 'palette' }, dir));
+  await captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'palette' }, dir));
 });
 
-test('MIG-B5-01: `uxdsl theme --strict=palette` still fails when palette itself is partial', async () => {
+test('MIG-B5-01: `uxdsl theme --strict-theme=palette` still fails when palette itself is partial', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { primary: { main: '#111111' } } };`);
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'palette' }, dir)),
-    /--strict \(scoped to: palette\):.*palette/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'palette' }, dir)),
+    /--strict-theme \(scoped to: palette\):.*palette/
   );
 });
 
-test('MIG-B5-01: bare `uxdsl theme --strict` (no scope) is unchanged — still fails on the exact reported typography_details repro', async () => {
+test('phase 2 (3): bare `uxdsl theme --strict-theme` (no scope) is refused with the scoped form, before any check runs', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: true }, dir)),
-    /--strict:.*typography_details/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': true }, dir)),
+    /--strict-theme needs a scope: name the families that must be completely declared, e\.g\. --strict-theme=palette,breakpoints/
   );
 });
 
-// --- MIG-B6-22 (FEAT-008): `--strict=true`/`=false` string forms and
-// unknown-family validation, reachable the same way from `theme --strict`
-// as from `build --strict-theme` (both go through normalizeStrictThemeScope).
+// --- MIG-B6-22 (FEAT-008): the `=true`/`=false` string forms and
+// unknown-family validation, reachable the same way from `theme` as from
+// `build` (both go through normalizeStrictThemeScope).
 
-test('MIG-B6-22: `uxdsl theme --strict=true` (string) fails the same way the bare flag does', async () => {
+test('MIG-B6-22: `uxdsl theme --strict-theme=true` (string) is refused like the bare flag', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'true' }, dir)),
-    /--strict:.*typography_details/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'true' }, dir)),
+    /--strict-theme needs a scope/
   );
 });
 
-test('MIG-B6-22: `uxdsl theme --strict=false` (string) does not fail despite a partial family', async () => {
+test('MIG-B6-22: `uxdsl theme --strict-theme=false` (string) is refused with the way to say "off"', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { typography_details: { h2: { line: '1.15' } } };`);
-  await captureStdoutAsync(() => cli.themeCommand({ strict: 'false' }, dir)); // Must not throw.
+  await assert.rejects(
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'false' }, dir)),
+    /Invalid value for --strict-theme: "false"\. To turn the check off, omit it/
+  );
 });
 
-test('MIG-B6-22: `uxdsl theme --strict=pallete` (typo) fails with a suggestion, before the incompleteness check ever runs', async () => {
+test('MIG-B6-22: `uxdsl theme --strict-theme=pallete` (typo) fails with a suggestion, before the incompleteness check ever runs', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: ${JSON.stringify(DEFAULT_THEME.palette)} };`);
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: 'pallete' }, dir)),
-    /Unknown theme family "pallete" in --strict\. Did you mean "palette"\?/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': 'pallete' }, dir)),
+    /Unknown theme family "pallete" in --strict-theme\. Did you mean "palette"\?/
   );
 });
 
-// MIG-B6-22 code-review fix: `uxdsl theme --strict` goes through the same
+// MIG-B6-22 code-review fix: `uxdsl theme --strict-theme` goes through the same
 // normalizeStrictThemeScope as `build --strict-theme` (see uxdsl-cli.test.js
 // for the equivalent build-side coverage), so a stray comma must fail here
 // too instead of silently normalizing to "no families" (strict off).
-test('MIG-B6-22: `uxdsl theme --strict=,` (stray comma) fails instead of silently turning strict off', async () => {
+test('MIG-B6-22: `uxdsl theme --strict-theme=,` (stray comma) fails instead of silently turning strict off', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   await assert.rejects(
-    () => captureStdoutAsync(() => cli.themeCommand({ strict: ',' }, dir)),
-    /Invalid value for --strict: ","\. A family list cannot contain an empty entry/
+    () => captureStdoutAsync(() => cli.themeCommand({ 'strict-theme': ',' }, dir)),
+    /Invalid value for --strict-theme: ","\. A family list cannot contain an empty entry/
   );
+});
+
+test('phase 2 (3, CLI-1): themeCommand answers from a theme file alone — no build config, no entry, nothing scaffolded', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#abcdef' } } }));
+  const output = await captureStdoutAsync(() => cli.themeCommand({}, dir));
+  const parsed = JSON.parse(output);
+  assert.equal(parsed.palette.primary.main, '#abcdef');
+  assert.equal(parsed.palette.primary.dark, DEFAULT_THEME.palette.primary.dark);
+  assert.deepEqual(fs.readdirSync(dir), ['uxdsl.theme.json']);
+});
+
+test('phase 2 (3, CLI-2): themeCommand reports an unknown family on stderr, the same way build does, and keeps stdout JSON', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ phase2ThemeCmdUnknownFamilyB: { x: 1 } }));
+  const originalWarn = console.warn;
+  const warnings = [];
+  console.warn = (...args) => warnings.push(args.join(' '));
+  let output;
+  try {
+    output = await captureStdoutAsync(() => cli.themeCommand({}, dir));
+  } finally {
+    console.warn = originalWarn;
+  }
+  assert.doesNotThrow(() => JSON.parse(output));
+  assert.ok(warnings.some((w) => /Unknown theme family "phase2ThemeCmdUnknownFamilyB"/.test(w)), JSON.stringify(warnings));
+});
+
+test('phase 2 (3): `$schema` is editor metadata — not a --diff row, not a family --strict-theme can find partial', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ $schema: './node_modules/postcss-uxdsl/schema/theme.schema.json', fonts: { families: { ui: 'Inter' } } }));
+  const rows = JSON.parse(await captureStdoutAsync(() => cli.themeCommand({ diff: true }, dir)));
+  assert.deepEqual(rows.filter((r) => r.path.startsWith('$')), []);
+  assert.ok(rows.some((r) => r.path === 'fonts.families.ui' && r.source === 'project'));
+  assert.deepEqual(cli.findPartiallyDefaultedFamilies({ $schema: './x.json' }, DEFAULT_THEME, ['palette']), []);
 });
 
 // --- MIG-B6-16 (FEAT-008): explicit partial overrides -----------------------
@@ -372,7 +409,7 @@ test('MIG-B6-16: --contrast refuses to share stdout with --diff or --strict', as
   const dir = partialPaletteProject();
   for (const [label, argv] of [
     ['--diff', { contrast: true, diff: true }],
-    ['--strict', { contrast: true, strict: true }],
+    ['--strict-theme', { contrast: true, 'strict-theme': 'palette' }],
   ]) {
     const { thrown, stdout } = await captureStreamsAsync(() => cli.themeCommand(argv, dir));
     assert.ok(thrown, `${label}: expected a refusal`);

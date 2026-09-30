@@ -35,13 +35,16 @@ async function main() {
     typography_details: { h2: { fontSize: '2.2rem' } },
   };\n`);
 
-  // --- MIG-B5-01: bare --strict-theme is unchanged from beta.4 — still
-  // fails on exactly this documented partial-typography usage. ---
+  // --- Stability phase 2 changed what this gate originally pinned: the bare
+  // --strict-theme (check every touched family) is no longer accepted at all,
+  // because it flagged exactly this documented partial-typography usage as
+  // incomplete. The fixture now pins the new contract: the bare form is
+  // refused with the scoped form spelled out, before any check runs. ---
   assert.throws(
     () => command('build', '--strict-theme'),
-    (error) => /--strict-theme:.*typography_details/.test(String(error.stderr))
+    (error) => /--strict-theme needs a scope: name the families that must be completely declared, e\.g\. --strict-theme=palette,breakpoints/.test(String(error.stderr))
   );
-  console.log('PASS: bare --strict-theme still fails on the documented typography_details partial override (no regression from beta.4).');
+  console.log('PASS: bare --strict-theme is refused with the scoped form (a scope is required).');
 
   // --- MIG-B5-01: scoped to the family that actually matters to this
   // project, the same theme passes. ---
@@ -49,9 +52,10 @@ async function main() {
   assert.ok(fs.existsSync(path.join(dir, 'src/uxdsl.css')));
   console.log('PASS: --strict-theme=palette passes with the same theme, scoping typography_details out.');
 
-  // --- MIG-B5-01: `uxdsl theme --strict=palette` has the same scope. ---
-  command('theme', '--strict=palette'); // Must not throw.
-  console.log('PASS: uxdsl theme --strict=palette has the same scope as build\'s equivalent.');
+  // --- MIG-B5-01: `uxdsl theme --strict-theme=palette` has the same scope
+  // (stability phase 2: one flag name on both commands). ---
+  command('theme', '--strict-theme=palette'); // Must not throw.
+  console.log('PASS: uxdsl theme --strict-theme=palette has the same scope as build\'s.');
 
   // --- MIG-B5-02: an unknown top-level family warns (not fails) from a
   // real build, and doesn't repeat on a second build in the same process.

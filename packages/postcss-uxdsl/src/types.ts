@@ -213,11 +213,15 @@ export interface UxdslConfigShared {
   /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
   watch?: string[];
   references?: ReferenceOptions;
-  /** `true` checks every touched family; an array limits the check to those families. */
-  strictTheme?: boolean | string[];
+  /** The theme families that must be completely declared by the project; the
+   * build fails when one of them is only partly declared. A scope is required
+   * (no `true`): the theme model is partial overrides, so an unscoped check
+   * flagged the recommended usage as incomplete. */
+  strictTheme?: string[];
   /** `'external'` writes `<outFile>.map`; `'inline'` appends a data URI. Shared by
-   * every entry — there are no per-entry map overrides. */
-  sourceMap?: false | 'inline' | 'external';
+   * every entry — there are no per-entry map overrides. Spelled like the
+   * `--sourcemap` flag. */
+  sourcemap?: false | 'inline' | 'external';
 }
 
 /**

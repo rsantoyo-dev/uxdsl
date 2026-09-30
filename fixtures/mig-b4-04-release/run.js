@@ -86,27 +86,28 @@ async function main() {
     watch: ['src/**/*.uxdsl'],
   };\n`);
 
-  // Partial palette (only primary.main) + --strict-theme: must fail,
+  // Partial palette (only primary.main) + --strict-theme=palette: must fail,
   // naming the family, and must not touch the previous good output.
+  // (Stability phase 2: the flag needs a scope; this gate used the bare form.)
   assert.throws(
-    () => command('build', '--strict-theme'),
-    (error) => /--strict-theme:.*palette/.test(String(error.stderr))
+    () => command('build', '--strict-theme=palette'),
+    (error) => /--strict-theme \(scoped to: palette\):.*palette/.test(String(error.stderr))
   );
   assert.equal(read('theme.css'), initialTheme, 'a failed --strict-theme build must not touch the previous output');
-  console.log('PASS: --strict-theme fails on a partially-defaulted family declared via a nested require(), writing nothing.');
+  console.log('PASS: --strict-theme=palette fails on a partially-defaulted family declared via a nested require(), writing nothing.');
 
-  // Complete the family: --strict-theme must now pass.
+  // Complete the family: --strict-theme=palette must now pass.
   const { DEFAULT_THEME } = req('postcss-uxdsl/ds-runtime');
   write('theme-data.json', JSON.stringify({ palette: DEFAULT_THEME.palette }));
-  command('build', '--strict-theme'); // Must not throw.
-  console.log('PASS: --strict-theme passes once every key of the declared family is explicit.');
+  command('build', '--strict-theme=palette'); // Must not throw.
+  console.log('PASS: --strict-theme=palette passes once every key of the declared family is explicit.');
 
   // --- Phase 3 (MIG-B4-02): a real `uxdsl watch`, editing *only* the
   // nested theme-data.json — never uxdsl.config.cjs itself — must still
   // trigger a rebuild. This is the exact gap a real consumer found:
   // before the fix, only the top-level config file was watched. ---
   write('theme-data.json', JSON.stringify({ palette: { ...DEFAULT_THEME.palette, primary: { ...DEFAULT_THEME.palette.primary, main: '#111111' } } }));
-  const child = spawn(process.execPath, [cli, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [cli, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   let watchOutput = '';
   child.stdout.on('data', (chunk) => { watchOutput += chunk.toString(); });
   child.stderr.on('data', (chunk) => { watchOutput += chunk.toString(); });
@@ -123,7 +124,7 @@ async function main() {
   } finally {
     child.kill();
   }
-  console.log('PASS: uxdsl watch rebuilds when only a build config\'s nested require() changes, against the installed tarball.');
+  console.log('PASS: uxdsl build --watch rebuilds when only a theme file\'s nested require() changes, against the installed tarball.');
 }
 
 main().catch((error) => {

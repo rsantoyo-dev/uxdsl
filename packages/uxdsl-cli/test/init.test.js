@@ -230,3 +230,39 @@ test('MIG-B7-12: "Next steps" points to editor support without naming a marketpl
     assert.doesNotMatch(r.stdout, /marketplace/i);
   }
 });
+
+// --- Stability phase 2 (3): what `init` scaffolds and says, exactly ---------
+
+test('phase 2 (3): init scaffolds src/styles.uxdsl — the file to edit — imported by the generated entry, and prints one import path', () => {
+  for (const branch of ['plain', 'next', 'vite']) {
+    const dir = mkProject(branch);
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
+    assert.match(styles, /write here, not there/, `[${branch}] styles.uxdsl says what it is for`);
+    const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
+    assert.match(entry, /^@import '\.\/styles\.uxdsl';$/m, `[${branch}] the generated entry imports it`);
+    const importLines = r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^import '/.test(l));
+    assert.deepEqual(importLines, ["import './src/uxdsl.css';"], `[${branch}] exactly one import path:\n${r.stdout}`);
+    assert.match(r.stdout, /Edit src\/styles\.uxdsl/, `[${branch}] the next steps point at the file to edit`);
+    assert.doesNotMatch(r.stdout, /\.\.\/uxdsl\.css/, `[${branch}] no second, framework-relative spelling of the path`);
+    // The scaffolded rule compiles: a first build is not blank.
+    const built = run(['build'], dir);
+    assert.equal(built.status, 0, built.stdout + built.stderr);
+    assert.match(fs.readFileSync(path.join(dir, 'src/uxdsl.css'), 'utf8'), /\.example\s*\{/);
+  }
+});
+
+test('phase 2 (3): init for Next.js writes a postcss.config.js that keeps Next\'s default plugins, then postcss-uxdsl', () => {
+  const dir = mkProject('next');
+  assert.equal(run(['init'], dir).status, 0);
+  const config = fs.readFileSync(path.join(dir, 'postcss.config.js'), 'utf8');
+  // Exactly the modules and options Next uses for its own default config
+  // (next/dist/build/webpack/config/blocks/css/plugins.js), in that order,
+  // because a custom postcss.config.js replaces them.
+  const loaded = require(path.join(dir, 'postcss.config.js'));
+  assert.deepEqual(Object.keys(loaded.plugins), ['next/dist/compiled/postcss-flexbugs-fixes', 'next/dist/compiled/postcss-preset-env', 'postcss-uxdsl']);
+  assert.deepEqual(loaded.plugins['next/dist/compiled/postcss-preset-env'], { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } });
+  assert.deepEqual(loaded.plugins['postcss-uxdsl'], { includeTheme: false });
+  assert.match(config, /replaces Next's defaults/);
+});
