@@ -285,6 +285,28 @@ frozen fixture and both are required to produce identical output.
 
 ---
 
+### One line per missing token
+
+A theme value that does not resolve is referenced by everything built on it —
+a dangling `palette.primary.main` is consumed by every Surface, Button and
+Input variable that says `palette(primary…)` — so one typo used to come back as
+a dozen `UXD_REFERENCE_MISSING` lines naming the same token. Since stability
+phase 1 the error message groups them: one line per missing token, listing
+its consumers (an author's own declaration first, with its `file:line:column`,
+then the theme's), capped at five with `and N more`:
+
+```text
+UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 14 definitions: color (src/app.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__outlined-selected-bg, --uxdsl__button__outlined-selected-border, --uxdsl__button__outlined-tone-primary-selected-bg and 9 more.
+```
+
+A token with a single consumer keeps the full chain
+(`color -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500`) behind
+its position, as before; cycles are always one line per issue. The
+`ReferenceIntegrityError.issues` array, `references.onWarning` and warn mode
+stay one entry per consumer. The `Did you mean "…"?` hint never suggests the
+missing name itself — a token defined only in the dark-mode palette used to be
+proposed as the fix for its own absence in the light scope.
+
 ## Spacing keys (`space-1` vs `1`)
 
 `theme.spacing` accepts either the bare numeric/named key (`"1"`,

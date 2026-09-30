@@ -743,6 +743,10 @@ compile cache. Use `responsiveEntries`/`resolveResponsiveValue` (exported from
 editing rather than writing demo parsers. Buttons and Inputs share
 `control-engine.ts`; their modules define family-specific schema and defaults.
 Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
+A `ReferenceIntegrityError` message is one line per missing token with its
+consumers (author declarations first, with positions, capped at five); read
+the first token named, fix it, and recompile before chasing the rest — the
+others are usually the same dangling reference seen through the theme.
 
 Density keys are references, never values to coerce with parseInt. Undefined or
 fractional Density references fail. Density 0 explicitly means zero; the shipped

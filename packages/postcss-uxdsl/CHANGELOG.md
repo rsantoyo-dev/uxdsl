@@ -240,6 +240,24 @@ left in place because it "did nothing"), that override now takes effect.
 - `uxdsl-core`, the CLI and the adapters produce the same order (they run
   this plugin); the playground's compiled `src/app/uxdsl.css` was rebuilt.
 
+Stability phase 1 (cascading reference errors; no visual change — messages
+only):
+
+- **One line per missing token.** `ReferenceIntegrityError.message` groups
+  `UXD_REFERENCE_MISSING` issues by the missing token: `--uxdsl__color__brand-500
+  has no definition … Referenced by 14 definitions: color (src/app.uxdsl:2:3),
+  --uxdsl__palette__primary-main, … and 9 more.` — an author's declaration
+  first with its position, then the theme's, capped at five. A token with one
+  consumer keeps the full-chain message it always had; cycles stay one per
+  issue; `issues`, `references.onWarning` and warn mode stay one per consumer.
+  `formatReferenceIssues(issues, limit?)` is exported next to
+  `formatReferenceIssue`.
+- **The hint never suggests the missing name itself.** A token defined only
+  in another scope (a dark-mode palette entry with no light-mode counterpart)
+  came back as `Did you mean "neutral-dark"?` for `neutral-dark`.
+- The captured `/docs/diagnostics` output for the dangling-theme-value case
+  now shows the grouped line.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes
