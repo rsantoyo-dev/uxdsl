@@ -32,6 +32,10 @@ npx uxdsl init
 npx uxdsl build
 ```
 
+`postcss` (`^8.4.31`) is a peer dependency, as for every PostCSS plugin: npm 7+ and
+Yarn install it automatically. With `--legacy-peer-deps`, pnpm in strict mode, or
+an older npm, add it yourself (`npm install -D postcss`).
+
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
 to a plain `.css` file you import from your app like any other stylesheet.

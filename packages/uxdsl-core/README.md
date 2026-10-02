@@ -36,6 +36,9 @@ You typically do **not** need to install this directly unless you are building a
 npm install uxdsl-core
 ```
 
+`postcss` (`^8.4.31`) is a peer dependency: npm 7+ installs it automatically; with
+`--legacy-peer-deps` or pnpm in strict mode, add it yourself.
+
 MIG-B6-28 (FEAT-008, `0.5.0-beta.6`): the published tarball declares an explicit `files`
 field (`dist`, `README.md`) instead of shipping everything not gitignored —
 previously that also included `src/*.ts`, `test/*.js` and `tsconfig.json`,
