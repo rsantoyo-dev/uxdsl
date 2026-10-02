@@ -655,8 +655,8 @@ byte-identical blocks for the same theme — do not rely on a compiler pass to
 fix up a theme value, and do not add a second serializer.
 
 There is one theme validator, `validateTheme(theme, { references? })` from
-`postcss-uxdsl/ds-runtime` (stability phase 1; `validateAndNormalizeTheme` is a
-deprecated alias that no longer normalizes anything). The PostCSS plugin calls
+`postcss-uxdsl/ds-runtime` (the former `validateAndNormalizeTheme` is gone; nothing
+is normalized). The PostCSS plugin calls
 it on the effective theme before any engine runs, `generateThemeCss` and
 `applyTheme` call it, the CLI calls it, and the packaged JSON Schema is
 generated from its patterns. Its rules: every leaf is a nonempty string —

@@ -48,7 +48,7 @@ the unscoped check flagged any documented partial theme override — not just
 in `typography_details`, but in the zero-config `palette` example this
 project's own README uses — as "incomplete". Since the stability plan's
 phase 2 the scope is required: the bare flag is refused with the scoped form
-spelled out. `validateTheme`'s (formerly `validateAndNormalizeTheme`) top-level "Unknown theme family"
+spelled out. `validateTheme`'s top-level "Unknown theme family"
 warning also actually prints from a real `uxdsl build`/`watch` for the
 first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.

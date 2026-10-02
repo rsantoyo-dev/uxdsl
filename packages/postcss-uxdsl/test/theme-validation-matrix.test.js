@@ -244,9 +244,7 @@ test('validation matrix: validateTheme does not normalize — fonts.families are
   assert.match(compiled.css, /--uxdsl__font__ui: Inter Tight, sans-serif;/);
 });
 
-test('validation matrix: the deprecated alias still validates the same way', () => {
-  assert.equal(typeof runtime.validateAndNormalizeTheme, 'function');
-  const viaAlias = runtime.validateAndNormalizeTheme({ spacing: { 1: 8 } });
-  const viaValidator = runtime.validateTheme({ spacing: { 1: 8 } });
-  assert.deepEqual(viaAlias.errors, viaValidator.errors);
+test('validation matrix: validateTheme is the only validator export', () => {
+  assert.equal(typeof runtime.validateTheme, 'function');
+  assert.equal(runtime.validateAndNormalizeTheme, undefined);
 });

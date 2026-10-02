@@ -1148,7 +1148,7 @@ test('MIG-B6-22 (subprocess): a flag valid for another command fails as unknown 
 });
 
 // --- MIG-B5-02 (FEAT-006): unknown theme family warnings, surfaced from a
-// real build --- `validateAndNormalizeTheme`'s "Unknown theme family"
+// real build --- `validateTheme`'s "Unknown theme family"
 // warning (MIG-B3-03) was never actually reachable from `uxdsl build`
 // before this — only the playground's theme editor called that function at
 // all. MIG-B5-02 also shipped a parallel "Unknown <family> key" warning one

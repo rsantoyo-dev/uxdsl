@@ -92,7 +92,7 @@ export interface UxdslMode {
  * back to the packaged base theme through `resolveTheme`, which is why this is
  * not a type with required members. The *family names* are closed — they are
  * `KNOWN_THEME_FAMILIES` — so `palete` or `spacings` fails to type-check, which
- * is the same thing `validateAndNormalizeTheme` warns about at build time.
+ * is the same thing `validateTheme` warns about at build time.
  */
 export interface UxdslTheme {
   breakpoints?: Record<string, number>;

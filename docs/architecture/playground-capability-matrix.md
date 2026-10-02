@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**108 capabilities · 107 shown at the level they require · 1 gaps.**
+**107 capabilities · 107 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -16,7 +16,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Theme families | 15 | 14 | 1 | 0 | 0 |
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
-| Runtime API (named in the package docs) | 29 | 28 | 0 | 1 | 1 |
+| Runtime API (named in the package docs) | 28 | 28 | 0 | 0 | 0 |
 | CLI commands | 4 | 0 | 4 | 0 | 0 |
 | CLI flags | 14 | 1 | 13 | 0 | 0 |
 | Package exports | 5 | 5 | 0 | 0 | 0 |
@@ -24,9 +24,9 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 
 ## Gaps
 
-- `runtime:validateAndNormalizeTheme` — none, requires live
+_None._
 
-Recorded as accepted in `capability-evidence.json`: 1.
+Recorded as accepted in `capability-evidence.json`: 0.
 
 ## Dogfooding: styling in the playground that bypasses UXDSL
 
@@ -157,7 +157,6 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |
-| `validateAndNormalizeTheme` | live | none ⚠ | — |
 | `validateTheme` | live | live | `src/components/ThemeConfigJsonEditor.tsx`, `src/components/ThemeContext.tsx` |
 
 ## CLI commands

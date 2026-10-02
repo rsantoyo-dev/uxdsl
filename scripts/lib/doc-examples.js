@@ -238,10 +238,10 @@ async function verifySurfaces(files) {
 /** Theme excerpts must themselves be valid themes. One problem per excerpt: a single
  * bad reference cascades into dozens of derived errors, and only the root cause helps. */
 function validateThemes(themes) {
-  const { validateAndNormalizeTheme } = load('packages/postcss-uxdsl/dist/ds-runtime');
+  const { validateTheme } = load('packages/postcss-uxdsl/dist/ds-runtime');
   const problems = [];
   for (const { file, line, theme } of themes) {
-    const errors = (validateAndNormalizeTheme(theme).errors || []).map((error) => String(error.message || error));
+    const errors = (validateTheme(theme).errors || []).map((error) => String(error.message || error));
     if (errors.length) problems.push({ file, line, problem: `theme excerpt is invalid (${errors.length} error${errors.length === 1 ? '' : 's'}, first: ${errors[0].slice(0, 170)})` });
   }
   return problems;

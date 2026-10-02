@@ -1011,9 +1011,8 @@ compiled, whether or not it appears in this package's own defaults, so
 `palette.brand`, `fonts.families.marketing` or `typography_details.display-xl`
 are ordinary valid names. Only their *shape* (the pattern above) is checked.
 
-`validateAndNormalizeTheme` still exists as a deprecated alias of
-`validateTheme` and will be removed in the next minor. It no longer normalizes
-anything: multi-word font families are emitted exactly as written by both the
+`validateTheme` replaces the former `validateAndNormalizeTheme`, which is removed.
+Nothing is normalized: multi-word font families are emitted exactly as written by both the
 plugin and `generateThemeCss` (`Inter Tight, sans-serif` stays unquoted, which is
 valid CSS), and its former `requireXsForResponsive` option — dead since a base
 value became mandatory — is ignored.

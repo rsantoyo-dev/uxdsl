@@ -873,10 +873,10 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
 const warnedUnknownThemeKeys = new Set();
 
 function warnUnknownThemeKeys(theme) {
-  if (theme === undefined || typeof uxdslRuntime.validateAndNormalizeTheme !== 'function') return;
+  if (theme === undefined || typeof uxdslRuntime.validateTheme !== 'function') return;
   let warnings;
   try {
-    ({ warnings } = uxdslRuntime.validateAndNormalizeTheme(theme));
+    ({ warnings } = uxdslRuntime.validateTheme(theme));
   } catch (_) {
     return; // Diagnostic-only — must never be the reason a build fails.
   }
@@ -1114,11 +1114,11 @@ async function buildOnce(config, entryIndices) {
     }
   }
 
-  // MIG-B5-02 (FEAT-006): `validateAndNormalizeTheme`'s "Unknown theme
+  // MIG-B5-02 (FEAT-006): `validateTheme`'s "Unknown theme
   // family" warning (MIG-B3-03) was never actually reachable from a real
   // build — only the playground's theme editor called this function at
   // all. Surfacing just `/^Unknown /`-prefixed warnings here (not the
-  // others `validateAndNormalizeTheme` can produce, e.g. color-format
+  // others `validateTheme` can produce, e.g. color-format
   // hints, which nobody asked to see from `build` and the plugin's own
   // reference-integrity pass already covers differently) closes that gap
   // without changing what a normal build reports beyond it. MIG-B5-02

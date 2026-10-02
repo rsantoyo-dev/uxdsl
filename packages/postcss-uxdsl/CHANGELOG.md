@@ -58,9 +58,8 @@ property now fails instead.
   `Inter Tight, sans-serif` stays unquoted (valid CSS); the runtime used to
   quote it while the plugin did not (audit T4). Color-format hints and the
   "breakpoints are not ascending" warning are gone.
-- **Deprecated:** `validateAndNormalizeTheme` is an alias of `validateTheme`
-  and will be removed in the next minor; its dead `requireXsForResponsive`
-  option is ignored.
+- **Removed:** `validateAndNormalizeTheme` (use `validateTheme`) and its dead
+  `requireXsForResponsive` option.
 - **Schema.** `schema/theme.schema.json` is regenerated from the validator's
   own patterns (`THEME_NAME_PATTERN`, `THEME_KEY_PATTERN`,
   `THEME_VALUE_PATTERN`, exported from `postcss-uxdsl/ds-runtime`): leaves

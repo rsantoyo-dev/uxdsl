@@ -401,15 +401,3 @@ export function themeValidationError(errors: ThemeValidationIssue[]): Error {
   return error;
 }
 
-/**
- * @deprecated Renamed to {@link validateTheme} in stability phase 1; this alias
- * calls it and will be removed in the next minor. The former
- * `requireXsForResponsive` option was dead (a base value was always required)
- * and is dropped; `references` is forwarded.
- */
-export function validateAndNormalizeTheme<TTheme extends Record<string, any>>(
-  input: unknown,
-  opts?: { requireXsForResponsive?: boolean; references?: ReferenceOptions }
-): ThemeValidationResult<TTheme> {
-  return validateTheme<TTheme>(input, { references: opts?.references });
-}

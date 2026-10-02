@@ -97,11 +97,11 @@ async function main() {
 
   // --- UX-01: modes/typography are recognised families -----------------------
   await check('UX-01', 'modes and typography no longer warn as unknown families', () => {
-    const result = runtime.validateAndNormalizeTheme({ modes: { dark: { palette: {} } }, typography: { 'font-code': 'monospace' } });
+    const result = runtime.validateTheme({ modes: { dark: { palette: {} } }, typography: { 'font-code': 'monospace' } });
     const unknown = result.warnings.filter((w) => /Unknown theme family/.test(w.message));
     if (unknown.length) throw new Error(`still warns: ${unknown.map((w) => w.path).join(', ')}`);
     // and a real typo still does warn, or the check above proves nothing
-    const typo = runtime.validateAndNormalizeTheme({ palete: {} }).warnings.map((w) => w.path);
+    const typo = runtime.validateTheme({ palete: {} }).warnings.map((w) => w.path);
     return typo.includes('palete') ? 'typo still warns' : (() => { throw new Error('a real typo stopped warning'); })();
   });
 
