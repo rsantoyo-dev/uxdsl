@@ -5,7 +5,7 @@ const exported = require('../dist/index');
 const plugin = exported.default || exported;
 const { generateSurfaceCss, inspectSurfaceTheme, surfaceDeclarations, getSurfaceTokens } = require('../dist/surfaces');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
-const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
+const { validateTheme } = require('../dist/ds-runtime/theme-validate');
 // Full 1-16 spacing plus the palette families the always-on density/surface/
 // button/input defaults need, so strict reference validation (every :root
 // block the plugin always emits, not just what this file's source uses)
@@ -50,7 +50,7 @@ test('legacy Surface definitions normalize to shared rules; JSON wins per field;
 });
 test('invalid Surface roles, fields, references and expressions are rejected',async()=>{
  for(const bad of [{surfaces:{contained:null}},{surfaces:[]},{surfaces:{contained:{unknown:'1px'}}},{surfaces:{contained:{shadow:'md(shadow(1))'}}},{surfaces:{contained:{radius:'radius(99)'}}},{surfaces:{contained:{bg:''}}}]) {
-  assert.throws(()=>generateSurfaceCss(bad));assert.equal(validateAndNormalizeTheme(bad).ok,false);
+  assert.throws(()=>generateSurfaceCss(bad));assert.equal(validateTheme(bad).ok,false);
   await assert.rejects(compile('.x { @ds-surface(contained); }',{theme:bad}));
  }
  await assert.rejects(compile('.x { @ds-surface(missing); }'));

@@ -107,14 +107,15 @@ test('MIG-B2-01: a theme file exporting a bare object is treated as the theme it
   assert.equal(config.references, undefined);
 });
 
-test('MIG-B2-01: a theme file exporting { theme, references } splits both fields correctly', async () => {
+test('phase 2: a theme file exporting { theme, references } is refused, naming where each half goes', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { fonts: { families: { ui: 'Inter' } } }, references: { externalTokens: ['--host-token'] } };`);
-  const config = await cli.loadConfig({}, dir);
-  assert.deepEqual(config.theme, { fonts: { families: { ui: 'Inter' } } });
-  assert.deepEqual(config.references, { externalTokens: ['--host-token'] });
+  await assert.rejects(
+    () => cli.loadConfig({}, dir),
+    /uxdsl\.theme\.config\.cjs exports \{ theme, references \}\. That wrapper was removed: a theme file exports the theme itself.*`references` belongs in uxdsl\.config\.cjs/
+  );
 });
 
 // A raw `var(--host-token)` written directly by the user (not produced by
@@ -129,11 +130,11 @@ test('MIG-B2-01: a theme file exporting { theme, references } splits both fields
 // Next.js `--font-geist-sans` case FEAT-003 describes.
 const HOST_FONT_THEME = { ...FULL_THEME, fonts: { families: { ui: 'var(--host-token)' } } };
 
-test('MIG-B2-01: externalTokens declared in the theme file lets a UXDSL-generated declaration reference a host variable with no fallback', async () => {
+test('MIG-B2-01: externalTokens declared in uxdsl.config.cjs lets a UXDSL-generated declaration reference a host variable with no fallback', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', references: { externalTokens: ['--host-token'] } };`);
   write(dir, 'src/entry.uxdsl', '/* no component rules needed — includeTheme defaults to true */');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: ${JSON.stringify(HOST_FONT_THEME)}, references: { externalTokens: ['--host-token'] } };`);
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = ${JSON.stringify(HOST_FONT_THEME)};`);
   const config = await cli.loadConfig({}, dir);
   const source = fs.readFileSync(config.entry, 'utf8');
   const result = await postcss([uxdslPlugin({ theme: config.theme, references: config.references })]).process(source, { from: config.entry });
@@ -154,22 +155,24 @@ test('MIG-B2-01: the same theme without externalTokens still fails with UXD_REFE
   );
 });
 
-test('MIG-B2-01: references declared in uxdsl.config.cjs have complete precedence over the theme file\'s', async () => {
+test('phase 2: `references` has one home — the build config; the theme file carries none', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', references: { externalTokens: ['--from-build'] } };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: {}, references: { externalTokens: ['--from-theme'] } };`);
+  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { fonts: { families: { ui: 'Inter' } } };`);
   const config = await cli.loadConfig({}, dir);
   assert.deepEqual(config.references, { externalTokens: ['--from-build'] });
+  assert.deepEqual(config.theme, { fonts: { families: { ui: 'Inter' } } });
+  assert.equal('references' in config.theme, false);
 });
 
-test('MIG-B2-01: a theme file\'s `references` key never leaks into the theme object sent to the compiler', async () => {
+test('phase 2: a uxdsl.config.json is not a build config (discovery ignores it; --config refuses it)', async () => {
+  assert.deepEqual(cli.CONFIG_CANDIDATES, ['uxdsl.config.cjs', 'uxdsl.config.js']);
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'uxdsl.config.json', JSON.stringify({ entry: './src/entry.uxdsl', outFile: './src/out.css' }));
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { theme: { fonts: { families: { ui: 'Inter' } } }, references: { externalTokens: ['--x'] } };`);
-  const config = await cli.loadConfig({}, dir);
-  assert.equal('references' in config.theme, false);
+  assert.equal(await cli.loadConfig({}, dir), null, 'not discovered');
+  await assert.rejects(() => cli.loadConfig({ config: 'uxdsl.config.json' }, dir), /a build config is a JavaScript module \(uxdsl\.config\.js or uxdsl\.config\.cjs\)\. JSON is for the theme/);
 });
 
 test('MIG-B2-01: --config pointing at a missing file fails with a clear, specific error', async () => {
@@ -214,23 +217,38 @@ test('MIG-B2-01: no config, no theme file, no direct args -> null (existing "pri
   assert.equal(config, null);
 });
 
-test('MIG-B2-01: an inline theme in uxdsl.config.cjs still works, and suppresses conventional theme-file discovery', async () => {
+// --- Stability phase 2: build-config keys that moved, each a hard error
+// naming the new home rather than a silently ignored key. ---
+
+for (const [key, value, home] of [
+  ['theme', `{ fonts: { families: { ui: 'Georgia' } } }`, /put the theme in a theme file next to this config/],
+  ['themeFile', `'./theme/custom.cjs'`, /name the theme file uxdsl\.theme\.json or uxdsl\.theme\.config\.\{js,cjs\} next to this config/],
+  ['breakpoints', `{ xl: 1600 }`, /declare "breakpoints" in the theme file/],
+  ['output', `'./src/out.css'`, /use "outFile"/],
+]) {
+  test(`phase 2: "${key}" in uxdsl.config.cjs is a hard error that says where it now goes`, async () => {
+    const dir = mkTmpDir();
+    write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', ${key}: ${value} };`);
+    write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+    await assert.rejects(() => cli.loadConfig({}, dir), new RegExp(`Invalid configuration in .*uxdsl\\.config\\.cjs: "${key}" is not a build-config key any more`));
+    await assert.rejects(() => cli.loadConfig({}, dir), home);
+  });
+}
+
+test('phase 2: "output" inside a builds[] entry is rejected the same way', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', theme: { fonts: { families: { ui: 'Georgia' } } } };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [{ entry: './src/entry.uxdsl', output: './src/out.css' }] };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  // Present but must be ignored since the build config already declares theme inline.
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { fonts: { families: { ui: 'Inter' } } };`);
-  const config = await cli.loadConfig({}, dir);
-  assert.deepEqual(config.theme, { fonts: { families: { ui: 'Georgia' } } });
+  await assert.rejects(() => cli.loadConfig({}, dir), /"builds\[0\]\.output" is not a build-config key any more — use "outFile"/);
 });
 
-test('MIG-B2-01: `themeFile` in uxdsl.config.cjs wins over the conventional name and resolves relative to the build config', async () => {
+test('phase 2: the theme file is discovered by name next to the build config, and is the only theme source', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', themeFile: './theme/custom.cjs' };`);
+  write(dir, 'config/uxdsl.config.cjs', `module.exports = { entry: '../src/entry.uxdsl', outFile: '../src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { fonts: { families: { ui: 'Ignored' } } };`);
-  write(dir, 'theme/custom.cjs', `module.exports = { fonts: { families: { ui: 'Custom' } } };`);
-  const config = await cli.loadConfig({}, dir);
+  write(dir, 'config/uxdsl.theme.json', JSON.stringify({ fonts: { families: { ui: 'Custom' } } }));
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ fonts: { families: { ui: 'Ignored: not next to the config' } } }));
+  const config = await cli.loadConfig({ config: 'config/uxdsl.config.cjs' }, dir);
   assert.deepEqual(config.theme, { fonts: { families: { ui: 'Custom' } } });
 });
 
@@ -259,17 +277,6 @@ test('MIG-B3-01: resolveIncludeTheme — flag overrides config, config overrides
   assert.equal(cli.resolveIncludeTheme(false, true), false);
 });
 
-test('MIG-B3-01: resolveBreakpoints — config wins over theme, theme wins over defaults, both merge partially', () => {
-  const defaults = cli.resolveBreakpoints(undefined, undefined);
-  assert.deepEqual(defaults, { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 });
-
-  const themeOnly = cli.resolveBreakpoints(undefined, { xl: 1440 });
-  assert.deepEqual(themeOnly, { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1440 });
-
-  const configWins = cli.resolveBreakpoints({ xl: 1600 }, { xl: 1440, sm: 500 });
-  assert.deepEqual(configWins, { xs: 0, sm: 500, md: 768, lg: 1024, xl: 1600 });
-});
-
 test('MIG-B3-01: "includeTheme" in uxdsl.config.cjs reaches loadConfig\'s resolved config', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
@@ -293,26 +300,21 @@ test('MIG-B3-01: a non-boolean "includeTheme" in uxdsl.config.cjs is a hard, act
   await assert.rejects(() => cli.loadConfig({}, dir), /"includeTheme" must be a boolean/);
 });
 
-test('MIG-B3-01: a theme-declared breakpoint reaches loadConfig\'s resolved breakpoints', async () => {
+test('phase 2: a theme-declared breakpoint reaches the compiled output through the theme, with no separate breakpoints channel', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'src/entry.uxdsl', '.x { width: xs(100%) xl(50%); }');
   write(dir, 'uxdsl.theme.config.cjs', `module.exports = { breakpoints: { xl: 1440 } };`);
   const config = await cli.loadConfig({}, dir);
-  assert.equal(config.breakpoints.xl, 1440);
-  assert.equal(config.breakpoints.sm, 480, 'unrelated breakpoints keep their default');
+  assert.equal(config.theme.breakpoints.xl, 1440);
+  assert.equal('breakpoints' in config, false, 'the resolved config carries no breakpoints of its own');
+  await cli.buildOnce(config);
+  const css = fs.readFileSync(config.outFile, 'utf8');
+  assert.match(css, /@media \(min-width: 1440px\)/);
+  assert.doesNotMatch(css, /1280px/);
 });
 
-test('MIG-B3-01: uxdsl.config.cjs breakpoints win over the theme file\'s on the same key', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', breakpoints: { xl: 1600 } };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { breakpoints: { xl: 1440 } };`);
-  const config = await cli.loadConfig({}, dir);
-  assert.equal(config.breakpoints.xl, 1600);
-});
-
-test('MIG-B3-01: buildOnce with includeTheme: false emits no :root and no #uxdsl-bp-meta marker', async () => {
+test('MIG-B3-01: buildOnce with includeTheme: false emits no :root', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
   write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
@@ -321,11 +323,9 @@ test('MIG-B3-01: buildOnce with includeTheme: false emits no :root and no #uxdsl
   await cli.buildOnce(config);
   const css = fs.readFileSync(config.outFile, 'utf8');
   assert.doesNotMatch(css, /:root/);
-  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
-  assert.doesNotMatch(css, /@uxdsl-bp/);
 });
 
-test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root and the #uxdsl-bp-meta marker', async () => {
+test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root — and no breakpoint marker (stability phase 2)', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
@@ -334,7 +334,10 @@ test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root a
   await cli.buildOnce(config);
   const css = fs.readFileSync(config.outFile, 'utf8');
   assert.match(css, /:root/);
-  assert.match(css, /#uxdsl-bp-meta/);
+  // The `/*@uxdsl-bp …*/` trailer and `#uxdsl-bp-meta` rule fed the removed
+  // breakpoint rewriter; a theme entry ends with its last real rule now.
+  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
+  assert.doesNotMatch(css, /@uxdsl-bp/);
 });
 
 test('MIG-B3-01: a theme entry and a component entry compiled separately compose without any duplicate definitions', async () => {
@@ -350,11 +353,10 @@ test('MIG-B3-01: a theme entry and a component entry compiled separately compose
   panelConfig.includeTheme = false;
   await cli.buildOnce(panelConfig);
 
-  const combined = fs.readFileSync(themeConfig.outFile, 'utf8') + '\n' + fs.readFileSync(panelConfig.outFile, 'utf8');
-  const rootCount = (combined.match(/:root/g) || []).length;
-  const bpMetaCount = (combined.match(/#uxdsl-bp-meta/g) || []).length;
-  assert.ok(rootCount > 0, 'the theme entry must still define :root');
-  assert.equal(bpMetaCount, 1, `expected exactly one #uxdsl-bp-meta across both entries; got ${bpMetaCount}`);
+  const themeCss = fs.readFileSync(themeConfig.outFile, 'utf8');
+  const panelCss = fs.readFileSync(panelConfig.outFile, 'utf8');
+  assert.match(themeCss, /:root/, 'the theme entry must still define :root');
+  assert.doesNotMatch(panelCss, /:root/, 'the component entry must not define it a second time');
   // The component entry's own reference (@ds-surface) must still resolve —
   // includeTheme: false only skips emitting definitions, not validation.
   assert.match(panelConfig && fs.readFileSync(panelConfig.outFile, 'utf8'), /background/);
@@ -370,12 +372,11 @@ test('MIG-B3-01: includeTheme: false still fails with UXD_REFERENCE_MISSING for 
 });
 
 // --- MIG-B3-03 (FEAT-004): theme-file/build-config collision diagnostic ---
-// Without a "theme" or "references" key, a theme file's entire export
-// becomes "the theme" (see normalizeThemeExport) — a uxdsl.config.cjs
-// accidentally copied/renamed to a theme-file name silently "worked" with
-// its entry/outFile/watch keys quietly ignored as unknown tokens.
+// A theme file's entire export is the theme — a uxdsl.config.cjs accidentally
+// copied/renamed to a theme-file name silently "worked" with its
+// entry/outFile/watch keys quietly ignored as unknown tokens.
 
-test('MIG-B3-03: warnIfLooksLikeBuildConfig warns when a theme export has no theme/references key but has build-config keys', () => {
+test('MIG-B3-03: warnIfLooksLikeBuildConfig warns when a theme export has build-config keys', () => {
   const { messages } = captureWarnings(() =>
     cli.warnIfLooksLikeBuildConfig({ entry: './src/entry.uxdsl', outFile: './src/out.css' }, '/project/uxdsl.theme.config.cjs')
   );
@@ -383,13 +384,6 @@ test('MIG-B3-03: warnIfLooksLikeBuildConfig warns when a theme export has no the
   assert.match(messages[0], /uxdsl\.theme\.config\.cjs/);
   assert.match(messages[0], /"entry"/);
   assert.match(messages[0], /"outFile"/);
-});
-
-test('MIG-B3-03: warnIfLooksLikeBuildConfig stays silent for the { theme, references } shape even with build-config-named keys', () => {
-  const { messages } = captureWarnings(() =>
-    cli.warnIfLooksLikeBuildConfig({ theme: { watch: 'not-actually-a-family' }, references: undefined }, '/project/uxdsl.theme.config.cjs')
-  );
-  assert.deepEqual(messages, []);
 });
 
 test('MIG-B3-03: warnIfLooksLikeBuildConfig stays silent for a bare theme object with no build-config-shaped keys', () => {
@@ -422,8 +416,8 @@ test('MIG-B3-03: the same theme-file shape only warns once per session (no per-r
 
 // --- MIG-B3-02 (FEAT-004): multiple entries in one uxdsl.config.cjs ---
 // A `builds` array compiles a theme entry and any number of component/
-// CSS-Module entries against the same shared theme/references/breakpoints
-// in a single `uxdsl build`/`watch` invocation.
+// CSS-Module entries against the same shared theme/references in a single
+// `uxdsl build`/`watch` invocation.
 
 test('MIG-B3-02: "builds" cannot be combined with a top-level "entry"/"outFile"', async () => {
   const dir = mkTmpDir();
@@ -510,9 +504,7 @@ test('MIG-B3-02: buildOnce compiles a theme entry and a component entry from one
   const themeCss = fs.readFileSync(config.builds[0].outFile, 'utf8');
   const panelCss = fs.readFileSync(config.builds[1].outFile, 'utf8');
   assert.match(themeCss, /:root/);
-  assert.match(themeCss, /#uxdsl-bp-meta/);
   assert.doesNotMatch(panelCss, /:root/);
-  assert.doesNotMatch(panelCss, /#uxdsl-bp-meta/);
   assert.match(panelCss, /background/);
 });
 
@@ -628,46 +620,47 @@ test('MIG-B4-02: the theme/config file itself is still recorded using its own ca
 // built and tested for `uxdsl theme --strict` (MIG-B3-04) — no engine
 // changes, just a new place to call the same check from.
 
-test('MIG-B4-01: resolveStrictTheme — flag overrides config, config overrides the false default', () => {
+test('MIG-B4-01: resolveStrictTheme — flag overrides config, config overrides the "off" default; a scope is always required', () => {
   assert.equal(cli.resolveStrictTheme(undefined, undefined), false);
-  assert.equal(cli.resolveStrictTheme(undefined, true), true);
-  assert.equal(cli.resolveStrictTheme(undefined, false), false);
-  assert.equal(cli.resolveStrictTheme(true, false), true);
-  assert.equal(cli.resolveStrictTheme(false, true), false);
+  assert.deepEqual(cli.resolveStrictTheme(undefined, ['palette']), ['palette']);
+  assert.deepEqual(cli.resolveStrictTheme('breakpoints', ['palette']), ['breakpoints']);
+  assert.equal(cli.resolveStrictTheme(false, ['palette']), false, '--no-strict-theme wins over the config');
+  assert.throws(() => cli.resolveStrictTheme(true, undefined), /--strict-theme needs a scope/);
+  assert.throws(() => cli.resolveStrictTheme(undefined, true), /strictTheme \(in the config file\) needs a scope/);
 });
 
 test('MIG-B4-01: "strictTheme" in uxdsl.config.cjs reaches loadConfig\'s resolved config, overridden by --no-strict-theme', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   const withConfig = await cli.loadConfig({}, dir);
-  assert.equal(withConfig.strictTheme, true);
+  assert.deepEqual(withConfig.strictTheme, ['palette']);
   const withFlag = await cli.loadConfig({ 'strict-theme': false }, dir);
   assert.equal(withFlag.strictTheme, false);
 });
 
-test('MIG-B4-01: a non-boolean "strictTheme" in uxdsl.config.cjs is a hard, actionable error', async () => {
+test('MIG-B4-01: a "strictTheme" that is not an array of family names is a hard, actionable error', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: 'yes' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean/);
+  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be an array of family names/);
 });
 
-test('MIG-B4-01: buildOnce with strictTheme: true fails, before writing anything, when a declared family is partially defaulted', async () => {
+test('MIG-B4-01: buildOnce with strictTheme: ["palette"] fails, before writing anything, when palette is partially defaulted', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   const config = await cli.loadConfig({}, dir);
   // Only palette.primary.main declared — the rest of palette (dark/contrast,
   // surface, neutral, error) is left to DEFAULT_THEME.
   config.theme = { palette: { primary: { main: '#123456' } } };
-  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*palette/);
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme \(scoped to: palette\):.*palette/);
   assert.ok(!fs.existsSync(config.outFile));
 });
 
-test('MIG-B4-01: buildOnce with strictTheme: true passes when every key of a declared family is explicit', async () => {
+test('MIG-B4-01: buildOnce with strictTheme: ["palette"] passes when every key of palette is explicit', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   const config = await cli.loadConfig({}, dir);
   config.theme = { spacing: FULL_SPACING, palette: DEFAULT_THEME.palette };
@@ -675,9 +668,9 @@ test('MIG-B4-01: buildOnce with strictTheme: true passes when every key of a dec
   assert.ok(fs.existsSync(config.outFile));
 });
 
-test('MIG-B4-01: buildOnce with strictTheme: true passes when no theme is declared at all', async () => {
+test('MIG-B4-01: buildOnce with strictTheme: ["palette"] passes when no theme is declared at all', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: ['palette'] };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
   const config = await cli.loadConfig({}, dir);
   await cli.buildOnce(config); // zero-config — nothing declared, nothing "partial".
@@ -701,13 +694,13 @@ test('MIG-B4-01: with a "builds" config, a shared partially-defaulted theme fail
       { entry: './a.uxdsl', outFile: './a.css' },
       { entry: './b.uxdsl', outFile: './b.css', includeTheme: false },
     ],
-    strictTheme: true,
+    strictTheme: ['palette'],
   };`);
   write(dir, 'a.uxdsl', '');
   write(dir, 'b.uxdsl', '');
   const config = await cli.loadConfig({}, dir);
   config.theme = { palette: { primary: { main: '#123456' } } };
-  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*palette/);
+  await assert.rejects(() => cli.buildOnce(config), /--strict-theme \(scoped to: palette\):.*palette/);
   assert.ok(!fs.existsSync(config.builds[0].outFile));
   assert.ok(!fs.existsSync(config.builds[1].outFile));
 });
@@ -720,10 +713,10 @@ test('MIG-B4-01: with a "builds" config, a shared partially-defaulted theme fail
 // (mig-b2-05-release's own fixture). The fix lets a project name which
 // families it wants checked, instead of the tool guessing.
 
-test('MIG-B5-01: normalizeStrictThemeScope — CSV string, array, booleans, and "nothing here" all normalize correctly', () => {
+test('MIG-B5-01: normalizeStrictThemeScope — CSV string, array, the off switch, and "nothing here" all normalize correctly; true needs a scope', () => {
   assert.equal(cli.normalizeStrictThemeScope(undefined), undefined);
   assert.equal(cli.normalizeStrictThemeScope(null), undefined);
-  assert.equal(cli.normalizeStrictThemeScope(true), true);
+  assert.throws(() => cli.normalizeStrictThemeScope(true), /--strict-theme needs a scope/);
   assert.equal(cli.normalizeStrictThemeScope(false), false);
   assert.deepEqual(cli.normalizeStrictThemeScope('palette,breakpoints'), ['palette', 'breakpoints']);
   assert.deepEqual(cli.normalizeStrictThemeScope(' palette , breakpoints '), ['palette', 'breakpoints']);
@@ -732,11 +725,10 @@ test('MIG-B5-01: normalizeStrictThemeScope — CSV string, array, booleans, and 
   assert.equal(cli.normalizeStrictThemeScope([]), undefined);
 });
 
-test('MIG-B5-01: resolveStrictTheme — a scoped flag overrides a scoped or boolean config, unchanged precedence otherwise', () => {
+test('MIG-B5-01: resolveStrictTheme — a scoped flag overrides a scoped config, unchanged precedence otherwise', () => {
   assert.equal(cli.resolveStrictTheme(undefined, undefined), false);
-  assert.equal(cli.resolveStrictTheme(undefined, true), true, 'strictTheme: true in config still means "check everything"');
   assert.deepEqual(cli.resolveStrictTheme(undefined, ['palette']), ['palette']);
-  assert.deepEqual(cli.resolveStrictTheme('palette,breakpoints', true), ['palette', 'breakpoints'], 'a scoped flag overrides an unscoped true in config');
+  assert.deepEqual(cli.resolveStrictTheme('palette,breakpoints', ['fonts']), ['palette', 'breakpoints'], 'a scoped flag overrides the config');
   assert.equal(cli.resolveStrictTheme(false, ['palette']), false, '--no-strict-theme always wins, scoped config or not');
 });
 
@@ -782,23 +774,28 @@ test('MIG-B5-01: --strict-theme=<families> on the command line scopes the check 
   await cli.buildOnce(config); // Must not throw — typography_details is out of scope.
 });
 
-test('MIG-B5-01: bare --strict-theme (no scope) is unchanged from beta.4 — still fails on the exact reported repro', async () => {
+test('phase 2 (3): the bare flag and strictTheme: true are refused with the scoped form spelled out', async () => {
+  // The unscoped check flagged every partial override — the theme model
+  // itself — as incomplete, so it had no correct use and is not accepted.
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: true };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({}, dir);
-  assert.equal(config.strictTheme, true);
-  // The exact repro from the consumer report: one documented partial
-  // typography override, nothing else touched.
-  config.theme = { typography_details: { h2: { line: '1.15' } } };
-  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*typography_details/);
+  await assert.rejects(
+    () => cli.loadConfig({}, dir),
+    /strictTheme \(in the config file\) needs a scope: name the families that must be completely declared, e\.g\. strictTheme: \['palette', 'breakpoints'\]/
+  );
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  await assert.rejects(
+    () => cli.loadConfig({ 'strict-theme': true }, dir),
+    /--strict-theme needs a scope: name the families that must be completely declared, e\.g\. --strict-theme=palette,breakpoints/
+  );
 });
 
-test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strings is a hard, actionable error', async () => {
+test('MIG-B5-01: a "strictTheme" that is not an array of strings is a hard, actionable error', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', strictTheme: 'palette' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be a boolean or an array of family names/);
+  await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be an array of family names/);
 });
 
 // --- MIG-B6-22 (FEAT-008): --strict-theme/--include-theme "=true"/"=false"
@@ -809,14 +806,11 @@ test('MIG-B5-01: a "strictTheme" that is neither a boolean nor an array of strin
 // nothing) and `--include-theme=false` was silently ignored (only a real
 // boolean, from the bare flag or --no- negation, was ever accepted).
 
-test('MIG-B6-22: normalizeStrictThemeScope treats the strings "true"/"false" as the same booleans, not as family names', () => {
-  assert.equal(cli.normalizeStrictThemeScope('true'), true);
-  assert.equal(cli.normalizeStrictThemeScope('false'), false);
-  assert.equal(cli.normalizeStrictThemeScope('True'), true, 'case-insensitive');
-  assert.equal(cli.normalizeStrictThemeScope('FALSE'), false, 'case-insensitive');
-  // A real family named exactly "true" is not a supported use case (every
-  // real family name is a fixed identifier from KNOWN_THEME_FAMILIES,
-  // never "true"/"false"), so this is an acceptable, deliberate ambiguity.
+test('MIG-B6-22: normalizeStrictThemeScope never reads the strings "true"/"false" as family names — each gets its own answer', () => {
+  assert.throws(() => cli.normalizeStrictThemeScope('true'), /--strict-theme needs a scope/);
+  assert.throws(() => cli.normalizeStrictThemeScope('True'), /--strict-theme needs a scope/, 'case-insensitive');
+  assert.throws(() => cli.normalizeStrictThemeScope('false'), /Invalid value for --strict-theme: "false"\. To turn the check off, omit it or pass --no-strict-theme\./);
+  assert.throws(() => cli.normalizeStrictThemeScope('FALSE'), /pass --no-strict-theme/, 'case-insensitive');
   assert.deepEqual(cli.normalizeStrictThemeScope('palette,breakpoints'), ['palette', 'breakpoints'], 'unaffected: still a plain CSV family list');
 });
 
@@ -928,9 +922,8 @@ test('MIG-B6-22: normalizeStrictThemeScope reports an incompatible install inste
     () => cli.normalizeStrictThemeScope('palette', { knownFamilies: undefined, requireKnownFamilies: true }),
     /Cannot validate family names for --strict-theme: this postcss-uxdsl install does not export KNOWN_THEME_FAMILIES/
   );
-  // A plain boolean scope never needed family validation, so it's unaffected.
-  assert.equal(cli.normalizeStrictThemeScope(true, { knownFamilies: undefined, requireKnownFamilies: true }), true);
-  assert.equal(cli.normalizeStrictThemeScope('true', { knownFamilies: undefined, requireKnownFamilies: true }), true);
+  // The off switch never needed family validation, so it's unaffected.
+  assert.equal(cli.normalizeStrictThemeScope(false, { knownFamilies: undefined, requireKnownFamilies: true }), false);
   // Without requireKnownFamilies (the default every pre-existing/pure-parsing
   // test above relies on), skipping validation is still the documented
   // behavior — only the two real CLI call sites opt into requiring it.
@@ -948,24 +941,22 @@ test('MIG-B6-22: resolveStrictTheme propagates requireKnownFamilies to both the 
   );
 });
 
-test('MIG-B6-22: buildOnce with a real theme fails on --strict-theme=true (string) the same way it fails on the bare flag', async () => {
+test('MIG-B6-22: --strict-theme=true (string) is refused like the bare flag, never read as a family named "true"', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({ 'strict-theme': 'true' }, dir);
-  assert.equal(config.strictTheme, true, '"true" (string) must resolve to the real boolean, not a ["true"] family list');
-  config.theme = { typography_details: { h2: { fontSize: '2.2rem' } } };
-  await assert.rejects(() => cli.buildOnce(config), /--strict-theme:.*typography_details/);
+  await assert.rejects(() => cli.loadConfig({ 'strict-theme': 'true' }, dir), /--strict-theme needs a scope/);
 });
 
-test('MIG-B6-22: buildOnce does not fail on --strict-theme=false (string) even with a partially-defaulted family', async () => {
+test('MIG-B6-22: --strict-theme=false (string) points at --no-strict-theme instead of reading as a family named "false"', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({ 'strict-theme': 'false' }, dir);
-  assert.equal(config.strictTheme, false);
-  config.theme = { typography_details: { h2: { fontSize: '2.2rem' } } };
-  await cli.buildOnce(config); // Must not throw.
+  await assert.rejects(() => cli.loadConfig({ 'strict-theme': 'false' }, dir), /pass --no-strict-theme/);
+  const off = await cli.loadConfig({ 'strict-theme': false }, dir);
+  assert.equal(off.strictTheme, false);
+  off.theme = { typography_details: { h2: { fontSize: '2.2rem' } } };
+  await cli.buildOnce(off); // Must not throw.
 });
 
 test('MIG-B6-22: loadConfig rejects an unknown family name in --strict-theme, with a suggestion', async () => {
@@ -1019,10 +1010,12 @@ test('MIG-B6-22: parseCommandArgv reads the command from the first non-flag toke
   assert.equal(argv.entry, 'x.uxdsl');
 });
 
-test('MIG-B6-22: parseCommandArgv defaults to "build"\'s flag set when no command is given', () => {
-  const { cmd, argv } = cli.parseCommandArgv(['--strict-theme']);
-  assert.equal(cmd, undefined);
-  assert.equal(argv['strict-theme'], true);
+test('phase 2 (3): parseCommandArgv with no command accepts only the global flags — a build flag alone is not a silent build', () => {
+  assert.equal(cli.parseCommandArgv([]).cmd, undefined);
+  assert.equal(cli.parseCommandArgv(['--help']).argv.help, true);
+  assert.equal(cli.parseCommandArgv(['-v']).argv.version, true);
+  assert.throws(() => cli.parseCommandArgv(['--strict-theme=palette']), /No command given \(got "--strict-theme=palette"\)\. To compile, run "uxdsl build \.\.\."/);
+  assert.throws(() => cli.parseCommandArgv(['--entry', 'x.uxdsl']), /No command given/);
 });
 
 test('MIG-B6-22: parseCommandArgv rejects a mistyped flag with a suggestion, scoped to that command\'s own flags', () => {
@@ -1090,21 +1083,33 @@ test('MIG-B6-22 (subprocess): --strict-theme=pallete (typo family) fails with ex
   assert.match(result.stderr, /\[uxdsl\] Error: Unknown theme family "pallete" in --strict-theme\. Did you mean "palette"\?/);
 });
 
-test('MIG-B6-22 (subprocess): --strict-theme=true (string) behaves like the bare flag; --strict-theme=false turns it off', () => {
+test('phase 2 (3, subprocess): --strict-theme needs a scope; =true and the bare flag are refused, =false points at --no-strict-theme, the scoped form runs the check', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
   fs.mkdirSync(path.join(dir, 'src'));
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
-  fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };");
+  fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { palette: { primary: { main: '#00aa00' } } };");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: palette(primary); }\n');
+  const run = (...args) => spawnSync(process.execPath, [CLI_BIN, ...args], { cwd: dir, encoding: 'utf8' });
 
-  const bare = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme'], { cwd: dir, encoding: 'utf8' });
-  const trueString = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=true'], { cwd: dir, encoding: 'utf8' });
+  const bare = run('build', '--strict-theme');
   assert.equal(bare.status, 1);
-  assert.equal(trueString.status, 1, 'bare and "=true" must fail identically — a partially-defaulted palette either way');
-  assert.match(trueString.stderr, /--strict-theme:.*palette/);
+  assert.match(bare.stderr, /\[uxdsl\] Error: --strict-theme needs a scope: name the families that must be completely declared, e\.g\. --strict-theme=palette,breakpoints/);
+  assert.equal(fs.existsSync(path.join(dir, 'out', 'a.css')), false, 'refused before anything is written');
+  const trueString = run('build', '--strict-theme=true');
+  assert.equal(trueString.status, 1);
+  assert.match(trueString.stderr, /needs a scope/);
 
-  const falseString = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=false'], { cwd: dir, encoding: 'utf8' });
-  assert.equal(falseString.status, 0, '"=false" must turn the gate off, not read as a family named "false"');
+  const falseString = run('build', '--strict-theme=false');
+  assert.equal(falseString.status, 1);
+  assert.match(falseString.stderr, /pass --no-strict-theme/);
+  const off = run('build', '--no-strict-theme');
+  assert.equal(off.status, 0, off.stderr);
+
+  const scoped = run('build', '--strict-theme=palette');
+  assert.equal(scoped.status, 1, 'palette is partially declared, so the scoped check fails');
+  assert.match(scoped.stderr, /--strict-theme \(scoped to: palette\):.*palette/);
+  const elsewhere = run('build', '--strict-theme=breakpoints');
+  assert.equal(elsewhere.status, 0, `breakpoints is untouched, so nothing is partial: ${elsewhere.stderr}`);
 });
 
 test('MIG-B6-22 (subprocess): --include-theme=false emits zero :root definitions, matching --no-include-theme', () => {
@@ -1143,7 +1148,7 @@ test('MIG-B6-22 (subprocess): a flag valid for another command fails as unknown 
 });
 
 // --- MIG-B5-02 (FEAT-006): unknown theme family warnings, surfaced from a
-// real build --- `validateAndNormalizeTheme`'s "Unknown theme family"
+// real build --- `validateTheme`'s "Unknown theme family"
 // warning (MIG-B3-03) was never actually reachable from `uxdsl build`
 // before this — only the playground's theme editor called that function at
 // all. MIG-B5-02 also shipped a parallel "Unknown <family> key" warning one
@@ -1324,14 +1329,14 @@ test('MIG-B6-23: loadAndBuildForWatch(argv, true) swallows a compile failure but
   assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')), false, 'nothing should have been written for a build that failed to compile');
 });
 
-// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root/
-// #uxdsl-bp-meta into a *.module.css output fails before anything is
-// written; more than one entry emitting the theme at all is a warning,
-// not an error.
+// MIG-B6-24 (FEAT-008): a builds[] entry that would emit :root into a
+// *.module.css output fails before anything is written; more than one entry
+// emitting the theme at all is a warning, not an error.
 
 test('MIG-B6-24: findThemeLeakSelector finds a real :root rule, not text inside a string or comment', () => {
   assert.equal(cli.findThemeLeakSelector(':root { --x: 1; }'), ':root');
-  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), '#uxdsl-bp-meta');
+  // The removed breakpoint marker is an ordinary rule now, not a theme leak.
+  assert.equal(cli.findThemeLeakSelector('#uxdsl-bp-meta { display: none; }'), null);
   assert.equal(cli.findThemeLeakSelector('.a, :root { color: red; }'), ':root', 'must catch :root inside a compound comma-separated selector');
   assert.equal(cli.findThemeLeakSelector('/* mentions :root in a comment */\n.a { color: red; }'), null);
   assert.equal(cli.findThemeLeakSelector('.a::before { content: ":root example"; }'), null);
@@ -1349,7 +1354,7 @@ test('MIG-B6-24: the exact reproduction fails before writing, naming the offendi
   const config = await cli.loadConfig({}, dir);
   await assert.rejects(
     () => cli.buildOnce(config),
-    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
+    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
   );
   assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing must be written, including the other, unrelated entry');
 });
@@ -1372,7 +1377,7 @@ test('MIG-B6-24: includeTheme: false does not exempt a .module.css entry whose o
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false };`);
   write(dir, 'src/panel.uxdsl', ':root { --leaked: 1; }\n.p { color: red; }');
   const config = await cli.loadConfig({}, dir);
-  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root and #uxdsl-bp-meta/);
+  await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root, which CSS Modules reject/);
 });
 
 test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, naming both', async () => {
@@ -1394,7 +1399,7 @@ test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-inc
   const dir = mkTmpDir();
   write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
   const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
-  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root and #uxdsl-bp-meta/);
+  await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root, which CSS Modules reject/);
 
   const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);
   await cli.buildOnce(passing); // Must not throw.
@@ -1465,7 +1470,7 @@ test('MIG-B6-21: switching external -> off retires that output\'s own map, but n
 });
 
 test('MIG-B6-21: the config option works and the flag overrides it', () => {
-  const dir = mkSourceMapProject(", sourceMap: 'external'");
+  const dir = mkSourceMapProject(", sourcemap: 'external'");
   assert.equal(spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' }).status, 0);
   assert.ok(fs.existsSync(path.join(dir, 'dist', 'css', 'out.css.map')), 'config alone enables it');
 
@@ -1479,10 +1484,18 @@ test('MIG-B6-21: an invalid sourcemap value fails loudly instead of silently emi
   assert.equal(flag.status, 1);
   assert.match(flag.stderr, /Invalid value for --sourcemap: "yes"/);
 
-  const badConfig = mkSourceMapProject(", sourceMap: 'External'");
+  const badConfig = mkSourceMapProject(", sourcemap: 'External'");
   const cfg = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: badConfig, encoding: 'utf8' });
   assert.equal(cfg.status, 1);
-  assert.match(cfg.stderr, /"sourceMap" must be false, "inline" or "external"/);
+  assert.match(cfg.stderr, /"sourcemap" must be false, "inline" or "external"/);
+});
+
+test('phase 2 (3): the config key is spelled "sourcemap", like the flag; "sourceMap" is rejected with the spelling', () => {
+  const dir = mkSourceMapProject(", sourceMap: 'external'");
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /"sourceMap" is not a build-config key any more — the key is spelled "sourcemap", like the --sourcemap flag/);
+  assert.equal(fs.existsSync(path.join(dir, 'dist')), false);
 });
 
 test('MIG-B6-21: a multi-entry build that fails writes neither CSS nor map for any entry', () => {
@@ -1531,4 +1544,122 @@ test('MIG-B7-15: a rebuild with identical output says what "unchanged" means, an
   const third = build();
   assert.match(third.stdout, /\[uxdsl\] built src[\\/]out\.css/);
   assert.doesNotMatch(third.stdout, /unchanged/);
+});
+
+// --- Stability phase 2 (3): the command surface — one way to do each thing,
+// help per command, a version, and a bare `uxdsl` that asks instead of building.
+
+function cliProject() {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
+  write(dir, 'src/a.uxdsl', '.a { color: red; }\n');
+  return dir;
+}
+
+const runCli = (dir, ...args) => spawnSync(process.execPath, [CLI_BIN, ...args], { cwd: dir, encoding: 'utf8' });
+
+test('phase 2 (3): bare `uxdsl` prints the general help and exits 0, and builds nothing', () => {
+  const dir = cliProject();
+  const result = runCli(dir);
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stdout, /^Usage: uxdsl <command> \[options\]/);
+  assert.match(result.stdout, /\n  build {2,}/);
+  assert.doesNotMatch(result.stdout, /\n  watch {2,}/, 'watch is not a command');
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing was compiled');
+  assert.equal(runCli(dir, '--help').stdout, result.stdout);
+  assert.equal(runCli(dir, '-h').stdout, result.stdout);
+});
+
+test('phase 2 (3): `uxdsl --version` prints the CLI version and the packages it resolved', () => {
+  const dir = cliProject();
+  const result = runCli(dir, '--version');
+  assert.equal(result.status, 0, result.stderr);
+  const cliVersion = require('../package.json').version;
+  assert.match(result.stdout, new RegExp(`^uxdsl-cli ${cliVersion.replace(/[.+]/g, '\\$&')}$`, 'm'));
+  assert.match(result.stdout, /^postcss-uxdsl \d+\.\d+\.\d+/m);
+  assert.match(result.stdout, /^uxdsl-core \d+\.\d+\.\d+/m);
+  assert.equal(runCli(dir, '-v').stdout, result.stdout);
+});
+
+test('phase 2 (3): `uxdsl <command> --help` prints that command\'s options and nothing else', () => {
+  const dir = cliProject();
+  const build = runCli(dir, 'build', '--help');
+  assert.equal(build.status, 0);
+  assert.match(build.stdout, /^Usage: uxdsl build \[options\]/);
+  for (const flag of ['--config', '--entry', '--out', '--watch', '--include-theme', '--sourcemap', '--strict-theme=<family,...>', '--no-strict-theme']) {
+    assert.ok(build.stdout.includes(flag), `build --help must document ${flag}`);
+  }
+  assert.doesNotMatch(build.stdout, /--diff|--contrast|--multi|--src/);
+
+  const theme = runCli(dir, 'theme', '--help');
+  assert.match(theme.stdout, /^Usage: uxdsl theme /);
+  for (const flag of ['--config', '--diff', '--contrast', '--strict-theme=<family,...>']) assert.ok(theme.stdout.includes(flag), `theme --help must document ${flag}`);
+  assert.doesNotMatch(theme.stdout, /--entry|--out|--watch|--sourcemap/);
+
+  assert.match(runCli(dir, 'init', '--help').stdout, /^Usage: uxdsl init \[--multi\]/);
+  assert.match(runCli(dir, 'generate-entry', '--help').stdout, /^Usage: uxdsl generate-entry /);
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'help never builds');
+});
+
+test('phase 2 (3): an unknown command is one line with a hint, not the whole help', () => {
+  const dir = cliProject();
+  const typo = runCli(dir, 'biuld');
+  assert.equal(typo.status, 1);
+  assert.equal(typo.stdout, '');
+  assert.equal(typo.stderr.trim(), '[uxdsl] Unknown command "biuld": did you mean "uxdsl build"?');
+  const far = runCli(dir, 'frobnicate');
+  assert.equal(far.status, 1);
+  assert.equal(far.stderr.trim(), '[uxdsl] Unknown command "frobnicate": run "uxdsl --help" for the list of commands');
+});
+
+test('phase 2 (3): `uxdsl watch` is gone — the hint is `uxdsl build --watch`, and a flag alone is not a build', () => {
+  const dir = cliProject();
+  const watch = runCli(dir, 'watch');
+  assert.equal(watch.status, 1);
+  assert.equal(watch.stderr.trim(), '[uxdsl] Unknown command "watch": use "uxdsl build --watch"');
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false);
+  const flagOnly = runCli(dir, '--entry', 'src/a.uxdsl', '--out', 'out/a.css');
+  assert.equal(flagOnly.status, 1);
+  assert.match(flagOnly.stderr, /No command given/);
+  assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'the old silent default-to-build is gone');
+});
+
+test('phase 2 (3): `theme` no longer takes --entry/--out', () => {
+  const dir = cliProject();
+  const result = runCli(dir, 'theme', '--entry', 'src/a.uxdsl', '--out', 'x.css');
+  assert.equal(result.status, 1);
+  assert.match(result.stderr, /Unknown option --entry\./);
+  assert.match(result.stderr, /Unknown option --out\./);
+});
+
+test('phase 2 (3, CLI-1): `theme` runs from a theme file alone — no build config, no entry', () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ $schema: './x.json', palette: { primary: { main: '#654321' } } }));
+  const result = runCli(dir, 'theme');
+  assert.equal(result.status, 0, result.stderr);
+  const theme = JSON.parse(result.stdout);
+  assert.equal(theme.palette.primary.main, '#654321');
+  assert.equal(theme.palette.primary.contrast, DEFAULT_THEME.palette.primary.contrast, 'merged over the base');
+  assert.equal(fs.readdirSync(dir).includes('src'), false, 'nothing was scaffolded or written');
+});
+
+test('phase 2 (3, CLI-2): `theme` prints the unknown-family warning build prints, on stderr, leaving stdout one JSON document', () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ phase2ThemeCmdUnknownFamily: { x: 1 } }));
+  const result = runCli(dir, 'theme');
+  assert.equal(result.status, 0, result.stderr);
+  assert.match(result.stderr, /\[uxdsl\] Warning: .*Unknown theme family "phase2ThemeCmdUnknownFamily"/);
+  assert.doesNotThrow(() => JSON.parse(result.stdout));
+});
+
+test('phase 2 (3): `theme --diff` never lists $schema as a project leaf, and --strict-theme never counts it', () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ $schema: './node_modules/postcss-uxdsl/schema/theme.schema.json', breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 } }));
+  const diff = runCli(dir, 'theme', '--diff');
+  assert.equal(diff.status, 0, diff.stderr);
+  const rows = JSON.parse(diff.stdout);
+  assert.equal(rows.some((r) => r.path.startsWith('$schema')), false, JSON.stringify(rows.filter((r) => r.path.startsWith('$'))));
+  assert.ok(rows.some((r) => r.path === 'breakpoints.md' && r.source === 'project'), 'control: a real family still appears');
+  const strict = runCli(dir, 'theme', '--strict-theme=breakpoints');
+  assert.equal(strict.status, 0, strict.stderr);
 });

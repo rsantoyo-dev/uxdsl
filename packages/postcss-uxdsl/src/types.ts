@@ -40,12 +40,6 @@ export type UxdslInputState = keyof typeof INPUT_STATES;
  */
 export type UxdslTokenValue = string;
 
-/** Breakpoint thresholds, in any of the three shapes the plugin accepts. */
-export type UxdslBreakpointSpec =
-  | Record<string, number>
-  | Array<[string, number]>
-  | Array<{ name: string; min?: number; px?: number }>;
-
 /**
  * One Palette family. Variant names are open, and `main` is deliberately not
  * required: `action` in the shipped base theme has only `disabled`, and a
@@ -98,7 +92,7 @@ export interface UxdslMode {
  * back to the packaged base theme through `resolveTheme`, which is why this is
  * not a type with required members. The *family names* are closed — they are
  * `KNOWN_THEME_FAMILIES` — so `palete` or `spacings` fails to type-check, which
- * is the same thing `validateAndNormalizeTheme` warns about at build time.
+ * is the same thing `validateTheme` warns about at build time.
  */
 export interface UxdslTheme {
   breakpoints?: Record<string, number>;
@@ -143,12 +137,17 @@ export type UxdslDeepPartial<T> =
  */
 export type UxdslThemeOverride = UxdslDeepPartial<UxdslTheme>;
 
-/** Options accepted by the PostCSS plugin. */
+/**
+ * Options accepted by the PostCSS plugin.
+ *
+ * Stability phase 1 removed `breakpoints` (in all three shapes it accepted),
+ * `themeVar`, `spaceVar` and `colorVar`. Thresholds are the theme's own
+ * `breakpoints` family — one source, validated once — and the emitted variable
+ * names are the `--uxdsl__<family>__<key>` contract, not something a caller
+ * renames. A JavaScript caller that still passes one gets a
+ * `UXD_OPTION_REMOVED` warning and the option is ignored.
+ */
 export interface UxdslOptions {
-  breakpoints?: UxdslBreakpointSpec;
-  themeVar?: (path: string) => string;
-  spaceVar?: (index: string) => string;
-  colorVar?: (path: string) => string;
   theme?: UxdslThemeOverride;
   /**
    * Whether this compilation emits the global `:root` token definitions
@@ -183,52 +182,42 @@ export interface UxdslOptions {
   configRoot?: string;
 }
 
-/**
- * @deprecated Renamed to {@link UxdslOptions} in 0.5.0-beta.6, so every public
- * type spells the product the same way. This alias still resolves to the same
- * type and is not scheduled for removal within 0.5.x.
- */
-export type UxDslOptions = UxdslOptions;
-
-/**
- * Where compiled CSS is written. `output` is the older spelling the CLI still
- * accepts (`configModule.outFile || configModule.output`); it is modelled here
- * so adding a type annotation to a working config does not report an error the
- * CLI would not — a false positive teaches people to delete the annotation.
- */
-export type UxdslOutTarget =
-  | { outFile: string; output?: never }
-  /** @deprecated Use `outFile`. Still accepted by the CLI. */
-  | { output: string; outFile?: never };
-
 /** One entry of a multi-entry `builds` array. */
-export type UxdslBuild = UxdslOutTarget & {
+export interface UxdslBuild {
   entry: string;
+  /** Where this entry's compiled CSS is written. */
+  outFile: string;
   /** Overrides the shared `includeTheme` for this entry only. A `--include-theme`
    * / `--no-include-theme` flag still wins over both. */
   includeTheme?: boolean;
-};
-
-/** The options a build config shares across every entry it declares. */
-export interface UxdslConfigShared {
-  /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
-  watch?: string[];
-  breakpoints?: UxdslBreakpointSpec;
-  /** Inline theme override. Mutually exclusive in practice with `themeFile`,
-   * which points at a file holding the same thing. */
-  theme?: UxdslThemeOverride;
-  /** Path to the theme file, resolved relative to this config file. */
-  themeFile?: string;
-  references?: ReferenceOptions;
-  /** `true` checks every touched family; an array limits the check to those families. */
-  strictTheme?: boolean | string[];
-  /** `'external'` writes `<outFile>.map`; `'inline'` appends a data URI. Shared by
-   * every entry — there are no per-entry map overrides. */
-  sourceMap?: false | 'inline' | 'external';
 }
 
 /**
- * The shape of `uxdsl.config.cjs`.
+ * The options a build config shares across every entry it declares.
+ *
+ * A build config says what to compile and where. The theme is not here: it
+ * comes from the theme file next to this config (`uxdsl.theme.json` or
+ * `uxdsl.theme.config.{js,cjs}`), which also owns `breakpoints`. The former
+ * `theme`, `themeFile`, `breakpoints` and `output` keys are rejected by the
+ * CLI with a message saying where each now goes.
+ */
+export interface UxdslConfigShared {
+  /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
+  watch?: string[];
+  references?: ReferenceOptions;
+  /** The theme families that must be completely declared by the project; the
+   * build fails when one of them is only partly declared. A scope is required
+   * (no `true`): the theme model is partial overrides, so an unscoped check
+   * flagged the recommended usage as incomplete. */
+  strictTheme?: string[];
+  /** `'external'` writes `<outFile>.map`; `'inline'` appends a data URI. Shared by
+   * every entry — there are no per-entry map overrides. Spelled like the
+   * `--sourcemap` flag. */
+  sourcemap?: false | 'inline' | 'external';
+}
+
+/**
+ * The shape of `uxdsl.config.js`/`.cjs`.
  *
  * The union models what the CLI actually accepts: a single `entry`/`outFile`,
  * or a `builds` array — never both, which the CLI rejects outright rather than
@@ -236,8 +225,9 @@ export interface UxdslConfigShared {
  * describe a config that fails at run time.
  */
 export type UxdslConfig =
-  | (UxdslConfigShared & UxdslOutTarget & {
+  | (UxdslConfigShared & {
       entry: string;
+      outFile: string;
       includeTheme?: boolean;
       builds?: never;
     })
@@ -245,7 +235,6 @@ export type UxdslConfig =
       builds: UxdslBuild[];
       entry?: never;
       outFile?: never;
-      output?: never;
       /** Applies to every entry that does not set its own. */
       includeTheme?: boolean;
     });

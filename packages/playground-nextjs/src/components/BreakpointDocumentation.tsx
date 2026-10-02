@@ -73,7 +73,7 @@ export function BreakpointExplanation() {
       <p>The component defines its layout transition; Density defines its spacing progression. Changing <code>md</code> changes when both rules apply after the configuration is compiled or applied. Changing only a Density mapping changes spacing without moving the layout threshold.</p>
       <p>Do not repeat a Density progression locally merely because it produces the same result today. Use <code>space()</code> for intentional stable spacing, explicit responsive values for deliberate local exceptions, and standard CSS when finer control is needed.</p>
       <h3>Explore the current viewport</h3>
-      <p>The playground below reports the actual browser viewport and edits its breakpoint configuration. Moving a threshold does not resize the browser. Move <code>md</code> across the current viewport width to inspect the transition. Editor constraints keep thresholds ordered; browser overrides may persist. These edits do not write your source JSON file.</p>
+      <p>The playground below reports the actual browser viewport and the active theme&apos;s thresholds, and simulates any width: it shows which breakpoint is active there and what a few responsive declarations resolve to, using the same <code>inspectResponsiveValue</code> an editor would. Simulating a width does not resize the browser, and nothing here edits the theme: thresholds are compiled into the components, so moving one is a change to the theme JSON and a rebuild.</p>
     </section>
   )
 }
@@ -90,22 +90,18 @@ export function BreakpointLiveExample() {
   padding: xs(space(3)) md(space(6));
 }`}</code></pre>
       <DemoBreakpointsCards />
-      <h3>Runtime configuration</h3>
-      <p>In a browser integration with UXDSL-generated styles loaded, the runtime exposes breakpoint updates:</p>
-      <pre><code className="language-typescript">{`import { breakpoints } from 'postcss-uxdsl/ds-runtime'
+      <h3>Thresholds are compiled, not applied at run time</h3>
+      <p>A threshold is baked into every component&apos;s <code>@media</code> rule at build time, so the runtime cannot move one: <code>applyTheme</code> refuses the patch and names the reason.</p>
+      <pre><code className="language-typescript">{`import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+import { inspectResponsiveValue } from 'postcss-uxdsl/language'
 
-const current = breakpoints.get()
-breakpoints.update('md', 800)
+const result = applyTheme({ breakpoints: { md: 800 } })
+result.ok // false — result.error.code === 'UXD_THEME_STRUCTURE': edit the theme file and rebuild
 
-const unsubscribe = breakpoints.subscribe((event) => {
-  if (event.type === 'breakpoint') {
-    console.log(breakpoints.get())
-  }
-})
-
-// Call during cleanup when the subscriber is no longer needed.
-unsubscribe()`}</code></pre>
-      <p>The subscription reports configuration updates; it is not a viewport-resize subscription. A runtime change does not edit the JSON file. Verify the resulting media rules in your integration, especially when stylesheets or overrides are loaded separately.</p>
+// Inspection at a width needs no document and changes nothing:
+inspectResponsiveValue('xs(column) md(row)', 820, { xs: 0, md: 768 })
+// { active: 'md', applied: 'md', value: 'row' }`}</code></pre>
+      <p>The playground above simulates widths this way. Changing <code>breakpoints</code> in the theme JSON and rebuilding is the one supported way to move a threshold; verify the resulting media rules in your integration.</p>
     </section>
   )
 }

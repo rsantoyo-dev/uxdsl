@@ -42,7 +42,11 @@ function missingTokenHint(reference: string, definitions: Iterable<string>): str
   if (!match) return '';
   const [, family, key] = match;
   const prefix = `--uxdsl__${family}__`;
-  const candidates = Array.from(definitions).filter(name => name.startsWith(prefix)).map(name => name.slice(prefix.length));
+  // Stability phase 1: never the missing name itself. A token defined only in
+  // another scope (a dark-mode palette entry with no light-mode counterpart)
+  // is in `definitions` under the very name that is missing here, and used to
+  // come back as `Did you mean "neutral-dark"?` for `neutral-dark`.
+  const candidates = Array.from(definitions).filter(name => name.startsWith(prefix) && name !== reference).map(name => name.slice(prefix.length));
   const candidate = closestKey(key, candidates);
   if (!candidate) return '';
   const written = family === 'palette' && key.endsWith('-main') && candidate.endsWith('-main')
@@ -51,9 +55,55 @@ function missingTokenHint(reference: string, definitions: Iterable<string>): str
   return ` Did you mean "${written}"?`;
 }
 
+/** How a consumer is named in a grouped message: its property, with the
+ * stylesheet position when it has one (an author's declaration; generated
+ * theme globals carry no source). */
+function describeConsumer(issue: ReferenceIssue): string {
+  if (!issue.source) return issue.consumer;
+  const position = issue.line === undefined ? '' : `:${issue.line}${issue.column === undefined ? '' : `:${issue.column}`}`;
+  return `${issue.consumer} (${issue.source}${position})`;
+}
+
+/**
+ * Stability phase 1 (audit finding "cascading errors"): one line per missing
+ * token, not one per consumer. A Palette value that does not resolve is
+ * referenced by every Surface, Button and Input variable built on it, so a
+ * single typo used to come back as twelve `UXD_REFERENCE_MISSING` lines that
+ * all named the same token. The lines list the consumers (an author's own
+ * declaration with its position first, then the theme's), capped at `limit`;
+ * `issues` itself stays one per consumer for tooling and warn mode.
+ */
+export function formatReferenceIssues(issues: ReferenceIssue[], limit = 5): string {
+  const lines: string[] = [];
+  const groups = new Map<string, ReferenceIssue[]>();
+  for (const issue of issues) {
+    if (issue.code !== 'UXD_REFERENCE_MISSING') { lines.push(formatReferenceIssue(issue)); continue; }
+    const group = groups.get(issue.reference);
+    if (group) group.push(issue); else groups.set(issue.reference, [issue]);
+  }
+  // `forEach`, not `for…of`: this module is part of `postcss-uxdsl/ds-runtime`,
+  // which a consumer may compile to ES5 (test/es5-consumer-compat.test.js).
+  groups.forEach((group, reference) => {
+    // One consumer: the message as it always was — the full chain
+    // (`color -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500`)
+    // behind the stylesheet position when there is one.
+    if (group.length === 1) { lines.push(formatReferenceIssue(group[0])); return; }
+    const located = group.filter(issue => issue.source);
+    const ordered = located.concat(group.filter(issue => !issue.source));
+    const consumers = Array.from(new Set(ordered.map(describeConsumer)));
+    const shown = consumers.slice(0, limit);
+    const more = consumers.length - shown.length;
+    const where = consumers.length === 1
+      ? `Referenced by ${consumers[0]}.`
+      : `Referenced by ${consumers.length} definitions: ${shown.join(', ')}${more ? ` and ${more} more` : ''}.`;
+    lines.push(`UXD_REFERENCE_MISSING: ${reference} has no definition in the active theme/scope. Define it or declare its external provider.${(group[0] as any).hint || ''} ${where}`);
+  });
+  return lines.join('\n');
+}
+
 export class ReferenceIntegrityError extends Error {
   constructor(public readonly issues: ReferenceIssue[]) {
-    super(issues.map(formatReferenceIssue).join('\n'));
+    super(formatReferenceIssues(issues));
     this.name = 'ReferenceIntegrityError';
     const located = issues.find(issue => issue.source);
     if (located) {
@@ -221,6 +271,9 @@ export function inspectReferences(root: Root, consumers: Declaration[], options:
     const issue: ReferenceIssue = { code, message, consumer: node.prop, reference, chain,
       source: node.source?.input.file, line: node.source?.start?.line, column: node.source?.start?.column };
     Object.defineProperty(issue, 'node', { value: node, enumerable: false });
+    // The hint alone, for the grouped message (formatReferenceIssues); kept
+    // off the enumerable shape the equivalence oracle compares.
+    Object.defineProperty(issue, 'hint', { value: referenceHint, enumerable: false });
     issues.push(issue);
   };
   // A resolution depends on the name and on the context's selector/conditions —

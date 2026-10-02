@@ -3,7 +3,7 @@ const postcss=require('postcss');const plugin=require('../dist');
 const {generateThemeCss}=require('../dist/ds-runtime/theme-generator');
 const {getDensityTokens,compileDensityRules,DEFAULT_DENSITIES,responsiveEntries}=require('../dist/language');
 const {surfaceValueToCss}=require('../dist/surfaces');const {presetValueToCss}=require('../dist/preset-engine');
-const {validateAndNormalizeTheme}=require('../dist/ds-runtime/theme-validate');
+const {validateTheme}=require('../dist/ds-runtime/theme-validate');
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function variables(css){const result={};postcss.parse(css).walkDecls(/^--/,d=>{let parent=d.parent;const path=[];while(parent.type!=='root'){path.unshift(parent.type==='atrule'?`@${parent.name} ${parent.params}`:parent.selector);parent=parent.parent}result[path.join('/')+'/'+d.prop]=d.value});return result;}
 // Full 1-16 spacing (this file's own 1/2/3 win) plus the palette families
@@ -46,7 +46,7 @@ test('simple values, named spacing and alpha have one meaning in direct CSS and 
 });
 test('Density validation is consistent between generation, validation and PostCSS',async()=>{
  for(const densities of [null,{bad:'md(space(1))'},{bad:'xs(space(1)) tablet(space(2))'},{bad:'xs(space(1)'},{bad:''}]){
-  assert.throws(()=>generateThemeCss({densities}));assert.equal(validateAndNormalizeTheme({densities}).ok,false);await assert.rejects(()=>compile('',{densities}));
+  assert.throws(()=>generateThemeCss({densities}));assert.equal(validateTheme({densities}).ok,false);await assert.rejects(()=>compile('',{densities}));
  }
  assert.throws(()=>compileDensityRules({}, {xs:0,sm:0}));
 });
@@ -56,11 +56,12 @@ test('shared Density defaults refer only to shipped spacing and display parsing 
  assert.deepEqual(responsiveEntries('xs(calc(space(1) + 2px)) wide(clamp(2px, 1vw, 8px))',{xs:0,wide:900}),{xs:'calc(space(1) + 2px)',wide:'clamp(2px, 1vw, 8px)'});
  assert.equal(getDensityTokens({densities:{custom:'4px'}}).custom,'4px');
 });
-test('browser Color helpers use the same standalone key as the compiler',()=>{
- const runtime=require('../dist/ds-runtime/index');const data=new Map();
- const previous={document:global.document,getComputedStyle:global.getComputedStyle};
- global.document={documentElement:{style:{setProperty:(k,v)=>data.set(k,v),removeProperty:k=>data.delete(k)}}};global.getComputedStyle=()=>({getPropertyValue:k=>data.get(k)||''});
- try{runtime.updateColor('white','#abcdef');assert.equal(runtime.getColor('white'),'#abcdef');assert.equal(data.get('--uxdsl__color__white'),'#abcdef');assert(!data.has('--uxdsl__color__white-main'));runtime.resetColors('white');assert.equal(data.size,0)}finally{for(const key of Object.keys(previous))if(previous[key]===undefined)delete global[key];else global[key]=previous[key]}
+test('applyTheme writes a standalone Color under the same key as the compiler',()=>{
+ const runtime=require('../dist/ds-runtime');const byId=new Map();const previousDocument=global.document;
+ global.document={createElement:()=>({id:'',textContent:'',setAttribute(){},getAttribute(){return null}}),getElementById:id=>byId.get(id)||null,head:{appendChild(node){if(node.id)byId.set(node.id,node);return node}}};
+ try{const applied=runtime.applyTheme({colors:{white:'#abcdef'}},{replace:true});assert.equal(applied.ok,true,applied.ok?'':applied.error.message);
+  const css=byId.get(runtime.DEFAULT_THEME_STYLE_ID).textContent;assert.match(css,/--uxdsl__color__white:\s*#abcdef/);assert.doesNotMatch(css,/--uxdsl__color__white-main/)}
+ finally{if(previousDocument===undefined)delete global.document;else global.document=previousDocument}
 });
 test('literal CSS string whitespace is not altered by token resolution',async()=>{
  const css=(await compile('.x { content: "two  spaces"; }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors})).css;assert(css.includes('"two  spaces"'));

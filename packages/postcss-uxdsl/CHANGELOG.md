@@ -9,6 +9,380 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 1 (audit of 2026-09-29, `docs/audits/2026-09-29-auditoria-estabilidad.md`;
+findings T2, T3, T4, R6 and L12 — one theme validator):
+
+### Visual changes
+
+None. The compiled CSS of the packaged base theme and of every theme that
+already validated is byte-identical before and after this change
+(`test/theme-validation-matrix.test.js` pins the accepted cases; the default
+output's size is unchanged). What changes is what is *refused*: a theme that
+used to compile with a literal `8`, `null` or `[object Object]` in a custom
+property now fails instead.
+
+- **One validator.** `validateTheme(theme, { references? })`
+  (`postcss-uxdsl/ds-runtime`) is now the single answer to "is this theme
+  valid?", and the PostCSS plugin (on the effective theme, before any engine
+  runs), `generateThemeCss`, `applyTheme` and `uxdsl-cli` all call it. The
+  audit found five different answers: the plugin, `generateThemeCss` and
+  `applyTheme` emitted a numeric, `null` or object leaf literally
+  (`--uxdsl__space__1: 8;`, `null;`, `[object Object]`), `applyTheme` coerced
+  `breakpoints.md: "768"` and `fontWeight: 700` where the plugin refused them,
+  and only the JSON Schema rejected any of it.
+- **Rules.** Every leaf is a nonempty string, never coerced (`UXD_THEME_INVALID`
+  with `.keyPath`: `spacing.1`, `palette.primary.main`, `breakpoints.md`, …);
+  `fonts` is closed to `families`/`google` (`google`: a string array, no empty
+  strings); `modes` is closed to `dark` and `modes.dark` to `palette`; a palette
+  family is an object, never a single color string; role/family/breakpoint
+  names match `^[a-z][a-z0-9-]*$` and token keys `^[a-z0-9][a-z0-9-]*$`
+  (`H1`, `Brand`, `call_to_action` are refused — they used to compile to
+  variables no directive could ever reference). A value cannot contain `;`,
+  `{` or `}` and its parentheses must balance: `typography: { 'font-x': 'a; }
+  .hack { color: blue' }` used to emit a `.hack` rule (audit T3).
+- **Breakpoints, once.** The effective map is checked once as `UXD_BP_INVALID`
+  (zero-width base, distinct, finite, non-negative). **Removed codes:**
+  `UXD_TYPO_BP`, `UXD_EDGE_BP`, `UXD_SHADOW_BP`, `UXD_SURFACE_BP`,
+  `UXD_BUTTON_BP`, `UXD_INPUT_BP`, `UXD_PRESET_BP` — the engines no longer
+  restate the same rules under their own family. A theme value naming a
+  breakpoint the map does not have (`radii: { 1: 'tablet(8px)' }`) is now that
+  family's `_VALUE` error (`UXD_EDGE_VALUE`), which is what it is.
+- **New warning code** `UXD_THEME_FAMILY` for an unknown top-level family. The
+  PostCSS plugin now reports it through `result.warn` (it used to report
+  nothing at all); the CLI prints it and `applyTheme` returns it, as before.
+- **`applyTheme` never throws on a bad patch.** A patch that is not an object
+  (an array, a string) is an ordinary `{ ok: false, error }` with
+  `UXD_THEME_INVALID`, not an exception out of `resolveTheme`.
+- **No normalization.** `validateTheme` returns a deep copy of its input,
+  unchanged. `fonts.families` are emitted exactly as written by both paths —
+  `Inter Tight, sans-serif` stays unquoted (valid CSS); the runtime used to
+  quote it while the plugin did not (audit T4). Color-format hints and the
+  "breakpoints are not ascending" warning are gone.
+- **Removed:** `validateAndNormalizeTheme` (use `validateTheme`) and its dead
+  `requireXsForResponsive` option.
+- **Schema.** `schema/theme.schema.json` is regenerated from the validator's
+  own patterns (`THEME_NAME_PATTERN`, `THEME_KEY_PATTERN`,
+  `THEME_VALUE_PATTERN`, exported from `postcss-uxdsl/ds-runtime`): leaves
+  are nonempty strings without `;`/`{`/`}`, names are lowercase, breakpoints
+  are non-negative numbers, `fonts`/`modes` are closed. What a regex cannot
+  say (balanced parentheses, a zero-width base, a dangling reference) the
+  validator still checks.
+- **New:** `renderThemeCss(effectiveTheme)` (`postcss-uxdsl/ds-runtime`), the
+  pure, unvalidated theme stylesheet `generateThemeCss` returns after
+  validating; for callers that already validated.
+
+Stability phase 1, finding T1 (P0: build and runtime emitted different CSS for
+the same theme) — one value grammar:
+
+### Visual changes
+
+None for the packaged base theme: its compiled custom properties are
+byte-identical before and after (the base theme never used a token function
+outside the preset families). Two things change for other themes, both from
+wrong to right: a token function inside a Palette, Color, Spacing or
+`fonts.families` value — `palette: { brand: { main: 'color(gray.300)' } }` —
+used to reach `generateThemeCss`/`applyTheme`'s stylesheet as the literal
+`color(gray.300)` (an invalid value the browser ignored) while the build
+resolved it; and `radii`/`shadows`/`borders`/Surface/Button/Input values
+that referenced another preset (`radii: { x: 'radius(2)' }`) had the same
+split. Both paths now resolve every token function identically. The density
+`:root` blocks the plugin emits are now formatted like every other generated
+block (`:root { --a: b; --c: d; }` on one line, the way `generateThemeCss`
+already wrote them) instead of PostCSS's default multi-line layout — a
+formatting change (+2 bytes on the default output: 50,608 → 50,610 for a
+one-rule entry, same 745 declarations), not a visual one. Through the CLI,
+`compile()` and the adapters (which stringify with `postcss-scss`) every
+generated block is now written on one line too. And the `@media` blocks the
+compiler creates for an author's responsive declaration now carry the
+author's own formatting: PostCSS infers the layout of a node created without
+`raws` from the first formatted node in the tree, which used to be the
+author's first rule and is now a generated block, so the cloned declarations
+copy the source declaration's `raws` instead — `.a { gap: xs(1rem) md(2rem); }`
+now clones `gap: 2rem` with the author's two-space indent rather than a
+depth-computed four (`fixtures/parity/expected/vars-responsive.json` was
+updated for exactly that whitespace).
+
+- **One grammar, resolved by the engines.** `tokenValueToCss(value)`
+  (`postcss-uxdsl/language`) is the one serializer for every theme value:
+  literal CSS, the token functions `space/density/color/palette/radius/
+  border/shadow` (plus `rounded`/`elevation`, the radius keywords, an alpha on
+  `palette`/`color`), responsive expressions, and `var()` passed through.
+  `foundations.ts` (Palette, Colors, Spacing, `modes.dark.palette`),
+  `typography.ts` (`typography_details`, legacy `typography`,
+  `fonts.families`), densities, the preset engine and the Surface/Button/
+  Input engines all call it, so the PostCSS plugin and `generateThemeCss`
+  produce the same block for the same value. `typography_details` fields may
+  now reference any token, not only `space()`/`density()`.
+- **The plugin rewrites the author's declarations only.** Every generated
+  theme node is marked, and the `$var`, responsive and token passes skip it.
+  The final pass that used to rewrite the generated `:root` blocks — the
+  reason the two paths diverged — no longer touches them.
+- **Parity test.** `test/build-runtime-parity.test.js`: for the packaged base
+  theme, each of the playground's four themes (merged exactly as
+  `themes.js` does) and a synthetic theme using every token function in every
+  family, every top-level block of the plugin's theme CSS (with the author's
+  rules removed) is byte-identical to a block of
+  `generateThemeCss(resolveTheme(theme))`, and vice versa; plus the audit's
+  twelve probe cases, an `applyTheme` check, and idempotency of the theme
+  output through the compiler. Block order still differs between the two
+  paths (the plugin appends most families after the author's rules); phase
+  1's next step, one insertion point, makes the whole string identical.
+- **Removed codes:** `UXD_TYPO_TOKEN` and the composed `UXD_EDGE_ALPHA`,
+  `UXD_SHADOW_ALPHA`, `UXD_SURFACE_ALPHA`, `UXD_BUTTON_ALPHA`,
+  `UXD_INPUT_ALPHA`, `UXD_PRESET_ALPHA`. A bad alpha is `UXD_TOKEN_ALPHA` and
+  a malformed key `UXD_TOKEN_KEY`, whichever family the value belongs to.
+- **Deprecated:** `presetValueToCss` and `spacingValueToCss` (both now call
+  `tokenValueToCss`); `RADIUS_KEYWORDS` and `normalizeTokenKey` move to
+  `language.ts` and stay re-exported from `edges`/`preset-engine`.
+- **`fonts.families` quoting** is the same on both paths: as written (the
+  runtime used to add quotes around a multi-word primary family).
+
+Stability phase 1, finding T6 (`tone()` instead of a regex over a magic
+literal) and T5 (the base theme wrote compiled variable names):
+
+### Visual changes
+
+None. `theme/base.json` is rewritten — its 17 hand-written
+`var(--uxdsl__button__tone-X, var(--uxdsl__palette__primary-X))` /
+`var(--uxdsl__input__tone-X, …)` chains become `tone(X)`, and its palette
+aliases (`surface.paper`, `surface.subtle`, `text.*`, `divider.main`,
+`action.disabled`) become `palette(surface.light)`-style references instead of
+`var(--uxdsl__palette__…)` — and the compiled CSS is byte-identical before and
+after: `generateThemeCss` of the base theme, the plugin's default output and
+the playground's rebuilt `src/app/uxdsl.css` all compare equal (`cmp`, and
+`test/tone-function.test.js` compiles the former spelling as an override and
+asserts equality on both paths).
+
+- **New value function `tone(main|dark|contrast)`**, valid inside
+  `buttons`/`inputs` theme values only. In the role's own variable it compiles
+  to the fallback chain the components already consume
+  (`var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))`); in
+  the per-tone variant to that family's own variant
+  (`var(--uxdsl__palette__success-dark)`). Anywhere else — a Surface, Palette
+  or Typography value, an author's declaration — it is `UXD_TONE_CONTEXT`; an
+  unknown variant is `UXD_BUTTON_TONE`/`UXD_INPUT_TONE`.
+- **Why:** the substitution was a regex that matched only that exact literal,
+  so `states.hover.bg: 'palette(primary.dark)'` never varied by tone and the
+  only way to get tone-following state colors was to know the compiled
+  variable names. An explicit Palette reference keeps its configured meaning.
+- **Deprecated:** the literal chain is still substituted for one release and
+  will stop being recognised in the next minor; write `tone(…)`. The generated
+  legacy packs (`default-buttons.uxdsl`, `default-inputs.uxdsl`) now say
+  `tone(…)` too, and a `@theme` pack may use it.
+- `uxdsl theme` prints the effective theme JSON, so its output now shows
+  `tone(dark)` and `palette(surface.light)` where it showed the compiled
+  names (1,104 bytes shorter for the base theme); the CSS it compiles to is
+  unchanged.
+
+Stability phase 1, finding T8 (a Button/Input per-tone variant only when the
+tone changes the value):
+
+### Visual changes
+
+None: every compiled reference to a per-tone variable already carries the
+role's own variable as its `var()` fallback (`var(--uxdsl__button__contained-
+tone-success-hover-bg, var(--uxdsl__button__contained-hover-bg))`), so a
+variant that is not emitted resolves to exactly the value the identical copy
+used to carry. `checkThemeContrast` on the base theme reports the same 123
+failures (47 for Buttons) as before, with nothing unresolved.
+
+- **Emission.** `compileButtonRules`/`compileInputRules` emit
+  `--uxdsl__<family>__<role>-tone-<palette family>-<state>-<key>` only when
+  substituting the tone changes the value — that is, when the value says
+  `tone(…)` (or the deprecated literal). A value that names a family
+  explicitly (`palette(error.main)`), a literal (`0.6`) or a token (`shadow(2)`)
+  gets no per-tone copy. The default output (one rule, `includeTheme: true`)
+  goes from **50,610 to 37,992 bytes (−25%)**, from **745 to 591
+  declarations** and from 617 to 463 distinct names; 154 of the 341 per-tone
+  variants were identical copies (`…-tone-<family>-disabled-opacity: 0.6`
+  eleven times over), 187 genuinely differ and remain. `generateThemeCss`
+  shows the same figures (50,594 → 37,976 bytes).
+- **`applyTheme`'s structural gate** no longer counts per-tone variants among
+  the defined properties: a patch that makes a value tone-independent (its
+  variants disappear) is a value change, not a rebuild.
+- `inspectButtonTheme`/`inspectInputTheme` return only the variants that are
+  emitted; resolve a component's reference through its fallback, as the
+  contrast gate does.
+
+Stability phase 1, finding T10 (the theme is inserted at one place):
+
+### Visual changes
+
+None for a stylesheet that does not itself redeclare a theme variable. One
+for a stylesheet that does: an author's own `:root { --uxdsl__palette__primary-main:
+… }` (or any other `--uxdsl__…` declaration in `:root`) now **applies** — it
+follows the theme's declaration of the same name in the compiled output and
+wins the cascade. Until now only the theme's `@import`s and the density block
+were placed after the author's prelude; every other family was appended
+*after* the author's rules, so such an override silently lost to the theme.
+If a project relied on the theme winning over its own `:root` (an override
+left in place because it "did nothing"), that override now takes effect.
+
+- **One insertion point.** The whole generated theme is one string —
+  `renderThemeCss`, the exact bytes `generateThemeCss` returns for the same
+  effective theme with the compilation's legacy `@theme` packs merged in —
+  parsed once and inserted after the author's prelude (`@charset`, leading
+  comments, body-less `@layer` statements, `@import`s) and before the
+  author's rules; the theme's Google Fonts `@import`s still go right after
+  `@charset`/comments, ahead of the author's imports (MIG-B7-14). Every
+  generated block is on one line, and the order is `generateThemeCss`'s:
+  foundations, typography, edges, shadows, surfaces, buttons, inputs,
+  densities. The density block, which used to lead the output, now closes
+  the run.
+- **Parity, byte for byte.** `test/build-runtime-parity.test.js` now asserts
+  the plugin's theme CSS (theme-only entry, or an entry with the author's
+  rules removed) equals `generateThemeCss(resolveTheme(theme))` as one
+  string, for the packaged base theme, the playground's four themes and a
+  synthetic theme; `test/theme-insertion.test.js` pins the placement and the
+  author-override case. The `includeTheme: false` reference check validates
+  against the same rendered string.
+- `uxdsl-core`, the CLI and the adapters produce the same order (they run
+  this plugin); the playground's compiled `src/app/uxdsl.css` was rebuilt.
+
+Stability phase 1 (cascading reference errors; no visual change — messages
+only):
+
+- **One line per missing token.** `ReferenceIntegrityError.message` groups
+  `UXD_REFERENCE_MISSING` issues by the missing token: `--uxdsl__color__brand-500
+  has no definition … Referenced by 14 definitions: color (src/app.uxdsl:2:3),
+  --uxdsl__palette__primary-main, … and 9 more.` — an author's declaration
+  first with its position, then the theme's, capped at five. A token with one
+  consumer keeps the full-chain message it always had; cycles stay one per
+  issue; `issues`, `references.onWarning` and warn mode stay one per consumer.
+  `formatReferenceIssues(issues, limit?)` is exported next to
+  `formatReferenceIssue`.
+- **The hint never suggests the missing name itself.** A token defined only
+  in another scope (a dark-mode palette entry with no light-mode counterpart)
+  came back as `Did you mean "neutral-dark"?` for `neutral-dark`.
+- The captured `/docs/diagnostics` output for the dangling-theme-value case
+  now shows the grouped line.
+
+Stability phase 1 (removed plugin options; decisions DE-4 and DE-10, finding
+L11):
+
+### Visual changes
+
+None for a project that configures breakpoints in its theme. A project that
+passed the plugin a `breakpoints` option that **differed** from its theme's map
+now compiles against the theme's thresholds: move those values to the theme's
+`breakpoints` family.
+
+- **Removed:** the plugin options `breakpoints` (as an object, an array of
+  pairs or an array of `{ name, min }`), `themeVar`, `spaceVar` and `colorVar`;
+  the type alias `UxDslOptions` (use `UxdslOptions`); the type
+  `UxdslBreakpointSpec`. The plugin's options are
+  `{ theme, includeTheme, references, discoverTheme, configRoot }`.
+- **Why.** `breakpoints` replaced the theme's map wholesale — `{ a: 0, b: 500 }`
+  next to the base theme failed as `UXD_EDGE_BP: xs` — and was one of three
+  places a threshold could come from; the theme's `breakpoints` family is now
+  the only one, validated once (`UXD_BP_INVALID`). The three callbacks let a
+  caller rename the `--uxdsl__<family>__<key>` variables that reference
+  integrity, `applyTheme`, the contrast gate and the build/runtime parity all
+  rely on.
+- **Not a throw.** A JavaScript caller that still passes one gets a
+  `UXD_OPTION_REMOVED` warning (`result.warn`) and the option is ignored. The
+  CLI, `uxdsl-core` and the adapters forwarded `breakpoints` until their own
+  phase stops doing so, so their builds keep working unchanged; a build
+  config's `breakpoints` key is typed `@deprecated` and has no effect.
+- `presetValueToCss` loses its third (`serializers`) parameter and
+  `tokenValueToCss`/`surfaceValueToCss` take none; they existed only for those
+  callbacks.
+
+Stability plan, phase 2 (1): one runtime API.
+
+### Removed
+
+The per-token runtime is gone. `postcss-uxdsl/ds-runtime`'s browser API is
+now exactly `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme`,
+`loadPersistedTheme({ key })`, `DEFAULT_THEME_STYLE_ID`,
+`DEFAULT_THEME_STORAGE_KEY` and their types. Why: the old setters wrote inline
+custom properties on `<html>` and held module-level singletons, while
+`applyTheme` writes one `<style>` per document — and an inline declaration beats
+any stylesheet, so a page that had called `updatePalette` could then call
+`applyTheme`, get `ok: true`, and see nothing change. Two state models for one
+theme is one too many. Every removed call is one `applyTheme` patch:
+
+| Removed | Use instead |
+| --- | --- |
+| `updatePalette('primary.main', v)`, `applyPalette({...})` | `applyTheme({ palette: { primary: { main: v } } })` |
+| `updateColor('gray.300', v)`, `applyColors({...})` | `applyTheme({ colors: { gray: { 300: v } } })` |
+| `updateSpacing(4, v)`, `applySpacing({...})` | `applyTheme({ spacing: { 4: v } })` |
+| `getPalette(t)`, `getColor(t)`, `getSpacing(t)` | `getAppliedTheme()` for the override; `getComputedStyle(el).getPropertyValue('--uxdsl__palette__primary-main')` for the computed value |
+| `resetPalette()`, `resetColors()`, `resetSpacing()` | `resetTheme()` (restores the override the project initialized with) |
+| `loadPersisted()`, `loadPersistedColors()`, `loadPersistedSpacing()`, `loadPersistedBreakpoints()` | `loadPersistedTheme({ key })` |
+| `subscribe(listener)` | `subscribeTheme(listener)` — notified with the applied override after each success |
+| `link(alias, source)`, `unlink(...)` | none: express the dependency in the theme (`palette.primary.main: "var(--uxdsl__color__blue-700)"`) |
+| `updateBreakpoint('md', 900)`, `applyBreakpoints`, `getBreakpoints`, `resetBreakpoints`, the `breakpoints` object | none: a threshold is compiled into every component's media queries. `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`; edit the theme file and rebuild. For inspection at a width, `inspectResponsiveValue` (`postcss-uxdsl/language`) |
+| the `spacing` and `colors` objects, the default export (`import runtime from 'postcss-uxdsl/ds-runtime'`) | named imports of the API above |
+| `LEGACY_STORAGE_KEYS`, `loadPersistedTheme({ migrateLegacy })` | none: the four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`) are no longer read, converted or removed. `loadPersistedTheme` reads its one key and nothing else |
+| `__resetThemeStateForTests` (public barrel) | still exists on the internal `ds-runtime/apply-theme` module for this package's own tests; it was never part of the API |
+
+- **Removed (uxdsl-core, CLI):** compiled output no longer ends with the
+  `/*@uxdsl-bp {…}*/` comment and the `#uxdsl-bp-meta { --bp: '…'; display:
+  none; }` rule. They existed so the removed breakpoint rewriter could read the
+  thresholds back from the CSSOM, and they named thresholds a theme could
+  override anyway (`compile({ source }, { theme: { breakpoints: { md: 800 } } })`
+  emitted `@media (min-width: 800px)` while the marker said 768). A theme
+  entry now ends with its last real rule; a component entry (`includeTheme:
+  false`) is unchanged. The CLI's CSS-Modules guard accordingly reports
+  "this entry would emit :root" (no longer ":root and #uxdsl-bp-meta").
+- `DEFAULT_BREAKPOINTS` is still exported from `postcss-uxdsl/ds-runtime` and
+  `postcss-uxdsl/language`: it is data, not the rewriter.
+- **Playground:** the breakpoints demo no longer edits thresholds (the runtime
+  never could, honestly); it simulates a width with `inspectResponsiveValue`.
+  The palette, colors and spacing editors write the theme JSON only, which
+  `ThemeContext` applies through `applyTheme`; nothing writes inline styles on
+  `<html>` any more, so `ThemeContext` no longer has to clear them.
+
+Stability plan, phase 2 (2): two files, two jobs — the build config and the theme file.
+
+### Removed
+
+Seven ways to hand over a theme, three build-config names, two theme-file
+export shapes, `references` in two places and `breakpoints` in three (audit
+I8, DE-10) are now one of each:
+
+| Removed | Use instead |
+| --- | --- |
+| `uxdsl.config.json` as a build config (discovered, or named with `--config`) | `uxdsl.config.cjs` or `uxdsl.config.js`. JSON is for the theme: `uxdsl.theme.json` |
+| `uxdsl.theme.config.json` as a theme-file name | `uxdsl.theme.json` (the other names, `uxdsl.theme.config.js`/`.cjs`, are unchanged) |
+| the `{ theme, references }` export of a theme file; `normalizeThemeExport` (`postcss-uxdsl/config`) | the theme file exports the theme itself; `references` goes in the build config or the plugin/adapter option. The wrapper is refused with an error naming both homes, not read as a theme with two unknown families |
+| `theme:` inline in the build config | the theme file next to the config |
+| `themeFile:` in the build config | the theme file is discovered by name next to the config; there is no pointer to it |
+| `breakpoints:` in the build config; the `breakpoints` option of `uxdsl-core`'s `compile()`, `vite-plugin-uxdsl` and `uxdsl-webpack-loader` | `breakpoints` in the theme (file or `theme` option), the one source every integration reads. The CLI, `compile()` and both adapters no longer forward a separate value to the plugin |
+| `output:` as an alias of `outFile` (top level and inside `builds[]`), and the `UxdslOutTarget` type | `outFile` |
+| `require('uxdsl-core')` as a callable (`processUxdsl(source, { fileId, … })` → `Promise<string>`) | `compile({ entry } \| { source, from }, config)` — the module now exports `compile` only |
+| `vite-plugin-uxdsl`'s `scss` / `scssLoadPaths` options (the Sass pre-pass) | none: `$var`, `@each`, `@mixin` and `@if` are handled by the shared pipeline; a `.uxdsl` file is not valid SCSS, so a Sass pass over it was a second compiler with no parity guarantee |
+
+Each removed build-config key is a hard error at load time naming its new
+home (`"theme" is not a build-config key any more — put the theme in a theme
+file next to this config …`), never a silently ignored key. The types follow:
+`UxdslConfigShared` lost `theme`, `themeFile` and `breakpoints`; `UxdslBuild`
+is `{ entry, outFile, includeTheme? }`. The playground's own `uxdsl.config.cjs`
+moved its theme into `uxdsl.theme.config.cjs` accordingly.
+
+Stability plan, phase 2 (3): CLI hygiene (`uxdsl-cli`; audit I3, I5, I10, I11).
+
+### Removed
+
+| Removed | Use instead |
+| --- | --- |
+| the `watch` command | `uxdsl build --watch` (it was an alias of it). `uxdsl watch` now fails with that one line |
+| `theme --strict` and the bare `--strict-theme` / `--strict-theme=true` / `strictTheme: true` | `--strict-theme=<family,...>` on `build` and `theme` alike, or `strictTheme: ['palette', …]`. A scope is required: the unscoped check treated every partial override — the theme model itself — as incomplete, so it flagged the documented usage and had no correct use. The bare flag is refused with the scoped form spelled out; `--strict-theme=false` points at `--no-strict-theme`, which still turns a config's `strictTheme` off for one run |
+| the `sourceMap` config key | `sourcemap`, spelled like the `--sourcemap` flag. `sourceMap` is rejected with the spelling |
+| `theme --entry` / `theme --out` | nothing: `theme` reads a theme, not an entry. It runs from a theme file alone, with no build config, and prints the same unknown-family warning `build` prints (on stderr; stdout stays one JSON document) |
+| `$schema` as a `theme --diff` row | nothing: `$schema` (any `$`-prefixed key) is editor metadata, not a family, and `--strict-theme` never counts it |
+| bare `uxdsl` compiling silently; a flag with no command (`uxdsl --entry a --out b`) compiling | bare `uxdsl` prints the help and exits 0; a flag with no command is an error pointing at `uxdsl build …` |
+| the one-page help | `uxdsl --help` (commands and global flags) and `uxdsl <command> --help` (that command's options only) |
+
+### Added
+
+- `uxdsl --version` (`-v`): the versions of `uxdsl-cli` and the `postcss-uxdsl` / `uxdsl-core` it resolved.
+- An unknown command is one line with a hint (`did you mean "uxdsl build"?`, or the command that replaced it), not the whole help.
+- `init` scaffolds `src/styles.uxdsl` — the file the user edits — and the generated `src/uxdsl-entry.uxdsl` imports it, so `generate-entry` rewriting the entry never discards hand-written styles. "Next steps" prints exactly one import path.
+- `init` for Next.js writes a `postcss.config.js` that names Next's own default plugins (`next/dist/compiled/postcss-flexbugs-fixes`, `next/dist/compiled/postcss-preset-env` with Next's options: `autoprefixer: { flexbox: 'no-2009' }`, `stage: 3`, `custom-properties: false`) ahead of `postcss-uxdsl`. A custom `postcss.config.js` replaces Next's defaults, so the previous file silently switched autoprefixing off (`user-select: none` lost its `-webkit-` prefix after `init`).
+- The `uxdsl-cli` README now describes the surface as it is — commands and flags tables, two files two jobs, watch, strict theme, source maps, diagnostics, editor support — and no longer carries per-release history.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

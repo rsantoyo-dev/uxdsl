@@ -111,7 +111,14 @@ async function main() {
   // was switched from a relative repo path (which would 404 for anyone
   // reading the installed copy, e.g. via a local file browser or an IDE's
   // node_modules README preview) to an absolute GitHub URL.
-  check('installed tarball does not include docs/ (moved to an absolute README link instead)', !fs.existsSync(path.join(installed.pkgDir, 'docs')));
+  // MIG-B7-15 (FEAT-009) later added exactly one file under docs/ on purpose:
+  // the agent guide generated from AGENTS.md, so a consumer's AI agent can
+  // read it from node_modules. The prose migration guide stays out.
+  check('installed tarball does not include docs/migration.md (moved to an absolute README link instead)', !fs.existsSync(path.join(installed.pkgDir, 'docs/migration.md')));
+  check('installed tarball ships docs/agent-guide.md and nothing else under docs/', (() => {
+    const docsDir = path.join(installed.pkgDir, 'docs');
+    return fs.existsSync(docsDir) && fs.readdirSync(docsDir).sort().join(',') === 'agent-guide.md';
+  })());
   const installedReadme = fs.readFileSync(path.join(installed.pkgDir, 'README.md'), 'utf8');
   check('installed README links migration.md via an absolute URL, not a relative path that would 404 once unshipped', /\]\(https:\/\/github\.com\/[^)]*\/docs\/migration\.md\)/.test(installedReadme));
 

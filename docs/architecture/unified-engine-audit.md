@@ -22,7 +22,7 @@ migrated. CLI/Vite/Webpack continue to delegate through the PostCSS integration.
 | Density leaked across builds and JSON was not applied by PostCSS | `language.ts`: effective defaults < per-build legacy < JSON |
 | Runtime omitted Density defaults | Same effective map in both adapters and current demos |
 | PostCSS omitted JSON Colors and Palette modes | `foundations.ts` emits both build and runtime foundation CSS |
-| Tokens differed between direct CSS, presets and a final compiler pass | `preset-engine.ts` owns normalization and alpha; final pass reuses it |
+| Tokens differed between direct CSS, presets and a final compiler pass | `language.ts`'s `tokenValueToCss` is the one value grammar for every family (foundations, typography, densities, presets, surfaces, controls) and for the author's declarations; the plugin's final pass runs over the author's nodes only (stability phase 1, audit T1) |
 | Standalone Color names acquired `-main` in browser helpers | Kind-aware normalization shared with runtime Color get/set/reset |
 | Inputs and Buttons duplicated role/state mechanics | `control-engine.ts`; family modules contain their own schema/default data |
 | Component responsive values had a separate extraction implementation | Shared `resolveResponsiveValue`; independent groups and future-only overrides tested |

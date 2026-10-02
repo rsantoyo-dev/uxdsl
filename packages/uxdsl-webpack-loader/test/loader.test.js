@@ -98,14 +98,14 @@ test('MIG-B6-20: this.addDependency() registers an @import-ed partial, so watch 
   );
 });
 
-test('MIG-B6-20: loader options arrive via getOptions() (breakpoints), not the removed this.query', async () => {
+test('MIG-B6-20: loader options arrive via getOptions(), not the removed this.query — breakpoints through the theme option', async () => {
   const dir = mkTmpDir();
   write(dir, 'panel.uxdsl', '.a { padding: xs(1rem) md(2rem); }');
   const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
 
-  // includeTheme: false — a partial breakpoints override otherwise also
-  // has to cover every name the default theme's own foundational CSS
-  // (edges/shadows/etc.) references; irrelevant to what this test checks.
+  // Stability phase 2: there is no `breakpoints` loader option; thresholds
+  // are the theme's own `breakpoints` family, here through the explicit
+  // `theme` option (a discovered theme file works the same way).
   await runWebpack({
     mode: 'development',
     context: dir,
@@ -114,7 +114,7 @@ test('MIG-B6-20: loader options arrive via getOptions() (breakpoints), not the r
     module: {
       rules: [{
         test: /\.uxdsl$/,
-        use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { includeTheme: false, breakpoints: { xs: 0, md: 900 } } }],
+        use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { includeTheme: false, theme: { breakpoints: { xs: 0, md: 900 } } } }],
       }],
     },
   });
@@ -126,7 +126,7 @@ test('MIG-B6-20: loader options arrive via getOptions() (breakpoints), not the r
 
 test('MIG-B6-20: discovers uxdsl.theme.config.cjs from rootContext when theme is omitted', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   write(dir, 'panel.uxdsl', '.a { color: palette(webpackonlybrand); }');
   const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
 
@@ -144,7 +144,7 @@ test('MIG-B6-20: discovers uxdsl.theme.config.cjs from rootContext when theme is
 
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   write(dir, 'panel.uxdsl', '.a { color: palette(webpackonlybrand); }');
   const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
 
@@ -160,4 +160,18 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
       }],
     },
   }), /UXD_REFERENCE_MISSING/);
+});
+
+test('phase 2: a theme file exporting { theme, references } fails the compilation with the loader\'s own message', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");
+  write(dir, 'panel.uxdsl', '.a { color: red; }');
+  const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
+  await assert.rejects(runWebpack({
+    mode: 'development',
+    context: dir,
+    entry,
+    output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+    module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, LOADER] }] },
+  }), /That wrapper was removed/);
 });

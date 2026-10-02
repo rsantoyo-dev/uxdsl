@@ -39,7 +39,12 @@ async function main() {
   command('build'); // Meaningful defaults: real components and heading, not just an empty entry.
   const theme = { spacing: { 4: '0.875rem' }, palette: { primary: { main: '#123456' } }, fonts: { families: { ui: 'var(--font-geist-sans)' } } };
   const references = { externalTokens: ['--font-geist-sans'] };
-  const config = value => write('uxdsl.theme.config.cjs', `module.exports = ${JSON.stringify(value)};\n`);
+  // Two files, two jobs (stability phase 2): the theme file exports the theme
+  // itself; `references` lives in the build config next to it.
+  const config = ({ theme: themeValue, references: referencesValue }) => {
+    write('uxdsl.theme.config.cjs', `module.exports = ${JSON.stringify(themeValue)};\n`);
+    write('uxdsl.config.cjs', `module.exports = ${JSON.stringify({ entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', ...(referencesValue ? { references: referencesValue } : {}) })};\n`);
+  };
   config({ theme, references });
   command('build');
   const css = output();

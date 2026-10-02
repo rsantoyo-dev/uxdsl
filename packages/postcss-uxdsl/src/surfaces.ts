@@ -1,6 +1,6 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens } from './language';
-import { compilePresetRules, mergePresetTokens, presetValueToCss } from './preset-engine';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss } from './language';
+import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
 import { buildVarName, buildNamespacedVarName } from './naming';
@@ -61,10 +61,13 @@ export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, Surfa
   return result;
 }
 
+/** Surface/Button/Input values: the one value grammar, after checking that
+ * every Density/Radius/Border/Shadow reference exists in the effective theme
+ * (the composition consumes them directly, so a dangling one is reported here
+ * with the family's own code rather than later by the reference pass). */
 export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
-  const parsed = valueParser(value);
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
-  parsed.walk(node => {
+  valueParser(value).walk(node => {
     if (node.type === 'function' && node.value === 'density') {
       const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
       if (!Object.prototype.hasOwnProperty.call(getDensityTokens(theme), key)) throw new Error(`UXD_DENSITY_REFERENCE: Undefined density ${key}.`);
@@ -76,10 +79,8 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
     const map = kind === 'radius' ? edges.radii : kind === 'border' ? edges.borders : shadows;
     const keyword = kind === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
     if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
-    Object.assign(node, { type: 'word', value: keyword || `var(${buildVarName(kind, key)})` });
-    return false;
   });
-  return presetValueToCss(parsed.toString(), 'UXD_SURFACE');
+  return tokenValueToCss(value);
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {

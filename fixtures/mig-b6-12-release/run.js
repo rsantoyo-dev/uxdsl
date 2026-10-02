@@ -97,11 +97,11 @@ async function main() {
 
   // --- UX-01: modes/typography are recognised families -----------------------
   await check('UX-01', 'modes and typography no longer warn as unknown families', () => {
-    const result = runtime.validateAndNormalizeTheme({ modes: { dark: { palette: {} } }, typography: { 'font-code': 'monospace' } });
+    const result = runtime.validateTheme({ modes: { dark: { palette: {} } }, typography: { 'font-code': 'monospace' } });
     const unknown = result.warnings.filter((w) => /Unknown theme family/.test(w.message));
     if (unknown.length) throw new Error(`still warns: ${unknown.map((w) => w.path).join(', ')}`);
     // and a real typo still does warn, or the check above proves nothing
-    const typo = runtime.validateAndNormalizeTheme({ palete: {} }).warnings.map((w) => w.path);
+    const typo = runtime.validateTheme({ palete: {} }).warnings.map((w) => w.path);
     return typo.includes('palete') ? 'typo still warns' : (() => { throw new Error('a real typo stopped warning'); })();
   });
 
@@ -151,7 +151,7 @@ async function main() {
   await check('UX-04', 'unknown flags and bad flag values fail with a message', () => {
     expectFailure(['build', '--strict-thme'], /Unknown option|Did you mean/, 'nonexistent flag');
     expectFailure(['build', '--strict-theme=pallete'], /pallete|Did you mean/, 'unknown family');
-    expectFailure(['theme', '--strict=,'], /strict/i, 'stray comma');
+    expectFailure(['theme', '--strict-theme=,'], /strict/i, 'stray comma');
     return 'all three rejected';
   });
   await check('UX-12', '--no-include-theme really suppresses :root', () => {
@@ -222,7 +222,7 @@ async function main() {
   const spawn = (...args) => require('node:child_process').spawnSync(
     process.execPath, [cli, ...args], { cwd: dir, encoding: 'utf8', maxBuffer: 32 * 1024 * 1024 });
   await check('UX-08', 'theme --diff summarises a mixed entry on stderr, stdout stays JSON', () => {
-    write('uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { primary: { main: '#00aa00' } } } };\n");
+    write('uxdsl.theme.config.cjs', "module.exports = { palette: { primary: { main: '#00aa00' } } };\n");
     const spawned = spawn('theme', '--diff');
     if (spawned.status !== 0) throw new Error(`theme --diff exited ${spawned.status}`);
     JSON.parse(spawned.stdout); // stdout must still be one JSON document

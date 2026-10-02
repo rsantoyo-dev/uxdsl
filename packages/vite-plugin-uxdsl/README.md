@@ -28,8 +28,8 @@ actively supported integration** for UXDSL in modern frontend projects.
   reaching for `document`.
 - **`?inline` works like it does for any Vite CSS import:** `import css from
   './panel.uxdsl?inline'` returns the compiled CSS as a string.
-- **Project theme discovery:** reads `uxdsl.theme.config.*`/
-  `uxdsl.theme.json` automatically, the same way `uxdsl-cli` always has.
+- **Project theme discovery:** reads `uxdsl.theme.json` /
+  `uxdsl.theme.config.{js,cjs}` automatically, the same way `uxdsl-cli` does.
 - **Full UXDSL Feature Support:** theme functions, responsive utilities and
   `@ds-*` directives — compiled through the same `compile()` pipeline the
   CLI uses, so the same entry and theme produce the same CSS everywhere.
@@ -41,6 +41,9 @@ actively supported integration** for UXDSL in modern frontend projects.
 ```bash
 npm install vite-plugin-uxdsl uxdsl-core --save-dev
 ```
+
+Works with Vite 4 and later (`peerDependencies.vite: ">=4.0.0"`, verified through
+Vite 8). `postcss` is a peer dependency that Vite already brings.
 
 ## Usage
 
@@ -104,52 +107,46 @@ Ensure your `tsconfig.json`'s `include` array covers this new file (e.g., `"incl
 uxdsl({
   theme,             // explicit theme object — skips discovery entirely when given
   references,        // same shape as postcss-uxdsl's `references` option
-  breakpoints,        // same shape as postcss-uxdsl's `breakpoints` option
   includeTheme,       // emit (or skip) the global :root token definitions — default true
   discoverTheme,      // default true; see "Project theme" below
   configRoot,         // directory theme discovery searches from — default Vite's own project root
-  scss,               // 'on' | 'off' — see "SCSS pre-pass" below; default off
-  scssLoadPaths,      // extra Sass load paths, only consulted when scss: 'on'
 })
 ```
 
 ### Project theme (`discoverTheme`, `configRoot`)
 
-When `theme` is omitted, the plugin looks for a conventional
-`uxdsl.theme.config.{cjs,js,json}`/`uxdsl.theme.json` in your Vite
-project root (Vite's resolved `root`) and compiles against it — no extra option needed for a normal
-project. `configRoot` points discovery somewhere else (a monorepo running
-Vite with a non-default `root`, for instance); `discoverTheme: false`
-always validates against the built-in default theme instead, matching
-every version of this plugin before this feature existed. An explicit
+When `theme` is omitted, the plugin looks for the project's theme file —
+`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+object (or a function returning it) — in your Vite project root (Vite's
+resolved `root`) and compiles against it; no extra option needed for a
+normal project. `configRoot` points discovery somewhere else (a monorepo
+running Vite with a non-default `root`, for instance); `discoverTheme: false`
+always validates against the built-in default theme instead. An explicit
 `theme` always wins outright, regardless of `discoverTheme`.
 
-### `breakpoints` default
+A theme file exports the theme and nothing else. `references` is a plugin
+option, never something the theme file carries — a file exporting the former
+`{ theme, references }` wrapper fails the build with a message saying so.
 
-If you do not provide `breakpoints` (and no theme — explicit or
-discovered — declares its own), the plugin uses UXDSL's shared default map:
+### Breakpoints
 
-```ts
-{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
+Thresholds are the theme's own `breakpoints` family, declared in the theme
+file (or the `theme` option) and read from there by every integration:
+
+```js
+// uxdsl.theme.config.cjs
+module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep UXDSL's defaults
 ```
 
-### SCSS pre-pass (`scss: 'on'`)
+There is no `breakpoints` plugin option. With no theme at all, the defaults
+are `{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }`.
 
-Off by default. UXDSL's own `$var`, responsive expressions (`xs()`/`md()`)
-and `@ds-*` directives don't need this at all — plain `$var`, `@each` and
-`@mixin` are already handled by `postcss-advanced-variables` inside the
-normal compile pipeline. `scss: 'on'` opts a `.uxdsl` file into a full Sass
-pre-pass (via the `sass` package, which you install yourself) before UXDSL
-compiles it, for projects that genuinely want Sass's nesting/functions/
-control-flow syntax mixed into their `.uxdsl` files. It is **not covered by
-the CLI/core/Webpack parity guarantee** the rest of this plugin has:
-Sass runs first, then the exact same `compile()` pipeline everything else
-uses runs on its output.
+### No SCSS pre-pass
 
-Through `0.5.0-beta.5` there was an `'auto'` mode that activated silently whenever the
-*host project* happened to have `sass` installed, for any reason — removed:
-a `.uxdsl` file's own syntax is not valid SCSS, so an unrelated dependency
-silently changing how every file in the project compiled was never safe.
+`$var`, `@each`, `@mixin`/`@include` and `@if` are handled by the shared
+compile pipeline itself. The former `scss: 'on'` option ran the `sass`
+package over a `.uxdsl` file first; a `.uxdsl` file's own syntax is not valid
+SCSS, so that was a second compiler with no parity guarantee, and it is gone.
 
 ---
 

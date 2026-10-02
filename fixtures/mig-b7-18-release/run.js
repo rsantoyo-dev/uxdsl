@@ -167,7 +167,9 @@ async function main() {
 
   // --- MIG-B7-15: the "before you upgrade" flow, between two real releases ----
   await check('B7-15a', '`uxdsl theme` before (published beta.6) and after (these tarballs) can be compared', () => {
-    const override = "module.exports = { theme: { typography_details: { h1: { fontWeight: '800' } } } };\n";
+    // A theme file exports the theme itself (stability phase 2); the published
+    // beta.6 accepts that shape too, so the same file serves both sides.
+    const override = "module.exports = { typography_details: { h1: { fontWeight: '800' } } };\n";
     const before = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'uxdsl-beta7-upgrade-before-'));
     fs.writeFileSync(path.join(before, 'package.json'), JSON.stringify({ name: 'before', version: '1.0.0', private: true }));
     fs.writeFileSync(path.join(before, 'uxdsl.theme.config.cjs'), override);

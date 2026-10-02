@@ -29,17 +29,18 @@ function mkTmpDir() {
 
 // --- CommonJS consumption contract ---
 
-test('MIG-B6-18: require(\'uxdsl-core\') is callable and exposes .compile', () => {
-  assert.equal(typeof core, 'function');
+test('stability phase 2: require(\'uxdsl-core\') exports compile() and nothing callable', () => {
+  // The callable default export (`processUxdsl(source, { fileId })`) was a
+  // second signature for the same pipeline; `compile()` is the API.
+  assert.equal(typeof core, 'object');
   assert.equal(typeof core.compile, 'function');
+  assert.equal(Object.keys(core).filter((k) => k !== '__esModule').join(','), 'compile');
 });
 
-test('MIG-B6-18: processUxdsl(source, options) keeps returning a Promise<string> (D3 compatibility)', async () => {
-  const result = core('.a { color: red; }', { includeTheme: false });
-  assert.ok(result instanceof Promise);
-  const css = await result;
-  assert.equal(typeof css, 'string');
-  assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
+test('stability phase 2: compile() has no breakpoints option — thresholds are the theme\'s own family', async () => {
+  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: false, theme: { breakpoints: { md: 900 } } });
+  assert.match(css, /@media \(min-width: 900px\)/);
+  assert.doesNotMatch(css, /768px/);
 });
 
 // --- Import cycles: migrated from inline-imports.test.js, now a hard error
@@ -49,9 +50,8 @@ test('MIG-B6-18: processUxdsl(source, options) keeps returning a Promise<string>
 
 test('MIG-B6-18: a real import cycle fails naming the full file chain', async () => {
   const entry = path.join(FIXTURES, 'cycle-a.uxdsl');
-  const source = fs.readFileSync(entry, 'utf8');
   await assert.rejects(
-    () => core(source, { fileId: entry }),
+    () => core.compile({ entry }),
     (err) => {
       assert.match(err.message, /^UXD_IMPORT_CYCLE: Circular import detected: /);
       assert.match(err.message, /cycle-a\.uxdsl -> .*cycle-b\.uxdsl -> .*cycle-a\.uxdsl/);
@@ -94,10 +94,9 @@ test('MIG-B6-20: compile({ source, from }) does not require `from` to be a real 
 
 test('MIG-B6-18: a non-cyclic duplicate import is inlined only once (unchanged from before)', async () => {
   const entry = path.join(FIXTURES, 'duplicate-root.uxdsl');
-  const source = fs.readFileSync(entry, 'utf8');
   // References validation is off — this fixture is about import
   // resolution, not styling. See docs/features/FEAT-002-beta-migration-hardening.md.
-  const css = await core(source, { fileId: entry, references: { mode: 'off' } });
+  const { css } = await core.compile({ entry }, { references: { mode: 'off' } });
   const occurrences = css.split('--dup-test').length - 1;
   assert.equal(occurrences, 1, 'duplicate partial should be inlined only once');
 });
@@ -114,7 +113,7 @@ test('MIG-B6-18: a nonexistent import fails, naming the importing file and the e
   // treats it as invalid and silently skips resolving it rather than
   // erroring, which would defeat the point of this test.
   const entry = write(dir, 'main.uxdsl', '@import "./missing-partial.uxdsl";\n.after { color: blue; }\n');
-  const error = await core(fs.readFileSync(entry, 'utf8'), { fileId: entry, includeTheme: false }).then(() => null, e => e);
+  const error = await core.compile({ entry }, { includeTheme: false }).then(() => null, e => e);
   assert.ok(error, 'compilation fails');
   assert.match(error.message, /main\.uxdsl:1:1/);
   assert.match(error.message, /Failed to find '\.\/missing-partial\.uxdsl'/);
@@ -126,18 +125,18 @@ test('MIG-B6-18: a nonexistent import fails, naming the importing file and the e
 // (real postcss-scss parsing, no line-splitting) closes. ---
 
 test('MIG-B6-18: an unquoted url() with "//" is left completely intact', async () => {
-  const css = await core('.a { background: url(https://example.com/a.png); }', { includeTheme: false });
+  const { css } = await core.compile({ source: '.a { background: url(https://example.com/a.png); }' }, { includeTheme: false });
   assert.match(css, /url\(https:\/\/example\.com\/a\.png\)/);
 });
 
 test('MIG-B6-18: a block comment containing a URL is left completely intact (not treated as a line comment)', async () => {
-  const css = await core('/* docs: https://uxdsl.dev */\n.a { color: red; }', { includeTheme: false });
+  const { css } = await core.compile({ source: '/* docs: https://uxdsl.dev */\n.a { color: red; }' }, { includeTheme: false });
   assert.match(css, /\/\* docs: https:\/\/uxdsl\.dev \*\//);
   assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
 
 test('MIG-B6-18: a real "//" line comment (SCSS-style, outside any URL) is still stripped by the postcss-scss syntax itself', async () => {
-  const css = await core('// a real comment\n.a { color: red; }', { includeTheme: false });
+  const { css } = await core.compile({ source: '// a real comment\n.a { color: red; }' }, { includeTheme: false });
   assert.doesNotMatch(css, /a real comment/);
   assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
@@ -149,7 +148,7 @@ test('MIG-B6-18: a real "//" line comment (SCSS-style, outside any URL) is still
 // caught). ---
 
 test('MIG-B6-18: a $var holding a responsive expression expands into a real @media block', async () => {
-  const css = await core('$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n', { includeTheme: false });
+  const { css } = await core.compile({ source: '$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n' }, { includeTheme: false });
   assert.match(css, /\.a\s*\{\s*gap:\s*1rem;?\s*\}/);
   assert.match(css, /@media \(min-width: 768px\)/);
   assert.doesNotMatch(css, /\$gap/);
@@ -163,7 +162,7 @@ test('MIG-B6-18: the same partial imported once plain and once under @media keep
   const dir = mkTmpDir();
   write(dir, 'shared.uxdsl', '.shared { color: red; }');
   const entry = write(dir, 'main.uxdsl', '@import "./shared.uxdsl";\n@import "./shared.uxdsl" (min-width: 768px);\n');
-  const css = await core(fs.readFileSync(entry, 'utf8'), { fileId: entry, includeTheme: false });
+  const { css } = await core.compile({ entry }, { includeTheme: false });
   assert.match(css, /\.shared\s*\{\s*color:\s*red;?\s*\}/);
   assert.match(css, /@media \(min-width: 768px\)[\s\S]*\.shared/);
 });
@@ -178,7 +177,7 @@ test('MIG-B6-18: the same partial imported once plain and once under @media keep
 test('MIG-B6-18: a bare package-specifier @import (not relative, not "~") resolves via node module resolution', async () => {
   const dir = mkTmpDir();
   const entry = write(dir, 'main.uxdsl', "@import 'postcss-uxdsl/theme/default-colors.css';\n.a { color: red; }\n");
-  const css = await core(fs.readFileSync(entry, 'utf8'), { fileId: entry, includeTheme: false });
+  const { css } = await core.compile({ entry }, { includeTheme: false });
   assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
 
@@ -186,8 +185,16 @@ test('MIG-B6-18: a bare package-specifier @import (not relative, not "~") resolv
 // UXDSL-specific to do — a positive control that this pipeline doesn't
 // touch ordinary CSS it doesn't need to. ---
 
+test('stability phase 2: a theme entry ends with its last rule — no /*@uxdsl-bp*/ trailer and no #uxdsl-bp-meta rule', async () => {
+  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: true });
+  assert.doesNotMatch(css, /@uxdsl-bp/);
+  assert.doesNotMatch(css, /#uxdsl-bp-meta/);
+  assert.match(css, /:root/, 'control: the theme itself is still emitted');
+  assert.ok(css.trimEnd().endsWith('}'), 'nothing is appended after the stylesheet');
+});
+
 test('MIG-B6-18 (positive control): plain native CSS with no UXDSL functions compiles unchanged', async () => {
-  const css = await core('.a {\n  color: red;\n  margin: 0 auto;\n}\n', { includeTheme: false });
+  const { css } = await core.compile({ source: '.a {\n  color: red;\n  margin: 0 auto;\n}\n' }, { includeTheme: false });
   assert.match(css, /\.a\s*\{\s*color:\s*red;\s*margin:\s*0 auto;?\s*\}/);
 });
 

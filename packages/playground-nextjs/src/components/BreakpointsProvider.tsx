@@ -1,77 +1,31 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react'
+import { createContext, useContext, useMemo, ReactNode } from 'react'
 import { useTheme } from './ThemeContext'
-import { breakpoints as runtimeBreakpoints, DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime'
+import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/language'
 
-const defaultBreakpoints = {
-  ...DEFAULT_BREAKPOINTS,
-}
+// The breakpoints of the active theme, as one read-only map for the pages that
+// need to know the thresholds (the toolbar's active-breakpoint pill, the side
+// navigation, the Density inspector).
+//
+// Read-only on purpose. Thresholds are compiled into every component's media
+// queries, so they cannot move at run time: `applyTheme({ breakpoints: { md:
+// 900 } })` is refused with UXD_THEME_STRUCTURE. Moving one is an edit to the
+// theme file and a rebuild. Simulating a width is inspection, not a change —
+// `inspectResponsiveValue` from `postcss-uxdsl/language` — and DemoBreakpoints
+// does exactly that.
 
-export type Breakpoints = typeof defaultBreakpoints
-export type BreakpointKey = keyof Breakpoints
+export type Breakpoints = Record<string, number>
+export type BreakpointKey = keyof typeof DEFAULT_BREAKPOINTS
 
-const BreakpointsContext = createContext<{
-  breakpoints: Breakpoints
-  setBreakpoints: React.Dispatch<React.SetStateAction<Breakpoints>>
-}>({
-  breakpoints: defaultBreakpoints,
-  setBreakpoints: () => {},
-})
+const BreakpointsContext = createContext<{ breakpoints: Breakpoints }>({ breakpoints: { ...DEFAULT_BREAKPOINTS } })
 
 export function BreakpointsProvider({ children }: { children: ReactNode }) {
-  const { activeThemeData, setCustomTheme, customThemeName } = useTheme()
-  const [breakpoints, setBreakpointsState] = useState(defaultBreakpoints)
-  const currentTheme = useRef({ activeThemeData, setCustomTheme, customThemeName })
-  currentTheme.current = { activeThemeData, setCustomTheme, customThemeName }
+  const { activeThemeData } = useTheme()
   const configured = JSON.stringify({ ...DEFAULT_BREAKPOINTS, ...activeThemeData?.breakpoints })
-  useEffect(() => {
-    const map = JSON.parse(configured)
-    setBreakpointsState(map)
-    runtimeBreakpoints.set(map, { replace: true })
-  }, [configured])
-
-  useEffect(() => {
-    // Sync with runtime on mount
-    // Load persisted values first (if present), then read current runtime map.
-    // This keeps the visual editor aligned with live CSS media query rewrites.
-    runtimeBreakpoints.load()
-    runtimeBreakpoints.get()
-    
-    // Small delay to allow <link> conversion to happen if needed
-    setTimeout(() => {
-      const current = runtimeBreakpoints.get()
-      if (current && Object.keys(current).length > 0) {
-        setBreakpointsState(prev => ({ ...prev, ...current }))
-      }
-    }, 100)
-
-    // Subscribe to runtime changes
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const unsubscribe = runtimeBreakpoints.subscribe((event: any) => {
-      if (event.type === 'breakpoint') {
-        const updated = runtimeBreakpoints.get()
-        setBreakpointsState(prev => ({ ...prev, ...updated }))
-        const current = currentTheme.current
-        const configuredMap = { ...DEFAULT_BREAKPOINTS, ...current.activeThemeData?.breakpoints }
-        if (Object.entries(updated).some(([name, width]) => configuredMap[name] !== width)) {
-          current.setCustomTheme(current.customThemeName || 'Custom Theme', { breakpoints: updated })
-        }
-      }
-    })
-
-    return () => {
-      unsubscribe()
-    }
-  }, [])
-
-  const setBreakpoints: React.Dispatch<React.SetStateAction<Breakpoints>> = (value) => {
-    const next = typeof value === 'function' ? value(breakpoints) : value
-    runtimeBreakpoints.set(next, { persist: true })
-  }
-
+  const value = useMemo(() => ({ breakpoints: JSON.parse(configured) as Breakpoints }), [configured])
   return (
-    <BreakpointsContext.Provider value={{ breakpoints, setBreakpoints }}>
+    <BreakpointsContext.Provider value={value}>
       {children}
     </BreakpointsContext.Provider>
   )

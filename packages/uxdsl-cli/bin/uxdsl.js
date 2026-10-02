@@ -92,18 +92,6 @@ const uxdslRuntime = loadUxDslRuntime() || {};
 const uxdslCore = loadUxDslCore();
 const uxdslConfig = loadUxDslConfig();
 
-const FALLBACK_BREAKPOINTS = {
-  xs: 0,
-  sm: 480,
-  md: 768,
-  lg: 1024,
-  xl: 1280,
-};
-
-const DEFAULT_BREAKPOINTS = uxdslRuntime.DEFAULT_BREAKPOINTS
-  ? { ...uxdslRuntime.DEFAULT_BREAKPOINTS }
-  : { ...FALLBACK_BREAKPOINTS };
-
 // MIG-B6-01 (FEAT-008): the shared top-level family registry the compiler
 // itself validates against. Only defined when the resolved postcss-uxdsl
 // install is new enough to export it — an older install falls back to
@@ -147,133 +135,167 @@ function closestMatch(value, candidates) {
   return closest;
 }
 
+// Two files, two jobs (stability phase 2, DE-10): the build config says what
+// to compile and where (entry/outFile/builds/watch/references/strictTheme/
+// sourceMap); the theme file next to it holds the theme, breakpoints
+// included. The build config is JavaScript only — a `.json` build config was
+// a third spelling of the same thing, and the theme file already covers the
+// "plain data" case.
 const CONFIG_CANDIDATES = [
   'uxdsl.config.cjs',
   'uxdsl.config.js',
-  'uxdsl.config.json',
 ];
 
-// MIG-B2-01: build config (entry/outFile/watch/references) and theme
-// (tokens + the theme's own `references`) are discovered separately, so a
-// project can add `uxdsl.theme.config.cjs` without touching
-// `uxdsl.config.cjs` at all.
-// MIG-B6-19 (FEAT-008): the candidate list itself now lives in
-// postcss-uxdsl/config (the plugin needs it too) — re-exported here
-// unchanged so existing tests/tooling that reference `THEME_CANDIDATES`
-// from this module keep working against the one real list.
+// The theme-file candidate list lives in postcss-uxdsl/config (the plugin
+// discovers the same file) — re-exported here so tests/tooling that reference
+// `THEME_CANDIDATES` from this module keep working against the one real list.
 const THEME_CANDIDATES = uxdslConfig.THEME_CANDIDATES;
+
+// Build-config keys that used to exist and now have another home. Each is a
+// hard error naming that home, never a silent no-op: a `theme:` that nobody
+// reads would compile the project against the wrong theme without a word.
+const REMOVED_CONFIG_KEYS = {
+  theme: 'put the theme in a theme file next to this config (uxdsl.theme.json, or uxdsl.theme.config.{js,cjs} exporting the theme object)',
+  themeFile: 'name the theme file uxdsl.theme.json or uxdsl.theme.config.{js,cjs} next to this config; it is discovered automatically',
+  breakpoints: 'declare "breakpoints" in the theme file — the theme is the one source of thresholds for every integration',
+  output: 'use "outFile"',
+  sourceMap: 'the key is spelled "sourcemap", like the --sourcemap flag',
+};
+
+// Commands that used to exist. Each maps to what replaces it, so the error is
+// one line with the answer in it.
+const REMOVED_COMMANDS = {
+  watch: 'uxdsl build --watch',
+};
 
 const DEFAULT_ENTRY_REL = path.join('src', 'uxdsl-entry.uxdsl');
 const DEFAULT_OUT_REL = path.join('src', 'uxdsl.css');
 
-function printHelp() {
-  console.log(`Usage: uxdsl <command> [options]
+const CLI_VERSION = require('../package.json').version;
+
+// Help is per command: `uxdsl --help` lists the commands and the global flags;
+// `uxdsl <command> --help` prints that command's options and nothing else.
+// The capability matrix (scripts/lib/capabilities.js) reads both, so a flag
+// documented here is a flag the playground has to show.
+const GENERAL_HELP = `Usage: uxdsl <command> [options]
 
 Commands:
-  init              First-run setup: creates uxdsl.config.cjs, src/uxdsl-entry.uxdsl
-                    and (Next.js) postcss.config.js if they don't exist yet.
-                    Never overwrites an existing file. Run this once per project.
-                    --multi: scaffold a theme entry + one example
-                    component entry (a "builds" array) instead — for a
-                    project that starts with a theme + several CSS-Module
-                    panels, so it doesn't need to be hand-written from
-                    the README.
-  generate-entry    Run after adding or removing .uxdsl files.
-                    Re-scan a source directory and rewrite the entry file's
-                    @import list to match every .uxdsl file found.
-  build             Compile the entry file (from uxdsl.config.cjs, --config,
-                    or --entry/--out) into a single CSS file, once.
-  watch             Same as "build", then keep rebuilding as files change.
-  theme             Print the resolved effective theme as JSON — same
-                    discovery and resolution as "build", no CSS written.
+  init              First-run setup: uxdsl.config.cjs, src/styles.uxdsl (the file you
+                    edit), the generated src/uxdsl-entry.uxdsl that imports it and,
+                    in a Next.js project, postcss.config.js. Never overwrites a file.
+  generate-entry    Rewrite the entry file's @import list from the .uxdsl files
+                    found under a directory. Run it after adding or removing files.
+  build             Compile the entry (or every entry in "builds") to CSS, once;
+                    --watch keeps rebuilding as files change.
+  theme             Print the effective theme as JSON: the same discovery and
+                    resolution as build, no CSS written.
 
-Theme Options (theme command only):
-  --diff            Print only the theme families your own config/theme
-                    file mentions, one row per leaf value, each labeled
-                    "project" (your value) or "default" (silently
-                    inherited from DEFAULT_THEME) instead of the full tree.
-                    A family you override only partly also prints a
-                    one-line summary on stderr ("palette.primary mixes
-                    your values (main) with base values (dark,
-                    contrast)"), so stdout stays clean JSON for scripts.
-  --strict          Exit non-zero if any family you declared ended up
-                    partially filled from defaults. Combine with --diff to
-                    see exactly which leaves triggered it.
-                    --strict=<family1>,<family2> scopes the check to only
-                    those families — see --strict-theme's own note under
-                    build/watch above for why this is usually what you want.
-  --contrast        Check the effective theme's text and border pairs
-                    against WCAG and print a JSON report on stdout, then
-                    exit 1 if any pair fails. Not part of "build", and
-                    cannot be combined with --diff or --strict, since each
-                    prints its own document on stdout.
+Global options:
+  --help, -h        This help. "uxdsl <command> --help" describes one command.
+  --version, -v     Print the versions of uxdsl-cli and the packages it resolved.
 
-Build/Watch Options:
-  --entry, -e       Entry .uxdsl file that contains @import statements
-  --out, -o         Output CSS file path
-  --config, -c      Path to the build config file (default: discovers
-                    uxdsl.config.cjs/.js/.json in the current directory).
-                    A theme file (uxdsl.theme.config.cjs/.js/.json, or
-                    uxdsl.theme.json) is discovered the same way, next to
-                    whichever build config was used — see that package's
-                    README for the full contract.
-  --watch, -w       (Build only) Rebuild on file changes
-  --include-theme, --no-include-theme
-                    Emit (or skip) the global :root token definitions.
-                    Defaults to true. Pass --no-include-theme for a
-                    component/CSS-Module entry that only consumes tokens
-                    a separate includeTheme entry already defines — see
-                    postcss-uxdsl's includeTheme option. Overrides
-                    "includeTheme" in uxdsl.config.cjs when passed.
-  --sourcemap, --sourcemap=inline, --no-sourcemap
-                    Emit a source map so devtools point at your .uxdsl
-                    sources instead of the compiled CSS. Bare --sourcemap
-                    means "external": writes <outFile>.map next to the CSS
-                    and appends a sourceMappingURL comment. =inline embeds
-                    the map as a data URI and writes no .map file.
-                    Defaults to off. Overrides "sourceMap" in
-                    uxdsl.config.cjs when passed.
-  --strict-theme, --no-strict-theme
-                    Fail the build (before writing anything) if a theme
-                    family you declared ended up partially filled from
-                    DEFAULT_THEME. Defaults to false — an existing
-                    project never starts failing builds it didn't ask to
-                    be stricter about. Same check as "uxdsl theme
-                    --strict", reachable from build/watch directly.
-                    Overrides "strictTheme" in uxdsl.config.cjs when
-                    passed.
-                    --strict-theme=<family1>,<family2> checks only the
-                    named families instead of every family you declared.
-                    Recommended over the bare flag for most projects: a
-                    family like typography_details documents per-key
-                    partial override as the intended pattern, so checking
-                    "every touched family" tends to fail on exactly the
-                    usage the library recommends. Scope it to the
-                    families you actually want fully specified (e.g.
-                    palette, breakpoints).
+Set UXDSL_DEBUG=1 to log which config and theme files were discovered.
+An unrecognized flag, or a flag used on the wrong command, fails with a
+suggestion instead of being ignored.
+`;
 
-Generate Entry Options:
+const COMMAND_HELP = {
+  init: `Usage: uxdsl init [--multi]
+
+Creates, without ever overwriting an existing file:
+  uxdsl.config.cjs         the build config (typed; your editor checks it)
+  src/styles.uxdsl         the file you edit — imported by the generated entry
+  src/uxdsl-entry.uxdsl    generated by "generate-entry"; do not edit it
+  postcss.config.js        Next.js projects only: Next's own default plugins
+                           plus postcss-uxdsl, since a custom file replaces
+                           Next's defaults
+and adds the uxdsl:build / uxdsl:watch scripts to package.json when missing.
+
+Options:
+  --multi           Scaffold a theme entry plus one example component entry
+                    (a "builds" array) instead of the single-entry form.
+`,
+  'generate-entry': `Usage: uxdsl generate-entry [--src <dir>] [--out <file>] [--exclude <a,b>]
+
+Rewrites the entry file's @import list to match every .uxdsl file found.
+
+Options:
   --src             Source directory to scan (default: ./src)
   --out, -o         Output file path (default: ./src/uxdsl-entry.uxdsl)
-  --exclude         Comma-separated list of files to exclude
+  --exclude         Comma-separated list of file names to leave out
+`,
+  build: `Usage: uxdsl build [options]
 
-Examples:
-  uxdsl init
-  uxdsl init --multi
-  uxdsl build
-  uxdsl build --entry src/main.uxdsl --out dist/styles.css
-  uxdsl generate-entry --src ./src --out ./src/app/uxdsl-entry.uxdsl
-  uxdsl theme --diff --strict
-  uxdsl theme --contrast
-  uxdsl build --strict-theme
+Compiles the entry from uxdsl.config.cjs (or --config, or --entry/--out) to
+one CSS file. The theme comes from the theme file next to the config
+(uxdsl.theme.json, or uxdsl.theme.config.cjs/.js exporting the theme).
 
-Set UXDSL_DEBUG=1 to log which config/theme files were discovered.
+Options:
+  --config, -c      Path to the build config (default: uxdsl.config.cjs or
+                    uxdsl.config.js in the current directory).
+  --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.
+  --out, -o         Output CSS file path (with --entry).
+  --watch, -w       Rebuild on file changes. Survives a broken edit: the last
+                    good CSS stays on disk until the next valid save.
+  --include-theme, --no-include-theme
+                    Emit (or skip) the global :root token definitions.
+                    Default true. Pass --no-include-theme for a component or
+                    CSS-Module entry that consumes tokens another entry
+                    defines. Overrides "includeTheme" in the config.
+  --sourcemap, --sourcemap=inline, --no-sourcemap
+                    Emit a source map. Bare --sourcemap means "external":
+                    writes <outFile>.map and a sourceMappingURL comment;
+                    =inline embeds it as a data URI. Default off. Overrides
+                    "sourcemap" in the config.
+  --strict-theme=<family,...>, --no-strict-theme
+                    Fail the build, before writing anything, when one of the
+                    named theme families is only partly declared by the
+                    project and the rest was filled from the base theme
+                    (e.g. --strict-theme=palette,breakpoints). A scope is
+                    required: the theme model is partial overrides, so an
+                    unscoped check flagged the recommended usage as
+                    incomplete. --no-strict-theme turns off "strictTheme"
+                    from the config for one run.
+`,
+  theme: `Usage: uxdsl theme [--config <file>] [--diff | --contrast] [--strict-theme=<family,...>]
 
-An unrecognized flag, or a real flag used on the wrong command, fails
-immediately with a suggestion (e.g. "Did you mean --strict-theme?")
-instead of being silently ignored. See the CLI README's "Strict flag
-parsing" section for the full accepted-value table.
-`);
+Prints the effective theme as JSON on stdout — the base theme with the
+project's theme file merged over it — using the same discovery as build,
+without writing CSS. Works from a theme file alone, with no build config.
+Unknown theme families are reported on stderr, as build reports them.
+
+Options:
+  --config, -c      Path to the build config, when the theme file sits next
+                    to a config outside the current directory.
+  --diff            Print only the families the theme file mentions, one row
+                    per leaf labeled "project" or "default"; a family mixing
+                    both is summarized on stderr. $schema is not a leaf.
+  --contrast        Check the effective theme's text and border pairs against
+                    WCAG, print the JSON report and exit 1 if any pair fails.
+                    Cannot be combined with --diff or --strict-theme.
+  --strict-theme=<family,...>
+                    Exit non-zero when one of the named families is only
+                    partly declared by the project. Same check as build's.
+`,
+};
+
+function printHelp(command) {
+  console.log(command && COMMAND_HELP[command] ? COMMAND_HELP[command] : GENERAL_HELP);
+}
+
+function resolvedVersion(specifier) {
+  try {
+    const mod = resolveUxDslModule(`${specifier}/package.json`);
+    return mod && mod.version ? mod.version : 'not found';
+  } catch (_) {
+    return 'not found';
+  }
+}
+
+function printVersion() {
+  console.log(`uxdsl-cli ${CLI_VERSION}`);
+  console.log(`postcss-uxdsl ${resolvedVersion('postcss-uxdsl')}`);
+  console.log(`uxdsl-core ${resolvedVersion('uxdsl-core')}`);
 }
 
 function resolvePath(maybePath, baseDir) {
@@ -296,7 +318,6 @@ function findConfigPath(cwd) {
 // postcss-uxdsl/config — re-exported here so existing tests/call sites in
 // this file keep working unchanged against the one real implementation.
 const findThemeConfigPath = uxdslConfig.findThemeConfigPath;
-const normalizeThemeExport = uxdslConfig.normalizeThemeExport;
 const warnIfLooksLikeBuildConfig = uxdslConfig.warnIfLooksLikeBuildConfig;
 
 /** Same CommonJS/`default`-interop/async-function contract as the build
@@ -337,7 +358,10 @@ function normalizeWatchGlobs(globs, cwd, entryOrEntries) {
   return result;
 }
 
-async function loadConfig(argv, cwd = process.cwd()) {
+// `themeOnly` is what `uxdsl theme` asks for: the same discovery, but a
+// project with a theme file and no build config (or no entry) is a valid
+// answer rather than "nothing to build".
+async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {}) {
   const directEntry = argv.entry || argv.e;
   const directOut = argv.out || argv.o;
   const configPathArg = argv.config || argv.c;
@@ -347,11 +371,8 @@ async function loadConfig(argv, cwd = process.cwd()) {
   let configModule = null;
 
   // Raw, unresolved values tracked across every branch below and combined
-  // into `resolvedConfig.breakpoints`/`includeTheme`/`strictTheme` in one
-  // place, once the theme (and thus `theme.breakpoints`) is known — see
-  // resolveBreakpoints/resolveIncludeTheme/resolveStrictTheme above for
-  // why this can't happen eagerly per-branch.
-  let rawBreakpoints;
+  // into `resolvedConfig.includeTheme`/`strictTheme`/`sourceMap` in one place
+  // — see resolveIncludeTheme/resolveStrictTheme below.
   let rawIncludeTheme;
   let rawStrictTheme;
   let rawSourceMap;
@@ -369,6 +390,12 @@ async function loadConfig(argv, cwd = process.cwd()) {
       if (!fs.existsSync(configPath)) {
         throw new Error(`Configuration file not found: ${configPath}`);
       }
+      if (/\.json$/i.test(configPath)) {
+        throw new Error(
+          `${configPath}: a build config is a JavaScript module (uxdsl.config.js or uxdsl.config.cjs). ` +
+          'JSON is for the theme: put theme data in uxdsl.theme.json next to the build config.'
+        );
+      }
     } else {
       configPath = findConfigPath(cwd);
     }
@@ -377,6 +404,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
       if (!configModule || typeof configModule !== 'object') {
         throw new Error(`Invalid configuration export in ${configPath}: expected an object (or a function/promise resolving to one).`);
       }
+      rejectRemovedConfigKeys(configModule, configPath);
       // MIG-B2-03 item 7: name the file AND the property, not just "invalid
       // configuration" — these two are required for buildOnce to do
       // anything at all, so catch a wrong type here instead of surfacing a
@@ -397,24 +425,22 @@ async function loadConfig(argv, cwd = process.cwd()) {
       // MIG-B6-21 (FEAT-008): validated here for the same reason as
       // includeTheme — a typo'd value ('External', true) must fail loudly
       // rather than read as "no map" and leave the user hunting for one.
-      if (configModule.sourceMap !== undefined && configModule.sourceMap !== false && configModule.sourceMap !== 'inline' && configModule.sourceMap !== 'external') {
-        throw new Error(`Invalid configuration in ${configPath}: "sourceMap" must be false, "inline" or "external".`);
+      if (configModule.sourcemap !== undefined && configModule.sourcemap !== false && configModule.sourcemap !== 'inline' && configModule.sourcemap !== 'external') {
+        throw new Error(`Invalid configuration in ${configPath}: "sourcemap" must be false, "inline" or "external".`);
       }
-      // MIG-B4-01 (FEAT-005): shared across every entry (single or
-      // `builds`) — the theme is one thing per build, so this is
-      // validated once here regardless of which branch below runs.
-      // MIG-B5-01 (FEAT-006): also accepts an array of family names —
-      // see resolveStrictTheme/normalizeStrictThemeScope for why `true`
-      // (check every touched family) isn't the only meaningful value.
+      // Shared across every entry (single or `builds`) — the theme is one
+      // thing per build, so this is validated once here regardless of which
+      // branch below runs. A boolean falls through to
+      // normalizeStrictThemeScope, which explains why a scope is required.
       if (
         configModule.strictTheme !== undefined &&
         typeof configModule.strictTheme !== 'boolean' &&
         !(Array.isArray(configModule.strictTheme) && configModule.strictTheme.every((f) => typeof f === 'string'))
       ) {
-        throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be a boolean or an array of family names.`);
+        throw new Error(`Invalid configuration in ${configPath}: "strictTheme" must be an array of family names (e.g. ['palette', 'breakpoints']).`);
       }
       rawStrictTheme = configModule.strictTheme;
-      rawSourceMap = configModule.sourceMap;
+      rawSourceMap = configModule.sourcemap;
       const baseDir = path.dirname(configPath);
 
       // MIG-B3-02: "builds" is mutually exclusive with top-level entry/
@@ -425,17 +451,18 @@ async function loadConfig(argv, cwd = process.cwd()) {
         if (!Array.isArray(configModule.builds) || configModule.builds.length === 0) {
           throw new Error(`Invalid configuration in ${configPath}: "builds" must be a non-empty array of { entry, outFile } objects.`);
         }
-        if (configModule.entry !== undefined || configModule.outFile !== undefined || configModule.output !== undefined) {
+        if (configModule.entry !== undefined || configModule.outFile !== undefined) {
           throw new Error(`Invalid configuration in ${configPath}: "builds" cannot be combined with a top-level "entry"/"outFile" — declare every entry inside "builds" instead.`);
         }
         resolvedConfig.builds = configModule.builds.map((buildEntry, index) => {
           if (!buildEntry || typeof buildEntry !== 'object') {
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}]" must be an object.`);
           }
+          rejectRemovedConfigKeys(buildEntry, configPath, `builds[${index}].`);
           if (typeof buildEntry.entry !== 'string') {
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].entry" must be a string path.`);
           }
-          if (typeof buildEntry.outFile !== 'string' && typeof buildEntry.output !== 'string') {
+          if (typeof buildEntry.outFile !== 'string') {
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].outFile" must be a string path.`);
           }
           if (buildEntry.includeTheme !== undefined && typeof buildEntry.includeTheme !== 'boolean') {
@@ -443,7 +470,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
           }
           return {
             entry: resolvePath(buildEntry.entry, baseDir),
-            outFile: resolvePath(buildEntry.outFile || buildEntry.output, baseDir),
+            outFile: resolvePath(buildEntry.outFile, baseDir),
             // Resolved to a definite boolean below, alongside the
             // single-entry case — see the `--include-theme` precedence
             // comment near the end of this function.
@@ -452,42 +479,32 @@ async function loadConfig(argv, cwd = process.cwd()) {
         });
       } else {
         resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
-        resolvedConfig.outFile = resolvePath(configModule.outFile || configModule.output, baseDir);
+        resolvedConfig.outFile = resolvePath(configModule.outFile, baseDir);
         rawIncludeTheme = configModule.includeTheme;
       }
-      rawBreakpoints = configModule.breakpoints;
       resolvedConfig.watch = configModule.watch || [];
-      resolvedConfig.theme = configModule.theme;
+      // `references` has exactly one home: the build config. A theme file
+      // carries none (its loader refuses the old { theme, references } wrapper).
       resolvedConfig.references = configModule.references;
     }
   }
 
-  // --- MIG-B2-01: theme file discovery, resolved relative to whichever
-  // file declares it (the build config's directory when one was found,
-  // the theme file's own directory otherwise), never the CLI package's. ---
+  // --- The theme file, discovered next to whichever build config was used
+  // (the build config's directory when one was found, cwd otherwise), never
+  // the CLI package's. It is the only place a theme comes from. ---
   const themeSearchDir = configPath ? path.dirname(configPath) : cwd;
-  let themeConfigPath = null;
-  if (configModule && configModule.themeFile) {
-    // `themeFile` wins over the conventional name and is resolved relative
-    // to the build config that declared it.
-    themeConfigPath = resolvePath(configModule.themeFile, themeSearchDir);
-    if (!fs.existsSync(themeConfigPath)) {
-      throw new Error(`themeFile not found: ${themeConfigPath}`);
-    }
-  } else if (!configModule || resolvedConfig.theme === undefined) {
-    // Only look for a conventional theme file when the build config didn't
-    // already declare `theme` inline — same "complete precedence" rule
-    // item 6 states for `references`, applied symmetrically to `theme` so
-    // there is one predictable rule instead of two.
-    themeConfigPath = findThemeConfigPath(themeSearchDir);
+  const themeConfigPath = findThemeConfigPath(themeSearchDir);
+  if (themeConfigPath) {
+    const { theme: fileTheme } = await loadThemeConfig(themeConfigPath);
+    resolvedConfig.theme = fileTheme;
   }
 
-  if (themeConfigPath) {
-    const { theme: fileTheme, references: fileReferences } = await loadThemeConfig(themeConfigPath);
-    if (resolvedConfig.theme === undefined) resolvedConfig.theme = fileTheme;
-    // Build config's `references` has complete precedence over the theme
-    // file's — never merged, matching item 6 exactly.
-    if (resolvedConfig.references === undefined) resolvedConfig.references = fileReferences;
+  if (themeOnly) {
+    // `uxdsl theme`: the theme (possibly none, meaning the base theme) and
+    // where it came from. No entry is needed and none is invented.
+    resolvedConfig.configPath = configPath;
+    resolvedConfig.themeConfigPath = themeConfigPath;
+    return resolvedConfig;
   }
 
   // --- item 10: a theme file with no uxdsl.config.cjs at all still works,
@@ -514,13 +531,10 @@ async function loadConfig(argv, cwd = process.cwd()) {
     return null;
   }
 
-  // MIG-B3-01: resolved once the theme is known, not eagerly per-branch
-  // above — see resolveBreakpoints/resolveIncludeTheme for why order
-  // matters here. A `--include-theme`/`--no-include-theme` flag always
-  // wins over the build config's own `includeTheme` — for `builds`, that
-  // means the flag overrides every entry uniformly; each entry's own
-  // `includeTheme` is only consulted when the flag is absent.
-  resolvedConfig.breakpoints = resolveBreakpoints(rawBreakpoints, resolvedConfig.theme && resolvedConfig.theme.breakpoints, { configPath, themeConfigPath });
+  // A `--include-theme`/`--no-include-theme` flag always wins over the build
+  // config's own `includeTheme` — for `builds`, that means the flag overrides
+  // every entry uniformly; each entry's own `includeTheme` is only consulted
+  // when the flag is absent.
   if (hasBuilds) {
     resolvedConfig.builds = resolvedConfig.builds.map((buildEntry) => ({
       ...buildEntry,
@@ -555,7 +569,7 @@ async function loadConfig(argv, cwd = process.cwd()) {
     // (loadModuleExport/loadThemeConfig already ran the real require()
     // above), so this is free information, not a second resolution pass.
     // The build config itself is watched for the same reason the theme
-    // file is: so `uxdsl watch` picks up an edit without the user having
+    // file is: so `build --watch` picks up an edit without the user having
     // to list uxdsl.config.cjs (or whatever it requires) in their own
     // `watch` array.
     const addRequireTreeToWatch = (filePath) => {
@@ -588,14 +602,9 @@ async function loadConfig(argv, cwd = process.cwd()) {
   return resolvedConfig;
 }
 
-// MIG-B3-01 (FEAT-004): `--include-theme`/config `includeTheme` and
-// `--config`'s/theme's `breakpoints` both need one resolution point,
-// applied after the theme is known, instead of being resolved eagerly
-// inside `loadConfig`'s three separate "found a config" branches — that
-// eager resolution is exactly why `theme.breakpoints` (already supported
-// and validated by the plugin) was permanently shadowed by
-// `config.breakpoints || DEFAULT_BREAKPOINTS`: the fallback ran before
-// there was ever a theme to consult.
+// MIG-B3-01 (FEAT-004): `--include-theme`/config `includeTheme` resolve at
+// one point, after every "found a config" branch, so the flag/config/default
+// precedence is written once.
 // MIG-B6-22 (FEAT-008): `--include-theme`/`--no-include-theme` arrive as
 // real booleans from minimist (bare flag or `--no-` negation), but
 // `--include-theme=false`/`=true` arrive as the strings `"false"`/`"true"`
@@ -629,7 +638,7 @@ function resolveSourceMap(flagValue, configValue) {
   }
   if (configValue === 'inline' || configValue === 'external') return configValue;
   if (configValue === false || configValue === undefined) return false;
-  throw new Error(`Invalid "sourceMap" in configuration: ${JSON.stringify(configValue)}. Expected false, "inline" or "external".`);
+  throw new Error(`Invalid "sourcemap" in configuration: ${JSON.stringify(configValue)}. Expected false, "inline" or "external".`);
 }
 
 function resolveIncludeTheme(flagValue, configValue) {
@@ -663,26 +672,22 @@ function resolveIncludeTheme(flagValue, configValue) {
 // empty string/array) so the flag > config > default chain below falls
 // through correctly instead of treating "nothing here" as "off".
 //
-// MIG-B6-22 (FEAT-008): a bare `--strict-theme`/`--strict` (no declared
-// minimist type — see main()) already arrives here as the real boolean
-// `true`, and `--no-strict-theme`/`--no-strict` as `false`; those are
-// unaffected by this function. What minimist cannot know on its own is that
-// `--strict-theme=true`/`=false` should mean the same thing as the bare
-// boolean forms — undeclared, `=value` always arrives as a string, so
-// those two literal strings used to fall into the CSV branch below and be
-// misread as a family named "true"/"false" (a silent no-op gate: "true"
-// never matches a real family, so nothing is ever flagged incomplete).
-// Matched by exact, case-insensitive value — "True,false" is a two-element
-// family list, not a mix of booleans, since a real family name can't
-// contain a comma anyway and this keeps the special case narrow.
+// MIG-B6-22 (FEAT-008): a bare `--strict-theme` (no declared minimist type —
+// see main()) arrives here as the real boolean `true`, and `--no-strict-theme`
+// as `false`. `--strict-theme=true`/`=false` arrive as strings (undeclared,
+// `=value` always does); they used to fall into the CSV branch below and be
+// misread as a family named "true"/"false" — a silent no-op gate. Each of the
+// four now gets its own answer (see strictThemeScopeRequired above), matched
+// by exact, case-insensitive value: "True,false" is a two-element family
+// list, since a real family name can't contain a comma anyway.
 //
 // `knownFamilies` (MIG-B6-01's `KNOWN_THEME_FAMILIES`) is optional so the
 // large existing pure-parsing test suite for this function keeps working
 // unchanged when it isn't passed; passing it validates every family name
 // and throws with an edit-distance suggestion for a typo (e.g. "pallete"),
-// describing where the value came from via `source` ("--strict-theme",
-// "--strict", or "strictTheme (in the config file)") so the message names
-// what was actually used, not just a fixed flag name.
+// describing where the value came from via `source` ("--strict-theme" or
+// "strictTheme (in the config file)") so the message names what was
+// actually used, not just a fixed flag name.
 //
 // `requireKnownFamilies` is a separate opt-in (only the real CLI call
 // sites in loadConfig/themeCommand pass it) for a case a code review
@@ -695,9 +700,32 @@ function resolveIncludeTheme(flagValue, configValue) {
 // worse than never having added the check, since it would look enabled.
 // A plain boolean scope (`true`/`false`, no specific families named)
 // never needed a family list to validate, so it's unaffected either way.
+// Stability phase 2: a scope is required. The bare flag (and `strictTheme:
+// true`) checked every family the project touched, and the theme model is
+// partial overrides — one `palette.primary.main` over the base, one
+// `typography_details` field — so the unscoped check flagged the usage the
+// documentation recommends as "incomplete". It had no correct use; naming
+// the families that must be complete is the only meaningful form.
+function strictThemeScopeRequired(source) {
+  const isFlag = source.startsWith('--');
+  return new Error(
+    `${source} needs a scope: name the families that must be completely declared, ` +
+    (isFlag ? `e.g. ${source}=palette,breakpoints` : "e.g. strictTheme: ['palette', 'breakpoints']") +
+    '. An unscoped check treats every partial override — the theme model itself — as incomplete, so it is not accepted.'
+  );
+}
+
 function normalizeStrictThemeScope(value, { knownFamilies, requireKnownFamilies = false, source = '--strict-theme' } = {}) {
   if (value === undefined || value === null) return undefined;
-  if (typeof value === 'boolean') return value;
+  if (value === false) return false; // --no-strict-theme: off for this run.
+  if (value === true) throw strictThemeScopeRequired(source);
+  if (typeof value === 'string') {
+    const lower = value.trim().toLowerCase();
+    if (lower === 'true') throw strictThemeScopeRequired(source);
+    if (lower === 'false') {
+      throw new Error(`Invalid value for ${source}: "false". To turn the check off, omit it${source.startsWith('--') ? ' or pass --no-strict-theme' : ''}.`);
+    }
+  }
 
   // MIG-B6-22 fix (code review): an empty overall value (`''`/`[]`) still
   // means "nothing here" — falls through to config/default, matching the
@@ -743,14 +771,11 @@ function normalizeStrictThemeScope(value, { knownFamilies, requireKnownFamilies 
   }
   if (typeof value === 'string') {
     if (value.trim() === '') return undefined;
-    const trimmedLower = value.trim().toLowerCase();
-    if (trimmedLower === 'true') return true;
-    if (trimmedLower === 'false') return false;
     return toValidatedFamilyList(value.split(','), () => JSON.stringify(value));
   }
   // Reachable when minimist auto-parses an undeclared flag's numeric-looking
   // value into a real number (`--strict-theme=5`) — not a documented form.
-  throw new Error(`Invalid value for ${source}: ${JSON.stringify(value)}. Expected true, false, or a comma-separated list of family names.`);
+  throw new Error(`Invalid value for ${source}: ${JSON.stringify(value)}. Expected a comma-separated list of family names.`);
 }
 
 function resolveStrictTheme(flagValue, configValue, { knownFamilies, requireKnownFamilies } = {}) {
@@ -761,76 +786,19 @@ function resolveStrictTheme(flagValue, configValue, { knownFamilies, requireKnow
   return false;
 }
 
-// Config-level breakpoints and theme-level breakpoints both merge onto
-// DEFAULT_BREAKPOINTS (config wins key-for-key on collision), mirroring
-// the partial-merge semantics beta.2 already established for the theme
-// itself — a project can override just `xl` without repeating `xs`/`sm`/
-// `md`/`lg`. `normalizeBpMap` already accepts every BreakpointSpec shape
-// (map, array of pairs, array of {name,min|px}), so both inputs reuse it.
-//
-// MIG-B6-19 (FEAT-008): the config always winning key-for-key is
-// unchanged (out of scope to flip), but a project silently losing a
-// theme's breakpoint value to an unrelated build config used to be
-// invisible — most often `init`'s own full default map, previously
-// written into every uxdsl.config.cjs, permanently shadowing every key a
-// theme declared. Warned once per distinct conflict (by file pair +
-// exact key/value signature), same dedup shape as
-// warnIfLooksLikeBuildConfig, so watch mode doesn't repeat it every
-// rebuild.
-const warnedBreakpointConflicts = new Map();
-
-function resolveBreakpoints(configBreakpoints, themeBreakpoints, { configPath, themeConfigPath } = {}) {
-  const merged = { ...DEFAULT_BREAKPOINTS };
-  const normalizedTheme = themeBreakpoints !== undefined ? normalizeBpMap(themeBreakpoints) : undefined;
-  const normalizedConfig = configBreakpoints !== undefined ? normalizeBpMap(configBreakpoints) : undefined;
-  if (normalizedTheme) Object.assign(merged, normalizedTheme);
-  if (normalizedConfig) Object.assign(merged, normalizedConfig);
-
-  if (normalizedTheme && normalizedConfig && configPath && themeConfigPath) {
-    const conflicts = Object.keys(normalizedConfig).filter(
-      (key) => normalizedTheme[key] !== undefined && normalizedTheme[key] !== normalizedConfig[key]
+/** Fails on a build-config key that has moved elsewhere, naming the new
+ * home. `prefix` labels a `builds[n].` entry. */
+function rejectRemovedConfigKeys(object, configPath, prefix = '') {
+  for (const key of Object.keys(REMOVED_CONFIG_KEYS)) {
+    if (!Object.prototype.hasOwnProperty.call(object, key)) continue;
+    throw new Error(
+      `Invalid configuration in ${configPath}: "${prefix}${key}" is not a build-config key any more — ${REMOVED_CONFIG_KEYS[key]}.`
     );
-    if (conflicts.length > 0) {
-      const signature = conflicts.map((key) => `${key}:${normalizedTheme[key]}->${normalizedConfig[key]}`).sort().join(',');
-      const cacheKey = `${configPath}|${themeConfigPath}`;
-      if (warnedBreakpointConflicts.get(cacheKey) !== signature) {
-        warnedBreakpointConflicts.set(cacheKey, signature);
-        console.warn(
-          `[uxdsl] Warning: ${path.basename(configPath)} and ${path.basename(themeConfigPath)} both define ` +
-          `breakpoint(s) ${conflicts.join(', ')} with different values — ${path.basename(configPath)} wins. ` +
-          'Remove the conflicting key(s) from one of the two files if this is unintentional.'
-        );
-      }
-    }
   }
-  return merged;
-}
-
-function normalizeBpMap(input) {
-  if (!input) return { ...DEFAULT_BREAKPOINTS };
-  if (Array.isArray(input)) {
-    const map = {};
-    input.forEach((it) => {
-      if (Array.isArray(it)) {
-        map[String(it[0])] = Number(it[1]);
-      } else if (it && typeof it === 'object') {
-        const name = String(it.name || '').trim();
-        const px = Number(it.min ?? it.px);
-        if (name && !Number.isNaN(px)) map[name] = px;
-      }
-    });
-    return map;
-  }
-  const map = {};
-  Object.keys(input || {}).forEach((k) => {
-    const v = input[k];
-    if (typeof v === 'number' && !Number.isNaN(v)) map[k] = v;
-  });
-  return map;
 }
 
 // Compiles one { entry, outFile, includeTheme } pair against the theme/
-// references/breakpoints every entry in a build shares. Returns the CSS to
+// references every entry in a build shares. Returns the CSS to
 // write without writing it — MIG-B3-02's multi-entry buildOnce compiles
 // every entry to memory first, so a failure partway through a `builds`
 // array leaves nothing written at all rather than some files updated and
@@ -869,7 +837,6 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   const { css: compiledCss, map, dependencies } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
-      breakpoints: sharedConfig.breakpoints || DEFAULT_BREAKPOINTS,
       theme: sharedConfig.theme,
       references: sharedConfig.references,
       includeTheme,
@@ -906,10 +873,10 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
 const warnedUnknownThemeKeys = new Set();
 
 function warnUnknownThemeKeys(theme) {
-  if (theme === undefined || typeof uxdslRuntime.validateAndNormalizeTheme !== 'function') return;
+  if (theme === undefined || typeof uxdslRuntime.validateTheme !== 'function') return;
   let warnings;
   try {
-    ({ warnings } = uxdslRuntime.validateAndNormalizeTheme(theme));
+    ({ warnings } = uxdslRuntime.validateTheme(theme));
   } catch (_) {
     return; // Diagnostic-only — must never be the reason a build fails.
   }
@@ -924,7 +891,7 @@ function warnUnknownThemeKeys(theme) {
 
 function annotateThemeError(err, config) {
   if (!err || typeof err !== 'object' || !err.keyPath || err.name === 'CssSyntaxError' || err.themeFile) return err;
-  const themeFile = config.themeConfigPath || (config.theme !== undefined ? config.configPath : null);
+  const themeFile = config.themeConfigPath;
   if (!themeFile) return err;
   err.themeFile = themeFile;
   err.message = `${path.relative(process.cwd(), themeFile)}: ${err.message}`;
@@ -942,9 +909,8 @@ function findThemeLeakSelector(css) {
   postcss.parse(css).walkRules((rule) => {
     if (found) return;
     for (const selector of postcss.list.comma(rule.selector)) {
-      const trimmed = selector.trim();
-      if (trimmed === ':root' || trimmed === '#uxdsl-bp-meta') {
-        found = trimmed;
+      if (selector.trim() === ':root') {
+        found = ':root';
         return;
       }
     }
@@ -954,21 +920,20 @@ function findThemeLeakSelector(css) {
 
 // MIG-B6-24 (FEAT-008): before writing anything (called from buildOnce
 // against each entry's already-compiled, in-memory CSS), refuses an entry
-// whose outFile is named like a CSS Module and would still define :root/
-// #uxdsl-bp-meta — Next.js (and other CSS Modules loaders) reject a bare
-// `:root` selector ("Selector :root is not pure"), and the CLI previously
-// never noticed. `includeTheme: false` is the normal way to avoid this;
-// this only catches the actual output, not just the config flag, since a
-// legacy import or explicit native CSS could still reintroduce either
-// selector even with `includeTheme: false`. Not a general CSS Modules
-// purity validator — only these two known selectors this compiler itself
-// can produce.
+// whose outFile is named like a CSS Module and would still define :root —
+// Next.js (and other CSS Modules loaders) reject a bare `:root` selector
+// ("Selector :root is not pure"), and the CLI previously never noticed.
+// `includeTheme: false` is the normal way to avoid this; this only catches
+// the actual output, not just the config flag, since a legacy import or
+// explicit native CSS could still reintroduce the selector even with
+// `includeTheme: false`. Not a general CSS Modules purity validator — only
+// the one selector this compiler itself produces for the theme.
 function assertNoThemeLeakIntoCssModule(outFile, css, label) {
   if (!/\.module\.css$/i.test(outFile)) return;
   const leaked = findThemeLeakSelector(css);
   if (!leaked) return;
   throw new Error(
-    `${label}this entry would emit :root and #uxdsl-bp-meta, which CSS Modules reject ` +
+    `${label}this entry would emit :root, which CSS Modules reject ` +
     '("Selector :root is not pure"). Set includeTheme: false for component entries.'
   );
 }
@@ -1113,7 +1078,7 @@ function commitCompiled(compiled) {
 
 // MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
 // includeTheme }) compiles several entries against the one shared theme/
-// references/breakpoints in a single `uxdsl build`/`watch` invocation,
+// references in a single `uxdsl build`/`watch` invocation,
 // instead of running the CLI once per entry. Single-entry configs
 // (config.builds absent) take the exact same path they always did —
 // entries becomes a one-element array built from config.entry/outFile/
@@ -1131,7 +1096,7 @@ async function buildOnce(config, entryIndices) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
   // ended up partially filled from DEFAULT_THEME — the same question
-  // `uxdsl theme --strict` already answers (MIG-B3-04), now reachable
+  // `uxdsl theme --strict-theme` already answers (MIG-B3-04), now reachable
   // from `build`/`watch` directly instead of requiring a separate command.
   // Checked once here, not per-entry: the theme is shared across every
   // entry, `builds` or not.
@@ -1142,19 +1107,18 @@ async function buildOnce(config, entryIndices) {
     const effectiveTheme = uxdslRuntime.resolveTheme(config.theme);
     const incomplete = findPartiallyDefaultedFamilies(config.theme, effectiveTheme, config.strictTheme);
     if (incomplete.length > 0) {
-      const scopeNote = Array.isArray(config.strictTheme) ? ` (scoped to: ${config.strictTheme.join(', ')})` : '';
       throw new Error(
-        `--strict-theme${scopeNote}: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        `--strict-theme (scoped to: ${config.strictTheme.join(', ')}): the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
         'Provide every key of these families explicitly, or drop --strict-theme/strictTheme if inheriting some of them is intentional.'
       );
     }
   }
 
-  // MIG-B5-02 (FEAT-006): `validateAndNormalizeTheme`'s "Unknown theme
+  // MIG-B5-02 (FEAT-006): `validateTheme`'s "Unknown theme
   // family" warning (MIG-B3-03) was never actually reachable from a real
   // build — only the playground's theme editor called this function at
   // all. Surfacing just `/^Unknown /`-prefixed warnings here (not the
-  // others `validateAndNormalizeTheme` can produce, e.g. color-format
+  // others `validateTheme` can produce, e.g. color-format
   // hints, which nobody asked to see from `build` and the plugin's own
   // reference-integrity pass already covers differently) closes that gap
   // without changing what a normal build reports beyond it. MIG-B5-02
@@ -1191,7 +1155,7 @@ async function buildOnce(config, entryIndices) {
 
   // MIG-B6-24 (FEAT-008): checked against every entry's actual compiled
   // output, before any of them are written — a CSS-Module-named outFile
-  // that would still define :root/#uxdsl-bp-meta fails the whole build
+  // that would still define :root fails the whole build
   // here, same as any other compile error (item 4: nothing partial gets
   // written). More than one entry emitting the theme at all (regardless
   // of outFile name) is a warning, not an error — usually intentional to
@@ -1277,8 +1241,14 @@ function diffThemeSubtree(rawNode, effectiveNode, pathPrefix) {
 // Only families the project's own theme actually mentions are shown —
 // per-leaf, labeled by provenance. A family the project never touched is
 // pure default top to bottom and adds nothing to "what's mine vs. inherited".
+// `$schema` (and any other `$`-prefixed key) is editor metadata, not a theme
+// family: it is not a project leaf and never counts as partially declared.
+function projectFamilies(rawTheme) {
+  return isPlainThemeObject(rawTheme) ? Object.keys(rawTheme).filter((key) => !key.startsWith('$')) : [];
+}
+
 function diffThemeAgainstDefaults(rawTheme, effectiveTheme) {
-  const touchedFamilies = isPlainThemeObject(rawTheme) ? Object.keys(rawTheme) : [];
+  const touchedFamilies = projectFamilies(rawTheme);
   const rows = [];
   for (const family of touchedFamilies) {
     rows.push(...diffThemeSubtree(rawTheme[family], effectiveTheme[family], [family]));
@@ -1286,7 +1256,7 @@ function diffThemeAgainstDefaults(rawTheme, effectiveTheme) {
   return rows;
 }
 
-// --strict's question is narrower than the diff itself: not "what's mine",
+// --strict-theme's question is narrower than the diff itself: not "what's mine",
 // but "did any family I explicitly declared end up partially filled by
 // defaults anyway" — the exact silent-fallback gap the CLI plugin-parity
 // report flagged as invisible.
@@ -1297,7 +1267,7 @@ function diffThemeAgainstDefaults(rawTheme, effectiveTheme) {
 // `typography_details`, mid partial-override) is never evaluated at all,
 // not just tolerated when it happens to fail.
 function findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, scope) {
-  const touchedFamilies = isPlainThemeObject(rawTheme) ? Object.keys(rawTheme) : [];
+  const touchedFamilies = projectFamilies(rawTheme);
   const candidates = Array.isArray(scope)
     ? touchedFamilies.filter((family) => scope.includes(family))
     : touchedFamilies;
@@ -1361,20 +1331,27 @@ async function themeCommand(argv, cwd = process.cwd()) {
     throw new Error('postcss-uxdsl/ds-runtime not found (or too old to export resolveTheme). Install a current postcss-uxdsl in your project or alongside the CLI.');
   }
   // MIG-B6-16 (FEAT-008): `--contrast` prints a different document on stdout, so
-  // combining it with `--diff` (or with `--strict`, which can throw before the
-  // report is read) would mean two formats on one stream. Refused explicitly
+  // combining it with `--diff` (or with `--strict-theme`, which can throw before
+  // the report is read) would mean two formats on one stream. Refused explicitly
   // rather than letting one silently win.
-  if (argv.contrast && (argv.diff || argv.strict !== undefined)) {
+  if (argv.contrast && (argv.diff || argv['strict-theme'] !== undefined)) {
     throw new Error(
-      `--contrast cannot be combined with ${argv.diff ? '--diff' : '--strict'}: ` +
+      `--contrast cannot be combined with ${argv.diff ? '--diff' : '--strict-theme'}: ` +
       'each prints its own JSON document on stdout. Run them as separate commands.'
     );
   }
+  // A usage error (no scope, an unknown family, a stray comma) is reported
+  // before anything is printed; the check itself runs after the JSON, so a
+  // script still gets the document together with the exit status.
+  const strictScope = normalizeStrictThemeScope(argv['strict-theme'], { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true, source: '--strict-theme' });
 
-  const config = await loadConfig(argv, cwd);
-  // No build config/theme file/direct args at all is not an error here —
-  // it just means "what would a zero-config build use", i.e. DEFAULT_THEME.
-  const rawTheme = config ? config.theme : undefined;
+  // The same discovery as build, from a theme file alone if that is all the
+  // project has. No theme file at all means "what a zero-config build uses",
+  // i.e. the base theme.
+  const config = await loadConfig(argv, cwd, { themeOnly: true });
+  const rawTheme = config.theme;
+  // Same diagnostic `build` prints, on stderr so stdout stays one JSON document.
+  warnUnknownThemeKeys(rawTheme);
   const effectiveTheme = uxdslRuntime.resolveTheme(rawTheme);
 
   if (argv.contrast) {
@@ -1409,17 +1386,13 @@ async function themeCommand(argv, cwd = process.cwd()) {
     for (const line of summarizeMixedEntries(output)) console.error(`[uxdsl] ${line}`);
   }
 
-  // MIG-B5-01 (FEAT-006): same scoping as `build --strict-theme` — bare
-  // `--strict` still means "every touched family" (unchanged);
-  // `--strict=palette,breakpoints` checks only those.
-  const strictScope = normalizeStrictThemeScope(argv.strict, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true, source: '--strict' });
+  // The same flag, the same scope rule and the same check as `build`.
   if (strictScope) {
     const incomplete = findPartiallyDefaultedFamilies(rawTheme, effectiveTheme, strictScope);
     if (incomplete.length > 0) {
-      const scopeNote = Array.isArray(strictScope) ? ` (scoped to: ${strictScope.join(', ')})` : '';
       throw new Error(
-        `--strict${scopeNote}: the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
-        'Provide every key of these families explicitly, or drop --strict if inheriting some of them is intentional.'
+        `--strict-theme (scoped to: ${strictScope.join(', ')}): the following theme families you declared are partially filled from defaults: ${incomplete.join(', ')}. ` +
+        'Provide every key of these families explicitly, or drop --strict-theme if inheriting some of them is intentional.'
       );
     }
   }
@@ -1782,13 +1755,8 @@ async function init(argv) {
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
   if (!fs.existsSync(configPath)) {
-    // MIG-B6-19 (FEAT-008): no `breakpoints:` here — a build config's
-    // breakpoints win key-for-key over the theme's own (see
-    // resolveBreakpoints), so writing the full default map here silently
-    // shadowed every key a project's uxdsl.theme.config.* declared,
-    // including ones it never touched. Breakpoints belong in the theme;
-    // this config only overrides one when a project deliberately wants a
-    // build-specific value the theme doesn't have.
+    // No `breakpoints:` here: they are a theme family, declared in the
+    // theme file — a build config that carries them is rejected.
     const configContent = CONFIG_TYPE_HEADER + (isMulti
       ? `const config = {
   // A theme entry (emits the shared :root definitions once) plus any
@@ -1822,6 +1790,22 @@ async function init(argv) {
   // 2. Create initial entry file(s)
   if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir);
 
+  // The file the user edits. The entry generate-entry writes is rewritten
+  // every time it runs, so styles go here and the entry imports them — it
+  // exists before generateEntry runs so the first entry already lists it.
+  const stylesPath = path.join(srcDir, 'styles.uxdsl');
+  if (!isMulti && !fs.existsSync(stylesPath)) {
+    fs.writeFileSync(stylesPath, `/* Your styles. src/uxdsl-entry.uxdsl imports this file; that entry is
+   regenerated by \`uxdsl generate-entry\`, so write here, not there. */
+
+.example {
+  @ds-surface(contained);
+  padding: density(3);
+}
+`);
+    console.log('  -> Created src/styles.uxdsl (edit this one)');
+  }
+
   if (isMulti) {
     const themeEntryPath = path.join(srcDir, 'theme.uxdsl');
     if (!fs.existsSync(themeEntryPath)) {
@@ -1844,17 +1828,29 @@ async function init(argv) {
   }
 
   // 3. Setup PostCSS (Required for Next.js, Optional/Good for Vite if not using plugin)
-  // For Next.js, we must ensure postcss-uxdsl is in postcss.config.js
-  // MIG-B6-19 (FEAT-008): no `theme` here, and none needed — the plugin
-  // discovers `uxdsl.theme.config.*`/`uxdsl.theme.json` from this same
-  // project root itself (same file the CLI build reads), so a `.css` file
-  // processed by this postcss.config.js validates against the project's
-  // real theme, not the built-in default, without any extra option.
+  // For Next.js, we must ensure postcss-uxdsl is in postcss.config.js.
+  // A custom postcss.config.js REPLACES Next's default plugin list, so the
+  // file written here names Next's own defaults first — the same modules
+  // Next loads for its default config, with the same options (see
+  // next/dist/build/webpack/config/blocks/css/plugins.js) — and only then
+  // postcss-uxdsl. Without them a project silently lost autoprefixing.
+  // No `theme` option: the plugin discovers the project's theme file itself.
   const POSTCSS_SNIPPET = `module.exports = {
   plugins: {
-    // The CLI-generated global CSS already contains the theme; the
-    // project's uxdsl.theme.config.*/uxdsl.theme.json (if any) is
-    // discovered automatically for everything else.
+    // Next.js's own default PostCSS plugins, with Next's own options. A custom
+    // postcss.config.js replaces Next's defaults, so they are named here; these
+    // are the modules Next ships and uses for its default configuration. To
+    // pin your own versions instead, install postcss-flexbugs-fixes and
+    // postcss-preset-env and use those names.
+    'next/dist/compiled/postcss-flexbugs-fixes': {},
+    'next/dist/compiled/postcss-preset-env': {
+      autoprefixer: { flexbox: 'no-2009' },
+      stage: 3,
+      features: { 'custom-properties': false },
+    },
+    // The CLI-generated global CSS already contains the theme; the project's
+    // uxdsl.theme.json / uxdsl.theme.config.{js,cjs} (if any) is discovered
+    // automatically for everything else.
     'postcss-uxdsl': { includeTheme: false },
   },
 };
@@ -1914,17 +1910,14 @@ async function init(argv) {
     console.log('3. Add more component entries to the "builds" array in uxdsl.config.cjs as the project grows.');
   } else {
     const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
-    console.log(`1. Import the generated CSS (once you run a build) — e.g.:`);
-    console.log(`   import './${outFileRel}';`);
+    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: run "npx uxdsl generate-entry" after adding or removing .uxdsl files.`);
     console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
-    console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}`);
-    if (isNext) {
-      console.log('3. Next.js: import "../uxdsl.css" from src/app/layout.tsx. Run uxdsl:watch alongside next dev to rebuild this generated file.');
-    } else if (isVite) {
-      console.log('3. Vite: import the generated CSS and run uxdsl:watch alongside vite. For direct .uxdsl imports, use vite-plugin-uxdsl instead of the generated-CSS workflow.');
+    console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}${isNext ? ' (alongside next dev)' : isVite ? ' (alongside vite)' : ''}`);
+    console.log(`3. Import the generated CSS once, from your root layout or app entry (path relative to that file):`);
+    console.log(`   import './${outFileRel}';`);
+    if (isVite) {
+      console.log('   For direct .uxdsl imports instead of a generated file, use vite-plugin-uxdsl.');
     }
-    console.log('\nTry adding a file named "src/components/Button.uxdsl" and run:');
-    console.log('  npx uxdsl generate-entry');
   }
   // MIG-B7-12 (FEAT-009): only what is true today — the extension ships as
   // a .vsix built from the repository, not from a marketplace (MIG-B7-05).
@@ -1933,7 +1926,7 @@ async function init(argv) {
   console.log('and theme JSON completion ("$schema"), see "Editor support" in the uxdsl-cli README.');
 }
 
-const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'watch', 'theme'];
+const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'theme'];
 
 // MIG-B6-22 (FEAT-008): every flag each command actually reads, as one
 // registry instead of scattered `argv.foo` reads scattered through each
@@ -1954,20 +1947,21 @@ const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'watch', 'theme'];
 const COMMAND_FLAG_SPECS = {
   init: { boolean: ['multi'], string: [], manual: [], alias: {} },
   'generate-entry': { boolean: [], string: ['src', 'out', 'exclude'], manual: [], alias: { out: 'o' } },
-  // `strict-theme`/`strict` are deliberately `manual`, not `string`: a
-  // minimist `string`-typed flag turns a BARE flag (no `=value`) into `''`
-  // instead of `true` — which silently disabled the bare `--strict-theme`/
-  // `--strict` control case entirely (caught by the manual repro in this
-  // story's test file, not by any prior automated test) since `''`
-  // normalizes to "no families", not "check everything".
+  // `strict-theme` is deliberately `manual`, not `string`: a minimist
+  // `string`-typed flag turns a BARE flag (no `=value`) into `''` instead of
+  // `true`, and `''` normalizes to "nothing here" — the bare flag would then
+  // be silently ignored instead of refused with the scoped form.
   // MIG-B6-21: `sourcemap` is `manual` for the same reason as
   // `strict-theme` — a minimist `string`-typed flag turns the bare
   // `--sourcemap` into `''` instead of `true`, which would lose the
   // "bare flag means external" case entirely.
   build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
-  watch: { boolean: [], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { entry: 'e', out: 'o', config: 'c' } },
-  theme: { boolean: ['diff', 'contrast'], string: ['entry', 'out', 'config'], manual: ['strict'], alias: { entry: 'e', out: 'o', config: 'c' } },
+  // `theme` reads a theme, not an entry: --entry/--out have nothing to say to
+  // it. Its strictness flag is build's, same name, same scope rule.
+  theme: { boolean: ['diff', 'contrast'], string: ['config'], manual: ['strict-theme'], alias: { config: 'c' } },
 };
+
+const GLOBAL_FLAGS = ['help', 'version'];
 
 function canonicalFlagName(rawArg) {
   return rawArg.replace(/^--?/, '').replace(/=.*$/, '').replace(/^no-/, '');
@@ -1986,14 +1980,21 @@ function canonicalFlagName(rawArg) {
 function parseCommandArgv(rawArgs) {
   const cmd = rawArgs[0] && !rawArgs[0].startsWith('-') ? rawArgs[0] : undefined;
   const rest = cmd !== undefined ? rawArgs.slice(1) : rawArgs;
+  // No command: only the global flags mean anything. Anything else is not
+  // silently treated as "build" — that is how `uxdsl` alone used to compile.
+  if (cmd === undefined) {
+    const stray = rest.filter((arg) => !['--help', '-h', '--version', '-v'].includes(arg));
+    if (stray.length > 0) {
+      throw new Error(`No command given (got ${stray.map((a) => JSON.stringify(a)).join(' ')}). To compile, run "uxdsl build ..."; "uxdsl --help" lists the commands.`);
+    }
+  }
   // An unrecognized command still needs *some* spec to parse its flags
-  // with — "build" (also the default-command spec) is as good as any,
-  // since main()'s switch reports "Unknown command" for it regardless and
-  // that flag-validation result is discarded below.
+  // with — "build" is as good as any, since main() reports "Unknown command"
+  // for it regardless and that flag-validation result is discarded below.
   const spec = COMMAND_FLAG_SPECS[cmd] || COMMAND_FLAG_SPECS.build;
-  const boolean = ['help', ...spec.boolean];
+  const boolean = [...GLOBAL_FLAGS, ...spec.boolean];
   const string = [...spec.string];
-  const alias = { help: 'h', ...spec.alias };
+  const alias = { help: 'h', version: 'v', ...spec.alias };
   const knownFlags = new Set([...boolean, ...string, ...spec.manual]);
 
   const unknownFlags = [];
@@ -2016,10 +2017,10 @@ function parseCommandArgv(rawArgs) {
     if (key !== '_' && Array.isArray(argv[key])) argv[key] = argv[key][argv[key].length - 1];
   }
 
-  // A command that isn't one of the five real ones gets its own clear
-  // "Unknown command" error from main()'s switch statement — reporting
-  // every one of its flags as "unknown option" too would only bury that
-  // message under noise for a typo'd command name.
+  // A command that isn't one of the four real ones gets its own clear
+  // "Unknown command" error from main() — reporting every one of its flags
+  // as "unknown option" too would only bury that message under noise for a
+  // typo'd command name.
   if ((cmd === undefined || KNOWN_COMMANDS.includes(cmd)) && unknownFlags.length > 0) {
     const knownLongFlags = [...knownFlags];
     const message = unknownFlags.map((rawArg) => {
@@ -2087,8 +2088,24 @@ async function main() {
     return;
   }
 
-  if (argv.help) {
+  if (argv.version) {
+    printVersion();
+    return;
+  }
+  // Bare `uxdsl` is a question, not a build: answer with the help, exit 0.
+  if (cmd === undefined) {
     printHelp();
+    return;
+  }
+  if (!KNOWN_COMMANDS.includes(cmd)) {
+    const replacement = REMOVED_COMMANDS[cmd];
+    const suggestion = replacement ? `use "${replacement}"` : (closestMatch(cmd, KNOWN_COMMANDS) ? `did you mean "uxdsl ${closestMatch(cmd, KNOWN_COMMANDS)}"?` : 'run "uxdsl --help" for the list of commands');
+    console.error(`[uxdsl] Unknown command "${cmd}": ${suggestion}`);
+    process.exitCode = 1;
+    return;
+  }
+  if (argv.help) {
+    printHelp(cmd);
     return;
   }
 
@@ -2101,34 +2118,20 @@ async function main() {
         await generateEntry(argv);
         break;
       case 'build':
-      case undefined: // Default to build if no command but args present
         {
           const watching = !!argv.watch;
           const config = await loadAndBuildForWatch(argv, watching);
           if (!config && !watching) {
-            // No config and no command -> Print help
-            printHelp();
-            return;
+            throw new Error('Nothing to build: no uxdsl.config.cjs, no theme file and no --entry/--out. Run "npx uxdsl init" to set a project up, or pass --entry <file> --out <file>.');
           }
           if (watching) {
             startWatch(config, argv, process.cwd(), buildOnce);
           }
         }
         break;
-      case 'watch':
-        {
-          const config = await loadAndBuildForWatch(argv, true);
-          startWatch(config, argv, process.cwd(), buildOnce);
-        }
-        break;
       case 'theme':
         await themeCommand(argv);
         break;
-      default:
-        console.error(`Unknown command: ${cmd}`);
-        printHelp();
-        process.exitCode = 1;
-        return;
     }
   } catch (err) {
     console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
@@ -2156,13 +2159,11 @@ module.exports = {
   DEFAULT_OUT_REL,
   findConfigPath,
   findThemeConfigPath,
-  normalizeThemeExport,
   warnIfLooksLikeBuildConfig,
   loadThemeConfig,
   loadConfig,
   resolvePath,
   normalizeWatchGlobs,
-  normalizeBpMap,
   resolveIncludeTheme,
   resolveStrictTheme,
   normalizeStrictThemeScope,
@@ -2171,7 +2172,6 @@ module.exports = {
   canonicalFlagName,
   COMMAND_FLAG_SPECS,
   parseCommandArgv,
-  resolveBreakpoints,
   buildOnce,
   warnUnknownThemeKeys,
   diffThemeAgainstDefaults,
@@ -2183,6 +2183,13 @@ module.exports = {
   init,
   generateEntry,
   main,
+  printHelp,
+  printVersion,
+  GENERAL_HELP,
+  COMMAND_HELP,
+  KNOWN_COMMANDS,
+  REMOVED_COMMANDS,
+  REMOVED_CONFIG_KEYS,
   commitFileIfChanged,
   commitCompiled,
   bootstrapWatchTargets,

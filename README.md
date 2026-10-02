@@ -41,13 +41,14 @@ tour of the syntax itself — responsive values, palette tokens, density,
 buttons, and live theming with no rebuild.
 
 [FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on a
-real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
-accept an optional family scope (`--strict-theme=palette,breakpoints`, or
+real consumer's CI report: `--strict-theme` (on `build` and `theme` alike)
+takes a family scope (`--strict-theme=palette,breakpoints`, or
 `strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
-the bare flag flags any documented partial theme override — not just in
-`typography_details`, but in the zero-config `palette` example this
-project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme`'s top-level "Unknown theme family"
+the unscoped check flagged any documented partial theme override — not just
+in `typography_details`, but in the zero-config `palette` example this
+project's own README uses — as "incomplete". Since the stability plan's
+phase 2 the scope is required: the bare flag is refused with the scoped form
+spelled out. `validateTheme`'s top-level "Unknown theme family"
 warning also actually prints from a real `uxdsl build`/`watch` for the
 first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.
@@ -262,6 +263,16 @@ Default values:
 ```ts
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
+
+Since stability phase 1 the theme's `breakpoints` family is the only place a
+threshold is configured. The PostCSS plugin no longer has a `breakpoints`
+option: a value forwarded to it — from a `breakpoints` key in `uxdsl.config.cjs`
+through `uxdsl-cli`/`uxdsl-core`, or from the `breakpoints` option of
+`vite-plugin-uxdsl`/`uxdsl-webpack-loader` — is ignored with a
+`UXD_OPTION_REMOVED` warning, and the build compiles against the theme's map.
+Put the thresholds in the theme (`{ "breakpoints": { "md": 800 } }` in
+`uxdsl.theme.json`, or the adapter's `theme` option). See
+[`postcss-uxdsl`'s changelog](packages/postcss-uxdsl/CHANGELOG.md).
 
 ## Quick start (Next.js playground)
 

@@ -10,7 +10,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const Ajv = require('ajv');
 
-const { KNOWN_THEME_FAMILIES, THEME_SCHEMA_KEY, validateAndNormalizeTheme } = require('../dist/ds-runtime');
+const { KNOWN_THEME_FAMILIES, THEME_SCHEMA_KEY, validateTheme } = require('../dist/ds-runtime');
 const { TYPOGRAPHY_PROPERTIES } = require('../dist/typography');
 const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../dist/buttons');
 const { INPUT_PROPERTIES, INPUT_STATES } = require('../dist/inputs');
@@ -90,6 +90,19 @@ test('MIG-B6-27: typos the compiler would silently ignore are rejected', () => {
     ['mode typo', { modes: { darkk: { palette: {} } } }],
     ['mode field typo', { modes: { dark: { palete: {} } } }],
     ['spacing value as a number', { spacing: { 1: 4 } }],
+    // Stability phase 1: the schema is generated from validateTheme's own
+    // patterns, so it rejects what the compiler rejects.
+    ['palette family that is a single color', { palette: { brand: '#000' } }],
+    ['null leaf', { palette: { primary: { light: null } } }],
+    ['empty leaf', { shadows: { 1: '' } }],
+    ['blank leaf', { shadows: { 1: '   ' } }],
+    ['semicolon in a value (CSS injection)', { typography: { 'font-x': 'a; } .hack { color: blue' } }],
+    ['brace in a value (CSS injection)', { palette: { primary: { main: 'red } .hack { color: blue' } } }],
+    ['uppercase typography role', { typography_details: { H1: { fontSize: '1rem' } } }],
+    ['uppercase palette family', { palette: { Brand: { main: '#000' } } }],
+    ['underscore in a role name', { buttons: { call_to_action: { surface: 'contained' } } }],
+    ['negative breakpoint', { breakpoints: { md: -1 } }],
+    ['empty google font spec', { fonts: { google: [''] } }],
   ];
   for (const [label, theme] of rejected) {
     assert.equal(validate(theme), false, `${label} should not validate: ${JSON.stringify(theme)}`);
@@ -124,12 +137,12 @@ test('MIG-B6-27: $schema is accepted by the schema and ignored by the validator'
   assert.ok(validate(theme), `a theme pointing at this schema must validate: ${why(theme)}`);
   // The runtime validator used to report it as an unknown family, which
   // advised against the very line the README tells people to add.
-  const result = validateAndNormalizeTheme(theme);
+  const result = validateTheme(theme);
   assert.deepEqual(result.warnings, []);
   assert.deepEqual(result.errors, []);
   // A real typo is still reported — the exemption is for this one key only.
   assert.deepEqual(
-    validateAndNormalizeTheme({ palete: {} }).warnings.map((w) => w.path),
+    validateTheme({ palete: {} }).warnings.map((w) => w.path),
     ['palete']);
 });
 
@@ -141,7 +154,13 @@ test('MIG-B6-27: the schema is generated, and --check detects drift', () => {
   const original = fs.readFileSync(schemaPath, 'utf8');
   try {
     const tampered = JSON.parse(original);
-    tampered.properties.typography_details.additionalProperties.properties.fontsize = { type: 'string' };
+    // This rewrites the real schema on disk for as long as `--check` runs, and
+    // the test files run in parallel processes: another file that loads the
+    // schema in that window sees the tampered one. The tampered key is
+    // therefore one no validation case anywhere exercises — it used to be
+    // `fontsize`, which theme-validation-matrix.test.js checks is *rejected*,
+    // and that case failed at random about one run in three.
+    tampered.properties.typography_details.additionalProperties.properties['tamper-only-this-test-uses'] = { type: 'string' };
     fs.writeFileSync(schemaPath, JSON.stringify(tampered, null, 2) + '\n');
     const drifted = spawnSync(process.execPath, [generator, '--check'], { cwd: repoRoot, encoding: 'utf8' });
     assert.notEqual(drifted.status, 0, '--check must fail on a hand-edited schema');

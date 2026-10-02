@@ -58,6 +58,11 @@ test('toned state variables resolve at theme scope and preserve explicit assignm
  const t={palette:{'brand-blue':{main:'blue',dark:'navy',contrast:'white'}},buttons:{contained:{states:{selected:{color:'red'}}}}};
  const values=inspectButtonTheme(t,0);
  assert.equal(values['--uxdsl__button__contained-tone-brand-blue-hover-bg'],'var(--uxdsl__palette__brand-blue-dark)');
- assert.equal(values['--uxdsl__button__contained-tone-brand-blue-selected-color'],'red');
+ // Stability phase 1 (T8): an explicit assignment is preserved by *not*
+ // emitting a per-tone copy of it — the component's reference falls back to
+ // the role's own variable, which says `red` for every tone.
+ assert.equal(values['--uxdsl__button__contained-selected-color'],'red');
+ assert.equal(values['--uxdsl__button__contained-tone-brand-blue-selected-color'],undefined);
+ assert.equal(buttonDeclarations(t,'contained','brand-blue').states.selected.color,'var(--uxdsl__button__contained-tone-brand-blue-selected-color, var(--uxdsl__button__contained-selected-color))');
  assert(buttonDeclarations(t,'contained','brand-blue').states.hover.background.includes('--uxdsl__button__contained-tone-brand-blue-hover-bg'));
 });

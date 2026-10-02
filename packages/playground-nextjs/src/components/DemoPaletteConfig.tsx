@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { useTheme } from './ThemeContext'
-import runtime from 'postcss-uxdsl/ds-runtime'
 
 
 const paletteCards = [
@@ -149,75 +148,20 @@ function ColorToken({ tone, variant, colorMap, activeTheme }: { tone: string, va
         const defaultHex = activeTheme?.palette?.[tone]?.[variant]
         const tokenName = defaultHex ? colorMap[defaultHex.toUpperCase()] : colorMap[hex]
 
-        if (tokenName) {
-            setLinkedToken(tokenName)
-            
-            // Register dependency in runtime
-            runtime.link(`${tone}-${variant}`, tokenName)
-
-            // Check if the linked token has an override
-            const overrideVar = `--uxdsl__color__${tokenName}`
-            const overrideValue = document.documentElement.style.getPropertyValue(overrideVar)
-            
-            // If the source token (green-600) is overridden, we should update our local state to match
-              if (overrideValue) {
-                 // We don't need to update runtime here because if the source is overridden, 
-                 // the CSS var for this palette token should already be pointing to it (via var(--...))
-                 // OR if it was manually set, we might need to fix it.
-                 
-                 // But for the UI (hex display), we need to update
-                 const newRgb = hexToRgbString(overrideValue)
-                 setColorValues({
-                    hex: overrideValue.toUpperCase(),
-                    rgb: newRgb,
-                    textColor: getContrastColor(newRgb)
-                 })
-            }
-        }
+        // The match is informational: the card names the Color token whose
+        // value this Palette variant happens to share.
+        if (tokenName) setLinkedToken(tokenName)
       }
     }
   }, [tone, variant, colorMap, linkedToken, activeTheme])
 
-  // Listen for color changes to update OUR color if we are linked
-  useEffect(() => {
-    const selfToken = `${tone}-${variant}`
-    const unsubscribe = runtime.subscribe((event) => {
-      if (event.type !== 'palette') return
-      const detail = event.detail as { token?: string; value?: string }
-      const changedToken = detail?.token
-      const value = detail?.value
-      if (!changedToken || !value) return
-
-      // Refresh this card when the same palette token changes,
-      // or when the source token this card is linked to changes.
-      if (changedToken !== selfToken && changedToken !== linkedToken) return
-
-      const nextHex = value.toUpperCase()
-      const newRgb = hexToRgbString(nextHex)
-      setColorValues({
-        hex: nextHex,
-        rgb: newRgb,
-        textColor: getContrastColor(newRgb)
-      })
-    })
-
-    return unsubscribe
-  }, [linkedToken, tone, variant])
-
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
-    const varName = `${tone}-${variant}`;
 
-    // Update runtime palette token (with persistence)
-    try {
-      runtime.updatePalette(varName, newHex, { persist: true })
-    } catch {
-      document.documentElement.style.setProperty(`--${varName}`, newHex)
-      document.documentElement.style.setProperty(`--uxdsl__palette__${varName}`, newHex)
-    }
-
-    // Keep JSON theme model aligned with runtime token updates.
+    // The theme JSON is the model: ThemeContext applies it through applyTheme,
+    // which replaces the managed stylesheet's custom property. This card, and
+    // every other consumer of palette.<tone>.<variant>, re-reads from there.
     const nextTheme = JSON.parse(JSON.stringify(activeTheme || {}))
     if (!nextTheme.palette) nextTheme.palette = {}
     if (!nextTheme.palette[tone] || typeof nextTheme.palette[tone] !== 'object') {

@@ -33,3 +33,6 @@ yarn-error.log*
 # scripts/capture-capabilities.js (its scratch copies of the fixture project)
 packages/playground-nextjs/public/runtime-sandbox/
 packages/playground-nextjs/capability-fixtures/.work/
+
+# Claude Code agent worktrees (never part of the repository)
+.claude/worktrees/

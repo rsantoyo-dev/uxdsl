@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { applyTheme, deepMergeTheme, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme, deepMergeTheme, validateTheme } from 'postcss-uxdsl/ds-runtime'
 import { createThemeScheduler } from '../lib/theme-scheduler'
 import { baseTheme, themes } from '../../themes'
 
@@ -40,27 +40,6 @@ function retireOldManagedElements() {
   for (const id of RETIRED_ELEMENT_IDS) document.getElementById(id)?.remove()
 }
 
-/**
- * Clears the inline custom properties the *old* per-token setters wrote on
- * `<html>`.
- *
- * `updatePalette`/`updateColor`/`updateSpacing` set them with
- * `documentElement.style.setProperty`, and an inline declaration beats any
- * `:root` rule — so a value left over from one theme would keep covering the
- * stylesheet after switching to another. Only `--uxdsl__*` properties are
- * removed, because those are the ones this runtime owns; anything else the app
- * or a demo put inline is left exactly where it is.
- */
-function clearRuntimeInlineTokens() {
-  const style = document.documentElement.style
-  const owned: string[] = []
-  for (let i = 0; i < style.length; i++) {
-    const property = style.item(i)
-    if (property.startsWith('--uxdsl__')) owned.push(property)
-  }
-  owned.forEach((property) => style.removeProperty(property))
-}
-
 export function ThemeContextProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(false)
   const [currentTheme, setCurrentTheme] = useState<ThemeName>('default')
@@ -92,7 +71,6 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
   const applyThemeNow = React.useCallback((theme: any) => {
     const result = applyTheme(theme, { replace: true, styleId: THEME_STYLE_ID })
     if (result.ok) {
-      clearRuntimeInlineTokens()
       retireOldManagedElements()
       if (result.warnings.length > 0) {
         // eslint-disable-next-line no-console
@@ -187,7 +165,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     const base = options?.replace ? baseTheme : (pendingCustomRef.current?.theme || activeThemeData || defaultTheme)
     const merged = deepMergeTheme(base, themeData || {})
 
-    const checked = validateAndNormalizeTheme(merged)
+    const checked = validateTheme(merged)
     if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))
 
     pendingCustomRef.current = { name, theme: merged }

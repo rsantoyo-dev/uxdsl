@@ -1,8 +1,7 @@
 {
   "name": "uxdsl",
   "version": "1.0.0",
-  "description": "This repo contains a minimal UX-focused CSS dialect (UXDSL) and tooling to load it in a Vite + React app.",
-  "main": "index.js",
+  "description": "UXDSL monorepo: a CSS dialect where breakpoints belong to the theme, not to components. Compiler (PostCSS), CLI, Vite and Webpack adapters, runtime and playground.",
   "directories": {
     "doc": "docs"
   },
@@ -42,5 +41,6 @@
   "license": "ISC",
   "devDependencies": {
     "husky": "^9.1.7"
-  }
+  },
+  "private": true
 }

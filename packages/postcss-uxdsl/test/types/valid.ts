@@ -3,7 +3,7 @@
 // worse failure than one that misses a typo, because it pushes people to
 // delete the annotation.
 import { defineConfig } from 'postcss-uxdsl/config';
-import type { UxdslConfig, UxdslTheme, UxdslThemeOverride, UxdslOptions, UxDslOptions } from 'postcss-uxdsl';
+import type { UxdslConfig, UxdslTheme, UxdslThemeOverride, UxdslOptions } from 'postcss-uxdsl';
 
 // A single-entry config.
 export const single = defineConfig({
@@ -11,9 +11,8 @@ export const single = defineConfig({
   outFile: './dist/app.css',
   includeTheme: true,
   strictTheme: ['palette', 'spacing'],
-  sourceMap: 'external',
-  watch: ['./uxdsl.theme.json'],
-  themeFile: './uxdsl.theme.json',
+  sourcemap: 'external',
+  watch: ['./tokens.json'],
   references: { mode: 'warn', externalTokens: ['--host-accent'] },
 });
 
@@ -23,8 +22,8 @@ export const multi = defineConfig({
     { entry: './src/theme.uxdsl', outFile: './dist/theme.css', includeTheme: true },
     { entry: './src/panel.uxdsl', outFile: './dist/panel.css', includeTheme: false },
   ],
-  sourceMap: false,
-  strictTheme: true,
+  sourcemap: false,
+  strictTheme: ['breakpoints'],
 });
 
 // `satisfies` is the documented route for a config assembled before the call,
@@ -86,7 +85,6 @@ export const override: UxdslThemeOverride = {
 export const options: UxdslOptions = {
   theme: override,
   includeTheme: false,
-  breakpoints: { xs: 0, md: 768 },
   discoverTheme: false,
   // A literal, not `process.cwd()`: this fixture is compiled in a project
   // without `@types/node`, which is the situation of a consumer that only has
@@ -94,17 +92,3 @@ export const options: UxdslOptions = {
   configRoot: './',
   references: { mode: 'error' },
 };
-
-// The pre-beta.6 spelling still resolves, to the same type.
-export const legacyAlias: UxDslOptions = options;
-
-// The CLI still accepts the older `output` spelling, so a working config that
-// uses it must keep type-checking once the annotation is added.
-export const legacyOutput = defineConfig({
-  entry: './src/app.uxdsl',
-  output: './dist/app.css',
-});
-
-export const legacyOutputInBuilds = defineConfig({
-  builds: [{ entry: './src/panel.uxdsl', output: './dist/panel.css' }],
-});
