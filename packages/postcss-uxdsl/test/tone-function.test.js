@@ -187,7 +187,7 @@ test('T8: making a value tone-independent at run time is a value change, not a s
     head: { appendChild(node) { if (node.id) byId.set(node.id, node); return node; } },
   };
   try {
-    runtime.__resetThemeStateForTests();
+    require('../dist/ds-runtime/apply-theme').__resetThemeStateForTests();
     assert.equal(runtime.applyTheme({}, { replace: true }).ok, true);
     // contained.hover.bg goes from tone(dark) (a variant per tone family) to
     // a fixed color (none): the variants disappear, and every compiled

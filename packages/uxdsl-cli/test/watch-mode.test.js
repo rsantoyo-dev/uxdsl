@@ -20,7 +20,7 @@
 //    so the loop from #2 could recur under a different filename.
 //
 // All four need a real chokidar watcher reacting to real filesystem
-// events, so this drives the actual `uxdsl watch` subprocess in a temp
+// events, so this drives the actual `uxdsl build --watch` subprocess in a temp
 // project rather than calling startWatch()'s internals directly.
 
 const { test } = require('node:test');
@@ -33,35 +33,36 @@ const { spawn, execFileSync } = require('node:child_process');
 const CLI_BIN = path.resolve(__dirname, '..', 'bin', 'uxdsl.js');
 const POSTCSS_UXDSL_DIR = path.resolve(__dirname, '..', '..', 'postcss-uxdsl');
 
-test('watch retargets themeFile and source globs without restarting the CLI', async t => {
+test('watch retargets the entry and source globs without restarting the CLI, and keeps following the theme file', async t => {
   const dir = mkProject();
   installPostcssUxdsl(dir);
   fs.mkdirSync(path.join(dir, 'old'));
   fs.mkdirSync(path.join(dir, 'next'));
   const put = (file, text) => fs.writeFileSync(path.join(dir, file), text);
-  const config = (folder, theme) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl'],themeFile:'./${theme}.json'};`;
+  // The theme file is discovered by name next to the config (there is no
+  // `themeFile` pointer); what a config reload retargets is the entry and the
+  // watch globs.
+  const config = (folder) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl']};`;
   put('old/entry.uxdsl', '.old { color: red; }');
   put('next/entry.uxdsl', '.next { color: blue; }');
-  put('first.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
-  put('second.json', JSON.stringify({ palette: { primary: { main: '#abcdef' } } }));
-  put('uxdsl.config.cjs', config('old', 'first'));
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  put('uxdsl.config.cjs', config('old'));
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let logs = '';
   child.stdout.on('data', data => { logs += data; });
   child.stderr.on('data', data => { logs += data; });
   const css = () => fs.existsSync(path.join(dir, 'out.css')) ? fs.readFileSync(path.join(dir, 'out.css'), 'utf8') : '';
-  await waitFor(() => css().includes('#123456'));
+  await waitFor(() => css().includes('#123456') && css().includes('.old'));
   await delay(WATCHER_SETTLE_MS);
-  put('uxdsl.config.cjs', config('next', 'second'));
-  await waitFor(() => css().includes('#abcdef'));
-  put('second.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
+  put('uxdsl.config.cjs', config('next'));
+  await waitFor(() => css().includes('.next'));
+  put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
   await waitFor(() => css().includes('#fedcba'));
   put('next/entry.uxdsl', '.updated { color: green; }');
   await waitFor(() => css().includes('.updated'));
   await delay(300);
   const before = (logs.match(/\[uxdsl\] built/g) || []).length;
-  put('first.json', '{}');
   put('old/entry.uxdsl', '.unused {}');
   await delay(700);
   assert.equal((logs.match(/\[uxdsl\] built/g) || []).length, before, logs);
@@ -124,7 +125,7 @@ test('watch mode reloads config and theme on change instead of serving a stale r
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
 
@@ -154,7 +155,7 @@ test('watch mode reloads a theme value that comes from a nested require() (e.g. 
   fs.writeFileSync(path.join(dir, 'theme-data.json'), JSON.stringify({ palette: { primary: { main: '#111111' } } }));
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = require('./theme-data.json');\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
 
@@ -216,7 +217,7 @@ test('watch mode does not treat its own output file as a source change (no self-
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config */');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let buildCount = 0;
   let output = '';
@@ -254,7 +255,7 @@ test('watch mode with a "builds" config rebuilds every entry from one watcher, e
   fs.writeFileSync(path.join(dir, 'src', 'panel.uxdsl'), '.card { color: red; }');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.config.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
@@ -287,7 +288,7 @@ test('changing outFile via a config reload does not resurrect the self-triggered
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config */');
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl', 'src/**/*.css'] };\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
@@ -321,7 +322,7 @@ test('MIG-B6-23: an initial compile error does not end the process; correcting t
   // an unresolvable token — not a broken config file (that's the next test).
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: palette(this-family-does-not-exist); }');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let exited = false;
   child.on('exit', () => { exited = true; });
@@ -349,7 +350,7 @@ test('MIG-B6-23: a config broken at startup (syntax error) recovers once fixed, 
   // "failed to *load*", the case item 1 distinguishes from a compile error.
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), 'module.exports = { this is not valid javascript');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let exited = false;
   child.on('exit', () => { exited = true; });
@@ -377,7 +378,7 @@ test('MIG-B6-23: a rebuild triggered by an unrelated watched file produces byte-
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
   fs.writeFileSync(path.join(dir, 'src', 'unused.uxdsl'), '/* not imported by anything */');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
@@ -414,7 +415,7 @@ test('MIG-B6-23: with two entries A and B, editing a partial only B imports does
   fs.writeFileSync(path.join(dir, 'src', 'b-partial.uxdsl'), '.b-partial { color: green; }');
   fs.writeFileSync(path.join(dir, 'src', 'b.uxdsl'), '@import "./b-partial.uxdsl";\n.b { color: blue; }');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let output = '';
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
@@ -443,7 +444,7 @@ test('MIG-B6-23: an output file is never observed empty or truncated while a reb
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.a { color: red; }');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
   await waitFor(() => fs.existsSync(cssPath));
@@ -492,7 +493,7 @@ test('MIG-B6-23: creating a previously-missing partial recovers the build (unkno
   // isn't a dependency of anything that compiled successfully).
   fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '@import "./missing-partial.uxdsl";\n.a { color: red; }');
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   let exited = false;
   child.on('exit', () => { exited = true; });

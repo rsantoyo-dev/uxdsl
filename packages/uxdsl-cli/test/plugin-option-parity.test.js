@@ -46,8 +46,14 @@ const CLI_SRC = path.resolve(__dirname, '..', 'bin', 'uxdsl.js');
 // these two never have anything to do there; forwarding them would be
 // dead weight, not a fix for a real gap.
 //
+// Stability phase 2: `breakpoints` is deliberately NOT forwarded by either
+// link. Thresholds are the theme's own `breakpoints` family, which reaches
+// the plugin inside `theme`; the separate plugin option is being removed by
+// the engine work and meanwhile warns and is ignored. Forwarding it would
+// keep a second source of truth alive.
+//
 // Every other option must be forwarded.
-const KNOWN_UNFORWARDED_PLUGIN_OPTIONS = new Set(['themeVar', 'spaceVar', 'colorVar', 'discoverTheme', 'configRoot']);
+const KNOWN_UNFORWARDED_PLUGIN_OPTIONS = new Set(['themeVar', 'spaceVar', 'colorVar', 'discoverTheme', 'configRoot', 'breakpoints']);
 
 function extractInterfaceKeys(source, interfaceName, fromFile) {
   const match = source.match(new RegExp(`interface ${interfaceName} \\{([\\s\\S]*?)\\n\\}`));

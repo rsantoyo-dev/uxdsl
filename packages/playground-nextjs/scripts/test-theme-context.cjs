@@ -69,16 +69,16 @@ const scenarios = {
 
   async initializationRemovesOnlyWhatItRetired(component) {
     harness.installDom();
-    // Elements the provider used to manage (retired), one it never did, and inline
-    // properties: a runtime-owned one and an app-owned one.
+    // Elements the provider used to manage (retired), one it never did, and an
+    // inline property the app owns. Nothing writes inline `--uxdsl__*` tokens any
+    // more (the per-token runtime is gone), so the provider has no inline
+    // properties of its own to clear — and must not touch the app's.
     document.head.insertAdjacentHTML('beforeend', '<link id="uxdsl-google-fonts"><style id="uxdsl-typography-theme"></style><style id="app-owned"></style>');
-    document.documentElement.style.setProperty('--uxdsl__space__1', '99px');
     document.documentElement.style.setProperty('--app-token', 'keep');
     await mount(component);
     assert.equal(document.getElementById('uxdsl-google-fonts'), null, 'retired font <link> removed');
     assert.equal(document.getElementById('uxdsl-typography-theme'), null, 'retired typography <style> removed');
     assert.ok(document.getElementById('app-owned'), 'an element the app owns is left alone');
-    assert.equal(document.documentElement.style.getPropertyValue('--uxdsl__space__1'), '', 'a stale inline runtime token no longer covers the stylesheet');
     assert.equal(document.documentElement.style.getPropertyValue('--app-token'), 'keep', 'an inline property the app owns is left alone');
   },
 
@@ -229,11 +229,6 @@ const mutations = [
     label: 'switching theme no longer cancels the queued edit',
     scenario: 'abandonedEditNeverLands',
     edit: (src) => src.replace("scheduler?.cancel()\n    pendingCustomRef.current = null\n\n    let themeToApply", "pendingCustomRef.current = null\n\n    let themeToApply"),
-  },
-  {
-    label: 'stale inline runtime tokens are no longer cleared',
-    scenario: 'initializationRemovesOnlyWhatItRetired',
-    edit: (src) => src.replace('      clearRuntimeInlineTokens()\n', ''),
   },
   {
     label: 'the retired managed elements are no longer removed',

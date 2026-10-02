@@ -1367,8 +1367,8 @@ html, body {
 .cap-sandbox__controls {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 } }
-/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
-   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so its layout row is
+   the md() rule at work. It scrolls sideways on a narrow screen. */
 .cap-frame-wrap {
   overflow-x: auto;
   border: 1px solid var(--uxdsl__palette__neutral-light);
@@ -9408,6 +9408,3 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   margin-top: 4rem;
   max-width: 800px;
 }
-
-/*@uxdsl-bp {"xs":0,"sm":480,"md":768,"lg":1024,"xl":1280}*/
-#uxdsl-bp-meta { --bp: '{"xs":0,"sm":480,"md":768,"lg":1024,"xl":1280}'; display: none; }

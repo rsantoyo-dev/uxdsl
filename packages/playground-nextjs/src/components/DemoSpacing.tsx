@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import runtime from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
 
 const MAX_LAYERS = 16
@@ -100,10 +99,6 @@ export default function DemoSpacing() {
   const [editingLevel, setEditingLevel] = useState<number | null>(null)
 
   useEffect(() => {
-    try {
-      runtime.loadPersistedSpacing()
-    } catch {}
-
     const style = getComputedStyle(document.documentElement)
     const values: Record<number, string> = {}
     spaces.forEach(s => {
@@ -114,13 +109,8 @@ export default function DemoSpacing() {
 
   const handleSpaceChange = (level: number, value: string) => {
     setComputedValues(prev => ({ ...prev, [level]: value }))
-    try {
-      runtime.updateSpacing(level, value, { persist: true })
-    } catch {
-      document.documentElement.style.setProperty(`--uxdsl__space__${level}`, value)
-    }
-
-    // Keep JSON theme model aligned with runtime token updates.
+    // The theme JSON is the model: ThemeContext applies it through applyTheme,
+    // which replaces the managed stylesheet's custom property.
     const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
     if (!nextTheme.spacing) nextTheme.spacing = {}
     nextTheme.spacing[String(level)] = value

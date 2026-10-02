@@ -124,22 +124,6 @@ test('packaged data-typo selectors consume all configured properties', async () 
   assert.equal(props['font-style'], undefined);
   assert.equal(props['text-decoration'], undefined);
 });
-test('switching theme breakpoint maps can remove previous custom names', () => {
-  const runtime = require('../dist/ds-runtime/index');
-  const previousDocument = global.document;
-  global.document = { querySelectorAll: () => [], styleSheets: [] };
-  try {
-    runtime.applyBreakpoints({ wide: 1800 }, { replace: true });
-    assert.equal(runtime.getBreakpoints().wide, 1800);
-    runtime.applyBreakpoints({ md: 900 }, { replace: true });
-    assert.equal(runtime.getBreakpoints().wide, undefined);
-    assert.equal(runtime.getBreakpoints().md, 900);
-  } finally {
-    if (previousDocument === undefined) delete global.document;
-    else global.document = previousDocument;
-  }
-});
-
 // --- MIG-B6-17 (FEAT-008): @ds-typo emits only what the theme defines ---
 // The directive used to emit a fixed list of 10-11 declarations whose literal
 // fallbacks came from a hardcoded map, not the theme: `auto` margins (which

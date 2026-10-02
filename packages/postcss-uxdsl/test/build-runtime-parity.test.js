@@ -138,7 +138,7 @@ test('build/runtime parity: applyTheme applies the resolved value, not the liter
     head: { appendChild(node) { if (node.id) byId.set(node.id, node); return node; } },
   };
   try {
-    runtime.__resetThemeStateForTests();
+    require('../dist/ds-runtime/apply-theme').__resetThemeStateForTests();
     assert.equal(runtime.applyTheme({}, { replace: true }).ok, true);
     const result = runtime.applyTheme({ palette: { brand: { main: 'palette(primary.main)' } }, radii: { x: 'radius(2)' } });
     assert.equal(result.ok, true, result.ok ? '' : result.error.message);

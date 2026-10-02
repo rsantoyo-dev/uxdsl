@@ -7,24 +7,29 @@ import type { UxdslConfig } from './types';
 // names have to be reachable from here, not only from the package root.
 export type { UxdslConfig, UxdslConfigShared, UxdslBuild, UxdslTheme, UxdslThemeOverride } from './types';
 
-// MIG-B6-19 (FEAT-008): the one shared theme-config loader — moved here
-// (out of uxdsl-cli, where this logic previously lived alone) so the
-// PostCSS plugin itself can discover a project's `uxdsl.theme.config.*`
-// without any adapter-specific glue, and so the CLI/adapters and the
-// plugin can never silently disagree about which file wins, what shape it
-// accepts, or when a file that looks like a build config is actually being
-// read as theme data.
+// The one shared theme-file loader, used by the PostCSS plugin's own
+// discovery, uxdsl-cli, vite-plugin-uxdsl and uxdsl-webpack-loader, so they
+// can never disagree about which file wins or what shape it accepts.
+//
+// Two files, two jobs (stability phase 2, DE-10):
+//   - the theme file (one of THEME_CANDIDATES) exports the theme, and only the
+//     theme: `module.exports = { palette: … }`, `uxdsl.theme.json` holding the
+//     same object, or a function (sync; async where the loader can await it)
+//     returning it. Breakpoints live here, under `breakpoints`.
+//   - the build config (`uxdsl.config.js`/`.cjs`) says what to compile and
+//     where, and carries `references`. It never carries a theme.
+// A theme file exporting the former `{ theme, references }` wrapper is refused
+// with an error that says where each half now goes, rather than being read as
+// a theme with two unknown families.
 
 export const THEME_CANDIDATES = [
   'uxdsl.theme.config.cjs',
   'uxdsl.theme.config.js',
-  'uxdsl.theme.config.json',
   'uxdsl.theme.json',
 ];
 
 export interface NormalizedThemeExport {
   theme: unknown;
-  references: unknown;
 }
 
 export interface DiscoveredTheme extends NormalizedThemeExport {
@@ -33,6 +38,10 @@ export interface DiscoveredTheme extends NormalizedThemeExport {
    * transitively `require()`d while loading — safe to feed directly into
    * a PostCSS `dependency` message or a file watcher's list. */
   dependencies: string[];
+  /** Always `undefined`: a theme file no longer carries `references` (they
+   * live in the build config or the plugin/adapter option). Kept on the type
+   * only until the plugin's own `discovered?.references` read is retired. */
+  references?: undefined;
 }
 
 export function findThemeConfigPath(dir: string): string | null {
@@ -43,53 +52,43 @@ export function findThemeConfigPath(dir: string): string | null {
   return null;
 }
 
-/** `uxdsl.theme.config.*`'s export is either `{ theme, references }`
- * (recommended when there are external variables) or a bare theme object —
- * distinguished by the presence of a `theme` or `references` key, not by
- * guessing at the shape of theme data itself. Never lets a `references` key
- * leak into the object that becomes `theme` (and, from there, generated
- * CSS): a plain theme object legitimately could have a key literally named
- * "theme" or "references" as a token family, but that's exactly the
- * ambiguity this contract accepts as the tradeoff for two vs. three files. */
-export function normalizeThemeExport(themeModule: any): NormalizedThemeExport {
-  if (
-    themeModule && typeof themeModule === 'object' && !Array.isArray(themeModule) &&
-    (Object.prototype.hasOwnProperty.call(themeModule, 'theme') || Object.prototype.hasOwnProperty.call(themeModule, 'references'))
-  ) {
-    return { theme: themeModule.theme, references: themeModule.references };
-  }
-  return { theme: themeModule, references: undefined };
+const WRAPPER_KEYS = ['theme', 'references'];
+
+/** A theme file exports the theme itself. The `{ theme, references }` wrapper
+ * it used to accept is refused, not guessed at: silently reading it as a theme
+ * would compile the project against an empty override (with `theme` and
+ * `references` reported as unknown families at best), and the two halves now
+ * have different homes. */
+export function assertBareThemeExport(themeModule: any, themeConfigPath: string): void {
+  const found = WRAPPER_KEYS.filter((key) => Object.prototype.hasOwnProperty.call(themeModule, key));
+  if (found.length === 0) return;
+  throw new Error(
+    `${themeConfigPath} exports { ${found.join(', ')} }. That wrapper was removed: a theme file exports ` +
+    'the theme itself (module.exports = { palette: { … }, … }), and `references` belongs in ' +
+    'uxdsl.config.cjs (or in the `references` option of the PostCSS plugin, Vite plugin or Webpack loader).'
+  );
 }
 
 // Keys that only make sense on a build config (uxdsl.config.cjs), never on
 // theme data. Used only as a heuristic for the warning below — not an
 // exhaustive/validated list, since a real theme family could coincidentally
 // use one of these names.
-const BUILD_CONFIG_SHAPED_KEYS = ['entry', 'outFile', 'output', 'watch', 'themeFile', 'plugins', 'builds'];
+const BUILD_CONFIG_SHAPED_KEYS = ['entry', 'outFile', 'watch', 'plugins', 'builds'];
 
-/** A theme file with no `theme`/`references` key has its entire export
- * treated as theme data (see normalizeThemeExport's own doc) — so a
- * uxdsl.config.cjs accidentally renamed/copied to a theme-file name
- * silently "works" (no throw anywhere), with its entry/outFile/watch keys
- * quietly ignored as unknown theme tokens. This is a warning, not an
- * error: a project could legitimately have a token family literally named
- * "watch" or "plugins", and warning-then-continuing costs nothing there.
- * Re-runs on every rebuild/discovery — without dedup this would repeat on
- * every keystroke in watch mode or every recompilation of a long-running
- * plugin instance. Keyed by path so an unrelated project (or a second theme
- * file) still gets its own warning, and cleared/replaced when the shape
- * actually changes so a later-introduced or later-fixed collision is still
- * caught. */
+/** A theme file's entire export is theme data, so a uxdsl.config.cjs
+ * accidentally renamed/copied to a theme-file name silently "works" (no throw
+ * anywhere), with its entry/outFile/watch keys quietly ignored as unknown
+ * theme tokens. This is a warning, not an error: a project could legitimately
+ * have a token family literally named "watch" or "plugins", and
+ * warning-then-continuing costs nothing there. Re-runs on every
+ * rebuild/discovery — without dedup this would repeat on every keystroke in
+ * watch mode or every recompilation of a long-running plugin instance. Keyed
+ * by path so an unrelated project (or a second theme file) still gets its own
+ * warning, and cleared/replaced when the shape actually changes so a
+ * later-introduced or later-fixed collision is still caught. */
 const warnedBuildConfigShapes = new Map<string, string>();
 
 export function warnIfLooksLikeBuildConfig(themeModule: any, themeConfigPath: string): void {
-  if (
-    Object.prototype.hasOwnProperty.call(themeModule, 'theme') ||
-    Object.prototype.hasOwnProperty.call(themeModule, 'references')
-  ) {
-    warnedBuildConfigShapes.delete(themeConfigPath); // Fixed since a previous warning, if any.
-    return; // Unambiguous shape (the { theme, references } form) — nothing to warn about.
-  }
   const suspects = BUILD_CONFIG_SHAPED_KEYS.filter((key) =>
     Object.prototype.hasOwnProperty.call(themeModule, key)
   );
@@ -102,11 +101,9 @@ export function warnIfLooksLikeBuildConfig(themeModule: any, themeConfigPath: st
   warnedBuildConfigShapes.set(themeConfigPath, signature);
   const keyList = suspects.map((k) => `"${k}"`).join(', ');
   console.warn(
-    `[uxdsl] Warning: ${themeConfigPath} looks like a build config (found ${keyList}), but has no ` +
-    '"theme" or "references" key, so it is being treated entirely as theme data — ' +
-    `${suspects.length > 1 ? 'those keys are' : 'that key is'} silently ignored as unknown tokens. ` +
-    'If this is really a theme file, wrap your data as { theme: { ... } }. ' +
-    'If it is a build config, rename it away from uxdsl.theme.config.*/uxdsl.theme.json.'
+    `[uxdsl] Warning: ${themeConfigPath} looks like a build config (found ${keyList}), but a theme file ` +
+    `is read entirely as theme data — ${suspects.length > 1 ? 'those keys are' : 'that key is'} silently ignored as unknown tokens. ` +
+    'If it is a build config, name it uxdsl.config.cjs instead.'
   );
 }
 
@@ -149,14 +146,23 @@ function unwrapDefault(mod: any): any {
   return mod;
 }
 
+function acceptThemeExport(mod: any, themeConfigPath: string): NormalizedThemeExport {
+  if (!mod || typeof mod !== 'object' || Array.isArray(mod)) {
+    throw new Error(`Invalid theme export in ${themeConfigPath}: expected an object (or a function returning one).`);
+  }
+  assertBareThemeExport(mod, themeConfigPath);
+  warnIfLooksLikeBuildConfig(mod, themeConfigPath);
+  return { theme: mod };
+}
+
 /** Synchronous loader — required by the PostCSS plugin, whose factory and
  * `Once()` visitor are both synchronous, including uses that read
- * `.process().css` without ever awaiting anything. An async factory export
- * (`module.exports = async () => ({...})`) can't be supported here: there
- * is nothing to await into. Rejected with a clear, actionable message
- * rather than silently falling back to a default theme, which would look
- * like a validation bug (unrelated tokens suddenly "missing") instead of
- * the actual unsupported-shape problem. */
+ * `.process().css` without ever awaiting anything. A plain object export and
+ * a synchronous factory (`module.exports = () => ({...})`) are accepted; an
+ * async factory can't be — there is nothing to await into — and is rejected
+ * with a clear, actionable message rather than silently falling back to a
+ * default theme, which would look like a validation bug (unrelated tokens
+ * suddenly "missing") instead of the actual unsupported-shape problem. */
 export function loadThemeConfigSync(themeConfigPath: string): NormalizedThemeExport {
   clearLocalRequireCache(themeConfigPath);
   let mod = require(themeConfigPath);
@@ -168,30 +174,22 @@ export function loadThemeConfigSync(themeConfigPath: string): NormalizedThemeExp
         `${themeConfigPath} exports an async function. Synchronous theme discovery ` +
         '(used by the PostCSS plugin) cannot await it — pass a resolved `theme` object ' +
         'to the plugin directly (`uxdsl({ theme: {...} })`), or use an integration that ' +
-        'supports async config (uxdsl-cli, or a future bundler adapter).'
+        'supports async config (uxdsl-cli, vite-plugin-uxdsl or uxdsl-webpack-loader).'
       );
     }
     mod = result;
   }
-  if (!mod || typeof mod !== 'object') {
-    throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
-  }
-  warnIfLooksLikeBuildConfig(mod, themeConfigPath);
-  return normalizeThemeExport(mod);
+  return acceptThemeExport(mod, themeConfigPath);
 }
 
-/** Async counterpart used by uxdsl-cli and any future bundler adapter —
- * accepts everything the sync loader does, plus an async factory export. */
+/** Async counterpart used by uxdsl-cli and the bundler adapters — accepts
+ * everything the sync loader does, plus an async factory export. */
 export async function loadThemeConfigAsync(themeConfigPath: string): Promise<NormalizedThemeExport> {
   clearLocalRequireCache(themeConfigPath);
   let mod = require(themeConfigPath);
   mod = unwrapDefault(mod);
   if (typeof mod === 'function') mod = await mod();
-  if (!mod || typeof mod !== 'object') {
-    throw new Error(`Invalid theme configuration export in ${themeConfigPath}`);
-  }
-  warnIfLooksLikeBuildConfig(mod, themeConfigPath);
-  return normalizeThemeExport(mod);
+  return acceptThemeExport(mod, themeConfigPath);
 }
 
 function dependenciesFor(themeConfigPath: string): string[] {
@@ -206,16 +204,16 @@ function dependenciesFor(themeConfigPath: string): string[] {
 export function discoverThemeSync(dir: string): DiscoveredTheme | null {
   const themeConfigPath = findThemeConfigPath(dir);
   if (!themeConfigPath) return null;
-  const { theme, references } = loadThemeConfigSync(themeConfigPath);
-  return { theme, references, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
+  const { theme } = loadThemeConfigSync(themeConfigPath);
+  return { theme, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
 }
 
-/** Async counterpart, for uxdsl-cli and any future bundler adapter. */
+/** Async counterpart, for uxdsl-cli and the bundler adapters. */
 export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme | null> {
   const themeConfigPath = findThemeConfigPath(dir);
   if (!themeConfigPath) return null;
-  const { theme, references } = await loadThemeConfigAsync(themeConfigPath);
-  return { theme, references, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
+  const { theme } = await loadThemeConfigAsync(themeConfigPath);
+  return { theme, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
 }
 
 // MIG-B6-27 (FEAT-008): identity at run time, a type checkpoint at edit time.

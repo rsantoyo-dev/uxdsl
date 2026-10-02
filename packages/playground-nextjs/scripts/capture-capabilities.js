@@ -9,7 +9,7 @@
 // what it printed — stdout, stderr, exit status and the files it wrote — to
 // src/generated/cli-captures.json. It also compiles a set of deliberately wrong sources
 // and themes through the same CLI and records the real UXD_* diagnostics, and records a
-// `uxdsl watch` session as a transcript. The pages import those JSON files.
+// `uxdsl build --watch` session as a transcript. The pages import those JSON files.
 //
 //   node scripts/capture-capabilities.js          rewrite the JSON files
 //   node scripts/capture-capabilities.js --check  fail when they differ from a fresh capture
@@ -107,8 +107,9 @@ function captureCli() {
     const map = JSON.parse(read(d, 'dist/card-mapped.css.map'));
     return { files: { 'dist/card-mapped.css': css }, facts: { mapSources: map.sources, mapFile: map.file, sourceMappingURL: (css.match(/sourceMappingURL=([^\s*]+)/) || [])[1] || null } };
   });
-  add('build-strict-theme', 'With --strict-theme: fail when a family you declared was partly filled from the base', dir, ['build', '--strict-theme'], none);
-  add('build-strict-theme-scoped', '--strict-theme scoped to the families that must be complete', dir, ['build', '--strict-theme=breakpoints'], none);
+  add('build-strict-theme', 'With --strict-theme=palette: fail when a family you named was partly filled from the base', dir, ['build', '--strict-theme=palette'], none);
+  add('build-strict-theme-scoped', '--strict-theme=breakpoints: a family this project declares completely passes', dir, ['build', '--strict-theme=breakpoints'], none);
+  add('build-strict-theme-bare', 'The bare flag is refused: a scope is required', dir, ['build', '--strict-theme'], none);
 
   add('theme', 'Print the effective theme: the base with this project\'s override merged over it', dir, ['theme'], (r) => {
     const theme = JSON.parse(r.stdout);
@@ -118,8 +119,8 @@ function captureCli() {
     const rows = JSON.parse(r.stdout);
     return { stdout: undefined, facts: { rows: rows.length, project: rows.filter((x) => x.source === 'project').length, default: rows.filter((x) => x.source === 'default').length }, excerpt: JSON.stringify(rows.filter((x) => x.path.startsWith('palette.primary.')), null, 2) };
   });
-  add('theme-strict', 'Fail when a declared family is partly inherited', dir, ['theme', '--strict'], (r) => ({ stdout: undefined, facts: { stdoutIsTheJson: (() => { try { JSON.parse(r.stdout); return true; } catch { return false; } })() } }));
-  add('theme-strict-scoped', '--strict scoped to breakpoints, which this project declares completely', dir, ['theme', '--strict=breakpoints'], () => ({ stdout: undefined }));
+  add('theme-strict', '--strict-theme=palette: fail when the named family is partly inherited', dir, ['theme', '--strict-theme=palette'], (r) => ({ stdout: undefined, facts: { stdoutIsTheJson: (() => { try { JSON.parse(r.stdout); return true; } catch { return false; } })() } }));
+  add('theme-strict-scoped', '--strict-theme=breakpoints, which this project declares completely', dir, ['theme', '--strict-theme=breakpoints'], () => ({ stdout: undefined }));
   add('theme-contrast', 'Check every text and border pair of the effective theme against WCAG', dir, ['theme', '--contrast'], (r) => {
     const report = JSON.parse(r.stdout);
     const byGroup = {};
@@ -127,10 +128,14 @@ function captureCli() {
     return { stdout: undefined, facts: { passed: report.passed, checked: report.checked.length, failures: report.failures.length, exceptions: report.exceptions.length, exceptionsMatched: report.exceptions.filter((e) => e.matched).length, exceptionIssues: report.exceptionIssues, bytes: Buffer.byteLength(r.stdout), byGroup }, excerpt: JSON.stringify(report.failures.slice(0, 2), null, 2) };
   });
 
+  add('help', 'Bare uxdsl asks, it does not build: the general help', dir, [], none);
+  add('build-help', 'Per-command help: only that command\'s options', dir, ['build', '--help'], none);
+  add('unknown-command', 'An unknown command is one line with a hint', dir, ['watch'], none);
+
   return { fixture: 'packages/playground-nextjs/capability-fixtures/cli-project', project, runs };
 }
 
-// ------------------------------------------------------------ uxdsl watch ----
+// ---------------------------------------------------- uxdsl build --watch ----
 
 function waitFor(state, test, timeoutMs, label) {
   return new Promise((resolve, reject) => {
@@ -147,7 +152,7 @@ function waitFor(state, test, timeoutMs, label) {
 
 async function captureWatch() {
   const dir = freshProject('watch');
-  const child = spawn(process.execPath, [CLI, 'watch'], { cwd: dir, env: ENV });
+  const child = spawn(process.execPath, [CLI, 'build', '--watch'], { cwd: dir, env: ENV });
   const state = { lines: [], cursor: 0 };
   const collect = (stream, name) => {
     let buffer = '';
@@ -165,7 +170,7 @@ async function captureWatch() {
   const original = fs.readFileSync(card, 'utf8');
   const steps = [];
   try {
-    steps.push({ action: 'start: uxdsl watch', output: await waitFor(state, (l) => /watching for changes/.test(l), 30000, 'the first build') });
+    steps.push({ action: 'start: uxdsl build --watch', output: await waitFor(state, (l) => /watching for changes/.test(l), 30000, 'the first build') });
     fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4);\n  border-radius: rounded(3);'));
     steps.push({ action: 'edit src/card.uxdsl: add border-radius: rounded(3);', output: await waitFor(state, (l) => /\] built /.test(l), 30000, 'the rebuild') });
     fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4) xxl(2rem);'));
@@ -176,7 +181,7 @@ async function captureWatch() {
     child.kill('SIGTERM');
   }
   const css = normalize(fs.readFileSync(path.join(dir, 'dist/app.css'), 'utf8'), dir);
-  return { argv: ['watch'], steps, facts: { finalBytes: Buffer.byteLength(css) } };
+  return { argv: ['build', '--watch'], steps, facts: { finalBytes: Buffer.byteLength(css) } };
 }
 
 // ---------------------------------------------------------- diagnostics ----

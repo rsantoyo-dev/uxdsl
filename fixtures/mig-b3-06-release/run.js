@@ -28,7 +28,7 @@ async function main() {
   // the exact "theme + N CSS Module panels" shape from the origin report.
   // MIG-B6-24 (FEAT-008): the theme entry's own outFile deliberately does
   // NOT end in .module.css — that combination (a CSS-Modules-named file
-  // that still defines :root/#uxdsl-bp-meta) is exactly what that story
+  // that still defines :root) is exactly what that story
   // makes the CLI refuse, matching real Next.js CSS Modules behavior
   // ("Selector :root is not pure"). Only the four component panels, which
   // compile with includeTheme: false and never define :root themselves,
@@ -41,21 +41,19 @@ async function main() {
       { entry: './src/panel-c.uxdsl', outFile: './src/panel-c.module.css', includeTheme: false },
       { entry: './src/panel-d.uxdsl', outFile: './src/panel-d.module.css', includeTheme: false },
     ],
+    references: { externalTokens: ['--font-geist-sans'] },
     watch: ['src/**/*.uxdsl'],
   };\n`);
 
-  // Partial theme override + externalTokens, exactly the shape MIG-B2-01/
-  // MIG-B2-02 introduced — and `breakpoints.xl` declared *only* here, never
-  // in uxdsl.config.cjs, to exercise MIG-B3-01's theme-breakpoints fix.
-  // Every other family (spacing, the rest of palette, typography_details,
-  // densities, ...) is left to DEFAULT_THEME entirely.
+  // Partial theme override; `references` sits in uxdsl.config.cjs above
+  // (stability phase 2: a theme file exports the theme itself). `breakpoints`
+  // is a theme family, so it is declared here and nowhere else. Every other
+  // family (spacing, the rest of palette, typography_details, densities, ...)
+  // is left to DEFAULT_THEME entirely.
   write('uxdsl.theme.config.cjs', `module.exports = {
-    theme: {
-      palette: { primary: { main: '#123456' } },
-      fonts: { families: { ui: 'var(--font-geist-sans)' } },
-      breakpoints: { xl: 1440 },
-    },
-    references: { externalTokens: ['--font-geist-sans'] },
+    palette: { primary: { main: '#123456' } },
+    fonts: { families: { ui: 'var(--font-geist-sans)' } },
+    breakpoints: { xl: 1440 },
   };\n`);
 
   write('src/theme.uxdsl', '/* theme-only entry — no component rules of its own */');
@@ -78,15 +76,16 @@ async function main() {
     d: read('panel-d.module.css'),
   };
 
-  // --- Central assertion: no duplicate :root/#uxdsl-bp-meta across entries ---
+  // --- Central assertion: exactly one entry defines :root ---
   for (const key of ['a', 'b', 'c', 'd']) {
     assert.doesNotMatch(outputs[key], /:root/, `panel-${key} (includeTheme: false) must not define :root`);
   }
   assert.match(outputs.theme, /:root/, 'the theme entry must still define :root');
+  // Stability phase 2: the `#uxdsl-bp-meta` marker that used to trail a theme
+  // entry (and was counted here as a proxy for "one theme entry") is gone.
   const combined = Object.values(outputs).join('\n');
-  const bpMetaCount = (combined.match(/#uxdsl-bp-meta/g) || []).length;
-  assert.equal(bpMetaCount, 1, `expected exactly one #uxdsl-bp-meta across all 5 entries; got ${bpMetaCount}`);
-  console.log('PASS: zero duplicate :root/#uxdsl-bp-meta across 5 tarball-installed CLI-built entries.');
+  assert.doesNotMatch(combined, /#uxdsl-bp-meta|@uxdsl-bp/, 'no entry carries the removed breakpoint marker');
+  console.log('PASS: exactly one of 5 tarball-installed CLI-built entries defines :root, and none carries a breakpoint marker.');
 
   // --- Breakpoint declared only in the theme file reaches every entry ---
   assert.match(outputs.a, /@media \(min-width: 1440px\)/, 'theme-only breakpoints.xl must reach a component entry\'s own responsive declarations');

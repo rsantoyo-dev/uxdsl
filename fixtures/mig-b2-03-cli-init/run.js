@@ -92,6 +92,9 @@ async function main() {
   check('init exits 0 in an empty project with a minimal package.json', init1.ok && init1.code === 0);
   check('init creates uxdsl.config.cjs', fs.existsSync(path.join(project, 'uxdsl.config.cjs')));
   check('init creates src/uxdsl-entry.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')));
+  check('init creates src/styles.uxdsl, the file the user edits', fs.existsSync(path.join(project, 'src', 'styles.uxdsl')));
+  check('the generated entry imports src/styles.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && /@import '\.\/styles\.uxdsl';/.test(fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')));
+  check('init prints exactly one import path', init1.output.split('\n').filter((l) => /^\s*import '/.test(l)).length === 1);
   check('init does NOT create postcss.config.js (no Next.js marker present)', !fs.existsSync(path.join(project, 'postcss.config.js')));
   check('init output documents the generated CSS import and watch command', /src\/uxdsl\.css/.test(init1.output) && /uxdsl:watch/.test(init1.output));
   const entryContent = fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'))
@@ -114,7 +117,7 @@ async function main() {
   }
 
   // --- 5: a second init changes nothing ---
-  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), 'package.json'];
+  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), path.join('src', 'styles.uxdsl'), 'package.json'];
   const before = snapshotHashes(project, trackedFiles);
   const init2 = runCli(['init'], project);
   const after = snapshotHashes(project, trackedFiles);
@@ -140,6 +143,12 @@ async function main() {
   const nextInit = runCli(['init'], nextProject);
   check('with a next.config.js marker present, init creates postcss.config.js', nextInit.ok && fs.existsSync(path.join(nextProject, 'postcss.config.js')));
   check('the created postcss.config.js references postcss-uxdsl', fs.existsSync(path.join(nextProject, 'postcss.config.js')) && fs.readFileSync(path.join(nextProject, 'postcss.config.js'), 'utf8').includes('postcss-uxdsl'));
+  check('the created postcss.config.js keeps Next\'s default plugins (flexbugs-fixes, preset-env) ahead of postcss-uxdsl', (() => {
+    const file = path.join(nextProject, 'postcss.config.js');
+    if (!fs.existsSync(file)) return false;
+    const keys = Object.keys(require(file).plugins);
+    return keys.join(',') === 'next/dist/compiled/postcss-flexbugs-fixes,next/dist/compiled/postcss-preset-env,postcss-uxdsl';
+  })());
 
   // --- 8: actionable error messages ---
   const missingEntry = runCli(['build', '--entry', 'src/does-not-exist.uxdsl', '--out', 'src/out.css'], project);

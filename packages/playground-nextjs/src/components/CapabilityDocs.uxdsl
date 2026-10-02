@@ -154,8 +154,8 @@
   align-items: start;
 }
 
-/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
-   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so its layout row is
+   the md() rule at work. It scrolls sideways on a narrow screen. */
 .cap-frame-wrap {
   overflow-x: auto;
   border: 1px solid palette(neutral-light);

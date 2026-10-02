@@ -11,9 +11,8 @@ export const single = defineConfig({
   outFile: './dist/app.css',
   includeTheme: true,
   strictTheme: ['palette', 'spacing'],
-  sourceMap: 'external',
-  watch: ['./uxdsl.theme.json'],
-  themeFile: './uxdsl.theme.json',
+  sourcemap: 'external',
+  watch: ['./tokens.json'],
   references: { mode: 'warn', externalTokens: ['--host-accent'] },
 });
 
@@ -23,8 +22,8 @@ export const multi = defineConfig({
     { entry: './src/theme.uxdsl', outFile: './dist/theme.css', includeTheme: true },
     { entry: './src/panel.uxdsl', outFile: './dist/panel.css', includeTheme: false },
   ],
-  sourceMap: false,
-  strictTheme: true,
+  sourcemap: false,
+  strictTheme: ['breakpoints'],
 });
 
 // `satisfies` is the documented route for a config assembled before the call,
@@ -93,14 +92,3 @@ export const options: UxdslOptions = {
   configRoot: './',
   references: { mode: 'error' },
 };
-
-// The CLI still accepts the older `output` spelling, so a working config that
-// uses it must keep type-checking once the annotation is added.
-export const legacyOutput = defineConfig({
-  entry: './src/app.uxdsl',
-  output: './dist/app.css',
-});
-
-export const legacyOutputInBuilds = defineConfig({
-  builds: [{ entry: './src/panel.uxdsl', output: './dist/panel.css' }],
-});

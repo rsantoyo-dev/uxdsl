@@ -142,7 +142,7 @@ function throughApplyTheme(theme) {
   const previous = globalThis.document;
   globalThis.document = makeDocument();
   try {
-    runtime.__resetThemeStateForTests();
+    require('../dist/ds-runtime/apply-theme').__resetThemeStateForTests();
     let result;
     try {
       result = runtime.applyTheme(theme, { replace: true });

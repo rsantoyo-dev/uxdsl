@@ -126,7 +126,7 @@ test('MIG-B6-20: loader options arrive via getOptions(), not the removed this.qu
 
 test('MIG-B6-20: discovers uxdsl.theme.config.cjs from rootContext when theme is omitted', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   write(dir, 'panel.uxdsl', '.a { color: palette(webpackonlybrand); }');
   const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
 
@@ -144,7 +144,7 @@ test('MIG-B6-20: discovers uxdsl.theme.config.cjs from rootContext when theme is
 
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   write(dir, 'panel.uxdsl', '.a { color: palette(webpackonlybrand); }');
   const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
 
@@ -160,4 +160,18 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
       }],
     },
   }), /UXD_REFERENCE_MISSING/);
+});
+
+test('phase 2: a theme file exporting { theme, references } fails the compilation with the loader\'s own message', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");
+  write(dir, 'panel.uxdsl', '.a { color: red; }');
+  const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
+  await assert.rejects(runWebpack({
+    mode: 'development',
+    context: dir,
+    entry,
+    output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+    module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, LOADER] }] },
+  }), /That wrapper was removed/);
 });

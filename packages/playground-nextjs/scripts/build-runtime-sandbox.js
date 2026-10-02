@@ -7,11 +7,10 @@
 //
 //   1. runtime-sandbox/sandbox.uxdsl is compiled by uxdsl-core's compile() — the pipeline
 //      `uxdsl build` uses — with the site's own default theme, so the sandbox is a real
-//      compiled UXDSL project, breakpoint metadata included (which is what the legacy
-//      breakpoint API rewrites).
+//      compiled UXDSL project.
 //   2. src/runtime-sandbox/sandbox-entry.ts is bundled with esbuild. Like next.config.js,
 //      it resolves postcss-uxdsl/ds-runtime to the package's current source.
-//   3. index.html inlines the CSS as a <style data-uxdsl> and loads the bundle.
+//   3. index.html inlines the CSS as a <style> and loads the bundle.
 //
 // Runs as part of `npm run uxdsl:build`, so `dev` and `build` always serve a fresh one.
 // The output is generated and git-ignored.
@@ -57,7 +56,7 @@ async function main() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UXDSL runtime sandbox</title>
-<style data-uxdsl>
+<style>
 ${css.replace(/<\/style/gi, '<\\/style')}
 </style>
 </head>

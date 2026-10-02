@@ -41,13 +41,14 @@ tour of the syntax itself — responsive values, palette tokens, density,
 buttons, and live theming with no rebuild.
 
 [FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on a
-real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
-accept an optional family scope (`--strict-theme=palette,breakpoints`, or
+real consumer's CI report: `--strict-theme` (on `build` and `theme` alike)
+takes a family scope (`--strict-theme=palette,breakpoints`, or
 `strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
-the bare flag flags any documented partial theme override — not just in
-`typography_details`, but in the zero-config `palette` example this
-project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme`'s (today `validateTheme`'s) top-level "Unknown theme family"
+the unscoped check flagged any documented partial theme override — not just
+in `typography_details`, but in the zero-config `palette` example this
+project's own README uses — as "incomplete". Since the stability plan's
+phase 2 the scope is required: the bare flag is refused with the scoped form
+spelled out. `validateTheme`'s (formerly `validateAndNormalizeTheme`) top-level "Unknown theme family"
 warning also actually prints from a real `uxdsl build`/`watch` for the
 first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.

@@ -93,11 +93,19 @@ function documentedRuntimeFunctions() {
     .sort();
 }
 
+// Help is per command (`uxdsl --help` lists the commands and the global flags;
+// `uxdsl <command> --help` lists that command's options), so the surface is
+// the union of all of them.
 function cliSurface() {
-  const help = execFileSync(process.execPath, [path.join(ROOT, 'packages/uxdsl-cli/bin/uxdsl.js'), '--help'], { encoding: 'utf8' });
-  const commands = [...help.matchAll(/^ {2}([a-z][a-z-]+) {2,}\S/gm)].map((m) => m[1]);
-  const flags = [...help.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)].map((m) => m[1]);
-  return { commands: [...new Set(commands)].sort(), flags: [...new Set(flags)].sort() };
+  const bin = path.join(ROOT, 'packages/uxdsl-cli/bin/uxdsl.js');
+  const help = execFileSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
+  const commands = [...new Set([...help.matchAll(/^ {2}([a-z][a-z-]+) {2,}\S/gm)].map((m) => m[1]))];
+  const flags = new Set([...help.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)].map((m) => m[1]));
+  for (const command of commands) {
+    const commandHelp = execFileSync(process.execPath, [bin, command, '--help'], { encoding: 'utf8' });
+    for (const m of commandHelp.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)) flags.add(m[1]);
+  }
+  return { commands: commands.sort(), flags: [...flags].sort() };
 }
 
 function packageExports() {
