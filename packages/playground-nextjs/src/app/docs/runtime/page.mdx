@@ -12,7 +12,7 @@ import { ThemeResolution, DirectiveDeclarations, FontsImport } from '@/component
 
 ## The theme this site applied
 
-The site initializes the runtime once, in `ThemeContext`, with `applyTheme(themes.default, { replace: true, styleId: 'uxdsl-ssr-theme' })` — the override it was built with — and applies the other named themes the same way when you pick one in the header. The calls here only read that state: `getAppliedTheme()` returns the applied override, `subscribeTheme(listener)` is notified after each successful application, and `getPalette('primary-main')` reads the computed custom property.
+The site initializes the runtime once, in `ThemeContext`, with `applyTheme(themes.default, { replace: true, styleId: 'uxdsl-ssr-theme' })` — the override it was built with — and applies the other named themes the same way when you pick one in the header. The calls here only read that state: `getAppliedTheme()` returns the applied override, `subscribeTheme(listener)` is notified after each successful application, and the computed custom property is what the applied stylesheet produced.
 
 </div>
 
@@ -22,11 +22,11 @@ The site initializes the runtime once, in `ThemeContext`, with `applyTheme(theme
 
 ## Calls that change state run in a sandbox
 
-`applyTheme`, `resetTheme` and `loadPersistedTheme` manage one stylesheet per document; the per-token setters (`updatePalette`, `updateColor`, `updateSpacing`, `updateBreakpoint`) write inline custom properties and rewrite compiled media queries. On this page they would compete with `ThemeContext`, so they run in the frame below: a page compiled with this site's default theme (by the real compiler, at build time), with its own document and its own copy of the runtime. Run the steps in order, watch the frame and the report, and reload the sandbox to undo everything.
+The runtime API is `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and `loadPersistedTheme`: one JSON theme per document, applied by replacing the custom properties of one managed stylesheet. On this page they would compete with `ThemeContext`, so they run in the frame below: a page compiled with this site's default theme (by the real compiler, at build time), with its own document and its own copy of the runtime. Run the steps in order, watch the frame and the report, and reload the sandbox to undo everything.
 
-Two results are worth reading closely, because they are the honest edges of the old API rather than bugs in this page. After `updatePalette`, a later `applyTheme` returns `ok: true` and the color does not change: the inline value beats any stylesheet (this site's `ThemeContext` clears those inline values after each application for exactly that reason). And after `updateBreakpoint('md', 900)`, `getBreakpoints()` says 900 while `getAppliedTheme()` still says 768: the legacy API rewrote the compiled rules, not the theme, and `applyTheme` itself refuses to move a threshold (`UXD_THEME_STRUCTURE`) — moving one is a rebuild.
+One result is worth reading closely. `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`: a threshold is compiled into every component's media queries, so moving one is a rebuild, not a runtime patch. Changing one token — a color, a spacing value — is the same `applyTheme` call with a one-key patch; there is no separate per-token setter, and nothing writes inline styles on `<html>`.
 
-`loadPersistedTheme` is always called here with the lab's own `key` and `migrateLegacy: false`. A default call migrates, and then deletes, the four pre-beta.6 storage keys — which this site's older demos still write.
+`loadPersistedTheme` is always called here with the lab's own `key`, so a saved lab override is never mistaken for the site's own; it reads that one key and nothing else.
 
 </div>
 

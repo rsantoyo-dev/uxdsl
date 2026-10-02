@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import runtime from 'postcss-uxdsl/ds-runtime'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from './ThemeContext'
@@ -67,9 +66,8 @@ function ColorScaleToken({
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
-    // Update CSS variables globally via runtime
-    // This will also update any linked palette tokens
-    runtime.updateColor(`${family}-${shade}`, newHex, { persist: true })
+    // The theme JSON is the model: the parent writes colors.<family>.<shade>
+    // and ThemeContext applies it through applyTheme.
     onTokenChange(`${family}-${shade}`, newHex)
     
     // Dispatch event for other components (UI updates only)
@@ -114,12 +112,6 @@ export default function DemoColors() {
   const [bgShade, setBgShade] = useState('600')
   const [textFamily, setTextFamily] = useState('gray')
   const [textShade, setTextShade] = useState('50')
-
-  useEffect(() => {
-    try {
-      runtime.loadPersistedColors()
-    } catch {}
-  }, [])
 
   const handleTokenChange = (token: string, value: string) => {
     const [family, shade] = token.split('-')

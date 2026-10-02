@@ -65,45 +65,49 @@ async function main() {
   const initialPanel = read('panel-a.css');
   assert.match(initialTheme, /:root/, 'the theme entry must define :root');
   assert.doesNotMatch(initialPanel, /:root/, 'the component entry (includeTheme: false) must not define :root');
-  const bpMetaCount = (initialTheme + initialPanel).match(/#uxdsl-bp-meta/g)?.length || 0;
-  assert.equal(bpMetaCount, 1, 'expected exactly one #uxdsl-bp-meta across both entries');
+  // Stability phase 2: the `#uxdsl-bp-meta` marker is gone; ":root in exactly
+  // one entry" is asserted directly above instead of through the marker.
+  assert.doesNotMatch(initialTheme + initialPanel, /#uxdsl-bp-meta|@uxdsl-bp/, 'no entry carries the removed breakpoint marker');
   console.log('PASS: init --multi scaffolds a working builds project from the installed CLI.');
 
-  // --- Phase 2 (MIG-B4-02 + MIG-B4-01): the build config itself (not a
-  // separate theme file) delegates its `theme` to a nested require() —
-  // the exact shape a real consumer reported as never triggering a
-  // rebuild — combined with --strict-theme on a partial theme. ---
+  // --- Phase 2 (MIG-B4-02 + MIG-B4-01): the theme file delegates to a
+  // nested require() — the exact shape a real consumer reported as never
+  // triggering a rebuild — combined with --strict-theme on a partial theme.
+  // (Stability phase 2: a build config no longer carries `theme`, so the
+  // delegation lives in the theme file; the nested-require watch guarantee
+  // is the same.) ---
   write('theme-data.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  write('uxdsl.theme.config.cjs', "module.exports = require('./theme-data.json');\n");
   write('uxdsl.config.cjs', `module.exports = {
     builds: [
       { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
       { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
     ],
-    theme: require('./theme-data.json'),
     watch: ['src/**/*.uxdsl'],
   };\n`);
 
-  // Partial palette (only primary.main) + --strict-theme: must fail,
+  // Partial palette (only primary.main) + --strict-theme=palette: must fail,
   // naming the family, and must not touch the previous good output.
+  // (Stability phase 2: the flag needs a scope; this gate used the bare form.)
   assert.throws(
-    () => command('build', '--strict-theme'),
-    (error) => /--strict-theme:.*palette/.test(String(error.stderr))
+    () => command('build', '--strict-theme=palette'),
+    (error) => /--strict-theme \(scoped to: palette\):.*palette/.test(String(error.stderr))
   );
   assert.equal(read('theme.css'), initialTheme, 'a failed --strict-theme build must not touch the previous output');
-  console.log('PASS: --strict-theme fails on a partially-defaulted family declared via a nested require(), writing nothing.');
+  console.log('PASS: --strict-theme=palette fails on a partially-defaulted family declared via a nested require(), writing nothing.');
 
-  // Complete the family: --strict-theme must now pass.
+  // Complete the family: --strict-theme=palette must now pass.
   const { DEFAULT_THEME } = req('postcss-uxdsl/ds-runtime');
   write('theme-data.json', JSON.stringify({ palette: DEFAULT_THEME.palette }));
-  command('build', '--strict-theme'); // Must not throw.
-  console.log('PASS: --strict-theme passes once every key of the declared family is explicit.');
+  command('build', '--strict-theme=palette'); // Must not throw.
+  console.log('PASS: --strict-theme=palette passes once every key of the declared family is explicit.');
 
   // --- Phase 3 (MIG-B4-02): a real `uxdsl watch`, editing *only* the
   // nested theme-data.json — never uxdsl.config.cjs itself — must still
   // trigger a rebuild. This is the exact gap a real consumer found:
   // before the fix, only the top-level config file was watched. ---
   write('theme-data.json', JSON.stringify({ palette: { ...DEFAULT_THEME.palette, primary: { ...DEFAULT_THEME.palette.primary, main: '#111111' } } }));
-  const child = spawn(process.execPath, [cli, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [cli, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   let watchOutput = '';
   child.stdout.on('data', (chunk) => { watchOutput += chunk.toString(); });
   child.stderr.on('data', (chunk) => { watchOutput += chunk.toString(); });
@@ -120,7 +124,7 @@ async function main() {
   } finally {
     child.kill();
   }
-  console.log('PASS: uxdsl watch rebuilds when only a build config\'s nested require() changes, against the installed tarball.');
+  console.log('PASS: uxdsl build --watch rebuilds when only a theme file\'s nested require() changes, against the installed tarball.');
 }
 
 main().catch((error) => {

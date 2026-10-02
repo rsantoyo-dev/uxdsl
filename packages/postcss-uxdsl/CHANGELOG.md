@@ -9,6 +9,101 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 2 (1): one runtime API.
+
+### Removed
+
+The per-token runtime is gone. `postcss-uxdsl/ds-runtime`'s browser API is
+now exactly `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme`,
+`loadPersistedTheme({ key })`, `DEFAULT_THEME_STYLE_ID`,
+`DEFAULT_THEME_STORAGE_KEY` and their types. Why: the old setters wrote inline
+custom properties on `<html>` and held module-level singletons, while
+`applyTheme` writes one `<style>` per document — and an inline declaration beats
+any stylesheet, so a page that had called `updatePalette` could then call
+`applyTheme`, get `ok: true`, and see nothing change. Two state models for one
+theme is one too many. Every removed call is one `applyTheme` patch:
+
+| Removed | Use instead |
+| --- | --- |
+| `updatePalette('primary.main', v)`, `applyPalette({...})` | `applyTheme({ palette: { primary: { main: v } } })` |
+| `updateColor('gray.300', v)`, `applyColors({...})` | `applyTheme({ colors: { gray: { 300: v } } })` |
+| `updateSpacing(4, v)`, `applySpacing({...})` | `applyTheme({ spacing: { 4: v } })` |
+| `getPalette(t)`, `getColor(t)`, `getSpacing(t)` | `getAppliedTheme()` for the override; `getComputedStyle(el).getPropertyValue('--uxdsl__palette__primary-main')` for the computed value |
+| `resetPalette()`, `resetColors()`, `resetSpacing()` | `resetTheme()` (restores the override the project initialized with) |
+| `loadPersisted()`, `loadPersistedColors()`, `loadPersistedSpacing()`, `loadPersistedBreakpoints()` | `loadPersistedTheme({ key })` |
+| `subscribe(listener)` | `subscribeTheme(listener)` — notified with the applied override after each success |
+| `link(alias, source)`, `unlink(...)` | none: express the dependency in the theme (`palette.primary.main: "var(--uxdsl__color__blue-700)"`) |
+| `updateBreakpoint('md', 900)`, `applyBreakpoints`, `getBreakpoints`, `resetBreakpoints`, the `breakpoints` object | none: a threshold is compiled into every component's media queries. `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`; edit the theme file and rebuild. For inspection at a width, `inspectResponsiveValue` (`postcss-uxdsl/language`) |
+| the `spacing` and `colors` objects, the default export (`import runtime from 'postcss-uxdsl/ds-runtime'`) | named imports of the API above |
+| `LEGACY_STORAGE_KEYS`, `loadPersistedTheme({ migrateLegacy })` | none: the four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`, `uxdsl:breakpoints`) are no longer read, converted or removed. `loadPersistedTheme` reads its one key and nothing else |
+| `__resetThemeStateForTests` (public barrel) | still exists on the internal `ds-runtime/apply-theme` module for this package's own tests; it was never part of the API |
+
+- **Removed (uxdsl-core, CLI):** compiled output no longer ends with the
+  `/*@uxdsl-bp {…}*/` comment and the `#uxdsl-bp-meta { --bp: '…'; display:
+  none; }` rule. They existed so the removed breakpoint rewriter could read the
+  thresholds back from the CSSOM, and they named thresholds a theme could
+  override anyway (`compile({ source }, { theme: { breakpoints: { md: 800 } } })`
+  emitted `@media (min-width: 800px)` while the marker said 768). A theme
+  entry now ends with its last real rule; a component entry (`includeTheme:
+  false`) is unchanged. The CLI's CSS-Modules guard accordingly reports
+  "this entry would emit :root" (no longer ":root and #uxdsl-bp-meta").
+- `DEFAULT_BREAKPOINTS` is still exported from `postcss-uxdsl/ds-runtime` and
+  `postcss-uxdsl/language`: it is data, not the rewriter.
+- **Playground:** the breakpoints demo no longer edits thresholds (the runtime
+  never could, honestly); it simulates a width with `inspectResponsiveValue`.
+  The palette, colors and spacing editors write the theme JSON only, which
+  `ThemeContext` applies through `applyTheme`; nothing writes inline styles on
+  `<html>` any more, so `ThemeContext` no longer has to clear them.
+
+Stability plan, phase 2 (2): two files, two jobs — the build config and the theme file.
+
+### Removed
+
+Seven ways to hand over a theme, three build-config names, two theme-file
+export shapes, `references` in two places and `breakpoints` in three (audit
+I8, DE-10) are now one of each:
+
+| Removed | Use instead |
+| --- | --- |
+| `uxdsl.config.json` as a build config (discovered, or named with `--config`) | `uxdsl.config.cjs` or `uxdsl.config.js`. JSON is for the theme: `uxdsl.theme.json` |
+| `uxdsl.theme.config.json` as a theme-file name | `uxdsl.theme.json` (the other names, `uxdsl.theme.config.js`/`.cjs`, are unchanged) |
+| the `{ theme, references }` export of a theme file; `normalizeThemeExport` (`postcss-uxdsl/config`) | the theme file exports the theme itself; `references` goes in the build config or the plugin/adapter option. The wrapper is refused with an error naming both homes, not read as a theme with two unknown families |
+| `theme:` inline in the build config | the theme file next to the config |
+| `themeFile:` in the build config | the theme file is discovered by name next to the config; there is no pointer to it |
+| `breakpoints:` in the build config; the `breakpoints` option of `uxdsl-core`'s `compile()`, `vite-plugin-uxdsl` and `uxdsl-webpack-loader` | `breakpoints` in the theme (file or `theme` option), the one source every integration reads. The CLI, `compile()` and both adapters no longer forward a separate value to the plugin |
+| `output:` as an alias of `outFile` (top level and inside `builds[]`), and the `UxdslOutTarget` type | `outFile` |
+| `require('uxdsl-core')` as a callable (`processUxdsl(source, { fileId, … })` → `Promise<string>`) | `compile({ entry } \| { source, from }, config)` — the module now exports `compile` only |
+| `vite-plugin-uxdsl`'s `scss` / `scssLoadPaths` options (the Sass pre-pass) | none: `$var`, `@each`, `@mixin` and `@if` are handled by the shared pipeline; a `.uxdsl` file is not valid SCSS, so a Sass pass over it was a second compiler with no parity guarantee |
+
+Each removed build-config key is a hard error at load time naming its new
+home (`"theme" is not a build-config key any more — put the theme in a theme
+file next to this config …`), never a silently ignored key. The types follow:
+`UxdslConfigShared` lost `theme`, `themeFile` and `breakpoints`; `UxdslBuild`
+is `{ entry, outFile, includeTheme? }`. The playground's own `uxdsl.config.cjs`
+moved its theme into `uxdsl.theme.config.cjs` accordingly.
+
+Stability plan, phase 2 (3): CLI hygiene (`uxdsl-cli`; audit I3, I5, I10, I11).
+
+### Removed
+
+| Removed | Use instead |
+| --- | --- |
+| the `watch` command | `uxdsl build --watch` (it was an alias of it). `uxdsl watch` now fails with that one line |
+| `theme --strict` and the bare `--strict-theme` / `--strict-theme=true` / `strictTheme: true` | `--strict-theme=<family,...>` on `build` and `theme` alike, or `strictTheme: ['palette', …]`. A scope is required: the unscoped check treated every partial override — the theme model itself — as incomplete, so it flagged the documented usage and had no correct use. The bare flag is refused with the scoped form spelled out; `--strict-theme=false` points at `--no-strict-theme`, which still turns a config's `strictTheme` off for one run |
+| the `sourceMap` config key | `sourcemap`, spelled like the `--sourcemap` flag. `sourceMap` is rejected with the spelling |
+| `theme --entry` / `theme --out` | nothing: `theme` reads a theme, not an entry. It runs from a theme file alone, with no build config, and prints the same unknown-family warning `build` prints (on stderr; stdout stays one JSON document) |
+| `$schema` as a `theme --diff` row | nothing: `$schema` (any `$`-prefixed key) is editor metadata, not a family, and `--strict-theme` never counts it |
+| bare `uxdsl` compiling silently; a flag with no command (`uxdsl --entry a --out b`) compiling | bare `uxdsl` prints the help and exits 0; a flag with no command is an error pointing at `uxdsl build …` |
+| the one-page help | `uxdsl --help` (commands and global flags) and `uxdsl <command> --help` (that command's options only) |
+
+### Added
+
+- `uxdsl --version` (`-v`): the versions of `uxdsl-cli` and the `postcss-uxdsl` / `uxdsl-core` it resolved.
+- An unknown command is one line with a hint (`did you mean "uxdsl build"?`, or the command that replaced it), not the whole help.
+- `init` scaffolds `src/styles.uxdsl` — the file the user edits — and the generated `src/uxdsl-entry.uxdsl` imports it, so `generate-entry` rewriting the entry never discards hand-written styles. "Next steps" prints exactly one import path.
+- `init` for Next.js writes a `postcss.config.js` that names Next's own default plugins (`next/dist/compiled/postcss-flexbugs-fixes`, `next/dist/compiled/postcss-preset-env` with Next's options: `autoprefixer: { flexbox: 'no-2009' }`, `stage: 3`, `custom-properties: false`) ahead of `postcss-uxdsl`. A custom `postcss.config.js` replaces Next's defaults, so the previous file silently switched autoprefixing off (`user-select: none` lost its `-webkit-` prefix after `init`).
+- The `uxdsl-cli` README now describes the surface as it is — commands and flags tables, two files two jobs, watch, strict theme, source maps, diagnostics, editor support — and no longer carries per-release history.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

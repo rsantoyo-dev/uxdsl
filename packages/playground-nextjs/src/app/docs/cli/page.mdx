@@ -62,20 +62,21 @@ Writes `<outFile>.map` next to the CSS and a `sourceMappingURL` comment, so devt
 
 <div className="doc-section">
 
-## `--strict-theme`
+## `--strict-theme=<families>`
 
-Fails the build, before writing anything, when a family you declared was partly filled from the base theme. This project overrides only `palette.primary.main`, so the bare flag fails; scoped to the families that must be complete (`--strict-theme=breakpoints`) it passes.
+Fails the build, before writing anything, when one of the named families was partly filled from the base theme. This project overrides only `palette.primary.main`, so `--strict-theme=palette` fails; `--strict-theme=breakpoints`, a family it declares completely, passes. A scope is required: the theme model is partial overrides, so an unscoped check flagged the recommended usage as incomplete — the bare flag is refused and says so.
 
 </div>
 
 <CliRun id="build-strict-theme" />
 <CliRun id="build-strict-theme-scoped" />
+<CliRun id="build-strict-theme-bare" />
 
 <div className="doc-section">
 
-## uxdsl theme: `--diff`, `--strict`, `--contrast`
+## uxdsl theme: `--diff`, `--strict-theme`, `--contrast`
 
-`uxdsl theme` prints the effective theme — the same discovery and resolution as `build`, no CSS written. `--diff` prints only what your theme file mentions, one row per leaf labeled `project` or `default`, and says on stderr where a family mixes the two. `--strict` exits non-zero when a declared family was partly inherited. `--contrast` runs the WCAG gate and prints its full JSON report; the Contrast page runs the same function in your browser.
+`uxdsl theme` prints the effective theme — the same discovery and resolution as `build`, no CSS written, and it works from a theme file alone. `--diff` prints only what your theme file mentions, one row per leaf labeled `project` or `default` (`$schema` is not a leaf), and says on stderr where a family mixes the two. `--strict-theme=<families>` exits non-zero when one of the named families was partly inherited — the same flag and rule as `build`'s. `--contrast` runs the WCAG gate and prints its full JSON report; the Contrast page runs the same function in your browser.
 
 </div>
 
@@ -87,10 +88,22 @@ Fails the build, before writing anything, when a family you declared was partly 
 
 <div className="doc-section">
 
-## uxdsl watch
+## uxdsl build --watch
 
-`uxdsl watch` builds, then rebuilds when a source changes. A broken edit is reported and the last good CSS stays on disk; the next valid save recovers. A session, recorded by the capture script as it edited the file:
+`uxdsl build --watch` builds, then rebuilds when a source changes. A broken edit is reported and the last good CSS stays on disk; the next valid save recovers. A session, recorded by the capture script as it edited the file:
 
 </div>
 
 <WatchTranscript />
+
+<div className="doc-section">
+
+## `--help`, `--version`, and what is not a command
+
+Bare `uxdsl` prints the help instead of building; `uxdsl <command> --help` prints that command's options and nothing else (`uxdsl init --help` is where `--multi`, the theme-plus-panels scaffold, is described); `uxdsl --version` prints the versions of `uxdsl-cli` and the `postcss-uxdsl` and `uxdsl-core` it resolved. An unknown command is one line with a hint — `watch`, which used to be a command, points at `uxdsl build --watch`.
+
+</div>
+
+<CliRun id="help" />
+<CliRun id="build-help" />
+<CliRun id="unknown-command" />

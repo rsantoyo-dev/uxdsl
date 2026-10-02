@@ -22,7 +22,7 @@ async function main() {
   });
   run('npm', ['install', 'vite@^5', '--no-audit', '--no-fund']);
 
-  write('uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };\n");
+  write('uxdsl.theme.config.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };\n");
   write('partial.uxdsl', '.partial { color: green; }\n');
   write('panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
   // A plain `export` of an otherwise-unused value is dead code from

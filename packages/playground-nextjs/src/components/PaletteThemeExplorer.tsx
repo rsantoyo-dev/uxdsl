@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 import { useTheme } from './ThemeContext'
-import runtime from 'postcss-uxdsl/ds-runtime'
 
 const paletteCards = [
   { id: 'primary', title: 'Primary', detail: 'Brand actions and key highlights' },
@@ -111,15 +110,7 @@ export default function PaletteThemeExplorer({ action }: { action?: React.ReactN
   const [inspectorTone, setInspectorTone] = useState('primary')
 
     const handleTokenColorChange = (variant: string, nextHex: string) => {
-        const token = `${inspectorTone}-${variant}`
-
-        try {
-            runtime.updatePalette(token, nextHex, { persist: true })
-        } catch {
-            document.documentElement.style.setProperty(`--${token}`, nextHex)
-            document.documentElement.style.setProperty(`--uxdsl__palette__${token}`, nextHex)
-        }
-
+        // The theme JSON is the model: ThemeContext applies it through applyTheme.
         const nextTheme = JSON.parse(JSON.stringify(activeThemeData || {}))
         if (!nextTheme.palette) nextTheme.palette = {}
         if (!nextTheme.palette[inspectorTone] || typeof nextTheme.palette[inspectorTone] !== 'object') {

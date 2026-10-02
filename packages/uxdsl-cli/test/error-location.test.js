@@ -53,7 +53,7 @@ for (const [themeSnippet, expectedMessage] of [
     const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-theme-location-'));
     fs.mkdirSync(path.join(directory, 'src'));
     fs.writeFileSync(path.join(directory, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
-    fs.writeFileSync(path.join(directory, 'uxdsl.theme.config.cjs'), `module.exports = { theme: ${JSON.stringify(themeSnippet)} };`);
+    fs.writeFileSync(path.join(directory, 'uxdsl.theme.config.cjs'), `module.exports = ${JSON.stringify(themeSnippet)};`);
     fs.writeFileSync(path.join(directory, 'src', 'a.uxdsl'), '.card { color: red; }\n');
 
     const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });

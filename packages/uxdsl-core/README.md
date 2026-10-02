@@ -1,32 +1,29 @@
 # uxdsl-core
 
-> The core processing engine for **UXDSL** — powering the CLI, Vite plugin, and Webpack loader.
+> The compile pipeline behind **UXDSL**'s CLI, Vite plugin and Webpack loader.
 
 [![npm version](https://img.shields.io/npm/v/uxdsl-core.svg)](https://www.npmjs.com/package/uxdsl-core)
 [![License](https://img.shields.io/npm/l/uxdsl-core.svg)](LICENSE)
 
-**[Visit the Official Documentation & Playground](https://uxdsl.vercel.app/)**
-
-**Demo release track:** this package may receive frequent small tweaks while docs and playground evolve.
-
-- npm package: [uxdsl-core on npm](https://www.npmjs.com/package/uxdsl-core)
-- npm versions: [Version history](https://www.npmjs.com/package/uxdsl-core?activeTab=versions)
+**[Visit the Official Documentation & Playground](https://uxdsl.io/)**
 
 ---
 
 ## Overview
 
-`uxdsl-core` is the low-level transformation library that parses and compiles UXDSL syntax into standard CSS. It is the brain behind the entire ecosystem, responsible for:
-
-- Parsing **Responsive Functions** (`xs()`, `md()`, etc.).
-- Resolving **Theme Functions** (`palette()`, `space()`, `radius()`, etc.).
-- Handling **Native Variables** (`$var`).
-- Managing **Mixins** and **Theme Packs**.
-
+`uxdsl-core` exports one function, `compile()`: the pipeline that turns a
+`.uxdsl` entry (or an in-memory source) into CSS — `postcss-scss` syntax,
+`postcss-import` with a shared resolver, `postcss-advanced-variables` for
+`$var`/`@each`/`@mixin`, then `postcss-uxdsl`. `uxdsl-cli`, `vite-plugin-uxdsl`
+and `uxdsl-webpack-loader` all call it, so the same entry and theme produce
+the same CSS everywhere.
 
 ### Who is this for?
 
-You typically do **not** need to install this directly unless you are building a custom integration, such as a plugin for a new bundler (e.g., Rollup, esbuild) or a custom Node.js script. For standard projects, use [uxdsl-cli](../uxdsl-cli) or the plugins for [Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-webpack-loader).
+You typically do **not** need to install this directly unless you are building
+a custom integration (a plugin for another bundler, a build script). For
+standard projects, use [uxdsl-cli](../uxdsl-cli) or the plugins for
+[Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-webpack-loader).
 
 ---
 
@@ -39,53 +36,9 @@ npm install uxdsl-core
 `postcss` (`^8.4.31`) is a peer dependency: npm 7+ installs it automatically; with
 `--legacy-peer-deps` or pnpm in strict mode, add it yourself.
 
-MIG-B6-28 (FEAT-008, `0.5.0-beta.6`): the published tarball declares an explicit `files`
-field (`dist`, `README.md`) instead of shipping everything not gitignored —
-previously that also included `src/*.ts`, `test/*.js` and `tsconfig.json`,
-none of which a consumer ever imports (`main`/`types` only ever point at
-`dist/`). See `packages/uxdsl-cli/README.md`'s own dependency-status section
-for the related `postcss-advanced-variables` pin this story also checked.
-
-## Usage
-
-```javascript
-const processUxdsl = require('uxdsl-core');
-
-const css = await processUxdsl(`
-body {
-  background: palette(primary-main);
-  padding: xs(10px) lg(20px);
-}
-`, {
-  breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
-});
-
-console.log(css); // Processed CSS
-```
-
 ## API
 
-### processUxdsl(source, options)
-
-- `source`: String containing UXDSL code
-- `options`: Object with configuration
-  - `fileId`: Optional path of a `.uxdsl` file on disk. When set, that file is
-    read and compiled exactly like `compile({ entry: fileId })` — `source` is
-    then ignored — and its `@import`s resolve relative to it
-  - `breakpoints`: Object with breakpoint definitions
-  - any other `compile()` config option below (`theme`, `references`,
-    `includeTheme`, `to`, `sourceMap`, `sourcesContent`)
-
-Returns a Promise that resolves to processed CSS string. Kept unchanged for
-backward compatibility — new integrations should prefer `compile()` below.
-
-### compile(input, config?)
-
-The one shared compile pipeline (`postcss-scss` → `postcss-import` →
-`postcss-advanced-variables` → `postcss-uxdsl`), used by `uxdsl-cli`,
-`vite-plugin-uxdsl` and `uxdsl-webpack-loader` (since `0.5.0-beta.6`,
-MIG-B6-18/MIG-B6-20) so every consumer gets identical `@import`, `$var` and
-comment handling.
+### `compile(input, config?)`
 
 ```javascript
 const { compile } = require('uxdsl-core');
@@ -93,10 +46,9 @@ const { compile } = require('uxdsl-core');
 const { css, map, dependencies, warnings } = await compile(
   { entry: './src/uxdsl-entry.uxdsl' },   // or { source, from? } for in-memory input
   {
-    theme,               // effective theme, same shape as postcss-uxdsl's `theme` option
+    theme,               // theme override, same shape as postcss-uxdsl's `theme` option
     references,          // same shape as postcss-uxdsl's `references` option
-    breakpoints,         // same shape as postcss-uxdsl's `breakpoints` option
-    includeTheme: true,  // emit the theme's :root tokens and append the `/*@uxdsl-bp ...*/` + #uxdsl-bp-meta marker (default: true)
+    includeTheme: true,  // emit the theme's :root tokens (default: true)
     to: './dist/app.css',
     sourceMap: false,    // false (default) | 'inline' | 'external'
     sourcesContent: true // embed the original sources in the map (default: true)
@@ -106,23 +58,28 @@ const { css, map, dependencies, warnings } = await compile(
 
 - `input`: exactly one of `{ entry: string }` (a real `.uxdsl` file on disk)
   or `{ source: string, from?: string }` (in-memory source; `from` is used
-  as the base path for relative `@import`s and diagnostics).
+  as the base path for relative `@import`s, bare/`~` specifier resolution,
+  cycle detection and diagnostics — it need not exist on disk).
+- `theme`: the project's theme override. Its `breakpoints` family is where
+  thresholds are declared — there is no separate `breakpoints` option, so
+  every integration reads them from the one place. `compile()` does not
+  discover a theme file itself; the CLI and the adapters do that
+  (`postcss-uxdsl/config`'s `discoverThemeAsync`) and pass the result here.
 - `dependencies`: every file actually read, entry first — safe to feed to a
   bundler's file-watcher.
 - `warnings`: `{ text, file?, line?, column? }[]` from the underlying
   PostCSS run.
-- `sourceMap` (MIG-B6-21): `'external'` returns the map as a JSON string in
-  `map` and leaves `css` untouched — the caller adds the
-  `sourceMappingURL` comment, since only it knows what the `.map` will be
-  called. `'inline'` appends the map to `css` as a base64 data URI (last in
-  the file, after the breakpoint metadata, so it is the annotation that
-  counts) *and* still returns it in `map`. `false` (the default) returns no
-  map and produces **byte-identical** CSS to omitting the option entirely.
-  Any other value throws rather than silently emitting nothing.
+- `sourceMap`: `'external'` returns the map as a JSON string in `map` and
+  leaves `css` untouched — the caller adds the `sourceMappingURL` comment,
+  since only it knows what the `.map` will be called. `'inline'` appends the
+  map to `css` as a base64 data URI (last in the file, so it is the
+  annotation that counts) *and* still returns it in `map`. `false` (the
+  default) returns no map and produces **byte-identical** CSS to omitting the
+  option entirely. Any other value throws rather than silently emitting
+  nothing.
 - `to` is what map `sources` are resolved against, so pass the real output
   path: an external `.map` lands next to the CSS, making one `to` correct
   for both modes. Without `to`, PostCSS falls back to `from`'s directory.
-  Paths are kept relative through `to` rather than by trimming prefixes.
 - Generated nodes carry the source of whatever produced them: a declaration
   rewritten from `density()` maps to the original declaration, and the
   declarations a `@ds-button` expands into map to the directive's own line.
@@ -134,67 +91,29 @@ const { css, map, dependencies, warnings } = await compile(
   resolve through real Node module resolution.
 - A missing import is a real, located error (`Failed to find '...' in
   [...]`), not a silently-untouched `@import` line in the output.
-- An import cycle (`a.uxdsl` → `b.uxdsl` → `a.uxdsl`) always fails, naming
-  the full file chain, rather than silently duplicating content.
+- An import cycle (`a.uxdsl` → `b.uxdsl` → `a.uxdsl`) always fails
+  (`UXD_IMPORT_CYCLE`), naming the full file chain, rather than silently
+  duplicating content.
 - **Every `@import` in the output precedes every other rule** (after an
   `@charset`, if you have one) — the theme's Google Fonts import first, then
-  yours in the order you wrote them, then the theme's `:root`. A browser
-  discards an `@import` that follows a style rule, and through `0.5.0-beta.6`
-  a `:root` block was emitted above them, so the font request was never made
-  and your own remote imports were dropped. Nothing you wrote is reordered.
-  A remote `@import url(…)` inside a partial you import is inlined into the
-  file and covered by the same guarantee. `includeTheme: false` emits no
-  theme `:root` and no theme import.
+  yours in the order you wrote them, then the theme's `:root`. Nothing you
+  wrote is reordered. `includeTheme: false` emits no theme `:root` and no
+  theme import.
 - `//` line comments are stripped from the compiled output (as a real Sass
   compiler would); `/* ... */` block comments, including ones containing a
   URL, and `url(...)` values containing `//`, are left completely intact.
+- The output ends with the stylesheet's last rule. Nothing is appended after
+  it (an earlier version added a `/*@uxdsl-bp*/` comment and a
+  `#uxdsl-bp-meta` rule for a runtime breakpoint rewriter that no longer
+  exists).
 
-## Demo update notes
+### What this package no longer exports
 
-Use this section for short release notes on each npm tweak.
-
-- v0.1.9 — baseline demo release for current docs/playground flow (bumped in
-  the repository but never published: npm goes from 0.1.8 to 0.3.0).
-- v0.5.0-beta.6 (MIG-B6-20, FEAT-008) — `compile({ source, from })` (used
-  exclusively by `uxdsl-webpack-loader` and by `vite-plugin-uxdsl`'s
-  optional Sass pre-pass) now gets the same import-cycle detection and
-  bare/`~`-specifier resolution `compile({ entry })` already had — both now
-  key off `from`, not just `entry`. Previously an import cycle reached only
-  through `{ source, from }` silently duplicated content instead of
-  failing, undoing MIG-B6-18's own guarantee for that call shape. No API
-  change — `from` was already accepted, just under-used internally.
-- v0.5.0-beta.6 (MIG-B6-18, FEAT-008) — replaced the old comment-stripping,
-  string-based `@import` inliner with a real `compile()` built on
-  `postcss-scss`/`postcss-import`/`postcss-advanced-variables`/
-  `postcss-uxdsl`, now shared with `uxdsl-cli`. Fixes silent corruption of
-  `url(...)`/block comments containing `//`, and a missing `@import` that
-  used to pass through untouched instead of erroring. An import cycle now
-  always fails (previously postcss-import silently duplicated content
-  instead). `processUxdsl(source, options)`'s signature and `Promise<string>`
-  return are unchanged; `compile` is a new named export.
-- v0.5.0-beta.1 — `test/inline-imports.test.js`'s duplicate-import case now passes
-  `references: { mode: 'off' }` to `processUxdsl`. It exercises `@import`
-  deduplication, not styling, and `postcss-uxdsl`'s reference-integrity
-  check (on by default) was aborting the whole test process on unrelated
-  always-on defaults the fixture never uses. No change to `uxdsl-core`
-  itself. (That test file was removed in `0.5.0-beta.6` by MIG-B6-18,
-  which added `test/compile.test.js`.)
-
-For automated version bumps in this monorepo:
-
-- Patch: `npm run release:patch` (bump + publish)
-- Minor: `npm run release:minor` (bump + publish)
-- Major: `npm run release:major` (bump + publish)
-
-For bump-only mode (no publish):
-
-- `npm run release:patch:bump-only`
-- `npm run release:minor:bump-only`
-- `npm run release:major:bump-only`
-
-If npm publish uses 2FA, pass OTP when releasing:
-
-- `NPM_OTP=123456 npm run release:patch`
+`require('uxdsl-core')` used to be callable — `processUxdsl(source, { fileId,
+...config })` returned `Promise<string>`. That was a second signature for the
+same pipeline and is gone: `compile({ entry: fileId }, config)` or
+`compile({ source, from }, config)` and read `.css` from the result. The
+`breakpoints` config option is gone too — declare `breakpoints` in the theme.
 
 ## License
 

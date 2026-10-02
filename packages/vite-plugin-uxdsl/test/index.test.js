@@ -127,7 +127,7 @@ test('MIG-B6-20: load() calls addWatchFile for the entry and every @import-ed de
 
 test('MIG-B6-20: load() discovers uxdsl.theme.config.* from configRoot when theme is omitted', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir });
   const result = await plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
@@ -136,7 +136,7 @@ test('MIG-B6-20: load() discovers uxdsl.theme.config.* from configRoot when them
 
 test('MIG-B6-20: load() also watches the discovered theme file', async () => {
   const dir = mkTmpDir();
-  const themeFile = write(dir, 'uxdsl.theme.config.cjs', 'module.exports = { theme: {} };');
+  const themeFile = write(dir, 'uxdsl.theme.config.cjs', 'module.exports = {};');
   const entry = write(dir, 'panel.uxdsl', '.a { color: red; }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir });
   const ctx = makeCtx();
@@ -146,7 +146,7 @@ test('MIG-B6-20: load() also watches the discovered theme file', async () => {
 
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir, discoverTheme: false });
   await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_REFERENCE_MISSING/);
@@ -154,7 +154,7 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
 
 test('MIG-B6-20: an explicit theme option always wins over discovery', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };");
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir, theme: {} });
   await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_REFERENCE_MISSING/);
@@ -174,4 +174,35 @@ test('MIG-B6-20: compile warnings surface through this.warn(), not swallowed', a
   const ctx = makeCtx();
   await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
   assert.deepEqual(ctx.warnings, []);
+});
+
+// --- Stability phase 2: what the plugin no longer accepts ---
+
+test('phase 2: breakpoints come from the theme (discovered or explicit); there is no plugin option for them', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', '{ "breakpoints": { "md": 900 } }');
+  const entry = write(dir, 'panel.uxdsl', '.a { padding: xs(1rem) md(2rem); }');
+  const discovered = await uxdsl({ includeTheme: false, configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
+  assert.match(discovered.code, /900px/);
+  assert.doesNotMatch(discovered.code, /768px/);
+  const explicit = await uxdsl({ includeTheme: false, theme: { breakpoints: { md: 1000 } } }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
+  assert.match(explicit.code, /1000px/);
+});
+
+test('phase 2: a theme file exporting { theme, references } fails the load with the loader\'s own message', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.config.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");
+  const entry = write(dir, 'panel.uxdsl', '.a { color: red; }');
+  await assert.rejects(uxdsl({ includeTheme: false, configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /That wrapper was removed/);
+});
+
+test('phase 2: the plugin source carries no scss pre-pass and no breakpoints option', () => {
+  const source = fs.readFileSync(path.resolve(__dirname, '..', 'src', 'index.ts'), 'utf8');
+  // Exact option keys and identifiers, not bare words — the source's own
+  // comments say why these are gone, and may name them.
+  for (const removed of ['scss?:', 'scssLoadPaths?:', 'compileWithSass', 'inlineUxdslImportsForSass', "('sass')", 'breakpoints?:', 'userOptions.breakpoints']) {
+    assert.equal(source.includes(removed), false, `${removed} must be gone from the plugin`);
+  }
+  const options = uxdsl({ includeTheme: false });
+  assert.equal(typeof options.load, 'function', 'control: the plugin still builds');
 });

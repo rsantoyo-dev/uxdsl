@@ -190,45 +190,42 @@ export interface UxdslOptions {
  */
 export type UxDslOptions = UxdslOptions;
 
-/**
- * Where compiled CSS is written. `output` is the older spelling the CLI still
- * accepts (`configModule.outFile || configModule.output`); it is modelled here
- * so adding a type annotation to a working config does not report an error the
- * CLI would not — a false positive teaches people to delete the annotation.
- */
-export type UxdslOutTarget =
-  | { outFile: string; output?: never }
-  /** @deprecated Use `outFile`. Still accepted by the CLI. */
-  | { output: string; outFile?: never };
-
 /** One entry of a multi-entry `builds` array. */
-export type UxdslBuild = UxdslOutTarget & {
+export interface UxdslBuild {
   entry: string;
+  /** Where this entry's compiled CSS is written. */
+  outFile: string;
   /** Overrides the shared `includeTheme` for this entry only. A `--include-theme`
    * / `--no-include-theme` flag still wins over both. */
   includeTheme?: boolean;
-};
-
-/** The options a build config shares across every entry it declares. */
-export interface UxdslConfigShared {
-  /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
-  watch?: string[];
-  breakpoints?: UxdslBreakpointSpec;
-  /** Inline theme override. Mutually exclusive in practice with `themeFile`,
-   * which points at a file holding the same thing. */
-  theme?: UxdslThemeOverride;
-  /** Path to the theme file, resolved relative to this config file. */
-  themeFile?: string;
-  references?: ReferenceOptions;
-  /** `true` checks every touched family; an array limits the check to those families. */
-  strictTheme?: boolean | string[];
-  /** `'external'` writes `<outFile>.map`; `'inline'` appends a data URI. Shared by
-   * every entry — there are no per-entry map overrides. */
-  sourceMap?: false | 'inline' | 'external';
 }
 
 /**
- * The shape of `uxdsl.config.cjs`.
+ * The options a build config shares across every entry it declares.
+ *
+ * A build config says what to compile and where. The theme is not here: it
+ * comes from the theme file next to this config (`uxdsl.theme.json` or
+ * `uxdsl.theme.config.{js,cjs}`), which also owns `breakpoints`. The former
+ * `theme`, `themeFile`, `breakpoints` and `output` keys are rejected by the
+ * CLI with a message saying where each now goes.
+ */
+export interface UxdslConfigShared {
+  /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
+  watch?: string[];
+  references?: ReferenceOptions;
+  /** The theme families that must be completely declared by the project; the
+   * build fails when one of them is only partly declared. A scope is required
+   * (no `true`): the theme model is partial overrides, so an unscoped check
+   * flagged the recommended usage as incomplete. */
+  strictTheme?: string[];
+  /** `'external'` writes `<outFile>.map`; `'inline'` appends a data URI. Shared by
+   * every entry — there are no per-entry map overrides. Spelled like the
+   * `--sourcemap` flag. */
+  sourcemap?: false | 'inline' | 'external';
+}
+
+/**
+ * The shape of `uxdsl.config.js`/`.cjs`.
  *
  * The union models what the CLI actually accepts: a single `entry`/`outFile`,
  * or a `builds` array — never both, which the CLI rejects outright rather than
@@ -236,8 +233,9 @@ export interface UxdslConfigShared {
  * describe a config that fails at run time.
  */
 export type UxdslConfig =
-  | (UxdslConfigShared & UxdslOutTarget & {
+  | (UxdslConfigShared & {
       entry: string;
+      outFile: string;
       includeTheme?: boolean;
       builds?: never;
     })
@@ -245,7 +243,6 @@ export type UxdslConfig =
       builds: UxdslBuild[];
       entry?: never;
       outFile?: never;
-      output?: never;
       /** Applies to every entry that does not set its own. */
       includeTheme?: boolean;
     });
