@@ -31,7 +31,9 @@ test('Shadow boundaries preserve layers, inset and later rule persistence', () =
   for (const width of [800, 801, 1400]) assert.equal(inspectShadowTheme(theme, width)['--uxdsl__shadow__2'], '0 6px 16px rgba(0,0,0,.18)');
 });
 test('legacy Shadows use shared rules; JSON wins and definitions do not leak', async () => {
-  const legacy = await compile(`@theme { shadow-2: ${expression}; } .card { box-shadow: shadow(2); }`, { breakpoints: { xs:0, sm:480, md:800, lg:1024, xl:1280 }, theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } });
+  // The threshold is the theme's (`md: 800` over the base map); the
+  // `breakpoints` plugin option this used to pass was removed in stability phase 1.
+  const legacy = await compile(`@theme { shadow-2: ${expression}; } .card { box-shadow: shadow(2); }`, { theme: { breakpoints: { md: 800 }, spacing: FULL_SPACING, palette: BASE_PALETTE } });
   assert.deepEqual(shadows(legacy.css), shadows(generateShadowCss({ breakpoints: theme.breakpoints, shadows: {2:expression} })));
   const overridden = await compile('@theme { shadow-2: 0 99px 99px red; } .card { box-shadow: shadow(2); }', {theme});
   assert(!overridden.css.includes('99px'));

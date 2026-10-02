@@ -32,7 +32,9 @@ test('MIG-B6-14: an unconfigured breakpoint-shaped function next to a real one f
 });
 
 test('MIG-B6-14: an xxl breakpoint actually defined in the theme does not fail', async () => {
-  const result = await compile('.a { padding: xs(1rem) xxl(2rem); }', { breakpoints: { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280, xxl: 1536 } });
+  // The theme is the one place a breakpoint is defined (the `breakpoints`
+  // plugin option this used to pass was removed in stability phase 1).
+  const result = await compile('.a { padding: xs(1rem) xxl(2rem); }', { theme: { breakpoints: { xxl: 1536 } } });
   assert.match(result.css, /1rem/);
 });
 

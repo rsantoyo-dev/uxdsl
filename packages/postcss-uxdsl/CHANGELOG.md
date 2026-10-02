@@ -258,6 +258,37 @@ only):
 - The captured `/docs/diagnostics` output for the dangling-theme-value case
   now shows the grouped line.
 
+Stability phase 1 (removed plugin options; decisions DE-4 and DE-10, finding
+L11):
+
+### Visual changes
+
+None for a project that configures breakpoints in its theme. A project that
+passed the plugin a `breakpoints` option that **differed** from its theme's map
+now compiles against the theme's thresholds: move those values to the theme's
+`breakpoints` family.
+
+- **Removed:** the plugin options `breakpoints` (as an object, an array of
+  pairs or an array of `{ name, min }`), `themeVar`, `spaceVar` and `colorVar`;
+  the type alias `UxDslOptions` (use `UxdslOptions`); the type
+  `UxdslBreakpointSpec`. The plugin's options are
+  `{ theme, includeTheme, references, discoverTheme, configRoot }`.
+- **Why.** `breakpoints` replaced the theme's map wholesale — `{ a: 0, b: 500 }`
+  next to the base theme failed as `UXD_EDGE_BP: xs` — and was one of three
+  places a threshold could come from; the theme's `breakpoints` family is now
+  the only one, validated once (`UXD_BP_INVALID`). The three callbacks let a
+  caller rename the `--uxdsl__<family>__<key>` variables that reference
+  integrity, `applyTheme`, the contrast gate and the build/runtime parity all
+  rely on.
+- **Not a throw.** A JavaScript caller that still passes one gets a
+  `UXD_OPTION_REMOVED` warning (`result.warn`) and the option is ignored. The
+  CLI, `uxdsl-core` and the adapters forwarded `breakpoints` until their own
+  phase stops doing so, so their builds keep working unchanged; a build
+  config's `breakpoints` key is typed `@deprecated` and has no effect.
+- `presetValueToCss` loses its third (`serializers`) parameter and
+  `tokenValueToCss`/`surfaceValueToCss` take none; they existed only for those
+  callbacks.
+
 FEAT-009, MIG-B7-14 (every `@import` now precedes every other rule):
 
 ### Visual changes

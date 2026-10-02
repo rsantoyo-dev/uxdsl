@@ -206,9 +206,6 @@ export function normalizeTokenKey(kind: string, input: string): string {
   return key;
 }
 
-/** Per-family overrides of the emitted reference, keyed by family. */
-export type TokenSerializers = Partial<Record<string, (key: string) => string>>;
-
 /**
  * Rewrites every token function in `input` to its `var(--uxdsl__<family>__<key>)`
  * reference (or a radius keyword's literal), leaving everything else — native
@@ -217,7 +214,7 @@ export type TokenSerializers = Partial<Record<string, (key: string) => string>>;
  * stylesheet does, on both paths, and the plugin's own author-side pass adds
  * "did you mean" hints before delegating here.
  */
-export function tokenValueToCss(input: string, serializers: TokenSerializers = {}): string {
+export function tokenValueToCss(input: string): string {
   const parsed = valueParser(input);
   parsed.walk(node => {
     // `tone()` belongs to Button/Input theme values only; control-engine.ts
@@ -239,7 +236,7 @@ export function tokenValueToCss(input: string, serializers: TokenSerializers = {
     // needs no such list at all.
     if (kind === 'color' && !/^[\w.-]+$/.test(args[0].replace(/^(['"])(.*)\1$/, '$2'))) return;
     const key = normalizeTokenKey(kind, args[0]);
-    let value = kind === 'radius' && RADIUS_KEYWORDS[key] ? RADIUS_KEYWORDS[key] : serializers[kind]?.(key) || `var(${buildVarName(kind, key)})`;
+    let value = kind === 'radius' && RADIUS_KEYWORDS[key] ? RADIUS_KEYWORDS[key] : `var(${buildVarName(kind, key)})`;
     // `border(k[, color][, style])`: the configured preset wins and the
     // optional arguments are ignored (documented); every other function takes
     // one key, plus an alpha for `palette`/`color` only.

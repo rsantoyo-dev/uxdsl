@@ -28,6 +28,9 @@ export const DIAGNOSTIC_CODES = new Set([
   // Stability phase 1 (audit T6): `tone(main|dark|contrast)` outside a
   // Button/Input theme value (language.ts's grammar, index.ts's author pass).
   'UXD_TONE_CONTEXT',
+  // Stability phase 1: a *warning* for a plugin option that no longer exists
+  // (`breakpoints`, `themeVar`, `spaceVar`, `colorVar`); the option is ignored.
+  'UXD_OPTION_REMOVED',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
   // MIG-B6-30 (FEAT-008): the runtime JSON theme API. These are returned on a

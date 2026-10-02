@@ -43,61 +43,27 @@ import { discoverThemeSync } from './config';
 import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { presetValueToCss } from './preset-engine';
-import { resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { resolveResponsiveValue, getDensityTokens, tokenValueToCss, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
-import type { UxdslBreakpointSpec, UxdslOptions } from './types';
+import type { UxdslOptions } from './types';
 
 // MIG-B6-27 (FEAT-008): the options interface lives in `./types` now, the
 // public type surface consumers import. It is re-exported from the namespace
 // merged at the bottom of this file, so `import type { UxdslOptions } from
 // 'postcss-uxdsl'` resolves even though this module uses `export =`.
-type BreakpointSpec = UxdslBreakpointSpec;
-
-// Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
-const defaultThemeVar = (path: string) => {
-  const key = String(path).trim().replace(/\./g, "-");
-  return `var(${buildNamespacedVarName('palette', key)})`;
+// Stability phase 1: the plugin options `breakpoints`, `themeVar`, `spaceVar`
+// and `colorVar` are gone. Thresholds are the theme's own `breakpoints` family
+// (one source, validated once by `validateTheme`), and the emitted names are
+// the `--uxdsl__<family>__<key>` contract. A caller that still passes one is
+// told so and the option is ignored — the CLI, `uxdsl-core` and the adapters
+// forwarded `breakpoints` until their own phase lands, so this must not throw.
+const REMOVED_OPTIONS: Record<string, string> = {
+  breakpoints: 'breakpoints are configured in the theme (`theme.breakpoints`)',
+  themeVar: 'palette() always compiles to var(--uxdsl__palette__<key>)',
+  spaceVar: 'space() always compiles to var(--uxdsl__space__<key>)',
+  colorVar: 'color() always compiles to var(--uxdsl__color__<key>)',
 };
-
-// Map space(2) -> var(--uxdsl__space__2)
-const defaultSpaceVar = (index: string) =>
-  `var(${buildVarName('space', String(index).trim())})`;
-
-// Map color(blue.500|blue-500) -> resolve to --uxdsl__color__*
-const defaultColorVar = (path: string) => {
-  const key = String(path).trim().replace(/\./g, "-");
-  return `var(${buildNamespacedVarName('color', key)})`;
-};
-
-function normalizeBreakpoints(input?: BreakpointSpec) {
-  if (!input) {
-    const ordered = Object.entries(DEFAULT_BPS).map(([n, px]) => ({
-      name: n,
-      px,
-    }));
-    return { map: { ...DEFAULT_BPS }, ordered };
-  }
-  if (Array.isArray(input)) {
-    const entries = input.map((it) =>
-      Array.isArray(it)
-        ? { name: it[0], px: Number(it[1]) }
-        : { name: it.name, px: Number(it.min ?? (it as any).px) }
-    );
-    const map: Record<string, number> = {};
-    entries.forEach(({ name, px }) => {
-      if (name) map[name] = px;
-    });
-    const ordered = entries.slice().sort((a, b) => a.px - b.px);
-    return { map, ordered };
-  }
-  const map: Record<string, number> = { ...(input as Record<string, number>) };
-  const ordered = Object.keys(map)
-    .map((k) => ({ name: k, px: Number(map[k]) }))
-    .sort((a, b) => a.px - b.px);
-  return { map, ordered };
-}
 
 // MIG-B7-14 (FEAT-009): CSS honors an `@import` only when it precedes every
 // other rule, and `@charset` only when it is the very first thing in the
@@ -129,12 +95,6 @@ function insertAfterLeading(root: Root, keep: (node: ChildNode) => boolean, node
 }
 
 function uxdslPlugin(opts: UxdslOptions = {}) {
-  const toVar =
-    typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
-  const toSpaceVar =
-    typeof opts.spaceVar === "function" ? opts.spaceVar : defaultSpaceVar;
-  const toColorVar =
-    typeof opts.colorVar === "function" ? opts.colorVar : defaultColorVar;
   const mediaRuleCache = new WeakMap<Rule, Map<string, Rule>>();
   const lastMediaByRule = new WeakMap<Rule, AtRule>();
   // Historical single-entry behavior: one compiled file both defines and
@@ -195,7 +155,14 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       if (!validated.ok) throw themeValidationError(validated.errors);
       for (const warning of validated.warnings) result.warn(warning.message, { plugin: 'postcss-uxdsl' });
       const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
-      const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
+      for (const [name, instead] of Object.entries(REMOVED_OPTIONS)) {
+        if ((opts as Record<string, unknown>)[name] !== undefined) {
+          result.warn(`UXD_OPTION_REMOVED: the "${name}" plugin option was removed and is ignored; ${instead}.`, { plugin: 'postcss-uxdsl' });
+        }
+      }
+      // The one breakpoint map of this compilation: the effective theme's.
+      const bps: Record<string, number> = { ...DEFAULT_BPS, ...effectiveTheme.breakpoints };
+      const ordered = Object.entries(bps).map(([name, px]) => ({ name, px })).sort((a, b) => a.px - b.px);
       const bpNames = new Set(Object.keys(bps));
       const inheritSource = (node: any, source: any) => {
         node.source = source;
@@ -852,7 +819,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
           }
           if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {
             node.type = 'word';
-            node.value = presetValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`, 'UXD_TOKEN', { palette: toVar, color: toColorVar, space: toSpaceVar });
+            node.value = tokenValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`);
             return false;
           }
         });
@@ -1025,11 +992,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];
       if (!includeTheme && effectiveTheme && references.mode !== 'off') {
-        // Over the defaults merged with the compilation's map, as the former
-        // `generateThemeCss(...)` call resolved it: a partial `breakpoints`
-        // option (still accepted until phase 1's last step) must not leave the
-        // base theme's own `sm()`/`lg()` expressions without a breakpoint.
-        css.push(renderThemeCss(themeForCss, { ...DEFAULT_BPS, ...bps }));
+        css.push(renderThemeCss(themeForCss, bps));
       }
       enforceReferences(root, consumers, { ...references, css,
         onWarning: issue => { result.warn(issue.message, { node: (issue as any).node, plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
@@ -1049,11 +1012,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
 // A namespace cannot re-export with `export ... from`, hence the import types.
 declare namespace uxdslPlugin {
   export type UxdslOptions = import('./types').UxdslOptions;
-  export type UxDslOptions = import('./types').UxDslOptions;
   export type UxdslTheme = import('./types').UxdslTheme;
   export type UxdslThemeOverride = import('./types').UxdslThemeOverride;
   export type UxdslDeepPartial<T> = import('./types').UxdslDeepPartial<T>;
-  export type UxdslBreakpointSpec = import('./types').UxdslBreakpointSpec;
   export type UxdslTokenValue = import('./types').UxdslTokenValue;
   export type UxdslPaletteFamily = import('./types').UxdslPaletteFamily;
   export type UxdslColorFamily = import('./types').UxdslColorFamily;

@@ -1,5 +1,5 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss, TokenSerializers } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
@@ -65,7 +65,7 @@ export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, Surfa
  * every Density/Radius/Border/Shadow reference exists in the effective theme
  * (the composition consumes them directly, so a dangling one is reported here
  * with the family's own code rather than later by the reference pass). */
-export function surfaceValueToCss(value: string, theme: SurfaceTheme, serializers: TokenSerializers = {}) {
+export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
   valueParser(value).walk(node => {
     if (node.type === 'function' && node.value === 'density') {
@@ -80,7 +80,7 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme, serializer
     const keyword = kind === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
     if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
   });
-  return tokenValueToCss(value, serializers);
+  return tokenValueToCss(value);
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {

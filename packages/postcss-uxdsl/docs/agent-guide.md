@@ -184,8 +184,11 @@ Other CSS cascade rules still apply.
   an intentional local exception. Do not move a shared threshold for one card.
 - Change a threshold only when all affected transitions should move. Inspect
   component declarations, Density mappings and Typography progressions.
-- Define new thresholds through supported configuration before use. Check support
-  in each installed integration; do not assume every editor accepts custom names.
+- Define new thresholds in the theme's `breakpoints` family before use — it is
+  the only place a breakpoint is configured (the plugin's `breakpoints` option
+  was removed; passing it warns `UXD_OPTION_REMOVED` and is ignored). Check
+  support in each installed integration; do not assume every editor accepts
+  custom names.
 - Omitted built-in breakpoint names can retain engine defaults. Inspect the
   effective map, not just the keys shown in a partial theme excerpt.
 

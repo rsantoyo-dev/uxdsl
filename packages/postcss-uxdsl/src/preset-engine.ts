@@ -1,5 +1,5 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression, tokenValueToCss, TokenSerializers } from './language';
+import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression, tokenValueToCss } from './language';
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
@@ -10,10 +10,11 @@ import { themeError } from './diagnostics';
 export { normalizeTokenKey, RADIUS_KEYWORDS } from './language';
 
 /** @deprecated Use `tokenValueToCss` (language.ts). The error prefix is no
- * longer used: a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
- * belongs to. */
-export function presetValueToCss(input: string, _errorPrefix = 'UXD_PRESET', serializers: TokenSerializers = {}): string {
-  return tokenValueToCss(input, serializers);
+ * longer used — a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
+ * belongs to — and the per-family serializers went with the `themeVar`/
+ * `spaceVar`/`colorVar` plugin options they existed for. */
+export function presetValueToCss(input: string, _errorPrefix = 'UXD_PRESET'): string {
+  return tokenValueToCss(input);
 }
 
 // MIG-B6-13 (FEAT-008) code-review follow-up: `keyPathPrefix` is optional so

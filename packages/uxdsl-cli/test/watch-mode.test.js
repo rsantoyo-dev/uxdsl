@@ -182,28 +182,29 @@ test('watch mode reloads when the build config (not the theme file) delegates to
   const dir = mkProject();
   installPostcssUxdsl(dir);
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  // A real responsive declaration is required — the breakpoint value alone
-  // (e.g. via the #uxdsl-bp-meta marker) is serialized as `"xl":1280`, with
-  // no "px" suffix, so only an actual @media rule proves the value changed.
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '.card { width: xs(100%) xl(50%); }');
-  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1280 } };\n");
+  // The nested module decides which entry is compiled — the one build-config
+  // value whose effect is unmistakable in the output. (It used to carry
+  // `breakpoints`, which a build config no longer accepts.)
+  fs.writeFileSync(path.join(dir, 'src', 'first.uxdsl'), '.first { color: red; }');
+  fs.writeFileSync(path.join(dir, 'src', 'second.uxdsl'), '.second { color: blue; }');
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/first.uxdsl', outFile: './src/uxdsl.css' };\n");
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = require('./real-config.js');\n");
 
-  const child = spawn(process.execPath, [CLI_BIN, 'watch'], { cwd: dir, stdio: 'pipe' });
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
   t.after(() => child.kill());
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
 
-  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('1280px'));
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('.first'));
   await delay(WATCHER_SETTLE_MS);
 
   // Only real-config.js changes — uxdsl.config.cjs's own content is
   // untouched, so this exercises the config's own nested require(), the
   // exact case a real consumer reported as never triggering a rebuild.
-  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', breakpoints: { xl: 1440 } };\n");
+  fs.writeFileSync(path.join(dir, 'real-config.js'), "module.exports = { entry: './src/second.uxdsl', outFile: './src/uxdsl.css' };\n");
 
-  await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('1440px'));
-  assert.ok(fs.readFileSync(cssPath, 'utf8').includes('1440px'), 'rebuilt CSS must carry the new breakpoint from the nested require()');
-  assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('1280px'), 'rebuilt CSS must not still carry the stale nested value');
+  await waitFor(() => fs.readFileSync(cssPath, 'utf8').includes('.second'));
+  assert.ok(fs.readFileSync(cssPath, 'utf8').includes('.second'), 'rebuilt CSS must come from the entry the nested require() now names');
+  assert.ok(!fs.readFileSync(cssPath, 'utf8').includes('.first'), 'rebuilt CSS must not still carry the stale entry');
 });
 
 test('watch mode does not treat its own output file as a source change (no self-triggered rebuild loop)', async (t) => {

@@ -147,6 +147,25 @@ Canonical defaults:
 
 Use this exported constant in integrations instead of duplicating literal values.
 
+**The theme is the only place a breakpoint is configured.** A project changes
+or adds a threshold in its theme's `breakpoints` family (`{ "breakpoints":
+{ "md": 800, "xxl": 1536 } }`, merged over the base map and validated once as
+`UXD_BP_INVALID`); the plugin reads that map and nothing else. The plugin's
+options are:
+
+```ts
+uxdsl({ theme?, includeTheme?, references?, discoverTheme?, configRoot? })
+```
+
+Stability phase 1 removed the `breakpoints` option (in the three shapes it
+accepted), which replaced the theme's map wholesale and was one of three places
+a threshold could come from, and the `themeVar`/`spaceVar`/`colorVar` callbacks,
+which let a caller rename the `--uxdsl__<family>__<key>` variables every other
+part of the system relies on. A JavaScript caller that still passes one gets a
+`UXD_OPTION_REMOVED` warning and the option is ignored (never a throw); in
+TypeScript it no longer type-checks, and neither do the `UxDslOptions` alias
+(use `UxdslOptions`) or `UxdslBreakpointSpec`.
+
 ### Runtime breakpoint API
 
 The runtime supports live breakpoint updates by rewriting generated media queries:
@@ -1200,7 +1219,7 @@ import type { UxdslTheme, UxdslThemeOverride, UxdslOptions, UxdslConfig } from '
 
 `UxdslTheme` is a complete theme; `UxdslThemeOverride` is the partial patch
 `resolveTheme` merges over the base, with arrays replaced rather than merged.
-`UxDslOptions` still resolves, as a deprecated alias of `UxdslOptions`.
+The former `UxDslOptions` alias was removed in stability phase 1; the type is `UxdslOptions`.
 
 **In a `uxdsl.theme.json`**, point `$schema` at the packaged JSON Schema:
 

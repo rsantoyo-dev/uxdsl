@@ -263,6 +263,16 @@ Default values:
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
 
+Since stability phase 1 the theme's `breakpoints` family is the only place a
+threshold is configured. The PostCSS plugin no longer has a `breakpoints`
+option: a value forwarded to it — from a `breakpoints` key in `uxdsl.config.cjs`
+through `uxdsl-cli`/`uxdsl-core`, or from the `breakpoints` option of
+`vite-plugin-uxdsl`/`uxdsl-webpack-loader` — is ignored with a
+`UXD_OPTION_REMOVED` warning, and the build compiles against the theme's map.
+Put the thresholds in the theme (`{ "breakpoints": { "md": 800 } }` in
+`uxdsl.theme.json`, or the adapter's `theme` option). See
+[`postcss-uxdsl`'s changelog](packages/postcss-uxdsl/CHANGELOG.md).
+
 ## Quick start (Next.js playground)
 
 1. Open a terminal in `packages/playground-nextjs`.
