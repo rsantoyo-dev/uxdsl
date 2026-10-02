@@ -13,33 +13,41 @@
     "breakpoints": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "number"
+        "type": "number",
+        "minimum": 0,
+        "description": "Viewport width in pixels. Widths must be distinct and one breakpoint must be 0."
       }
     },
     "spacing": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^(space-)?[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^(space-)?[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     },
     "palette": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "object",
         "propertyNames": {
-          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
         },
         "additionalProperties": {
-          "type": "string"
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+          "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
         }
       }
     },
@@ -50,16 +58,22 @@
         "families": {
           "type": "object",
           "propertyNames": {
-            "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+            "pattern": "^[a-z][a-z0-9-]*$"
           },
           "additionalProperties": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           }
         },
         "google": {
           "type": "array",
           "items": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "\\S",
+            "description": "A Google Fonts css2 family spec, e.g. \"Inter:wght@400;700\". Percent-encoded into the @import URL, never emitted as CSS."
           }
         }
       }
@@ -67,20 +81,26 @@
     "colors": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "anyOf": [
           {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           {
             "type": "object",
             "propertyNames": {
-              "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
             },
             "additionalProperties": {
-              "type": "string"
+              "type": "string",
+              "minLength": 1,
+              "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+              "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
             }
           }
         ]
@@ -89,41 +109,71 @@
     "typography_details": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "fontFamily": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "fontSize": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "lineHeight": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "fontWeight": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "letterSpacing": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "textTransform": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "textDecoration": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "fontStyle": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "marginBlockStart": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "marginBlockEnd": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           }
         }
       }
@@ -131,72 +181,123 @@
     "densities": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     },
     "inputs": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "surface": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "base": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
               "padding": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "radius": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "bg": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "color": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "border": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "shadow": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "opacity": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "outline": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "outline-offset": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "transform": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "cursor": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "font-weight": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "caret": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "placeholder": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "underline": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               }
             }
           },
@@ -209,49 +310,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -260,49 +406,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -311,49 +502,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -362,49 +598,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -413,49 +694,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -464,49 +790,94 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "caret": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "placeholder": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "underline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               }
@@ -518,54 +889,93 @@
     "buttons": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "surface": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "base": {
             "type": "object",
             "additionalProperties": false,
             "properties": {
               "padding": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "radius": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "bg": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "color": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "border": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "shadow": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "opacity": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "outline": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "outline-offset": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "transform": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "cursor": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               },
               "font-weight": {
-                "type": "string"
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
               }
             }
           },
@@ -578,40 +988,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -620,40 +1066,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -662,40 +1144,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -704,40 +1222,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -746,40 +1300,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               },
@@ -788,40 +1378,76 @@
                 "additionalProperties": false,
                 "properties": {
                   "padding": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "radius": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "bg": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "color": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "border": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "shadow": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "opacity": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "outline-offset": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "transform": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "cursor": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   },
                   "font-weight": {
-                    "type": "string"
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                    "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                   }
                 }
               }
@@ -833,29 +1459,47 @@
     "surfaces": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "padding": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "radius": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "bg": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "color": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "border": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           },
           "shadow": {
-            "type": "string"
+            "type": "string",
+            "minLength": 1,
+            "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+            "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
           }
         }
       }
@@ -863,28 +1507,37 @@
     "shadows": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     },
     "borders": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     },
     "radii": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     },
     "modes": {
@@ -898,15 +1551,18 @@
             "palette": {
               "type": "object",
               "propertyNames": {
-                "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+                "pattern": "^[a-z][a-z0-9-]*$"
               },
               "additionalProperties": {
                 "type": "object",
                 "propertyNames": {
-                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
                 },
                 "additionalProperties": {
-                  "type": "string"
+                  "type": "string",
+                  "minLength": 1,
+                  "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+                  "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
                 }
               }
             }
@@ -917,10 +1573,13 @@
     "typography": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]*$"
+        "pattern": "^[a-z][a-z0-9-]*$"
       },
       "additionalProperties": {
-        "type": "string"
+        "type": "string",
+        "minLength": 1,
+        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
+        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     }
   }

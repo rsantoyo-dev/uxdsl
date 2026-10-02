@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { applyTheme, deepMergeTheme, validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme, deepMergeTheme, validateTheme } from 'postcss-uxdsl/ds-runtime'
 import { createThemeScheduler } from '../lib/theme-scheduler'
 import { baseTheme, themes } from '../../themes'
 
@@ -187,7 +187,7 @@ export function ThemeContextProvider({ children }: { children: React.ReactNode }
     const base = options?.replace ? baseTheme : (pendingCustomRef.current?.theme || activeThemeData || defaultTheme)
     const merged = deepMergeTheme(base, themeData || {})
 
-    const checked = validateAndNormalizeTheme(merged)
+    const checked = validateTheme(merged)
     if (!checked.ok) throw new Error(checked.errors.map(issue => `${issue.path}: ${issue.message}`).join('; '))
 
     pendingCustomRef.current = { name, theme: merged }

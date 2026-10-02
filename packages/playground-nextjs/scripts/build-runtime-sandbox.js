@@ -33,7 +33,7 @@ async function main() {
   const theme = themes.default;
   const { compile } = loadCore();
   const entry = path.join(PLAYGROUND, 'runtime-sandbox/sandbox.uxdsl');
-  const { css, warnings } = await compile({ entry }, { theme, breakpoints: theme.breakpoints });
+  const { css, warnings } = await compile({ entry }, { theme });
   if (warnings.length) throw new Error(`runtime sandbox: the compiler warned:\n${warnings.map((w) => w.text).join('\n')}`);
 
   const bundle = await esbuild.build({

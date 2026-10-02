@@ -40,12 +40,6 @@ export type UxdslInputState = keyof typeof INPUT_STATES;
  */
 export type UxdslTokenValue = string;
 
-/** Breakpoint thresholds, in any of the three shapes the plugin accepts. */
-export type UxdslBreakpointSpec =
-  | Record<string, number>
-  | Array<[string, number]>
-  | Array<{ name: string; min?: number; px?: number }>;
-
 /**
  * One Palette family. Variant names are open, and `main` is deliberately not
  * required: `action` in the shipped base theme has only `disabled`, and a
@@ -143,12 +137,17 @@ export type UxdslDeepPartial<T> =
  */
 export type UxdslThemeOverride = UxdslDeepPartial<UxdslTheme>;
 
-/** Options accepted by the PostCSS plugin. */
+/**
+ * Options accepted by the PostCSS plugin.
+ *
+ * Stability phase 1 removed `breakpoints` (in all three shapes it accepted),
+ * `themeVar`, `spaceVar` and `colorVar`. Thresholds are the theme's own
+ * `breakpoints` family — one source, validated once — and the emitted variable
+ * names are the `--uxdsl__<family>__<key>` contract, not something a caller
+ * renames. A JavaScript caller that still passes one gets a
+ * `UXD_OPTION_REMOVED` warning and the option is ignored.
+ */
 export interface UxdslOptions {
-  breakpoints?: UxdslBreakpointSpec;
-  themeVar?: (path: string) => string;
-  spaceVar?: (index: string) => string;
-  colorVar?: (path: string) => string;
   theme?: UxdslThemeOverride;
   /**
    * Whether this compilation emits the global `:root` token definitions
@@ -184,13 +183,6 @@ export interface UxdslOptions {
 }
 
 /**
- * @deprecated Renamed to {@link UxdslOptions} in 0.5.0-beta.6, so every public
- * type spells the product the same way. This alias still resolves to the same
- * type and is not scheduled for removal within 0.5.x.
- */
-export type UxDslOptions = UxdslOptions;
-
-/**
  * Where compiled CSS is written. `output` is the older spelling the CLI still
  * accepts (`configModule.outFile || configModule.output`); it is modelled here
  * so adding a type annotation to a working config does not report an error the
@@ -213,7 +205,9 @@ export type UxdslBuild = UxdslOutTarget & {
 export interface UxdslConfigShared {
   /** Extra paths for `--watch` to observe, beyond the entries and their imports. */
   watch?: string[];
-  breakpoints?: UxdslBreakpointSpec;
+  /** @deprecated Ignored: breakpoints are the theme's own `breakpoints` family
+   * (stability phase 1 removed the plugin option this was forwarded to). */
+  breakpoints?: Record<string, number>;
   /** Inline theme override. Mutually exclusive in practice with `themeFile`,
    * which points at a file holding the same thing. */
   theme?: UxdslThemeOverride;

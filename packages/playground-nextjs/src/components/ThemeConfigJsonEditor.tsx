@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, RefreshCcw } from 'lucide-react'
-import { validateAndNormalizeTheme } from 'postcss-uxdsl/ds-runtime'
+import { validateTheme } from 'postcss-uxdsl/ds-runtime'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 
@@ -45,7 +45,7 @@ export default function ThemeConfigJsonEditor() {
     syncTimeoutRef.current = window.setTimeout(() => {
       try {
         const parsed = JSON.parse(jsonText)
-        const validated = validateAndNormalizeTheme(parsed, { requireXsForResponsive: true })
+        const validated = validateTheme(parsed)
 
         if (!validated.ok) {
           const first = validated.errors[0]

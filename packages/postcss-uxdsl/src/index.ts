@@ -1,16 +1,15 @@
-import { generateFoundationCss } from './foundations';
 import { enforceReferences, ReferenceOptions } from './reference-integrity';
-import { generateThemeCss } from './ds-runtime/theme-generator';
-import { getInputTokens, generateInputCss, inputComponentCss, parseInputArguments } from './inputs';
-import { getButtonTokens, generateButtonCss, buttonComponentCss, parseButtonArguments } from './buttons';
-import { generateSurfaceCss, getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
-import { generateShadowCss, getShadowTokens } from './shadows';
-import { generateEdgeCss, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
+import { renderThemeCss } from './ds-runtime/theme-generator';
+import { validateTheme, themeValidationError } from './ds-runtime/theme-validate';
+import { getInputTokens, inputComponentCss, parseInputArguments } from './inputs';
+import { getButtonTokens, buttonComponentCss, parseButtonArguments } from './buttons';
+import { getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
+import { getShadowTokens } from './shadows';
+import { getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
 import { discoverThemeSync } from './config';
-import { googleFontsImportUrls } from './fonts';
 // The UXDSL PostCSS plugin.
 //
 // MIG-B6-28 (FEAT-008): this header described a five-line prototype — "$var
@@ -44,61 +43,27 @@ import { googleFontsImportUrls } from './fonts';
 import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { presetValueToCss } from './preset-engine';
-import { compileDensityRules, resolveResponsiveValue, getDensityTokens, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
-import { generateTypographyCss, TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
+import { resolveResponsiveValue, getDensityTokens, tokenValueToCss, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
-import type { UxdslBreakpointSpec, UxdslOptions } from './types';
+import type { UxdslOptions } from './types';
 
 // MIG-B6-27 (FEAT-008): the options interface lives in `./types` now, the
 // public type surface consumers import. It is re-exported from the namespace
 // merged at the bottom of this file, so `import type { UxdslOptions } from
 // 'postcss-uxdsl'` resolves even though this module uses `export =`.
-type BreakpointSpec = UxdslBreakpointSpec;
-
-// Map palette(foo.bar|foo-bar) -> resolve to --uxdsl__palette__*
-const defaultThemeVar = (path: string) => {
-  const key = String(path).trim().replace(/\./g, "-");
-  return `var(${buildNamespacedVarName('palette', key)})`;
+// Stability phase 1: the plugin options `breakpoints`, `themeVar`, `spaceVar`
+// and `colorVar` are gone. Thresholds are the theme's own `breakpoints` family
+// (one source, validated once by `validateTheme`), and the emitted names are
+// the `--uxdsl__<family>__<key>` contract. A caller that still passes one is
+// told so and the option is ignored — the CLI, `uxdsl-core` and the adapters
+// forwarded `breakpoints` until their own phase lands, so this must not throw.
+const REMOVED_OPTIONS: Record<string, string> = {
+  breakpoints: 'breakpoints are configured in the theme (`theme.breakpoints`)',
+  themeVar: 'palette() always compiles to var(--uxdsl__palette__<key>)',
+  spaceVar: 'space() always compiles to var(--uxdsl__space__<key>)',
+  colorVar: 'color() always compiles to var(--uxdsl__color__<key>)',
 };
-
-// Map space(2) -> var(--uxdsl__space__2)
-const defaultSpaceVar = (index: string) =>
-  `var(${buildVarName('space', String(index).trim())})`;
-
-// Map color(blue.500|blue-500) -> resolve to --uxdsl__color__*
-const defaultColorVar = (path: string) => {
-  const key = String(path).trim().replace(/\./g, "-");
-  return `var(${buildNamespacedVarName('color', key)})`;
-};
-
-function normalizeBreakpoints(input?: BreakpointSpec) {
-  if (!input) {
-    const ordered = Object.entries(DEFAULT_BPS).map(([n, px]) => ({
-      name: n,
-      px,
-    }));
-    return { map: { ...DEFAULT_BPS }, ordered };
-  }
-  if (Array.isArray(input)) {
-    const entries = input.map((it) =>
-      Array.isArray(it)
-        ? { name: it[0], px: Number(it[1]) }
-        : { name: it.name, px: Number(it.min ?? (it as any).px) }
-    );
-    const map: Record<string, number> = {};
-    entries.forEach(({ name, px }) => {
-      if (name) map[name] = px;
-    });
-    const ordered = entries.slice().sort((a, b) => a.px - b.px);
-    return { map, ordered };
-  }
-  const map: Record<string, number> = { ...(input as Record<string, number>) };
-  const ordered = Object.keys(map)
-    .map((k) => ({ name: k, px: Number(map[k]) }))
-    .sort((a, b) => a.px - b.px);
-  return { map, ordered };
-}
 
 // MIG-B7-14 (FEAT-009): CSS honors an `@import` only when it precedes every
 // other rule, and `@charset` only when it is the very first thing in the
@@ -130,12 +95,6 @@ function insertAfterLeading(root: Root, keep: (node: ChildNode) => boolean, node
 }
 
 function uxdslPlugin(opts: UxdslOptions = {}) {
-  const toVar =
-    typeof opts.themeVar === "function" ? opts.themeVar : defaultThemeVar;
-  const toSpaceVar =
-    typeof opts.spaceVar === "function" ? opts.spaceVar : defaultSpaceVar;
-  const toColorVar =
-    typeof opts.colorVar === "function" ? opts.colorVar : defaultColorVar;
   const mediaRuleCache = new WeakMap<Rule, Map<string, Rule>>();
   const lastMediaByRule = new WeakMap<Rule, AtRule>();
   // Historical single-entry behavior: one compiled file both defines and
@@ -186,8 +145,24 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // of how populated DEFAULT_THEME is.
       const rawTheme = (opts.theme ?? discovered?.theme) as Record<string, any> | undefined;
       const effectiveTheme = resolveTheme(rawTheme);
+      // Stability phase 1: the one validator, on the effective theme, before
+      // any engine reads it — the same call `generateThemeCss` and
+      // `applyTheme` make, so a numeric leaf, a `"768"` breakpoint or an
+      // unknown `fonts` key is refused here with the same code and key path.
+      // References are checked once, at the end, on the stylesheet actually
+      // emitted (legacy `@theme` packs included), not here.
+      const validated = validateTheme(effectiveTheme, { references: false });
+      if (!validated.ok) throw themeValidationError(validated.errors);
+      for (const warning of validated.warnings) result.warn(warning.message, { plugin: 'postcss-uxdsl' });
       const effectiveReferences = opts.references ?? discovered?.references as ReferenceOptions | undefined;
-      const { map: bps, ordered } = normalizeBreakpoints(opts.breakpoints ?? (effectiveTheme.breakpoints ? { ...DEFAULT_BPS, ...effectiveTheme.breakpoints } : undefined));
+      for (const [name, instead] of Object.entries(REMOVED_OPTIONS)) {
+        if ((opts as Record<string, unknown>)[name] !== undefined) {
+          result.warn(`UXD_OPTION_REMOVED: the "${name}" plugin option was removed and is ignored; ${instead}.`, { plugin: 'postcss-uxdsl' });
+        }
+      }
+      // The one breakpoint map of this compilation: the effective theme's.
+      const bps: Record<string, number> = { ...DEFAULT_BPS, ...effectiveTheme.breakpoints };
+      const ordered = Object.entries(bps).map(([name, px]) => ({ name, px })).sort((a, b) => a.px - b.px);
       const bpNames = new Set(Object.keys(bps));
       const inheritSource = (node: any, source: any) => {
         node.source = source;
@@ -204,26 +179,25 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // globals, and keeps `sources` to files that actually exist. Reference
       // diagnostics are unaffected: an anonymous Input already has no
       // `input.file`, so `issue.source` was undefined for these nodes anyway.
-      const themeGenerated = (css: string) => inheritSource(postcss.parse(css), undefined).nodes;
+      // Stability phase 1 (audit T1): every generated theme node is marked, and
+      // the value passes below (`$var` substitution, responsive expansion,
+      // token rewriting) run over the author's nodes only. The engines resolve
+      // the one value grammar themselves now, so the same `renderThemeCss`
+      // string `generateThemeCss` returns is what this plugin inserts — a
+      // final pass that also rewrote the generated `:root` blocks is what made
+      // the two paths differ (`radius(2)` resolved at build time only).
+      const generated = new WeakSet<ChildNode>();
+      const markGenerated = (nodes: ChildNode[]) => {
+        for (const node of nodes) { generated.add(node); (node as any).walk?.((child: ChildNode) => { generated.add(child); }); }
+        return nodes;
+      };
+      const themeGenerated = (css: string) => markGenerated(inheritSource(postcss.parse(css), undefined).nodes);
       const originalSources = new Set<Declaration['source']>();
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
         originalSources.add(node.source);
         if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
       });
-      if (effectiveTheme && includeTheme) {
-        root.append(themeGenerated(generateFoundationCss(effectiveTheme)));
-        root.append(themeGenerated(generateTypographyCss(effectiveTheme, bps)));
-
-        // MIG-B6-29 phase 4: the URL itself comes from the shared, tested
-        // encoder in ./fonts, not a bare template interpolation — a family
-        // name with a space (or any other character css2's own syntax doesn't
-        // use) used to produce an invalid URL here. MIG-B7-14: inserted after
-        // the author's `@charset` (which must stay first), in configured order,
-        // and before everything else — see `insertAfterLeading`.
-        insertAfterLeading(root, isCharsetOrComment, [...googleFontsImportUrls(effectiveTheme.fonts?.google)].map(
-          (url) => postcss.atRule({ name: 'import', params: `url('${url}')` })));
-      }
       const vars: Record<string, string> = Object.create(null);
       // Selector-scoped typography directives.
       // MIG-B6-14 (FEAT-008): only @ds-typo(h1) is supported — @ds(h1) and
@@ -596,11 +570,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // definitions themselves are gated by includeTheme.
       const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
       const effectiveShadows = getShadowTokens(shadowTheme);
-      if (includeTheme) root.append(themeGenerated(generateShadowCss(shadowTheme, bps)));
 
       const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
       const edgeTokens = getEdgeTokens(edgeTheme);
-      if (includeTheme) root.append(themeGenerated(generateEdgeCss(edgeTheme, bps)));
 
       // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
       // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
@@ -609,26 +581,12 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // *unresolved* override, not `effectiveTheme` (which now always
       // carries DEFAULT_THEME's own densities too).
       const effectiveDensities = getDensityTokens(rawTheme, densityTokens);
-      // Generate CSS variables for density tokens
-      if (includeTheme) {
-        for (const compiled of compileDensityRules(effectiveDensities, bps)) {
-          const rule = postcss.rule({ selector: ':root' });
-          for (const [prop, value] of Object.entries(compiled.values)) rule.append({ prop, value });
-          if (compiled.minWidth === null) insertAfterLeading(root, isPrelude, [rule]);
-          else {
-            const media = postcss.atRule({ name: 'media', params: `(min-width: ${compiled.minWidth}px)` });
-            media.append(rule);
-            root.append(media);
-          }
-        }
-      }
 
       getSurfaceTokens({ surfaces: effectiveTheme?.surfaces }); // Validate JSON before merging legacy fields.
       const legacySurfaces = (root as any).__surfacePacks || {};
       const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
       for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
       const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
-      if (includeTheme) root.append(themeGenerated(generateSurfaceCss(effectiveSurfaceTheme, bps)));
       getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
       const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
@@ -638,7 +596,6 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
-      if (includeTheme) root.append(themeGenerated(generateButtonCss(effectiveButtonTheme, bps)));
       getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
       const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
       for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
@@ -648,7 +605,41 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
       }
       const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
-      if (includeTheme) root.append(themeGenerated(generateInputCss(effectiveInputTheme, bps)));
+      // The one theme this compilation emits and validates references against:
+      // the effective theme with this file's legacy `@theme` packs merged in.
+      const themeForCss = { ...effectiveInputTheme, buttons: buttonOverrides };
+
+      // Stability phase 1 (audit T10): the whole theme is one string —
+      // `renderThemeCss`, the exact bytes `generateThemeCss` returns — inserted
+      // at one place. Its `@import`s go right after the author's `@charset` and
+      // leading comments (MIG-B7-14: the theme's imports first, then the
+      // author's, in written order); every other block goes after the author's
+      // whole prelude (`@charset`, body-less `@layer`, `@import`s, comments)
+      // and *before* the author's rules. Until now only the imports and the
+      // density block went there and every other family was appended after
+      // the author's rules, so an author's own `:root { --uxdsl__… }` override
+      // silently lost to the theme's later declaration of the same name.
+      if (includeTheme) {
+        const nodes = [...themeGenerated(renderThemeCss(themeForCss, bps))];
+        const imports = nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
+        const blocks = nodes.filter((node) => !imports.includes(node));
+        // A parsed string's first node has no leading raw; after an author's
+        // prelude it gets a newline so it never glues onto the previous node.
+        // Every other node keeps the raw it was parsed with: PostCSS's
+        // `Root.normalize` rewrites the `before` of a node inserted after a
+        // sibling to that sibling's own, which would turn the renderer's
+        // ` @media` into `\n@media` and break byte-identity with
+        // `generateThemeCss`.
+        const inserted = (keep: (node: ChildNode) => boolean, group: ChildNode[]) => {
+          if (!group.length) return;
+          const parsedBefore = new Map(group.map((node) => [node, node.raws.before]));
+          if (root.nodes.some(keep) && !group[0].raws.before) parsedBefore.set(group[0], '\n');
+          insertAfterLeading(root, keep, group);
+          for (const node of group) node.raws.before = parsedBefore.get(node);
+        };
+        inserted(isCharsetOrComment, imports);
+        inserted(isPrelude, blocks);
+      }
 
       // After tokens are known, expand @ds-surface and @ds-button using packs
       root.walkRules((rule) => {
@@ -734,7 +725,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       if (varNames.length > 0) {
         const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
         root.walkDecls((decl) => {
-          if (typeof decl.value !== "string") return;
+          if (typeof decl.value !== "string" || generated.has(decl)) return;
           decl.value = decl.value.replace(varRefRE, (_m, name) => {
             return Object.prototype.hasOwnProperty.call(vars, name)
               ? vars[name]
@@ -823,19 +814,22 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             node.value = `var(${buildVarName('border', key)})`;
             return;
           }
+          if (node.type === 'function' && node.value === 'tone') {
+            throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', valueParser.stringify(node));
+          }
           if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {
             node.type = 'word';
-            node.value = presetValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`, 'UXD_TOKEN', { palette: toVar, color: toColorVar, space: toSpaceVar });
+            node.value = tokenValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`);
             return false;
           }
         });
         return p.toString().trim();
       }
 
-      // Walk declarations to handle palette()/space() and responsive bp(...) values
+      // Walk the author's declarations to handle palette()/space() and responsive bp(...) values
       root.walkDecls((decl) => {
         try {
-          if (typeof decl.value !== "string") return;
+          if (typeof decl.value !== "string" || generated.has(decl)) return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
         const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
 
@@ -895,7 +889,12 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             // `!important` from every breakpoint but the base one, so a
             // competing, non-responsive `!important` declaration elsewhere
             // in the cascade could still win at md/lg/xl.
-            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source });
+            // Stability phase 1: a declaration derived from the author's keeps
+            // the author's own formatting (`raws`). Without them PostCSS infers
+            // the style from the first formatted node in the tree — a generated
+            // one-line `:root` block now — and the author's media clones would
+            // silently follow the theme's layout instead of the author's.
+            cloned.append({ prop: decl.prop, value: text, important: decl.important, source: decl.source, raws: { ...decl.raws } });
             (at as any).append(cloned);
             if (
               parentFallback &&
@@ -942,7 +941,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
             bucket.set(bp, cloned);
             targetRule = cloned;
           }
-          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source });
+          targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source, raws: { ...decl.raws } });
         });
         if (!baseOut) decl.remove();
         } catch (error) {
@@ -950,10 +949,11 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         }
       });
 
-      // Reuse the same resolver after substitutions and media cloning.
+      // Reuse the same resolver after substitutions and media cloning — over
+      // the author's nodes only; the generated theme is already resolved.
       root.walkDecls(decl => {
         try {
-          if (typeof decl.value === 'string') decl.value = rewriteFuncs(decl.value);
+          if (typeof decl.value === 'string' && !generated.has(decl)) decl.value = rewriteFuncs(decl.value);
         } catch (error) {
           throw locateError(error, decl);
         }
@@ -992,7 +992,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];
       if (!includeTheme && effectiveTheme && references.mode !== 'off') {
-        css.push(generateThemeCss({ ...effectiveInputTheme, buttons: buttonOverrides, breakpoints: bps }, { mode: 'off' }));
+        css.push(renderThemeCss(themeForCss, bps));
       }
       enforceReferences(root, consumers, { ...references, css,
         onWarning: issue => { result.warn(issue.message, { node: (issue as any).node, plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },
@@ -1012,11 +1012,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
 // A namespace cannot re-export with `export ... from`, hence the import types.
 declare namespace uxdslPlugin {
   export type UxdslOptions = import('./types').UxdslOptions;
-  export type UxDslOptions = import('./types').UxDslOptions;
   export type UxdslTheme = import('./types').UxdslTheme;
   export type UxdslThemeOverride = import('./types').UxdslThemeOverride;
   export type UxdslDeepPartial<T> = import('./types').UxdslDeepPartial<T>;
-  export type UxdslBreakpointSpec = import('./types').UxdslBreakpointSpec;
   export type UxdslTokenValue = import('./types').UxdslTokenValue;
   export type UxdslPaletteFamily = import('./types').UxdslPaletteFamily;
   export type UxdslColorFamily = import('./types').UxdslColorFamily;

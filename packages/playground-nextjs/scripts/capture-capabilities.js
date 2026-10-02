@@ -194,7 +194,7 @@ const DIAGNOSTICS = [
   { expect: 'UXD_DIRECTIVE_CONTEXT', title: 'A directive outside the rule it styles', css: '@media (min-width: 768px) {\n  @ds-surface(contained);\n}\n' },
   { expect: 'UXD_DIRECTIVE_UNKNOWN', title: 'A directive UXDSL does not have', css: '.card {\n  @ds-card(contained);\n}\n' },
   { expect: 'UXD_TOKEN_ALPHA', title: 'An alpha outside 0–1', css: '.overlay {\n  background: palette(primary-main, 2);\n}\n' },
-  { expect: 'UXD_TYPO_BP', title: 'A negative breakpoint in the theme (reported by the first engine that validates the map: Typography)', css: '.a {\n  padding: space(3);\n}\n', theme: { breakpoints: { xs: 0, sm: 480, md: -1, lg: 1024, xl: 1280 } } },
+  { expect: 'UXD_BP_INVALID', title: 'A negative breakpoint in the theme (validated once, before any engine runs)', css: '.a {\n  padding: space(3);\n}\n', theme: { breakpoints: { xs: 0, sm: 480, md: -1, lg: 1024, xl: 1280 } } },
   { expect: 'UXD_TYPO_FIELD', title: 'A typography field the engine does not support', css: '.a {\n  padding: space(3);\n}\n', theme: { typography_details: { h1: { opacity: '0.8' } } } },
   { expect: 'UXD_REFERENCE_MISSING', title: 'A theme value pointing at a token that does not exist', css: '.a {\n  color: palette(primary-main);\n}\n', theme: { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } } },
 ];

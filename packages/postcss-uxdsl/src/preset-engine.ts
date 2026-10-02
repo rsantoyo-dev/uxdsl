@@ -1,44 +1,20 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression } from './language';
-import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
+import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression, tokenValueToCss } from './language';
+import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
-export function normalizeTokenKey(kind: string, input: string): string {
-  let key = input.trim().replace(/^(['"])(.*)\1$/, '$2');
-  if (!/^[\w.-]+$/.test(key)) throw new Error('UXD_TOKEN_KEY: Expected a token key.');
-  if (kind === 'palette' || kind === 'color') key = key.replace(/\./g, '-');
-  if (kind === 'palette' && !key.includes('-')) key += '-main';
-  return key;
-}
+// Stability phase 1: the value grammar lives in language.ts (`tokenValueToCss`,
+// `normalizeTokenKey`, `RADIUS_KEYWORDS`) so every engine — foundations,
+// typography, densities and these presets — serializes a theme value the
+// same way. These names stay exported here for the callers that import them.
+export { normalizeTokenKey, RADIUS_KEYWORDS } from './language';
 
-export function presetValueToCss(input: string, errorPrefix = 'UXD_PRESET', serializers: Partial<Record<string, (key: string) => string>> = {}): string {
-  const parsed = valueParser(input);
-  parsed.walk(node => {
-    if (node.type !== 'function' || !['space', 'density', 'color', 'palette'].includes(node.value)) return;
-    // MIG-B6-14 (FEAT-008): `color()` is the one UXDSL token function that
-    // collides with a real native CSS function of the same name (relative
-    // color syntax `color(from red srgb r g b / 0.5)`, an explicit color
-    // space `color(display-p3 1 0 0)`). A token's own key always matches
-    // `normalizeTokenKey`'s shape (`/^[\w.-]+$/`, no spaces); any native
-    // form's first "argument" (there's no comma to split on) contains a
-    // space or slash and never does. This replaces a fixed, incomplete list
-    // of known color-space keywords — CSS keeps adding spaces (rec2100-pq,
-    // etc.) that list would need to track forever — with a shape check that
-    // needs no such list at all.
-    if (node.value === 'color' && !/^[\w.-]+$/.test(valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2'))) return;
-    const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());
-    const key = normalizeTokenKey(node.value, args[0]);
-    const varName = node.value === 'color' || node.value === 'palette' ? buildNamespacedVarName(node.value, key) : buildVarName(node.value, key);
-    let value = serializers[node.value]?.(key) || `var(${varName})`;
-    if (args.length > 1) {
-      const alpha = Number(args[1]);
-      if (!['palette', 'color'].includes(node.value) || args.length !== 2 || !args[1] || !Number.isFinite(alpha) || alpha < 0 || alpha > 1) throw new Error(`${errorPrefix}_ALPHA: Expected a number between 0 and 1.`);
-      value = `color-mix(in srgb, ${value} ${alpha * 100}%, transparent)`;
-    }
-    Object.assign(node, { type: 'word', value });
-    return false;
-  });
-  return parsed.toString();
+/** @deprecated Use `tokenValueToCss` (language.ts). The error prefix is no
+ * longer used — a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
+ * belongs to — and the per-family serializers went with the `themeVar`/
+ * `spaceVar`/`colorVar` plugin options they existed for. */
+export function presetValueToCss(input: string, _errorPrefix = 'UXD_PRESET'): string {
+  return tokenValueToCss(input);
 }
 
 // MIG-B6-13 (FEAT-008) code-review follow-up: `keyPathPrefix` is optional so
@@ -70,7 +46,10 @@ export function mergePresetTokens(defaults: Record<string, string>, input: Recor
 }
 
 export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix = 'UXD_PRESET') {
-  const ordered = validateBreakpoints(breakpoints, `${errorPrefix}_BP`);
+  // Stability phase 1: the breakpoint map has one owner and one code
+  // (`UXD_BP_INVALID`), not one `<FAMILY>_BP` restatement per engine. A value
+  // naming a breakpoint the map does not have is a value error, `_VALUE`.
+  const ordered = validateBreakpoints(breakpoints);
   const rules = ordered.map(([breakpoint, width], i) => ({ breakpoint, minWidth: i ? width : null as number | null, values: {} as Record<string, string> }));
   // MIG-08: two different (family, key) pairs — e.g. surface role
   // "contained-shadow" with no field suffix, and role "contained" field
@@ -80,11 +59,11 @@ export function compilePresetRules(tokens: Record<string, Record<string, string>
   const names = new NameRegistry(errorPrefix);
   for (const family of Object.keys(tokens)) {
     for (const [key, expression] of Object.entries(tokens[family])) {
-      validateResponsiveExpression(expression, breakpoints, `${errorPrefix}_BP`);
+      validateResponsiveExpression(expression, breakpoints, `${errorPrefix}_VALUE`);
       const varName = names.claim(buildVarName(family, key), `${family}.${key}`);
       let previous: string | undefined;
       ordered.forEach(([bp], i) => {
-        const value = presetValueToCss(resolveResponsiveValue(expression, bp, breakpoints), errorPrefix);
+        const value = tokenValueToCss(resolveResponsiveValue(expression, bp, breakpoints));
         if (!value && i === 0) throw new Error(`${errorPrefix}_BASE: ${family}.${key} needs a base value.`);
         if (value !== previous) rules[i].values[varName] = value;
         previous = value;
@@ -93,4 +72,3 @@ export function compilePresetRules(tokens: Record<string, Record<string, string>
   }
   return rules.filter(rule => Object.keys(rule.values).length);
 }
-

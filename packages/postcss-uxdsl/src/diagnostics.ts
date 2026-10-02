@@ -6,10 +6,18 @@ const CODE_PATTERN = /^(UXD_[A-Z0-9_]+):/;
 // the prefixes expanded by the preset and control engines. The source guard in
 // test/diagnostics-catalog.test.js prevents a new code from bypassing it.
 export const DIAGNOSTIC_CODES = new Set([
-  'UXD_THEME_INVALID', 'UXD_SPACING_KEY', 'UXD_SPACING_COLLISION', 'UXD_FOUNDATION_NAME_COLLISION',
+  // Stability phase 1: `validateTheme`'s own codes. UXD_THEME_INVALID is every
+  // structural problem (a leaf that is not a nonempty string, a closed key,
+  // a name that does not match THEME_NAME_PATTERN, `;`/`{`/`}` or unbalanced
+  // parentheses in a value), with the key path. UXD_THEME_FAMILY is the
+  // unknown-top-level-family *warning*. UXD_BP_INVALID is the one breakpoint
+  // code: the map is validated once, never restated per engine.
+  'UXD_THEME_INVALID', 'UXD_THEME_FAMILY', 'UXD_SPACING_KEY', 'UXD_SPACING_COLLISION', 'UXD_FOUNDATION_NAME_COLLISION',
   'UXD_BP_INVALID', 'UXD_VALUE',
   'UXD_DENSITY_MAP', 'UXD_DENSITY_VALUE', 'UXD_DENSITY_KEY', 'UXD_DENSITY_BASE', 'UXD_DENSITY_REFERENCE',
-  'UXD_TYPO_TOKEN', 'UXD_TYPO_BP', 'UXD_TYPO_DETAILS', 'UXD_TYPO_ROLE', 'UXD_TYPO_FIELD', 'UXD_TYPO_BASE', 'UXD_TYPO_NAME_COLLISION',
+  // (UXD_TYPO_TOKEN is gone: a malformed token key in a typography value is
+  // the grammar's own UXD_TOKEN_KEY, like in every other family.)
+  'UXD_TYPO_DETAILS', 'UXD_TYPO_ROLE', 'UXD_TYPO_FIELD', 'UXD_TYPO_BASE', 'UXD_TYPO_NAME_COLLISION',
   // MIG-B6-17 (FEAT-008): `@ds-typo(role)` naming a role the effective theme
   // does not define. Distinct from UXD_TYPO_ROLE, which rejects an invalid
   // role *definition* in the JSON; this one rejects an invalid *reference*
@@ -17,6 +25,12 @@ export const DIAGNOSTIC_CODES = new Set([
   // (e.g. UXD_SURFACE_ROLE vs UXD_SURFACE_REFERENCE).
   'UXD_TYPO_REFERENCE',
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
+  // Stability phase 1 (audit T6): `tone(main|dark|contrast)` outside a
+  // Button/Input theme value (language.ts's grammar, index.ts's author pass).
+  'UXD_TONE_CONTEXT',
+  // Stability phase 1: a *warning* for a plugin option that no longer exists
+  // (`breakpoints`, `themeVar`, `spaceVar`, `colorVar`); the option is ignored.
+  'UXD_OPTION_REMOVED',
   'UXD_SURFACE_MAP', 'UXD_SURFACE_ROLE', 'UXD_SURFACE_FIELD', 'UXD_SURFACE_REFERENCE', 'UXD_SURFACE_TONE', 'UXD_SURFACE_SIZE', 'UXD_SURFACE_ARGUMENT', 'UXD_SURFACE_VIEWPORT',
   'UXD_REFERENCE_MISSING', 'UXD_REFERENCE_CYCLE', 'UXD_REFERENCE_CONTEXT',
   // MIG-B6-30 (FEAT-008): the runtime JSON theme API. These are returned on a
@@ -33,7 +47,10 @@ export const DIAGNOSTIC_CODES = new Set([
   // pipeline — see index.ts's final walkAtRules pass and its responsive
   // value-function scan.
   'UXD_DIRECTIVE_UNKNOWN', 'UXD_DIRECTIVE_CONTEXT', 'UXD_BREAKPOINT_UNKNOWN',
-  ...['UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE'].flatMap(prefix => ['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
+  // Stability phase 1: a bad alpha is UXD_TOKEN_ALPHA whichever family the
+  // value belongs to — the one value grammar (language.ts's tokenValueToCss)
+  // reports it, so the per-family `_ALPHA` compositions are gone.
+  ...['UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE'].flatMap(prefix => ['MAP', 'VALUE', 'BASE', 'NAME_COLLISION', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
   // UXD_PRESET is preset-engine.ts's *default* errorPrefix — no call site in
   // src/ ever omits the explicit family prefix, so UXD_PRESET_VIEWPORT (a
   // literal, per-family string everywhere else, e.g. UXD_EDGE_VIEWPORT) was
@@ -47,8 +64,8 @@ export const DIAGNOSTIC_CODES = new Set([
   // from "some real call site actually uses this prefix" needs call-graph
   // analysis this check doesn't do, so this narrower case is flagged as a
   // known gap rather than fixed here.
-  ...['ALPHA', 'MAP', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION'].map(suffix => `UXD_PRESET_${suffix}`),
-  ...['UXD_BUTTON', 'UXD_INPUT'].flatMap(prefix => ['ALPHA', 'MAP', 'ROLE', 'FIELD', 'FIELDS', 'SURFACE', 'STATES', 'STATE', 'VALUE', 'BP', 'BASE', 'NAME_COLLISION', 'ARGUMENT', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
+  ...['MAP', 'VALUE', 'BASE', 'NAME_COLLISION'].map(suffix => `UXD_PRESET_${suffix}`),
+  ...['UXD_BUTTON', 'UXD_INPUT'].flatMap(prefix => ['MAP', 'ROLE', 'FIELD', 'FIELDS', 'SURFACE', 'STATES', 'STATE', 'TONE', 'VALUE', 'BASE', 'NAME_COLLISION', 'ARGUMENT', 'VIEWPORT'].map(suffix => `${prefix}_${suffix}`)),
 ]);
 
 export function diagnostic(message: string, word?: string): Error {

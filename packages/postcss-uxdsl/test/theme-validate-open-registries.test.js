@@ -25,7 +25,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
+const { validateTheme } = require('../dist/ds-runtime/theme-validate');
 
 function unknownWarnings(result) {
   return result.warnings.filter((w) => /^Unknown /.test(w.message));
@@ -44,14 +44,14 @@ test('MIG-B6-01: public runtime validates the README example and actual playgrou
   // DEFAULT_THEME loads, not a second copy the playground alone used.
   const base = JSON.parse(fs.readFileSync(path.join(__dirname, '../src/theme/base.json'), 'utf8'));
   for (const theme of [JSON.parse(example[1]), base]) {
-    const result = runtime.validateAndNormalizeTheme(theme);
+    const result = runtime.validateTheme(theme);
     assert.equal(result.ok, true, JSON.stringify(result.errors));
     assert.deepEqual(unknownWarnings(result), []);
   }
 });
 
 test('MIG-B6-01: a palette role beyond DEFAULT_THEME\'s built-ins produces no warning', () => {
-  const result = validateAndNormalizeTheme({
+  const result = validateTheme({
     palette: {
       // MIG-B6-29: these must NOT collide with theme/base.json's own 14
       // families (primary/secondary/surface/tertiary/success/info/warning/
@@ -70,17 +70,17 @@ test('MIG-B6-01: a palette role beyond DEFAULT_THEME\'s built-ins produces no wa
 });
 
 test('MIG-B6-01: a custom fonts.families role beyond DEFAULT_THEME\'s built-ins produces no warning', () => {
-  const result = validateAndNormalizeTheme({ fonts: { families: { mono2: 'Fira Code' } } });
+  const result = validateTheme({ fonts: { families: { mono2: 'Fira Code' } } });
   assert.deepEqual(unknownWarnings(result), []);
 });
 
 test('MIG-B6-01: a custom typography_details tag beyond DEFAULT_THEME\'s built-ins produces no warning', () => {
-  const result = validateAndNormalizeTheme({ typography_details: { footer: { fontSize: '0.8rem' } } });
+  const result = validateTheme({ typography_details: { footer: { fontSize: '0.8rem' } } });
   assert.deepEqual(unknownWarnings(result), []);
 });
 
 test('MIG-B6-01: the MIG-B3-03 top-level family check still catches a real typo', () => {
-  const result = validateAndNormalizeTheme({ palete: { primary: { main: '#123456' } } });
+  const result = validateTheme({ palete: { primary: { main: '#123456' } } });
   const warnings = unknownWarnings(result);
   assert.equal(warnings.length, 1);
   assert.equal(warnings[0].path, 'palete');
@@ -91,7 +91,7 @@ test('MIG-B6-01: the MIG-B3-03 top-level family check still catches a real typo'
 // hand, in one theme, so the criterion is checkable as written rather than
 // inferred from the three single-family tests above.
 test('MIG-B6-01: palette.brand + fonts.families.marketing + typography_details.display-xl compile warning-free together', () => {
-  const result = validateAndNormalizeTheme({
+  const result = validateTheme({
     palette: { brand: { main: '#ff5722' } },
     fonts: { families: { marketing: 'Poppins' } },
     typography_details: { 'display-xl': { fontSize: '4rem' } },
@@ -100,7 +100,7 @@ test('MIG-B6-01: palette.brand + fonts.families.marketing + typography_details.d
 });
 
 test('MIG-B6-01: modes and legacy typography compile warning-free with open registries', () => {
-  const result = validateAndNormalizeTheme({
+  const result = validateTheme({
     modes: { dark: { palette: { primary: { main: '#000000' } } } },
     typography: { hero: '2rem' },
     typography_details: { lead: { fontSize: '1.25rem' } },
@@ -114,11 +114,11 @@ test('MIG-B6-01: a typo\'d typography field name (not tag name) is still a hard 
   // Unlike a typo'd tag name (open namespace, no warning at all now) or a
   // typo'd palette/fonts.families role (same), a typo'd *field* inside a
   // tag (fontsize instead of fontSize) is still caught for real — it
-  // survives validateAndNormalizeTheme's normalization untouched (that
+  // survives validateTheme's normalization untouched (that
   // step only coerces keys it already recognizes) and then fails
   // compileTypographyRules's own TYPOGRAPHY_PROPERTIES membership check
   // with a hard UXD_TYPO_FIELD error, surfaced here as a validation error.
-  const result = validateAndNormalizeTheme({ typography_details: { h1: { fontsize: '2rem' } } });
+  const result = validateTheme({ typography_details: { h1: { fontsize: '2rem' } } });
   assert.equal(result.ok, false);
   assert.ok(result.errors.some((e) => /UXD_TYPO_FIELD: Invalid h1\.fontsize/.test(e.message)));
 });
