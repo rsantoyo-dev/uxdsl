@@ -81,15 +81,22 @@ for (const [css, line, expectedName, expectedReason] of [
 // typography_details (typography.ts) but left surfaces/densities/radii
 // throwing a plain, unlocated Error — reproduced with the exact theme
 // snippets from that review.
+//
+// Stability phase 1: a structural problem (a family that is not an object, a
+// role name outside THEME_NAME_PATTERN, an empty leaf) is now caught by the
+// one validator before any engine runs, as UXD_THEME_INVALID — same key path,
+// one code. An unknown *field* is still the engine's own closed-set error.
 for (const [theme, code, keyPath] of [
   [{ surfaces: { contained: { bogus: 'red' } } }, 'UXD_SURFACE_FIELD', 'surfaces.contained.bogus'],
-  [{ surfaces: { 'bad role': {} } }, 'UXD_SURFACE_ROLE', 'surfaces.bad role'],
-  [{ surfaces: 'not-an-object' }, 'UXD_SURFACE_MAP', 'surfaces'],
-  [{ densities: { x: '' } }, 'UXD_DENSITY_VALUE', 'densities.x'],
-  [{ densities: 'not-an-object' }, 'UXD_DENSITY_MAP', 'densities'],
-  [{ radii: { '1': '' } }, 'UXD_EDGE_VALUE', 'radii.1'],
-  [{ borders: { '1': '' } }, 'UXD_EDGE_VALUE', 'borders.1'],
-  [{ shadows: { '1': '' } }, 'UXD_SHADOW_VALUE', 'shadows.1'],
+  [{ surfaces: { 'bad role': {} } }, 'UXD_THEME_INVALID', 'surfaces.bad role'],
+  [{ surfaces: 'not-an-object' }, 'UXD_THEME_INVALID', 'surfaces'],
+  [{ densities: { x: '' } }, 'UXD_THEME_INVALID', 'densities.x'],
+  [{ densities: 'not-an-object' }, 'UXD_THEME_INVALID', 'densities'],
+  [{ radii: { '1': '' } }, 'UXD_THEME_INVALID', 'radii.1'],
+  [{ borders: { '1': '' } }, 'UXD_THEME_INVALID', 'borders.1'],
+  [{ shadows: { '1': '' } }, 'UXD_THEME_INVALID', 'shadows.1'],
+  [{ palette: { primary: { main: 5 } } }, 'UXD_THEME_INVALID', 'palette.primary.main'],
+  [{ breakpoints: { md: '768' } }, 'UXD_THEME_INVALID', 'breakpoints.md'],
 ]) {
   test(`MIG-B6-13: ${code} at "${keyPath}" carries the theme key path`, async () => {
     const error = await postcss([plugin({ includeTheme: false, theme })]).process('.a {}', { from: file }).then(() => null, caught => caught);

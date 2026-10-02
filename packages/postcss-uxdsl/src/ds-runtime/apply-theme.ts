@@ -12,8 +12,8 @@
 // when it returns `ok: false` nothing moved at all. There is no
 // requestAnimationFrame inside: batching belongs to the editor that produces
 // the patches, which is the only layer that knows what a "frame" of input is.
-import { generateThemeCss } from './theme-generator';
-import { validateAndNormalizeTheme, deepMergeTheme } from './theme-validate';
+import { renderThemeCss } from './theme-generator';
+import { validateTheme, deepMergeTheme } from './theme-validate';
 import { resolveTheme } from '../default-theme';
 import { themeStructure, structuralChanges, structuralChangeError, ThemeStructure } from './theme-structure';
 import { readLegacyThemeStorage, clearLegacyThemeStorage } from './legacy-storage';
@@ -69,6 +69,15 @@ function environmentError(operation: string): Error {
     'that path is pure and per-request, with no shared state.'
   );
   (error as any).code = 'UXD_THEME_ENVIRONMENT';
+  return error;
+}
+
+/** The error a rejected theme carries. Every rejection shares one code so a
+ * caller can branch on it; the issues themselves say what was wrong. */
+function rejection(details: string, issues?: unknown[]): Error {
+  const error = new Error(`UXD_THEME_INVALID: the theme was rejected, and nothing was changed.\n  - ${details}`);
+  (error as any).code = 'UXD_THEME_INVALID';
+  if (issues) (error as any).issues = issues;
   return error;
 }
 
@@ -204,28 +213,32 @@ export function applyTheme(patch: ThemeOverride = {}, options: ApplyThemeOptions
     : copy(patch || {});
 
   // Validate, generate and compare the structure before anything is committed.
-  const effective = resolveTheme(nextOverride as any);
-  const validated = validateAndNormalizeTheme(effective as any);
+  // Stability phase 1: the one validator (`validateTheme`) runs on the
+  // effective theme; a patch that is not an object is a rejection like any
+  // other, never an exception out of this function.
+  let effective: Record<string, any>;
+  try {
+    effective = resolveTheme(nextOverride as any);
+  } catch (cause) {
+    return { ok: false, error: rejection(cause instanceof Error ? cause.message : String(cause)) };
+  }
+  const validated = validateTheme(effective);
   if (!validated.ok) {
-    const error = new Error(
-      'UXD_THEME_INVALID: the theme was rejected, and nothing was changed.\n  - ' +
-      validated.errors.map((issue: any) => `${issue.path}: ${issue.message}`).join('\n  - ')
-    );
-    (error as any).code = 'UXD_THEME_INVALID';
-    (error as any).issues = validated.errors;
-    return { ok: false, error };
+    return { ok: false, error: rejection(validated.errors.map((issue) => `${issue.path}: ${issue.message}`).join('\n  - '), validated.errors) };
   }
 
+  // Validated above, references included: the render is the same string
+  // `generateThemeCss` would return for this effective theme.
   let css: string;
   try {
-    css = generateThemeCss(validated.theme as any);
+    css = renderThemeCss(effective);
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause : new Error(String(cause)) };
   }
 
   let structure: ThemeStructure;
   try {
-    structure = themeStructure(validated.theme, css);
+    structure = themeStructure(effective, css);
   } catch (cause) {
     return { ok: false, error: cause instanceof Error ? cause : new Error(String(cause)) };
   }

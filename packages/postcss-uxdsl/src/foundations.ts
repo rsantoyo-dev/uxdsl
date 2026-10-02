@@ -1,5 +1,5 @@
 import { DEFAULT_BORDER_COLORS } from './edges';
-import { normalizeSpacingDefinitions } from './language';
+import { normalizeSpacingDefinitions, tokenValueToCss } from './language';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
 /** Emits `--uxdsl__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
@@ -7,17 +7,24 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
  * identifiers (e.g. top-level palette key `"primary-main"` and structured
  * `primary.main`) that concatenate to the identical variable name raise
  * `UXD_FOUNDATION_NAME_COLLISION` instead of one silently overwriting the
- * other (MIG-08). */
+ * other (MIG-08).
+ *
+ * Stability phase 1: every value goes through the one value grammar
+ * (`tokenValueToCss`), so `palette.brand.main: 'color(gray.300)'` or
+ * `palette.text.primary: 'palette(surface.contrast)'` compile to the same
+ * `var(--uxdsl__…)` reference on both CSS paths — foundations used to be
+ * emitted raw, and only the plugin's final pass over every declaration
+ * resolved them at build time. */
 function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry): string[] {
   const out: string[] = [];
   for (const [key, val] of Object.entries(map)) {
     if (typeof val === 'object' && val !== null) {
       for (const [subKey, subVal] of Object.entries(val as Record<string, unknown>)) {
         const identifier = `${namespace}.${key}.${subKey}`;
-        out.push(`${names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier)}: ${subVal}`);
+        out.push(`${names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier)}: ${tokenValueToCss(String(subVal))}`);
       }
     } else {
-      out.push(`${names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`)}: ${val}`);
+      out.push(`${names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`)}: ${tokenValueToCss(String(val))}`);
     }
   }
   return out;
@@ -44,7 +51,7 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   // one spelling win by accidental object key order.
   if (theme.spacing) {
     Object.entries(normalizeSpacingDefinitions(theme.spacing)).forEach(([key, val]) => {
-      cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${val}`);
+      cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${tokenValueToCss(String(val))}`);
     });
   }
 

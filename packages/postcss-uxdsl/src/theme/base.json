@@ -100,8 +100,8 @@
       "light": "#f8fafc",
       "dark": "#8d929a",
       "contrast": "#0f172a",
-      "paper": "var(--uxdsl__palette__surface-light)",
-      "subtle": "var(--uxdsl__palette__surface-dark)"
+      "paper": "palette(surface.light)",
+      "subtle": "palette(surface.dark)"
     },
     "tertiary": {
       "main": "#68768a",
@@ -152,16 +152,16 @@
       "contrast": "#0f172a"
     },
     "text": {
-      "main": "var(--uxdsl__palette__text-primary)",
-      "primary": "var(--uxdsl__palette__surface-contrast)",
-      "secondary": "var(--uxdsl__palette__neutral-dark)",
-      "disabled": "var(--uxdsl__palette__tertiary-main)"
+      "main": "palette(text.primary)",
+      "primary": "palette(surface.contrast)",
+      "secondary": "palette(neutral.dark)",
+      "disabled": "palette(tertiary.main)"
     },
     "divider": {
-      "main": "var(--uxdsl__palette__surface-dark)"
+      "main": "palette(surface.dark)"
     },
     "action": {
-      "disabled": "var(--uxdsl__palette__text-disabled)"
+      "disabled": "palette(text.disabled)"
     }
   },
   "modes": {
@@ -257,12 +257,12 @@
       "base": {},
       "states": {
         "hover": {
-          "bg": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
-          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))"
+          "bg": "tone(dark)",
+          "color": "tone(contrast)"
         },
         "selected": {
-          "bg": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
-          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))"
+          "bg": "tone(dark)",
+          "color": "tone(contrast)"
         }
       }
     },
@@ -271,13 +271,13 @@
       "base": {},
       "states": {
         "hover": {
-          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))",
-          "border": "1px solid var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+          "color": "tone(dark)",
+          "border": "1px solid tone(dark)"
         },
         "selected": {
-          "bg": "var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main))",
-          "color": "var(--uxdsl__button__tone-contrast, var(--uxdsl__palette__primary-contrast))",
-          "border": "1px solid var(--uxdsl__button__tone-main, var(--uxdsl__palette__primary-main))"
+          "bg": "tone(main)",
+          "color": "tone(contrast)",
+          "border": "1px solid tone(main)"
         }
       }
     },
@@ -286,10 +286,10 @@
       "base": {},
       "states": {
         "hover": {
-          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+          "color": "tone(dark)"
         },
         "selected": {
-          "color": "var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))"
+          "color": "tone(dark)"
         }
       }
     }
@@ -298,12 +298,12 @@
     "contained": {
       "surface": "contained",
       "base": {
-        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "caret": "tone(main)",
         "placeholder": "palette(neutral.dark)"
       },
       "states": {
         "focus": {
-          "border": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+          "border": "1px solid tone(main)",
           "shadow": "shadow(2)"
         },
         "invalid": {
@@ -318,12 +318,12 @@
     "outlined": {
       "surface": "outlined",
       "base": {
-        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "caret": "tone(main)",
         "placeholder": "palette(neutral.dark)"
       },
       "states": {
         "focus": {
-          "border": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))"
+          "border": "1px solid tone(main)"
         },
         "invalid": {
           "border": "1px solid palette(error.main)"
@@ -339,12 +339,12 @@
         "border": "none",
         "shadow": "none",
         "underline": "1px solid palette(neutral.dark)",
-        "caret": "var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))",
+        "caret": "tone(main)",
         "placeholder": "palette(neutral.dark)"
       },
       "states": {
         "focus": {
-          "underline": "1px solid var(--uxdsl__input__tone-main, var(--uxdsl__palette__primary-main))"
+          "underline": "1px solid tone(main)"
         },
         "invalid": {
           "underline": "1px solid palette(error.main)"

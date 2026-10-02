@@ -72,6 +72,18 @@ test('MIG-B6-27: every typo is caught, and no @ts-expect-error goes unused', () 
     `(TS2578 here means a typo is no longer caught):\n${output}`);
 });
 
+test('stability phase 1: the removed plugin options and type names no longer type-check', () => {
+  // Same mechanism as the typo corpus: each @ts-expect-error in removed.ts must
+  // suppress a real error, so an option or alias that came back is TS2578.
+  for (const [label, compilerOptions] of [
+    ['node16', { module: 'node16', moduleResolution: 'node16', target: 'es2022' }],
+    ['bundler', { module: 'esnext', moduleResolution: 'bundler', target: 'es2022' }],
+  ]) {
+    const { status, output } = checkTypes(`${label}-removed`, { compilerOptions, files: ['removed.ts'] });
+    assert.equal(status, 0, `breakpoints/themeVar/spaceVar/colorVar, UxDslOptions and UxdslBreakpointSpec must be gone (${label}):\n${output}`);
+  }
+});
+
 test('MIG-B6-27: a plain .cjs config is type-checked through JSDoc', () => {
   const { status, output } = checkTypes('jsdoc', {
     compilerOptions: { module: 'node16', moduleResolution: 'node16', target: 'es2022', allowJs: true, checkJs: true },

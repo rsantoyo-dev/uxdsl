@@ -47,7 +47,7 @@ accept an optional family scope (`--strict-theme=palette,breakpoints`, or
 the bare flag flags any documented partial theme override — not just in
 `typography_details`, but in the zero-config `palette` example this
 project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme`'s top-level "Unknown theme family"
+unchanged. `validateAndNormalizeTheme`'s (today `validateTheme`'s) top-level "Unknown theme family"
 warning also actually prints from a real `uxdsl build`/`watch` for the
 first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.
@@ -262,6 +262,16 @@ Default values:
 ```ts
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
+
+Since stability phase 1 the theme's `breakpoints` family is the only place a
+threshold is configured. The PostCSS plugin no longer has a `breakpoints`
+option: a value forwarded to it — from a `breakpoints` key in `uxdsl.config.cjs`
+through `uxdsl-cli`/`uxdsl-core`, or from the `breakpoints` option of
+`vite-plugin-uxdsl`/`uxdsl-webpack-loader` — is ignored with a
+`UXD_OPTION_REMOVED` warning, and the build compiles against the theme's map.
+Put the thresholds in the theme (`{ "breakpoints": { "md": 800 } }` in
+`uxdsl.theme.json`, or the adapter's `theme` option). See
+[`postcss-uxdsl`'s changelog](packages/postcss-uxdsl/CHANGELOG.md).
 
 ## Quick start (Next.js playground)
 

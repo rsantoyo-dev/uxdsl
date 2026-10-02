@@ -178,8 +178,11 @@ Other CSS cascade rules still apply.
   an intentional local exception. Do not move a shared threshold for one card.
 - Change a threshold only when all affected transitions should move. Inspect
   component declarations, Density mappings and Typography progressions.
-- Define new thresholds through supported configuration before use. Check support
-  in each installed integration; do not assume every editor accepts custom names.
+- Define new thresholds in the theme's `breakpoints` family before use — it is
+  the only place a breakpoint is configured (the plugin's `breakpoints` option
+  was removed; passing it warns `UXD_OPTION_REMOVED` and is ignored). Check
+  support in each installed integration; do not assume every editor accepts
+  custom names.
 - Omitted built-in breakpoint names can retain engine defaults. Inspect the
   effective map, not just the keys shown in a partial theme excerpt.
 
@@ -463,7 +466,7 @@ choose a role; theme JSON defines `buttons[role]` with `surface`, `base`, `state
 Surfaces own the container composition. HTML/application code own interaction.
 
 ```json
-{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
+{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"hover":{"bg":"tone(dark)","color":"tone(contrast)"},"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
 ```
 
 ```css
@@ -477,9 +480,20 @@ Surfaces own the container composition. HTML/application code own interaction.
   supplied responsive strings replace a whole field. `surface` must exist.
 - Automatic Button/Input tone generation requires a Palette family with `main`,
   `dark` and `contrast`; partial semantic groups such as `divider` are not tones.
+  Palette aliases in a theme reference other roles with `palette(surface.light)`,
+  never with the compiled `var(--uxdsl__palette__…)` name.
 - Base fields override Surface composition, including optional tone and numeric
-  size. Size selects Density and Radius. Default state colors follow the optional
-  Palette tone; explicit Palette references retain their configured meaning.
+  size. Size selects Density and Radius. A value follows the component's optional
+  Palette tone by saying `tone(main|dark|contrast)` (falling back to `primary`
+  when no tone is given); an explicit Palette reference such as
+  `palette(primary.dark)` retains its configured meaning whichever tone is
+  requested. `tone()` is valid only in Button/Input values (`UXD_TONE_CONTEXT`
+  elsewhere); the former hand-written fallback chain
+  `var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))` is
+  deprecated and still substituted for one release. A per-tone variable
+  (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) exists only where the
+  tone changes the value; a component always references it with the role's
+  own variable as the `var()` fallback, so resolve through that fallback.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
   focusvisible, disabled, selected. Defaults supply hover and selected only.
@@ -526,8 +540,10 @@ labels, validation and errors. Preserve intent, not just the current computed va
   pseudo-element, including within states. Underline maps to border-bottom; the
   built-in underline role explicitly clears full borders and shadows.
 - Tone overrides Surface colors and default caret/focus treatment when the effective
-  theme supplies that Palette family. Explicit assignments remain explicit; invalid
-  defaults retain the error role. Numeric size selects Density and Radius tokens.
+  theme supplies that Palette family; a field follows it by saying
+  `tone(main|dark|contrast)` (the base theme's caret and focus border do). Explicit
+  assignments remain explicit; invalid defaults retain the error role. Numeric
+  size selects Density and Radius tokens.
 - Use native labels, correct types, disabled/readOnly and associated help/error
   messages. Placeholder is not a label. aria-disabled does not prevent editing;
   aria-invalid does not validate data. Native :invalid may match before interaction.
@@ -601,6 +617,50 @@ led with it. From `0.5.0-beta.7` (unreleased as of 2026-09-28; `0.5.0-beta.6`
 still has the old placement), compiled output puts every `@import` — the
 theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
+
+In compiled output the generated theme is one contiguous run, inserted after
+the author's prelude (`@charset`, leading comments, the theme's `@import`s,
+then the author's `@layer` statements and `@import`s) and before the author's
+rules (stability phase 1, audit T10) — the exact string `generateThemeCss`
+returns for the same theme, so build and runtime are byte-identical. An
+author's own `:root { --uxdsl__… }` therefore follows the theme's declaration
+and wins the cascade; to override a token in a stylesheet, write that rule
+rather than editing generated CSS.
+
+Theme values have one grammar, in every family and on both CSS paths
+(stability phase 1, audit T1): a literal CSS value; a token function —
+`space(k)`, `density(k)`, `color(family.shade[, alpha])`,
+`palette(family[.variant][, alpha])`, `radius(k|pill|full|circle)`,
+`border(k)`, `shadow(k)` — compiling to its `var(--uxdsl__<family>__<key>)`
+reference; a responsive expression over the theme's breakpoints (not in
+Spacing, Colors, Palette or `fonts.families`); and `var(--…)` as the escape
+hatch. Write `palette(surface.contrast)` in a theme, not the compiled name
+`var(--uxdsl__palette__surface-contrast)`; the reference pass checks that the
+token exists. The engines resolve this grammar themselves (`tokenValueToCss`,
+`postcss-uxdsl/language`), so the PostCSS plugin and `generateThemeCss` emit
+byte-identical blocks for the same theme — do not rely on a compiler pass to
+fix up a theme value, and do not add a second serializer.
+
+There is one theme validator, `validateTheme(theme, { references? })` from
+`postcss-uxdsl/ds-runtime` (stability phase 1; `validateAndNormalizeTheme` is a
+deprecated alias that no longer normalizes anything). The PostCSS plugin calls
+it on the effective theme before any engine runs, `generateThemeCss` and
+`applyTheme` call it, the CLI calls it, and the packaged JSON Schema is
+generated from its patterns. Its rules: every leaf is a nonempty string —
+numbers, `null`, arrays and objects where a string belongs are
+`UXD_THEME_INVALID` with the key path, and nothing is coerced (`"768"` is not
+a breakpoint, `700` is not a font weight); a theme value cannot contain `;`,
+`{` or `}` and its parentheses balance; `fonts` is closed to
+`families`/`google`, `modes` to `dark`, `modes.dark` to `palette`; a palette
+family is an object; role, family and breakpoint names match
+`^[a-z][a-z0-9-]*$` and token keys may also start with a digit. The breakpoint
+map is validated once as `UXD_BP_INVALID` (zero-width base, distinct, finite,
+non-negative widths); engines no longer restate it under their own code.
+Closed field sets stay the engines' own errors (`UXD_TYPO_FIELD`,
+`UXD_BUTTON_STATE`, …). An unknown top-level family is a warning
+(`UXD_THEME_FAMILY`), not an error. When generating a theme, write lowercase
+names and string leaves only; do not rely on any path to quote, number-coerce
+or clean a value for you.
 
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option.
@@ -680,6 +740,10 @@ compile cache. Use `responsiveEntries`/`resolveResponsiveValue` (exported from
 editing rather than writing demo parsers. Buttons and Inputs share
 `control-engine.ts`; their modules define family-specific schema and defaults.
 Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
+A `ReferenceIntegrityError` message is one line per missing token with its
+consumers (author declarations first, with positions, capped at five); read
+the first token named, fix it, and recompile before chasing the rest — the
+others are usually the same dangling reference seen through the theme.
 
 Density keys are references, never values to coerce with parseInt. Undefined or
 fractional Density references fail. Density 0 explicitly means zero; the shipped
@@ -827,9 +891,10 @@ MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
 from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
-still warn (a warning from `validateAndNormalizeTheme`, printed by the CLI; the
-PostCSS plugin itself reports none), and invalid Typography fields still fail. This does not add new modes
-or change strict-theme behavior.
+still warn (`UXD_THEME_FAMILY`, a warning from `validateTheme`, printed by the
+CLI and reported by the PostCSS plugin through `result.warn`), and invalid
+Typography fields still fail. This does not add new modes or change strict-theme
+behavior.
 
 For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
 `MIG-B6-*.md` before implementation. The parent feature records product decisions;

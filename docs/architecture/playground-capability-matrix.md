@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**113 capabilities · 113 shown at the level they require · 0 gaps.**
+**114 capabilities · 113 shown at the level they require · 1 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -16,7 +16,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Theme families | 15 | 14 | 1 | 0 | 0 |
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
-| Runtime API (named in the package docs) | 35 | 35 | 0 | 0 | 0 |
+| Runtime API (named in the package docs) | 36 | 35 | 0 | 1 | 1 |
 | CLI commands | 5 | 0 | 5 | 0 | 0 |
 | CLI flags | 12 | 1 | 11 | 0 | 0 |
 | Package exports | 5 | 5 | 0 | 0 | 0 |
@@ -24,9 +24,9 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 
 ## Gaps
 
-_None._
+- `runtime:validateAndNormalizeTheme` — none, requires live
 
-Recorded as accepted in `capability-evidence.json`: 0.
+Recorded as accepted in `capability-evidence.json`: 1.
 
 ## Dogfooding: styling in the playground that bypasses UXDSL
 
@@ -164,7 +164,8 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `updateColor` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `updatePalette` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `updateSpacing` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
-| `validateAndNormalizeTheme` | live | live | `src/components/ThemeConfigJsonEditor.tsx`, `src/components/ThemeContext.tsx` |
+| `validateAndNormalizeTheme` | live | none ⚠ | — |
+| `validateTheme` | live | live | `src/components/ThemeConfigJsonEditor.tsx`, `src/components/ThemeContext.tsx` |
 
 ## CLI commands
 

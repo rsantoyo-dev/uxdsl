@@ -137,8 +137,8 @@
       "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_TOKEN_ALPHA: Expected a number between 0 and 1.\n  1 | .overlay {\n> 2 |   background: palette(primary-main, 2);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
-      "code": "UXD_TYPO_BP",
-      "title": "A negative breakpoint in the theme (reported by the first engine that validates the map: Typography)",
+      "code": "UXD_BP_INVALID",
+      "title": "A negative breakpoint in the theme (validated once, before any engine runs)",
       "source": ".a {\n  padding: space(3);\n}\n",
       "theme": {
         "breakpoints": {
@@ -157,7 +157,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_TYPO_BP: Typography requires distinct non-negative breakpoint widths and a zero-width base (at breakpoints).\n"
+      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_BP_INVALID: Expected named, distinct non-negative widths and a zero-width base.\n"
     },
     {
       "code": "UXD_TYPO_FIELD",
@@ -199,7 +199,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: src/example.uxdsl:2:3: UXD_REFERENCE_MISSING: color -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-selected-bg -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-selected-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-tone-primary-selected-bg -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-tone-primary-selected-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-tone-primary-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-tone-primary-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-focus-underline -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-tone-primary-focus-underline -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\n"
+      "stderr": "[uxdsl] Error: UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 18 definitions: color (src/example.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__outlined-selected-bg, --uxdsl__button__outlined-selected-border, --uxdsl__button__outlined-tone-primary-selected-bg and 13 more.\n"
     }
   ],
   "aliases": {

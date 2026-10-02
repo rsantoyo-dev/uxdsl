@@ -65,12 +65,19 @@ function controlStructure(
 }
 
 /** Custom properties defined by a stylesheet: `--name` immediately followed by
- * a colon, which is a declaration rather than a `var()` reference. */
+ * a colon, which is a declaration rather than a `var()` reference.
+ *
+ * Stability phase 1 (audit T8): a Button/Input per-tone variant
+ * (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) is left out. It is
+ * emitted only when the tone changes the value, and every compiled reference
+ * to one carries the untoned variable as its `var()` fallback — so a patch
+ * that makes a value tone-independent (and the variant disappear) breaks
+ * nothing compiled, and must not read as a removed property. */
 function definedVariables(css: string): string[] {
   const names = new Set<string>();
   const pattern = /(--[A-Za-z0-9_-]+)\s*:/g;
   let match: RegExpExecArray | null;
-  while ((match = pattern.exec(css))) names.add(match[1]);
+  while ((match = pattern.exec(css))) if (!/^--uxdsl__(?:button|input)__[a-z0-9-]+-tone-/.test(match[1])) names.add(match[1]);
   return Array.from(names).sort();
 }
 

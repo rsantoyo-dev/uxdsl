@@ -4,7 +4,7 @@ const postcss = require('postcss');
 const plugin = require('../dist');
 const { compileTypographyRules, generateTypographyCss, typographyValueToCss } = require('../dist/typography');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
-const { validateAndNormalizeTheme } = require('../dist/ds-runtime/theme-validate');
+const { validateTheme } = require('../dist/ds-runtime/theme-validate');
 const { inspectResponsiveValue } = require('../dist/language');
 // Full 1-16 spacing (this file's own 4/5/6 win) plus the palette families
 // the always-on density/surface/button/input defaults need, so strict
@@ -71,10 +71,11 @@ test('native CSS, fractional and named tokens remain intact', () => {
 test('invalid definitions fail in the shared compiler and theme validator', () => {
   for (const details of [{ h1: { fontSize: 'md(2rem)' } }, { h1: { bogus: '2rem' } }, { h1: { fontSize: '' } }]) {
     assert.throws(() => compileTypographyRules(details), /UXD_TYPO_/);
-    assert.equal(validateAndNormalizeTheme({ typography_details: details }).ok, false);
+    assert.equal(validateTheme({ typography_details: details }).ok, false);
   }
-  assert.throws(() => compileTypographyRules(theme.typography_details, { xs: 0, md: NaN }), /UXD_TYPO_BP/);
-  const validated = validateAndNormalizeTheme(theme);
+  // Stability phase 1: one breakpoint code, from the one owner (language.ts).
+  assert.throws(() => compileTypographyRules(theme.typography_details, { xs: 0, md: NaN }), /UXD_BP_INVALID/);
+  const validated = validateTheme(theme);
   assert.equal(validated.ok, true);
   assert.equal(validated.theme.breakpoints.wide, 1800);
 });
