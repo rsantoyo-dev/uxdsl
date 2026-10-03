@@ -27,17 +27,21 @@ export function ButtonDocumentation() {
     <p>An optional configured Palette family overrides Surface colors. Default state colors follow the tone through shared references; explicitly configured Palette references keep their own meaning. A numeric size selects <code>density(n)</code> and <code>radius(n)</code>, not pixels. Explicit Button base overrides take precedence over the Surface composition, including its tone and size. Use local CSS after the directive for a deliberate exception.</p>
     <p>Supported visual fields are padding, radius, bg, color, border, shadow, opacity, outline, outline-offset, transform, cursor and font-weight. Supported states are hover, active, focus, focusvisible, disabled and selected. Selected maps to .is-selected, aria-pressed=true or aria-selected=true; use only semantics appropriate to the actual element. Disabled styling also recognizes aria-disabled, which does not itself prevent activation. Default packs provide hover and selected styling; define other treatments as needed and preserve browser focus indicators.</p>
     <p>Palette contrast tokens are assignments, not automatic contrast guarantees. Verify foreground/background combinations, keyboard focus, disabled behavior and touch use. Styling does not implement click handling or toggle state.</p>
-    <h3>Legacy @theme and one shared engine</h3>
-    <pre><code className="language-css">{`@theme {
-  button-checkout: {
-    @ds-surface(contained);
-    padding: density(2);
-    :hover { bg: palette(primary-dark); }
-    :focusvisible { outline: 2px solid palette(primary-main); }
+    <h3>One source and one shared engine</h3>
+    <pre><code className="language-json">{`{
+  "buttons": {
+    "checkout": {
+      "surface": "contained",
+      "base": { "padding": "density(2)" },
+      "states": {
+        "hover": { "bg": "palette(primary-dark)" },
+        "focusvisible": { "outline": "2px solid palette(primary-main)" }
+      }
+    }
   }
-}
-.checkout { @ds-button(checkout); }`}</code></pre>
-    <p>JSON overrides matching legacy base and state fields, followed by shared defaults. Import legacy definitions in each compilation; Button packs no longer leak through a global cache. PostCSS, runtime generation, inspection and this preview use the same Button engine. Defaults generate the legacy default file. Unknown roles, fields, states and invalid responsive mappings fail clearly; inspect token dependencies and actual CSS because validation is not a complete CSS or accessibility audit.</p>
+}`}</code></pre>
+    <pre><code className="language-css">{`.checkout { @ds-button(checkout); }`}</code></pre>
+    <p>A role is defined in the theme JSON and nowhere else: a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>, and nothing leaks between compilations. PostCSS, runtime generation, inspection and this preview use the same Button engine. Unknown roles, fields, states and invalid responsive mappings fail clearly; inspect token dependencies and actual CSS because validation is not a complete CSS or accessibility audit.</p>
   </section></div>
 }
 
@@ -45,7 +49,7 @@ export function ButtonAgentGuidance() {
   return <AgentGuidance id="ai-buttons-guide" title="How an AI agent should use Buttons">
     <p><strong>Responsibility: preserve shared action roles and their visual states.</strong> Preserve intent, not just the current computed value.</p>
     <ul>
-      <li>Inspect buttons, surfaces, Palette, Density, Radii, Borders, Shadows, breakpoints and legacy imports before choosing a role.</li>
+      <li>Inspect buttons, surfaces, Palette, Density, Radii, Borders, Shadows and breakpoints before choosing a role.</li>
       <li>Reuse a configured Button role. Do not replace its directive with currently resolved colors, padding or state styles.</li>
       <li>Choose semantic HTML and implement activation, disabled and toggle behavior independently of styling.</li>
       <li>Inspect inherited base and state fields. Define a custom role in JSON before referencing it. Explicit base fields override the selected Surface composition.</li>

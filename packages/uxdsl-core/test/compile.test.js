@@ -79,8 +79,11 @@ test('MIG-B6-20: compile({ source, from }) rejects the same cycle too — not ju
 });
 
 test('MIG-B6-20: compile({ source, from }) still resolves a bare package-specifier @import, matching compile({ entry })', async () => {
-  const source = "@import 'postcss-uxdsl/theme/default-colors.css';\n.a { color: red; }\n";
-  const css = await core.compile({ source, from: path.join(FIXTURES, 'virtual-entry.uxdsl') }, { includeTheme: false });
+  const dir = mkTmpDir();
+  write(dir, 'node_modules/some-package/tokens.css', '.from-package { color: green; }\n');
+  const source = "@import 'some-package/tokens.css';\n.a { color: red; }\n";
+  const css = await core.compile({ source, from: path.join(dir, 'virtual-entry.uxdsl') }, { includeTheme: false });
+  assert.match(css.css, /\.from-package\s*\{\s*color:\s*green;?\s*\}/);
   assert.match(css.css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
 
@@ -167,8 +170,8 @@ test('MIG-B6-18: the same partial imported once plain and once under @media keep
   assert.match(css, /@media \(min-width: 768px\)[\s\S]*\.shared/);
 });
 
-// --- Bare package-specifier imports (`@import 'postcss-uxdsl/theme/...'`,
-// as playground-nextjs's real entry does): must resolve through real node
+// --- Bare package-specifier imports (`@import 'some-package/tokens.css'`,
+// a stylesheet an installed package ships): must resolve through real node
 // module resolution, not existsSync(path.resolve(basedir, id)) — the old
 // CLI's inline resolver used require.resolve() unconditionally and this
 // compile() must not regress that for anything that isn't a relative
@@ -176,8 +179,10 @@ test('MIG-B6-18: the same partial imported once plain and once under @media keep
 
 test('MIG-B6-18: a bare package-specifier @import (not relative, not "~") resolves via node module resolution', async () => {
   const dir = mkTmpDir();
-  const entry = write(dir, 'main.uxdsl', "@import 'postcss-uxdsl/theme/default-colors.css';\n.a { color: red; }\n");
+  write(dir, 'node_modules/some-package/tokens.css', '.from-package { color: green; }\n');
+  const entry = write(dir, 'main.uxdsl', "@import 'some-package/tokens.css';\n.a { color: red; }\n");
   const { css } = await core.compile({ entry }, { includeTheme: false });
+  assert.match(css, /\.from-package\s*\{\s*color:\s*green;?\s*\}/);
   assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
 

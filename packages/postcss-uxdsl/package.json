@@ -76,7 +76,8 @@
       "import": "./dist/language.js"
     },
     "./schema/theme.schema.json": "./schema/theme.schema.json",
-    "./theme/*": "./src/theme/*",
+    "./theme/base.json": "./src/theme/base.json",
+    "./theme/base.contrast-exceptions.json": "./src/theme/base.contrast-exceptions.json",
     "./package.json": "./package.json"
   },
   "dependencies": {

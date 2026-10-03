@@ -44,7 +44,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, full, pill.\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill.\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_DENSITY_REFERENCE",
@@ -200,18 +200,36 @@
       ],
       "exit": 1,
       "stderr": "[uxdsl] Error: UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 18 definitions: color (src/example.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__outlined-selected-bg, --uxdsl__button__outlined-selected-border, --uxdsl__button__outlined-tone-primary-selected-bg and 13 more.\n"
+    },
+    {
+      "code": "UXD_SYNTAX_REMOVED",
+      "title": "A spelling the language no longer has (the former elevation() alias)",
+      "source": ".card {\n  box-shadow: elevation(2);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:15: UXD_SYNTAX_REMOVED: elevation() was removed; use shadow(2).\n  1 | .card {\n> 2 |   box-shadow: elevation(2);\n    |               ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_THEME_BLOCK_REMOVED",
+      "title": "A @theme block: tokens are defined in the theme JSON",
+      "source": "@theme {\n  radius-2: 12px;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:1:1: UXD_THEME_BLOCK_REMOVED: @theme blocks were removed; define these tokens in the theme JSON (uxdsl.theme.json): density-<k> under \"densities\", radius-<k> under \"radii\", border-<k> under \"borders\", shadow-<k> under \"shadows\", and surface-/button-/input-<role> packs under \"surfaces\", \"buttons\" and \"inputs\".\n> 1 | @theme {\n    | ^\n  2 |   radius-2: 12px;\n  3 | }\n"
     }
-  ],
-  "aliases": {
-    "source": ".with-alias {\n  box-shadow: elevation(2);\n  border-radius: rounded(2);\n}\n\n.with-name {\n  box-shadow: shadow(2);\n  border-radius: radius(2);\n}\n",
-    "argv": [
-      "build",
-      "--entry",
-      "src/aliases.uxdsl",
-      "--out",
-      "dist/aliases.css",
-      "--no-include-theme"
-    ],
-    "css": ".with-alias {\n  box-shadow: var(--uxdsl__shadow__2);\n  border-radius: var(--uxdsl__radius__2);\n}\n\n.with-name {\n  box-shadow: var(--uxdsl__shadow__2);\n  border-radius: var(--uxdsl__radius__2);\n}\n"
-  }
+  ]
 }

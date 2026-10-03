@@ -178,7 +178,7 @@ function deriveCapabilities() {
   const docsMention = (needle) => matching(sources.docs, needle);
 
   for (const directive of L.directives) {
-    add('directive', directive, directive === 'theme' ? 'documented' : 'live', liveFilesForDirective(sources, directive), docsMention(directive === 'theme' ? /@theme\b/ : `@${directive}`), directive === 'theme' ? 'deprecated legacy pack syntax' : '');
+    add('directive', directive, 'live', liveFilesForDirective(sources, directive), docsMention(`@${directive}`));
   }
   const BREAKPOINTS = new Set(Object.keys(rt.DEFAULT_BREAKPOINTS));
   for (const fn of L.functions) {

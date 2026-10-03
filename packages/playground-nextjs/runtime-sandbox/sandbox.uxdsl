@@ -25,8 +25,8 @@ body {
 
 .lab-swatch {
   padding: space(3);
-  border-radius: rounded(2);
-  box-shadow: elevation(1);
+  border-radius: radius(2);
+  box-shadow: shadow(1);
   font-size: 0.8125rem;
 }
 

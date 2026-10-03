@@ -355,9 +355,6 @@
       }
     }
   },
-  "typography": {
-    "font-code": "\"JetBrains Mono\", \"SF Mono\", Menlo, monospace"
-  },
   "typography_details": {
     "default": {
       "fontFamily": "var(--uxdsl__font__ui)",

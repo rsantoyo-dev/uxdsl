@@ -530,15 +530,11 @@ function main(argv) {
     }
   }
 
-  // MIG-B5-03 (FEAT-006): keeps packages/postcss-uxdsl/src/theme/theme-manifest.json's
-  // own `uxdslVersion` (and every other generated language artifact) in
-  // sync with the version just written above. Without this, the manifest
-  // silently goes stale on every release — it did after both the beta.3
-  // and beta.4 publishes, caught only by a release-gate fixture's own
-  // registry check, not by anything in this script. Depends on
-  // postcss-uxdsl's freshly-built dist/ output (generate-language-artifacts.js
-  // reads compiled defaults from there), so this runs after the build loop
-  // above and is skipped along with it in --skip-build mode.
+  // Regenerates the language artifacts (the VS Code extension's completions
+  // and grammar, the theme JSON Schema) from the freshly built engine
+  // defaults, so a release never ships them stale. Depends on postcss-uxdsl's
+  // dist/ output, so this runs after the build loop above and is skipped
+  // along with it in --skip-build mode.
   if (!skipBuild) {
     if (dryRun) {
       console.log('(dry-run) would run node scripts/generate-language-artifacts.js');

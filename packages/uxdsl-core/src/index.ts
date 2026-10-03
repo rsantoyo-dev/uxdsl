@@ -61,8 +61,8 @@ function createImportResolver(entry: string) {
       const direct = path.resolve(basedir, request);
       if (fs.existsSync(direct)) return direct;
     } else {
-      // Bare specifier — a package import (e.g.
-      // `postcss-uxdsl/theme/default-colors.css`), `~`-prefixed or not.
+      // Bare specifier — a package import (e.g. `some-package/tokens.css`),
+      // `~`-prefixed or not.
       // Real node resolution, not existsSync(path.resolve(...)), since
       // it lives in node_modules, not relative to the importing file.
       try {

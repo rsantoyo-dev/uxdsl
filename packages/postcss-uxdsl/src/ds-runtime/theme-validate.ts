@@ -32,8 +32,7 @@ export type ThemeValidationResult<TTheme extends Record<string, any>> = {
 export interface ValidateThemeOptions {
   /** Reference-integrity options for the generated theme. `false` skips the
    * reference pass entirely (the PostCSS plugin does, because it checks the
-   * references of the exact stylesheet it emits, legacy `@theme` packs
-   * included, once at the end). */
+   * references of the exact stylesheet it emits, once at the end). */
   references?: ReferenceOptions | false;
 }
 
@@ -45,7 +44,7 @@ export interface ValidateThemeOptions {
 export const KNOWN_THEME_FAMILIES = new Set([
   'breakpoints', 'spacing', 'palette', 'fonts', 'colors', 'typography_details',
   'densities', 'inputs', 'buttons', 'surfaces', 'shadows', 'borders', 'radii',
-  'modes', 'typography',
+  'modes',
 ]);
 
 /**
@@ -268,14 +267,17 @@ export function validateTheme<TTheme extends Record<string, any>>(
         if (!object(family, value)) break;
         for (const [key, entry] of Object.entries(value)) {
           const path = `${family}.${key}`;
-          if (name(path, key.startsWith('space-') ? key.slice('space-'.length) : key, THEME_KEY_PATTERN)) leaf(path, entry);
+          if (name(path, key, THEME_KEY_PATTERN)) leaf(path, entry);
         }
         break;
       case 'densities': case 'radii': case 'borders': case 'shadows':
         stringMap(family, value, THEME_KEY_PATTERN);
         break;
       case 'typography':
-        stringMap(family, value, THEME_NAME_PATTERN);
+        // The flat family (`typography: { 'font-code': … }`, emitted as the
+        // un-namespaced `--font-code`) is gone. An error rather than the
+        // unknown-family warning: the key was valid, so its replacement is named.
+        invalid(family, 'The flat "typography" family was removed; define text roles in "typography_details" and font stacks in "fonts.families"');
         break;
       case 'colors':
         if (!object(family, value)) break;
@@ -346,7 +348,7 @@ export function validateTheme<TTheme extends Record<string, any>>(
       }
     };
     engine('theme', () => { generateFoundationCss(theme); });
-    engine('typography', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
+    engine('fonts', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
     if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps); });
     engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps); });
     engine('inputs', () => { compileInputRules(theme, bps); });

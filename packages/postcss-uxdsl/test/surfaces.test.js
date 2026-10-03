@@ -40,13 +40,15 @@ test('tone and size composition matches compiled declarations',async()=>{
  assert.equal(surfaceDeclarations(theme,'outlined','primary').border,'1px solid var(--uxdsl__palette__primary-main)');
  assert.equal(surfaceDeclarations(theme,'flat','primary').border,'var(--uxdsl__surface__flat-border)');
 });
-test('legacy Surface definitions normalize to shared rules; JSON wins per field; no leakage',async()=>{
- const legacy='@theme { surface-contained: { bg: pink; padding: 11px; } } .x { @ds-surface(contained); }';
- const output=await compile(legacy,{theme:withBaseline({surfaces:{contained:{bg:'white'}}})});
- assert(output.css.includes('--uxdsl__surface__contained-bg: white'));
+test('Surface definitions come from the JSON through the shared rules; a @theme pack fails; no leakage',async()=>{
+ const source='.x { @ds-surface(contained); }';
+ const custom=withBaseline({surfaces:{contained:{bg:'pink',padding:'11px'}}});
+ const output=await compile(source,{theme:custom});
+ assert(output.css.includes('--uxdsl__surface__contained-bg: pink'));
  assert(output.css.includes('--uxdsl__surface__contained-padding: 11px'));
- assert(!(await compile('.x { @ds-surface(contained); }',{theme:withBaseline()})).css.includes('11px'));
- assert.deepEqual(declarations((await compile(legacy,{theme:withBaseline()})).css),declarations(generateSurfaceCss(withBaseline({surfaces:{contained:{bg:'pink',padding:'11px'}}}))));
+ assert(!(await compile(source,{theme:withBaseline()})).css.includes('11px'));
+ assert.deepEqual(declarations(output.css),declarations(generateSurfaceCss(custom)));
+ await assert.rejects(()=>compile('@theme { surface-contained: { bg: pink; padding: 11px; } } '+source,{theme:withBaseline()}),/UXD_THEME_BLOCK_REMOVED/);
 });
 test('invalid Surface roles, fields, references and expressions are rejected',async()=>{
  for(const bad of [{surfaces:{contained:null}},{surfaces:[]},{surfaces:{contained:{unknown:'1px'}}},{surfaces:{contained:{shadow:'md(shadow(1))'}}},{surfaces:{contained:{radius:'radius(99)'}}},{surfaces:{contained:{bg:''}}}]) {

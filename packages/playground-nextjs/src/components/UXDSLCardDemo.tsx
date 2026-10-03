@@ -26,7 +26,7 @@ const DEMO_CODE = `.uxdsl-card {
     @ds-surface (contained light);
     width: density(10);
     height: density(10);
-    border-radius: radius(full);
+    border-radius: radius(pill);
     display: grid;
     place-items: center;
     box-shadow: shadow(2);

@@ -1,5 +1,5 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss, REMOVED_RADIUS_FULL } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
@@ -32,7 +32,7 @@ export function parseOverrideArguments(parts: string[], errorPrefix: string): { 
     const match = part.match(/^(radius|shadow)\((.+)\)$/);
     if (!match) { rest.push(part); continue; }
     const [, kind, rawKey] = match;
-    const key = rawKey.trim().replace(/^(['"])(.*)\1$/, '$2');
+    const key = rawKey.trim();
     if (kind === 'radius') {
       if (radius !== undefined) throw new Error(`${errorPrefix}_ARGUMENT: Repeated radius() argument.`);
       radius = key;
@@ -69,16 +69,16 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
   valueParser(value).walk(node => {
     if (node.type === 'function' && node.value === 'density') {
-      const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+      const key = valueParser.stringify(node.nodes).trim();
       if (!Object.prototype.hasOwnProperty.call(getDensityTokens(theme), key)) throw new Error(`UXD_DENSITY_REFERENCE: Undefined density ${key}.`);
     }
-    if (node.type !== 'function' || !['radius', 'rounded', 'border', 'shadow', 'elevation'].includes(node.value)) return;
-    const kind = node.value === 'rounded' ? 'radius' : node.value === 'elevation' ? 'shadow' : node.value;
+    if (node.type !== 'function' || !['radius', 'border', 'shadow'].includes(node.value)) return;
+    const kind = node.value;
     // Match the existing border helper contract: a configured preset wins over optional arguments.
-    const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
+    const key = valueParser.stringify(node.nodes).split(',')[0].trim();
     const map = kind === 'radius' ? edges.radii : kind === 'border' ? edges.borders : shadows;
     const keyword = kind === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
-    if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
+    if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(kind === 'radius' && key === 'full' ? REMOVED_RADIUS_FULL : `UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
   });
   return tokenValueToCss(value);
 }
@@ -133,7 +133,7 @@ export function surfaceDeclarations(theme: SurfaceTheme, role = 'contained', ton
   if (radiusOverride) {
     const radii = getEdgeTokens(theme).radii;
     const keyword = RADIUS_KEYWORDS[radiusOverride];
-    if (!keyword && !Object.prototype.hasOwnProperty.call(radii, radiusOverride)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined radius ${radiusOverride}.`);
+    if (!keyword && !Object.prototype.hasOwnProperty.call(radii, radiusOverride)) throw new Error(radiusOverride === 'full' ? REMOVED_RADIUS_FULL : `UXD_SURFACE_REFERENCE: Undefined radius ${radiusOverride}.`);
     result['border-radius'] = keyword || `var(${buildVarName('radius', radiusOverride)})`;
   }
   if (shadowOverride) {

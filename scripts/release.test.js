@@ -407,8 +407,8 @@ test('MIG-B6-28 (subprocess, fake npm): a real publish failure ("publicación pa
 test('MIG-B6-28 (subprocess, fake npm): a clean full release — no --dry-run/--skip-build/--skip-publish — publishes all five packages and completes', () => {
   // Regression: the first version of this story recorded each tarball's
   // shasum *before* the version-bump loop rewrote every package.json (and
-  // before generate-language-artifacts rewrote theme-manifest.json, which
-  // ships), then compared *after* — so every real release aborted with
+  // before generate-language-artifacts rewrote the generated artifacts that
+  // ship), then compared *after* — so every real release aborted with
   // "changed after the prepublish gate ran" before publishing anything.
   // None of the other subprocess tests reach a real publish with a real
   // build path, and the fake npm used to return a constant shasum, which

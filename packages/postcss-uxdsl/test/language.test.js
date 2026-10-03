@@ -32,7 +32,7 @@ test('Density preserves references and suppresses redundant breakpoints', () => 
   ]);
 });
 test('runtime and PostCSS have equivalent Density declarations', async () => {
-  const built = await postcss([plugin({ theme: withBaseline() })]).process('@theme { density-4: xs(space(4)) md(space(5)) xl(space(6)); } .card { padding: density(4); }', { from: undefined });
+  const built = await postcss([plugin({ theme: withBaseline({ densities: defs }) })]).process('.card { padding: density(4); }', { from: undefined });
   assert.deepEqual(densityDeclarations(built.css), densityDeclarations(generateThemeCss(withBaseline({ densities: defs }))));
   assert.match(built.css, /padding: var\(--uxdsl__density__4\)/);
 });

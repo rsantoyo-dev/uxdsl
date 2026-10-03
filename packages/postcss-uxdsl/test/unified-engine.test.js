@@ -17,25 +17,18 @@ const theme={colors:{blue:{500:'#123456'},white:'#fff'},palette:{primary:{main:'
 test('all generated theme variables and mode selectors agree across build and runtime',async()=>{
  assert.deepEqual(variables((await compile('',theme)).css),variables(generateThemeCss(theme)));
 });
-test('Density JSON wins over local legacy definitions and no configuration leaks between builds',async()=>{
- const first=await compile('@theme { density-custom: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{custom:'xs(space(3))'}});
+test('Density tokens come from the JSON and no configuration leaks between builds',async()=>{
+ const first=await compile('',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{custom:'xs(space(3))'}});
  assert(first.css.includes('--uxdsl__density__custom: var(--uxdsl__space__3)'));
  const baseline={spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors};
  const second=(await compile('',baseline)).css;assert(!second.includes('--uxdsl__density__custom:'));
  assert.deepEqual(variables(second),variables(generateThemeCss(baseline)));
 });
-test('MIG-B6-29: a legacy density-<n> for an already-built-in key wins over DEFAULT_DENSITIES when the caller never touches theme.densities at all',async()=>{
- // Regression: once DEFAULT_THEME.densities carries real values for every
- // key 0-15 (previously none of them existed there), a naive
- // `{...legacy, ...effectiveTheme.densities}` merge always lost to the
- // now-always-populated default, even for a key the caller's own theme
- // object never mentions — "defaults < legacy < explicit override" only
- // holds when the merge is computed against the *unresolved* theme.
- const legacyOnly=await compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors});
- assert(legacyOnly.css.includes('--uxdsl__density__4: var(--uxdsl__space__1)'));
- assert(!legacyOnly.css.includes(`--uxdsl__density__4: ${DEFAULT_DENSITIES['4']}`.replace(/space\((\d+)\)/g,'var(--uxdsl__space__$1)')));
- const explicitWins=await compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{4:'xs(space(9))'}});
+test('a JSON density for a built-in key replaces DEFAULT_DENSITIES; a @theme pack is an error, not a second source',async()=>{
+ const explicitWins=await compile('',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{4:'xs(space(9))'}});
  assert(explicitWins.css.includes('--uxdsl__density__4: var(--uxdsl__space__9)'));
+ assert(!explicitWins.css.includes(`--uxdsl__density__4: ${DEFAULT_DENSITIES['4']}`.replace(/space\((\d+)\)/g,'var(--uxdsl__space__$1)')));
+ await assert.rejects(()=>compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors}),/UXD_THEME_BLOCK_REMOVED/);
 });
 test('simple values, named spacing and alpha have one meaning in direct CSS and presets',async()=>{
  for(const expression of ['color(white)','palette(primary)','space(gutter)','palette(primary.main, 0.25)','color(blue.500, 0.125)','color(display-p3 1 0 0)']){
@@ -51,8 +44,8 @@ test('Density validation is consistent between generation, validation and PostCS
  assert.throws(()=>compileDensityRules({}, {xs:0,sm:0}));
 });
 test('shared Density defaults refer only to shipped spacing and display parsing handles nested CSS',()=>{
- const spacing=fs.readFileSync(require.resolve('../src/theme/default-spacing.css'),'utf8');
- for(const expression of Object.values(DEFAULT_DENSITIES))for(const [,key] of expression.matchAll(/space\((\d+)\)/g))assert(spacing.includes(`--uxdsl__space__${key}:`));
+ const spacing=require('../dist/default-theme').DEFAULT_THEME.spacing;
+ for(const expression of Object.values(DEFAULT_DENSITIES))for(const [,key] of expression.matchAll(/space\((\d+)\)/g))assert(Object.prototype.hasOwnProperty.call(spacing,key),key);
  assert.deepEqual(responsiveEntries('xs(calc(space(1) + 2px)) wide(clamp(2px, 1vw, 8px))',{xs:0,wide:900}),{xs:'calc(space(1) + 2px)',wide:'clamp(2px, 1vw, 8px)'});
  assert.equal(getDensityTokens({densities:{custom:'4px'}}).custom,'4px');
 });

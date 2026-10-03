@@ -32,14 +32,17 @@ test('Button tone, size, state selectors and component CSS use shared compositio
  assert(actual.includes('[aria-pressed="true"]'));
  assert(buttonComponentCss(t,'.a, .b','checkout').includes('.a:hover, .b:hover'));
 });
-test('legacy button packs, JSON precedence and compilation isolation',async()=>{
- const legacy='@theme { button-checkout: { @ds-surface(outlined); padding: 7px; :hover { bg: red; } } } .x { @ds-button(checkout); }';
- const css=(await compile(legacy,withBaseline({buttons:{checkout:{base:{padding:'9px'},states:{hover:{color:'white'}}}}}))).css;
+test('a Button role is defined in the theme JSON only, and compilations are isolated',async()=>{
+ const source='.x { @ds-button(checkout); }';
+ const css=(await compile(source,withBaseline({buttons:{checkout:{surface:'outlined',base:{padding:'9px'},states:{hover:{bg:'red',color:'white'}}}}}))).css;
  assert(css.includes('--uxdsl__button__checkout-base-padding: 9px'));
  assert(css.includes('--uxdsl__button__checkout-hover-bg: red'));
  assert(css.includes('--uxdsl__button__checkout-hover-color: white'));
  assert(css.includes('var(--uxdsl__surface__outlined-radius)'));
- await assert.rejects(()=>compile('.x { @ds-button(checkout); }'),/UXD_BUTTON/);
+ // The role does not survive into a compilation whose theme lacks it…
+ await assert.rejects(()=>compile(source),/UXD_BUTTON/);
+ // …and the former in-stylesheet pack is an error, not a second source.
+ await assert.rejects(()=>compile('@theme { button-checkout: { @ds-surface(outlined); padding: 7px; } } '+source),/UXD_THEME_BLOCK_REMOVED/);
 });
 test('invalid Button roles, fields, states and mappings fail in both paths',async()=>{
  for(const buttons of [null,{x:null},{x:{unknown:'red'}},{x:{surface:'missing'}},{x:{base:null}},{x:{states:null}},{x:{states:{hover:null}}},{x:{states:{unknown:{color:'red'}}}},{x:{base:{padding:'md(8px)'}}}]){

@@ -95,20 +95,6 @@ export function generateTypographyCss(theme: Record<string, any>, breakpoints: B
   for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value));
   const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
   const output = Object.keys(base).length ? [serialize(base)] : [];
-  // Legacy flat variables share the same responsive resolver as structured fields.
-  const previous: Record<string, string> = {};
-  Object.entries(breakpoints).sort((a, b) => a[1] - b[1]).forEach(([bp, width], index) => {
-    const values: Record<string, string> = {};
-    for (const [key, expression] of Object.entries(theme.typography || {})) {
-      const value = typographyValueToCss(resolveResponsiveValue(String(expression), bp, breakpoints));
-      if (value !== previous[key]) values[`--${key}`] = value;
-      previous[key] = value;
-    }
-    if (Object.keys(values).length) {
-      const body = serialize(values);
-      output.push(index ? `@media (min-width: ${width}px) { ${body} }` : body);
-    }
-  });
   for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints)) {
     const body = serialize(rule.values);
     output.push(rule.minWidth === null ? body : `@media (min-width: ${rule.minWidth}px) { ${body} }`);

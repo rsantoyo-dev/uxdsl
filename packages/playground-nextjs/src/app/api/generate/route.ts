@@ -250,10 +250,6 @@ export async function POST(req: Request) {
         "14": "string",
         "15": "string",
         "16": "string"
-      },
-      "typography": {
-        "font-code": "string", // e.g., "monospace"
-        "font-ui": "string" // e.g., "Inter, sans-serif"
       }
     }
     User Request:

@@ -247,8 +247,9 @@ So an author's own `:root { --uxdsl__palette__primary-main: … }` comes
 way any later declaration of a custom property does. Before stability phase 1
 (audit finding T10) only the imports and the density block were placed at
 the prelude and every other family was appended *after* the author's rules,
-so that override silently lost. Legacy `@theme { … }` packs are consumed from
-wherever they appear and contribute to the same run.
+so that override silently lost. The theme JSON is the only source of a
+token: a `@theme { … }` block in a stylesheet is `UXD_THEME_BLOCK_REMOVED`
+(stability phase 3), naming the family its contents belong to.
 
 `test/theme-insertion.test.js` pins the order, and
 `test/build-runtime-parity.test.js` asserts that a theme-only entry compiles
@@ -328,16 +329,14 @@ stay one entry per consumer. The `Did you mean "…"?` hint never suggests the
 missing name itself — a token defined only in the dark-mode palette used to be
 proposed as the fix for its own absence in the light scope.
 
-## Spacing keys (`space-1` vs `1`)
+## Spacing keys
 
-`theme.spacing` accepts either the bare numeric/named key (`"1"`,
-`"gutter"`) or the legacy `space-`-prefixed form (`"space-1"`,
-`"space-gutter"`) — both emit `--uxdsl__space__1` / `--uxdsl__space__gutter`. `space-` is a
-reserved prefix removed exactly once; `"outer-space"` is untouched, and a
-repeated or empty prefix (`"space-space-1"`, `"space-"`) raises
-`UXD_SPACING_KEY`. Defining both spellings for the same key in one config
-(`{ "1": "4px", "space-1": "4px" }`) raises `UXD_SPACING_COLLISION` even
-when the values agree — pick one spelling.
+A `theme.spacing` key is the token key itself: `"1"` emits `--uxdsl__space__1`
+and is referenced as `space(1)`; `"gutter"` emits `--uxdsl__space__gutter`.
+The former `space-`-prefixed spelling of the same key (`"space-1"`) is
+`UXD_SPACING_KEY`, with the key path and the bare key to write instead
+(stability phase 3); a key that merely contains the word, such as
+`"outer-space"`, is an ordinary key.
 
 ---
 
@@ -383,8 +382,9 @@ it — is read by one grammar:
   `Inter, sans-serif`, `none`;
 - a **token function**: `space(k)`, `density(k)`, `color(family.shade[, alpha])`,
   `palette(family[.variant][, alpha])` (no variant means `.main`),
-  `radius(k | pill | full | circle)`, `border(k)`, `shadow(k)` — and the aliases
-  `rounded()`/`elevation()`. Each compiles to its `var(--uxdsl__<family>__<key>)`
+  `radius(k | pill | circle)`, `border(k)`, `shadow(k)` — one name per concept:
+  the former aliases `rounded()`, `elevation()` and `radius(full)` are
+  `UXD_SYNTAX_REMOVED`, naming the replacement. Each compiles to its `var(--uxdsl__<family>__<key>)`
   reference; a radius keyword to its literal (`9999px`, `50%`); an alpha, allowed
   on `palette()`/`color()` only, to `color-mix(in srgb, <ref> N%, transparent)`
   (a value outside 0–1 is `UXD_TOKEN_ALPHA`);
@@ -433,14 +433,11 @@ a browser's computed-style/devtools view, in generated CSS, or in a
 diagnostic message — nothing else on the page uses it by accident. This
 does not change the DSL syntax you write (`palette()`, `space()`,
 `@ds-surface`, ...) or the logical keys in your theme JSON — only the CSS
-custom property name the compiler produces underneath.
-
-The one exception is a flat `theme.typography` entry (as opposed to the
-structured `theme.typography_details`): its JSON key becomes the variable
-name verbatim (`{ typography: { "h1-size": "2rem" } }` emits
-`--h1-size: 2rem;`), since that key is a name you chose yourself, not one
-this compiler assigns from a family/key pair. The packaged base theme has one
-such entry, `font-code`, so even a zero-config build emits `--font-code`.
+custom property name the compiler produces underneath. There is no
+exception: the flat `theme.typography` family, whose keys became
+un-namespaced variables (`--font-code`), is gone (stability phase 3) — a
+theme that still carries it is `UXD_THEME_INVALID` at `typography`, pointing
+at `typography_details` (text roles) and `fonts.families` (font stacks).
 
 `applyTheme` writes only this canonical name too; if you read a Palette
 token's CSS variable directly (`getComputedStyle(...).getPropertyValue`),
@@ -534,8 +531,9 @@ default. A `theme` that isn't an object (and isn't `undefined`/`null`)
 throws `UXD_THEME_INVALID` rather than being silently ignored. `generateThemeCss`
 (`postcss-uxdsl/ds-runtime`) and the PostCSS plugin resolve through the
 exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
-`DEFAULT_THEME` and `getDefaultTheme()` (a mutable copy) directly, for an
-app that needs to build the same effective theme during SSR.
+`DEFAULT_THEME` directly, for an app that needs to build the same effective
+theme during SSR (`resolveTheme()` with no override returns a fresh, mutable
+copy of it; the former `getDefaultTheme()` did the same and is removed).
 
 `DEFAULT_THEME` is deep-frozen, but only an internal clone of
 `theme/base.json` — never the module object that path itself resolves to.
@@ -554,7 +552,6 @@ remain open. For example, this partial theme introduces no unknown-family warnin
 ```json
 {
   "modes": { "dark": { "palette": { "primary": { "main": "#000000" } } } },
-  "typography": { "hero": "2rem" },
   "typography_details": { "lead": { "fontSize": "1.25rem" } },
   "palette": { "brand": { "main": "#ff5722" } },
   "fonts": { "families": { "display": "Poppins" } }
@@ -820,22 +817,19 @@ A role the effective theme does not define fails as `UXD_TYPO_REFERENCE`,
 pointing at the directive and listing the roles that do exist — it never
 silently falls back to `default`.
 
-### Legacy opt-in packs (deprecated)
+### The theme files the package ships
 
-`postcss-uxdsl/theme/*.uxdsl` and `postcss-uxdsl/theme/*.css`
-(`default-densities`, `default-borders`, `default-radii`, `default-shadows`,
-`default-surfaces`, `default-buttons`, `default-inputs`, `default-spacing`,
-`default-typography`, plus the separate `default-colors`/`default-palette`
-pair) are **deprecated as of MIG-B6-29 (FEAT-008)**, not removed. Every
-built-in preset already reads its defaults from `DEFAULT_THEME`
-(`theme/base.json`) directly — none of these imports is needed for
-`density()`/`border()`/`radius()`/`shadow()`/`@ds-surface`/`@ds-button`/
-`@ds-input`/`@ds-typo` to work out of the box. They remain available,
-generated from the exact same engine defaults (except `default-colors`/
-`default-palette`, a deliberately separate, richer, opt-in palette — a
-different design direction, not a superset of `DEFAULT_THEME.palette`), for
-a project that already imports one of them explicitly. Still shipped in
-0.5.0-beta.6 and on `main` as of 2026-09-28; no removal is scheduled.
+Exactly two, both explicit exports: `postcss-uxdsl/theme/base.json`
+(`DEFAULT_THEME`) and `postcss-uxdsl/theme/base.contrast-exceptions.json`.
+Every built-in preset reads its defaults from the base JSON directly — no
+import is needed for `density()`/`border()`/`radius()`/`shadow()`/
+`@ds-surface`/`@ds-button`/`@ds-input`/`@ds-typo` to work out of the box.
+The legacy opt-in packs (`theme/default-*.uxdsl`, `theme/default-*.css`) and
+`theme/theme-manifest.json` were removed in stability phase 3: they defined
+every token a second time, in `@theme { … }` blocks the compiler no longer
+accepts. A project that imported `default-colors.css` for its color
+collection declares those colors under its own theme's `colors` family instead
+(`color(blue.500)` keeps resolving).
 
 ### Theme discovery (`discoverTheme`, `configRoot`)
 
@@ -992,7 +986,7 @@ What it checks, in order:
 - **References**, unless `references: false`: the generated theme's `var()`
   graph, as `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`. The plugin passes
   `false` here because it checks the references of the exact stylesheet it
-  emits, legacy `@theme` packs included, once at the end.
+  emits, once at the end.
 
 An unknown **top-level** family is a warning (`UXD_THEME_FAMILY`), never an
 error: nothing compiles it into CSS, so this catches a typo (`color` instead of

@@ -31,7 +31,7 @@
   .prod-avatar {
     width: 80px;
     height: 80px;
-    border-radius: radius(full);
+    border-radius: radius(pill);
     background: palette(primary-main);
     color: palette(primary-contrast);
     display: flex;

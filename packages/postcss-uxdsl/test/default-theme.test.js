@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const postcss = require('postcss');
 const exported = require('../dist/index');
 const plugin = exported.default || exported;
-const { DEFAULT_THEME, getDefaultTheme, resolveTheme } = require('../dist/default-theme');
+const { DEFAULT_THEME, resolveTheme } = require('../dist/default-theme');
 const { generateThemeCss } = require('../dist/ds-runtime/theme-generator');
 const { inspectResponsiveValue } = require('../dist/language');
 const baseThemeJson = require('../src/theme/base.json');
@@ -65,10 +65,10 @@ test('MIG-B2-02: partial Typography, fonts and spacing overrides merge without d
   assert.equal(resolved.typography_details.code.fontSize, DEFAULT_THEME.typography_details.code.fontSize);
 });
 
-test('MIG-B2-02: spacing keys are normalized before merging, so a "space-N" override replaces the default instead of colliding with it', () => {
-  const resolved = resolveTheme({ spacing: { 'space-1': '99px' } });
+test('spacing keys merge as written: "1" replaces the default "1"; nothing is normalized', () => {
+  const resolved = resolveTheme({ spacing: { 1: '99px' } });
   assert.equal(resolved.spacing[1], '99px');
-  assert.equal(Object.keys(resolved.spacing).filter((k) => k.startsWith('space-')).length, 0);
+  assert.equal(Object.keys(resolved.spacing).length, Object.keys(DEFAULT_THEME.spacing).length);
 });
 
 test('MIG-B2-02: array overrides replace the whole array; undefined never overwrites a default', () => {
@@ -151,9 +151,9 @@ test('MIG-B2-02: resolving one theme does not leak into the next resolution or m
   assert.equal(first.palette.primary.main, '#111111');
   assert.equal(second.palette.primary.main, '#222222');
   assert.equal(DEFAULT_THEME.palette.primary.main, resolveTheme().palette.primary.main);
-  // getDefaultTheme() returns a mutable copy; mutating it must not affect
-  // DEFAULT_THEME or a later resolution.
-  const copy = getDefaultTheme();
+  // resolveTheme() with no override returns a mutable copy; mutating it must
+  // not affect DEFAULT_THEME or a later resolution.
+  const copy = resolveTheme();
   copy.palette.primary.main = '#mutated';
   assert.notEqual(DEFAULT_THEME.palette.primary.main, '#mutated');
   assert.notEqual(resolveTheme().palette.primary.main, '#mutated');

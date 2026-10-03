@@ -91,7 +91,7 @@
     justify-content: center;
     gap: density(2);
     padding: density(4) density(6);
-    border-radius: radius(full);
+    border-radius: radius(pill);
     transition: transform 0.2s;
     width: 100%; 
     /* Removed max-width to allow full width on all screens as requested */

@@ -2,10 +2,6 @@
   "version": 1.1,
   "atDirectives": [
     {
-      "name": "@theme",
-      "description": "Legacy shared token pack (borders, radii, shadows, surfaces, buttons, inputs) inlined into the compiled theme. Prefer the theme JSON for new tokens."
-    },
-    {
       "name": "@ds-surface",
       "description": "Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone and numeric size: @ds-surface(role [tone] [size])."
     },

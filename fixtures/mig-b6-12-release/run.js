@@ -96,8 +96,10 @@ async function main() {
   console.log('Audit regressions (UX-*/N-*), run against the installed packages:');
 
   // --- UX-01: modes/typography are recognised families -----------------------
-  await check('UX-01', 'modes and typography no longer warn as unknown families', () => {
-    const result = runtime.validateTheme({ modes: { dark: { palette: {} } }, typography: { 'font-code': 'monospace' } });
+  // Stability phase 3: the flat `typography` family this check used to pass is
+  // removed (an error naming typography_details); `modes` is the recognised one.
+  await check('UX-01', 'modes no longer warns as an unknown family', () => {
+    const result = runtime.validateTheme({ modes: { dark: { palette: {} } } });
     const unknown = result.warnings.filter((w) => /Unknown theme family/.test(w.message));
     if (unknown.length) throw new Error(`still warns: ${unknown.map((w) => w.path).join(', ')}`);
     // and a real typo still does warn, or the check above proves nothing

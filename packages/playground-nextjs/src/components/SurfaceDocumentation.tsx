@@ -52,19 +52,21 @@ export function SurfaceDocumentation() {
 }`}</code></pre>
       <p>The optional tone names a Palette family. Outlined uses a transparent background with that family&apos;s main color for text and a 1px solid border. Flat uses transparent background and the main foreground while keeping the configured border. Contained and custom roles use the family&apos;s main background and contrast foreground while keeping their configured border.</p>
       <p>The numeric size overrides padding with <code>density(n)</code> and corners with <code>radius(n)</code>. Inspect both definitions before using it; it does not mean n pixels and the two scales need not match. Without these optional arguments, all six fields follow the Surface. A tone intentionally overrides some fields, so later edits to those overridden fields will not affect that toned component.</p>
-      <h3>One engine and a supported legacy input</h3>
-      <p>PostCSS, runtime theme generation, the inspector and this demo share the Surface engine. Defaults are maintained there and generated into <code>postcss-uxdsl/theme/default-surfaces.uxdsl</code>. A legacy <code>@theme</code> Surface pack remains valid in the same compilation:</p>
-      <pre><code className="language-css">{`@theme {
-  surface-contained: {
-    padding: density(2);
-    radius: radius(2);
-    bg: palette(surface-main);
-    color: palette(surface-contrast);
-    border: border(1);
-    shadow: shadow(1);
+      <h3>One engine and one source</h3>
+      <p>PostCSS, runtime theme generation, the inspector and this demo share the Surface engine. The built-in roles live in <code>postcss-uxdsl/theme/base.json</code>; a project overrides a role field by field in its theme JSON, the only place a Surface is defined (a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>):</p>
+      <pre><code className="language-json">{`{
+  "surfaces": {
+    "contained": {
+      "padding": "density(2)",
+      "radius": "radius(2)",
+      "bg": "palette(surface-main)",
+      "color": "palette(surface-contrast)",
+      "border": "border(1)",
+      "shadow": "shadow(1)"
+    }
   }
 }`}</code></pre>
-      <p>JSON fields override matching legacy fields, which override shared defaults. Include legacy definitions in each build that needs them: Surface packs no longer leak through a process-global cache. Unknown roles, fields and referenced Radius/Border/Shadow presets produce errors; verify other token dependencies and actual CSS too. The compiler is not a full CSS or accessibility validator.</p>
+      <p>A supplied field replaces that field of the shared default role; the other fields are inherited, and nothing leaks between builds. Unknown roles, fields and referenced Radius/Border/Shadow presets produce errors; verify other token dependencies and actual CSS too. The compiler is not a full CSS or accessibility validator.</p>
       <p>The preview reads the active theme and shared defaults. Its JSON editor applies scoped browser changes without saving your source file. Resize the actual browser to inspect responsive behavior. Invalid edits preserve the last valid preview; Reset restores the active theme. The optional tone and size controls use the same composition function as the compiler. Size options come from the effective Density and Radius definitions, including shared defaults.</p>
     </section>
   </div>
@@ -74,7 +76,7 @@ export function SurfaceAgentGuidance() {
   return <AgentGuidance id="ai-surfaces-guide" title="How an AI agent should use Surfaces">
     <p><strong>Responsibility: maintain shared container treatments by composing existing design-system roles and tokens.</strong> Preserve intent, not just the current computed value.</p>
     <ul>
-      <li>Inspect the effective <code>surfaces</code> configuration, legacy imports, breakpoints and referenced Density, Radii, Palette, Borders and Shadows before selecting a role.</li>
+      <li>Inspect the effective <code>surfaces</code> configuration, breakpoints and referenced Density, Radii, Palette, Borders and Shadows before selecting a role.</li>
       <li>Reuse a suitable configured role with <code>@ds-surface(role)</code>. Do not rebuild its six properties locally merely because the result looks identical today.</li>
       <li>Preserve token references. Surface radius references Radius, not Spacing; the Surface consumes that system&apos;s shape behavior.</li>
       <li>Use a tone only when an explicit Palette-family override is intended. Check which fields it overrides for the selected variant.</li>

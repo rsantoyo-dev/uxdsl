@@ -86,7 +86,7 @@ const { css, map, dependencies, warnings } = await compile(
   CSS generated purely from the theme (the `:root` token blocks) is
   deliberately left unmapped rather than pointed at an invented file.
 - `@import` resolution: relative paths (`./x.uxdsl`), bare package
-  specifiers (`postcss-uxdsl/theme/default-colors.css`), and `~`-prefixed
+  specifiers (`some-package/tokens.css`), and `~`-prefixed
   specifiers (`~some-package/x.css`) are all supported — the last two
   resolve through real Node module resolution.
 - A missing import is a real, located error (`Failed to find '...' in

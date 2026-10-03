@@ -42,22 +42,12 @@ test('Input tone, size, base precedence and native defaults match both adapters'
  assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-invalid-border'],'1px solid var(--uxdsl__palette__error-main)');
  assert.equal(inspectInputTheme(t,0)['--uxdsl__input__search-tone-brand-blue-invalid-border'],undefined);
 });
-test('Input legacy packs merge JSON fields and do not leak into another compilation',async()=>{
- const source='@theme { input-search: { @ds-surface(outlined); padding: 7px; :focus { bg: red; placeholder: gray; } } } .x { @ds-input(search); }';
- const css=(await compile(source,withBaseline({inputs:{search:{base:{padding:'9px'},states:{focus:{color:'white'}}}}}))).css;
+test('an Input role is defined in the theme JSON only and does not leak into another compilation',async()=>{
+ const source='.x { @ds-input(search); }';
+ const css=(await compile(source,withBaseline({inputs:{search:{surface:'outlined',base:{padding:'9px'},states:{focus:{bg:'red',color:'white',placeholder:'gray'}}}}}))).css;
  for(const text of ['--uxdsl__input__search-base-padding: 9px','--uxdsl__input__search-focus-bg: red','--uxdsl__input__search-focus-color: white','var(--uxdsl__surface__outlined-radius)'])assert(css.includes(text));
- await assert.rejects(()=>compile('.x { @ds-input(search); }'),/UXD_INPUT/);
-});
-test('generated legacy Input defaults match engine defaults',async()=>{
- const source=fs.readFileSync(require.resolve('../src/theme/default-inputs.uxdsl'),'utf8');
- // MIG-B6-29: compile() resolves withBaseline() against the now much
- // larger DEFAULT_THEME.palette (14 families, not 4) before generating
- // tone variables; a bare generateInputCss(withBaseline()) call bypasses
- // that resolution and only ever sees withBaseline()'s own 4 families, so
- // the two sides must both go through resolveTheme() to compare the same
- // effective tone set instead of two different ones that happened to
- // coincide back when DEFAULT_THEME.palette itself only had 4 families.
- assert.deepEqual(vars((await compile(source,withBaseline())).css),vars(generateInputCss(resolveTheme(withBaseline()))));
+ await assert.rejects(()=>compile(source),/UXD_INPUT/);
+ await assert.rejects(()=>compile('@theme { input-search: { @ds-surface(outlined); padding: 7px; } } '+source),/UXD_THEME_BLOCK_REMOVED/);
 });
 test('underline maps to bottom border and preserves local CSS ordering',async()=>{
  const css=(await compile('.x { @ds-input(underline); border-bottom-width: 3px; }',withBaseline())).css;

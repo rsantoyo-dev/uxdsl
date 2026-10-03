@@ -1,5 +1,6 @@
 import { DEFAULT_BORDER_COLORS } from './edges';
-import { normalizeSpacingDefinitions, tokenValueToCss } from './language';
+import { tokenValueToCss } from './language';
+import { themeError } from './diagnostics';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
 /** Emits `--uxdsl__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
@@ -46,11 +47,12 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   const colors = { ...theme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...theme.colors?.gray } };
   cssVars.push(...namespacedVars('color', colors, names));
 
-  // Spacing. MIG-01: "space-1" and "1" both mean --uxdsl__space__1; normalize
-  // before emission so neither form silently doubles the prefix or lets
-  // one spelling win by accidental object key order.
+  // Spacing. A key is the token key itself (`"1"` -> --uxdsl__space__1). The
+  // former `space-` prefixed spelling of the same key is an error naming the
+  // bare key, so one token never has two spellings.
   if (theme.spacing) {
-    Object.entries(normalizeSpacingDefinitions(theme.spacing)).forEach(([key, val]) => {
+    Object.entries(theme.spacing as Record<string, unknown>).forEach(([key, val]) => {
+      if (key.startsWith('space-')) throw themeError('UXD_SPACING_KEY', `The "space-" prefix was removed from spacing keys; write "${key.slice('space-'.length)}" instead of "${key}"`, `spacing.${key}`);
       cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${tokenValueToCss(String(val))}`);
     });
   }

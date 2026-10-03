@@ -167,14 +167,11 @@ test('a release version bump (version, sibling ranges, theme manifest) needs no 
   fs.writeFileSync(path.join(coreDir, 'package.json'), JSON.stringify({ name: 'uxdsl-core', version: '0.0.0' }));
   const cliPkg = (version, deps) => JSON.stringify({ name: 'uxdsl-cli', version, dependencies: deps });
   fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.0', { 'postcss-uxdsl': '0.0.0', minimist: '^1.2.8' }));
-  fs.mkdirSync(path.join(pkgDir, 'src', 'theme'), { recursive: true });
-  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'theme-manifest.json'), JSON.stringify({ uxdslVersion: '0.0.0', theme: { name: 'Default' } }));
   git(dir, ['add', '-A']);
-  git(dir, ['commit', '-q', '-m', 'add cli and manifest']);
+  git(dir, ['commit', '-q', '-m', 'add cli']);
 
   fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.1' }));
   fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', minimist: '^1.2.8' }));
-  fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'theme-manifest.json'), JSON.stringify({ uxdslVersion: '0.0.1', theme: { name: 'Default' } }));
   stage(dir, '-A');
   assert.equal(runGuard(dir).status, 0, 'a version bump alone should not require a README');
 

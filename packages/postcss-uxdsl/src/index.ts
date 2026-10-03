@@ -18,8 +18,8 @@ import { discoverThemeSync } from './config';
 // surface, which is:
 //
 //   Values      $var declarations and substitutions; space(), density(),
-//               color(), palette(), radius()/rounded(), border(), shadow()/
-//               elevation(); responsive functions xs() sm() md() lg() xl()
+//               color(), palette(), radius(), border(), shadow();
+//               responsive functions xs() sm() md() lg() xl()
 //               over the theme's own breakpoint map, `!important` preserved
 //               at every breakpoint.
 //   Directives  @ds-surface, @ds-button, @ds-input, @ds-typo — each expanding
@@ -43,7 +43,7 @@ import { discoverThemeSync } from './config';
 import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { resolveResponsiveValue, getDensityTokens, tokenValueToCss, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { resolveResponsiveValue, getDensityTokens, tokenValueToCss, removedSyntaxMessage, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 import type { UxdslOptions } from './types';
@@ -122,27 +122,13 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
           }
         }
       }
-      // MIG-B2-02: the effective theme — DEFAULT_THEME with whatever the
-      // caller provided (or, absent that, whatever discovery found) deep-
-      // merged on top — is resolved once here and used everywhere
-      // `opts.theme` used to be read directly below, so an omitted or
-      // partial theme (`{}`, or just `{ palette: { primary: { main: ... } } }`)
-      // still produces a fully-defined, strictly-valid effective theme
-      // instead of leaving whichever families the caller didn't mention
-      // undefined.
-      // MIG-B6-29 (FEAT-008): the *unresolved* caller/discovered theme, kept
-      // separate from `effectiveTheme` below. Once DEFAULT_THEME started
-      // carrying its own shadows/borders/radii/surfaces/buttons/inputs
-      // (previously all absent from it), every `effectiveTheme?.<family>`
-      // read further down silently stopped meaning "what the caller
-      // explicitly asked for" and started meaning "that, or the default if
-      // they didn't" — which made a legacy `@theme { shadow-2: ... }`
-      // declaration always lose to DEFAULT_THEME's own shadow-2, even
-      // though the caller never touched shadows.2 at all. `rawTheme` is
-      // used everywhere a legacy `@theme{}` block needs to know whether a
-      // field was genuinely overridden, so "defaults < legacy < explicit
-      // override" (this story's own required precedence) holds regardless
-      // of how populated DEFAULT_THEME is.
+      // The effective theme — DEFAULT_THEME with whatever the caller provided
+      // (or, absent that, whatever discovery found) deep-merged on top — is
+      // resolved once here and is the only theme every step below reads, so an
+      // omitted or partial theme (`{}`, or just `{ palette: { primary: { main:
+      // … } } }`) still produces a fully-defined, strictly-valid effective theme.
+      // It is the exact object `generateThemeCss` resolves for the same input:
+      // the theme JSON is the only source of a token.
       const rawTheme = (opts.theme ?? discovered?.theme) as Record<string, any> | undefined;
       const effectiveTheme = resolveTheme(rawTheme);
       // Stability phase 1: the one validator, on the effective theme, before
@@ -150,7 +136,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // `applyTheme` make, so a numeric leaf, a `"768"` breakpoint or an
       // unknown `fonts` key is refused here with the same code and key path.
       // References are checked once, at the end, on the stylesheet actually
-      // emitted (legacy `@theme` packs included), not here.
+      // emitted, not here.
       const validated = validateTheme(effectiveTheme, { references: false });
       if (!validated.ok) throw themeValidationError(validated.errors);
       for (const warning of validated.warnings) result.warn(warning.message, { plugin: 'postcss-uxdsl' });
@@ -196,9 +182,29 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       const dslSources = new Set<Declaration['source']>();
       root.walkDecls(node => {
         originalSources.add(node.source);
-        if (/\b(space|density|radius|rounded|border|shadow|elevation|palette|color)\(/.test(node.value)) dslSources.add(node.source);
+        if (/\b(space|density|radius|border|shadow|palette|color)\(/.test(node.value)) dslSources.add(node.source);
       });
       const vars: Record<string, string> = Object.create(null);
+      // `@theme { … }` token packs are not part of the language: the theme
+      // JSON is the only place a token is defined. A block is an error naming
+      // where its contents go, never silently dropped or passed through.
+      root.walkAtRules(/^theme$/i, (at) => {
+        throw locateError(diagnostic(
+          'UXD_THEME_BLOCK_REMOVED: @theme blocks were removed; define these tokens in the theme JSON ' +
+          '(uxdsl.theme.json): density-<k> under "densities", radius-<k> under "radii", border-<k> under "borders", ' +
+          'shadow-<k> under "shadows", and surface-/button-/input-<role> packs under "surfaces", "buttons" and "inputs".'
+        ), at);
+      });
+      // Directive arguments are bare words. A quoted argument is an error
+      // rather than something to unwrap: `@ds-typo("h1")` is not `@ds-typo(h1)`.
+      const DIRECTIVE_ARGUMENT_CODES: Record<string, string> = { 'ds-typo': 'UXD_TYPO_ARGUMENT', 'ds-surface': 'UXD_SURFACE_ARGUMENT', 'ds-button': 'UXD_BUTTON_ARGUMENT', 'ds-input': 'UXD_INPUT_ARGUMENT' };
+      const rejectQuotedArguments = (at: AtRule) => {
+        if (!/["']/.test(at.params)) return;
+        throw locateError(diagnostic(
+          `${DIRECTIVE_ARGUMENT_CODES[at.name.toLowerCase()]}: quoted arguments are not part of the directive grammar; ` +
+          `write @${at.name}${at.params.replace(/["']/g, '')} without quotes.`
+        ), at);
+      };
       // Selector-scoped typography directives.
       // MIG-B6-14 (FEAT-008): only @ds-typo(h1) is supported — @ds(h1) and
       // @ds-h1 were never implemented despite an older comment claiming
@@ -206,13 +212,8 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // as UXD_DIRECTIVE_UNKNOWN instead of reaching CSS untouched.
       root.walkRules((rule) => {
         const applyTypo = (at: any, variantRaw: string) => {
+          rejectQuotedArguments(at);
           let tag = String(variantRaw || "").trim();
-          if (
-            (tag.startsWith('"') && tag.endsWith('"')) ||
-            (tag.startsWith("'") && tag.endsWith("'"))
-          ) {
-            tag = tag.slice(1, -1);
-          }
           if (tag.startsWith("(") && tag.endsWith(")")) {
             tag = tag.slice(1, -1).trim();
           }
@@ -268,346 +269,14 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         // left for the final UXD_DIRECTIVE_CONTEXT pass to reject.
         rule.walkAtRules("ds-typo", (at) => { if (at.parent === rule) applyTypo(at, at.params || ""); });
       });
-      const densityTokens: Record<string, string> = Object.create(null);
-      const radiusTokens: Record<string, string> = Object.create(null);
-      const shadowTokens: Record<string, string> = Object.create(null);
-      const borderTokens: Record<string, string> = Object.create(null);
-
-      // Parse a button pack body "{ ... }" into base + states maps
-      function parseButtonPack(rawVal: string): {
-        base: Record<string, string>;
-        states: Record<string, Record<string, string>>;
-      } {
-        const outBase: Record<string, string> = Object.create(null);
-        const outStates: Record<string, Record<string, string>> = Object.create(
-          null
-        );
-        let s = String(rawVal || "").trim();
-        if (s.startsWith("{") && s.endsWith("}")) s = s.slice(1, -1);
-        let i = 0;
-        const N = s.length;
-        const isWs = (ch: string) => /\s/.test(ch);
-        function skipWs() {
-          while (i < N && isWs(s[i]!)) i++;
-        }
-        function readUntilTopLevelSemi(): string {
-          let depth = 0;
-          let buf = "";
-          while (i < N) {
-            const ch = s[i]!;
-            if (ch === "{") {
-              depth++;
-              buf += ch;
-              i++;
-              continue;
-            }
-            if (ch === "}" && depth > 0) {
-              depth--;
-              buf += ch;
-              i++;
-              continue;
-            }
-            if (ch === ";" && depth === 0) {
-              i++;
-              break;
-            }
-            buf += ch;
-            i++;
-          }
-          return buf.trim();
-        }
-        while (i < N) {
-          skipWs();
-          if (i >= N) break;
-          if (s[i] === "&" || s[i] === ":") {
-            // Read state key up to '{'
-            let key = "";
-            while (i < N && s[i] !== "{") {
-              key += s[i];
-              i++;
-            }
-            key = key.trim();
-            if (i < N && s[i] === "{") {
-              i++; // skip '{'
-              let depth = 1;
-              let inner = "";
-              while (i < N && depth > 0) {
-                const ch = s[i]!;
-                if (ch === "{") {
-                  depth++;
-                  inner += ch;
-                  i++;
-                  continue;
-                }
-                if (ch === "}") {
-                  depth--;
-                  if (depth === 0) {
-                    i++;
-                    break;
-                  }
-                  inner += ch;
-                  i++;
-                  continue;
-                }
-                inner += ch;
-                i++;
-              }
-              const norm = key
-                .replace(/^&/, "")
-                .replace(/^:/, "")
-                .trim()
-                .toLowerCase();
-              const stateDecls: Record<string, string> = Object.create(null);
-              // Split inner by top-level ';'
-              let j = 0;
-              const M = inner.length;
-              function readInnerUntilSemi(): string {
-                let d = 0,
-                  b = "";
-                while (j < M) {
-                  const ch2 = inner[j]!;
-                  if (ch2 === "{") {
-                    d++;
-                    b += ch2;
-                    j++;
-                    continue;
-                  }
-                  if (ch2 === "}" && d > 0) {
-                    d--;
-                    b += ch2;
-                    j++;
-                    continue;
-                  }
-                  if (ch2 === ";" && d === 0) {
-                    j++;
-                    break;
-                  }
-                  b += ch2;
-                  j++;
-                }
-                return b.trim();
-              }
-              while (j < M) {
-                while (j < M && /\s/.test(inner[j]!)) j++;
-                const line = readInnerUntilSemi();
-                if (!line) break;
-                const idx = line.indexOf(":");
-                if (idx > 0) {
-                  const k = line.slice(0, idx).trim().toLowerCase();
-                  const v = line.slice(idx + 1).trim();
-                  if (k) stateDecls[k] = v;
-                }
-              }
-              if (Object.keys(stateDecls).length) outStates[norm] = stateDecls;
-            }
-            continue;
-          }
-          const chunk = readUntilTopLevelSemi();
-          if (!chunk) break;
-          const idx = chunk.indexOf(":");
-          if (idx > 0) {
-            const k = chunk.slice(0, idx).trim().toLowerCase();
-            const v = chunk.slice(idx + 1).trim();
-            if (k) outBase[k] = v;
-          }
-        }
-        return { base: outBase, states: outStates };
-      }
-
-      // Collect theme-driven density tokens (generic only) and store globally
-      root.walkAtRules("theme", (at) => {
-        at.walkDecls((decl) => {
-          const prop = String((decl as any).prop || "").trim();
-          // Accept only generic: density-<n>
-          const m = prop.match(/^density-([\w-]+)$/);
-          if (m) {
-            const n = m[1];
-            const key = `${n}`;
-            const val = String((decl as any).value || "").trim();
-            densityTokens[key] = val;
-          }
-          // radius-<n>
-          const r = prop.match(/^radius-(\d+)$/);
-          if (r) {
-            const n = r[1];
-            const key = `${n}`;
-            const val = String((decl as any).value || "").trim();
-            radiusTokens[key] = val;
-
-          }
-          // shadow-<n>
-          const s = prop.match(/^shadow-(\d+)$/);
-          if (s) {
-            const n = s[1];
-            const key = `${n}`;
-            const val = String((decl as any).value || "").trim();
-            shadowTokens[key] = val;
-
-          }
-          // border-<n> (composite)
-          const b = prop.match(/^border-(\d+)$/);
-          if (b) {
-            const n = b[1];
-            const key = `${n}`;
-            const val = String((decl as any).value || "").trim();
-            borderTokens[key] = val;
-
-          }
-          // button packs: button-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; }
-          const pack = prop.match(/^button-([a-zA-Z][\w-]*)$/);
-          if (pack) {
-            const vname = pack[1].toLowerCase();
-            const rawVal = String((decl as any).value || "").trim();
-            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
-              const parsed: any = parseButtonPack(rawVal);
-              const surface = rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/);
-              if (surface) parsed.surface = surface[1];
-              (root as any).__btnPacks =
-                (root as any).__btnPacks || Object.create(null);
-              (root as any).__btnPacks[vname] = parsed;
-            }
-          }
-          // surface packs: surface-<variant>: { padding:..; radius:..; bg:..; color:..; border:..; shadow:.. }
-          const surf = prop.match(/^surface-([a-zA-Z][\w-]*)$/);
-          if (surf) {
-            const vname = surf[1].toLowerCase();
-            const rawVal = String((decl as any).value || "").trim();
-            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
-              const parsed = parseButtonPack(rawVal);
-              (root as any).__surfacePacks =
-                (root as any).__surfacePacks || Object.create(null);
-              (root as any).__surfacePacks[vname] = parsed.base;
-            }
-          }
-          // input packs: input-<variant>: { padding.., radius.., bg.., color.., border.., shadow.., caret.., placeholder.. }
-          const inp = prop.match(/^input-([a-zA-Z][\w-]*)$/);
-          if (inp) {
-            const vname = inp[1].toLowerCase();
-            const rawVal = String((decl as any).value || "").trim();
-            if (rawVal.startsWith("{") && rawVal.endsWith("}")) {
-              const parsed = parseButtonPack(rawVal);
-              (root as any).__inputPacks =
-                (root as any).__inputPacks || Object.create(null);
-              (root as any).__inputPacks[vname] = {
-                base: parsed.base,
-                states: parsed.states,
-                ...(rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/) ? { surface: rawVal.match(/@ds-surface\s*\(\s*([a-z][a-z0-9-]*)\s*\)\s*;/)![1] } : {}),
-              };
-
-            }
-          }
-        });
-
-        // Also support rule-form packs: `button-contained: { ... }`, `surface-contained: { ... }`, `input-contained: { ... }`
-        at.walkRules((r) => {
-          const sel = String((r as any).selector || "").trim();
-          const mBtn = sel.match(/^button-([a-zA-Z][\w-]*):?$/);
-          const mSurf = sel.match(/^surface-([a-zA-Z][\w-]*):?$/);
-          const mInp = sel.match(/^input-([a-zA-Z][\w-]*):?$/);
-          if (!mBtn && !mSurf && !mInp) return;
-          const isSurface = !!mSurf;
-          const isInput = !!mInp;
-          const vname = (
-            mBtn ? mBtn[1] : mSurf ? mSurf[1] : mInp![1]
-          ).toLowerCase();
-          const base: Record<string, string> = Object.create(null);
-          const states: Record<string, Record<string, string>> = Object.create(
-            null
-          );
-          (r.nodes || []).forEach((n: any) => {
-            if (!n) return;
-            if (n.type === "decl") {
-              const k = String(n.prop || "")
-                .trim()
-                .toLowerCase();
-              const v = String(n.value || "").trim();
-              if (k) base[k] = v;
-            } else if ((mBtn || mInp) && n.type === 'atrule' && n.name === 'ds-surface') {
-              base.__surface = String(n.params).trim().replace(/^\((.*)\)$/, '$1').trim();
-            } else if (!isSurface && n.type === "rule") {
-              // Selector can be ':hover' or '&:hover'
-              let st = String(n.selector || "").trim();
-              st = st.replace(/^&/, "").replace(/^:/, "").toLowerCase();
-              const sd: Record<string, string> = Object.create(null);
-              (n.nodes || []).forEach((dn: any) => {
-                if (dn && dn.type === "decl") {
-                  const k = String(dn.prop || "")
-                    .trim()
-                    .toLowerCase();
-                  const v = String(dn.value || "").trim();
-                  if (k) sd[k] = v;
-                }
-              });
-              if (st && Object.keys(sd).length) states[st] = sd;
-            }
-          });
-          if (isSurface) {
-            (root as any).__surfacePacks =
-              (root as any).__surfacePacks || Object.create(null);
-            (root as any).__surfacePacks[vname] = base;
-          } else if (isInput) {
-            (root as any).__inputPacks =
-              (root as any).__inputPacks || Object.create(null);
-            const surface = base.__surface;
-            delete base.__surface;
-            (root as any).__inputPacks[vname] = { base, states, ...(surface ? { surface } : {}) };
-          } else {
-            const surface = base.__surface;
-            delete base.__surface;
-            const parsed = { base, states, ...(surface ? { surface } : {}) };
-            (root as any).__btnPacks =
-              (root as any).__btnPacks || Object.create(null);
-            (root as any).__btnPacks[vname] = parsed;
-          }
-        });
-        // Remove @theme blocks from output
-        at.remove();
-      });
-
       // Token maps are always computed so references (`shadow()`, `radius()`,
       // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
       // and resolving against the effective theme. Only the `:root`
-      // definitions themselves are gated by includeTheme.
-      const shadowTheme = { shadows: { ...shadowTokens, ...rawTheme?.shadows } };
-      const effectiveShadows = getShadowTokens(shadowTheme);
-
-      const edgeTheme = { borders: { ...borderTokens, ...rawTheme?.borders }, radii: { ...radiusTokens, ...rawTheme?.radii } };
-      const edgeTokens = getEdgeTokens(edgeTheme);
-
-      // MIG-B6-29: same rawTheme reasoning as shadows/edges/surfaces/buttons/
-      // inputs above — getDensityTokens's own `{...DEFAULT_DENSITIES,
-      // ...legacy, ...theme.densities}` already gives `theme.densities`
-      // top precedence, which is only correct when `theme` is the
-      // *unresolved* override, not `effectiveTheme` (which now always
-      // carries DEFAULT_THEME's own densities too).
-      const effectiveDensities = getDensityTokens(rawTheme, densityTokens);
-
-      getSurfaceTokens({ surfaces: effectiveTheme?.surfaces }); // Validate JSON before merging legacy fields.
-      const legacySurfaces = (root as any).__surfacePacks || {};
-      const surfaceOverrides: Record<string, any> = { ...legacySurfaces };
-      for (const [role, style] of Object.entries(rawTheme?.surfaces || {})) surfaceOverrides[role] = { ...legacySurfaces[role], ...(style as any) };
-      const effectiveSurfaceTheme = { ...effectiveTheme, ...edgeTheme, ...shadowTheme, surfaces: surfaceOverrides, densities: effectiveDensities };
-      getButtonTokens({ ...effectiveSurfaceTheme, buttons: effectiveTheme?.buttons });
-      const buttonOverrides: Record<string, any> = { ...((root as any).__btnPacks || {}) };
-      for (const [role, pack] of Object.entries(rawTheme?.buttons || {}) as [string, any][]) {
-        const legacy = buttonOverrides[role] || {};
-        const states = { ...legacy.states };
-        for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
-        buttonOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
-      }
-      const effectiveButtonTheme = { ...effectiveSurfaceTheme, buttons: buttonOverrides };
-      getInputTokens({ ...effectiveSurfaceTheme, inputs: effectiveTheme?.inputs });
-      const inputOverrides: Record<string, any> = { ...((root as any).__inputPacks || {}) };
-      for (const [role, pack] of Object.entries(rawTheme?.inputs || {}) as [string, any][]) {
-        const legacy = inputOverrides[role] || {};
-        const states = { ...legacy.states };
-        for (const [state, fields] of Object.entries(pack.states || {})) states[state] = { ...states[state], ...(fields as any) };
-        inputOverrides[role] = { ...legacy, ...pack, base: { ...legacy.base, ...pack.base }, states };
-      }
-      const effectiveInputTheme = { ...effectiveSurfaceTheme, inputs: inputOverrides };
-      // The one theme this compilation emits and validates references against:
-      // the effective theme with this file's legacy `@theme` packs merged in.
-      const themeForCss = { ...effectiveInputTheme, buttons: buttonOverrides };
+      // definitions themselves are gated by includeTheme. The theme JSON is the
+      // only source of a token: there is no in-stylesheet pack to merge.
+      const effectiveShadows = getShadowTokens(effectiveTheme);
+      const edgeTokens = getEdgeTokens(effectiveTheme);
+      const effectiveDensities = getDensityTokens(effectiveTheme);
 
       // Stability phase 1 (audit T10): the whole theme is one string —
       // `renderThemeCss`, the exact bytes `generateThemeCss` returns — inserted
@@ -620,7 +289,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // the author's rules, so an author's own `:root { --uxdsl__… }` override
       // silently lost to the theme's later declaration of the same name.
       if (includeTheme) {
-        const nodes = [...themeGenerated(renderThemeCss(themeForCss, bps))];
+        const nodes = [...themeGenerated(renderThemeCss(effectiveTheme, bps))];
         const imports = nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
         const blocks = nodes.filter((node) => !imports.includes(node));
         // A parsed string's first node has no leading raw; after an author's
@@ -646,8 +315,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         rule.walkAtRules('ds-input', at => {
           if (at.parent !== rule) return;
           try {
-            const { role, tone, size, radius, shadow } = parseInputArguments(effectiveInputTheme, at.params);
-            const generated = postcss.parse(inputComponentCss(effectiveInputTheme, rule.selector, role, tone, size, radius, shadow));
+            rejectQuotedArguments(at);
+            const { role, tone, size, radius, shadow } = parseInputArguments(effectiveTheme, at.params);
+            const generated = postcss.parse(inputComponentCss(effectiveTheme, rule.selector, role, tone, size, radius, shadow));
             const base = generated.nodes.shift() as Rule;
             for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
             let anchor: any = rule;
@@ -661,16 +331,12 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         rule.walkAtRules("ds-surface", (at) => {
           if (at.parent !== rule) return;
           try {
+            rejectQuotedArguments(at);
             let inner = String((at.params || "").trim());
-            if (
-              (inner.startsWith('"') && inner.endsWith('"')) ||
-              (inner.startsWith("'") && inner.endsWith("'"))
-            )
-              inner = inner.slice(1, -1);
             if (inner.startsWith("(") && inner.endsWith(")"))
               inner = inner.slice(1, -1).trim();
-            const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveSurfaceTheme, inner);
-            const props = surfaceDeclarations(effectiveSurfaceTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
+            const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveTheme, inner);
+            const props = surfaceDeclarations(effectiveTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
             const insert = (prop: string, value: string) => {
               (rule as any).insertBefore(at, { prop, value, source: at.source });
             };
@@ -684,8 +350,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         rule.walkAtRules('ds-button', at => {
           if (at.parent !== rule) return;
           try {
-            const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveButtonTheme, at.params);
-            const generated = postcss.parse(buttonComponentCss(effectiveButtonTheme, rule.selector, role, tone, size, radius, shadow));
+            rejectQuotedArguments(at);
+            const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveTheme, at.params);
+            const generated = postcss.parse(buttonComponentCss(effectiveTheme, rule.selector, role, tone, size, radius, shadow));
             const base = generated.nodes.shift() as Rule;
             for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
             let anchor: any = rule;
@@ -741,83 +408,48 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       function rewriteFuncs(input: string, _forProp?: string): string {
         const p = valueParser(input);
         p.walk((node: any) => {
-          // Token-aware density helpers
-          if (
-            node.type === "function" &&
-            (node.value === "density" || node.value === "densities")
-          ) {
-            const ordered = Object.keys(bps)
-              .map((name) => ({ name, px: (bps as any)[name] as number }))
-              .filter((it) => typeof it.px === "number" && !Number.isNaN(it.px))
-              .sort((a, b) => a.px - b.px);
-
-            const innerText = valueParser.stringify(node.nodes).trim();
-
-            if (node.value === "density") {
-              const key = innerText.trim().replace(/^(['"])(.*)\1$/, '$2');
-              if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) {
-                throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), valueParser.stringify(node));
-              }
-              node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
-            } else {
-              const rawVals = innerText
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean);
-              const steps: number[] = rawVals
-                .map((s) => parseInt(s.replace(/[^-\d]/g, ""), 10))
-                .filter((n) => !Number.isNaN(n));
-              if (steps.length > 0 && ordered.length > 0) {
-                const parts = ordered.map((bp, i) => {
-                  const step =
-                    typeof steps[i] === "number"
-                      ? steps[i]
-                      : steps[steps.length - 1];
-                  return `${bp.name}(space(${step}))`;
-                });
-                node.type = "word";
-                node.value = parts.join(" ");
-                return;
-              }
+          if (node.type !== 'function') return;
+          // A spelling the language no longer has: fail, naming the replacement.
+          const removed = removedSyntaxMessage(node.value, valueParser.stringify(node.nodes));
+          if (removed) throw diagnostic(removed, valueParser.stringify(node));
+          if (node.value === 'density') {
+            const key = valueParser.stringify(node.nodes).trim();
+            if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) {
+              throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), valueParser.stringify(node));
             }
-            return;
+            node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
           }
-          // Radius helpers: radius(n) or rounded(n)
-          if (
-            node.type === "function" &&
-            (node.value === "radius" || node.value === "rounded")
-          ) {
-            const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+          if (node.value === 'radius') {
+            const key = valueParser.stringify(node.nodes).trim();
             if (RADIUS_KEYWORDS[key] || Object.prototype.hasOwnProperty.call(edgeTokens.radii, key)) {
               node.type = 'word';
               node.value = RADIUS_KEYWORDS[key] || `var(${buildVarName('radius', key)})`;
               return;
             }
+            // `full` was an alias of `pill`; a theme that defines its own
+            // `radii.full` took the branch above.
+            if (key === 'full') throw diagnostic(REMOVED_RADIUS_FULL, valueParser.stringify(node));
             throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', node.value, key, [...Object.keys(edgeTokens.radii), ...Object.keys(RADIUS_KEYWORDS)]), valueParser.stringify(node));
           }
-          // Shadow helpers: shadow(n) or elevation(n)
-          if (
-            node.type === "function" &&
-            (node.value === "shadow" || node.value === "elevation")
-          ) {
-            const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
+          if (node.value === 'shadow') {
+            const key = valueParser.stringify(node.nodes).trim();
             if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw diagnostic(missingKeyMessage('UXD_SHADOW_REFERENCE', node.value, key, Object.keys(effectiveShadows)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('shadow', key)})`;
             return;
           }
           // Border helper: border(n[, color][, style])
-          if (node.type === "function" && node.value === "border") {
-            const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
+          if (node.value === 'border') {
+            const key = valueParser.stringify(node.nodes).split(',')[0].trim();
             if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', 'border', key, Object.keys(edgeTokens.borders)), valueParser.stringify(node));
             node.type = 'word';
             node.value = `var(${buildVarName('border', key)})`;
             return;
           }
-          if (node.type === 'function' && node.value === 'tone') {
+          if (node.value === 'tone') {
             throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', valueParser.stringify(node));
           }
-          if (node.type === 'function' && ['palette', 'color', 'space'].includes(node.value)) {
+          if (['palette', 'color', 'space'].includes(node.value)) {
             node.type = 'word';
             node.value = tokenValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`);
             return false;
@@ -992,7 +624,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // emitting globals. Dependency CSS remains validation-only as well.
       const css = [...(references.css || [])];
       if (!includeTheme && effectiveTheme && references.mode !== 'off') {
-        css.push(renderThemeCss(themeForCss, bps));
+        css.push(renderThemeCss(effectiveTheme, bps));
       }
       enforceReferences(root, consumers, { ...references, css,
         onWarning: issue => { result.warn(issue.message, { node: (issue as any).node, plugin: 'postcss-uxdsl' }); references.onWarning?.(issue); },

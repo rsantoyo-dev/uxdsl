@@ -123,7 +123,7 @@ export default function DemoProductivity() {
       margin-bottom: density(1);
     }
     .badge { 
-      @ds-surface(contained surface density(0) radius(full)); 
+      @ds-surface(contained surface density(0) radius(pill)); 
     }
   }
 }`}

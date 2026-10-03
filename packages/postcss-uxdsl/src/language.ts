@@ -4,29 +4,6 @@ import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
 import { BASE_THEME } from './base-theme';
 
-/** `space-` is a reserved legacy prefix; remove it once, never recursively. */
-export function normalizeSpacingKey(key: string): string {
-  return key.startsWith('space-') ? key.slice(6) : key;
-}
-
-/** Normalize before emission so aliases cannot silently overwrite each other. */
-export function normalizeSpacingDefinitions<T>(spacing: Record<string, T>): Record<string, T> {
-  const normalized: Record<string, T> = Object.create(null);
-  const sources = new Map<string, string>();
-  for (const [key, value] of Object.entries(spacing)) {
-    const token = normalizeSpacingKey(key);
-    if (!token || token.startsWith('space-')) {
-      throw new Error(`UXD_SPACING_KEY: Invalid spacing key "${key}"; use an identifier with at most one space- prefix.`);
-    }
-    if (sources.has(token)) {
-      throw new Error(`UXD_SPACING_COLLISION: spacing keys "${sources.get(token)}" and "${key}" both define ${buildVarName('space', token)}. Use only one spelling.`);
-    }
-    sources.set(token, key);
-    normalized[token] = value;
-  }
-  return normalized;
-}
-
 export type BreakpointMap = Record<string, number>;
 // MIG-B6-29 (FEAT-008): derived from theme/base.json (via BASE_THEME), not a
 // second, independently-maintained literal — see base-theme.ts for why this
@@ -53,7 +30,7 @@ export const KNOWN_CSS_FUNCTIONS = [
   // UXDSL's own value functions. `tone` is valid in Button/Input theme values
   // only; it is listed so the grammar, not the breakpoint heuristic, reports
   // it elsewhere (UXD_TONE_CONTEXT, with the reason).
-  'space', 'density', 'color', 'palette', 'radius', 'rounded', 'border', 'shadow', 'elevation', 'tone',
+  'space', 'density', 'color', 'palette', 'radius', 'border', 'shadow', 'tone',
   // Math.
   'calc', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
   'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp',
@@ -75,7 +52,12 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   if (typeof expression !== 'string' || !expression.trim() || /[;{}]/.test(expression)) throw new Error(`${prefix}: Expected a nonempty value.`);
   const parsed = valueParser(expression);
   parsed.walk(node => { if ((node as any).unclosed) throw new Error(`${prefix}: Unclosed expression.`); });
-  for (const node of parsed.nodes) if (node.type === 'function' && !Object.prototype.hasOwnProperty.call(bps, node.value) && !(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) throw new Error(`${prefix}: Unknown function or breakpoint ${node.value}.`);
+  for (const node of parsed.nodes) {
+    if (node.type !== 'function' || Object.prototype.hasOwnProperty.call(bps, node.value) || (KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) continue;
+    // A removed spelling names its replacement instead of reading as a typo.
+    const removed = removedSyntaxMessage(node.value, valueParser.stringify(node.nodes));
+    throw new Error(removed || `${prefix}: Unknown function or breakpoint ${node.value}.`);
+  }
 }
 
 // MIG-B6-29 (FEAT-008): derived from theme/base.json, not computed here —
@@ -95,8 +77,8 @@ export const LANGUAGE_COMPLETIONS = {
     'ds-button': ['radius', 'shadow'],
     'ds-input': ['radius', 'shadow'],
   },
-  directives: ['theme', 'ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
-  functions: ['palette', 'color', 'radius', 'rounded', 'border', 'density', 'shadow', 'elevation', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
+  directives: ['ds-surface', 'ds-typo', 'ds-button', 'ds-input'],
+  functions: ['palette', 'color', 'radius', 'border', 'density', 'shadow', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
 
 // MIG-B6-26 (FEAT-008): the exact tone predicate control-engine.ts's own
@@ -178,8 +160,7 @@ export function resolveResponsiveValue(input: string, target: string, bps: Break
 // One grammar for every theme value, in every family, on both CSS paths: a
 // literal CSS value; a token function — `space(k)`, `density(k)`,
 // `color(family.shade[, alpha])`, `palette(family[.variant][, alpha])`,
-// `radius(k | pill | full | circle)`, `border(k)`, `shadow(k)` (and the
-// aliases `rounded()`/`elevation()`); a responsive expression over the
+// `radius(k | pill | circle)`, `border(k)`, `shadow(k)`; a responsive expression over the
 // theme's breakpoints (`xs(…) md(…)`, resolved by resolveResponsiveValue
 // before this runs); and `var()` as the escape hatch, passed through. The
 // engines (foundations, typography, densities, presets, surfaces, controls)
@@ -189,14 +170,36 @@ export function resolveResponsiveValue(input: string, target: string, bps: Break
 // `space/density/color/palette` and the plugin's final pass over *every*
 // declaration papered over the rest at build time only.
 
-/** `radius(pill)`/`radius(full)` compile to `9999px`, `radius(circle)` to `50%`. */
-export const RADIUS_KEYWORDS: Record<string, string> = Object.freeze({ pill: '9999px', full: '9999px', circle: '50%' });
+/** `radius(pill)` compiles to `9999px`, `radius(circle)` to `50%`. */
+export const RADIUS_KEYWORDS: Record<string, string> = Object.freeze({ pill: '9999px', circle: '50%' });
 
-/** The token functions the grammar rewrites, alias → family. */
+/** The token functions the grammar rewrites, name → family. One name per concept. */
 export const TOKEN_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
   space: 'space', density: 'density', color: 'color', palette: 'palette',
-  radius: 'radius', rounded: 'radius', border: 'border', shadow: 'shadow', elevation: 'shadow',
+  radius: 'radius', border: 'border', shadow: 'shadow',
 });
+
+/**
+ * Spellings the language no longer has. Each fails as `UXD_SYNTAX_REMOVED`,
+ * naming what to write instead, wherever the one value grammar runs — an
+ * author's declaration or a theme value — so none of them reaches CSS as an
+ * unknown function a browser silently discards.
+ */
+const REMOVED_FUNCTIONS: Readonly<Record<string, (args: string) => string>> = Object.freeze({
+  rounded: (args: string) => `rounded() was removed; use radius(${args}).`,
+  elevation: (args: string) => `elevation() was removed; use shadow(${args}).`,
+  densities: () => 'densities() was removed; define the progression once as a Density token in the theme (densities: { "k": "xs(space(1)) md(space(2))" }) and use density(k).',
+});
+
+/** The message for a removed function call, or `undefined` for any other name. */
+export function removedSyntaxMessage(name: string, args: string): string | undefined {
+  if (Object.prototype.hasOwnProperty.call(REMOVED_FUNCTIONS, name)) return `UXD_SYNTAX_REMOVED: ${REMOVED_FUNCTIONS[name](args.trim())}`;
+  return undefined;
+}
+
+/** `radius(full)` was an alias of `radius(pill)`. A theme may still define its
+ * own `radii.full`; without one, the reference fails with this message. */
+export const REMOVED_RADIUS_FULL = 'UXD_SYNTAX_REMOVED: radius(full) was removed; use radius(pill).';
 
 export function normalizeTokenKey(kind: string, input: string): string {
   let key = input.trim().replace(/^(['"])(.*)\1$/, '$2');
@@ -221,6 +224,10 @@ export function tokenValueToCss(input: string): string {
     // substitutes it before any value reaches this grammar, so one still
     // here is in a family (or an author's stylesheet) that has no tone.
     if (node.type === 'function' && node.value === 'tone') throw new Error('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it.');
+    if (node.type === 'function') {
+      const removed = removedSyntaxMessage(node.value, valueParser.stringify(node.nodes));
+      if (removed) throw new Error(removed);
+    }
     if (node.type !== 'function' || !Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, node.value)) return;
     const kind = TOKEN_FUNCTIONS[node.value];
     const args = valueParser.stringify(node.nodes).split(',').map(arg => arg.trim());

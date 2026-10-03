@@ -81,18 +81,6 @@ const VISUAL_DEFAULT_FILES = [
   `${SRC}/naming.ts`,
   `${SRC}/base-theme.ts`,
   `${SRC}/ds-runtime/theme-generator.ts`,
-  // The generated legacy default files consumers can still import.
-  `${SRC}/theme/default-borders.uxdsl`,
-  `${SRC}/theme/default-buttons.uxdsl`,
-  `${SRC}/theme/default-colors.css`,
-  `${SRC}/theme/default-densities.uxdsl`,
-  `${SRC}/theme/default-inputs.uxdsl`,
-  `${SRC}/theme/default-palette.css`,
-  `${SRC}/theme/default-radii.uxdsl`,
-  `${SRC}/theme/default-shadows.uxdsl`,
-  `${SRC}/theme/default-spacing.css`,
-  `${SRC}/theme/default-surfaces.uxdsl`,
-  `${SRC}/theme/default-typography.uxdsl`,
 ];
 
 // MIG-B7-16 (FEAT-009): the other half of the classification. Every file under
@@ -114,7 +102,6 @@ const NON_VISUAL_SOURCE_FILES = {
   [`${SRC}/ds-runtime/contrast.ts`]: 'reports WCAG results over a theme; emits no CSS',
   [`${SRC}/ds-runtime/theme-structure.ts`]: 'compares two themes to gate applyTheme; emits no CSS',
   [`${SRC}/ds-runtime/theme-validate.ts`]: 'validates a theme object; emits no CSS',
-  [`${SRC}/theme/theme-manifest.json`]: 'generated release metadata that changes with every version bump',
 };
 const VISUAL_DEFAULT_CHANGELOG = 'packages/postcss-uxdsl/CHANGELOG.md';
 
@@ -159,8 +146,8 @@ function stableJson(value) {
 
 const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies', 'optionalDependencies'];
 
-// A release bumps every package's `version`, the ranges on its sibling
-// packages, and the theme manifest's `uxdslVersion` — and nothing else. There
+// A release bumps every package's `version` and the ranges on its sibling
+// packages — and nothing else. There
 // is no consumer-facing behavior to document there (the release record in
 // docs/releases/ is where a version is described), so a staged file whose only
 // difference from HEAD is those fields counts as mechanical, like a lockfile.
@@ -169,11 +156,6 @@ const DEPENDENCY_FIELDS = ['dependencies', 'devDependencies', 'peerDependencies'
 function withoutVersionFields(before, after, relFile, internalVersions) {
   const oldCopy = JSON.parse(JSON.stringify(before));
   const newCopy = JSON.parse(JSON.stringify(after));
-  if (relFile.endsWith('theme-manifest.json')) {
-    delete oldCopy.uxdslVersion;
-    delete newCopy.uxdslVersion;
-    return [oldCopy, newCopy];
-  }
   delete oldCopy.version;
   delete newCopy.version;
   for (const field of DEPENDENCY_FIELDS) {
@@ -196,7 +178,7 @@ function withoutVersionFields(before, after, relFile, internalVersions) {
 }
 
 function isVersionBumpOnly(relFile, internalVersions) {
-  if (!relFile.endsWith('/package.json') && !relFile.endsWith('/theme-manifest.json')) return false;
+  if (!relFile.endsWith('/package.json')) return false;
   const before = readJsonAt(`HEAD:${relFile}`);
   const after = readJsonAt(`:${relFile}`);
   if (!before || !after) return false;

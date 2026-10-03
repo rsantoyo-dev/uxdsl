@@ -28,17 +28,16 @@ test('inspection preserves values below, at, above and after transitions', () =>
   for (const [width, expected] of [[799, '8px'], [800, '12px'], [801, '12px'], [1600, '12px']]) assert.equal(inspectEdgeTheme(theme, width)['--uxdsl__radius__2'], expected);
   assert.equal(inspectEdgeTheme(theme, 800)['--uxdsl__border__1'], '2px dashed var(--uxdsl__palette__primary-main)');
 });
-test('legacy @theme uses the shared generator and JSON wins over legacy declarations', async () => {
-  const legacy = '@theme { radius-2: xs(8px) md(12px); border-1: xs(1px solid palette(primary.main)) md(2px dashed palette(primary.main)); } .card { border: border(1); border-radius: radius(2); }';
-  const output = await compile(legacy, { breakpoints: { xs: 0, sm: 480, md: 800, lg: 1024, xl: 1280 }, theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } });
+test('a @theme pack is not a second source of edges: it fails, and the JSON is what compiles', async () => {
+  await assert.rejects(() => compile('@theme { radius-2: 99px; } .card { border-radius: radius(2); }', { theme }), /UXD_THEME_BLOCK_REMOVED/);
+  const output = await compile('.card { border: border(1); border-radius: radius(2); }', { theme });
   assert.deepEqual(edgeDeclarations(output.css), edgeDeclarations(generateEdgeCss(theme)));
-  const override = await compile('@theme { radius-2: 99px; } .card { border-radius: radius(2); }', { theme });
-  assert(!override.css.includes('99px'));
 });
 test('edge definitions do not leak across PostCSS invocations', async () => {
-  const withBaseline = { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } };
-  await compile('@theme { radius-2: 99px; } .a { border-radius: radius(2); }', withBaseline);
-  const result = await compile('.b { border-radius: radius(2); }', withBaseline);
+  const baseline = { spacing: FULL_SPACING, palette: BASE_PALETTE };
+  const first = await compile('.a { border-radius: radius(2); }', { theme: { ...baseline, radii: { 2: '99px' } } });
+  assert(first.css.includes('--uxdsl__radius__2: 99px'));
+  const result = await compile('.b { border-radius: radius(2); }', { theme: baseline });
   assert(!result.css.includes('99px'));
 });
 test('literal values, nested CSS, shape keywords and references are preserved', async () => {

@@ -177,7 +177,7 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
 // existing role/tone/size detection runs, so they compose with tone-only
 // and legacy invocations without changing how those are parsed.
 function parseArguments(theme: ControlTheme, input: string) {
-  const allParts = input.trim().replace(/^(['"])(.*)\1$/, '$2').replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
+  const allParts = input.trim().replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
   const { radius, shadow, rest: parts } = parseOverrideArguments(allParts, errorPrefix);
   const roles = getTokens(theme);
   const role = parts.find(part => Object.hasOwnProperty.call(roles, part)) || 'contained';

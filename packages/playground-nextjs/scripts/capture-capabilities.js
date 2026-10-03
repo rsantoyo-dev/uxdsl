@@ -171,8 +171,8 @@ async function captureWatch() {
   const steps = [];
   try {
     steps.push({ action: 'start: uxdsl build --watch', output: await waitFor(state, (l) => /watching for changes/.test(l), 30000, 'the first build') });
-    fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4);\n  border-radius: rounded(3);'));
-    steps.push({ action: 'edit src/card.uxdsl: add border-radius: rounded(3);', output: await waitFor(state, (l) => /\] built /.test(l), 30000, 'the rebuild') });
+    fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4);\n  border-radius: radius(3);'));
+    steps.push({ action: 'edit src/card.uxdsl: add border-radius: radius(3);', output: await waitFor(state, (l) => /\] built /.test(l), 30000, 'the rebuild') });
     fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4) xxl(2rem);'));
     steps.push({ action: 'edit src/card.uxdsl: add xxl(2rem), a breakpoint that is not configured', output: await waitFor(state, (l) => /build failed|watching for a fix/.test(l), 30000, 'the error') });
     fs.writeFileSync(card, original);
@@ -202,6 +202,8 @@ const DIAGNOSTICS = [
   { expect: 'UXD_BP_INVALID', title: 'A negative breakpoint in the theme (validated once, before any engine runs)', css: '.a {\n  padding: space(3);\n}\n', theme: { breakpoints: { xs: 0, sm: 480, md: -1, lg: 1024, xl: 1280 } } },
   { expect: 'UXD_TYPO_FIELD', title: 'A typography field the engine does not support', css: '.a {\n  padding: space(3);\n}\n', theme: { typography_details: { h1: { opacity: '0.8' } } } },
   { expect: 'UXD_REFERENCE_MISSING', title: 'A theme value pointing at a token that does not exist', css: '.a {\n  color: palette(primary-main);\n}\n', theme: { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } } },
+  { expect: 'UXD_SYNTAX_REMOVED', title: 'A spelling the language no longer has (the former elevation() alias)', css: '.card {\n  box-shadow: elevation(2);\n}\n' },
+  { expect: 'UXD_THEME_BLOCK_REMOVED', title: 'A @theme block: tokens are defined in the theme JSON', css: '@theme {\n  radius-2: 12px;\n}\n' },
 ];
 
 function captureDiagnostics() {
@@ -220,20 +222,6 @@ function captureDiagnostics() {
   return results;
 }
 
-// Same source, one with the aliases and one with the names they alias: the compiled
-// declarations must be identical, and the page shows both.
-function captureAliases() {
-  const dir = freshProject('aliases');
-  const source = '.with-alias {\n  box-shadow: elevation(2);\n  border-radius: rounded(2);\n}\n\n.with-name {\n  box-shadow: shadow(2);\n  border-radius: radius(2);\n}\n';
-  fs.writeFileSync(path.join(dir, 'src/aliases.uxdsl'), source);
-  const r = run(dir, ['build', '--entry', 'src/aliases.uxdsl', '--out', 'dist/aliases.css', '--no-include-theme']);
-  if (r.exit !== 0) throw new Error(`aliases did not compile:\n${r.stderr}`);
-  const css = read(dir, 'dist/aliases.css');
-  const body = (selector) => ((css.match(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`)) || [])[1] || '').trim();
-  if (!body('.with-alias') || body('.with-alias') !== body('.with-name')) throw new Error(`elevation()/rounded() no longer compile to the same declarations as shadow()/radius():\n${css}`);
-  return { source, argv: r.argv, css };
-}
-
 // ------------------------------------------------------------------ main ----
 
 async function main() {
@@ -242,7 +230,7 @@ async function main() {
   try {
     const cli = captureCli();
     cli.watch = await captureWatch();
-    const compiler = { diagnostics: captureDiagnostics(), aliases: captureAliases() };
+    const compiler = { diagnostics: captureDiagnostics() };
     const files = [[CLI_OUT, cli], [DIAG_OUT, compiler]].map(([file, data]) => [file, `${JSON.stringify({ generatedBy: 'packages/playground-nextjs/scripts/capture-capabilities.js — do not edit; run it to refresh', ...data }, null, 2)}\n`]);
     if (CHECK) {
       const stale = files.filter(([file, text]) => !fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== text).map(([file]) => path.relative(PLAYGROUND, file));

@@ -79,20 +79,11 @@ test('invalid definitions fail in the shared compiler and theme validator', () =
   assert.equal(validated.ok, true);
   assert.equal(validated.theme.breakpoints.wide, 1800);
 });
-test('legacy flat typography and font variables remain supported', () => {
-  // Unlike typography_details (structured, role+field -> the shared
-  // "typography" family), a flat `theme.typography` map is a pass-through
-  // escape hatch: the JSON key IS the full variable name, verbatim. It is
-  // not part of the `--uxdsl__<family>__<key>` contract and MIG-08 leaves
-  // it untouched on purpose (the doc: "no se deben renombrar variables CSS
-  // externas del consumidor" applies here too — this key is the
-  // consumer's own choice, not one this compiler assigns).
-  assert.match(generateTypographyCss({ typography: { 'h1-size': '2rem' }, fonts: { families: { ui: 'sans-serif' } } }), /--h1-size: 2rem;/);
-});
-test('legacy responsive variables remain equivalent in both adapters', async () => {
-  const input = { spacing: FULL_SPACING, palette: BASE_PALETTE, typography: { 'h1-size': 'xs(space(4)) md(3rem)' } };
-  const built = await postcss([plugin({ theme: input })]).process('', { from: undefined });
-  assert.deepEqual(declarations(built.css), declarations(generateThemeCss(input)));
+test('fonts.families compile to --uxdsl__font__<name>; there is no flat typography family', () => {
+  assert.match(generateTypographyCss({ fonts: { families: { ui: 'sans-serif' } } }), /--uxdsl__font__ui: sans-serif;/);
+  const built = postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, fonts: { families: { ui: 'sans-serif' } } } })]).process('', { from: undefined }).css;
+  assert.doesNotMatch(built, /--font-|--h1-size/);
+  assert.throws(() => generateThemeCss({ typography: { 'h1-size': '2rem' } }), /UXD_THEME_INVALID: .*typography_details/);
 });
 test('preview scopes Density and Typography to the same simulated viewport', () => {
   const { inspectTypographyTheme } = require('../dist/typography');
@@ -101,20 +92,13 @@ test('preview scopes Density and Typography to the same simulated viewport', () 
   assert.equal(inspectTypographyTheme(input, 800)['--uxdsl__density__4'], 'var(--uxdsl__space__5)');
   assert.equal(inspectTypographyTheme(input, 800)['--uxdsl__typography__h1-size'], 'var(--uxdsl__density__4)');
 });
-test('packaged data-typo selectors consume all configured properties', async () => {
-  const fs = require('node:fs');
-  const source = fs.readFileSync(require.resolve('../src/theme/default-typography.uxdsl'), 'utf8');
-  // default-typography.uxdsl ships .ds-typo[data-typo="default"/"code"]
-  // selectors unconditionally; a theme needs those two typography_details
-  // roles for --uxdsl__typography__default-size/--uxdsl__typography__code-size to resolve (see MIG-04's note on
-  // the shipped defaults not being fully self-contained).
-  const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, typography_details: { default: { fontSize: '1rem' }, code: { fontSize: '0.9rem' } } } })]).process(source, { from: undefined });
+test('a data-typo selector written with @ds-typo consumes exactly the configured properties', async () => {
+  const source = '.ds-typo[data-typo="h1"] { @ds-typo(h1); }';
+  const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })]).process(source, { from: undefined });
   const rule = postcss.parse(built.css).nodes.find(n => n.selector === '.ds-typo[data-typo="h1"]');
   const props = Object.fromEntries(rule.nodes.map(d => [d.prop, d.value]));
-  // MIG-B6-17 (FEAT-008): one declaration per field the effective theme
-  // defines for this role, referencing the variable with no literal fallback.
-  // This used to assert the opposite — `var(…, none)`, `var(…, normal)` and
-  // `var(…, auto)` for fields the theme never defined at all.
+  // One declaration per field the effective theme defines for this role,
+  // referencing the variable with no literal fallback.
   assert.equal(props['margin-block-end'], 'var(--uxdsl__typography__h1-margin-block-end)');
   assert.equal(props['font-family'], 'var(--uxdsl__typography__h1-font-family)');
   assert.equal(props['font-size'], 'var(--uxdsl__typography__h1-size)');

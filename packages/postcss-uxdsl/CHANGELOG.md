@@ -9,6 +9,46 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 3 (1): the legacy language surface is removed (audit
+decision DE-4, findings L6, L14, T9, T11, T14).
+
+### Visual changes
+
+None. The compiled CSS of the packaged base theme loses exactly one
+declaration, `--font-code` (the un-namespaced variable the flat `typography`
+family emitted; nothing read it), and every other custom property keeps its
+name and value (`test/removed-language-surface.test.js`). A stylesheet that
+still imported the legacy `theme/default-*` files defined every token twice;
+it now defines each once, with the value the theme JSON gives it.
+
+### Removed
+
+One spelling per concept. Each removed spelling fails with a located `UXD_*`
+error that names the replacement; none passes through to CSS.
+
+| Removed | Instead | Error |
+| --- | --- | --- |
+| `@theme { … }` blocks (density-/radius-/border-/shadow-`<k>`, `surface-`/`button-`/`input-<role>` packs) and the "defaults < legacy < JSON" precedence | the theme JSON (`uxdsl.theme.json`): `densities`, `radii`, `borders`, `shadows`, `surfaces`, `buttons`, `inputs` | `UXD_THEME_BLOCK_REMOVED` |
+| `rounded(k)` | `radius(k)` | `UXD_SYNTAX_REMOVED` |
+| `elevation(k)` | `shadow(k)` | `UXD_SYNTAX_REMOVED` |
+| `radius(full)` | `radius(pill)` (a theme may still define its own `radii.full`) | `UXD_SYNTAX_REMOVED` |
+| `densities(a, b, c)` (undocumented; skipped reference integrity) | a Density token in the theme, `density(k)` | `UXD_SYNTAX_REMOVED` |
+| `"space-1"`-style spacing keys and `UXD_SPACING_COLLISION` | the bare key, `"1"` | `UXD_SPACING_KEY` (with the key path) |
+| quoted directive arguments, `@ds-typo("h1")` | `@ds-typo(h1)` | `UXD_TYPO_ARGUMENT` / `UXD_SURFACE_ARGUMENT` / `UXD_BUTTON_ARGUMENT` / `UXD_INPUT_ARGUMENT` |
+| the flat `typography` theme family (`{ "font-code": … }`, emitted as `--font-code`), in `theme/base.json`, `UxdslTheme`, the schema and `KNOWN_THEME_FAMILIES` | `typography_details` for text roles, `fonts.families` for font stacks | `UXD_THEME_INVALID` at `typography` |
+| `postcss-uxdsl/theme/default-{colors,palette,spacing}.css`, `default-{typography,densities,radii,shadows,borders,surfaces,buttons,inputs}.uxdsl`, `theme/theme-manifest.json`, and the `./theme/*` glob export | `postcss-uxdsl/theme/base.json` and `postcss-uxdsl/theme/base.contrast-exceptions.json`, now explicit exports; every built-in preset already reads the base JSON with no import | the import fails to resolve |
+| `getDefaultTheme()` | `resolveTheme()` (a fresh effective theme) or `DEFAULT_THEME` (frozen) | — |
+| `normalizeSpacingKey`, `normalizeSpacingDefinitions` (`postcss-uxdsl/language`) | nothing to normalize: keys are written once | — |
+| `theme` in `LANGUAGE_COMPLETIONS.directives`; `rounded`/`elevation` in `LANGUAGE_COMPLETIONS.functions`, `KNOWN_CSS_FUNCTIONS` and `TOKEN_FUNCTIONS`; `full` in `RADIUS_KEYWORDS` | — | — |
+
+New codes: `UXD_THEME_BLOCK_REMOVED`, `UXD_SYNTAX_REMOVED`, `UXD_TYPO_ARGUMENT`.
+Removed code: `UXD_SPACING_COLLISION`.
+
+The compiler reads one theme: the effective theme (`resolveTheme(override)`),
+the same object `generateThemeCss` resolves — there is no per-file pack to
+merge, so a token's value is the theme's, in every compilation, with nothing
+leaking between builds.
+
 Stability phase 1 (audit of 2026-09-29, `docs/audits/2026-09-29-auditoria-estabilidad.md`;
 findings T2, T3, T4, R6 and L12 — one theme validator):
 

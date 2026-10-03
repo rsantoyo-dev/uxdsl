@@ -118,19 +118,6 @@ test('tone(): outside buttons/inputs it is UXD_TONE_CONTEXT — in a Surface, a 
   assert.equal(caught.line, 2);
 });
 
-test('tone(): a legacy @theme pack may use it too, and compiles like the JSON form', async () => {
-  const pack = '@theme { button-cta: { @ds-surface(contained); :hover { bg: tone(dark); color: tone(contrast); } } }';
-  const viaPack = compile(`${pack} .b { @ds-button(cta); }`);
-  const viaJson = compile('.b { @ds-button(cta); }', { buttons: { cta: { surface: 'contained', states: { hover: { bg: 'tone(dark)', color: 'tone(contrast)' } } } } });
-  // The removed @theme block leaves a different raw before `.b`, so compare
-  // the declarations, not the whitespace between rules.
-  const ctaVariables = (css) => Object.fromEntries([...css.matchAll(/(--uxdsl__button__cta-[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));
-  assert.ok(Object.keys(ctaVariables(viaJson)).length > 0);
-  assert.deepEqual(ctaVariables(viaPack), ctaVariables(viaJson));
-  assert.equal(viaPack.match(/\.b:hover \{[^}]*\}/)[0], viaJson.match(/\.b:hover \{[^}]*\}/)[0]);
-  assert.match(viaJson, /--uxdsl__button__cta-hover-bg: var\(--uxdsl__button__tone-dark, var\(--uxdsl__palette__primary-dark\)\);/);
-});
-
 // --- Audit T8: a per-tone variant only when the tone changes the value --------
 
 test('T8: a per-tone variant is emitted only when the tone changes the value', () => {
@@ -151,8 +138,9 @@ test('T8: the default output loses every identical tone copy and nothing else', 
   const css = generateThemeCss(resolveTheme({}));
   const declarations = css.match(/--[\w-]+\s*:/g) || [];
   const toneDeclarations = declarations.filter((d) => /-tone-/.test(d));
-  // Before T8: 745 declarations, 341 of them tone variants, 617 unique names.
-  assert.equal(declarations.length, 745 - 341 + toneDeclarations.length);
+  // Before T8: 745 declarations, 341 of them tone variants, 617 unique names;
+  // one fewer since the flat `typography` family (`--font-code`) was removed.
+  assert.equal(declarations.length, 745 - 341 - 1 + toneDeclarations.length);
   assert.ok(toneDeclarations.length > 0 && toneDeclarations.length < 341, `expected fewer than 341 tone variants, got ${toneDeclarations.length}`);
   // Every remaining variant differs from its untoned sibling.
   const map = Object.fromEntries([...css.matchAll(/(--uxdsl__(?:button|input)__[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));

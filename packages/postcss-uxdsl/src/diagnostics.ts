@@ -12,9 +12,16 @@ export const DIAGNOSTIC_CODES = new Set([
   // parentheses in a value), with the key path. UXD_THEME_FAMILY is the
   // unknown-top-level-family *warning*. UXD_BP_INVALID is the one breakpoint
   // code: the map is validated once, never restated per engine.
-  'UXD_THEME_INVALID', 'UXD_THEME_FAMILY', 'UXD_SPACING_KEY', 'UXD_SPACING_COLLISION', 'UXD_FOUNDATION_NAME_COLLISION',
+  'UXD_THEME_INVALID', 'UXD_THEME_FAMILY', 'UXD_SPACING_KEY', 'UXD_FOUNDATION_NAME_COLLISION',
+  // Stability phase 3: spellings the language no longer has. A `@theme { … }`
+  // block is UXD_THEME_BLOCK_REMOVED; `rounded()`, `elevation()`, `densities()`
+  // and `radius(full)` are UXD_SYNTAX_REMOVED. Each message names the replacement.
+  'UXD_THEME_BLOCK_REMOVED', 'UXD_SYNTAX_REMOVED',
   'UXD_BP_INVALID', 'UXD_VALUE',
   'UXD_DENSITY_MAP', 'UXD_DENSITY_VALUE', 'UXD_DENSITY_KEY', 'UXD_DENSITY_BASE', 'UXD_DENSITY_REFERENCE',
+  // A quoted `@ds-typo("h1")` argument (the Surface/Button/Input equivalents
+  // are their own families' `_ARGUMENT` codes).
+  'UXD_TYPO_ARGUMENT',
   // (UXD_TYPO_TOKEN is gone: a malformed token key in a typography value is
   // the grammar's own UXD_TOKEN_KEY, like in every other family.)
   'UXD_TYPO_DETAILS', 'UXD_TYPO_ROLE', 'UXD_TYPO_FIELD', 'UXD_TYPO_BASE', 'UXD_TYPO_NAME_COLLISION',

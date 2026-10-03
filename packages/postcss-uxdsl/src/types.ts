@@ -96,7 +96,7 @@ export interface UxdslMode {
  */
 export interface UxdslTheme {
   breakpoints?: Record<string, number>;
-  /** Keys accept the bare number (`"1"`) or the prefixed form (`"space-1"`). */
+  /** Keys are the token keys themselves (`"1"`, `"gutter"`), referenced as `space(1)`. */
   spacing?: Record<string, UxdslTokenValue>;
   palette?: Record<string, UxdslPaletteFamily>;
   fonts?: UxdslFonts;
@@ -110,8 +110,6 @@ export interface UxdslTheme {
   borders?: Record<string, UxdslTokenValue>;
   radii?: Record<string, UxdslTokenValue>;
   modes?: { dark?: UxdslMode };
-  /** Legacy flat typography variables (`font-code`). `typography_details` is the current form. */
-  typography?: Record<string, UxdslTokenValue>;
 }
 
 /**

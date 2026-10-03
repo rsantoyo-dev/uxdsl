@@ -15,7 +15,7 @@
   display: flex;
   align-items: center;
   padding: space(2);
-  border-radius: radius(full);
+  border-radius: radius(pill);
   background: palette(surface-paper);
   border: 1px solid palette(divider);
   transition: border-color 0.2s ease;

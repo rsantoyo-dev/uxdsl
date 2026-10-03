@@ -35,11 +35,11 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39609 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39539 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 39609,
-        "rootBlocks": 17,
+        "bytes": 39539,
+        "rootBlocks": 16,
         "mediaQueries": 9
       }
     },
@@ -66,11 +66,11 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38443 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38373 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38443,
-        "rootBlocks": 17
+        "bytes": 38373,
+        "rootBlocks": 16
       }
     },
     {
@@ -85,11 +85,11 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38443 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38373 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38443,
-        "rootBlocks": 17
+        "bytes": 38373,
+        "rootBlocks": 16
       }
     },
     {
@@ -197,11 +197,10 @@
           "surfaces",
           "buttons",
           "inputs",
-          "typography",
           "typography_details",
           "$schema"
         ],
-        "bytes": 12129,
+        "bytes": 12037,
         "primary": {
           "main": "#0f766e",
           "light": "#a855f7",
@@ -325,16 +324,16 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39609 bytes)",
+          "[uxdsl] built dist/app.css (39539 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
       {
-        "action": "edit src/card.uxdsl: add border-radius: rounded(3);",
+        "action": "edit src/card.uxdsl: add border-radius: radius(3);",
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39651 bytes)"
+          "[uxdsl] built dist/app.css (39581 bytes)"
         ]
       },
       {
@@ -350,12 +349,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39609 bytes)"
+          "[uxdsl] built dist/app.css (39539 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 39609
+      "finalBytes": 39539
     }
   }
 }

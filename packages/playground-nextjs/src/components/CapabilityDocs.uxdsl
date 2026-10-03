@@ -159,8 +159,8 @@
 .cap-frame-wrap {
   overflow-x: auto;
   border: 1px solid palette(neutral-light);
-  border-radius: rounded(2);
-  box-shadow: elevation(1);
+  border-radius: radius(2);
+  box-shadow: shadow(1);
 }
 
 .cap-frame {
@@ -277,25 +277,6 @@
   display: grid;
   gap: density(2);
   padding-inline-start: space(6);
-}
-
-.cap-alias-demo {
-  display: grid;
-  gap: density(3);
-  align-content: start;
-}
-
-.cap-alias-box {
-  @ds-surface(flat);
-  padding: density(4);
-  background: palette(surface-main);
-  border: 1px solid palette(neutral-light);
-}
-
-/* The aliases under test: these two rules must render identically. */
-.cap-alias-box--alias {
-  box-shadow: elevation(2);
-  border-radius: rounded(2);
 }
 
 .cap-alias-box--name {
