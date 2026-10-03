@@ -625,11 +625,14 @@ exact record per pair. An exception, exact or pattern, covers failing pairs:
 the report lists each under `excepted` with its real ratio and the
 exception's id, counts per exception (`matched`, `covered`), and fails on a
 pattern that matches nothing, a malformed record or a duplicate id. The
-remaining findings are values (light-mode `warning.main` not dark enough for
-direct text use; dark-mode `neutral.dark` and `light.dark`; the *untoned*
-placeholder default `neutral.dark` not dark-mode-aware enough, 9 failures
-pinned by `packages/postcss-uxdsl/test/input-placeholder-tone.test.js`),
-fixed as values in the same phase. `postcss-uxdsl/ds-runtime`
+remaining findings were values, fixed as values in the same phase (DE-7 /
+D-9 = b): light-mode `warning` re-chosen (`main` `#b45309`, `dark`
+`#92400e`, `contrast` `#ffffff`, dark-mode `dark` `#f59e0b`), dark-mode
+`neutral.dark` `#94a3b8` (also the *untoned* placeholder default, whose 9
+dark-mode failures `packages/postcss-uxdsl/test/input-placeholder-tone.test.js`
+now pins as a negative control) and dark-mode `light.dark` `#334155`. The
+base theme passes its own gate; the CHANGELOG's "Visual changes" table has
+every before/after. `postcss-uxdsl/ds-runtime`
 also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
@@ -946,16 +949,18 @@ Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
 its 4 phases, closing that story. `checkThemeContrast` against
 `theme/base.json` with the shipped `theme/base.contrast-exceptions.json`
-(three patterns, stability phase 5): 824 pairs checked, 30 failing, 94
-excepted, no exception issue, as of this phase's first commit (before it:
-123 failing with the single exact record, 124 without; 156 before FEAT-009's
+(three patterns, stability phase 5) reports `passed: true`: 824 pairs
+checked, 0 failing, 98 excepted, no exception issue (before this phase: 123
+failing with the single exact record, 124 without; 156 before FEAT-009's
 MIG-B7-01). Reproduce after building `postcss-uxdsl`, from the repository root:
 `node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.
 `fixtures/mig-b7-18-release/contrast-baseline.json` pins the exact failing
 and excepted sets (re-pin deliberately with
-`node fixtures/mig-b7-18-release/run.js --write-contrast-baseline`). The 30
-are value findings, fixed as values in this phase's next commit; excepted
-pairs are listed, never counted as passing. `generateThemeCss` and the PostCSS
+`node fixtures/mig-b7-18-release/run.js --write-contrast-baseline`);
+`test/base-theme-contrast.test.js` reverts each corrected value as a negative
+control. The playground's four named themes pass the same gate with their
+own values (`npm run theme:audit` exits 0). Excepted pairs are listed, never
+counted as passing. `generateThemeCss` and the PostCSS
 plugin now emit byte-identical Google Fonts `@import`s for the same theme;
 `packages/playground-nextjs`'s own `ThemeContext.tsx` used to hand-roll a
 separate client-side font `<link>` with a weaker encoder; MIG-B6-30 phase 3

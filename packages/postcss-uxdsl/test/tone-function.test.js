@@ -152,7 +152,10 @@ test('T8: the default output loses every identical tone copy and nothing else', 
   const declarations = css.match(/--[\w-]+\s*:/g) || [];
   const toneDeclarations = declarations.filter((d) => /-tone-/.test(d));
   // Before T8: 745 declarations, 341 of them tone variants, 617 unique names.
-  assert.equal(declarations.length, 745 - 341 + toneDeclarations.length);
+  // Stability phase 5 then added two dark-mode palette values to the base
+  // theme (`modes.dark.palette.warning.dark`, `modes.dark.palette.light.dark`),
+  // each emitted once per dark-mode selector: 745 + 4 untoned declarations.
+  assert.equal(declarations.length, 749 - 341 + toneDeclarations.length);
   assert.ok(toneDeclarations.length > 0 && toneDeclarations.length < 341, `expected fewer than 341 tone variants, got ${toneDeclarations.length}`);
   // Every remaining variant differs from its untoned sibling.
   const map = Object.fromEntries([...css.matchAll(/(--uxdsl__(?:button|input)__[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));
@@ -172,11 +175,13 @@ test('T8: the contrast gate resolves through the fallback, so its verdict on the
   const { checkThemeContrast } = require('../dist/ds-runtime');
   // Measured with no exceptions, so this pins what the engine resolves and
   // not what the shipped exception list happens to cover (stability phase 5
-  // turned that list into patterns): 124 is the 123 this test used to see
-  // plus the one pair the former exact record excused.
+  // turned that list into patterns). The 98 are exactly the canvas-identity
+  // tones drawn on the page (38 Button pairs among them); the phase's value
+  // fixes removed every other failure (124 before them).
   const report = checkThemeContrast(resolveTheme());
-  assert.equal(report.failures.filter((f) => f.family === 'button').length, 47);
-  assert.equal(report.failures.length, 124);
+  assert.equal(report.failures.filter((f) => f.family === 'button').length, 38);
+  assert.equal(report.failures.length, 98);
+  assert.ok(report.failures.every((f) => ['surface', 'light', 'dark'].includes(f.tone)));
   assert.deepEqual(report.failures.filter((f) => /unresolved/.test(f.reason || '')), []);
 });
 

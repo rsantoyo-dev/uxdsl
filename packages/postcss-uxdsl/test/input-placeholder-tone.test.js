@@ -130,19 +130,16 @@ test('MIG-B7-01: the contrast gate no longer reports the tinted-placeholder fail
   assert.deepEqual(tintedPlaceholderFailures, [],
     `expected every toned placeholder pair to pass now, still failing: ${JSON.stringify(tintedPlaceholderFailures)}`);
 
-  // The untoned dark-mode gap (neutral.dark itself not being dark-mode aware
-  // enough against the default background) is a different, undiagnosed
-  // finding — this fix does not and should not touch it. Pinned here so a
-  // regression removing it silently is caught, and so this exact list is the
-  // one MIG-B7-11's release gate is expected to still see.
+  // The untoned dark-mode gap this fix left (neutral.dark #475569 not being
+  // dark-mode aware enough against the default background: 9 placeholder
+  // pairs, `tone: null`) was a value finding, closed by stability phase 5
+  // with `modes.dark.palette.neutral.dark` #94a3b8. Nothing is left; a
+  // placeholder failure reappearing in either mode is a regression.
   const remaining = report.failures.filter((f) => f.pair === 'placeholder');
-  const signature = (f) => `${f.mode}/${f.family}/${f.component}/${f.tone}/${f.state}`;
-  assert.deepEqual(
-    [...new Set(remaining.map(signature))].sort(),
-    ['dark/input/contained/null/base', 'dark/input/contained/null/focus', 'dark/input/contained/null/invalid',
-     'dark/input/outlined/null/base', 'dark/input/outlined/null/focus', 'dark/input/outlined/null/invalid',
-     'dark/input/underline/null/base', 'dark/input/underline/null/focus', 'dark/input/underline/null/invalid'].sort(),
-    'the untoned dark-mode placeholder gap (out of scope here) should be exactly this set — investigate before editing this list');
+  assert.deepEqual(remaining, [], `no placeholder pair fails any more, got ${JSON.stringify(remaining)}`);
+  const untonedDark = checkThemeContrast(resolveTheme({ modes: { dark: { palette: { neutral: { dark: '#475569' } } } } }), { exceptions });
+  assert.equal(untonedDark.failures.filter((f) => f.pair === 'placeholder' && f.tone === null && f.mode === 'dark').length, 9,
+    'negative control: the old dark-mode value brings back exactly the 9 untoned placeholder pairs');
 });
 
 test('MIG-B7-01: Button\'s own tone-state pattern (hover.bg etc.) is unaffected', () => {
@@ -150,8 +147,9 @@ test('MIG-B7-01: Button\'s own tone-state pattern (hover.bg etc.) is unaffected'
   // (compileRules' regex substitution) that Button states and Input's own
   // caret still rely on.
   // No exceptions: this pins the engine's own Button findings, not what the
-  // shipped exception list covers (stability phase 5 made that list patterns).
+  // shipped exception list covers (stability phase 5 made that list patterns;
+  // its value fixes took Button's count from 47 to the 38 canvas-identity pairs).
   const report = checkThemeContrast(resolveTheme());
-  assert.equal(report.failures.filter((f) => f.family === 'button').length, 47,
-    'Button\'s failure count must be exactly what it was before this fix');
+  assert.equal(report.failures.filter((f) => f.family === 'button').length, 38,
+    'Button\'s failure count must be exactly what the base theme measures');
 });

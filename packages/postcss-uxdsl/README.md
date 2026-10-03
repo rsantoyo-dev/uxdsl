@@ -710,27 +710,25 @@ page.
 **Current status against `theme/base.json`**: phase 3 corrected 16 colors
 (hue and chroma held fixed, only lightness moved, in both directions,
 smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
-full before/after table). `report.passed` is still honestly `false`: as
-of 2026-09-28, `checkThemeContrast(resolveTheme(), { exceptions })` with the
-shipped exceptions file reports 123 failing pairs (124 without it) —
-`uxdsl theme --contrast` in a project with no theme override reports the same
-123. MIG-B7-01 (FEAT-009, in `0.5.0-beta.7`, unreleased as of 2026-09-28)
-closed one of phase 3's three findings:
-`inputs.*.base.placeholder` follows the requested tone on `contained`
-(the only Input role whose background actually tints), using that tone's
-own `contrast` color instead of the fixed `neutral.dark` gray that could
-not read on every toned background at once. Two of the original three
-remain open, plus a fourth surfaced while closing the first — three open
-findings in all: `light`/`dark`/`surface` are
-canvas-identity families whose own `main`/`dark` are asked to double as
-text/border when used as an explicit tone; `warning.main` (light mode)
-isn't dark enough for direct text/border use without losing its own
-identity; and `palette(neutral.dark)`, the Input placeholder's *untoned*
-default (all three roles), is not dark-mode-aware enough against dark
-mode's own background — a plain color choice, not a tone-substitution
-mechanism gap, so MIG-B7-01 deliberately left it open. Each is recommended
-as its own follow-up in the relevant story's evidence, not swept into an
-exception.
+full before/after table), and `report.passed` stayed honestly `false` for a
+while: 123 failing pairs as of 2026-09-28. MIG-B7-01 (FEAT-009) closed one
+of phase 3's three findings — `inputs.*.base.placeholder` follows the
+requested tone on `contained`, the only Input role whose background
+actually tints — and stability phase 5 (unreleased, `0.5.0-beta.7`) closed
+the rest: `checkThemeContrast(resolveTheme(), { exceptions })` with the
+shipped exceptions file reports **`passed: true` — 824 pairs checked, 0
+failing, 98 excepted, no exception issue**, and `uxdsl theme --contrast` in
+a project with no theme override exits 0 with the same report. What
+changed: `warning` was re-chosen for light mode (`main` `#b45309`, `dark`
+`#92400e`, `contrast` `#ffffff`) and given its own dark-mode `dark`
+(`#f59e0b`); dark mode's `neutral.dark` (`#94a3b8`, the untoned placeholder
+and hover gray) and `light.dark` (`#334155`) were corrected — the
+CHANGELOG's "Visual changes" table has every before/after; and the
+canvas-identity families (`light`/`dark`/`surface` used as a tone, drawing
+their own color on the page) are excepted as the structural class they are,
+three patterns, every covered pair still listed. The 98 excepted pairs are
+all of that class; reverting any corrected value makes the gate fail again,
+not through an exception (`test/base-theme-contrast.test.js`).
 
 **Input placeholder tone (MIG-B7-01, FEAT-009 — `0.5.0-beta.7`, unreleased as
 of 2026-09-28; `0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
@@ -1087,12 +1085,13 @@ override. The green above against the inherited white `contrast` is about
 state, breakpoint and ratio. It exits 1 when anything fails, and it is
 deliberately **not** part of `build`.
 
-One caveat worth knowing before you run it: as of 2026-09-28 the packaged base
-theme does not pass its own contrast gate (123 failing pairs with no override —
-see "Current status against `theme/base.json`" above). Those failures are real,
-disclosed and tracked (see MIG-B6-29 and MIG-B7-01 in the repository), not a
-problem with your configuration — so
-read the report for the pairs *your* override introduced.
+With no override the packaged base theme passes its own gate (since
+stability phase 5 — before it, 123 pairs failed and the command exited 1
+for everyone; see "Current status against `theme/base.json`" above), so a
+failure is a pair *your* override introduced. The report still lists the
+pairs the packaged exceptions cover under `excepted` — the canvas-identity
+families `surface`, `light` and `dark` used as a tone — and a clean exit
+says how many on stderr; they are not counted as passing.
 
 ---
 

@@ -394,12 +394,25 @@ test('MIG-B6-16: `theme --contrast` on the base theme enumerates the shipped exc
     assert.ok(report.exceptions.some((e) => e.id === pair.exception), 'and names the exception that covers it');
   }
 
-  // The values findings (light-mode `warning`, dark-mode `neutral.dark` and
-  // `light.dark`) are still open at this commit, so the base theme does not
-  // pass yet; this pins the real state and is flipped when they are fixed.
-  assert.equal(report.passed, false);
-  assert.ok(thrown, 'a failing gate exits non-zero even for the base theme');
-  assert.ok(report.failures.length > 0);
+  // Stability phase 5 fixed the value findings (light-mode `warning`,
+  // dark-mode `neutral.dark` and `light.dark`): a zero-config project passes.
+  assert.equal(report.passed, true);
+  assert.ok(!thrown, `a passing gate must not throw: ${thrown && thrown.message}`);
+  assert.deepEqual(report.failures, []);
+});
+
+test('`theme --contrast` on a zero-config project exits 0, keeps stdout one JSON document, and says on stderr what was excepted', () => {
+  const { spawnSync } = require('node:child_process');
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+  const bin = path.join(__dirname, '..', 'bin', 'uxdsl.js');
+  const spawned = spawnSync(process.execPath, [bin, 'theme', '--contrast'], { cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
+  assert.equal(spawned.status, 0, spawned.stderr);
+  const report = JSON.parse(spawned.stdout);
+  assert.equal(report.passed, true);
+  assert.ok(report.excepted.length > 0);
+  assert.match(spawned.stderr, new RegExp(`\\[uxdsl\\] --contrast: no blocking failure\\. ${report.excepted.length} more pairs fail and are covered by an exception \\(listed under "excepted", not passing\\)\\.`));
 });
 
 test('a packaged pattern follows the tone, not a hex: a recolored canvas family is still excepted, one that now passes makes the pattern stale', async () => {

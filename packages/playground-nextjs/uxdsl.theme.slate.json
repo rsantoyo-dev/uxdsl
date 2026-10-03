@@ -22,8 +22,8 @@
     "tertiary": {
       "main": "#677684",
       "light": "#DDE5EB",
-      "dark": "#9FB3C8",
-      "contrast": "#000000"
+      "dark": "#63768a",
+      "contrast": "#ffffff"
     },
     "success": {
       "main": "#166534",
@@ -40,7 +40,7 @@
     "warning": {
       "main": "#a46802",
       "light": "#FFA726",
-      "dark": "#D97706",
+      "dark": "#b36100",
       "contrast": "#000000"
     },
     "error": {
@@ -56,10 +56,10 @@
       "contrast": "#FFFFFF"
     },
     "neutral": {
-      "main": "#8d929a",
+      "main": "#72777f",
       "light": "#F8FAFC",
-      "dark": "#CBD5E1",
-      "contrast": "#0B1220"
+      "dark": "#5b646f",
+      "contrast": "#ffffff"
     },
     "light": {
       "main": "#FFFFFF",
@@ -103,7 +103,7 @@
         "neutral": {
           "main": "#94A3B8",
           "light": "#CBD5E1",
-          "dark": "#64748B",
+          "dark": "#8192aa",
           "contrast": "#0B1220"
         },
         "light": {

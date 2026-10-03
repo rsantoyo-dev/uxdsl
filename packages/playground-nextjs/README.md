@@ -36,8 +36,10 @@ document rather than resetting the previous one.
   shipped exceptions, the same call as `uxdsl theme --contrast`) over the four named themes,
   summarizes the failing pairs per mode/family/pair, and checks typography progressions
   with the engine's own resolvers (`resolveTypographyRole`, `resolveResponsiveValue`). It
-  exits 1 while the gate fails — which it does today for every shipped theme (MIG-B6-29);
-  that is the honest verdict, not a broken script. Per-pair detail: `uxdsl theme --contrast`.
+  exits 1 while the gate fails for any theme and 0 when all four pass — which they do
+  since stability phase 5 (0 failing pairs; the pairs the packaged pattern exceptions
+  cover are printed per theme and per exception, never counted as passing). Per-pair
+  detail: `uxdsl theme --contrast`.
 
 ## Capability coverage
 

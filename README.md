@@ -17,11 +17,16 @@ no longer grows quadratically (24,000 lines: 63.3 s → 0.79 s).
 `npm run verify:beta6` runs the release gate against real tarballs. Its
 automated portion passed; as of 2026-09-28, external validation against a real
 consumer project is still pending and is listed, with the known limitations, in
-the release record — the most important being that the packaged base theme does
-not yet pass its own contrast gate (`checkThemeContrast` on
-`packages/postcss-uxdsl/src/theme/base.json` still reports `passed: false`: 123
-failing pairs with the shipped `base.contrast-exceptions.json`, 124 without it,
-as of 2026-09-28; `uxdsl theme --contrast` reproduces the 123). What comes next is planned in
+the release record. The most important of those — the packaged base theme not
+passing its own contrast gate (123 failing pairs as of 2026-09-28) — is closed
+by stability phase 5 (unreleased): `checkThemeContrast` on
+`packages/postcss-uxdsl/src/theme/base.json` with the shipped
+`base.contrast-exceptions.json` now reports `passed: true` — 824 pairs checked,
+0 failing, 98 excepted (the canvas-identity families `surface`, `light` and
+`dark` used as a tone and drawn on the page, covered by three pattern
+exceptions and still listed pair by pair, never counted as passing);
+`uxdsl theme --contrast` in a zero-config project exits 0 and prints the same
+report. What comes next is planned in
 [FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md): `0.5.0-beta.7` first, then
 `0.5.0-rc.1`.
 

@@ -245,11 +245,14 @@ than a silently shorter list.
 
 `uxdsl theme --contrast` answers the question that follows — do the resulting
 text and border pairs meet WCAG? It loads the exceptions shipped with the base
-theme (matched on resolved colors, so overriding an excepted color stops
-inheriting its exception) and reports each failing pair with its mode,
-component, tone, state and breakpoint. The base theme does not pass its own
-gate; those failures are disclosed upstream, so read the pairs your override
-introduced.
+theme — three patterns for the canvas-identity families `surface`, `light`
+and `dark` used as a tone, which follow the tone rather than a hex — and
+reports each failing pair with its mode, component, tone, state and
+breakpoint, and each excepted pair under `excepted` with the exception that
+covers it. The base theme passes its own gate (since stability phase 5), so
+with no override the command exits 0 and a failing pair is one your override
+introduced; a pattern that your override leaves nothing to cover is reported
+as stale.
 
 ## Source maps
 

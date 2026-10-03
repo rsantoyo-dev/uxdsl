@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39609 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39769 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 39609,
+        "bytes": 39769,
         "rootBlocks": 17,
         "mediaQueries": 9
       }
@@ -66,10 +66,10 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38443 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38603 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38443,
+        "bytes": 38603,
         "rootBlocks": 17
       }
     },
@@ -85,10 +85,10 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38443 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38603 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38443,
+        "bytes": 38603,
         "rootBlocks": 17
       }
     },
@@ -201,7 +201,7 @@
           "typography_details",
           "$schema"
         ],
-        "bytes": 12129,
+        "bytes": 12187,
         "primary": {
           "main": "#0f766e",
           "light": "#a855f7",
@@ -257,26 +257,19 @@
         "theme",
         "--contrast"
       ],
-      "exit": 1,
-      "stderr": "[uxdsl] Error: --contrast: 30 contrast pairs fail WCAG for this theme. The JSON report on stdout lists each one with its mode, component, state, breakpoint and resolved colors. 94 more pairs fail and are covered by an exception (listed under \"excepted\", not passing).\n",
+      "exit": 0,
+      "stderr": "[uxdsl] --contrast: no blocking failure. 98 more pairs fail and are covered by an exception (listed under \"excepted\", not passing).\n",
       "facts": {
-        "passed": false,
+        "passed": true,
         "checked": 824,
-        "failures": 30,
+        "failures": 0,
         "exceptions": 3,
         "exceptionsMatched": 3,
         "exceptionIssues": [],
-        "bytes": 321639,
-        "byGroup": {
-          "light surface text": 2,
-          "light button text": 5,
-          "light input text": 6,
-          "dark button text": 7,
-          "dark button border": 1,
-          "dark input placeholder": 9
-        }
+        "bytes": 312760,
+        "byGroup": {}
       },
-      "excerpt": "[\n  {\n    \"mode\": \"light\",\n    \"family\": \"surface\",\n    \"component\": \"outlined\",\n    \"tone\": \"warning\",\n    \"state\": \"base\",\n    \"pair\": \"text\",\n    \"background\": \"own-bg-or-ambient\",\n    \"against\": \"ambient\",\n    \"breakpoint\": 0,\n    \"required\": 4.5,\n    \"ratio\": 3.1858232404059073,\n    \"reason\": \"3.19:1 < 4.5:1\"\n  },\n  {\n    \"mode\": \"light\",\n    \"family\": \"surface\",\n    \"component\": \"flat\",\n    \"tone\": \"warning\",\n    \"state\": \"base\",\n    \"pair\": \"text\",\n    \"background\": \"own-bg-or-ambient\",\n    \"against\": \"ambient\",\n    \"breakpoint\": 0,\n    \"required\": 4.5,\n    \"ratio\": 3.1858232404059073,\n    \"reason\": \"3.19:1 < 4.5:1\"\n  }\n]"
+      "excerpt": "[]"
     },
     {
       "id": "help",
@@ -318,7 +311,7 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39609 bytes)",
+          "[uxdsl] built dist/app.css (39769 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -327,7 +320,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39651 bytes)"
+          "[uxdsl] built dist/app.css (39811 bytes)"
         ]
       },
       {
@@ -343,12 +336,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39609 bytes)"
+          "[uxdsl] built dist/app.css (39769 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 39609
+      "finalBytes": 39769
     }
   }
 }

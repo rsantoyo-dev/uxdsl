@@ -122,10 +122,10 @@
       "contrast": "#ffffff"
     },
     "warning": {
-      "main": "#d97706",
+      "main": "#b45309",
       "light": "#fbbf24",
-      "dark": "#c25e0a",
-      "contrast": "#000000"
+      "dark": "#92400e",
+      "contrast": "#ffffff"
     },
     "error": {
       "main": "#dc2626",
@@ -187,7 +187,7 @@
         "neutral": {
           "main": "#c0cfe5",
           "light": "#cbd5e1",
-          "dark": "#475569",
+          "dark": "#94a3b8",
           "contrast": "#000000"
         },
         "tertiary": {
@@ -207,6 +207,7 @@
         },
         "warning": {
           "main": "#fbbf24",
+          "dark": "#f59e0b",
           "contrast": "#000000"
         },
         "error": {
@@ -216,6 +217,7 @@
         },
         "light": {
           "main": "#1e293b",
+          "dark": "#334155",
           "contrast": "#f8fafc"
         },
         "dark": {

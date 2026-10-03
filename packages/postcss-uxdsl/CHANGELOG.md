@@ -9,6 +9,60 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 5 (audit of 2026-09-29, decision DE-7 / D-9 = b, plus the
+dark-mode findings) — the base theme passes its own contrast gate:
+
+### Visual changes
+
+Six resolved palette values of the packaged base theme change. Every
+consumer with no override of the affected family sees them; every one is a
+measured correction, not a restyle (hue held, lightness moved, or the
+`contrast` color flipped to the one that reads on the new fill).
+
+| Mode | Token | Before | After | Why |
+| --- | --- | --- | --- | --- |
+| light | `palette.warning.main` | `#d97706` | `#b45309` | 3.19:1 as outlined/flat/underline text on white; now 5.02:1 |
+| light | `palette.warning.dark` | `#c25e0a` | `#92400e` | hover text/border on white (4.29:1); now passes, and reads under white |
+| light | `palette.warning.contrast` | `#000000` | `#ffffff` | the darker `main`/`dark` fills need white text, not black |
+| dark | `modes.dark.palette.warning.dark` | inherited `#c25e0a` | `#f59e0b` | a contained Button's hover fill under black text; the inherited light-mode brown would fail |
+| dark | `modes.dark.palette.neutral.dark` | `#475569` | `#94a3b8` | 2.66:1 on the dark canvas as hover text, border and the untoned Input placeholder (9 pairs, `tone: null`) |
+| dark | `modes.dark.palette.light.dark` | inherited `#e2e8f0` | `#334155` | a contained Button with the `light` tone hovered to a pale fill under near-white text (1.95:1) |
+
+`palette.warning.light` (`#fbbf24`) is unchanged: it stays lighter than the
+new `main`, so the family keeps its progression. `modes.dark.palette.warning.main`
+(`#fbbf24`) and `.contrast` (`#000000`) are unchanged.
+
+Measured with the real checker before and after
+(`checkThemeContrast(resolveTheme(), { exceptions })`, 824 pairs in both
+modes at every breakpoint): **30 failing → 0 failing**; 94 → 98 excepted
+(the four extra are the `light` tone's dark-mode hover/selected pairs on
+`outlined` and `flat`: `light.dark` is now a dark fill, and drawn on the
+dark canvas it is the same canvas-identity class; all 98 are what the three
+shipped patterns cover, each listed in the report); `exceptionIssues: []`;
+`passed: true`. Without any exception: 124
+→ 98 failing, all of them `surface`/`light`/`dark` drawn on the page. The
+audit's own prediction was 123 → 97 with its single exact record counted
+separately; the measured result differs by exactly that record. Reverting
+any one of the six values makes the gate fail again, and not through an
+exception (`test/base-theme-contrast.test.js`). `uxdsl theme --contrast` in
+a project with no theme override now exits 0; the beta.7 release gate's
+`contrast-baseline.json` pins "0 failing, 98 excepted" pair by pair.
+
+The playground's own named themes were brought through the same gate with
+their own values (`packages/playground-nextjs/uxdsl.theme.{green,slate}.json`;
+`purple` and `default` pass with the base alone), hue held and lightness
+moved by the smallest step that clears the family, verified with the real
+checker: green — `secondary.main` `#D97706` → `#b36100`, `tertiary.main`
+`#a8a29e` → `#7b7571` with `tertiary.contrast` `#ffffff` (was inherited
+black), `warning.dark` `#ea580c` → `#ca4901`, dark-mode `neutral.dark`
+`#57534e` → `#88847e`; slate — `neutral.main` `#8d929a` → `#72777f`,
+`neutral.dark` `#CBD5E1` → `#5b646f`, `neutral.contrast` `#0B1220` →
+`#ffffff`, `tertiary.dark` `#9FB3C8` → `#63768a`, `tertiary.contrast`
+`#000000` → `#ffffff`, `warning.dark` `#D97706` → `#b36100`, dark-mode
+`neutral.dark` `#64748B` → `#8192aa`. `npm run theme:audit` exits 0:
+default 824/0/98, green 737/0/98, purple 824/0/98, slate 776/0/82
+(checked/failing/excepted).
+
 Stability phase 5 (audit of 2026-09-29, decision DE-7 / D-8 = a) — pattern
 exceptions in the contrast gate:
 
@@ -25,7 +79,7 @@ Measured with the real checker against the base theme (`checkThemeContrast(resol
 with the exact record, 124 without). The 94 pairs the patterns cover are still
 failing pairs: the report now lists every one of them under `excepted` with its
 real ratio and the exception's id, and `uxdsl theme --contrast` prints them. The
-30 that remain are the value findings the next commit of this phase fixes
+30 that remained were the value findings the entry above fixes
 (light-mode `warning`, dark-mode `neutral.dark` and `light.dark`, and the untoned
 dark-mode placeholder) — none is a canvas identity, and the patterns are
 narrowed so none can hide one: a canvas family's own fill (`contained` + tone)
