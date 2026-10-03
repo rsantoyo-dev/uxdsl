@@ -149,8 +149,9 @@ test('MIG-B7-01: Button\'s own tone-state pattern (hover.bg etc.) is unaffected'
   // Control: this fix must not have disturbed the *other* mechanism
   // (compileRules' regex substitution) that Button states and Input's own
   // caret still rely on.
-  const exceptions = require('../src/theme/base.contrast-exceptions.json');
-  const report = checkThemeContrast(resolveTheme(), { exceptions });
+  // No exceptions: this pins the engine's own Button findings, not what the
+  // shipped exception list covers (stability phase 5 made that list patterns).
+  const report = checkThemeContrast(resolveTheme());
   assert.equal(report.failures.filter((f) => f.family === 'button').length, 47,
     'Button\'s failure count must be exactly what it was before this fix');
 });

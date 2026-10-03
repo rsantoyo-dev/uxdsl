@@ -50,11 +50,30 @@ test('audit-themes.mjs reports each theme\'s own count, the same as checkThemeCo
 
 test('audit-themes.mjs rejects an invalid exception even when no ordinary contrast failures remain', async () => {
   const { contrastVerdict } = await import('./audit-themes.mjs');
-  assert.deepEqual(contrastVerdict([{ passed: false, failures: [], exceptionIssues: ['stale exception'] }]), {
+  assert.deepEqual(contrastVerdict([{ passed: false, failures: [], excepted: [], exceptionIssues: ['stale exception'] }]), {
     failures: 0,
+    excepted: 0,
     exceptionIssues: 1,
     passed: false,
   });
+});
+
+test('audit-themes.mjs counts excepted pairs separately from failing ones, and prints both per theme', async () => {
+  const { contrastVerdict } = await import('./audit-themes.mjs');
+  assert.deepEqual(contrastVerdict([
+    { passed: true, failures: [], excepted: [{}, {}], exceptionIssues: [] },
+    { passed: true, failures: [], excepted: [{}], exceptionIssues: [] },
+  ]), { failures: 0, excepted: 3, exceptionIssues: 0, passed: true });
+
+  const { stdout } = run(PACKAGE_DIR);
+  for (const name of Object.keys(themes)) {
+    const expected = checkThemeContrast(resolveTheme(themes[name]), { exceptions });
+    const section = stdout.split(`=== Theme: ${name} ===`)[1].split('=== Theme:')[0];
+    assert.match(section, new RegExp(`${expected.failures.length} failing, ${expected.excepted.length} excepted \\(failing, covered by an exception, not counted as passing\\)`));
+    for (const exception of expected.exceptions) {
+      assert.ok(section.includes(`exception ${exception.id} (${exception.kind}): ${exception.matched ? `covers ${exception.covered}` : 'matches nothing'}`), `${name}: ${exception.id} is not reported`);
+    }
+  }
 });
 
 test('audit-themes.mjs keeps using the engine: no private responsive parser, luminance or hex parser', () => {

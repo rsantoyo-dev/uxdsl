@@ -9,6 +9,70 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 5 (audit of 2026-09-29, decision DE-7 / D-8 = a) — pattern
+exceptions in the contrast gate:
+
+### Visual changes
+
+None: no compiled CSS changes. What changes is what `theme/base.contrast-exceptions.json`
+says about the base theme's colors, which this guard treats as a visual-default
+decision. The file used to hold one exact record (the `light` tone's text on
+`outlined`, `#f1f5f9` on `#ffffff`); it now holds three **pattern** records —
+`{ "tone": "surface" | "light" | "dark", "against": "ambient", "reason" }` —
+for the canvas-identity families used as a tone and drawn on the page itself.
+Measured with the real checker against the base theme (`checkThemeContrast(resolveTheme(), { exceptions })`):
+824 pairs checked, 30 failing, 94 excepted, no exception issue (before: 123 failing
+with the exact record, 124 without). The 94 pairs the patterns cover are still
+failing pairs: the report now lists every one of them under `excepted` with its
+real ratio and the exception's id, and `uxdsl theme --contrast` prints them. The
+30 that remain are the value findings the next commit of this phase fixes
+(light-mode `warning`, dark-mode `neutral.dark` and `light.dark`, and the untoned
+dark-mode placeholder) — none is a canvas identity, and the patterns are
+narrowed so none can hide one: a canvas family's own fill (`contained` + tone)
+is measured against that fill, not the page, and stays held to the gate.
+
+- **New: pattern exceptions.** Besides the exact per-pair record (unchanged,
+  still pinned to its resolved colors), `checkThemeContrast` accepts
+  `{ tone, reason, id?, mode?, family?, component?, state?, pair?, against? }`:
+  every failing pair of that tone family, narrowed by whichever keys are
+  present. `tone` and `reason` are required; a pattern is never "every failure".
+  `against` is `'own'` (the role's own opaque or tinted background) or
+  `'ambient'` (the page background, `palette.surface.main`: every border, and
+  the text of a transparent-background role). A pattern with a misspelled or
+  unknown key, a bad enum, a missing reason or an empty id is reported in
+  `exceptionIssues` and never applied — the quiet failure mode of a typo would
+  be a pattern covering a whole tone instead of the one role it named.
+- **Report shape.** `report.exceptions[i]` is now
+  `{ id, kind: 'pair' | 'pattern', record, matched, covered }` (`covered` is the
+  number of excepted pairs attributed to it; `0` or `1` for an exact record);
+  new `report.excepted` lists every covered pair — a failure plus the
+  `exception` id that covers it; `checked`, `failures` and `excepted` entries
+  carry `against`. A pattern that matches no failing pair is a stale exception
+  (`exceptionIssues`, gate fails), exactly as a stale exact record is; a
+  pattern written without `id` gets `tone:<family>[,key=value…]`.
+- **Exempt pairs are never excepted.** A `disabled` state is computed and
+  listed with `exempt: true` and never blocks; an exception written for one
+  now reports as stale instead of silently "matching" a pair that could not
+  block anyway.
+- **Collapsed pairs re-checked per tone.** Two tones that resolve to the exact
+  same colors on the same role were, and are, one finding — but when the
+  first is covered by a pattern and the second is not, the second is now
+  recorded as its own failure instead of riding on the first tone's exception.
+- **`uxdsl theme --contrast`** prints the same report (so `excepted` is in
+  the JSON), says in its failure message how many exception issues and
+  excepted pairs there are, and on a clean exit prints one stderr line with
+  the excepted count so exit 0 never reads as "every pair passed". Its
+  packaged exceptions follow the tone, not a hex: a project that recolors
+  `light` keeps the exception; one that makes `light` pass everywhere is told
+  the pattern is stale.
+- **Rule for themes:** `surface`, `light` and `dark` are canvas identities;
+  use them as a tone only on `contained`. On `outlined`, `flat` and
+  `underline` (and as a contained Input's focus border) they draw the canvas
+  color on the canvas, which no value can fix.
+- The beta.7 release gate's `contrast-baseline.json` now pins the excepted
+  pairs (each with its exception) next to the failing ones, so a pattern
+  widening is a reviewed diff like a new failure.
+
 Stability phase 1 (audit of 2026-09-29, `docs/audits/2026-09-29-auditoria-estabilidad.md`;
 findings T2, T3, T4, R6 and L12 — one theme validator):
 

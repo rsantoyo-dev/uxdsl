@@ -86,7 +86,7 @@ suggestion when there is a close one, instead of being ignored.
 | --- | --- |
 | `--config <file>`, `-c` | The build config, when the theme file sits next to a config outside the current directory. |
 | `--diff` | Only the families the theme file mentions, one row per leaf labeled `project` or `default`; a family mixing both is summarized on stderr. `$schema` is not a leaf. |
-| `--contrast` | Check every text and border pair of the effective theme against WCAG, print the JSON report, exit 1 if any pair fails. Not combinable with `--diff` or `--strict-theme`. |
+| `--contrast` | Check every text and border pair of the effective theme against WCAG, print the JSON report, exit 1 if any pair fails or a packaged exception is stale. Pairs a packaged exception covers (the canvas-identity families `surface`, `light`, `dark` used as a tone) are printed under `excepted`, never counted as passing; a clean exit says how many on stderr. Not combinable with `--diff` or `--strict-theme`. |
 | `--strict-theme=<family,...>` | The same check as `build`'s, without building. |
 
 `theme` takes no `--entry`/`--out`: it reads a theme, and works from a theme

@@ -170,10 +170,13 @@ test('T8: the default output loses every identical tone copy and nothing else', 
 
 test('T8: the contrast gate resolves through the fallback, so its verdict on the base theme is unchanged', () => {
   const { checkThemeContrast } = require('../dist/ds-runtime');
-  const exceptions = require('../src/theme/base.contrast-exceptions.json');
-  const report = checkThemeContrast(resolveTheme(), { exceptions });
+  // Measured with no exceptions, so this pins what the engine resolves and
+  // not what the shipped exception list happens to cover (stability phase 5
+  // turned that list into patterns): 124 is the 123 this test used to see
+  // plus the one pair the former exact record excused.
+  const report = checkThemeContrast(resolveTheme());
   assert.equal(report.failures.filter((f) => f.family === 'button').length, 47);
-  assert.equal(report.failures.length, 123);
+  assert.equal(report.failures.length, 124);
   assert.deepEqual(report.failures.filter((f) => /unresolved/.test(f.reason || '')), []);
 });
 

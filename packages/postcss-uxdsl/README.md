@@ -642,8 +642,9 @@ const { checkThemeContrast, resolveTheme } = require('postcss-uxdsl/ds-runtime')
 const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json')
 
 const report = checkThemeContrast(resolveTheme(myTheme), { exceptions })
-report.passed    // false if any non-excepted pair fails, or any exception is stale/duplicated
-report.failures  // { mode, family, component, tone, state, pair, ratio, required, reason, ... }[]
+report.passed    // false if any non-excepted pair fails, or any exception is stale/duplicated/invalid
+report.failures  // { mode, family, component, tone, state, pair, against, ratio, required, reason, ... }[]
+report.excepted  // the same shape plus `exception`: failing pairs an exception covers — listed, never counted as passing
 report.checked   // every pair actually evaluated, including passes and exempt ones
 ```
 
@@ -658,18 +659,43 @@ never blocks `report.passed` on its own (`exempt: true`) — WCAG itself
 does not hold inactive controls to the normative threshold.
 
 **Exceptions** (`postcss-uxdsl/theme/base.contrast-exceptions.json`) cover
-a specific (mode, family, component, tone, state, pair) combination that
-is unsupported *by the nature of the role* — e.g. the palette's `light`
-family (a background role) used as a text color on a transparent-background
-role, which this JSON file itself documents as its only current entry —
-never a color the theme could reasonably fix instead. Matching is exact:
-an exception also records the resolved foreground/background hex it was
-written against, and stops applying the moment either one changes for any
-reason (a theme override, or a future color correction) — it can never
-silently keep "covering" a color that is not the one it was reviewed for.
-A duplicate exception `id`, or an exception whose recorded colors no
-longer occur anywhere, fails the gate too (`report.exceptionIssues`), so a
-stale entry can't quietly accumulate.
+a finding that is unsupported *by the nature of the role* — never a color
+the theme could reasonably fix instead. Two kinds of record exist:
+
+- An **exact record** names one (mode, family, component, tone, state,
+  pair) and the resolved foreground/background hex it was written against,
+  and stops applying the moment either color changes for any reason (a
+  theme override, a future color correction) — it can never silently keep
+  "covering" a color that is not the one it was reviewed for.
+- A **pattern** (stability phase 5) names a structural class instead:
+  `{ "tone": "<palette family>", "reason": "…" }`, optionally narrowed by
+  `mode`, `family`, `component`, `state`, `pair` and `against` (`"own"`:
+  the role's own background; `"ambient"`: the page background,
+  `palette.surface.main` — every border, and the text of a role whose own
+  background is transparent). `tone` and `reason` are required; a pattern
+  is never "every failure". A misspelled or unknown key, a bad enum or a
+  missing reason makes the record invalid, reported and not applied — a
+  typo must not quietly widen a pattern to a whole tone. An explicit `id`
+  is optional; a pattern without one is reported as `tone:<family>[,key=value…]`.
+
+The shipped file is three patterns, one per **canvas-identity family**:
+`surface`, `light` and `dark`, narrowed to `against: "ambient"`. Used as a
+tone on `outlined`, `flat` or `underline` (or as a contained Input's focus
+border), those families draw the page's own color on the page — about 1:1,
+whatever hex they hold — so no value can fix it without giving the family a
+second, contradictory meaning. **Use `surface`, `light` and `dark` as a tone
+only on `contained`**, where they are a fill with their own `contrast` on
+top; that text pair is measured against the fill, not the page, and the
+patterns do not reach it.
+
+Excepted is not passing. `report.excepted` lists every pair an exception
+covers — the same shape as a failure, plus the `exception` id — with its
+real ratio; `report.exceptions[i]` reports `{ id, kind, record, matched,
+covered }`; and `uxdsl theme --contrast` prints all of it. A duplicate
+`id`, an invalid record, an exact record whose colors no longer occur or a
+pattern that matches no failing pair fails the gate (`report.exceptionIssues`),
+so a stale entry can't quietly accumulate. A `disabled` state is exempt
+(computed, listed, never blocking) and is therefore never excepted.
 
 **What this does not check**: it is a compiled-output check, not a DOM or
 browser certification — no real layout, no stacking context, no

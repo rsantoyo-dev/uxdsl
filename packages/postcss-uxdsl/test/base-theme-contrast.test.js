@@ -108,20 +108,56 @@ test('phase 3 fixed the story\'s tertiary/contained/hover example; the other two
   assert.equal(Number(lightOutlined.ratio.toFixed(2)), 1.10);
 });
 
-test('the one exception this story\'s own reproduction names (light-tone text on a transparent-bg role) is declared, exact-matched and justified', () => {
-  assert.equal(exceptions.length, 1);
-  const [exception] = exceptions;
-  assert.equal(exception.tone, 'light');
-  assert.equal(exception.pair, 'text');
-  assert.match(exception.reason, /background role/);
+// Stability phase 5 (audit DE-7, D-8 = a): the canvas-identity families used
+// as a tone are a property of the role, not a color to fix, so the shipped
+// file excepts them as three patterns instead of one exact record per pair.
+const IDENTITY_TONES = ['surface', 'light', 'dark'];
+const failsItsThreshold = (pair) => pair.ratio === null || pair.ratio < pair.required;
+
+test('the shipped exceptions are three patterns, one per canvas-identity family, each matched and justified', () => {
+  assert.deepEqual(exceptions.map((e) => e.tone), IDENTITY_TONES);
+  for (const exception of exceptions) {
+    assert.ok(!('resolved' in exception), 'a pattern pins no resolved colors');
+    assert.equal(exception.against, 'ambient', 'narrowed to the tone drawn on the page itself');
+    assert.match(exception.reason, /only on `contained`/);
+  }
   const report = checkThemeContrast(theme, { exceptions });
-  const matchedException = report.exceptions.find((e) => e.record.id === exception.id);
-  assert.equal(matchedException.matched, true);
-  // The same combination on other roles/families (flat, button, input —
-  // not named by the story, not excepted here) remains a real, open
-  // failure — the exception is scoped to exactly what it names, not
-  // silently broadened.
-  assert.ok(report.failures.some((f) => f.tone === 'light' && f.component === 'flat' && f.pair === 'text' && f.mode === 'light'));
+  assert.deepEqual(report.exceptions.map((e) => [e.kind, e.matched]), IDENTITY_TONES.map(() => ['pattern', true]));
+  assert.ok(report.exceptions.every((e) => e.covered > 0));
+  assert.equal(report.exceptions.reduce((sum, e) => sum + e.covered, 0), report.excepted.length);
+  assert.deepEqual(report.exceptionIssues, []);
+});
+
+test('every excepted pair is listed, still failing, and is exactly a canvas-identity tone drawn on the page', () => {
+  const report = checkThemeContrast(theme, { exceptions });
+  const without = checkThemeContrast(theme);
+  assert.ok(report.excepted.length > 0);
+  assert.ok(report.excepted.every((e) => IDENTITY_TONES.includes(e.tone) && e.against === 'ambient'));
+  assert.ok(report.excepted.every(failsItsThreshold), 'excepted is not passing');
+  // Measured, not asserted: the patterns cover exactly the identity-tone
+  // failures the unexcepted run reports against the page, and nothing else
+  // left the failure list.
+  const identityOnPage = without.failures.filter((f) => IDENTITY_TONES.includes(f.tone) && f.against === 'ambient');
+  assert.equal(report.excepted.length, identityOnPage.length);
+  assert.equal(report.failures.length, without.failures.length - identityOnPage.length);
+  assert.equal(report.checked.length, without.checked.length);
+  // The single exact record this file shipped before is subsumed: same pair, same 1.10:1.
+  const former = report.excepted.find((e) => e.mode === 'light' && e.family === 'surface' && e.component === 'outlined' && e.tone === 'light' && e.state === 'base' && e.pair === 'text');
+  assert.ok(former, 'the former exact record\'s pair must be among the excepted');
+  assert.equal(Number(former.ratio.toFixed(2)), 1.10);
+  assert.equal(former.exception, 'canvas-identity-tone-light');
+});
+
+test('the patterns do not reach a canvas-identity family\'s own fill: its text on `contained` is still held to the gate', () => {
+  // In dark mode `light.dark` is still the light-mode gray, so a contained
+  // Button's hover/selected fill is pale under near-white text. That is a
+  // value to fix (deliverable 2 of this phase does), and the patterns must
+  // not excuse it meanwhile.
+  const report = checkThemeContrast(theme, { exceptions });
+  const ownFill = report.failures.filter((f) => IDENTITY_TONES.includes(f.tone));
+  assert.deepEqual(
+    ownFill.map((f) => [f.mode, f.family, f.component, f.tone, f.state, f.pair, f.against].join('/')).sort(),
+    ['dark/button/contained/light/hover/text/own', 'dark/button/contained/light/selected/text/own']);
 });
 
 test('an unjustified, made-up exception does not silently suppress unrelated real failures', () => {

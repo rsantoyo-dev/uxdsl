@@ -59,21 +59,43 @@ const DELEGATED = [
 
 const contrastSignature = (f) => [f.mode, f.family, f.component, f.tone, f.state, f.pair, f.background, f.breakpoint].join('|');
 
-function assertContrastBaseline(report, pinnedSignatures) {
-  // Known failing pairs are deliberately pinned, but a stale or duplicate
-  // exception is a separate failure of the shared contrast checker.
+// An excepted pair is pinned together with the exception that covers it, so a
+// pattern quietly widening (or a pair moving from one exception to another)
+// shows up as a diff of the baseline, exactly as a new failure does.
+const exceptedSignature = (e) => `${contrastSignature(e)}|${e.exception}`;
+
+function diffPinned(pinnedList, actualList) {
+  const pinned = new Set(pinnedList);
+  const actual = new Set(actualList);
+  return { added: actualList.filter((s) => !pinned.has(s)), closed: [...pinned].filter((s) => !actual.has(s)) };
+}
+
+function contrastBaselineOf(report, version) {
+  const signatures = report.failures.map(contrastSignature).sort();
+  const excepted = (report.excepted || []).map(exceptedSignature).sort();
+  return { version, count: signatures.length, signatures, exceptedCount: excepted.length, excepted };
+}
+
+function assertContrastBaseline(report, baseline) {
+  // Known failing pairs are deliberately pinned, but a stale, malformed or
+  // duplicate exception is a separate failure of the shared contrast checker.
   if (report.exceptionIssues.length) {
     throw new Error(`contrast exceptions invalid: ${report.exceptionIssues.join('; ')}`);
   }
-  const pinned = new Set(pinnedSignatures);
-  const actual = report.failures.map(contrastSignature);
-  const added = actual.filter((s) => !pinned.has(s));
-  const actualSet = new Set(actual);
-  const closed = [...pinned].filter((s) => !actualSet.has(s));
-  if (added.length || closed.length) {
-    throw new Error(`${added.length} new (e.g. ${added[0] || '—'}), ${closed.length} closed (e.g. ${closed[0] || '—'}); re-pin deliberately`);
+  const failing = diffPinned(baseline.signatures, report.failures.map(contrastSignature));
+  if (failing.added.length || failing.closed.length) {
+    throw new Error(`failing pairs: ${failing.added.length} new (e.g. ${failing.added[0] || '—'}), ${failing.closed.length} closed (e.g. ${failing.closed[0] || '—'}); re-pin deliberately`);
   }
-  return `${actual.length} known failures, unchanged`;
+  // Excepted is not passing: the pairs an exception covers are pinned too.
+  const excepted = diffPinned(baseline.excepted || [], (report.excepted || []).map(exceptedSignature));
+  if (excepted.added.length || excepted.closed.length) {
+    throw new Error(`excepted pairs: ${excepted.added.length} new (e.g. ${excepted.added[0] || '—'}), ${excepted.closed.length} closed (e.g. ${excepted.closed[0] || '—'}); re-pin deliberately`);
+  }
+  // The verdict has to follow from the pinned set, not merely coexist with it.
+  if (report.passed !== (report.failures.length === 0)) {
+    throw new Error(`report.passed is ${report.passed} with ${report.failures.length} failing pairs and no exception issue`);
+  }
+  return `${report.failures.length} failing pairs, ${(report.excepted || []).length} excepted (listed, not passing), unchanged`;
 }
 
 function contrastReport(runtime, req) {
@@ -126,9 +148,9 @@ async function main() {
   if (args.has('--write-contrast-baseline')) {
     const report = contrastReport(runtime, req);
     if (report.exceptionIssues.length) throw new Error(`contrast exceptions invalid: ${report.exceptionIssues.join('; ')}`);
-    const signatures = report.failures.map(contrastSignature).sort();
-    fs.writeFileSync(BASELINE, `${JSON.stringify({ version, count: signatures.length, signatures }, null, 2)}\n`);
-    console.log(`Pinned ${signatures.length} known contrast failures to ${path.relative(REPO_ROOT, BASELINE)}.`);
+    const pinned = contrastBaselineOf(report, version);
+    fs.writeFileSync(BASELINE, `${JSON.stringify(pinned, null, 2)}\n`);
+    console.log(`Pinned ${pinned.count} failing and ${pinned.exceptedCount} excepted contrast pairs to ${path.relative(REPO_ROOT, BASELINE)}.`);
     return;
   }
 
@@ -233,10 +255,9 @@ async function main() {
   });
 
   // --- Contrast: the exact known set, not "> 0" -------------------------------
-  await check('contrast', 'contrast failures are exactly the pinned set', () => {
+  await check('contrast', 'failing and excepted contrast pairs are exactly the pinned sets', () => {
     if (!fs.existsSync(BASELINE)) throw new Error('no baseline — run with --write-contrast-baseline and review it');
-    const pinned = JSON.parse(fs.readFileSync(BASELINE, 'utf8')).signatures;
-    return assertContrastBaseline(contrastReport(runtime, req), pinned);
+    return assertContrastBaseline(contrastReport(runtime, req), JSON.parse(fs.readFileSync(BASELINE, 'utf8')));
   });
 
   await check('B7-01', 'a toned contained Input placeholder has no contrast failure', () => {
@@ -297,4 +318,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, assertContrastBaseline };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline };

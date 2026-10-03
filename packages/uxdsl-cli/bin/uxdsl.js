@@ -271,8 +271,10 @@ Options:
                     per leaf labeled "project" or "default"; a family mixing
                     both is summarized on stderr. $schema is not a leaf.
   --contrast        Check the effective theme's text and border pairs against
-                    WCAG, print the JSON report and exit 1 if any pair fails.
-                    Cannot be combined with --diff or --strict-theme.
+                    WCAG, print the JSON report and exit 1 if any pair fails
+                    or a shipped exception is stale. Pairs a shipped exception
+                    covers are listed under "excepted", never counted as
+                    passing. Cannot be combined with --diff or --strict-theme.
   --strict-theme=<family,...>
                     Exit non-zero when one of the named families is only
                     partly declared by the project. Same check as build's.
@@ -1311,10 +1313,13 @@ function summarizeMixedEntries(rows) {
   return lines;
 }
 
-/** The exceptions shipped with the packaged base theme: contrast pairs that
- * are knowingly accepted, each with a recorded reason. They are matched on the
- * resolved colors too, so a project that overrides one of those colors stops
- * inheriting the exception — which is the point. Missing file (an older
+/** The exceptions shipped with the packaged base theme: contrast findings that
+ * are knowingly accepted, each with a recorded reason. Today they are three
+ * patterns — the canvas-identity families `surface`, `light` and `dark` used
+ * as a tone and drawn on the page itself — so they follow the tone, not a hex:
+ * a project that recolors one of those families keeps the exception, and one
+ * that makes the tone pass everywhere is told the pattern is stale. Every pair
+ * a pattern covers is printed under `excepted`. Missing file (an older
  * postcss-uxdsl) is not fatal: the check just runs without them. */
 function packagedContrastExceptions() {
   try {
@@ -1362,14 +1367,24 @@ async function themeCommand(argv, cwd = process.cwd()) {
     // The full report is printed either way: a failing check is exactly when
     // its detail is worth having, so it is never truncated to an error line.
     console.log(JSON.stringify(report, null, 2));
+    // Excepted is not passing: say how many pairs an exception covers, in
+    // both outcomes, so a clean exit never reads as "every pair passed".
+    const excepted = Array.isArray(report.excepted) ? report.excepted.length : 0;
+    const exceptedNote = excepted
+      ? `${excepted} more ${excepted === 1 ? 'pair fails' : 'pairs fail'} and ${excepted === 1 ? 'is' : 'are'} covered by an exception (listed under "excepted", not passing)`
+      : '';
     if (!report.passed) {
+      const issues = report.exceptionIssues || [];
       const error = new Error(
         `--contrast: ${report.failures.length} contrast ${report.failures.length === 1 ? 'pair fails' : 'pairs fail'} WCAG for this theme. ` +
-        'The JSON report on stdout lists each one with its mode, component, state, breakpoint and resolved colors.'
+        'The JSON report on stdout lists each one with its mode, component, state, breakpoint and resolved colors.' +
+        (issues.length ? ` ${issues.length} exception ${issues.length === 1 ? 'issue' : 'issues'}: ${issues[0]}${issues.length > 1 ? ' (and more under "exceptionIssues")' : ''}.` : '') +
+        (exceptedNote ? ` ${exceptedNote}.` : '')
       );
       error.uxdslQuiet = true;
       throw error;
     }
+    if (exceptedNote) console.error(`[uxdsl] --contrast: no blocking failure. ${exceptedNote}.`);
     return;
   }
 

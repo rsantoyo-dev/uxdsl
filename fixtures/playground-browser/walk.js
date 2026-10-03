@@ -213,16 +213,27 @@ async function checkContrast(page, report, where, themeName) {
   const exceptions = require(path.join(ROOT, 'packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'));
   const { themes } = require(path.join(PLAYGROUND, 'themes.js'));
   const node = checkThemeContrast(resolveTheme(themes[themeName]), { exceptions });
-  const nodeSignatures = node.failures.map((f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`).sort();
+  const signatureOf = (f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`;
+  const nodeSignatures = node.failures.map(signatureOf).sort();
+  // Excepted pairs are compared too, each with the exception that covers it:
+  // the page must not show fewer covered pairs than the checker reports.
+  const nodeExcepted = node.excepted.map((f) => `${signatureOf(f)}|${f.exception}`).sort();
   const shown = await page.evaluate(() => {
     const el = document.querySelector('[data-testid="contrast-report"]');
-    return el ? { summary: JSON.parse(el.getAttribute('data-contrast-summary')), signatures: JSON.parse(el.getAttribute('data-contrast-signatures')), rows: el.querySelectorAll('tbody tr').length } : null;
+    return el ? {
+      summary: JSON.parse(el.getAttribute('data-contrast-summary')),
+      signatures: JSON.parse(el.getAttribute('data-contrast-signatures')),
+      excepted: JSON.parse(el.getAttribute('data-contrast-excepted') || 'null'),
+      exceptedRows: el.querySelectorAll('[data-testid="contrast-excepted"] tbody tr').length,
+    } : null;
   });
   if (!shown) { report.fail(where, 'contrast-mismatch the page rendered no report'); return null; }
-  const expected = { passed: node.passed, checked: node.checked.length, failures: node.failures.length, exceptions: node.exceptions.length, exceptionIssues: node.exceptionIssues.length };
-  const got = { passed: shown.summary.passed, checked: shown.summary.checked, failures: shown.summary.failures, exceptions: shown.summary.exceptions, exceptionIssues: shown.summary.exceptionIssues };
+  const expected = { passed: node.passed, checked: node.checked.length, failures: node.failures.length, excepted: node.excepted.length, exceptions: node.exceptions.length, exceptionIssues: node.exceptionIssues.length };
+  const got = { passed: shown.summary.passed, checked: shown.summary.checked, failures: shown.summary.failures, excepted: shown.summary.excepted, exceptions: shown.summary.exceptions, exceptionIssues: shown.summary.exceptionIssues };
   if (JSON.stringify(expected) !== JSON.stringify(got)) report.fail(where, `contrast-mismatch summary for ${themeName}: page ${JSON.stringify(got)} vs Node ${JSON.stringify(expected)}`);
   if (JSON.stringify(nodeSignatures) !== JSON.stringify(shown.signatures)) report.fail(where, `contrast-mismatch failing pairs for ${themeName} differ from Node's (${shown.signatures.length} vs ${nodeSignatures.length})`);
+  if (JSON.stringify(nodeExcepted) !== JSON.stringify(shown.excepted)) report.fail(where, `contrast-mismatch excepted pairs for ${themeName} differ from Node's (${shown.excepted ? shown.excepted.length : 'none exposed'} vs ${nodeExcepted.length})`);
+  if (shown.exceptedRows !== nodeExcepted.length) report.fail(where, `contrast-mismatch the page lists ${shown.exceptedRows} excepted pair(s) for ${themeName}, Node reports ${nodeExcepted.length}`);
   if (shown.summary.theme !== themeName) report.fail(where, `contrast-mismatch the page says theme "${shown.summary.theme}", expected "${themeName}"`);
   return { themeName, ...got };
 }

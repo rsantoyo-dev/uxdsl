@@ -378,31 +378,58 @@ test('MIG-B6-16: `theme --contrast` on the base theme enumerates the shipped exc
   const { stdout, thrown } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
   const report = JSON.parse(stdout);
 
-  assert.equal(report.exceptions.length, 1, 'the packaged exception is loaded and enumerated');
-  assert.equal(report.exceptions[0].matched, true, 'and it matches the base theme it was written for');
-  assert.deepEqual(report.exceptionIssues, [], 'so it is not stale');
+  // Stability phase 5 (audit DE-7): the packaged exceptions are three
+  // patterns, one per canvas-identity family used as a tone.
+  assert.deepEqual(report.exceptions.map((e) => [e.kind, e.record.tone, e.matched]),
+    [['pattern', 'surface', true], ['pattern', 'light', true], ['pattern', 'dark', true]],
+    'the packaged patterns are loaded, enumerated and matched');
+  assert.deepEqual(report.exceptionIssues, [], 'so none is stale');
+  // What they cover is printed pair by pair, with its real ratio: excepted
+  // is a list in the document, never a silent pass.
+  assert.ok(report.excepted.length > 0);
+  assert.equal(report.exceptions.reduce((sum, e) => sum + e.covered, 0), report.excepted.length);
+  for (const pair of report.excepted) {
+    assert.ok(pair.ratio === null || pair.ratio < pair.required, `an excepted pair fails its threshold: ${JSON.stringify(pair)}`);
+    assert.ok(['surface', 'light', 'dark'].includes(pair.tone));
+    assert.ok(report.exceptions.some((e) => e.id === pair.exception), 'and names the exception that covers it');
+  }
 
-  // MIG-B6-29 phase 3 left three engine/architecture gaps open by design, so
-  // the base theme does not pass yet. Asserting `passed: true` here would be
-  // asserting a fiction; this pins the real state instead, and will fail
-  // loudly (forcing this test to be revisited) once those gaps close.
+  // The values findings (light-mode `warning`, dark-mode `neutral.dark` and
+  // `light.dark`) are still open at this commit, so the base theme does not
+  // pass yet; this pins the real state and is flipped when they are fixed.
   assert.equal(report.passed, false);
   assert.ok(thrown, 'a failing gate exits non-zero even for the base theme');
   assert.ok(report.failures.length > 0);
 });
 
-test('MIG-B6-16: overriding an excepted pair stops inheriting its exception', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  // The shipped exception records palette.light.main (#f1f5f9) on white.
-  write(dir, 'uxdsl.theme.config.cjs', `module.exports = { palette: { light: { main: '#334155' } } };`);
-  const { stdout } = await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, dir));
-  const report = JSON.parse(stdout);
+test('a packaged pattern follows the tone, not a hex: a recolored canvas family is still excepted, one that now passes makes the pattern stale', async () => {
+  const project = (theme) => {
+    const dir = mkTmpDir();
+    write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
+    write(dir, 'src/entry.uxdsl', '.x { color: red; }');
+    write(dir, 'uxdsl.theme.config.cjs', `module.exports = ${JSON.stringify(theme)};`);
+    return dir;
+  };
+  const lightPattern = (report) => report.exceptions.find((e) => e.record.tone === 'light');
 
-  assert.equal(report.exceptions[0].matched, false, 'the recorded colors no longer occur');
-  assert.ok(report.exceptionIssues.some((issue) => /stale exception/.test(issue)),
-    `a no-longer-applicable exception must be reported, got ${JSON.stringify(report.exceptionIssues)}`);
+  // Another near-white: the same structural finding with a different hex. An
+  // exact record would have gone stale here; the pattern keeps covering it.
+  const recolored = JSON.parse((await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, project({ palette: { light: { main: '#e5e7eb' } } })))).stdout);
+  assert.equal(lightPattern(recolored).matched, true);
+  assert.ok(recolored.excepted.some((e) => e.tone === 'light' && e.mode === 'light' && e.component === 'outlined' && e.state === 'base' && e.pair === 'text'));
+  assert.deepEqual(recolored.exceptionIssues, []);
+
+  // A project that turns `light` into an ordinary dark-on-light family in
+  // both modes has nothing left for the pattern to cover, and is told so.
+  const repurposed = JSON.parse((await captureStreamsAsync(() => cli.themeCommand({ contrast: true }, project({
+    palette: { light: { main: '#334155', dark: '#1e293b', contrast: '#ffffff' } },
+    modes: { dark: { palette: { light: { main: '#cbd5e1', dark: '#e2e8f0', contrast: '#0f172a' } } } },
+  })))).stdout);
+  assert.equal(lightPattern(repurposed).matched, false);
+  assert.equal(lightPattern(repurposed).covered, 0);
+  assert.equal(repurposed.failures.filter((f) => f.tone === 'light').length, 0, 'control: the repurposed family really does pass');
+  assert.ok(repurposed.exceptionIssues.some((issue) => /stale exception "canvas-identity-tone-light": the pattern matches no failing pair/.test(issue)),
+    `a no-longer-applicable exception must be reported, got ${JSON.stringify(repurposed.exceptionIssues)}`);
 });
 
 test('MIG-B6-16: --contrast refuses to share stdout with --diff or --strict', async () => {

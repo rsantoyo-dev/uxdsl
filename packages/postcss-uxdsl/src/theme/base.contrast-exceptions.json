@@ -1,14 +1,20 @@
 [
   {
-    "id": "surface-outlined-light-tone-base-text-light-mode",
-    "mode": "light",
-    "family": "surface",
-    "component": "outlined",
+    "id": "canvas-identity-tone-surface",
+    "tone": "surface",
+    "against": "ambient",
+    "reason": "palette.surface is the page's own canvas: surface.main IS the ambient background every border and every transparent-background role is measured against. Asking for it as a tone on outlined, flat or underline — or as the focus border of a contained Input — draws the canvas color on the canvas, about 1:1 in either mode, whatever value the family holds. No color choice can fix that without giving `surface` a second, contradictory meaning as a text color, so it is a property of the role, not a color to correct. Use `surface` as a tone only on `contained`, where it is a fill with its own `contrast` on top; that text pair is measured against the role's own background and is NOT covered by this pattern."
+  },
+  {
+    "id": "canvas-identity-tone-light",
     "tone": "light",
-    "state": "base",
-    "pair": "text",
-    "background": "own-bg-or-ambient",
-    "resolved": { "foreground": "#f1f5f9", "background": "#ffffff" },
-    "reason": "palette.light is a background role (a near-white surface, used for light-mode fills and hover backgrounds), not a text role. Applying it as an @ds-surface(outlined light)/@ds-button(outlined light)/@ds-input(outlined light) tone asks for text painted in that same near-white color on the page's own near-white background — the combination is unsupported by the nature of the role, not a color this theme's own palette can fix without giving `light` a second, contradictory meaning as a text color. Story reproduction (MIG-B6-29 'Por qué'): documented as the canonical example of this exact class of exception, ratio 1.10:1."
+    "against": "ambient",
+    "reason": "palette.light is a near-canvas fill family (a near-white surface in light mode, a raised panel in dark mode), not a text or border color. Used as a tone on outlined, flat or underline — or as the focus border of a contained Input — its main/dark are drawn directly on the page, 1.10:1 to 1.95:1 with the shipped values. Darkening it until that passes would stop it being `light`. Use `light` as a tone only on `contained`, where it is a fill with its own `contrast` on top; that text pair is measured against the role's own background and is NOT covered by this pattern. This subsumes the single exact record the file shipped before (surface.outlined, light tone, base text, #f1f5f9 on #ffffff, 1.10:1)."
+  },
+  {
+    "id": "canvas-identity-tone-dark",
+    "tone": "dark",
+    "against": "ambient",
+    "reason": "palette.dark is the inverse canvas: a near-black fill for inverted panels. In dark mode its main/dark sit next to the page's own near-black background, so as a tone on outlined, flat or underline — or as the focus border of a contained Input — it is drawn dark on dark, about 1.04:1. In light mode the same tone passes and nothing is excepted. Lightening it until dark mode passes would stop it being `dark`. Use `dark` as a tone only on `contained`, where it is a fill with its own `contrast` on top; that text pair is measured against the role's own background and is NOT covered by this pattern."
   }
 ]

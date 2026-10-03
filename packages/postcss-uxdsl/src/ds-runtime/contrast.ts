@@ -294,21 +294,31 @@ function viewportsOf(theme: Record<string, any>): number[] {
 
 export type ContrastMode = 'light' | 'dark';
 export type ContrastPairKind = 'text' | 'placeholder' | 'border';
+export type ContrastFamily = 'surface' | 'button' | 'input';
+/** What a pair's foreground was measured against: the role's `own`
+ * background (opaque, or a translucent tint composited over the page), or the
+ * `ambient` page background, `palette.surface.main` — every border/underline
+ * pair, and the text of a role whose own background is transparent. */
+export type ContrastAgainst = 'own' | 'ambient';
 
 export interface ContrastFailure {
   mode: ContrastMode;
-  family: 'surface' | 'button' | 'input';
+  family: ContrastFamily;
   component: string;
   tone: string | null;
   state: string;
   pair: ContrastPairKind;
   background: string;
+  against: ContrastAgainst;
   breakpoint: number;
   ratio: number | null; // null when unresolved
   required: number;
   reason: string;
 }
 
+/** An exact, per-pair exception: one (mode, family, component, tone, state,
+ * pair) together with the resolved colors it was reviewed against. It stops
+ * applying the moment either color changes. */
 export interface ContrastExceptionRecord {
   id: string;
   mode: ContrastMode;
@@ -322,36 +332,81 @@ export interface ContrastExceptionRecord {
   reason: string;
 }
 
+/** A pattern exception (stability phase 5, audit DE-7): a *structural class*
+ * of pairs rather than one pair — every failing pair of one tone family,
+ * optionally narrowed. It exists for a finding that is a property of the role
+ * and not of a color: a canvas-identity family (`surface`, `light`, `dark`)
+ * used as a tone draws the page's own color on the page, whatever hex that
+ * is, on every role, state and mode at once. Ninety-seven exact records would
+ * say that less clearly than three patterns do, and would all go stale on the
+ * next palette edit.
+ *
+ * `tone` is required — a pattern can never be "every failure" — and so is
+ * `reason`. Every other key narrows the match; a key that is absent matches
+ * anything. Unlike an exact record a pattern does not pin resolved colors,
+ * which is exactly why it is reported pair by pair in `report.excepted`. */
+export interface ContrastExceptionPattern {
+  /** Optional; derived from the pattern's own keys (`tone:surface`) when absent. */
+  id?: string;
+  tone: string;
+  mode?: ContrastMode;
+  family?: ContrastFamily;
+  component?: string;
+  state?: string;
+  pair?: ContrastPairKind;
+  against?: ContrastAgainst;
+  reason: string;
+}
+
+export type ContrastException = ContrastExceptionRecord | ContrastExceptionPattern;
+
 export interface ContrastCheckedPair {
   mode: ContrastMode;
-  family: 'surface' | 'button' | 'input';
+  family: ContrastFamily;
   component: string;
   tone: string | null;
   state: string;
   pair: ContrastPairKind;
   background: string;
+  against: ContrastAgainst;
   breakpoint: number;
   ratio: number | null;
   required: number;
   exempt: boolean; // e.g. a disabled state: computed, reported, not held to the normative threshold.
 }
 
+/** A pair that fails its threshold and is covered by an exception. Same
+ * shape as a failure, plus the `id` of the exception that covers it (the
+ * exact record when both an exact record and a pattern match). */
+export interface ContrastExceptedPair extends ContrastFailure {
+  exception: string;
+}
+
 export interface ContrastReport {
-  /** `true` iff zero non-exempted failures remain, no exception is stale
-   * or duplicated, after exceptions are applied. Does NOT mean every pair
-   * passed outright — an excepted or exempt failure still is one, just
-   * not a blocking one. Every exception is listed in `exceptions` even
-   * when `passed` is `true`, so a report can never silently imply
-   * "everything actually passed". */
+  /** `true` iff zero non-exempted failures remain, no exception is stale,
+   * invalid or duplicated, after exceptions are applied. Does NOT mean every
+   * pair passed outright — an excepted or exempt failure still is one, just
+   * not a blocking one. Every exception is listed in `exceptions`, and every
+   * pair one of them covers in `excepted`, even when `passed` is `true`, so
+   * a report can never silently imply "everything actually passed". */
   passed: boolean;
   failures: ContrastFailure[];
-  exceptions: Array<{ record: ContrastExceptionRecord; matched: boolean }>;
+  /** Every exception supplied, exact or pattern: whether it matched at
+   * least one failing pair, and how many it covered (`0` or `1` for an exact
+   * record). `id` is the record's own, or the derived one for a pattern
+   * written without it. */
+  exceptions: Array<{ id: string; kind: 'pair' | 'pattern'; record: ContrastException; matched: boolean; covered: number }>;
+  /** Every failing pair an exception covers — failing, listed, not
+   * blocking. Never folded into "passing": `checked` still carries its real
+   * ratio. */
+  excepted: ContrastExceptedPair[];
   /** Problems with the exceptions list itself, not with the theme's
-   * colors: a duplicate `id`, or an exception that matched nothing (the
-   * override/theme moved on and the recorded resolved colors no longer
-   * occur) — both fail the gate per the story's own "una excepción
-   * obsoleta o duplicada falla en CI", so a stale exception can never
-   * silently keep "covering" a color that has since changed. */
+   * colors: a duplicate `id`, a malformed record, or an exception that
+   * matched nothing (the override/theme moved on and the recorded resolved
+   * colors no longer occur; a pattern that covers no failing pair) — each
+   * fails the gate per the story's own "una excepción obsoleta o duplicada
+   * falla en CI", so a stale exception can never silently keep "covering" a
+   * color that has since changed. */
   exceptionIssues: string[];
   checked: ContrastCheckedPair[];
 }
@@ -360,8 +415,105 @@ const AMBIENT_BACKGROUND_EXPRESSION = 'var(--uxdsl__palette__surface-main)';
 
 function isOpaque(color: RGBA): boolean { return color.a >= 0.999; }
 
-function pairId(p: { mode: string; family: string; component: string; tone: string | null; state: string; pair: string }): string {
-  return `${p.mode}.${p.family}.${p.component}.${p.tone ?? '-'}.${p.state}.${p.pair}`;
+// ---------------------------------------------------------------------
+// Exceptions: reading the list, telling the two kinds apart, matching.
+// ---------------------------------------------------------------------
+
+const PATTERN_KEYS = ['id', 'tone', 'mode', 'family', 'component', 'state', 'pair', 'against', 'reason'];
+const PATTERN_NARROWING_KEYS = ['mode', 'family', 'component', 'state', 'pair', 'against'] as const;
+const PATTERN_ENUMS: Record<string, string[]> = {
+  mode: ['light', 'dark'],
+  family: ['surface', 'button', 'input'],
+  pair: ['text', 'placeholder', 'border'],
+  against: ['own', 'ambient'],
+};
+
+interface PreparedException {
+  id: string;
+  kind: 'pair' | 'pattern';
+  record: ContrastException;
+  /** `false` for a malformed record: listed, reported in `exceptionIssues`, never applied. */
+  usable: boolean;
+  matched: boolean;
+  covered: number;
+}
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function derivedPatternId(pattern: Record<string, unknown>): string {
+  const parts = [`tone:${String(pattern.tone)}`];
+  for (const key of PATTERN_NARROWING_KEYS) if (pattern[key] !== undefined) parts.push(`${key}=${String(pattern[key])}`);
+  return parts.join(',');
+}
+
+/** Sorts the supplied list into exact records (they carry `resolved`) and
+ * patterns (they do not), and validates the patterns. A pattern is validated
+ * strictly because its failure mode is the dangerous one: a misspelled
+ * narrowing key (`componnet`) would not narrow anything, and the pattern
+ * would quietly cover a whole tone instead of the one role it named. */
+function prepareExceptions(list: unknown, issues: string[]): PreparedException[] {
+  if (list === undefined || list === null) return [];
+  if (!Array.isArray(list)) {
+    issues.push('invalid exceptions: expected an array of exception records');
+    return [];
+  }
+  return list.map((raw, index): PreparedException => {
+    const where = `exception #${index + 1}`;
+    if (!isPlainObject(raw)) {
+      issues.push(`invalid ${where}: expected an object`);
+      return { id: where, kind: 'pair', record: raw as ContrastException, usable: false, matched: false, covered: 0 };
+    }
+    if (isPlainObject(raw.resolved)) {
+      return { id: String(raw.id), kind: 'pair', record: raw as unknown as ContrastExceptionRecord, usable: true, matched: false, covered: 0 };
+    }
+    const problems: string[] = [];
+    if (typeof raw.tone !== 'string' || !raw.tone) problems.push('a pattern needs `tone` (a palette family name); an exact record needs `resolved`');
+    if (typeof raw.reason !== 'string' || !raw.reason.trim()) problems.push('a pattern needs a written `reason`');
+    if (raw.id !== undefined && (typeof raw.id !== 'string' || !raw.id)) problems.push('`id` must be a nonempty string');
+    for (const key of Object.keys(raw)) {
+      if (PATTERN_KEYS.indexOf(key) === -1) problems.push(`unknown key "${key}" (a pattern accepts ${PATTERN_KEYS.join(', ')})`);
+    }
+    for (const key of PATTERN_NARROWING_KEYS) {
+      const value = raw[key];
+      if (value === undefined) continue;
+      if (typeof value !== 'string' || !value) problems.push(`\`${key}\` must be a nonempty string`);
+      else if (PATTERN_ENUMS[key] && PATTERN_ENUMS[key].indexOf(value) === -1) problems.push(`\`${key}\` must be one of ${PATTERN_ENUMS[key].join(', ')} (got "${value}")`);
+    }
+    const id = typeof raw.id === 'string' && raw.id ? raw.id : (typeof raw.tone === 'string' && raw.tone ? derivedPatternId(raw) : where);
+    for (const problem of problems) issues.push(`invalid exception "${id}": ${problem}`);
+    return { id, kind: 'pattern', record: raw as unknown as ContrastExceptionPattern, usable: problems.length === 0, matched: false, covered: 0 };
+  });
+}
+
+interface MeasuredPair {
+  mode: ContrastMode;
+  family: ContrastFamily;
+  component: string;
+  tone: string | null;
+  state: string;
+  pair: ContrastPairKind;
+  background: string;
+  against: ContrastAgainst;
+  foregroundHex: string | null;
+  backgroundHex: string | null;
+}
+
+function exceptionCovers(exception: PreparedException, measured: MeasuredPair): boolean {
+  if (!exception.usable) return false;
+  if (exception.kind === 'pair') {
+    const e = exception.record as ContrastExceptionRecord;
+    return e.mode === measured.mode && e.family === measured.family && e.component === measured.component &&
+      e.tone === measured.tone && e.state === measured.state && e.pair === measured.pair && e.background === measured.background &&
+      measured.foregroundHex === e.resolved.foreground && measured.backgroundHex === e.resolved.background;
+  }
+  const p = exception.record as ContrastExceptionPattern;
+  if (p.tone !== measured.tone) return false;
+  for (const key of PATTERN_NARROWING_KEYS) {
+    if (p[key] !== undefined && p[key] !== measured[key]) return false;
+  }
+  return true;
 }
 
 /**
@@ -380,15 +532,16 @@ function pairId(p: { mode: string; family: string; component: string; tone: stri
  */
 export function checkThemeContrast(
   theme: Record<string, any>,
-  options: { exceptions?: ContrastExceptionRecord[] } = {}
+  options: { exceptions?: ContrastException[] } = {}
 ): ContrastReport {
   const { light, dark } = buildPaletteMaps(theme);
   const toneFamilies = getToneFamilies(theme.palette || {});
   const viewports = viewportsOf(theme);
   const checked: ContrastCheckedPair[] = [];
   const failures: ContrastFailure[] = [];
-  const exceptionMatches = new Map<string, boolean>();
-  (options.exceptions || []).forEach((e) => exceptionMatches.set(e.id, false));
+  const excepted: ContrastExceptedPair[] = [];
+  const exceptionIssues: string[] = [];
+  const prepared = prepareExceptions(options.exceptions, exceptionIssues);
   // Enumerating every tone × breakpoint is how "todos sus estados... y cada
   // intervalo responsive" (the story's own requirement) gets covered without
   // hand-picking which combinations matter — but most fields (e.g. a
@@ -402,7 +555,13 @@ export function checkThemeContrast(
   // that produced it. A tone or breakpoint that genuinely changes the
   // resolved colors (e.g. 'outlined' role's tone-dependent border) still
   // produces its own distinct entry, since its signature differs for real.
-  const seenSignatures = new Set<string>();
+  //
+  // The outcome is remembered with the signature for one reason: a pattern
+  // exception is per tone, and the signature is not. If the same colors fail
+  // under an excepted tone first and under a tone no exception covers later,
+  // collapsing the second into the first would let the pattern excuse a tone
+  // it never named. That repeat is recorded as a failure of its own instead.
+  const seenSignatures: Record<string, 'pass' | 'exempt' | 'fail' | 'excepted'> = {};
 
   const modes: Array<{ mode: ContrastMode; paletteMap: Record<string, string> }> = [{ mode: 'light', paletteMap: light.palette }];
   if (dark) modes.push({ mode: 'dark', paletteMap: dark.palette });
@@ -424,28 +583,33 @@ export function checkThemeContrast(
       const buttonMap = { ...paletteMap, ...surfaceVars, ...edgeVars, ...shadowVars, ...inspectButtonTheme(theme, viewport) };
       const inputMap = { ...paletteMap, ...surfaceVars, ...edgeVars, ...shadowVars, ...inspectInputTheme(theme, viewport) };
 
-      const effectiveBackground = (bgExpr: string, varMap: Record<string, string>): ResolvedColor => {
+      // `against` says which of the two the pair is really measured on: the
+      // role's own background (opaque, or a translucent tint over the page),
+      // or the page itself showing through a transparent/unresolvable one.
+      const effectiveBackground = (bgExpr: string, varMap: Record<string, string>): { color: ResolvedColor; against: ContrastAgainst } => {
         const resolved = resolveExpression(bgExpr, varMap);
-        if (resolved.ok && isOpaque(resolved.color)) return resolved;
-        if (!ambient.ok) return ambient;
-        if (!resolved.ok) return { ok: true, color: { ...ambient.color, a: 1 } }; // fully transparent bg: page shows through entirely.
-        return { ok: true, color: { ...compositeOver(resolved.color, ambient.color), a: 1 } };
+        if (resolved.ok && isOpaque(resolved.color)) return { color: resolved, against: 'own' };
+        if (!ambient.ok) return { color: ambient, against: 'ambient' };
+        if (!resolved.ok || resolved.color.a === 0) return { color: { ok: true, color: { ...ambient.color, a: 1 } }, against: 'ambient' }; // fully transparent bg: page shows through entirely.
+        return { color: { ok: true, color: { ...compositeOver(resolved.color, ambient.color), a: 1 } }, against: 'own' };
       };
+      const onAmbient: { color: ResolvedColor; against: ContrastAgainst } = { color: ambient, against: 'ambient' };
 
       const record = (entry: {
-        family: 'surface' | 'button' | 'input';
+        family: ContrastFamily;
         component: string;
         tone: string | null;
         state: string;
         pair: ContrastPairKind;
         fgExpr: string | undefined;
-        bgColor: ResolvedColor;
+        bg: { color: ResolvedColor; against: ContrastAgainst };
         backgroundLabel: string;
         varMap: Record<string, string>;
         exempt?: boolean;
       }) => {
         const required = entry.pair === 'border' ? 3 : 4.5;
-        const base = { mode, family: entry.family, component: entry.component, tone: entry.tone, state: entry.state, pair: entry.pair, background: entry.backgroundLabel, breakpoint: viewport, required };
+        const bgColor = entry.bg.color;
+        const base = { mode, family: entry.family, component: entry.component, tone: entry.tone, state: entry.state, pair: entry.pair, background: entry.backgroundLabel, against: entry.bg.against, breakpoint: viewport, required };
         if (!entry.fgExpr) return; // field not defined for this role/state at all — nothing to check, not a failure.
         const fg = resolveExpression(entry.fgExpr, entry.varMap);
         // WCAG 1.4.11 requires a *visible* non-text boundary to be
@@ -461,35 +625,44 @@ export function checkThemeContrast(
         let ratio: number | null = null;
         let reason = '';
         if (!fg.ok) reason = fg.reason;
-        else if (!entry.bgColor.ok) reason = entry.bgColor.reason;
+        else if (!bgColor.ok) reason = bgColor.reason;
         else {
-          const composited = isOpaque(fg.color) ? fg.color : compositeOver(fg.color, entry.bgColor.color);
-          ratio = contrastRatio(composited, entry.bgColor.color);
+          const composited = isOpaque(fg.color) ? fg.color : compositeOver(fg.color, bgColor.color);
+          ratio = contrastRatio(composited, bgColor.color);
         }
         const fgSignature = fg.ok ? rgbToHex(fg.color) + (fg.color.a < 1 ? `@${fg.color.a.toFixed(3)}` : '') : `unresolved:${fg.reason}`;
-        const bgSignature = entry.bgColor.ok ? rgbToHex(entry.bgColor.color) : `unresolved:${entry.bgColor.reason}`;
+        const bgSignature = bgColor.ok ? rgbToHex(bgColor.color) : `unresolved:${bgColor.reason}`;
         const signature = [mode, entry.family, entry.component, entry.state, entry.pair, fgSignature, bgSignature].join('|');
-        if (seenSignatures.has(signature)) return;
-        seenSignatures.add(signature);
-        checked.push({ ...base, ratio, exempt: !!entry.exempt });
+        const seen = Object.prototype.hasOwnProperty.call(seenSignatures, signature) ? seenSignatures[signature] : undefined;
+        // Only an excepted finding is looked at again: every other outcome is
+        // the same whichever tone produced these colors.
+        if (seen !== undefined && seen !== 'excepted') return;
         const passes = ratio !== null && ratio >= required;
-        if (passes) return;
-        const id = pairId(base);
-        const exception = (options.exceptions || []).find((e) =>
-          e.mode === mode && e.family === entry.family && e.component === entry.component &&
-          e.tone === entry.tone && e.state === entry.state && e.pair === entry.pair && e.background === entry.backgroundLabel
-        );
-        if (exception) {
-          const fgHex = fg.ok ? rgbToHex(fg.color) : null;
-          const bgHex = entry.bgColor.ok ? rgbToHex(entry.bgColor.color) : null;
-          const exact = fgHex === exception.resolved.foreground && bgHex === exception.resolved.background;
-          if (exact) {
-            exceptionMatches.set(exception.id, true);
-            return; // exact-match exception: does not count as a failure, exempt or not.
-          }
+        if (passes || entry.exempt) {
+          // A disabled state is computed and listed, never blocking — and so
+          // never something an exception has to, or can, cover.
+          seenSignatures[signature] = passes ? 'pass' : 'exempt';
+          checked.push({ ...base, ratio, exempt: !!entry.exempt });
+          return;
         }
-        if (entry.exempt) return; // e.g. disabled state: computed and checked, never blocking.
-        failures.push({ ...base, ratio, reason: reason || `${ratio!.toFixed(2)}:1 < ${required}:1` });
+        const measured: MeasuredPair = { ...base, foregroundHex: fg.ok ? rgbToHex(fg.color) : null, backgroundHex: bgColor.ok ? rgbToHex(bgColor.color) : null };
+        const covering = prepared.filter((exception) => exceptionCovers(exception, measured));
+        for (const exception of covering) exception.matched = true;
+        // The same colors, already listed as excepted under an earlier tone
+        // and covered for this tone too: one finding, credited to both.
+        if (seen === 'excepted' && covering.length) return;
+        checked.push({ ...base, ratio, exempt: false });
+        const failure: ContrastFailure = { ...base, ratio, reason: reason || `${ratio!.toFixed(2)}:1 < ${required}:1` };
+        if (covering.length) {
+          // Attributed to the first exception in the list that covers it, so
+          // the `covered` counts add up to exactly `excepted.length`.
+          covering[0].covered++;
+          excepted.push({ ...failure, exception: covering[0].id });
+          seenSignatures[signature] = 'excepted';
+          return;
+        }
+        failures.push(failure);
+        seenSignatures[signature] = 'fail';
       };
 
       // Surfaces: no states of their own.
@@ -497,8 +670,8 @@ export function checkThemeContrast(
         for (const tone of [null, ...toneFamilies]) {
           const decl = surfaceDeclarations(theme, role, tone || '');
           const bg = effectiveBackground(decl.background, surfaceMap);
-          record({ family: 'surface', component: role, tone, state: 'base', pair: 'text', fgExpr: decl.color, bgColor: bg, backgroundLabel: 'own-bg-or-ambient', varMap: surfaceMap });
-          record({ family: 'surface', component: role, tone, state: 'base', pair: 'border', fgExpr: decl.border, bgColor: ambient, backgroundLabel: 'ambient', varMap: surfaceMap });
+          record({ family: 'surface', component: role, tone, state: 'base', pair: 'text', fgExpr: decl.color, bg, backgroundLabel: 'own-bg-or-ambient', varMap: surfaceMap });
+          record({ family: 'surface', component: role, tone, state: 'base', pair: 'border', fgExpr: decl.border, bg: onAmbient, backgroundLabel: 'ambient', varMap: surfaceMap });
         }
       }
 
@@ -511,8 +684,8 @@ export function checkThemeContrast(
           for (const [state, fields] of Object.entries(byState)) {
             running = { ...running, ...fields }; // CSS cascade: a state only overrides what it sets.
             const bg = effectiveBackground(running.background, buttonMap);
-            record({ family: 'button', component: role, tone, state, pair: 'text', fgExpr: running.color, bgColor: bg, backgroundLabel: 'own-bg-or-ambient', varMap: buttonMap, exempt: state === 'disabled' });
-            record({ family: 'button', component: role, tone, state, pair: 'border', fgExpr: running.border, bgColor: ambient, backgroundLabel: 'ambient', varMap: buttonMap, exempt: state === 'disabled' });
+            record({ family: 'button', component: role, tone, state, pair: 'text', fgExpr: running.color, bg, backgroundLabel: 'own-bg-or-ambient', varMap: buttonMap, exempt: state === 'disabled' });
+            record({ family: 'button', component: role, tone, state, pair: 'border', fgExpr: running.border, bg: onAmbient, backgroundLabel: 'ambient', varMap: buttonMap, exempt: state === 'disabled' });
           }
         }
       }
@@ -527,11 +700,11 @@ export function checkThemeContrast(
             running = { ...running, ...fields };
             const bg = effectiveBackground(running.background, inputMap);
             const exempt = state === 'disabled';
-            record({ family: 'input', component: role, tone, state, pair: 'text', fgExpr: running.color, bgColor: bg, backgroundLabel: 'own-bg-or-ambient', varMap: inputMap, exempt });
-            record({ family: 'input', component: role, tone, state, pair: 'placeholder', fgExpr: running.placeholder, bgColor: bg, backgroundLabel: 'own-bg-or-ambient', varMap: inputMap, exempt });
-            record({ family: 'input', component: role, tone, state, pair: 'border', fgExpr: running.border, bgColor: ambient, backgroundLabel: 'ambient', varMap: inputMap, exempt });
+            record({ family: 'input', component: role, tone, state, pair: 'text', fgExpr: running.color, bg, backgroundLabel: 'own-bg-or-ambient', varMap: inputMap, exempt });
+            record({ family: 'input', component: role, tone, state, pair: 'placeholder', fgExpr: running.placeholder, bg, backgroundLabel: 'own-bg-or-ambient', varMap: inputMap, exempt });
+            record({ family: 'input', component: role, tone, state, pair: 'border', fgExpr: running.border, bg: onAmbient, backgroundLabel: 'ambient', varMap: inputMap, exempt });
             if (running.underline) {
-              record({ family: 'input', component: role, tone, state, pair: 'border', fgExpr: running.underline, bgColor: ambient, backgroundLabel: 'ambient', varMap: inputMap, exempt });
+              record({ family: 'input', component: role, tone, state, pair: 'border', fgExpr: running.underline, bg: onAmbient, backgroundLabel: 'ambient', varMap: inputMap, exempt });
             }
           }
         }
@@ -539,8 +712,7 @@ export function checkThemeContrast(
     }
   }
 
-  const exceptions = (options.exceptions || []).map((record) => ({ record, matched: exceptionMatches.get(record.id) ?? false }));
-  const exceptionIssues: string[] = [];
+  const exceptions = prepared.map(({ id, kind, record, matched, covered }) => ({ id, kind, record, matched, covered }));
   // Object, not Map: a bare `for...of` over a Map/Set needs
   // --downlevelIteration or an ES2015+ target — this file gets bundled
   // straight from source by consumers targeting ES5 (the Next.js
@@ -549,10 +721,15 @@ export function checkThemeContrast(
   // stale local dist"), so every iteration here stays array-based, the
   // same convention the rest of this package's src/ already follows.
   const idCounts: Record<string, number> = {};
-  for (const e of options.exceptions || []) idCounts[e.id] = (idCounts[e.id] || 0) + 1;
+  for (const e of prepared) idCounts[e.id] = (idCounts[e.id] || 0) + 1;
   for (const [id, count] of Object.entries(idCounts)) if (count > 1) exceptionIssues.push(`duplicate exception id "${id}" (${count} entries)`);
-  for (const { record, matched } of exceptions) if (!matched) exceptionIssues.push(`stale exception "${record.id}": no longer matches any failing pair with its recorded resolved colors`);
-  return { passed: failures.length === 0 && exceptionIssues.length === 0, failures, exceptions, exceptionIssues, checked };
+  for (const e of prepared) {
+    if (!e.usable || e.matched) continue; // a malformed record already has its own issue.
+    exceptionIssues.push(e.kind === 'pattern'
+      ? `stale exception "${e.id}": the pattern matches no failing pair`
+      : `stale exception "${e.id}": no longer matches any failing pair with its recorded resolved colors`);
+  }
+  return { passed: failures.length === 0 && exceptionIssues.length === 0, failures, exceptions, excepted, exceptionIssues, checked };
 }
 
 function rgbToHex(c: { r: number; g: number; b: number }): string {

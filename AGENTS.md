@@ -437,6 +437,12 @@ This excerpt assumes its referenced tokens and breakpoints exist.
   main foreground and a 1px solid main border. Flat uses transparent bg and main
   foreground, preserving its border. Contained/custom roles use main bg and
   contrast foreground, preserving the configured border.
+- `surface`, `light` and `dark` are canvas identities; use them as a tone only
+  on `contained`. On `outlined`, `flat` or `underline` (and as a contained
+  Input's focus border) their `main` is drawn on the page it is the color of,
+  which no value can fix; the shipped contrast exceptions cover exactly that
+  class as three patterns (`{ tone, against: "ambient" }`), and those pairs are
+  listed as excepted, never as passing.
 - Numeric size overrides padding with Density and corners with Radius. Inspect
   both tokens; n is not a pixel value. Omit arguments to follow all role fields.
 - Modify a shared Surface only for a shared change; choose another role or CSS
@@ -601,18 +607,23 @@ history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
 WCAG for any effective theme, including a project's own. Phase 3 corrected
 16 of `theme/base.json`'s own colors (and the playground's own `green`/
 `slate` named themes) to clear it, in OKLCH, preserving hue and moving only
-lightness; `report.passed` is still honestly `false`. Of the three real,
-disclosed engine/architecture findings that phase 3 left, one is closed
-(FEAT-009's MIG-B7-01, unreleased as of 2026-09-28: the Input `placeholder`
+lightness. Of the three real, disclosed engine/architecture findings that
+phase 3 left, one is closed (FEAT-009's MIG-B7-01: the Input `placeholder`
 follows the requested tone on `contained`, the only role whose background
-tints). As of 2026-09-28 two remain (`light`/`dark`/`surface` used as an
-accent tone reading their own canvas-identity color as text; `warning.main`
-not dark enough for direct text use), plus one that MIG-B7-01 itself
-surfaced: the *untoned* placeholder default `neutral.dark` is not
-dark-mode-aware enough (9 failures, `tone: null`, pinned by
-`packages/postcss-uxdsl/test/input-placeholder-tone.test.js`). Each is
-recommended as follow-up work in its own story's evidence, not swept into ad
-hoc exceptions. `postcss-uxdsl/ds-runtime`
+tints), and stability phase 5 (audit DE-7) settled the second as a property
+of the role rather than a color: `light`/`dark`/`surface` used as an accent
+tone draw their own canvas-identity color on the canvas, so
+`theme/base.contrast-exceptions.json` excepts that class as three
+**pattern** records (`{ tone, against: "ambient", reason }`) instead of one
+exact record per pair. An exception, exact or pattern, covers failing pairs:
+the report lists each under `excepted` with its real ratio and the
+exception's id, counts per exception (`matched`, `covered`), and fails on a
+pattern that matches nothing, a malformed record or a duplicate id. The
+remaining findings are values (light-mode `warning.main` not dark enough for
+direct text use; dark-mode `neutral.dark` and `light.dark`; the *untoned*
+placeholder default `neutral.dark` not dark-mode-aware enough, 9 failures
+pinned by `packages/postcss-uxdsl/test/input-placeholder-tone.test.js`),
+fixed as values in the same phase. `postcss-uxdsl/ds-runtime`
 also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
@@ -927,17 +938,18 @@ section above, which describes the contract as implemented. MIG-B6-29 (the packa
 accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
-its 4 phases, closing that story. `checkThemeContrast` still correctly
-reports `passed: false` against `theme/base.json`: as of 2026-09-28, 123
-failing pairs with the shipped `theme/base.contrast-exceptions.json` applied
-(124 without it; 156 with it before FEAT-009's MIG-B7-01). Reproduce after
-building `postcss-uxdsl`, from the repository root:
-`node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); console.log(r.checkThemeContrast(r.resolveTheme(), { exceptions: x }).failures.length)"`.
-No test pins that total yet; MIG-B7-11 (pending) is planned to pin the exact
-set — the remaining gaps are engine/
-architecture findings, not color choices; see MIG-B6-29's and MIG-B7-01's own
-evidence for exactly which ones and the recommended follow-up for each. That
-is by design, not a bug in the gate. `generateThemeCss` and the PostCSS
+its 4 phases, closing that story. `checkThemeContrast` against
+`theme/base.json` with the shipped `theme/base.contrast-exceptions.json`
+(three patterns, stability phase 5): 824 pairs checked, 30 failing, 94
+excepted, no exception issue, as of this phase's first commit (before it:
+123 failing with the single exact record, 124 without; 156 before FEAT-009's
+MIG-B7-01). Reproduce after building `postcss-uxdsl`, from the repository root:
+`node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.
+`fixtures/mig-b7-18-release/contrast-baseline.json` pins the exact failing
+and excepted sets (re-pin deliberately with
+`node fixtures/mig-b7-18-release/run.js --write-contrast-baseline`). The 30
+are value findings, fixed as values in this phase's next commit; excepted
+pairs are listed, never counted as passing. `generateThemeCss` and the PostCSS
 plugin now emit byte-identical Google Fonts `@import`s for the same theme;
 `packages/playground-nextjs`'s own `ThemeContext.tsx` used to hand-roll a
 separate client-side font `<link>` with a weaker encoder; MIG-B6-30 phase 3

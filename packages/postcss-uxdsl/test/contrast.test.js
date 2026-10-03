@@ -284,3 +284,182 @@ test('checkThemeContrast: repeating the exact same call twice is deterministic',
   assert.deepEqual(a.failures, b.failures);
   assert.equal(a.checked.length, b.checked.length);
 });
+
+// ---------------------------------------------------------------------
+// Pattern exceptions (stability phase 5, audit DE-7 / D-8 = a): a
+// structural class of pairs — one tone family, optionally narrowed —
+// instead of one exact pair. Every number below is measured against the
+// same theme with no exceptions; none is hand-asserted.
+// ---------------------------------------------------------------------
+
+const failsItsThreshold = (pair) => pair.ratio === null || pair.ratio < pair.required;
+
+test('pattern exception: covers the failing pairs of its tone and lists each as excepted — never as passing', () => {
+  const theme = resolveTheme();
+  const without = checkThemeContrast(theme);
+  const toneFailures = without.failures.filter((f) => f.tone === 'surface');
+  assert.ok(toneFailures.length > 0, 'the `surface` tone must fail something for this test to mean anything');
+
+  const report = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', reason: 'test: the canvas drawn on the canvas' }] });
+  assert.equal(report.failures.filter((f) => f.tone === 'surface').length, 0);
+  assert.equal(report.excepted.length, toneFailures.length);
+  assert.ok(report.excepted.every((e) => e.tone === 'surface' && e.exception === 'tone:surface'));
+  assert.ok(report.excepted.every(failsItsThreshold), 'an excepted pair still fails its threshold');
+  // Nothing was moved to "passing": the same pairs are checked, with the same ratios.
+  assert.equal(report.checked.length, without.checked.length);
+  assert.equal(report.checked.filter((c) => !c.exempt && failsItsThreshold(c)).length, without.failures.length);
+  // Every other failure is untouched.
+  assert.equal(report.failures.length, without.failures.length - toneFailures.length);
+  assert.equal(report.passed, false);
+
+  const [entry] = report.exceptions;
+  assert.deepEqual(
+    { id: entry.id, kind: entry.kind, matched: entry.matched, covered: entry.covered },
+    { id: 'tone:surface', kind: 'pattern', matched: true, covered: toneFailures.length });
+  assert.deepEqual(report.exceptionIssues, []);
+});
+
+test('pattern exception: each narrowing key restricts the match; an absent key matches anything', () => {
+  const theme = resolveTheme();
+  const all = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', reason: 'test' }] }).excepted;
+  for (const [key, value] of [['mode', 'dark'], ['family', 'input'], ['component', 'outlined'], ['state', 'base'], ['pair', 'border'], ['against', 'ambient']]) {
+    const report = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', [key]: value, reason: 'test' }] });
+    const expected = all.filter((e) => e[key] === value);
+    assert.ok(expected.length > 0, `${key}=${value} must select something`);
+    assert.equal(report.excepted.length, expected.length, `${key}=${value}`);
+    assert.ok(report.excepted.every((e) => e[key] === value), `${key}=${value}`);
+    assert.equal(report.exceptions[0].id, `tone:surface,${key}=${value}`);
+    assert.equal(report.exceptions[0].covered, expected.length);
+  }
+});
+
+test('pattern exception, negative control: a pattern that matches nothing is an exceptionIssue and fails the gate', () => {
+  const theme = resolveTheme();
+  const failuresWithout = checkThemeContrast(theme).failures.length;
+  const patterns = [
+    { tone: 'no-such-family', reason: 'test' },
+    { tone: 'primary', reason: 'test: primary passes everywhere, so there is nothing to except' },
+    { tone: 'surface', component: 'no-such-role', reason: 'test' },
+  ];
+  for (const pattern of patterns) {
+    const report = checkThemeContrast(theme, { exceptions: [pattern] });
+    assert.equal(report.exceptions[0].matched, false, JSON.stringify(pattern));
+    assert.equal(report.exceptions[0].covered, 0);
+    assert.equal(report.excepted.length, 0);
+    assert.equal(report.failures.length, failuresWithout);
+    assert.equal(report.exceptionIssues.length, 1);
+    assert.match(report.exceptionIssues[0], /^stale exception "[^"]+": the pattern matches no failing pair$/);
+    assert.equal(report.passed, false);
+  }
+});
+
+test('pattern exception: a malformed pattern is reported and never applied — a misspelled key cannot silently broaden it', () => {
+  const theme = resolveTheme();
+  const failuresWithout = checkThemeContrast(theme).failures.length;
+  const cases = [
+    [{ tone: 'surface', componnet: 'outlined', reason: 'test' }, /unknown key "componnet"/],
+    [{ tone: 'surface' }, /needs a written `reason`/],
+    [{ tone: 'surface', reason: '   ' }, /needs a written `reason`/],
+    [{ reason: 'no tone at all' }, /needs `tone`/],
+    [{ tone: null, reason: 'test' }, /needs `tone`/],
+    [{ tone: 'surface', pair: 'outline', reason: 'test' }, /`pair` must be one of text, placeholder, border/],
+    [{ tone: 'surface', mode: 'night', reason: 'test' }, /`mode` must be one of light, dark/],
+    [{ tone: 'surface', against: 'canvas', reason: 'test' }, /`against` must be one of own, ambient/],
+    [{ tone: 'surface', id: '', reason: 'test' }, /`id` must be a nonempty string/],
+    ['surface', /expected an object/],
+  ];
+  for (const [exception, message] of cases) {
+    const report = checkThemeContrast(theme, { exceptions: [exception] });
+    const issues = report.exceptionIssues.join('\n');
+    assert.match(issues, message, JSON.stringify(exception));
+    assert.doesNotMatch(issues, /stale exception/, 'a malformed record is reported once, as malformed');
+    assert.equal(report.excepted.length, 0, `${JSON.stringify(exception)} must not cover anything`);
+    assert.equal(report.failures.length, failuresWithout);
+    assert.equal(report.passed, false);
+  }
+  const notAList = checkThemeContrast(theme, { exceptions: { tone: 'surface', reason: 'test' } });
+  assert.match(notAList.exceptionIssues.join('\n'), /expected an array/);
+  assert.equal(notAList.excepted.length, 0);
+  assert.equal(notAList.passed, false);
+});
+
+test('pattern exception: the same colors under a tone the pattern does not name remain a failure', () => {
+  // `ghost` repeats the canvas color, so its outlined text resolves to the
+  // very pair the `surface` tone produces. The checker collapses identical
+  // pairs across tones; a per-tone pattern must not ride on that.
+  const theme = resolveTheme({ palette: { ghost: { main: '#ffffff', dark: '#ffffff', contrast: '#000000' } } });
+  const isGhostText = (f) => f.tone === 'ghost' && f.family === 'surface' && f.component === 'outlined' && f.pair === 'text' && f.mode === 'light';
+
+  const onlySurface = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', reason: 'test' }] });
+  assert.ok(onlySurface.failures.some(isGhostText), 'the un-excepted tone must be reported as its own failure');
+  assert.ok(!onlySurface.excepted.some((e) => e.tone === 'ghost'));
+
+  const both = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', reason: 'test' }, { tone: 'ghost', reason: 'test' }] });
+  assert.equal(both.failures.filter((f) => f.tone === 'ghost' || f.tone === 'surface').length, 0);
+  assert.deepEqual(both.exceptions.map((e) => e.matched), [true, true]);
+  assert.deepEqual(both.exceptionIssues, []);
+  assert.equal(both.exceptions.reduce((sum, e) => sum + e.covered, 0), both.excepted.length, 'every excepted pair is attributed to exactly one exception');
+});
+
+test('checked pairs say what they were measured against, and `against: ambient` leaves a role\'s own fill uncovered', () => {
+  const plain = checkThemeContrast(resolveTheme());
+  const find = (wanted) => plain.checked.find((c) => c.mode === 'light' && c.tone === null && Object.keys(wanted).every((k) => c[k] === wanted[k]));
+  assert.equal(find({ family: 'surface', component: 'contained', pair: 'text' }).against, 'own');
+  assert.equal(find({ family: 'surface', component: 'outlined', pair: 'text' }).against, 'ambient');
+  assert.equal(find({ family: 'surface', component: 'outlined', pair: 'border' }).against, 'ambient');
+
+  // A real value mistake on a canvas-identity family: its own `contrast` no
+  // longer reads on its own fill. That is a color to fix, not the canvas
+  // drawn on the canvas, and a pattern narrowed to the page must not hide it.
+  const broken = resolveTheme({ palette: { light: { contrast: '#fdfdfd' } } });
+  const isOwnFill = (f) => f.tone === 'light' && f.component === 'contained' && f.pair === 'text' && f.against === 'own';
+  const narrowed = checkThemeContrast(broken, { exceptions: [{ tone: 'light', against: 'ambient', reason: 'test' }] });
+  assert.ok(narrowed.failures.some(isOwnFill), 'the fill\'s own text must still fail the gate');
+  assert.ok(!narrowed.excepted.some(isOwnFill));
+  assert.ok(narrowed.excepted.length > 0 && narrowed.excepted.every((e) => e.against === 'ambient'));
+  const broad = checkThemeContrast(broken, { exceptions: [{ tone: 'light', reason: 'test' }] });
+  assert.ok(broad.excepted.some(isOwnFill), 'control: the un-narrowed pattern is what would have hidden it');
+});
+
+test('an exempt (disabled) pair is never excepted, so an exception written for one is stale', () => {
+  const theme = resolveTheme({
+    inputs: { 'disabled-fails': { surface: 'contained', base: {}, states: { disabled: { color: '#fefefe' } } } },
+  });
+  const pattern = { tone: 'light', component: 'disabled-fails', state: 'disabled', reason: 'test' };
+  const exact = {
+    id: 'test-disabled-exact', mode: 'light', family: 'input', component: 'disabled-fails', tone: null, state: 'disabled',
+    pair: 'text', background: 'own-bg-or-ambient', resolved: { foreground: '#fefefe', background: '#ffffff' }, reason: 'test',
+  };
+  const report = checkThemeContrast(theme, { exceptions: [pattern, exact] });
+  const disabled = report.checked.filter((c) => c.component === 'disabled-fails' && c.state === 'disabled' && c.pair === 'text');
+  assert.ok(disabled.some((c) => c.tone === null && c.exempt && failsItsThreshold(c)), 'the untoned disabled pair is computed, failing and exempt');
+  assert.ok(disabled.some((c) => c.tone === 'light' && c.exempt && failsItsThreshold(c)), 'so is the light-toned one');
+  assert.equal(report.excepted.length, 0);
+  assert.deepEqual(report.exceptions.map((e) => e.matched), [false, false]);
+  assert.equal(report.exceptionIssues.filter((issue) => /^stale exception/.test(issue)).length, 2);
+});
+
+test('pattern exception: an explicit id is kept, a missing one is derived, duplicates are reported, exact records and patterns mix', () => {
+  const theme = resolveTheme();
+  const report = checkThemeContrast(theme, { exceptions: [{ id: 'my-id', tone: 'surface', reason: 'test' }, { tone: 'light', pair: 'text', reason: 'test' }] });
+  assert.deepEqual(report.exceptions.map((e) => e.id), ['my-id', 'tone:light,pair=text']);
+  assert.ok(report.excepted.some((e) => e.exception === 'my-id'));
+  assert.ok(report.excepted.some((e) => e.exception === 'tone:light,pair=text'));
+
+  const duplicated = checkThemeContrast(theme, { exceptions: [{ tone: 'surface', reason: 'one' }, { tone: 'surface', reason: 'two' }] });
+  assert.match(duplicated.exceptionIssues.join(' '), /duplicate exception id "tone:surface" \(2 entries\)/);
+  assert.equal(duplicated.passed, false);
+
+  // The exact record this file used to ship, followed by the pattern that
+  // subsumes it: the pair is attributed to the first one that covers it.
+  const exact = {
+    id: 'exact-first', mode: 'light', family: 'surface', component: 'outlined', tone: 'light', state: 'base',
+    pair: 'text', background: 'own-bg-or-ambient', resolved: { foreground: '#f1f5f9', background: '#ffffff' }, reason: 'test',
+  };
+  const mixed = checkThemeContrast(theme, { exceptions: [exact, { tone: 'light', reason: 'test' }] });
+  assert.deepEqual(mixed.exceptions.map((e) => e.kind), ['pair', 'pattern']);
+  assert.equal(mixed.exceptions[0].covered, 1);
+  assert.equal(mixed.excepted.filter((e) => e.exception === 'exact-first').length, 1);
+  assert.equal(mixed.exceptions[0].covered + mixed.exceptions[1].covered, mixed.excepted.length);
+  assert.deepEqual(mixed.exceptionIssues, []);
+});
