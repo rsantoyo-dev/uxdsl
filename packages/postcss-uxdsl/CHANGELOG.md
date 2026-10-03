@@ -9,6 +9,43 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 5 (audit of 2026-09-29, decision DE-11 / finding T12) — the
+base theme demonstrates Colors → Palette:
+
+### Visual changes
+
+None. Every resolved palette custom property, light and dark (52 + 52), is
+byte-identical before and after (`test/base-theme-colors.test.js` pins the
+whole map as a fixture), and the contrast gate reports the same 824 checked
+/ 0 failing / 98 excepted. What changes in the compiled theme block: the
+palette declarations become references (`--uxdsl__palette__primary-main:
+var(--uxdsl__color__purple-700)` instead of `#7e22ce`, on both paths), and
+45 color declarations are added (49 literals in `colors`, 4 of which the
+gray scale already held). The four existing gray shades keep their color
+and are written in lowercase hex now (`--uxdsl__color__gray-300: #cbd5e1`,
+was `#CBD5E1`): same color, different bytes, disclosed here because a
+consumer diffing compiled CSS will see it.
+
+- `theme/base.json`'s `colors` now holds `white`, `black` and every shade
+  its palette uses: `gray` (`50`, `100`, `200`, `300`, `320`, `340`, `400`,
+  `450`, `470`, `480`, `490`, `500`, `550`, `600`, `700`, `800`, `900`,
+  `950`), `purple` (`200`, `300`, `500`, `700`, `900`), `pink` (`200`, `400`,
+  `500`, `600`, `700`), `red` (`200`, `500`, `550`, `600`, `700`), `amber`
+  (`400`, `500`, `700`, `800`), `green` (`400`, `600`, `650`, `700`, `900`),
+  `sky` (`300`, `600`, `650`, `700`, `800`). A key is a position in the
+  family's lightness order (Tailwind's number where the value is Tailwind's,
+  the nearest free step otherwise); it is not a promise about the value.
+- Every leaf of `palette` and `modes.dark.palette` is a `color(family.shade)`
+  reference, or the `palette(…)` alias it already was; no literal remains.
+  Editing a Color now reaches the roles that reference it, which is the
+  model the agent guide teaches.
+- `color(white)`, `color(black)` and `color(white, 0.5)` work with no theme
+  of the project's own.
+- `DEFAULT_THEME.palette.*` values are therefore references, not hex: code
+  that read `DEFAULT_THEME.palette.primary.light` expecting `#a855f7` now
+  gets `color(purple.500)`; resolve it through the theme (`tokenValueToCss`
+  or the generated CSS) rather than reading the leaf as a color.
+
 Stability phase 5 (audit of 2026-09-29, decision DE-7 / D-9 = b, plus the
 dark-mode findings) — the base theme passes its own contrast gate:
 

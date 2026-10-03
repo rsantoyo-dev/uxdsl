@@ -111,8 +111,8 @@ Both live in the theme JSON.
   },
   "palette": {
     "primary": {
-      "main": "var(--uxdsl__color__blue-700)",
-      "contrast": "var(--uxdsl__color__white)"
+      "main": "color(blue.700)",
+      "contrast": "color(white)"
     }
   }
 }
@@ -124,7 +124,10 @@ Both live in the theme JSON.
   color: palette(primary.contrast);
 }
 .blue-swatch {
-  background: color(blue-700);
+  background: color(blue.700);
+}
+.scrim {
+  background: color(black, 0.5);
 }
 ```
 
@@ -133,6 +136,14 @@ Both live in the theme JSON.
   swatch. Shade numbers are keys, not calculated brightness or contrast guarantees.
 - Preserve explicit Palette-to-Color references. Matching hex values do not form
   a dependency. A literal Palette value is valid but does not track a Color token.
+- The base theme demonstrates this model (stability phase 5, audit DE-11):
+  `colors` holds `white`, `black` and every shade its palette uses (`gray`
+  50–950 plus `purple`, `pink`, `red`, `amber`, `green`, `sky`), and every
+  palette leaf, light and dark, is a `color(family.shade)` or `palette(…)`
+  reference — no literal. A shade key such as `gray.450` is a position in
+  that family's lightness order, not a promise about the value. `color(white)`
+  and `color(black)` work with no theme of the project's own, so
+  `color(white, 0.5)` is the way to write a translucent canvas.
 - Confirm roles, variants and referenced tokens exist. Inspect mode assignments
   and active overrides before changing them.
 - A variant named `contrast` is not automatic accessibility validation. Check
@@ -147,7 +158,7 @@ should receive the change. For “update blue-700 throughout the theme,” edit
 
 **Palette decision rule:** reassign a role when its purpose stays the same but its
 visual color should change. For “make primary actions blue-500,” change
-`palette.primary.main` to `var(--uxdsl__color__blue-500)` and keep components using
+`palette.primary.main` to `color(blue.500)` and keep components using
 `palette(primary.main)`. Direct blue-700 consumers retain their token.
 
 ## Breakpoints

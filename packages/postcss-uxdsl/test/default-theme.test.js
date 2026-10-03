@@ -45,10 +45,15 @@ test('MIG-B2-02: generateThemeCss() with no arguments compiles and passes strict
 test('MIG-B2-02: a partial theme keeps every non-overridden default and changes only what was given', () => {
   const css = generateThemeCss({ palette: { primary: { main: '#123456' } } });
   assert.match(css, /--uxdsl__palette__primary-main: #123456/);
-  // Untouched sibling keys of the same family keep their default value.
-  assert.match(css, new RegExp(`--uxdsl__palette__primary-dark: ${DEFAULT_THEME.palette.primary.dark.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  // Untouched sibling keys of the same family keep their default value —
+  // since stability phase 5 a `color(...)` reference into the base
+  // collection, emitted through the one value grammar.
+  const { tokenValueToCss } = require('../dist/language');
+  const escape = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  assert.equal(DEFAULT_THEME.palette.primary.dark, 'color(purple.900)');
+  assert.match(css, new RegExp(`--uxdsl__palette__primary-dark: ${escape(tokenValueToCss(DEFAULT_THEME.palette.primary.dark))}`));
   // An entirely different family (surface) is untouched too.
-  assert.match(css, new RegExp(`--uxdsl__palette__surface-main: ${DEFAULT_THEME.palette.surface.main.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
+  assert.match(css, new RegExp(`--uxdsl__palette__surface-main: ${escape(tokenValueToCss(DEFAULT_THEME.palette.surface.main))}`));
 });
 
 test('MIG-B2-02: partial Typography, fonts and spacing overrides merge without dropping sibling defaults', () => {
@@ -297,7 +302,10 @@ test('MIG-B6-29: the migration.md beta.5-pinning recipe restores exactly beta.5\
   // Documented, disclosed non-goal: beta.5 never defined a `light` variant
   // for these families at all, and there is no override that removes a
   // merged-in key — this recipe is not bit-for-bit identical to beta.5.
-  assert.equal(resolved.palette.primary.light, '#a855f7');
+  // (Since stability phase 5 the merged-in key is the base's reference into
+  // its Colors collection, `color(purple.500)` = #a855f7.)
+  assert.equal(resolved.palette.primary.light, 'color(purple.500)');
+  assert.equal(resolved.colors.purple[500], '#a855f7');
 });
 
 test('MIG-B6-29: DEFAULT_THEME follows the OS dark-mode preference by default; data-theme="light" pins light', () => {

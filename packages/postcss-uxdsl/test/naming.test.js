@@ -75,11 +75,15 @@ test('MIG-08: centralizing name construction did not change existing output for 
   const css = generateFoundationCss(theme);
   // MIG-B6-29: gray-* comes from theme/base.json's own colors.gray now
   // (DEFAULT_BORDER_COLORS derives from it), not a second, independently
-  // hardcoded gray literal that used to live only in edges.ts.
+  // hardcoded gray literal that used to live only in edges.ts. Stability
+  // phase 5 grew that family to every shade the base palette uses (lowercase
+  // hex), so the whole scale is what this dependency merge carries.
+  const gray = Object.entries(require('../src/theme/base.json').colors.gray).map(([k, v]) => `--uxdsl__color__gray-${k}: ${v};`).join(' ');
   assert.equal(
     css,
-    ":root { --uxdsl__palette__primary-main: #123; --uxdsl__palette__primary-dark: #111; --uxdsl__palette__primary-contrast: #fff; --uxdsl__color__blue-500: #123456; --uxdsl__color__gray-300: #CBD5E1; --uxdsl__color__gray-400: #94A3B8; --uxdsl__color__gray-500: #64748B; --uxdsl__color__gray-600: #475569; --uxdsl__space__1: 4px; --uxdsl__space__2: 8px; }"
+    `:root { --uxdsl__palette__primary-main: #123; --uxdsl__palette__primary-dark: #111; --uxdsl__palette__primary-contrast: #fff; --uxdsl__color__blue-500: #123456; ${gray} --uxdsl__space__1: 4px; --uxdsl__space__2: 8px; }`
   );
+  assert.match(css, /--uxdsl__color__gray-300: #cbd5e1; --uxdsl__color__gray-320/);
 });
 
 test('MIG-08: typography field names are centralized too (consistency; no realistic collision surface with the current fixed suffix set)', () => {

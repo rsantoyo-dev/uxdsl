@@ -154,8 +154,10 @@ test('T8: the default output loses every identical tone copy and nothing else', 
   // Before T8: 745 declarations, 341 of them tone variants, 617 unique names.
   // Stability phase 5 then added two dark-mode palette values to the base
   // theme (`modes.dark.palette.warning.dark`, `modes.dark.palette.light.dark`),
-  // each emitted once per dark-mode selector: 745 + 4 untoned declarations.
-  assert.equal(declarations.length, 749 - 341 + toneDeclarations.length);
+  // each emitted once per dark-mode selector (+4), and populated `colors`
+  // with the 49 literals the palette uses, 4 of which the gray scale already
+  // held (+45): 745 + 49 untoned declarations.
+  assert.equal(declarations.length, 794 - 341 + toneDeclarations.length);
   assert.ok(toneDeclarations.length > 0 && toneDeclarations.length < 341, `expected fewer than 341 tone variants, got ${toneDeclarations.length}`);
   // Every remaining variant differs from its untoned sibling.
   const map = Object.fromEntries([...css.matchAll(/(--uxdsl__(?:button|input)__[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));

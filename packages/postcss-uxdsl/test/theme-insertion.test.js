@@ -32,7 +32,8 @@ test('T10: an author\'s own :root override of a theme variable now wins — it f
   const css = compile(':root { --uxdsl__palette__primary-main: rebeccapurple; }\n.a { color: palette(primary); }');
   const nodes = topLevel(css);
   const authorRoot = nodes.findIndex((node) => node.type === 'rule' && node.selector === ':root' && node.toString().includes('rebeccapurple'));
-  const themeRoot = nodes.findIndex((node) => node.type === 'rule' && node.toString().includes('--uxdsl__palette__primary-main: #7e22ce'));
+  // The base palette references its Colors collection (stability phase 5), so the theme's own declaration is a var().
+  const themeRoot = nodes.findIndex((node) => node.type === 'rule' && node.toString().includes('--uxdsl__palette__primary-main: var(--uxdsl__color__purple-700)'));
   assert.ok(authorRoot >= 0 && themeRoot >= 0);
   assert.ok(authorRoot > themeRoot, `the author's :root (index ${authorRoot}) must come after the theme's (index ${themeRoot}) so the cascade picks it`);
   const lastGenerated = nodes.map(isGenerated).lastIndexOf(true);

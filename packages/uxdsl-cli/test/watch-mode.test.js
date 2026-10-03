@@ -434,7 +434,9 @@ test('MIG-B6-23: with two entries A and B, editing a partial only B imports does
   const aStatAfter = fs.statSync(aCssPath);
   assert.equal(aStatAfter.mtimeMs, aStatBefore.mtimeMs, `editing B's own partial must not rewrite A.\n${output}`);
   assert.equal(aStatAfter.ino, aStatBefore.ino, "editing B's own partial must not replace A's file");
-  assert.doesNotMatch(fs.readFileSync(aCssPath, 'utf8'), /yellow|green/, "A's output must never contain B's partial content");
+  // The declarations B's partial writes, not the bare words: the generated
+  // theme block legitimately names a `green` Colors family (stability phase 5).
+  assert.doesNotMatch(fs.readFileSync(aCssPath, 'utf8'), /color: (yellow|green)/, "A's output must never contain B's partial content");
 });
 
 test('MIG-B6-23: an output file is never observed empty or truncated while a rebuild is writing it (atomic replace)', async (t) => {

@@ -93,6 +93,14 @@ suggestion when there is a close one, instead of being ignored.
 file alone, with no build config. It prints the unknown-family warning `build`
 prints, on stderr, so stdout stays one JSON document for `| jq` and scripts.
 
+What it prints is the theme as written, not resolved colors: since stability
+phase 5 the base palette references its own Colors collection, so a leaf your
+theme does not override reads `"main": "color(purple.700)"` (and `--diff`
+labels it `default`) rather than `#7e22ce`; the hex is under `colors.purple`
+in the same document. A script that wants the final color resolves the
+reference through the compiled CSS (`uxdsl build`) or `tokenValueToCss`
+from `postcss-uxdsl/language`, not by reading the leaf as a color.
+
 ## Two files, two jobs
 
 The **build config** says what to compile and where. It is a JavaScript

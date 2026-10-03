@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (39769 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (43754 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 39769,
+        "bytes": 43754,
         "rootBlocks": 17,
         "mediaQueries": 9
       }
@@ -66,10 +66,10 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (38603 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (42588 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38603,
+        "bytes": 42588,
         "rootBlocks": 17
       }
     },
@@ -85,10 +85,10 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (38603 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (42588 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 38603,
+        "bytes": 42588,
         "rootBlocks": 17
       }
     },
@@ -201,15 +201,15 @@
           "typography_details",
           "$schema"
         ],
-        "bytes": 12187,
+        "bytes": 13958,
         "primary": {
           "main": "#0f766e",
-          "light": "#a855f7",
-          "dark": "#581c87",
-          "contrast": "#ffffff"
+          "light": "color(purple.500)",
+          "dark": "color(purple.900)",
+          "contrast": "color(white)"
         }
       },
-      "excerpt": "{\n  \"palette\": {\n    \"primary\": {\n      \"main\": \"#0f766e\",\n      \"light\": \"#a855f7\",\n      \"dark\": \"#581c87\",\n      \"contrast\": \"#ffffff\"\n    }\n  }\n}"
+      "excerpt": "{\n  \"palette\": {\n    \"primary\": {\n      \"main\": \"#0f766e\",\n      \"light\": \"color(purple.500)\",\n      \"dark\": \"color(purple.900)\",\n      \"contrast\": \"color(white)\"\n    }\n  }\n}"
     },
     {
       "id": "theme-diff",
@@ -225,7 +225,7 @@
         "project": 6,
         "default": 51
       },
-      "excerpt": "[\n  {\n    \"path\": \"palette.primary.main\",\n    \"value\": \"#0f766e\",\n    \"source\": \"project\"\n  },\n  {\n    \"path\": \"palette.primary.light\",\n    \"value\": \"#a855f7\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.dark\",\n    \"value\": \"#581c87\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.contrast\",\n    \"value\": \"#ffffff\",\n    \"source\": \"default\"\n  }\n]"
+      "excerpt": "[\n  {\n    \"path\": \"palette.primary.main\",\n    \"value\": \"#0f766e\",\n    \"source\": \"project\"\n  },\n  {\n    \"path\": \"palette.primary.light\",\n    \"value\": \"color(purple.500)\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.dark\",\n    \"value\": \"color(purple.900)\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.contrast\",\n    \"value\": \"color(white)\",\n    \"source\": \"default\"\n  }\n]"
     },
     {
       "id": "theme-strict",
@@ -311,7 +311,7 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39769 bytes)",
+          "[uxdsl] built dist/app.css (43754 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -320,7 +320,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39811 bytes)"
+          "[uxdsl] built dist/app.css (43796 bytes)"
         ]
       },
       {
@@ -336,12 +336,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (39769 bytes)"
+          "[uxdsl] built dist/app.css (43754 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 39769
+      "finalBytes": 43754
     }
   }
 }

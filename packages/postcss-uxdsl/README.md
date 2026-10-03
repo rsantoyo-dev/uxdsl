@@ -545,6 +545,29 @@ importing `postcss-uxdsl/theme/base.json` directly still gives you a plain,
 mutable object, safe to `deepMergeTheme` and pass around without it being
 affected by anything this package itself froze.
 
+### The default theme's Colors (`colors` → `palette`)
+
+Stability phase 5 (audit DE-11): the base theme demonstrates the model the
+agent guide teaches instead of contradicting it. `theme/base.json`'s
+`colors` holds `white`, `black` and every shade its palette uses —
+`gray` (the slate scale, `50`…`950`, with the in-between shades the
+corrected palette needs: `320`, `340`, `450`, `470`, `480`, `490`, `550`),
+`purple`, `pink`, `red`, `amber`, `green` and `sky` — and every palette
+leaf, in `palette` and in `modes.dark.palette`, is a `color(family.shade)`
+reference (or a `palette(…)` alias): `primary.main` is `color(purple.700)`,
+`warning.contrast` is `color(white)`, dark mode's `surface.main` is
+`color(gray.950)`. A shade key is a position in the family's lightness
+order, not a promise about the value (`gray.450` sits between `400` and
+`500`). This is values only: every resolved palette custom property, light
+and dark, is byte-identical to what the literals resolved to before
+(`test/base-theme-colors.test.js` pins all 104), the contrast gate's
+result is unchanged, and the compiled theme block grows by the 45 color
+declarations the collection adds. What changes is the dependency graph:
+editing `colors.purple["700"]` now moves `primary.main`, as the guide says
+it should, and `color(white, 0.5)` or `color(black)` work with no theme of
+the project's own. The four `gray` shades the borders use are the same
+colors, written in lowercase hex now (`#cbd5e1`, not `#CBD5E1`).
+
 ### Recognized theme families
 
 `postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry
@@ -957,16 +980,18 @@ consulted before any edit-distance check, so a real `log(...)` next to
 `lg(...)` is never misread as a typo of it.
 
 `color()` is a token reference only when its first argument looks like one
-(`color(gray-300)`, `color(gray.300)`); native CSS forms — relative color
-syntax, an explicit color space — pass through untouched. The token must
-exist: `gray` is the only color collection the default theme defines, so
-`color(brand-500)` fails as `UXD_REFERENCE_MISSING` until your theme's
-`colors` defines `brand`:
+(`color(gray-300)`, `color(gray.300)`, `color(white)`); native CSS forms —
+relative color syntax, an explicit color space — pass through untouched. The
+token must exist: the default theme's `colors` holds `white`, `black` and
+the families its palette uses (`gray`, `purple`, `pink`, `red`, `amber`,
+`green`, `sky`; see "The default theme's Colors" below), so `color(brand-500)`
+fails as `UXD_REFERENCE_MISSING` until your theme's `colors` defines `brand`:
 
 ```css
 .a { color: color(from red srgb r g b / 0.5); }  /* untouched */
 .a { color: color(display-p3 1 0 0); }           /* untouched */
-.a { color: color(gray-300); }                   /* var(--uxdsl__color__gray-300) */
+.a { color: color(gray.300); }                   /* var(--uxdsl__color__gray-300) */
+.a { background: color(white, 0.5); }            /* color-mix(in srgb, var(--uxdsl__color__white) 50%, transparent) */
 .a { color: color(brand-500); }                  /* UXD_REFERENCE_MISSING: not in the default theme */
 ```
 
