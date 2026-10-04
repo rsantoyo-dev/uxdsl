@@ -13,22 +13,22 @@
   flex-direction: column;
   padding: density(2);
   border-radius: 0; /* fastest */
-  color: palette(primary-contrast);
+  color: palette(primary.contrast);
   min-width: 0;
 }
 
 .perf-card__title {
-  @ds-typo (h6);
+  @ds-typo(h6);
 }
 
 .perf-card--light {
-  background: palette(primary-light);
+  background: palette(primary.light);
 }
 
 .perf-card--main {
-  background: palette(primary-main);
+  background: palette(primary.main);
 }
 
 .perf-card--dark {
-  background: palette(primary-dark);
+  background: palette(primary.dark);
 }

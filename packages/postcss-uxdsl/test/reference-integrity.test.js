@@ -47,7 +47,7 @@ test('external providers are explicit and plain host CSS stays outside DSL valid
   // a palette family DEFAULT_THEME doesn't define is used here instead to
   // still exercise a reference that genuinely has no default.
   await postcss([plugin({ includeTheme: false, references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] } })]).process('.x { color: palette(brand-custom.main); } .y { color: var(--host); }', { from: undefined });
-  await assert.rejects(postcss([plugin({ includeTheme: false })]).process('.x { color: palette(brand-custom.main); }', { from: undefined }), /UXD_REFERENCE_MISSING/);
+  await assert.rejects(postcss([plugin({ includeTheme: false })]).process('.x { color: palette(brand-custom.main); }', { from: undefined }), /UXD_PALETTE_REFERENCE/);
 });
 test('runtime and PostCSS reject missing mandatory theme dependencies', async () => {
   const invalid = { ...theme, surfaces: { contained: { bg: 'palette(missing.main)' } } };

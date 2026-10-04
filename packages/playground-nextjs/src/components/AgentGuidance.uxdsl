@@ -6,7 +6,7 @@
 .agent-guidance {
   margin-block: 3rem;
   padding: clamp(space(5), 3vw, space(7));
-  border: 1px solid color(gray-400);
+  border: 1px solid color(gray.400);
   border-radius: 0.75rem;
   min-width: 0;
   line-height: 1.7;
@@ -54,14 +54,14 @@
 .agent-guidance pre {
   overflow-x: auto;
   padding: space(5);
-  background: color(gray-900);
-  color: color(gray-200);
+  background: color(gray.900);
+  color: color(gray.200);
   border-radius: 0.5rem;
   font-size: 0.85rem;
 }
 
 .agent-guidance blockquote {
-  border-inline-start: 3px solid color(gray-400);
+  border-inline-start: 3px solid color(gray.400);
   padding-inline-start: space(5);
   margin-block: space(5);
 }

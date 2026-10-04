@@ -60,7 +60,8 @@ async function main() {
   config({ theme: { fonts: { families: { ui: 'var(--font-geist-sans, Arial, sans-serif)' } } } });
   command('build');
   write('src/uxdsl-entry.uxdsl', '.bad { color: palette(not-defined.main); }');
-  assert.throws(() => command('build'), error => /UXD_REFERENCE_MISSING/.test(String(error.stderr)));
+  // Stability phase 3: a token function is checked at rewrite time with its family's code.
+  assert.throws(() => command('build'), error => /UXD_PALETTE_REFERENCE/.test(String(error.stderr)));
   // Stability phase 3 replaced the beta.2 checks of theme-manifest.json and the
   // legacy theme/default-* files (both removed) with their successors: the two
   // JSON files are explicit exports and the only theme files the tarball ships.

@@ -373,6 +373,101 @@ interleaved `all` reset, or an interleaved nested rule/at-rule such as
 
 ---
 
+## The canonical grammar (token functions and directives)
+
+Stability phase 3 (audit decision DE-5) left exactly one spelling for each
+construct. Everything the compiler accepts is listed here; anything else is a
+located `UXD_*` error naming the grammar — never text that reaches CSS.
+
+**Token functions**, in a declaration or a theme value:
+
+```text
+space(k)   density(k)   radius(k | pill | circle)   border(k)   shadow(k)
+palette(family[.variant][, alpha])      color(family[.shade][, alpha])
+```
+
+- Exactly one argument. `border(1, red, dashed)` is `UXD_EDGE_ARGUMENT` (it used
+  to drop the extra arguments quietly); `radius(2, 3)` is `UXD_EDGE_ARGUMENT`,
+  `space(4, 0.5)` is `UXD_SPACE_ARGUMENT`, `density(4, 2)` is
+  `UXD_DENSITY_ARGUMENT`, `shadow(1, 2)` is `UXD_SHADOW_ARGUMENT`. To change a
+  border's color or style locally, write `border: border(1)` and the
+  `border-color`/`border-style` longhands after it.
+- An optional alpha on `palette()`/`color()` only, a number from 0 to 1
+  (`UXD_TOKEN_ALPHA` otherwise); a third argument is `UXD_PALETTE_ARGUMENT`/
+  `UXD_COLOR_ARGUMENT`.
+- A key is a bare word: `space("1")` is `UXD_TOKEN_KEY`.
+- `family.variant` is the one spelling of a Palette or Color entry;
+  `palette(primary)` means `palette(primary.main)`. The former dashed spelling
+  is `UXD_PALETTE_SYNTAX`/`UXD_COLOR_SYNTAX` with the dotted form to write
+  (`palette(primary-main)` → `palette(primary.main)`, `palette(text-primary)` →
+  `palette(text.primary)`, `color(gray-300)` → `color(gray.300)`), on both CSS
+  paths. A family whose own name contains a dash stays expressible as written:
+  with `palette: { "text-primary": { … } }`, `palette(text-primary)` is that
+  family's `main`.
+- Every reference is checked when the declaration is rewritten, against the
+  effective theme (plus `references.externalTokens` and the tokens declared by
+  `references.css`), with the family's own code and a "did you mean":
+  `UXD_SPACE_REFERENCE`, `UXD_DENSITY_REFERENCE`, `UXD_EDGE_REFERENCE`,
+  `UXD_SHADOW_REFERENCE`, `UXD_PALETTE_REFERENCE` ("`primary` has: main, light,
+  dark, contrast. Did you mean "main"?"), `UXD_COLOR_REFERENCE`. This holds
+  whatever `references.mode` says; the reference pass over the emitted
+  stylesheet (`UXD_REFERENCE_MISSING`) is the second net, for a `var()` an
+  author wrote by hand next to a token and for theme values.
+- Names are case-insensitive and normalized: `Space(1)`, `PALETTE(primary)`,
+  `MD(2rem)` and `RADIUS(PILL)` compile exactly like their lowercase forms;
+  they no longer pass through as unknown functions.
+
+**Directives**, each a direct child of the rule it styles:
+
+```text
+@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])
+@ds-button(role [tone] [size] [radius(k)] [shadow(k)])
+@ds-input(role [tone] [size] [radius(k)] [shadow(k)])
+@ds-typo(role)
+```
+
+- Parentheses directly after the name, arguments separated by whitespace, the
+  role first. `@ds-surface (contained)`, `@ds-surface contained;`,
+  `@ds-surface(contained, primary, 2)`, `@ds-surface("contained")`,
+  `@ds-surface(2 primary contained)`, a second tone, a second size, a repeated
+  `radius()`/`shadow()`, `density(0)` as an argument, or `!important` on the
+  directive are `UXD_SURFACE_ARGUMENT`/`UXD_BUTTON_ARGUMENT`/
+  `UXD_INPUT_ARGUMENT`/`UXD_TYPO_ARGUMENT`, each message quoting the grammar.
+  Letter case and the whitespace inside the parentheses do not matter.
+- The role must exist (`UXD_SURFACE_REFERENCE`, `UXD_BUTTON_ROLE`,
+  `UXD_INPUT_ROLE`, `UXD_TYPO_REFERENCE`, each listing the roles that do). A
+  tone written in the role's position says so: "`light` is a tone, not a role;
+  the role comes first".
+- A tone is validated with `getToneFamilies`: `@ds-surface(contained text)` is
+  `UXD_SURFACE_TONE: "text" is not a tone; a tone is a Palette family with
+  main, dark and contrast: primary, secondary, …`.
+- A second `@ds-button` or `@ds-input` in the same rule — the two would emit
+  competing sets of states — is `UXD_DIRECTIVE_DUPLICATE`, located at the second
+  one. A repeated `@ds-surface` or `@ds-typo`, like a plain declaration after a
+  directive, is ordinary cascade: the later one wins.
+
+### Codemod: `scripts/codemod-canonical-grammar.js`
+
+The package ships a codemod that rewrites the removed spellings to the
+canonical ones — `rounded()`/`elevation()`/`radius(full)`, dashed
+`palette()`/`color()` arguments, and the lax directive forms (a space before
+the parentheses, missing parentheses, commas, quotes):
+
+```sh
+node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js --theme uxdsl.theme.json src
+node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js --write --theme uxdsl.theme.json src
+```
+
+Without `--write` it only reports. A dashed Palette/Color argument is rewritten
+only when the split is unambiguous against the theme (the packaged base merged
+with `--theme`); a family whose own name contains a dash, an ambiguous split and
+`densities(…)` are reported for a decision by hand. It walks `.uxdsl`, `.css`,
+`.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`, `.md` and `.json` files and skips
+`node_modules`, `dist` and `.next`. It rewrites prose too, so review a
+documentation file it touches.
+
+---
+
 ## Theme values: one grammar, both paths (`tokenValueToCss`)
 
 Every string value in the theme JSON — in every family, whichever path compiles
@@ -395,9 +490,10 @@ it — is read by one grammar:
 
 So a Palette value may say `palette(surface.contrast)` or `color(gray.300)` just
 as a Surface field may say `radius(2)`; the compiled variable name is never
-something you have to know to write a theme. Whether the token *exists* is the
-reference pass's question (`UXD_REFERENCE_MISSING`), asked of the emitted
-stylesheet on both paths.
+something you have to know to write a theme. Whether a theme value's token
+*exists* is the reference pass's question (`UXD_REFERENCE_MISSING`), asked of
+the emitted stylesheet on both paths; an author's declaration is checked
+earlier, when it is rewritten (see "The canonical grammar" above).
 
 Before stability phase 1 (audit finding T1) only the preset families resolved
 these functions; a Palette, Color, Spacing or `fonts.families` value was emitted
@@ -927,17 +1023,16 @@ consulted before any edit-distance check, so a real `log(...)` next to
 `lg(...)` is never misread as a typo of it.
 
 `color()` is a token reference only when its first argument looks like one
-(`color(gray-300)`, `color(gray.300)`); native CSS forms — relative color
-syntax, an explicit color space — pass through untouched. The token must
-exist: `gray` is the only color collection the default theme defines, so
-`color(brand-500)` fails as `UXD_REFERENCE_MISSING` until your theme's
-`colors` defines `brand`:
+(`color(gray.300)`); native CSS forms — relative color syntax, an explicit
+color space — pass through untouched. The token must exist: `gray` is the
+only color collection the default theme defines, so `color(brand.500)` fails
+as `UXD_COLOR_REFERENCE` until your theme's `colors` defines `brand`:
 
 ```css
 .a { color: color(from red srgb r g b / 0.5); }  /* untouched */
 .a { color: color(display-p3 1 0 0); }           /* untouched */
-.a { color: color(gray-300); }                   /* var(--uxdsl__color__gray-300) */
-.a { color: color(brand-500); }                  /* UXD_REFERENCE_MISSING: not in the default theme */
+.a { color: color(gray.300); }                   /* var(--uxdsl__color__gray-300) */
+.a { color: color(brand.500); }                  /* UXD_COLOR_REFERENCE: not in the default theme */
 ```
 
 A `$var` holding a responsive expression expands correctly when this

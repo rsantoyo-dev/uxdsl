@@ -1,17 +1,17 @@
-import { BreakpointMap, DEFAULT_BREAKPOINTS } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { BASE_THEME } from './base-theme';
 
 // MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
 // independently-maintained literal.
 export const DEFAULT_SHADOWS: Record<string, string> = BASE_THEME.shadows as Record<string, string>;
-export interface ShadowTheme { shadows?: Record<string, string>; breakpoints?: BreakpointMap }
+export interface ShadowTheme extends TokenContext { shadows?: Record<string, string>; breakpoints?: BreakpointMap }
 // MIG-B6-13 (FEAT-008) code-review follow-up: same `keyPathPrefix` fix as
 // edges.ts's radii/borders — `{ shadows: { '1': '' } }` previously threw an
 // unlocated Error.
 export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW', 'shadows');
 export function compileShadowRules(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW');
+  return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW', theme);
 }
 export function generateShadowCss(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileShadowRules(theme, breakpoints).map(rule => {

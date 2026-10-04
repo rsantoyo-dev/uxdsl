@@ -4,7 +4,7 @@ import { generateButtonCss } from '../buttons';
 import { generateSurfaceCss } from '../surfaces';
 import { generateShadowCss } from '../shadows';
 import { generateEdgeCss } from '../edges';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, generateDensityCss, getDensityTokens } from '../language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, generateDensityCss, getDensityTokens, tokenValueToCss } from '../language';
 import { generateTypographyCss } from '../typography';
 import postcss, { Declaration } from 'postcss';
 import { enforceReferences, ReferenceOptions } from '../reference-integrity';
@@ -36,7 +36,7 @@ export function renderThemeCss(theme: Record<string, any>, breakpoints: Breakpoi
   cssContent += '\n' + generateSurfaceCss(theme, breakpoints);
   cssContent += '\n' + generateButtonCss(theme, breakpoints);
   cssContent += '\n' + generateInputCss(theme, breakpoints);
-  cssContent += '\n' + generateDensityCss(getDensityTokens(theme), breakpoints);
+  cssContent += '\n' + generateDensityCss(getDensityTokens(theme), breakpoints, ':root', 'media', (value) => tokenValueToCss(value, theme));
   return cssContent;
 }
 

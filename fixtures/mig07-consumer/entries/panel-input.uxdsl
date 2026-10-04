@@ -10,5 +10,5 @@
 }
 .hint {
   @ds-typo(caption);
-  color: palette(text-disabled);
+  color: palette(text.disabled);
 }

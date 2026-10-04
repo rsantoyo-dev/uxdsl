@@ -15,9 +15,9 @@
     justify-content: center;
     align-items: center;
     padding: density(4);
-    background: palette(surface-light);
+    background: palette(surface.light);
     border-radius: radius(2);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     min-height: 300px;
   }
 
@@ -75,7 +75,7 @@
   }
 
   .surface-card {
-    @ds-surface (outlined);
+    @ds-surface(outlined);
     padding: density(2);
     display: flex;
     flex-direction: column;
@@ -88,7 +88,7 @@
     justify-content: space-between;
     align-items: flex-start;
     padding-bottom: density(1);
-    border-bottom: 1px solid palette(neutral-light, 0.5);
+    border-bottom: 1px solid palette(neutral.light, 0.5);
   }
 
   .surface-card__title-group {
@@ -99,7 +99,7 @@
 
   .surface-card__desc {
     font-size: 0.85rem;
-    color: palette(neutral-dark);
+    color: palette(neutral.dark);
     line-height: 1.4;
     max-width: 90%;
   }
@@ -108,8 +108,8 @@
     @ds-typo(body);
     font-weight: bold;
     font-family: monospace;
-    color: palette(primary-main);
-    background: palette(primary-main, 0.1);
+    color: palette(primary.main);
+    background: palette(primary.main, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
     width: fit-content;
@@ -124,7 +124,7 @@
   .surface-doc-card {
     @ds-surface(outlined);
     padding: density(3);
-    background: palette(surface-light, 0.3);
+    background: palette(surface.light, 0.3);
   }
 
   .surface-doc-intro {
@@ -135,7 +135,7 @@
   .surface-doc-subtitle {
     font-weight: bold;
     margin-bottom: density(1);
-    color: palette(primary-dark);
+    color: palette(primary.dark);
   }
 
   .surface-doc-list {
@@ -154,15 +154,15 @@
     padding: space(2) space(4);
     font-size: 0.8rem;
     cursor: pointer;
-    background: palette(surface-light);
-    border: 1px solid palette(neutral-light);
+    background: palette(surface.light);
+    border: 1px solid palette(neutral.light);
     border-radius: radius(1);
     transition: all 0.2s ease;
   }
 
   .surface-card__edit-btn:hover {
-    border-color: palette(primary-main);
-    color: palette(primary-main);
+    border-color: palette(primary.main);
+    color: palette(primary.main);
   }
 
   .surface-card__preview {
@@ -170,7 +170,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    background: palette(neutral-light, 0.1);
+    background: palette(neutral.light, 0.1);
     border-radius: radius(1);
     padding: density(2);
   }
@@ -191,7 +191,7 @@
     gap: space(2);
     font-family: monospace;
     font-size: 0.8rem;
-    color: palette(neutral-dark);
+    color: palette(neutral.dark);
   }
 
   .surface-prop {
@@ -217,7 +217,7 @@
     gap: density(3);
     @ds-surface(outlined);
     padding: density(3);
-    background: palette(surface-light, 0.3);
+    background: palette(surface.light, 0.3);
   }
 
   .surface-playground__controls {
@@ -246,7 +246,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: palette(neutral-light, 0.1);
+    background: palette(neutral.light, 0.1);
     border-radius: radius(2);
     padding: density(4);
     min-height: 300px;
@@ -268,14 +268,14 @@
     @each $tone in $tones {
       @for $density from 0 through 5 {
         .surface-playground__box--#{$variant}-#{$tone}-#{$density} {
-          @ds-surface $variant $tone $density;
+          @ds-surface($variant $tone $density);
         }
       }
     }
     /* Handle 'none' tone */
     @for $density from 0 through 5 {
       .surface-playground__box--#{$variant}-none-#{$density} {
-        @ds-surface $variant $density;
+        @ds-surface($variant $density);
       }
     }
   }

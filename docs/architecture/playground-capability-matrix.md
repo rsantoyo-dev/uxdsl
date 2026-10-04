@@ -45,7 +45,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `ds-button` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
+| `ds-button` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/ButtonDocumentation.tsx` |
 | `ds-input` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `ds-surface` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 | `ds-typo` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/not-found.uxdsl` |
@@ -78,7 +78,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `borders` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
 | `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `buttons` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
+| `buttons` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/ButtonDocumentation.tsx` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `fonts` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/layout.uxdsl` |
@@ -95,13 +95,13 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `button.contained` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
-| `button.flat` | live | live | `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
-| `button.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/DemoProductivity.uxdsl` |
+| `button.contained` | live | live | `src/app/page.uxdsl`, `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl` |
+| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/HomeInteractiveDemos.uxdsl` |
+| `button.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/DemoDensity.uxdsl` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
-| `surface.contained` | live | live | `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoProductivity.uxdsl` |
+| `surface.contained` | live | live | `src/app/not-found.uxdsl`, `src/app/page.uxdsl`, `src/app/theming/page.uxdsl` |
 | `surface.flat` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 

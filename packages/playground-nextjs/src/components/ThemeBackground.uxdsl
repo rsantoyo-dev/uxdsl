@@ -6,7 +6,7 @@
   z-index: 0; /* Behind content but check parent context */
   overflow: hidden;
   pointer-events: none;
-  background: palette(surface-main);
+  background: palette(surface.main);
 }
 
 .theme-background-image {
@@ -25,7 +25,7 @@
   transform: translate(-50%, -50%);
   font-family: var(--uxdsl__font__code, monospace);
   font-size: 0.75rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   z-index: 1;
   opacity: 0.8;
   animation: pulse 1.5s ease-in-out infinite;
@@ -36,7 +36,7 @@
 .theme-background-tint {
   position: absolute;
   inset: 0;
-  background: palette(primary-main);
+  background: palette(primary.main);
   opacity: 0.5; 
   mix-blend-mode: color;
   z-index: 2;
@@ -47,9 +47,9 @@
   inset: 0;
   background: linear-gradient(
     to bottom,
-    palette(surface-light, 0.5) 0%, /* Reduced top opacity */
-    palette(surface-main, 0.05) 50%, /* Much lower middle opacity */
-    palette(surface-main, 0.5) 100% /* Reduced bottom opacity */
+    palette(surface.light, 0.5) 0%, /* Reduced top opacity */
+    palette(surface.main, 0.05) 50%, /* Much lower middle opacity */
+    palette(surface.main, 0.5) 100% /* Reduced bottom opacity */
   );
   z-index: 3;
 }

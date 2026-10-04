@@ -229,24 +229,24 @@
     "contained": {
       "padding": "density(2)",
       "radius": "radius(2)",
-      "bg": "palette(surface-main)",
-      "color": "palette(surface-contrast)",
-      "border": "1px solid palette(surface-dark)",
+      "bg": "palette(surface.main)",
+      "color": "palette(surface.contrast)",
+      "border": "1px solid palette(surface.dark)",
       "shadow": "shadow(1)"
     },
     "outlined": {
       "padding": "density(2)",
       "radius": "radius(2)",
       "bg": "transparent",
-      "color": "palette(surface-contrast)",
-      "border": "1px solid palette(neutral-main)",
+      "color": "palette(surface.contrast)",
+      "border": "1px solid palette(neutral.main)",
       "shadow": "none"
     },
     "flat": {
       "padding": "density(2)",
       "radius": "radius(2)",
       "bg": "transparent",
-      "color": "palette(surface-contrast)",
+      "color": "palette(surface.contrast)",
       "border": "none",
       "shadow": "none"
     }

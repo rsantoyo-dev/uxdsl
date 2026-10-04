@@ -34,8 +34,8 @@ export function ButtonDocumentation() {
       "surface": "contained",
       "base": { "padding": "density(2)" },
       "states": {
-        "hover": { "bg": "palette(primary-dark)" },
-        "focusvisible": { "outline": "2px solid palette(primary-main)" }
+        "hover": { "bg": "palette(primary.dark)" },
+        "focusvisible": { "outline": "2px solid palette(primary.main)" }
       }
     }
   }

@@ -215,7 +215,7 @@ test('MIG-B6-19: discoverTheme: false keeps validating against the built-in defa
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
-    /UXD_REFERENCE_MISSING/
+    /UXD_PALETTE_REFERENCE/
   );
 });
 
@@ -227,7 +227,7 @@ test('MIG-B6-19: an explicit theme option always wins over discovery, even an em
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
-    /UXD_REFERENCE_MISSING/
+    /UXD_PALETTE_REFERENCE/
   );
 });
 
@@ -248,7 +248,7 @@ test('MIG-B6-19: two different configRoots processed in the same process do not 
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
-    /UXD_REFERENCE_MISSING/
+    /UXD_PALETTE_REFERENCE/
   );
 });
 
@@ -263,7 +263,7 @@ test('MIG-B6-19: the same plugin instance re-discovers a theme edited on disk be
   fs.writeFileSync(themeFile, 'module.exports = {};');
   await assert.rejects(
     postcss([instance]).process('.a { color: palette(reviewonlybrand); }', { from: undefined }),
-    /UXD_REFERENCE_MISSING/
+    /UXD_PALETTE_REFERENCE/
   );
 });
 

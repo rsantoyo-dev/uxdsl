@@ -18,13 +18,13 @@
     position: relative;
     
     /* Futuristic left border marker */
-    border-left: 2px solid palette(neutral-light);
+    border-left: 2px solid palette(neutral.light);
     padding-left: density(4);
     transition: all 0.3s ease;
   }
 
   .step-card:hover {
-    border-left-color: palette(primary-main);
+    border-left-color: palette(primary.main);
   }
 
   .step-header {
@@ -36,7 +36,7 @@
   .step-number {
     /* Sober typographic number */
     @ds-typo(h6);
-    color: palette(secondary-main); /* Secondary accent */
+    color: palette(secondary.main); /* Secondary accent */
     font-family: font(code);
     font-weight: 700; 
     line-height: 1;
@@ -46,13 +46,13 @@
     @ds-typo(h5);
     margin: 0;
     font-weight: 600;
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
     letter-spacing: -0.5px;
   }
 
   .step-desc {
     @ds-typo(body);
-    color: palette(surface-contrast); /* Full contrast */
+    color: palette(surface.contrast); /* Full contrast */
     font-weight: 400; /* Ensure it's not bold, standard body text */
     max-width: 60ch;
     margin: 0;
@@ -65,19 +65,19 @@
     display: flex;
     gap: density(2);
     align-items: flex-start;
-    background: palette(surface-light, 0.5);
-    border: 1px dashed palette(neutral-main);
+    background: palette(surface.light, 0.5);
+    border: 1px dashed palette(neutral.main);
   }
 
   .info-icon {
-    color: palette(primary-main);
+    color: palette(primary.main);
     margin-top: 2px;
   }
 
   .info-text {
     @ds-typo(body-sm);
     margin: 0;
-    color: palette(surface-contrast, 0.8);
+    color: palette(surface.contrast, 0.8);
   }
   
   .code-wrapper {
@@ -86,11 +86,11 @@
   }
 
   .warning-blockquote {
-    @ds-surface(outlined, warning);
+    @ds-surface(outlined warning);
     padding: density(4);
     border-radius: radius(1);
     margin-bottom: density(8);
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 
   /* MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. #646cff is Vite's own brand color
@@ -125,7 +125,7 @@
   }
 
   .section-rule {
-    border-color: palette(neutral-main);
+    border-color: palette(neutral.main);
     opacity: 0.3;
     margin: space(7) 0;
   }
@@ -135,7 +135,7 @@
   }
 
   .inline-link {
-    color: palette(primary-main);
+    color: palette(primary.main);
     text-decoration: underline;
   }
 }

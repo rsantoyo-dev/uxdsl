@@ -149,7 +149,7 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
   write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir, discoverTheme: false });
-  await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_REFERENCE_MISSING/);
+  await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_PALETTE_REFERENCE/);
 });
 
 test('MIG-B6-20: an explicit theme option always wins over discovery', async () => {
@@ -157,7 +157,7 @@ test('MIG-B6-20: an explicit theme option always wins over discovery', async () 
   write(dir, 'uxdsl.theme.config.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
   const plugin = uxdsl({ includeTheme: false, configRoot: dir, theme: {} });
-  await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_REFERENCE_MISSING/);
+  await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_PALETTE_REFERENCE/);
 });
 
 test('MIG-B6-20: compile warnings surface through this.warn(), not swallowed', async () => {

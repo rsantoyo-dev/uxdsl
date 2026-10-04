@@ -12,9 +12,9 @@
     /* min-height removed to adapt to content */
     overflow: auto; 
     padding: density(4);
-    background: palette(surface-light);
+    background: palette(surface.light);
     border-radius: radius(2);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     position: relative;
     transition: all 0.3s ease; /* Smooth transition when resizing */
   }
@@ -29,7 +29,7 @@
   .concentric-content {
     position: relative;
     z-index: 100;
-    background: palette(surface-main);
+    background: palette(surface.main);
     padding: density(2);
     border-radius: radius(1);
     display: flex;
@@ -40,15 +40,15 @@
     box-shadow: shadow(2);
     @ds-typo(caption);
     font-weight: bold;
-    color: palette(primary-dark);
-    border: 1px solid palette(neutral-light);
+    color: palette(primary.dark);
+    border: 1px solid palette(neutral.light);
   }
 
   .concentric-ring {
     position: absolute;
     border-radius: radius(2);
-    border: 1px solid palette(primary-main, 0.2);
-    background: palette(primary-main, 0.03); /* Very subtle fill */
+    border: 1px solid palette(primary.main, 0.2);
+    background: palette(primary.main, 0.03); /* Very subtle fill */
     pointer-events: auto; /* Allow hovering */
     transition: all 0.2s ease;
     display: flex;
@@ -59,15 +59,15 @@
 
   .concentric-ring:hover,
   .concentric-ring.is-hovered {
-    border-color: palette(secondary-main);
-    background: palette(secondary-main, 0.1);
+    border-color: palette(secondary.main);
+    background: palette(secondary.main, 0.1);
     /* No z-index boost: it let outer rings obscure inner rings on hover. */
-    box-shadow: 0 0 0 1px palette(secondary-main);
+    box-shadow: 0 0 0 1px palette(secondary.main);
   }
 
   .ring-label {
-    background: palette(secondary-main);
-    color: palette(secondary-contrast);
+    background: palette(secondary.main);
+    color: palette(secondary.contrast);
     font-size: 0.6rem;
     padding: 1px 4px;
     border-radius: 0 0 4px 4px;
@@ -111,7 +111,7 @@
   }
 
   .spacing-card:hover {
-    border-color: palette(primary-main);
+    border-color: palette(primary.main);
     box-shadow: shadow(1);
   }
 
@@ -120,7 +120,7 @@
     @ds-typo(subtitle2);
     font-family: monospace;
     font-weight: bold;
-    color: palette(primary-dark);
+    color: palette(primary.dark);
   }
 
   .spacing-card__input-wrapper {
@@ -134,16 +134,16 @@
     max-width: xs(120px) md(200px);
     padding: space(1) density(1);
     background: transparent;
-    border: 1px solid palette(neutral-main);
+    border: 1px solid palette(neutral.main);
     border-radius: radius(1);
     font-family: monospace;
     font-size: 0.85rem;
     text-align: xs(right) md(left);
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
   }
 
   .spacing-card__input:focus {
-    border-color: palette(primary-main);
+    border-color: palette(primary.main);
     outline: none;
   }
 
@@ -151,7 +151,7 @@
     grid-area: sep;
     display: md(none);
     height: 1px;
-    background: palette(neutral-light, 0.5);
+    background: palette(neutral.light, 0.5);
     width: 100%;
     margin: space(1) 0;
   }
@@ -168,10 +168,10 @@
   }
 
   .spacing-box {
-    background: palette(primary-main);
+    background: palette(primary.main);
     border-radius: 2px;
     /* Box shadow to make it visible if white */
-    box-shadow: 0 0 0 1px palette(primary-main, 0.2);
+    box-shadow: 0 0 0 1px palette(primary.main, 0.2);
   }
 
   /* Generate size classes for all 16 levels */

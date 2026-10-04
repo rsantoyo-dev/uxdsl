@@ -82,7 +82,7 @@ const STEPS: Step[] = [
   { group: 'Theme API', call: `loadPersistedTheme({ key: ${KEY} })`, note: 'The saved override comes back, validated like any patch.', run: (lab) => lab.api.loadPersistedTheme({ key: lab.storageKey }) },
   { group: 'Theme API', call: 'getAppliedTheme()', note: 'What is applied now, as a copy.', run: (lab) => { const t = lab.api.getAppliedTheme(); return { families: Object.keys(t).length, 'palette.primary.main': t?.palette?.primary?.main } } },
   { group: 'Theme API', call: `resetTheme({ clearPersist: true, key: ${KEY} })`, note: 'Reset and forget the saved override.', run: (lab) => lab.api.resetTheme({ clearPersist: true, key: lab.storageKey }) },
-  { group: 'One token at a time — still applyTheme', call: `applyTheme({ colors: { gray: { 300: '${AMBER}' } } })`, note: 'A Color token: only color(gray-300) consumers follow. Where updateColor used to write an inline property, this replaces the custom property in the managed stylesheet.', run: (lab) => lab.api.applyTheme({ colors: { gray: { 300: AMBER } } }) },
+  { group: 'One token at a time — still applyTheme', call: `applyTheme({ colors: { gray: { 300: '${AMBER}' } } })`, note: 'A Color token: only color(gray.300) consumers follow. Where updateColor used to write an inline property, this replaces the custom property in the managed stylesheet.', run: (lab) => lab.api.applyTheme({ colors: { gray: { 300: AMBER } } }) },
   { group: 'One token at a time — still applyTheme', call: `applyTheme({ spacing: { 5: '2rem' } })`, note: 'density(4) is space(5) at this width, so the Density box grows; the space(4) box does not.', run: (lab) => lab.api.applyTheme({ spacing: { 5: '2rem' } }) },
 ]
 
@@ -158,8 +158,8 @@ export function RuntimeSandbox() {
           <dl className="cap-facts">
             <dt>Sandbox width</dt><dd>{probe.width}px</dd>
             <dt>Computed <code>--uxdsl__palette__primary-main</code></dt><dd><code>{probe.primaryMain}</code></dd>
-            <dt><code>palette(primary-main)</code> swatch</dt><dd><code>{probe.paletteSwatch}</code></dd>
-            <dt><code>color(gray-300)</code> swatch</dt><dd><code>{probe.colorSwatch}</code></dd>
+            <dt><code>palette(primary.main)</code> swatch</dt><dd><code>{probe.paletteSwatch}</code></dd>
+            <dt><code>color(gray.300)</code> swatch</dt><dd><code>{probe.colorSwatch}</code></dd>
             <dt><code>space(4)</code> / <code>density(4)</code> padding</dt><dd><code>{probe.spacePadding}</code> / <code>{probe.densityPadding}</code></dd>
             <dt>Layout <code>flex-direction</code></dt><dd><code>{probe.layoutDirection}</code></dd>
             <dt><code>getAppliedTheme().breakpoints.md</code></dt><dd><code>{probe.appliedMd ?? '—'}</code></dd>

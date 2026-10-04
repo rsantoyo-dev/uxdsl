@@ -15,7 +15,7 @@
 
   .section-title {
     font: font(h4);
-    color: palette(text-main);
+    color: palette(text.main);
     margin-bottom: space(2);
   }
 
@@ -30,25 +30,25 @@
     flex-direction: column;
     gap: space(2);
     padding: space(4);
-    background: palette(surface-main);
-    border: border(1, palette(neutral-main));
+    background: palette(surface.main);
+    border: border(1);
     border-radius: radius(2);
   }
 
   .preview-box {
     width: 100%;
     height: 100px;
-    background: palette(surface-main);
+    background: palette(surface.main);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font: font(body-sm);
   }
 
   .label {
     font: font(body-sm);
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font-family: monospace;
   }
 
@@ -56,10 +56,10 @@
     display: xs(flex) md(grid);
     flex-direction: column;
     grid-template-columns: md(300px 1fr);
-    background: palette(surface-main);
+    background: palette(surface.main);
     padding: space(6);
     border-radius: radius(3);
-    border: border(1, palette(neutral-main));
+    border: border(1);
   }
 
   .controls {
@@ -77,7 +77,7 @@
 
   .control-label {
     font: font(label);
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   .select {
@@ -98,7 +98,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: palette(surface-light);
+    background: palette(surface.light);
     border-radius: radius(2);
     min-height: 300px;
     padding: space(8);
@@ -107,11 +107,11 @@
   .demo-element {
     width: 200px;
     height: 200px;
-    background: palette(surface-main);
+    background: palette(surface.main);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: palette(text-main);
+    color: palette(text.main);
     font-weight: bold;
     transition: all 0.3s ease;
   }
@@ -119,6 +119,6 @@
   .demo-code-block {
     border-radius: radius(2);
     overflow: hidden;
-    border: border(1, palette(neutral-main));
+    border: border(1);
   }
 }

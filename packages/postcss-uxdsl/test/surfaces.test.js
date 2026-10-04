@@ -71,8 +71,12 @@ test('Surface backgrounds preserve native gradients and palette opacity',()=>{
  assert(css.includes('linear-gradient(color-mix(in srgb, var(--uxdsl__palette__primary-main) 50%, transparent), transparent)'));
 });
 
-test('legacy tone-only invocation uses a configured palette family',async()=>{
- const output=await compile('.x { @ds-surface(light, 2); }',{theme:withBaseline({palette:{...BASE_PALETTE,light:{main:'white',contrast:'black'}}})});
+test('a tone is a Palette family with main, dark and contrast, named after the role',async()=>{
+ const theme=withBaseline({palette:{...BASE_PALETTE,light:{main:'white',dark:'gray',contrast:'black'}}});
+ const output=await compile('.x { @ds-surface(contained light 2); }',{theme});
  assert(output.css.includes('background: var(--uxdsl__palette__light-main)'));
  assert(output.css.includes('padding: var(--uxdsl__density__2)'));
+ // The former tone-only and comma-separated forms name the grammar instead of guessing a role.
+ await assert.rejects(()=>compile('.x { @ds-surface(light 2); }',{theme}),/UXD_SURFACE_REFERENCE: "light" is a tone, not a role; the role comes first/);
+ await assert.rejects(()=>compile('.x { @ds-surface(contained, light); }',{theme}),/UXD_SURFACE_ARGUMENT/);
 });

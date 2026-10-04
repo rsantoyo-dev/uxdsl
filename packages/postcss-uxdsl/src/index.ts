@@ -5,10 +5,11 @@ import { getInputTokens, inputComponentCss, parseInputArguments } from './inputs
 import { getButtonTokens, buttonComponentCss, parseButtonArguments } from './buttons';
 import { getSurfaceTokens, surfaceDeclarations, parseSurfaceArguments } from './surfaces';
 import { getShadowTokens } from './shadows';
-import { getEdgeTokens, RADIUS_KEYWORDS } from './edges';
-import { buildVarName, buildNamespacedVarName } from './naming';
+import { getEdgeTokens, DEFAULT_BORDER_COLORS, RADIUS_KEYWORDS } from './edges';
+import { directiveInner, parseTypoArguments } from './directives';
+import { buildVarName } from './naming';
 import { resolveTheme } from './default-theme';
-import { diagnostic, locateError, missingKeyMessage, closestKey, editDistance } from './diagnostics';
+import { diagnostic, locateError, missingKeyMessage, closestKey, formatKeyList, editDistance } from './diagnostics';
 import { discoverThemeSync } from './config';
 // The UXDSL PostCSS plugin.
 //
@@ -43,7 +44,8 @@ import { discoverThemeSync } from './config';
 import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { resolveResponsiveValue, getDensityTokens, tokenValueToCss, removedSyntaxMessage, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { resolveResponsiveValue, getDensityTokens, removedSyntaxMessage, parseTokenReference, tokenReferenceToCss, TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import type { TokenReference } from './language';
 import { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
 import type { UxdslOptions } from './types';
@@ -150,6 +152,17 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       const bps: Record<string, number> = { ...DEFAULT_BPS, ...effectiveTheme.breakpoints };
       const ordered = Object.entries(bps).map(([name, px]) => ({ name, px })).sort((a, b) => a.px - b.px);
       const bpNames = new Set(Object.keys(bps));
+      const KNOWN_FUNCTION_NAMES = new Set((KNOWN_CSS_FUNCTIONS as readonly string[]).map((name) => name.toLowerCase()));
+      /** The top-level, comma-separated arguments of a function node, as written. */
+      const tokenArguments = (node: any): string[] => {
+        const groups: any[][] = [[]];
+        for (const child of node.nodes) {
+          if (child.type === 'div' && child.value === ',') groups.push([]);
+          else groups[groups.length - 1].push(child);
+        }
+        const args = groups.map((group) => valueParser.stringify(group).trim());
+        return args.length === 1 && args[0] === '' ? [] : args;
+      };
       const inheritSource = (node: any, source: any) => {
         node.source = source;
         for (const child of node.nodes || []) inheritSource(child, source);
@@ -195,80 +208,6 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
           'shadow-<k> under "shadows", and surface-/button-/input-<role> packs under "surfaces", "buttons" and "inputs".'
         ), at);
       });
-      // Directive arguments are bare words. A quoted argument is an error
-      // rather than something to unwrap: `@ds-typo("h1")` is not `@ds-typo(h1)`.
-      const DIRECTIVE_ARGUMENT_CODES: Record<string, string> = { 'ds-typo': 'UXD_TYPO_ARGUMENT', 'ds-surface': 'UXD_SURFACE_ARGUMENT', 'ds-button': 'UXD_BUTTON_ARGUMENT', 'ds-input': 'UXD_INPUT_ARGUMENT' };
-      const rejectQuotedArguments = (at: AtRule) => {
-        if (!/["']/.test(at.params)) return;
-        throw locateError(diagnostic(
-          `${DIRECTIVE_ARGUMENT_CODES[at.name.toLowerCase()]}: quoted arguments are not part of the directive grammar; ` +
-          `write @${at.name}${at.params.replace(/["']/g, '')} without quotes.`
-        ), at);
-      };
-      // Selector-scoped typography directives.
-      // MIG-B6-14 (FEAT-008): only @ds-typo(h1) is supported — @ds(h1) and
-      // @ds-h1 were never implemented despite an older comment claiming
-      // otherwise; both now fall through to the final pass below and fail
-      // as UXD_DIRECTIVE_UNKNOWN instead of reaching CSS untouched.
-      root.walkRules((rule) => {
-        const applyTypo = (at: any, variantRaw: string) => {
-          rejectQuotedArguments(at);
-          let tag = String(variantRaw || "").trim();
-          if (tag.startsWith("(") && tag.endsWith(")")) {
-            tag = tag.slice(1, -1).trim();
-          }
-          tag = tag.toLowerCase();
-
-          const insert = (prop: string, value: string) => {
-            at.parent.insertBefore(at, { prop, value, source: at.source });
-          };
-
-          // MIG-B6-17 (FEAT-008): emit exactly the fields the effective theme
-          // defines for this role, and nothing else. This used to emit a fixed
-          // list of 10-11 declarations whose fallbacks the theme never asked
-          // for — `margin-block-*: auto` (which absorbs free space in a flex or
-          // grid container instead of the 0 it collapses to in normal flow),
-          // `text-decoration: none` (which stripped the underline off any link
-          // it was applied to, WCAG 1.4.1), `text-transform`/`font-style`
-          // resets, and an `opacity` that could not be overridden from the
-          // theme at all, since `opacity` is not one of TYPOGRAPHY_PROPERTIES'
-          // fields. Whatever is worth keeping now lives in theme/base.json.
-          const details = (effectiveTheme?.typography_details || {}) as Record<string, Record<string, string>>;
-          const style = resolveTypographyRole(details, tag);
-          if (!style) {
-            throw locateError(
-              diagnostic(missingKeyMessage('UXD_TYPO_REFERENCE', 'ds-typo', tag, Object.keys(details))),
-              at,
-            );
-          }
-
-          // Consumer side of typography.ts's compileTypographyRules, which
-          // emits `--uxdsl__typography__<tag>-<field>` (MIG-08: one shared
-          // "typography" family, not the tag itself); `typo` composes that
-          // name the same way so definition and reference always match.
-          const typo = (field: string) => buildVarName('typography', `${tag}-${field}`);
-
-          // Iterating the property map (not the resolved style's own keys)
-          // keeps the emitted order canonical and independent of how the JSON
-          // happened to be authored, and of `default`-vs-role merge order.
-          // No literal fallback: compileTypographyRules defines a variable for
-          // every field of this same resolved set, so the reference always
-          // resolves.
-          for (const [field, cssProperty] of Object.entries(TYPOGRAPHY_CSS_PROPERTIES)) {
-            if (!Object.prototype.hasOwnProperty.call(style, field)) continue;
-            insert(cssProperty, `var(${typo(TYPOGRAPHY_PROPERTIES[field as keyof typeof TYPOGRAPHY_PROPERTIES])})`);
-          }
-
-          at.remove();
-        };
-
-        // @ds-typo(h1). MIG-B6-14 (FEAT-008): only a direct child of `rule`,
-        // matching @ds-surface/@ds-button/@ds-input below — otherwise a
-        // @ds-typo nested inside a @media/@supports under this rule would
-        // be silently applied as if it were responsive, instead of being
-        // left for the final UXD_DIRECTIVE_CONTEXT pass to reject.
-        rule.walkAtRules("ds-typo", (at) => { if (at.parent === rule) applyTypo(at, at.params || ""); });
-      });
       // Token maps are always computed so references (`shadow()`, `radius()`,
       // `density()`, `@ds-surface`/`@ds-button`/`@ds-input`) keep validating
       // and resolving against the effective theme. Only the `:root`
@@ -310,58 +249,71 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         inserted(isPrelude, blocks);
       }
 
-      // After tokens are known, expand @ds-surface and @ds-button using packs
+      // Directives: one grammar (src/directives.ts), one pass, in source
+      // order. Each directive must be a direct child of the rule it styles —
+      // anything else is left for the final UXD_DIRECTIVE_CONTEXT pass — and a
+      // rule takes each of them once: a second @ds-button, or a @ds-button
+      // next to a @ds-input, would emit two competing sets of states, so it
+      // is UXD_DIRECTIVE_DUPLICATE at the second occurrence.
+      const expandTypo = (rule: Rule, at: AtRule) => {
+        const role = parseTypoArguments(directiveInner('ds-typo', at.params, at.raws.afterName));
+        // Exactly the fields the effective theme defines for this role, and
+        // nothing else: no literal fallbacks the theme never asked for.
+        const details = (effectiveTheme.typography_details || {}) as Record<string, Record<string, string>>;
+        const style = resolveTypographyRole(details, role);
+        if (!style) throw diagnostic(missingKeyMessage('UXD_TYPO_REFERENCE', 'ds-typo', role, Object.keys(details)));
+        // Consumer side of typography.ts's compileTypographyRules, which emits
+        // `--uxdsl__typography__<role>-<field>`; the same builder composes the
+        // name so definition and reference always match. Iterating the property
+        // map keeps the emitted order canonical whatever the JSON's own order.
+        for (const [field, cssProperty] of Object.entries(TYPOGRAPHY_CSS_PROPERTIES)) {
+          if (!Object.prototype.hasOwnProperty.call(style, field)) continue;
+          rule.insertBefore(at, { prop: cssProperty, value: `var(${buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof typeof TYPOGRAPHY_PROPERTIES]}`)})`, source: at.source });
+        }
+      };
+      const expandSurface = (rule: Rule, at: AtRule) => {
+        const { role, tone, size, radius, shadow } = parseSurfaceArguments(effectiveTheme, directiveInner('ds-surface', at.params, at.raws.afterName));
+        const props = surfaceDeclarations(effectiveTheme, role, tone, size, radius, shadow);
+        for (const [prop, value] of Object.entries(props)) rule.insertBefore(at, { prop, value, source: at.source });
+      };
+      const expandControl = (rule: Rule, at: AtRule, name: 'ds-button' | 'ds-input') => {
+        const inner = directiveInner(name, at.params, at.raws.afterName);
+        const { role, tone, size, radius, shadow } = name === 'ds-button' ? parseButtonArguments(effectiveTheme, inner) : parseInputArguments(effectiveTheme, inner);
+        const componentCss = name === 'ds-button' ? buttonComponentCss : inputComponentCss;
+        const generated = postcss.parse(componentCss(effectiveTheme, rule.selector, role, tone, size, radius, shadow));
+        const base = generated.nodes.shift() as Rule;
+        for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
+        let anchor: ChildNode = rule;
+        for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
+      };
       root.walkRules((rule) => {
-        rule.walkAtRules('ds-input', at => {
-          if (at.parent !== rule) return;
+        const seen = new Map<string, AtRule>();
+        for (const node of [...rule.nodes]) {
+          if (node.type !== 'atrule' || !/^ds-(surface|button|input|typo)$/i.test(node.name)) continue;
+          const at = node as AtRule;
+          const name = at.name.toLowerCase() as 'ds-surface' | 'ds-button' | 'ds-input' | 'ds-typo';
+          // A second control directive would emit a second, competing set of
+          // states; a surface or typography directive repeated, or followed by
+          // a declaration, is ordinary cascade (the later one wins).
+          if (name === 'ds-button' || name === 'ds-input') {
+            const earlier = seen.get('control');
+            if (earlier) {
+              throw locateError(diagnostic(
+                `UXD_DIRECTIVE_DUPLICATE: @${name}${at.params} repeats @${earlier.name}${earlier.params} in the same rule; a rule takes one @ds-button or @ds-input. ` +
+                'Choose one role, or split the selectors into two rules.'
+              ), at);
+            }
+            seen.set('control', at);
+          }
           try {
-            rejectQuotedArguments(at);
-            const { role, tone, size, radius, shadow } = parseInputArguments(effectiveTheme, at.params);
-            const generated = postcss.parse(inputComponentCss(effectiveTheme, rule.selector, role, tone, size, radius, shadow));
-            const base = generated.nodes.shift() as Rule;
-            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
-            let anchor: any = rule;
-            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
-            at.remove();
+            if (name === 'ds-typo') expandTypo(rule, at);
+            else if (name === 'ds-surface') expandSurface(rule, at);
+            else expandControl(rule, at, name);
           } catch (error) {
             throw locateError(error, at);
           }
-        });
-        // @ds-surface(variant [tone])
-        rule.walkAtRules("ds-surface", (at) => {
-          if (at.parent !== rule) return;
-          try {
-            rejectQuotedArguments(at);
-            let inner = String((at.params || "").trim());
-            if (inner.startsWith("(") && inner.endsWith(")"))
-              inner = inner.slice(1, -1).trim();
-            const { role: variant, tone: toneFamily, size: sizeToken, radius: radiusOverride, shadow: shadowOverride } = parseSurfaceArguments(effectiveTheme, inner);
-            const props = surfaceDeclarations(effectiveTheme, variant, toneFamily, sizeToken, radiusOverride, shadowOverride);
-            const insert = (prop: string, value: string) => {
-              (rule as any).insertBefore(at, { prop, value, source: at.source });
-            };
-            Object.keys(props).forEach((k) => insert(k, props[k]!));
-            at.remove();
-          } catch (error) {
-            throw locateError(error, at);
-          }
-        });
-
-        rule.walkAtRules('ds-button', at => {
-          if (at.parent !== rule) return;
-          try {
-            rejectQuotedArguments(at);
-            const { role, tone, size, radius, shadow } = parseButtonArguments(effectiveTheme, at.params);
-            const generated = postcss.parse(buttonComponentCss(effectiveTheme, rule.selector, role, tone, size, radius, shadow));
-            const base = generated.nodes.shift() as Rule;
-            for (const declaration of [...(base.nodes || [])]) rule.insertBefore(at, inheritSource(declaration, at.source));
-            let anchor: any = rule;
-            for (const state of [...generated.nodes]) { rule.parent!.insertAfter(anchor, inheritSource(state, at.source)); anchor = state; }
-            at.remove();
-          } catch (error) {
-            throw locateError(error, at);
-          }
-        });
+          at.remove();
+        }
       });
 
       // Collect root-level $vars and remove the declarations
@@ -405,55 +357,84 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         return resolveResponsiveValue(input, targetBp, bps);
       }
 
-      function rewriteFuncs(input: string, _forProp?: string): string {
+      // The author-side pass of the one value grammar: every token function
+      // is parsed by language.ts (count, key shape, alpha, dotted path) and
+      // its reference checked here against the effective theme — with the
+      // family's own code and a "did you mean" — before it is serialized. The
+      // reference-integrity pass over the emitted stylesheet stays the second
+      // net, for `var()` an author wrote by hand and for theme values.
+      const effectiveColors: Record<string, unknown> = { ...effectiveTheme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...effectiveTheme.colors?.gray } };
+      const effectivePalette: Record<string, unknown> = effectiveTheme.palette || {};
+      const effectiveSpacing: Record<string, unknown> = effectiveTheme.spacing || {};
+      const tokenContext = { palette: effectivePalette, colors: effectiveColors };
+      // A token the host guarantees (`references.externalTokens`) or another
+      // compiled entry declares (`references.css`) is as good as one the theme
+      // defines; the reference pass checks the same set, once, at the end.
+      let externalNames: Set<string> | undefined;
+      const declaredExternally = (name: string) => {
+        if (!externalNames) {
+          externalNames = new Set(effectiveReferences?.externalTokens || []);
+          for (const css of effectiveReferences?.css || []) {
+            try { postcss.parse(css).walkDecls((declaration) => { if (declaration.prop.startsWith('--')) externalNames!.add(declaration.prop); }); } catch { /* an unparsable dependency is the reference pass's own error */ }
+          }
+        }
+        return externalNames.has(name);
+      };
+      const checkReference = (reference: TokenReference, call: string) => {
+        const { kind, key } = reference;
+        if (declaredExternally(buildVarName(kind, key))) return;
+        if (kind === 'space' && !Object.prototype.hasOwnProperty.call(effectiveSpacing, key)) throw diagnostic(missingKeyMessage('UXD_SPACE_REFERENCE', 'space', key, Object.keys(effectiveSpacing)), call);
+        if (kind === 'density' && !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), call);
+        if (kind === 'radius' && !RADIUS_KEYWORDS[key] && !Object.prototype.hasOwnProperty.call(edgeTokens.radii, key)) {
+          // `full` was an alias of `pill`; a theme that defines its own `radii.full` passed above.
+          throw diagnostic(key === 'full' ? REMOVED_RADIUS_FULL : missingKeyMessage('UXD_EDGE_REFERENCE', 'radius', key, [...Object.keys(edgeTokens.radii), ...Object.keys(RADIUS_KEYWORDS)]), call);
+        }
+        if (kind === 'border' && !Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', 'border', key, Object.keys(edgeTokens.borders)), call);
+        if (kind === 'shadow' && !Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw diagnostic(missingKeyMessage('UXD_SHADOW_REFERENCE', 'shadow', key, Object.keys(effectiveShadows)), call);
+        if (kind === 'palette' || kind === 'color') {
+          const map = kind === 'palette' ? effectivePalette : effectiveColors;
+          const code = kind === 'palette' ? 'UXD_PALETTE_REFERENCE' : 'UXD_COLOR_REFERENCE';
+          const family = reference.family!;
+          const entry = map[family];
+          const path = reference.written;
+          if (entry === undefined) {
+            const suggestion = closestKey(family, Object.keys(map));
+            throw diagnostic(`${code}: ${kind}(${path}) does not exist; available families: ${formatKeyList(Object.keys(map))}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`, call);
+          }
+          if (typeof entry !== 'object' || entry === null) {
+            if (reference.variant) throw diagnostic(`${code}: ${kind}(${path}) does not exist; ${family} is a standalone color, written ${kind}(${family}).`, call);
+            return;
+          }
+          if (!Object.prototype.hasOwnProperty.call(entry, reference.variant!)) {
+            const variants = Object.keys(entry as Record<string, unknown>);
+            const suggestion = closestKey(reference.variant!, variants);
+            throw diagnostic(`${code}: ${kind}(${path}) does not exist; ${family} has: ${variants.join(', ')}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`, call);
+          }
+        }
+      };
+      function rewriteFuncs(input: string): string {
         const p = valueParser(input);
         p.walk((node: any) => {
           if (node.type !== 'function') return;
+          const name = String(node.value).toLowerCase();
+          const call = valueParser.stringify(node);
           // A spelling the language no longer has: fail, naming the replacement.
-          const removed = removedSyntaxMessage(node.value, valueParser.stringify(node.nodes));
-          if (removed) throw diagnostic(removed, valueParser.stringify(node));
-          if (node.value === 'density') {
-            const key = valueParser.stringify(node.nodes).trim();
-            if (!/^[\w-]+$/.test(key) || !Object.prototype.hasOwnProperty.call(effectiveDensities, key)) {
-              throw diagnostic(missingKeyMessage('UXD_DENSITY_REFERENCE', 'density', key, Object.keys(effectiveDensities)), valueParser.stringify(node));
-            }
-            node.type = 'word'; node.value = `var(${buildVarName('density', key)})`; return;
+          const removed = removedSyntaxMessage(name, valueParser.stringify(node.nodes));
+          if (removed) throw diagnostic(removed, call);
+          if (name === 'tone') {
+            throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', call);
           }
-          if (node.value === 'radius') {
-            const key = valueParser.stringify(node.nodes).trim();
-            if (RADIUS_KEYWORDS[key] || Object.prototype.hasOwnProperty.call(edgeTokens.radii, key)) {
-              node.type = 'word';
-              node.value = RADIUS_KEYWORDS[key] || `var(${buildVarName('radius', key)})`;
-              return;
-            }
-            // `full` was an alias of `pill`; a theme that defines its own
-            // `radii.full` took the branch above.
-            if (key === 'full') throw diagnostic(REMOVED_RADIUS_FULL, valueParser.stringify(node));
-            throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', node.value, key, [...Object.keys(edgeTokens.radii), ...Object.keys(RADIUS_KEYWORDS)]), valueParser.stringify(node));
-          }
-          if (node.value === 'shadow') {
-            const key = valueParser.stringify(node.nodes).trim();
-            if (!Object.prototype.hasOwnProperty.call(effectiveShadows, key)) throw diagnostic(missingKeyMessage('UXD_SHADOW_REFERENCE', node.value, key, Object.keys(effectiveShadows)), valueParser.stringify(node));
-            node.type = 'word';
-            node.value = `var(${buildVarName('shadow', key)})`;
-            return;
-          }
-          // Border helper: border(n[, color][, style])
-          if (node.value === 'border') {
-            const key = valueParser.stringify(node.nodes).split(',')[0].trim();
-            if (!Object.prototype.hasOwnProperty.call(edgeTokens.borders, key)) throw diagnostic(missingKeyMessage('UXD_EDGE_REFERENCE', 'border', key, Object.keys(edgeTokens.borders)), valueParser.stringify(node));
-            node.type = 'word';
-            node.value = `var(${buildVarName('border', key)})`;
-            return;
-          }
-          if (node.value === 'tone') {
-            throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', valueParser.stringify(node));
-          }
-          if (['palette', 'color', 'space'].includes(node.value)) {
-            node.type = 'word';
-            node.value = tokenValueToCss(`${node.value}(${valueParser.stringify(node.nodes)})`);
-            return false;
-          }
+          if (!Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, name)) return;
+          const kind = TOKEN_FUNCTIONS[name];
+          const args = tokenArguments(node);
+          // A native `color(display-p3 …)`/`color(from …)` is not a token.
+          if (kind === 'color' && args.length && !/^[\w.-]+$/.test(args[0])) return;
+          let reference: TokenReference;
+          try { reference = parseTokenReference(kind, args, tokenContext); } catch (error) { throw diagnostic((error as Error).message, call); }
+          checkReference(reference, call);
+          node.type = 'word';
+          node.value = tokenReferenceToCss(reference);
+          return false;
         });
         return p.toString().trim();
       }
@@ -463,7 +444,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         try {
           if (typeof decl.value !== "string" || generated.has(decl)) return;
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
-        const phase1Text = rewriteFuncs(decl.value, (decl as any).prop);
+        const phase1Text = rewriteFuncs(decl.value);
 
         // Phase 2: extract responsive values
         const parsed = valueParser(phase1Text);
@@ -480,8 +461,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         const suspiciousFunctions: string[] = [];
         for (const node of parsed.nodes) {
           if (node.type !== 'function') continue;
-          if (bpNames.has(node.value)) { hasResponsive = true; continue; }
-          if (!(KNOWN_CSS_FUNCTIONS as readonly string[]).includes(node.value)) suspiciousFunctions.push(node.value);
+          const fn = node.value.toLowerCase();
+          if (bpNames.has(fn)) { hasResponsive = true; continue; }
+          if (!KNOWN_FUNCTION_NAMES.has(fn)) suspiciousFunctions.push(node.value);
         }
         for (const name of suspiciousFunctions) {
           const distanceOne = Array.from(bpNames).some(bp => editDistance(name.toLowerCase(), bp.toLowerCase()) === 1);
@@ -602,14 +584,15 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // browser never silently discards an at-rule this plugin never processed.
       const knownDirectives: string[] = LANGUAGE_COMPLETIONS.directives.filter(name => name.startsWith('ds-'));
       root.walkAtRules(at => {
-        if (at.name !== 'ds' && !at.name.startsWith('ds-')) return;
-        if (knownDirectives.includes(at.name)) {
+        const name = at.name.toLowerCase();
+        if (name !== 'ds' && !name.startsWith('ds-')) return;
+        if (knownDirectives.includes(name)) {
           throw locateError(diagnostic(
             'UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; ' +
             'use responsive values on the properties instead, e.g. padding: xs(…) md(…).'
           ), at);
         }
-        const suggestion = closestKey(at.name, knownDirectives);
+        const suggestion = closestKey(name, knownDirectives);
         throw locateError(diagnostic(
           `UXD_DIRECTIVE_UNKNOWN: Unknown directive @${at.name}.${suggestion ? ` Did you mean @${suggestion}?` : ''}`
         ), at);

@@ -2,5 +2,5 @@
 @import "./duplicate-partial.uxdsl";
 
 body {
-  color: palette(primary-main);
+  color: palette(primary.main);
 }

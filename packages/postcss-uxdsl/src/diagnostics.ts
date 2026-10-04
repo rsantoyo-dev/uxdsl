@@ -32,6 +32,16 @@ export const DIAGNOSTIC_CODES = new Set([
   // (e.g. UXD_SURFACE_ROLE vs UXD_SURFACE_REFERENCE).
   'UXD_TYPO_REFERENCE',
   'UXD_TOKEN_KEY', 'UXD_TOKEN_ALPHA', 'UXD_EDGE_REFERENCE', 'UXD_SHADOW_REFERENCE',
+  // Stability phase 3: the one grammar of token functions. Every function
+  // takes exactly one argument (`_ARGUMENT`, by family; palette()/color()
+  // may add an alpha), every reference is checked at rewrite time against
+  // the effective theme (`_REFERENCE`, with a "did you mean"), and
+  // `family.variant` is the one spelling of a Palette/Color entry (`_SYNTAX`).
+  'UXD_SPACE_ARGUMENT', 'UXD_SPACE_REFERENCE', 'UXD_DENSITY_ARGUMENT', 'UXD_EDGE_ARGUMENT', 'UXD_SHADOW_ARGUMENT',
+  'UXD_PALETTE_ARGUMENT', 'UXD_PALETTE_REFERENCE', 'UXD_PALETTE_SYNTAX',
+  'UXD_COLOR_ARGUMENT', 'UXD_COLOR_REFERENCE', 'UXD_COLOR_SYNTAX',
+  // A second @ds-button/@ds-input in the same rule.
+  'UXD_DIRECTIVE_DUPLICATE',
   // Stability phase 1 (audit T6): `tone(main|dark|contrast)` outside a
   // Button/Input theme value (language.ts's grammar, index.ts's author pass).
   'UXD_TONE_CONTEXT',

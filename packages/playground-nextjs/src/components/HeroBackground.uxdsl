@@ -18,7 +18,7 @@
 .hero-background__blob--secondary {
   width: 600px;
   height: 600px;
-  background: radial-gradient(circle, palette(secondary-main) 0%, transparent 60%);
+  background: radial-gradient(circle, palette(secondary.main) 0%, transparent 60%);
   opacity: var(--blob-opacity, 0.05);
   filter: blur(80px);
 }
@@ -26,7 +26,7 @@
 .hero-background__blob--primary {
   width: 500px;
   height: 500px;
-  background: radial-gradient(circle, palette(primary-main) 0%, transparent 60%);
+  background: radial-gradient(circle, palette(primary.main) 0%, transparent 60%);
   opacity: var(--blob-opacity, 0.08);
   filter: blur(60px);
 }
@@ -34,7 +34,7 @@
 .hero-background__blob--dark {
   width: 400px;
   height: 400px;
-  background: radial-gradient(circle, palette(primary-dark) 0%, transparent 70%);
+  background: radial-gradient(circle, palette(primary.dark) 0%, transparent 70%);
   opacity: 0; /* Controlled by JS */
   filter: blur(40px);
   mix-blend-mode: multiply;

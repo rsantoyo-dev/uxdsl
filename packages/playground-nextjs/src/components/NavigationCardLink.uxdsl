@@ -1,6 +1,6 @@
 /* NavigationCardLink Styles */
 .navigation-card-link {
-  @ds-surface (contained);
+  @ds-surface(contained);
   width: 100%;
   box-sizing: border-box;
   display: flex;
@@ -13,17 +13,17 @@
   color: inherit;
   transition: all 0.2s ease-in-out;
   border: 1px solid transparent;
-  background: palette(surface-main);
+  background: palette(surface.main);
 
   /* Hover State */
   &:hover {
     transform: translateY(-2px);
     box-shadow: shadow(3);
-    border-color: palette(primary-light, 0.3);
+    border-color: palette(primary.light, 0.3);
 
     .nav-card-arrow {
       transform: translateX(4px);
-      color: palette(primary-main);
+      color: palette(primary.main);
     }
   }
 
@@ -45,14 +45,14 @@
     flex-shrink: 0;
 
     &.primary {
-      background: palette(primary-light, 0.1);
-      color: palette(primary-main);
+      background: palette(primary.light, 0.1);
+      color: palette(primary.main);
     }
 
     &.secondary {
       background: transparent;
-      border: 1px solid palette(secondary-main, 0.3);
-      color: palette(secondary-main);
+      border: 1px solid palette(secondary.main, 0.3);
+      color: palette(secondary.main);
     }
   }
 
@@ -65,20 +65,20 @@
   }
 
   .nav-card-title {
-    @ds-typo (h4);
+    @ds-typo(h4);
     margin: 0;
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
   }
 
   .nav-card-desc {
-    @ds-typo (span);
+    @ds-typo(span);
     margin: 0;
-    color: palette(secondary-main);
+    color: palette(secondary.main);
   }
 
   /* Arrow Indicator */
   .nav-card-arrow {
-    color: palette(secondary-light);
+    color: palette(secondary.light);
     transition: all 0.2s;
   }
 
@@ -89,8 +89,8 @@
     box-shadow: none;
 
     &:hover {
-      background: palette(surface-light, 0.5);
-      border-color: palette(primary-main);
+      background: palette(surface.light, 0.5);
+      border-color: palette(primary.main);
       box-shadow: shadow(2);
     }
   }

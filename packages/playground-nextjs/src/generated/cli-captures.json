@@ -6,7 +6,7 @@
     "uxdsl.theme.json": "{\n  \"$schema\": \"../../node_modules/postcss-uxdsl/schema/theme.schema.json\",\n  \"breakpoints\": { \"xs\": 0, \"sm\": 480, \"md\": 768, \"lg\": 1024, \"xl\": 1280 },\n  \"palette\": {\n    \"primary\": { \"main\": \"#0f766e\" }\n  }\n}\n",
     "src/card.uxdsl": ".card {\n  @ds-surface(contained);\n  display: flex;\n  flex-direction: xs(column) md(row);\n  gap: density(4);\n}\n",
     "src/button.uxdsl": ".save {\n  @ds-button(contained primary 2);\n}\n",
-    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary-main);\n}\n"
+    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary.main);\n}\n"
   },
   "runs": [
     {

@@ -2,19 +2,19 @@
 #DemoColors {
   .demo-section { display: flex; flex-direction: column; gap: density(3); }
   .demo-header { display: flex; flex-direction: column; gap: density(2); }
-  .demo-title { @ds-typo (h4); margin: 0; }
-  .demo-subtitle { @ds-typo (body); max-width: 720px; }
+  .demo-title { @ds-typo(h4); margin: 0; }
+  .demo-subtitle { @ds-typo(body); max-width: 720px; }
 
   .colors-stack { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: density(4); }
   .color-family { display: flex; flex-direction: column; gap: density(2); }
-  .family-title { @ds-typo (h5); margin: 0; text-transform: capitalize; }
+  .family-title { @ds-typo(h5); margin: 0; text-transform: capitalize; }
 
   .family-grid { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: density(1); }
 
   .color-token { 
     border-radius: radius(1); 
     padding: density(1); 
-    background: palette(surface-main, 0.2); 
+    background: palette(surface.main, 0.2); 
     display: flex; 
     flex-direction: column; 
     justify-content: center; 
@@ -27,10 +27,10 @@
 
   .color-token:hover { transform: scale(1.05); z-index: 1; box-shadow: shadow(2); }
 
-  .token-shade { @ds-typo (caption); font-weight: bold; opacity: 0.9; pointer-events: none; }
+  .token-shade { @ds-typo(caption); font-weight: bold; opacity: 0.9; pointer-events: none; }
   .token-values { display: flex; flex-direction: column; align-items: flex-end; gap: space(1); position: absolute; bottom: density(1); right: density(1); pointer-events: none; }
-  .token-hex { @ds-typo (caption); font-family: monospace; font-weight: bold; font-size: 0.75em; }
-  .token-rgb { @ds-typo (tag); font-family: monospace; opacity: 0.7; font-size: 0.65em; }
+  .token-hex { @ds-typo(caption); font-family: monospace; font-weight: bold; font-size: 0.75em; }
+  .token-rgb { @ds-typo(tag); font-family: monospace; opacity: 0.7; font-size: 0.65em; }
 
   /* Interactive Playground */
   .surfaces-playground-container {
@@ -46,7 +46,7 @@
     gap: density(3);
     @ds-surface(outlined);
     padding: density(3);
-    background: palette(surface-light, 0.3);
+    background: palette(surface.light, 0.3);
   }
 
   .surface-playground__controls {
@@ -87,8 +87,8 @@
     justify-content: space-between;
     align-items: center;
     padding: density(1) density(2);
-    background: palette(neutral-dark);
-    color: palette(neutral-contrast);
+    background: palette(neutral.dark);
+    color: palette(neutral.contrast);
   }
 
   .code-file {
@@ -102,7 +102,7 @@
   @each $family in $color-families {
     @each $shade in $color-shades {
       .chip--#{$family}-#{$shade} {
-        background: color(#{$family}-#{$shade});
+        background: color(#{$family}.#{$shade});
       }
     }
   }

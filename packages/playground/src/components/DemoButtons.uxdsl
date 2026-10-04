@@ -18,31 +18,31 @@
 }
 
 .btn {
-  @ds-button (contained);
-  @ds-typo (body);
+  @ds-button(contained);
+  @ds-typo(body);
 
   cursor: pointer;
 }
 
 .btn.btn--outlined {
-  @ds-button (outlined primary);
+  @ds-button(outlined primary);
 }
 
 .btn.btn--flat {
-  @ds-button (flat primary);
+  @ds-button(flat primary);
 }
 
 /* Paint examples: reuse structure, change tone via decorator */
 .btn--secondary {
-  @ds-button (contained secondary);
+  @ds-button(contained secondary);
 }
 
 .btn--outlined.btn--secondary {
-  @ds-button (outlined secondary);
+  @ds-button(outlined secondary);
 }
 
 .btn--flat.btn--secondary {
-  @ds-button (flat secondary);
+  @ds-button(flat secondary);
 }
 
 // SCSS example: generate size variants via loop
@@ -51,6 +51,6 @@ $max: 3;
 
 @for $i from $min through $max {
   .btn--sass-size-#{$i} {
-    @ds-button (contained secondary #{$i});
+    @ds-button(contained secondary #{$i});
   }
 }

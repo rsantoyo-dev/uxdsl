@@ -3,6 +3,6 @@
 .code-block-frame {
   border-radius: radius(2);
   overflow: hidden;
-  border: 1px solid palette(neutral-light);
+  border: 1px solid palette(neutral.light);
   font-size: 0.9rem;
 }

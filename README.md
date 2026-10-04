@@ -121,6 +121,14 @@ The built-in presets are `postcss-uxdsl/theme/base.json`'s; the theme JSON is th
 only source of a preset (a `@theme` block is `UXD_THEME_BLOCK_REMOVED` since
 stability phase 3).
 
+The language has one spelling per construct (stability phase 3): `border(k)`,
+`radius(k)`, `shadow(k)`, `space(k)` and `density(k)` take exactly one
+argument, a Palette or Color entry is `palette(family.variant)`/`color(family.shade)`,
+and a directive is `@ds-x(role [tone] [size] [radius(k)] [shadow(k)])`; every
+other spelling is a located `UXD_*` error naming the grammar, and
+`postcss-uxdsl/scripts/codemod-canonical-grammar.js` rewrites the removed ones.
+See the postcss-uxdsl README, "The canonical grammar".
+
 Migration notes for `0.5.0-beta.1` (not included in npm 0.4.0):
 
 - JSON entries win over shared defaults.

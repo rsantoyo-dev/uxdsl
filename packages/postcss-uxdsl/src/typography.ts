@@ -1,4 +1,4 @@
-import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
@@ -47,11 +47,11 @@ export function resolveTypographyRole(details: TypographyDetails, role: string):
 /** Stability phase 1: the one value grammar. A typography field may reference
  * any token (`palette(primary)` in `letterSpacing`, `radius(2)`…), not only
  * `space()`/`density()`; the reference pass judges whether it exists. */
-export function typographyValueToCss(input: string): string {
-  return tokenValueToCss(input);
+export function typographyValueToCss(input: string, context?: TokenContext): string {
+  return tokenValueToCss(input, context);
 }
 
-export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS) {
+export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS, context?: TokenContext) {
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
   // Stability phase 1: the breakpoint map has one owner and one code
   // (`UXD_BP_INVALID`, language.ts); this engine no longer restates the
@@ -79,7 +79,7 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
       const varName = names.claim(buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`), `${role}.${field}`);
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
-        const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints));
+        const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints), context);
         if (!value && index === 0) throw themeError('UXD_TYPO_BASE', `${role}.${field} needs a base value`, `typography_details.${role}.${field}`);
         if (value !== previous) rules[index].values[varName] = value;
         previous = value;
@@ -92,10 +92,10 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
 /** Pure generation used identically by PostCSS, SSR and browser applications. */
 export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
   const base: Record<string, string> = {};
-  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value));
+  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value), theme);
   const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
   const output = Object.keys(base).length ? [serialize(base)] : [];
-  for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints)) {
+  for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints, theme)) {
     const body = serialize(rule.values);
     output.push(rule.minWidth === null ? body : `@media (min-width: ${rule.minWidth}px) { ${body} }`);
   }
@@ -106,8 +106,8 @@ export function generateTypographyCss(theme: Record<string, any>, breakpoints: B
 export function inspectTypographyTheme(theme: Record<string, any>, width: number): Record<string, string> {
   const bps = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints };
   const rules = [
-    ...compileTypographyRules(theme.typography_details || {}, bps),
-    ...compileDensityRules(theme.densities || {}, bps),
+    ...compileTypographyRules(theme.typography_details || {}, bps, theme),
+    ...compileDensityRules(theme.densities || {}, bps, (value) => tokenValueToCss(value, theme)),
   ];
   const values: Record<string, string> = {};
   for (const rule of rules) {

@@ -4,12 +4,12 @@
   flex-direction: xs(column) md(row);
   gap: xs(space(2)) md(space(4));
   padding: xs(space(3)) md(space(6));
-  @ds-surface (light);
-  border: 1px solid palette(surface-contrast);
+  @ds-surface(contained light);
+  border: 1px solid palette(surface.contrast);
   border-radius: radius(3);
 
   .demo-breakpoints-card-item {
-    @ds-surface;
+    @ds-surface(contained);
     flex: 1;
     padding: space(6);
     display: flex;
@@ -17,30 +17,30 @@
     align-items: center;
     text-align: center;
     gap: space(3);
-    border: 1px solid palette(surface-dark);
+    border: 1px solid palette(surface.dark);
     border-radius: radius(2);
     box-shadow: shadow(1);
   }
 
   .demo-breakpoints-card-title {
     font-weight: 600;
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
   }
 
   .demo-breakpoints-card-text {
     font-size: 0.875rem;
-    color: palette(tertiary-dark);
+    color: palette(tertiary.dark);
   }
 
   .demo-breakpoints-card-icon--primary {
-    color: palette(primary-main);
+    color: palette(primary.main);
   }
 
   .demo-breakpoints-card-icon--secondary {
-    color: palette(secondary-main);
+    color: palette(secondary.main);
   }
 
   .demo-breakpoints-card-icon--info {
-    color: palette(info-main);
+    color: palette(info.main);
   }
 }

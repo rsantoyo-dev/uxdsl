@@ -9,6 +9,68 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 3 (2): the canonical grammar (audit decision DE-5;
+findings L4, L5, L7, L8, L9, L10, L15, L16).
+
+### Visual changes
+
+None. Every accepted spelling compiles to the same declarations as before;
+the packaged base theme's own `surfaces` now say `palette(surface.main)`
+instead of `palette(surface-main)` and emit the identical variables. What
+changes is what is refused, and that every refusal names the grammar.
+
+### Removed
+
+| Removed | Instead | Error |
+| --- | --- | --- |
+| extra arguments on `space()`, `density()`, `radius()`, `border()`, `shadow()` — `border(1, red, dashed)` used to drop the color and style quietly | one argument; `border: border(1)` followed by `border-color`/`border-style` | `UXD_SPACE_ARGUMENT`, `UXD_DENSITY_ARGUMENT`, `UXD_EDGE_ARGUMENT`, `UXD_SHADOW_ARGUMENT` |
+| a third argument on `palette()`/`color()` | `palette(family[.variant][, alpha])` | `UXD_PALETTE_ARGUMENT`, `UXD_COLOR_ARGUMENT` |
+| quoted token keys, `space("1")` | `space(1)` | `UXD_TOKEN_KEY` |
+| the dashed Palette/Color spelling, `palette(primary-main)`, `color(gray-300)` (in declarations and in theme values) | `palette(primary.main)`, `color(gray.300)`; a family whose own name has a dash stays as written | `UXD_PALETTE_SYNTAX`, `UXD_COLOR_SYNTAX`, with the dotted form |
+| `@ds-x (args)`, `@ds-x args;`, `@ds-x(a, b)`, `@ds-x("a")`, tone-only `@ds-surface(primary)`, `@ds-surface(2 primary contained)`, a second tone or size, `density(0)` as an argument, `!important` on a directive | `@ds-x(role [tone] [size] [radius(k)] [shadow(k)])`, `@ds-typo(role)` | `UXD_SURFACE_ARGUMENT`, `UXD_BUTTON_ARGUMENT`, `UXD_INPUT_ARGUMENT`, `UXD_TYPO_ARGUMENT`; a tone in the role's position is the role's `_REFERENCE`/`_ROLE` error saying the role comes first |
+| an unvalidated tone next to a role (`@ds-surface(contained text)` used to fail two steps later as a missing `text-contrast`) | a tone is a Palette family with `main`, `dark` and `contrast` | `UXD_SURFACE_TONE`, `UXD_BUTTON_TONE`, `UXD_INPUT_TONE`, listing the tones |
+| two `@ds-button`/`@ds-input` in one rule (base won by the last, states by the first) | one control directive per rule | `UXD_DIRECTIVE_DUPLICATE` |
+| `parseOverrideArguments` (surfaces.ts) | `parseDirectiveTokens` (`src/directives.ts`) | — |
+
+- **References are checked when a declaration is rewritten**, against the
+  effective theme (plus `references.externalTokens` and the custom properties
+  declared by `references.css`), with the family's code and a "did you mean":
+  `UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE` (`palette(primary.mian) does
+  not exist; primary has: main, light, dark, contrast. Did you mean "main"?`),
+  `UXD_COLOR_REFERENCE`, next to the existing `UXD_DENSITY_REFERENCE`,
+  `UXD_EDGE_REFERENCE` and `UXD_SHADOW_REFERENCE`. This holds whatever
+  `references.mode` says (`space(99)` used to compile with `mode: 'off'`); the
+  reference pass over the emitted stylesheet (`UXD_REFERENCE_MISSING`) stays
+  the second net for a hand-written `var()` and for theme values. A test that
+  asserted `UXD_REFERENCE_MISSING` for a token function now sees the family
+  code.
+- **Names are case-insensitive**: `Space(1)`, `PALETTE(primary)`, `MD(2rem)`,
+  `RADIUS(PILL)`, `@DS-SURFACE(…)` compile like their lowercase forms, and
+  `@DS-CARD(…)` is `UXD_DIRECTIVE_UNKNOWN`; none passes through.
+- **New:** `parseTokenReference`, `tokenReferenceToCss`, `TOKEN_FUNCTION_CODES`
+  and the `TokenContext`/`TokenReference` types (`postcss-uxdsl/language`);
+  `tokenValueToCss(value, context?)` takes the theme as context so the dashed
+  spelling can be named in a theme value; `compilePresetRules`,
+  `compileTypographyRules`, `generateDensityCss` and `typographyValueToCss`
+  take the same optional context. `src/directives.ts` (`parseDirectiveTokens`,
+  `parseTypoArguments`, `directiveInner`, `DIRECTIVE_USAGE`) is the one
+  directive parser; `parseSurfaceArguments`/`parseButtonArguments`/
+  `parseInputArguments` use it and accept the arguments with or without the
+  parentheses.
+- **New codemod:** `scripts/codemod-canonical-grammar.js` (shipped;
+  `npm run codemod:canonical-grammar`) rewrites `rounded()`/`elevation()`/
+  `radius(full)`, dashed `palette()`/`color()` arguments (when the theme makes
+  the split unambiguous) and the lax directive forms; it was run over the
+  playground (484 dashed Palette/Color arguments, 48 spaced directives) and
+  the consumer fixture.
+- The VS Code custom data describes each directive with its usage string from
+  `DIRECTIVE_USAGE`.
+
+New codes: `UXD_SPACE_ARGUMENT`, `UXD_SPACE_REFERENCE`, `UXD_DENSITY_ARGUMENT`,
+`UXD_EDGE_ARGUMENT`, `UXD_SHADOW_ARGUMENT`, `UXD_PALETTE_ARGUMENT`,
+`UXD_PALETTE_REFERENCE`, `UXD_PALETTE_SYNTAX`, `UXD_COLOR_ARGUMENT`,
+`UXD_COLOR_REFERENCE`, `UXD_COLOR_SYNTAX`, `UXD_DIRECTIVE_DUPLICATE`.
+
 Stability plan, phase 3 (1): the legacy language surface is removed (audit
 decision DE-4, findings L6, L14, T9, T11, T14).
 

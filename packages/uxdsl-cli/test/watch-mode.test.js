@@ -330,7 +330,7 @@ test('MIG-B6-23: an initial compile error does not end the process; correcting t
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
 
-  await waitFor(() => /UXD_REFERENCE_MISSING|error/i.test(output));
+  await waitFor(() => /UXD_PALETTE_REFERENCE|error/i.test(output));
   await delay(WATCHER_SETTLE_MS);
   assert.equal(exited, false, `the process must still be running after an initial compile error.\n${output}`);
   assert.equal(fs.existsSync(path.join(dir, 'src', 'uxdsl.css')), false, 'nothing should have been written for a build that failed to compile');

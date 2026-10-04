@@ -20,7 +20,7 @@
   font-size: 8rem;
   font-weight: 800;
   line-height: 1;
-  color: palette(primary-light, 0.15);
+  color: palette(primary.light, 0.15);
   margin: 0;
   user-select: none;
 }
@@ -37,12 +37,12 @@
 
 .title {
   @ds-typo(h2);
-  color: palette(text-primary);
+  color: palette(text.primary);
 }
 
 .subtitle {
   @ds-typo(body);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   max-width: 500px;
   line-height: 1.6;
 }
@@ -80,11 +80,11 @@
   &:hover {
     transform: translateY(-3px);
     box-shadow: shadow(3);
-    border-color: palette(primary-light, 0.3);
+    border-color: palette(primary.light, 0.3);
     
     .nav-card-icon {
-      background: palette(primary-main);
-      color: palette(primary-contrast);
+      background: palette(primary.main);
+      color: palette(primary.contrast);
     }
   }
 }
@@ -92,24 +92,24 @@
 .nav-card-icon {
   width: 40px;
   height: 40px;
-  background: palette(surface-dark, 0.5);
+  background: palette(surface.dark, 0.5);
   border-radius: radius(pill);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: palette(text-primary);
+  color: palette(text.primary);
   transition: all 0.2s ease;
 }
 
 .nav-card-title {
   @ds-typo(h6);
-  color: palette(text-primary);
+  color: palette(text.primary);
   margin: 0;
 }
 
 .nav-card-desc {
   @ds-typo(caption);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   text-align: left;
   margin: 0;
   line-height: 1.5;

@@ -24,10 +24,25 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
 | Shadows | Shared visual depth and inset treatments | `shadow(key)` for box shadows |
-| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size])` |
-| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size])` |
-| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size])` |
+| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size] [radius(k)] [shadow(k)])` |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
+
+The grammar has one spelling per construct (stability phase 3): a token
+function takes exactly one argument (`border(1, red, dashed)` is an error —
+write `border: border(1)` and the longhands after it), plus an optional alpha
+on `palette()`/`color()`; a Palette or Color entry is `family.variant`
+(`palette(primary.main)`, `color(gray.300)`; `palette(primary)` is its
+`main`), never dashed; a directive is `@ds-x(role [tone] [size] [radius(k)]
+[shadow(k)])` with the parentheses directly after the name and
+whitespace-separated arguments, the role first; names are case-insensitive.
+Every reference in a declaration is checked against the effective theme when
+it is rewritten (`UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE`, …, with a
+"did you mean"), a tone with `getToneFamilies` (`UXD_SURFACE_TONE`), and a
+second `@ds-button`/`@ds-input` in one rule is `UXD_DIRECTIVE_DUPLICATE`.
+`scripts/codemod-canonical-grammar.js` in `postcss-uxdsl` rewrites the
+removed spellings.
 
 A matching value does not imply a matching responsibility. Do not replace:
 
@@ -124,7 +139,7 @@ Both live in the theme JSON.
   color: palette(primary.contrast);
 }
 .blue-swatch {
-  background: color(blue-700);
+  background: color(blue.700);
 }
 ```
 
@@ -302,15 +317,15 @@ for component spacing, not automatically for border width or corner rounding.
   Preserve references instead of copying their current computed values.
 - Change a shared definition only when all its consumers should follow. Edit
   source configuration and rebuild or use the runtime; preview edits do not save it.
-- When a Border preset exists, optional arguments in
-  `border(1, palette(primary.main), dashed)` are ignored in favor of that preset.
+- `border(k)` takes exactly the preset key: `border(1, palette(primary.main), dashed)`
+  is `UXD_EDGE_ARGUMENT` (the extra arguments used to be ignored silently).
   For local changes, follow `border: border(1)` with explicit `border-color` or
   `border-style` longhands. The engine changes preset variables across thresholds; subsequent local
   longhands persist without repeating their breakpoint declarations. Do not
   alter the preset for a one-component request.
 - `radius(pill)` compiles to `9999px`; `radius(circle)` compiles to `50%`. A
   circle needs equal width and height. One name per concept: the former
-  `rounded()` alias and `radius(full)` fail as `UXD_SYNTAX_REMOVED`, naming the
+  `radius()` alias and `radius(pill)` fail as `UXD_SYNTAX_REMOVED`, naming the
   replacement. Keywords are built-ins, not editable numbered presets. Border
   radius alone does not clip child content.
 - Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references fail instead of inventing fallback
@@ -359,7 +374,7 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
   the current resolved value. Components consume `var(--uxdsl__shadow__key)`.
 - Values can be static or responsive. Include a base value; the most recent
   applicable declaration persists until overridden. A shadow does not change
-  stacking order; the former `elevation()` alias fails as `UXD_SYNTAX_REMOVED`.
+  stacking order; the former `shadow()` alias fails as `UXD_SYNTAX_REMOVED`.
 - Preserve comma-separated layers, nested color functions, inset flags, units,
   and configured `space`, `density`, `color` or `palette` dependencies. Never
   parse a shadow list by splitting all commas. Not all box-shadow presets are

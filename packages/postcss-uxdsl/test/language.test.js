@@ -40,8 +40,9 @@ test('custom breakpoint values and input order are handled consistently', () => 
   const css = language.generateDensityCss({ 4: 'xl(space(6)) xs(space(4)) md(space(5))' }, { xl: 1600, xs: 0, md: 850 });
   assert.deepEqual(densityDeclarations(css).map(x => x[0]), ['base', '(min-width: 850px)', '(min-width: 1600px)']);
 });
-test('nested native expressions and quoted spacing references survive', () => {
-  assert.equal(language.spacingValueToCss('calc(space("4") + 2px)'), 'calc(var(--uxdsl__space__4) + 2px)');
+test('nested native expressions survive; a quoted token key is an error', () => {
+  assert.equal(language.spacingValueToCss('calc(space(4) + 2px)'), 'calc(var(--uxdsl__space__4) + 2px)');
+  assert.throws(() => language.spacingValueToCss('calc(space("4") + 2px)'), /UXD_TOKEN_KEY/);
   assert.equal(language.resolveResponsiveValue('xs(calc(space(4) + 2px)) md(space(5))', 'xs', language.DEFAULT_BREAKPOINTS), 'calc(space(4) + 2px)');
   assert.equal(language.resolveResponsiveValue('rgb(10, 20, 30)', 'md', language.DEFAULT_BREAKPOINTS), 'rgb(10, 20, 30)');
 });

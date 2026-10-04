@@ -82,9 +82,9 @@ test('in a block that documents an error, every other statement must still compi
 });
 
 test('a claimed output (`/* var(--…) */`) must appear in the compiled CSS', async () => {
-  const good = '.a { color: color(gray-300); }  /* var(--uxdsl__color__gray-300) */';
+  const good = '.a { color: color(gray.300); }  /* var(--uxdsl__color__gray-300) */';
   assert.deepEqual(await runExample({ code: `${good}\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */`, theme: null }), []);
-  const bad = '.a { color: color(gray-300); }  /* var(--uxdsl__color__gray-999) */\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */';
+  const bad = '.a { color: color(gray.300); }  /* var(--uxdsl__color__gray-999) */\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */';
   const [problem] = await runExample({ code: bad, theme: null });
   assert.match(problem, /documented as producing var\(--uxdsl__color__gray-999\) but does not/);
 });

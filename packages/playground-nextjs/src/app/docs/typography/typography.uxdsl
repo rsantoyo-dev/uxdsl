@@ -8,7 +8,7 @@
 
   .doc-divider {
     border: 0;
-    border-top: 1px solid palette(neutral-light);
+    border-top: 1px solid palette(neutral.light);
     opacity: 0.6;
     margin: density(10) 0;
   }
@@ -16,19 +16,19 @@
   .doc-content h2.ds-typo {
     @ds-typo(h2);
     margin: 0;
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
   }
 
   .doc-content h3.ds-typo {
     @ds-typo(h3);
     margin: density(4) 0 density(2);
-    color: palette(surface-contrast);
+    color: palette(surface.contrast);
   }
 
   .doc-paragraph {
     @ds-typo(p);
     margin: 0;
-    color: palette(surface-contrast, 0.85);
+    color: palette(surface.contrast, 0.85);
     max-width: 75ch;
   }
 
@@ -41,7 +41,7 @@
     @ds-surface(outlined);
     padding: density(3);
     border-radius: radius(2);
-    background: palette(surface-light, 0.35);
+    background: palette(surface.light, 0.35);
     overflow-x: auto;
   }
 
@@ -54,16 +54,16 @@
     @ds-typo(small);
     text-align: left;
     padding: density(2);
-    border-bottom: 2px solid palette(neutral-light);
-    color: palette(surface-contrast);
+    border-bottom: 2px solid palette(neutral.light);
+    color: palette(surface.contrast);
     font-weight: 600;
   }
 
   .doc-table td {
     @ds-typo(body);
     padding: density(2);
-    border-bottom: 1px solid palette(neutral-light);
-    color: palette(surface-contrast, 0.85);
+    border-bottom: 1px solid palette(neutral.light);
+    color: palette(surface.contrast, 0.85);
     vertical-align: top;
   }
 
@@ -72,26 +72,26 @@
   }
 
   .doc-table code {
-    background: palette(neutral-light);
+    background: palette(neutral.light);
     padding: 2px 6px;
     border-radius: radius(1);
     font-family: font(code);
     font-size: 0.9em;
-    color: palette(primary-dark);
+    color: palette(primary.dark);
   }
 
   .info-box {
     @ds-surface(outlined neutral);
     padding: density(3);
     border-radius: radius(2);
-    background: palette(surface-light, 0.35);
-    border: 1px dashed palette(neutral-main);
+    background: palette(surface.light, 0.35);
+    border: 1px dashed palette(neutral.main);
   }
 
   .info-text {
     @ds-typo(small);
     margin: 0;
-    color: palette(surface-contrast, 0.85);
+    color: palette(surface.contrast, 0.85);
     max-width: 75ch;
   }
 }

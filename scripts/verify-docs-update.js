@@ -92,6 +92,7 @@ const VISUAL_DEFAULT_FILES = [
 // code; they are not mutation-tested.
 const NON_VISUAL_SOURCE_FILES = {
   [`${SRC}/diagnostics.ts`]: 'error messages and source positions; never a compiled declaration',
+  [`${SRC}/directives.ts`]: 'parses directive arguments and reports their errors; the declarations come from surfaces.ts and control-engine.ts, listed above',
   [`${SRC}/types.ts`]: 'type declarations only',
   [`${SRC}/reference-integrity.ts`]: 'validates emitted references and throws or warns; emits no CSS',
   [`${SRC}/config.ts`]: 'discovers which theme file is read; with no file the default output is unaffected',

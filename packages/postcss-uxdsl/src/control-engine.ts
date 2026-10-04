@@ -1,6 +1,7 @@
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
-import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
+import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, requireRole } from './surfaces';
+import { parseDirectiveTokens, directiveArgumentsInner, toneError } from './directives';
 import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
@@ -127,7 +128,7 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
       }
     }
   }
-  return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix);
+  return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix, theme);
 }
 function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileRules(theme, breakpoints).map(rule => {
@@ -173,19 +174,16 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   }
   return { base, states: Object.fromEntries(Object.entries(pack.states).map(([state, style]) => [state, refs(state, style)])) };
 }
-// MIG-05: radius()/shadow() override arguments are extracted before the
-// existing role/tone/size detection runs, so they compose with tone-only
-// and legacy invocations without changing how those are parsed.
+/** `@ds-<family>(role [tone] [size] [radius(k)] [shadow(k)])`: the grammar, then the role and tone against the theme. */
 function parseArguments(theme: ControlTheme, input: string) {
-  const allParts = input.trim().replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
-  const { radius, shadow, rest: parts } = parseOverrideArguments(allParts, errorPrefix);
-  const roles = getTokens(theme);
-  const role = parts.find(part => Object.hasOwnProperty.call(roles, part)) || 'contained';
-  const rest = parts.filter(part => part !== role);
-  const tone = rest.find(part => !/^\d+$/.test(part)) || '';
-  const size = rest.find(part => /^\d+$/.test(part)) || '';
-  if (rest.length > Number(!!tone) + Number(!!size) || (tone && (!/^[a-z][a-z0-9-]*$/.test(tone) || (!parts.some(part => Object.hasOwnProperty.call(roles, part)) && !Object.hasOwnProperty.call(theme.palette || {}, tone))))) throw fail(`UXD_INPUT_ARGUMENT: Invalid ${input}; use a configured role, Palette family, numeric size and optional radius()/shadow() overrides.`);
-  return { role, tone, size, radius: radius || '', shadow: shadow || '' };
+  const directive = `ds-${family}`;
+  const args = parseDirectiveTokens(directive, directiveArgumentsInner(directive, input));
+  requireRole(directive, family === 'button' ? 'UXD_BUTTON_ROLE' : 'UXD_INPUT_ROLE', args.role, Object.keys(getTokens(theme)), theme.palette);
+  if (args.tone) {
+    const tones = getToneFamilies(theme.palette);
+    if (!tones.includes(args.tone)) throw toneError(family === 'button' ? 'UXD_BUTTON_TONE' : 'UXD_INPUT_TONE', args.tone, tones);
+  }
+  return args;
 }
 function inspectTheme(theme: ControlTheme, viewport: number) {
   if (!Number.isFinite(viewport) || viewport < 0) throw fail('UXD_INPUT_VIEWPORT: Expected a non-negative width.');

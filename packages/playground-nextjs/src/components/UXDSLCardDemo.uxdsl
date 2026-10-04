@@ -8,7 +8,7 @@
   margin-top: density(4);
 
   .uxdsl-card {
-    @ds-surface (contained);
+    @ds-surface(contained);
     width: xs(100%) md(400px);
     border-radius: radius(3);
     box-shadow: shadow(3);
@@ -17,14 +17,14 @@
   }
 
   .card-header {
-    background: linear-gradient(135deg, palette(primary-main), palette(primary-dark));
+    background: linear-gradient(135deg, palette(primary.main), palette(primary.dark));
     padding: density(6);
     display: grid;
     place-items: center;
   }
 
   .logo-circle {
-    @ds-surface (contained light);
+    @ds-surface(contained light);
     width: density(10);
     height: density(10);
     border-radius: radius(pill);
@@ -47,13 +47,13 @@
   }
 
   .card-title {
-    @ds-typo (h5);
-    color: palette(primary-main);
+    @ds-typo(h5);
+    color: palette(primary.main);
   }
 
   .card-desc {
-    @ds-typo (body);
-    color: palette(primary-main);
+    @ds-typo(body);
+    color: palette(primary.main);
   }
 
   .card-actions {
@@ -64,13 +64,13 @@
   }
 
   .btn-primary {
-    @ds-button (contained primary);
+    @ds-button(contained primary);
     width: 100%;
     justify-content: center;
   }
 
   .btn-secondary {
-    @ds-button (outlined neutral);
+    @ds-button(outlined neutral);
     width: 100%;
     justify-content: center;
   }
@@ -78,7 +78,7 @@
   .demo-code-block {
     width: 100%;
     max-width: 600px;
-    background: palette(surface-main);
+    background: palette(surface.main);
     border-radius: radius(2);
     overflow: hidden;
     border: border(1);
@@ -86,7 +86,7 @@
   }
 
   .code-header {
-    background: palette(primary-main);
+    background: palette(primary.main);
     padding: density(2) density(3);
     border-bottom: border(1);
     display: flex;
@@ -96,15 +96,15 @@
   .code-file {
     font-family: monospace;
     font-size: 0.8rem;
-    color: palette(neutral-light);
+    color: palette(neutral.light);
     font-weight: bold;
   }
 
   .code-content {
-    @ds-typo (pre);
+    @ds-typo(pre);
     padding: density(4);
     overflow-x: auto;
-    color: palette(neutral-light);
+    color: palette(neutral.light);
   }
 }
 

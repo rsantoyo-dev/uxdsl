@@ -44,12 +44,12 @@
         "base": {},
         "states": {
           "hover": {
-            "bg": "palette(primary-dark)",
-            "color": "palette(primary-contrast)"
+            "bg": "palette(primary.dark)",
+            "color": "palette(primary.contrast)"
           },
           "selected": {
-            "bg": "palette(primary-dark)",
-            "color": "palette(primary-contrast)"
+            "bg": "palette(primary.dark)",
+            "color": "palette(primary.contrast)"
           }
         }
       },
@@ -57,13 +57,13 @@
         "base": {},
         "states": {
           "hover": {
-            "color": "palette(primary-dark)",
-            "border": "border(1, palette(primary-dark))"
+            "color": "palette(primary.dark)",
+            "border": "border(1, palette(primary.dark))"
           },
           "selected": {
-            "bg": "palette(primary-main)",
-            "color": "palette(primary-contrast)",
-            "border": "border(1, palette(primary-main))"
+            "bg": "palette(primary.main)",
+            "color": "palette(primary.contrast)",
+            "border": "border(1, palette(primary.main))"
           }
         }
       },
@@ -71,10 +71,10 @@
         "base": {},
         "states": {
           "hover": {
-            "color": "palette(primary-dark)"
+            "color": "palette(primary.dark)"
           },
           "selected": {
-            "color": "palette(primary-dark)"
+            "color": "palette(primary.dark)"
           }
         }
       }
@@ -83,24 +83,24 @@
       "contained": {
         "padding": "density(2)",
         "radius": "radius(2)",
-        "bg": "palette(surface-main)",
-        "color": "palette(surface-contrast)",
-        "border": "palette(surface-dark)",
+        "bg": "palette(surface.main)",
+        "color": "palette(surface.contrast)",
+        "border": "palette(surface.dark)",
         "shadow": "shadow(1)"
       },
       "outlined": {
         "padding": "density(2)",
         "radius": "radius(2)",
         "bg": "transparent",
-        "color": "palette(surface-contrast)",
-        "border": "border(1, palette(neutral-main))",
+        "color": "palette(surface.contrast)",
+        "border": "border(1, palette(neutral.main))",
         "shadow": "none"
       },
       "flat": {
         "padding": "density(2)",
         "radius": "radius(2)",
         "bg": "transparent",
-        "color": "palette(surface-contrast)",
+        "color": "palette(surface.contrast)",
         "border": "none",
         "shadow": "none"
       }
@@ -108,16 +108,16 @@
     "input": {
       "contained": {
         "base": {
-          "caret": "palette(primary-main)",
+          "caret": "palette(primary.main)",
           "placeholder": "color(neutral-dark)"
         },
         "states": {
           "focus": {
-            "border": "border(1, palette(primary-main))",
+            "border": "border(1, palette(primary.main))",
             "shadow": "shadow(2)"
           },
           "invalid": {
-            "border": "border(1, palette(error-main))"
+            "border": "border(1, palette(error.main))"
           },
           "disabled": {
             "color": "color(neutral-dark)"
@@ -126,15 +126,15 @@
       },
       "outlined": {
         "base": {
-          "caret": "palette(primary-main)",
+          "caret": "palette(primary.main)",
           "placeholder": "color(neutral-dark)"
         },
         "states": {
           "focus": {
-            "border": "border(1, palette(primary-main))"
+            "border": "border(1, palette(primary.main))"
           },
           "invalid": {
-            "border": "border(1, palette(error-main))"
+            "border": "border(1, palette(error.main))"
           }
         }
       },
@@ -142,15 +142,15 @@
         "base": {
           "border": "none",
           "underline": "1px solid color(neutral-dark)",
-          "caret": "palette(primary-main)",
+          "caret": "palette(primary.main)",
           "placeholder": "color(neutral-dark)"
         },
         "states": {
           "focus": {
-            "underline": "1px solid palette(primary-main)"
+            "underline": "1px solid palette(primary.main)"
           },
           "invalid": {
-            "underline": "1px solid palette(error-main)"
+            "underline": "1px solid palette(error.main)"
           }
         }
       }

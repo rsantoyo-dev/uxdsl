@@ -26,7 +26,7 @@
 
     .control-label {
         @ds-typo(caption);
-        color: palette(neutral-dark);
+        color: palette(neutral.dark);
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -34,22 +34,22 @@
 
     .control-select {
         padding: density(1) density(2);
-        border: 1px solid palette(neutral-light);
+        border: 1px solid palette(neutral.light);
         border-radius: radius(1);
-        background: palette(surface-main);
-        color: palette(surface-contrast);
+        background: palette(surface.main);
+        color: palette(surface.contrast);
         font-size: 0.9rem;
         cursor: pointer;
         width: 100%;
         
         &:hover {
-            border-color: palette(primary-main);
+            border-color: palette(primary.main);
         }
         
         &:focus {
             outline: none;
-            border-color: palette(primary-main);
-            box-shadow: 0 0 0 2px palette(primary-main, 0.2);
+            border-color: palette(primary.main);
+            box-shadow: 0 0 0 2px palette(primary.main, 0.2);
         }
     }
 
@@ -57,9 +57,9 @@
         display: flex;
         flex-direction: column;
         gap: density(3);
-        background: palette(surface-light);
+        background: palette(surface.light);
         padding: density(3);
-        border: 1px dashed palette(neutral-light);
+        border: 1px dashed palette(neutral.light);
         border-radius: radius(2);
     }
 
@@ -75,21 +75,21 @@
 
     .code-block {
         @ds-surface(contained);
-        background: palette(neutral-dark); /* Force dark background for code */
+        background: palette(neutral.dark); /* Force dark background for code */
         border-radius: radius(2);
         overflow: hidden;
     }
     
     .code-header {
-         background: palette(neutral-dark, 0.5); /* Slightly lighter than main bg */
+         background: palette(neutral.dark, 0.5); /* Slightly lighter than main bg */
          padding: density(1) density(2);
-         border-bottom: 1px solid palette(neutral-main, 0.1);
+         border-bottom: 1px solid palette(neutral.main, 0.1);
     }
     
     .code-filename {
         @ds-typo(caption);
         font-family: monospace;
-        color: palette(neutral-light);
+        color: palette(neutral.light);
     }
 
   /* MIG-B7-17 phase B (4): the toolbar, the preview's static half and the "CSS Usage" panel were
@@ -112,7 +112,7 @@
   .pp-toolbar__heading {
     font-size: 0.75rem;
     font-weight: 600;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -145,8 +145,8 @@
   .pp-usage {
     margin-top: space(6);
     padding: space(5);
-    background: palette(surface-light);
-    border: 1px solid palette(neutral-light);
+    background: palette(surface.light);
+    border: 1px solid palette(neutral.light);
     border-radius: 6px;
     text-align: left;
   }
@@ -160,14 +160,14 @@
 
   .pp-usage__title {
     font-size: 0.8rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
 
   .pp-code {
-    background: palette(surface-dark);
+    background: palette(surface.dark);
     padding: space(4);
     border-radius: 6px;
     font-family: var(--uxdsl__font__code);
@@ -176,7 +176,7 @@
     flex-direction: column;
     gap: space(2);
     overflow-x: auto;
-    border: 1px solid palette(neutral-dark);
+    border: 1px solid palette(neutral.dark);
   }
 
   .pp-code__line {
@@ -189,23 +189,23 @@
   }
 
   .pp-code__selector {
-    color: palette(secondary-light);
+    color: palette(secondary.light);
   }
 
   .pp-code__property {
-    color: palette(primary-light);
+    color: palette(primary.light);
   }
 
   .pp-code__function {
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 
   .pp-code__argument {
-    color: palette(warning-light);
+    color: palette(warning.light);
   }
 
   .pp-code__punct {
-    color: palette(text-disabled);
+    color: palette(text.disabled);
   }
 
   .pp-code__gap {
@@ -215,11 +215,11 @@
   .pp-usage__note {
     margin-top: space(4);
     font-size: 0.8rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     line-height: 1.5;
   }
 
   .pp-usage__note strong {
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 }

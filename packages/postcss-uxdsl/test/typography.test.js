@@ -65,8 +65,9 @@ test('theme regeneration removes old declarations and moves thresholds without s
   assert.equal(JSON.stringify(theme), before);
   assert.equal(generateTypographyCss(theme), generateTypographyCss(JSON.parse(before)));
 });
-test('native CSS, fractional and named tokens remain intact', () => {
-  assert.equal(typographyValueToCss('clamp(space(0.5), 3vw, density(section))'), 'clamp(var(--uxdsl__space__0.5), 3vw, var(--uxdsl__density__section))');
+test('native CSS and named tokens remain intact; a key is a bare word without dots', () => {
+  assert.equal(typographyValueToCss('clamp(space(half), 3vw, density(section))'), 'clamp(var(--uxdsl__space__half), 3vw, var(--uxdsl__density__section))');
+  assert.throws(() => typographyValueToCss('space(0.5)'), /UXD_TOKEN_KEY/);
 });
 test('invalid definitions fail in the shared compiler and theme validator', () => {
   for (const details of [{ h1: { fontSize: 'md(2rem)' } }, { h1: { bogus: '2rem' } }, { h1: { fontSize: '' } }]) {

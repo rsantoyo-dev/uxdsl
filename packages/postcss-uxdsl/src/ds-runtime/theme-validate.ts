@@ -1,4 +1,4 @@
-import { compileDensityRules, getDensityTokens, validateBreakpoints, DEFAULT_BREAKPOINTS } from '../language';
+import { compileDensityRules, getDensityTokens, validateBreakpoints, tokenValueToCss, DEFAULT_BREAKPOINTS } from '../language';
 import { compileInputRules } from '../inputs';
 import { compileButtonRules } from '../buttons';
 import { compileSurfaceRules } from '../surfaces';
@@ -349,8 +349,8 @@ export function validateTheme<TTheme extends Record<string, any>>(
     };
     engine('theme', () => { generateFoundationCss(theme); });
     engine('fonts', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
-    if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps); });
-    engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps); });
+    if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps, theme); });
+    engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps, (value) => tokenValueToCss(value, theme)); });
     engine('inputs', () => { compileInputRules(theme, bps); });
     engine('buttons', () => { compileButtonRules(theme, bps); });
     engine('surfaces', () => { compileSurfaceRules(theme, bps); });

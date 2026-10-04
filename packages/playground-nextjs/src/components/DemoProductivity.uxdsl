@@ -32,15 +32,15 @@
     width: 80px;
     height: 80px;
     border-radius: radius(pill);
-    background: palette(primary-main);
-    color: palette(primary-contrast);
+    background: palette(primary.main);
+    color: palette(primary.contrast);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: bold;
     font-size: 2rem;
     box-shadow: shadow(2);
-    border: 4px solid palette(surface-main);
+    border: 4px solid palette(surface.main);
   }
 
   .prod-info {
@@ -51,13 +51,13 @@
 
   .prod-title {
     @ds-typo(h4);
-    color: palette(text-primary);
+    color: palette(text.primary);
     margin: 0;
   }
 
   .prod-subtitle {
     @ds-typo(body-sm);
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     margin: 0;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -68,9 +68,9 @@
     display: flex;
     justify-content: space-around;
     padding: density(3) 0;
-    border-top: 1px solid palette(neutral-light);
-    border-bottom: 1px solid palette(neutral-light);
-    background: palette(surface-subtle);
+    border-top: 1px solid palette(neutral.light);
+    border-bottom: 1px solid palette(neutral.light);
+    background: palette(surface.subtle);
     border-radius: radius(2);
   }
 
@@ -83,14 +83,14 @@
 
   .prod-stat-val {
     @ds-typo(h5);
-    color: palette(primary-main);
+    color: palette(primary.main);
     margin: 0;
     line-height: 1;
   }
 
   .prod-stat-label {
     @ds-typo(caption);
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font-weight: 600;
   }
 
@@ -144,7 +144,7 @@
     display: flex;
     gap: density(2);
     margin-bottom: density(4);
-    border-bottom: 1px solid palette(neutral-light);
+    border-bottom: 1px solid palette(neutral.light);
     padding-bottom: density(2);
   }
 
@@ -154,20 +154,20 @@
     padding: density(2) density(4);
     font-size: 1rem;
     font-weight: 600;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     cursor: pointer;
     border-radius: radius(2);
     transition: all 0.2s ease;
   }
 
   .prod-tab-btn:hover {
-    background: palette(surface-subtle);
-    color: palette(text-primary);
+    background: palette(surface.subtle);
+    color: palette(text.primary);
   }
 
   .prod-tab-btn.active {
-    background: palette(primary-light);
-    color: palette(primary-dark);
+    background: palette(primary.light);
+    color: palette(primary.dark);
   }
 
   .prod-code-section {
@@ -183,9 +183,9 @@
   .prod-form {
     margin-top: density(3);
     padding: density(3);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     border-radius: radius(2);
-    background: palette(surface-light);
+    background: palette(surface.light);
     display: flex;
     flex-direction: column;
     /* Explicit responsive gap: small on mobile, large on desktop */
@@ -195,7 +195,7 @@
   .prod-form-title {
     @ds-typo(h6);
     margin: 0;
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 
   .prod-form-row {
@@ -215,7 +215,7 @@
   .prod-label {
     @ds-typo(caption);
     font-weight: bold;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   .prod-input {
@@ -237,9 +237,9 @@
     display: flex;
     justify-content: center;
     padding: density(4);
-    background: palette(surface-subtle);
+    background: palette(surface.subtle);
     border-radius: radius(3);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
   }
 
   /* Removed duplicate .demo-code block since it's now defined below with max-width */
@@ -276,7 +276,7 @@
     display: flex;
     gap: density(2);
     margin-bottom: density(4);
-    border-bottom: 1px solid palette(neutral-light);
+    border-bottom: 1px solid palette(neutral.light);
     padding-bottom: density(2);
   }
 
@@ -286,20 +286,20 @@
     padding: density(2) density(4);
     font-size: 1rem;
     font-weight: 600;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     cursor: pointer;
     border-radius: radius(2);
     transition: all 0.2s ease;
   }
 
   .prod-tab-btn:hover {
-    background: palette(surface-subtle);
-    color: palette(primary-main);
+    background: palette(surface.subtle);
+    color: palette(primary.main);
   }
 
   .prod-tab-btn.active {
-    background: palette(primary-light);
-    color: palette(primary-dark);
+    background: palette(primary.light);
+    color: palette(primary.dark);
   }
 
   .prod-comparison-grid {
@@ -316,7 +316,7 @@
     color: #d4d4d4;
     font-family: monospace;
     font-size: 0.9rem;
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     box-shadow: shadow(2);
     width: 100%;
     max-width: 600px; /* Thinner code block */

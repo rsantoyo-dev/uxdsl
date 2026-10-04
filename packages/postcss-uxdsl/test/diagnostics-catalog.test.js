@@ -16,6 +16,10 @@ function sourceFiles(directory) {
 
 const COMPOSED_PREFIXES_BY_FILE = new Map([
   ['preset-engine.ts', ['UXD_PRESET', 'UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE', 'UXD_BUTTON', 'UXD_INPUT']],
+  // The token-function grammar composes `${code}_ARGUMENT` from TOKEN_FUNCTION_CODES.
+  ['language.ts', ['UXD_SPACE', 'UXD_DENSITY', 'UXD_COLOR', 'UXD_PALETTE', 'UXD_EDGE', 'UXD_SHADOW']],
+  // The directive grammar composes `UXD_${family}_ARGUMENT` from DIRECTIVE_FAMILIES.
+  ['directives.ts', ['UXD_SURFACE', 'UXD_BUTTON', 'UXD_INPUT', 'UXD_TYPO']],
   ['surfaces.ts', ['UXD_SURFACE', 'UXD_BUTTON', 'UXD_INPUT']],
   ['naming.ts', ['UXD_FOUNDATION', 'UXD_TYPO', 'UXD_PRESET', 'UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE', 'UXD_BUTTON', 'UXD_INPUT']],
 ]);

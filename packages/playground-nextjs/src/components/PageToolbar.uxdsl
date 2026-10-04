@@ -1,8 +1,8 @@
 /* PageToolbar styles - Scoped */
 #PageToolbar {
   width: 100%;
-  background: palette(surface-light);
-  border-bottom: 1px solid palette(neutral-light);
+  background: palette(surface.light);
+  border-bottom: 1px solid palette(neutral.light);
   position: -webkit-sticky; /* Safari */
   position: sticky;
   top: 0;
@@ -31,7 +31,7 @@
 
 #PageToolbar .page-toolbar__title {
   @ds-typo(body);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   display: flex;
   align-items: center;
   gap: density(1);
@@ -54,13 +54,13 @@
 
   &:hover {
     transform: translateY(-1px);
-    color: palette(primary-main);
+    color: palette(primary.main);
   }
 }
 
 #PageToolbar .page-toolbar__brand-text {
-  @ds-typo (body);
-  color: palette(primary-main);
+  @ds-typo(body);
+  color: palette(primary.main);
   font-weight: 800;
 }
 
@@ -70,20 +70,20 @@
   transition: color 0.2s;
   
   &:hover {
-    color: palette(primary-main);
+    color: palette(primary.main);
     text-decoration: underline;
   }
 }
 
 #PageToolbar .breadcrumb-separator {
-  color: palette(neutral-dark);
+  color: palette(neutral.dark);
   opacity: 0.5;
 }
 
 #PageToolbar .page-toolbar__burger {
   background: transparent;
   border: none;
-  color: palette(secondary-main);
+  color: palette(secondary.main);
   cursor: pointer;
   padding: 0;
   display: flex;
@@ -93,7 +93,7 @@
 }
 
 #PageToolbar .page-toolbar__burger:hover {
-  color: palette(secondary-dark);
+  color: palette(secondary.dark);
   background: transparent;
 }
 
@@ -138,7 +138,7 @@
 
 #PageToolbar .page-toolbar__bp {
   @ds-typo(caption);
-  background: palette(secondary-light, 0.1);
+  background: palette(secondary.light, 0.1);
   padding: density(1) density(2);
   border-radius: radius(1);
   line-height: 1;
@@ -165,12 +165,12 @@
   &:hover, &.active {
     opacity: 1;
     transform: scale(1.2);
-    border-color: palette(surface-contrast, 0.5);
+    border-color: palette(surface.contrast, 0.5);
   }
 
-  &.default { background: color(purple-600); }
-  &.green { background: color(green-600); }
-  &.purple { background: color(purple-600); }
+  &.default { background: color(purple.600); }
+  &.green { background: color(green.600); }
+  &.purple { background: color(purple.600); }
 }
 
 #PageToolbar .mini-theme-toggle {
@@ -183,12 +183,12 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   opacity: 0.7;
   transition: color 0.2s;
 
   &:hover {
     opacity: 1;
-    color: palette(primary-main);
+    color: palette(primary.main);
   }
 }

@@ -14,7 +14,9 @@ async function compile(css) {
 
 for (const [property, value, code] of [
   ['padding', 'density(16)', 'UXD_DENSITY_REFERENCE'],
-  ['color', 'palette(primry)', 'UXD_REFERENCE_MISSING'],
+  ['color', 'palette(primry)', 'UXD_PALETTE_REFERENCE'],
+  // A var() the author wrote next to a token function is checked by the reference pass.
+  ['box-shadow', '0 0 0 space(1) var(--uxdsl__palette__primry-main)', 'UXD_REFERENCE_MISSING'],
   ['border-radius', 'radius(md)', 'UXD_EDGE_REFERENCE'],
 ]) {
   test(`MIG-B6-13: ${code} includes the declaration source location`, async () => {
@@ -24,13 +26,15 @@ for (const [property, value, code] of [
     assert.equal(error.line, 2);
     assert.equal(typeof error.column, 'number');
     assert.match(error.message, new RegExp(code));
-    if (code === 'UXD_REFERENCE_MISSING') assert.match(error.message, /Did you mean "primary"\?/);
+    if (code === 'UXD_PALETTE_REFERENCE' || code === 'UXD_REFERENCE_MISSING') assert.match(error.message, /Did you mean "primary"\?/);
   });
 }
 
 test('MIG-B6-13: reference warnings retain the declaration location', async () => {
+  // A token function is checked at rewrite time whatever the mode; the
+  // reference pass (and its warn mode) is for a var() the author wrote.
   const result = await postcss([plugin({ includeTheme: false, references: { mode: 'warn' } })])
-    .process('.a {\n  color: palette(primry);\n}', { from: file });
+    .process('.a {\n  box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main);\n}', { from: file });
   const [warning] = result.warnings();
   assert.equal(warning.line, 2);
   assert.equal(warning.column, 3);

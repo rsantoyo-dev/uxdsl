@@ -59,8 +59,8 @@ export function SurfaceDocumentation() {
     "contained": {
       "padding": "density(2)",
       "radius": "radius(2)",
-      "bg": "palette(surface-main)",
-      "color": "palette(surface-contrast)",
+      "bg": "palette(surface.main)",
+      "color": "palette(surface.contrast)",
       "border": "border(1)",
       "shadow": "shadow(1)"
     }

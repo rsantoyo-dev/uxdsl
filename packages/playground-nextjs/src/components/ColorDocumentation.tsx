@@ -45,7 +45,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
 
 /* Deliberately use a specific color token */
 .blue-swatch {
-  background: color(blue-700);
+  background: color(blue.700);
 }`}</code></pre></div>
         <div><h4>Equivalent plain CSS</h4><pre><code className="language-css">{`:root {
   --uxdsl__color__blue-700: #1d4ed8;
@@ -66,7 +66,7 @@ export function ColorExplanation({ topic }: { topic: Topic }) {
       <h3>3. Choose the scope of the change</h3>
       <ul>
         <li><strong>Update a color value:</strong> change <code>{'colors.blue["700"]'}</code> to update direct consumers and palette roles that reference it.</li>
-        <li><strong>Reassign a role:</strong> change <code>palette.primary.main</code> to reference <code>blue-500</code>. Primary actions follow that role; direct <code>color(blue-700)</code> consumers keep their token.</li>
+        <li><strong>Reassign a role:</strong> change <code>palette.primary.main</code> to reference <code>blue-500</code>. Primary actions follow that role; direct <code>color(blue.700)</code> consumers keep their token.</li>
         <li><strong>Change one component:</strong> choose another appropriate existing role or color token in that component, without changing shared definitions.</li>
       </ul>
       <p>Apply changes through the theme build or supported runtime API. Existing overrides and active modes can affect the final value. A variant named <code>contrast</code> is a configured foreground color, not proof of accessible contrast; check the actual foreground/background pair in each relevant state and theme.</p>
@@ -114,7 +114,7 @@ export function ColorAgentGuidance({ topic }: { topic: Topic }) {
       <pre><code className="language-json">{theme}</code></pre>
       <pre><code className="language-css">{topic === 'colors' ? `/* A swatch intentionally represents this Color token */
 .blue-swatch {
-  background: color(blue-700);
+  background: color(blue.700);
 }` : `.primary-action {
   background: palette(primary.main);
   color: palette(primary.contrast);

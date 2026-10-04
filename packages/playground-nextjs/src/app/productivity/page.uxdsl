@@ -2,7 +2,7 @@
 #ProductivityPage {
   .back-link {
     @ds-typo(body-sm);
-    color: palette(primary-main);
+    color: palette(primary.main);
     text-decoration: none;
     font-weight: bold;
   }

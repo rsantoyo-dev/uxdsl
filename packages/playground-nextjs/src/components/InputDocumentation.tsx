@@ -46,10 +46,10 @@ export function InputDocumentation() {
   "inputs": {
     "search": {
       "surface": "outlined",
-      "base": { "padding": "density(2)", "placeholder": "palette(neutral-dark)" },
+      "base": { "padding": "density(2)", "placeholder": "palette(neutral.dark)" },
       "states": {
-        "focus": { "border": "1px solid palette(primary-main)" },
-        "invalid": { "border": "2px solid palette(error-main)" }
+        "focus": { "border": "1px solid palette(primary.main)" },
+        "invalid": { "border": "2px solid palette(error.main)" }
       }
     }
   }

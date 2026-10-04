@@ -16,6 +16,7 @@ const { KNOWN_THEME_FAMILIES } = require('../packages/postcss-uxdsl/dist/ds-runt
 const { SURFACE_PROPERTIES } = require('../packages/postcss-uxdsl/dist/surfaces');
 const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/postcss-uxdsl/dist/buttons');
 const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/postcss-uxdsl/dist/inputs');
+const { DIRECTIVE_USAGE } = require('../packages/postcss-uxdsl/dist/directives');
 
 // MIG-B6-26 (FEAT-008): the vscode extension's directive-argument
 // completions, its TextMate grammar's function/directive alternations,
@@ -45,11 +46,12 @@ const fullCompletions = {
     ])
   ),
 };
+// The usage string of each directive comes from the grammar itself (src/directives.ts).
 const directiveDescriptions = {
-  'ds-surface': "Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone and numeric size: @ds-surface(role [tone] [size]).",
-  'ds-button': 'Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone and numeric size: @ds-button(role [tone] [size]).',
-  'ds-input': 'Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone and numeric size: @ds-input(role [tone] [size]).',
-  'ds-typo': 'Applies a shared typography role\'s responsive font styles: @ds-typo(role).',
+  'ds-surface': `Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-surface']}.`,
+  'ds-button': `Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-button']}.`,
+  'ds-input': `Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-input']}.`,
+  'ds-typo': `Applies a shared typography role's responsive font styles: ${DIRECTIVE_USAGE['ds-typo']}.`,
 };
 const customData = {
   version: 1.1,

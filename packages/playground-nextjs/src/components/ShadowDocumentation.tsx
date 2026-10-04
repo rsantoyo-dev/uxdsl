@@ -28,7 +28,7 @@ export default function ShadowDocumentation() {
 }
 .card { box-shadow: var(--uxdsl__shadow__2); }`}</code></pre></div>
       </div>
-      <p>The component selects a preset. At 768px the shared variable changes; at later breakpoints that value persists until another override applies. This is a discrete transition, not automatic interpolation. <code>elevation(2)</code> is an alias for <code>shadow(2)</code>; neither changes stacking order.</p>
+      <p>The component selects a preset. At 768px the shared variable changes; at later breakpoints that value persists until another override applies. This is a discrete transition, not automatic interpolation. <code>shadow(2)</code> is an alias for <code>shadow(2)</code>; neither changes stacking order.</p>
       <h3>Layers, inset effects and system references</h3>
       <pre><code className="language-json">{`{
   "shadows": {
