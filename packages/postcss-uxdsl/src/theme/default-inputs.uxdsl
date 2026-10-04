@@ -18,6 +18,7 @@
     :disabled {
       color: palette(neutral.dark);
       opacity: 0.6;
+      cursor: not-allowed;
     }
   }
   input-outlined: {
@@ -32,6 +33,7 @@
     }
     :disabled {
       opacity: 0.6;
+      cursor: not-allowed;
     }
   }
   input-underline: {
@@ -49,6 +51,7 @@
     }
     :disabled {
       opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 }

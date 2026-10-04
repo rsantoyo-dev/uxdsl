@@ -97,10 +97,15 @@ test('MIG-B6-30: removing a typography field is rejected', () => {
     /typography role "h1" now emits a different set of fields/);
 });
 
-test('MIG-B6-30: introducing a focus-visible state is rejected', () => {
-  assertRejected('introduce focusvisible',
-    afterPatch({}, { buttons: { contained: { states: { focusvisible: { outline: '2px solid palette(primary.main)' } } } } }),
+test('MIG-B6-30: introducing a state the role does not have is rejected (an existing one is a value change)', () => {
+  // The base Button roles ship `focusvisible` and `disabled` since stability
+  // phase 5, so patching `focusvisible` is an ordinary value change now;
+  // `active` is still a state the role does not emit.
+  assertRejected('introduce active',
+    afterPatch({}, { buttons: { contained: { states: { active: { transform: 'translateY(1px)' } } } } }),
     /button role "contained" changed its states/);
+  assertAllowed('restyle the shipped focusvisible state',
+    afterPatch({}, { buttons: { contained: { states: { focusvisible: { outline: '3px solid palette(primary.main)' } } } } }));
 });
 
 test('MIG-B6-30: changing the Surface a Button composes from is rejected', () => {

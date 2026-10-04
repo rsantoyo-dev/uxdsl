@@ -199,7 +199,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 18 definitions: color (src/example.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__outlined-selected-bg, --uxdsl__button__outlined-selected-border, --uxdsl__button__outlined-tone-primary-selected-bg and 13 more.\n"
+      "stderr": "[uxdsl] Error: UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 24 definitions: color (src/example.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__contained-focusvisible-outline, --uxdsl__button__contained-tone-primary-focusvisible-outline, --uxdsl__button__outlined-focusvisible-outline and 19 more.\n"
     }
   ],
   "aliases": {

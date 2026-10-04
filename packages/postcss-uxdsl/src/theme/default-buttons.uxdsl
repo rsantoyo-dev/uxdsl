@@ -10,9 +10,17 @@
       bg: tone(dark);
       color: tone(contrast);
     }
+    :focusvisible {
+      outline: 2px solid tone(main);
+      outline-offset: 2px;
+    }
     :selected {
       bg: tone(dark);
       color: tone(contrast);
+    }
+    :disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
   button-outlined: {
@@ -21,10 +29,18 @@
       color: tone(dark);
       border: 1px solid tone(dark);
     }
+    :focusvisible {
+      outline: 2px solid tone(main);
+      outline-offset: 2px;
+    }
     :selected {
       bg: tone(main);
       color: tone(contrast);
       border: 1px solid tone(main);
+    }
+    :disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
   button-flat: {
@@ -32,8 +48,16 @@
     :hover {
       color: tone(dark);
     }
+    :focusvisible {
+      outline: 2px solid tone(main);
+      outline-offset: 2px;
+    }
     :selected {
       color: tone(dark);
+    }
+    :disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
     }
   }
 }

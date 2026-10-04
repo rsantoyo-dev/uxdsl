@@ -339,6 +339,16 @@ repeated or empty prefix (`"space-space-1"`, `"space-"`) raises
 (`{ "1": "4px", "space-1": "4px" }`) raises `UXD_SPACING_COLLISION` even
 when the values agree — pick one spelling.
 
+The base theme's numbered families each have an explicit zero (stability
+phase 5 added the last two): `spacing.0` is `0` and `borders.0` is `none`,
+next to `densities.0` (`0`), `radii.0` (`0`) and `shadows.0` (`none`), so
+`space(0)`, `border(0)`, `density(0)`, `radius(0)` and `shadow(0)` all
+resolve with no theme of the project's own and "no edge" stays a token
+(`border: border(0)`) rather than a literal. The shipped ranges are
+`spacing` 0–16, `densities` 0–15 (each referencing `spacing` 1–16),
+`radii` 0–5, `borders` 0–5, `shadows` 0–5; a key is a position in the
+scale, not a pixel count.
+
 ---
 
 ## Independent radius/shadow overrides (`@ds-surface`/`@ds-button`/`@ds-input`)
@@ -645,6 +655,34 @@ theme (745 → 591 declarations; the 154 dropped ones were byte-identical
 copies). Read a component's value through that fallback, never by looking
 up the per-tone name alone.
 
+### What the base Button and Input roles ship as states
+
+Stability phase 5 (audit T15): every base Button role (`contained`,
+`outlined`, `flat`) now ships four states — `hover` and `selected` as
+before, plus `focusvisible` (`outline: 2px solid tone(main)`,
+`outline-offset: 2px`: a keyboard focus ring in the requested tone,
+`primary` when none is given) and `disabled` (`opacity: 0.6`, `cursor:
+not-allowed`). `active` and `focus` are left to the project. Every
+`@ds-button` therefore emits a `:focus-visible` rule and a
+`:disabled, [aria-disabled="true"]` rule; the Input roles already had
+`focus` (border or underline in the tone) and `disabled` (`opacity: 0.6`),
+which gains the same `cursor`. Measured on one `.btn { @ds-button(contained); }`
+compiled with no theme of the project's own: 42,768 → 47,664 bytes and
+662 → 718 declarations in all (the theme block 640 → 690: 4 untoned
+declarations per Button role, 33 per-tone `focusvisible` outlines, 3 Input
+cursors, the two zero keys below); the component itself 3 → 5 rules,
+10 → 14 declarations. Adding these later would have been structural under
+`applyTheme` (a rebuild for every consumer), which is why they are in the
+base before the contract freezes.
+
+One disclosed limitation, a property of the state selectors rather than of
+these values: a disabled button that is hovered still receives the hover
+colors under its dimming, because `.btn:hover` does not exclude
+`:disabled`. Values cannot close it — a `disabled` state restating base
+colors would say `tone(main)`, which is `primary` for an untoned button
+whose real base is the Surface — so it is left to the engine
+(`test/base-theme-states.test.js` pins the current selectors so the change
+is a conscious one).
 
 ### Accessibility contrast gate (`checkThemeContrast`)
 
@@ -739,8 +777,9 @@ of phase 3's three findings — `inputs.*.base.placeholder` follows the
 requested tone on `contained`, the only Input role whose background
 actually tints — and stability phase 5 (unreleased, `0.5.0-beta.7`) closed
 the rest: `checkThemeContrast(resolveTheme(), { exceptions })` with the
-shipped exceptions file reports **`passed: true` — 824 pairs checked, 0
-failing, 98 excepted, no exception issue**, and `uxdsl theme --contrast` in
+shipped exceptions file reports **`passed: true` — 1004 pairs checked, 0
+failing, 111 excepted, no exception issue** (824/0/98 before the same phase
+added the Button `focusvisible`/`disabled` states), and `uxdsl theme --contrast` in
 a project with no theme override exits 0 with the same report. What
 changed: `warning` was re-chosen for light mode (`main` `#b45309`, `dark`
 `#92400e`, `contrast` `#ffffff`) and given its own dark-mode `dark`
@@ -749,7 +788,7 @@ and hover gray) and `light.dark` (`#334155`) were corrected — the
 CHANGELOG's "Visual changes" table has every before/after; and the
 canvas-identity families (`light`/`dark`/`surface` used as a tone, drawing
 their own color on the page) are excepted as the structural class they are,
-three patterns, every covered pair still listed. The 98 excepted pairs are
+three patterns, every covered pair still listed. The 111 excepted pairs are
 all of that class; reverting any corrected value makes the gate fail again,
 not through an exception (`test/base-theme-contrast.test.js`).
 
@@ -1182,7 +1221,7 @@ with `UXD_THEME_STRUCTURE`, naming what changed and telling you to rebuild:
 | Rejected — rebuild required | Allowed — applied immediately |
 | --- | --- |
 | Adding or removing a `typography_details` field | Changing any token's value |
-| Introducing a state such as `focusvisible` | Responsive expressions over the same thresholds |
+| Introducing a state a role does not emit (`active`, say) | Responsive expressions over the same thresholds |
 | Changing the Surface a Button or Input composes from | Dark-mode (`modes.dark`) colors |
 | Moving an existing breakpoint threshold | Adding a new token or breakpoint name |
 | A palette family losing `main`/`dark`/`contrast` | A field a role already emits |

@@ -81,6 +81,7 @@
     "xl": 1280
   },
   "spacing": {
+    "0": "0",
     "1": "0.125rem",
     "2": "0.25rem",
     "3": "0.5rem",
@@ -117,6 +118,7 @@
     "15": "xs(space(15)) md(space(16)) xl(space(16))"
   },
   "borders": {
+    "0": "none",
     "1": "xs(1px solid color(gray.300))",
     "2": "xs(space(1) solid color(gray.300))",
     "3": "xs(space(2) solid color(gray.400))",
@@ -319,9 +321,17 @@
           "bg": "tone(dark)",
           "color": "tone(contrast)"
         },
+        "focusvisible": {
+          "outline": "2px solid tone(main)",
+          "outline-offset": "2px"
+        },
         "selected": {
           "bg": "tone(dark)",
           "color": "tone(contrast)"
+        },
+        "disabled": {
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     },
@@ -333,10 +343,18 @@
           "color": "tone(dark)",
           "border": "1px solid tone(dark)"
         },
+        "focusvisible": {
+          "outline": "2px solid tone(main)",
+          "outline-offset": "2px"
+        },
         "selected": {
           "bg": "tone(main)",
           "color": "tone(contrast)",
           "border": "1px solid tone(main)"
+        },
+        "disabled": {
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     },
@@ -347,8 +365,16 @@
         "hover": {
           "color": "tone(dark)"
         },
+        "focusvisible": {
+          "outline": "2px solid tone(main)",
+          "outline-offset": "2px"
+        },
         "selected": {
           "color": "tone(dark)"
+        },
+        "disabled": {
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     }
@@ -370,7 +396,8 @@
         },
         "disabled": {
           "color": "palette(neutral.dark)",
-          "opacity": "0.6"
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     },
@@ -388,7 +415,8 @@
           "border": "1px solid palette(error.main)"
         },
         "disabled": {
-          "opacity": "0.6"
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     },
@@ -409,7 +437,8 @@
           "underline": "1px solid palette(error.main)"
         },
         "disabled": {
-          "opacity": "0.6"
+          "opacity": "0.6",
+          "cursor": "not-allowed"
         }
       }
     }

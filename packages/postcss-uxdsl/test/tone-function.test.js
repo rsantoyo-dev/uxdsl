@@ -47,7 +47,8 @@ test('tone(): theme/base.json is written with tone() and palette() — no compil
   const text = JSON.stringify(base);
   assert.doesNotMatch(text, /var\(--uxdsl__(?:button|input)__tone-/, 'the literal fallback chain is gone from the base theme');
   assert.doesNotMatch(text, /var\(--uxdsl__palette__/, 'palette aliases reference palette(), not the compiled name');
-  assert.equal((text.match(/tone\((?:main|dark|contrast)\)/g) || []).length, 17, 'the 17 former literals are now tone()');
+  // 17 former literals, plus the three `focusvisible` outlines stability phase 5 added to the Button roles.
+  assert.equal((text.match(/tone\((?:main|dark|contrast)\)/g) || []).length, 20, 'the 17 former literals are now tone(), plus 3 focusvisible outlines');
 });
 
 test('tone(): the base theme compiles byte-identically to its former literal spelling, on both paths', () => {
@@ -156,8 +157,11 @@ test('T8: the default output loses every identical tone copy and nothing else', 
   // theme (`modes.dark.palette.warning.dark`, `modes.dark.palette.light.dark`),
   // each emitted once per dark-mode selector (+4), and populated `colors`
   // with the 49 literals the palette uses, 4 of which the gray scale already
-  // held (+45): 745 + 49 untoned declarations.
-  assert.equal(declarations.length, 794 - 341 + toneDeclarations.length);
+  // held (+45), then added `focusvisible`/`disabled` to the three Button
+  // roles (4 untoned each), `cursor` to the three Input disabled states and
+  // the zero keys `spacing.0`/`borders.0` (+17 untoned; the 33 per-tone
+  // `focusvisible` outlines count as tone variants): 745 + 66 untoned.
+  assert.equal(declarations.length, 811 - 341 + toneDeclarations.length);
   assert.ok(toneDeclarations.length > 0 && toneDeclarations.length < 341, `expected fewer than 341 tone variants, got ${toneDeclarations.length}`);
   // Every remaining variant differs from its untoned sibling.
   const map = Object.fromEntries([...css.matchAll(/(--uxdsl__(?:button|input)__[\w-]+): ([^;]+);/g)].map((m) => [m[1], m[2]]));
@@ -177,12 +181,13 @@ test('T8: the contrast gate resolves through the fallback, so its verdict on the
   const { checkThemeContrast } = require('../dist/ds-runtime');
   // Measured with no exceptions, so this pins what the engine resolves and
   // not what the shipped exception list happens to cover (stability phase 5
-  // turned that list into patterns). The 98 are exactly the canvas-identity
-  // tones drawn on the page (38 Button pairs among them); the phase's value
-  // fixes removed every other failure (124 before them).
+  // turned that list into patterns). The 111 are exactly the canvas-identity
+  // tones drawn on the page (51 Button pairs among them, 13 of those the
+  // hover colors re-measured under the `focusvisible` state the phase added);
+  // the phase's value fixes removed every other failure (124 before them).
   const report = checkThemeContrast(resolveTheme());
-  assert.equal(report.failures.filter((f) => f.family === 'button').length, 38);
-  assert.equal(report.failures.length, 98);
+  assert.equal(report.failures.filter((f) => f.family === 'button').length, 51);
+  assert.equal(report.failures.length, 111);
   assert.ok(report.failures.every((f) => ['surface', 'light', 'dark'].includes(f.tone)));
   assert.deepEqual(report.failures.filter((f) => /unresolved/.test(f.reason || '')), []);
 });

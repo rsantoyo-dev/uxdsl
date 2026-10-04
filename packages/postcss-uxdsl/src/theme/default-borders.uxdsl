@@ -4,6 +4,7 @@
  * import needed. Kept, unchanged in meaning, for a project that already
  * imports this pack explicitly. Not removed in 0.5.0-beta.6. */
 @theme {
+  border-0: none;
   border-1: xs(1px solid color(gray.300));
   border-2: xs(space(1) solid color(gray.300));
   border-3: xs(space(2) solid color(gray.400));

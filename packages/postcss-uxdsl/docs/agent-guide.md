@@ -333,7 +333,12 @@ for component spacing, not automatically for border width or corner rounding.
   compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
   Keywords are built-ins, not editable numbered presets. Border radius alone
   does not clip child content.
-- Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references fail instead of inventing fallback
+- Define numbered presets before use. Every numbered family has an explicit
+  zero in the base theme: `radius(0)` is a square corner (`0`), `border(0)` is
+  `none`, `shadow(0)` is `none`, `space(0)` is `0` and `density(0)` is `0`
+  (stability phase 5 added the Spacing and Border ones). Write `border(0)`
+  to remove a shared edge rather than a literal `none`, so the intent stays
+  a token. Unknown Border/Radius references fail instead of inventing fallback
   values. Define the token before using it; do not rely on old fallback behavior.
 - For local independent shapes, use intentional native CSS or per-corner values.
   Trace Spacing and Palette dependencies before changing foundational tokens.
@@ -519,7 +524,15 @@ Surfaces own the container composition. HTML/application code own interaction.
   own variable as the `var()` fallback, so resolve through that fallback.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
-  focusvisible, disabled, selected. Defaults supply hover and selected only.
+  focusvisible, disabled, selected. The base roles supply hover, focusvisible
+  (`outline: 2px solid tone(main)`, `outline-offset: 2px` — a keyboard focus
+  ring in the tone, on every `@ds-button`), selected and disabled (`opacity:
+  0.6`, `cursor: not-allowed`) since stability phase 5; `active` and `focus`
+  are left to the project. A disabled button still receives the hover colors
+  under its dimming when hovered — the state selectors do not exclude
+  `:disabled` (an engine follow-up, not a value); do not restate base colors
+  in `disabled` to work around it, since `tone(main)` is `primary` when no
+  tone is given and the untoned base is the Surface.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
   Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
@@ -724,7 +737,9 @@ if (!result.ok) console.error(result.error.message)
 `applyTheme` swaps custom properties; it cannot rewrite rules a build already
 compiled into the host's components. A patch that changes *which declarations a
 directive would emit* — a `typography_details` field added or removed, a state
-such as `focusvisible` introduced, a Button's or Input's Surface changed, an
+the role does not emit introduced (`active`, say; the base Button roles
+already ship `hover`, `focusvisible`, `selected` and `disabled`), a Button's
+or Input's Surface changed, an
 existing breakpoint threshold moved, a palette family losing `main`/`dark`/
 `contrast` — is refused with `UXD_THEME_STRUCTURE` and an instruction to
 rebuild. Token values, responsive expressions over the same thresholds,
@@ -960,8 +975,9 @@ Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
 its 4 phases, closing that story. `checkThemeContrast` against
 `theme/base.json` with the shipped `theme/base.contrast-exceptions.json`
-(three patterns, stability phase 5) reports `passed: true`: 824 pairs
-checked, 0 failing, 98 excepted, no exception issue (before this phase: 123
+(three patterns, stability phase 5) reports `passed: true`: 1004 pairs
+checked, 0 failing, 111 excepted, no exception issue (824/0/98 before the
+phase added the Button `focusvisible`/`disabled` states; before the phase: 123
 failing with the single exact record, 124 without; 156 before FEAT-009's
 MIG-B7-01). Reproduce after building `postcss-uxdsl`, from the repository root:
 `node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.

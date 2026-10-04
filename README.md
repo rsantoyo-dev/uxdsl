@@ -21,8 +21,8 @@ the release record. The most important of those — the packaged base theme not
 passing its own contrast gate (123 failing pairs as of 2026-09-28) — is closed
 by stability phase 5 (unreleased): `checkThemeContrast` on
 `packages/postcss-uxdsl/src/theme/base.json` with the shipped
-`base.contrast-exceptions.json` now reports `passed: true` — 824 pairs checked,
-0 failing, 98 excepted (the canvas-identity families `surface`, `light` and
+`base.contrast-exceptions.json` now reports `passed: true` — 1004 pairs checked,
+0 failing, 111 excepted (the canvas-identity families `surface`, `light` and
 `dark` used as a tone and drawn on the page, covered by three pattern
 exceptions and still listed pair by pair, never counted as passing);
 `uxdsl theme --contrast` in a zero-config project exits 0 and prints the same

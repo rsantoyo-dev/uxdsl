@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (43754 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (48919 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 43754,
+        "bytes": 48919,
         "rootBlocks": 17,
         "mediaQueries": 9
       }
@@ -66,10 +66,10 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (42588 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (47159 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 42588,
+        "bytes": 47159,
         "rootBlocks": 17
       }
     },
@@ -85,10 +85,10 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (42588 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (47159 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 42588,
+        "bytes": 47159,
         "rootBlocks": 17
       }
     },
@@ -201,7 +201,7 @@
           "typography_details",
           "$schema"
         ],
-        "bytes": 13958,
+        "bytes": 14727,
         "primary": {
           "main": "#0f766e",
           "light": "color(purple.500)",
@@ -258,15 +258,15 @@
         "--contrast"
       ],
       "exit": 0,
-      "stderr": "[uxdsl] --contrast: no blocking failure. 98 more pairs fail and are covered by an exception (listed under \"excepted\", not passing).\n",
+      "stderr": "[uxdsl] --contrast: no blocking failure. 111 more pairs fail and are covered by an exception (listed under \"excepted\", not passing).\n",
       "facts": {
         "passed": true,
-        "checked": 824,
+        "checked": 1004,
         "failures": 0,
         "exceptions": 3,
         "exceptionsMatched": 3,
         "exceptionIssues": [],
-        "bytes": 312760,
+        "bytes": 377744,
         "byGroup": {}
       },
       "excerpt": "[]"
@@ -311,7 +311,7 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (43754 bytes)",
+          "[uxdsl] built dist/app.css (48919 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -320,7 +320,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (43796 bytes)"
+          "[uxdsl] built dist/app.css (48961 bytes)"
         ]
       },
       {
@@ -336,12 +336,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (43754 bytes)"
+          "[uxdsl] built dist/app.css (48919 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 43754
+      "finalBytes": 48919
     }
   }
 }

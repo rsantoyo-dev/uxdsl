@@ -9,6 +9,46 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 5 (audit of 2026-09-29, findings T15, L17, T13) — states the
+base Button roles were missing, and explicit zeros:
+
+### Visual changes
+
+Every `@ds-button(...)` with no override of the role's states now emits two
+more rules, and every text-like `@ds-input(...)` one more declaration:
+
+- **Keyboard focus ring.** `:focus-visible` → `outline: 2px solid <tone main>`
+  (`primary.main` when no tone is given) with `outline-offset: 2px`, on
+  `contained`, `outlined` and `flat`. Before: no rule, so the browser's
+  default focus ring (or none, when a project reset outlines).
+- **Disabled.** `:disabled, [aria-disabled="true"]` → `opacity: 0.6`,
+  `cursor: not-allowed`, on the three Button roles. Before: no rule at all —
+  a disabled button looked enabled. The three Input roles already dimmed to
+  `0.6`; they gain the same `cursor: not-allowed`.
+- **Explicit zeros.** `spacing.0: "0"` and `borders.0: "none"`, so
+  `space(0)` and `border(0)` resolve zero-config like `density(0)`,
+  `radius(0)` and `shadow(0)` already did. Two new custom properties
+  (`--uxdsl__space__0`, `--uxdsl__border__0`); nothing existing changes.
+
+Measured on one `.btn { @ds-button(contained); }` compiled zero-config,
+before → after: 42,768 → 47,664 bytes, 662 → 718 declarations (the theme
+block 42,145 → 46,716 bytes, 640 → 690 declarations: 12 untoned
+Button-state declarations, 33 per-tone `focusvisible` outlines — the tone
+changes the value, so each of the 11 tones gets its own — 3 Input cursors,
+2 zero keys); the component rules 3 → 5, 10 → 14 declarations. The
+contrast gate still passes: 824 → 1004 pairs checked (the new states), 0
+failing, 98 → 111 excepted (the 13 extra are the canvas-identity tones'
+hover colors measured again under `focusvisible`, the same class the three
+patterns cover; `disabled` pairs are exempt, as before). The playground's
+four themes pass (default 1004/0/111, green 911/0/111, purple 1004/0/111,
+slate 953/0/95). `contrast-baseline.json` re-pinned.
+
+Disclosed, not fixed here: a disabled button that is hovered still receives
+the hover colors under its dimming, because the `hover` selector does not
+exclude `:disabled`. That is the state selectors' business (engine), not a
+value; `test/base-theme-states.test.js` pins the current behavior so the
+change is a conscious one.
+
 Stability phase 5 (audit of 2026-09-29, decision DE-11 / finding T12) — the
 base theme demonstrates Colors → Palette:
 

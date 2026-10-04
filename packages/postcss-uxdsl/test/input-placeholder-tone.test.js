@@ -148,8 +148,9 @@ test('MIG-B7-01: Button\'s own tone-state pattern (hover.bg etc.) is unaffected'
   // caret still rely on.
   // No exceptions: this pins the engine's own Button findings, not what the
   // shipped exception list covers (stability phase 5 made that list patterns;
-  // its value fixes took Button's count from 47 to the 38 canvas-identity pairs).
+  // its value fixes took Button's count from 47 to the 38 canvas-identity
+  // pairs, and its new `focusvisible` state re-measures 13 of them: 51).
   const report = checkThemeContrast(resolveTheme());
-  assert.equal(report.failures.filter((f) => f.family === 'button').length, 38,
+  assert.equal(report.failures.filter((f) => f.family === 'button').length, 51,
     'Button\'s failure count must be exactly what the base theme measures');
 });
