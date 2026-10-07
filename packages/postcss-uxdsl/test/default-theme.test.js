@@ -165,7 +165,7 @@ test('MIG-B2-02: default headings and controls compile without legacy imports at
   const runtime = postcss.parse(generateThemeCss());
   const valueAt = (root, width) => {
     let result;
-    root.walkDecls('--uxdsl__typography__h1-size', d => {
+    root.walkDecls('--uxdsl__typography__h1-font-size', d => {
       let active = true;
       for (let p = d.parent; p; p = p.parent) if (p.type === 'atrule' && p.name === 'media') active = active && width >= Number(p.params.match(/min-width:\s*([\d.]+)/)[1]);
       if (active) result = d.value;

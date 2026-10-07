@@ -2,34 +2,24 @@ import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, 
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
-/** JSON fields and their public CSS variable suffixes. */
+/** JSON fields and the CSS property each one is: the public variable suffix
+ * (`--uxdsl__typography__<role>-font-size`) and the declaration `@ds-typo`
+ * emits (`font-size`) are the same name. */
 export const TYPOGRAPHY_PROPERTIES = Object.freeze({
-  fontFamily: 'font-family', fontSize: 'size', lineHeight: 'line',
-  fontWeight: 'weight', letterSpacing: 'spacing', textTransform: 'transform',
-  textDecoration: 'decoration', fontStyle: 'style',
-  marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
-});
-export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
-export type TypographyDetails = Record<string, TypographyStyle>;
-
-/** The same JSON fields, mapped to the CSS property `@ds-typo` emits for each.
- * MIG-B6-17 (FEAT-008): `@ds-typo` used to emit a fixed list of declarations
- * with literal fallbacks the theme never asked for (`auto` margins that break
- * flex/grid, a `text-decoration: none` that stripped link underlines, an
- * `opacity` that could not be overridden from JSON at all because it is not a
- * field here). It now emits one declaration per field the effective theme
- * actually defines, so this map and TYPOGRAPHY_PROPERTIES must stay key-for-key
- * identical — test/typography.test.js guards that. The suffix map is the public
- * variable name (`fontSize` -> `--…-size`); this one is the CSS property
- * (`fontSize` -> `font-size`). They differ, so neither can be derived from the
- * other by camelCase conversion. */
-export const TYPOGRAPHY_CSS_PROPERTIES = Object.freeze({
   fontFamily: 'font-family', fontSize: 'font-size', lineHeight: 'line-height',
   fontWeight: 'font-weight', letterSpacing: 'letter-spacing',
   textTransform: 'text-transform', textDecoration: 'text-decoration',
   fontStyle: 'font-style',
   marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
 });
+export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
+export type TypographyDetails = Record<string, TypographyStyle>;
+
+/** The CSS property `@ds-typo` emits for each field — the same map as the
+ * variable suffixes above, kept under its own name for the callers that read
+ * it as "the property to emit". `@ds-typo` emits one declaration per field the
+ * effective theme defines for the role, with no literal fallbacks. */
+export const TYPOGRAPHY_CSS_PROPERTIES = TYPOGRAPHY_PROPERTIES;
 
 /** The effective field set for one role: `default` underneath the role's own
  * fields, exactly as compileTypographyRules composes it when generating the

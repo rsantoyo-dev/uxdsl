@@ -521,7 +521,7 @@ Every custom property this compiler emits or consumes carries the shared
 `--uxdsl__density__2`, `--uxdsl__radius__2`/`--uxdsl__border__1`,
 `--uxdsl__shadow__1`, `--uxdsl__surface__contained-padding`,
 `--uxdsl__button__contained-hover-bg`,
-`--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-size`,
+`--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-font-size`,
 `--uxdsl__font__ui`, `--uxdsl__palette__primary-main`,
 `--uxdsl__color__gray-300`. One shared, always-`uxdsl__`-prefixed
 namespace is what makes a UXDSL-generated variable unambiguous to spot in
@@ -888,10 +888,10 @@ theme did not ask for:
 .eyebrow {
   margin: 0;
   font-family: var(--uxdsl__typography__caption-font-family);
-  font-size: var(--uxdsl__typography__caption-size);
-  line-height: var(--uxdsl__typography__caption-line);
-  font-weight: var(--uxdsl__typography__caption-weight);
-  letter-spacing: var(--uxdsl__typography__caption-spacing);
+  font-size: var(--uxdsl__typography__caption-font-size);
+  line-height: var(--uxdsl__typography__caption-line-height);
+  font-weight: var(--uxdsl__typography__caption-font-weight);
+  letter-spacing: var(--uxdsl__typography__caption-letter-spacing);
   margin-block-start: var(--uxdsl__typography__caption-margin-block-start);
   margin-block-end: var(--uxdsl__typography__caption-margin-block-end);
 }

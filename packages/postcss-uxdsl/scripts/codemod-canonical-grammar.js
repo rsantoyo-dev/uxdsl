@@ -10,6 +10,8 @@
 //   color(family-shade)      -> color(family.shade)
 //   @ds-x (args) / @ds-x args; / @ds-x(a, b) / @ds-x("a")
 //                            -> @ds-x(a b)
+//   --uxdsl__typography__<role>-size / -line / -weight / -spacing / -transform / -decoration / -style
+//                            -> -font-size / -line-height / -font-weight / -letter-spacing / -text-transform / -text-decoration / -font-style
 //
 // Usage:
 //   node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js [--write] [--theme uxdsl.theme.json] <paths…>
@@ -119,6 +121,9 @@ function rewrite(text, report) {
     });
   }
   count('directive arguments', n); n = 0;
+  const TYPOGRAPHY_SUFFIXES = { size: 'font-size', line: 'line-height', weight: 'font-weight', spacing: 'letter-spacing', transform: 'text-transform', decoration: 'text-decoration', style: 'font-style' };
+  out = out.replace(/(--uxdsl__typography__[a-z0-9-]*?)-(size|line|weight|spacing|transform|decoration|style)\b(?!-)/g, (match, head, suffix) => { n++; return `${head}-${TYPOGRAPHY_SUFFIXES[suffix]}`; });
+  count('typography variable suffixes', n); n = 0;
   const densities = (out.match(/\bdensities\(/g) || []).length;
   if (densities) report.push(['unresolved', `densities(…) ×${densities}: define a Density token in the theme and use density(k)`]);
   return out;

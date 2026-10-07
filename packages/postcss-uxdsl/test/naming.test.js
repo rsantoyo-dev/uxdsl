@@ -84,6 +84,6 @@ test('MIG-08: centralizing name construction did not change existing output for 
 
 test('MIG-08: typography field names are centralized too (consistency; no realistic collision surface with the current fixed suffix set)', () => {
   const rules = compileTypographyRules({ h1: { fontSize: '1rem', fontWeight: '700' } }, { xs: 0 });
-  assert.equal(rules[0].values['--uxdsl__typography__h1-size'], '1rem');
-  assert.equal(rules[0].values['--uxdsl__typography__h1-weight'], '700');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-font-size'], '1rem');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-font-weight'], '700');
 });

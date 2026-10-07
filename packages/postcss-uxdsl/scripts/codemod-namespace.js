@@ -4,6 +4,8 @@
 // Explicit migration of selected files. These legacy prefixes must belong to
 // UXDSL in the consumer; arbitrary --primary-main aliases are never inferred.
 const fs = require('node:fs');
+// The pre-namespace suffixes were abbreviated; the variable is named after the CSS property now.
+const TYPOGRAPHY_SUFFIXES = { size: 'font-size', line: 'line-height', weight: 'font-weight', spacing: 'letter-spacing', transform: 'text-transform', decoration: 'text-decoration', style: 'font-style' };
 function migrate(source, explicit = {}) {
   const changes = [];
   const output = source.replace(/--[a-zA-Z0-9_-]+/g, (token, offset) => {
@@ -19,7 +21,7 @@ function migrate(source, explicit = {}) {
     if ((match = token.match(/^--ds__(palette|color)__(.+)$/))) next = `--uxdsl__${match[1]}__${match[2]}`;
     else if ((match = token.match(/^--font-(ui|ui-2|code)$/))) next = `--uxdsl__font__${match[1]}`;
     else if ((match = token.match(/^--(space|density|radius|border|shadow|surface|button|input)-(.+)$/))) next = `--uxdsl__${match[1]}__${match[2]}`;
-    else if ((match = token.match(/^--(h[1-6]|p|span|body|small|code|pre|caption|default|tag|body-sm|subtitle2)-(font-family|size|line|weight|spacing|transform|decoration|style|margin-block-start|margin-block-end)$/))) next = `--uxdsl__typography__${match[1]}-${match[2]}`;
+    else if ((match = token.match(/^--(h[1-6]|p|span|body|small|code|pre|caption|default|tag|body-sm|subtitle2)-(font-family|size|line|weight|spacing|transform|decoration|style|margin-block-start|margin-block-end)$/))) next = `--uxdsl__typography__${match[1]}-${TYPOGRAPHY_SUFFIXES[match[2]] || match[2]}`;
     if (!next || token.startsWith('--uxdsl__')) return token;
     changes.push({ before: token, after: next });
     return next;

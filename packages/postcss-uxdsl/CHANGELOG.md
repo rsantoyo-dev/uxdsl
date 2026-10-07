@@ -9,6 +9,38 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 3 (3): typography variable names (audit decision DE-6,
+finding L20).
+
+### Visual changes
+
+None visually: every typography declaration resolves to the same value as
+before. The *names* of seven variables change — a stylesheet or script that
+read `--uxdsl__typography__<role>-size` by hand must read
+`--uxdsl__typography__<role>-font-size` now (the compiler, `@ds-typo`,
+`generateThemeCss` and `applyTheme` all agree, so nothing built from the
+theme needs an edit).
+
+### Removed
+
+| Removed | Instead |
+| --- | --- |
+| `--uxdsl__typography__<role>-size` | `--uxdsl__typography__<role>-font-size` |
+| `--uxdsl__typography__<role>-line` | `--uxdsl__typography__<role>-line-height` |
+| `--uxdsl__typography__<role>-weight` | `--uxdsl__typography__<role>-font-weight` |
+| `--uxdsl__typography__<role>-spacing` | `--uxdsl__typography__<role>-letter-spacing` |
+| `--uxdsl__typography__<role>-transform` | `--uxdsl__typography__<role>-text-transform` |
+| `--uxdsl__typography__<role>-decoration` | `--uxdsl__typography__<role>-text-decoration` |
+| `--uxdsl__typography__<role>-style` | `--uxdsl__typography__<role>-font-style` |
+
+`-font-family`, `-margin-block-start` and `-margin-block-end` were already
+the property names and do not change. The suffix of a typography variable is
+now, for every field, the CSS property it holds: `TYPOGRAPHY_PROPERTIES` and
+`TYPOGRAPHY_CSS_PROPERTIES` are the same map. `scripts/codemod-namespace.js`
+maps the pre-namespace `--h1-size` to the new name, and
+`scripts/codemod-canonical-grammar.js` renames a beta-era
+`--uxdsl__typography__<role>-size` wherever it finds one.
+
 Stability plan, phase 3 (2): the canonical grammar (audit decision DE-5;
 findings L4, L5, L7, L8, L9, L10, L15, L16).
 

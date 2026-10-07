@@ -262,7 +262,7 @@ pasa por `src/naming.ts`), no un cambio de sintaxis del DSL — `palette()`,
 | Surface | `--surface-flat-padding` | `--uxdsl__surface__flat-padding` |
 | Button | `--button-contained-hover-bg` | `--uxdsl__button__contained-hover-bg` |
 | Input | `--input-outlined-focus-border` | `--uxdsl__input__outlined-focus-border` |
-| Typography | `--h1-size` | `--uxdsl__typography__h1-size` |
+| Typography | `--h1-size` | `--uxdsl__typography__h1-font-size` (fase 3 de estabilidad: el sufijo es el nombre de la propiedad CSS; en beta.1 era `-size`) |
 | Font family | `--font-ui` | `--uxdsl__font__ui` |
 | Palette | `--ds__palette__primary-main` | `--uxdsl__palette__primary-main` |
 | Color | `--ds__color__gray-300` | `--uxdsl__color__gray-300` |
@@ -790,7 +790,7 @@ Para roles tipográficos personalizados y nombres que pertenecen al host,
 pasar `--map mapping.json`: un objeto de nombre anterior a nombre destino.
 Un mapeo a sí mismo protege un token externo que coincida con un prefijo de
 UXDSL. Ejemplo: `{ "--space-host": "--space-host",
-"--custom-title-size": "--uxdsl__typography__custom-title-size" }`.
+"--custom-title-size": "--uxdsl__typography__custom-title-font-size" }`.
 Revisar el diff antes de escribir; conservar el commit anterior permite
 revertir la migración. Una segunda ejecución no produce cambios adicionales.
 

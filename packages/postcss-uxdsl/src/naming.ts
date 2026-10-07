@@ -4,7 +4,7 @@
  * `--uxdsl__palette__primary-main`, `--uxdsl__color__gray-300`,
  * `--uxdsl__radius__1`/`--uxdsl__border__1`, `--uxdsl__shadow__1`,
  * `--uxdsl__surface__flat-padding`, `--uxdsl__button__contained-hover-bg`,
- * `--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-size`,
+ * `--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-font-size`,
  * ...).
  *
  * Centralizing this construction is what let every family move from a bare
