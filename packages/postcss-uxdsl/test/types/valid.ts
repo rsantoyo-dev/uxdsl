@@ -73,7 +73,6 @@ export const theme: UxdslTheme = {
     },
   },
   modes: { dark: { palette: { primary: { main: '#ddbfff' } } } },
-  typography: { 'font-code': '"JetBrains Mono", monospace' },
 };
 
 // An override declares only what it changes.

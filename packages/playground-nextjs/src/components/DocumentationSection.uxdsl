@@ -30,8 +30,8 @@
 
 .doc-section pre {
   overflow-x: auto;
-  background: color(gray-900);
-  color: color(gray-200);
+  background: color(gray.900);
+  color: color(gray.200);
   padding: space(5);
   border-radius: 0.5rem;
   font-size: 0.85rem;
@@ -66,5 +66,5 @@
 
 .doc-section__table-wrap th, .doc-section__table-wrap td {
   padding: space(4);
-  border-bottom: 1px solid color(gray-400);
+  border-bottom: 1px solid color(gray.400);
 }

@@ -68,7 +68,7 @@ test('MIG-B6-14 (positive control): every function in the known-CSS-functions li
     skew: '10deg', skewX: '10deg', skewY: '10deg', matrix: '1, 0, 0, 1, 0, 0', matrix3d: '1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1', perspective: '10px',
     blur: '2px', brightness: '1.2', contrast: '1.2', 'drop-shadow': '2px 2px red', grayscale: '50%', 'hue-rotate': '90deg', invert: '50%', opacity: '50%', saturate: '150%', sepia: '50%',
     anchor: '--x', 'anchor-size': '--x',
-    space: '1', density: '1', color: 'primary', palette: 'primary', radius: '1', rounded: '1', border: '1', shadow: '1', elevation: '1', tone: 'main',
+    space: '1', density: '1', color: 'gray.300', palette: 'primary', radius: '1', border: '1', shadow: '1', tone: 'main',
     calc: '1px + 1px', min: '1px, 2px', max: '1px, 2px', clamp: '1px, 2px, 3px',
   };
   for (const name of KNOWN_CSS_FUNCTIONS) {

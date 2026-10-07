@@ -1,9 +1,9 @@
 import { PageTitle } from '@/components/PageTitle'
-import { DiagnosticsList, AliasComparison } from '@/components/DiagnosticsCaptures'
+import { DiagnosticsList, DiagnosticsCatalog } from '@/components/DiagnosticsCaptures'
 
 <PageTitle
   title="Diagnostics"
-  subtitle="Real UXD_* errors from the compiler, and the aliases it accepts."
+  subtitle="Real UXD_* errors from the compiler."
   subtext="Each example was compiled by uxdsl build; the error under it is what the build printed."
 />
 
@@ -21,10 +21,18 @@ These are captured by `scripts/capture-capabilities.js`, which also fails when a
 
 <div className="doc-section">
 
-## `elevation()` and `rounded()`
+## One spelling per concept
 
-Two aliases the language accepts: `elevation(n)` is `shadow(n)` and `rounded(n)` is `radius(n)`. An alias does not change stacking order or add a scale — it is the same reference under another name. Compiled both ways, and measured in this page's own stylesheet:
+The language has no aliases: `shadow(n)` and `radius(n)` are the names, with `pill` and `circle` as the radius keywords. A spelling that was removed in stability phase 3 — `elevation(n)`, `rounded(n)`, `radius(full)`, `densities(…)`, a `@theme { … }` block — is an error that names what to write instead (`UXD_SYNTAX_REMOVED`, `UXD_THEME_BLOCK_REMOVED` above); it never reaches the browser as an unknown function it would silently discard.
 
 </div>
 
-<AliasComparison />
+<div className="doc-section">
+
+## Every code
+
+The complete catalog, read from `postcss-uxdsl`'s own `DIAGNOSTIC_CATALOG` (exported from `postcss-uxdsl` and `postcss-uxdsl/ds-runtime`): what each code means and what to do about it. A test fails when the compiler can produce a code the catalog does not list, when an entry is produced nowhere, or when no test provokes it.
+
+</div>
+
+<DiagnosticsCatalog />

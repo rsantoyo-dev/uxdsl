@@ -24,7 +24,7 @@
     "spacing": {
       "type": "object",
       "propertyNames": {
-        "pattern": "^(space-)?[a-z0-9][a-z0-9-]*$"
+        "pattern": "^[a-z0-9][a-z0-9-]*$"
       },
       "additionalProperties": {
         "type": "string",
@@ -1568,18 +1568,6 @@
             }
           }
         }
-      }
-    },
-    "typography": {
-      "type": "object",
-      "propertyNames": {
-        "pattern": "^[a-z][a-z0-9-]*$"
-      },
-      "additionalProperties": {
-        "type": "string",
-        "minLength": 1,
-        "pattern": "^\\s*[^\\s;{}][^;{}]*$",
-        "description": "A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no \";\", \"{\" or \"}\"; parentheses must balance."
       }
     }
   }

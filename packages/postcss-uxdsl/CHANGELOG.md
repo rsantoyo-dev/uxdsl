@@ -57,11 +57,9 @@ patterns cover; `disabled` pairs are exempt, as before). The playground's
 four themes pass (default 1004/0/111, green 911/0/111, purple 1004/0/111,
 slate 953/0/95). `contrast-baseline.json` re-pinned.
 
-Disclosed, not fixed here: a disabled button that is hovered still receives
-the hover colors under its dimming, because the `hover` selector does not
-exclude `:disabled`. That is the state selectors' business (engine), not a
-value; `test/base-theme-states.test.js` pins the current behavior so the
-change is a conscious one.
+A disabled button that was hovered still received the hover colors under its
+dimming; stability phase 3 (below) makes `hover`/`active` exclude disabled
+controls in the engine.
 
 Stability phase 5 (audit of 2026-09-29, decision DE-11 / finding T12) — the
 base theme demonstrates Colors → Palette:
@@ -217,6 +215,247 @@ is measured against that fill, not the page, and stays held to the gate.
 - The beta.7 release gate's `contrast-baseline.json` now pins the excepted
   pairs (each with its exception) next to the failing ones, so a pattern
   widening is a reviewed diff like a new failure.
+
+Stability plan, phase 3 (5): the diagnostics catalog, the compiler split into
+named steps, and disabled controls that do not react to the pointer (audit
+L21; handoff 2026-10-07 §3.1).
+
+### Visual changes
+
+- **A disabled Button or Input no longer changes on hover or press.** The
+  `hover` and `active` state rules used to be plain `:hover`/`:active`, so a
+  control that was `:disabled` or `[aria-disabled="true"]` still took its
+  hover colors under its dimming. They are now
+  `:hover:not(:where(:disabled, [aria-disabled="true"]))` (and `:active…`;
+  Inputs have no `active` state). `:where()` keeps the exclusion out of the
+  specificity, so an author's own `.btn:hover { … }` after the directive
+  overrides the generated rule exactly as before. `NOT_DISABLED` is exported
+  from `postcss-uxdsl/ds-runtime` (via `buttons`) for tools that compose the
+  same selectors. Pinned by `test/control-disabled-states.test.js`.
+
+### Added
+
+- **`DIAGNOSTIC_CATALOG`** — the frozen catalog of every `UXD_*` code the
+  compiler, the theme validator and engines, the browser runtime and
+  `uxdsl-core` can produce, each with one line of meaning, one line of fix and
+  its owner (`compiler`, `theme`, `runtime`, `core`). Exported from
+  `postcss-uxdsl` (on the plugin function) and `postcss-uxdsl/ds-runtime`
+  (with `DIAGNOSTIC_CODES`). `diagnostic()` refuses a code the catalog does not
+  list. `test/diagnostics-catalog.test.js` keeps it exact: every code the
+  sources (this package and `uxdsl-core`) can produce is in it, every entry is
+  produced somewhere, and every entry is provoked by a test
+  (`test/diagnostics-coverage.test.js` provokes the engine codes through
+  their public functions). The playground's `/docs/diagnostics` page renders
+  the catalog itself — all 106 codes, grouped by owner — next to the captured
+  real errors.
+
+### Changed
+
+- **`Once()` is a sequence of named steps** over one per-compilation object
+  (`validateOptions → emitTheme → expandDirectives → resolveVariables →
+  expandResponsive → rejectLeftoverDirectives → checkReferences`); nothing is
+  stored on the PostCSS root or the plugin instance
+  (`test/compiler-structure.test.js`). No output changes.
+- The sources describe behavior, not history: story-ID tags (`MIG-…`,
+  `FEAT-…`) are gone from `src/**` of `postcss-uxdsl` and `uxdsl-core`
+  (this CHANGELOG has the history).
+- `compilePresetRules` takes its family's code prefix explicitly (no generic
+  `UXD_PRESET_*` default), and the typography engine no longer runs a name
+  registry: with property-named suffixes no two role/field pairs can produce
+  the same variable.
+- `UXD_INCLUDE_ARGUMENT` says "has text after its argument list" for
+  `@include pad(1px) 2px;` instead of calling it unbalanced.
+
+Codes: added `UXD_IMPORT_CYCLE` to the catalog (`uxdsl-core` already threw
+it); removed `UXD_TYPO_NAME_COLLISION` (unreachable) and the never-produced
+`UXD_PRESET_*` defaults.
+
+Stability plan, phase 3 (4): no silent output (audit findings L1, L2, L3, L18,
+L19 and §3.2, decision DE-2).
+
+### Visual changes
+
+None for a stylesheet that compiled to valid CSS before. What changes is
+what is refused (each a located error), and that a rule the responsive split
+emptied no longer leaves `.a {}` behind.
+
+- **The structure of a responsive expression** is checked before it is
+  rewritten: a breakpoint function nested in another function
+  (`calc(100% - xs(1rem) md(2rem))`, `var(--x, xs(…) md(…))`) or in another
+  breakpoint is `UXD_BREAKPOINT_CONTEXT`, with the top-level form to write;
+  a responsive value under `@keyframes`/`@font-face`/`@page`/`@counter-style`
+  is `UXD_BREAKPOINT_CONTEXT` too (a media query cannot be nested there — it
+  used to be emitted inside the at-rule); an empty argument (`xs()`) is
+  `UXD_BREAKPOINT_EMPTY` (it used to be dropped); `!important` inside a group
+  is `UXD_BREAKPOINT_IMPORTANT` (it used to apply at that breakpoint only);
+  a group without a base next to other content (`xs(1px) 5px md(2px)`) is
+  `UXD_BREAKPOINT_BASE` (md used to get three parts). `analyzeResponsiveValue`
+  (`postcss-uxdsl/language`) is the shared reader.
+- **Emptied rules are removed:** `.a { padding: md(2rem); }` compiles to the
+  `@media` block alone.
+- **`$variables` in the standalone plugin:** one declared inside a rule is
+  `UXD_VARIABLE_CONTEXT` (it reached CSS as an invalid declaration), one
+  nothing declared is `UXD_VARIABLE_UNDEFINED` (it reached CSS as `$gap`).
+- **`uxdsl-core`'s SCSS subset is exact** (its README, "The SCSS subset").
+  `@include pad(density(2))` and `@include pad(xs(1px) md(2px))` now work as
+  written — an `includeArguments` pre-pass binds any mixin argument that
+  carries parentheses to a variable, which is what the variables plugin
+  resolves correctly (it used to split the arguments at the first parenthesis
+  and emit `padding: densit;`). After the variables plugin, a `sassLeftoverGuard`
+  fails on everything Sass-only that used to pass through as text:
+  `&__item`/`&--mod`/`&-suffix` selectors (`UXD_NESTING_INVALID`, native
+  nesting cannot concatenate), `@extend`/`%placeholder`, `@use`/`@forward`,
+  `@function`/`@return`/`@while`/`@at-root`/`@debug`/`@warn`/`@error`,
+  `!global`, interpolation around anything but a `$variable`, an unresolved
+  `$x`, Sass-only functions (`darken()`, `map-get()`, `nth()`, `percentage()`,
+  `unquote()`, `str-*()`, `math.*`/`map.*`/`color.*`, Sass's `if(a, b, c)`,
+  `rgba($color, .5)`) and arithmetic outside `calc()` (`10px * 2`, `1rem +
+  2px`, `10px / 2`, `"a" + "b"`) — all `UXD_SCSS_UNSUPPORTED`, each naming
+  what to write instead; an `@include` with unbalanced parentheses is
+  `UXD_INCLUDE_ARGUMENT`. The audit's 110-case matrix is
+  `packages/uxdsl-core/test/scss-subset.test.js`: 69 cases compile to the
+  exact CSS pinned there (valid, no Sass construct left; css-tree's lexer
+  judges every value against its property), 41 fail with the pinned error,
+  0 are silent — the audit counted 14.
+
+New codes: `UXD_BREAKPOINT_CONTEXT`, `UXD_BREAKPOINT_EMPTY`,
+`UXD_BREAKPOINT_IMPORTANT`, `UXD_BREAKPOINT_BASE`, `UXD_VARIABLE_CONTEXT`,
+`UXD_VARIABLE_UNDEFINED` (compiler); `UXD_SCSS_UNSUPPORTED`,
+`UXD_NESTING_INVALID`, `UXD_INCLUDE_ARGUMENT` (`uxdsl-core`).
+
+Stability plan, phase 3 (3): typography variable names (audit decision DE-6,
+finding L20).
+
+### Visual changes
+
+None visually: every typography declaration resolves to the same value as
+before. The *names* of seven variables change — a stylesheet or script that
+read `--uxdsl__typography__<role>-size` by hand must read
+`--uxdsl__typography__<role>-font-size` now (the compiler, `@ds-typo`,
+`generateThemeCss` and `applyTheme` all agree, so nothing built from the
+theme needs an edit).
+
+### Removed
+
+| Removed | Instead |
+| --- | --- |
+| `--uxdsl__typography__<role>-size` | `--uxdsl__typography__<role>-font-size` |
+| `--uxdsl__typography__<role>-line` | `--uxdsl__typography__<role>-line-height` |
+| `--uxdsl__typography__<role>-weight` | `--uxdsl__typography__<role>-font-weight` |
+| `--uxdsl__typography__<role>-spacing` | `--uxdsl__typography__<role>-letter-spacing` |
+| `--uxdsl__typography__<role>-transform` | `--uxdsl__typography__<role>-text-transform` |
+| `--uxdsl__typography__<role>-decoration` | `--uxdsl__typography__<role>-text-decoration` |
+| `--uxdsl__typography__<role>-style` | `--uxdsl__typography__<role>-font-style` |
+
+`-font-family`, `-margin-block-start` and `-margin-block-end` were already
+the property names and do not change. The suffix of a typography variable is
+now, for every field, the CSS property it holds: `TYPOGRAPHY_PROPERTIES` and
+`TYPOGRAPHY_CSS_PROPERTIES` are the same map. `scripts/codemod-namespace.js`
+maps the pre-namespace `--h1-size` to the new name, and
+`scripts/codemod-canonical-grammar.js` renames a beta-era
+`--uxdsl__typography__<role>-size` wherever it finds one.
+
+Stability plan, phase 3 (2): the canonical grammar (audit decision DE-5;
+findings L4, L5, L7, L8, L9, L10, L15, L16).
+
+### Visual changes
+
+None. Every accepted spelling compiles to the same declarations as before;
+the packaged base theme's own `surfaces` now say `palette(surface.main)`
+instead of `palette(surface-main)` and emit the identical variables. What
+changes is what is refused, and that every refusal names the grammar.
+
+### Removed
+
+| Removed | Instead | Error |
+| --- | --- | --- |
+| extra arguments on `space()`, `density()`, `radius()`, `border()`, `shadow()` — `border(1, red, dashed)` used to drop the color and style quietly | one argument; `border: border(1)` followed by `border-color`/`border-style` | `UXD_SPACE_ARGUMENT`, `UXD_DENSITY_ARGUMENT`, `UXD_EDGE_ARGUMENT`, `UXD_SHADOW_ARGUMENT` |
+| a third argument on `palette()`/`color()` | `palette(family[.variant][, alpha])` | `UXD_PALETTE_ARGUMENT`, `UXD_COLOR_ARGUMENT` |
+| quoted token keys, `space("1")` | `space(1)` | `UXD_TOKEN_KEY` |
+| the dashed Palette/Color spelling, `palette(primary-main)`, `color(gray-300)` (in declarations and in theme values) | `palette(primary.main)`, `color(gray.300)`; a family whose own name has a dash stays as written | `UXD_PALETTE_SYNTAX`, `UXD_COLOR_SYNTAX`, with the dotted form |
+| `@ds-x (args)`, `@ds-x args;`, `@ds-x(a, b)`, `@ds-x("a")`, tone-only `@ds-surface(primary)`, `@ds-surface(2 primary contained)`, a second tone or size, `density(0)` as an argument, `!important` on a directive | `@ds-x(role [tone] [size] [radius(k)] [shadow(k)])`, `@ds-typo(role)` | `UXD_SURFACE_ARGUMENT`, `UXD_BUTTON_ARGUMENT`, `UXD_INPUT_ARGUMENT`, `UXD_TYPO_ARGUMENT`; a tone in the role's position is the role's `_REFERENCE`/`_ROLE` error saying the role comes first |
+| an unvalidated tone next to a role (`@ds-surface(contained text)` used to fail two steps later as a missing `text-contrast`) | a tone is a Palette family with `main`, `dark` and `contrast` | `UXD_SURFACE_TONE`, `UXD_BUTTON_TONE`, `UXD_INPUT_TONE`, listing the tones |
+| two `@ds-button`/`@ds-input` in one rule (base won by the last, states by the first) | one control directive per rule | `UXD_DIRECTIVE_DUPLICATE` |
+| `parseOverrideArguments` (surfaces.ts) | `parseDirectiveTokens` (`src/directives.ts`) | — |
+
+- **References are checked when a declaration is rewritten**, against the
+  effective theme (plus `references.externalTokens` and the custom properties
+  declared by `references.css`), with the family's code and a "did you mean":
+  `UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE` (`palette(primary.mian) does
+  not exist; primary has: main, light, dark, contrast. Did you mean "main"?`),
+  `UXD_COLOR_REFERENCE`, next to the existing `UXD_DENSITY_REFERENCE`,
+  `UXD_EDGE_REFERENCE` and `UXD_SHADOW_REFERENCE`. This holds whatever
+  `references.mode` says (`space(99)` used to compile with `mode: 'off'`); the
+  reference pass over the emitted stylesheet (`UXD_REFERENCE_MISSING`) stays
+  the second net for a hand-written `var()` and for theme values. A test that
+  asserted `UXD_REFERENCE_MISSING` for a token function now sees the family
+  code.
+- **Names are case-insensitive**: `Space(1)`, `PALETTE(primary)`, `MD(2rem)`,
+  `RADIUS(PILL)`, `@DS-SURFACE(…)` compile like their lowercase forms, and
+  `@DS-CARD(…)` is `UXD_DIRECTIVE_UNKNOWN`; none passes through.
+- **New:** `parseTokenReference`, `tokenReferenceToCss`, `TOKEN_FUNCTION_CODES`
+  and the `TokenContext`/`TokenReference` types (`postcss-uxdsl/language`);
+  `tokenValueToCss(value, context?)` takes the theme as context so the dashed
+  spelling can be named in a theme value; `compilePresetRules`,
+  `compileTypographyRules`, `generateDensityCss` and `typographyValueToCss`
+  take the same optional context. `src/directives.ts` (`parseDirectiveTokens`,
+  `parseTypoArguments`, `directiveInner`, `DIRECTIVE_USAGE`) is the one
+  directive parser; `parseSurfaceArguments`/`parseButtonArguments`/
+  `parseInputArguments` use it and accept the arguments with or without the
+  parentheses.
+- **New codemod:** `scripts/codemod-canonical-grammar.js` (shipped;
+  `npm run codemod:canonical-grammar`) rewrites `rounded()`/`elevation()`/
+  `radius(full)`, dashed `palette()`/`color()` arguments (when the theme makes
+  the split unambiguous) and the lax directive forms; it was run over the
+  playground (484 dashed Palette/Color arguments, 48 spaced directives) and
+  the consumer fixture.
+- The VS Code custom data describes each directive with its usage string from
+  `DIRECTIVE_USAGE`.
+
+New codes: `UXD_SPACE_ARGUMENT`, `UXD_SPACE_REFERENCE`, `UXD_DENSITY_ARGUMENT`,
+`UXD_EDGE_ARGUMENT`, `UXD_SHADOW_ARGUMENT`, `UXD_PALETTE_ARGUMENT`,
+`UXD_PALETTE_REFERENCE`, `UXD_PALETTE_SYNTAX`, `UXD_COLOR_ARGUMENT`,
+`UXD_COLOR_REFERENCE`, `UXD_COLOR_SYNTAX`, `UXD_DIRECTIVE_DUPLICATE`.
+
+Stability plan, phase 3 (1): the legacy language surface is removed (audit
+decision DE-4, findings L6, L14, T9, T11, T14).
+
+### Visual changes
+
+None. The compiled CSS of the packaged base theme loses exactly one
+declaration, `--font-code` (the un-namespaced variable the flat `typography`
+family emitted; nothing read it), and every other custom property keeps its
+name and value (`test/removed-language-surface.test.js`). A stylesheet that
+still imported the legacy `theme/default-*` files defined every token twice;
+it now defines each once, with the value the theme JSON gives it.
+
+### Removed
+
+One spelling per concept. Each removed spelling fails with a located `UXD_*`
+error that names the replacement; none passes through to CSS.
+
+| Removed | Instead | Error |
+| --- | --- | --- |
+| `@theme { … }` blocks (density-/radius-/border-/shadow-`<k>`, `surface-`/`button-`/`input-<role>` packs) and the "defaults < legacy < JSON" precedence | the theme JSON (`uxdsl.theme.json`): `densities`, `radii`, `borders`, `shadows`, `surfaces`, `buttons`, `inputs` | `UXD_THEME_BLOCK_REMOVED` |
+| `rounded(k)` | `radius(k)` | `UXD_SYNTAX_REMOVED` |
+| `elevation(k)` | `shadow(k)` | `UXD_SYNTAX_REMOVED` |
+| `radius(full)` | `radius(pill)` (a theme may still define its own `radii.full`) | `UXD_SYNTAX_REMOVED` |
+| `densities(a, b, c)` (undocumented; skipped reference integrity) | a Density token in the theme, `density(k)` | `UXD_SYNTAX_REMOVED` |
+| `"space-1"`-style spacing keys and `UXD_SPACING_COLLISION` | the bare key, `"1"` | `UXD_SPACING_KEY` (with the key path) |
+| quoted directive arguments, `@ds-typo("h1")` | `@ds-typo(h1)` | `UXD_TYPO_ARGUMENT` / `UXD_SURFACE_ARGUMENT` / `UXD_BUTTON_ARGUMENT` / `UXD_INPUT_ARGUMENT` |
+| the flat `typography` theme family (`{ "font-code": … }`, emitted as `--font-code`), in `theme/base.json`, `UxdslTheme`, the schema and `KNOWN_THEME_FAMILIES` | `typography_details` for text roles, `fonts.families` for font stacks | `UXD_THEME_INVALID` at `typography` |
+| `postcss-uxdsl/theme/default-{colors,palette,spacing}.css`, `default-{typography,densities,radii,shadows,borders,surfaces,buttons,inputs}.uxdsl`, `theme/theme-manifest.json`, and the `./theme/*` glob export | `postcss-uxdsl/theme/base.json` and `postcss-uxdsl/theme/base.contrast-exceptions.json`, now explicit exports; every built-in preset already reads the base JSON with no import | the import fails to resolve |
+| `getDefaultTheme()` | `resolveTheme()` (a fresh effective theme) or `DEFAULT_THEME` (frozen) | — |
+| `normalizeSpacingKey`, `normalizeSpacingDefinitions` (`postcss-uxdsl/language`) | nothing to normalize: keys are written once | — |
+| `theme` in `LANGUAGE_COMPLETIONS.directives`; `rounded`/`elevation` in `LANGUAGE_COMPLETIONS.functions`, `KNOWN_CSS_FUNCTIONS` and `TOKEN_FUNCTIONS`; `full` in `RADIUS_KEYWORDS` | — | — |
+
+New codes: `UXD_THEME_BLOCK_REMOVED`, `UXD_SYNTAX_REMOVED`, `UXD_TYPO_ARGUMENT`.
+Removed code: `UXD_SPACING_COLLISION`.
+
+The compiler reads one theme: the effective theme (`resolveTheme(override)`),
+the same object `generateThemeCss` resolves — there is no per-file pack to
+merge, so a token's value is the theme's, in every compilation, with nothing
+leaking between builds.
 
 Stability phase 1 (audit of 2026-09-29, `docs/audits/2026-09-29-auditoria-estabilidad.md`;
 findings T2, T3, T4, R6 and L12 — one theme validator):

@@ -1,15 +1,12 @@
 'use client'
 
-// MIG-B7-17 (FEAT-009), phase C: real UXD_* diagnostics, and the two value-function aliases.
-//
-// The diagnostics are what `uxdsl build` printed for each broken source or theme, captured
-// by scripts/capture-capabilities.js (and re-checked by `npm test`), which also fails when a
-// case stops producing the code it is listed under. The alias section compiles the same
-// source both ways at capture time and, on this page, measures two boxes styled with
-// elevation()/rounded() and shadow()/radius() in the site's own stylesheet.
+// Real UXD_* diagnostics: what `uxdsl build` printed for each broken source or theme,
+// captured by scripts/capture-capabilities.js (and re-checked by `npm test`), which also
+// fails when a case stops producing the code it is listed under. The catalog table is the
+// package's own DIAGNOSTIC_CATALOG, rendered as is: every code, its meaning and its fix.
 
-import { useEffect, useRef, useState } from 'react'
 import captures from '@/generated/compiler-captures.json'
+import { DIAGNOSTIC_CATALOG } from 'postcss-uxdsl/ds-runtime'
 
 type Diagnostic = { code: string; title: string; source: string; theme: unknown; argv: string[]; exit: number; stderr: string }
 
@@ -18,7 +15,7 @@ export function DiagnosticsList() {
   return (
     <div className="cap-grid">
       {list.map((d) => (
-        <figure key={d.code} className="cap-run" data-diagnostic={d.code}>
+        <figure key={d.code} id={`capture-${d.code.toLowerCase()}`} className="cap-run" data-diagnostic={d.code}>
           <figcaption className="cap-run__title"><code>{d.code}</code> — {d.title}</figcaption>
           {d.theme ? (<>
             <p className="cap-note"><code>uxdsl.theme.json</code></p>
@@ -33,44 +30,36 @@ export function DiagnosticsList() {
   )
 }
 
-export function AliasComparison() {
-  const alias = useRef<HTMLDivElement>(null)
-  const name = useRef<HTMLDivElement>(null)
-  const [measured, setMeasured] = useState<{ alias: string[]; name: string[] } | null>(null)
+const OWNERS: Array<[string, string]> = [
+  ['compiler', 'The compiler (your stylesheet)'],
+  ['theme', 'The theme (validateTheme and the engines, build and run time alike)'],
+  ['runtime', 'The browser runtime (returned on a result, never thrown)'],
+  ['core', 'uxdsl-core (the SCSS subset and imports)'],
+]
 
-  useEffect(() => {
-    const read = (el: HTMLDivElement | null) => {
-      if (!el) return ['', '']
-      const cs = getComputedStyle(el)
-      return [cs.boxShadow, cs.borderTopLeftRadius]
-    }
-    const measure = () => setMeasured({ alias: read(alias.current), name: read(name.current) })
-    measure()
-    window.addEventListener('resize', measure)
-    return () => window.removeEventListener('resize', measure)
-  }, [])
-
-  const same = measured && measured.alias.join('|') === measured.name.join('|')
+export function DiagnosticsCatalog() {
+  const entries = Object.entries(DIAGNOSTIC_CATALOG).sort(([a], [b]) => a.localeCompare(b))
+  const captured = new Set((captures.diagnostics as Diagnostic[]).map((d) => d.code))
   return (
-    <div className="cap-aliases">
-      <div className="cap-grid">
-        <figure className="cap-run">
-          <figcaption className="cap-run__title">Compiled once each way</figcaption>
-          <pre className="cap-terminal"><code>{captures.aliases.source.trimEnd()}</code></pre>
-          <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {captures.aliases.argv.join(' ')}</span>{`\n${captures.aliases.css.trimEnd()}`}</code></pre>
-        </figure>
-        <div className="cap-alias-demo">
-          <div ref={alias} className="cap-alias-box cap-alias-box--alias"><code>elevation(2)</code> · <code>rounded(2)</code></div>
-          <div ref={name} className="cap-alias-box cap-alias-box--name"><code>shadow(2)</code> · <code>radius(2)</code></div>
-          {measured && (
-            <dl className="cap-facts">
-              <dt>box-shadow</dt><dd><code>{measured.alias[0]}</code> {measured.alias[0] === measured.name[0] ? '= same' : `≠ ${measured.name[0]}`}</dd>
-              <dt>border-radius</dt><dd><code>{measured.alias[1]}</code> {measured.alias[1] === measured.name[1] ? '= same' : `≠ ${measured.name[1]}`}</dd>
-            </dl>
-          )}
-          <p className="cap-note" data-alias-equal={same ? 'true' : 'false'}>{same ? 'Measured in this browser: identical.' : 'Measuring…'}</p>
-        </div>
-      </div>
+    <div data-testid="diagnostics-catalog">
+      {OWNERS.map(([owner, title]) => {
+        const rows = entries.filter(([, entry]) => entry.owner === owner)
+        return (
+          <div key={owner} className="cap-table-wrap">
+            <table>
+              <caption>{title} — {rows.length} codes</caption>
+              <thead><tr><th>Code</th><th>Meaning</th><th>Fix</th></tr></thead>
+              <tbody>{rows.map(([code, entry]) => (
+                <tr key={code} id={code.toLowerCase()} data-code={code}>
+                  <td><code>{code}</code>{captured.has(code) ? <> <a href={`#capture-${code.toLowerCase()}`}>example</a></> : null}</td>
+                  <td>{entry.meaning}</td>
+                  <td>{entry.fix}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        )
+      })}
     </div>
   )
 }

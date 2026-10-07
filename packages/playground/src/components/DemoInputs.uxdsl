@@ -17,13 +17,13 @@
   gap: density(2);
 }
 
-.input.input--contained { @ds-input (contained); }
-.input.input--outlined { @ds-input (outlined); }
-.input.input--underline { @ds-input (underline); }
+.input.input--contained { @ds-input(contained); }
+.input.input--outlined { @ds-input(outlined); }
+.input.input--underline { @ds-input(underline); }
 
-.input.input--contained.input--secondary { @ds-input (contained secondary); }
-.input.input--outlined.input--secondary { @ds-input (outlined secondary); }
-.input.input--underline.input--secondary { @ds-input (underline secondary); }
+.input.input--contained.input--secondary { @ds-input(contained secondary); }
+.input.input--outlined.input--secondary { @ds-input(outlined secondary); }
+.input.input--underline.input--secondary { @ds-input(underline secondary); }
 
 // SCSS example: mixin for size adjustment
 @mixin input-size($n) {
@@ -31,4 +31,4 @@
   border-radius: radius($n);
 }
 
-.input.input--sass-2 { @ds-input (underline tertiary 2); @include input-size(2); }
+.input.input--sass-2 { @ds-input(underline tertiary 2); @include input-size(2); }

@@ -36,7 +36,7 @@ test('includeTheme: false skips every global :root definition, including density
   assert.match(result.css, /border-radius: var\(--uxdsl__radius__2\)/);
   assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__1\)/);
   assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
-  assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-size\)/);
+  assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-font-size\)/);
 });
 
 test('includeTheme defaults to true and matches the explicit-true single-entry output', async () => {

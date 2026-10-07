@@ -1,4 +1,4 @@
-// MIG-B6-30 (FEAT-008): what a runtime theme patch may and may not change.
+// What a runtime theme patch may and may not change.
 //
 // `applyTheme` replaces one managed `<style>` element holding the generated
 // theme CSS. That covers every custom property — values, mode palettes, new

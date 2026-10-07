@@ -201,7 +201,8 @@ temas parciales; los helpers `space(7)`, `density(2)` y las directivas no cambia
    npm run uxdsl:build
    ```
 
-   Solo `--font-ui`, `--font-ui-2` y `--font-code` se migran automáticamente.
+   Solo `--font-ui` y `--font-ui-2` se migran automáticamente (`--font-code`, de la
+   familia plana `typography`, desapareció con esa familia en la fase 3 de estabilidad).
    `--font-geist-sans`, `--font-geist-mono` y fuentes personalizadas se preservan;
    usar `--map mapping.json` para fuentes propias de UXDSL y roles personalizados.
    Un mapping identidad protege un prefijo del host. Las claves lógicas y
@@ -236,7 +237,7 @@ actualizar.
 
 | Área | Antes | Ahora | Cambio de comportamiento |
 | --- | --- | --- | --- |
-| Spacing keys | `"space-1"` y `"1"` en el JSON emiten variables distintas (`--uxdsl__space__space-1` vs `--uxdsl__space__1`); density/radius apuntan solo a la forma sin prefijo | Ambas formas emiten `--uxdsl__space__1`; usar ambas en la misma config lanza `UXD_SPACING_COLLISION` | Corrección de bug, no sintaxis nueva |
+| Spacing keys | `"space-1"` y `"1"` en el JSON emiten variables distintas (`--uxdsl__space__space-1` vs `--uxdsl__space__1`); density/radius apuntan solo a la forma sin prefijo | Solo la clave sin prefijo (`"1"`); `"space-1"` falla con `UXD_SPACING_KEY` indicando la clave a escribir (fase 3 de estabilidad; en beta.2 ambas formas convivían) | Corrección de bug, no sintaxis nueva |
 | Entradas múltiples | Cada archivo compilado emite siempre `:root` completo (foundations, typography, density, shadows, edges, surfaces, buttons, inputs) | `includeTheme: false` en la opción del plugin desactiva esos ocho emisores para una entrada que solo consume tokens de otra | Opt-in; por defecto (`true`) no cambia nada |
 | Referencias indefinidas | `var(--token-inexistente)` se emitía igual; el navegador simplemente no aplicaba la propiedad | Falla el build con `UXD_REFERENCE_MISSING`/`UXD_REFERENCE_CYCLE`, indicando la cadena completa de dependencia | Ver "Qué hacer si tu build empieza a fallar" abajo |
 | `border(1..5)` | Requería que el tema definiera `colors.gray.{300,400,500,600}` manualmente, o las propiedades quedaban inválidas en silencio | Ese `gray` por defecto se mezcla automáticamente (tus shades ganan por clave si los definís) | Nadie necesita cambiar código; los temas que ya definían `colors.gray` siguen ganando |
@@ -261,7 +262,7 @@ pasa por `src/naming.ts`), no un cambio de sintaxis del DSL — `palette()`,
 | Surface | `--surface-flat-padding` | `--uxdsl__surface__flat-padding` |
 | Button | `--button-contained-hover-bg` | `--uxdsl__button__contained-hover-bg` |
 | Input | `--input-outlined-focus-border` | `--uxdsl__input__outlined-focus-border` |
-| Typography | `--h1-size` | `--uxdsl__typography__h1-size` |
+| Typography | `--h1-size` | `--uxdsl__typography__h1-font-size` (fase 3 de estabilidad: el sufijo es el nombre de la propiedad CSS; en beta.1 era `-size`) |
 | Font family | `--font-ui` | `--uxdsl__font__ui` |
 | Palette | `--ds__palette__primary-main` | `--uxdsl__palette__primary-main` |
 | Color | `--ds__color__gray-300` | `--uxdsl__color__gray-300` |
@@ -280,7 +281,7 @@ nombre lo elegiste vos, no este compilador.
 
 | Sintaxis anterior | Equivalente nuevo | Notas |
 | --- | --- | --- |
-| `spacing: { "space-1": "4px" }` | Sin cambios — sigue aceptado; equivalente a `{ "1": "4px" }` | No hace falta migrar nada; ambas formas conviven |
+| `spacing: { "space-1": "4px" }` | `{ "1": "4px" }` | Desde la fase 3 de estabilidad el prefijo `space-` falla con `UXD_SPACING_KEY`; en beta.2 ambas formas convivían |
 | Un solo archivo con `theme` + componentes | Un archivo con `includeTheme: true` (o sin la opción) + N archivos con `includeTheme: false` y el mismo objeto `theme` | Ver "Guía de 5 entradas" abajo |
 | `@ds-surface(contained 2); border-radius: radius(4);` | `@ds-surface(contained 2 radius(4));` | El codemod (`npm run codemod:size-overrides`) automatiza este caso puntual |
 | `@ds-button(role size); box-shadow: shadow(1);` | `@ds-button(role size shadow(1));` | Mismo codemod, mismo caso para button/input |
@@ -789,7 +790,7 @@ Para roles tipográficos personalizados y nombres que pertenecen al host,
 pasar `--map mapping.json`: un objeto de nombre anterior a nombre destino.
 Un mapeo a sí mismo protege un token externo que coincida con un prefijo de
 UXDSL. Ejemplo: `{ "--space-host": "--space-host",
-"--custom-title-size": "--uxdsl__typography__custom-title-size" }`.
+"--custom-title-size": "--uxdsl__typography__custom-title-font-size" }`.
 Revisar el diff antes de escribir; conservar el commit anterior permite
 revertir la migración. Una segunda ejecución no produce cambios adicionales.
 

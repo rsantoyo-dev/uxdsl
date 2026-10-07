@@ -41,18 +41,21 @@ export function InputDocumentation() {
       <li>This treatment targets text-like inputs and textareas. Selects need their native interaction checked; checkbox, radio, range and file controls need dedicated treatment. Do not apply this pack indiscriminately.</li>
       <li>Verify keyboard focus, foreground and placeholder contrast, error communication and touch use. Palette names do not guarantee accessibility.</li>
     </ul>
-    <h3>Legacy @theme remains supported</h3>
-    <pre><code className="language-css">{`@theme {
-  input-search: {
-    @ds-surface(outlined);
-    padding: density(2);
-    placeholder: palette(neutral-dark);
-    :focus { border: 1px solid palette(primary-main); }
-    :invalid { border: 2px solid palette(error-main); }
+    <h3>One source and one shared engine</h3>
+    <pre><code className="language-json">{`{
+  "inputs": {
+    "search": {
+      "surface": "outlined",
+      "base": { "padding": "density(2)", "placeholder": "palette(neutral.dark)" },
+      "states": {
+        "focus": { "border": "1px solid palette(primary.main)" },
+        "invalid": { "border": "2px solid palette(error.main)" }
+      }
+    }
   }
-}
-.search-field { @ds-input(search); }`}</code></pre>
-    <p>JSON overrides matching legacy base and state fields, then defaults. Import legacy packs in each compilation; Input packs no longer leak through a global cache. PostCSS, runtime, inspection and this demo share the Input engine. Default files are generated from that engine. Undefined roles, unsupported fields and invalid responsive mappings fail clearly; inspect remaining dependencies and actual CSS too.</p>
+}`}</code></pre>
+    <pre><code className="language-css">{`.search-field { @ds-input(search); }`}</code></pre>
+    <p>A role is defined in the theme JSON and nowhere else: a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>, and nothing leaks between compilations. PostCSS, runtime, inspection and this demo share the Input engine. Undefined roles, unsupported fields and invalid responsive mappings fail clearly; inspect remaining dependencies and actual CSS too.</p>
     <p>The demo applies scoped JSON changes without saving the source file. Invalid edits retain the last valid preview. Resize the actual viewport, use the keyboard and try native readonly and disabled controls.</p>
   </section></div>
 }
@@ -61,7 +64,7 @@ export function InputAgentGuidance() {
   return <AgentGuidance id="ai-inputs-guide" title="How an AI agent should use Inputs">
     <p><strong>Responsibility: preserve shared field roles and visual states while keeping form semantics in HTML and application logic.</strong> Preserve intent, not just the current computed value.</p>
     <ul>
-      <li>Inspect inputs, surfaces, referenced Density, Radius, Palette, Borders, Shadows, breakpoints and legacy imports before choosing or modifying a role.</li>
+      <li>Inspect inputs, surfaces, referenced Density, Radius, Palette, Borders, Shadows and breakpoints before choosing or modifying a role.</li>
       <li>Reuse a suitable configured role with @ds-input(role). Do not copy its current resolved colors, padding or focus treatment into local CSS.</li>
       <li>Inspect inherited fields. Custom roles inherit contained defaults; explicit base fields override the selected Surface composition. Define a role and its dependencies before using it.</li>
       <li>Use optional tones and sizes deliberately. Check the Palette family and both Density and Radius keys. Keep error styling connected to its error meaning.</li>

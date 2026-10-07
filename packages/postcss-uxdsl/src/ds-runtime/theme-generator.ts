@@ -4,7 +4,7 @@ import { generateButtonCss } from '../buttons';
 import { generateSurfaceCss } from '../surfaces';
 import { generateShadowCss } from '../shadows';
 import { generateEdgeCss } from '../edges';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, generateDensityCss, getDensityTokens } from '../language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, generateDensityCss, getDensityTokens, tokenValueToCss } from '../language';
 import { generateTypographyCss } from '../typography';
 import postcss, { Declaration } from 'postcss';
 import { enforceReferences, ReferenceOptions } from '../reference-integrity';
@@ -21,7 +21,7 @@ import { validateTheme, themeValidationError } from './theme-validate';
  * directly; anything else goes through `generateThemeCss`.
  */
 export function renderThemeCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
-  // MIG-B6-29 phase 4: the same shared encoder the PostCSS plugin uses, so a
+  // The same shared encoder the PostCSS plugin uses, so a
   // runtime/SSR consumer of this function gets the identical `@import` a
   // build-time compile of the same theme would. `@import` rules must lead
   // the stylesheet, before any other rule.
@@ -36,11 +36,11 @@ export function renderThemeCss(theme: Record<string, any>, breakpoints: Breakpoi
   cssContent += '\n' + generateSurfaceCss(theme, breakpoints);
   cssContent += '\n' + generateButtonCss(theme, breakpoints);
   cssContent += '\n' + generateInputCss(theme, breakpoints);
-  cssContent += '\n' + generateDensityCss(getDensityTokens(theme), breakpoints);
+  cssContent += '\n' + generateDensityCss(getDensityTokens(theme), breakpoints, ':root', 'media', (value) => tokenValueToCss(value, theme));
   return cssContent;
 }
 
-/** MIG-B2-02: omitted/partial themes resolve against `DEFAULT_THEME`
+/** Omitted/partial themes resolve against `DEFAULT_THEME`
  * before generating or validating — `generateThemeCss()` with no
  * arguments at all now produces valid CSS instead of an empty string.
  *

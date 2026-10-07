@@ -28,7 +28,7 @@ export default function ShadowDocumentation() {
 }
 .card { box-shadow: var(--uxdsl__shadow__2); }`}</code></pre></div>
       </div>
-      <p>The component selects a preset. At 768px the shared variable changes; at later breakpoints that value persists until another override applies. This is a discrete transition, not automatic interpolation. <code>elevation(2)</code> is an alias for <code>shadow(2)</code>; neither changes stacking order.</p>
+      <p>The component selects a preset. At 768px the shared variable changes; at later breakpoints that value persists until another override applies. This is a discrete transition, not automatic interpolation. <code>shadow(2)</code> is an alias for <code>shadow(2)</code>; neither changes stacking order.</p>
       <h3>Layers, inset effects and system references</h3>
       <pre><code className="language-json">{`{
   "shadows": {
@@ -45,19 +45,18 @@ export default function ShadowDocumentation() {
       </ul>
       <p>Do not replace <code>shadow(2)</code> with today&apos;s computed value when the component should follow future theme changes. Changing the token updates every consumer after the configuration is applied. Inspect active overrides, clipping ancestors, backgrounds, focus indicators and interaction states.</p>
       <h3>One engine at build time, runtime and in the preview</h3>
-      <p>PostCSS, runtime and the demo share the Shadow compiler and responsive resolver. Defaults are maintained in the shared module and emitted into <code>postcss-uxdsl/theme/default-shadows.uxdsl</code> by the generation script. The previous runtime supported literal values; responsive values now resolve through the same engine as PostCSS.</p>
-      <pre><code className="language-css">{`/* Legacy input remains supported in the same compilation. */
-@theme {
-  shadow-2: xs(0 2px 4px rgba(0, 0, 0, 0.12)) md(0 6px 16px rgba(0, 0, 0, 0.18));
+      <p>PostCSS, runtime and the demo share the Shadow compiler and responsive resolver. The built-in presets live in <code>postcss-uxdsl/theme/base.json</code>; a project overrides them in its theme JSON, the only place a preset is defined.</p>
+      <pre><code className="language-json">{`{
+  "shadows": { "2": "xs(0 2px 4px rgba(0, 0, 0, 0.12)) md(0 6px 16px rgba(0, 0, 0, 0.18))" }
 }`}</code></pre>
-      <p>JSON entries override matching legacy declarations, which override defaults. Include legacy definitions in every compilation that needs them; they no longer leak between builds through a global cache. Undefined Shadow references now report errors instead of silently selecting a fallback. Validation is not a complete CSS grammar or accessibility checker.</p>
+      <p>A <code>@theme</code> block in a stylesheet fails as <code>UXD_THEME_BLOCK_REMOVED</code>, naming the family its declarations belong to; nothing leaks between builds. Undefined Shadow references report errors instead of silently selecting a fallback. Validation is not a complete CSS grammar or accessibility checker.</p>
       <p>The live editor below starts from the active theme and shared defaults. Its changes affect only the preview, not your source JSON. It uses the real viewport and shared inspector. An invalid edit retains the last valid preview; Reset restores the active theme.</p>
     </section>
     <AgentGuidance id="ai-shadows-guide" title="How an AI agent should use Shadows">
       <p><strong>Responsibility: maintain shared depth treatments and their responsive behavior.</strong> Preserve intent, not just the current computed value.</p>
       <ul>
-        <li>Inspect the effective <code>shadows</code> configuration, legacy imports, breakpoints and referenced color or spacing tokens before selecting a preset.</li>
-        <li>Reuse an appropriate configured <code>shadow(key)</code> or <code>elevation(key)</code> for box shadows. Do not infer visual strength from a numeric key or confuse elevation with z-index.</li>
+        <li>Inspect the effective <code>shadows</code> configuration, breakpoints and referenced color or spacing tokens before selecting a preset.</li>
+        <li>Reuse an appropriate configured <code>shadow(key)</code> for box shadows (the former <code>elevation()</code> alias fails as <code>UXD_SYNTAX_REMOVED</code>). Do not infer visual strength from a numeric key or confuse depth with z-index.</li>
         <li>Preserve layers, nested color functions, inset flags, units and token references. Do not split shadow expressions with a simple comma-based parser.</li>
         <li>Do not copy resolved shadow values into a component that should remain connected to a shared preset.</li>
         <li>Change a shared preset only when all its consumers should follow. Select another preset or use native CSS for a deliberate local exception.</li>

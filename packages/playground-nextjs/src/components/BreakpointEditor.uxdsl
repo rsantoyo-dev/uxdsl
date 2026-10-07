@@ -23,7 +23,7 @@
 }
 
 .breakpoint-editor__dialog {
-  background: palette(surface-main);
+  background: palette(surface.main);
   padding: space(7);
   border-radius: 1rem;
   width: min(560px, 90vw);

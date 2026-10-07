@@ -34,24 +34,24 @@ function declarations(css) {
 test('PostCSS and runtime emit equivalent Typography from the same JSON', async () => {
   const result = await postcss([plugin({ theme })]).process('.title { @ds-typo(h1); }', { from: undefined });
   assert.deepEqual(declarations(result.css), declarations(generateThemeCss(theme)));
-  assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-size/);
+  assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-font-size/);
   assert.match(result.css, /--uxdsl__space__4: 1rem/);
   assert.doesNotMatch(result.css, /font-size:.*xs\(/);
 });
 test('all configured fields inherit defaults and resolve custom breakpoints', () => {
   const rules = compileTypographyRules(theme.typography_details, theme.breakpoints);
-  assert.equal(rules[0].values['--uxdsl__typography__h1-line'], '1.5');
-  assert.equal(rules[0].values['--uxdsl__typography__h1-weight'], '700');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-line-height'], '1.5');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-font-weight'], '700');
   assert.equal(rules[0].values['--uxdsl__typography__label-font-family'], 'var(--uxdsl__font__ui)');
-  assert.equal(rules.find(r => r.minWidth === 800).values['--uxdsl__typography__label-transform'], 'uppercase');
-  assert.deepEqual(rules.filter(r => r.values['--uxdsl__typography__h1-size']).map(r => r.minWidth), [null, 800, 1800]);
+  assert.equal(rules.find(r => r.minWidth === 800).values['--uxdsl__typography__label-text-transform'], 'uppercase');
+  assert.deepEqual(rules.filter(r => r.values['--uxdsl__typography__h1-font-size']).map(r => r.minWidth), [null, 800, 1800]);
 });
 test('inspection agrees with generated rules around every threshold', () => {
   const expr = theme.typography_details.h1.fontSize;
   const rules = compileTypographyRules(theme.typography_details, theme.breakpoints);
   for (const threshold of Object.values(theme.breakpoints)) {
     for (const width of [threshold - 1, threshold, threshold + 1].filter(w => w >= 0)) {
-      const expected = rules.filter(r => (r.minWidth ?? 0) <= width && r.values['--uxdsl__typography__h1-size']).at(-1).values['--uxdsl__typography__h1-size'];
+      const expected = rules.filter(r => (r.minWidth ?? 0) <= width && r.values['--uxdsl__typography__h1-font-size']).at(-1).values['--uxdsl__typography__h1-font-size'];
       assert.equal(typographyValueToCss(inspectResponsiveValue(expr, width, theme.breakpoints).value), expected);
     }
   }
@@ -61,12 +61,13 @@ test('theme regeneration removes old declarations and moves thresholds without s
   const changed = { ...theme, breakpoints: { ...theme.breakpoints, md: 920 }, typography_details: { h1: { fontSize: 'xs(1rem) md(3rem)' } } };
   const css = generateTypographyCss(changed);
   assert.match(css, /min-width: 920px/);
-  assert.doesNotMatch(css, /800px|--label-|--uxdsl__typography__h1-weight/);
+  assert.doesNotMatch(css, /800px|--label-|--uxdsl__typography__h1-font-font-weight/);
   assert.equal(JSON.stringify(theme), before);
   assert.equal(generateTypographyCss(theme), generateTypographyCss(JSON.parse(before)));
 });
-test('native CSS, fractional and named tokens remain intact', () => {
-  assert.equal(typographyValueToCss('clamp(space(0.5), 3vw, density(section))'), 'clamp(var(--uxdsl__space__0.5), 3vw, var(--uxdsl__density__section))');
+test('native CSS and named tokens remain intact; a key is a bare word without dots', () => {
+  assert.equal(typographyValueToCss('clamp(space(half), 3vw, density(section))'), 'clamp(var(--uxdsl__space__half), 3vw, var(--uxdsl__density__section))');
+  assert.throws(() => typographyValueToCss('space(0.5)'), /UXD_TOKEN_KEY/);
 });
 test('invalid definitions fail in the shared compiler and theme validator', () => {
   for (const details of [{ h1: { fontSize: 'md(2rem)' } }, { h1: { bogus: '2rem' } }, { h1: { fontSize: '' } }]) {
@@ -79,45 +80,29 @@ test('invalid definitions fail in the shared compiler and theme validator', () =
   assert.equal(validated.ok, true);
   assert.equal(validated.theme.breakpoints.wide, 1800);
 });
-test('legacy flat typography and font variables remain supported', () => {
-  // Unlike typography_details (structured, role+field -> the shared
-  // "typography" family), a flat `theme.typography` map is a pass-through
-  // escape hatch: the JSON key IS the full variable name, verbatim. It is
-  // not part of the `--uxdsl__<family>__<key>` contract and MIG-08 leaves
-  // it untouched on purpose (the doc: "no se deben renombrar variables CSS
-  // externas del consumidor" applies here too — this key is the
-  // consumer's own choice, not one this compiler assigns).
-  assert.match(generateTypographyCss({ typography: { 'h1-size': '2rem' }, fonts: { families: { ui: 'sans-serif' } } }), /--h1-size: 2rem;/);
-});
-test('legacy responsive variables remain equivalent in both adapters', async () => {
-  const input = { spacing: FULL_SPACING, palette: BASE_PALETTE, typography: { 'h1-size': 'xs(space(4)) md(3rem)' } };
-  const built = await postcss([plugin({ theme: input })]).process('', { from: undefined });
-  assert.deepEqual(declarations(built.css), declarations(generateThemeCss(input)));
+test('fonts.families compile to --uxdsl__font__<name>; there is no flat typography family', () => {
+  assert.match(generateTypographyCss({ fonts: { families: { ui: 'sans-serif' } } }), /--uxdsl__font__ui: sans-serif;/);
+  const built = postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, fonts: { families: { ui: 'sans-serif' } } } })]).process('', { from: undefined }).css;
+  assert.doesNotMatch(built, /--font-|--h1-size/);
+  assert.throws(() => generateThemeCss({ typography: { 'h1-size': '2rem' } }), /UXD_THEME_INVALID: .*typography_details/);
 });
 test('preview scopes Density and Typography to the same simulated viewport', () => {
   const { inspectTypographyTheme } = require('../dist/typography');
   const input = { ...theme, densities: { 4: 'xs(space(4)) md(space(5))' }, typography_details: { h1: { fontSize: 'density(4)' } } };
   assert.equal(inspectTypographyTheme(input, 799)['--uxdsl__density__4'], 'var(--uxdsl__space__4)');
   assert.equal(inspectTypographyTheme(input, 800)['--uxdsl__density__4'], 'var(--uxdsl__space__5)');
-  assert.equal(inspectTypographyTheme(input, 800)['--uxdsl__typography__h1-size'], 'var(--uxdsl__density__4)');
+  assert.equal(inspectTypographyTheme(input, 800)['--uxdsl__typography__h1-font-size'], 'var(--uxdsl__density__4)');
 });
-test('packaged data-typo selectors consume all configured properties', async () => {
-  const fs = require('node:fs');
-  const source = fs.readFileSync(require.resolve('../src/theme/default-typography.uxdsl'), 'utf8');
-  // default-typography.uxdsl ships .ds-typo[data-typo="default"/"code"]
-  // selectors unconditionally; a theme needs those two typography_details
-  // roles for --uxdsl__typography__default-size/--uxdsl__typography__code-size to resolve (see MIG-04's note on
-  // the shipped defaults not being fully self-contained).
-  const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, typography_details: { default: { fontSize: '1rem' }, code: { fontSize: '0.9rem' } } } })]).process(source, { from: undefined });
+test('a data-typo selector written with @ds-typo consumes exactly the configured properties', async () => {
+  const source = '.ds-typo[data-typo="h1"] { @ds-typo(h1); }';
+  const built = await postcss([plugin({ theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })]).process(source, { from: undefined });
   const rule = postcss.parse(built.css).nodes.find(n => n.selector === '.ds-typo[data-typo="h1"]');
   const props = Object.fromEntries(rule.nodes.map(d => [d.prop, d.value]));
-  // MIG-B6-17 (FEAT-008): one declaration per field the effective theme
-  // defines for this role, referencing the variable with no literal fallback.
-  // This used to assert the opposite — `var(…, none)`, `var(…, normal)` and
-  // `var(…, auto)` for fields the theme never defined at all.
+  // One declaration per field the effective theme defines for this role,
+  // referencing the variable with no literal fallback.
   assert.equal(props['margin-block-end'], 'var(--uxdsl__typography__h1-margin-block-end)');
   assert.equal(props['font-family'], 'var(--uxdsl__typography__h1-font-family)');
-  assert.equal(props['font-size'], 'var(--uxdsl__typography__h1-size)');
+  assert.equal(props['font-size'], 'var(--uxdsl__typography__h1-font-size)');
   // The base theme defines no textTransform/fontStyle for h1, so the packaged
   // selector must not invent them.
   assert.equal(props['text-transform'], undefined);
@@ -170,8 +155,8 @@ test('MIG-B6-17: a custom role with only fontSize inherits default\'s other fiel
   const result = await compileWithBase('.card h2 { @ds-typo(card-title); }', { theme: custom });
   const props = emitted(result.css);
   // Its own field, plus every field `default` contributes.
-  assert.equal(props['font-size'], 'var(--uxdsl__typography__card-title-size)');
-  assert.equal(props['font-weight'], 'var(--uxdsl__typography__card-title-weight)');
+  assert.equal(props['font-size'], 'var(--uxdsl__typography__card-title-font-size)');
+  assert.equal(props['font-weight'], 'var(--uxdsl__typography__card-title-font-weight)');
   assert.equal(props['font-family'], 'var(--uxdsl__typography__card-title-font-family)');
 
   // The generator defines every variable the directive just referenced —
@@ -186,8 +171,8 @@ test('MIG-B6-17: a custom role with only fontSize inherits default\'s other fiel
 test('MIG-B6-17: defining textDecoration in the theme makes it emitted again', async () => {
   const withDecoration = { typography_details: { caption: { textDecoration: 'underline' } } };
   const result = await compileWithBase('.a { @ds-typo(caption); }', { theme: withDecoration });
-  assert.equal(emitted(result.css)['text-decoration'], 'var(--uxdsl__typography__caption-decoration)');
-  assert.match(generateThemeCss(withDecoration), /--uxdsl__typography__caption-decoration:\s*underline/);
+  assert.equal(emitted(result.css)['text-decoration'], 'var(--uxdsl__typography__caption-text-decoration)');
+  assert.match(generateThemeCss(withDecoration), /--uxdsl__typography__caption-text-decoration:\s*underline/);
 });
 
 test('MIG-B6-17: a later declaration still overrides the directive, and two directives keep their positions', async () => {

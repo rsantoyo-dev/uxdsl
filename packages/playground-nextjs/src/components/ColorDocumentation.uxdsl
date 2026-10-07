@@ -41,8 +41,8 @@
 
 .color-documentation pre {
   overflow-x: auto;
-  background: color(gray-900);
-  color: color(gray-200);
+  background: color(gray.900);
+  color: color(gray.200);
   padding: space(5);
   border-radius: 0.5rem;
   font-size: 0.85rem;

@@ -63,8 +63,8 @@ ${css.replace(/<\/style/gi, '<\\/style')}
 <body>
 <main class="lab">
   <div class="lab-row">
-    <div class="lab-swatch lab-swatch--palette">background: palette(primary-main)</div>
-    <div class="lab-swatch lab-swatch--color">background: color(gray-300)</div>
+    <div class="lab-swatch lab-swatch--palette">background: palette(primary.main)</div>
+    <div class="lab-swatch lab-swatch--color">background: color(gray.300)</div>
   </div>
   <div class="lab-row">
     <div class="lab-box lab-box--space">padding: space(4)</div>

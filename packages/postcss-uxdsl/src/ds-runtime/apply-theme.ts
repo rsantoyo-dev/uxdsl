@@ -1,4 +1,4 @@
-// MIG-B6-30 (FEAT-008): one theme model at build time and at run time.
+// One theme model at build time and at run time.
 //
 // The project's theme is JSON: a base plus an override. A build compiles that
 // JSON; this applies the same JSON in the browser, so editing a value needs no

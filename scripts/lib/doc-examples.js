@@ -33,7 +33,7 @@ const PKG = (name) => path.join(ROOT, 'packages', name);
 const postcss = require(require.resolve('postcss', { paths: [PKG('postcss-uxdsl')] }));
 const load = (rel) => require(path.join(ROOT, rel));
 
-const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(/;
+const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(/; // the removed spellings stay listed so an example showing one is compiled (and must document its error)
 const NEEDS_PIPELINE = /@mixin\b|@include\b|^\s*\$[\w-]+\s*:/m;
 const CODE = /\bUXD_[A-Z0-9_]+/;
 
@@ -155,18 +155,19 @@ function collectExamples(relPath) {
   return { examples, themes };
 }
 
-/** Splits a block into statements, each with the expectation its trailing comment declares. */
+/** Splits a block into statements, each with the expectation its trailing comment declares.
+ * Every top-level node is a statement — a `@theme { … }` block too, which the compiler
+ * rejects, so an example showing one has to document that error. */
 function statementsOf(code) {
   const root = postcss.parse(code);
-  const theme = root.nodes.filter((n) => n.type === 'atrule' && n.name === 'theme');
   const out = [];
   root.nodes.forEach((node, i) => {
-    if (node.type === 'comment' || theme.includes(node)) return;
+    if (node.type === 'comment') return;
     const next = root.nodes[i + 1];
     const trailing = next && next.type === 'comment' && next.source.start.line === node.source.end.line ? next.text.trim() : '';
     const expectError = /^(UXD_[A-Z0-9_]+)\b/.exec(trailing);
     const claimsOutput = /^(var\(--[\w-]+\))\s*$/.exec(trailing);
-    out.push({ css: [...theme.map(String), String(node)].join('\n'), expectCode: expectError && expectError[1], claims: claimsOutput && claimsOutput[1] });
+    out.push({ css: String(node), expectCode: expectError && expectError[1], claims: claimsOutput && claimsOutput[1] });
   });
   return out;
 }

@@ -12,5 +12,5 @@
   border-bottom: 1px solid palette(divider);
 }
 .muted {
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }

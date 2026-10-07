@@ -11,7 +11,7 @@
 
 .config-editor__hint {
   font-size: 0.8rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .config-editor__buttons {
@@ -20,9 +20,9 @@
 }
 
 .config-editor__button {
-  border: 1px solid palette(neutral-light);
-  background: palette(surface-light);
-  color: palette(text-primary);
+  border: 1px solid palette(neutral.light);
+  background: palette(surface.light);
+  color: palette(text.primary);
   border-radius: radius(1);
   padding: space(2) space(3);
   display: inline-flex;
@@ -32,9 +32,9 @@
 }
 
 .config-editor__button--primary {
-  border-color: palette(primary-main);
-  background: palette(primary-main);
-  color: palette(primary-contrast);
+  border-color: palette(primary.main);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
 }
 
 .config-editor {
@@ -50,22 +50,22 @@
   font-family: var(--uxdsl__font__code, ui-monospace, SFMono-Regular, Menlo, monospace);
   font-size: 0.82rem;
   line-height: 1.5;
-  border: 1px solid palette(neutral-light);
+  border: 1px solid palette(neutral.light);
   border-radius: radius(1);
   padding: space(3);
-  background: palette(surface-main);
-  color: palette(text-primary);
+  background: palette(surface.main);
+  color: palette(text.primary);
 }
 
 .config-editor__textarea.is-invalid {
-  border-color: palette(error-main);
+  border-color: palette(error.main);
 }
 
 .config-editor__status {
   font-size: 0.75rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .config-editor__status.is-invalid {
-  color: palette(error-main);
+  color: palette(error.main);
 }

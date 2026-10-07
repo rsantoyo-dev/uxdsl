@@ -37,7 +37,7 @@ const PLAYGROUND_THEMES = Object.fromEntries(['default', 'green', 'purple', 'sla
 
 // Every token function, in every family that takes a value: token references
 // nested in responsive groups, alpha on palette()/color(), the radius
-// keywords, both aliases, and var() as the escape hatch.
+// keywords, and var() as the escape hatch.
 const SYNTHETIC = {
   breakpoints: { xs: 0, md: 700, xl: 1300 },
   colors: { white: '#ffffff', ink: 'color(gray.600)', brand: { 500: 'palette(primary.main)', 700: 'var(--uxdsl__color__gray-500)' } },
@@ -49,14 +49,13 @@ const SYNTHETIC = {
   modes: { dark: { palette: { brand: { main: 'color(gray.600)', dark: 'palette(primary.light, 0.25)', contrast: 'color(white)' } } } },
   fonts: { families: { display: 'var(--uxdsl__font__ui)', 'display-2': 'Playfair Display, serif' } },
   typography_details: { hero: { fontFamily: 'var(--uxdsl__font__display)', fontSize: 'xs(density(4)) md(space(9))', letterSpacing: 'space(1)', marginBlockEnd: 'density(1)' } },
-  typography: { 'font-hero': 'xs(var(--uxdsl__font__display)) md(var(--uxdsl__font__display-2))' },
   densities: { hero: 'xs(density(2)) md(space(6))' },
-  radii: { hero: 'xs(radius(pill)) md(rounded(2)) xl(radius(circle))', tight: 'space(1)' },
+  radii: { hero: 'xs(radius(pill)) md(radius(2)) xl(radius(circle))', tight: 'space(1)' },
   borders: { hero: 'xs(border(1)) md(space(1) solid palette(brand, 0.5))', dotted: 'space(1) dotted color(brand.500)' },
   shadows: { hero: 'xs(none) md(shadow(2))', tint: '0 0 0 space(1) palette(brand.light)' },
-  surfaces: { hero: { padding: 'density(hero)', radius: 'radius(hero)', bg: 'palette(brand.main)', color: 'palette(brand.contrast)', border: 'border(hero)', shadow: 'elevation(hero)' } },
+  surfaces: { hero: { padding: 'density(hero)', radius: 'radius(hero)', bg: 'palette(brand.main)', color: 'palette(brand.contrast)', border: 'border(hero)', shadow: 'shadow(hero)' } },
   buttons: { hero: { surface: 'hero', base: { 'font-weight': '600', shadow: 'shadow(tint)' }, states: { hover: { bg: 'palette(brand.dark)', border: 'border(dotted)' }, focusvisible: { outline: 'space(1) solid palette(brand.main, 0.5)', 'outline-offset': 'space(1)' } } } },
-  inputs: { hero: { surface: 'hero', base: { caret: 'palette(brand.dark)', placeholder: 'color(ink)', radius: 'rounded(tight)' }, states: { focus: { border: 'border(dotted)', shadow: 'shadow(tint)' }, invalid: { underline: 'space(1) solid palette(error)' } } } },
+  inputs: { hero: { surface: 'hero', base: { caret: 'palette(brand.dark)', placeholder: 'color(ink)', radius: 'radius(tight)' }, states: { focus: { border: 'border(dotted)', shadow: 'shadow(tint)' }, invalid: { underline: 'space(1) solid palette(error)' } } } },
 };
 
 const THEMES = { 'packaged base ({} override)': {}, ...PLAYGROUND_THEMES, 'synthetic: every token function in every family': SYNTHETIC };
@@ -111,8 +110,8 @@ for (const [label, theme, re, resolved] of [
   ['densities.x = density(2)', { densities: { x: 'density(2)' } }, /density__x:/, 'var(--uxdsl__density__2)'],
   ['borders.x = border(1)', { borders: { x: 'border(1)' } }, /border__x:/, 'var(--uxdsl__border__1)'],
   ['surfaces.contained.padding = space(3)', { surfaces: { contained: { padding: 'space(3)' } } }, /contained-padding:/, 'var(--uxdsl__space__3)'],
-  ['typography_details.h1.fontSize = density(4)', { typography_details: { h1: { fontSize: 'density(4)' } } }, /h1-size:/, 'var(--uxdsl__density__4)'],
-  ['typography_details.h1.letterSpacing = palette(primary)', { typography_details: { h1: { letterSpacing: 'palette(primary)' } } }, /h1-spacing:/, 'var(--uxdsl__palette__primary-main)'],
+  ['typography_details.h1.fontSize = density(4)', { typography_details: { h1: { fontSize: 'density(4)' } } }, /h1-font-size:/, 'var(--uxdsl__density__4)'],
+  ['typography_details.h1.letterSpacing = palette(primary)', { typography_details: { h1: { letterSpacing: 'palette(primary)' } } }, /h1-letter-spacing:/, 'var(--uxdsl__palette__primary-main)'],
   ['spacing.gutter = space(2)', { spacing: { gutter: 'space(2)' } }, /space__gutter:/, 'var(--uxdsl__space__2)'],
   ['palette.brand.main = color(gray.300)', { palette: { brand: { main: 'color(gray.300)' } } }, /brand-main:/, 'var(--uxdsl__color__gray-300)'],
   ['palette.brand.main = palette(primary, 0.5)', { palette: { brand: { main: 'palette(primary, 0.5)' } } }, /brand-main:/, 'color-mix(in srgb, var(--uxdsl__palette__primary-main) 50%, transparent)'],

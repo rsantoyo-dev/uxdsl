@@ -4,13 +4,13 @@
   .density-header { display: flex; flex-direction: column; gap: density(2); }
 
   .density-code-snippet {
-    background: palette(surface-dark);
-    color: palette(surface-contrast);
+    background: palette(surface.dark);
+    color: palette(surface.contrast);
     padding: density(2);
     border-radius: radius(1);
     font-family: monospace;
     font-size: 0.9rem;
-    border-left: 4px solid palette(primary-main);
+    border-left: 4px solid palette(primary.main);
     margin-top: density(1);
   }
 
@@ -35,9 +35,9 @@
     overflow-x: auto; /* Enable horizontal scroll */
     overflow-y: hidden;
     padding: density(4);
-    background: palette(surface-light);
+    background: palette(surface.light);
     border-radius: radius(2);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     position: relative;
     z-index: 0;
   }
@@ -54,7 +54,7 @@
   .concentric-content {
     position: relative;
     z-index: 100;
-    background: palette(surface-main);
+    background: palette(surface.main);
     padding: density(2);
     border-radius: radius(1);
     display: flex;
@@ -65,15 +65,15 @@
     box-shadow: shadow(2);
     @ds-typo(caption);
     font-weight: bold;
-    color: palette(primary-dark);
-    border: 1px solid palette(neutral-light);
+    color: palette(primary.dark);
+    border: 1px solid palette(neutral.light);
   }
 
   .concentric-ring {
     position: absolute;
     border-radius: radius(2);
-    border: 1px solid palette(primary-main, 0.2);
-    background: palette(primary-main, 0.03);
+    border: 1px solid palette(primary.main, 0.2);
+    background: palette(primary.main, 0.03);
     pointer-events: auto;
     transition: all 0.2s ease;
     display: flex;
@@ -84,14 +84,14 @@
 
   .concentric-ring:hover,
   .concentric-ring.is-hovered {
-    border-color: palette(secondary-main);
-    background: palette(secondary-main, 0.1);
-    box-shadow: 0 0 0 1px palette(secondary-main);
+    border-color: palette(secondary.main);
+    background: palette(secondary.main, 0.1);
+    box-shadow: 0 0 0 1px palette(secondary.main);
   }
 
   .ring-label {
-    background: palette(secondary-main);
-    color: palette(secondary-contrast);
+    background: palette(secondary.main);
+    color: palette(secondary.contrast);
     font-size: 0.6rem;
     padding: 1px 4px;
     border-radius: 0 0 4px 4px;
@@ -142,7 +142,7 @@
     justify-content: space-between;
     align-items: center;
     padding-bottom: density(2);
-    border-bottom: 1px solid palette(neutral-light, 0.5);
+    border-bottom: 1px solid palette(neutral.light, 0.5);
   }
 
   .density-card__header-col {
@@ -188,8 +188,8 @@
     @ds-typo(body);
     font-weight: bold;
     font-family: monospace;
-    color: palette(primary-main);
-    background: palette(primary-main, 0.1);
+    color: palette(primary.main);
+    background: palette(primary.main, 0.1);
     padding: 2px 6px;
     border-radius: 4px;
     width: fit-content;
@@ -206,17 +206,17 @@
     gap: space(2);
     font-family: monospace;
     font-size: 0.75rem;
-    background: palette(neutral-light, 0.3);
+    background: palette(neutral.light, 0.3);
     padding: space(1) space(2);
     border-radius: 2px;
     transition: all 0.2s ease;
   }
 
   .density-def-item--active {
-    background: palette(primary-main, 0.15);
-    color: palette(primary-dark);
+    background: palette(primary.main, 0.15);
+    color: palette(primary.dark);
     font-weight: bold;
-    box-shadow: 0 0 0 1px palette(primary-main, 0.3);
+    box-shadow: 0 0 0 1px palette(primary.main, 0.3);
   }
 
   .density-def-bp {
@@ -229,7 +229,7 @@
   }
 
   .density-card__edit-btn {
-    @ds-button (outlined secondary 1);
+    @ds-button(outlined secondary 1);
     white-space: nowrap;
   }
 
@@ -251,7 +251,7 @@
   }
 
   .density-metric-value--highlight {
-    color: palette(secondary-dark);
+    color: palette(secondary.dark);
     font-weight: bold;
   }
 
@@ -267,7 +267,7 @@
   .density-concentric-center {
     width: 4px;
     height: 4px;
-    background: palette(primary-dark);
+    background: palette(primary.dark);
     border-radius: 50%;
     position: relative; /* Changed from absolute */
     grid-area: 1 / 1; /* Stack in center */
@@ -303,33 +303,33 @@
 
   /* Color variations for concentric boxes */
   .density-concentric-box--0 {
-    border-color: palette(secondary-main);
-    background: palette(secondary-main, 0.05);
-    color: palette(secondary-dark);
+    border-color: palette(secondary.main);
+    background: palette(secondary.main, 0.05);
+    color: palette(secondary.dark);
     z-index: 3;
   }
 
   .density-concentric-box--1 {
-    border-color: palette(tertiary-main);
-    background: palette(tertiary-main, 0.05);
-    color: palette(tertiary-dark);
+    border-color: palette(tertiary.main);
+    background: palette(tertiary.main, 0.05);
+    color: palette(tertiary.dark);
     z-index: 2;
   }
 
   .density-concentric-box--2 {
-    border-color: palette(primary-main);
-    background: palette(primary-main, 0.05);
-    color: palette(primary-dark);
+    border-color: palette(primary.main);
+    background: palette(primary.main, 0.05);
+    color: palette(primary.dark);
     z-index: 1;
   }
 
   .density-concentric-box--active {
     border-style: solid;
     border-width: 2px;
-    border-color: palette(secondary-dark);
-    background: palette(secondary-main, 0.15);
+    border-color: palette(secondary.dark);
+    background: palette(secondary.main, 0.15);
     z-index: 10; /* Ensure it's on top if possible, or at least prominent */
-    box-shadow: 0 0 0 1px palette(surface-main); /* Small outline to separate */
+    box-shadow: 0 0 0 1px palette(surface.main); /* Small outline to separate */
   }
 
   /* MIG-B7-17 phase B (4): were inline style={{}} in DemoDensity.tsx. */

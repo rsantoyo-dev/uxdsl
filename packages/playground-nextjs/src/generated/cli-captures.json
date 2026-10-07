@@ -6,7 +6,7 @@
     "uxdsl.theme.json": "{\n  \"$schema\": \"../../node_modules/postcss-uxdsl/schema/theme.schema.json\",\n  \"breakpoints\": { \"xs\": 0, \"sm\": 480, \"md\": 768, \"lg\": 1024, \"xl\": 1280 },\n  \"palette\": {\n    \"primary\": { \"main\": \"#0f766e\" }\n  }\n}\n",
     "src/card.uxdsl": ".card {\n  @ds-surface(contained);\n  display: flex;\n  flex-direction: xs(column) md(row);\n  gap: density(4);\n}\n",
     "src/button.uxdsl": ".save {\n  @ds-button(contained primary 2);\n}\n",
-    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary-main);\n}\n"
+    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary.main);\n}\n"
   },
   "runs": [
     {
@@ -35,11 +35,11 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (48919 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (49478 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 48919,
-        "rootBlocks": 17,
+        "bytes": 49478,
+        "rootBlocks": 16,
         "mediaQueries": 9
       }
     },
@@ -66,11 +66,11 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (47159 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (47671 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 47159,
-        "rootBlocks": 17
+        "bytes": 47671,
+        "rootBlocks": 16
       }
     },
     {
@@ -85,11 +85,11 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (47159 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (47671 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 47159,
-        "rootBlocks": 17
+        "bytes": 47671,
+        "rootBlocks": 16
       }
     },
     {
@@ -197,11 +197,10 @@
           "surfaces",
           "buttons",
           "inputs",
-          "typography",
           "typography_details",
           "$schema"
         ],
-        "bytes": 14727,
+        "bytes": 14635,
         "primary": {
           "main": "#0f766e",
           "light": "color(purple.500)",
@@ -311,16 +310,16 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (48919 bytes)",
+          "[uxdsl] built dist/app.css (49478 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
       {
-        "action": "edit src/card.uxdsl: add border-radius: rounded(3);",
+        "action": "edit src/card.uxdsl: add border-radius: radius(3);",
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (48961 bytes)"
+          "[uxdsl] built dist/app.css (49520 bytes)"
         ]
       },
       {
@@ -336,12 +335,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (48919 bytes)"
+          "[uxdsl] built dist/app.css (49478 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 48919
+      "finalBytes": 49478
     }
   }
 }

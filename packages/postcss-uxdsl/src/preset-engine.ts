@@ -1,23 +1,22 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression, tokenValueToCss } from './language';
+import { BreakpointMap, TokenContext, resolveResponsiveValue, validateBreakpoints, validateResponsiveExpression, tokenValueToCss } from './language';
 import { buildVarName, NameRegistry } from './naming';
 import { themeError } from './diagnostics';
 
-// Stability phase 1: the value grammar lives in language.ts (`tokenValueToCss`,
-// `normalizeTokenKey`, `RADIUS_KEYWORDS`) so every engine — foundations,
-// typography, densities and these presets — serializes a theme value the
-// same way. These names stay exported here for the callers that import them.
-export { normalizeTokenKey, RADIUS_KEYWORDS } from './language';
+// The value grammar lives in language.ts (`tokenValueToCss`,
+// `RADIUS_KEYWORDS`) so every engine — foundations, typography, densities and
+// these presets — serializes a theme value the same way.
+export { RADIUS_KEYWORDS } from './language';
 
 /** @deprecated Use `tokenValueToCss` (language.ts). The error prefix is no
  * longer used — a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
  * belongs to — and the per-family serializers went with the `themeVar`/
  * `spaceVar`/`colorVar` plugin options they existed for. */
-export function presetValueToCss(input: string, _errorPrefix = 'UXD_PRESET'): string {
+export function presetValueToCss(input: string, _errorPrefix?: string): string {
   return tokenValueToCss(input);
 }
 
-// MIG-B6-13 (FEAT-008) code-review follow-up: `keyPathPrefix` is optional so
+// `keyPathPrefix` is optional so
 // every pre-existing caller (surfaces.ts's own per-role merge, control-engine.ts)
 // keeps its exact prior message/shape; only a caller that actually knows which
 // top-level theme family it's validating (edges.ts, for `radii`/`borders`)
@@ -45,13 +44,13 @@ export function mergePresetTokens(defaults: Record<string, string>, input: Recor
   return { ...defaults, ...input };
 }
 
-export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix = 'UXD_PRESET') {
+export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix: string, context?: TokenContext) {
   // Stability phase 1: the breakpoint map has one owner and one code
   // (`UXD_BP_INVALID`), not one `<FAMILY>_BP` restatement per engine. A value
   // naming a breakpoint the map does not have is a value error, `_VALUE`.
   const ordered = validateBreakpoints(breakpoints);
   const rules = ordered.map(([breakpoint, width], i) => ({ breakpoint, minWidth: i ? width : null as number | null, values: {} as Record<string, string> }));
-  // MIG-08: two different (family, key) pairs — e.g. surface role
+  // Two different (family, key) pairs — e.g. surface role
   // "contained-shadow" with no field suffix, and role "contained" field
   // "shadow" — can concatenate to the identical CSS variable name. Without
   // this, the second one to run would silently overwrite the first's
@@ -63,7 +62,7 @@ export function compilePresetRules(tokens: Record<string, Record<string, string>
       const varName = names.claim(buildVarName(family, key), `${family}.${key}`);
       let previous: string | undefined;
       ordered.forEach(([bp], i) => {
-        const value = tokenValueToCss(resolveResponsiveValue(expression, bp, breakpoints));
+        const value = tokenValueToCss(resolveResponsiveValue(expression, bp, breakpoints), context);
         if (!value && i === 0) throw new Error(`${errorPrefix}_BASE: ${family}.${key} needs a base value.`);
         if (value !== previous) rules[i].values[varName] = value;
         previous = value;

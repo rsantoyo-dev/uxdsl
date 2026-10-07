@@ -60,9 +60,14 @@ async function main() {
   config({ theme: { fonts: { families: { ui: 'var(--font-geist-sans, Arial, sans-serif)' } } } });
   command('build');
   write('src/uxdsl-entry.uxdsl', '.bad { color: palette(not-defined.main); }');
-  assert.throws(() => command('build'), error => /UXD_REFERENCE_MISSING/.test(String(error.stderr)));
-  assert.equal(req('postcss-uxdsl/theme/theme-manifest.json').uxdslVersion, version);
-  for (const file of ['default-spacing.css', 'default-typography.uxdsl', 'default-buttons.uxdsl']) assert.ok(fs.existsSync(req.resolve(`postcss-uxdsl/theme/${file}`)));
-  console.log('PASS: five tarballs, partial theme + externals, CLI/PostCSS/runtime parity, CSS Modules output, fallback and negative controls, exports/manifest.');
+  // Stability phase 3: a token function is checked at rewrite time with its family's code.
+  assert.throws(() => command('build'), error => /UXD_PALETTE_REFERENCE/.test(String(error.stderr)));
+  // Stability phase 3 replaced the beta.2 checks of theme-manifest.json and the
+  // legacy theme/default-* files (both removed) with their successors: the two
+  // JSON files are explicit exports and the only theme files the tarball ships.
+  assert.ok(req('postcss-uxdsl/theme/base.json').palette);
+  assert.ok(Array.isArray(req('postcss-uxdsl/theme/base.contrast-exceptions.json')));
+  for (const file of ['theme-manifest.json', 'default-spacing.css', 'default-typography.uxdsl', 'default-buttons.uxdsl']) assert.throws(() => req.resolve(`postcss-uxdsl/theme/${file}`), `${file} is no longer shipped`);
+  console.log('PASS: five tarballs, partial theme + externals, CLI/PostCSS/runtime parity, CSS Modules output, fallback and negative controls, exports.');
 }
 main().catch(error => { console.error(error.stdout || '', error.stderr || '', error); process.exitCode = 1; });

@@ -99,7 +99,6 @@ export const completions = {
     }
   },
   "directives": [
-    "theme",
     "ds-surface",
     "ds-typo",
     "ds-button",
@@ -109,11 +108,9 @@ export const completions = {
     "palette",
     "color",
     "radius",
-    "rounded",
     "border",
     "density",
     "shadow",
-    "elevation",
     "space",
     "xs",
     "sm",

@@ -159,7 +159,7 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
         use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { discoverTheme: false } }],
       }],
     },
-  }), /UXD_REFERENCE_MISSING/);
+  }), /UXD_PALETTE_REFERENCE/);
 });
 
 test('phase 2: a theme file exporting { theme, references } fails the compilation with the loader\'s own message', async () => {

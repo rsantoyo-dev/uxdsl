@@ -84,7 +84,7 @@ test('MIG-04: an external stylesheet is accepted when declared, in strict mode',
   // the defaults, use a palette family DEFAULT_THEME doesn't define.
   await assert.rejects(
     compile('.x { color: palette(brand-custom.main); }', { includeTheme: false }),
-    /UXD_REFERENCE_MISSING: color -> --uxdsl__palette__brand-custom-main/,
+    /UXD_PALETTE_REFERENCE: palette\(brand-custom\.main\) does not exist/,
     'sanity check: a reference absent from both the theme and DEFAULT_THEME still fails validation'
   );
   const result = await compile('.x { color: palette(brand-custom.main); }', {

@@ -11,8 +11,8 @@
 }
 
 .space-box {
-  background: palette(primary-light);
-  color: palette(primary-contrast);
+  background: palette(primary.light);
+  color: palette(primary.contrast);
   border-radius: radius(1);
 }
 
@@ -24,8 +24,8 @@
 .space-6 { padding: space(6); }
 
 .density-box {
-  background: palette(primary-main);
-  color: palette(primary-contrast);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
   border-radius: radius(1);
 }
 
@@ -37,15 +37,15 @@
   display: flex;
   flex-wrap: wrap;
   gap: densities(1, 2, 3);
-  background: palette(primary-dark);
-  color: palette(primary-contrast);
+  background: palette(primary.dark);
+  color: palette(primary.contrast);
   padding: density(1);
   border-radius: radius(1);
 }
 
 .gap-item {
-  background: palette(primary-light);
-  color: palette(primary-contrast);
+  background: palette(primary.light);
+  color: palette(primary.contrast);
   padding: space(2);
   border-radius: radius(1);
 }

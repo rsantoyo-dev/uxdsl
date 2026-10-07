@@ -82,19 +82,21 @@ test('in a block that documents an error, every other statement must still compi
 });
 
 test('a claimed output (`/* var(--…) */`) must appear in the compiled CSS', async () => {
-  const good = '.a { color: color(gray-300); }  /* var(--uxdsl__color__gray-300) */';
+  const good = '.a { color: color(gray.300); }  /* var(--uxdsl__color__gray-300) */';
   assert.deepEqual(await runExample({ code: `${good}\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */`, theme: null }), []);
-  const bad = '.a { color: color(gray-300); }  /* var(--uxdsl__color__gray-999) */\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */';
+  const bad = '.a { color: color(gray.300); }  /* var(--uxdsl__color__gray-999) */\n.b { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN */';
   const [problem] = await runExample({ code: bad, theme: null });
   assert.match(problem, /documented as producing var\(--uxdsl__color__gray-999\) but does not/);
 });
 
-test('statementsOf keeps @theme with every statement and reads only same-line trailing comments', () => {
-  const found = statementsOf('@theme { space-1: 4px; }\n.a { padding: space(1); }  /* UXD_X: boom */\n/* not trailing */\n.b { color: red; }');
-  assert.equal(found.length, 2);
-  assert.match(found[0].css, /@theme/);
-  assert.equal(found[0].expectCode, 'UXD_X');
-  assert.equal(found[1].expectCode, null);
+test('statementsOf makes every top-level node a statement (a @theme block too) and reads only same-line trailing comments', () => {
+  const found = statementsOf('@theme { space-1: 4px; }  /* UXD_THEME_BLOCK_REMOVED: … */\n.a { padding: space(1); }  /* UXD_X: boom */\n/* not trailing */\n.b { color: red; }');
+  assert.equal(found.length, 3);
+  assert.match(found[0].css, /^@theme/);
+  assert.equal(found[0].expectCode, 'UXD_THEME_BLOCK_REMOVED');
+  assert.doesNotMatch(found[1].css, /@theme/);
+  assert.equal(found[1].expectCode, 'UXD_X');
+  assert.equal(found[2].expectCode, null);
 });
 
 // --- 2. the real documentation --------------------------------------------

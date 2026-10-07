@@ -100,7 +100,8 @@ async function main() {
   // atomic-write guarantee, exercised here against real tarballs/CLI, not
   // just the in-process unit tests). ---
   write('src/panel-b.uxdsl', '.bad { color: palette(not-defined.main); }');
-  assert.throws(() => command('build'), (error) => /UXD_REFERENCE_MISSING/.test(String(error.stderr)));
+  // Stability phase 3: a token function is checked at rewrite time with its family's code.
+  assert.throws(() => command('build'), (error) => /UXD_PALETTE_REFERENCE/.test(String(error.stderr)));
   assert.equal(read('theme.css'), outputs.theme, 'a failed build must not touch the theme entry\'s previous output');
   assert.equal(read('panel-a.module.css'), outputs.a, 'a failed build must not touch an unrelated entry\'s previous output');
   console.log('PASS: an unknown token still fails the whole build, leaving every previous output untouched.');

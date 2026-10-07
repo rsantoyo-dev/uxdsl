@@ -27,10 +27,10 @@ test('JSON references and externalTokens migrate without changing logical keys',
 });
 test('custom roles and conflicting host names require explicit mappings', () => {
   const source = '.x { color: var(--host-size); padding: var(--space-owned-by-host); font-size: var(--custom-title-size); }';
-  const { output } = migrate(source, { '--space-owned-by-host': '--space-owned-by-host', '--custom-title-size': '--uxdsl__typography__custom-title-size' });
+  const { output } = migrate(source, { '--space-owned-by-host': '--space-owned-by-host', '--custom-title-size': '--uxdsl__typography__custom-title-font-size' });
   assert.match(output, /var\(--host-size\)/);
   assert.match(output, /var\(--space-owned-by-host\)/);
-  assert.match(output, /var\(--uxdsl__typography__custom-title-size\)/);
+  assert.match(output, /var\(--uxdsl__typography__custom-title-font-size\)/);
 });
 
 test('MIG-B2-04: migrates spacing 4–10 and Typography, preserving host fonts, logical keys and helpers', () => {
@@ -40,7 +40,7 @@ test('MIG-B2-04: migrates spacing 4–10 and Typography, preserving host fonts, 
   assert.deepEqual(result.typography, { 'h1-size': '2rem', '--h2-size': '3rem' });
   assert.deepEqual(result.references.externalTokens, ['--font-geist-sans', '--font-geist-mono']);
   assert.equal(result.typography_details.h1.fontFamily, 'var(--uxdsl__font__ui, var(--font-geist-sans))');
-  assert.equal(result.typography_details.h1.fontSize, 'var(--uxdsl__typography__h1-size)');
+  assert.equal(result.typography_details.h1.fontSize, 'var(--uxdsl__typography__h1-font-size)');
   assert.deepEqual(result.values, Array.from({ length: 7 }, (_, i) => `var(--uxdsl__space__${i + 4})`));
   assert.equal(result.helper, 'space(7)');
 });

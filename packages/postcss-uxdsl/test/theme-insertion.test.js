@@ -78,10 +78,9 @@ test('T10: one formatting style — every generated block is a one-line rule or 
   }
 });
 
-test('T10: a legacy @theme pack in the source is consumed and the theme still goes to the one place', () => {
-  const css = compile('@import url("https://example.com/a.css");\n@theme { density-custom: xs(space(1)) md(space(2)); }\n.a { padding: density(custom); }');
+test('T10: a token the theme JSON adds goes to the same one place as the rest of the theme', () => {
+  const css = compile('@import url("https://example.com/a.css");\n.a { padding: density(custom); }', { theme: { densities: { custom: 'xs(space(1)) md(space(2))' } } });
   const nodes = topLevel(css);
-  assert.doesNotMatch(css, /@theme/);
   assert.match(css, /--uxdsl__density__custom: var\(--uxdsl__space__1\)/);
   const firstAuthorRule = nodes.findIndex((node) => node.type === 'rule' && node.selector === '.a');
   assert.ok(nodes.slice(0, firstAuthorRule).filter(isGenerated).length > 10, 'the theme precedes the author rule');

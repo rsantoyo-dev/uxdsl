@@ -1,35 +1,25 @@
-import { BreakpointMap, DEFAULT_BREAKPOINTS, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
-import { buildVarName, NameRegistry } from './naming';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
+import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
 
-/** JSON fields and their public CSS variable suffixes. */
+/** JSON fields and the CSS property each one is: the public variable suffix
+ * (`--uxdsl__typography__<role>-font-size`) and the declaration `@ds-typo`
+ * emits (`font-size`) are the same name. */
 export const TYPOGRAPHY_PROPERTIES = Object.freeze({
-  fontFamily: 'font-family', fontSize: 'size', lineHeight: 'line',
-  fontWeight: 'weight', letterSpacing: 'spacing', textTransform: 'transform',
-  textDecoration: 'decoration', fontStyle: 'style',
-  marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
-});
-export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
-export type TypographyDetails = Record<string, TypographyStyle>;
-
-/** The same JSON fields, mapped to the CSS property `@ds-typo` emits for each.
- * MIG-B6-17 (FEAT-008): `@ds-typo` used to emit a fixed list of declarations
- * with literal fallbacks the theme never asked for (`auto` margins that break
- * flex/grid, a `text-decoration: none` that stripped link underlines, an
- * `opacity` that could not be overridden from JSON at all because it is not a
- * field here). It now emits one declaration per field the effective theme
- * actually defines, so this map and TYPOGRAPHY_PROPERTIES must stay key-for-key
- * identical — test/typography.test.js guards that. The suffix map is the public
- * variable name (`fontSize` -> `--…-size`); this one is the CSS property
- * (`fontSize` -> `font-size`). They differ, so neither can be derived from the
- * other by camelCase conversion. */
-export const TYPOGRAPHY_CSS_PROPERTIES = Object.freeze({
   fontFamily: 'font-family', fontSize: 'font-size', lineHeight: 'line-height',
   fontWeight: 'font-weight', letterSpacing: 'letter-spacing',
   textTransform: 'text-transform', textDecoration: 'text-decoration',
   fontStyle: 'font-style',
   marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
 });
+export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
+export type TypographyDetails = Record<string, TypographyStyle>;
+
+/** The CSS property `@ds-typo` emits for each field — the same map as the
+ * variable suffixes above, kept under its own name for the callers that read
+ * it as "the property to emit". `@ds-typo` emits one declaration per field the
+ * effective theme defines for the role, with no literal fallbacks. */
+export const TYPOGRAPHY_CSS_PROPERTIES = TYPOGRAPHY_PROPERTIES;
 
 /** The effective field set for one role: `default` underneath the role's own
  * fields, exactly as compileTypographyRules composes it when generating the
@@ -47,11 +37,11 @@ export function resolveTypographyRole(details: TypographyDetails, role: string):
 /** Stability phase 1: the one value grammar. A typography field may reference
  * any token (`palette(primary)` in `letterSpacing`, `radius(2)`…), not only
  * `space()`/`density()`; the reference pass judges whether it exists. */
-export function typographyValueToCss(input: string): string {
-  return tokenValueToCss(input);
+export function typographyValueToCss(input: string, context?: TokenContext): string {
+  return tokenValueToCss(input, context);
 }
 
-export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS) {
+export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS, context?: TokenContext) {
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
   // Stability phase 1: the breakpoint map has one owner and one code
   // (`UXD_BP_INVALID`, language.ts); this engine no longer restates the
@@ -65,21 +55,17 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
     }
   }
   const rules = ordered.map(([breakpoint, width], index) => ({ breakpoint, minWidth: index ? width : null as number | null, values: {} as Record<string, string> }));
-  // MIG-08: every role shares one "typography" family instead of the role
-  // itself being the family, so the emitted name is
-  // `--uxdsl__typography__<role>-<field>` (e.g. `--uxdsl__typography__h1-size`),
-  // matching every other family's `--uxdsl__<family>__<key>` shape. A role
-  // like "h1-weight" combined with field "size" would still concatenate to
-  // the same name as role "h1" field "weight-size" — the registry catches
-  // that instead of one silently overwriting the other.
-  const names = new NameRegistry('UXD_TYPO');
+  // Every role shares one "typography" family, so the emitted name is
+  // `--uxdsl__typography__<role>-<property>` (`--uxdsl__typography__h1-font-size`).
+  // Two role/field pairs cannot produce the same name: a role is
+  // `^[a-z][a-z0-9-]*$` and no property name is a dash-suffix of another.
   for (const [role, style] of Object.entries(details)) {
     const merged = role === 'default' ? style : { ...details.default, ...style };
     for (const [field, expression] of Object.entries(merged)) {
-      const varName = names.claim(buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`), `${role}.${field}`);
+      const varName = buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`);
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
-        const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints));
+        const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints), context);
         if (!value && index === 0) throw themeError('UXD_TYPO_BASE', `${role}.${field} needs a base value`, `typography_details.${role}.${field}`);
         if (value !== previous) rules[index].values[varName] = value;
         previous = value;
@@ -92,24 +78,10 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
 /** Pure generation used identically by PostCSS, SSR and browser applications. */
 export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
   const base: Record<string, string> = {};
-  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value));
+  for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value), theme);
   const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
   const output = Object.keys(base).length ? [serialize(base)] : [];
-  // Legacy flat variables share the same responsive resolver as structured fields.
-  const previous: Record<string, string> = {};
-  Object.entries(breakpoints).sort((a, b) => a[1] - b[1]).forEach(([bp, width], index) => {
-    const values: Record<string, string> = {};
-    for (const [key, expression] of Object.entries(theme.typography || {})) {
-      const value = typographyValueToCss(resolveResponsiveValue(String(expression), bp, breakpoints));
-      if (value !== previous[key]) values[`--${key}`] = value;
-      previous[key] = value;
-    }
-    if (Object.keys(values).length) {
-      const body = serialize(values);
-      output.push(index ? `@media (min-width: ${width}px) { ${body} }` : body);
-    }
-  });
-  for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints)) {
+  for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints, theme)) {
     const body = serialize(rule.values);
     output.push(rule.minWidth === null ? body : `@media (min-width: ${rule.minWidth}px) { ${body} }`);
   }
@@ -120,8 +92,8 @@ export function generateTypographyCss(theme: Record<string, any>, breakpoints: B
 export function inspectTypographyTheme(theme: Record<string, any>, width: number): Record<string, string> {
   const bps = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints };
   const rules = [
-    ...compileTypographyRules(theme.typography_details || {}, bps),
-    ...compileDensityRules(theme.densities || {}, bps),
+    ...compileTypographyRules(theme.typography_details || {}, bps, theme),
+    ...compileDensityRules(theme.densities || {}, bps, (value) => tokenValueToCss(value, theme)),
   ];
   const values: Record<string, string> = {};
   for (const rule of rules) {

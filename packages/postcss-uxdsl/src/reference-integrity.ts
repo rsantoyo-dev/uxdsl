@@ -23,7 +23,7 @@ export interface ReferenceIssue {
   node?: Declaration;
 }
 
-// MIG-B6-13 (FEAT-008) architecture decision, recorded on code review:
+// Architecture decision:
 // `issue.source` is whatever PostCSS's `from` option resolved to (absolute,
 // relative, or undefined) — never made relative to the working directory
 // here. This engine is browser-safe (no Node-only globals, see the guard
@@ -129,7 +129,7 @@ function parseMinWidth(condition: string): number | null {
   const match = condition.match(/^@media \(min-width:\s*([\d.]+)px\)$/);
   return match ? Number(match[1]) : null;
 }
-// MIG-B6-25 (FEAT-008): the min-width regex used to run on every condition of
+// The min-width regex used to run on every condition of
 // every pair compared, which at 24k lines meant millions of identical matches
 // against a handful of distinct strings. The caller passes a memoized reader
 // so the parse happens once per condition *per pass* — deliberately not a
@@ -155,7 +155,7 @@ export function inspectReferences(root: Root, consumers: Declaration[], options:
   if (options.mode === 'off') return [];
   const externals = new Set(options.externalTokens || []);
   externals.forEach(token => { if (!/^--[\w-]+$/.test(token)) throw new Error(`UXD_REFERENCE_CONTEXT: Invalid external token ${token}.`); });
-  // MIG-B6-25 (FEAT-008): every index below is built once per call and thrown
+  // Every index below is built once per call and thrown
   // away with it. None of them changes what counts as an issue — they only
   // stop the same answer from being recomputed per consumer. See the frozen
   // oracle in test/fixtures/reference-integrity-oracle.js, which the

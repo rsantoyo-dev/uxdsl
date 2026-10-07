@@ -216,7 +216,7 @@ export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme |
   return { theme, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
 }
 
-// MIG-B6-27 (FEAT-008): identity at run time, a type checkpoint at edit time.
+// Identity at run time, a type checkpoint at edit time.
 //
 // Deliberately *not* generic. `defineConfig<T extends UxdslConfig>(config: T)`
 // reads as stricter and is in fact weaker: inference widens `T` to include

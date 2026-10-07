@@ -20,8 +20,8 @@ function shadows(css) {
   postcss.parse(css).walkDecls(/^--uxdsl__shadow__/, d => result.push([d.parent.parent.type === 'atrule' ? d.parent.parent.params : 'base', d.prop, d.value]));
   return result;
 }
-test('Shadow JSON has equivalent build/runtime output; aliases preserve references', async () => {
-  const result = await compile('.card { box-shadow: shadow(2); } .panel { box-shadow: elevation(named); }', { theme });
+test('Shadow JSON has equivalent build/runtime output; references are preserved', async () => {
+  const result = await compile('.card { box-shadow: shadow(2); } .panel { box-shadow: shadow(named); }', { theme });
   assert.deepEqual(shadows(result.css), shadows(generateThemeCss(theme)));
   assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__2\)/);
   assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__named\)/);
@@ -30,13 +30,13 @@ test('Shadow boundaries preserve layers, inset and later rule persistence', () =
   for (const width of [0, 799]) assert.equal(inspectShadowTheme(theme, width)['--uxdsl__shadow__2'], '0 2px 4px rgba(0,0,0,.12), inset 0 1px 2px rgba(0,0,0,.2)');
   for (const width of [800, 801, 1400]) assert.equal(inspectShadowTheme(theme, width)['--uxdsl__shadow__2'], '0 6px 16px rgba(0,0,0,.18)');
 });
-test('legacy Shadows use shared rules; JSON wins and definitions do not leak', async () => {
-  // The threshold is the theme's (`md: 800` over the base map); the
-  // `breakpoints` plugin option this used to pass was removed in stability phase 1.
-  const legacy = await compile(`@theme { shadow-2: ${expression}; } .card { box-shadow: shadow(2); }`, { theme: { breakpoints: { md: 800 }, spacing: FULL_SPACING, palette: BASE_PALETTE } });
-  assert.deepEqual(shadows(legacy.css), shadows(generateShadowCss({ breakpoints: theme.breakpoints, shadows: {2:expression} })));
-  const overridden = await compile('@theme { shadow-2: 0 99px 99px red; } .card { box-shadow: shadow(2); }', {theme});
-  assert(!overridden.css.includes('99px'));
+test('Shadows compile from the JSON through the shared rules; a @theme pack fails and definitions do not leak', async () => {
+  // The threshold is the theme's (`md: 800` over the base map).
+  const built = await compile('.card { box-shadow: shadow(2); }', { theme: { breakpoints: { md: 800 }, spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: expression } } });
+  assert.deepEqual(shadows(built.css), shadows(generateShadowCss({ breakpoints: theme.breakpoints, shadows: {2:expression} })));
+  await assert.rejects(() => compile('@theme { shadow-2: 0 99px 99px red; } .card { box-shadow: shadow(2); }', {theme}), /UXD_THEME_BLOCK_REMOVED/);
+  const first = await compile('.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: '0 99px 99px red' } } });
+  assert(first.css.includes('99px'));
   assert(!(await compile('.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })).css.includes('99px'));
 });
 test('nested CSS, token dependencies, commas and zero preset survive', () => {

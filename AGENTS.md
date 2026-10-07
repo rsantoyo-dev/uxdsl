@@ -23,11 +23,26 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Breakpoints | Shared viewport transition thresholds | Named responsive declarations for local layout behavior |
 | Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
-| Shadows | Shared visual depth and inset treatments | `shadow(key)` / `elevation(key)` for box shadows |
-| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size])` |
-| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size])` |
-| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size])` |
+| Shadows | Shared visual depth and inset treatments | `shadow(key)` for box shadows |
+| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size] [radius(k)] [shadow(k)])` |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
+
+The grammar has one spelling per construct (stability phase 3): a token
+function takes exactly one argument (`border(1, red, dashed)` is an error —
+write `border: border(1)` and the longhands after it), plus an optional alpha
+on `palette()`/`color()`; a Palette or Color entry is `family.variant`
+(`palette(primary.main)`, `color(gray.300)`; `palette(primary)` is its
+`main`), never dashed; a directive is `@ds-x(role [tone] [size] [radius(k)]
+[shadow(k)])` with the parentheses directly after the name and
+whitespace-separated arguments, the role first; names are case-insensitive.
+Every reference in a declaration is checked against the effective theme when
+it is rewritten (`UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE`, …, with a
+"did you mean"), a tone with `getToneFamilies` (`UXD_SURFACE_TONE`), and a
+second `@ds-button`/`@ds-input` in one rule is `UXD_DIRECTIVE_DUPLICATE`.
+`scripts/codemod-canonical-grammar.js` in `postcss-uxdsl` rewrites the
+removed spellings.
 
 A matching value does not imply a matching responsibility. Do not replace:
 
@@ -342,18 +357,14 @@ supported; the former runtime copied them literally without resolving progressio
 }
 ```
 
-Legacy `border-n` and `radius-n` declarations in `@theme` remain supported in the
-same compilation. JSON overrides matching legacy entries; both override shared
-defaults. Import legacy definitions in each compilation that needs them. There
-is no cross-compilation Borders/Radii cache. The default .uxdsl files are generated
-from the shared module. Components consume `var(--uxdsl__border__n)`/`var(--uxdsl__radius__n)`;
-replacing the generated theme stylesheet updates their responsive behavior.
+The theme JSON is the only place a preset is defined: a `@theme { … }` block in
+a stylesheet fails as `UXD_THEME_BLOCK_REMOVED`, naming the family its
+declarations belong to, and nothing leaks between compilations. The built-in
+presets come from `theme/base.json`. Components consume
+`var(--uxdsl__border__n)`/`var(--uxdsl__radius__n)`; replacing the generated
+theme stylesheet updates their responsive behavior.
 
 ```css
-@theme {
-  border-1: xs(1px solid #64748b) md(2px solid #64748b);
-  radius-2: xs(8px) md(12px);
-}
 .card {
   border: border(1);
   border-radius: radius(2);
@@ -369,16 +380,17 @@ for component spacing, not automatically for border width or corner rounding.
   Preserve references instead of copying their current computed values.
 - Change a shared definition only when all its consumers should follow. Edit
   source configuration and rebuild or use the runtime; preview edits do not save it.
-- When a Border preset exists, optional arguments in
-  `border(1, palette(primary.main), dashed)` are ignored in favor of that preset.
+- `border(k)` takes exactly the preset key: `border(1, palette(primary.main), dashed)`
+  is `UXD_EDGE_ARGUMENT` (the extra arguments used to be ignored silently).
   For local changes, follow `border: border(1)` with explicit `border-color` or
   `border-style` longhands. The engine changes preset variables across thresholds; subsequent local
   longhands persist without repeating their breakpoint declarations. Do not
   alter the preset for a one-component request.
-- `radius(pill)` and `radius(full)` both compile to `9999px`; `radius(circle)`
-  compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
-  Keywords are built-ins, not editable numbered presets. Border radius alone
-  does not clip child content.
+- `radius(pill)` compiles to `9999px`; `radius(circle)` compiles to `50%`. A
+  circle needs equal width and height. One name per concept: the former
+  `rounded()` alias and `radius(full)` fail as `UXD_SYNTAX_REMOVED`, naming the
+  replacement. Keywords are built-ins, not editable numbered presets. Border
+  radius alone does not clip child content.
 - Define numbered presets before use. Every numbered family has an explicit
   zero in the base theme: `radius(0)` is a square corner (`0`), `border(0)` is
   `none`, `shadow(0)` is `none`, `space(0)` is `0` and `density(0)` is `0`
@@ -423,14 +435,14 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
 
 ```css
 .card { box-shadow: shadow(2); }
-.inset-panel { box-shadow: elevation(inset); }
+.inset-panel { box-shadow: shadow(inset); }
 ```
 
 - Select an existing suitable preset. Preserve its reference instead of copying
   the current resolved value. Components consume `var(--uxdsl__shadow__key)`.
 - Values can be static or responsive. Include a base value; the most recent
-  applicable declaration persists until overridden. `elevation()` is an alias
-  for `shadow()` and does not change stacking order.
+  applicable declaration persists until overridden. A shadow does not change
+  stacking order; the former `elevation()` alias fails as `UXD_SYNTAX_REMOVED`.
 - Preserve comma-separated layers, nested color functions, inset flags, units,
   and configured `space`, `density`, `color` or `palette` dependencies. Never
   parse a shadow list by splitting all commas. Not all box-shadow presets are
@@ -441,10 +453,9 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
 - Define tokens before use. Missing references fail instead of using fallbacks.
 - PostCSS, `generateThemeCss`, `generateShadowCss` and `inspectShadowTheme` share
   `src/shadows.ts` and the preset engine. The demo consumes that same engine.
-  Defaults generate `default-shadows.uxdsl`; do not maintain a second default map.
-- Legacy `shadow-n` in `@theme` remains supported in the same compilation. JSON
-  overrides matching legacy definitions, followed by defaults. There is no
-  process-global Shadow cache; import legacy definitions in each relevant build.
+  The defaults are `theme/base.json`'s; do not maintain a second default map.
+- The theme JSON is the only source: a `shadow-n` declaration in a `@theme`
+  block is `UXD_THEME_BLOCK_REMOVED`. There is no process-global Shadow cache.
 - Update source configuration and rebuild or replace managed runtime theme CSS.
   Preview edits are scoped and do not save JSON. Invalid edits preserve the last
   valid preview. Inspect actual CSS; validation is not a complete CSS validator.
@@ -517,10 +528,11 @@ This excerpt assumes its referenced tokens and breakpoints exist.
   after the directive for a local exception. Do not replace a role with values
   merely because they match the current viewport.
 - PostCSS, `generateSurfaceCss`, `generateThemeCss`, `surfaceDeclarations` and
-  `inspectSurfaceTheme` use one Surface engine. Defaults generate the legacy file.
-- Legacy `@theme` Surface packs remain supported in the same compilation; JSON
-  fields override legacy fields, followed by defaults. No cross-build Surface
-  cache is retained. Unknown roles/fields and Radius/Border/Shadow references fail.
+  `inspectSurfaceTheme` use one Surface engine; the defaults are `theme/base.json`'s.
+- The theme JSON is the only source (a `@theme` Surface pack is
+  `UXD_THEME_BLOCK_REMOVED`); a supplied field overrides the default role's.
+  No cross-build Surface cache is retained. Unknown roles/fields and
+  Radius/Border/Shadow references fail.
   Also inspect Density, Spacing and Palette dependencies; validation is not a
   complete token-graph, CSS grammar or accessibility checker.
 - Verify responsive boundaries and persistence, tone overrides, nested containers,
@@ -573,21 +585,19 @@ Surfaces own the container composition. HTML/application code own interaction.
   focusvisible, disabled, selected. The base roles supply hover, focusvisible
   (`outline: 2px solid tone(main)`, `outline-offset: 2px` — a keyboard focus
   ring in the tone, on every `@ds-button`), selected and disabled (`opacity:
-  0.6`, `cursor: not-allowed`) since stability phase 5; `active` and `focus`
-  are left to the project. A disabled button still receives the hover colors
-  under its dimming when hovered — the state selectors do not exclude
-  `:disabled` (an engine follow-up, not a value); do not restate base colors
-  in `disabled` to work around it, since `tone(main)` is `primary` when no
-  tone is given and the untoned base is the Surface.
+  0.6`, `cursor: not-allowed`); `active` and `focus` are left to the project.
+  `hover` and `active` exclude a disabled control (`:disabled`,
+  `[aria-disabled="true"]`) without raising specificity, so a disabled button
+  keeps its disabled look under the pointer.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
   Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
   `postcss-uxdsl/ds-runtime`, checks Button text/border pairs specifically —
   not run automatically, and not a substitute for a real accessibility review).
-- Legacy `button-role` packs in `@theme` share the same engine within a build.
-  JSON overrides matching legacy fields, then defaults. No global Button cache.
+- A role is defined in the theme JSON only (a `button-<role>` pack in a
+  `@theme` block is `UXD_THEME_BLOCK_REMOVED`). No global Button cache.
 - `generateButtonCss`, `inspectButtonTheme`, `buttonComponentCss`, PostCSS and
-  the demo share `src/buttons.ts`. Defaults generate default-buttons.uxdsl.
+  the demo share `src/buttons.ts`; the defaults are `theme/base.json`'s.
 - Updating existing values uses managed theme CSS. Structural changes (Surface
   selection, added/removed state fields) require regenerated component CSS too.
 - Verify all interaction states, responsive boundaries and affected consumers.
@@ -633,8 +643,9 @@ labels, validation and errors. Preserve intent, not just the current computed va
   scope; do not apply this pack blindly to checkboxes, radios, range or file inputs.
   Defaults inherit typography, use border-box and width 100%; local CSS can override.
 - PostCSS, generateInputCss, inspectInputTheme and inputComponentCss use inputs.ts
-  and shared preset/Surface engines. Generated default-inputs.uxdsl is not a second
-  source. Legacy packs are per compilation; JSON fields win; no global Input cache.
+  and shared preset/Surface engines; the defaults are `theme/base.json`'s. A role is
+  defined in the theme JSON only (a `@theme` pack is `UXD_THEME_BLOCK_REMOVED`);
+  no global Input cache.
 - Existing values update through managed theme CSS. Structural field/Surface changes
   require regenerated component CSS. Preview changes are scoped, not saved to JSON.
 - Verify responsive boundaries, persistence, keyboard focus, hover, disabled,
@@ -829,12 +840,26 @@ value at a supplied width without a document; that is what the playground's
 breakpoint demo does, not an actual browser resize. Validate real layouts
 with a real viewport too.
 
+The SCSS subset `uxdsl-core` compiles (`$variables`, `@if/@else`, `@each` of a
+list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
+nesting forwarded as written) is documented exactly once, in
+`packages/uxdsl-core/README.md` ("The SCSS subset"); everything else Sass has
+fails as `UXD_SCSS_UNSUPPORTED` or `UXD_NESTING_INVALID` naming what to write
+instead, and `packages/uxdsl-core/test/scss-subset.test.js` pins the audit's
+110-case matrix with no silent case.
+
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
 This is an architectural rule, not a claim that every legacy default or token
 family is already unified. Compiler success does not guarantee every reference,
 CSS value or accessibility requirement was validated. Inspect actual output.
 
+
+Every `UXD_*` code is in `DIAGNOSTIC_CATALOG` (`postcss-uxdsl`,
+`postcss-uxdsl/ds-runtime`) with its meaning and fix; read the fix there
+rather than guessing from the message, and add a new code to the catalog (with
+a test that provokes it) before throwing it — `diagnostic()` refuses an
+uncatalogued one.
 
 The active engine ownership and verification contract is documented in
 `docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective

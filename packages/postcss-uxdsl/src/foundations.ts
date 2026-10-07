@@ -1,5 +1,6 @@
 import { DEFAULT_BORDER_COLORS } from './edges';
-import { normalizeSpacingDefinitions, tokenValueToCss } from './language';
+import { TokenContext, tokenValueToCss } from './language';
+import { themeError } from './diagnostics';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
 
 /** Emits `--uxdsl__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
@@ -7,7 +8,7 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
  * identifiers (e.g. top-level palette key `"primary-main"` and structured
  * `primary.main`) that concatenate to the identical variable name raise
  * `UXD_FOUNDATION_NAME_COLLISION` instead of one silently overwriting the
- * other (MIG-08).
+ * other.
  *
  * Stability phase 1: every value goes through the one value grammar
  * (`tokenValueToCss`), so `palette.brand.main: 'color(gray.300)'` or
@@ -15,16 +16,16 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
  * `var(--uxdsl__…)` reference on both CSS paths — foundations used to be
  * emitted raw, and only the plugin's final pass over every declaration
  * resolved them at build time. */
-function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry): string[] {
+function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry, context: TokenContext): string[] {
   const out: string[] = [];
   for (const [key, val] of Object.entries(map)) {
     if (typeof val === 'object' && val !== null) {
       for (const [subKey, subVal] of Object.entries(val as Record<string, unknown>)) {
         const identifier = `${namespace}.${key}.${subKey}`;
-        out.push(`${names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier)}: ${tokenValueToCss(String(subVal))}`);
+        out.push(`${names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier)}: ${tokenValueToCss(String(subVal), context)}`);
       }
     } else {
-      out.push(`${names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`)}: ${tokenValueToCss(String(val))}`);
+      out.push(`${names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`)}: ${tokenValueToCss(String(val), context)}`);
     }
   }
   return out;
@@ -36,7 +37,7 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   const names = new NameRegistry('UXD_FOUNDATION');
 
   // Palette
-  if (theme.palette) cssVars.push(...namespacedVars('palette', theme.palette, names));
+  if (theme.palette) cssVars.push(...namespacedVars('palette', theme.palette, names, theme));
 
   // Color scales (for color(token) -> --uxdsl__color__token). DEFAULT_BORDERS
   // (edges.ts) depends on color(gray.*); merge that dependency in here —
@@ -44,14 +45,15 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   // out of the box. A theme that overrides every DEFAULT_BORDERS key no
   // longer references gray and this merge goes unused.
   const colors = { ...theme.colors, gray: { ...DEFAULT_BORDER_COLORS.gray, ...theme.colors?.gray } };
-  cssVars.push(...namespacedVars('color', colors, names));
+  cssVars.push(...namespacedVars('color', colors, names, theme));
 
-  // Spacing. MIG-01: "space-1" and "1" both mean --uxdsl__space__1; normalize
-  // before emission so neither form silently doubles the prefix or lets
-  // one spelling win by accidental object key order.
+  // Spacing. A key is the token key itself (`"1"` -> --uxdsl__space__1). The
+  // former `space-` prefixed spelling of the same key is an error naming the
+  // bare key, so one token never has two spellings.
   if (theme.spacing) {
-    Object.entries(normalizeSpacingDefinitions(theme.spacing)).forEach(([key, val]) => {
-      cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${tokenValueToCss(String(val))}`);
+    Object.entries(theme.spacing as Record<string, unknown>).forEach(([key, val]) => {
+      if (key.startsWith('space-')) throw themeError('UXD_SPACING_KEY', `The "space-" prefix was removed from spacing keys; write "${key.slice('space-'.length)}" instead of "${key}"`, `spacing.${key}`);
+      cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${tokenValueToCss(String(val), theme)}`);
     });
   }
 
@@ -60,7 +62,7 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   // are tracked in their own registry rather than colliding with the base
   // palette's identical names, which is expected (that's the override).
   if (theme.modes && theme.modes.dark && theme.modes.dark.palette) {
-    const darkVars = namespacedVars('palette', theme.modes.dark.palette, new NameRegistry('UXD_FOUNDATION'));
+    const darkVars = namespacedVars('palette', theme.modes.dark.palette, new NameRegistry('UXD_FOUNDATION'), theme);
 
     if (darkVars.length > 0) {
       const darkCss = darkVars.join('; ');

@@ -1,6 +1,7 @@
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
-import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, parseOverrideArguments } from './surfaces';
+import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, requireRole } from './surfaces';
+import { parseDirectiveTokens, directiveArgumentsInner, toneError } from './directives';
 import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
@@ -86,7 +87,7 @@ function getTokens(theme: ControlTheme = {}): Record<string, Required<ControlRol
   return result;
 }
 function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  // MIG-08: every role/state/tone bucket shares one `family` namespace
+  // Every role/state/tone bucket shares one `family` namespace
   // (`button`/`input`) instead of folding role/state into the family
   // portion, so the emitted name is `--uxdsl__button__<role>-<state>-<key>`
   // (e.g. `--uxdsl__button__contained-hover-bg`), matching every other
@@ -108,7 +109,7 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
         untoned[key] = toneReferences(value, family, null, fail);
         put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(untoned[key], theme));
       }
-      // MIG-B6-26 (FEAT-008): moved to language.ts as getToneFamilies, so
+      // Moved to language.ts as getToneFamilies, so
       // the vscode extension's completion generator can derive the exact
       // same tone list without duplicating this predicate by hand.
       //
@@ -127,7 +128,7 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
       }
     }
   }
-  return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix);
+  return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix, theme);
 }
 function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileRules(theme, breakpoints).map(rule => {
@@ -150,7 +151,7 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   if (radiusOverride) base['border-radius'] = composed['border-radius'];
   if (shadowOverride) base['box-shadow'] = composed['box-shadow'];
   if (tone) for (const variant of ['main','dark','contrast']) base[buildVarName(family, `tone-${variant}`)] = `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`;
-  // MIG-B7-01 (FEAT-009): `placeholder` (Input only — no other family defines
+  // `placeholder` (Input only — no other family defines
   // this field) needs a *different* tone rule than every other field, not
   // just a copy of the existing one. The regex-substitution mechanism above
   // (compileRules, the one that already tone-varies hover.bg/caret/etc.)
@@ -173,19 +174,16 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   }
   return { base, states: Object.fromEntries(Object.entries(pack.states).map(([state, style]) => [state, refs(state, style)])) };
 }
-// MIG-05: radius()/shadow() override arguments are extracted before the
-// existing role/tone/size detection runs, so they compose with tone-only
-// and legacy invocations without changing how those are parsed.
+/** `@ds-<family>(role [tone] [size] [radius(k)] [shadow(k)])`: the grammar, then the role and tone against the theme. */
 function parseArguments(theme: ControlTheme, input: string) {
-  const allParts = input.trim().replace(/^(['"])(.*)\1$/, '$2').replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
-  const { radius, shadow, rest: parts } = parseOverrideArguments(allParts, errorPrefix);
-  const roles = getTokens(theme);
-  const role = parts.find(part => Object.hasOwnProperty.call(roles, part)) || 'contained';
-  const rest = parts.filter(part => part !== role);
-  const tone = rest.find(part => !/^\d+$/.test(part)) || '';
-  const size = rest.find(part => /^\d+$/.test(part)) || '';
-  if (rest.length > Number(!!tone) + Number(!!size) || (tone && (!/^[a-z][a-z0-9-]*$/.test(tone) || (!parts.some(part => Object.hasOwnProperty.call(roles, part)) && !Object.hasOwnProperty.call(theme.palette || {}, tone))))) throw fail(`UXD_INPUT_ARGUMENT: Invalid ${input}; use a configured role, Palette family, numeric size and optional radius()/shadow() overrides.`);
-  return { role, tone, size, radius: radius || '', shadow: shadow || '' };
+  const directive = `ds-${family}`;
+  const args = parseDirectiveTokens(directive, directiveArgumentsInner(directive, input));
+  requireRole(directive, family === 'button' ? 'UXD_BUTTON_ROLE' : 'UXD_INPUT_ROLE', args.role, Object.keys(getTokens(theme)), theme.palette);
+  if (args.tone) {
+    const tones = getToneFamilies(theme.palette);
+    if (!tones.includes(args.tone)) throw toneError(family === 'button' ? 'UXD_BUTTON_TONE' : 'UXD_INPUT_TONE', args.tone, tones);
+  }
+  return args;
 }
 function inspectTheme(theme: ControlTheme, viewport: number) {
   if (!Number.isFinite(viewport) || viewport < 0) throw fail('UXD_INPUT_VIEWPORT: Expected a non-negative width.');
@@ -196,7 +194,7 @@ function inspectTheme(theme: ControlTheme, viewport: number) {
 function componentCss(theme: ControlTheme, selector: string, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const {base, states} = declarations(theme, role, tone, size, radiusOverride, shadowOverride);
   const emit = (sel: string, declarations: Record<string,string>) => `${sel} { ${Object.entries(declarations).map(([key,value]) => `${key}: ${value};`).join(' ')} }`;
-  // MIG-B6-15 (FEAT-008): a plain `.split(',')` also splits inside
+  // A plain `.split(',')` also splits inside
   // functional pseudo-classes (`:is(.x, .y)`, `:where(...)`, `:not(...)`,
   // `:has(...)`) since they contain commas of their own — `.btn:is(.x, .y)`
   // became the two bogus selectors `.btn:is(.x` and `.y)`, and appending a

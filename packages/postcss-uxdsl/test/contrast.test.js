@@ -143,11 +143,11 @@ test('checkThemeContrast: a real, obviously-passing custom role produces zero fa
   // A literal `#000000` border would be exactly this test's point in
   // light mode, but genuinely invisible against dark mode's own
   // near-black ambient background — a real bug this gate is supposed to
-  // catch, not something to route around. `palette(surface-contrast)`
+  // catch, not something to route around. `palette(surface.contrast)`
   // inverts with the mode on purpose, so this role is actually
   // theme-correct (and passing) in both.
   const theme = resolveTheme({
-    surfaces: { 'obviously-fine': { bg: '#ffffff', color: '#000000', border: '1px solid palette(surface-contrast)' } },
+    surfaces: { 'obviously-fine': { bg: '#ffffff', color: '#000000', border: '1px solid palette(surface.contrast)' } },
   });
   const report = checkThemeContrast(theme);
   const { failures } = findFor(report, 'obviously-fine');

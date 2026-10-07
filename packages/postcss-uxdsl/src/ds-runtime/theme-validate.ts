@@ -1,4 +1,4 @@
-import { compileDensityRules, getDensityTokens, validateBreakpoints, DEFAULT_BREAKPOINTS } from '../language';
+import { compileDensityRules, getDensityTokens, validateBreakpoints, tokenValueToCss, DEFAULT_BREAKPOINTS } from '../language';
 import { compileInputRules } from '../inputs';
 import { compileButtonRules } from '../buttons';
 import { compileSurfaceRules } from '../surfaces';
@@ -32,12 +32,11 @@ export type ThemeValidationResult<TTheme extends Record<string, any>> = {
 export interface ValidateThemeOptions {
   /** Reference-integrity options for the generated theme. `false` skips the
    * reference pass entirely (the PostCSS plugin does, because it checks the
-   * references of the exact stylesheet it emits, legacy `@theme` packs
-   * included, once at the end). */
+   * references of the exact stylesheet it emits, once at the end). */
   references?: ReferenceOptions | false;
 }
 
-// MIG-B3-03 (FEAT-004), MIG-B6-01 (FEAT-008): every top-level theme family
+// Every top-level theme family
 // the compiler and theme generator read. The top-level set is closed: a key
 // outside it is either a typo or unused data. `theme-families-drift.test.js`
 // scans source reads to keep this public registry synchronized for CLI strict
@@ -45,11 +44,11 @@ export interface ValidateThemeOptions {
 export const KNOWN_THEME_FAMILIES = new Set([
   'breakpoints', 'spacing', 'palette', 'fonts', 'colors', 'typography_details',
   'densities', 'inputs', 'buttons', 'surfaces', 'shadows', 'borders', 'radii',
-  'modes', 'typography',
+  'modes',
 ]);
 
 /**
- * MIG-B6-27 (FEAT-008): JSON Schema metadata, recognized but deliberately
+ * JSON Schema metadata, recognized but deliberately
  * **not** a member of `KNOWN_THEME_FAMILIES` — it names no tokens and compiles
  * to nothing, so treating it as a family would put it in the schema's own
  * family list, in strict-theme scopes and in every drift check. It is accepted
@@ -104,7 +103,7 @@ function balancedParentheses(value: string): boolean {
 }
 
 /**
- * MIG-B6-30 (FEAT-008): a real deep copy of theme data.
+ * A real deep copy of theme data.
  *
  * `deepMergeTheme({}, input)` reads like one but is not: with an empty base
  * every key takes the `out[key] = nextVal` branch, so nested objects are shared
@@ -268,14 +267,17 @@ export function validateTheme<TTheme extends Record<string, any>>(
         if (!object(family, value)) break;
         for (const [key, entry] of Object.entries(value)) {
           const path = `${family}.${key}`;
-          if (name(path, key.startsWith('space-') ? key.slice('space-'.length) : key, THEME_KEY_PATTERN)) leaf(path, entry);
+          if (name(path, key, THEME_KEY_PATTERN)) leaf(path, entry);
         }
         break;
       case 'densities': case 'radii': case 'borders': case 'shadows':
         stringMap(family, value, THEME_KEY_PATTERN);
         break;
       case 'typography':
-        stringMap(family, value, THEME_NAME_PATTERN);
+        // The flat family (`typography: { 'font-code': … }`, emitted as the
+        // un-namespaced `--font-code`) is gone. An error rather than the
+        // unknown-family warning: the key was valid, so its replacement is named.
+        invalid(family, 'The flat "typography" family was removed; define text roles in "typography_details" and font stacks in "fonts.families"');
         break;
       case 'colors':
         if (!object(family, value)) break;
@@ -314,7 +316,7 @@ export function validateTheme<TTheme extends Record<string, any>>(
         control(family, value);
         break;
       default:
-        // MIG-B3-03: an unknown top-level family is exactly the "silent
+        // An unknown top-level family is exactly the "silent
         // fallback" gap that lets a theme-file/build-config collision (or a
         // plain typo like `color` for `colors`) go unnoticed — nothing
         // consumes the key, so it neither errors nor visibly does anything.
@@ -346,9 +348,9 @@ export function validateTheme<TTheme extends Record<string, any>>(
       }
     };
     engine('theme', () => { generateFoundationCss(theme); });
-    engine('typography', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
-    if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps); });
-    engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps); });
+    engine('fonts', () => { generateTypographyCss({ ...theme, typography_details: undefined }, bps); });
+    if (theme.typography_details) engine('typography_details', () => { compileTypographyRules(theme.typography_details, bps, theme); });
+    engine('densities', () => { compileDensityRules(getDensityTokens(theme), bps, (value) => tokenValueToCss(value, theme)); });
     engine('inputs', () => { compileInputRules(theme, bps); });
     engine('buttons', () => { compileButtonRules(theme, bps); });
     engine('surfaces', () => { compileSurfaceRules(theme, bps); });

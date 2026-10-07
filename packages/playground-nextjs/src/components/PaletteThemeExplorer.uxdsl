@@ -14,10 +14,10 @@
   display: flex;
   align-items: center;
   gap: density(4);
-  background: palette(surface-main);
+  background: palette(surface.main);
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid palette(neutral-light);
+  border: 1px solid palette(neutral.light);
 }
 
 .inspector-item-details {
@@ -39,8 +39,8 @@
 }
 
 .pte-detail {
-  background: palette(surface-light);
-  border: 1px solid palette(neutral-light);
+  background: palette(surface.light);
+  border: 1px solid palette(neutral.light);
   border-radius: 8px;
   padding: space(6);
   margin-bottom: space(7);
@@ -56,19 +56,19 @@
 .pte-detail h3.pte-detail__title {
   font-size: 1.2rem;
   font-weight: 700;
-  color: palette(text-primary);
+  color: palette(text.primary);
   margin: 0;
 }
 
 .pte-detail__subtitle {
   font-size: 0.8rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .pte-detail p.pte-detail__hint {
   margin-top: space(4);
   font-size: 0.75rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .pte-swatch {
@@ -99,17 +99,17 @@
 .pte-item__hex {
   font-size: 0.7rem;
   font-family: monospace;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .pte-item__rgb {
   font-size: 0.6rem;
-  color: palette(text-disabled);
+  color: palette(text.disabled);
 }
 
 .pte h5.pte-selector__heading {
   font-size: 0.7rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   font-weight: 600;
   text-transform: uppercase;
   margin-bottom: space(4);
@@ -120,8 +120,8 @@
   align-items: center;
   justify-content: space-between;
   gap: space(5);
-  background: palette(surface-light);
-  border: 1px solid palette(neutral-light);
+  background: palette(surface.light);
+  border: 1px solid palette(neutral.light);
   border-radius: 6px;
   padding: space(3) space(4);
   cursor: pointer;
@@ -130,14 +130,14 @@
 }
 
 .pte-selector__option.is-selected {
-  border-color: palette(primary-main);
+  border-color: palette(primary.main);
   opacity: 1;
 }
 
 .pte-selector__name {
   font-size: 0.7rem;
   font-weight: 600;
-  color: palette(text-primary);
+  color: palette(text.primary);
 }
 
 .pte-selector__strip {

@@ -1,7 +1,7 @@
 import baseThemeJson from './theme/base.json';
 
 /**
- * MIG-B6-29 (FEAT-008): the one place the shipped `theme/base.json` is
+ * The one place the shipped `theme/base.json` is
  * loaded and frozen. A pure leaf — imports nothing from `default-theme.ts`
  * (the resolver) or any engine (`language.ts`, `edges.ts`, `shadows.ts`,
  * `surfaces.ts`, `buttons.ts`, `inputs.ts`), all of which import `BASE_THEME`

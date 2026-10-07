@@ -1,5 +1,7 @@
 import valueParser from 'postcss-value-parser';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, tokenValueToCss } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, getToneFamilies, tokenValueToCss, REMOVED_RADIUS_FULL } from './language';
+import { closestKey, formatKeyList } from './diagnostics';
+import { DirectiveArguments, parseDirectiveTokens, directiveArgumentsInner, toneError } from './directives';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { EdgeTheme, getEdgeTokens, RADIUS_KEYWORDS } from './edges';
 import { ShadowTheme, getShadowTokens } from './shadows';
@@ -10,41 +12,11 @@ import { BASE_THEME } from './base-theme';
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
 export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
-// MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
+// Derived from theme/base.json, not a second,
 // independently-maintained literal.
 export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = BASE_THEME.surfaces as Record<string, SurfaceStyle>;
 
-/**
- * MIG-05: extract optional `radius(key)` / `shadow(key)` override arguments
- * from an already-split argument list, shared by surface/button/input
- * argument parsing. Each may appear at most once; a repeated occurrence is
- * ambiguous and rejected rather than silently keeping the last one. The
- * override key is a token key exactly like the standalone `radius()` /
- * `shadow()` value functions accept (a keyword such as `pill`, or a
- * configured numeric token) — no new responsive syntax is introduced here,
- * since the token itself can already be responsive at the theme level.
- */
-export function parseOverrideArguments(parts: string[], errorPrefix: string): { radius?: string; shadow?: string; rest: string[] } {
-  let radius: string | undefined;
-  let shadow: string | undefined;
-  const rest: string[] = [];
-  for (const part of parts) {
-    const match = part.match(/^(radius|shadow)\((.+)\)$/);
-    if (!match) { rest.push(part); continue; }
-    const [, kind, rawKey] = match;
-    const key = rawKey.trim().replace(/^(['"])(.*)\1$/, '$2');
-    if (kind === 'radius') {
-      if (radius !== undefined) throw new Error(`${errorPrefix}_ARGUMENT: Repeated radius() argument.`);
-      radius = key;
-    } else {
-      if (shadow !== undefined) throw new Error(`${errorPrefix}_ARGUMENT: Repeated shadow() argument.`);
-      shadow = key;
-    }
-  }
-  return { radius, shadow, rest };
-}
-
-// MIG-B6-13 (FEAT-008) code-review follow-up: each throw below now carries
+// Each throw below now carries
 // the theme key path it actually failed at (`surfaces`, `surfaces.<role>`,
 // `surfaces.<role>.<field>`) via `themeError`, matching typography.ts's
 // existing pattern — previously `{ surfaces: { contained: { bogus: 'red' } } }`
@@ -66,25 +38,25 @@ export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, Surfa
  * (the composition consumes them directly, so a dangling one is reported here
  * with the family's own code rather than later by the reference pass). */
 export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
+  // The grammar first (argument count, key shape), then the references the
+  // composition consumes directly.
+  const css = tokenValueToCss(value, theme);
   const edges = getEdgeTokens(theme), shadows = getShadowTokens(theme);
   valueParser(value).walk(node => {
-    if (node.type === 'function' && node.value === 'density') {
-      const key = valueParser.stringify(node.nodes).trim().replace(/^(['"])(.*)\1$/, '$2');
-      if (!Object.prototype.hasOwnProperty.call(getDensityTokens(theme), key)) throw new Error(`UXD_DENSITY_REFERENCE: Undefined density ${key}.`);
-    }
-    if (node.type !== 'function' || !['radius', 'rounded', 'border', 'shadow', 'elevation'].includes(node.value)) return;
-    const kind = node.value === 'rounded' ? 'radius' : node.value === 'elevation' ? 'shadow' : node.value;
-    // Match the existing border helper contract: a configured preset wins over optional arguments.
-    const key = valueParser.stringify(node.nodes).split(',')[0].trim().replace(/^(['"])(.*)\1$/, '$2');
-    const map = kind === 'radius' ? edges.radii : kind === 'border' ? edges.borders : shadows;
-    const keyword = kind === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
-    if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(`UXD_SURFACE_REFERENCE: Unknown ${kind} ${key}.`);
+    if (node.type !== 'function') return;
+    const name = node.value.toLowerCase();
+    const key = valueParser.stringify(node.nodes).trim();
+    if (name === 'density' && !Object.prototype.hasOwnProperty.call(getDensityTokens(theme), key)) throw new Error(`UXD_DENSITY_REFERENCE: Undefined density ${key}.`);
+    if (!['radius', 'border', 'shadow'].includes(name)) return;
+    const map = name === 'radius' ? edges.radii : name === 'border' ? edges.borders : shadows;
+    const keyword = name === 'radius' ? RADIUS_KEYWORDS[key] : undefined;
+    if (!keyword && !Object.prototype.hasOwnProperty.call(map, key)) throw new Error(name === 'radius' && key === 'full' ? REMOVED_RADIUS_FULL : `UXD_SURFACE_REFERENCE: Unknown ${name} ${key}.`);
   });
-  return tokenValueToCss(value);
+  return css;
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  // MIG-08: one shared "surface" family, keyed `${role}-${field}` — so the
+  // One shared "surface" family, keyed `${role}-${field}` — so the
   // emitted name is `--uxdsl__surface__<role>-<field>` (e.g.
   // `--uxdsl__surface__flat-padding`), matching every other family's
   // `--uxdsl__<family>__<key>` shape instead of folding the role into the
@@ -93,7 +65,7 @@ export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: Break
   for (const [role, style] of Object.entries(getSurfaceTokens(theme))) {
     for (const [field, value] of Object.entries(style)) surface[`${role}-${field}`] = surfaceValueToCss(value!, theme);
   }
-  return compilePresetRules({ surface }, breakpoints, 'UXD_SURFACE');
+  return compilePresetRules({ surface }, breakpoints, 'UXD_SURFACE', theme);
 }
 export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
   return compileSurfaceRules(theme, breakpoints).map(rule => {
@@ -105,7 +77,7 @@ export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: Breakp
 /**
  * Composition used by PostCSS directives and live component previews.
  *
- * MIG-05 precedence: role/tone defaults apply first; `size` then sets
+ * Precedence: role/tone defaults apply first; `size` then sets
  * padding and radius together (legacy behavior, unchanged); an explicit
  * `radiusOverride`/`shadowOverride` replaces only that one property,
  * independently of `size` and of each other. A later plain CSS declaration
@@ -133,7 +105,7 @@ export function surfaceDeclarations(theme: SurfaceTheme, role = 'contained', ton
   if (radiusOverride) {
     const radii = getEdgeTokens(theme).radii;
     const keyword = RADIUS_KEYWORDS[radiusOverride];
-    if (!keyword && !Object.prototype.hasOwnProperty.call(radii, radiusOverride)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined radius ${radiusOverride}.`);
+    if (!keyword && !Object.prototype.hasOwnProperty.call(radii, radiusOverride)) throw new Error(radiusOverride === 'full' ? REMOVED_RADIUS_FULL : `UXD_SURFACE_REFERENCE: Undefined radius ${radiusOverride}.`);
     result['border-radius'] = keyword || `var(${buildVarName('radius', radiusOverride)})`;
   }
   if (shadowOverride) {
@@ -149,13 +121,23 @@ export function inspectSurfaceTheme(theme: SurfaceTheme, viewport: number) {
   return values;
 }
 
-/** Legacy tone-only syntax is accepted when the effective palette defines it. */
-export function parseSurfaceArguments(theme: SurfaceTheme, input: string) {
-  const allParts = input.trim().replace(/^\((.*)\)$/, '$1').split(/[\s,]+/).filter(Boolean);
-  const { radius, shadow, rest: parts } = parseOverrideArguments(allParts, 'UXD_SURFACE');
-  const roles = getSurfaceTokens(theme);
-  const role = parts.find(part => Object.prototype.hasOwnProperty.call(roles, part)) || 'contained';
-  const tone = parts.find(part => !Object.prototype.hasOwnProperty.call(roles, part) && !/^\d+$/.test(part)) || '';
-  if (parts.length && !parts.some(part => Object.prototype.hasOwnProperty.call(roles, part)) && tone && !Object.prototype.hasOwnProperty.call(theme.palette || {}, tone)) throw new Error(`UXD_SURFACE_REFERENCE: Undefined surface or palette family ${tone}.`);
-  return { role, tone, size: parts.find(part => /^\d+$/.test(part)) || '', radius: radius || '', shadow: shadow || '' };
+/** The role a directive names must exist; the error lists the roles that do and, when the
+ * word is a tone, says the role comes first. Shared by the three directives. */
+export function requireRole(directive: string, code: string, role: string, roles: string[], palette: Record<string, unknown> | undefined): void {
+  if (roles.includes(role)) return;
+  const tones = getToneFamilies(palette);
+  if (tones.includes(role)) throw new Error(`${code}: "${role}" is a tone, not a role; the role comes first — write @${directive}(${roles[0]} ${role}). Roles: ${formatKeyList(roles)}.`);
+  const suggestion = closestKey(role, roles);
+  throw new Error(`${code}: Undefined ${directive.replace('ds-', '')} role "${role}"; roles: ${formatKeyList(roles)}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`);
+}
+
+/** `@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])`: the grammar, then the role and tone against the theme. */
+export function parseSurfaceArguments(theme: SurfaceTheme, input: string): DirectiveArguments {
+  const args = parseDirectiveTokens('ds-surface', directiveArgumentsInner('ds-surface', input));
+  requireRole('ds-surface', 'UXD_SURFACE_REFERENCE', args.role, Object.keys(getSurfaceTokens(theme)), theme.palette);
+  if (args.tone) {
+    const tones = getToneFamilies(theme.palette);
+    if (!tones.includes(args.tone)) throw toneError('UXD_SURFACE_TONE', args.tone, tones);
+  }
+  return args;
 }

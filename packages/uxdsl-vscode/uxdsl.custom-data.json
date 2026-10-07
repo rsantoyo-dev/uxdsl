@@ -2,12 +2,8 @@
   "version": 1.1,
   "atDirectives": [
     {
-      "name": "@theme",
-      "description": "Legacy shared token pack (borders, radii, shadows, surfaces, buttons, inputs) inlined into the compiled theme. Prefer the theme JSON for new tokens."
-    },
-    {
       "name": "@ds-surface",
-      "description": "Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone and numeric size: @ds-surface(role [tone] [size])."
+      "description": "Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone, numeric size and overrides: @ds-surface(role [tone] [size] [radius(k)] [shadow(k)])."
     },
     {
       "name": "@ds-typo",
@@ -15,11 +11,11 @@
     },
     {
       "name": "@ds-button",
-      "description": "Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone and numeric size: @ds-button(role [tone] [size])."
+      "description": "Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone, numeric size and overrides: @ds-button(role [tone] [size] [radius(k)] [shadow(k)])."
     },
     {
       "name": "@ds-input",
-      "description": "Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone and numeric size: @ds-input(role [tone] [size])."
+      "description": "Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone, numeric size and overrides: @ds-input(role [tone] [size] [radius(k)] [shadow(k)])."
     }
   ]
 }

@@ -1,9 +1,8 @@
 import { deepMergeTheme } from './ds-runtime/theme-validate';
-import { normalizeSpacingDefinitions } from './language';
 import { BASE_THEME } from './base-theme';
 
 /**
- * MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is the reviewed `theme/base.json`
+ * `DEFAULT_THEME` is the reviewed `theme/base.json`
  * itself — colors, fonts (including `fonts.google`), breakpoints, spacing,
  * densities, borders, radii, shadows, the full 14-family palette,
  * `modes.dark`, surfaces, buttons, inputs and typography_details — not a
@@ -23,7 +22,7 @@ import { BASE_THEME } from './base-theme';
  * with an ad hoc `default.fontSize`/`code.fontSize` patch to plug a
  * zero-config crash) no longer feeds `DEFAULT_THEME` — the JSON's own
  * `typography_details` is already complete on its own terms. That file is
- * left as-is; MIG-B6-17 owns removing whatever `@ds-typo` consumption-side
+ * left as-is; removing whatever `@ds-typo` consumption-side
  * fallback logic still assumes the old shape (see this story's own
  * evidence for the specific fields this can affect: `@ds-typo` roles no
  * longer inherit `textTransform`/`textDecoration`/`fontStyle`/
@@ -31,12 +30,6 @@ import { BASE_THEME } from './base-theme';
  * that used to provide them and no longer does).
  */
 export const DEFAULT_THEME: Readonly<Record<string, any>> = BASE_THEME;
-
-/** Returns a fresh, mutable deep copy of `DEFAULT_THEME` — browser-safe
- * (no `structuredClone` dependency assumed) and clonable, per item 2. */
-export function getDefaultTheme(): Record<string, any> {
-  return JSON.parse(JSON.stringify(DEFAULT_THEME));
-}
 
 /**
  * The one place an "effective theme" is built: `DEFAULT_THEME` with
@@ -46,16 +39,6 @@ export function getDefaultTheme(): Record<string, any> {
  * and the PostCSS plugin, so both always resolve the same effective
  * theme for the same input — this is what item 6 requires, not a second,
  * parallel resolution.
- *
- * `spacing` gets one extra step first: `override.spacing`'s keys are
- * normalized to the same canonical form `DEFAULT_THEME.spacing` already
- * uses (`normalizeSpacingDefinitions`, MIG-01's existing "space-1" vs "1"
- * contract) *before* the merge, not after. Merging first and normalizing
- * after would treat a `{ "space-1": "10px" }` override as an *additional*
- * key alongside the default's `"1"`, which is a real distinct key until
- * normalized — silently keeping the default `"1"` value alive alongside
- * the override, or throwing `UXD_SPACING_COLLISION` for what the caller
- * clearly meant as one override, not two conflicting spellings of it.
  */
 export function resolveTheme(override?: unknown): Record<string, any> {
   const isPlainObject = (value: unknown): value is Record<string, any> => !!value && typeof value === 'object' && (Object.getPrototypeOf(value) === Object.prototype || Object.getPrototypeOf(value) === null);
@@ -67,8 +50,5 @@ export function resolveTheme(override?: unknown): Record<string, any> {
     throw new Error('UXD_THEME_INVALID: Expected theme to be an object.');
   }
   const input: Record<string, any> = override ? { ...(override as Record<string, any>) } : {};
-  if (isPlainObject(input.spacing)) {
-    input.spacing = normalizeSpacingDefinitions(input.spacing);
-  }
   return deepMergeTheme(DEFAULT_THEME as Record<string, any>, input);
 }

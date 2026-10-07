@@ -7,7 +7,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   resolveTheme,
-  getDefaultTheme,
+  DEFAULT_THEME,
   buttonDeclarations,
   inputDeclarations,
   resolveTypographyRole,
@@ -25,14 +25,14 @@ const DEFAULT_OVERRIDE = `{
   }
 }`
 
-/** resolveTheme(override) next to getDefaultTheme(): which leaves the override set and which it inherited. */
+/** resolveTheme(override) next to DEFAULT_THEME: which leaves the override set and which it inherited. */
 export function ThemeResolution() {
   const [text, setText] = useState(DEFAULT_OVERRIDE)
   const outcome = useMemo(() => {
     try {
       const override = JSON.parse(text)
       const effective = resolveTheme(override)
-      const base = getDefaultTheme()
+      const base = DEFAULT_THEME
       const rows = Object.entries(effective.palette?.primary || {}).map(([variant, value]) => ({
         variant,
         value: String(value),
@@ -47,14 +47,14 @@ export function ThemeResolution() {
 
   return (
     <div className="cap-card" data-testid="theme-resolution">
-      <h3 className="cap-card__title"><code>resolveTheme(override)</code> and <code>getDefaultTheme()</code></h3>
+      <h3 className="cap-card__title"><code>resolveTheme(override)</code> and <code>DEFAULT_THEME</code></h3>
       <label className="cap-label" htmlFor="cap-override">A partial override</label>
       <textarea id="cap-override" className="cap-field cap-field--code" rows={6} value={text} onChange={(e) => setText(e.target.value)} spellCheck={false} aria-invalid={!outcome.ok} />
       {outcome.ok ? (
         <div className="cap-table-wrap">
           <table>
             <caption>Effective <code>palette.primary</code> ({outcome.families} families in the resolved theme)</caption>
-            <thead><tr><th>Variant</th><th>resolveTheme</th><th>From</th><th>getDefaultTheme</th></tr></thead>
+            <thead><tr><th>Variant</th><th>resolveTheme</th><th>From</th><th>DEFAULT_THEME</th></tr></thead>
             <tbody>{outcome.rows.map((r) => <tr key={r.variant}><td><code>{r.variant}</code></td><td><code>{r.value}</code></td><td>{r.source}</td><td><code>{r.base}</code></td></tr>)}</tbody>
           </table>
         </div>

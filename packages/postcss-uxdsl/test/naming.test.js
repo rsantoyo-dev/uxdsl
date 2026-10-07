@@ -38,12 +38,16 @@ test('MIG-08: compilePresetRules (shared by edges/shadows/surfaces/buttons/input
   // "y__z" and family "x__y" key "z" both produce `--uxdsl__x__y__z`. This
   // is the shared choke point for edges/shadows/surfaces/buttons/inputs,
   // so a fix here covers all of them at once.
-  assert.throws(
-    () => compilePresetRules({ x: { 'y__z': '1px' }, 'x__y': { z: '2px' } }, { xs: 0 }),
-    /UXD_PRESET_NAME_COLLISION: "x__y\.z" and "x\.y__z" both produce --uxdsl__x__y__z\./
-  );
+  // The engine is only reached this way directly: validateTheme refuses a key
+  // with "__" first. The code is the calling family's, never a generic one.
+  for (const prefix of ['UXD_EDGE', 'UXD_SHADOW', 'UXD_SURFACE']) {
+    assert.throws(
+      () => compilePresetRules({ x: { 'y__z': '1px' }, 'x__y': { z: '2px' } }, { xs: 0 }, prefix),
+      new RegExp(`${prefix}_NAME_COLLISION: "x__y\\.z" and "x\\.y__z" both produce --uxdsl__x__y__z\\.`)
+    );
+  }
   // A legitimate, non-colliding compile still works.
-  const rules = compilePresetRules({ surface: { padding: '4px' } }, { xs: 0 });
+  const rules = compilePresetRules({ surface: { padding: '4px' } }, { xs: 0 }, 'UXD_SURFACE');
   assert.equal(rules[0].values['--uxdsl__surface__padding'], '4px');
 });
 
@@ -88,6 +92,6 @@ test('MIG-08: centralizing name construction did not change existing output for 
 
 test('MIG-08: typography field names are centralized too (consistency; no realistic collision surface with the current fixed suffix set)', () => {
   const rules = compileTypographyRules({ h1: { fontSize: '1rem', fontWeight: '700' } }, { xs: 0 });
-  assert.equal(rules[0].values['--uxdsl__typography__h1-size'], '1rem');
-  assert.equal(rules[0].values['--uxdsl__typography__h1-weight'], '700');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-font-size'], '1rem');
+  assert.equal(rules[0].values['--uxdsl__typography__h1-font-weight'], '700');
 });

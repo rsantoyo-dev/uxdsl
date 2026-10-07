@@ -6,7 +6,7 @@
   width: 100%;
 
   .hero-surface {
-    @ds-surface (contained);
+    @ds-surface(contained);
     width: 100%;
     flex: 1;
     display: grid;
@@ -51,8 +51,8 @@
     margin-bottom: 0;
     
     .page-title__text {
-      @ds-typo (h1);
-      background: linear-gradient(135deg, palette(primary-dark), palette(primary-main));
+      @ds-typo(h1);
+      background: linear-gradient(135deg, palette(primary.dark), palette(primary.main));
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       margin-bottom: density(2);
@@ -60,7 +60,7 @@
 
     .page-title__subtitle {
       @ds-typo(h3);
-      color: palette(text-secondary);
+      color: palette(text.secondary);
     }
   }
 
@@ -85,13 +85,13 @@
   }
 
   .get-started-btn {
-    @ds-button (contained primary 3);
+    @ds-button(contained primary 3);
     display: flex;
     align-items: center;
     justify-content: center;
     gap: density(2);
     padding: density(4) density(6);
-    border-radius: radius(full);
+    border-radius: radius(pill);
     transition: transform 0.2s;
     width: 100%; 
     /* Removed max-width to allow full width on all screens as requested */
@@ -108,8 +108,8 @@
   }
 
   .intro-text {
-    @ds-typo (span);
-    color: palette(text-secondary);
+    @ds-typo(span);
+    color: palette(text.secondary);
     text-align: center;
   }
 
@@ -135,8 +135,8 @@
   }
 
   .section-label {
-    @ds-typo (h6);
-    color: palette(text-secondary);
+    @ds-typo(h6);
+    color: palette(text.secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
   }
@@ -148,7 +148,7 @@
   .welcome-footer {
     margin-top: auto;
     padding: density(8) density(4);
-    background: palette(surface-light);
+    background: palette(surface.light);
     border-top: border(1);
     display: flex;
     flex-direction: column;
@@ -168,19 +168,19 @@
     display: flex;
     align-items: center;
     gap: density(2);
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     text-decoration: none;
     font-weight: 500;
     transition: color 0.2s;
 
     &:hover {
-      color: palette(primary-main);
+      color: palette(primary.main);
     }
   }
 
   .footer-copy {
-    @ds-typo (caption);
-    color: palette(text-disabled);
+    @ds-typo(caption);
+    color: palette(text.disabled);
   }
 
   /* MIG-B7-17 phase B (4): were inline style={{}} in app/page.tsx. */

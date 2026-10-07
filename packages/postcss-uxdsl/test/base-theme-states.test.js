@@ -54,15 +54,14 @@ test('@ds-button emits the two new state rules, with the tone in the outline, an
   assert.equal(inDisabled.props.cursor, 'var(--uxdsl__input__contained-disabled-cursor)');
 });
 
-test('disclosed limitation: the hover rule precedes the disabled rule and still sets colors, so a hovered disabled button is dimmed, not frozen', async () => {
-  // Values cannot fix this: `disabled` restating base colors would say
-  // `tone(main)`, which is `primary` for an untoned button whose real base
-  // is the Surface. The fix is the state selectors excluding :disabled — an
-  // engine change this test pins the absence of, so it flips consciously.
+test('a hovered disabled button keeps its disabled look: hover excludes disabled controls without raising specificity', async () => {
+  // Phase 5 disclosed that the hover rule still applied to a disabled button;
+  // phase 3 made the state selectors exclude :disabled / [aria-disabled="true"]
+  // inside :where(), so specificity is unchanged.
   const css = await compile('.btn { @ds-button(contained); }');
   const selectors = rulesOf(css, '.btn').map((r) => r.selector);
-  assert.ok(selectors.indexOf('.btn:hover') < selectors.indexOf('.btn:disabled, .btn[aria-disabled="true"]'));
-  assert.doesNotMatch(selectors.join('\n'), /:hover:not\(/);
+  assert.ok(selectors.includes('.btn:hover:not(:where(:disabled, [aria-disabled="true"]))'), selectors.join('\n'));
+  assert.ok(!selectors.includes('.btn:hover'), 'no unguarded hover rule');
 });
 
 test('space(0) and border(0) compile with no theme of the project\'s own, to an explicit zero and none', async () => {

@@ -132,7 +132,7 @@ export default function DemoColors() {
         <p className="demo-subtitle">
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.
           <br />
-          Usage example: <code>background: color(blue-500)</code>
+          Usage example: <code>background: color(blue.500)</code>
         </p>
       </div>
 

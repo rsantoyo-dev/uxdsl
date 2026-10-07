@@ -1,12 +1,12 @@
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
-import { BreakpointMap, DEFAULT_BREAKPOINTS, tokenValueToCss } from './language';
+import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, tokenValueToCss } from './language';
 import { BASE_THEME } from './base-theme';
 
 // Stability phase 1: the radius keywords are part of the one value grammar
 // (language.ts); re-exported here for the callers that import them from edges.
 export { RADIUS_KEYWORDS } from './language';
 
-// MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
+// Derived from theme/base.json, not a second,
 // independently-maintained literal.
 export const DEFAULT_RADII: Record<string, string> = BASE_THEME.radii as Record<string, string>;
 export const DEFAULT_BORDERS: Record<string, string> = BASE_THEME.borders as Record<string, string>;
@@ -14,13 +14,13 @@ export const DEFAULT_BORDERS: Record<string, string> = BASE_THEME.borders as Rec
  * (merged under theme.colors.gray, user shades winning per-key) so
  * border(1..5) resolves out of the box; a theme that overrides every
  * DEFAULT_BORDERS key no longer references this and it goes unused.
- * MIG-B6-29: this used to be a *second*, independently hardcoded `gray`
+ * This used to be a *second*, independently hardcoded `gray`
  * literal that quietly diverged from the playground's own base theme colors
  * (`#d1d5db` here vs. `#CBD5E1` there — different hues, not a casing typo).
  * Now derived from the same `theme/base.json` every other default comes
  * from, so there is exactly one `colors.gray` in the whole package. */
 export const DEFAULT_BORDER_COLORS: Record<string, Record<string, string>> = Object.freeze({ gray: BASE_THEME.colors.gray });
-export interface EdgeTheme { borders?: Record<string, string>; radii?: Record<string, string>; breakpoints?: BreakpointMap }
+export interface EdgeTheme extends TokenContext { borders?: Record<string, string>; radii?: Record<string, string>; breakpoints?: BreakpointMap }
 
 export const edgeValueToCss = (input: string) => tokenValueToCss(input);
 
@@ -33,7 +33,7 @@ export function getEdgeTokens(theme: EdgeTheme = {}) {
 
 export function compileEdgeRules(theme: EdgeTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
   const tokens = getEdgeTokens(theme);
-  return compilePresetRules({ border: tokens.borders, radius: tokens.radii }, breakpoints, 'UXD_EDGE');
+  return compilePresetRules({ border: tokens.borders, radius: tokens.radii }, breakpoints, 'UXD_EDGE', theme as TokenContext);
 }
 
 export function generateEdgeCss(theme: EdgeTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root'): string {

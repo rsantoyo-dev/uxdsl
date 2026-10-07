@@ -1,8 +1,8 @@
 /**
  * Core processing engine for UXDSL files.
  *
- * MIG-B6-18 (FEAT-008): this is the one shared `compile()` the CLI, and
- * later Vite/Webpack (MIG-B6-20), all use — the exact same pipeline
+ * This is the one shared `compile()` the CLI, and
+ * Vite/Webpack adapters all use — the exact same pipeline
  * (`postcss-scss` syntax, `postcss-import` with a shared resolver,
  * `postcss-advanced-variables`, `postcss-uxdsl`) instead of three
  * independently-drifted compilers for the same language. The previous
@@ -10,7 +10,7 @@
  * its own line-by-line string manipulation, which corrupted valid CSS
  * (`url(https://...)`, a `//` inside a block comment) without ever
  * erroring, and silently left a nonexistent import's `@import` line in the
- * output instead of failing. See docs/features/FEAT-008/MIG-B6-18-compile-compartido.md.
+ * output instead of failing.
  */
 
 import fs from 'fs';
@@ -23,7 +23,7 @@ const postcssScss = require('postcss-scss');
 const postcssImport = require('postcss-import');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssAdvancedVariables = require('postcss-advanced-variables');
-// MIG-B6-18 item 4: resolved only through the declared dependency — no
+// Resolved only through the declared dependency — no
 // monorepo-local-path guessing with a silently-swallowed catch. A dev
 // checkout resolves this via the ordinary `node_modules/postcss-uxdsl`
 // symlink `file:`/workspace linking already creates; nothing here should
@@ -33,10 +33,9 @@ const uxdslPlugin = require('postcss-uxdsl');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssImportDefaultResolveId = require('postcss-import/lib/resolve-id');
+import { includeArguments, sassLeftoverGuard } from './scss-subset';
 
-/** MIG-B6-18 item 1 (moved from `uxdsl-cli/bin/uxdsl.js`, the CLI's own
- * copy is removed once it calls `compile()` instead), item 5 fix folded
- * in: supports a `~package/file.uxdsl`-style bare specifier resolved
+/** The one import resolver of `compile()`. Supports a `~package/file.uxdsl`-style bare specifier resolved
  * through Node's own module resolution (so a project can import a
  * `.uxdsl` file shipped inside an installed package), otherwise resolves
  * relative to `basedir`. Found while wiring this up: a `resolve` option
@@ -61,8 +60,8 @@ function createImportResolver(entry: string) {
       const direct = path.resolve(basedir, request);
       if (fs.existsSync(direct)) return direct;
     } else {
-      // Bare specifier — a package import (e.g.
-      // `postcss-uxdsl/theme/default-colors.css`), `~`-prefixed or not.
+      // Bare specifier — a package import (e.g. `some-package/tokens.css`),
+      // `~`-prefixed or not.
       // Real node resolution, not existsSync(path.resolve(...)), since
       // it lives in node_modules, not relative to the importing file.
       try {
@@ -94,10 +93,10 @@ function resolveForCycleCheck(id: string, basedir: string, entryDir: string): st
   return fs.existsSync(direct) ? direct : undefined;
 }
 
-/** MIG-B6-18 item 5: postcss-import does not reliably error on a real
+/** Postcss-import does not reliably error on a real
  * import cycle — verified empirically: `a.uxdsl` importing `b.uxdsl`
  * importing `a.uxdsl` back compiles successfully, silently duplicating
- * `a`'s rules once instead of failing. FEAT-008's rule 1 ("no silent
+ * `a`'s rules once instead of failing. The "no silent
  * output that doesn't match the input") requires an error here, so this
  * walks the same `.uxdsl` import graph the real compile is about to,
  * purely to detect a cycle before handing off to postcss-import for the
@@ -106,7 +105,7 @@ function resolveForCycleCheck(id: string, basedir: string, entryDir: string): st
  * file and the exact line (verified), so duplicating that check would
  * only risk giving a worse message.
  *
- * MIG-B6-20 (FEAT-008): also called for a `{ source, from }` compile, not
+ * Also called for a `{ source, from }` compile, not
  * just `{ entry }` — the Vite plugin's optional Sass pre-pass and every
  * single Webpack loader compilation use that shape exclusively.
  * Discovered via the shared parity fixture: without this, a cycle
@@ -118,7 +117,7 @@ function checkImportCycles(
   entryDir: string,
   visited: Set<string> = new Set(),
   stack: string[] = [],
-  // MIG-B6-20 (FEAT-008) item 5: the top-level node's own content, for a
+  // The top-level node's own content, for a
   // `{ source, from }` call — `from` need not exist on disk at all (an
   // unsaved editor buffer, or Sass-preprocessed content upstream), so this
   // reads from the caller's in-memory string instead of `fs.readFileSync`
@@ -190,10 +189,9 @@ export interface CompileConfig {
   includeTheme?: boolean;
   to?: string;
   sourcesContent?: boolean;
-  /** Declared, not yet implemented (MIG-B6-21) — `false` is the only
-   * accepted value today. Any other value is a hard "not implemented"
-   * error, never silently ignored, so a caller can tell "no sourcemap
-   * support yet" apart from "sourcemap silently didn't happen". */
+  /** `false` (no map, the default), `'inline'` (a data URI appended last) or
+   * `'external'` (returned as `map`; the caller writes the file and the
+   * annotation). Any other value is an error, never silently ignored. */
   sourceMap?: false | 'inline' | 'external';
 }
 
@@ -219,7 +217,7 @@ export interface CompileResult {
  * shared resolver) for `@import` inlining, `postcss-advanced-variables`
  * for `$var` resolution — *before* `postcss-uxdsl` ever sees the source,
  * so a `$var` holding a responsive expression expands the same way
- * MIG-B6-14 made the plugin-used-alone case work — and finally
+ * the plugin used alone does — and finally
  * `postcss-uxdsl` itself. `compile()` is this package's whole API: the
  * callable `processUxdsl(source, { fileId })` default export it used to
  * carry was a second signature for the same pipeline (stability phase 2).
@@ -231,7 +229,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   if (input.entry !== undefined && input.source !== undefined) {
     throw new Error('uxdsl-core: compile() accepts either { entry } or { source }, not both.');
   }
-  // MIG-B6-21 (FEAT-008): implemented. Still validated strictly rather than
+  // Implemented. Still validated strictly rather than
   // coerced, so a typo ('External', true) fails loudly instead of silently
   // producing no map — the same reason this threw while it was unimplemented.
   const sourceMap = config.sourceMap ?? false;
@@ -246,7 +244,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     throw new Error(`uxdsl-core: entry file not found: ${entry}`);
   }
   const source = entry !== undefined ? fs.readFileSync(entry, 'utf8') : (input.source as string);
-  // MIG-B6-20 (FEAT-008): both the import resolver (bare/`~` specifiers)
+  // Both the import resolver (bare/`~` specifiers)
   // and cycle detection key off `from`, not just `entry` — a `{ source,
   // from }` call needs exactly the same guarantees an `{ entry }` call
   // gets, since the Vite plugin's Sass pre-pass and every Webpack loader
@@ -259,9 +257,15 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   }
 
   const includeTheme = config.includeTheme !== false;
+  // The SCSS subset: `includeArguments` lets a mixin argument carry parentheses
+  // (the variables plugin splits arguments at the first one), and
+  // `sassLeftoverGuard` fails on anything Sass-only the variables plugin left
+  // behind — see ./scss-subset.ts and the README's "SCSS subset" section.
   const plugins = [
     postcssImport(resolveImport ? { resolve: resolveImport } : {}),
+    includeArguments(),
     postcssAdvancedVariables(),
+    sassLeftoverGuard(),
     uxdslPlugin({
       theme: config.theme,
       references: config.references,
@@ -269,7 +273,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     }),
   ];
 
-  // MIG-B6-21: `annotation: false` — 'inline' adds its own data URI at the
+  // `annotation: false` — 'inline' adds its own data URI at the
   // very end below, and 'external' leaves the annotation to whoever knows
   // the final `.map` filename (the CLI). `inline: false` keeps the map out
   // of the CSS in both cases so there is exactly one place that decides.
@@ -297,7 +301,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     if (comment.raws.inline) comment.remove();
   });
 
-  // MIG-B6-21: the map is only produced by PostCSS's own stringification, so
+  // The map is only produced by PostCSS's own stringification, so
   // the mapped path has to read `result.css`. The unmapped path keeps calling
   // `root.toString(postcssScss)` exactly as before, so `sourceMap: false`
   // stays byte-identical to this same compiler without the option — which is

@@ -8,9 +8,9 @@ Language support for **UXDSL** (User Experience Design System Language)
 - **Syntax highlighting**, generated from the compiler's own language
   metadata (`postcss-uxdsl`'s `LANGUAGE_COMPLETIONS`) — never hand-typed,
   so it can't silently drift from what actually compiles:
-  - Directives: `@theme`, `@ds-surface`, `@ds-typo`, `@ds-button`, `@ds-input`.
+  - Directives: `@ds-surface`, `@ds-typo`, `@ds-button`, `@ds-input`.
   - Functions: `palette()`, `color()`, `space()`, `density()`, `radius()`,
-    `rounded()`, `border()`, `shadow()`, `elevation()`, and the built-in
+    `border()`, `shadow()`, and the built-in
     default breakpoints (`xs()`, `sm()`, `md()`, `lg()`, `xl()`) — a
     breakpoint name your project's own theme adds is not highlighted as a
     UXDSL function or completed.

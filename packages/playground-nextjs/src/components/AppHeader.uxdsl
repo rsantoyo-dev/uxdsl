@@ -4,14 +4,14 @@
   width: 100%;
   margin: 0;
   padding: 0;
-  background: linear-gradient(135deg, palette(primary-dark) 0%, palette(primary-main) 100%);
+  background: linear-gradient(135deg, palette(primary.dark) 0%, palette(primary.main) 100%);
   /* Fallback if gradient fails */
-  background-color: palette(primary-main);
-  color: palette(primary-contrast);
+  background-color: palette(primary.main);
+  color: palette(primary.contrast);
   position: relative;
   z-index: 1000;
   box-shadow: shadow(2);
-  border-bottom: 1px solid palette(primary-light, 0.3);
+  border-bottom: 1px solid palette(primary.light, 0.3);
 }
 
 #AppHeader .app-header__container {
@@ -27,12 +27,12 @@
 
 /* Logo Container - 120px Centered */
 #AppHeader .app-header__inner {
-  @ds-surface (contained light);
+  @ds-surface(contained light);
   display: flex;
   flex-direction: row; /* Changed to row */
   align-items: flex-end; /* Align text with bottom of logo */
   gap: space(3); /* stable, not responsive: the logo row keeps one gap */
-  background: palette(surface-light, 0.9); /* Corrected alpha */
+  background: palette(surface.light, 0.9); /* Corrected alpha */
   text-decoration: none;
   cursor: pointer;
   color: inherit;
@@ -50,8 +50,8 @@
 }
 
 #AppHeader .app-header__title-text {
-  @ds-typo (h6);
-  color: palette(primary-dark);
+  @ds-typo(h6);
+  color: palette(primary.dark);
   font-weight: 800;
   line-height: 1;
   letter-spacing: -0.5px;
@@ -135,13 +135,13 @@
 /* MIG-B7-17 phase B (4): each theme button's ring color was an inline --theme-color with a hex
    literal. They are swatches of *other* themes, which the active Palette cannot give: Colors. */
 #AppHeader .theme-color-btn--default {
-  --theme-color: color(purple-600);
+  --theme-color: color(purple.600);
 }
 
 #AppHeader .theme-color-btn--green {
-  --theme-color: color(green-600);
+  --theme-color: color(green.600);
 }
 
 #AppHeader .theme-color-btn--slate {
-  --theme-color: color(slate-800);
+  --theme-color: color(slate.800);
 }

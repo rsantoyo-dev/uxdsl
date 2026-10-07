@@ -7,7 +7,7 @@ import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { UXDSLLogo } from '@/components/UXDSLLogo'
 
 const DEMO_CODE = `.uxdsl-card {
-    @ds-surface (contained);
+    @ds-surface(contained);
     width: xs(100%) md(400px);
     border-radius: radius(3);
     box-shadow: shadow(3);
@@ -16,17 +16,17 @@ const DEMO_CODE = `.uxdsl-card {
   }
 
   .card-header {
-    background: linear-gradient(135deg, palette(primary-main), palette(primary-dark));
+    background: linear-gradient(135deg, palette(primary.main), palette(primary.dark));
     padding: density(6);
     display: grid;
     place-items: center;
   }
 
   .logo-circle {
-    @ds-surface (contained light);
+    @ds-surface(contained light);
     width: density(10);
     height: density(10);
-    border-radius: radius(full);
+    border-radius: radius(pill);
     display: grid;
     place-items: center;
     box-shadow: shadow(2);
@@ -46,13 +46,13 @@ const DEMO_CODE = `.uxdsl-card {
   }
 
   .card-title {
-    @ds-typo (h5);
-    color: palette(primary-main);
+    @ds-typo(h5);
+    color: palette(primary.main);
   }
 
   .card-desc {
-    @ds-typo (body);
-    color: palette(primary-main);
+    @ds-typo(body);
+    color: palette(primary.main);
   }
 
   .card-actions {
@@ -63,13 +63,13 @@ const DEMO_CODE = `.uxdsl-card {
   }
 
   .btn-primary {
-    @ds-button (contained primary);
+    @ds-button(contained primary);
     width: 100%;
     justify-content: center;
   }
 
   .btn-secondary {
-    @ds-button (outlined neutral);
+    @ds-button(outlined neutral);
     width: 100%;
     justify-content: center;
   }`;
