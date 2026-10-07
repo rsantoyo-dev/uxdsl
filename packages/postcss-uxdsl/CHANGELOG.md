@@ -9,6 +9,20 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability phase 5 (audit of 2026-09-29, decision DE-8 / finding T7) — `modes`
+is public API. No code change: the README ("Dark mode (`modes`) — the public
+contract") and the agent guide now state what has shipped since beta.6 as
+the contract it is — `modes` is exactly `{ "dark": { "palette": { … } } }`
+(validator-closed), a dark key you omit inherits the light value, the
+switch is `data-theme="dark" | "light"` on `<html>` over
+`prefers-color-scheme` (the dark palette is emitted twice: under
+`@media (prefers-color-scheme: dark)` for `:root:not([data-theme='light'])`
+and unconditionally for `:root[data-theme='dark']`), the library never sets
+the attribute, and a project overrides a dark value by writing only the
+changed keys under `modes.dark.palette` in its theme file, the `theme`
+option or an `applyTheme` patch. Generalizing to `modes.<name>` later is
+additive and not promised. Both examples compile under `npm test`.
+
 Stability phase 5 (audit of 2026-09-29, findings T15, L17, T13) — states the
 base Button roles were missing, and explicit zeros:
 

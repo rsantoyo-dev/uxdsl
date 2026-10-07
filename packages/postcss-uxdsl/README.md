@@ -578,6 +578,64 @@ it should, and `color(white, 0.5)` or `color(black)` work with no theme of
 the project's own. The four `gray` shades the borders use are the same
 colors, written in lowercase hex now (`#cbd5e1`, not `#CBD5E1`).
 
+### Dark mode (`modes`) — the public contract
+
+Stability phase 5 (audit DE-8 / T7) freezes what has been shipping since
+`0.5.0-beta.6` as the API it already was, without changing the engine:
+
+- The `modes` family is exactly `{ "dark": { "palette": { … } } }`. `dark`
+  is the only mode and `palette` the only family it can carry (the validator
+  refuses anything else as `UXD_THEME_INVALID`); every other family —
+  spacing, radii, shadows, surfaces, typography — has one value for both
+  modes. A dark palette key you leave out inherits the light value for that
+  key (objects merge by key, so `modes: {}` changes nothing and there is no
+  "disable dark mode" override; a project that wants one look in both modes
+  repeats its light values under `modes.dark.palette`). Generalizing to
+  `modes.<name>` later is additive and not promised.
+- A dark palette value is written in the same grammar as a light one: a
+  literal, `color(family.shade)` or `palette(role.variant)`; the base theme
+  references its Colors collection in both.
+- **The switch is `data-theme` on `<html>`, over `prefers-color-scheme`.**
+  The compiled output has the dark palette twice: under
+  `@media (prefers-color-scheme: dark)` for `:root:not([data-theme='light'])`,
+  and unconditionally for `:root[data-theme='dark']`. So with no attribute
+  the OS preference decides; `<html data-theme="light">` pins light whatever
+  the OS says; `<html data-theme="dark">` pins dark. Nothing else toggles it,
+  and neither value is set by the library — a theme switcher writes the
+  attribute (and persists it) itself.
+
+```json
+{
+  "palette": { "primary": { "main": "color(purple.700)", "contrast": "color(white)" } },
+  "modes": { "dark": { "palette": { "primary": { "main": "color(purple.200)", "contrast": "color(black)" } } } }
+}
+```
+
+```css
+.cta { background: palette(primary.main); color: palette(primary.contrast); }  /* var(--uxdsl__palette__primary-main) */
+```
+
+<!-- doc-example: output -->
+```css
+:root { --uxdsl__palette__primary-main: var(--uxdsl__color__purple-700); --uxdsl__palette__primary-contrast: var(--uxdsl__color__white); /* … */ }
+@media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { --uxdsl__palette__primary-main: var(--uxdsl__color__purple-200); --uxdsl__palette__primary-contrast: var(--uxdsl__color__black); } }
+:root[data-theme='dark'] { --uxdsl__palette__primary-main: var(--uxdsl__color__purple-200); --uxdsl__palette__primary-contrast: var(--uxdsl__color__black); }
+.cta { background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); }
+```
+
+To override a dark value in a project, write only the keys that change,
+under `modes.dark.palette`, in the theme file (`uxdsl.theme.json`), the
+`theme` option or an `applyTheme` patch — all three go through the same
+merge:
+
+```json
+{ "modes": { "dark": { "palette": { "surface": { "main": "#000000" }, "neutral": { "dark": "color(gray.400)" } } } } }
+```
+
+`applyTheme` applies a dark value change as an ordinary value (no rebuild);
+`checkThemeContrast` evaluates every pair in both modes, and `uxdsl theme`
+prints the effective `modes.dark.palette` after the merge.
+
 ### Recognized theme families
 
 `postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry

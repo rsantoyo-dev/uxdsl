@@ -161,6 +161,58 @@ visual color should change. For “make primary actions blue-500,” change
 `palette.primary.main` to `color(blue.500)` and keep components using
 `palette(primary.main)`. Direct blue-700 consumers retain their token.
 
+## Dark mode (`modes`)
+
+**Responsibility:** `modes` redefines Palette values for dark mode, nothing
+else. Its shape is public API (stability phase 5, audit DE-8): exactly
+`{ "dark": { "palette": { … } } }`. `dark` is the only mode and `palette`
+the only family it carries; the validator refuses any other key as
+`UXD_THEME_INVALID`. Spacing, radii, shadows, surfaces and typography have
+one value for both modes.
+
+```json
+{
+  "palette": { "primary": { "main": "color(purple.700)", "contrast": "color(white)" } },
+  "modes": { "dark": { "palette": { "primary": { "main": "color(purple.200)", "contrast": "color(black)" } } } }
+}
+```
+
+```css
+.cta {
+  background: palette(primary.main);  /* var(--uxdsl__palette__primary-main) */
+  color: palette(primary.contrast);
+}
+```
+
+- The switch is `data-theme` on `<html>`, over `prefers-color-scheme`. The
+  compiled output declares the dark palette twice: inside
+  `@media (prefers-color-scheme: dark)` for `:root:not([data-theme='light'])`,
+  and unconditionally for `:root[data-theme='dark']`. No attribute: the OS
+  preference decides; `data-theme="light"` pins light; `data-theme="dark"`
+  pins dark. The library never sets the attribute; a theme switcher writes
+  and persists it.
+- Components keep reading `palette(role.variant)` and get both modes. Do not
+  express dark mode with a second theme, a `.dark` class or `@media` in a
+  component; do not write dark values into `palette` and light ones into
+  `modes`.
+- A dark key you omit inherits the light value for that key (objects merge
+  by key), so a family that should look the same in both modes needs no
+  entry, and `modes: {}` changes nothing. There is no override that turns
+  dark mode off; a project that wants one look repeats its light values
+  under `modes.dark.palette`.
+- Override a dark value by writing only the keys that change under
+  `modes.dark.palette` — in the theme file, the `theme` option or an
+  `applyTheme` patch; all three use the same merge, and `applyTheme` treats
+  a dark value change as a value, not a structural change. A dark value is
+  written in the same grammar as a light one (`color(gray.950)`,
+  `palette(surface.light)`, a literal).
+- `checkThemeContrast` evaluates every pair in both modes; `uxdsl theme`
+  prints the effective `modes.dark.palette` after the merge. Generalizing to
+  `modes.<name>` later would be additive and is not promised.
+
+**Decision rule:** a color that differs in dark mode is a `modes.dark.palette`
+value; the component never knows which mode it is in.
+
 ## Breakpoints
 
 **Responsibility:** preserve shared responsive thresholds. Read configured widths;
