@@ -750,6 +750,14 @@ value at a supplied width without a document; that is what the playground's
 breakpoint demo does, not an actual browser resize. Validate real layouts
 with a real viewport too.
 
+The SCSS subset `uxdsl-core` compiles (`$variables`, `@if/@else`, `@each` of a
+list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
+nesting forwarded as written) is documented exactly once, in
+`packages/uxdsl-core/README.md` ("The SCSS subset"); everything else Sass has
+fails as `UXD_SCSS_UNSUPPORTED` or `UXD_NESTING_INVALID` naming what to write
+instead, and `packages/uxdsl-core/test/scss-subset.test.js` pins the audit's
+110-case matrix with no silent case.
+
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
 This is an architectural rule, not a claim that every legacy default or token

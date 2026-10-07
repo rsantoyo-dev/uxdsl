@@ -44,7 +44,7 @@ import { discoverThemeSync } from './config';
 import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from "postcss";
 import postcss from "postcss";
 import valueParser from "postcss-value-parser";
-import { resolveResponsiveValue, getDensityTokens, removedSyntaxMessage, parseTokenReference, tokenReferenceToCss, TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
+import { resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, parseTokenReference, tokenReferenceToCss, TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS } from './language';
 import type { TokenReference } from './language';
 import { TYPOGRAPHY_PROPERTIES, TYPOGRAPHY_CSS_PROPERTIES, resolveTypographyRole } from './typography';
 import { DEFAULT_BREAKPOINTS as DEFAULT_BPS } from "./ds-runtime/breakpoints";
@@ -316,7 +316,19 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         }
       });
 
-      // Collect root-level $vars and remove the declarations
+      // The standalone plugin resolves root-level $variables only. A `$var`
+      // declared inside a rule is the SCSS subset's block scope, which
+      // uxdsl-core (the CLI and the adapters) resolves before this plugin runs;
+      // here it would reach CSS as an invalid declaration, so it is an error
+      // naming that pipeline. Collect the root-level ones and remove them.
+      root.walkDecls((decl) => {
+        if (decl.prop.startsWith('$') && decl.parent !== root) {
+          throw locateError(diagnostic(
+            `UXD_VARIABLE_CONTEXT: ${decl.prop} is declared inside a rule; the PostCSS plugin on its own resolves $variables declared at the root of the file. ` +
+            'Move it to the root, or compile through uxdsl-core / uxdsl build, whose SCSS subset has block scope.'
+          ), decl);
+        }
+      });
       root.each((node) => {
         if (
           node.type === "decl" &&
@@ -340,18 +352,26 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       // instead of being split into media queries the way the CLI (which
       // resolves $vars via postcss-advanced-variables before this plugin
       // ever runs) already does.
-      const varNames = Object.keys(vars);
-      if (varNames.length > 0) {
-        const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
-        root.walkDecls((decl) => {
-          if (typeof decl.value !== "string" || generated.has(decl)) return;
+      const varRefRE = /\$([a-zA-Z_][\w-]*)/g;
+      root.walkDecls((decl) => {
+        if (typeof decl.value !== "string" || generated.has(decl)) return;
+        if (Object.keys(vars).length > 0) {
           decl.value = decl.value.replace(varRefRE, (_m, name) => {
             return Object.prototype.hasOwnProperty.call(vars, name)
               ? vars[name]
               : _m;
           });
-        });
-      }
+        }
+        // A `$name` still in the value names a variable nothing declared
+        // (strings are left alone: `content: "$5"` is text).
+        for (const node of valueParser(decl.value).nodes) {
+          if (node.type === 'word' && /^\$[a-zA-Z_][\w-]*$/.test(node.value)) {
+            throw locateError(diagnostic(
+              `UXD_VARIABLE_UNDEFINED: ${node.value} is not defined; declare it at the root of the file (${node.value}: …;) before this rule.`, node.value
+            ), decl);
+          }
+        }
+      });
 
       function resolveValueForBp(input: string, targetBp: string): string {
         return resolveResponsiveValue(input, targetBp, bps);
@@ -440,9 +460,41 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       }
 
       // Walk the author's declarations to handle palette()/space() and responsive bp(...) values
+      const emptied = new Set<Rule>();
       root.walkDecls((decl) => {
         try {
           if (typeof decl.value !== "string" || generated.has(decl)) return;
+        // The structure of the responsive expression, before anything is
+        // rewritten: a breakpoint function nested in another function, an
+        // empty argument, `!important` inside a group, or a group without a
+        // base next to other content would all reach CSS as text (or as a
+        // value whose shape changes between breakpoints); each is an error.
+        const structure = analyzeResponsiveValue(decl.value, bps);
+        if (structure.nested) {
+          const { name, parent, names, inner } = structure.nested;
+          const hint = bpNames.has(parent)
+            ? `a breakpoint function cannot nest in another (${parent}(${name}(…)))`
+            : `write the breakpoint functions at the top level of the value and ${parent}() inside each group: ${names.map((bp) => `${bp}(${parent}(${resolveResponsiveValue(inner, bp, bps)}))`).join(' ')}`;
+          throw diagnostic(`UXD_BREAKPOINT_CONTEXT: ${name}(…) is nested inside ${parent}(…); ${hint}.`, `${name}(`);
+        }
+        if (structure.groups.length) {
+          for (let ancestor: any = decl.parent; ancestor; ancestor = ancestor.parent) {
+            if (ancestor.type !== 'atrule') continue;
+            const atName = String(ancestor.name).toLowerCase().replace(/^-\w+-/, '');
+            if (['keyframes', 'font-face', 'page', 'counter-style'].includes(atName)) {
+              throw diagnostic(`UXD_BREAKPOINT_CONTEXT: a responsive value cannot live inside @${ancestor.name}: a media query cannot be nested there. Set the responsive value on a custom property outside it and read var() here, or write the block once per breakpoint.`);
+            }
+          }
+          const baseName = ordered[0].name;
+          for (const group of structure.groups) {
+            if (group.empty.length) throw diagnostic(`UXD_BREAKPOINT_EMPTY: ${group.empty[0]}() has no value; write the value inside the parentheses, or remove the breakpoint.`, `${group.empty[0]}(`);
+            if (group.important) throw diagnostic(`UXD_BREAKPOINT_IMPORTANT: !important belongs after the groups, not inside one; write ${decl.prop}: ${decl.value.replace(/\s*!important/gi, '')} !important, which applies it at every breakpoint.`);
+            if (!structure.standalone && !group.hasBase) {
+              const first = `${group.names[0]}(`;
+              throw diagnostic(`UXD_BREAKPOINT_BASE: ${group.text} has no ${baseName}() value, so "${decl.prop}" would have a different number of parts below ${group.names[0]}; give the group a ${baseName}() base, or make the whole value one responsive expression.`, first);
+            }
+          }
+        }
         // Phase 1: replace palette()/space() so nested calls inside xs()/md() are resolved
         const phase1Text = rewriteFuncs(decl.value);
 
@@ -525,6 +577,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
         }
 
         const parentRule = parentNode as Rule;
+        const emptiedRules = emptied;
         const rootNode = parentRule.root();
         let bucket = mediaRuleCache.get(parentRule);
         if (!bucket) {
@@ -557,11 +610,17 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
           }
           targetRule.append({ prop: decl.prop, value: rewriteFuncs(text), important: decl.important, source: decl.source, raws: { ...decl.raws } });
         });
-        if (!baseOut) decl.remove();
+        if (!baseOut) {
+          decl.remove();
+          // A rule the split emptied is removed with its last declaration: an
+          // empty `.a {}` is not what the author wrote.
+          if (parentRule.nodes.length === 0) emptiedRules.add(parentRule);
+        }
         } catch (error) {
           throw locateError(error, decl);
         }
       });
+      for (const rule of emptied) rule.remove();
 
       // Reuse the same resolver after substitutions and media cloning — over
       // the author's nodes only; the generated theme is already resolved.

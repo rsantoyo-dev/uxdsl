@@ -1040,6 +1040,43 @@ plugin runs standalone (not only via a build that resolves `$var`s first):
 `$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
 plus `@media` block as writing the responsive value inline.
 
+### The structure of a responsive expression (stability phase 3)
+
+A responsive expression is read before anything is rewritten, and four shapes
+that used to reach CSS as text, or leave something invalid behind, are
+located errors:
+
+```css
+.a { width: calc(100% - xs(1rem) md(2rem)); }   /* UXD_BREAKPOINT_CONTEXT: nested in calc(); write xs(calc(100% - 1rem)) md(calc(100% - 2rem)) */
+.a { padding: xs(md(1rem)); }                     /* UXD_BREAKPOINT_CONTEXT: a breakpoint cannot nest in a breakpoint */
+.a { padding: xs(); }                             /* UXD_BREAKPOINT_EMPTY */
+.a { padding: xs(1px !important) md(2px); }       /* UXD_BREAKPOINT_IMPORTANT: write xs(1px) md(2px) !important */
+.a { padding: xs(1px) 5px md(2px); }              /* UXD_BREAKPOINT_BASE: md(2px) has no xs() value, so md would get three parts */
+```
+
+The same `UXD_BREAKPOINT_CONTEXT` refuses a responsive value under
+`@keyframes`, `@font-face`, `@page` or `@counter-style`, where a media query
+cannot be nested (set the responsive value on a custom property outside, and
+read `var()` inside). Tokens are still fine there: `@keyframes pulse { from {
+padding: space(1); } }` compiles.
+
+A rule the split emptied is removed with its last declaration: `.a { padding:
+md(2rem); }` compiles to the `@media` block alone, not to an empty `.a {}`
+followed by it. An empty rule the author wrote stays.
+
+`!important` after the groups applies at every breakpoint; a lone group may
+start at any breakpoint (`padding: md(2rem)` is "from md up"); when a value
+has other parts next to a group, every group needs a base so the value keeps
+the same number of parts at every width.
+
+The standalone plugin resolves `$variables` declared at the root of the file.
+One declared inside a rule is `UXD_VARIABLE_CONTEXT` (the SCSS subset's block
+scope is `uxdsl-core`'s, which the CLI and the adapters run), and a `$name`
+nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
+breakpoints)` (`postcss-uxdsl/language`) reports the same structure — groups,
+bases, nesting, empties — for an editor.
+
+
 ### One theme validator (`validateTheme`)
 
 There is one answer to "is this theme valid?", and every path asks the same

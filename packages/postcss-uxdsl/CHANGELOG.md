@@ -9,6 +9,59 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 3 (4): no silent output (audit findings L1, L2, L3, L18,
+L19 and §3.2, decision DE-2).
+
+### Visual changes
+
+None for a stylesheet that compiled to valid CSS before. What changes is
+what is refused (each a located error), and that a rule the responsive split
+emptied no longer leaves `.a {}` behind.
+
+- **The structure of a responsive expression** is checked before it is
+  rewritten: a breakpoint function nested in another function
+  (`calc(100% - xs(1rem) md(2rem))`, `var(--x, xs(…) md(…))`) or in another
+  breakpoint is `UXD_BREAKPOINT_CONTEXT`, with the top-level form to write;
+  a responsive value under `@keyframes`/`@font-face`/`@page`/`@counter-style`
+  is `UXD_BREAKPOINT_CONTEXT` too (a media query cannot be nested there — it
+  used to be emitted inside the at-rule); an empty argument (`xs()`) is
+  `UXD_BREAKPOINT_EMPTY` (it used to be dropped); `!important` inside a group
+  is `UXD_BREAKPOINT_IMPORTANT` (it used to apply at that breakpoint only);
+  a group without a base next to other content (`xs(1px) 5px md(2px)`) is
+  `UXD_BREAKPOINT_BASE` (md used to get three parts). `analyzeResponsiveValue`
+  (`postcss-uxdsl/language`) is the shared reader.
+- **Emptied rules are removed:** `.a { padding: md(2rem); }` compiles to the
+  `@media` block alone.
+- **`$variables` in the standalone plugin:** one declared inside a rule is
+  `UXD_VARIABLE_CONTEXT` (it reached CSS as an invalid declaration), one
+  nothing declared is `UXD_VARIABLE_UNDEFINED` (it reached CSS as `$gap`).
+- **`uxdsl-core`'s SCSS subset is exact** (its README, "The SCSS subset").
+  `@include pad(density(2))` and `@include pad(xs(1px) md(2px))` now work as
+  written — an `includeArguments` pre-pass binds any mixin argument that
+  carries parentheses to a variable, which is what the variables plugin
+  resolves correctly (it used to split the arguments at the first parenthesis
+  and emit `padding: densit;`). After the variables plugin, a `sassLeftoverGuard`
+  fails on everything Sass-only that used to pass through as text:
+  `&__item`/`&--mod`/`&-suffix` selectors (`UXD_NESTING_INVALID`, native
+  nesting cannot concatenate), `@extend`/`%placeholder`, `@use`/`@forward`,
+  `@function`/`@return`/`@while`/`@at-root`/`@debug`/`@warn`/`@error`,
+  `!global`, interpolation around anything but a `$variable`, an unresolved
+  `$x`, Sass-only functions (`darken()`, `map-get()`, `nth()`, `percentage()`,
+  `unquote()`, `str-*()`, `math.*`/`map.*`/`color.*`, Sass's `if(a, b, c)`,
+  `rgba($color, .5)`) and arithmetic outside `calc()` (`10px * 2`, `1rem +
+  2px`, `10px / 2`, `"a" + "b"`) — all `UXD_SCSS_UNSUPPORTED`, each naming
+  what to write instead; an `@include` with unbalanced parentheses is
+  `UXD_INCLUDE_ARGUMENT`. The audit's 110-case matrix is
+  `packages/uxdsl-core/test/scss-subset.test.js`: 69 cases compile to the
+  exact CSS pinned there (valid, no Sass construct left; css-tree's lexer
+  judges every value against its property), 41 fail with the pinned error,
+  0 are silent — the audit counted 14.
+
+New codes: `UXD_BREAKPOINT_CONTEXT`, `UXD_BREAKPOINT_EMPTY`,
+`UXD_BREAKPOINT_IMPORTANT`, `UXD_BREAKPOINT_BASE`, `UXD_VARIABLE_CONTEXT`,
+`UXD_VARIABLE_UNDEFINED` (compiler); `UXD_SCSS_UNSUPPORTED`,
+`UXD_NESTING_INVALID`, `UXD_INCLUDE_ARGUMENT` (`uxdsl-core`).
+
 Stability plan, phase 3 (3): typography variable names (audit decision DE-6,
 finding L20).
 

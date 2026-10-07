@@ -64,6 +64,15 @@ export const DIAGNOSTIC_CODES = new Set([
   // pipeline — see index.ts's final walkAtRules pass and its responsive
   // value-function scan.
   'UXD_DIRECTIVE_UNKNOWN', 'UXD_DIRECTIVE_CONTEXT', 'UXD_BREAKPOINT_UNKNOWN',
+  // Stability phase 3: the structure of a responsive expression. A breakpoint
+  // function nested in another function or under @keyframes/@font-face/
+  // @page/@counter-style (CONTEXT), an empty argument (EMPTY), `!important`
+  // inside a group (IMPORTANT), a group without a base next to other content
+  // (BASE).
+  'UXD_BREAKPOINT_CONTEXT', 'UXD_BREAKPOINT_EMPTY', 'UXD_BREAKPOINT_IMPORTANT', 'UXD_BREAKPOINT_BASE',
+  // The standalone plugin's $variables: declared inside a rule (CONTEXT) or
+  // never declared (UNDEFINED).
+  'UXD_VARIABLE_CONTEXT', 'UXD_VARIABLE_UNDEFINED',
   // Stability phase 1: a bad alpha is UXD_TOKEN_ALPHA whichever family the
   // value belongs to — the one value grammar (language.ts's tokenValueToCss)
   // reports it, so the per-family `_ALPHA` compositions are gone.

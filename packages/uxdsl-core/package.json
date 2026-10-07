@@ -51,8 +51,8 @@
     "postcss-advanced-variables": "^3.0.0",
     "postcss-import": "^16.1.0",
     "postcss-scss": "^4.0.9",
-    "postcss-value-parser": "^4.2.0",
-    "postcss-uxdsl": "0.5.0-beta.7-dev"
+    "postcss-uxdsl": "0.5.0-beta.7-dev",
+    "postcss-value-parser": "^4.2.0"
   },
   "publishConfig": {
     "access": "public",
@@ -62,6 +62,7 @@
     "postcss": "^8.4.31"
   },
   "devDependencies": {
+    "css-tree": "^3.1.0",
     "postcss": "^8.5.6"
   }
 }

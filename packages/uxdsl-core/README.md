@@ -107,6 +107,44 @@ const { css, map, dependencies, warnings } = await compile(
   `#uxdsl-bp-meta` rule for a runtime breakpoint rewriter that no longer
   exists).
 
+## The SCSS subset
+
+`compile()` reads `.uxdsl` with `postcss-scss` and runs
+`postcss-advanced-variables`, so a stylesheet may use **this subset of Sass,
+and only this**:
+
+| Supported | Notes |
+| --- | --- |
+| `$variables` | `$x: 1px;` at the root or inside a block (block scope), `!default`, `#{$x}` interpolation in a selector, a value or a media query |
+| `@if` / `@else` | `@else if` is not supported (it fails with the variables plugin's own error) |
+| `@each $x in (a, b)` | lists only — no maps, no `@each $k, $v` |
+| `@for $i from 1 through 3` | |
+| `@mixin` / `@include` | positional arguments, defaults (`@mixin m($a: 1px)`), `@content`; an argument may be any value, token functions and responsive expressions included: `@include pad(density(2))`, `@include pad(xs(1px) md(2px))`, `@include box(rgba(0,0,0,.5), 2px)` all work as written. No keyword (`$b: 9px`) or variadic (`$args...`) arguments |
+| `@import "./partial"` | a path, with or without the extension-less `_partial` convention |
+| native CSS nesting | `.a { .b {} }`, `&:hover`, `& .child`, `&.other`, `.x &`, `@media` inside a rule — **forwarded to the browser as written, not flattened** (Chrome 120+, Safari 17.2+, Firefox 117+) |
+| `//` line comments | stripped from the output |
+
+Everything else Sass has is **not** compiled and fails with a located error
+naming what to write instead — never text the browser would silently discard:
+
+| Unsupported | Error | Instead |
+| --- | --- | --- |
+| `&__item`, `&--mod`, `&-suffix` | `UXD_NESTING_INVALID` | native nesting cannot concatenate the parent selector; write `.block__item` |
+| `@extend`, `%placeholder` | `UXD_SCSS_UNSUPPORTED` | a mixin, or a shared class in the markup |
+| `@use`, `@forward` | `UXD_SCSS_UNSUPPORTED` | `@import "./partial"` |
+| `@function` / `@return`, `@while`, `@at-root`, `@debug` / `@warn` / `@error` | `UXD_SCSS_UNSUPPORTED` | a mixin, `@for`/`@each`, a root-level rule, nothing |
+| `!global` | `UXD_SCSS_UNSUPPORTED` | declare the variable at the root |
+| `#{…}` around anything but a `$variable` (`#{palette(primary.main)}`) | `UXD_SCSS_UNSUPPORTED` | write the value directly |
+| an undefined `$x`, or `$x` where the variables plugin could not resolve it | `UXD_SCSS_UNSUPPORTED` (or the plugin's own located error) | declare it before its use |
+| Sass functions: `darken()`, `lighten()`, `mix()`, `map-get()`, `nth()`, `percentage()`, `unquote()`, `str-*()`, `math.*`, `map.*`, `color.*`, Sass's `if(a, b, c)`, `rgba($color, .5)` | `UXD_SCSS_UNSUPPORTED` | a Palette variant or alpha (`palette(primary, 0.5)`), `color-mix()`, `rgb(from … / .5)`, `calc()`, the value itself |
+| arithmetic outside `calc()`: `10px * 2`, `1rem + 2px`, `$a + $b`, `10px / 2`, `"a" + "b"` | `UXD_SCSS_UNSUPPORTED` | `calc(10px * 2)` (a slash between two plain numbers or two lengths — `aspect-ratio: 16 / 9`, `border-radius: 10px / 20px` — is CSS and stays) |
+| an `@include` with unbalanced parentheses | `UXD_INCLUDE_ARGUMENT` | balance them |
+
+`test/scss-subset.test.js` pins all of this with the 110-case matrix of the
+2026-09-29 audit: every case either compiles to the exact CSS recorded there —
+valid CSS, with no Sass construct left in it — or fails with the recorded
+error. There is no third outcome.
+
 ### What this package no longer exports
 
 `require('uxdsl-core')` used to be callable — `processUxdsl(source, { fileId,

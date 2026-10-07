@@ -347,6 +347,66 @@ export function tokenValueToCss(input: string, context?: TokenContext): string {
 /** @deprecated The grammar is one function now; this is `tokenValueToCss`. */
 export const spacingValueToCss = (input: string): string => tokenValueToCss(input);
 
+
+/** What an editor or the compiler needs to know about the responsive groups of one value. */
+export interface ResponsiveAnalysis {
+  /** Top-level groups of adjacent breakpoint functions, in order, each with its source text. */
+  groups: Array<{ names: string[]; text: string; hasBase: boolean; empty: string[]; important: boolean }>;
+  /** The value is exactly one group and nothing else. */
+  standalone: boolean;
+  /** A breakpoint function nested inside another function (`calc(… xs(…))`, `xs(md(…))`), or null:
+   * the breakpoint, the enclosing function, the breakpoint names of that inner group, and the
+   * enclosing function's arguments as written. */
+  nested: { name: string; parent: string; names: string[]; inner: string } | null;
+}
+
+/**
+ * Describes the responsive structure of a value without resolving it: the
+ * compiler turns a nested breakpoint, an empty argument, `!important` inside a
+ * group or a group without a base next to other content into located errors
+ * from this; an editor can show the same facts.
+ */
+export function analyzeResponsiveValue(input: string, bps: BreakpointMap): ResponsiveAnalysis {
+  const nodes = valueParser(input).nodes;
+  const base = Object.keys(bps).sort((a, b) => bps[a] - bps[b])[0];
+  let nested: ResponsiveAnalysis['nested'] = null;
+  const findNested = (node: valueParser.Node, parent: valueParser.FunctionNode | null) => {
+    if (node.type !== 'function') return;
+    if (parent && isBreakpoint(bps, node.value) && !nested) {
+      const names = parent.nodes.filter((sibling) => sibling.type === 'function' && isBreakpoint(bps, sibling.value)).map((sibling) => sibling.value.toLowerCase());
+      nested = { name: node.value.toLowerCase(), parent: parent.value.toLowerCase(), names: names.filter((entry, index) => names.indexOf(entry) === index), inner: valueParser.stringify(parent.nodes) };
+    }
+    for (const child of node.nodes) findNested(child, node);
+  };
+  for (const node of nodes) findNested(node, null);
+  const groups: ResponsiveAnalysis['groups'] = [];
+  let other = false;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node.type === 'space' || node.type === 'comment') continue;
+    if (node.type !== 'function' || !isBreakpoint(bps, node.value)) { other = true; continue; }
+    const group: ResponsiveAnalysis['groups'][number] = { names: [], text: '', hasBase: false, empty: [], important: false };
+    let j = i;
+    let last = i;
+    while (j < nodes.length) {
+      const next = nodes[j];
+      if (next.type === 'space' || next.type === 'comment') { j++; continue; }
+      if (next.type !== 'function' || !isBreakpoint(bps, next.value) || group.names.includes(next.value.toLowerCase())) break;
+      const name = next.value.toLowerCase();
+      group.names.push(name);
+      if (name === base) group.hasBase = true;
+      if (!next.nodes.some((child) => child.type !== 'space' && child.type !== 'comment')) group.empty.push(name);
+      if (next.nodes.some((child) => child.type === 'word' && child.value.toLowerCase() === '!important')) group.important = true;
+      last = j;
+      j++;
+    }
+    group.text = valueParser.stringify(nodes.slice(i, last + 1));
+    groups.push(group);
+    i = last;
+  }
+  return { groups, standalone: groups.length === 1 && !other, nested };
+}
+
 /** Inspection for a single responsive token; shares the production resolver. */
 export function inspectResponsiveValue(input: string, width: number, bps: BreakpointMap) {
   const ordered = Object.entries(bps).sort((a, b) => a[1] - b[1]);

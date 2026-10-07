@@ -5831,8 +5831,6 @@ input[type="range"]::-moz-range-thumb:hover {
 .demo-item {
   min-width: 0;
 }
-.demo-item-full {
-}
 @media (min-width: 1024px){
 .demo-item-full {
   grid-column: span 2;
@@ -6230,8 +6228,6 @@ svg.interactive-logo {
 #PageToolbar .page-toolbar__burger:hover {
   color: var(--uxdsl__palette__secondary-dark);
   background: transparent;
-}
-#PageToolbar .page-toolbar__burger {
 }
 @media (min-width: 1024px){
 #PageToolbar .page-toolbar__burger {

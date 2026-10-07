@@ -33,6 +33,7 @@ const uxdslPlugin = require('postcss-uxdsl');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssImportDefaultResolveId = require('postcss-import/lib/resolve-id');
+import { includeArguments, sassLeftoverGuard } from './scss-subset';
 
 /** MIG-B6-18 item 1 (moved from `uxdsl-cli/bin/uxdsl.js`, the CLI's own
  * copy is removed once it calls `compile()` instead), item 5 fix folded
@@ -259,9 +260,15 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   }
 
   const includeTheme = config.includeTheme !== false;
+  // The SCSS subset: `includeArguments` lets a mixin argument carry parentheses
+  // (the variables plugin splits arguments at the first one), and
+  // `sassLeftoverGuard` fails on anything Sass-only the variables plugin left
+  // behind — see ./scss-subset.ts and the README's "SCSS subset" section.
   const plugins = [
     postcssImport(resolveImport ? { resolve: resolveImport } : {}),
+    includeArguments(),
     postcssAdvancedVariables(),
+    sassLeftoverGuard(),
     uxdslPlugin({
       theme: config.theme,
       references: config.references,
