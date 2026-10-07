@@ -1,5 +1,5 @@
 /**
- * MIG-08: a single contract for building the CSS custom property names
+ * A single contract for building the CSS custom property names
  * every token family emits (`--uxdsl__space__1`, `--uxdsl__density__1`,
  * `--uxdsl__palette__primary-main`, `--uxdsl__color__gray-300`,
  * `--uxdsl__radius__1`/`--uxdsl__border__1`, `--uxdsl__shadow__1`,
@@ -21,7 +21,7 @@
  * and palette family `"primary"` sub-key `"main"`, or surface role
  * `"contained-shadow"` and role `"contained"` field `"shadow"`) producing
  * the identical generated name, so the second silently overwrites the
- * first with no diagnostic. See docs/features/FEAT-002-beta-migration-hardening.md.
+ * first with no diagnostic.
  */
 
 /** `--uxdsl__<family>__<key>` — edges, shadows, surfaces, buttons, inputs,

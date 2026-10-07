@@ -63,7 +63,7 @@ export function includeArguments(): Plugin {
         const open = params.indexOf('(');
         if (open === -1) return;
         if (!params.endsWith(')')) {
-          throw at.error(`UXD_INCLUDE_ARGUMENT: @include ${params} has unbalanced parentheses; write @include name(arg, arg).`, { plugin: PLUGIN });
+          throw at.error(`UXD_INCLUDE_ARGUMENT: @include ${params} has text after its argument list; write @include name(arg, arg).`, { plugin: PLUGIN });
         }
         const name = params.slice(0, open).trim();
         const args = splitArguments(params.slice(open + 1, -1));

@@ -30,7 +30,7 @@ test('Button tone, size, state selectors and component CSS use shared compositio
  assert.equal(base['--uxdsl__button__tone-dark'],'var(--uxdsl__palette__brand-blue-dark)');
  assert.equal(base.padding,'var(--uxdsl__density__2)');
  assert(actual.includes('[aria-pressed="true"]'));
- assert(buttonComponentCss(t,'.a, .b','checkout').includes('.a:hover, .b:hover'));
+ assert(buttonComponentCss(t,'.a, .b','checkout').includes('.a:hover:not(:where(:disabled, [aria-disabled="true"])), .b:hover:not(:where(:disabled, [aria-disabled="true"]))'));
 });
 test('a Button role is defined in the theme JSON only, and compilations are isolated',async()=>{
  const source='.x { @ds-button(checkout); }';

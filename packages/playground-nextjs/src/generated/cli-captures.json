@@ -35,10 +35,10 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (40121 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (40168 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 40121,
+        "bytes": 40168,
         "rootBlocks": 16,
         "mediaQueries": 9
       }
@@ -324,7 +324,7 @@
         "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (40121 bytes)",
+          "[uxdsl] built dist/app.css (40168 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
@@ -333,7 +333,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (40163 bytes)"
+          "[uxdsl] built dist/app.css (40210 bytes)"
         ]
       },
       {
@@ -349,12 +349,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (40121 bytes)"
+          "[uxdsl] built dist/app.css (40168 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 40121
+      "finalBytes": 40168
     }
   }
 }

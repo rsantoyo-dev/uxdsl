@@ -2,7 +2,7 @@ import { deepMergeTheme } from './ds-runtime/theme-validate';
 import { BASE_THEME } from './base-theme';
 
 /**
- * MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is the reviewed `theme/base.json`
+ * `DEFAULT_THEME` is the reviewed `theme/base.json`
  * itself — colors, fonts (including `fonts.google`), breakpoints, spacing,
  * densities, borders, radii, shadows, the full 14-family palette,
  * `modes.dark`, surfaces, buttons, inputs and typography_details — not a
@@ -22,7 +22,7 @@ import { BASE_THEME } from './base-theme';
  * with an ad hoc `default.fontSize`/`code.fontSize` patch to plug a
  * zero-config crash) no longer feeds `DEFAULT_THEME` — the JSON's own
  * `typography_details` is already complete on its own terms. That file is
- * left as-is; MIG-B6-17 owns removing whatever `@ds-typo` consumption-side
+ * left as-is; removing whatever `@ds-typo` consumption-side
  * fallback logic still assumes the old shape (see this story's own
  * evidence for the specific fields this can affect: `@ds-typo` roles no
  * longer inherit `textTransform`/`textDecoration`/`fontStyle`/

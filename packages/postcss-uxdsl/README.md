@@ -966,6 +966,12 @@ bundler's own watcher picks up an edit to it.
 
 ### Diagnostics
 
+Every code is in `DIAGNOSTIC_CATALOG` (exported from `postcss-uxdsl` and
+`postcss-uxdsl/ds-runtime`): code → one line of meaning → one line of fix, and
+its owner (`compiler`, `theme`, `runtime`, `core`). The compiler refuses to
+produce a code the catalog does not list, and a test keeps the catalog exact in
+both directions; https://uxdsl.io/docs/diagnostics renders it.
+
 Compiler diagnostics start with a stable `UXD_*` code. CSS value functions and
 `@ds-typo`, `@ds-surface`, `@ds-button`, and `@ds-input` directives are reported
 with their stylesheet location; direct expansion failures are PostCSS
@@ -984,7 +990,12 @@ key path (as of 2026-09-29); they still preserve their code and message.
 The per-family default constants (`DEFAULT_RADII`, `DEFAULT_SHADOWS`,
 `DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`,
 `DEFAULT_BUTTONS`, `DEFAULT_INPUTS`) are read from the same
-`theme/base.json` as `DEFAULT_THEME` (MIG-B6-29), not maintained separately.
+`theme/base.json` as `DEFAULT_THEME`, not maintained separately.
+
+A disabled control does not react to the pointer: the Button `hover`/`active`
+and Input `hover` rules are `:hover:not(:where(:disabled, [aria-disabled="true"]))`
+(`NOT_DISABLED`), with the same specificity as a plain `:hover`, so an author's
+`.btn:hover` after the directive still wins.
 
 ### Zero silent output: leftover directives and unknown breakpoints (MIG-B6-14)
 

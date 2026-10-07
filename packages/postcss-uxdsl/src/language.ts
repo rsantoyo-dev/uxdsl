@@ -5,7 +5,7 @@ import { themeError } from './diagnostics';
 import { BASE_THEME } from './base-theme';
 
 export type BreakpointMap = Record<string, number>;
-// MIG-B6-29 (FEAT-008): derived from theme/base.json (via BASE_THEME), not a
+// Derived from theme/base.json (via BASE_THEME), not a
 // second, independently-maintained literal — see base-theme.ts for why this
 // direction (engine imports data) never cycles back through the resolver.
 export const DEFAULT_BREAKPOINTS: BreakpointMap = BASE_THEME.breakpoints as BreakpointMap;
@@ -15,7 +15,7 @@ export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID
   if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([name,width]) => !/^[a-z][\w-]*$/i.test(name) || !Number.isFinite(width) || width < 0) || new Set(ordered.map(([,width]) => width)).size !== ordered.length) throw new Error(`${prefix}: Expected named, distinct non-negative widths and a zero-width base.`);
   return ordered;
 }
-// MIG-B6-14 (FEAT-008): every CSS/UXDSL function name a responsive-looking
+// Every CSS/UXDSL function name a responsive-looking
 // value can legitimately use at its top level, shared by validateResponsiveExpression
 // (theme-level Density/Typography values) and index.ts's own UXD_BREAKPOINT_UNKNOWN
 // check (arbitrary user CSS declarations) — one inventory, not two independently
@@ -63,7 +63,7 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   }
 }
 
-// MIG-B6-29 (FEAT-008): derived from theme/base.json, not computed here —
+// Derived from theme/base.json, not computed here —
 // density defaults still stay inside the shipped 1-16 Spacing scale, that
 // shape is just data now instead of a formula.
 export const DEFAULT_DENSITIES: Record<string, string> = BASE_THEME.densities as Record<string, string>;
@@ -84,7 +84,7 @@ export const LANGUAGE_COMPLETIONS = {
   functions: ['palette', 'color', 'radius', 'border', 'density', 'shadow', 'space', ...Object.keys(DEFAULT_BREAKPOINTS)],
 } as const;
 
-// MIG-B6-26 (FEAT-008): the exact tone predicate control-engine.ts's own
+// The exact tone predicate control-engine.ts's own
 // button/input tone generation uses (moved here, not duplicated, and
 // re-exported for it to import back) — a tone must be a full color family
 // (main/dark/contrast), not a semantic overlay group like text/divider/
@@ -105,7 +105,7 @@ export function getToneFamilies(palette: Record<string, unknown> = {}): string[]
   });
 }
 
-// MIG-B6-13 (FEAT-008) code-review follow-up: located with `themeError` the
+// Located with `themeError` the
 // same way typography.ts already is — `{ densities: { x: '' } }` previously
 // threw `UXD_DENSITY_VALUE: Invalid x.` with no `.keyPath`, leaving no way
 // to tell it came from `densities.x` versus a merged default/legacy key.

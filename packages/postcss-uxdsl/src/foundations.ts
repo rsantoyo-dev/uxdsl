@@ -8,7 +8,7 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
  * identifiers (e.g. top-level palette key `"primary-main"` and structured
  * `primary.main`) that concatenate to the identical variable name raise
  * `UXD_FOUNDATION_NAME_COLLISION` instead of one silently overwriting the
- * other (MIG-08).
+ * other.
  *
  * Stability phase 1: every value goes through the one value grammar
  * (`tokenValueToCss`), so `palette.brand.main: 'color(gray.300)'` or

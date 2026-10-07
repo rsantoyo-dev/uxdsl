@@ -36,7 +36,7 @@ export interface ValidateThemeOptions {
   references?: ReferenceOptions | false;
 }
 
-// MIG-B3-03 (FEAT-004), MIG-B6-01 (FEAT-008): every top-level theme family
+// Every top-level theme family
 // the compiler and theme generator read. The top-level set is closed: a key
 // outside it is either a typo or unused data. `theme-families-drift.test.js`
 // scans source reads to keep this public registry synchronized for CLI strict
@@ -48,7 +48,7 @@ export const KNOWN_THEME_FAMILIES = new Set([
 ]);
 
 /**
- * MIG-B6-27 (FEAT-008): JSON Schema metadata, recognized but deliberately
+ * JSON Schema metadata, recognized but deliberately
  * **not** a member of `KNOWN_THEME_FAMILIES` — it names no tokens and compiles
  * to nothing, so treating it as a family would put it in the schema's own
  * family list, in strict-theme scopes and in every drift check. It is accepted
@@ -103,7 +103,7 @@ function balancedParentheses(value: string): boolean {
 }
 
 /**
- * MIG-B6-30 (FEAT-008): a real deep copy of theme data.
+ * A real deep copy of theme data.
  *
  * `deepMergeTheme({}, input)` reads like one but is not: with an empty base
  * every key takes the `out[key] = nextVal` branch, so nested objects are shared
@@ -316,7 +316,7 @@ export function validateTheme<TTheme extends Record<string, any>>(
         control(family, value);
         break;
       default:
-        // MIG-B3-03: an unknown top-level family is exactly the "silent
+        // An unknown top-level family is exactly the "silent
         // fallback" gap that lets a theme-file/build-config collision (or a
         // plain typo like `color` for `colors`) go unnoticed — nothing
         // consumes the key, so it neither errors nor visibly does anything.

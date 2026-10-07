@@ -1,4 +1,4 @@
-// MIG-B6-29 (FEAT-008), phase 4/4 ("paso 9" of the story): the one shared
+// The one shared
 // Google Fonts encoder, used by both the PostCSS plugin (src/index.ts) and
 // the runtime/SSR generator (ds-runtime/theme-generator.ts) so they emit the
 // exact same `@import` for the same `theme.fonts.google`. Browser-safe: no

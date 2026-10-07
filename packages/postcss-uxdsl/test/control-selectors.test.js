@@ -44,7 +44,8 @@ for (const [selector, intact] of FUNCTIONAL_PSEUDOS) {
     const hoverLine = css.split('\n').find(l => l.includes(':hover'));
     assert.ok(hoverLine, 'a :hover rule must be generated');
     assert.ok(hoverLine.includes(intact), `expected the intact "${intact}" fragment, got: ${hoverLine}`);
-    assert.match(hoverLine, new RegExp(`\\)\\s*:hover\\s*\\{`), 'the :hover suffix must land after the closing paren, not inside it');
+    // The hover suffix (`:hover:not(:where(:disabled, …))`, a disabled control does not react to the pointer) lands after the closing paren.
+    assert.match(hoverLine, new RegExp(`\\)\\s*:hover:not\\(:where\\(:disabled`), 'the :hover suffix must land after the closing paren, not inside it');
   });
 
   test(`MIG-B6-15: @ds-input preserves "${intact}" the same way`, async () => {
@@ -66,7 +67,7 @@ test('MIG-B6-15: a multi-state, multi-suffix selector (.is-selected, [aria-press
 test('MIG-B6-15: a plain comma-separated selector list still targets each member independently (regression control)', async () => {
   const css = await compile('.a, .b { @ds-button(contained primary); }');
   const hoverLine = css.split('\n').find(l => l.includes(':hover'));
-  assert.match(hoverLine, /\.a:hover,\s*\.b:hover/);
+  assert.match(hoverLine, /\.a:hover:not\(:where\(:disabled, \[aria-disabled="true"\]\)\),\s*\.b:hover:not\(:where\(/);
 });
 
 for (const [selector, intact] of FUNCTIONAL_PSEUDOS) {

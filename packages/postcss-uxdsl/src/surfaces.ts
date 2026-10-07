@@ -12,11 +12,11 @@ import { BASE_THEME } from './base-theme';
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
 export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
-// MIG-B6-29 (FEAT-008): derived from theme/base.json, not a second,
+// Derived from theme/base.json, not a second,
 // independently-maintained literal.
 export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = BASE_THEME.surfaces as Record<string, SurfaceStyle>;
 
-// MIG-B6-13 (FEAT-008) code-review follow-up: each throw below now carries
+// Each throw below now carries
 // the theme key path it actually failed at (`surfaces`, `surfaces.<role>`,
 // `surfaces.<role>.<field>`) via `themeError`, matching typography.ts's
 // existing pattern — previously `{ surfaces: { contained: { bogus: 'red' } } }`
@@ -56,7 +56,7 @@ export function surfaceValueToCss(value: string, theme: SurfaceTheme) {
 }
 
 export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  // MIG-08: one shared "surface" family, keyed `${role}-${field}` — so the
+  // One shared "surface" family, keyed `${role}-${field}` — so the
   // emitted name is `--uxdsl__surface__<role>-<field>` (e.g.
   // `--uxdsl__surface__flat-padding`), matching every other family's
   // `--uxdsl__<family>__<key>` shape instead of folding the role into the
@@ -77,7 +77,7 @@ export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: Breakp
 /**
  * Composition used by PostCSS directives and live component previews.
  *
- * MIG-05 precedence: role/tone defaults apply first; `size` then sets
+ * Precedence: role/tone defaults apply first; `size` then sets
  * padding and radius together (legacy behavior, unchanged); an explicit
  * `radiusOverride`/`shadowOverride` replaces only that one property,
  * independently of `size` and of each other. A later plain CSS declaration

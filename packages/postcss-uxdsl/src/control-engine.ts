@@ -87,7 +87,7 @@ function getTokens(theme: ControlTheme = {}): Record<string, Required<ControlRol
   return result;
 }
 function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
-  // MIG-08: every role/state/tone bucket shares one `family` namespace
+  // Every role/state/tone bucket shares one `family` namespace
   // (`button`/`input`) instead of folding role/state into the family
   // portion, so the emitted name is `--uxdsl__button__<role>-<state>-<key>`
   // (e.g. `--uxdsl__button__contained-hover-bg`), matching every other
@@ -109,7 +109,7 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
         untoned[key] = toneReferences(value, family, null, fail);
         put(`${role}-${state}-${key}`, `${role}.${state}.${key}`, surfaceValueToCss(untoned[key], theme));
       }
-      // MIG-B6-26 (FEAT-008): moved to language.ts as getToneFamilies, so
+      // Moved to language.ts as getToneFamilies, so
       // the vscode extension's completion generator can derive the exact
       // same tone list without duplicating this predicate by hand.
       //
@@ -151,7 +151,7 @@ function declarations(theme: ControlTheme, role = 'contained', tone = '', size =
   if (radiusOverride) base['border-radius'] = composed['border-radius'];
   if (shadowOverride) base['box-shadow'] = composed['box-shadow'];
   if (tone) for (const variant of ['main','dark','contrast']) base[buildVarName(family, `tone-${variant}`)] = `var(${buildNamespacedVarName('palette', `${tone}-${variant}`)})`;
-  // MIG-B7-01 (FEAT-009): `placeholder` (Input only — no other family defines
+  // `placeholder` (Input only — no other family defines
   // this field) needs a *different* tone rule than every other field, not
   // just a copy of the existing one. The regex-substitution mechanism above
   // (compileRules, the one that already tone-varies hover.bg/caret/etc.)
@@ -194,7 +194,7 @@ function inspectTheme(theme: ControlTheme, viewport: number) {
 function componentCss(theme: ControlTheme, selector: string, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const {base, states} = declarations(theme, role, tone, size, radiusOverride, shadowOverride);
   const emit = (sel: string, declarations: Record<string,string>) => `${sel} { ${Object.entries(declarations).map(([key,value]) => `${key}: ${value};`).join(' ')} }`;
-  // MIG-B6-15 (FEAT-008): a plain `.split(',')` also splits inside
+  // A plain `.split(',')` also splits inside
   // functional pseudo-classes (`:is(.x, .y)`, `:where(...)`, `:not(...)`,
   // `:has(...)`) since they contain commas of their own — `.btn:is(.x, .y)`
   // became the two bogus selectors `.btn:is(.x` and `.y)`, and appending a

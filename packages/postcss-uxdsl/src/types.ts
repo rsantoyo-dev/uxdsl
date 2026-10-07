@@ -1,4 +1,4 @@
-// MIG-B6-27 (FEAT-008): the public type surface for `uxdsl.config.cjs`,
+// The public type surface for `uxdsl.config.cjs`,
 // `uxdsl.theme.json` and the plugin's own options.
 //
 // Typos are made while *writing* configuration, so that is where they have to

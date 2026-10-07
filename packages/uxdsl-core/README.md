@@ -138,12 +138,14 @@ naming what to write instead — never text the browser would silently discard:
 | an undefined `$x`, or `$x` where the variables plugin could not resolve it | `UXD_SCSS_UNSUPPORTED` (or the plugin's own located error) | declare it before its use |
 | Sass functions: `darken()`, `lighten()`, `mix()`, `map-get()`, `nth()`, `percentage()`, `unquote()`, `str-*()`, `math.*`, `map.*`, `color.*`, Sass's `if(a, b, c)`, `rgba($color, .5)` | `UXD_SCSS_UNSUPPORTED` | a Palette variant or alpha (`palette(primary, 0.5)`), `color-mix()`, `rgb(from … / .5)`, `calc()`, the value itself |
 | arithmetic outside `calc()`: `10px * 2`, `1rem + 2px`, `$a + $b`, `10px / 2`, `"a" + "b"` | `UXD_SCSS_UNSUPPORTED` | `calc(10px * 2)` (a slash between two plain numbers or two lengths — `aspect-ratio: 16 / 9`, `border-radius: 10px / 20px` — is CSS and stays) |
-| an `@include` with unbalanced parentheses | `UXD_INCLUDE_ARGUMENT` | balance them |
+| an `@include` whose argument list does not balance, or has text after it (`@include pad(1px) 2px;`) | `UXD_INCLUDE_ARGUMENT` | `@include name(arg, arg)` |
 
 `test/scss-subset.test.js` pins all of this with the 110-case matrix of the
 2026-09-29 audit: every case either compiles to the exact CSS recorded there —
 valid CSS, with no Sass construct left in it — or fails with the recorded
-error. There is no third outcome.
+error. There is no third outcome. These codes, and `UXD_IMPORT_CYCLE` for
+`.uxdsl` files that import each other, are in `postcss-uxdsl`'s
+`DIAGNOSTIC_CATALOG` with the rest, each with its meaning and fix.
 
 ### What this package no longer exports
 

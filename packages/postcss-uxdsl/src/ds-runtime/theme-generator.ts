@@ -21,7 +21,7 @@ import { validateTheme, themeValidationError } from './theme-validate';
  * directly; anything else goes through `generateThemeCss`.
  */
 export function renderThemeCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
-  // MIG-B6-29 phase 4: the same shared encoder the PostCSS plugin uses, so a
+  // The same shared encoder the PostCSS plugin uses, so a
   // runtime/SSR consumer of this function gets the identical `@import` a
   // build-time compile of the same theme would. `@import` rules must lead
   // the stylesheet, before any other rule.
@@ -40,7 +40,7 @@ export function renderThemeCss(theme: Record<string, any>, breakpoints: Breakpoi
   return cssContent;
 }
 
-/** MIG-B2-02: omitted/partial themes resolve against `DEFAULT_THEME`
+/** Omitted/partial themes resolve against `DEFAULT_THEME`
  * before generating or validating — `generateThemeCss()` with no
  * arguments at all now produces valid CSS instead of an empty string.
  *

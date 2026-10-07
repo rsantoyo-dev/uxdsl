@@ -515,6 +515,9 @@ Surfaces own the container composition. HTML/application code own interaction.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
   focusvisible, disabled, selected. Defaults supply hover and selected only.
+  `hover` and `active` exclude a disabled control (`:disabled`,
+  `[aria-disabled="true"]`) without raising specificity, so a disabled button
+  keeps its disabled look under the pointer.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
   Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
@@ -770,6 +773,12 @@ This is an architectural rule, not a claim that every legacy default or token
 family is already unified. Compiler success does not guarantee every reference,
 CSS value or accessibility requirement was validated. Inspect actual output.
 
+
+Every `UXD_*` code is in `DIAGNOSTIC_CATALOG` (`postcss-uxdsl`,
+`postcss-uxdsl/ds-runtime`) with its meaning and fix; read the fix there
+rather than guessing from the message, and add a new code to the catalog (with
+a test that provokes it) before throwing it — `diagnostic()` refuses an
+uncatalogued one.
 
 The active engine ownership and verification contract is documented in
 `docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective

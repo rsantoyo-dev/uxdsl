@@ -9,6 +9,60 @@ for a narrative migration guide covering the same ground.
 
 ## 0.5.0-beta.7 — unreleased
 
+Stability plan, phase 3 (5): the diagnostics catalog, the compiler split into
+named steps, and disabled controls that do not react to the pointer (audit
+L21; handoff 2026-10-07 §3.1).
+
+### Visual changes
+
+- **A disabled Button or Input no longer changes on hover or press.** The
+  `hover` and `active` state rules used to be plain `:hover`/`:active`, so a
+  control that was `:disabled` or `[aria-disabled="true"]` still took its
+  hover colors under its dimming. They are now
+  `:hover:not(:where(:disabled, [aria-disabled="true"]))` (and `:active…`;
+  Inputs have no `active` state). `:where()` keeps the exclusion out of the
+  specificity, so an author's own `.btn:hover { … }` after the directive
+  overrides the generated rule exactly as before. `NOT_DISABLED` is exported
+  from `postcss-uxdsl/ds-runtime` (via `buttons`) for tools that compose the
+  same selectors. Pinned by `test/control-disabled-states.test.js`.
+
+### Added
+
+- **`DIAGNOSTIC_CATALOG`** — the frozen catalog of every `UXD_*` code the
+  compiler, the theme validator and engines, the browser runtime and
+  `uxdsl-core` can produce, each with one line of meaning, one line of fix and
+  its owner (`compiler`, `theme`, `runtime`, `core`). Exported from
+  `postcss-uxdsl` (on the plugin function) and `postcss-uxdsl/ds-runtime`
+  (with `DIAGNOSTIC_CODES`). `diagnostic()` refuses a code the catalog does not
+  list. `test/diagnostics-catalog.test.js` keeps it exact: every code the
+  sources (this package and `uxdsl-core`) can produce is in it, every entry is
+  produced somewhere, and every entry is provoked by a test
+  (`test/diagnostics-coverage.test.js` provokes the engine codes through
+  their public functions). The playground's `/docs/diagnostics` page renders
+  the catalog itself — all 106 codes, grouped by owner — next to the captured
+  real errors.
+
+### Changed
+
+- **`Once()` is a sequence of named steps** over one per-compilation object
+  (`validateOptions → emitTheme → expandDirectives → resolveVariables →
+  expandResponsive → rejectLeftoverDirectives → checkReferences`); nothing is
+  stored on the PostCSS root or the plugin instance
+  (`test/compiler-structure.test.js`). No output changes.
+- The sources describe behavior, not history: story-ID tags (`MIG-…`,
+  `FEAT-…`) are gone from `src/**` of `postcss-uxdsl` and `uxdsl-core`
+  (this CHANGELOG has the history).
+- `compilePresetRules` takes its family's code prefix explicitly (no generic
+  `UXD_PRESET_*` default), and the typography engine no longer runs a name
+  registry: with property-named suffixes no two role/field pairs can produce
+  the same variable.
+- `UXD_INCLUDE_ARGUMENT` says "has text after its argument list" for
+  `@include pad(1px) 2px;` instead of calling it unbalanced.
+
+Codes: added `UXD_IMPORT_CYCLE` to the catalog (`uxdsl-core` already threw
+it); removed `UXD_TYPO_NAME_COLLISION` (unreachable) and the never-produced
+`UXD_PRESET_*` defaults.
+
 Stability plan, phase 3 (4): no silent output (audit findings L1, L2, L3, L18,
 L19 and §3.2, decision DE-2).
 

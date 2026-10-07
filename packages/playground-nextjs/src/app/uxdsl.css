@@ -448,7 +448,7 @@ input[type="range"]::-moz-range-thumb:hover {
     border-color: var(--uxdsl__palette__action-disabled);
   }
 }
-.ai-submit-btn:hover { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+.ai-submit-btn:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-primary-hover-color, var(--uxdsl__button__flat-hover-color)); }
 .ai-submit-btn.is-selected, .ai-submit-btn[aria-pressed="true"], .ai-submit-btn[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-primary-selected-color, var(--uxdsl__button__flat-selected-color)); }
 .ai-response {
   margin-top: var(--uxdsl__space__4);
@@ -829,11 +829,11 @@ input[type="range"]::-moz-range-thumb:hover {
   max-width: 100%;
   overflow-wrap: anywhere;
 }
-.cap-button:hover { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.cap-button:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-primary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-primary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
 .cap-button.is-selected, .cap-button[aria-pressed="true"], .cap-button[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-primary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-primary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-primary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
 .cap-button--reset { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
 }
-.cap-button--reset:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.cap-button--reset:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
 .cap-button--reset.is-selected, .cap-button--reset[aria-pressed="true"], .cap-button--reset[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 .cap-steps {
   display: grid;
@@ -2343,7 +2343,7 @@ input[type="range"]::-moz-range-thumb:hover {
   .density-card__edit-btn { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
     white-space: nowrap;
   }
-.density-card__edit-btn:hover { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.density-card__edit-btn:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
 .density-card__edit-btn.is-selected, .density-card__edit-btn[aria-pressed="true"], .density-card__edit-btn[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-secondary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-secondary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-secondary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
 
   .density-metric-item {
@@ -3234,7 +3234,7 @@ input[type="range"]::-moz-range-thumb:hover {
     justify-content: center;
     padding: var(--uxdsl__density__3);
   }
-.prod-btn-primary:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.prod-btn-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
 .prod-btn-primary.is-selected, .prod-btn-primary[aria-pressed="true"], .prod-btn-primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 
   .prod-btn-secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__secondary-main); border: 1px solid var(--uxdsl__palette__secondary-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
@@ -3242,7 +3242,7 @@ input[type="range"]::-moz-range-thumb:hover {
     justify-content: center;
     padding: var(--uxdsl__density__3);
   }
-.prod-btn-secondary:hover { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.prod-btn-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-secondary-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-secondary-hover-border, var(--uxdsl__button__outlined-hover-border)); }
 .prod-btn-secondary.is-selected, .prod-btn-secondary[aria-pressed="true"], .prod-btn-secondary[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-secondary-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-secondary-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-secondary-selected-border, var(--uxdsl__button__outlined-selected-border)); }
 
   .prod-code-block {
@@ -5854,7 +5854,7 @@ input[type="range"]::-moz-range-thumb:hover {
     opacity: 1;
   }
 }
-.home-demos__toggle:hover { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
+.home-demos__toggle:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__flat-tone-secondary-hover-color, var(--uxdsl__button__flat-hover-color)); }
 .home-demos__toggle.is-selected, .home-demos__toggle[aria-pressed="true"], .home-demos__toggle[aria-selected="true"] { color: var(--uxdsl__button__flat-tone-secondary-selected-color, var(--uxdsl__button__flat-selected-color)); }
 /* MIG-B7-17 phase B (4): was inline style={{}} on DocsLink in HomeInteractiveDemos.tsx. */
 a.docs-link {
@@ -7990,14 +7990,14 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
     width: 100%;
     justify-content: center;
   }
-.btn-primary:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.btn-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
 .btn-primary.is-selected, .btn-primary[aria-pressed="true"], .btn-primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 
   .btn-secondary { padding: var(--uxdsl__surface__outlined-padding); border-radius: var(--uxdsl__surface__outlined-radius); background: transparent; color: var(--uxdsl__palette__neutral-main); border: 1px solid var(--uxdsl__palette__neutral-main); box-shadow: var(--uxdsl__surface__outlined-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__neutral-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__neutral-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__neutral-contrast);
     width: 100%;
     justify-content: center;
   }
-.btn-secondary:hover { color: var(--uxdsl__button__outlined-tone-neutral-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-neutral-hover-border, var(--uxdsl__button__outlined-hover-border)); }
+.btn-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { color: var(--uxdsl__button__outlined-tone-neutral-hover-color, var(--uxdsl__button__outlined-hover-color)); border: var(--uxdsl__button__outlined-tone-neutral-hover-border, var(--uxdsl__button__outlined-hover-border)); }
 .btn-secondary.is-selected, .btn-secondary[aria-pressed="true"], .btn-secondary[aria-selected="true"] { background: var(--uxdsl__button__outlined-tone-neutral-selected-bg, var(--uxdsl__button__outlined-selected-bg)); color: var(--uxdsl__button__outlined-tone-neutral-selected-color, var(--uxdsl__button__outlined-selected-color)); border: var(--uxdsl__button__outlined-tone-neutral-selected-border, var(--uxdsl__button__outlined-selected-border)); }
 
   .demo-code-block {
@@ -8735,7 +8735,7 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
       box-shadow: var(--uxdsl__shadow__4);
     }
   }
-.get-started-btn:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.get-started-btn:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
 .get-started-btn.is-selected, .get-started-btn[aria-pressed="true"], .get-started-btn[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
 
   .intro-section {

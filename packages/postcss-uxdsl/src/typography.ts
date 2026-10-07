@@ -1,5 +1,5 @@
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
-import { buildVarName, NameRegistry } from './naming';
+import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
 
 /** JSON fields and the CSS property each one is: the public variable suffix
@@ -55,18 +55,14 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
     }
   }
   const rules = ordered.map(([breakpoint, width], index) => ({ breakpoint, minWidth: index ? width : null as number | null, values: {} as Record<string, string> }));
-  // MIG-08: every role shares one "typography" family instead of the role
-  // itself being the family, so the emitted name is
-  // `--uxdsl__typography__<role>-<field>` (e.g. `--uxdsl__typography__h1-size`),
-  // matching every other family's `--uxdsl__<family>__<key>` shape. A role
-  // like "h1-weight" combined with field "size" would still concatenate to
-  // the same name as role "h1" field "weight-size" — the registry catches
-  // that instead of one silently overwriting the other.
-  const names = new NameRegistry('UXD_TYPO');
+  // Every role shares one "typography" family, so the emitted name is
+  // `--uxdsl__typography__<role>-<property>` (`--uxdsl__typography__h1-font-size`).
+  // Two role/field pairs cannot produce the same name: a role is
+  // `^[a-z][a-z0-9-]*$` and no property name is a dash-suffix of another.
   for (const [role, style] of Object.entries(details)) {
     const merged = role === 'default' ? style : { ...details.default, ...style };
     for (const [field, expression] of Object.entries(merged)) {
-      const varName = names.claim(buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`), `${role}.${field}`);
+      const varName = buildVarName('typography', `${role}-${TYPOGRAPHY_PROPERTIES[field as keyof TypographyStyle]}`);
       let previous: string | undefined;
       ordered.forEach(([bp], index) => {
         const value = typographyValueToCss(resolveResponsiveValue(expression!, bp, breakpoints), context);

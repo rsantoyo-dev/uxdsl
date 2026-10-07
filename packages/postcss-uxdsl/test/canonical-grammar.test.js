@@ -133,7 +133,7 @@ test('directives: one grammar, @ds-x(role [tone] [size] [radius(k)] [shadow(k)])
   assert.match(CANONICAL.surface, /padding: var\(--uxdsl__density__2\)/);
   assert.match(CANONICAL.surface, /border-radius: 9999px/);
   assert.match(CANONICAL.surface, /box-shadow: var\(--uxdsl__shadow__1\)/);
-  assert.match(CANONICAL.button, /\.a:hover \{/);
+  assert.match(CANONICAL.button, /\.a:hover:not\(:where\(:disabled, \[aria-disabled="true"\]\)\) \{/);
   assert.match(CANONICAL.input, /\.a::placeholder \{/);
   assert.match(CANONICAL.typo, /font-size: var\(--uxdsl__typography__h1-/);
   // Whitespace inside the parentheses, and letter case, do not matter.
