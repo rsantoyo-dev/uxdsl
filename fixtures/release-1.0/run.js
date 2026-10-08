@@ -794,10 +794,14 @@ async function main() {
 
   // --- Measurements, reported rather than judged ----------------------------
   console.log('\nMeasured (reported, not a pass/fail):');
-  const audit = spawnSync('npm', ['audit', '--omit=dev', '--json'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
+  // All dependencies: the documented install is `npm i -D uxdsl`, so
+  // --omit=dev would leave out uxdsl itself and report a clean zero.
+  const audit = spawnSync('npm', ['audit', '--json'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
   try {
-    const counts = JSON.parse(audit.stdout).metadata.vulnerabilities;
-    console.log(`  npm audit (production): ${Object.entries(counts).map(([level, n]) => `${n} ${level}`).join(', ')}`);
+    const report = JSON.parse(audit.stdout);
+    const counts = report.metadata.vulnerabilities;
+    const chains = Object.entries(report.vulnerabilities || {}).map(([name, v]) => `${name} (${v.severity})`).join(', ');
+    console.log(`  npm audit (npm i -D uxdsl): ${Object.entries(counts).map(([level, n]) => `${n} ${level}`).join(', ')}${chains ? ` — ${chains}` : ''}`);
   } catch {
     console.log(`  npm audit: unavailable (${(audit.stderr || '').trim().split('\n')[0] || `exit ${audit.status}`})`);
   }
