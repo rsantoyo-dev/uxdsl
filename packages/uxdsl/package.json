@@ -1,6 +1,6 @@
 {
   "name": "uxdsl",
-  "version": "1.0.0-dev",
+  "version": "0.5.0-beta.7",
   "description": "UXDSL: a CSS dialect where breakpoints belong to the theme, not to components. Compiler (PostCSS plugin), CLI, Vite plugin, Webpack loader and browser theme runtime in one package.",
   "keywords": [
     "uxdsl",

@@ -1,8 +1,8 @@
 'use strict';
 
 // Stability phase 4: the five former package names get one last version,
-// 0.6.0, that depends on `uxdsl` and re-exports it. Prepared here, published by
-// the owner (docs/releases/uxdsl-package-move.md).
+// 0.5.0-beta.7, that depends on `uxdsl` and re-exports it. Prepared here, published by
+// the owner (docs/releases/0.5.0-beta.7.md).
 //
 // Each shim is installed the way npm would lay it out — its files copied into a
 // node_modules next to the built `uxdsl` — and required from outside. It must
@@ -68,12 +68,12 @@ function install() {
 
 const surface = (mod) => (typeof mod === 'function' || (mod && typeof mod === 'object') ? Object.keys(mod).filter((key) => key !== '__esModule').sort() : []);
 
-test('phase 4: each shim is 0.6.0, depends on uxdsl ^1.0.0-rc.1, keeps the postcss peer and ships only re-exports', () => {
+test('phase 4: each shim is 0.5.0-beta.7, depends on exactly uxdsl 0.5.0-beta.7, keeps the postcss peer and ships only re-exports', () => {
   for (const shim of SHIMS) {
     const pkg = JSON.parse(fs.readFileSync(path.join(HERE, shim, 'package.json'), 'utf8'));
     assert.equal(pkg.name, shim);
-    assert.equal(pkg.version, '0.6.0');
-    assert.deepEqual(pkg.dependencies, { uxdsl: '^1.0.0-rc.1' });
+    assert.equal(pkg.version, '0.5.0-beta.7');
+    assert.deepEqual(pkg.dependencies, { uxdsl: '0.5.0-beta.7' });
     assert.equal(pkg.peerDependencies.postcss, '^8.4.31');
     assert.equal(pkg.publishConfig.access, 'public');
     for (const file of pkg.files) {

@@ -2,7 +2,7 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## One package: `uxdsl` (unreleased)
+## One package: `uxdsl` (0.5.0-beta.7)
 
 ```bash
 npm i -D uxdsl
@@ -15,11 +15,11 @@ theme runtime are one package, [`uxdsl`](packages/uxdsl/README.md), with one
 entry point per job: `uxdsl` (`compile()`), `uxdsl/postcss`, `uxdsl/vite`,
 `uxdsl/webpack`, `uxdsl/runtime`, `uxdsl/theme`, `uxdsl/language`,
 `uxdsl/config` and `uxdsl/engine` (tooling, exempt from semver). It ships in
-`1.0.0-rc.1`; until then the published release is `0.5.0-beta.6`, as five
-packages. The old → new import table is in the
+`0.5.0-beta.7`, its first release under that name; `0.5.0-beta.6` and earlier
+were published as five packages. The old → new import table is in the
 [CHANGELOG](packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1);
-the five former names get a last, deprecated version that re-exports `uxdsl`
-([publish steps](docs/releases/uxdsl-package-move.md)). `npm run verify:1.0`
+the five former names are deprecated in favour of `uxdsl`
+([release record and publish steps](docs/releases/0.5.0-beta.7.md)). `npm run verify:1.0`
 is the release gate: one tarball, installed the documented way, plus real
 Vite, Webpack, Next.js and Chrome runs.
 

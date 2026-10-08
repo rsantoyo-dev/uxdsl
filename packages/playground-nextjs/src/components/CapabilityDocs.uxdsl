@@ -157,6 +157,7 @@
 /* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so its layout row is
    the md() rule at work. It scrolls sideways on a narrow screen. */
 .cap-frame-wrap {
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid palette(neutral.light);
   border-radius: radius(2);
@@ -221,6 +222,9 @@
 
 .cap-run {
   display: grid;
+  /* One column that cannot grow past the figure: a captured terminal line scrolls
+     inside its <pre> instead of widening the caption, the facts and the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: space(2);
   margin: 0 0 density(4);
   min-width: 0;
@@ -303,8 +307,15 @@
 
 .cap-transcript {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: density(2);
   padding-inline-start: space(6);
+}
+
+/* A grid item defaults to min-width: auto and would grow to its longest captured line;
+   the step stays in the column and its terminal scrolls inside itself. */
+.cap-transcript > li {
+  min-width: 0;
 }
 
 .cap-alias-box--name {

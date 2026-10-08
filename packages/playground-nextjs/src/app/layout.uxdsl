@@ -51,3 +51,21 @@ html, body {
 .layout__content {
   min-width: 0;
 }
+
+/* Content never widens the page. A code block scrolls inside itself; inline code
+   breaks anywhere rather than pushing the line out; images, video and tables
+   shrink to the column. Iframes are left alone: a demo frame's width is its
+   viewport, so each frame's container owns its own scrolling. The browser
+   walk fails on any horizontal overflow. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+:not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+img, video, table {
+  max-width: 100%;
+}

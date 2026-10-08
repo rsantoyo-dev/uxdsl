@@ -1,6 +1,6 @@
 {
   "name": "uxdsl-cli",
-  "version": "0.6.0",
+  "version": "0.5.0-beta.7",
   "description": "Deprecated: the `uxdsl` command is now provided by the `uxdsl` package.",
   "license": "MIT",
   "author": "Ricardo Santoyo <rsantoyo-dev>",
@@ -20,7 +20,7 @@
     "bin"
   ],
   "dependencies": {
-    "uxdsl": "^1.0.0-rc.1"
+    "uxdsl": "0.5.0-beta.7"
   },
   "peerDependencies": {
     "postcss": "^8.4.31"

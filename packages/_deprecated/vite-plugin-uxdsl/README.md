@@ -1,7 +1,7 @@
 # vite-plugin-uxdsl (deprecated)
 
 `vite-plugin-uxdsl` is part of [`uxdsl`](https://www.npmjs.com/package/uxdsl) now. This
-last version, 0.6.0, depends on `uxdsl` and only re-exports it, so an existing
+version, 0.5.0-beta.7, depends on `uxdsl` and only re-exports it, so an existing
 install keeps working while you move:
 
 ```bash

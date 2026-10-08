@@ -130,6 +130,21 @@ html, body {
 .layout__content {
   min-width: 0;
 }
+/* Content never widens the page. A code block scrolls inside itself; inline code
+   breaks anywhere rather than pushing the line out; images, video and tables
+   shrink to the column. Iframes are left alone: a demo frame's width is its
+   viewport, so each frame's container owns its own scrolling. The browser
+   walk fails on any horizontal overflow. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+:not(pre) > code {
+  overflow-wrap: anywhere;
+}
+img, video, table {
+  max-width: 100%;
+}
 /* Minimal app styles using only DS tokens + packs */
 /* Shared Russian Doll Visualization Styles */
 .concentric-wrapper {
@@ -986,6 +1001,7 @@ input[type="range"]::-moz-range-thumb:hover {
 /* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so its layout row is
    the md() rule at work. It scrolls sideways on a narrow screen. */
 .cap-frame-wrap {
+  max-width: 100%;
   overflow-x: auto;
   border: 1px solid var(--uxdsl__palette__neutral-light);
   border-radius: var(--uxdsl__radius__2);
@@ -1063,6 +1079,9 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 .cap-run {
   display: grid;
+  /* One column that cannot grow past the figure: a captured terminal line scrolls
+     inside its <pre> instead of widening the caption, the facts and the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--uxdsl__space__2);
   margin: 0 0 var(--uxdsl__density__4);
   min-width: 0;
@@ -1147,8 +1166,14 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 .cap-transcript {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--uxdsl__density__2);
   padding-inline-start: var(--uxdsl__space__6);
+}
+/* A grid item defaults to min-width: auto and would grow to its longest captured line;
+   the step stays in the column and its terminal scrolls inside itself. */
+.cap-transcript > li {
+  min-width: 0;
 }
 .cap-alias-box--name {
   box-shadow: var(--uxdsl__shadow__2);

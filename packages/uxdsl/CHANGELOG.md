@@ -9,11 +9,13 @@ that have not been published to npm — the package version stays at whatever
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md)
 for a narrative migration guide covering the same ground.
 
-## 1.0.0-rc.1 — unreleased
+## 0.5.0-beta.7 — unreleased
 
-Everything in this section has been on `main` since 0.5.0-beta.6 and ships in
-the first release of the one package. It was collected under
-"0.5.0-beta.7 — unreleased" until stability phase 4; no beta.7 was published.
+The first release of the one package, `uxdsl`. Everything in this section has
+been on `main` since 0.5.0-beta.6: FEAT-009's beta.7 stories and stability
+phases 0–5, the dependency replacements (no `braces`, no `postcss@7`) and the
+first half of phase 6 (the playground site). What is still open moves to
+0.5.0-beta.8; see `docs/releases/0.5.0-beta.7.md`.
 
 ### Package layout (stability phase 4, decision DE-1)
 
