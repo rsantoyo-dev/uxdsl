@@ -859,11 +859,15 @@ with a real viewport too.
 
 The SCSS subset `compile()` compiles (`$variables`, `@if/@else`, `@each` of a
 list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
-nesting forwarded as written) is documented exactly once, in
-`packages/uxdsl/docs/integrations/compile.md` ("The SCSS subset"); everything else Sass has
-fails as `UXD_SCSS_UNSUPPORTED` or `UXD_NESTING_INVALID` naming what to write
-instead, and `packages/uxdsl/test/core/scss-subset.test.js` pins the audit's
-110-case matrix with no silent case.
+nesting forwarded as written) is UXDSL's own implementation
+(`packages/uxdsl/src/scss-subset.ts`, no Sass and no variables plugin) and is
+documented exactly once, in `packages/uxdsl/docs/integrations/compile.md`
+("The SCSS subset"); everything else Sass has — and anything the subset cannot
+evaluate exactly, such as `@else if`, `and`/`or`/`not` or an undefined
+`$variable` — fails as `UXD_SCSS_UNSUPPORTED`, `UXD_INCLUDE_ARGUMENT` or
+`UXD_NESTING_INVALID` naming what to write instead.
+`packages/uxdsl/test/core/scss-subset.test.js` pins the audit's 110-case
+matrix with no silent case, and `scss-expansion.test.js` the subset's rules.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.

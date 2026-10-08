@@ -146,8 +146,8 @@ test('MIG-B6-18: a real "//" line comment (SCSS-style, outside any URL) is still
 });
 
 // --- $var responsive expansion, matching MIG-B6-14's plugin-alone fix,
-// now via the full pipeline (postcss-advanced-variables resolves $vars
-// before postcss-uxdsl ever runs, so this was never actually broken at
+// now via the full pipeline (the SCSS subset's expansion resolves $vars
+// before the plugin ever runs, so this was never actually broken at
 // this layer — confirmed here so a future regression at either layer is
 // caught). ---
 

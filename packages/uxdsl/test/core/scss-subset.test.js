@@ -10,10 +10,12 @@
 // `&__item`, `darken()`, `10px * 2`, `@extend`, `!global`, `@while`, …);
 // this suite fails if any case ever does again.
 //
-// Legend of the error column: a `UXD_*` code is one of ours (the
-// scss-subset guard, the include-argument pre-pass or the compiler);
-// `postcss-advanced-variables` / `postcss-import` is a located error of that
-// plugin, kept because it is an error, not output.
+// Legend of the error column: a `UXD_*` code is one of ours (the subset's
+// expansion, its guard or the compiler); `postcss-import` is a located error
+// of that plugin, kept because it is an error, not output. Until the subset
+// was UXDSL's own implementation, seven cases failed with
+// `postcss-advanced-variables`' own error (an unresolved variable it tripped
+// over); they are `UXD_SCSS_UNSUPPORTED` now, naming the construct.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -77,7 +79,7 @@ const CASES = [
   ["nest-11-directive-in-nested", ".a { color: red; &:hover { @ds-surface(contained); } }", { css: ".a { color: red; &:hover { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); } }" }],
   ["nest-12-directive-parent-with-amp", ".a { @ds-surface(contained); &:hover { color: blue; } }", { css: ".a { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); &:hover { color: blue; } }" }],
   ["mixin-01-default-arg", "@mixin m($a: 1px) { width: $a; }\n.a { @include m; }\n.b { @include m(2px); }", { css: ".a { width: 1px; } .b { width: 2px; }" }],
-  ["mixin-02-keyword-arg", "@mixin m($a: 1px, $b: 2px) { width: $a; height: $b; }\n.a { @include m($b: 9px); }", { error: "postcss-advanced-variables" }],
+  ["mixin-02-keyword-arg", "@mixin m($a: 1px, $b: 2px) { width: $a; height: $b; }\n.a { @include m($b: 9px); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["mixin-03-content", "@mixin mq { @media (min-width: 600px) { @content; } }\n.a { @include mq { color: red; } }", { css: ".a { @media (min-width: 600px) { color: red; } }" }],
   ["mixin-04-uxdsl-fn-param", "@mixin pad($p) { padding: $p; }\n.a { @include pad(density(2)); }", { css: ".a { padding: var(--uxdsl__density__2); }" }],
   ["mixin-05-responsive-arg", "@mixin pad($p) { padding: $p; }\n.a { @include pad(xs(1px) md(2px)); }", { css: ".a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }" }],
@@ -85,14 +87,14 @@ const CASES = [
   ["mixin-07-typo-in-content", "@mixin wrap { .inner { @content; } }\n.a { @include wrap { @ds-typo(h1); } }", { css: ".a { .inner { font-family: var(--uxdsl__typography__h1-font-family); font-size: var(--uxdsl__typography__h1-font-size); line-height: var(--uxdsl__typography__h1-line-height); font-weight: var(--uxdsl__typography__h1-font-weight); letter-spacing: var(--uxdsl__typography__h1-letter-spacing); margin-block-start: var(--uxdsl__typography__h1-margin-block-start); margin-block-end: var(--uxdsl__typography__h1-margin-block-end); } }" }],
   ["mixin-08-param-as-directive-arg", "@mixin card($tone) { .card-#{$tone} { @ds-surface($tone, 1); background: palette(#{$tone}-main); } }\n@include card(primary);", { error: "UXD_SURFACE_ARGUMENT" }],
   ["mixin-09-nested-selector-in-mixin", "@mixin hov { &:hover { color: red; } }\n.a { @include hov; }", { css: ".a { &:hover { color: red; } }" }],
-  ["mixin-10-variadic", "@mixin sh($shadows...) { box-shadow: $shadows; }\n.a { @include sh(0 1px 2px red, 0 2px 4px blue); }", { error: "postcss-advanced-variables" }],
+  ["mixin-10-variadic", "@mixin sh($shadows...) { box-shadow: $shadows; }\n.a { @include sh(0 1px 2px red, 0 2px 4px blue); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["mixin-11-workaround-var", "@mixin pad($p) { padding: $p; }\n$d: density(2);\n.a { @include pad($d); }", { css: ".a { padding: var(--uxdsl__density__2); }" }],
   ["mixin-12-workaround-interp", "@mixin pad($p) { padding: $p; }\n.a { @include pad(#{density(2)}); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["mixin-13-workaround-responsive-var", "@mixin pad($p) { padding: $p; }\n$r: xs(1px) md(2px);\n.a { @include pad($r); }", { css: ".a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }" }],
   ["mixin-14-css-fn-arg-with-comma", "@mixin box($w, $h) { width: $w; height: $h; }\n.a { @include box(rgba(0,0,0,.5), 2px); }", { css: ".a { width: rgba(0,0,0,.5); height: 2px; }", authorValue: true }],
   ["mixin-15-calc-arg", "@mixin m($a) { width: $a; }\n.a { @include m(calc(100% - 2px)); }", { css: ".a { width: calc(100% - 2px); }" }],
   ["mixin-16-nested-include", "@mixin a { color: red; }\n@mixin b { @include a; border: 0; }\n.x { @include b; }", { css: ".x { color: red; border: 0; }" }],
-  ["fn-01-custom-function", "@function double($n) { @return $n * 2; }\n.a { width: double(2px); }", { error: "postcss-advanced-variables" }],
+  ["fn-01-custom-function", "@function double($n) { @return $n * 2; }\n.a { width: double(2px); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["fn-02-darken", ".a { color: darken(#3b82f6, 10%); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["fn-03-lighten", ".a { color: lighten(#3b82f6, 10%); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["fn-04-rgba-var", "$c: #000;\n.a { color: rgba($c, .5); }", { error: "UXD_SCSS_UNSUPPORTED" }],
@@ -102,11 +104,11 @@ const CASES = [
   ["fn-08-unquote", "$s: \"foo\";\n.a { content: unquote($s); font-family: unquote(\"Inter\"); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["fn-09-string-fns", ".a { content: str-slice(\"hello\", 1, 2); width: str-length(\"abc\"); font-family: to-upper-case(\"inter\"); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["fn-10-map-module", "@use \"sass:map\";\n$m: (a: 1px);\n.a { width: map.get($m, a); }", { error: "UXD_SCSS_UNSUPPORTED" }],
-  ["fn-11-color-adjust", "@use \"sass:color\";\n.a { color: color.adjust(#3b82f6, $lightness: -10%); }", { error: "postcss-advanced-variables" }],
+  ["fn-11-color-adjust", "@use \"sass:color\";\n.a { color: color.adjust(#3b82f6, $lightness: -10%); }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["ctrl-01-if-else", "$t: ocean;\n.a { @if $t == ocean { color: blue; } @else { color: black; } }", { css: ".a { color: blue }" }],
-  ["ctrl-02-else-if", "$t: 2;\n.a { @if $t == 1 { color: red; } @else if $t == 2 { color: green; } @else { color: blue; } }", { error: "postcss-advanced-variables" }],
+  ["ctrl-02-else-if", "$t: 2;\n.a { @if $t == 1 { color: red; } @else if $t == 2 { color: green; } @else { color: blue; } }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["ctrl-03-each-list", "@each $n in (a, b) { .x-#{$n} { color: red; } }", { css: ".x-a { color: red; } .x-b { color: red; }" }],
-  ["ctrl-04-each-map", "@each $k, $v in (a: 1px, b: 2px) { .x-#{$k} { width: $v; } }", { error: "postcss-advanced-variables" }],
+  ["ctrl-04-each-map", "@each $k, $v in (a: 1px, b: 2px) { .x-#{$k} { width: $v; } }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["ctrl-05-for-through", "@for $i from 1 through 3 { .w-#{$i} { width: #{$i}0%; } }", { css: ".w-1 { width: 10%; } .w-2 { width: 20%; } .w-3 { width: 30%; }" }],
   ["ctrl-06-while", "$i: 1;\n@while $i < 3 { .w-#{$i} { width: 1px; } $i: $i + 1; }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["ctrl-07-each-var-list", "$tones: primary, secondary;\n@each $t in $tones { .t-#{$t} { color: palette(#{$t}.main); } }", { css: ".t-primary { color: var(--uxdsl__palette__primary-main); } .t-secondary { color: var(--uxdsl__palette__secondary-main); }" }],
@@ -119,7 +121,7 @@ const CASES = [
   ["import-03-uxdsl-file", "@import \"./partial-vars.uxdsl\";\n.a { width: $from-uxdsl; }", { css: ".from-uxdsl { color: blue; } .a { width: 7px; }" }],
   ["import-04-css-file", "@import \"./plain.css\";\n.a { color: red; }", { css: ".plain { color: green; } .a { color: red; }" }],
   ["import-05-node-modules", "@import \"postcss-uxdsl/theme/default-colors.css\";\n.a { color: red; }", { error: "postcss-import" }],
-  ["import-06-use-partial", "@use \"./partial\" as p;\n.a { width: p.$from-partial; }", { error: "postcss-advanced-variables" }],
+  ["import-06-use-partial", "@use \"./partial\" as p;\n.a { width: p.$from-partial; }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["import-07-forward", "@forward \"./partial\";\n.a { color: red; }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["import-08-use-sass-builtin-only", "@use \"sass:math\";\n.a { color: red; }", { error: "UXD_SCSS_UNSUPPORTED" }],
   ["comment-01-line", "// top line\n.a { color: red; // trailing\n}", { css: ".a { color: red; }" }],

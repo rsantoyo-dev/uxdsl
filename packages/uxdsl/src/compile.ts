@@ -3,8 +3,8 @@
  *
  * This is the one shared `compile()` the CLI, and
  * Vite/Webpack adapters all use — the exact same pipeline
- * (`postcss-scss` syntax, `postcss-import` with a shared resolver,
- * `postcss-advanced-variables`, the UXDSL plugin) instead of three
+ * (`postcss-scss` syntax, `postcss-import` with a shared resolver, the
+ * SCSS subset of ./scss-subset.ts, the UXDSL plugin) instead of three
  * independently-drifted compilers for the same language. The previous
  * version of this file stripped `//` comments and inlined `@import`s with
  * its own line-by-line string manipulation, which corrupted valid CSS
@@ -21,15 +21,13 @@ import postcss, { Result, Warning } from 'postcss';
 const postcssScss = require('postcss-scss');
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssImport = require('postcss-import');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const postcssAdvancedVariables = require('postcss-advanced-variables');
 // The plugin is part of this package: the pipeline and the plugin can never
 // come from two different installs.
 import uxdslPlugin = require('./plugin');
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const postcssImportDefaultResolveId = require('postcss-import/lib/resolve-id');
-import { includeArguments, sassLeftoverGuard } from './scss-subset';
+import { scssSubset, sassLeftoverGuard } from './scss-subset';
 
 /** The one import resolver of `compile()`. Supports a `~package/file.uxdsl`-style bare specifier resolved
  * through Node's own module resolution (so a project can import a
@@ -210,7 +208,7 @@ export interface CompileResult {
 /**
  * The one shared compilation pipeline: `postcss-scss` syntax (so native
  * SCSS-like nesting/comments parse correctly), `postcss-import` (with the
- * shared resolver) for `@import` inlining, `postcss-advanced-variables`
+ * shared resolver) for `@import` inlining, the SCSS subset (`scssSubset`)
  * for `$var` resolution — *before* the UXDSL plugin ever sees the source,
  * so a `$var` holding a responsive expression expands the same way
  * the plugin used alone does — and finally
@@ -253,14 +251,13 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   }
 
   const includeTheme = config.includeTheme !== false;
-  // The SCSS subset: `includeArguments` lets a mixin argument carry parentheses
-  // (the variables plugin splits arguments at the first one), and
-  // `sassLeftoverGuard` fails on anything Sass-only the variables plugin left
-  // behind — see ./scss-subset.ts and the README's "SCSS subset" section.
+  // The SCSS subset: `scssSubset` expands $variables, @if/@else, @each, @for,
+  // @mixin/@include and @content, and `sassLeftoverGuard` fails on anything
+  // Sass-only left after it — see ./scss-subset.ts and "The SCSS subset" in
+  // docs/integrations/compile.md.
   const plugins = [
     postcssImport(resolveImport ? { resolve: resolveImport } : {}),
-    includeArguments(),
-    postcssAdvancedVariables(),
+    scssSubset(),
     sassLeftoverGuard(),
     uxdslPlugin({
       theme: config.theme,

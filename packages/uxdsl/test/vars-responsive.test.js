@@ -6,7 +6,7 @@
 // queries — `$gap: xs(1rem) md(2rem); .a { gap: $gap; }` compiled to the
 // invalid, unexpanded `.a { gap: xs(1rem) md(2rem); }`. Substitution now
 // runs first, matching what the CLI already produces when
-// postcss-advanced-variables resolves $vars ahead of this plugin.
+// compile()'s SCSS subset resolves $vars ahead of this plugin.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');

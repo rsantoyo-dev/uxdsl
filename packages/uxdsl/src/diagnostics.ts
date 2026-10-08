@@ -113,10 +113,10 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_THEME_STRUCTURE: runtime('The patch changes what the compiler would emit (a field, state, surface or breakpoint), which custom properties cannot express.', 'Change the theme file and rebuild; apply values, not structure, at run time.'),
   UXD_THEME_PERSIST: runtime('Browser storage could not be read, written or cleared.', 'Check storage availability; the theme was still applied.'),
   // --- compile() (the SCSS subset) ---------------------------------------------
-  UXD_SCSS_UNSUPPORTED: core('A Sass construct outside the subset was left in the stylesheet: @extend, @use, a %placeholder, !global, a Sass function, interpolation around a non-variable, an unresolved $var, or arithmetic outside calc().', 'Write the CSS the message names instead; the subset is $variables, @if/@else, @each, @for, @mixin/@include, @import.'),
+  UXD_SCSS_UNSUPPORTED: core('A Sass construct outside the subset, or one the subset cannot evaluate: @extend, @use, a %placeholder, !global, a Sass function, interpolation around a non-variable, an undefined $var or mixin, @else if, and/or/not, a keyword or variadic argument, an @import inside a block, or arithmetic outside calc().', 'Write the CSS the message names instead; the subset is $variables, @if/@else, @each, @for, @mixin/@include/@content, @import at the top.'),
   UXD_NESTING_INVALID: core('A selector concatenates the parent with &-suffix, &__x or &--x, which native CSS nesting cannot express.', 'Write the full selector, e.g. .block__item.'),
   UXD_IMPORT_CYCLE: core('Two or more .uxdsl files import each other in a cycle.', 'Break the cycle; the message lists the files in order.'),
-  UXD_INCLUDE_ARGUMENT: core('An @include has unbalanced parentheses in its arguments.', 'Balance the parentheses: @include name(arg, arg).'),
+  UXD_INCLUDE_ARGUMENT: core('An @include whose arguments do not parse (unbalanced parentheses, text after the list) or do not fit the mixin (too many, a missing one, a content block the mixin has no @content for).', 'Write @include name(arg, arg) with one argument per parameter that has no default.'),
 });
 
 /** The Button/Input codes the control engine composes from one template. */

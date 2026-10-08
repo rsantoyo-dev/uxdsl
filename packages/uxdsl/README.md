@@ -1302,8 +1302,11 @@ the same number of parts at every width.
 
 The standalone plugin resolves `$variables` declared at the root of the file.
 One declared inside a rule is `UXD_VARIABLE_CONTEXT` (the SCSS subset's block
-scope is `compile()`'s, which the CLI and the adapters run), and a `$name`
-nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
+scope is `compile()`'s, which the CLI and the adapters run — UXDSL's own
+implementation of `$variables`, `@if`/`@else`, `@each`, `@for`,
+`@mixin`/`@include`/`@content`; "The SCSS subset" in the
+[compile guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/compile.md)
+lists it), and a `$name` nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
 breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
 

@@ -123,6 +123,78 @@ Differences, all at the edges:
 
 None: the watcher decides when to compile, not what.
 
+### Dependencies: the SCSS subset is UXDSL's own (no `postcss@7` in the install)
+
+The second chain, `postcss-advanced-variables@3` → `postcss@7` (no upstream
+fix), is gone with the dependency: `compile()` expands the documented SCSS
+subset itself — `scssSubset()` in `src/scss-subset.ts`, a PostCSS plugin that
+runs after `postcss-import` and before the subset's guard. It keeps the former
+plugin's tree operations (variables on the block that declares them, looked up
+through the parents; mixin bodies, `@each`/`@for` iterations and content
+blocks cloned and moved into place), so the output is the same byte for byte:
+the 69 compiling cases of the SCSS matrix (CSS and source maps), all 89
+`.uxdsl` files in the repository (with and without the theme, maps,
+dependency lists and errors), the playground's 396 KB `uxdsl.css`, and a
+300-rule benchmark. The `@include` argument pre-pass is gone: arguments are split at
+their top-level commas when the mixin is expanded. `compile()` of 300 rules
+takes the same time (median of 21: 52.7 ms plain, 51.4 ms written with the
+subset; 53.2 / 53.0 ms before).
+
+Errors that came from the former plugin are `UXD_SCSS_UNSUPPORTED` now,
+located and naming the construct: an undefined `$variable` or mixin (was
+`postcss-advanced-variables: … Could not resolve …`), and the seven matrix
+cases that tripped over one (`@include m($b: 9px)`, `$args...`, `@function`,
+`color.adjust(…, $lightness: …)`, `@else if`, `@each $k, $v`, `@use … as p`).
+The catalog entries for `UXD_SCSS_UNSUPPORTED` and `UXD_INCLUDE_ARGUMENT` say
+what they now cover. Pinned by `test/core/scss-subset.test.js` (the matrix) and
+`test/core/scss-expansion.test.js` (the rules one by one).
+
+Edge behavior that changed — each was either silent wrong output or a
+divergence from Sass, which the subset is documented to follow:
+
+- **`@if` truthiness is Sass's.** `null` is false (it was true) and `0` is
+  true (it was false); `false` is false, and `""` and `()` are true, as before.
+  A condition with no value is an error (it was false).
+- **`@if` conditions are one value or one comparison.** `and`, `or`, `not`
+  or more terms are `UXD_SCSS_UNSUPPORTED` (they always evaluated to false).
+  `($a == b)` is the comparison inside the parentheses (it was a string, so
+  always true). `<`, `<=`, `>`, `>=` compare numbers, unitless or in one unit
+  (`10px < 9px` is false; it compared the text, true); on anything else they
+  are `UXD_SCSS_UNSUPPORTED` (`a < b` compared the text).
+- **`@else`.** A comment between the `@if` block and its `@else` is allowed
+  (the `@else` was left in the output); an `@else` that follows no `@if`, and
+  `@else if` whether or not its branch runs, are `UXD_SCSS_UNSUPPORTED`.
+- **`@each`.** A list without commas is a space-separated list, as in Sass:
+  `@each $s in sm md lg` iterates three times (it iterated once, emitting
+  `.x-sm md lg`). `()` iterates zero times (it iterated once over an empty
+  value). `@each $item $index in …` (an undocumented iterator form) is
+  `UXD_SCSS_UNSUPPORTED`.
+- **`@for … to` leaves the end out**, as in Sass (`from 1 to 3` is 1, 2; it
+  was 1, 2, 3, the same as `through`). `by` and bounds that are not whole
+  numbers are `UXD_SCSS_UNSUPPORTED` (`by` was an undocumented step; a bound
+  like `a` iterated zero times).
+- **`@mixin` defaults may contain parentheses**: `$b: rgba(0, 0, 0, .5)` is
+  that color (it was truncated to `rgb`). A variadic parameter is
+  `UXD_SCSS_UNSUPPORTED` at the `@mixin`.
+- **`@include`** with more arguments than the mixin takes, without an argument
+  that has no default, or with a content block for a mixin without
+  `@content` is `UXD_INCLUDE_ARGUMENT` (extra arguments and the block were
+  dropped; a missing argument could resolve to an outer variable of the same
+  name). `@include m (1px)` — a space before the list — works (it looked for
+  a mixin whose name ended in that space). `@content(…)` and `@include … using (…)` are
+  `UXD_SCSS_UNSUPPORTED` (the arguments were ignored).
+- **`@import` inside a block, `@if`, `@each`, `@for` or `@mixin`** is
+  `UXD_SCSS_UNSUPPORTED`: CSS has no nested `@import`, and the former plugin
+  inlined it with Sass's partial resolution, a second import resolver next to
+  `postcss-import`'s. `@import` at the top of the file is unchanged.
+- **The first Sass-only at-rule is reported where it is met.** In
+  `%base { … } .a { @extend %base; }` the error names `@extend` (it named the
+  `%base` selector); same code.
+
+### Visual changes
+
+None: every stylesheet within the subset compiles to the same bytes.
+
 ### The browser runtime without PostCSS (stability phase 4, audit R5)
 
 `uxdsl/runtime` no longer pulls in the CSS parser. A browser bundle of

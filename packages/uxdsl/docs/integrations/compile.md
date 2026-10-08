@@ -12,8 +12,8 @@ Part of the [`uxdsl`](../../README.md) package (`npm i -D uxdsl`). Until 0.5.0-b
 
 The package root exports `compile()`: the pipeline that turns a
 `.uxdsl` entry (or an in-memory source) into CSS — `postcss-scss` syntax,
-`postcss-import` with a shared resolver, `postcss-advanced-variables` for
-`$var`/`@each`/`@mixin`, then the UXDSL PostCSS plugin. The CLI, `uxdsl/vite`
+`postcss-import` with a shared resolver, UXDSL's own SCSS subset for
+`$var`/`@each`/`@mixin` (below), then the UXDSL PostCSS plugin. The CLI, `uxdsl/vite`
 and `uxdsl/webpack` all call it, so the same entry and theme produce
 the same CSS everywhere.
 
@@ -108,18 +108,20 @@ const { css, map, dependencies, warnings } = await compile(
 
 ## The SCSS subset
 
-`compile()` reads `.uxdsl` with `postcss-scss` and runs
-`postcss-advanced-variables`, so a stylesheet may use **this subset of Sass,
-and only this**:
+`compile()` reads `.uxdsl` with `postcss-scss`, inlines `@import` with
+`postcss-import`, and expands **this subset of Sass, and only this** with
+UXDSL's own implementation (`src/scss-subset.ts`; until 1.0 it was
+`postcss-advanced-variables` — the output is the same, and the CHANGELOG lists
+the edge cases that now fail or follow Sass instead):
 
 | Supported | Notes |
 | --- | --- |
-| `$variables` | `$x: 1px;` at the root or inside a block (block scope), `!default`, `#{$x}` interpolation in a selector, a value or a media query |
-| `@if` / `@else` | `@else if` is not supported (it fails with the variables plugin's own error) |
-| `@each $x in (a, b)` | lists only — no maps, no `@each $k, $v` |
-| `@for $i from 1 through 3` | |
-| `@mixin` / `@include` | positional arguments, defaults (`@mixin m($a: 1px)`), `@content`; an argument may be any value, token functions and responsive expressions included: `@include pad(density(2))`, `@include pad(xs(1px) md(2px))`, `@include box(rgba(0,0,0,.5), 2px)` all work as written. No keyword (`$b: 9px`) or variadic (`$args...`) arguments |
-| `@import "./partial"` | a path, with or without the extension-less `_partial` convention |
+| `$variables` | `$x: 1px;` at the root or inside a block (block scope: a block sees its own and its enclosing blocks' variables, declared before the use), `!default`, `#{$x}` interpolation in a selector, a value or an at-rule prelude (`@media`, `@ds-surface(…)`), `$x` directly in a value or a prelude — not in a property name |
+| `@if` / `@else` | one value or one comparison: `==`, `!=` on any values, `<`, `<=`, `>`, `>=` on numbers (unitless, or in one unit); `false` and `null` are false, every other value (`0`, `""`, `()`) is true, as in Sass. No `and` / `or` / `not`, no `@else if` |
+| `@each $x in a, b, c` | one variable over a comma list, a space list (`sm md lg`), a `$variable` holding one, or a map (its values); `()` is empty. No `@each $k, $v` |
+| `@for $i from 1 through 3` | `through` includes the end, `to` leaves it out, counting down works; whole numbers, no `by` |
+| `@mixin` / `@include` | positional arguments and defaults (`@mixin m($a, $b: rgba(0,0,0,.5))`), `@content`; an argument is split at its top-level commas, so token functions and responsive expressions work as written: `@include pad(density(2))`, `@include pad(xs(1px) md(2px))`, `@include box(rgba(0,0,0,.5), 2px)`. A mixin body sees the variables of the block that includes it. No keyword (`$b: 9px`) or variadic (`$args...`) arguments, no `@content(…)` / `using` |
+| `@import "./partial.uxdsl"` | at the top of the file, a path with its extension, inlined by `postcss-import`; a remote `url(…)` stays as written |
 | native CSS nesting | `.a { .b {} }`, `&:hover`, `& .child`, `&.other`, `.x &`, `@media` inside a rule — **forwarded to the browser as written, not flattened** (Chrome 120+, Safari 17.2+, Firefox 117+) |
 | `//` line comments | stripped from the output |
 
@@ -130,19 +132,24 @@ naming what to write instead — never text the browser would silently discard:
 | --- | --- | --- |
 | `&__item`, `&--mod`, `&-suffix` | `UXD_NESTING_INVALID` | native nesting cannot concatenate the parent selector; write `.block__item` |
 | `@extend`, `%placeholder` | `UXD_SCSS_UNSUPPORTED` | a mixin, or a shared class in the markup |
-| `@use`, `@forward` | `UXD_SCSS_UNSUPPORTED` | `@import "./partial"` |
+| `@use`, `@forward` | `UXD_SCSS_UNSUPPORTED` | `@import "./partial.uxdsl"` |
 | `@function` / `@return`, `@while`, `@at-root`, `@debug` / `@warn` / `@error` | `UXD_SCSS_UNSUPPORTED` | a mixin, `@for`/`@each`, a root-level rule, nothing |
 | `!global` | `UXD_SCSS_UNSUPPORTED` | declare the variable at the root |
 | `#{…}` around anything but a `$variable` (`#{palette(primary.main)}`) | `UXD_SCSS_UNSUPPORTED` | write the value directly |
-| an undefined `$x`, or `$x` where the variables plugin could not resolve it | `UXD_SCSS_UNSUPPORTED` (or the plugin's own located error) | declare it before its use |
+| an undefined `$x` or mixin (or one declared after its use, or in a block that does not enclose it) | `UXD_SCSS_UNSUPPORTED` | declare it before its use, in the same block or an enclosing one |
+| `@else if`, `and` / `or` / `not`, `<` on values that are not numbers of one unit | `UXD_SCSS_UNSUPPORTED` | a second `@if`, nested `@if` blocks |
+| `@each $k, $v`, `@for … by`, keyword or variadic arguments, `@content(…)` | `UXD_SCSS_UNSUPPORTED` | one variable, a step of 1, positional arguments, a plain `@content` |
+| `@import` inside a block, `@if`, `@each`, `@for` or `@mixin` | `UXD_SCSS_UNSUPPORTED` | `@import` at the top of the file |
 | Sass functions: `darken()`, `lighten()`, `mix()`, `map-get()`, `nth()`, `percentage()`, `unquote()`, `str-*()`, `math.*`, `map.*`, `color.*`, Sass's `if(a, b, c)`, `rgba($color, .5)` | `UXD_SCSS_UNSUPPORTED` | a Palette variant or alpha (`palette(primary, 0.5)`), `color-mix()`, `rgb(from … / .5)`, `calc()`, the value itself |
 | arithmetic outside `calc()`: `10px * 2`, `1rem + 2px`, `$a + $b`, `10px / 2`, `"a" + "b"` | `UXD_SCSS_UNSUPPORTED` | `calc(10px * 2)` (a slash between two plain numbers or two lengths — `aspect-ratio: 16 / 9`, `border-radius: 10px / 20px` — is CSS and stays) |
-| an `@include` whose argument list does not balance, or has text after it (`@include pad(1px) 2px;`) | `UXD_INCLUDE_ARGUMENT` | `@include name(arg, arg)` |
+| an `@include` whose argument list does not balance or has text after it (`@include pad(1px) 2px;`), passes more arguments than the mixin takes, leaves out one without a default, or passes a content block to a mixin without `@content` | `UXD_INCLUDE_ARGUMENT` | `@include name(arg, arg)`, one argument per parameter without a default |
 
 `test/core/scss-subset.test.js` pins all of this with the 110-case matrix of the
 2026-09-29 audit: every case either compiles to the exact CSS recorded there —
 valid CSS, with no Sass construct left in it — or fails with the recorded
-error. There is no third outcome. These codes, and `UXD_IMPORT_CYCLE` for
+error. There is no third outcome. `test/core/scss-expansion.test.js` pins the
+expansion's rules one by one (scope, `!default`, arguments, `@content`, `@each`,
+`@for`, `@if` truthiness and comparisons, source positions). These codes, and `UXD_IMPORT_CYCLE` for
 `.uxdsl` files that import each other, are in the
 `DIAGNOSTIC_CATALOG` with the rest, each with its meaning and fix.
 
