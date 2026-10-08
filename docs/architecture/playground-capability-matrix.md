@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**104 capabilities · 104 shown at the level they require · 0 gaps.**
+**119 capabilities · 119 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -16,10 +16,10 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Theme families | 14 | 14 | 0 | 0 | 0 |
 | Roles | 9 | 9 | 0 | 0 | 0 |
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
-| Runtime API (named in the package docs) | 27 | 27 | 0 | 0 | 0 |
+| Runtime API (named in the package docs) | 37 | 37 | 0 | 0 | 0 |
 | CLI commands | 4 | 0 | 4 | 0 | 0 |
 | CLI flags | 14 | 1 | 13 | 0 | 0 |
-| Package exports | 7 | 7 | 0 | 0 | 0 |
+| Package exports | 12 | 12 | 0 | 0 | 0 |
 | Diagnostics | 1 | 1 | 0 | 0 | 0 |
 
 ## Gaps
@@ -126,6 +126,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
+| `analyzeResponsiveValue` | live | live | `src/components/RuntimeEngines.tsx` |
 | `applyTheme` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/ThemeContext.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `buttonComponentCss` | live | live | `src/components/DemoButtons.tsx` |
 | `buttonDeclarations` | live | live | `src/components/RuntimeEngines.tsx` |
@@ -136,22 +137,31 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `generateEdgeCss` | live | live | `src/components/DemoBorders.tsx`, `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx` |
 | `generateShadowCss` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoShadows.tsx`, `src/components/DemoSurfaces.tsx` |
 | `generateSurfaceCss` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/InputDemo.tsx` |
-| `generateThemeCss` | live | live | `src/components/ThemeScript.tsx`, `src/components/TypographyDocumentation.tsx` |
+| `generateThemeCss` | live | live | `src/components/RuntimeEngines.tsx`, `src/components/ThemeScript.tsx`, `src/components/TypographyDocumentation.tsx` |
 | `getAppliedTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
-| `getDensityTokens` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoSurfaces.tsx`, `src/components/InputDemo.tsx` |
+| `getDensityTokens` | live | live | `src/components/DemoButtons.tsx`, `src/components/DemoDensity.tsx`, `src/components/DemoSurfaces.tsx` |
+| `getToneFamilies` | live | live | `src/components/RuntimeEngines.tsx` |
 | `googleFontsImportUrls` | live | live | `src/components/RuntimeEngines.tsx` |
 | `inputDeclarations` | live | live | `src/components/RuntimeEngines.tsx` |
 | `inspectButtonTheme` | live | live | `src/components/DemoButtons.tsx` |
 | `inspectEdgeTheme` | live | live | `src/components/DemoBorders.tsx` |
 | `inspectInputTheme` | live | live | `src/components/InputDemo.tsx` |
+| `inspectReferences` | live | live | `src/components/RuntimeEngines.tsx` |
+| `inspectResponsiveValue` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
 | `inspectShadowTheme` | live | live | `src/components/DemoShadows.tsx` |
 | `inspectSurfaceTheme` | live | live | `src/components/DemoSurfaces.tsx` |
 | `loadPersistedTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
 | `resetTheme` | live | live | `src/runtime-sandbox/sandbox-entry.ts` |
+| `resolveResponsiveValue` | live | live | `src/components/DemoDensity.tsx` |
 | `resolveTheme` | live | live | `src/components/ContrastReport.tsx`, `src/components/RuntimeEngines.tsx` |
 | `resolveTypographyRole` | live | live | `src/components/RuntimeEngines.tsx` |
+| `responsiveEntries` | live | live | `src/components/DemoDensity.tsx` |
+| `spacingValueToCss` | live | live | `src/components/RussianDoll.tsx` |
 | `subscribeTheme` | live | live | `src/components/RuntimeLab.tsx`, `src/runtime-sandbox/sandbox-entry.ts` |
 | `surfaceDeclarations` | live | live | `src/components/DemoSurfaces.tsx` |
+| `themeStructure` | live | live | `src/components/RuntimeEngines.tsx` |
+| `tokenValueToCss` | live | live | `src/components/RuntimeEngines.tsx` |
+| `validateResponsiveExpression` | live | live | `src/components/RuntimeEngines.tsx` |
 | `validateTheme` | live | live | `src/components/ThemeConfigJsonEditor.tsx`, `src/components/ThemeContext.tsx` |
 
 ## CLI commands
@@ -188,11 +198,16 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | --- | --- | --- | --- |
 | `.` | live | live | `package.json` |
 | `./config` | live | live | `uxdsl.config.cjs` |
-| `./ds-runtime` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointEditor.tsx`, `src/components/ContrastReport.tsx` |
-| `./language` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointsProvider.tsx`, `src/components/DemoBreakpoints.tsx` |
+| `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/DemoBorders.tsx`, `src/components/DemoButtons.tsx` |
+| `./language` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
+| `./postcss` | live | live | `package.json` |
+| `./runtime` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx` |
 | `./schema/theme.schema.json` | live | live | `uxdsl.theme.green.json` |
+| `./theme` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointEditor.tsx`, `src/components/BreakpointsProvider.tsx` |
 | `./theme/base.contrast-exceptions.json` | live | live | `src/components/ContrastReport.tsx` |
 | `./theme/base.json` | live | live | `themes.js` |
+| `./vite` | live | live | `fixtures/vite-adapter/run.js` |
+| `./webpack` | live | live | `fixtures/webpack-adapter/run.js` |
 
 ## Diagnostics
 

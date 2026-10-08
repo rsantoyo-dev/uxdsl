@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './DemoTypography.uxdsl';
-import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme';
 
 // Lazy import runtime utilities similar to App.jsx
 async function withRuntime(cb) {
-  const mod = await import('postcss-uxdsl/ds-runtime');
+  const mod = await import('uxdsl/runtime');
   return cb(mod);
 }
 

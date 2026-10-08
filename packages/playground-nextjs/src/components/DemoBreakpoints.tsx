@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useBreakpoints } from '@/components/BreakpointsProvider'
-import { inspectResponsiveValue } from 'postcss-uxdsl/language'
+import { inspectResponsiveValue } from 'uxdsl/language'
 import { Monitor } from 'lucide-react'
 
 // Inspection, not editing. The thresholds shown come from the active theme and

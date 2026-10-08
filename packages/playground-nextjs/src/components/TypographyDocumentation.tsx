@@ -52,7 +52,7 @@ export default function TypographyDocumentation() {
       <ul><li>Change a Typography progression to update every component consuming that style.</li><li>Change a Spacing token to update its direct consumers and the Typography or Density definitions referencing it.</li><li>Change a breakpoint threshold to move transitions using that name.</li><li>Choose another configured style or use a deliberate local CSS override when only one component should change.</li></ul>
       <h3>One generator for build time and runtime</h3>
       <p>PostCSS accepts the JSON as its <code>theme</code> option. SSR and browser applications use <code>generateThemeCss(theme)</code> from <code>postcss-uxdsl/ds-runtime</code>. Both call the same Typography generator. For live changes, regenerate and replace the managed theme stylesheet rather than appending overrides:</p>
-      <pre><code className="language-ts">{`import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+      <pre><code className="language-ts">{`import { generateThemeCss } from 'uxdsl/theme'
 
 // themeStyle is the application's existing managed <style> element.
 // Generate first so an invalid update cannot clear the active stylesheet.

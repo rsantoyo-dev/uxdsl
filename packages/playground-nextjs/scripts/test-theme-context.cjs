@@ -33,7 +33,7 @@ const has = (hex) => new RegExp(hex.replace('#', '#?'), 'i').test(themeCss());
 // A theme leaf is written in the value grammar — the base says `color(purple.700)`
 // (stability phase 5), a named theme may say a literal — and the stylesheet carries
 // its compiled form, so the comparison goes through the same compiler.
-const { tokenValueToCss } = require('postcss-uxdsl/language');
+const { tokenValueToCss } = require('uxdsl/engine');
 const primaryOf = (name) => tokenValueToCss(themes[name].palette.primary.main);
 // The light-mode `--uxdsl__palette__primary-main` actually on the page. Searching
 // the whole stylesheet for a hex is a weak proxy: green's primary also appears in

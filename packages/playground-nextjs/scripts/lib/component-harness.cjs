@@ -12,7 +12,7 @@
 //
 // A component is bundled *from its own source* on every load: relative imports
 // (the scheduler, themes.js and its JSON) are inlined, while every bare import
-// (react, postcss-uxdsl/ds-runtime) stays external and resolves from this
+// (react, uxdsl/*) stays external and resolves from this
 // package's node_modules — so the component and the test share one React, and
 // the runtime under test is the built package, not a copy of it.
 

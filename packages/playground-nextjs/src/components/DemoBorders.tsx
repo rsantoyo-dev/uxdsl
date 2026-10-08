@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { generateEdgeCss, getEdgeTokens, inspectEdgeTheme, RADIUS_KEYWORDS } from 'postcss-uxdsl/ds-runtime'
+import { generateEdgeCss, getEdgeTokens, inspectEdgeTheme, RADIUS_KEYWORDS } from 'uxdsl/engine'
 import { useTheme } from './ThemeContext'
 
 export default function DemoBorders() {

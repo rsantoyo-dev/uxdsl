@@ -29,7 +29,7 @@ const {
   checkThemeContrast,
   resolveTheme,
   deepMergeTheme,
-} = require(path.join(__dirname, '..', 'packages', 'postcss-uxdsl', 'dist', 'ds-runtime'));
+} = require(path.join(__dirname, '..', 'packages', 'uxdsl', 'dist', 'entries', 'engine'));
 
 const TEXT_MARGIN = 4.6; // story: >= 4.6:1 for text (gate itself requires 4.5:1)
 const BORDER_MARGIN = 3.1; // story: >= 3.1:1 for borders (gate itself requires 3:1)
@@ -480,8 +480,8 @@ module.exports = { correctMode, currentHexOf, setPaletteColor, runGate, failingF
 if (require.main === module) {
   const fs = require('fs');
   const themeName = process.argv[2] || 'base';
-  const baseTheme = require(path.join(__dirname, '..', 'packages', 'postcss-uxdsl', 'dist', 'theme', 'base.json'));
-  const exceptions = require(path.join(__dirname, '..', 'packages', 'postcss-uxdsl', 'src', 'theme', 'base.contrast-exceptions.json'));
+  const baseTheme = require(path.join(__dirname, '..', 'packages', 'uxdsl', 'dist', 'theme', 'base.json'));
+  const exceptions = require(path.join(__dirname, '..', 'packages', 'uxdsl', 'src', 'theme', 'base.contrast-exceptions.json'));
   let theme = themeName === 'base' ? clone(baseTheme) : deepMergeTheme(baseTheme, require(path.join(__dirname, '..', 'packages', 'playground-nextjs', `uxdsl.theme.${themeName}.json`)));
 
   const log = (msg) => console.error(new Date().toISOString().slice(11, 19), msg);

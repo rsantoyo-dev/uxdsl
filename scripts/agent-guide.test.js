@@ -8,7 +8,7 @@ const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 
 const { render, check, SOURCE, TARGET, HEADER } = require('./generate-agent-guide');
-const PKG_DIR = path.resolve(__dirname, '..', 'packages', 'postcss-uxdsl');
+const PKG_DIR = path.resolve(__dirname, '..', 'packages', 'uxdsl');
 
 test('MIG-B7-15: the packaged guide is AGENTS.md byte for byte behind the generated header', () => {
   const copy = fs.readFileSync(TARGET, 'utf8');

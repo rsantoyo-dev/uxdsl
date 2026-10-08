@@ -3,7 +3,7 @@
 // MIG-B3-05 (FEAT-004): regression coverage for verify-docs-update.js's
 // pre-commit guard, including the new visual-default-files rule it did not
 // have before (a change to default-theme.ts/typography-defaults.ts/
-// typography.ts requires postcss-uxdsl's own CHANGELOG.md to be staged,
+// typography.ts requires the uxdsl package's own CHANGELOG.md to be staged,
 // not just any README — beta.2's unannounced h2/h3 line-height change is
 // exactly the gap this closes).
 //
@@ -34,9 +34,9 @@ function mkFakeRepo() {
   fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
   fs.copyFileSync(REAL_SCRIPT, path.join(dir, 'scripts', 'verify-docs-update.js'));
 
-  const pkgDir = path.join(dir, 'packages', 'postcss-uxdsl');
+  const pkgDir = path.join(dir, 'packages', 'uxdsl');
   fs.mkdirSync(path.join(pkgDir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.0' }));
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'uxdsl', version: '0.0.0' }));
   fs.writeFileSync(path.join(pkgDir, 'README.md'), '# readme\n');
   fs.writeFileSync(path.join(pkgDir, 'CHANGELOG.md'), '# changelog\n');
   fs.writeFileSync(path.join(pkgDir, 'src', 'typography.ts'), '// typography\n');
@@ -58,7 +58,7 @@ function runGuard(dir) {
 test('MIG-B3-05: an ordinary package code change with no README staged fails', () => {
   const { dir, pkgDir } = mkFakeRepo();
   fs.appendFileSync(path.join(pkgDir, 'src', 'other.ts'), '// edit\n');
-  stage(dir, 'packages/postcss-uxdsl/src/other.ts');
+  stage(dir, 'packages/uxdsl/src/other.ts');
   const result = runGuard(dir);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Documentation update required/);
@@ -68,7 +68,7 @@ test('MIG-B3-05: the same change with the package README staged passes (no visua
   const { dir, pkgDir } = mkFakeRepo();
   fs.appendFileSync(path.join(pkgDir, 'src', 'other.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/other.ts', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/other.ts', 'packages/uxdsl/README.md');
   const result = runGuard(dir);
   assert.equal(result.status, 0, result.stderr);
 });
@@ -77,7 +77,7 @@ test('MIG-B3-05: editing typography.ts with README staged but no CHANGELOG still
   const { dir, pkgDir } = mkFakeRepo();
   fs.appendFileSync(path.join(pkgDir, 'src', 'typography.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/typography.ts', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/typography.ts', 'packages/uxdsl/README.md');
   const result = runGuard(dir);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Visual-default change without a CHANGELOG note/);
@@ -89,7 +89,7 @@ test('MIG-B3-05: editing typography.ts with both README and CHANGELOG staged pas
   fs.appendFileSync(path.join(pkgDir, 'src', 'typography.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
   fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');
-  stage(dir, 'packages/postcss-uxdsl/src/typography.ts', 'packages/postcss-uxdsl/README.md', 'packages/postcss-uxdsl/CHANGELOG.md');
+  stage(dir, 'packages/uxdsl/src/typography.ts', 'packages/uxdsl/README.md', 'packages/uxdsl/CHANGELOG.md');
   const result = runGuard(dir);
   assert.equal(result.status, 0, result.stderr);
 });
@@ -107,7 +107,7 @@ test('MIG-B3-05: default-theme.ts and typography.ts are covered by the same guar
 
   fs.appendFileSync(path.join(pkgDir, 'src', 'default-theme.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/default-theme.ts', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/default-theme.ts', 'packages/uxdsl/README.md');
   const result = runGuard(dir);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Visual-default change without a CHANGELOG note/);
@@ -123,7 +123,7 @@ test('MIG-B6-29: theme/base.json is covered by the same guard', () => {
 
   fs.writeFileSync(path.join(pkgDir, 'src', 'theme', 'base.json'), '{"spacing":{}}\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/theme/base.json', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/theme/base.json', 'packages/uxdsl/README.md');
   const result = runGuard(dir);
   assert.equal(result.status, 1);
   assert.match(result.stderr, /Visual-default change without a CHANGELOG note/);
@@ -133,7 +133,7 @@ test('MIG-B6-29: theme/base.json is covered by the same guard', () => {
 test('MIG-B3-05: a docs-only change (README/CHANGELOG/docs) never requires further docs', () => {
   const { dir, pkgDir } = mkFakeRepo();
   fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');
-  stage(dir, 'packages/postcss-uxdsl/CHANGELOG.md');
+  stage(dir, 'packages/uxdsl/CHANGELOG.md');
   const result = runGuard(dir);
   assert.equal(result.status, 0, result.stderr);
 });
@@ -147,12 +147,12 @@ test('MIG-B6-30: a lockfile sync alone does not demand a README note, but packag
   // Adding a devDependency to one package rewrites its siblings' lockfiles;
   // there is no consumer-facing note to write for that.
   fs.writeFileSync(path.join(pkgDir, 'package-lock.json'), '{"lockfileVersion":3,"synced":true}\n');
-  stage(dir, 'packages/postcss-uxdsl/package-lock.json');
+  stage(dir, 'packages/uxdsl/package-lock.json');
   assert.equal(runGuard(dir).status, 0, 'a lockfile-only change should not require a README');
 
   // The real dependency declaration is still guarded.
-  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.0', dependencies: { chalk: '^5.0.0' } }));
-  stage(dir, 'packages/postcss-uxdsl/package.json');
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'uxdsl', version: '0.0.0', dependencies: { chalk: '^5.0.0' } }));
+  stage(dir, 'packages/uxdsl/package.json');
   assert.notEqual(runGuard(dir).status, 0, 'a package.json change must still require a docs note');
 });
 
@@ -166,20 +166,20 @@ test('a release version bump (version, sibling ranges, theme manifest) needs no 
   fs.writeFileSync(path.join(coreDir, 'README.md'), '# core\n');
   fs.writeFileSync(path.join(coreDir, 'package.json'), JSON.stringify({ name: 'uxdsl-core', version: '0.0.0' }));
   const cliPkg = (version, deps) => JSON.stringify({ name: 'uxdsl-cli', version, dependencies: deps });
-  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.0', { 'postcss-uxdsl': '0.0.0', minimist: '^1.2.8' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.0', { 'uxdsl': '0.0.0', minimist: '^1.2.8' }));
   git(dir, ['add', '-A']);
   git(dir, ['commit', '-q', '-m', 'add cli']);
 
-  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'postcss-uxdsl', version: '0.0.1' }));
-  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', minimist: '^1.2.8' }));
+  fs.writeFileSync(path.join(pkgDir, 'package.json'), JSON.stringify({ name: 'uxdsl', version: '0.0.1' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'uxdsl': '0.0.1', minimist: '^1.2.8' }));
   stage(dir, '-A');
   assert.equal(runGuard(dir).status, 0, 'a version bump alone should not require a README');
 
-  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', minimist: '^1.3.0' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'uxdsl': '0.0.1', minimist: '^1.3.0' }));
   stage(dir, '-A');
   assert.notEqual(runGuard(dir).status, 0, 'an external dependency change alongside the bump still requires a README');
 
-  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '0.0.1', 'uxdsl-core': '0.0.0', minimist: '^1.2.8' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'uxdsl': '0.0.1', 'uxdsl-core': '0.0.0', minimist: '^1.2.8' }));
   stage(dir, '-A');
   assert.notEqual(runGuard(dir).status, 0, 'adding an internal dependency is not a release range bump');
 
@@ -187,11 +187,11 @@ test('a release version bump (version, sibling ranges, theme manifest) needs no 
   stage(dir, '-A');
   assert.notEqual(runGuard(dir).status, 0, 'removing an internal dependency still requires docs');
 
-  fs.writeFileSync(path.join(cliDir, 'package.json'), JSON.stringify({ name: 'uxdsl-cli', version: '0.0.1', dependencies: { minimist: '^1.2.8' }, devDependencies: { 'postcss-uxdsl': '0.0.1' } }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), JSON.stringify({ name: 'uxdsl-cli', version: '0.0.1', dependencies: { minimist: '^1.2.8' }, devDependencies: { 'uxdsl': '0.0.1' } }));
   stage(dir, '-A');
   assert.notEqual(runGuard(dir).status, 0, 'moving an internal dependency to another field still requires docs');
 
-  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'postcss-uxdsl': '99.0.0', minimist: '^1.2.8' }));
+  fs.writeFileSync(path.join(cliDir, 'package.json'), cliPkg('0.0.1', { 'uxdsl': '99.0.0', minimist: '^1.2.8' }));
   stage(dir, '-A');
   assert.notEqual(runGuard(dir).status, 0, 'an unrelated internal range change still requires docs');
 });
@@ -200,7 +200,7 @@ test('a release version bump (version, sibling ranges, theme manifest) needs no 
 
 const { VISUAL_DEFAULT_FILES, NON_VISUAL_SOURCE_FILES } = require('./verify-docs-update.js');
 const REPO_ROOT = path.resolve(__dirname, '..');
-const SRC_DIR = 'packages/postcss-uxdsl/src';
+const SRC_DIR = 'packages/uxdsl/src';
 
 function sourceFiles(dir = SRC_DIR) {
   // Hidden files (.DS_Store) are not source. Untracked files still count, so a new
@@ -232,7 +232,7 @@ test('MIG-B7-16: every not-visual file says why, in terms of compiled output', (
 });
 
 test('MIG-B7-16: the engines that turn defaults into CSS are guarded — the files whose changes went unannounced', () => {
-  for (const engine of ['control-engine.ts', 'index.ts', 'fonts.ts', 'surfaces.ts', 'ds-runtime/theme-generator.ts']) {
+  for (const engine of ['control-engine.ts', 'plugin.ts', 'compile.ts', 'fonts.ts', 'surfaces.ts', 'ds-runtime/theme-generator.ts']) {
     assert.ok(VISUAL_DEFAULT_FILES.includes(`${SRC_DIR}/${engine}`), `${engine} must be a guarded visual-default file`);
   }
 });
@@ -245,14 +245,14 @@ test('MIG-B7-16: editing an engine with README staged but no CHANGELOG fails; wi
 
   fs.appendFileSync(path.join(pkgDir, 'src', 'control-engine.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/control-engine.ts', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/control-engine.ts', 'packages/uxdsl/README.md');
   const blocked = runGuard(dir);
   assert.equal(blocked.status, 1);
   assert.match(blocked.stderr, /Visual-default change without a CHANGELOG note/);
   assert.match(blocked.stderr, /control-engine\.ts/);
 
   fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');
-  stage(dir, 'packages/postcss-uxdsl/CHANGELOG.md');
+  stage(dir, 'packages/uxdsl/CHANGELOG.md');
   assert.equal(runGuard(dir).status, 0);
 });
 
@@ -264,6 +264,6 @@ test('MIG-B7-16: a not-visual file (diagnostics.ts) still needs only a README, a
 
   fs.appendFileSync(path.join(pkgDir, 'src', 'diagnostics.ts'), '// edit\n');
   fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
-  stage(dir, 'packages/postcss-uxdsl/src/diagnostics.ts', 'packages/postcss-uxdsl/README.md');
+  stage(dir, 'packages/uxdsl/src/diagnostics.ts', 'packages/uxdsl/README.md');
   assert.equal(runGuard(dir).status, 0);
 });

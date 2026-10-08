@@ -1,22 +1,22 @@
-const { DEFAULT_INPUTS } = require('../packages/postcss-uxdsl/dist/inputs');
-const { DEFAULT_BUTTONS } = require('../packages/postcss-uxdsl/dist/buttons');
+const { DEFAULT_INPUTS } = require('../packages/uxdsl/dist/inputs');
+const { DEFAULT_BUTTONS } = require('../packages/uxdsl/dist/buttons');
 // The compiled browser-safe language module is the authoritative source.
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const { DEFAULT_DENSITIES, LANGUAGE_COMPLETIONS, getToneFamilies } = require('../packages/postcss-uxdsl/dist/language');
-const { DEFAULT_RADII } = require('../packages/postcss-uxdsl/dist/edges');
-const { DEFAULT_SURFACES } = require('../packages/postcss-uxdsl/dist/surfaces');
-const { DEFAULT_THEME } = require('../packages/postcss-uxdsl/dist/default-theme');
-const { TYPOGRAPHY_PROPERTIES } = require('../packages/postcss-uxdsl/dist/typography');
+const { DEFAULT_DENSITIES, LANGUAGE_COMPLETIONS, getToneFamilies } = require('../packages/uxdsl/dist/language');
+const { DEFAULT_RADII } = require('../packages/uxdsl/dist/edges');
+const { DEFAULT_SURFACES } = require('../packages/uxdsl/dist/surfaces');
+const { DEFAULT_THEME } = require('../packages/uxdsl/dist/default-theme');
+const { TYPOGRAPHY_PROPERTIES } = require('../packages/uxdsl/dist/typography');
 // MIG-B6-27 (FEAT-008): the JSON Schema is generated from the very constants
 // the compiler branches on, so it cannot drift into describing a theme the
 // engine would reject (or rejecting one it accepts).
-const { KNOWN_THEME_FAMILIES } = require('../packages/postcss-uxdsl/dist/ds-runtime');
-const { SURFACE_PROPERTIES } = require('../packages/postcss-uxdsl/dist/surfaces');
-const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/postcss-uxdsl/dist/buttons');
-const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/postcss-uxdsl/dist/inputs');
-const { DIRECTIVE_USAGE } = require('../packages/postcss-uxdsl/dist/directives');
+const { KNOWN_THEME_FAMILIES } = require('../packages/uxdsl/dist/entries/engine');
+const { SURFACE_PROPERTIES } = require('../packages/uxdsl/dist/surfaces');
+const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/uxdsl/dist/buttons');
+const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/uxdsl/dist/inputs');
+const { DIRECTIVE_USAGE } = require('../packages/uxdsl/dist/directives');
 
 // MIG-B6-26 (FEAT-008): the vscode extension's directive-argument
 // completions, its TextMate grammar's function/directive alternations,
@@ -106,7 +106,7 @@ const files = {
 // belongs, an empty string, `;`/`{`/`}` in a value. What a regex cannot say
 // (balanced parentheses, a zero-width base breakpoint, a dangling reference)
 // the validator still checks and the schema documents in `description`.
-const { THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN } = require('../packages/postcss-uxdsl/dist/ds-runtime');
+const { THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN } = require('../packages/uxdsl/dist/entries/engine');
 const NAME_PATTERN = THEME_NAME_PATTERN.source;
 const KEY_PATTERN = THEME_KEY_PATTERN.source;
 const leaf = {
@@ -216,7 +216,7 @@ const themeSchema = {
     ...Object.fromEntries(knownFamilies.map((family) => [family, familySchemas[family]])),
   },
 };
-files['packages/postcss-uxdsl/schema/theme.schema.json'] = JSON.stringify(themeSchema, null, 2) + '\n';
+files['packages/uxdsl/schema/theme.schema.json'] = JSON.stringify(themeSchema, null, 2) + '\n';
 
 for (const [file, content] of Object.entries(files)) {
   const target = path.join(root, file);

@@ -12,7 +12,7 @@
 //     Reloading the sandbox undoes everything it did.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAppliedTheme, subscribeTheme } from 'postcss-uxdsl/ds-runtime'
+import { getAppliedTheme, subscribeTheme } from 'uxdsl/runtime'
 import type { UxdslLab } from '@/runtime-sandbox/sandbox-entry'
 import { useTheme } from './ThemeContext'
 

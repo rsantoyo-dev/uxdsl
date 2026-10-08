@@ -1,6 +1,6 @@
 'use strict';
 
-// MIG-B6-20 (FEAT-008) acceptance gate: vite-plugin-uxdsl installed from a
+// MIG-B6-20 (FEAT-008) acceptance gate: uxdsl/vite, installed from a
 // real tarball (no workspace/symlink resolution back into this monorepo),
 // driving real `vite build` and `vite.createServer()` calls — not a mocked
 // plugin context. Exercises every criterion the story lists for this
@@ -16,13 +16,12 @@ const { packAndInstall } = require('../lib/tarball-consumer');
 
 async function main() {
   const { dir, run, write } = packAndInstall({
-    names: ['postcss-uxdsl', 'uxdsl-core', 'vite-plugin-uxdsl'],
     tmpPrefix: 'uxdsl-vite-adapter-',
     consumerPkg: { name: 'uxdsl-vite-adapter-consumer', version: '1.0.0', private: true },
   });
   run('npm', ['install', 'vite@^5', '--no-audit', '--no-fund']);
 
-  write('uxdsl.theme.config.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };\n");
+  write('uxdsl.theme.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };\n");
   write('partial.uxdsl', '.partial { color: green; }\n');
   write('panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
   // A plain `export` of an otherwise-unused value is dead code from
@@ -35,8 +34,8 @@ async function main() {
   write(
     'vite.config.js',
     "const { defineConfig } = require('vite');\n" +
-    "const uxdsl = require('vite-plugin-uxdsl');\n" +
-    "module.exports = defineConfig({ plugins: [uxdsl.default ? uxdsl.default() : uxdsl()], build: { outDir: 'dist' } });\n"
+    "const uxdsl = require('uxdsl/vite');\n" +
+    "module.exports = defineConfig({ plugins: [uxdsl()], build: { outDir: 'dist' } });\n"
   );
 
   // --- vite build: real CSS extraction ---
@@ -53,8 +52,8 @@ async function main() {
   console.log('  ok  - vite build extracts a real .css asset with the compiled rules');
 
   // --- theme applied ---
-  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.config.cjs must be discovered and applied");
-  console.log('  ok  - the project theme (uxdsl.theme.config.cjs) is discovered and applied');
+  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.cjs must be discovered and applied");
+  console.log('  ok  - the project theme (uxdsl.theme.cjs) is discovered and applied');
 
   // --- MIG-B6-21: does Vite actually chain our CSS source map? ---
   // The plugin follows Vite's own `build.sourcemap`, so this builds a second
@@ -65,8 +64,8 @@ async function main() {
   write(
     'vite.map.config.js',
     "const { defineConfig } = require('vite');\n" +
-    "const uxdsl = require('vite-plugin-uxdsl');\n" +
-    "module.exports = defineConfig({ plugins: [uxdsl.default ? uxdsl.default() : uxdsl()], build: { outDir: 'dist-map', sourcemap: true } });\n"
+    "const uxdsl = require('uxdsl/vite');\n" +
+    "module.exports = defineConfig({ plugins: [uxdsl()], build: { outDir: 'dist-map', sourcemap: true } });\n"
   );
   run(path.join(dir, 'node_modules/.bin/vite'), ['build', '--config', 'vite.map.config.js']);
   const mapAssets = path.join(dir, 'dist-map', 'assets');

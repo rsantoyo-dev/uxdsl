@@ -4,8 +4,8 @@
 // MIG-B7-17 (FEAT-009), phase C: what the /docs/cli and /docs/diagnostics pages show is
 // real output, not text somebody typed.
 //
-// This runs the real `uxdsl` CLI (packages/uxdsl-cli, compiling with the local
-// postcss-uxdsl) against a small project, capability-fixtures/cli-project, and writes
+// This runs the real `uxdsl` CLI (packages/uxdsl/bin, compiling with the package it
+// ships in) against a small project, capability-fixtures/cli-project, and writes
 // what it printed — stdout, stderr, exit status and the files it wrote — to
 // src/generated/cli-captures.json. It also compiles a set of deliberately wrong sources
 // and themes through the same CLI and records the real UXD_* diagnostics, and records a
@@ -27,10 +27,10 @@ const { spawnSync, spawn } = require('node:child_process');
 
 const PLAYGROUND = path.resolve(__dirname, '..');
 const FIXTURE = path.join(PLAYGROUND, 'capability-fixtures/cli-project');
-// Inside the playground so the project resolves postcss-uxdsl from the playground's own
+// Inside the playground so the project resolves uxdsl from the playground's own
 // node_modules (the local package), exactly like the fixture does in place.
 const WORK = path.join(PLAYGROUND, 'capability-fixtures/.work');
-const CLI = path.join(PLAYGROUND, '../uxdsl-cli/bin/uxdsl.js');
+const CLI = path.join(PLAYGROUND, '../uxdsl/bin/uxdsl.js');
 const OUT_DIR = path.join(PLAYGROUND, 'src/generated');
 const CLI_OUT = path.join(OUT_DIR, 'cli-captures.json');
 const DIAG_OUT = path.join(OUT_DIR, 'compiler-captures.json');
@@ -230,7 +230,7 @@ function captureDiagnostics() {
 // ------------------------------------------------------------------ main ----
 
 async function main() {
-  if (!fs.existsSync(path.join(PLAYGROUND, 'node_modules/postcss-uxdsl/dist/index.js'))) throw new Error('postcss-uxdsl is not built: run `npm run local-deps` in packages/playground-nextjs first.');
+  if (!fs.existsSync(path.join(PLAYGROUND, 'node_modules/uxdsl/dist/entries/index.js'))) throw new Error('uxdsl is not built: run `npm run local-deps` in packages/playground-nextjs first.');
   fs.mkdirSync(WORK, { recursive: true });
   try {
     const cli = captureCli();

@@ -30,7 +30,7 @@ const vm = require('node:vm');
 const ROOT = path.resolve(__dirname, '../..');
 const PKG = (name) => path.join(ROOT, 'packages', name);
 
-const postcss = require(require.resolve('postcss', { paths: [PKG('postcss-uxdsl')] }));
+const postcss = require(require.resolve('postcss', { paths: [PKG('uxdsl')] }));
 const load = (rel) => require(path.join(ROOT, rel));
 
 const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(/; // the removed spellings stay listed so an example showing one is compiled (and must document its error)
@@ -42,7 +42,7 @@ const lineOf = (text, index) => text.slice(0, index).split('\n').length;
 
 function looksLikeTheme(value) {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const { KNOWN_THEME_FAMILIES } = load('packages/postcss-uxdsl/dist/ds-runtime');
+  const { KNOWN_THEME_FAMILIES } = load('packages/uxdsl/dist/entries/engine');
   return Object.keys(value).some((key) => KNOWN_THEME_FAMILIES.has(key));
 }
 
@@ -173,20 +173,20 @@ function statementsOf(code) {
 }
 
 async function compileWithPlugin(css, theme) {
-  const exported = load('packages/postcss-uxdsl/dist/index');
+  const exported = load('packages/uxdsl/dist/plugin');
   const plugin = exported.default || exported;
   return (await postcss([plugin({ theme: theme || {}, includeTheme: false })]).process(css, { from: undefined })).css;
 }
 
 async function compileWithPipeline(css, theme) {
-  const core = load('packages/uxdsl-core/dist/index.js');
+  const core = load('packages/uxdsl/dist/entries/index.js');
   const from = path.join(ROOT, 'docs', 'doc-example.uxdsl');
   const out = await core.compile({ source: css, from }, { includeTheme: false, theme: theme || {} });
   return typeof out === 'string' ? out : out.css;
 }
 
 const errorCode = (error) => (CODE.exec(String((error && error.message) || error)) || [])[0] || null;
-const firstLine = (error) => String((error && error.message) || error).split('\n')[0].replace(/^postcss-uxdsl: <css input>:\d+:\d+: /, '').slice(0, 160);
+const firstLine = (error) => String((error && error.message) || error).split('\n')[0].replace(/^uxdsl: <css input>:\d+:\d+: /, '').slice(0, 160);
 
 /** Runs one example. Returns a list of problems; empty means it holds. */
 async function runExample(example) {
@@ -239,7 +239,7 @@ async function verifySurfaces(files) {
 /** Theme excerpts must themselves be valid themes. One problem per excerpt: a single
  * bad reference cascades into dozens of derived errors, and only the root cause helps. */
 function validateThemes(themes) {
-  const { validateTheme } = load('packages/postcss-uxdsl/dist/ds-runtime');
+  const { validateTheme } = load('packages/uxdsl/dist/entries/engine');
   const problems = [];
   for (const { file, line, theme } of themes) {
     const errors = (validateTheme(theme).errors || []).map((error) => String(error.message || error));
@@ -263,7 +263,8 @@ function discoverSurfaces() {
   out.push('README.md', 'AGENTS.md');
   return out.filter((f) => /^(README|AGENTS)\.md$/.test(f)
     || /^packages\/[^/]+\/README\.md$/.test(f)
-    || f === 'packages/postcss-uxdsl/docs/migration.md'
+    || f === 'packages/uxdsl/docs/migration.md'
+    || /^packages\/uxdsl\/docs\/integrations\/.*\.md$/.test(f)
     || /^docs\/architecture\/.*\.md$/.test(f)
     || /^packages\/playground-nextjs\/src\/.*\.(tsx|mdx)$/.test(f)).sort();
 }

@@ -21,9 +21,10 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],
-      "postcss-uxdsl/ds-runtime": ["../postcss-uxdsl/src/ds-runtime.ts"],
-      "postcss-uxdsl/language": ["../postcss-uxdsl/src/language.ts"],
-      "postcss-uxdsl/runtime": ["../postcss-uxdsl/src/runtime.ts"]
+      "uxdsl/runtime": ["../uxdsl/src/entries/runtime.ts"],
+      "uxdsl/theme": ["../uxdsl/src/entries/theme.ts"],
+      "uxdsl/language": ["../uxdsl/src/entries/language.ts"],
+      "uxdsl/engine": ["../uxdsl/src/entries/engine.ts"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

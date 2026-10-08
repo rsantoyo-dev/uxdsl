@@ -7,7 +7,7 @@ const EXCLUDED_FILES = ['uxdsl-entry.uxdsl'];
 
 // The theme is not imported here: `uxdsl build` emits every token (foundations, typography,
 // densities, borders, radii, shadows, surfaces, buttons, inputs) once, from the theme JSON
-// (uxdsl.theme.config.cjs). The eleven `postcss-uxdsl/theme/default-*` imports this used to
+// (uxdsl.theme.cjs). The eleven former `theme/default-*` imports this used to
 // list defined every token a second time; those files no longer exist. The color collection
 // they alone contributed lives in uxdsl.theme.shared.json, and the `.ds-typo` selector rules
 // in app/typography-roles.uxdsl.

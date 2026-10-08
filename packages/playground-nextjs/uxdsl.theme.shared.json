@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "$schema": "./node_modules/uxdsl/schema/theme.schema.json",
   "colors": {
     "blue": {
       "50": "#E3F2FD",

@@ -1,5 +1,5 @@
 import React from 'react'
-import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+import { generateThemeCss } from 'uxdsl/theme'
 
 interface Theme {
   modes?: {

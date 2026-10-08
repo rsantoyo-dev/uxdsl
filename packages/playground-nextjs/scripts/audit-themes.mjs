@@ -22,9 +22,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const { checkThemeContrast, resolveTheme, resolveTypographyRole } = require('postcss-uxdsl/ds-runtime');
-const { resolveResponsiveValue } = require('postcss-uxdsl/language');
-const contrastExceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json');
+const { checkThemeContrast, resolveTheme } = require('uxdsl/theme');
+const { resolveTypographyRole } = require('uxdsl/engine');
+const { resolveResponsiveValue } = require('uxdsl/language');
+const contrastExceptions = require('uxdsl/theme/base.contrast-exceptions.json');
 const { themes } = require(path.join(ROOT, 'themes.js'));
 
 const HEADINGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];

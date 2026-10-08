@@ -2,8 +2,8 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const runtime = require('../../packages/postcss-uxdsl/dist/ds-runtime');
-const exceptions = require('../../packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json');
+const runtime = require('../../packages/uxdsl/dist/entries/theme');
+const exceptions = require('../../packages/uxdsl/src/theme/base.contrast-exceptions.json');
 const baseline = require('./contrast-baseline.json');
 const { assertContrastBaseline, contrastBaselineOf } = require('./run');
 

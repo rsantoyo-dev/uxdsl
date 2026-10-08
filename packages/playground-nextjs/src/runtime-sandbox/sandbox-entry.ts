@@ -7,7 +7,7 @@
 // AND a separate JavaScript realm, with its own copy of the runtime's module state. Nothing
 // done in the sandbox reaches the site; reloading the iframe undoes it.
 //
-// The functions are the real exports of postcss-uxdsl/ds-runtime; the page drives them
+// The functions are the real exports of uxdsl/runtime; the page drives them
 // through `window.__uxdslLab` and reads back what the sandbox's own computed styles say.
 import {
   applyTheme,
@@ -15,7 +15,7 @@ import {
   resetTheme,
   loadPersistedTheme,
   subscribeTheme,
-} from 'postcss-uxdsl/ds-runtime'
+} from 'uxdsl/runtime'
 import { themes } from '../../themes'
 
 /** The key this lab persists under. Never the default `uxdsl:theme`, so a saved lab

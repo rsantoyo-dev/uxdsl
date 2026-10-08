@@ -9,8 +9,8 @@
 // against the same call made in Node for the same theme.
 
 import { useMemo, useState } from 'react'
-import { checkThemeContrast, resolveTheme } from 'postcss-uxdsl/ds-runtime'
-import exceptions from 'postcss-uxdsl/theme/base.contrast-exceptions.json'
+import { checkThemeContrast, resolveTheme } from 'uxdsl/theme'
+import exceptions from 'uxdsl/theme/base.contrast-exceptions.json'
 import { useTheme } from './ThemeContext'
 
 type Filter = 'all' | 'light' | 'dark'

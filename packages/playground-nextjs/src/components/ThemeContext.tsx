@@ -1,7 +1,8 @@
 'use client'
 
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
-import { applyTheme, deepMergeTheme, validateTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme } from 'uxdsl/runtime'
+import { deepMergeTheme, validateTheme } from 'uxdsl/theme'
 import { createThemeScheduler } from '../lib/theme-scheduler'
 import { baseTheme, themes } from '../../themes'
 

@@ -1,4 +1,4 @@
-import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/language'
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
 import AgentGuidance from './AgentGuidance'
 import DemoBreakpointsCards from './DemoBreakpointsCards'
 
@@ -92,8 +92,8 @@ export function BreakpointLiveExample() {
       <DemoBreakpointsCards />
       <h3>Thresholds are compiled, not applied at run time</h3>
       <p>A threshold is baked into every component&apos;s <code>@media</code> rule at build time, so the runtime cannot move one: <code>applyTheme</code> refuses the patch and names the reason.</p>
-      <pre><code className="language-typescript">{`import { applyTheme } from 'postcss-uxdsl/ds-runtime'
-import { inspectResponsiveValue } from 'postcss-uxdsl/language'
+      <pre><code className="language-typescript">{`import { applyTheme } from 'uxdsl/runtime'
+import { inspectResponsiveValue } from 'uxdsl/language'
 
 const result = applyTheme({ breakpoints: { md: 800 } })
 result.ok // false — result.error.code === 'UXD_THEME_STRUCTURE': edit the theme file and rebuild

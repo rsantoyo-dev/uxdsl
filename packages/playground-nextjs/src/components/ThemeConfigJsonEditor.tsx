@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Download, RefreshCcw } from 'lucide-react'
-import { validateTheme } from 'postcss-uxdsl/ds-runtime'
+import { validateTheme } from 'uxdsl/theme'
 import { useTheme } from './ThemeContext'
 import { InteractiveDemoContainer } from './InteractiveDemoContainer'
 

@@ -8,8 +8,10 @@ const nextConfig = {
   webpack(config) {
     config.resolve.alias = {
       ...config.resolve.alias,
-      'postcss-uxdsl/ds-runtime$': path.resolve(__dirname, '../postcss-uxdsl/src/ds-runtime.ts'),
-      'postcss-uxdsl/language$': path.resolve(__dirname, '../postcss-uxdsl/src/language.ts'),
+      'uxdsl/runtime$': path.resolve(__dirname, '../uxdsl/src/entries/runtime.ts'),
+      'uxdsl/theme$': path.resolve(__dirname, '../uxdsl/src/entries/theme.ts'),
+      'uxdsl/language$': path.resolve(__dirname, '../uxdsl/src/entries/language.ts'),
+      'uxdsl/engine$': path.resolve(__dirname, '../uxdsl/src/entries/engine.ts'),
     }
     return config
   },

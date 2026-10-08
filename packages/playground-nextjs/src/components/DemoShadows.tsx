@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { generateShadowCss, getShadowTokens, inspectShadowTheme } from 'postcss-uxdsl/ds-runtime'
+import { generateShadowCss, getShadowTokens, inspectShadowTheme } from 'uxdsl/engine'
 import { useTheme } from './ThemeContext'
 
 export default function DemoShadows() {

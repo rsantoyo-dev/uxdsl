@@ -209,8 +209,8 @@ async function checkFocus(page, report, where) {
 }
 
 async function checkContrast(page, report, where, themeName) {
-  const { checkThemeContrast, resolveTheme } = require(path.join(ROOT, 'packages/postcss-uxdsl/dist/ds-runtime'));
-  const exceptions = require(path.join(ROOT, 'packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'));
+  const { checkThemeContrast, resolveTheme } = require(path.join(ROOT, 'packages/uxdsl/dist/entries/engine'));
+  const exceptions = require(path.join(ROOT, 'packages/uxdsl/src/theme/base.contrast-exceptions.json'));
   const { themes } = require(path.join(PLAYGROUND, 'themes.js'));
   const node = checkThemeContrast(resolveTheme(themes[themeName]), { exceptions });
   const signatureOf = (f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`;

@@ -1,0 +1,134 @@
+{
+  "name": "uxdsl",
+  "version": "1.0.0-dev",
+  "description": "UXDSL: a CSS dialect where breakpoints belong to the theme, not to components. Compiler (PostCSS plugin), CLI, Vite plugin, Webpack loader and browser theme runtime in one package.",
+  "keywords": [
+    "uxdsl",
+    "css",
+    "postcss",
+    "postcss-plugin",
+    "design-system",
+    "design-tokens",
+    "theme",
+    "responsive",
+    "vite-plugin",
+    "webpack-loader"
+  ],
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/uxdsl"
+  },
+  "bugs": {
+    "url": "https://github.com/rsantoyo-dev/uxdsl/issues"
+  },
+  "homepage": "https://uxdsl.io",
+  "main": "./dist/entries/index.js",
+  "types": "./dist/entries/index.d.ts",
+  "bin": {
+    "uxdsl": "./bin/uxdsl.js"
+  },
+  "sideEffects": false,
+  "files": [
+    "dist",
+    "bin",
+    "src/theme",
+    "schema",
+    "docs/agent-guide.md",
+    "scripts/codemod-canonical-grammar.js",
+    "scripts/codemod-namespace.js",
+    "scripts/codemod-size-overrides.js"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/entries/index.d.ts",
+      "default": "./dist/entries/index.js"
+    },
+    "./postcss": {
+      "types": "./dist/plugin.d.ts",
+      "default": "./dist/plugin.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
+    "./webpack": {
+      "types": "./dist/webpack.d.ts",
+      "default": "./dist/webpack.js"
+    },
+    "./runtime": {
+      "types": "./dist/entries/runtime.d.ts",
+      "default": "./dist/entries/runtime.js"
+    },
+    "./theme": {
+      "types": "./dist/entries/theme.d.ts",
+      "default": "./dist/entries/theme.js"
+    },
+    "./language": {
+      "types": "./dist/entries/language.d.ts",
+      "default": "./dist/entries/language.js"
+    },
+    "./config": {
+      "types": "./dist/entries/config.d.ts",
+      "default": "./dist/entries/config.js"
+    },
+    "./engine": {
+      "types": "./dist/entries/engine.d.ts",
+      "default": "./dist/entries/engine.js"
+    },
+    "./theme/base.json": "./src/theme/base.json",
+    "./theme/base.contrast-exceptions.json": "./src/theme/base.contrast-exceptions.json",
+    "./schema/theme.schema.json": "./schema/theme.schema.json",
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "clean": "rm -rf dist",
+    "prepack": "npm run build",
+    "test": "npm run build && node --test test/*.test.js && node --test test/core/*.test.js && node --test test/cli/*.test.js && node --test test/vite/*.test.js && node --test test/webpack/*.test.js && node --test --test-concurrency=1 test/performance/*.test.js",
+    "codemod:size-overrides": "node scripts/codemod-size-overrides.js",
+    "codemod:namespace": "node scripts/codemod-namespace.js",
+    "codemod:canonical-grammar": "node scripts/codemod-canonical-grammar.js"
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "minimist": "^1.2.8",
+    "postcss-advanced-variables": "^3.0.0",
+    "postcss-import": "^16.1.0",
+    "postcss-scss": "^4.0.9",
+    "postcss-value-parser": "^4.2.0"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31",
+    "vite": ">=4.0.0",
+    "webpack": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    },
+    "webpack": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "ajv": "8.20.0",
+    "css-loader": "^7.1.5",
+    "css-tree": "^3.1.0",
+    "esbuild": "^0.25.12",
+    "mini-css-extract-plugin": "^2.10.2",
+    "postcss": "^8.5.6",
+    "source-map-js": "^1.2.1",
+    "style-loader": "^4.0.0",
+    "typescript": "^5.9.3",
+    "vite": "^5.4.21",
+    "webpack": "^5.102.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

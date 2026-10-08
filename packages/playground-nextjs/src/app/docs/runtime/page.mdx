@@ -1,6 +1,6 @@
 import { PageTitle } from '@/components/PageTitle'
 import { SiteThemeState, RuntimeSandbox } from '@/components/RuntimeLab'
-import { ThemeResolution, DirectiveDeclarations, FontsImport } from '@/components/RuntimeEngines'
+import { ThemeResolution, DirectiveDeclarations, FontsImport, ValueGrammar, ReferenceCheck } from '@/components/RuntimeEngines'
 
 <PageTitle
   title="Runtime API"
@@ -36,7 +36,7 @@ One result is worth reading closely. `applyTheme({ breakpoints: { md: 900 } })` 
 
 ## Resolution, engines and fonts
 
-These functions are pure: they take a theme and return a value, so they run on this page against the active theme. `resolveTheme` is the one place an effective theme is built (the base with an override merged over it); `buttonDeclarations`, `inputDeclarations` and `resolveTypographyRole` are what `@ds-button`, `@ds-input` and `@ds-typo` expand to — the compiler calls the same functions; `googleFontsImportUrls` and `encodeGoogleFontFamily` build the Google Fonts `@import` both the compiler and `generateThemeCss` emit.
+These functions are pure: they take a theme and return a value, so they run on this page against the active theme. `resolveTheme` is the one place an effective theme is built (the base with an override merged over it); `buttonDeclarations`, `inputDeclarations` and `resolveTypographyRole` are what `@ds-button`, `@ds-input` and `@ds-typo` expand to — the compiler calls the same functions; `googleFontsImportUrls` and `encodeGoogleFontFamily` build the Google Fonts `@import` both the compiler and `generateThemeCss` emit. `tokenValueToCss` is the one grammar every theme value goes through, on both CSS paths, `validateResponsiveExpression` and `analyzeResponsiveValue` are how the compiler checks and reads a responsive value before expanding it, `themeStructure` and `structuralChanges` are the comparison `applyTheme` runs before it applies a patch, and `inspectReferences` is the reference check every build runs (the last four from `uxdsl/engine`, the tooling entry).
 
 </div>
 
@@ -44,4 +44,6 @@ These functions are pure: they take a theme and return a value, so they run on t
   <ThemeResolution />
   <DirectiveDeclarations />
   <FontsImport />
+  <ValueGrammar />
+  <ReferenceCheck />
 </div>

@@ -3,7 +3,7 @@
   "version": "0.0.6",
   "private": true,
   "scripts": {
-    "local-deps": "npm install --include=dev --prefix ../uxdsl-cli && npm install --include=dev --prefix ../postcss-uxdsl && npm run build --prefix ../postcss-uxdsl && npm install --prefix ../uxdsl-core && npm run build --prefix ../uxdsl-core",
+    "local-deps": "npm install --include=dev --prefix ../uxdsl && npm run build --prefix ../uxdsl",
     "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build && node scripts/build-runtime-sandbox.js",
     "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && node scripts/build-runtime-sandbox.js && uxdsl build --watch",
     "capture:capabilities": "node scripts/capture-capabilities.js",
@@ -39,11 +39,11 @@
     "lucide-react": "^0.554.0",
     "next": "^14.0.0",
     "postcss": "^8.5.6",
-    "postcss-uxdsl": "file:../postcss-uxdsl",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-syntax-highlighter": "^16.1.0",
-    "sass": "^1.94.0"
+    "sass": "^1.94.0",
+    "uxdsl": "file:../uxdsl"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",
@@ -62,7 +62,6 @@
     "stylelint": "^16.25.0",
     "stylelint-config-standard-scss": "^13.0.0",
     "stylelint-selector-bem-pattern": "^4.0.1",
-    "typescript": "^5.0.0",
-    "uxdsl-cli": "file:../uxdsl-cli"
+    "typescript": "^5.0.0"
   }
 }

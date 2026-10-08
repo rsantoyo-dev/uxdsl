@@ -13,8 +13,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { checkThemeContrast, resolveTheme } = require('postcss-uxdsl/ds-runtime');
-const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json');
+const { checkThemeContrast, resolveTheme } = require('uxdsl/theme');
+const exceptions = require('uxdsl/theme/base.contrast-exceptions.json');
 const { themes } = require('../themes.js');
 
 const PACKAGE_DIR = path.resolve(__dirname, '..');

@@ -112,8 +112,8 @@ test('every documentation surface with examples is found (the extractor cannot s
   // Floors, not exact counts: removing an example is fine; the extractor breaking is not.
   const floors = {
     'AGENTS.md': 8,
-    'packages/postcss-uxdsl/README.md': 8,
-    'packages/uxdsl-cli/README.md': 1,
+    'packages/uxdsl/README.md': 8,
+    'packages/uxdsl/docs/integrations/cli.md': 1,
     'packages/playground-nextjs/src/components/ButtonDocumentation.tsx': 2,
     'packages/playground-nextjs/src/components/SurfaceDocumentation.tsx': 3,
     'packages/playground-nextjs/src/components/ColorDocumentation.tsx': 1,

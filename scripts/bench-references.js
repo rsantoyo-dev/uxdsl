@@ -17,7 +17,7 @@ const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const root = path.resolve(__dirname, '..');
-const pkgDir = path.join(root, 'packages', 'postcss-uxdsl');
+const pkgDir = path.join(root, 'packages', 'uxdsl');
 const postcss = require(require.resolve('postcss', { paths: [pkgDir] }));
 const postcssScss = require(require.resolve('postcss-scss', { paths: [pkgDir] }));
 const uxdsl = require(path.join(pkgDir, 'dist', 'index.js'));

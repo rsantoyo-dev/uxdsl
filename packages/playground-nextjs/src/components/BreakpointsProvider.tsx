@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useMemo, ReactNode } from 'react'
 import { useTheme } from './ThemeContext'
-import { DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/language'
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
 
 // The breakpoints of the active theme, as one read-only map for the pages that
 // need to know the thresholds (the toolbar's active-breakpoint pill, the side

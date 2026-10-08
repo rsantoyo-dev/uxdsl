@@ -5,18 +5,28 @@
 // state, so they run on the page itself, against what ThemeContext applied.
 
 import { useEffect, useMemo, useState } from 'react'
+import postcss, { type Declaration } from 'postcss'
 import {
   resolveTheme,
   DEFAULT_THEME,
+  googleFontsImportUrls,
+  generateThemeCss,
+  DEFAULT_BREAKPOINTS,
+} from 'uxdsl/theme'
+import {
   buttonDeclarations,
   inputDeclarations,
   resolveTypographyRole,
   getButtonTokens,
   getInputTokens,
-  googleFontsImportUrls,
   encodeGoogleFontFamily,
-} from 'postcss-uxdsl/ds-runtime'
-import { getToneFamilies } from 'postcss-uxdsl/language'
+  tokenValueToCss,
+  analyzeResponsiveValue,
+  themeStructure,
+  structuralChanges,
+  inspectReferences,
+} from 'uxdsl/engine'
+import { getToneFamilies, validateResponsiveExpression } from 'uxdsl/language'
 import { useTheme } from './ThemeContext'
 
 const DEFAULT_OVERRIDE = `{
@@ -33,13 +43,17 @@ export function ThemeResolution() {
       const override = JSON.parse(text)
       const effective = resolveTheme(override)
       const base = DEFAULT_THEME
+      // What applyTheme would do with it: the same structural comparison it runs
+      // before touching the page (a value change applies, a structural one asks
+      // for a rebuild).
+      const changes = structuralChanges(themeStructure(base, generateThemeCss(base)), themeStructure(effective, generateThemeCss(effective)))
       const rows = Object.entries(effective.palette?.primary || {}).map(([variant, value]) => ({
         variant,
         value: String(value),
         source: override?.palette?.primary?.[variant] !== undefined ? 'your override' : 'base',
         base: String(base.palette?.primary?.[variant] ?? '—'),
       }))
-      return { ok: true as const, rows, families: Object.keys(effective).length }
+      return { ok: true as const, rows, families: Object.keys(effective).length, changes }
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message.split('\n')[0] : String(error) }
     }
@@ -59,6 +73,13 @@ export function ThemeResolution() {
           </table>
         </div>
       ) : <p className="cap-result cap-result--error" role="alert">{outcome.message}</p>}
+      {outcome.ok && (
+        <p className="cap-note" data-testid="theme-structure">
+          <code>structuralChanges(themeStructure(…))</code>: {outcome.changes.length
+            ? <>a rebuild is needed — {outcome.changes.join('; ')}</>
+            : <>values only, so <code>applyTheme</code> would apply it without a rebuild</>}
+        </p>
+      )}
       <p className="cap-note">Override only <code>main</code> and <code>dark</code>/<code>contrast</code> come from the base: the same merge <code>uxdsl theme --diff</code> labels leaf by leaf (see the CLI page).</p>
     </div>
   )
@@ -159,6 +180,78 @@ export function FontsImport() {
       <label className="cap-label" htmlFor="cap-font-family">A family spec</label>
       <input id="cap-font-family" className="cap-field" value={family} onChange={(e) => setFamily(e.target.value)} spellCheck={false} />
       <p className="cap-note"><code>encodeGoogleFontFamily</code> → <code>{encodeGoogleFontFamily(family)}</code></p>
+    </div>
+  )
+}
+
+/** The one value grammar: what a theme value compiles to, and how a responsive value groups. */
+export function ValueGrammar() {
+  const { activeThemeData } = useTheme()
+  const theme = activeThemeData
+  const [value, setValue] = useState('palette(primary.main, 0.5)')
+  const [responsive, setResponsive] = useState('xs(1rem) md(2rem) !important')
+  const compiled = useMemo(() => {
+    try { return { ok: true as const, css: tokenValueToCss(value, theme) } }
+    catch (error) { return { ok: false as const, message: error instanceof Error ? error.message.split('\n')[0] : String(error) } }
+  }, [value, theme])
+  const analysis = useMemo(() => {
+    const bps = { ...DEFAULT_BREAKPOINTS, ...(theme?.breakpoints || {}) }
+    try {
+      validateResponsiveExpression(responsive, bps)
+      return { ok: true as const, result: analyzeResponsiveValue(responsive, bps) }
+    }
+    catch (error) { return { ok: false as const, message: error instanceof Error ? error.message.split('\n')[0] : String(error) } }
+  }, [responsive, theme])
+
+  return (
+    <div className="cap-card" data-testid="value-grammar">
+      <h3 className="cap-card__title"><code>tokenValueToCss</code> · <code>validateResponsiveExpression</code> · <code>analyzeResponsiveValue</code></h3>
+      <label className="cap-label" htmlFor="cap-token-value">A theme value</label>
+      <input id="cap-token-value" className="cap-field" value={value} onChange={(e) => setValue(e.target.value)} spellCheck={false} aria-invalid={!compiled.ok} />
+      {compiled.ok
+        ? <p className="cap-note"><code>tokenValueToCss</code> → <code>{compiled.css}</code></p>
+        : <p className="cap-result cap-result--error" role="alert">{compiled.message}</p>}
+      <label className="cap-label" htmlFor="cap-responsive-value">A responsive value</label>
+      <input id="cap-responsive-value" className="cap-field" value={responsive} onChange={(e) => setResponsive(e.target.value)} spellCheck={false} aria-invalid={!analysis.ok} />
+      {analysis.ok ? (
+        <div className="cap-table-wrap">
+          <table>
+            <caption>Groups of breakpoint functions ({analysis.result.standalone ? 'the whole value' : 'inside a larger value'})</caption>
+            <thead><tr><th>Breakpoints</th><th>Base</th><th>!important</th></tr></thead>
+            <tbody>{analysis.result.groups.map((group, i) => <tr key={i}><td><code>{group.names.join(' ')}</code></td><td>{group.hasBase ? 'yes' : 'no'}</td><td>{group.important ? 'yes' : 'no'}</td></tr>)}</tbody>
+          </table>
+        </div>
+      ) : <p className="cap-result cap-result--error" role="alert">{analysis.message}</p>}
+    </div>
+  )
+}
+
+/** The reference check the compiler runs on every build, on CSS typed here against the active theme. */
+export function ReferenceCheck() {
+  const { activeThemeData } = useTheme()
+  const [css, setCss] = useState('.card {\n  color: var(--uxdsl__palette__primary-main);\n  background: var(--uxdsl__palette__brand-main);\n}')
+  const outcome = useMemo(() => {
+    try {
+      const root = postcss.parse(css)
+      const consumers: Declaration[] = []
+      root.walkDecls((decl) => { consumers.push(decl) })
+      const issues = inspectReferences(root, consumers, { css: [generateThemeCss(activeThemeData)] })
+      return { ok: true as const, issues: issues.map((issue) => issue.message) }
+    } catch (error) {
+      return { ok: false as const, message: error instanceof Error ? error.message.split('\n')[0] : String(error) }
+    }
+  }, [css, activeThemeData])
+
+  return (
+    <div className="cap-card" data-testid="reference-check">
+      <h3 className="cap-card__title"><code>inspectReferences</code></h3>
+      <label className="cap-label" htmlFor="cap-reference-css">Compiled CSS that uses theme variables</label>
+      <textarea id="cap-reference-css" className="cap-field cap-field--code" rows={5} value={css} onChange={(e) => setCss(e.target.value)} spellCheck={false} aria-invalid={outcome.ok && outcome.issues.length > 0} />
+      {outcome.ok ? (
+        outcome.issues.length
+          ? <ul className="cap-log">{outcome.issues.map((issue) => <li key={issue}><code>{issue}</code></li>)}</ul>
+          : <p className="cap-note">Every <code>var(--uxdsl__…)</code> resolves against the active theme.</p>
+      ) : <p className="cap-result cap-result--error" role="alert">{outcome.message}</p>}
     </div>
   )
 }

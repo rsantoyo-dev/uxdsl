@@ -6,7 +6,7 @@
 // package's own DIAGNOSTIC_CATALOG, rendered as is: every code, its meaning and its fix.
 
 import captures from '@/generated/compiler-captures.json'
-import { DIAGNOSTIC_CATALOG } from 'postcss-uxdsl/ds-runtime'
+import { DIAGNOSTIC_CATALOG } from 'uxdsl/language'
 
 type Diagnostic = { code: string; title: string; source: string; theme: unknown; argv: string[]; exit: number; stderr: string }
 

@@ -5,11 +5,11 @@
 // page runs its state-changing runtime calls in (see src/runtime-sandbox/sandbox-entry.ts
 // for why they need their own document and realm).
 //
-//   1. runtime-sandbox/sandbox.uxdsl is compiled by uxdsl-core's compile() — the pipeline
+//   1. runtime-sandbox/sandbox.uxdsl is compiled by uxdsl's compile() — the pipeline
 //      `uxdsl build` uses — with the site's own default theme, so the sandbox is a real
 //      compiled UXDSL project.
 //   2. src/runtime-sandbox/sandbox-entry.ts is bundled with esbuild. Like next.config.js,
-//      it resolves postcss-uxdsl/ds-runtime to the package's current source.
+//      it resolves uxdsl/runtime and friends to the package's current source.
 //   3. index.html inlines the CSS as a <style> and loads the bundle.
 //
 // Runs as part of `npm run uxdsl:build`, so `dev` and `build` always serve a fresh one.
@@ -23,8 +23,7 @@ const PLAYGROUND = path.resolve(__dirname, '..');
 const OUT = path.join(PLAYGROUND, 'public/runtime-sandbox');
 
 function loadCore() {
-  const cliRequire = require('node:module').createRequire(path.join(PLAYGROUND, '../uxdsl-cli/package.json'));
-  return cliRequire('uxdsl-core');
+  return require('uxdsl');
 }
 
 async function main() {
@@ -43,10 +42,16 @@ async function main() {
     target: 'es2019',
     minify: true,
     write: false,
-    alias: {
-      'postcss-uxdsl/ds-runtime': path.resolve(PLAYGROUND, '../postcss-uxdsl/src/ds-runtime.ts'),
-      'postcss-uxdsl/language': path.resolve(PLAYGROUND, '../postcss-uxdsl/src/language.ts'),
-    },
+    // The package's entry points resolve to its current source (exact matches only:
+    // `uxdsl/theme/base.json` is a file of the package, not a path under the entry).
+    plugins: [{
+      name: 'uxdsl-source',
+      setup(build) {
+        build.onResolve({ filter: /^uxdsl\/(runtime|theme|language|engine)$/ }, (args) => ({
+          path: path.resolve(PLAYGROUND, '../uxdsl/src/entries', `${args.path.slice('uxdsl/'.length)}.ts`),
+        }));
+      },
+    }],
     logLevel: 'silent',
   });
 
