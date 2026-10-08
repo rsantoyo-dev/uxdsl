@@ -219,6 +219,16 @@ a reader never sees a truncated file and an unchanged entry keeps its mtime:
 [uxdsl] unchanged src/uxdsl.css (compiled output identical to the file on disk; not rewritten)
 ```
 
+A `watch` entry is a glob when it has `*`, `?`, a `[…]` class, a `{…}` set or
+an extglob (`@(…)`, `!(…)`, `+(…)`); the watcher follows its static base
+directory (`src` for `src/**/*.uxdsl`, also when it is created after the
+watcher started) and reports only the files the glob matches, dot-directories
+included — the picomatch semantics chokidar 3 used. Anything else is a path:
+a file, a directory (watched recursively) or one that does not exist yet. A
+parenthesis alone is a path character, so `app/(marketing)/page.uxdsl` is the
+file of that name. Directories no glob can reach (`src/a/b` for `src/*.uxdsl`)
+are not traversed.
+
 "Unchanged" is about the output, not the inputs. `UXDSL_DEBUG=1` logs which
 config and theme files were discovered (and which external tokens were
 loaded, never their values).

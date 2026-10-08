@@ -88,6 +88,41 @@ css-loader's pure mode, no marker leaving the tokens unresolved), by
 
 None for a stylesheet without the marker: its output is byte-identical.
 
+### Dependencies: `build --watch` on chokidar 4 (1.0 gate: 0 high in `npm audit`)
+
+`npm i -D uxdsl` reported 4 high findings from two inherited chains; this
+removes the first, `chokidar@3` → `braces`. The watcher is `chokidar@^4`
+(one dependency, `readdirp`) plus `picomatch@^4` (none). chokidar 4 has no
+globs, so the CLI watches each glob's static base directory and reports an
+event only when its path matches the glob — the picomatch match, with dirs
+starting with a dot included, that chokidar 3 applied to the same `watch`
+entries. Every watch behavior the CLI tests pin is unchanged (selective
+rebuilds, atomic writes, own output excluded, recovery from a missing import,
+serialized pending changes, config/theme reload, a config edit retargeting the
+watcher), and so is the captured `build --watch` session the playground shows.
+`test/cli/watch-selection.test.js` pins the selection.
+
+Differences, all at the edges:
+
+- A glob whose base directory does not exist when the watcher starts
+  (`watch: ['styles/**/*.uxdsl']` before `styles/` is created) is followed
+  once the directory appears; chokidar 3 never reported its files.
+- An `unlinkDir` event for a removed directory no glob matches is no longer
+  reported (the `unlink` of each matching file inside it still is, and
+  `addDir` never was), so removing such a directory triggers one rebuild, not
+  two.
+- A `watch` entry counts as a glob when it has `*`, `?`, `[…]`, `{…}` or an
+  extglob; a parenthesis alone is a path character (`app/(marketing)/…`).
+  chokidar 3's `is-glob` also treated `(a|b)` as a glob and `b?.uxdsl` as a
+  path.
+- macOS uses `fs.watch` instead of FSEvents. Measured on a 20-partial project
+  (`build --watch`, median of 5 starts and 25 rebuilds, Apple Silicon): start
+  to "watching for changes" 226 ms → 203 ms; edit to "built" 152 ms → 57 ms.
+
+### Visual changes
+
+None: the watcher decides when to compile, not what.
+
 ### The browser runtime without PostCSS (stability phase 4, audit R5)
 
 `uxdsl/runtime` no longer pulls in the CSS parser. A browser bundle of

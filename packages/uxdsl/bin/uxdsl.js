@@ -3,7 +3,9 @@
 const fs = require('fs');
 const path = require('path');
 const minimist = require('minimist');
+const { EventEmitter } = require('events');
 const chokidar = require('chokidar');
+const picomatch = require('picomatch');
 const postcss = require('postcss');
 // The CLI is part of the `uxdsl` package, so it compiles with the exact
 // compiler, theme model and theme-file discovery shipped next to it — there is
@@ -1332,6 +1334,89 @@ function bootstrapWatchTargets(argv, cwd) {
   return [...targets];
 }
 
+// chokidar 4 watches paths, not globs, so the watch list is split here into
+// what to watch and what to report. An entry is a glob when it has `*`, `?`,
+// a `[…]` class, a `{…}` set or an extglob (`@(…)`, `!(…)`, `+(…)`); a
+// parenthesis alone is a literal path character, so a Next.js route group
+// (`app/(marketing)/…`) or `file (1).uxdsl` is a path. A path is watched as
+// is — a file, a directory (recursively) or one that does not exist yet. A
+// glob watches its static base directory, and an event is reported only when
+// its path matches the glob (picomatch, `dot: true`: what chokidar 3 matched
+// with); directories no glob can reach below are not traversed, and files no
+// glob matches are not watched.
+const toPosixPath = (file) => file.split(path.sep).join('/');
+
+function watchSelection(targets) {
+  const plain = new Set();
+  const globs = [];
+  const roots = new Set();
+  for (const target of targets) {
+    const posix = toPosixPath(target);
+    const scan = picomatch.scan(posix, { noparen: true });
+    if (!scan.isGlob) {
+      const resolved = path.resolve(target);
+      plain.add(resolved);
+      roots.add(resolved);
+      continue;
+    }
+    const base = path.resolve(scan.base || '/');
+    roots.add(base);
+    const rest = scan.glob;
+    const segments = rest.split('/');
+    globs.push({
+      base,
+      matches: picomatch(posix, { dot: true }),
+      // A brace or an extglob may span a `/`; such a glob is never used to prune.
+      segments: /[{(]/.test(rest) ? null : segments.map((s) => (s === '**' ? s : picomatch(s, { dot: true }))),
+    });
+  }
+  const plainList = [...plain];
+  const inside = (file, dir) => file.startsWith(dir.endsWith(path.sep) ? dir : dir + path.sep);
+  // A plain target, a directory inside one, or an ancestor chokidar needs to
+  // reach one that does not exist yet.
+  const nearPlain = (file) => plain.has(file) || plainList.some((p) => inside(file, p) || inside(p, file));
+  const selects = (file) => {
+    const resolved = path.resolve(file);
+    if (plain.has(resolved) || plainList.some((p) => inside(resolved, p))) return true;
+    const posix = toPosixPath(resolved);
+    return globs.some((g) => g.matches(posix));
+  };
+  const mayContainMatches = (dir) => globs.some((g) => {
+    if (dir === g.base || inside(g.base, dir)) return true;
+    if (!inside(dir, g.base)) return false;
+    if (!g.segments) return true;
+    const parts = toPosixPath(path.relative(g.base, dir)).split('/');
+    for (let i = 0; i < parts.length; i++) {
+      const segment = g.segments[i];
+      if (segment === '**') return true;
+      // The last segment names files; a directory has to sit above it.
+      if (i >= g.segments.length - 1 || !segment(parts[i])) return false;
+    }
+    return true;
+  });
+  const ignored = (file, stats) => {
+    const resolved = path.resolve(file);
+    if (nearPlain(resolved)) return false;
+    if (!stats) return false; // chokidar asks again with the stats
+    if (stats.isDirectory()) return !mayContainMatches(resolved);
+    return !globs.some((g) => g.matches(toPosixPath(resolved)));
+  };
+  return { roots: [...roots], selects, ignored };
+}
+
+// The CLI's watcher: chokidar 4 over `watchSelection(targets)`, emitting only
+// the selected paths' events (`all`), plus `ready` and `error`.
+function createWatcher(targets) {
+  const { roots, selects, ignored } = watchSelection(targets);
+  const events = new EventEmitter();
+  const watcher = chokidar.watch(roots, { ignoreInitial: true, ignored });
+  watcher.on('all', (event, file) => { if (selects(file)) events.emit('all', event, file); });
+  watcher.on('ready', () => events.emit('ready'));
+  watcher.on('error', (error) => events.emit('error', error));
+  events.close = () => watcher.close();
+  return events;
+}
+
 // `initialConfig` may be `null` — the caller's own initial `loadConfig`/
 // `buildOnce` already failed and was logged; this starts in "bootstrap"
 // mode (watching config/theme candidates only) instead of never reaching
@@ -1345,7 +1430,7 @@ function startWatch(initialConfig, argv, cwd, builder) {
   // build (full or selective) never touches this — the last valid graph is
   // what a subsequent change is still checked against (item 3).
   let dependencyGraph = new Map();
-  let watcher = chokidar.watch(config ? config.watch : bootstrapWatchTargets(argv, cwd), { ignoreInitial: true });
+  let watcher = createWatcher(config ? config.watch : bootstrapWatchTargets(argv, cwd));
   console.log('[uxdsl] watching for changes...');
   let building = false;
   // 'full' once any queued change requires one; otherwise a Set of the
@@ -1404,7 +1489,7 @@ function startWatch(initialConfig, argv, cwd, builder) {
       // Recreate to handle overlapping globs without unwatch() leaving
       // exclusions behind. Keep config errors recoverable on the old watcher.
       await watcher.close();
-      watcher = chokidar.watch(config.watch, { ignoreInitial: true });
+      watcher = createWatcher(config.watch);
       watcher.on('all', onChange);
       await new Promise((resolve, reject) => {
         watcher.once('ready', resolve);
@@ -2061,6 +2146,8 @@ module.exports = {
   findPartiallyDefaultedFamilies,
   themeCommand,
   startWatch,
+  watchSelection,
+  createWatcher,
   clearRequireCache,
   collectLocalRequireTree,
   init,

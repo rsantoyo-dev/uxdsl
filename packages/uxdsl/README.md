@@ -43,7 +43,8 @@ an older npm, add it yourself (`npm install -D postcss`). `vite` (`>=4`) and
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
 to a plain `.css` file you import from your app like any other stylesheet.
-`npx uxdsl build --watch` recompiles as you edit. See
+`npx uxdsl build --watch` recompiles as you edit (the config's `watch` globs
+select what it follows — "Watch mode" in the CLI guide). See
 [the CLI guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md) for the full setup
 (Next.js/Vite detection, `uxdsl:build`/`uxdsl:watch` scripts, multi-entry
 projects).

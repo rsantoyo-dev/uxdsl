@@ -94,8 +94,9 @@
     "codemod:canonical-grammar": "node scripts/codemod-canonical-grammar.js"
   },
   "dependencies": {
-    "chokidar": "^3.6.0",
+    "chokidar": "^4.0.3",
     "minimist": "^1.2.8",
+    "picomatch": "^4.0.7",
     "postcss-advanced-variables": "^3.0.0",
     "postcss-import": "^16.1.0",
     "postcss-scss": "^4.0.9",
