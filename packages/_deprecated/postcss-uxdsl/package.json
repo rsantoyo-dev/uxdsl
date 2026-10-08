@@ -1,0 +1,59 @@
+{
+  "name": "postcss-uxdsl",
+  "version": "0.6.0",
+  "description": "Deprecated: the UXDSL PostCSS plugin is now `uxdsl/postcss` in the `uxdsl` package.",
+  "license": "MIT",
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/_deprecated/postcss-uxdsl"
+  },
+  "homepage": "https://uxdsl.io",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./ds-runtime": {
+      "types": "./ds-runtime.d.ts",
+      "default": "./ds-runtime.js"
+    },
+    "./language": {
+      "types": "./language.d.ts",
+      "default": "./language.js"
+    },
+    "./config": {
+      "types": "./config.d.ts",
+      "default": "./config.js"
+    },
+    "./theme/base.json": "./theme-base.js",
+    "./theme/base.contrast-exceptions.json": "./theme-base-contrast-exceptions.js",
+    "./schema/theme.schema.json": "./theme-schema.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "config.d.ts",
+    "config.js",
+    "ds-runtime.d.ts",
+    "ds-runtime.js",
+    "index.d.ts",
+    "index.js",
+    "language.d.ts",
+    "language.js",
+    "theme-base-contrast-exceptions.js",
+    "theme-base.js",
+    "theme-schema.js"
+  ],
+  "dependencies": {
+    "uxdsl": "^1.0.0-rc.1"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

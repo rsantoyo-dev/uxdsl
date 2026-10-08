@@ -1,0 +1,41 @@
+{
+  "name": "uxdsl-webpack-loader",
+  "version": "0.6.0",
+  "description": "Deprecated: the UXDSL Webpack loader is now `uxdsl/webpack` in the `uxdsl` package.",
+  "license": "MIT",
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/_deprecated/uxdsl-webpack-loader"
+  },
+  "homepage": "https://uxdsl.io",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
+  "dependencies": {
+    "uxdsl": "^1.0.0-rc.1"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31",
+    "webpack": "^5.0.0"
+  },
+  "peerDependenciesMeta": {
+    "webpack": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

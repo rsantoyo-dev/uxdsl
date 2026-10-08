@@ -1,0 +1,31 @@
+{
+  "name": "uxdsl-cli",
+  "version": "0.6.0",
+  "description": "Deprecated: the `uxdsl` command is now provided by the `uxdsl` package.",
+  "license": "MIT",
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/_deprecated/uxdsl-cli"
+  },
+  "homepage": "https://uxdsl.io",
+  "bin": {
+    "uxdsl": "./bin/uxdsl.js"
+  },
+  "exports": {
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin"
+  ],
+  "dependencies": {
+    "uxdsl": "^1.0.0-rc.1"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

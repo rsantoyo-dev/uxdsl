@@ -1,0 +1,7 @@
+{
+  "postcss-uxdsl": "postcss-uxdsl is now part of uxdsl. Install it with `npm i -D uxdsl` and use 'uxdsl/postcss' (the plugin), 'uxdsl/runtime', 'uxdsl/theme', 'uxdsl/language', 'uxdsl/config' or 'uxdsl/engine'. Old \u2192 new imports: https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1",
+  "uxdsl-core": "uxdsl-core is now part of uxdsl. Install it with `npm i -D uxdsl` and use `require('uxdsl').compile`. Old \u2192 new imports: https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1",
+  "uxdsl-cli": "uxdsl-cli is now part of uxdsl: `npm i -D uxdsl` provides the same `uxdsl` command. Old \u2192 new: https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1",
+  "vite-plugin-uxdsl": "vite-plugin-uxdsl is now part of uxdsl. Install it with `npm i -D uxdsl` and use `import uxdsl from 'uxdsl/vite'`. Old \u2192 new imports: https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1",
+  "uxdsl-webpack-loader": "uxdsl-webpack-loader is now part of uxdsl. Install it with `npm i -D uxdsl` and use `loader: 'uxdsl/webpack'`. Old \u2192 new: https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1"
+}

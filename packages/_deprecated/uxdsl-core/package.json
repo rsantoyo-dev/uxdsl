@@ -1,0 +1,35 @@
+{
+  "name": "uxdsl-core",
+  "version": "0.6.0",
+  "description": "Deprecated: compile() is now exported by the `uxdsl` package root.",
+  "license": "MIT",
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/_deprecated/uxdsl-core"
+  },
+  "homepage": "https://uxdsl.io",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
+  "dependencies": {
+    "uxdsl": "^1.0.0-rc.1"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
