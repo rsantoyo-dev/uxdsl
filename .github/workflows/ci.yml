@@ -27,24 +27,22 @@ jobs:
       - name: Install root, packages and fixtures
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          for p in postcss-uxdsl uxdsl-core uxdsl-cli vite-plugin-uxdsl uxdsl-webpack-loader uxdsl-vscode playground-nextjs; do
+          for p in uxdsl uxdsl-vscode playground-nextjs; do
             (cd "packages/$p" && npm ci --ignore-scripts --no-audit --no-fund)
           done
           (cd fixtures/mig02-nextjs-cssmodules && npm install --ignore-scripts --no-audit --no-fund)
-      - name: Build the compiler and core
-        run: |
-          npm --prefix packages/postcss-uxdsl run build
-          npm --prefix packages/uxdsl-core run build
-      - name: Prepare the consumer fixture (packs postcss-uxdsl, installs the tarball)
+      - name: Build the package
+        run: npm --prefix packages/uxdsl run build
+      - name: Prepare the consumer fixture (packs uxdsl, installs the tarball)
         run: node fixtures/mig07-consumer/run.js
       - name: Test
         run: npm test
 
   gate:
-    name: verify:beta7 (real tarballs, real Chrome)
+    name: verify:1.0 (one tarball, real Chrome)
     needs: test
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       UXDSL_CHROME_PATH: /usr/bin/google-chrome
     steps:
@@ -57,9 +55,9 @@ jobs:
       - name: Install root, packages and fixtures
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
-          for p in postcss-uxdsl uxdsl-core uxdsl-cli vite-plugin-uxdsl uxdsl-webpack-loader playground-nextjs; do
+          for p in uxdsl playground-nextjs; do
             (cd "packages/$p" && npm ci --ignore-scripts --no-audit --no-fund)
           done
           (cd fixtures/mig02-nextjs-cssmodules && npm install --ignore-scripts --no-audit --no-fund)
       - name: Release gate
-        run: npm run verify:beta7
+        run: npm run verify:1.0

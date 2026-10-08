@@ -20,8 +20,8 @@ const { chromium } = require('playwright-core');
 
 const installed = createRequire(path.resolve(__dirname, '../mig07-consumer/package.json'));
 const postcss = installed('postcss');
-const plugin = installed('postcss-uxdsl');
-const { generateThemeCss } = installed('postcss-uxdsl/ds-runtime');
+const plugin = installed('uxdsl/postcss');
+const { generateThemeCss } = installed('uxdsl/theme');
 const sourceTheme = require('../mig07-consumer/theme.json');
 
 const playgroundRequire = createRequire(path.resolve(__dirname, '../../packages/playground-nextjs/package.json'));
@@ -32,7 +32,7 @@ const STYLE_ID = 'uxdsl-ssr-theme';
 
 /** The installed runtime, bundled as an IIFE on `window.UXDSL`. */
 function bundleInstalledRuntime() {
-  const entry = installed.resolve('postcss-uxdsl/ds-runtime');
+  const entry = installed.resolve('uxdsl/runtime');
   const result = esbuild.buildSync({
     entryPoints: [entry],
     bundle: true,

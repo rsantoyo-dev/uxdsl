@@ -29,7 +29,7 @@ npm run verify
 ```
 
 First run installs the fixture dependencies locally. Every run builds and
-packs `postcss-uxdsl`, installs it through `fixtures/mig07-consumer/`, then
+packs `uxdsl`, installs it through `fixtures/mig07-consumer/`, then
 compiles using that installed package. No compiler source is imported from
 the monorepo by this fixture.
 

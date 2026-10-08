@@ -6,26 +6,23 @@ const path = require('path');
 const { spawnSync } = require('child_process');
 
 const rootDir = path.resolve(__dirname, '..');
+// Stability phase 4: one npm package. The loop shape (and the per-package
+// checks below) stays general, but there is exactly one entry.
 const packages = [
-  { name: 'postcss-uxdsl', dir: 'packages/postcss-uxdsl', deps: [] },
-  { name: 'uxdsl-core', dir: 'packages/uxdsl-core', deps: ['postcss-uxdsl'] },
-  { name: 'vite-plugin-uxdsl', dir: 'packages/vite-plugin-uxdsl', deps: ['postcss-uxdsl', 'uxdsl-core'] },
-  { name: 'uxdsl-webpack-loader', dir: 'packages/uxdsl-webpack-loader', deps: ['postcss-uxdsl', 'uxdsl-core'] },
-  { name: 'uxdsl-cli', dir: 'packages/uxdsl-cli', deps: ['postcss-uxdsl', 'uxdsl-core'] },
+  { name: 'uxdsl', dir: 'packages/uxdsl', deps: [] },
 ];
 
-// MIG-B6-28 (FEAT-008): postcss-uxdsl gets a fixed budget (its README/PNG
-// bloat was the story's own reproduction: 2 040 KB packed before `files`
-// existed at all). The other four already had no size problem; their
-// budget is their own measured packed size once `files` was added here,
-// +50% headroom, rounded up to a round number — not a moving target
-// recomputed from whatever happens to be on disk at check time.
+// The VS Code extension is released with the package but not to npm: the
+// release builds its VSIX, and publishing that to the Marketplace and Open VSX
+// is the owner's step. Its version is its own (it is not bumped here).
+const EXTENSION = { name: 'uxdsl-vscode', dir: 'packages/uxdsl-vscode' };
+
+// A fixed budget, not a moving target recomputed from whatever is on disk at
+// check time: uxdsl packed to 222 KB when the five packages became one
+// (276 KB for the five together before), so 300 KB leaves room for growth
+// while still catching a stray asset or an unpruned `files` entry.
 const PACK_BUDGETS_KB = {
-  'postcss-uxdsl': 250,
-  'uxdsl-cli': 55,
-  'uxdsl-core': 15,
-  'uxdsl-webpack-loader': 5,
-  'vite-plugin-uxdsl': 12,
+  uxdsl: 300,
 };
 
 function isValidSemver(input) {
@@ -305,35 +302,15 @@ function assertNpmPublishAccess(packageNames, { dryRun, skipPublish }) {
   });
 }
 
-function appendCoreReadmeNote(nextVersion, text, { dryRun } = {}) {
-  const readmeFile = path.join(rootDir, 'packages/uxdsl-core/README.md');
-  if (!fs.existsSync(readmeFile)) return;
-
-  const content = fs.readFileSync(readmeFile, 'utf8');
-  const anchor = '## Demo update notes';
-  const idx = content.indexOf(anchor);
-  if (idx === -1) return;
-
-  const normalized = String(text || '').trim();
-  if (!normalized) return;
-
-  const insertAfter = 'Use this section for short release notes on each npm tweak.';
-  const insertAt = content.indexOf(insertAfter, idx);
-  if (insertAt === -1) return;
-
-  const line = `\n\n- v${nextVersion} — ${normalized}`;
-  const updated =
-    content.slice(0, insertAt + insertAfter.length) +
-    line +
-    content.slice(insertAt + insertAfter.length);
-
-  if (dryRun) {
-    console.log(`(dry-run) would append uxdsl-core demo note: v${nextVersion} — ${normalized}`);
-    return;
+/** Builds the extension's VSIX for the owner to publish. Never publishes it. */
+function packageExtension({ dryRun } = {}) {
+  const extensionDir = path.join(rootDir, EXTENSION.dir);
+  if (!fs.existsSync(path.join(extensionDir, 'package.json'))) {
+    throw new Error(`${EXTENSION.dir}/package.json not found`);
   }
-
-  fs.writeFileSync(readmeFile, updated);
-  console.log(`Updated uxdsl-core README note for v${nextVersion}`);
+  run('npm', ['run', 'package'], extensionDir, { dryRun });
+  const { version } = readJson(path.join(extensionDir, 'package.json'));
+  console.log(`${dryRun ? '(dry-run) would package' : 'Packaged'} ${EXTENSION.dir}/${EXTENSION.name}-${version}.vsix — publishing it to the Marketplace and Open VSX is the owner's step.`);
 }
 
 function printCheckPackReport({ results, violations }) {
@@ -366,7 +343,6 @@ function parseArgs(argv) {
   const options = {
     version: null,
     bumpType: null,
-    note: null,
     otp: process.env.NPM_OTP || null,
     tag: null,
     dryRun: false,
@@ -382,9 +358,6 @@ function parseArgs(argv) {
       i += 1;
     } else if (arg === '--bump') {
       options.bumpType = argv[i + 1];
-      i += 1;
-    } else if (arg === '--note') {
-      options.note = argv[i + 1];
       i += 1;
     } else if (arg === '--otp') {
       options.otp = argv[i + 1];
@@ -444,7 +417,7 @@ function main(argv) {
   }
 
   if (!version && !bumpType) {
-    console.error('Usage: node scripts/release.js (--version <semver> | --bump <patch|minor|major>) [--note "short update note"] [--otp <2fa-code>] [--tag <dist-tag>] [--dry-run] [--skip-build] [--skip-publish] | --check-pack [--skip-build]');
+    console.error('Usage: node scripts/release.js (--version <semver> | --bump <patch|minor|major>) [--otp <2fa-code>] [--tag <dist-tag>] [--dry-run] [--skip-build] [--skip-publish] | --check-pack [--skip-build]');
     process.exit(1);
   }
 
@@ -454,7 +427,7 @@ function main(argv) {
       process.exit(1);
     }
 
-    const sourcePkgFile = path.join(rootDir, 'packages/uxdsl-core/package.json');
+    const sourcePkgFile = path.join(rootDir, packages[0].dir, 'package.json');
     const sourcePkg = readJson(sourcePkgFile);
     const currentVersion = sourcePkg.version;
 
@@ -490,10 +463,6 @@ function main(argv) {
       console.error('\nAborting release: preflight check failed (see above). Nothing was published.');
       process.exit(1);
     }
-  }
-
-  if (options.note) {
-    appendCoreReadmeNote(version, options.note, { dryRun });
   }
 
   packages.forEach((pkg) => {
@@ -532,7 +501,7 @@ function main(argv) {
 
   // Regenerates the language artifacts (the VS Code extension's completions
   // and grammar, the theme JSON Schema) from the freshly built engine
-  // defaults, so a release never ships them stale. Depends on postcss-uxdsl's
+  // defaults, so a release never ships them stale. Depends on uxdsl's
   // dist/ output, so this runs after the build loop above and is skipped
   // along with it in --skip-build mode.
   if (!skipBuild) {
@@ -566,6 +535,7 @@ function main(argv) {
         writeJson(lockFile, lock);
       }
     }
+    if (!skipBuild) packageExtension({ dryRun });
     console.log('Publish skipped.');
     return;
   }
@@ -575,8 +545,8 @@ function main(argv) {
   // files that ship — and record each tarball's shasum ("registrando
   // hash"). Then, right before each individual `npm publish`, re-pack that
   // package and refuse to publish anything whose shasum no longer matches:
-  // publishing five packages sequentially (with OTP prompts) leaves a real
-  // window for a source/dependency change to land on disk mid-loop.
+  // the build, an OTP prompt and the publish itself leave a real window for a
+  // source/dependency change to land on disk after validation.
   const validatedShasums = {};
   if (!dryRun) {
     const finalReport = checkPackBudgets(packages, PACK_BUDGETS_KB, rootDir);
@@ -645,11 +615,13 @@ function main(argv) {
     });
   }
 
+  if (!skipBuild) packageExtension({ dryRun });
   console.log('Release complete.');
 }
 
 module.exports = {
   packages,
+  EXTENSION,
   PACK_BUDGETS_KB,
   isValidSemver,
   getChannel,

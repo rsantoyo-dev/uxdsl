@@ -24,7 +24,7 @@ const { createRequire } = require('node:module');
 const { chromium } = require('playwright-core');
 const installed = createRequire(path.resolve(__dirname, '../mig07-consumer/package.json'));
 const postcss = installed('postcss');
-const plugin = installed('postcss-uxdsl');
+const plugin = installed('uxdsl/postcss');
 
 const RED = 'rgb(255, 0, 0)';
 const AUTHOR_IMPORT = '@import url("data:text/css,.probe%7Bbackground-color:rgb(255,0,0)%7D");';
