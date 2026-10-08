@@ -792,19 +792,26 @@ async function main() {
     });
   }
 
-  // --- Measurements, reported rather than judged ----------------------------
-  console.log('\nMeasured (reported, not a pass/fail):');
+  // --- What `npm i -D uxdsl` installs ---------------------------------------
+  console.log('\nThe install (`npm i -D uxdsl` of the tarball):');
   // All dependencies: the documented install is `npm i -D uxdsl`, so
-  // --omit=dev would leave out uxdsl itself and report a clean zero.
-  const audit = spawnSync('npm', ['audit', '--json'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
-  try {
-    const report = JSON.parse(audit.stdout);
+  // --omit=dev would leave out uxdsl itself and report a clean zero. The 1.0
+  // gate requires no high and no critical finding; an audit that cannot run
+  // (no registry) fails the check rather than passing it unmeasured.
+  await check('AUDIT', '`npm audit` (all dependencies) of a fresh `npm i -D uxdsl`: 0 high, 0 critical', () => {
+    const audit = spawnSync('npm', ['audit', '--json'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
+    let report;
+    try { report = JSON.parse(audit.stdout); } catch { throw new Error(`npm audit did not run: ${(audit.stderr || '').trim().split('\n')[0] || `exit ${audit.status}`}`); }
+    if (!report.metadata || !report.metadata.vulnerabilities) throw new Error(`npm audit returned no counts: ${JSON.stringify(report.error || report).slice(0, 160)}`);
     const counts = report.metadata.vulnerabilities;
     const chains = Object.entries(report.vulnerabilities || {}).map(([name, v]) => `${name} (${v.severity})`).join(', ');
-    console.log(`  npm audit (npm i -D uxdsl): ${Object.entries(counts).map(([level, n]) => `${n} ${level}`).join(', ')}${chains ? ` — ${chains}` : ''}`);
-  } catch {
-    console.log(`  npm audit: unavailable (${(audit.stderr || '').trim().split('\n')[0] || `exit ${audit.status}`})`);
-  }
+    const summary = `${['critical', 'high', 'moderate', 'low'].map((level) => `${counts[level] || 0} ${level}`).join(', ')}${chains ? ` — ${chains}` : ''}`;
+    if ((counts.high || 0) > 0 || (counts.critical || 0) > 0) throw new Error(summary);
+    return summary;
+  });
+
+  // --- Measurements, reported rather than judged ----------------------------
+  console.log('\nMeasured (reported, not a pass/fail):');
   const lsAll = spawnSync('npm', ['ls', '--all', '--parseable'], { cwd: dir, encoding: 'utf8', maxBuffer: 1 << 26 });
   console.log(`  packages installed with uxdsl: ${new Set((lsAll.stdout || '').trim().split('\n').slice(1)).size}`);
 

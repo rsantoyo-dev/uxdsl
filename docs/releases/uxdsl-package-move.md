@@ -36,13 +36,15 @@ the `uxdsl-cli` bin runs the command, and that the declaration files resolve.
    node scripts/release.js --check-pack   # the uxdsl tarball against its 300 KB budget
    ```
 
-Known before publishing: `npm audit` on a fresh `npm i -D uxdsl` reports 5
-vulnerabilities (1 moderate, 4 high), from two inherited chains —
-`chokidar@3` → `braces` (the CLI's watcher) and `postcss-advanced-variables@3`
-→ `postcss@7` (the SCSS subset). The published 0.5.0-beta.6
-(`npm i -D uxdsl-cli postcss-uxdsl`) reports 6 (2 moderate, 4 high) from the
-same two. `verify:1.0` prints the count; the 1.0 gate (stability phase 7)
-requires 0 high, so both chains need replacing before `1.0.0`.
+`npm audit` on a fresh `npm i -D uxdsl` (all dependencies) reports 0
+vulnerabilities: 20 packages, `uxdsl` and its `postcss` peer included. Until
+the `feat/stability-deps` work it reported 5 (1 moderate, 4 high) from two
+inherited chains — `chokidar@3` → `braces` (the CLI's watcher, now
+`chokidar@4` + `picomatch`) and `postcss-advanced-variables@3` → `postcss@7`
+(the SCSS subset, now UXDSL's own) — and installed 36 packages; the published
+0.5.0-beta.6 (`npm i -D uxdsl-cli postcss-uxdsl`) reports 6 (2 moderate,
+4 high) from the same two. `verify:1.0` fails on any high or critical finding
+(check `AUDIT`).
 
 ## 1. Publish `uxdsl`
 

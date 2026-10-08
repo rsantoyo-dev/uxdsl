@@ -195,6 +195,15 @@ divergence from Sass, which the subset is documented to follow:
 
 None: every stylesheet within the subset compiles to the same bytes.
 
+### `npm i -D uxdsl`: 0 vulnerabilities, 20 packages
+
+With both chains gone, `npm audit` (all dependencies, not `--omit=dev`) of an
+empty project after `npm i -D <uxdsl tarball>` reports 0 vulnerabilities (it
+reported 1 moderate and 4 high), and the install is 20 packages, `uxdsl` and
+its `postcss` peer included (it was 36). `verify:1.0` turns its audit from a
+measurement into check `AUDIT`: any high or critical finding fails the gate,
+and so does an audit that cannot run.
+
 ### The browser runtime without PostCSS (stability phase 4, audit R5)
 
 `uxdsl/runtime` no longer pulls in the CSS parser. A browser bundle of
