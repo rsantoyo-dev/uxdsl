@@ -41,7 +41,7 @@ Every reference in a declaration is checked against the effective theme when
 it is rewritten (`UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE`, …, with a
 "did you mean"), a tone with `getToneFamilies` (`UXD_SURFACE_TONE`), and a
 second `@ds-button`/`@ds-input` in one rule is `UXD_DIRECTIVE_DUPLICATE`.
-`scripts/codemod-canonical-grammar.js` in `postcss-uxdsl` rewrites the
+`scripts/codemod-canonical-grammar.js` in `uxdsl` rewrites the
 removed spellings.
 
 A matching value does not imply a matching responsibility. Do not replace:
@@ -163,7 +163,7 @@ Both live in the theme JSON.
   and active overrides before changing them.
 - A variant named `contrast` is not automatic accessibility validation. Check
   actual foreground/background pairs, states and themes —
-  `checkThemeContrast(theme, { exceptions })` (`postcss-uxdsl/ds-runtime`,
+  `checkThemeContrast(theme, { exceptions })` (`uxdsl/theme`,
   MIG-B6-29) does this for a given effective theme; it is not run
   automatically as part of resolving or compiling one.
 
@@ -592,7 +592,7 @@ Surfaces own the container composition. HTML/application code own interaction.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
   Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
-  `postcss-uxdsl/ds-runtime`, checks Button text/border pairs specifically —
+  `uxdsl/theme`, checks Button text/border pairs specifically —
   not run automatically, and not a substitute for a real accessibility review).
 - A role is defined in the theme JSON only (a `button-<role>` pack in a
   `@theme` block is `UXD_THEME_BLOCK_REMOVED`). No global Button cache.
@@ -656,6 +656,18 @@ keep interaction/validation semantics in HTML and application code.
 
 ## Build time, runtime and one source of truth
 
+UXDSL is one package, `uxdsl` (`npm i -D uxdsl`; it provides the `uxdsl`
+command). Import from the entry that owns the job: `uxdsl` (`compile()`,
+`resolveTheme`, `DEFAULT_THEME`, `defineConfig`, the types), `uxdsl/postcss`
+(the plugin; `'uxdsl/postcss'` in a `postcss.config.js`), `uxdsl/vite`,
+`uxdsl/webpack`, `uxdsl/runtime` (the browser API; it does not load PostCSS),
+`uxdsl/theme` (resolve, validate, generate, contrast — isomorphic),
+`uxdsl/language` (editor metadata and `DIAGNOSTIC_CODES`), `uxdsl/config` and
+`uxdsl/engine` (per-family engines for tooling — exempt from semver, so do
+not build an application on it). The five former package names
+(`postcss-uxdsl`, `uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`,
+`uxdsl-webpack-loader`) are deprecated re-exports; do not add them to a project.
+
 FEAT-002 moved every emitted variable to `--uxdsl__<family>__<key>` in
 0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped
 `scripts/codemod-namespace.js` previews migration of selected consumer files;
@@ -669,15 +681,15 @@ The CLI reloads local config dependencies on rebuild; list those files in
 updates the running watcher. Two files, two jobs: `uxdsl.config.js`/`.cjs`
 says what to compile and where (`entry`/`outFile` or `builds`, `watch`,
 `references`, `strictTheme`, `sourcemap`); the theme file next to it —
-`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+`uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` exporting the theme
 object — holds the theme, `breakpoints` included. A build config that
 carries `theme`, `themeFile`, `breakpoints` or `output` is rejected with the
 new home of each; a theme file exporting `{ theme, references }` is refused
 the same way. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
-The reviewed base theme ships inside `postcss-uxdsl` itself, at
-`postcss-uxdsl/theme/base.json` (`packages/postcss-uxdsl/src/theme/base.json`
+The reviewed base theme ships inside `uxdsl` itself, at
+`uxdsl/theme/base.json` (`packages/uxdsl/src/theme/base.json`
 in this repo) — it is `DEFAULT_THEME`, not a playground-only convenience file.
 The Next.js playground no longer keeps its own copy; `packages/playground-nextjs/themes.js`
 requires that same package path as `baseTheme`. Named
@@ -689,7 +701,7 @@ as a complete theme. Nested objects merge; arrays and responsive strings
 replace the whole field. Custom edits merge over the active effective theme;
 replace starts from the common base. Put shared roles and dependencies in the
 base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
-history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
+history). `uxdsl/theme` exports `checkThemeContrast(theme,
 { exceptions })` (MIG-B6-29 phase 2) to verify text/border colors against
 WCAG for any effective theme, including a project's own. Phase 3 corrected
 16 of `theme/base.json`'s own colors (and the playground's own `green`/
@@ -710,11 +722,11 @@ remaining findings were values, fixed as values in the same phase (DE-7 /
 D-9 = b): light-mode `warning` re-chosen (`main` `#b45309`, `dark`
 `#92400e`, `contrast` `#ffffff`, dark-mode `dark` `#f59e0b`), dark-mode
 `neutral.dark` `#94a3b8` (also the *untoned* placeholder default, whose 9
-dark-mode failures `packages/postcss-uxdsl/test/input-placeholder-tone.test.js`
+dark-mode failures `packages/uxdsl/test/input-placeholder-tone.test.js`
 now pins as a negative control) and dark-mode `light.dark` `#334155`. The
 base theme passes its own gate; the CHANGELOG's "Visual changes" table has
-every before/after. `postcss-uxdsl/ds-runtime`
-also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
+every before/after. `uxdsl/theme`
+also exports `googleFontsImportUrls` (and `uxdsl/engine` `encodeGoogleFontFamily`; MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
 now emit byte-identical `@import`s for the same theme instead of only the
@@ -745,12 +757,12 @@ Spacing, Colors, Palette or `fonts.families`); and `var(--…)` as the escape
 hatch. Write `palette(surface.contrast)` in a theme, not the compiled name
 `var(--uxdsl__palette__surface-contrast)`; the reference pass checks that the
 token exists. The engines resolve this grammar themselves (`tokenValueToCss`,
-`postcss-uxdsl/language`), so the PostCSS plugin and `generateThemeCss` emit
+`uxdsl/engine`), so the PostCSS plugin and `generateThemeCss` emit
 byte-identical blocks for the same theme — do not rely on a compiler pass to
 fix up a theme value, and do not add a second serializer.
 
 There is one theme validator, `validateTheme(theme, { references? })` from
-`postcss-uxdsl/ds-runtime` (the former `validateAndNormalizeTheme` is gone; nothing
+`uxdsl/theme` (the former `validateAndNormalizeTheme` is gone; nothing
 is normalized). The PostCSS plugin calls
 it on the effective theme before any engine runs, `generateThemeCss` and
 `applyTheme` call it, the CLI calls it, and the packaged JSON Schema is
@@ -773,7 +785,7 @@ or clean a value for you.
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option.
 
-In a browser, `applyTheme(patch, opts)` from `postcss-uxdsl/ds-runtime`
+In a browser, `applyTheme(patch, opts)` from `uxdsl/runtime`
 (MIG-B6-30) is the supported way to apply a theme. It is synchronous: it
 validates, generates and checks the patch against the applied structure before
 touching the DOM, so `ok: true` means the stylesheet and the reported state
@@ -784,7 +796,7 @@ singleton. Initialize once with the override the project was built with
 CSS back does not reconstruct the JSON.
 
 ```ts
-import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme } from 'uxdsl/runtime'
 
 applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' })
 const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } })
@@ -817,7 +829,7 @@ On the server there is no state to share: use `generateThemeCss(theme)`, which
 is pure and per request, and render the result yourself.
 
 ```ts
-import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+import { generateThemeCss } from 'uxdsl/theme'
 
 // nextTheme is the effective configuration, not an unrelated partial patch.
 const css = generateThemeCss(nextTheme)
@@ -835,17 +847,17 @@ threshold cannot be moved at run time at all: `applyTheme({ breakpoints:
 { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`. Moving one is an edit
 to the theme file and a rebuild. There is no runtime breakpoint API.
 Simulating a width is inspection, not a change: `inspectResponsiveValue`
-(`postcss-uxdsl/language`) reports the active breakpoint and the resolved
+(`uxdsl/language`) reports the active breakpoint and the resolved
 value at a supplied width without a document; that is what the playground's
 breakpoint demo does, not an actual browser resize. Validate real layouts
 with a real viewport too.
 
-The SCSS subset `uxdsl-core` compiles (`$variables`, `@if/@else`, `@each` of a
+The SCSS subset `compile()` compiles (`$variables`, `@if/@else`, `@each` of a
 list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
 nesting forwarded as written) is documented exactly once, in
-`packages/uxdsl-core/README.md` ("The SCSS subset"); everything else Sass has
+`packages/uxdsl/docs/integrations/compile.md` ("The SCSS subset"); everything else Sass has
 fails as `UXD_SCSS_UNSUPPORTED` or `UXD_NESTING_INVALID` naming what to write
-instead, and `packages/uxdsl-core/test/scss-subset.test.js` pins the audit's
+instead, and `packages/uxdsl/test/core/scss-subset.test.js` pins the audit's
 110-case matrix with no silent case.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
@@ -855,8 +867,8 @@ family is already unified. Compiler success does not guarantee every reference,
 CSS value or accessibility requirement was validated. Inspect actual output.
 
 
-Every `UXD_*` code is in `DIAGNOSTIC_CATALOG` (`postcss-uxdsl`,
-`postcss-uxdsl/ds-runtime`) with its meaning and fix; read the fix there
+Every `UXD_*` code is in `DIAGNOSTIC_CATALOG` (`uxdsl/language`, and on the
+`uxdsl/postcss` plugin) with its meaning and fix; read the fix there
 rather than guessing from the message, and add a new code to the catalog (with
 a test that provokes it) before throwing it — `diagnostic()` refuses an
 uncatalogued one.
@@ -865,7 +877,7 @@ The active engine ownership and verification contract is documented in
 `docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective
 Density defaults and overrides. No token family should depend on a process-global
 compile cache. Use `responsiveEntries`/`resolveResponsiveValue` (exported from
-`postcss-uxdsl/language`) for inspection and
+`uxdsl/language`) for inspection and
 editing rather than writing demo parsers. Buttons and Inputs share
 `control-engine.ts`; their modules define family-specific schema and defaults.
 Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
@@ -900,19 +912,18 @@ different responsibilities; use the shared kind-aware normalizer.
 ## Editor support in a consuming project
 
 `uxdsl init` writes a typed `uxdsl.config.cjs`: `// @ts-check`, then
-`/** @type {import('postcss-uxdsl/config').UxdslConfig} */` on a `const` that is
+`/** @type {import('uxdsl/config').UxdslConfig} */` on a `const` that is
 exported (FEAT-009's MIG-B7-12, in `0.5.0-beta.7`, unreleased as of
 2026-09-28). Keep that shape when editing the file: the
 `@type` placed directly above `module.exports = {…}` checks nothing, removing
 `// @ts-check` silences every error, and adding a run-time
-`require('postcss-uxdsl/config')` can fail the build where `postcss-uxdsl` is
-not resolvable from the project root (pnpm, installed only as a dependency of
-`uxdsl-cli`). Do not create a theme file just to hold `$schema`: it compiles to
+`require('uxdsl/config')` can fail the build where `uxdsl` is
+not resolvable from the config's directory (a global or `npx`-run CLI). Do not create a theme file just to hold `$schema`: it compiles to
 the same CSS but adds `[uxdsl] Theme config detected` to every build. Add
 `$schema` to a theme file the project already has or is creating. `.uxdsl`
 highlighting and completion come from the `uxdsl-vscode` extension, which is
 installed from a `.vsix` and completes the built-in default theme's roles, not
-the project's own. The uxdsl-cli README's "Editor support" section is the
+the project's own. The "Editor support" section of `packages/uxdsl/docs/integrations/cli.md` is the
 consumer-facing reference.
 
 ## Using this guide in another project
@@ -921,15 +932,15 @@ Installing UXDSL from npm does not guarantee an agent reads this guide. Agent
 discovery depends on the tool and project setup.
 
 Since `0.5.0-beta.7` (unreleased as of 2026-09-28; the published
-`0.5.0-beta.6` tarball does not contain it) the guide ships inside `postcss-uxdsl`, at
-`node_modules/postcss-uxdsl/docs/agent-guide.md` — generated from this file,
+`0.5.0-beta.6` tarball does not contain it) the guide ships inside the package — `uxdsl` since the package move — at
+`node_modules/uxdsl/docs/agent-guide.md` — generated from this file,
 so it is the guide for the version the project actually has installed and it
 updates with every upgrade. Point the consuming project's existing `AGENTS.md`
 (or its agent's supported instruction file) at it, without overwriting
 project-specific rules:
 
 > Before generating or modifying UXDSL UI, read
-> `node_modules/postcss-uxdsl/docs/agent-guide.md` and the active theme JSON.
+> `node_modules/uxdsl/docs/agent-guide.md` and the active theme JSON.
 > Preserve configured roles and responsive behavior.
 
 Adjust the path if `node_modules` is hoisted elsewhere (a monorepo root). Paths
@@ -945,7 +956,7 @@ https://github.com/rsantoyo-dev/uxdsl/blob/main/AGENTS.md
 ## Maintaining this guide in the UXDSL repository
 
 This file consolidates agent-facing guidance; it is not an automatic conversation
-archive. `packages/postcss-uxdsl/docs/agent-guide.md` is a generated copy of it
+archive. `packages/uxdsl/docs/agent-guide.md` is a generated copy of it
 that ships in the npm package: after editing this file, run
 `npm run generate:agent-guide` (`npm test` runs its `--check` and fails on drift).
 Never edit the copy. When changing a primitive's behavior or its AI documentation, update the
@@ -980,7 +991,7 @@ or when a recorded gap has been closed and is still on the list. A new directive
 function, theme family, role, state or documented runtime function therefore shows up
 there by itself.
 
-A new file under `packages/postcss-uxdsl/src` must be classified in
+A new file under `packages/uxdsl/src` must be classified in
 `scripts/verify-docs-update.js` — a guarded visual-default file, or a not-visual
 file with its reason — or `npm test` fails.
 
@@ -1017,7 +1028,7 @@ Density reference: https://uxdsl.io/docs/densities
 ## Beta.6 implementation planning and evidence
 
 MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
-from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
+from `uxdsl/theme`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
 still warn (`UXD_THEME_FAMILY`, a warning from `validateTheme`, printed by the
@@ -1050,11 +1061,11 @@ its 4 phases, closing that story. `checkThemeContrast` against
 checked, 0 failing, 111 excepted, no exception issue (824/0/98 before the
 phase added the Button `focusvisible`/`disabled` states; before the phase: 123
 failing with the single exact record, 124 without; 156 before FEAT-009's
-MIG-B7-01). Reproduce after building `postcss-uxdsl`, from the repository root:
-`node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.
-`fixtures/mig-b7-18-release/contrast-baseline.json` pins the exact failing
+MIG-B7-01). Reproduce after building `packages/uxdsl`, from the repository root:
+`node -e "const r=require('./packages/uxdsl/dist/entries/engine'); const x=require('./packages/uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.
+`fixtures/release-1.0/contrast-baseline.json` pins the exact failing
 and excepted sets (re-pin deliberately with
-`node fixtures/mig-b7-18-release/run.js --write-contrast-baseline`);
+`node fixtures/release-1.0/run.js --write-contrast-baseline`);
 `test/base-theme-contrast.test.js` reverts each corrected value as a negative
 control. The playground's four named themes pass the same gate with their
 own values (`npm run theme:audit` exits 0). Excepted pairs are listed, never

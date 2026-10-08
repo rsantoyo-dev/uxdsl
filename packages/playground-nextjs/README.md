@@ -19,9 +19,9 @@ npm run test:audit       # scripts/audit-themes.mjs
 All of them run on `node --test`; there is no second test runner. Component tests use
 jsdom and React Testing Library, and `scripts/lib/component-harness.cjs` bundles the
 component from its own source with esbuild on every load: relative imports are inlined,
-bare imports (`react`, `postcss-uxdsl/ds-runtime`) resolve from this package's
+bare imports (`react`, `uxdsl/runtime` and the other `uxdsl/*` entries) resolve from this package's
 `node_modules`, so the component and the test share one React and the runtime under test
-is the built package. Build `../postcss-uxdsl` first if `dist/` is missing.
+is the built package. Build `../uxdsl` first if `dist/` is missing.
 
 The component tests also run each behavior against a copy of the component with that
 behavior deliberately broken and require the test to fail (`negative control:` in

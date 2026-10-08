@@ -1,19 +1,18 @@
-# uxdsl-webpack-loader
+# `uxdsl/webpack` — the Webpack loader
 
 > The official **Webpack** loader for **UXDSL** — enabling seamless import and compilation of `.uxdsl` files.
 
-[![npm version](https://img.shields.io/npm/v/uxdsl-webpack-loader.svg)](https://www.npmjs.com/package/uxdsl-webpack-loader)
-[![License](https://img.shields.io/npm/l/uxdsl-webpack-loader.svg)](LICENSE)
+Part of the [`uxdsl`](../../README.md) package (`npm i -D uxdsl`). Until 0.5.0-beta.6 this was the separate `uxdsl-webpack-loader` package; that name is deprecated and only re-exports `uxdsl`.
 
-**[Visit the Official Documentation & Playground](https://uxdsl.vercel.app/)**
+**[Visit the Official Documentation & Playground](https://uxdsl.io/)**
 
 ---
 
 ## Overview
 
-`uxdsl-webpack-loader` compiles a `.uxdsl` file to real CSS text (MIG-B6-20,
-FEAT-008, decision D-4) — the same `compile()` pipeline `uxdsl-cli` and
-`vite-plugin-uxdsl` use, so the same entry and theme produce the same CSS
+`uxdsl/webpack` compiles a `.uxdsl` file to real CSS text (MIG-B6-20,
+FEAT-008, decision D-4) — the same `compile()` pipeline the CLI and
+`uxdsl/vite` use, so the same entry and theme produce the same CSS
 everywhere. Chain it before `css-loader` (with `style-loader` or
 `MiniCssExtractPlugin` in front of that) exactly like any other CSS-producing
 loader.
@@ -25,8 +24,8 @@ loader.
   discovered theme file) is registered via `this.addDependency()`, so
   webpack's cache and watch mode actually see an edit to either.
 - **Project theme discovery**: reads `uxdsl.theme.json` /
-  `uxdsl.theme.config.{js,cjs}` from `rootContext` automatically, the same
-  way `uxdsl-cli` does.
+  `uxdsl.theme.{js,cjs}` from `rootContext` automatically, the same
+  way the `uxdsl` CLI does.
 - **Configurable**: options arrive via webpack 5's real `this.getOptions()`.
 
 ---
@@ -34,7 +33,7 @@ loader.
 ## Installation
 
 ```bash
-npm install uxdsl-webpack-loader uxdsl-core --save-dev
+npm i -D uxdsl
 ```
 
 MIG-B6-28 (FEAT-008, `0.5.0-beta.6`): the published tarball declares an explicit `files`
@@ -55,7 +54,7 @@ module.exports = {
         use: [
           'style-loader', // 3. Inject styles into the DOM (or MiniCssExtractPlugin.loader to extract a real .css file)
           'css-loader',   // 2. Turn CSS into a CommonJS module
-          'uxdsl-webpack-loader', // 1. Compile UXDSL to CSS
+          'uxdsl/webpack', // 1. Compile UXDSL to CSS
         ],
       },
     ],
@@ -73,10 +72,10 @@ import './styles.uxdsl';
 
 ```js
 {
-  loader: 'uxdsl-webpack-loader',
+  loader: 'uxdsl/webpack',
   options: {
     theme,            // explicit theme object — skips discovery entirely when given
-    references,       // same shape as postcss-uxdsl's `references` option
+    references,       // same shape as the PostCSS plugin's `references` option
     includeTheme,      // emit (or skip) the global :root token definitions — default true
     discoverTheme,     // default true; see "Project theme" below
     configRoot,        // directory theme discovery searches from — default webpack's rootContext
@@ -87,7 +86,7 @@ import './styles.uxdsl';
 ### Project theme (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted, the loader looks for the project's theme file —
-`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+`uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` exporting the theme
 object (or a function returning it) — in `rootContext` (webpack's `context`
 option, which defaults to the current working directory) and compiles
 against it; no extra option needed for a normal project. `configRoot` points

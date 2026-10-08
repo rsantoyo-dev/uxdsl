@@ -1,5 +1,36 @@
 # Migración a las betas de UXDSL 0.5.0
 
+## To 1.0: one package, `uxdsl`
+
+The five packages of 0.5.0-beta.6 — `postcss-uxdsl`, `uxdsl-core`,
+`uxdsl-cli`, `vite-plugin-uxdsl`, `uxdsl-webpack-loader` — are one package,
+`uxdsl`. The sections after this one describe the betas, under the names of
+the time.
+
+1. Replace the packages: `npm uninstall postcss-uxdsl uxdsl-core uxdsl-cli
+   vite-plugin-uxdsl uxdsl-webpack-loader && npm i -D uxdsl`. The `uxdsl`
+   command is the same, with the same flags; `uxdsl watch` (removed in the
+   betas) is `uxdsl build --watch`.
+2. Rename the theme file: `uxdsl.theme.config.cjs` → `uxdsl.theme.cjs`
+   (`.js` → `uxdsl.theme.js`), or keep the theme in `uxdsl.theme.json`. An old
+   name is an error that names the new one, never a silent fallback.
+3. Update imports and config keys — the full table is in the
+   [CHANGELOG](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1):
+   `plugins: { 'postcss-uxdsl': … }` → `'uxdsl/postcss'`;
+   `require('uxdsl-core').compile` → `require('uxdsl').compile`;
+   `vite-plugin-uxdsl` → `uxdsl/vite`; `uxdsl-webpack-loader` → `uxdsl/webpack`;
+   `postcss-uxdsl/ds-runtime` → `uxdsl/runtime` (`applyTheme` and friends),
+   `uxdsl/theme` (`generateThemeCss`, `validateTheme`, `checkThemeContrast`, …)
+   or `uxdsl/engine` (the per-family engines); `postcss-uxdsl/config` →
+   `uxdsl/config`; `import('postcss-uxdsl/config').UxdslConfig` in a JSDoc
+   `@type` → `import('uxdsl/config').UxdslConfig`.
+4. Point `"$schema"` at `./node_modules/uxdsl/schema/theme.schema.json`, and an
+   agent instruction at `node_modules/uxdsl/docs/agent-guide.md`.
+
+The compiled CSS does not change with the move: the same theme produces the
+same bytes. Before and after, `npx uxdsl theme > effective.json` (below) shows
+that the effective theme is the same too.
+
 ## Antes de actualizar (cualquier versión)
 
 Un cambio de versión puede cambiar defaults en familias que tu tema **nunca
@@ -10,7 +41,7 @@ como JSON por stdout. Guárdalo antes y después, y compara:
 
 ```bash
 npx uxdsl theme > effective.before.json
-npm install -D uxdsl-cli@<siguiente> postcss-uxdsl@<siguiente>
+npm i -D uxdsl@<siguiente>
 npx uxdsl theme > effective.after.json
 diff effective.before.json effective.after.json
 ```

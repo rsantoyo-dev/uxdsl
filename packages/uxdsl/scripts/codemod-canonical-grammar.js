@@ -14,7 +14,7 @@
 //                            -> -font-size / -line-height / -font-weight / -letter-spacing / -text-transform / -text-decoration / -font-style
 //
 // Usage:
-//   node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js [--write] [--theme uxdsl.theme.json] <paths…>
+//   node node_modules/uxdsl/scripts/codemod-canonical-grammar.js [--write] [--theme uxdsl.theme.json] <paths…>
 //
 // A path is a file or a directory (walked for .uxdsl .css .scss .ts .tsx .js .jsx .mdx .md
 // .json; node_modules, dist and .next are skipped). Without --write it only reports.
@@ -47,7 +47,7 @@ if (!targets.length) {
 }
 
 function loadRuntime() {
-  try { return require('postcss-uxdsl/ds-runtime'); } catch (_) { return require(path.join(__dirname, '../dist/ds-runtime')); }
+  try { return require('uxdsl/theme'); } catch (_) { return require(path.join(__dirname, '../dist/entries/theme')); }
 }
 const { resolveTheme } = loadRuntime();
 const override = themePath ? require(path.resolve(themePath)) : {};

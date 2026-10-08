@@ -302,7 +302,7 @@ function expandDirectives(c: Compilation) {
  * a declaration is responsive by looking at its current value, so a `$var`
  * holding `xs(…) md(…)` splits into media queries like an inline expression.
  * A `$var` declared inside a rule is the SCSS subset's block scope, which
- * uxdsl-core (the CLI and the adapters) resolves before this plugin runs; here
+ * compile() (the CLI and the adapters) resolves before this plugin runs; here
  * it would reach CSS as an invalid declaration, so it is an error naming that
  * pipeline. A `$name` nothing declared is an error too.
  */
@@ -312,7 +312,7 @@ function resolveVariables(c: Compilation) {
     if (decl.prop.startsWith('$') && decl.parent !== root) {
       throw locateError(diagnostic(
         `UXD_VARIABLE_CONTEXT: ${decl.prop} is declared inside a rule; the PostCSS plugin on its own resolves $variables declared at the root of the file. ` +
-        'Move it to the root, or compile through uxdsl-core / uxdsl build, whose SCSS subset has block scope.'
+        'Move it to the root, or compile through compile() / uxdsl build, whose SCSS subset has block scope.'
       ), decl);
     }
   });
@@ -625,8 +625,8 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
 
 // This module is `export =` — a PostCSS plugin is a callable — so the public
 // types and the diagnostics catalog are merged into the function's own
-// namespace: `import type { UxdslTheme } from 'postcss-uxdsl'` and
-// `require('postcss-uxdsl').DIAGNOSTIC_CATALOG` both resolve without a second
+// namespace: `import type { UxdslTheme } from 'uxdsl'` and
+// `require('uxdsl/postcss').DIAGNOSTIC_CATALOG` both resolve without a second
 // entry point. A namespace cannot re-export with `export … from`, hence the
 // import types.
 namespace uxdslPlugin {

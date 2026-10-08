@@ -30,7 +30,7 @@ test('overrides preserve siblings and replace whole responsive fields and arrays
 
 // MIG-B7-17 phase C: the named overrides declare the packaged JSON Schema as their `$schema`,
 // so an editor validates and completes them. This resolves the package's own export
-// (`postcss-uxdsl/schema/theme.schema.json`), checks each pointer reaches that same file, and
+// (`uxdsl/schema/theme.schema.json`), checks each pointer reaches that same file, and
 // that every top-level key is one the schema declares (it is `additionalProperties: false`).
 // Not a full JSON Schema validation — the editor does that; this keeps the pointer honest.
 test('named theme overrides point $schema at the packaged theme schema, and use only families it declares', () => {

@@ -4,7 +4,7 @@
  * This is the one shared `compile()` the CLI, and
  * Vite/Webpack adapters all use — the exact same pipeline
  * (`postcss-scss` syntax, `postcss-import` with a shared resolver,
- * `postcss-advanced-variables`, `postcss-uxdsl`) instead of three
+ * `postcss-advanced-variables`, the UXDSL plugin) instead of three
  * independently-drifted compilers for the same language. The previous
  * version of this file stripped `//` comments and inlined `@import`s with
  * its own line-by-line string manipulation, which corrupted valid CSS
@@ -175,7 +175,7 @@ export interface CompileInput {
 }
 
 export interface CompileConfig {
-  /** The theme override, same shape as postcss-uxdsl's `theme` option. Its
+  /** The theme override, same shape as the PostCSS plugin's `theme` option. Its
    * `breakpoints` family is the one source of thresholds; there is no
    * separate `breakpoints` option here. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -211,10 +211,10 @@ export interface CompileResult {
  * The one shared compilation pipeline: `postcss-scss` syntax (so native
  * SCSS-like nesting/comments parse correctly), `postcss-import` (with the
  * shared resolver) for `@import` inlining, `postcss-advanced-variables`
- * for `$var` resolution — *before* `postcss-uxdsl` ever sees the source,
+ * for `$var` resolution — *before* the UXDSL plugin ever sees the source,
  * so a `$var` holding a responsive expression expands the same way
  * the plugin used alone does — and finally
- * `postcss-uxdsl` itself. `compile()` is this package's whole API: the
+ * the plugin itself. `compile()` is the package root's API: the
  * callable `processUxdsl(source, { fileId })` default export it used to
  * carry was a second signature for the same pipeline (stability phase 2).
  */

@@ -4,7 +4,7 @@ const CODE_PATTERN = /^(UXD_[A-Z0-9_]+):/;
 
 /** Who produces a code: the PostCSS compiler, the theme validator and engines
  * (both CSS paths), the browser runtime (returned on a result, never thrown),
- * or `uxdsl-core`'s SCSS-subset pass. */
+ * or `compile()`'s SCSS-subset pass. */
 export type DiagnosticOwner = 'compiler' | 'theme' | 'runtime' | 'core';
 
 export interface DiagnosticEntry {
@@ -35,7 +35,7 @@ function presetFamily(owner: DiagnosticOwner, prefix: string, what: string, path
 /**
  * The frozen catalog of every `UXD_*` code — one line of meaning and one line
  * of fix each — that the compiler, the theme validator and engines, the
- * browser runtime and `uxdsl-core` can produce. A code is produced only if it
+ * browser runtime and `compile()` can produce. A code is produced only if it
  * is listed here (`diagnostic()` refuses an uncatalogued one), and
  * `test/diagnostics-catalog.test.js` keeps the list exact: every code the
  * sources emit is in it, every entry is emitted somewhere and asserted by a
@@ -99,7 +99,7 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_BREAKPOINT_EMPTY: compiler('A breakpoint function has no value, e.g. xs().', 'Write the value inside the parentheses, or remove the breakpoint.'),
   UXD_BREAKPOINT_IMPORTANT: compiler('`!important` appears inside a breakpoint group.', 'Put `!important` after the groups; it then applies at every breakpoint.'),
   UXD_BREAKPOINT_BASE: compiler('In a multi-part value, a responsive group has no value at the base breakpoint, so the value would change shape between widths.', 'Give the group a base, e.g. xs(…), or make the whole value one responsive expression.'),
-  UXD_VARIABLE_CONTEXT: compiler('A `$variable` is declared inside a rule, which the standalone plugin does not scope.', 'Declare it at the root of the file, or compile through uxdsl-core / uxdsl build.'),
+  UXD_VARIABLE_CONTEXT: compiler('A `$variable` is declared inside a rule, which the standalone plugin does not scope.', 'Declare it at the root of the file, or compile through compile() / uxdsl build.'),
   UXD_VARIABLE_UNDEFINED: compiler('A `$name` in a value was never declared.', 'Declare `$name: …;` at the root of the file before the rule.'),
   UXD_REFERENCE_MISSING: compiler('An emitted var(--uxdsl__…) points at a custom property nothing defines.', 'Define the token in the theme, declare it in references.externalTokens, or fix the name; the message names the chain.'),
   UXD_REFERENCE_CYCLE: compiler('Theme tokens reference each other in a cycle.', 'Break the cycle; the message shows the chain.'),
@@ -111,7 +111,7 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_THEME_STYLE_ELEMENT: runtime('The element with the requested id is not a <style>.', 'Use an id that is free or belongs to a <style> element.'),
   UXD_THEME_STRUCTURE: runtime('The patch changes what the compiler would emit (a field, state, surface or breakpoint), which custom properties cannot express.', 'Change the theme file and rebuild; apply values, not structure, at run time.'),
   UXD_THEME_PERSIST: runtime('Browser storage could not be read, written or cleared.', 'Check storage availability; the theme was still applied.'),
-  // --- uxdsl-core (the SCSS subset) --------------------------------------------
+  // --- compile() (the SCSS subset) ---------------------------------------------
   UXD_SCSS_UNSUPPORTED: core('A Sass construct outside the subset was left in the stylesheet: @extend, @use, a %placeholder, !global, a Sass function, interpolation around a non-variable, an unresolved $var, or arithmetic outside calc().', 'Write the CSS the message names instead; the subset is $variables, @if/@else, @each, @for, @mixin/@include, @import.'),
   UXD_NESTING_INVALID: core('A selector concatenates the parent with &-suffix, &__x or &--x, which native CSS nesting cannot express.', 'Write the full selector, e.g. .block__item.'),
   UXD_IMPORT_CYCLE: core('Two or more .uxdsl files import each other in a cycle.', 'Break the cycle; the message lists the files in order.'),

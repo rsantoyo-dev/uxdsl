@@ -1,7 +1,7 @@
 /* App-level theme overrides.
 
    Nothing lives here any more (MIG-B7-17 phase B): the playground's theme is the JSON in
-   uxdsl.theme.*.json, merged over postcss-uxdsl/theme/base.json by themes.js. What this file
+   uxdsl.theme.*.json, merged over uxdsl/theme/base.json by themes.js. What this file
    held was dead:
    - about 95 lines of commented-out palette aliases, font families, a typography scale and a
      spacing scale from before the theme moved to JSON;

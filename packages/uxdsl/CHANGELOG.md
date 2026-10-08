@@ -60,6 +60,13 @@ Also changed by the move:
 - **Error prefixes.** Compiler diagnostics read `uxdsl: <file>:<line>:<col>:
   UXD_…` (was `postcss-uxdsl:`), `compile()` errors `uxdsl: …` (was
   `uxdsl-core:`), and the Vite plugin is named `uxdsl` in Vite's plugin list.
+  `UXD_VARIABLE_CONTEXT` names `compile() / uxdsl build` as the pipeline with
+  block-scoped `$variables` (was `uxdsl-core / uxdsl build`).
+- **Documentation.** The README, the agent guide, the integration guides
+  (`docs/integrations/{cli,compile,vite,webpack}.md`, the former READMEs of
+  the other four packages) and the playground name `uxdsl` and its subpaths;
+  `docs/migration.md` opens with the 1.0 steps. Release notes and these
+  entries for earlier versions keep the names of their time.
 - **What the tarball ships.** `files` is `dist`, `bin`, `src/theme`,
   `schema`, `docs/agent-guide.md` and the three codemods; the CHANGELOG is
   linked from the README instead of shipped.

@@ -34,7 +34,7 @@ const OWNERS: Array<[string, string]> = [
   ['compiler', 'The compiler (your stylesheet)'],
   ['theme', 'The theme (validateTheme and the engines, build and run time alike)'],
   ['runtime', 'The browser runtime (returned on a result, never thrown)'],
-  ['core', 'uxdsl-core (the SCSS subset and imports)'],
+  ['core', 'compile() (the SCSS subset and imports)'],
 ]
 
 export function DiagnosticsCatalog() {

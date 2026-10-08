@@ -718,7 +718,7 @@ export function checkThemeContrast(
   // Object, not Map: a bare `for...of` over a Map/Set needs
   // --downlevelIteration or an ES2015+ target — this file gets bundled
   // straight from source by consumers targeting ES5 (the Next.js
-  // playground's own next.config.js aliases postcss-uxdsl/* to this
+  // playground's own next.config.js aliases uxdsl/* to this
   // package's TypeScript source, "to consume current engine source, not a
   // stale local dist"), so every iteration here stays array-based, the
   // same convention the rest of this package's src/ already follows.

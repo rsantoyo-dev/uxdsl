@@ -9,7 +9,7 @@ must consume those functions rather than maintain a competing interpretation.
 
 ## Scope
 
-Verified: `packages/postcss-uxdsl` build/runtime exports, the current Next.js
+Verified: `packages/uxdsl` (then `packages/postcss-uxdsl`) build/runtime exports, the current Next.js
 playground, generated defaults and VS Code completion inventory. The old
 `packages/playground` application and its demo implementations are outside this
 verification; do not describe every historical application in the repository as
@@ -82,7 +82,7 @@ These are not implied capabilities of the engine:
   indexes (contexts bucketed by selector, memoized resolutions, values parsed
   once) are built and discarded inside `inspectReferences`; like every other
   family, it keeps no process-global cache between builds.
-  `packages/postcss-uxdsl/test/performance/reference-performance.test.js` asserts the growth
+  `packages/uxdsl/test/performance/reference-performance.test.js` asserts the growth
   ratio, and `npm run bench:references` prints the absolute curve with the
   machine that produced it.
 - `applyTheme` (MIG-B6-30) applies theme *values* at run time; it is not a

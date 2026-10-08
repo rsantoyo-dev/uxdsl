@@ -6,7 +6,7 @@
 // proof, and it ages silently. This module finds every UXDSL example in the
 // documentation surfaces, pairs each one with the theme excerpt the page shows
 // for it, and compiles it with the real compiler — the plugin in
-// packages/postcss-uxdsl, and uxdsl-core's compile() for the few examples that
+// packages/uxdsl, and its compile() for the few examples that
 // need the CLI pipeline (@mixin, $variables). There is no parser of its own and
 // no default values of its own: what the compiler accepts is what an example
 // may show.

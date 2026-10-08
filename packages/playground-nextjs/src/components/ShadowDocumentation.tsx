@@ -45,7 +45,7 @@ export default function ShadowDocumentation() {
       </ul>
       <p>Do not replace <code>shadow(2)</code> with today&apos;s computed value when the component should follow future theme changes. Changing the token updates every consumer after the configuration is applied. Inspect active overrides, clipping ancestors, backgrounds, focus indicators and interaction states.</p>
       <h3>One engine at build time, runtime and in the preview</h3>
-      <p>PostCSS, runtime and the demo share the Shadow compiler and responsive resolver. The built-in presets live in <code>postcss-uxdsl/theme/base.json</code>; a project overrides them in its theme JSON, the only place a preset is defined.</p>
+      <p>PostCSS, runtime and the demo share the Shadow compiler and responsive resolver. The built-in presets live in <code>uxdsl/theme/base.json</code>; a project overrides them in its theme JSON, the only place a preset is defined.</p>
       <pre><code className="language-json">{`{
   "shadows": { "2": "xs(0 2px 4px rgba(0, 0, 0, 0.12)) md(0 6px 16px rgba(0, 0, 0, 0.18))" }
 }`}</code></pre>

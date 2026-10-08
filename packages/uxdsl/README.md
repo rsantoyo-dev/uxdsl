@@ -135,7 +135,7 @@ comma-separated list, including one with functional pseudo-classes —
 ### Live theming — change it with no rebuild at all
 
 ```ts
-import { applyTheme } from 'postcss-uxdsl/ds-runtime';
+import { applyTheme } from 'uxdsl/runtime';
 
 applyTheme({}, { replace: true });                          // once: the override the project was built with
 applyTheme({ palette: { primary: { main: '#e11d48' } } });  // then: any value, any time
@@ -155,7 +155,7 @@ that works in the theme file works here — see
   </a>
 </p>
 
-<img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/postcss-uxdsl/assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
+<img src="https://raw.githubusercontent.com/rsantoyo-dev/uxdsl/main/packages/uxdsl/assets/uxdsl-intro-page.png" width="400px" alt="UXDSL Intro" />
 
 ---
 
@@ -163,7 +163,7 @@ that works in the theme file works here — see
 
 The default breakpoint map is centralized and exported from the runtime:
 
-- `postcss-uxdsl/ds-runtime` → `DEFAULT_BREAKPOINTS`
+- `uxdsl/theme` → `DEFAULT_BREAKPOINTS`
 
 Canonical defaults:
 
@@ -202,7 +202,7 @@ rewriter that used to exist regex-edited the compiled media queries of some
 stylesheets and left the theme's own untouched, so the two disagreed; it is
 gone.) To ask what a responsive value resolves to at a given width without a
 document — an editor, an inspector — use `inspectResponsiveValue` from
-`postcss-uxdsl/language`.
+`uxdsl/language`.
 
 <p align="center">
   <a href="https://uxdsl.vercel.app/docs/home">
@@ -402,7 +402,7 @@ appear once: a repeated `radius()` or `shadow()` fails as
 undefined key as `UXD_SURFACE_REFERENCE` (the standalone functions report
 `UXD_EDGE_REFERENCE`/`UXD_SHADOW_REFERENCE` instead). A later plain CSS
 declaration in the same rule still wins last, as always. See
-[`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/postcss-uxdsl/docs/migration.md)
+[`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md)
 for the full precedence rules and a codemod that folds an existing manual
 `border-radius: radius(N);` override into this syntax
 (`npm run codemod:size-overrides`). The codemod skips (and reports for
@@ -494,8 +494,8 @@ canonical ones — `rounded()`/`elevation()`/`radius(full)`, dashed
 the parentheses, missing parentheses, commas, quotes):
 
 ```sh
-node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js --theme uxdsl.theme.json src
-node node_modules/postcss-uxdsl/scripts/codemod-canonical-grammar.js --write --theme uxdsl.theme.json src
+node node_modules/uxdsl/scripts/codemod-canonical-grammar.js --theme uxdsl.theme.json src
+node node_modules/uxdsl/scripts/codemod-canonical-grammar.js --write --theme uxdsl.theme.json src
 ```
 
 Without `--write` it only reports. A dashed Palette/Color argument is rewritten
@@ -544,7 +544,7 @@ in a build and stayed the literal `radius(2)` in `generateThemeCss` and
 `applyTheme`, which reported `ok: true`. Now the engines every path shares
 (foundations, typography, densities, the preset engine, Surfaces, Buttons,
 Inputs) resolve the grammar themselves through `tokenValueToCss`
-(`postcss-uxdsl/language`), and the plugin's own value passes run over the
+(`uxdsl/language`), and the plugin's own value passes run over the
 author's declarations only. `test/build-runtime-parity.test.js` pins it: for the
 packaged base theme, each of the playground's themes and a synthetic theme that
 uses every function in every family, each top-level block of the plugin's theme
@@ -611,7 +611,7 @@ uxdsl({ theme: { palette: { primary: { main: '#123456' } } } })
 //    surfaces, buttons, inputs, typography_details), keeps its default
 ```
 
-**MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is `postcss-uxdsl/theme/base.json`
+**MIG-B6-29 (FEAT-008): `DEFAULT_THEME` is `uxdsl/theme/base.json`
 itself** — the reviewed base theme, not a "deliberately minimal" 4-family
 stub kept just to avoid a crash. It defines a full 14-family Palette
 (`primary`/`secondary`/`surface`/`tertiary`/`success`/`info`/`warning`/
@@ -645,7 +645,7 @@ compared to any earlier beta:
 
 Both gaps that used to exist here are closed (MIG-B6-29 phase 4): the
 Google Fonts URL is now built by a shared, tested encoder
-(`encodeGoogleFontFamily`/`googleFontsImportUrls`, `postcss-uxdsl/ds-runtime`)
+(`encodeGoogleFontFamily`/`googleFontsImportUrls`, `uxdsl/engine`)
 that safely handles a family name with a space (`"Open Sans:wght@400;700"`
 → `family=Open+Sans:wght@400;700`) or any other character outside css2's
 own syntax, instead of a bare, unescaped template interpolation; and
@@ -665,17 +665,17 @@ Merge rules: object keys merge recursively; arrays and scalars (including
 `null`) replace the previous value whole; `undefined` never overwrites a
 default. A `theme` that isn't an object (and isn't `undefined`/`null`)
 throws `UXD_THEME_INVALID` rather than being silently ignored. `generateThemeCss`
-(`postcss-uxdsl/ds-runtime`) and the PostCSS plugin resolve through the
-exact same `resolveTheme` — `postcss-uxdsl/ds-runtime` also exports
+(`uxdsl/theme`) and the PostCSS plugin resolve through the
+exact same `resolveTheme` — `uxdsl/theme` also exports
 `DEFAULT_THEME` directly, for an app that needs to build the same effective
 theme during SSR (`resolveTheme()` with no override returns a fresh, mutable
 copy of it; the former `getDefaultTheme()` did the same and is removed).
 
 `DEFAULT_THEME` is deep-frozen, but only an internal clone of
 `theme/base.json` — never the module object that path itself resolves to.
-If your own bundler aliases `postcss-uxdsl/*` straight to this package's
+If your own bundler aliases `uxdsl/*` straight to this package's
 source (rather than its published `dist/`, e.g. for a monorepo dev setup),
-importing `postcss-uxdsl/theme/base.json` directly still gives you a plain,
+importing `uxdsl/theme/base.json` directly still gives you a plain,
 mutable object, safe to `deepMergeTheme` and pass around without it being
 affected by anything this package itself froze.
 
@@ -762,7 +762,7 @@ prints the effective `modes.dark.palette` after the merge.
 
 ### Recognized theme families
 
-`postcss-uxdsl/ds-runtime` exports `KNOWN_THEME_FAMILIES`, the shared registry
+`uxdsl/theme` exports `KNOWN_THEME_FAMILIES`, the shared registry
 used by theme validation. Nested Palette, font-family and Typography role names
 remain open. For example, this partial theme introduces no unknown-family warnings:
 
@@ -784,9 +784,8 @@ partial semantic group (e.g. a `divider`-only role) does not qualify. This
 was previously duplicated inline inside `control-engine.ts`; both now import
 the single implementation from `language.ts` (chosen to avoid a circular
 import, since `default-theme.ts`/`surfaces.ts`/`control-engine.ts` already
-import from `language.ts`). It is not re-exported from the
-`postcss-uxdsl/ds-runtime` entry point, but it is exported by the public
-`postcss-uxdsl/language` entry (the package `exports` map); the repository's own
+import from `language.ts`). It is exported by the public
+`uxdsl/language` entry (the package `exports` map); the repository's own
 `scripts/generate-language-artifacts.js` (which builds the VS Code
 extension's completion metadata) already reaches into compiled `dist/*`
 modules directly for several such internals, `getToneFamilies` among them.
@@ -868,7 +867,7 @@ is a conscious one).
 ### Accessibility contrast gate (`checkThemeContrast`)
 
 **MIG-B6-29 (FEAT-008), phase 2/4 (the gate) and phase 3/4 (color
-correction).** `postcss-uxdsl/ds-runtime` exports
+correction).** `uxdsl/theme` exports
 `checkThemeContrast(theme, { exceptions? })`, which MIG-B6-16 uses for
 `uxdsl theme --contrast`. It checks every text/placeholder color and every
 border/underline color this theme's Surface/Button/Input engines actually
@@ -880,8 +879,8 @@ breakpoint — against WCAG's normal-text ratio (4.5:1) and non-text ratio
 its surroundings).
 
 ```js
-const { checkThemeContrast, resolveTheme } = require('postcss-uxdsl/ds-runtime')
-const exceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json')
+const { checkThemeContrast, resolveTheme } = require('uxdsl/theme');
+const exceptions = require('uxdsl/theme/base.contrast-exceptions.json')
 
 const report = checkThemeContrast(resolveTheme(myTheme), { exceptions })
 report.passed    // false if any non-excepted pair fails, or any exception is stale/duplicated/invalid
@@ -900,7 +899,7 @@ A `disabled` state is still computed and listed in `report.checked`, but
 never blocks `report.passed` on its own (`exempt: true`) — WCAG itself
 does not hold inactive controls to the normative threshold.
 
-**Exceptions** (`postcss-uxdsl/theme/base.contrast-exceptions.json`) cover
+**Exceptions** (`uxdsl/theme/base.contrast-exceptions.json`) cover
 a finding that is unsupported *by the nature of the role* — never a color
 the theme could reasonably fix instead. Two kinds of record exist:
 
@@ -1010,7 +1009,8 @@ knowing: Inter is actually requested (and your visitors' browsers contact
 dropped applies. `fonts: { google: [] }` still opts out of the theme's.
 
 ```js
-const { encodeGoogleFontFamily, googleFontsImportUrls } = require('postcss-uxdsl/ds-runtime')
+const { googleFontsImportUrls } = require('uxdsl/theme');
+const { encodeGoogleFontFamily } = require('uxdsl/engine');
 
 encodeGoogleFontFamily('Open Sans:wght@400;700') // 'Open+Sans:wght@400;700'
 googleFontsImportUrls(['Inter:wght@400;700', 'Playfair Display'])
@@ -1038,7 +1038,7 @@ itself considers safe. `googleFontsImportUrls([])` (or `undefined`)
 returns `[]`, matching `fonts: { google: [] }` emitting no import at all.
 Neither function performs the request itself, and neither imports
 anything Node-only — both are exported from the same browser-safe
-`postcss-uxdsl/ds-runtime` entry as `checkThemeContrast` and
+`uxdsl/theme` entry as `checkThemeContrast` and
 `generateThemeCss`, so a project managing its own font `<link>` (a
 client-side theme switcher, for example) can reuse the exact same
 encoding instead of drifting from what the compiler itself emits.
@@ -1089,8 +1089,8 @@ silently falls back to `default`.
 
 ### The theme files the package ships
 
-Exactly two, both explicit exports: `postcss-uxdsl/theme/base.json`
-(`DEFAULT_THEME`) and `postcss-uxdsl/theme/base.contrast-exceptions.json`.
+Exactly two, both explicit exports: `uxdsl/theme/base.json`
+(`DEFAULT_THEME`) and `uxdsl/theme/base.contrast-exceptions.json`.
 Every built-in preset reads its defaults from the base JSON directly — no
 import is needed for `density()`/`border()`/`radius()`/`shadow()`/
 `@ds-surface`/`@ds-button`/`@ds-input`/`@ds-typo` to work out of the box.
@@ -1105,14 +1105,14 @@ collection declares those colors under its own theme's `colors` family instead
 
 When `theme` is omitted (and `discoverTheme` isn't `false`), the plugin looks
 for the project's theme file — `uxdsl.theme.json`, or
-`uxdsl.theme.config.js`/`.cjs` exporting the theme object — in `configRoot`
-(default `process.cwd()`) — the exact same discovery `uxdsl-cli` does,
+`uxdsl.theme.js`/`.cjs` exporting the theme object — in `configRoot`
+(default `process.cwd()`) — the exact same discovery the `uxdsl` CLI does,
 available with the plugin used directly since 0.5.0-beta.6, e.g. from a
 project's own `postcss.config.js`:
 
 ```js
 // postcss.config.js — no `theme` option needed at all; discovered from cwd.
-module.exports = { plugins: { 'postcss-uxdsl': { includeTheme: false } } };
+module.exports = { plugins: { 'uxdsl/postcss': { includeTheme: false } } };
 ```
 
 ```js
@@ -1126,22 +1126,22 @@ included, since thresholds are a theme family. `references` is the plugin
 option (or the build config's key), never something the theme file carries:
 a file exporting the former `{ theme, references }` wrapper is refused with a
 message saying where each half goes. The loader, the factory-export support
-and the "looks like a build config" warning are exactly `uxdsl-cli`'s own —
-both share `postcss-uxdsl/config`, so they can never quietly disagree. One
+and the "looks like a build config" warning are exactly the CLI's own —
+both share `uxdsl/config`, so they can never quietly disagree. One
 difference: discovery inside the plugin is **synchronous** (the plugin
-factory and its compilation pass both are), so an `uxdsl.theme.config.cjs`
+factory and its compilation pass both are), so an `uxdsl.theme.cjs`
 exporting an async factory function (`module.exports = async () => ({...})`)
 throws a clear error naming the file — pass a resolved `theme` object to the
 plugin directly instead, or use an integration that supports async config
-(`uxdsl-cli`, `vite-plugin-uxdsl` or `uxdsl-webpack-loader`, which all use
+(the `uxdsl` CLI, `uxdsl/vite` or `uxdsl/webpack`, which all use
 `discoverThemeAsync`). The discovered theme file (and anything it locally
 `require()`s) is reported as a real PostCSS `dependency` message, so a
 bundler's own watcher picks up an edit to it.
 
 ### Diagnostics
 
-Every code is in `DIAGNOSTIC_CATALOG` (exported from `postcss-uxdsl` and
-`postcss-uxdsl/ds-runtime`): code → one line of meaning → one line of fix, and
+Every code is in `DIAGNOSTIC_CATALOG` (exported from `uxdsl/language` and as a
+property of the `uxdsl/postcss` plugin): code → one line of meaning → one line of fix, and
 its owner (`compiler`, `theme`, `runtime`, `core`). The compiler refuses to
 produce a code the catalog does not list, and a test keeps the catalog exact in
 both directions; https://uxdsl.io/docs/diagnostics renders it.
@@ -1154,7 +1154,7 @@ with their stylesheet location; direct expansion failures are PostCSS
 source location. A theme error names a key path (`.keyPath`, e.g.
 `palette.primary.main`, `surfaces.contained.bogus`, `densities.x`, `radii.1`,
 `breakpoints.md`, `typography_details.h1.fontSize`) where the validator
-provides one — `uxdsl-cli` prepends the theme file's own path when it resolved
+provides one — the CLI prepends the theme file's own path when it resolved
 one, so `uxdsl build` names both the file and the exact key. Every structural
 problem is `UXD_THEME_INVALID` with a key path (see "One theme validator"
 below); a breakpoint-map problem is `UXD_BP_INVALID`, reported once.
@@ -1203,7 +1203,7 @@ away from a configured breakpoint name:
 ```
 
 The known-function list (math, color, gradients, transforms, filters, and
-UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `postcss-uxdsl/language` —
+UXDSL's own value functions) is `KNOWN_CSS_FUNCTIONS` from `uxdsl/language` —
 consulted before any edit-distance check, so a real `log(...)` next to
 `lg(...)` is never misread as a typo of it.
 
@@ -1259,9 +1259,9 @@ the same number of parts at every width.
 
 The standalone plugin resolves `$variables` declared at the root of the file.
 One declared inside a rule is `UXD_VARIABLE_CONTEXT` (the SCSS subset's block
-scope is `uxdsl-core`'s, which the CLI and the adapters run), and a `$name`
+scope is `compile()`'s, which the CLI and the adapters run), and a `$name`
 nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
-breakpoints)` (`postcss-uxdsl/language`) reports the same structure — groups,
+breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
 
 
@@ -1269,8 +1269,8 @@ bases, nesting, empties — for an editor.
 
 There is one answer to "is this theme valid?", and every path asks the same
 function for it: the PostCSS plugin (on the effective theme, before any engine
-reads it), `generateThemeCss`, `applyTheme` and `uxdsl-cli` all call
-`validateTheme(theme, { references? })` from `postcss-uxdsl/ds-runtime`. The
+reads it), `generateThemeCss`, `applyTheme` and the CLI all call
+`validateTheme(theme, { references? })` from `uxdsl/theme`. The
 packaged JSON Schema is generated from the validator's own patterns, so an
 editor rejects the same names and leaves. The result is
 `{ ok, theme, errors, warnings }`; each issue is `{ code, path, message }`, and
@@ -1312,7 +1312,7 @@ An unknown **top-level** family is a warning (`UXD_THEME_FAMILY`), never an
 error: nothing compiles it into CSS, so this catches a typo (`color` instead of
 `colors`) or a stray field from copy-pasting the wrong file — but the validator
 cannot tell a typo from a family a newer version knows about. The PostCSS plugin
-reports it through `result.warn`, `uxdsl-cli` prints it, `applyTheme` returns it
+reports it through `result.warn`, the CLI prints it, `applyTheme` returns it
 in `warnings`. The recognized families are `KNOWN_THEME_FAMILIES`
 (`breakpoints`, `spacing`, `palette`, `fonts`, `colors`, `typography_details`,
 `densities`, `inputs`, `buttons`, `surfaces`, `shadows`, `borders`, `radii`,
@@ -1484,7 +1484,7 @@ you build. Since beta.6 the editor catches all four as you type.
 Setting this up in a consuming app — which of these `uxdsl init` already writes,
 the `$schema` path in a monorepo, and the VS Code extension for `.uxdsl` files —
 is covered from the start in
-[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
+[the CLI guide's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#editor-support).
 
 **In a plain `uxdsl.config.cjs`**, with no TypeScript in the project — the form
 `uxdsl init` writes since `0.5.0-beta.7` (unreleased as of 2026-09-28),
@@ -1492,7 +1492,7 @@ type-only, nothing loaded at run time:
 
 ```js
 // @ts-check
-/** @type {import('postcss-uxdsl/config').UxdslConfig} */
+/** @type {import('uxdsl/config').UxdslConfig} */
 const config = {
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
@@ -1504,12 +1504,12 @@ module.exports = config;
 
 `// @ts-check` is what makes the editor report errors in plain JavaScript, and
 the type has to sit on the `const`: placed directly above `module.exports = {…}`
-it checks nothing. Or, with a run-time `require` that needs `postcss-uxdsl`
-resolvable from the project root (under pnpm, a direct dependency):
+it checks nothing. Or, with a run-time `require` that needs `uxdsl`
+resolvable from the config's directory (a project dependency, not an `npx`-run CLI):
 
 ```js
 // @ts-check
-const { defineConfig } = require('postcss-uxdsl/config');
+const { defineConfig } = require('uxdsl/config');
 
 module.exports = defineConfig({
   entry: './src/app.uxdsl',
@@ -1531,7 +1531,7 @@ beforehand, annotate it where it is defined, or use
 **In TypeScript**, the types are exported from the package root:
 
 ```ts
-import type { UxdslTheme, UxdslThemeOverride, UxdslOptions, UxdslConfig } from 'postcss-uxdsl';
+import type { UxdslTheme, UxdslThemeOverride, UxdslOptions, UxdslConfig } from 'uxdsl';
 ```
 
 `UxdslTheme` is a complete theme; `UxdslThemeOverride` is the partial patch
@@ -1542,7 +1542,7 @@ The former `UxDslOptions` alias was removed in stability phase 1; the type is `U
 
 ```json
 {
-  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "$schema": "./node_modules/uxdsl/schema/theme.schema.json",
   "palette": { "primary": { "main": "#7e22ce", "contrast": "#ffffff" } }
 }
 ```
@@ -1574,7 +1574,7 @@ own `map`, so a project that already asks for maps in its
 `postcss.config.js` gets them with no extra configuration:
 
 ```js
-postcss([require('postcss-uxdsl')()]).process(css, {
+postcss([require('uxdsl/postcss')()]).process(css, {
   from: 'src/panel.uxdsl',
   to: 'dist/panel.css',
   map: { inline: false },
@@ -1600,10 +1600,10 @@ the map — a handful of authored lines could produce a map several times the
 size of the CSS, listing eight "files" that do not exist. Since 0.5.0-beta.6 `sources` is
 limited to files you can actually open.
 
-Compiling through `uxdsl-cli` instead? It exposes this as
+Compiling through the `uxdsl` CLI instead? It exposes this as
 `--sourcemap`/`--no-sourcemap` and a `sourcemap` config option (spelled like
 the flag), and writes the `.map` file next to the CSS — see
-[`uxdsl-cli`'s README](../uxdsl-cli/README.md).
+[the CLI guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md).
 
 ---
 
@@ -1614,11 +1614,11 @@ verify:consumer-fixture`) installs this package from an actual `npm pack`
 tarball — never the monorepo's TypeScript source — and compiles a theme
 entry plus four CSS-Module-style panel entries against it. That check is
 what caught `package.json`'s `exports` map missing `"./package.json"`,
-which broke `require("postcss-uxdsl/package.json")` for any consumer that
+which broke `require("…/package.json")` for any consumer that
 reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 
-`fixtures/mig-b3-06-release/` (`npm run verify:beta3`) does the same from
-fresh tarballs of all five coordinated packages, exercising `uxdsl-cli`'s
+`fixtures/release-1.0/` (`npm run verify:1.0`) does the same from the one
+tarball, and among its checks exercises the CLI's
 `builds` array end to end: a theme entry and four component entries built
 from one `uxdsl.config.cjs`, a partial theme with `externalTokens` and a
 theme-file-only `breakpoints.xl`, exactly one entry defining `:root`
@@ -1630,7 +1630,7 @@ fails; `--no-include-theme` overrides every entry).
 Since `0.5.0-beta.7` (unreleased as of 2026-09-28), the package ships the UXDSL
 agent guide at `docs/agent-guide.md`, generated from
 the repository's `AGENTS.md` for this exact version. Point a consuming project's
-agent instructions at `node_modules/postcss-uxdsl/docs/agent-guide.md` rather
+agent instructions at `node_modules/uxdsl/docs/agent-guide.md` rather
 than keeping a copy that ages with each upgrade.
 
 ---

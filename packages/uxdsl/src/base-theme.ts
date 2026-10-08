@@ -13,10 +13,10 @@ import baseThemeJson from './theme/base.json';
  *
  * `require('./theme/base.json')` is cached by Node (and by bundlers) like
  * any other module, keyed by resolved absolute path — not by import
- * specifier. `postcss-uxdsl/theme/base.json` is also the package's public
+ * specifier. `uxdsl/theme/base.json` is also the package's public
  * export for this same file (`"./theme/*": "./src/theme/*"`), so *any*
  * other code in the same process/bundle that imports that public path
- * (directly, or via a build tool aliasing `postcss-uxdsl/*` straight to
+ * (directly, or via a build tool aliasing `uxdsl/*` straight to
  * this package's own source — the Next.js playground's webpack config
  * does exactly that, "to consume current engine source, not a stale local
  * dist") resolves to the exact same physical file, and therefore the exact

@@ -6,7 +6,7 @@ Language support for **UXDSL** (User Experience Design System Language)
 ## Features
 
 - **Syntax highlighting**, generated from the compiler's own language
-  metadata (`postcss-uxdsl`'s `LANGUAGE_COMPLETIONS`) — never hand-typed,
+  metadata (`uxdsl`'s `LANGUAGE_COMPLETIONS`) — never hand-typed,
   so it can't silently drift from what actually compiles:
   - Directives: `@ds-surface`, `@ds-typo`, `@ds-button`, `@ds-input`.
   - Functions: `palette()`, `color()`, `space()`, `density()`, `radius()`,
@@ -73,7 +73,7 @@ validated by CI will replace "package it yourself" once that pipeline exists
 For a consuming app, this extension is one of two mechanisms: the typed
 `uxdsl.config.cjs` that `uxdsl init` writes and the theme JSON `$schema` work
 without it. See
-[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl-cli/README.md#editor-support).
+[uxdsl-cli's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#editor-support).
 
 ## Development
 
@@ -90,7 +90,7 @@ The grammar (`syntaxes/uxdsl.tmLanguage.json`), the CSS custom data
 (`uxdsl.custom-data.json`) and the completion data
 (`src/generated-completions.ts`) are all generated —
 `npm run generate:language` at the repository root regenerates them from
-`postcss-uxdsl`'s compiled `LANGUAGE_COMPLETIONS`/engine defaults. Do not
+`uxdsl`'s compiled `LANGUAGE_COMPLETIONS`/engine defaults. Do not
 hand-edit any of the three; `node scripts/generate-language-artifacts.js
 --check` (run from the repo root) fails if they drift from source.
 

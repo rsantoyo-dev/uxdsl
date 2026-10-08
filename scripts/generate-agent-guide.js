@@ -5,7 +5,7 @@
 // AGENTS.md is the only source; `packages/uxdsl/docs/agent-guide.md`
 // is a generated, byte-for-byte copy behind a short header, shipped in the
 // npm tarball (`files`) so a consuming project can point its agents at
-// `node_modules/postcss-uxdsl/docs/agent-guide.md` — the guide for the version
+// `node_modules/uxdsl/docs/agent-guide.md` — the guide for the version
 // it actually has installed — instead of keeping a copy that ages.
 //
 //   node scripts/generate-agent-guide.js           # write the copy

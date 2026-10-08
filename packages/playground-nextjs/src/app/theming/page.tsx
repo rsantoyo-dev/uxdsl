@@ -9,7 +9,7 @@ export default function ThemingPage() {
             this site is actually themed. */}
         <p>
           The theme is JSON. This site starts from the base that ships with the package
-          (<code>postcss-uxdsl/theme/base.json</code>) and merges one override file per named
+          (<code>uxdsl/theme/base.json</code>) and merges one override file per named
           theme over it (<code>uxdsl.theme.green.json</code>, <code>uxdsl.theme.slate.json</code>…) with
           <code>deepMergeTheme</code> in <code>themes.js</code>. <code>uxdsl build</code> compiles the
           default theme through <code>uxdsl.config.cjs</code>; the header&apos;s theme buttons apply

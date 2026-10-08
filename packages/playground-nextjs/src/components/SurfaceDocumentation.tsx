@@ -53,7 +53,7 @@ export function SurfaceDocumentation() {
       <p>The optional tone names a Palette family. Outlined uses a transparent background with that family&apos;s main color for text and a 1px solid border. Flat uses transparent background and the main foreground while keeping the configured border. Contained and custom roles use the family&apos;s main background and contrast foreground while keeping their configured border.</p>
       <p>The numeric size overrides padding with <code>density(n)</code> and corners with <code>radius(n)</code>. Inspect both definitions before using it; it does not mean n pixels and the two scales need not match. Without these optional arguments, all six fields follow the Surface. A tone intentionally overrides some fields, so later edits to those overridden fields will not affect that toned component.</p>
       <h3>One engine and one source</h3>
-      <p>PostCSS, runtime theme generation, the inspector and this demo share the Surface engine. The built-in roles live in <code>postcss-uxdsl/theme/base.json</code>; a project overrides a role field by field in its theme JSON, the only place a Surface is defined (a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>):</p>
+      <p>PostCSS, runtime theme generation, the inspector and this demo share the Surface engine. The built-in roles live in <code>uxdsl/theme/base.json</code>; a project overrides a role field by field in its theme JSON, the only place a Surface is defined (a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>):</p>
       <pre><code className="language-json">{`{
   "surfaces": {
     "contained": {

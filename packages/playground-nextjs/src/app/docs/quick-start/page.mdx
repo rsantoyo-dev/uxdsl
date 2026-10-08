@@ -76,7 +76,7 @@ npm run dev`} />
       </div>
       <div className="step-desc">Add the Vite plugin and core engine.</div>
       <div className="code-wrapper">
-        <CodeBlock language="bash" code="npm install -D vite-plugin-uxdsl uxdsl-core" />
+        <CodeBlock language="bash" code="npm i -D uxdsl" />
       </div>
     </div>
 
@@ -88,7 +88,7 @@ npm run dev`} />
       <div className="step-desc">Add the plugin to your <code>vite.config.ts</code>.</div>
       <div className="code-wrapper">
         <CodeBlock language="typescript" code={`import { defineConfig } from 'vite';
-import vitePluginUxdsl from 'vite-plugin-uxdsl';
+import vitePluginUxdsl from 'uxdsl/vite';
 
 export default defineConfig({
   plugins: [
@@ -136,7 +136,7 @@ import './styles.uxdsl';`} />
       </div>
       <div className="step-desc">Install the CLI, PostCSS plugin, and concurrently (for running scripts together).</div>
       <div className="code-wrapper">
-        <CodeBlock language="bash" code="npm install -D postcss-uxdsl uxdsl-cli concurrently" />
+        <CodeBlock language="bash" code="npm i -D uxdsl concurrently" />
       </div>
     </div>
 

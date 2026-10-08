@@ -12,7 +12,7 @@ import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
 // queries, so they cannot move at run time: `applyTheme({ breakpoints: { md:
 // 900 } })` is refused with UXD_THEME_STRUCTURE. Moving one is an edit to the
 // theme file and a rebuild. Simulating a width is inspection, not a change —
-// `inspectResponsiveValue` from `postcss-uxdsl/language` — and DemoBreakpoints
+// `inspectResponsiveValue` from `uxdsl/language` — and DemoBreakpoints
 // does exactly that.
 
 export type Breakpoints = Record<string, number>

@@ -22,7 +22,7 @@ export default function BorderDocumentation() {
       <p><strong>Borders define the edge; Radii define the corner shape.</strong> A border preset combines width, style and color. A radius preset defines corner rounding. Either can include a responsive progression, but neither has to change with viewport width. Standard CSS remains available for deliberate local exceptions.</p>
       <h3>Where these definitions live today</h3>
       <p>Define <code>borders</code> and <code>radii</code> in the theme JSON. PostCSS, runtime theme generation and the preview use the same compiler and responsive resolver. Both plain CSS values and responsive progressions are supported.</p>
-      <p>Pass the effective theme JSON to the build and runtime. The theme JSON is the only source of a preset: a <code>@theme</code> block in a stylesheet fails as <code>UXD_THEME_BLOCK_REMOVED</code>, naming the family its contents belong to, and nothing leaks from one compilation into another. The built-in presets come from <code>postcss-uxdsl/theme/base.json</code>. Inspect the definitions instead of assuming a preset number is a pixel value.</p>
+      <p>Pass the effective theme JSON to the build and runtime. The theme JSON is the only source of a preset: a <code>@theme</code> block in a stylesheet fails as <code>UXD_THEME_BLOCK_REMOVED</code>, naming the family its contents belong to, and nothing leaks from one compilation into another. The built-in presets come from <code>uxdsl/theme/base.json</code>. Inspect the definitions instead of assuming a preset number is a pixel value.</p>
       <h3>One definition, multiple consumers</h3>
       <pre><code className="language-json">{`{
   "breakpoints": { "xs": 0, "md": 768 },

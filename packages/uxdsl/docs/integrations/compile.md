@@ -1,9 +1,8 @@
-# uxdsl-core
+# `compile()` — the one pipeline
 
 > The compile pipeline behind **UXDSL**'s CLI, Vite plugin and Webpack loader.
 
-[![npm version](https://img.shields.io/npm/v/uxdsl-core.svg)](https://www.npmjs.com/package/uxdsl-core)
-[![License](https://img.shields.io/npm/l/uxdsl-core.svg)](LICENSE)
+Part of the [`uxdsl`](../../README.md) package (`npm i -D uxdsl`). Until 0.5.0-beta.6 this was the separate `uxdsl-core` package; that name is deprecated and only re-exports `uxdsl`.
 
 **[Visit the Official Documentation & Playground](https://uxdsl.io/)**
 
@@ -11,26 +10,26 @@
 
 ## Overview
 
-`uxdsl-core` exports one function, `compile()`: the pipeline that turns a
+The package root exports `compile()`: the pipeline that turns a
 `.uxdsl` entry (or an in-memory source) into CSS — `postcss-scss` syntax,
 `postcss-import` with a shared resolver, `postcss-advanced-variables` for
-`$var`/`@each`/`@mixin`, then `postcss-uxdsl`. `uxdsl-cli`, `vite-plugin-uxdsl`
-and `uxdsl-webpack-loader` all call it, so the same entry and theme produce
+`$var`/`@each`/`@mixin`, then the UXDSL PostCSS plugin. The CLI, `uxdsl/vite`
+and `uxdsl/webpack` all call it, so the same entry and theme produce
 the same CSS everywhere.
 
 ### Who is this for?
 
-You typically do **not** need to install this directly unless you are building
+You typically do **not** call it directly unless you are building
 a custom integration (a plugin for another bundler, a build script). For
-standard projects, use [uxdsl-cli](../uxdsl-cli) or the plugins for
-[Vite](../vite-plugin-uxdsl) and [Webpack](../uxdsl-webpack-loader).
+standard projects, use [the CLI](cli.md) or the plugins for
+[Vite](vite.md) and [Webpack](webpack.md).
 
 ---
 
 ## Installation
 
 ```bash
-npm install uxdsl-core
+npm i -D uxdsl
 ```
 
 `postcss` (`^8.4.31`) is a peer dependency: npm 7+ installs it automatically; with
@@ -41,13 +40,13 @@ npm install uxdsl-core
 ### `compile(input, config?)`
 
 ```javascript
-const { compile } = require('uxdsl-core');
+const { compile } = require('uxdsl');
 
 const { css, map, dependencies, warnings } = await compile(
   { entry: './src/uxdsl-entry.uxdsl' },   // or { source, from? } for in-memory input
   {
-    theme,               // theme override, same shape as postcss-uxdsl's `theme` option
-    references,          // same shape as postcss-uxdsl's `references` option
+    theme,               // theme override, same shape as the PostCSS plugin's `theme` option
+    references,          // same shape as the PostCSS plugin's `references` option
     includeTheme: true,  // emit the theme's :root tokens (default: true)
     to: './dist/app.css',
     sourceMap: false,    // false (default) | 'inline' | 'external'
@@ -64,7 +63,7 @@ const { css, map, dependencies, warnings } = await compile(
   thresholds are declared — there is no separate `breakpoints` option, so
   every integration reads them from the one place. `compile()` does not
   discover a theme file itself; the CLI and the adapters do that
-  (`postcss-uxdsl/config`'s `discoverThemeAsync`) and pass the result here.
+  (`uxdsl/config`'s `discoverThemeAsync`) and pass the result here.
 - `dependencies`: every file actually read, entry first — safe to feed to a
   bundler's file-watcher.
 - `warnings`: `{ text, file?, line?, column? }[]` from the underlying
@@ -140,14 +139,14 @@ naming what to write instead — never text the browser would silently discard:
 | arithmetic outside `calc()`: `10px * 2`, `1rem + 2px`, `$a + $b`, `10px / 2`, `"a" + "b"` | `UXD_SCSS_UNSUPPORTED` | `calc(10px * 2)` (a slash between two plain numbers or two lengths — `aspect-ratio: 16 / 9`, `border-radius: 10px / 20px` — is CSS and stays) |
 | an `@include` whose argument list does not balance, or has text after it (`@include pad(1px) 2px;`) | `UXD_INCLUDE_ARGUMENT` | `@include name(arg, arg)` |
 
-`test/scss-subset.test.js` pins all of this with the 110-case matrix of the
+`test/core/scss-subset.test.js` pins all of this with the 110-case matrix of the
 2026-09-29 audit: every case either compiles to the exact CSS recorded there —
 valid CSS, with no Sass construct left in it — or fails with the recorded
 error. There is no third outcome. These codes, and `UXD_IMPORT_CYCLE` for
-`.uxdsl` files that import each other, are in `postcss-uxdsl`'s
+`.uxdsl` files that import each other, are in the
 `DIAGNOSTIC_CATALOG` with the rest, each with its meaning and fix.
 
-### What this package no longer exports
+### What is no longer exported
 
 `require('uxdsl-core')` used to be callable — `processUxdsl(source, { fileId,
 ...config })` returned `Promise<string>`. That was a second signature for the

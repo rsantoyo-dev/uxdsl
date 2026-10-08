@@ -18,9 +18,9 @@
  * This script never re-implements color/contrast math beyond OKLCH conversion
  * itself (scripts/lib/oklch.js): every pass/fail decision, and the ratio used to
  * pick a winning candidate, comes from the real, shipped `checkThemeContrast`
- * (postcss-uxdsl/dist/ds-runtime), run against a full clone of the real theme at
+ * (packages/uxdsl/dist/entries/engine), run against a full clone of the real theme at
  * each candidate — never a hand-derived model of which CSS field reads which
- * palette key. That mapping lives only in postcss-uxdsl's own surfaces/buttons/
+ * palette key. That mapping lives only in uxdsl's own surfaces/buttons/
  * inputs engines and theme/base.json; this script treats it as an oracle.
  */
 const path = require('path');

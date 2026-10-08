@@ -1,6 +1,6 @@
 # MIG-07 consumer fixture
 
-Verifies `postcss-uxdsl` from the outside: installs it from a real
+Verifies `uxdsl` from the outside: installs it from a real
 `npm pack` tarball (never the monorepo's TypeScript source) and compiles
 one theme entry (`includeTheme: true`) plus four CSS-Module-style panel
 entries (`includeTheme: false`), covering the `@ds-surface`/`@ds-button`/
@@ -15,7 +15,7 @@ npm run verify:consumer-fixture   # from the repo root
 node run.js                       # from this directory
 ```
 
-Each run: packs `postcss-uxdsl`, does a clean install of that tarball into
+Each run: packs `uxdsl`, does a clean install of that tarball into
 this directory's own `node_modules` (deleting any previous install
 first), builds the five entries, and checks:
 
@@ -23,7 +23,7 @@ first), builds the five entries, and checks:
   validation runs by default, so this alone proves zero unresolved
   mandatory UXDSL references.
 - The four panel entries emit zero `:root` blocks; the theme entry does.
-- PostCSS and the installed `postcss-uxdsl/ds-runtime`'s `generateThemeCss`
+- PostCSS and the installed `uxdsl/theme`'s `generateThemeCss`
   agree on which value actually wins the CSS cascade for every theme-entry
   declaration — via `lib/css-cascade-compare.js`'s `cascadedVariables`, not
   a flat "collect declarations and sort" comparison (that was blind to
@@ -60,6 +60,6 @@ Printed at the end of every run, and tracked in
   mode) accepting the panel output. This fixture confirms the panels
   contain no `:root` selector, which is the specific thing that loader
   rejects, but does not run that loader.
-- **Coordinated multi-package install.** Only `postcss-uxdsl` is packed
-  and installed here. `uxdsl-core`, `uxdsl-cli` and `vite-plugin-uxdsl`
-  are not exercised by this fixture.
+- **The CLI and the bundler adapters.** This fixture drives the PostCSS
+  plugin of the installed `uxdsl`; `npm run verify:1.0` drives the CLI,
+  `compile()`, `uxdsl/vite` and `uxdsl/webpack` from the same tarball.

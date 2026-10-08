@@ -1,21 +1,16 @@
-# vite-plugin-uxdsl
-
-<p align="center">
-  <img src="./assets/logo-uxdsl.png" alt="UX-DSL Logo" width="120" />
-</p>
+# `uxdsl/vite` — the Vite plugin
 
 > The official **Vite** plugin for **UXDSL** — seamlessly integrating `.uxdsl` files into your Vite projects.
 
-[![npm version](https://img.shields.io/npm/v/vite-plugin-uxdsl.svg)](https://www.npmjs.com/package/vite-plugin-uxdsl)
-[![License](https://img.shields.io/npm/l/vite-plugin-uxdsl.svg)](LICENSE)
+Part of the [`uxdsl`](../../README.md) package (`npm i -D uxdsl`). Until 0.5.0-beta.6 this was the separate `vite-plugin-uxdsl` package; that name is deprecated and only re-exports `uxdsl`.
 
-**[Visit the Official Documentation & Playground](https://uxdsl.vercel.app/)**
+**[Visit the Official Documentation & Playground](https://uxdsl.io/)**
 
 ---
 
 ## Overview
 
-`vite-plugin-uxdsl` turns a `.uxdsl` import into a real CSS import, handled by
+`uxdsl/vite` turns a `.uxdsl` import into a real CSS import, handled by
 Vite's own CSS pipeline (MIG-B6-20, FEAT-008, decision D-4) — the same
 extraction, HMR and SSR handling Vite gives any other `.css` file, not a
 custom runtime `<style>` injection. This is the **recommended and most
@@ -29,7 +24,7 @@ actively supported integration** for UXDSL in modern frontend projects.
 - **`?inline` works like it does for any Vite CSS import:** `import css from
   './panel.uxdsl?inline'` returns the compiled CSS as a string.
 - **Project theme discovery:** reads `uxdsl.theme.json` /
-  `uxdsl.theme.config.{js,cjs}` automatically, the same way `uxdsl-cli` does.
+  `uxdsl.theme.{js,cjs}` automatically, the same way the `uxdsl` CLI does.
 - **Full UXDSL Feature Support:** theme functions, responsive utilities and
   `@ds-*` directives — compiled through the same `compile()` pipeline the
   CLI uses, so the same entry and theme produce the same CSS everywhere.
@@ -39,7 +34,7 @@ actively supported integration** for UXDSL in modern frontend projects.
 ## Installation
 
 ```bash
-npm install vite-plugin-uxdsl uxdsl-core --save-dev
+npm i -D uxdsl
 ```
 
 Works with Vite 4 and later (`peerDependencies.vite: ">=4.0.0"`, verified through
@@ -49,12 +44,12 @@ Vite 8). `postcss` is a peer dependency that Vite already brings.
 
 ### 1. Configure the Plugin
 
-Add `vite-plugin-uxdsl` to your `vite.config.js` or `vite.config.ts`:
+Add `uxdsl/vite` to your `vite.config.js` or `vite.config.ts`:
 
 ```javascript
 // vite.config.js
 import { defineConfig } from 'vite';
-import uxdsl from 'vite-plugin-uxdsl';
+import uxdsl from 'uxdsl/vite';
 
 export default defineConfig({
   plugins: [uxdsl()],
@@ -106,7 +101,7 @@ Ensure your `tsconfig.json`'s `include` array covers this new file (e.g., `"incl
 ```ts
 uxdsl({
   theme,             // explicit theme object — skips discovery entirely when given
-  references,        // same shape as postcss-uxdsl's `references` option
+  references,        // same shape as the PostCSS plugin's `references` option
   includeTheme,       // emit (or skip) the global :root token definitions — default true
   discoverTheme,      // default true; see "Project theme" below
   configRoot,         // directory theme discovery searches from — default Vite's own project root
@@ -116,7 +111,7 @@ uxdsl({
 ### Project theme (`discoverTheme`, `configRoot`)
 
 When `theme` is omitted, the plugin looks for the project's theme file —
-`uxdsl.theme.json`, or `uxdsl.theme.config.js`/`.cjs` exporting the theme
+`uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` exporting the theme
 object (or a function returning it) — in your Vite project root (Vite's
 resolved `root`) and compiles against it; no extra option needed for a
 normal project. `configRoot` points discovery somewhere else (a monorepo
@@ -134,7 +129,7 @@ Thresholds are the theme's own `breakpoints` family, declared in the theme
 file (or the `theme` option) and read from there by every integration:
 
 ```js
-// uxdsl.theme.config.cjs
+// uxdsl.theme.cjs
 module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep UXDSL's defaults
 ```
 

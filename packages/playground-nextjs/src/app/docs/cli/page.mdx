@@ -11,7 +11,7 @@ import { CliRun, CliProjectFiles, WatchTranscript } from '@/components/CliCaptur
 
 ## The project these commands run in
 
-A build config made with `defineConfig` from `postcss-uxdsl/config`, a theme file that points `$schema` at the packaged `postcss-uxdsl/schema/theme.schema.json` (so an editor validates and completes it) and overrides only `palette.primary.main`, and three sources. `scripts/capture-capabilities.js` runs each command below and stores what it printed; `npm test` runs it again with `--check`, so this page cannot keep showing output the CLI no longer produces. Absolute paths are shown as `<project>`.
+A build config made with `defineConfig` from `uxdsl/config`, a theme file that points `$schema` at the packaged `uxdsl/schema/theme.schema.json` (so an editor validates and completes it) and overrides only `palette.primary.main`, and three sources. `scripts/capture-capabilities.js` runs each command below and stores what it printed; `npm test` runs it again with `--check`, so this page cannot keep showing output the CLI no longer produces. Absolute paths are shown as `<project>`.
 
 </div>
 
@@ -100,7 +100,7 @@ Fails the build, before writing anything, when one of the named families was par
 
 ## `--help`, `--version`, and what is not a command
 
-Bare `uxdsl` prints the help instead of building; `uxdsl <command> --help` prints that command's options and nothing else (`uxdsl init --help` is where `--multi`, the theme-plus-panels scaffold, is described); `uxdsl --version` prints the versions of `uxdsl-cli` and the `postcss-uxdsl` and `uxdsl-core` it resolved. An unknown command is one line with a hint — `watch`, which used to be a command, points at `uxdsl build --watch`.
+Bare `uxdsl` prints the help instead of building; `uxdsl <command> --help` prints that command's options and nothing else (`uxdsl init --help` is where `--multi`, the theme-plus-panels scaffold, is described); `uxdsl --version` prints the one version of the installed `uxdsl` package — the CLI, the compiler and the theme model are one install. An unknown command is one line with a hint — `watch`, which used to be a command, points at `uxdsl build --watch`.
 
 </div>
 
