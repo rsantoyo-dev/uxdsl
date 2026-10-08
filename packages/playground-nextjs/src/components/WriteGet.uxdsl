@@ -1,0 +1,37 @@
+/* Theme excerpt, then the source next to its compiled output (stacked on phones). */
+
+.write-get {
+  display: grid;
+  gap: space(4);
+  margin-block: density(4);
+  min-width: 0;
+}
+
+.write-get__pair {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 2fr) minmax(0, 3fr));
+  gap: space(4);
+  align-items: start;
+}
+
+.write-get__theme, .write-get__side {
+  display: grid;
+  gap: space(2);
+  min-width: 0;
+}
+
+.write-get__label {
+  @ds-typo(caption);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(2);
+  align-items: baseline;
+  font-weight: 700;
+  color: palette(surface.contrast);
+}
+
+.write-get__note {
+  font-weight: 400;
+  color: palette(text.secondary);
+}

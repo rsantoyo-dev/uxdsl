@@ -185,8 +185,8 @@ export default function DemoColors() {
                  wrapLines={true}
                >
 {`.my-element {
-  background-color: color(${bgFamily}-${bgShade});
-  color: color(${textFamily}-${textShade});
+  background-color: color(${bgFamily}.${bgShade});
+  color: color(${textFamily}.${textShade});
 }`}
                </SyntaxHighlighter>
              </div>
@@ -194,13 +194,8 @@ export default function DemoColors() {
         </div>
       </div>
 
-      <div className="demo-header">
-        <h3 className="demo-title">Global Palette</h3>
-        <p className="demo-subtitle">
-          Click on any color swatch to update the UX-DSL token.
-        </p>
-      </div>
-
+      <details className="demo-disclosure">
+      <summary className="demo-disclosure__summary">Every color of the collection; click a swatch to change it</summary>
       <div className="colors-stack">
         {families.map((fam) => (
           <article key={fam} className="color-family">
@@ -218,6 +213,7 @@ export default function DemoColors() {
           </article>
         ))}
       </div>
+      </details>
     </section>
   )
 }

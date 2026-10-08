@@ -1,204 +1,238 @@
-/* Welcome Page Styles */
-#WelcomePage {
+/* The home page. Above the fold on a laptop: the thesis, the example next to its compiled CSS,
+   the resizable frame and the three ways in. */
+
+.home {
   display: flex;
   flex-direction: column;
-  min-height: calc(100vh - 64px); /* Adjust based on header height */
+  min-height: calc(100vh - space(12));
   width: 100%;
+}
 
-  .hero-surface {
-    @ds-surface(contained);
-    width: 100%;
-    flex: 1;
-    display: grid;
-    place-items: center;
-    gap: density(8);
-    background: transparent;
-    border-bottom: border(1);
-    padding: density(8);
+.home-hero {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  padding: density(5) xs(space(4)) md(space(6));
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) lg(minmax(0, 5fr) minmax(0, 7fr));
+  gap: density(4) density(6);
+  align-items: start;
+}
+
+.home-hero__intro {
+  display: grid;
+  gap: density(3);
+  min-width: 0;
+}
+
+.home-hero__eyebrow {
+  @ds-typo(caption);
+  margin: 0;
+  color: palette(primary.main);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.home-hero__title {
+  @ds-typo(h2);
+  margin: 0;
+  color: palette(surface.contrast);
+  letter-spacing: -0.02em;
+}
+
+.home-hero__lede {
+  @ds-typo(p);
+  margin: 0;
+  color: palette(text.secondary);
+}
+
+.home-hero__ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(3);
+}
+
+.home-cta {
+  @ds-button(outlined primary);
+  display: inline-flex;
+  align-items: center;
+  gap: space(2);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.home-cta--primary {
+  @ds-button(contained primary);
+}
+
+.home-hero__code {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(minmax(0, 1fr) minmax(0, 1fr));
+  gap: space(4);
+  min-width: 0;
+}
+
+.home-code {
+  display: grid;
+  align-content: start;
+  gap: space(2);
+  min-width: 0;
+}
+
+.home-code__label {
+  @ds-typo(caption);
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: space(2);
+  font-weight: 700;
+  color: palette(surface.contrast);
+}
+
+.home-code__path {
+  font-weight: 400;
+  color: palette(text.secondary);
+  font-family: var(--uxdsl__font__code), monospace;
+}
+
+/* Code on the home page is denser than in the documentation. */
+.home-code .code-block-frame {
+  font-size: 0.78rem;
+}
+
+/* The compiled CSS is longer than the source: it scrolls inside the panel. */
+.home-code__scroll {
+  max-height: xs(18rem) lg(19.5rem);
+  overflow-y: auto;
+  border-radius: radius(2);
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+}
+
+.home-hero__frame {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: space(2);
+  min-width: 0;
+}
+
+.home-hero__frame-hint {
+  @ds-typo(caption);
+  margin: 0;
+  color: palette(text.secondary);
+}
+
+.home-section-title {
+  @ds-typo(h3);
+  margin: 0 0 density(4);
+}
+
+.home-pillars {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: density(8) xs(space(4)) md(space(6)) density(4);
+}
+
+.home-pillars__grid {
+  display: grid;
+  grid-template-columns: xs(minmax(0, 1fr)) md(repeat(2, minmax(0, 1fr))) xl(repeat(4, minmax(0, 1fr)));
+  gap: density(4);
+}
+
+.home-pillar {
+  @ds-surface(outlined);
+  display: grid;
+  align-content: start;
+  gap: space(3);
+  color: palette(surface.contrast);
+  text-decoration: none;
+
+  &:hover {
+    border-color: palette(primary.main);
   }
 
-  .hero-content {
-    display: flex;
-    flex-direction: xs(column) md(row); /* column on mobile, row on larger screens */
-    align-items: center;
-    gap: density(4);
-    text-align: xs(center) md(left); /* left-aligned within the row layout */
-    justify-content: md(center); /* center the row content */
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+}
 
-    .welcome-page-title {
-      .page-title__text {
-        margin-bottom: md(0); /* remove bottom margin when in row layout */
-      }
-    }
+.home-pillar__title {
+  @ds-typo(h5);
+  margin: 0;
+  color: palette(primary.main);
+}
+
+.home-pillar__text {
+  @ds-typo(span);
+  margin: 0;
+  color: palette(text.secondary);
+}
+
+.home-experiment {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  padding: density(6) xs(space(4)) md(space(6)) density(8);
+  display: grid;
+  justify-items: start;
+}
+
+.home-experiment__text {
+  @ds-typo(span);
+  margin: 0;
+  max-width: 48rem;
+  color: palette(text.secondary);
+}
+
+.home-footer {
+  margin-top: auto;
+  padding: density(6) space(4);
+  background: palette(surface.light);
+  border-top: border(1);
+  display: grid;
+  justify-items: center;
+  gap: space(4);
+  width: 100%;
+}
+
+.home-footer__links {
+  display: flex;
+  gap: space(6);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.home-footer__link {
+  display: inline-flex;
+  align-items: center;
+  gap: space(2);
+  color: palette(text.secondary);
+  text-decoration: none;
+  font-weight: 500;
+  border-radius: radius(1);
+
+  &:hover {
+    color: palette(primary.main);
   }
 
-  .logo-container {
-    width: 7.5rem; /* Decorative shape size; not shared spacing. */
-    height: 7.5rem;
-    display: grid;
-    place-items: center;
-    
-    /* Optional: Add a glow or shadow to the logo container */
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
   }
+}
 
-  .hero-logo {
-    width: 100%;
-    height: auto;
-  }
-
-  .welcome-page-title {
-    margin-bottom: 0;
-    
-    .page-title__text {
-      @ds-typo(h1);
-      background: linear-gradient(135deg, palette(primary.dark), palette(primary.main));
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: density(2);
-    }
-
-    .page-title__subtitle {
-      @ds-typo(h3);
-      color: palette(text.secondary);
-    }
-  }
-
-  .home-container {
-    box-sizing: border-box;
-    max-width: 90vw;
-    width: 100%;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: density(6); /* Increased gap for better rhythm than density(2) for main sections */
-    padding: density(8) density(4) density(10); /* Added top padding */
-  }
-
-  .actions {
-    margin-top: 0;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-
-  .get-started-btn {
-    @ds-button(contained primary 3);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: density(2);
-    padding: density(4) density(6);
-    border-radius: radius(pill);
-    transition: transform 0.2s;
-    width: 100%; 
-    /* Removed max-width to allow full width on all screens as requested */
-
-    &:hover {
-      transform: translateY(-2px);
-      box-shadow: shadow(4);
-    }
-  }
-
-  .intro-section {
-    width: 100%;
-    margin: 0;
-  }
-
-  .intro-text {
-    @ds-typo(span);
-    color: palette(text.secondary);
-    text-align: center;
-  }
-
-  .nav-grid {
-    display: grid;
-    grid-template-columns: xs(1fr) md(repeat(2, 1fr));
-    gap: density(4);
-    width: 100%;
-    max-width: 100%;
-    margin-top: density(2);
-    margin-bottom: density(2);
-    box-sizing: border-box;
-  }
-
-  .demo-section {
-    width: 100%;
-    max-width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: density(4);
-    margin-top: density(4);
-  }
-
-  .section-label {
-    @ds-typo(h6);
-    color: palette(text.secondary);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .demo-wrapper-scale {
-    width: 100%;
-  }
-
-  .welcome-footer {
-    margin-top: auto;
-    padding: density(8) density(4);
-    background: palette(surface.light);
-    border-top: border(1);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: density(4);
-    width: 100%;
-  }
-
-  .footer-links {
-    display: flex;
-    gap: density(6);
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .footer-link {
-    display: flex;
-    align-items: center;
-    gap: density(2);
-    color: palette(text.secondary);
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-
-    &:hover {
-      color: palette(primary.main);
-    }
-  }
-
-  .footer-copy {
-    @ds-typo(caption);
-    color: palette(text.disabled);
-  }
-
-  /* MIG-B7-17 phase B (4): were inline style={{}} in app/page.tsx. */
-  .hero-surface {
-    position: relative;
-    overflow: hidden;
-  }
-
-  .hero-content {
-    position: relative;
-    z-index: 1;
-  }
-
-  .hero-prompt {
-    position: relative;
-    z-index: 20;
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
+.home-footer__copy {
+  @ds-typo(caption);
+  margin: 0;
+  color: palette(text.secondary);
 }

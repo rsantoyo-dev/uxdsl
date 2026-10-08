@@ -1,9 +1,14 @@
 import { TypographyDemos } from '@/components/TypographyDemos'
+import WriteGet from '@/components/WriteGet'
+import TypographyRules from '@/components/TypographyDocumentation'
 import { PageTitle } from '@/components/PageTitle'
-import TypographyDocumentation from '@/components/TypographyDocumentation'
 
-<div id="TypographyPage">
-  <PageTitle title="Typography" subtitle="Responsive text styles, defined in your theme." subtext="Choose a text style in the component. Let the system control how it adapts across screens." />
-  <TypographyDemos />
-  <TypographyDocumentation />
-</div>
+export const metadata = { title: 'Typography' }
+
+<PageTitle title="Typography" subtitle="A text role is defined once with its size and line height per breakpoint; a component names the role." />
+
+<TypographyDemos />
+
+<WriteGet id="typography" />
+
+<TypographyRules />

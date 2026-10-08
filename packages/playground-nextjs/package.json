@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "local-deps": "npm install --include=dev --prefix ../uxdsl && npm run build --prefix ../uxdsl",
-    "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build && node scripts/build-runtime-sandbox.js",
-    "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && node scripts/build-runtime-sandbox.js && uxdsl build --watch",
+    "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js",
+    "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js && uxdsl build --watch",
     "capture:capabilities": "node scripts/capture-capabilities.js",
     "theme:audit": "node scripts/audit-themes.mjs",
     "test:themes": "node --test scripts/test-theme-inheritance.cjs",
@@ -13,7 +13,7 @@
     "test:components": "node --test scripts/test-theme-context.cjs",
     "test:audit": "node --test scripts/test-audit-themes.cjs",
     "test:captures": "node scripts/capture-capabilities.js --check",
-    "test": "npm run test:themes && npm run test:scheduler && npm run test:components && npm run test:audit && npm run test:captures",
+    "test": "npm run test:themes && npm run test:scheduler && npm run test:components && npm run test:audit && npm run test:captures && npm run test:examples",
     "dev": "npm run local-deps && npm run uxdsl:build && concurrently \"next dev\"",
     "build": "npm run local-deps && npm run uxdsl:build && next build",
     "start": "next start",
@@ -26,7 +26,9 @@
     "release:patch:bump-only": "npm --prefix ../.. run release:patch:bump-only",
     "release:minor:bump-only": "npm --prefix ../.. run release:minor:bump-only",
     "release:major:bump-only": "npm --prefix ../.. run release:major:bump-only",
-    "postinstall": "npm run local-deps"
+    "postinstall": "npm run local-deps",
+    "capture:examples": "node scripts/capture-examples.js",
+    "test:examples": "node scripts/capture-examples.js --check"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

@@ -1,4 +1,4 @@
-// The build config of the small project whose real CLI output the playground's /docs/cli
+// The build config of the small project whose real CLI output the playground's /docs/tooling
 // page shows (captured by scripts/capture-capabilities.js). `defineConfig` is the typed
 // helper from `uxdsl/config`. The theme is not named here: `uxdsl build` discovers
 // `uxdsl.theme.json` next to this file.

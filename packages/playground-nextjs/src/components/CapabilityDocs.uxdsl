@@ -236,6 +236,34 @@
   margin: 0;
 }
 
+/* A captured run shown as a disclosure: the title and exit status until it is opened. */
+.cap-run--collapsed {
+  border: border(1);
+  border-radius: radius(1);
+  padding: space(2) space(4);
+  margin-bottom: space(3);
+
+  & > summary {
+    cursor: pointer;
+    display: list-item;
+    border-radius: radius(1);
+  }
+
+  & > summary:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+
+  &[open] > summary {
+    margin-bottom: space(3);
+  }
+}
+
+.cap-list {
+  display: grid;
+  min-width: 0;
+}
+
 .cap-terminal {
   margin: 0;
   overflow-x: auto;

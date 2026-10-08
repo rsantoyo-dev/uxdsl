@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// MIG-B7-17 (FEAT-009), phase C: what the /docs/cli and /docs/diagnostics pages show is
+// MIG-B7-17 (FEAT-009), phase C: what the /docs/tooling and /docs/diagnostics pages show is
 // real output, not text somebody typed.
 //
 // This runs the real `uxdsl` CLI (packages/uxdsl/bin, compiling with the package it
@@ -127,6 +127,33 @@ function captureCli() {
     for (const f of report.failures) { const k = `${f.mode} ${f.family} ${f.pair}`; byGroup[k] = (byGroup[k] || 0) + 1; }
     return { stdout: undefined, facts: { passed: report.passed, checked: report.checked.length, failures: report.failures.length, exceptions: report.exceptions.length, exceptionsMatched: report.exceptions.filter((e) => e.matched).length, exceptionIssues: report.exceptionIssues, bytes: Buffer.byteLength(r.stdout), byGroup }, excerpt: JSON.stringify(report.failures.slice(0, 2), null, 2) };
   });
+
+  // `init` in an empty project, and in one that has a next.config.js: what it prints and
+  // every file it writes (the quick start shows these).
+  const initFiles = (d) => {
+    const files = {};
+    const walkDir = (rel) => {
+      for (const entry of fs.readdirSync(path.join(d, rel), { withFileTypes: true })) {
+        const child = rel ? `${rel}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) walkDir(child);
+        else if (!['package.json', 'next.config.js'].includes(child)) files[child] = read(d, child);
+      }
+    };
+    walkDir('');
+    files['package.json'] = read(d, 'package.json');
+    return files;
+  };
+  for (const [id, title, extra] of [
+    ['init', 'First run in an empty project: `uxdsl init`', {}],
+    ['init-next', 'The same in a Next.js project (a next.config.js is present)', { 'next.config.js': 'module.exports = {};\n' }],
+  ]) {
+    const initDir = path.join(WORK, id);
+    fs.rmSync(initDir, { recursive: true, force: true });
+    fs.mkdirSync(initDir, { recursive: true });
+    fs.writeFileSync(path.join(initDir, 'package.json'), `${JSON.stringify({ name: 'my-app', private: true, scripts: { dev: 'next dev' } }, null, 2)}\n`);
+    for (const [file, text] of Object.entries(extra)) fs.writeFileSync(path.join(initDir, file), text);
+    add(id, title, initDir, ['init'], (_, d) => ({ files: initFiles(d) }));
+  }
 
   add('help', 'Bare uxdsl asks, it does not build: the general help', dir, [], none);
   add('build-help', 'Per-command help: only that command\'s options', dir, ['build', '--help'], none);

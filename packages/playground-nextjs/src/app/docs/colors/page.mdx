@@ -1,12 +1,22 @@
 import DemoColors from '@/components/DemoColors'
-import { ColorExplanation, ColorAgentGuidance } from '@/components/ColorDocumentation'
+import PalettePlayground from '@/components/PalettePlayground'
+import WriteGet from '@/components/WriteGet'
+import { ColorRules } from '@/components/ColorDocumentation'
 import { PageTitle } from '@/components/PageTitle'
 
-<PageTitle 
-  title="Colors" 
-  subtitle="Define reusable color values. Connect them to palette roles in your theme."
+export const metadata = { title: 'Colors & palette' }
+
+<PageTitle
+  title="Colors & palette"
+  subtitle="Colors are the values; the palette gives them roles, with a dark value where one differs, and components name the role."
 />
 
-<ColorExplanation topic="colors" />
 <DemoColors />
-<ColorAgentGuidance topic="colors" />
+
+<section id="usage" className="palette-docs__usage">
+  <PalettePlayground />
+</section>
+
+<WriteGet id="colors" />
+
+<ColorRules />
