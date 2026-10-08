@@ -6,7 +6,16 @@ plan, §5.2 the 13 owner decisions — **all accepted**, §5.3 the frozen 1.0
 contract). Read that document first, then this one. Nothing is published; the
 owner publishes.
 
-## 0. Status update — 2026-10-07, later the same day (read this first)
+## Update 2026-10-08 — read `2026-10-08-plan-beta9.md` instead
+
+Everything this handoff lists as remaining is now planned, with the owner's
+later decisions, in [2026-10-08-plan-beta9.md](2026-10-08-plan-beta9.md):
+the first release of `uxdsl` is `0.5.0-beta.9` (the five former names were
+published as `0.5.0-beta.8` from the pre-stability code), plus the pending
+playground, extension and documentation work, the philosophy items and the
+user-experience improvements. The working rules in §2 below still apply.
+
+## 0. Status update — 2026-10-07, later the same day
 
 Sections 3.1, 3.2 and 3.3 below are **done**. `feat/stability-integration`
 (PR #25 → main) now contains phases 0, 1, 2, 3, 4 and 5; CI is green there
@@ -156,7 +165,7 @@ Then `npm test`, `npm run verify:beta7`, push; CI on #25 must be green
 
 Breaking rename, free now (0 external users). Target layout:
 
-```
+```text
 uxdsl                      (bin: uxdsl)
   "."          compile(), resolveTheme, DEFAULT_THEME, defineConfig, types
   "./postcss"  the PostCSS plugin  uxdsl({ theme?, includeTheme?, references?, discoverTheme?, configRoot? })
@@ -217,7 +226,7 @@ Documentation (English only in public docs; history lives in CHANGELOG and
 Files: root `README.md` ≤120 lines (what/why, 5-line example, install, package
 table, links, one status line); package README ≤150; `AGENTS.md` ≤600 (move
 "Beta.6 implementation planning" and "Maintaining this guide" to
-`CONTRIBUTING.md`; strip MIG/FEAT references and every "as of <date>");
+`CONTRIBUTING.md`; strip MIG/FEAT references and every "as of …" date);
 `migration.md` → English ≤200. Claims to drop everywhere: "replaces SCSS",
 "no media queries", "type-safe", "fluid typography" (see audit §2.3).
 
