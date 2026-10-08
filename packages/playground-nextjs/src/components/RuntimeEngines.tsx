@@ -5,7 +5,7 @@
 // state, so they run on the page itself, against what ThemeContext applied.
 
 import { useEffect, useMemo, useState } from 'react'
-import postcss, { type Declaration } from 'postcss'
+import type { Declaration } from 'postcss'
 import {
   resolveTheme,
   DEFAULT_THEME,
@@ -226,21 +226,34 @@ export function ValueGrammar() {
   )
 }
 
+type Postcss = typeof import('postcss').default
+
 /** The reference check the compiler runs on every build, on CSS typed here against the active theme. */
 export function ReferenceCheck() {
   const { activeThemeData } = useTheme()
   const [css, setCss] = useState('.card {\n  color: var(--uxdsl__palette__primary-main);\n  background: var(--uxdsl__palette__brand-main);\n}')
+  // The CSS typed here is parsed with PostCSS, loaded on the client when the
+  // card mounts. A static import would make this module an async one on the
+  // server (Next externalizes the app's own postcss as ESM), and an async
+  // client module referenced from the MDX page renders as undefined.
+  const [postcss, setPostcss] = useState<Postcss | null>(null)
+  useEffect(() => {
+    let live = true
+    import('postcss').then((mod) => { if (live) setPostcss(() => mod.default) })
+    return () => { live = false }
+  }, [])
   const outcome = useMemo(() => {
+    if (!postcss) return { ok: true as const, issues: [] as string[], loading: true }
     try {
       const root = postcss.parse(css)
       const consumers: Declaration[] = []
       root.walkDecls((decl) => { consumers.push(decl) })
       const issues = inspectReferences(root, consumers, { css: [generateThemeCss(activeThemeData)] })
-      return { ok: true as const, issues: issues.map((issue) => issue.message) }
+      return { ok: true as const, issues: issues.map((issue) => issue.message), loading: false }
     } catch (error) {
       return { ok: false as const, message: error instanceof Error ? error.message.split('\n')[0] : String(error) }
     }
-  }, [css, activeThemeData])
+  }, [css, activeThemeData, postcss])
 
   return (
     <div className="cap-card" data-testid="reference-check">
@@ -248,7 +261,8 @@ export function ReferenceCheck() {
       <label className="cap-label" htmlFor="cap-reference-css">Compiled CSS that uses theme variables</label>
       <textarea id="cap-reference-css" className="cap-field cap-field--code" rows={5} value={css} onChange={(e) => setCss(e.target.value)} spellCheck={false} aria-invalid={outcome.ok && outcome.issues.length > 0} />
       {outcome.ok ? (
-        outcome.issues.length
+        outcome.loading ? <p className="cap-note">Loading PostCSS…</p>
+        : outcome.issues.length
           ? <ul className="cap-log">{outcome.issues.map((issue) => <li key={issue}><code>{issue}</code></li>)}</ul>
           : <p className="cap-note">Every <code>var(--uxdsl__…)</code> resolves against the active theme.</p>
       ) : <p className="cap-result cap-result--error" role="alert">{outcome.message}</p>}
