@@ -10,14 +10,15 @@ owner publishes.
 
 Sections 3.1, 3.2 and 3.3 below are **done**. `feat/stability-integration`
 (PR #25 → main) now contains phases 0, 1, 2, 3, 4 and 5; CI is green there
-(`npm test` and `verify:1.0`: one tarball, real Chrome). PRs #22–#24 and
-#26–#28 are contained in it. The packages are now ONE package, `uxdsl`
+(`npm test` and `verify:1.0`: one tarball, real Chrome). It contains the
+PRs numbered 22–24 and 26–28. The packages are now ONE package, `uxdsl`
 (`packages/uxdsl`); every `postcss-uxdsl` / `uxdsl-core` / `uxdsl-cli` path
 below is historical — read it as `packages/uxdsl` and `uxdsl/<subpath>`. The
 beta gates are replaced by `npm run verify:1.0` (`fixtures/release-1.0/run.js`).
 Owner publish steps: `docs/releases/uxdsl-package-move.md`.
 
 Owner decisions taken after this handoff was written:
+
 1. **Playground CSS Modules:** re-implement the pattern of branch
    `docs/playground-page-audit` inside phase 6 on the current code (do not
    rebase that branch; close it afterwards).
@@ -29,6 +30,7 @@ Owner decisions taken after this handoff was written:
 3. **`packages/playground`** (the old, broken Vite demo): delete it in phase 6.
 
 Remaining work, in order:
+
 - **Dependencies** (decision 2) — branch `feat/stability-deps`, in progress.
 - **Phase 6, playground site** (§3.4 playground list + decisions 1 and 3,
   `@uxdsl theme;` added to `LANGUAGE_COMPLETIONS`, VS Code packaging) —
