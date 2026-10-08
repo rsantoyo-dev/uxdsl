@@ -6,7 +6,43 @@ plan, §5.2 the 13 owner decisions — **all accepted**, §5.3 the frozen 1.0
 contract). Read that document first, then this one. Nothing is published; the
 owner publishes.
 
-## 1. Where things are
+## 0. Status update — 2026-10-07, later the same day (read this first)
+
+Sections 3.1, 3.2 and 3.3 below are **done**. `feat/stability-integration`
+(PR #25 → main) now contains phases 0, 1, 2, 3, 4 and 5; CI is green there
+(`npm test` and `verify:1.0`: one tarball, real Chrome). PRs #22–#24 and
+#26–#28 are contained in it. The packages are now ONE package, `uxdsl`
+(`packages/uxdsl`); every `postcss-uxdsl` / `uxdsl-core` / `uxdsl-cli` path
+below is historical — read it as `packages/uxdsl` and `uxdsl/<subpath>`. The
+beta gates are replaced by `npm run verify:1.0` (`fixtures/release-1.0/run.js`).
+Owner publish steps: `docs/releases/uxdsl-package-move.md`.
+
+Owner decisions taken after this handoff was written:
+1. **Playground CSS Modules:** re-implement the pattern of branch
+   `docs/playground-page-audit` inside phase 6 on the current code (do not
+   rebase that branch; close it afterwards).
+2. **`npm audit`:** fix both inherited HIGH chains before 1.0 —
+   `chokidar` → v4 (+ a glob matcher for `watch` patterns) and UXDSL's own
+   implementation of the documented SCSS subset instead of
+   `postcss-advanced-variables`. The 1.0 gate requires 0 high/critical on a
+   fresh `npm i -D uxdsl`. (This supersedes §5's parking-lot note.)
+3. **`packages/playground`** (the old, broken Vite demo): delete it in phase 6.
+
+Remaining work, in order:
+- **Dependencies** (decision 2) — branch `feat/stability-deps`, in progress.
+- **Phase 6, playground site** (§3.4 playground list + decisions 1 and 3,
+  `@uxdsl theme;` added to `LANGUAGE_COMPLETIONS`, VS Code packaging) —
+  branch `feat/stability-phase-6-playground`, in progress.
+- **Phase 6, markdown docs** (§3.4 "Files": root README ≤120, package README,
+  AGENTS ≤600 + CONTRIBUTING, migration in English, drop dated claims) —
+  not started; do it after the dependencies branch lands, since it rewrites
+  the README section the dependencies branch touches.
+- **Phase 7** (§3.5) — not started.
+- Small open item: the "did you mean" for numeric keys picks the first key at
+  edit distance 1 (`color(gray.350)` → "Did you mean 50?" although 340 and
+  300 are as close); prefer the numerically nearest key.
+
+## 1. Where things are (as of the first writing)
 
 Repository `rsantoyo-dev/uxdsl`. `main` is at `0446d7c` (beta.7 integrated).
 Nothing from the stability plan is merged yet.
