@@ -1,0 +1,6 @@
+@uxdsl theme;
+
+body {
+  margin: 0;
+  font-family: var(--uxdsl__font__ui, sans-serif);
+}

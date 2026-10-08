@@ -768,6 +768,10 @@ async function main() {
     repoNode('verify:cssmodules-build', ['fixtures/mig02-nextjs-cssmodules/run.js'], 900000);
     return 'pure-mode build, computed styles, applyTheme on a page';
   });
+  await check('DE-9', '[tarball, Chrome] Next.js with PostCSS only: `@uxdsl theme;` in globals.css, tokens in a CSS Module (fixtures/mig02-nextjs-cssmodules/postcss-only.js)', () => {
+    repoNode('postcss-only', ['fixtures/mig02-nextjs-cssmodules/postcss-only.js'], 900000);
+    return 'marker emits the theme; in a module it is rejected; without it no theme';
+  });
 
   // --- Repository-level guarantees -----------------------------------------
   console.log('\nRepository-level guarantees (documentation and playground sources):');

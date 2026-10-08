@@ -71,6 +71,23 @@ Also changed by the move:
   `schema`, `docs/agent-guide.md` and the three codemods; the CHANGELOG is
   linked from the README instead of shipped.
 
+### Added: `@uxdsl theme;` (stability phase 4, decision DE-9)
+
+A PostCSS-only setup — Next.js with `'uxdsl/postcss': { includeTheme: false }`
+in `postcss.config.js` and no CLI — puts the theme in its one global
+stylesheet with `@uxdsl theme;`: the plugin emits the theme there, in the
+marker's place (the theme's `@import`s still first), whatever `includeTheme`
+says, and CSS Modules just use tokens. With `includeTheme: true` the marker
+only chooses the position. A misspelled, repeated or nested marker is the new
+code `UXD_THEME_MARKER`. Pinned by `test/theme-marker.test.js` and, with a real
+`next build` in Chrome (positive, a marker moved into a CSS Module rejected by
+css-loader's pure mode, no marker leaving the tokens unresolved), by
+`fixtures/mig02-nextjs-cssmodules/postcss-only.js`.
+
+### Visual changes
+
+None for a stylesheet without the marker: its output is byte-identical.
+
 ### The browser runtime without PostCSS (stability phase 4, audit R5)
 
 `uxdsl/runtime` no longer pulls in the CSS parser. A browser bundle of

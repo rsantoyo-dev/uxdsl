@@ -1,0 +1,6 @@
+{
+  "name": "mig02-postcss-only",
+  "private": true,
+  "version": "0.0.0",
+  "description": "DE-9: UXDSL in Next.js through PostCSS only. next, react and react-dom come from the parent fixture; uxdsl is the tarball installed in fixtures/mig07-consumer, linked in by ../postcss-only.js."
+}

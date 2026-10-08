@@ -667,6 +667,11 @@ command). Import from the entry that owns the job: `uxdsl` (`compile()`,
 not build an application on it). The five former package names
 (`postcss-uxdsl`, `uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`,
 `uxdsl-webpack-loader`) are deprecated re-exports; do not add them to a project.
+With the PostCSS plugin alone (Next.js, no CLI), configure
+`'uxdsl/postcss': { includeTheme: false }` and write `@uxdsl theme;` once, at
+the top level of the one global stylesheet: the theme is emitted there and
+nowhere else, and CSS Modules stay free of `:root` (`UXD_THEME_MARKER` for a
+misspelled, repeated or nested marker).
 
 FEAT-002 moved every emitted variable to `--uxdsl__<family>__<key>` in
 0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped

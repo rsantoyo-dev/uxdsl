@@ -29,6 +29,7 @@
     "verify:consumer-fixture": "node fixtures/mig07-consumer/run.js",
     "verify:1.0": "node fixtures/release-1.0/run.js",
     "verify:cssmodules-build": "node fixtures/mig02-nextjs-cssmodules/run.js",
+    "verify:nextjs-postcss-only": "node fixtures/mig02-nextjs-cssmodules/postcss-only.js",
     "verify:playground-browser": "node fixtures/playground-browser/walk.js --build"
   },
   "keywords": [],

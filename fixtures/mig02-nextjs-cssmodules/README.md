@@ -56,6 +56,17 @@ Each run:
    `.next` build cache, so the directory is back in its normal,
    always-succeeding state for the next run.
 
+## PostCSS only: `postcss-only.js` (`npm run verify:nextjs-postcss-only`)
+
+A second Next.js app, `postcss-only/`, uses UXDSL with no CLI at all: its
+`postcss.config.js` is Next's default plugins plus
+`'uxdsl/postcss': { includeTheme: false }`, `styles/globals.css` starts with
+`@uxdsl theme;`, and `styles/card.module.css` only uses tokens. The script packs
+and installs the tarball (through `../mig07-consumer`), links it into the app,
+runs `next build` (static export) and reads computed styles in Chrome at two
+widths, then repeats with the marker moved into the CSS Module (css-loader must
+reject it as not pure) and with no marker (the tokens must resolve to nothing).
+
 ## What this does not verify
 
 - **Visual review of all built pages** — computed-style tests run in a

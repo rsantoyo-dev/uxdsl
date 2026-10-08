@@ -1,0 +1,6 @@
+.card {
+  padding: xs(4px) md(16px);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
+  border-radius: radius(2);
+}

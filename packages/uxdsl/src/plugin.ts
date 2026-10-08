@@ -13,7 +13,9 @@
 //   Theme       The effective theme comes from the `theme` option or, when it
 //               is omitted, from conventional theme-file discovery
 //               (`discoverTheme`/`configRoot`). `includeTheme: false` compiles
-//               an entry that only consumes tokens another entry defines.
+//               an entry that only consumes tokens another entry defines;
+//               `@uxdsl theme;` emits the theme where it is written, and only
+//               there, whatever `includeTheme` says.
 //   Integrity   Every emitted var() is checked against a real definition
 //               (`references`), failing the build by default rather than
 //               shipping a dangling token.
@@ -74,6 +76,10 @@ interface Compilation {
   root: Root;
   result: Result;
   includeTheme: boolean;
+  /** `@uxdsl theme;` in this stylesheet, when written: the theme goes there. */
+  themeMarker: AtRule | null;
+  /** Whether this compilation emitted the theme (the marker, or includeTheme). */
+  themeEmitted: boolean;
   /** The effective theme: DEFAULT_THEME with the override deep-merged on top, validated. */
   theme: Record<string, any>;
   references: ReferenceOptions;
@@ -145,6 +151,8 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   return {
     root, result, theme, bps, ordered, originalSources, dslSources,
     includeTheme: opts.includeTheme !== false,
+    themeMarker: findThemeMarker(root),
+    themeEmitted: false,
     references: (opts.references ?? discovered?.references ?? {}) as ReferenceOptions,
     bpNames: new Set(Object.keys(bps)),
     // Token maps are always computed so references keep validating against
@@ -160,6 +168,29 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
 }
 
 // --- emitTheme ---------------------------------------------------------------
+
+/**
+ * `@uxdsl theme;` — the statement that puts the theme in this stylesheet, at
+ * this position. One form, once, at the top level: a stylesheet carries the
+ * theme at most once, and a theme inside a rule or an at-rule would not be the
+ * global `:root` every other file reads.
+ */
+function findThemeMarker(root: Root): AtRule | null {
+  let marker: AtRule | null = null;
+  root.walkAtRules(/^uxdsl$/i, (at) => {
+    if (at.params.trim().toLowerCase() !== 'theme' || at.nodes !== undefined) {
+      throw locateError(diagnostic(`UXD_THEME_MARKER: @uxdsl ${at.params.trim()} is not a UXDSL at-rule; the one form is \`@uxdsl theme;\`, which emits the theme where it is written.`), at);
+    }
+    if (at.parent !== root) {
+      throw locateError(diagnostic('UXD_THEME_MARKER: `@uxdsl theme;` belongs at the top level of a global stylesheet, outside any rule or at-rule.'), at);
+    }
+    if (marker) {
+      throw locateError(diagnostic('UXD_THEME_MARKER: `@uxdsl theme;` appears twice; a stylesheet carries the theme once. Keep the first.'), at);
+    }
+    marker = at;
+  });
+  return marker;
+}
 
 const atRuleName = (node: ChildNode) => (node.type === 'atrule' ? node.name.toLowerCase() : '');
 const isCharsetOrComment = (node: ChildNode) => node.type === 'comment' || atRuleName(node) === 'charset';
@@ -196,7 +227,8 @@ function inheritSource<T extends { source?: unknown; nodes?: any[] }>(node: T, s
  * wrote is reordered.
  */
 function emitTheme(c: Compilation) {
-  if (!c.includeTheme) return;
+  if (!c.includeTheme && !c.themeMarker) return;
+  c.themeEmitted = true;
   const parsed = inheritSource(postcss.parse(renderThemeCss(c.theme, c.bps)), undefined);
   for (const node of parsed.nodes) { c.generated.add(node); (node as any).walk?.((child: ChildNode) => { c.generated.add(child); }); }
   const nodes = [...parsed.nodes];
@@ -215,7 +247,20 @@ function emitTheme(c: Compilation) {
     for (const node of group) node.raws.before = parsedBefore.get(node);
   };
   inserted(isCharsetOrComment, imports);
-  inserted(isPrelude, blocks);
+  const marker = c.themeMarker;
+  if (!marker) {
+    inserted(isPrelude, blocks);
+    return;
+  }
+  // `@uxdsl theme;`: the blocks take the marker's place. The @imports stay
+  // first (above), since CSS honors one only before every other rule.
+  if (blocks.length) {
+    const parsedBefore = new Map(blocks.map((node) => [node, node.raws.before]));
+    parsedBefore.set(blocks[0], marker.raws.before);
+    marker.parent!.insertBefore(marker, blocks);
+    for (const node of blocks) node.raws.before = parsedBefore.get(node);
+  }
+  marker.remove();
 }
 
 // --- expandDirectives --------------------------------------------------------
@@ -597,7 +642,7 @@ function checkReferences(c: Compilation) {
     if (!c.originalSources.has(node.source) || c.dslSources.has(node.source)) consumers.push(node);
   });
   const css = [...(c.references.css || [])];
-  if (!c.includeTheme && c.references.mode !== 'off') css.push(renderThemeCss(c.theme, c.bps));
+  if (!c.themeEmitted && c.references.mode !== 'off') css.push(renderThemeCss(c.theme, c.bps));
   enforceReferences(c.root, consumers, {
     ...c.references, css,
     onWarning: (issue) => { c.result.warn(issue.message, { node: (issue as any).node, plugin: PLUGIN }); c.references.onWarning?.(issue); },

@@ -245,6 +245,48 @@ present in the page for the referenced `var()`s to resolve. Both entries
 must share the same effective theme (breakpoints, tokens, overrides) or the
 generated variable names can diverge.
 
+### `@uxdsl theme;` — the theme where you write it (PostCSS only, e.g. Next.js)
+
+With the PostCSS plugin alone — no CLI, no generated stylesheet — one plugin
+configuration compiles every CSS file of the app, the global stylesheet and
+each CSS Module alike. Configure it with `includeTheme: false`, so no module
+ever carries `:root`, and write `@uxdsl theme;` in the one global stylesheet:
+the theme is emitted there, at that position, and nowhere else.
+
+```js
+// postcss.config.js (Next.js: its own default plugins first, since a custom
+// file replaces them — `uxdsl init` writes the same list)
+module.exports = {
+  plugins: {
+    'next/dist/compiled/postcss-flexbugs-fixes': {},
+    'next/dist/compiled/postcss-preset-env': { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } },
+    'uxdsl/postcss': { includeTheme: false },
+  },
+};
+```
+
+```css
+/* app/globals.css — imported once, from the root layout */
+@uxdsl theme;
+
+body { margin: 0; }
+```
+
+```css
+/* card.module.css — tokens only; no :root, so css-loader's pure mode accepts it */
+.card { padding: xs(4px) md(16px); background: palette(primary.main); }
+```
+
+The theme is the project's `uxdsl.theme.json` (or `uxdsl.theme.js`/`.cjs`),
+discovered from the working directory as always. Its Google Fonts `@import`
+still leads the stylesheet, since CSS honors an `@import` only before every
+other rule; the `:root` blocks take the marker's place. The marker is one
+statement, once per stylesheet, at the top level: `@uxdsl them;`, a second
+`@uxdsl theme;`, or one inside a rule or `@media` is `UXD_THEME_MARKER`. With
+the default `includeTheme: true` the marker only chooses where the one copy
+goes. `fixtures/mig02-nextjs-cssmodules/postcss-only.js` builds exactly this
+setup with `next build` from the packed tarball and checks it in Chrome.
+
 ---
 
 ## Where the theme goes in the compiled output
