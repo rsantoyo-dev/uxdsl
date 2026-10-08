@@ -1,34 +1,12 @@
 import { MetadataRoute } from 'next'
+import { getDocsLinks, SITE_URL } from '@/lib/docs'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = 'https://uxdsl.vercel.app'
-  
-  // Core routes
-  const routes = [
-    '',
-    '/docs/home',
-    '/docs/quick-start',
-    '/docs/config',
-    '/docs/palette',
-    '/docs/typography',
-    '/docs/densities',
-    '/docs/breakpoints',
-    '/docs/colors',
-    '/docs/spacing',
-    '/docs/surfaces',
-    '/docs/buttons',
-    '/docs/inputs',
-    '/docs/borders',
-    '/docs/shadows',
-    '/docs/productivity',
-    '/docs/runtime',
-    '/docs/contrast',
-    '/docs/cli',
-    '/docs/diagnostics',
-  ]
+  // The home page and every page of the documentation's navigation, on the one canonical host.
+  const routes = ['', ...getDocsLinks().map((link) => link.href)]
 
   return routes.map((route) => ({
-    url: `${baseUrl}${route}`,
+    url: `${SITE_URL}${route}`,
     lastModified: new Date(),
     changeFrequency: 'weekly',
     priority: route === '' ? 1 : 0.8,

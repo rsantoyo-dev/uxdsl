@@ -48,7 +48,7 @@ export default function SpacingExplanation() {
       <h3>Density by default, Spacing for deliberate control</h3>
       <p>Start with an appropriate <code>density(n)</code> token for component spacing. Use <code>space(n)</code> directly when a stable spacing value is intentional. Direct Spacing still belongs to the design system; it bypasses the Density progression. Matching token numbers or matching values at one breakpoint do not make the two interchangeable.</p>
       <p><strong>Stable across breakpoints does not mean permanently fixed:</strong> <code>space()</code> does not add responsive rules itself. Its result still follows the theme value, CSS units and any deliberate overrides. For example, <code>rem</code> follows the root font size; a configured <code>clamp()</code> can vary with the viewport.</p>
-      <p>For shared responsive spacing, see <a href="/docs/densities">Density</a>. Keep explicit local responsive rules for intentional component exceptions.</p>
+      <p>For shared responsive spacing, see <a href="#densities">Density</a>. Keep explicit local responsive rules for intentional component exceptions.</p>
     </section>
   )
 }

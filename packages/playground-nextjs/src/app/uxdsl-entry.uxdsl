@@ -19,7 +19,6 @@
 @import '../components/DemoButtons.uxdsl';
 @import '../components/DemoColors.uxdsl';
 @import '../components/DemoDensity.uxdsl';
-@import '../components/DemoPalette.uxdsl';
 @import '../components/DemoProductivity.uxdsl';
 @import '../components/DemoShadows.uxdsl';
 @import '../components/DemoSpacing.uxdsl';
@@ -41,15 +40,12 @@
 @import '../components/RussianDoll.uxdsl';
 @import '../components/SideNav.uxdsl';
 @import '../components/SpacingExplanation.uxdsl';
+@import '../components/SurfaceGrid.uxdsl';
 @import '../components/ThemeBackground.uxdsl';
 @import '../components/ThemeConfigJsonEditor.uxdsl';
-@import '../components/UXDSLCardDemo.uxdsl';
 @import './docs/breakpoints/breakpoints.uxdsl';
-@import './docs/palette/palette-docs.uxdsl';
+@import './docs/colors/palette-docs.uxdsl';
 @import './docs/quick-start/quick-start.uxdsl';
 @import './docs/typography/typography.uxdsl';
 @import './not-found.uxdsl';
 @import './page.uxdsl';
-@import './productivity/page.uxdsl';
-@import './theming/page.uxdsl';
-@import './typography/typography-page.uxdsl';

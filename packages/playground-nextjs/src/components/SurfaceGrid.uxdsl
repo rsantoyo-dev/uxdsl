@@ -1,0 +1,27 @@
+$roles: contained, outlined, flat;
+$tones: primary, secondary, success, info, warning, error;
+
+.surface-grid {
+  display: grid;
+  grid-template-columns: xs(repeat(2, 1fr)) md(repeat(3, 1fr)) xl(repeat(6, 1fr));
+  gap: density(3);
+}
+
+@each $role in $roles {
+  @each $tone in $tones {
+    .surface-grid__tile--#{$role}-#{$tone} {
+      @ds-surface(#{$role} #{$tone});
+    }
+  }
+}
+
+.surface-grid__title {
+  @ds-typo(h6);
+  margin: 0;
+}
+
+.surface-grid__meta {
+  @ds-typo(caption);
+  margin: 0;
+  font-family: var(--uxdsl__font__code), monospace;
+}

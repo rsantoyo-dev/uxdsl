@@ -8,6 +8,11 @@ import { useState, useEffect, Fragment } from 'react'
 import Link from 'next/link'
 import { useTheme } from '@/components/ThemeContext'
 
+const MINI_THEMES = [
+  { name: 'default', title: 'Default theme' },
+  { name: 'green', title: 'Green theme' },
+  { name: 'slate', title: 'Slate theme' },
+] as const
 
 export default function PageToolbar() {
   const { toggle } = useNav()
@@ -16,18 +21,18 @@ export default function PageToolbar() {
   const [activeBp, setActiveBp] = useState<string>('xs')
   const [windowWidth, setWindowWidth] = useState(0)
   const [showControls, setShowControls] = useState(false)
-  
+
   const { isDark, currentTheme, switchTheme, toggleDarkMode } = useTheme()
 
   useEffect(() => {
     const handleResize = () => {
       const w = window.innerWidth
       setWindowWidth(w)
-      
+
       const entries = Object.entries(breakpoints)
       entries.sort((a, b) => (a[1] as number) - (b[1] as number))
-      
-      let current = 'xs'
+
+      let current = entries[0]?.[0] ?? 'xs'
       for (const [key, value] of entries) {
         if (w >= (value as number)) {
           current = key
@@ -47,7 +52,7 @@ export default function PageToolbar() {
 
     const observer = new IntersectionObserver(
       ([entry]) => {
-        // Show controls when header is NOT visible (scrolled out)
+        // Show the theme controls once the header (which has the full ones) scrolls out.
         setShowControls(!entry.isIntersecting)
       },
       { threshold: 0 }
@@ -59,66 +64,63 @@ export default function PageToolbar() {
 
   const isDocs = pathname.startsWith('/docs')
   const segments = pathname.split('/').filter(Boolean)
+  const threshold = breakpoints[activeBp] ?? 0
+  const explanation = `This window is ${windowWidth}px wide, so the theme's ${activeBp} breakpoint (from ${threshold}px) is the one whose rules apply. The thresholds are defined in the theme JSON.`
 
   return (
-    <div id="PageToolbar">
-      <div className="page-toolbar">
+    <div id="PageToolbar" className="page-toolbar">
+      <div className="page-toolbar__inner">
         <div className="page-toolbar__left">
           {isDocs && (
-            <button 
-              className="page-toolbar__burger" 
+            <button
+              type="button"
+              className="page-toolbar__burger"
               onClick={toggle}
-              aria-label="Toggle menu"
+              aria-label="Open the documentation menu"
             >
-              <Menu size={16} />
+              <Menu size={18} aria-hidden="true" />
             </button>
           )}
-          <div className="page-toolbar__title">
+          <nav className="page-toolbar__title" aria-label="Breadcrumb">
             <Link href="/" className="breadcrumb-link-brand">
-              <span className="page-toolbar__brand-text" data-typo="span">UX-DSL</span>
+              <span className="page-toolbar__brand-text">UXDSL</span>
             </Link>
             {segments.map((segment, index) => {
-              const href = '/' + segments.slice(0, index + 1).join('/')
-              // If segment is 'docs', point to /docs/home to be safe, or keep as is if /docs redirects
-              const targetHref = segment === 'docs' ? '/docs/home' : href
-              
+              const href = segment === 'docs' ? '/docs/introduction' : '/' + segments.slice(0, index + 1).join('/')
               return (
                 <Fragment key={segment}>
-                  <span className="breadcrumb-separator">/</span>
-                  <Link href={targetHref} className="breadcrumb-link">
+                  <span className="breadcrumb-separator" aria-hidden="true">/</span>
+                  <Link href={href} className="breadcrumb-link" aria-current={index === segments.length - 1 ? 'page' : undefined}>
                     {segment}
                   </Link>
                 </Fragment>
               )
             })}
-          </div>
+          </nav>
         </div>
 
         <div className="page-toolbar__right">
-          <div className={`page-toolbar__theme-row ${showControls ? 'visible' : ''}`}>
-            <button 
-              onClick={() => switchTheme('default')} 
-              className={`mini-theme-btn default ${currentTheme === 'default' ? 'active' : ''}`} 
-              title="Default Theme"
-            />
-            <button 
-              onClick={() => switchTheme('green')} 
-              className={`mini-theme-btn green ${currentTheme === 'green' ? 'active' : ''}`} 
-              title="Green Theme"
-            />
-            <button 
-              onClick={() => switchTheme('purple')} 
-              className={`mini-theme-btn purple ${currentTheme === 'purple' ? 'active' : ''}`} 
-              title="Purple Theme"
-            />
-            <button onClick={toggleDarkMode} className="mini-theme-toggle" title="Toggle Dark Mode">
-              {isDark ? <Moon size={12} /> : <Sun size={12} />}
+          <div className={`page-toolbar__theme-row ${showControls ? 'is-visible' : ''}`}>
+            {MINI_THEMES.map(({ name, title }) => (
+              <button
+                key={name}
+                type="button"
+                onClick={() => switchTheme(name)}
+                className={`mini-theme-btn mini-theme-btn--${name} ${currentTheme === name ? 'is-active' : ''}`}
+                title={title}
+                aria-label={title}
+                aria-pressed={currentTheme === name}
+              />
+            ))}
+            <button type="button" onClick={toggleDarkMode} className="mini-theme-toggle" aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}>
+              {isDark ? <Moon size={14} aria-hidden="true" /> : <Sun size={14} aria-hidden="true" />}
             </button>
           </div>
-          <div className="page-toolbar__info-row">
-            <span className="page-toolbar__bp">{activeBp.toUpperCase()}</span>
+          <Link href="/docs/breakpoints" className="page-toolbar__viewport" title={explanation} aria-label={explanation}>
+            <span className="page-toolbar__viewport-label">viewport</span>
             <span className="page-toolbar__width">{windowWidth}px</span>
-          </div>
+            <span className="page-toolbar__bp">{activeBp} ≥ {threshold}px</span>
+          </Link>
         </div>
       </div>
     </div>

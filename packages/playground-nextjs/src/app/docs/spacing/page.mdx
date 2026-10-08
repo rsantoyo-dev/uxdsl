@@ -1,13 +1,16 @@
 import DemoSpacing from '@/components/DemoSpacing'
+import DemoDensity from '@/components/DemoDensity'
 import SpacingExplanation from '@/components/SpacingExplanation'
-import SpacingAgentGuidance from '@/components/SpacingAgentGuidance'
 import { PageTitle } from '@/components/PageTitle'
 
-<PageTitle 
-  title="Spacing" 
-  subtitle="Define spacing once. Update every consumer from your theme."
+<PageTitle
+  title="Spacing & density"
+  subtitle="Spacing is the scale; a density is a step on it that the theme moves at each breakpoint."
 />
 
 <SpacingExplanation />
 <DemoSpacing />
-<SpacingAgentGuidance />
+
+<section id="densities">
+  <DemoDensity />
+</section>

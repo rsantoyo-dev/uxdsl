@@ -519,7 +519,7 @@ function main(argv) {
     // registry integrity hashes for artifacts that have not been published.
     if (!dryRun) {
       const byName = Object.fromEntries(packages.map(pkg => [pkg.name, readJson(path.join(rootDir, pkg.dir, 'package.json'))]));
-      for (const dir of [...packages.map(pkg => pkg.dir), 'packages/playground', 'packages/playground-nextjs']) {
+      for (const dir of [...packages.map(pkg => pkg.dir), 'packages/playground-nextjs']) {
         const lockFile = path.join(rootDir, dir, 'package-lock.json');
         if (!fs.existsSync(lockFile)) continue;
         const lock = readJson(lockFile);
