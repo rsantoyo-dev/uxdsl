@@ -1,0 +1,1839 @@
+
+==============================================================================
+# arith-01-slash-div
+------------------------------------------------------------------------------
+.a { width: 10px / 2; }
+
+--- UXDSL (OK) ---
+.a { width: 10px / 2; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 10px/2;
+}
+
+==============================================================================
+# arith-02-string-concat
+------------------------------------------------------------------------------
+$a: "foo";
+.a { content: $a + "bar"; }
+
+--- UXDSL (OK) ---
+.a { content: "foo" + "bar"; }
+
+--- Dart Sass (OK) ---
+.a {
+  content: "foobar";
+}
+
+==============================================================================
+# arith-03-unit-mismatch
+------------------------------------------------------------------------------
+.a { width: 1rem + 2px; }
+
+--- UXDSL (OK) ---
+.a { width: 1rem + 2px; }
+
+--- Dart Sass (ERROR) ---
+1rem and 2px have incompatible units. |   ╷
+
+==============================================================================
+# arith-04-mul
+------------------------------------------------------------------------------
+.a { width: 10px * 2; }
+
+--- UXDSL (OK) ---
+.a { width: 10px * 2; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 20px;
+}
+
+==============================================================================
+# arith-05-var-mul
+------------------------------------------------------------------------------
+$x: 10px;
+.a { width: $x * 2; }
+
+--- UXDSL (OK) ---
+.a { width: 10px * 2; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 20px;
+}
+
+==============================================================================
+# arith-06-add-vars
+------------------------------------------------------------------------------
+$a: 1px;
+$b: 2px;
+.a { width: $a + $b; }
+
+--- UXDSL (OK) ---
+.a { width: 1px + 2px; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 3px;
+}
+
+==============================================================================
+# arith-07-unitless-add
+------------------------------------------------------------------------------
+$n: 1;
+.a { z-index: $n + 1; }
+
+--- UXDSL (OK) ---
+.a { z-index: 1 + 1; }
+
+--- Dart Sass (OK) ---
+.a {
+  z-index: 2;
+}
+
+==============================================================================
+# comment-01-line
+------------------------------------------------------------------------------
+// top line
+.a { color: red; // trailing
+}
+
+--- UXDSL (OK) ---
+.a { color: red;
+}
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+
+==============================================================================
+# comment-02-block
+------------------------------------------------------------------------------
+/* keep me */
+.a { color: red; /* inline */ }
+
+--- UXDSL (OK) ---
+/* keep me */
+.a { color: red; /* inline */ }
+
+--- Dart Sass (OK) ---
+/* keep me */
+.a {
+  color: red; /* inline */
+}
+
+==============================================================================
+# comment-03-bang
+------------------------------------------------------------------------------
+/*! license */
+.a { color: red; }
+
+--- UXDSL (OK) ---
+/*! license */
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+/*! license */
+.a {
+  color: red;
+}
+
+==============================================================================
+# comment-04-url-slashes
+------------------------------------------------------------------------------
+.a { background: url(https://example.com/x.png); }
+
+--- UXDSL (OK) ---
+.a { background: url(https://example.com/x.png); }
+
+--- Dart Sass (OK) ---
+.a {
+  background: url(https://example.com/x.png);
+}
+
+==============================================================================
+# ctrl-01-if-else
+------------------------------------------------------------------------------
+$t: ocean;
+.a { @if $t == ocean { color: blue; } @else { color: black; } }
+
+--- UXDSL (OK) ---
+.a { color: blue }
+
+--- Dart Sass (OK) ---
+.a {
+  color: blue;
+}
+
+==============================================================================
+# ctrl-02-else-if
+------------------------------------------------------------------------------
+$t: 2;
+.a { @if $t == 1 { color: red; } @else if $t == 2 { color: green; } @else { color: blue; } }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/ctrl-02-else-if.uxdsl:2:44: Could not resolve the variable "$t" within "if $t == 2"
+
+--- Dart Sass (OK) ---
+.a {
+  color: green;
+}
+
+==============================================================================
+# ctrl-03-each-list
+------------------------------------------------------------------------------
+@each $n in (a, b) { .x-#{$n} { color: red; } }
+
+--- UXDSL (OK) ---
+.x-a { color: red; } .x-b { color: red; }
+
+--- Dart Sass (OK) ---
+.x-a {
+  color: red;
+}
+
+.x-b {
+  color: red;
+}
+
+==============================================================================
+# ctrl-04-each-map
+------------------------------------------------------------------------------
+@each $k, $v in (a: 1px, b: 2px) { .x-#{$k} { width: $v; } }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/ctrl-04-each-map.uxdsl:1:42: Could not resolve the variable "$k" within ".x-#{$k}"
+
+--- Dart Sass (OK) ---
+.x-a {
+  width: 1px;
+}
+
+.x-b {
+  width: 2px;
+}
+
+==============================================================================
+# ctrl-05-for-through
+------------------------------------------------------------------------------
+@for $i from 1 through 3 { .w-#{$i} { width: #{$i}0%; } }
+
+--- UXDSL (OK) ---
+.w-1 { width: 10%; } .w-2 { width: 20%; } .w-3 { width: 30%; }
+
+--- Dart Sass (OK) ---
+.w-1 {
+  width: 10 %;
+}
+
+.w-2 {
+  width: 20 %;
+}
+
+.w-3 {
+  width: 30 %;
+}
+
+==============================================================================
+# ctrl-06-while
+------------------------------------------------------------------------------
+$i: 1;
+@while $i < 3 { .w-#{$i} { width: 1px; } $i: $i + 1; }
+
+--- UXDSL (OK) ---
+@while 1 < 3 { .w-1 { width: 1px; } }
+
+--- Dart Sass (OK) ---
+.w-1 {
+  width: 1px;
+}
+
+.w-2 {
+  width: 1px;
+}
+
+==============================================================================
+# ctrl-07-each-var-list
+------------------------------------------------------------------------------
+$tones: primary, secondary;
+@each $t in $tones { .t-#{$t} { color: palette(#{$t}.main); } }
+
+--- UXDSL (OK) ---
+.t-primary { color: var(--uxdsl__palette__primary-main); } .t-secondary { color: var(--uxdsl__palette__secondary-main); }
+
+--- Dart Sass (ERROR) ---
+Interpolation isn't allowed in namespaces. |   ╷
+
+==============================================================================
+# ctrl-08-debug-warn
+------------------------------------------------------------------------------
+@debug "dbg";
+@warn "wrn";
+.a { color: red; }
+
+--- UXDSL (OK) ---
+@debug "dbg";
+@warn "wrn";
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+
+==============================================================================
+# ctrl-09-each-over-map-single-var
+------------------------------------------------------------------------------
+$m: (a: 1px, b: 2px);
+@each $k in $m { .x-#{$k} { color: red; } }
+
+--- UXDSL (OK) ---
+.x-1px { color: red; } .x-2px { color: red; }
+
+--- Dart Sass (ERROR) ---
+expected selector. |   ┌──> cases/ctrl-09-each-over-map-single-var.uxdsl
+
+==============================================================================
+# extend-01-placeholder
+------------------------------------------------------------------------------
+%base { color: red; }
+.a { @extend %base; }
+
+--- UXDSL (OK) ---
+%base { color: red; }
+.a { @extend %base; }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+
+==============================================================================
+# extend-02-class
+------------------------------------------------------------------------------
+.base { color: red; }
+.a { @extend .base; }
+
+--- UXDSL (OK) ---
+.base { color: red; }
+.a { @extend .base; }
+
+--- Dart Sass (OK) ---
+.base, .a {
+  color: red;
+}
+
+==============================================================================
+# fn-01-custom-function
+------------------------------------------------------------------------------
+@function double($n) { @return $n * 2; }
+.a { width: double(2px); }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/fn-01-custom-function.uxdsl:1:4: Could not resolve the variable "$n" within "double($n)"
+
+--- Dart Sass (OK) ---
+.a {
+  width: 4px;
+}
+
+==============================================================================
+# fn-02-darken
+------------------------------------------------------------------------------
+.a { color: darken(#3b82f6, 10%); }
+
+--- UXDSL (OK) ---
+.a { color: darken(#3b82f6, 10%); }
+
+--- Dart Sass (OK) ---
+.a {
+  color: rgb(11.1512195122, 99.1219512195, 242.8487804878);
+}
+
+==============================================================================
+# fn-03-lighten
+------------------------------------------------------------------------------
+.a { color: lighten(#3b82f6, 10%); }
+
+--- UXDSL (OK) ---
+.a { color: lighten(#3b82f6, 10%); }
+
+--- Dart Sass (OK) ---
+.a {
+  color: rgb(107.7609756098, 161.0975609756, 248.2390243902);
+}
+
+==============================================================================
+# fn-04-rgba-var
+------------------------------------------------------------------------------
+$c: #000;
+.a { color: rgba($c, .5); }
+
+--- UXDSL (OK) ---
+.a { color: rgba(#000, .5); }
+
+--- Dart Sass (OK) ---
+.a {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+==============================================================================
+# fn-05-math-div
+------------------------------------------------------------------------------
+@use "sass:math";
+.a { width: math.div(10px, 2); }
+
+--- UXDSL (OK) ---
+@use "sass:math";
+.a { width: math.div(10px, 2); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 5px;
+}
+
+==============================================================================
+# fn-06-percentage
+------------------------------------------------------------------------------
+.a { width: percentage(0.5); }
+
+--- UXDSL (OK) ---
+.a { width: percentage(0.5); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 50%;
+}
+
+==============================================================================
+# fn-07-if
+------------------------------------------------------------------------------
+$x: true;
+.a { width: if($x, 1px, 2px); }
+
+--- UXDSL (OK) ---
+.a { width: if(true, 1px, 2px); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+}
+
+==============================================================================
+# fn-08-unquote
+------------------------------------------------------------------------------
+$s: "foo";
+.a { content: unquote($s); font-family: unquote("Inter"); }
+
+--- UXDSL (OK) ---
+.a { content: unquote("foo"); font-family: unquote("Inter"); }
+
+--- Dart Sass (OK) ---
+.a {
+  content: foo;
+  font-family: Inter;
+}
+
+==============================================================================
+# fn-09-string-fns
+------------------------------------------------------------------------------
+.a { content: str-slice("hello", 1, 2); width: str-length("abc"); font-family: to-upper-case("inter"); }
+
+--- UXDSL (OK) ---
+.a { content: str-slice("hello", 1, 2); width: str-length("abc"); font-family: to-upper-case("inter"); }
+
+--- Dart Sass (OK) ---
+.a {
+  content: "he";
+  width: 3;
+  font-family: "INTER";
+}
+
+==============================================================================
+# fn-10-map-module
+------------------------------------------------------------------------------
+@use "sass:map";
+$m: (a: 1px);
+.a { width: map.get($m, a); }
+
+--- UXDSL (OK) ---
+@use "sass:map";
+.a { width: map.get((a: 1px), a); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+}
+
+==============================================================================
+# fn-11-color-adjust
+------------------------------------------------------------------------------
+@use "sass:color";
+.a { color: color.adjust(#3b82f6, $lightness: -10%); }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/fn-11-color-adjust.uxdsl:2:36: Could not resolve the variable "$lightness" within "color.adjust(#3b82f6, $lightness: -10%)"
+
+--- Dart Sass (OK) ---
+.a {
+  color: rgb(11.1512195122, 99.1219512195, 242.8487804878);
+}
+
+==============================================================================
+# import-01-partial-no-ext
+------------------------------------------------------------------------------
+@import "partial";
+.a { width: $from-partial; }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-import: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/import-01-partial-no-ext.uxdsl:1:1: Failed to find 'partial'
+
+--- Dart Sass (OK) ---
+.from-partial {
+  color: red;
+}
+
+.a {
+  width: 42px;
+}
+
+==============================================================================
+# import-02-partial-underscore
+------------------------------------------------------------------------------
+@import "./_partial.scss";
+.a { width: $from-partial; }
+
+--- UXDSL (OK) ---
+.from-partial { color: red; }
+.a { width: 42px; }
+
+--- Dart Sass (OK) ---
+.from-partial {
+  color: red;
+}
+
+.a {
+  width: 42px;
+}
+
+==============================================================================
+# import-03-uxdsl-file
+------------------------------------------------------------------------------
+@import "./partial-vars.uxdsl";
+.a { width: $from-uxdsl; }
+
+--- UXDSL (OK) ---
+.from-uxdsl { color: blue; }
+.a { width: 7px; }
+
+--- Dart Sass (ERROR) ---
+Can't find stylesheet to import. |   ╷
+
+==============================================================================
+# import-04-css-file
+------------------------------------------------------------------------------
+@import "./plain.css";
+.a { color: red; }
+
+--- UXDSL (OK) ---
+.plain { color: green; }
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+@import "./plain.css";
+.a {
+  color: red;
+}
+
+==============================================================================
+# import-05-node-modules
+------------------------------------------------------------------------------
+@import "postcss-uxdsl/theme/default-colors.css";
+.a { color: red; }
+
+--- UXDSL (OK) ---
+/* Deprecated (FEAT-008, MIG-B6-29): a separate, richer, opt-in color
+ * collection — a different design direction than postcss-uxdsl/theme/base.json's
+ * own colors.gray, not a superset of it. Not removed in 0.5.0-beta.6; see
+ * packages/postcss-uxdsl/README.md. */
+:root {
+  /* Blue */
+  --uxdsl__color__blue-50: #E3F2FD;
+  --uxdsl__color__blue-100: #BBDEFB;
+  --uxdsl__color__blue-200: #90CAF9;
+  --uxdsl__color__blue-300: #64B5F6;
+  --uxdsl__color__blue-400: #3B82F6;
+  --uxdsl__color__blue-500: #2563EB;
+  --uxdsl__color__blue-600: #2E86C1;
+  --uxdsl__color__blue-700: #1976D2;
+  --uxdsl__color__blue-800: #1565C0;
+  --uxdsl__color__blue-900: #0D47A1;
+  --uxdsl__color__blue-contrast: #FFFFFF;
+
+  /* Indigo */
+  --uxdsl__color__indigo-50: #E8EAF6;
+  --uxdsl__color__indigo-100: #C5CAE9;
+  --uxdsl__color__indigo-200: #9FA8DA;
+  --uxdsl__color__indigo-300: #7986CB;
+  --uxdsl__color__indigo-400: #5C6BC0;
+  --uxdsl__color__indigo-500: #3F51B5;
+  --uxdsl__color__indigo-600: #3949AB;
+  --uxdsl__color__indigo-700: #303F9F;
+  --uxdsl__color__indigo-800: #283593;
+  --uxdsl__color__indigo-900: #1A237E;
+  --uxdsl__color__indigo-contrast: #FFFFFF;
+
+  /* Purple (Keyed to Tailwind-like Brand) */
+  --uxdsl__color__purple-50: #faf5ff;
+  --uxdsl__color__purple-100: #f3e8ff;
+  --uxdsl__color__purple-200: #e9d5ff;
+  --uxdsl__color__purple-300: #d8b4fe;
+  --uxdsl__color__purple-400: #a855f7; /* Light */
+  --uxdsl__color__purple-500: #9333ea;
+  --uxdsl__color__purple-600: #7e22ce; /* Main */
+  --uxdsl__color__purple-700: #6b21a8;
+  --uxdsl__color__purple-800: #581c87; /* Dark */
+  --uxdsl__color__purple-900: #3b0764;
+  --uxdsl__color__purple-contrast: #FFFFFF;
+
+  /* Pink */
+  --uxdsl__color__pink-50: #FCE4EC;
+  --uxdsl__color__pink-100: #F8BBD0;
+  --uxdsl__color__pink-200: #F48FB1;
+  --uxdsl__color__pink-300: #F06292;
+  --uxdsl__color__pink-400: #EC407A;
+  --uxdsl__color__pink-500: #E91E63;
+  --uxdsl__color__pink-600: #D81B60;
+  --uxdsl__color__pink-700: #C2185B;
+  --uxdsl__color__pink-800: #AD1457;
+  --uxdsl__color__pink-900: #880E4F;
+  --uxdsl__color__pink-contrast: #FFFFFF;
+
+  /* Red */
+  --uxdsl__color__red-50: #FFEBEE;
+  --uxdsl__color__red-100: #FFCDD2;
+  --uxdsl__color__red-200: #EF9A9A;
+  --uxdsl__color__red-300: #E57373;
+  --uxdsl__color__red-400: #EF5350;
+  --uxdsl__color__red-500: #EC1B2E;
+  --uxdsl__color__red-600: #C61625;
+  --uxdsl__color__red-700: #D32F2F;
+  --uxdsl__color__red-800: #C62828;
+  --uxdsl__color__red-900: #771010;
+  --uxdsl__color__red-contrast: #FFFFFF;
+
+  /* Orange */
+  --uxdsl__color__orange-50: #FFF3E0;
+  --uxdsl__color__orange-100: #FFE0B2;
+  --uxdsl__color__orange-200: #FFCC80;
+  --uxdsl__color__orange-300: #FFB74D;
+  --uxdsl__color__orange-400: #FFA726;
+  --uxdsl__color__orange-500: #F59E0B;
+  --uxdsl__color__orange-600: #D97706;
+  --uxdsl__color__orange-700: #F57C00;
+  --uxdsl__color__orange-800: #EF6C00;
+  --uxdsl__color__orange-900: #bb4600;
+  --uxdsl__color__orange-contrast: #000000;
+
+  /* Yellow */
+  --uxdsl__color__yellow-50: #FFFDE7;
+  --uxdsl__color__yellow-100: #FFF9C4;
+  --uxdsl__color__yellow-200: #FFF59D;
+  --uxdsl__color__yellow-300: #FFF176;
+  --uxdsl__color__yellow-400: #FFEE58;
+  --uxdsl__color__yellow-500: #FFEB3B;
+  --uxdsl__color__yellow-600: #FDD835;
+  --uxdsl__color__yellow-700: #FBC02D;
+  --uxdsl__color__yellow-800: #F9A825;
+  --uxdsl__color__yellow-900: #F57F17;
+  --uxdsl__color__yellow-contrast: #000000;
+
+  /* Green */
+  --uxdsl__color__green-50: #E8F5E9;
+  --uxdsl__color__green-100: #C8E6C9;
+  --uxdsl__color__green-200: #A5D6A7;
+  --uxdsl__color__green-300: #81C784;
+  --uxdsl__color__green-400: #66BB6A;
+  --uxdsl__color__green-500: #4CAF50;
+  --uxdsl__color__green-600: #15803D;
+  --uxdsl__color__green-700: #166534;
+  --uxdsl__color__green-800: #2E7D32;
+  --uxdsl__color__green-900: #1B5E20;
+  --uxdsl__color__green-contrast: #FFFFFF;
+
+  /* Teal (Modern, Professional) */
+  --uxdsl__color__teal-50: #F0FDFA;
+  --uxdsl__color__teal-100: #CCFBF1;
+  --uxdsl__color__teal-200: #99F6E4;
+  --uxdsl__color__teal-300: #5EEAD4;
+  --uxdsl__color__teal-400: #2DD4BF;
+  --uxdsl__color__teal-500: #14B8A6;
+  --uxdsl__color__teal-600: #0D9488;
+  --uxdsl__color__teal-700: #0F766E;
+  --uxdsl__color__teal-800: #115E59;
+  --uxdsl__color__teal-900: #134E4A;
+  --uxdsl__color__teal-contrast: #FFFFFF;
+
+  /* Cyan */
+  --uxdsl__color__cyan-50: #E0F7FA;
+  --uxdsl__color__cyan-100: #B2EBF2;
+  --uxdsl__color__cyan-200: #80DEEA;
+  --uxdsl__color__cyan-300: #4DD0E1;
+  --uxdsl__color__cyan-400: #26C6DA;
+  --uxdsl__color__cyan-500: #00BCD4;
+  --uxdsl__color__cyan-600: #00ACC1;
+  --uxdsl__color__cyan-700: #0097A7;
+  --uxdsl__color__cyan-800: #00838F;
+  --uxdsl__color__cyan-900: #006064;
+  --uxdsl__color__cyan-contrast: #000000;
+
+  /* Gray */
+  --uxdsl__color__gray-50: #F8FAFC;
+  --uxdsl__color__gray-100: #F1F5F9;
+  --uxdsl__color__gray-200: #E2E8F0;
+  --uxdsl__color__gray-300: #CBD5E1;
+  --uxdsl__color__gray-400: #94A3B8;
+  --uxdsl__color__gray-500: #64748B;
+  --uxdsl__color__gray-600: #475569;
+  --uxdsl__color__gray-700: #334155;
+  --uxdsl__color__gray-800: #1F2937;
+  --uxdsl__color__gray-900: #0B1220;
+  --uxdsl__color__gray-contrast: #000000;
+
+  /* Monochrome */
+  --uxdsl__color__black: #000000;
+  --uxdsl__color__white: #FFFFFF;
+
+  /* Slate (Sober Blue-Grey based on #2C415C) */
+  --uxdsl__color__slate-50: #F5F8FA;
+  --uxdsl__color__slate-100: #DDE5EB;
+  --uxdsl__color__slate-200: #BCCCDC;
+  --uxdsl__color__slate-300: #9FB3C8;
+  --uxdsl__color__slate-400: #829AB1;
+  --uxdsl__color__slate-500: #627D98;
+  --uxdsl__color__slate-600: #486581;
+  --uxdsl__color__slate-700: #334E68;
+  --uxdsl__color__slate-800: #2C415C;
+  --uxdsl__color__slate-900: #102A43;
+  --uxdsl__color__slate-contrast: #FFFFFF;
+}
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+@import "postcss-uxdsl/theme/default-colors.css";
+.a {
+  color: red;
+}
+
+==============================================================================
+# import-06-use-partial
+------------------------------------------------------------------------------
+@use "./partial" as p;
+.a { width: p.$from-partial; }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/import-06-use-partial.uxdsl:2:16: Could not resolve the variable "$from-partial" within "p.$from-partial"
+
+--- Dart Sass (OK) ---
+.from-partial {
+  color: red;
+}
+
+.a {
+  width: 42px;
+}
+
+==============================================================================
+# import-07-forward
+------------------------------------------------------------------------------
+@forward "./partial";
+.a { color: red; }
+
+--- UXDSL (OK) ---
+@forward "./partial";
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+.from-partial {
+  color: red;
+}
+
+.a {
+  color: red;
+}
+
+==============================================================================
+# import-08-use-sass-builtin-only
+------------------------------------------------------------------------------
+@use "sass:math";
+.a { color: red; }
+
+--- UXDSL (OK) ---
+@use "sass:math";
+.a { color: red; }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+
+==============================================================================
+# interact-01-var-holds-responsive
+------------------------------------------------------------------------------
+$pad: xs(1px) md(2px);
+.a { padding: $pad; }
+
+--- UXDSL (OK) ---
+.a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# interact-02-var-inside-xs
+------------------------------------------------------------------------------
+$s: 1px;
+.a { padding: xs($s) md(2px); }
+
+--- UXDSL (OK) ---
+.a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# interact-03-var-inside-xs-interp
+------------------------------------------------------------------------------
+$s: 1px;
+.a { padding: xs(#{$s}) md(2px); }
+
+--- UXDSL (OK) ---
+.a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# interact-04-var-holds-density
+------------------------------------------------------------------------------
+$d: density(2);
+.a { padding: $d; }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__density__2); }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: density(2);
+}
+
+==============================================================================
+# interact-05-each-emits-directive
+------------------------------------------------------------------------------
+@each $t in (primary, secondary) { .btn-#{$t} { @ds-button(contained $t); } }
+
+--- UXDSL (OK) ---
+.btn-primary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
+.btn-primary:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.btn-primary.is-selected, .btn-primary[aria-pressed="true"], .btn-primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); } .btn-secondary { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast); } .btn-secondary:hover { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); } .btn-secondary.is-selected, .btn-secondary[aria-pressed="true"], .btn-secondary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+--- Dart Sass (OK) ---
+.btn-primary {
+  @ds-button (contained $t);
+}
+
+.btn-secondary {
+  @ds-button (contained $t);
+}
+
+==============================================================================
+# interp-01-palette
+------------------------------------------------------------------------------
+.a { color: #{palette(primary.main)}; }
+
+--- UXDSL (OK) ---
+.a { color: #{palette(primary.main)}; }
+
+--- Dart Sass (ERROR) ---
+expected "(". |   ╷
+
+==============================================================================
+# interp-02-calc-var-interp
+------------------------------------------------------------------------------
+$g: 16px;
+.a { width: calc(100% - #{$g}); }
+
+--- UXDSL (OK) ---
+.a { width: calc(100% - 16px); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: calc(100% - 16px);
+}
+
+==============================================================================
+# interp-03-calc-space
+------------------------------------------------------------------------------
+.a { width: calc(100% - space(2)); }
+
+--- UXDSL (OK) ---
+.a { width: calc(100% - var(--uxdsl__space__2)); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: calc(100% - space(2));
+}
+
+==============================================================================
+# interp-04-calc-var-plain
+------------------------------------------------------------------------------
+$g: 16px;
+.a { width: calc(100% - $g); }
+
+--- UXDSL (OK) ---
+.a { width: calc(100% - 16px); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: calc(100% - 16px);
+}
+
+==============================================================================
+# interp-05-var-holding-token
+------------------------------------------------------------------------------
+$c: palette(primary.main);
+.a { color: $c; }
+
+--- UXDSL (OK) ---
+.a { color: var(--uxdsl__palette__primary-main); }
+
+--- Dart Sass (ERROR) ---
+expected "(". |   ╷
+
+==============================================================================
+# mixin-01-default-arg
+------------------------------------------------------------------------------
+@mixin m($a: 1px) { width: $a; }
+.a { @include m; }
+.b { @include m(2px); }
+
+--- UXDSL (OK) ---
+.a { width: 1px; }
+.b { width: 2px; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+}
+
+.b {
+  width: 2px;
+}
+
+==============================================================================
+# mixin-02-keyword-arg
+------------------------------------------------------------------------------
+@mixin m($a: 1px, $b: 2px) { width: $a; height: $b; }
+.a { @include m($b: 9px); }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/mixin-02-keyword-arg.uxdsl:2:18: Could not resolve the variable "$b" within "$b: 9px"
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+  height: 9px;
+}
+
+==============================================================================
+# mixin-03-content
+------------------------------------------------------------------------------
+@mixin mq { @media (min-width: 600px) { @content; } }
+.a { @include mq { color: red; } }
+
+--- UXDSL (OK) ---
+.a { @media (min-width: 600px) { color: red; } }
+
+--- Dart Sass (OK) ---
+@media (min-width: 600px) {
+  .a {
+    color: red;
+  }
+}
+
+==============================================================================
+# mixin-04-uxdsl-fn-param
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+.a { @include pad(density(2)); }
+
+--- UXDSL (OK) ---
+.a { padding: densit; }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: density(2);
+}
+
+==============================================================================
+# mixin-05-responsive-arg
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+.a { @include pad(xs(1px) md(2px)); }
+
+--- UXDSL (OK) ---
+.a { padding: x; }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# mixin-06-emits-directive
+------------------------------------------------------------------------------
+@mixin card { @ds-surface(contained); }
+.a { @include card; }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+
+--- Dart Sass (OK) ---
+.a {
+  @ds-surface (contained);
+}
+
+==============================================================================
+# mixin-07-typo-in-content
+------------------------------------------------------------------------------
+@mixin wrap { .inner { @content; } }
+.a { @include wrap { @ds-typo(h1); } }
+
+--- UXDSL (OK) ---
+.a { .inner { font-family: var(--uxdsl__typography__h1-font-family); font-size: var(--uxdsl__typography__h1-size); line-height: var(--uxdsl__typography__h1-line); font-weight: var(--uxdsl__typography__h1-weight); letter-spacing: var(--uxdsl__typography__h1-spacing); margin-block-start: var(--uxdsl__typography__h1-margin-block-start); margin-block-end: var(--uxdsl__typography__h1-margin-block-end); } }
+
+--- Dart Sass (OK) ---
+.a .inner {
+  @ds-typo (h1);
+}
+
+==============================================================================
+# mixin-08-param-as-directive-arg
+------------------------------------------------------------------------------
+@mixin card($tone) { .card-#{$tone} { @ds-surface($tone, 1); background: palette(#{$tone}-main); } }
+@include card(primary);
+
+--- UXDSL (OK) ---
+.card-primary { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); background: var(--uxdsl__palette__primary-main); }
+
+--- Dart Sass (OK) ---
+.card-primary {
+  @ds-surface ($tone, 1);
+  background: palette(primary-main);
+}
+
+==============================================================================
+# mixin-09-nested-selector-in-mixin
+------------------------------------------------------------------------------
+@mixin hov { &:hover { color: red; } }
+.a { @include hov; }
+
+--- UXDSL (OK) ---
+.a { &:hover { color: red; } }
+
+--- Dart Sass (OK) ---
+.a:hover {
+  color: red;
+}
+
+==============================================================================
+# mixin-10-variadic
+------------------------------------------------------------------------------
+@mixin sh($shadows...) { box-shadow: $shadows; }
+.a { @include sh(0 1px 2px red, 0 2px 4px blue); }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/mixin-10-variadic.uxdsl:1:39: Could not resolve the variable "$shadows" within "$shadows"
+
+--- Dart Sass (OK) ---
+.a {
+  box-shadow: 0 1px 2px red, 0 2px 4px blue;
+}
+
+==============================================================================
+# mixin-11-workaround-var
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+$d: density(2);
+.a { @include pad($d); }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__density__2); }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: density(2);
+}
+
+==============================================================================
+# mixin-12-workaround-interp
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+.a { @include pad(#{density(2)}); }
+
+--- UXDSL (OK) ---
+.a { padding: #{densit; }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: density(2);
+}
+
+==============================================================================
+# mixin-13-workaround-responsive-var
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+$r: xs(1px) md(2px);
+.a { @include pad($r); }
+
+--- UXDSL (OK) ---
+.a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# mixin-14-css-fn-arg-with-comma
+------------------------------------------------------------------------------
+@mixin box($w, $h) { width: $w; height: $h; }
+.a { @include box(rgba(0,0,0,.5), 2px); }
+
+--- UXDSL (ERROR) ---
+CssSyntaxError: postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/mixin-14-css-fn-arg-with-comma.uxdsl:1:33: Could not resolve the variable "$h" within "$h"
+
+--- Dart Sass (OK) ---
+.a {
+  width: rgba(0, 0, 0, 0.5);
+  height: 2px;
+}
+
+==============================================================================
+# mixin-15-calc-arg
+------------------------------------------------------------------------------
+@mixin m($a) { width: $a; }
+.a { @include m(calc(100% - 2px)); }
+
+--- UXDSL (OK) ---
+.a { width: cal; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: calc(100% - 2px);
+}
+
+==============================================================================
+# mixin-16-nested-include
+------------------------------------------------------------------------------
+@mixin a { color: red; }
+@mixin b { @include a; border: 0; }
+.x { @include b; }
+
+--- UXDSL (OK) ---
+.x { color: red; border: 0; }
+
+--- Dart Sass (OK) ---
+.x {
+  color: red;
+  border: 0;
+}
+
+==============================================================================
+# modern-01-container
+------------------------------------------------------------------------------
+.wrap { container-type: inline-size; }
+@container (min-width: 400px) { .a { color: red; } }
+
+--- UXDSL (OK) ---
+.wrap { container-type: inline-size; }
+@container (min-width: 400px) { .a { color: red; } }
+
+--- Dart Sass (OK) ---
+.wrap {
+  container-type: inline-size;
+}
+
+@container (min-width: 400px) {
+  .a {
+    color: red;
+  }
+}
+
+==============================================================================
+# modern-02-layer
+------------------------------------------------------------------------------
+@layer base, components;
+@layer base { .a { color: red; } }
+
+--- UXDSL (OK) ---
+@layer base, components; @layer base { .a { color: red; } }
+
+--- Dart Sass (OK) ---
+@layer base, components;
+@layer base {
+  .a {
+    color: red;
+  }
+}
+
+==============================================================================
+# modern-03-has-is
+------------------------------------------------------------------------------
+.a:has(> .b) { color: red; }
+:is(.a, .b) .c { color: blue; }
+
+--- UXDSL (OK) ---
+.a:has(> .b) { color: red; }
+:is(.a, .b) .c { color: blue; }
+
+--- Dart Sass (OK) ---
+.a:has(> .b) {
+  color: red;
+}
+
+:is(.a, .b) .c {
+  color: blue;
+}
+
+==============================================================================
+# modern-04-supports
+------------------------------------------------------------------------------
+@supports (display: grid) { .a { display: grid; } }
+
+--- UXDSL (OK) ---
+@supports (display: grid) { .a { display: grid; } }
+
+--- Dart Sass (OK) ---
+@supports (display: grid) {
+  .a {
+    display: grid;
+  }
+}
+
+==============================================================================
+# modern-05-property
+------------------------------------------------------------------------------
+@property --x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+--- UXDSL (OK) ---
+@property --x { syntax: '<length>'; inherits: false; initial-value: 0px; }
+
+--- Dart Sass (OK) ---
+@property --x {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+==============================================================================
+# modern-06-custom-props-fallback
+------------------------------------------------------------------------------
+.a { --gap: 1rem; padding: var(--gap, 8px); }
+
+--- UXDSL (OK) ---
+.a { --gap: 1rem; padding: var(--gap, 8px); }
+
+--- Dart Sass (OK) ---
+.a {
+  --gap: 1rem;
+  padding: var(--gap, 8px);
+}
+
+==============================================================================
+# modern-07-custom-prop-undefined
+------------------------------------------------------------------------------
+.a { color: var(--host-color, red); }
+
+--- UXDSL (OK) ---
+.a { color: var(--host-color, red); }
+
+--- Dart Sass (OK) ---
+.a {
+  color: var(--host-color, red);
+}
+
+==============================================================================
+# modern-08-color-mix
+------------------------------------------------------------------------------
+.a { color: color-mix(in srgb, palette(primary.main) 50%, white); }
+
+--- UXDSL (OK) ---
+.a { color: color-mix(in srgb, var(--uxdsl__palette__primary-main) 50%, white); }
+
+--- Dart Sass (ERROR) ---
+expected "(". |   ╷
+
+==============================================================================
+# modern-09-font-face
+------------------------------------------------------------------------------
+@font-face { font-family: "X"; src: url(x.woff2) format("woff2"); }
+
+--- UXDSL (OK) ---
+@font-face { font-family: "X"; src: url(x.woff2) format("woff2"); }
+
+--- Dart Sass (OK) ---
+@font-face {
+  font-family: "X";
+  src: url(x.woff2) format("woff2");
+}
+
+==============================================================================
+# modern-10-keyframes-tokens
+------------------------------------------------------------------------------
+@keyframes pulse { from { padding: space(1); } to { padding: space(2); } }
+.a { animation: pulse 1s; }
+
+--- UXDSL (OK) ---
+@keyframes pulse { from { padding: var(--uxdsl__space__1); } to { padding: var(--uxdsl__space__2); } }
+.a { animation: pulse 1s; }
+
+--- Dart Sass (OK) ---
+@keyframes pulse {
+  from {
+    padding: space(1);
+  }
+  to {
+    padding: space(2);
+  }
+}
+.a {
+  animation: pulse 1s;
+}
+
+==============================================================================
+# modern-11-keyframes-responsive
+------------------------------------------------------------------------------
+@keyframes pulse { from { padding: xs(1px) md(2px); } to { padding: 3px; } }
+
+--- UXDSL (OK) ---
+@keyframes pulse { from { padding: 1px; } @media (min-width: 768px) { from { padding: 2px; } } to { padding: 3px; } }
+
+--- Dart Sass (OK) ---
+@keyframes pulse {
+  from {
+    padding: xs(1px) md(2px);
+  }
+  to {
+    padding: 3px;
+  }
+}
+
+==============================================================================
+# modern-12-supports-with-tokens
+------------------------------------------------------------------------------
+@supports (display: grid) { .a { gap: density(2); padding: xs(1px) md(2px); } }
+
+--- UXDSL (OK) ---
+@supports (display: grid) { .a { gap: var(--uxdsl__density__2); padding: 1px; } @media (min-width: 768px) { .a { padding: 2px; } } }
+
+--- Dart Sass (OK) ---
+@supports (display: grid) {
+  .a {
+    gap: density(2);
+    padding: xs(1px) md(2px);
+  }
+}
+
+==============================================================================
+# nest-01-basic
+------------------------------------------------------------------------------
+.a { color: red; .b { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; .b { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a .b {
+  color: blue;
+}
+
+==============================================================================
+# nest-02-amp-hover
+------------------------------------------------------------------------------
+.a { color: red; &:hover { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; &:hover { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a:hover {
+  color: blue;
+}
+
+==============================================================================
+# nest-03-amp-suffix
+------------------------------------------------------------------------------
+.a { color: red; &-suffix { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; &-suffix { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a-suffix {
+  color: blue;
+}
+
+==============================================================================
+# nest-04-amp-plus-amp
+------------------------------------------------------------------------------
+.a { color: red; & + & { margin: 0; } }
+
+--- UXDSL (OK) ---
+.a { color: red; & + & { margin: 0; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a + .a {
+  margin: 0;
+}
+
+==============================================================================
+# nest-05-parent-amp
+------------------------------------------------------------------------------
+.a { color: red; .x & { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; .x & { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.x .a {
+  color: blue;
+}
+
+==============================================================================
+# nest-06-media-inside-rule
+------------------------------------------------------------------------------
+.a { color: red; @media (min-width: 600px) { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; @media (min-width: 600px) { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+@media (min-width: 600px) {
+  .a {
+    color: blue;
+  }
+}
+
+==============================================================================
+# nest-07-at-root
+------------------------------------------------------------------------------
+.a { color: red; @at-root .b { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; @at-root .b { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.b {
+  color: blue;
+}
+
+==============================================================================
+# nest-08-native-form
+------------------------------------------------------------------------------
+.a { color: red; & .b { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { color: red; & .b { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a .b {
+  color: blue;
+}
+
+==============================================================================
+# nest-09-responsive-in-nested
+------------------------------------------------------------------------------
+.a { .b { padding: xs(1px) md(2px); } }
+
+--- UXDSL (OK) ---
+.a { .b { padding: 1px; } @media (min-width: 768px) { .b { padding: 2px; } } }
+
+--- Dart Sass (OK) ---
+.a .b {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# nest-10-amp-hover-responsive
+------------------------------------------------------------------------------
+.a { &:hover { padding: xs(1px) md(2px); } }
+
+--- UXDSL (OK) ---
+.a { &:hover { padding: 1px; } @media (min-width: 768px) { &:hover { padding: 2px; } } }
+
+--- Dart Sass (OK) ---
+.a:hover {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# nest-11-directive-in-nested
+------------------------------------------------------------------------------
+.a { color: red; &:hover { @ds-surface(contained); } }
+
+--- UXDSL (OK) ---
+.a { color: red; &:hover { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); } }
+
+--- Dart Sass (OK) ---
+.a {
+  color: red;
+}
+.a:hover {
+  @ds-surface (contained);
+}
+
+==============================================================================
+# nest-12-directive-parent-with-amp
+------------------------------------------------------------------------------
+.a { @ds-surface(contained); &:hover { color: blue; } }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); &:hover { color: blue; } }
+
+--- Dart Sass (OK) ---
+.a {
+  @ds-surface (contained);
+}
+.a:hover {
+  color: blue;
+}
+
+==============================================================================
+# partial-vars
+------------------------------------------------------------------------------
+$from-uxdsl: 7px;
+.from-uxdsl { color: blue; }
+
+--- UXDSL (OK) ---
+.from-uxdsl { color: blue; }
+
+--- Dart Sass (OK) ---
+.from-uxdsl {
+  color: blue;
+}
+
+==============================================================================
+# sass-tol-01-responsive-fn
+------------------------------------------------------------------------------
+.a { padding: xs(1px) md(2px); }
+
+--- UXDSL (OK) ---
+.a { padding: 1px; }@media (min-width: 768px) {.a { padding: 2px; } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+==============================================================================
+# sass-tol-02-palette-dot
+------------------------------------------------------------------------------
+.a { color: palette(primary.main); }
+
+--- UXDSL (OK) ---
+.a { color: var(--uxdsl__palette__primary-main); }
+
+--- Dart Sass (ERROR) ---
+expected "(". |   ╷
+
+==============================================================================
+# sass-tol-03-palette-plain
+------------------------------------------------------------------------------
+.a { color: palette(primary); }
+
+--- UXDSL (OK) ---
+.a { color: var(--uxdsl__palette__primary-main); }
+
+--- Dart Sass (OK) ---
+.a {
+  color: palette(primary);
+}
+
+==============================================================================
+# sass-tol-04-density
+------------------------------------------------------------------------------
+.a { gap: density(2); }
+
+--- UXDSL (OK) ---
+.a { gap: var(--uxdsl__density__2); }
+
+--- Dart Sass (OK) ---
+.a {
+  gap: density(2);
+}
+
+==============================================================================
+# sass-tol-05-ds-surface
+------------------------------------------------------------------------------
+.a { @ds-surface(contained); }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__surface__contained-bg); color: var(--uxdsl__surface__contained-color); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); }
+
+--- Dart Sass (OK) ---
+.a {
+  @ds-surface (contained);
+}
+
+==============================================================================
+# sass-tol-06-ds-button-args
+------------------------------------------------------------------------------
+.a { @ds-button(contained primary 2); }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast); }
+.a:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.a.is-selected, .a[aria-pressed="true"], .a[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+--- Dart Sass (OK) ---
+.a {
+  @ds-button (contained primary 2);
+}
+
+==============================================================================
+# sass-tol-07-ds-typo
+------------------------------------------------------------------------------
+.a { @ds-typo(h1); }
+
+--- UXDSL (OK) ---
+.a { font-family: var(--uxdsl__typography__h1-font-family); font-size: var(--uxdsl__typography__h1-size); line-height: var(--uxdsl__typography__h1-line); font-weight: var(--uxdsl__typography__h1-weight); letter-spacing: var(--uxdsl__typography__h1-spacing); margin-block-start: var(--uxdsl__typography__h1-margin-block-start); margin-block-end: var(--uxdsl__typography__h1-margin-block-end); }
+
+--- Dart Sass (OK) ---
+.a {
+  @ds-typo (h1);
+}
+
+==============================================================================
+# sass-tol-08-responsive-space
+------------------------------------------------------------------------------
+.a { padding: xs(space(1)) md(space(2)); }
+
+--- UXDSL (OK) ---
+.a { padding: var(--uxdsl__space__1); }@media (min-width: 768px) {.a { padding: var(--uxdsl__space__2); } }
+
+--- Dart Sass (OK) ---
+.a {
+  padding: xs(space(1)) md(space(2));
+}
+
+==============================================================================
+# sass-tol-09-radius-keyword
+------------------------------------------------------------------------------
+.a { border-radius: radius(pill); }
+
+--- UXDSL (OK) ---
+.a { border-radius: 9999px; }
+
+--- Dart Sass (OK) ---
+.a {
+  border-radius: radius(pill);
+}
+
+==============================================================================
+# vars-01-basic
+------------------------------------------------------------------------------
+$x: 1px;
+.a { width: $x; }
+
+--- UXDSL (OK) ---
+.a { width: 1px; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+}
+
+==============================================================================
+# vars-02-selector-interp
+------------------------------------------------------------------------------
+$n: foo;
+.card-#{$n} { color: red; }
+
+--- UXDSL (OK) ---
+.card-foo { color: red; }
+
+--- Dart Sass (OK) ---
+.card-foo {
+  color: red;
+}
+
+==============================================================================
+# vars-03-property-name
+------------------------------------------------------------------------------
+$p: margin;
+.a { #{$p}-top: 1px; }
+
+--- UXDSL (OK) ---
+.a { #{$p}-top: 1px; }
+
+--- Dart Sass (OK) ---
+.a {
+  margin-top: 1px;
+}
+
+==============================================================================
+# vars-04-media-query
+------------------------------------------------------------------------------
+$bp: 600px;
+@media (min-width: $bp) { .a { color: red; } }
+@media (min-width: #{$bp}) { .b { color: red; } }
+
+--- UXDSL (OK) ---
+@media (min-width: 600px) { .a { color: red; } }
+@media (min-width: 600px) { .b { color: red; } }
+
+--- Dart Sass (OK) ---
+@media (min-width: 600px) {
+  .a {
+    color: red;
+  }
+}
+@media (min-width: 600px) {
+  .b {
+    color: red;
+  }
+}
+
+==============================================================================
+# vars-05-default-flag
+------------------------------------------------------------------------------
+$x: 1px;
+$x: 2px !default;
+$y: 3px !default;
+.a { width: $x; height: $y; }
+
+--- UXDSL (OK) ---
+.a { width: 1px; height: 3px; }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+  height: 3px;
+}
+
+==============================================================================
+# vars-06-scope
+------------------------------------------------------------------------------
+$c: red;
+.a { $c: blue; color: $c; }
+.b { color: $c; }
+
+--- UXDSL (OK) ---
+.a { color: blue; }
+.b { color: red; }
+
+--- Dart Sass (OK) ---
+.a {
+  color: blue;
+}
+
+.b {
+  color: red;
+}
+
+==============================================================================
+# vars-07-global-flag
+------------------------------------------------------------------------------
+$c: red;
+.a { $c: blue !global; color: $c; }
+.b { color: $c; }
+
+--- UXDSL (OK) ---
+.a { color: blue !global; }
+.b { color: red; }
+
+--- Dart Sass (OK) ---
+.a {
+  color: blue;
+}
+
+.b {
+  color: blue;
+}
+
+==============================================================================
+# vars-08-map-get
+------------------------------------------------------------------------------
+$m: (a: 1px, b: 2px);
+.a { width: map-get($m, a); }
+
+--- UXDSL (OK) ---
+.a { width: map-get((a: 1px, b: 2px), a); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 1px;
+}
+
+==============================================================================
+# vars-09-list-nth
+------------------------------------------------------------------------------
+$l: 1px 2px 3px;
+.a { width: nth($l, 2); }
+
+--- UXDSL (OK) ---
+.a { width: nth(1px 2px 3px, 2); }
+
+--- Dart Sass (OK) ---
+.a {
+  width: 2px;
+}
+
+==============================================================================
+# vars-10-in-shorthand
+------------------------------------------------------------------------------
+$a: 1px;
+$b: solid;
+.a { border: $a $b red; }
+
+--- UXDSL (OK) ---
+.a { border: 1px solid red; }
+
+--- Dart Sass (OK) ---
+.a {
+  border: 1px solid red;
+}

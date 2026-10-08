@@ -1,0 +1,165 @@
+.a { padding: xs(1px) md(2px); }
+----
+.a { padding: md(2px); }
+----
+.a { padding: md(2px) xl(3px); }
+----
+.a { padding: sm(2px); }
+----
+.a { padding: md(2px) xs(1px); }
+----
+.a { padding: xl(3px) xs(1px) md(2px); }
+----
+.a { padding: xs(1px) xs(2px); }
+----
+.a { padding: xs(1px) md(2px) xs(3px); }
+----
+.a { padding: xs(1px) md(2px) 5px; }
+----
+.a { padding: 5px xs(1px) md(2px); }
+----
+.a { padding: xs(1px) 5px md(2px); }
+----
+.a { margin: xs(1px 2px) md(3px); }
+----
+.a { margin: xs(1px 2px) md(3px 4px 5px 6px); }
+----
+.a { padding: xs(1px) md(2px) xs(3px) md(4px); }
+----
+.a { padding: xs(1px)md(2px); }
+----
+.a { padding: xs( 1px ) md( 2px ); }
+----
+.a { padding: xs(); }
+----
+.a { padding: xs() md(2px); }
+----
+.a { padding: xs(1px) md(); }
+----
+.a { padding: xs(1px) xxl(2px); }
+----
+.a { padding: xxl(2px); }
+----
+.a { padding: xd(1px); }
+----
+.a { padding: mobile(1px) desktop(2px); }
+----
+.a { padding: foo(1px); }
+----
+.a { padding: XS(1px) MD(2px); }
+----
+.a { width: calc(xs(1px) + md(2px)); }
+----
+.a { width: calc(100% - xs(1px) md(2px)); }
+----
+.a { width: xs(calc(100% - 1px)) md(calc(100% - 2px)); }
+----
+.a { padding: xs(space(1)) md(space(2)); }
+----
+.a { padding: xs(density(1)) md(density(2)); }
+----
+.a { color: xs(palette(primary)) md(palette(secondary, 0.5)); }
+----
+.a { background: xs(url(a.png)) md(url(b.png)); }
+----
+.a { background: xs(url("a b.png")) md(url('b,c.png')); }
+----
+.a { --gap: xs(1px) md(2px); }
+----
+.a { --gap: xs(1px) md(2px); gap: var(--gap); }
+----
+.a { padding: xs(1px) md(2px) !important; }
+----
+.a { padding: xs(1px !important) md(2px); }
+----
+.a { padding: xs(var(--x, 1px)) md(var(--y, 2px)); }
+----
+.a { padding: xs(1px) md(xs(2px)); }
+----
+.a { padding: xs(1px) md(lg(2px)); }
+----
+.a { font: xs(12px/1.2 sans-serif) md(14px/1.4 serif); }
+----
+.a { grid-template-columns: xs(repeat(1, 1fr)) md(repeat(2, 1fr)); }
+----
+.a { transition: xs(all 0.2s, color 0.3s) md(none); }
+----
+.a { font-family: xs("Inter", sans-serif) md("Roboto", serif); }
+----
+.a { content: xs("a") md("b"); }
+----
+.a { display: xs(none) md(block); .b { color: xs(red) md(blue); } }
+----
+.a { .b { color: xs(red) md(blue); } }
+----
+.a { &:hover { color: xs(red) md(blue); } }
+----
+.a { color: xs(red) md(blue); &:hover { color: xs(green) md(yellow); } }
+----
+@media (min-width: 500px) { .a { color: xs(red) md(blue); } }
+----
+@media (max-width: 500px) { .a { color: xs(red) md(blue); } }
+----
+@media print { .a { color: xs(red) md(blue); } }
+----
+@supports (display: grid) { .a { color: xs(red) md(blue); } }
+----
+@container (min-width: 300px) { .a { color: xs(red) md(blue); } }
+----
+@keyframes spin { from { width: xs(1px) md(2px); } to { width: xs(3px) md(4px); } }
+----
+:root { --g: xs(1px) md(2px); }
+----
+.a { color: xs(red) md(blue); } .a { color: xs(green) md(yellow); }
+----
+.a, .b { color: xs(red) md(blue); }
+----
+.a { color: xs(red) md(blue); padding: xs(1px) lg(2px); }
+----
+.a { color: xs(red) md(blue); } .b { color: xs(red) md(blue); }
+----
+$gap: xs(1px) md(2px); .a { gap: $gap; }
+----
+$gap: xs(1px) md(2px); .a { gap: xs($gap); }
+----
+$gap: xs(1px) md(2px); .a { padding: $gap $gap; }
+----
+$x: 1px; .a { padding: xs($x) md(2px); }
+----
+.a { $local: 2px; padding: xs($local); }
+----
+.a { padding: xs(1px) md(2px); } @media (min-width: 768px) { .a { padding: 3px; } }
+----
+.a { padding: xs(1px) md(2px); } @media (min-width: 200px) { .a { padding: 3px; } }
+----
+.a { padding: xs(1px) md(2px); .b { padding: xs(3px) md(4px); } }
+----
+.a { padding: xs(1px) sm(1px) md(1px); }
+----
+.a { padding: xs(1px) md(2px) lg(2px) xl(3px); }
+----
+.a { padding: xs(1px) md(calc(1px + 1px)); }
+----
+@opts {"theme":{"breakpoints":{"tablet":600}}}
+.a { padding: xs(1px) tablet(2px) md(3px); }
+----
+@opts {"theme":{"breakpoints":{"xs":0,"md":700}}}
+.a { padding: xs(1px) md(2px) sm(9px); }
+----
+@opts {"breakpoints":{"a":0,"b":500}}
+.a { padding: a(1px) b(2px) md(3px); }
+----
+@opts {"breakpoints":{"b":500}}
+.a { padding: b(2px); }
+----
+@opts {"theme":{"breakpoints":{"md":-5}}}
+.a { padding: xs(1px) md(2px); }
+----
+@opts {"theme":{"breakpoints":{"md":"800"}}}
+.a { padding: xs(1px) md(2px); }
+----
+@opts {"theme":{"breakpoints":{"md":480}}}
+.a { padding: xs(1px) md(2px); }
+----
+@opts {"theme":{"breakpoints":{"xs":10}}}
+.a { padding: xs(1px) md(2px); }

@@ -1,0 +1,113 @@
+.a { @ds-surface(contained); padding: density(4); }
+----
+.a { padding: density(4); @ds-surface(contained); }
+----
+.a { @ds-surface(contained); @ds-surface(outlined); }
+----
+.a { @ds-surface(contained); @ds-button(outlined); }
+----
+.a { @ds-button(contained); @ds-surface(outlined); }
+----
+.a { @ds-button(contained); @ds-input(outlined); }
+----
+.a { @ds-button(contained); @ds-button(outlined); }
+----
+.a { @ds-typo(h1); @ds-input(outlined); }
+----
+.a { @ds-input(outlined); @ds-typo(h1); }
+----
+.a { @ds-typo(h1); @ds-typo(h2); }
+----
+.a { @ds-button(contained); color: red; }
+----
+.a { @ds-button(contained); &:hover { color: red; } }
+----
+.a { &:hover { @ds-surface(outlined); } }
+----
+.a { .b { @ds-surface(outlined); } }
+----
+.a { .b { @ds-button(outlined); } }
+----
+.a { &:hover { @ds-button(outlined); } }
+----
+.a { @ds-button(contained); .b { color: red; } }
+----
+.a { @ds-button(contained); } .a:hover { color: red; }
+----
+.a { @ds-button(contained); padding: xs(1px) md(2px); }
+----
+.a { padding: xs(1px) md(2px); @ds-button(contained); }
+----
+.a { @ds-button(contained); } .b { @ds-button(contained); }
+----
+.a, .b { @ds-button(contained); }
+----
+.a:is(.x, .y) { @ds-button(contained); }
+----
+.a:not(:disabled) { @ds-button(contained); }
+----
+button.a { @ds-button(contained); }
+----
+.a { @ds-input(outlined); font-size: 2rem; }
+----
+.a { @ds-typo(h1); @ds-input(outlined); }
+----
+.a { @ds-surface(contained) !important; }
+----
+.a { @ds-surface(contained); } @media (min-width: 768px) { .a { @ds-surface(outlined); } }
+----
+@media (min-width: 768px) { .a { @ds-surface(outlined); } }
+----
+@supports (display: grid) { .a { @ds-surface(outlined); } }
+----
+.a { @media (min-width: 768px) { @ds-surface(outlined); } }
+----
+@ds-surface(contained);
+----
+.a { @ds-surfac(contained); }
+----
+.a { @ds-buttons(contained); }
+----
+.a { @ds(h1); }
+----
+.a { @ds-h1; }
+----
+.a { @ds-foo; }
+----
+.a { @dsfoo; }
+----
+.a { @apply foo; }
+----
+.a { @mixin foo; }
+----
+.a { @include foo; }
+----
+.a { @theme { density-1: xs(space(1)); } }
+----
+@theme { density-99: xs(space(1)) md(space(2)); } .a { padding: density(99); }
+----
+@theme { radius-9: 5px; } .a { border-radius: radius(9); }
+----
+@theme { shadow-9: 0 0 1px red; } .a { box-shadow: shadow(9); }
+----
+@theme { border-9: 1px solid red; } .a { border: border(9); }
+----
+@theme { surface-hero: { padding: density(3); bg: palette(primary); } } .a { @ds-surface(hero); }
+----
+@theme { button-cta: { padding: density(3); &:hover { bg: red; } } } .a { @ds-button(cta); }
+----
+@theme { button-cta { padding: density(3); &:hover { bg: red; } } } .a { @ds-button(cta); }
+----
+@theme { input-search: { caret: red; } } .a { @ds-input(search); }
+----
+@theme { space-1: 99px; } .a { padding: space(1); }
+----
+@theme { palette-foo: red; } .a { color: palette(foo); }
+----
+@theme { typography-h9: 1rem; } .a { @ds-typo(h9); }
+----
+@theme { bogus-1: 1px; }
+----
+@theme { density-1: xs(space(1)); } .a { padding: density(1); }
+----
+@theme { density-1: xs(space(1)); }

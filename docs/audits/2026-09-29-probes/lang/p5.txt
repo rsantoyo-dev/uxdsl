@@ -1,0 +1,133 @@
+@opts {"theme":{"spacing":{"1":4}}}
+.a { padding: space(1); }
+----
+@opts {"theme":{"palette":{"primary":{"main":5}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"palette":{"primary":{"main":{"x":1}}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"palette":{"primary":{"main":null}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"palette":{"primary":{"main":""}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"palette":{"primary":{"main":"red; } .hack { color: blue"}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"colors":{"gray":{"300":5}}}}
+.a { color: color(gray.300); }
+----
+@opts {"theme":{"colors":{"brand":[1,2]}}}
+.a { color: red; }
+----
+@opts {"theme":{"fonts":{"families":{"ui":5}}}}
+.a { color: red; }
+----
+@opts {"theme":{"fonts":{"google":"Inter"}}}
+.a { color: red; }
+----
+@opts {"theme":{"typography_details":{"h1":{"fontSize":5}}}}
+.a { color: red; }
+----
+@opts {"theme":{"typography_details":{"h1":{"fontsize":"1rem"}}}}
+.a { color: red; }
+----
+@opts {"theme":{"surfaces":{"contained":{"padding":5}}}}
+.a { color: red; }
+----
+@opts {"theme":{"buttons":{"contained":{"states":{"focusVisible":{"outline":"1px solid red"}}}}}}
+.a { color: red; }
+----
+@opts {"theme":{"buttons":{"contained":{"base":{"padding":"density(99)"}}}}}
+.a { color: red; }
+----
+@opts {"theme":{"buttons":{"contained":{"base":{"bg":"palette(nope)"}}}}}
+.a { color: red; }
+----
+@opts {"theme":{"surfaces":{"contained":{"bg":"palette(nope)"}}}}
+.a { color: red; }
+----
+@opts {"theme":{"surfaces":{"contained":{"bg":"palette(nope)"}}},"references":{"mode":"off"}}
+.a { @ds-surface(contained); }
+----
+@opts {"theme":{"modes":{"dark":null}}}
+.a { color: red; }
+----
+@opts {"theme":{"modes":{"dark":{"palette":{"primary":{"main":5}}}}}}
+.a { color: red; }
+----
+@opts {"theme":{"modes":{"light":{"palette":{"primary":{"main":"red"}}}}}}
+.a { color: red; }
+----
+@opts {"theme":{"palete":{"primary":{"main":"red"}}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"spacing":{"gutter":"1rem","space-gutter":"2rem"}}}
+.a { color: red; }
+----
+@opts {"theme":{"densities":{"x":"xs(space(99))"}}}
+.a { padding: density(x); }
+----
+@opts {"theme":{"densities":{"x":"md(space(2))"}}}
+.a { padding: density(x); }
+----
+@opts {"theme":{"radii":{"x":"md(2px)"}}}
+.a { border-radius: radius(x); }
+----
+@opts {"theme":{"shadows":{"x":"xs(none) md(shadow(1))"}}}
+.a { box-shadow: shadow(x); }
+----
+@opts {"theme":{"borders":{"x":"1px solid palette(primary, 0.5)"}}}
+.a { border: border(x); }
+----
+@opts {"theme":{"borders":{"x":"1px solid palette(primary.light)"}}}
+.a { border: border(x); }
+----
+@opts {"theme":{"palette":{"brand":{"main":"red"}}}}
+.a { @ds-button(contained brand); }
+----
+@opts {"theme":{"palette":{"brand":{"main":"red","dark":"maroon","contrast":"white"}}}}
+.a { @ds-button(contained brand); }
+----
+@opts {"theme":{"palette":{"Brand":{"main":"red","dark":"maroon","contrast":"white"}}}}
+.a { color: palette(Brand); }
+----
+@opts {"theme":{"palette":{"primary-main":"red"}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"palette":{"primary":"red"}}}
+.a { color: palette(primary); }
+----
+@opts {"theme":{"breakpoints":{"md":-5}},"references":{"mode":"off"}}
+.a { padding: xs(1px) md(2px); }
+----
+@opts {"breakpoints":{"b":500},"references":{"mode":"off"}}
+.a { padding: b(2px); }
+----
+@opts {"references":{"mode":"off"}}
+.a { padding: space(99); color: palette(nope); }
+----
+@opts {"references":{"mode":"warn"}}
+.a { padding: space(99); color: palette(nope); }
+----
+.a { color: palette(nope); background: palette(nope); border-color: palette(nope.dark); }
+----
+.a { color: palette(nope); } .b { color: palette(nope); }
+----
+.a { padding: xs(1px) md(2px); color: palette(nope); }
+----
+.a { color: palette(nope); } .a:hover { color: palette(nope); }
+----
+.a { padding: space(4) space(99); }
+----
+.a { color: var(--undefined-thing); }
+----
+.a { color: var(--undefined-thing, red); }
+----
+.a { --x: palette(nope); }
+----
+.a { --x: var(--y); --y: var(--x); }
+----
+.a { padding: space(4) } .a { padding: space(4) }

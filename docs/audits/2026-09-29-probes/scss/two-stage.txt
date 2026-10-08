@@ -1,0 +1,438 @@
+
+==============================================================================
+# ts-01 responsive fn
+------------------------------------------------------------------------------
+.a { padding: xs(1px) md(2px); }
+
+--- after Dart Sass ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: 1px;
+}@media (min-width: 768px) {.a {
+    padding: 2px;
+}
+}
+
+==============================================================================
+# ts-02 palette dot (documented form)
+------------------------------------------------------------------------------
+.a { color: palette(primary.main); }
+
+--- Dart Sass ERROR ---
+expected "(".
+
+==============================================================================
+# ts-03 palette hyphen form
+------------------------------------------------------------------------------
+.a { color: palette(primary-main); }
+
+--- after Dart Sass ---
+.a {
+  color: palette(primary-main);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: var(--uxdsl__palette__primary-main);
+}
+
+==============================================================================
+# ts-04 palette quoted
+------------------------------------------------------------------------------
+.a { color: palette("primary.main"); }
+
+--- after Dart Sass ---
+.a {
+  color: palette("primary.main");
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: var(--uxdsl__palette__primary-main);
+}
+
+==============================================================================
+# ts-05 palette interp-quoted
+------------------------------------------------------------------------------
+.a { color: palette(#{"primary.main"}); }
+
+--- after Dart Sass ---
+.a {
+  color: palette(primary.main);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: var(--uxdsl__palette__primary-main);
+}
+
+==============================================================================
+# ts-06 palette plain
+------------------------------------------------------------------------------
+.a { color: palette(primary); }
+
+--- after Dart Sass ---
+.a {
+  color: palette(primary);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: var(--uxdsl__palette__primary-main);
+}
+
+==============================================================================
+# ts-07 density + space in responsive
+------------------------------------------------------------------------------
+.a { gap: density(2); padding: xs(space(1)) md(space(2)); }
+
+--- after Dart Sass ---
+.a {
+  gap: density(2);
+  padding: xs(space(1)) md(space(2));
+}
+
+--- then UXDSL (OK) ---
+.a {
+  gap: var(--uxdsl__density__2);
+  padding: var(--uxdsl__space__1);
+}@media (min-width: 768px) {.a {
+    padding: var(--uxdsl__space__2);
+}
+}
+
+==============================================================================
+# ts-08 @ds-surface (Sass inserts a space)
+------------------------------------------------------------------------------
+.a { @ds-surface(contained); }
+
+--- after Dart Sass ---
+.a {
+  @ds-surface (contained);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+
+==============================================================================
+# ts-09 @ds-button 3 args
+------------------------------------------------------------------------------
+.a { @ds-button(contained primary 2); }
+
+--- after Dart Sass ---
+.a {
+  @ds-button (contained primary 2);
+}
+
+--- then UXDSL (OK) ---
+.a { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+.a:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.a.is-selected, .a[aria-pressed="true"], .a[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+==============================================================================
+# ts-10 @ds-typo
+------------------------------------------------------------------------------
+.a { @ds-typo(h1); }
+
+--- after Dart Sass ---
+.a {
+  @ds-typo (h1);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  font-family: var(--uxdsl__typography__h1-font-family);
+  font-size: var(--uxdsl__typography__h1-size);
+  line-height: var(--uxdsl__typography__h1-line);
+  font-weight: var(--uxdsl__typography__h1-weight);
+  letter-spacing: var(--uxdsl__typography__h1-spacing);
+  margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+}
+
+==============================================================================
+# ts-11 @ds-* arg from $var (no interp)
+------------------------------------------------------------------------------
+$t: primary;
+.a { @ds-button(contained $t); }
+
+--- after Dart Sass ---
+.a {
+  @ds-button (contained $t);
+}
+
+--- then UXDSL ERROR ---
+postcss-advanced-variables: /private/tmp/claude-501/-Users-ricardosantoyo-Documents-projects-uxdsl/ca184564-843f-4f1e-a19d-fd41af19540d/scratchpad/audit-scss/cases/two-stage.uxdsl:2:9: Could not resolve the variable "$t" within "(contained $t)"
+
+==============================================================================
+# ts-12 @ds-* arg from $var (interp)
+------------------------------------------------------------------------------
+$t: primary;
+.a { @ds-button(contained #{$t}); }
+
+--- after Dart Sass ---
+.a {
+  @ds-button (contained primary);
+}
+
+--- then UXDSL (OK) ---
+.a { padding: var(--uxdsl__surface__contained-padding); border-radius: var(--uxdsl__surface__contained-radius); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+.a:hover { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+.a.is-selected, .a[aria-pressed="true"], .a[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+==============================================================================
+# ts-13 palette(#{$t}.main)
+------------------------------------------------------------------------------
+$t: primary;
+.a { color: palette(#{$t}.main); }
+
+--- Dart Sass ERROR ---
+Interpolation isn't allowed in namespaces.
+
+==============================================================================
+# ts-14 palette(#{$t}-main)
+------------------------------------------------------------------------------
+$t: primary;
+.a { color: palette(#{$t}-main); }
+
+--- after Dart Sass ---
+.a {
+  color: palette(primary-main);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: var(--uxdsl__palette__primary-main);
+}
+
+==============================================================================
+# ts-15 $var holding responsive expr
+------------------------------------------------------------------------------
+$pad: xs(1px) md(2px);
+.a { padding: $pad; }
+
+--- after Dart Sass ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: 1px;
+}@media (min-width: 768px) {.a {
+    padding: 2px;
+}
+}
+
+==============================================================================
+# ts-16 $var holding palette dot
+------------------------------------------------------------------------------
+$c: palette(primary.main);
+.a { color: $c; }
+
+--- Dart Sass ERROR ---
+expected "(".
+
+==============================================================================
+# ts-17 mixin arg density()
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+.a { @include pad(density(2)); }
+
+--- after Dart Sass ---
+.a {
+  padding: density(2);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: var(--uxdsl__density__2);
+}
+
+==============================================================================
+# ts-18 mixin arg responsive
+------------------------------------------------------------------------------
+@mixin pad($p) { padding: $p; }
+.a { @include pad(xs(1px) md(2px)); }
+
+--- after Dart Sass ---
+.a {
+  padding: xs(1px) md(2px);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: 1px;
+}@media (min-width: 768px) {.a {
+    padding: 2px;
+}
+}
+
+==============================================================================
+# ts-19 nesting & responsive + directive
+------------------------------------------------------------------------------
+.a { @ds-surface(contained); &:hover { padding: xs(1px) md(2px); } &-suffix { color: red; } }
+
+--- after Dart Sass ---
+.a {
+  @ds-surface (contained);
+}
+.a:hover {
+  padding: xs(1px) md(2px);
+}
+.a-suffix {
+  color: red;
+}
+
+--- then UXDSL (OK) ---
+.a {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+}
+.a:hover {
+  padding: 1px;
+}
+@media (min-width: 768px) {
+.a:hover {
+    padding: 2px;
+}
+}
+.a-suffix {
+  color: red;
+}
+
+==============================================================================
+# ts-20 Sass math + UXDSL
+------------------------------------------------------------------------------
+@use "sass:math";
+.a { width: math.div(100%, 3); padding: density(2); }
+
+--- after Dart Sass ---
+.a {
+  width: 33.3333333333%;
+  padding: density(2);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  width: 33.3333333333%;
+  padding: var(--uxdsl__density__2);
+}
+
+==============================================================================
+# ts-21 darken on a palette token
+------------------------------------------------------------------------------
+.a { color: darken(palette(primary), 10%); }
+
+--- Dart Sass ERROR ---
+$color: palette(primary) is not a color.
+
+==============================================================================
+# ts-22 calc with space()
+------------------------------------------------------------------------------
+.a { width: calc(100% - space(2)); }
+
+--- after Dart Sass ---
+.a {
+  width: calc(100% - space(2));
+}
+
+--- then UXDSL (OK) ---
+.a {
+  width: calc(100% - var(--uxdsl__space__2));
+}
+
+==============================================================================
+# ts-23 responsive value inside Sass @media nesting
+------------------------------------------------------------------------------
+.a { @media (min-width: 600px) { padding: xs(1px) md(2px); } }
+
+--- after Dart Sass ---
+@media (min-width: 600px) {
+  .a {
+    padding: xs(1px) md(2px);
+  }
+}
+
+--- then UXDSL (OK) ---
+@media (min-width: 600px) {
+  .a {
+    padding: 1px;
+  }
+  @media (min-width: 768px) {
+  .a {
+      padding: 2px;
+  }
+  }
+}
+
+==============================================================================
+# ts-24 keyword mixin args + @ds-typo in @content
+------------------------------------------------------------------------------
+@mixin wrap($sel: '.inner') { #{$sel} { @content; } }
+.a { @include wrap($sel: '.title') { @ds-typo(h1); } }
+
+--- after Dart Sass ---
+.a .title {
+  @ds-typo (h1);
+}
+
+--- then UXDSL (OK) ---
+.a .title {
+  font-family: var(--uxdsl__typography__h1-font-family);
+  font-size: var(--uxdsl__typography__h1-size);
+  line-height: var(--uxdsl__typography__h1-line);
+  font-weight: var(--uxdsl__typography__h1-weight);
+  letter-spacing: var(--uxdsl__typography__h1-spacing);
+  margin-block-start: var(--uxdsl__typography__h1-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h1-margin-block-end);
+}
+
+==============================================================================
+# ts-25 unit arithmetic with rem+px
+------------------------------------------------------------------------------
+.a { width: 1rem + 2px; }
+
+--- Dart Sass ERROR ---
+1rem and 2px have incompatible units.
+
+==============================================================================
+# ts-26 @extend + placeholder
+------------------------------------------------------------------------------
+%base { color: red; }
+.a { @extend %base; padding: density(2); }
+
+--- after Dart Sass ---
+.a {
+  color: red;
+}
+
+.a {
+  padding: density(2);
+}
+
+--- then UXDSL (OK) ---
+.a {
+  color: red;
+}
+
+.a {
+  padding: var(--uxdsl__density__2);
+}

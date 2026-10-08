@@ -1,0 +1,175 @@
+==============================================================================
+# vars-01-basic
+.a { width: 1px; }
+--> valid per css-tree
+==============================================================================
+# nest-01-basic
+.a { color: red; .b { color: blue; } }
+--> parse error: Identifier is expected
+--> unparsed raw: ".b { color: blue; }"
+==============================================================================
+# nest-02-amp-hover
+.a { color: red; &:hover { color: blue; } }
+--> valid per css-tree
+==============================================================================
+# nest-03-amp-suffix
+.a { color: red; &-suffix { color: blue; } }
+--> valid per css-tree
+==============================================================================
+# nest-04-amp-plus-amp
+.a { color: red; & + & { margin: 0; } }
+--> valid per css-tree
+==============================================================================
+# nest-05-parent-amp
+.a { color: red; .x & { color: blue; } }
+--> parse error: Identifier is expected
+--> unparsed raw: ".x & { color: blue; }"
+==============================================================================
+# nest-06-media-inside-rule
+.a { color: red; @media (min-width: 600px) { color: blue; } }
+--> valid per css-tree
+==============================================================================
+# nest-07-at-root
+.a { color: red; @at-root .b { color: blue; } }
+--> parse error: Semicolon or block is expected
+--> unknown at-rule @at-root (a browser drops it)
+--> unparsed raw: ".b"
+==============================================================================
+# nest-09-responsive-in-nested
+.a { .b { padding: 1px; } @media (min-width: 768px) { .b { padding: 2px; } } }
+--> parse error: Identifier is expected
+--> unparsed raw: ".b { padding: 1px; } @media (min-width: 768px) { .b { paddin"
+==============================================================================
+# nest-10-amp-hover-responsive
+.a { &:hover { padding: 1px; } @media (min-width: 768px) { &:hover { padding: 2px; } } }
+--> valid per css-tree
+==============================================================================
+# vars-03-property-name
+.a { #{$p}-top: 1px; }
+--> parse error: Identifier is expected
+--> unparsed raw: "#{$p}-top: 1px;"
+==============================================================================
+# vars-07-global-flag
+.a { color: blue !global; }
+.b { color: red; }
+--> valid per css-tree
+==============================================================================
+# mixin-04-uxdsl-fn-param
+.a { padding: densit; }
+--> invalid value: "padding: densit" -> Mismatch
+==============================================================================
+# mixin-05-responsive-arg
+.a { padding: x; }
+--> invalid value: "padding: x" -> Mismatch
+==============================================================================
+# mixin-15-calc-arg
+.a { width: cal; }
+--> invalid value: "width: cal" -> Mismatch
+==============================================================================
+# fn-02-darken
+.a { color: darken(#3b82f6, 10%); }
+--> invalid value: "color: darken(#3b82f6,10%)" -> Mismatch
+==============================================================================
+# fn-04-rgba-var
+.a { color: rgba(#000, .5); }
+--> invalid value: "color: rgba(#000,.5)" -> Mismatch
+==============================================================================
+# fn-05-math-div
+@use "sass:math";
+.a { width: math.div(10px, 2); }
+--> parse error: Unexpected input
+--> unknown at-rule @use (a browser drops it)
+--> invalid value: "width: math.div(10px, 2)" -> Mismatch
+--> unparsed raw: "math.div(10px, 2)"
+==============================================================================
+# fn-06-percentage
+.a { width: percentage(0.5); }
+--> invalid value: "width: percentage(0.5)" -> Mismatch
+==============================================================================
+# fn-07-if
+.a { width: if(true, 1px, 2px); }
+--> invalid value: "width: if(true,1px,2px)" -> Mismatch
+==============================================================================
+# fn-08-unquote
+.a { content: unquote("foo"); font-family: unquote("Inter"); }
+--> invalid value: "content: unquote("foo")" -> Mismatch
+--> invalid value: "font-family: unquote("Inter")" -> Mismatch
+==============================================================================
+# vars-08-map-get
+.a { width: map-get((a: 1px, b: 2px), a); }
+--> parse error: ")" is expected
+--> invalid value: "width: map-get((a: 1px, b: 2px), a)" -> Mismatch
+--> unparsed raw: "map-get((a: 1px, b: 2px), a)"
+==============================================================================
+# vars-09-list-nth
+.a { width: nth(1px 2px 3px, 2); }
+--> invalid value: "width: nth(1px 2px 3px,2)" -> Mismatch
+==============================================================================
+# ctrl-06-while
+@while 1 < 3 { .w-1 { width: 1px; } }
+--> parse error: Semicolon or block is expected
+--> unknown at-rule @while (a browser drops it)
+--> unparsed raw: "1 < 3"
+==============================================================================
+# ctrl-08-debug-warn
+@debug "dbg";
+@warn "wrn";
+.a { color: red; }
+--> unknown at-rule @debug (a browser drops it)
+--> unknown at-rule @warn (a browser drops it)
+==============================================================================
+# extend-01-placeholder
+%base { color: red; }
+.a { @extend %base; }
+--> parse error: Selector is expected
+--> parse error: Semicolon or block is expected
+--> unknown at-rule @extend (a browser drops it)
+--> unparsed raw: "%base"
+--> unparsed raw: "%base"
+==============================================================================
+# extend-02-class
+.base { color: red; }
+.a { @extend .base; }
+--> parse error: Semicolon or block is expected
+--> unknown at-rule @extend (a browser drops it)
+--> unparsed raw: ".base"
+==============================================================================
+# import-07-forward
+@forward "./partial";
+.a { color: red; }
+--> unknown at-rule @forward (a browser drops it)
+==============================================================================
+# import-08-use-sass-builtin-only
+@use "sass:math";
+.a { color: red; }
+--> unknown at-rule @use (a browser drops it)
+==============================================================================
+# interp-01-palette
+.a { color: #{palette(primary.main)}; }
+--> parse error: Hex or identifier is expected
+--> invalid value: "color: #{palette(primary.main)}" -> Mismatch
+--> unparsed raw: "#{palette(primary.main)}"
+==============================================================================
+# arith-01-slash-div
+.a { width: 10px / 2; }
+--> invalid value: "width: 10px/2" -> Mismatch
+==============================================================================
+# arith-02-string-concat
+.a { content: "foo" + "bar"; }
+--> invalid value: "content: "foo" + "bar"" -> Mismatch
+==============================================================================
+# arith-03-unit-mismatch
+.a { width: 1rem + 2px; }
+--> invalid value: "width: 1rem + 2px" -> Mismatch
+==============================================================================
+# arith-04-mul
+.a { width: 10px * 2; }
+--> invalid value: "width: 10px*2" -> Mismatch
+==============================================================================
+# arith-06-add-vars
+.a { width: 1px + 2px; }
+--> invalid value: "width: 1px + 2px" -> Mismatch
+==============================================================================
+# modern-11-keyframes-responsive
+@keyframes pulse { from { padding: 1px; } @media (min-width: 768px) { from { padding: 2px; } } to { padding: 3px; } }
+--> valid per css-tree
