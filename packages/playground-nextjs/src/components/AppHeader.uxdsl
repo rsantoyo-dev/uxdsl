@@ -127,12 +127,15 @@
   gap: space(2);
 }
 
+/* Each button is filled with its theme's color, ringed by the page's divider so it shows in
+   both modes. */
 .theme-color-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: radius(circle);
-  border: 3px solid var(--theme-color);
-  background: palette(surface.main);
+  border: 2px solid palette(surface.main);
+  box-shadow: 0 0 0 1px palette(divider.main);
+  background: var(--theme-color);
   cursor: pointer;
   padding: 0;
   transition: transform 0.15s ease;

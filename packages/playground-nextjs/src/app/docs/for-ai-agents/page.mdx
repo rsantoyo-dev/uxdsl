@@ -1,0 +1,68 @@
+import { PageTitle } from '@/components/PageTitle'
+import SpacingAgentGuidance from '@/components/SpacingAgentGuidance'
+import DensityAgentGuidance from '@/components/DensityAgentGuidance'
+import { BreakpointAgentGuidance } from '@/components/agent-guides/BreakpointGuide'
+import { ColorAgentGuidance } from '@/components/agent-guides/ColorGuide'
+import { TypographyAgentGuidance } from '@/components/agent-guides/TypographyGuide'
+import { BorderAgentGuidance } from '@/components/agent-guides/BorderGuide'
+import { ShadowAgentGuidance } from '@/components/agent-guides/ShadowGuide'
+import { SurfaceAgentGuidance } from '@/components/agent-guides/SurfaceGuide'
+import { ButtonAgentGuidance } from '@/components/agent-guides/ButtonGuide'
+import { InputAgentGuidance } from '@/components/agent-guides/InputGuide'
+
+export const metadata = { title: 'For AI agents' }
+
+<PageTitle
+  title="For AI agents"
+  subtitle="How a coding agent should read and change a UXDSL project."
+/>
+
+<div className="doc-section">
+
+## Point your agent at the guide that ships with the package
+
+`uxdsl` ships its agent guide inside the package, at `node_modules/uxdsl/docs/agent-guide.md`, so it always describes the version the project has installed. Add one instruction to the project's own `AGENTS.md` (or the instruction file your agent reads), next to the project's own rules:
+
+```text
+Before generating or modifying UXDSL UI, read
+node_modules/uxdsl/docs/agent-guide.md and the active theme JSON.
+Preserve configured roles and responsive behavior.
+```
+
+Adjust the path when `node_modules` is hoisted to a monorepo root. A link alone may not be fetched by every agent; a copy in the repository ages with every upgrade.
+
+## The one rule
+
+**Preserve intent, not just the current computed value.** A component names a token or a role; the theme decides what it is and how it changes per breakpoint. Two declarations that compute to the same pixels today can mean different things tomorrow:
+
+<div className="doc-section__table-wrap">
+<table>
+<thead><tr><th>Do not replace…</th><th>…with</th><th>because</th></tr></thead>
+<tbody>
+<tr><td><code>density(4)</code></td><td><code>space(4)</code> or <code>0.75rem</code></td><td>the density steps at each breakpoint; the space does not</td></tr>
+<tr><td><code>palette(primary.main)</code></td><td><code>color(purple.700)</code> or a hex</td><td>the role follows a theme change and dark mode; a color does not</td></tr>
+<tr><td><code>@ds-typo(h2)</code></td><td>a fixed <code>font-size</code></td><td>the role's size and line height change per breakpoint</td></tr>
+<tr><td><code>@ds-surface(contained)</code></td><td>its six resolved properties</td><td>the role is shared; a copy is not</td></tr>
+</tbody>
+</table>
+</div>
+
+Before a change, decide its scope: one component (pick another existing token, or write a local CSS exception after the directive), a shared role or progression (edit the theme and check every consumer), or a threshold (edit `breakpoints` in the theme and rebuild). Never reference a token the theme does not define: the build fails with a `UXD_*` code, listed on [Diagnostics](/docs/diagnostics).
+
+## Per primitive
+
+Each block below is the guide for one primitive: what it is responsible for, how to choose it in a component, when to change the theme instead, and what to verify.
+
+</div>
+
+<SpacingAgentGuidance />
+<DensityAgentGuidance />
+<BreakpointAgentGuidance />
+<ColorAgentGuidance topic="colors" />
+<ColorAgentGuidance topic="palette" />
+<TypographyAgentGuidance />
+<BorderAgentGuidance />
+<ShadowAgentGuidance />
+<SurfaceAgentGuidance />
+<ButtonAgentGuidance />
+<InputAgentGuidance />

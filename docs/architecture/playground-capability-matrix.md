@@ -35,11 +35,11 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Measure | Now | Baseline |
 | --- | ---: | ---: |
 | handWrittenMediaQueries | 2 | 2 |
-| hexColorsInUxdsl | 12 | 12 |
-| rgbHslInUxdsl | 1 | 1 |
+| hexColorsInUxdsl | 1 | 1 |
+| rgbHslInUxdsl | 0 | 0 |
 | cssModuleFiles | 0 | 0 |
-| inlineStyleObjects | 28 | 28 |
-| hexColorsInTsx | 30 | 30 |
+| inlineStyleObjects | 23 | 23 |
+| hexColorsInTsx | 23 | 23 |
 
 ## Directives
 
@@ -54,40 +54,40 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `border` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
+| `border` | live | live | `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `color` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `density` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `radius` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `shadow` | live | live | `src/app/app.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
-| `space` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/productivity/page.uxdsl` |
+| `space` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
 ## Breakpoint functions
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `lg` | live | live | `src/app/layout.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoProductivity.uxdsl` |
+| `lg` | live | live | `src/app/layout.uxdsl`, `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl` |
 | `md` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
-| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/DemoProductivity.uxdsl` |
-| `xl` | live | live | `src/components/CapabilityDocs.uxdsl` |
+| `sm` | live | live | `src/components/AppHeader.uxdsl`, `src/components/PageToolbar.uxdsl` |
+| `xl` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/SurfaceGrid.uxdsl` |
 | `xs` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 
 ## Theme families
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `borders` | live | live | `src/app/page.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoShadows.uxdsl` |
+| `borders` | live | live | `src/app/page.uxdsl`, `src/components/AgentGuidance.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `breakpoints` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `buttons` | live | live | `src/app/page.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/ButtonDocumentation.tsx` |
 | `colors` | live | live | `src/components/AgentGuidance.uxdsl`, `src/components/AIPrompt.uxdsl`, `src/components/AppHeader.uxdsl` |
 | `densities` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `fonts` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/layout.uxdsl` |
 | `inputs` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
-| `modes` | live | live | `src/components/CodeBlock.tsx`, `src/components/ThemeContext.tsx` |
+| `modes` | live | live | `src/components/CodeBlock.tsx`, `src/components/ParadigmFrame.tsx`, `src/components/ThemeContext.tsx` |
 | `palette` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `radii` | live | live | `src/app/app.uxdsl`, `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl` |
 | `shadows` | live | live | `src/app/app.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
-| `spacing` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/productivity/page.uxdsl` |
+| `spacing` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/layout.uxdsl`, `src/app/page.uxdsl` |
 | `surfaces` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 | `typography_details` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl`, `src/app/not-found.uxdsl` |
 
@@ -96,12 +96,12 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `button.contained` | live | live | `src/app/page.uxdsl`, `src/components/ButtonDocumentation.tsx`, `src/components/CapabilityDocs.uxdsl` |
-| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/HomeInteractiveDemos.uxdsl` |
-| `button.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/DemoDensity.uxdsl` |
+| `button.flat` | live | live | `src/components/AIPrompt.uxdsl`, `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
+| `button.outlined` | live | live | `src/app/page.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoButtons.tsx` |
 | `input.contained` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
 | `input.outlined` | live | live | `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBorders.uxdsl`, `src/components/DemoColors.uxdsl` |
 | `input.underline` | live | live | `src/components/InputDemo.tsx`, `src/components/RuntimeEngines.tsx` |
-| `surface.contained` | live | live | `src/app/not-found.uxdsl`, `src/app/page.uxdsl`, `src/app/theming/page.uxdsl` |
+| `surface.contained` | live | live | `src/app/not-found.uxdsl`, `src/components/CapabilityDocs.uxdsl`, `src/components/DemoBreakpointsCards.uxdsl` |
 | `surface.flat` | live | live | `src/app/docs/quick-start/quick-start.uxdsl`, `src/components/DemoSurfaces.tsx`, `src/components/SideNav.uxdsl` |
 | `surface.outlined` | live | live | `src/app/docs/breakpoints/breakpoints.uxdsl`, `src/app/docs/quick-start/quick-start.uxdsl`, `src/app/docs/typography/typography.uxdsl` |
 
@@ -115,12 +115,12 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `button.focusvisible` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
 | `button.hover` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx`, `src/components/RuntimeEngines.tsx` |
 | `button.selected` | live | live | `src/components/ButtonDocumentation.tsx`, `src/components/DemoButtons.tsx` |
-| `input.disabled` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
-| `input.focus` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.focusvisible` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.hover` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.invalid` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx`, `src/components/RuntimeEngines.tsx` |
-| `input.readonly` | live | live | `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.disabled` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.focus` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.focusvisible` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.hover` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.invalid` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
+| `input.readonly` | live | live | `src/components/agent-guides/InputGuide.tsx`, `src/components/InputDemo.tsx`, `src/components/InputDocumentation.tsx` |
 
 ## Runtime API (named in the package docs)
 
@@ -168,29 +168,29 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `build` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/diagnostics/page.mdx`, `src/app/docs/quick-start/page.mdx` |
-| `generate-entry` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
-| `init` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
-| `theme` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/contrast/page.mdx`, `src/components/ContrastReport.tsx` |
+| `build` | documented | documented | `src/app/docs/diagnostics/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/quick-start/page.mdx` |
+| `generate-entry` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
+| `init` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
+| `theme` | documented | documented | `src/app/docs/accessibility/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/tooling/page.mdx` |
 
 ## CLI flags
 
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
-| `--config` | documented | documented | `src/app/docs/cli/page.mdx` |
+| `--config` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--contrast` | live | live | `src/components/ContrastReport.tsx` |
-| `--diff` | documented | documented | `src/app/docs/cli/page.mdx`, `src/components/RuntimeEngines.tsx` |
-| `--entry` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--exclude` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--help` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--include-theme` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--multi` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--out` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--sourcemap` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--src` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--strict-theme` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--version` | documented | documented | `src/app/docs/cli/page.mdx` |
-| `--watch` | documented | documented | `src/app/docs/cli/page.mdx`, `src/app/docs/quick-start/page.mdx` |
+| `--diff` | documented | documented | `src/app/docs/introduction/page.mdx`, `src/app/docs/tooling/page.mdx`, `src/components/RuntimeEngines.tsx` |
+| `--entry` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--exclude` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--help` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--include-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--multi` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--out` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--sourcemap` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--src` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--strict-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--version` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--watch` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
 
 ## Package exports
 
@@ -199,11 +199,11 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `.` | live | live | `package.json` |
 | `./config` | live | live | `uxdsl.config.cjs` |
 | `./engine` | live | live | `src/components/BreakpointEditor.tsx`, `src/components/DemoBorders.tsx`, `src/components/DemoButtons.tsx` |
-| `./language` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/DemoBreakpoints.tsx`, `src/components/DemoDensity.tsx` |
+| `./language` | live | live | `src/app/docs/language/page.tsx`, `src/components/BreakpointDocumentation.tsx`, `src/components/DemoBreakpoints.tsx` |
 | `./postcss` | live | live | `package.json` |
 | `./runtime` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/RuntimeLab.tsx`, `src/components/ThemeContext.tsx` |
 | `./schema/theme.schema.json` | live | live | `uxdsl.theme.green.json` |
-| `./theme` | live | live | `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointEditor.tsx`, `src/components/BreakpointsProvider.tsx` |
+| `./theme` | live | live | `src/components/agent-guides/BreakpointGuide.tsx`, `src/components/BreakpointDocumentation.tsx`, `src/components/BreakpointEditor.tsx` |
 | `./theme/base.contrast-exceptions.json` | live | live | `src/components/ContrastReport.tsx` |
 | `./theme/base.json` | live | live | `themes.js` |
 | `./vite` | live | live | `fixtures/vite-adapter/run.js` |

@@ -47,7 +47,8 @@ export default function CodeBlock({ language = 'bash', children, code }: CodeBlo
       <SyntaxHighlighter
         language={language}
         style={isDark ? vscDarkPlus : vs}
-        customStyle={{ margin: 0, padding: '1.5rem' }}
+        customStyle={{ margin: 0, padding: '1rem', overflowX: 'auto', fontSize: 'inherit' }}
+        codeTagProps={{ className: 'code-block-frame__code' }}
         wrapLines={true}
       >
         {content}

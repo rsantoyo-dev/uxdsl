@@ -1,17 +1,16 @@
 import { PageTitle } from '@/components/PageTitle'
 import ThemeConfigJsonEditor from '@/components/ThemeConfigJsonEditor'
 
-export default function DocsConfigPage() {
+export const metadata = { title: 'Theme' }
+
+export default function DocsThemePage() {
   return (
-    <main className="main">
-      <div className="container">
-        <PageTitle
-          title="Config JSON"
-          subtitle="Single source of truth for runtime theme tokens."
-          subtext="Changes from demos update this JSON. Editing this JSON updates the UI runtime."
-        />
-        <ThemeConfigJsonEditor />
-      </div>
-    </main>
+    <>
+      <PageTitle
+        title="Theme"
+        subtitle="One JSON holds every design decision; the build, the runtime and the audits read it."
+      />
+      <ThemeConfigJsonEditor />
+    </>
   )
 }

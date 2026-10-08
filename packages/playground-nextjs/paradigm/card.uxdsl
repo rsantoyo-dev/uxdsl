@@ -1,0 +1,7 @@
+.card {
+  @ds-surface(contained);
+  display: grid;
+  padding: density(4);
+  gap: xs(0.5rem) md(1rem);
+}
+.card h2 { @ds-typo(h2); }

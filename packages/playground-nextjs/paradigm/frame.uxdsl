@@ -1,0 +1,41 @@
+/* The page inside the home page's resizable frame. card.uxdsl is the example the home page
+   shows, verbatim; everything below is the frame's own chrome. The frame is an iframe, so its
+   media queries follow the frame's width: dragging it crosses the theme's breakpoints. */
+@import './card.uxdsl';
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  padding: space(5);
+  background: palette(surface.light);
+  color: palette(surface.contrast);
+  font-family: var(--uxdsl__font__ui), system-ui, sans-serif;
+}
+
+/* The tinted band is the card's padding: its background stops at the content box, and the
+   padding area shows the primary tone underneath. */
+.card {
+  max-width: 44rem;
+  margin: 0 auto;
+  background:
+    linear-gradient(palette(surface.main), palette(surface.main)) content-box,
+    palette(primary.main, 0.16) padding-box;
+}
+
+.card h2 {
+  margin: 0;
+}
+
+.card p {
+  @ds-typo(p);
+  margin: 0;
+  color: palette(text.secondary);
+}
+
+.card code {
+  font-family: var(--uxdsl__font__code), monospace;
+  color: palette(primary.main);
+}

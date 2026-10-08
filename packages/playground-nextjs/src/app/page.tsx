@@ -1,168 +1,104 @@
-'use client'
-
-import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowRight, Github, Mail, Package, BookOpen, Rocket, Palette, Type, Grid3X3, Smartphone } from 'lucide-react'
-import { InteractiveLogo } from '@/components/InteractiveLogo'
-import { HeroBackground } from '@/components/HeroBackground'
-import { ThemeBackground } from '@/components/ThemeBackground'
-import { PageTitle } from '@/components/PageTitle'
+import { ArrowRight, Github, Package, Mail } from 'lucide-react'
+import CodeBlock from '@/components/CodeBlock'
+import ParadigmFrame from '@/components/ParadigmFrame'
 import { AIPrompt } from '@/components/AIPrompt'
-import HomeInteractiveDemos from '@/components/HomeInteractiveDemos'
-import NavigationCardLink from '@/components/NavigationCardLink'
+import { GITHUB_URL, NPM_URL } from '@/lib/docs'
+import generated from '@/generated/examples.json'
+
+// The example, its theme excerpt and its compiled CSS all come from
+// src/generated/examples.json, written by scripts/capture-examples.js with the real
+// compiler (and re-checked by `npm test`). The card in the frame is the same file.
+const paradigm = generated.examples.paradigm
+const themeExcerpt = JSON.stringify(JSON.parse(paradigm.theme), null, 2)
+
+const PILLARS = [
+  { href: '/docs/spacing', title: 'Tokens that step', text: 'Spacing, density, type, radii and shadows are defined once with their breakpoint progression. A component names the token.' },
+  { href: '/docs/surfaces', title: 'Roles, not recipes', text: '@ds-surface, @ds-button and @ds-input apply a role from the theme: padding, corners, colors, border, shadow and states.' },
+  { href: '/docs/diagnostics', title: 'Nothing silent', text: 'An unknown token, breakpoint or role stops the build with a UXD_* code, the file, line and column, and what exists instead.' },
+  { href: '/docs/runtime', title: 'One JSON, three uses', text: 'The theme the build compiles is the one applyTheme changes in the browser and uxdsl theme --contrast audits.' },
+]
 
 export default function Home() {
-  const [mousePos, setMousePos] = useState<{x: number | null, y: number | null}>({ x: null, y: null })
-  const [isPressed, setIsPressed] = useState(false)
-  
-  const handleMouseMove = (e: React.MouseEvent) => {
-    setMousePos({ x: e.clientX, y: e.clientY })
-  }
-
-  const handleMouseLeave = () => {
-    setMousePos({ x: null, y: null })
-    setIsPressed(false)
-  }
-
-  const handleMouseDown = () => setIsPressed(true)
-  const handleMouseUp = () => setIsPressed(false)
-
   return (
-    <main id="WelcomePage">
-      <div
-        className="hero-surface"
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
-        onMouseDown={handleMouseDown}
-        onMouseUp={handleMouseUp}
-        onTouchStart={handleMouseDown}
-        onTouchEnd={handleMouseUp}
-      >
-        <ThemeBackground />
-        <HeroBackground
-          mouseX={mousePos.x}
-          mouseY={mousePos.y}
-          isPressed={isPressed}
-        />
-
-        <div
-          className="hero-content"
-        >
-          <div className="logo-container">
-            <InteractiveLogo
-              className="hero-logo"
-              mouseX={mousePos.x}
-              mouseY={mousePos.y}
-            />
-          </div>
-          <PageTitle
-            title="UX-DSL"
-            subtitle="UX Design System Language"
-            className="welcome-page-title"
-          />
-        </div>
-        <div className="hero-prompt">
-          <AIPrompt />
-        </div>
-      </div>
-
-      <div className="home-container">
-        <div className="actions">
-          <Link href="/docs/home" className="get-started-btn">
-            Get Started <ArrowRight size={20} />
-          </Link>
-        </div>
-
-        <div className="intro-section">
-          <p className="intro-text">
-            A type-safe, compile-time design system language that bridges the
-            gap between design tokens and CSS implementation. Write expressive,
-            token-aware styles that compile to optimized CSS.
+    <main className="home">
+      <section className="home-hero" aria-labelledby="home-title">
+        <div className="home-hero__intro">
+          <p className="home-hero__eyebrow">UXDSL · CSS with a theme</p>
+          <h1 id="home-title" className="home-hero__title">Breakpoints belong to the theme, not to your components.</h1>
+          <p className="home-hero__lede">
+            Spacing, type and color — and how each of them steps at a breakpoint — are defined once in a theme JSON.
+            Components name them. The compiler writes the media queries and refuses any reference it cannot resolve.
           </p>
-        </div>
-
-        <div className="nav-grid">
-          <NavigationCardLink
-            href="/docs/quick-start"
-            title="Quick Start"
-            description="Get up and running with UX-DSL in minutes."
-            icon={<Rocket size={24} />}
-            variant="primary"
-          />
-          <NavigationCardLink
-            href="/docs/home"
-            title="Documentation"
-            description="Explore the comprehensive guides and API references."
-            icon={<BookOpen size={24} />}
-            variant="secondary"
-          />
-          <NavigationCardLink
-            href="/docs/palette"
-            title="Palette"
-            description="Explore the color system and semantic tokens."
-            icon={<Palette size={24} />}
-            variant="secondary"
-          />
-          <NavigationCardLink
-            href="/docs/typography"
-            title="Typography"
-            description="Master the fluid typography system."
-            icon={<Type size={24} />}
-            variant="secondary"
-          />
-          <NavigationCardLink
-            href="/docs/densities"
-            title="Densities"
-            description="Manage spacing and sizing across different contexts."
-            icon={<Grid3X3 size={24} />}
-            variant="secondary"
-          />
-          <NavigationCardLink
-            href="/docs/breakpoints"
-            title="Breakpoints"
-            description="Responsive design breakpoints and layout rules."
-            icon={<Smartphone size={24} />}
-            variant="secondary"
-          />
-        </div>
-
-        <div className="demo-section">
-          <h3 className="section-label">See it in action</h3>
-          <div className="demo-wrapper-scale">
-            <HomeInteractiveDemos />
+          <div className="home-hero__ctas">
+            <Link href="/docs/quick-start" className="home-cta home-cta--primary">
+              Quick start <ArrowRight size={18} aria-hidden="true" />
+            </Link>
+            <Link href="/docs/introduction" className="home-cta">Docs</Link>
+            <a href={GITHUB_URL} className="home-cta" target="_blank" rel="noopener noreferrer">
+              <Github size={18} aria-hidden="true" /> GitHub
+            </a>
           </div>
         </div>
-      </div>
 
-      <footer className="welcome-footer">
-        <div className="footer-links">
-          <a
-            href="https://github.com/rsantoyo-dev/uxdsl"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-link"
-          >
-            <Github size={20} />
-            <span>GitHub</span>
+        <div className="home-hero__code">
+          <div className="home-code">
+            <p className="home-code__label">The theme <span className="home-code__path">uxdsl.theme.json</span></p>
+            <CodeBlock language="json" code={themeExcerpt} />
+            <p className="home-code__label">UXDSL you write <span className="home-code__path">card.uxdsl</span></p>
+            <CodeBlock language="scss" code={paradigm.source} />
+          </div>
+          <div className="home-code">
+            <p className="home-code__label">CSS you get <span className="home-code__path">compiled by uxdsl</span></p>
+            <div className="home-code__scroll" tabIndex={0} aria-label="The compiled CSS (scrollable)">
+              <CodeBlock language="css" code={paradigm.output} />
+            </div>
+          </div>
+        </div>
+
+        <div className="home-hero__frame">
+          <p className="home-hero__frame-hint">
+            Drag the frame&apos;s right edge (or the slider). The card has no breakpoint in it; its padding and title step at the theme&apos;s.
+          </p>
+          <ParadigmFrame breakpoints={paradigm.breakpoints} />
+        </div>
+      </section>
+
+      <section className="home-pillars" aria-labelledby="home-pillars-title">
+        <h2 id="home-pillars-title" className="home-section-title">What the theme decides</h2>
+        <div className="home-pillars__grid">
+          {PILLARS.map((pillar) => (
+            <Link key={pillar.href} href={pillar.href} className="home-pillar">
+              <h3 className="home-pillar__title">{pillar.title}</h3>
+              <p className="home-pillar__text">{pillar.text}</p>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-experiment" aria-labelledby="home-experiment-title">
+        <h2 id="home-experiment-title" className="home-section-title">Experiment: a theme from a name</h2>
+        <p className="home-experiment__text">
+          Type a name and a language model writes a theme override for this site; it is validated and applied with
+          <code> applyTheme</code>, like the header&apos;s theme buttons. It changes values only — the components are not rebuilt.
+        </p>
+        <AIPrompt />
+      </section>
+
+      <footer className="home-footer">
+        <div className="home-footer__links">
+          <a href={GITHUB_URL} target="_blank" rel="noopener noreferrer" className="home-footer__link">
+            <Github size={18} aria-hidden="true" /> GitHub
           </a>
-          <a
-            href="https://www.npmjs.com/search?q=uxdsl"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="footer-link"
-          >
-            <Package size={20} />
-            <span>Packages</span>
+          <a href={NPM_URL} target="_blank" rel="noopener noreferrer" className="home-footer__link">
+            <Package size={18} aria-hidden="true" /> npm
           </a>
-          <a href="mailto:ricardo.santoyo@hotmail.com" className="footer-link">
-            <Mail size={20} />
-            <span>Contact</span>
+          <a href="mailto:ricardo.santoyo@hotmail.com" className="home-footer__link">
+            <Mail size={18} aria-hidden="true" /> Contact
           </a>
         </div>
-        <div className="footer-copy">
-          © {new Date().getFullYear()} Ricardo Santoyo. MIT License.
-        </div>
+        <p className="home-footer__copy">© {new Date().getFullYear()} Ricardo Santoyo. MIT License.</p>
       </footer>
     </main>
-  );
+  )
 }

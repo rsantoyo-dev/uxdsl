@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-// MIG-B7-17 (FEAT-009), phase C: what the /docs/cli and /docs/diagnostics pages show is
+// MIG-B7-17 (FEAT-009), phase C: what the /docs/tooling and /docs/diagnostics pages show is
 // real output, not text somebody typed.
 //
 // This runs the real `uxdsl` CLI (packages/uxdsl/bin, compiling with the package it
