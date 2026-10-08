@@ -1,16 +1,22 @@
 import DemoSpacing from '@/components/DemoSpacing'
 import DemoDensity from '@/components/DemoDensity'
-import SpacingExplanation from '@/components/SpacingExplanation'
+import WriteGet from '@/components/WriteGet'
+import SpacingRules from '@/components/SpacingExplanation'
 import { PageTitle } from '@/components/PageTitle'
+
+export const metadata = { title: 'Spacing & density' }
 
 <PageTitle
   title="Spacing & density"
   subtitle="Spacing is the scale; a density is a step on it that the theme moves at each breakpoint."
 />
 
-<SpacingExplanation />
 <DemoSpacing />
 
 <section id="densities">
   <DemoDensity />
 </section>
+
+<WriteGet id="spacing" />
+
+<SpacingRules />

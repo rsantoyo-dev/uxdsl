@@ -1,12 +1,14 @@
 import InputDemo from '@/components/InputDemo'
+import WriteGet from '@/components/WriteGet'
+import { InputRules } from '@/components/InputDocumentation'
 import { PageTitle } from '@/components/PageTitle'
-import { InputDocumentation } from '@/components/InputDocumentation'
 
-<PageTitle title="Inputs" subtitle="Shared field roles, responsive spacing and visual interaction states." />
+export const metadata = { title: 'Inputs' }
 
-<InputDocumentation />
-
-## Interactive Demo
+<PageTitle title="Inputs" subtitle="A field role is a surface plus caret, placeholder and states, defined in the theme; an input names the role." />
 
 <InputDemo />
 
+<WriteGet id="inputs" />
+
+<InputRules />

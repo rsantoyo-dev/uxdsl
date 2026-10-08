@@ -1,17 +1,48 @@
 import { PageTitle } from '@/components/PageTitle'
 import { CliRun, CliProjectFiles, WatchTranscript } from '@/components/CliCaptures'
+import { DirectiveDeclarations, ReferenceCheck } from '@/components/RuntimeEngines'
+
+export const metadata = { title: 'Tooling' }
 
 <PageTitle
   title="Tooling"
-  subtitle="What the uxdsl command prints — captured, not transcribed."
-  subtext="Every panel is the real stdout, stderr and exit status of the CLI in this repository, run against the small project below."
+  subtitle="The CLI, its config, multiple entries, source maps and the editor — every terminal below is real output."
 />
 
 <div className="doc-section">
 
-## The project these commands run in
+Each panel is the real stdout, stderr and exit status of the `uxdsl` CLI in this repository, run against a small project by `scripts/capture-capabilities.js`; `npm test` runs it again and fails when the CLI prints something else. Paths are shown as `<project>`.
 
-A build config made with `defineConfig` from `uxdsl/config`, a theme file that points `$schema` at the packaged `uxdsl/schema/theme.schema.json` (so an editor validates and completes it) and overrides only `palette.primary.main`, and three sources. `scripts/capture-capabilities.js` runs each command below and stores what it printed; `npm test` runs it again with `--check`, so this page cannot keep showing output the CLI no longer produces. Absolute paths are shown as `<project>`.
+## Commands
+
+</div>
+
+<CliRun id="help" />
+
+<div className="doc-section">
+
+`uxdsl init --multi` scaffolds a theme entry plus one component entry instead of one entry. `uxdsl generate-entry --src <dir> --out <file> --exclude <a,b>` rewrites the entry's `@import` list from the `.uxdsl` files under a directory. `uxdsl <command> --help` prints one command's options, `uxdsl --version` the installed version. An unknown command or flag fails before anything runs, with a suggestion.
+
+## Two files, two jobs
+
+The **build config**, `uxdsl.config.cjs` (or `.js`), says what to compile and where. The **theme file**, `uxdsl.theme.json` (or `uxdsl.theme.js`/`.cjs` exporting the object), holds the theme and nothing else; it is discovered next to the config, or in the working directory, by the CLI and by the PostCSS plugin, the Vite plugin and the Webpack loader alike. A config that carries `theme` or `breakpoints` is refused, naming where each belongs.
+
+<div className="doc-section__table-wrap">
+<table>
+<thead><tr><th>Config key</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>entry</code>, <code>outFile</code></td><td>One entry and its output.</td></tr>
+<tr><td><code>builds</code></td><td>Several entries, <code>[{"{ entry, outFile, includeTheme? }"}]</code>, compiled from one theme.</td></tr>
+<tr><td><code>includeTheme</code></td><td>Emit the theme's <code>:root</code> definitions (default <code>true</code>); per entry in <code>builds</code>.</td></tr>
+<tr><td><code>watch</code></td><td>Extra paths for <code>--watch</code>, beyond the entries, their imports and the config and theme files.</td></tr>
+<tr><td><code>references</code></td><td>Tokens defined outside the theme (<code>externalTokens</code>, <code>css</code>) and how strictly a missing one fails.</td></tr>
+<tr><td><code>strictTheme</code></td><td>Families the project must declare completely, such as <code>['palette']</code>.</td></tr>
+<tr><td><code>sourcemap</code></td><td><code>false</code>, <code>'inline'</code> or <code>'external'</code>.</td></tr>
+</tbody>
+</table>
+</div>
+
+The project every command below runs in — a config made with `defineConfig` from `uxdsl/config`, a theme file whose `$schema` points at the packaged schema, three sources:
 
 </div>
 
@@ -19,78 +50,41 @@ A build config made with `defineConfig` from `uxdsl/config`, a theme file that p
 
 <div className="doc-section">
 
-## uxdsl generate-entry: `--src`, `--out`, `--exclude`
-
-Rewrites the entry's `@import` list from every `.uxdsl` file under `--src`; `--exclude` leaves files out by name.
+## Build: discovery, `--config`, `--entry`
 
 </div>
 
-<CliRun id="generate-entry" />
+<CliRun id="build" collapsed />
+<CliRun id="build-config" collapsed />
+<CliRun id="build-entry" collapsed />
+<CliRun id="build-help" collapsed />
 
 <div className="doc-section">
 
-## uxdsl build: discovery, `--config`, `--entry`
+## Multiple entries and CSS Modules
 
-With no flags, `uxdsl build` finds `uxdsl.config.cjs` in the current directory and the theme file next to it. `--config` names the config file; `--entry` with `--out` compiles one file to one output instead of the config's entry.
-
-</div>
-
-<CliRun id="build" />
-<CliRun id="build-config" />
-<CliRun id="build-entry" />
-
-<div className="doc-section">
-
-## `--include-theme` and `--no-include-theme`
-
-`--include-theme` is the default: the entry also defines every token in `:root`, once. A second entry — a component or CSS-Module stylesheet — passes `--no-include-theme` to emit only its rules, consuming the tokens the first entry already defined. The same `card.uxdsl`, both ways:
+The first entry defines every token in `:root`, once (`--include-theme`, the default). Every other entry — a component sheet, a CSS Module — compiles with `--no-include-theme` (or `includeTheme: false` in `builds`, or in the PostCSS plugin's options) and only consumes those tokens: no `:root`, so a CSS Modules loader accepts it, and nothing is repeated. This site does exactly that: every component's `.uxdsl` is a CSS Module compiled with `includeTheme: false`.
 
 </div>
 
-<CliRun id="build-include-theme" />
+<CliRun id="build-include-theme" collapsed />
 <CliRun id="build-no-include-theme" />
 
 <div className="doc-section">
 
-## `--sourcemap`
+## Source maps
 
-Writes `<outFile>.map` next to the CSS and a `sourceMappingURL` comment, so devtools point at the `.uxdsl` line that produced a rule. `--sourcemap=inline` embeds the map instead.
-
-</div>
-
-<CliRun id="build-sourcemap" />
-
-<div className="doc-section">
-
-## `--strict-theme=<families>`
-
-Fails the build, before writing anything, when one of the named families was partly filled from the base theme. This project overrides only `palette.primary.main`, so `--strict-theme=palette` fails; `--strict-theme=breakpoints`, a family it declares completely, passes. A scope is required: the theme model is partial overrides, so an unscoped check flagged the recommended usage as incomplete — the bare flag is refused and says so.
+`--sourcemap` writes `<outFile>.map` and a `sourceMappingURL` comment, so devtools point at the `.uxdsl` line that produced a rule; `--sourcemap=inline` embeds the map. The Vite plugin and the Webpack loader pass their maps on to the next loader.
 
 </div>
 
-<CliRun id="build-strict-theme" />
-<CliRun id="build-strict-theme-scoped" />
-<CliRun id="build-strict-theme-bare" />
+<CliRun id="build-sourcemap" collapsed />
 
 <div className="doc-section">
 
-## uxdsl theme: `--diff`, `--strict-theme`, `--contrast`
+## Watch
 
-`uxdsl theme` prints the effective theme — the same discovery and resolution as `build`, no CSS written, and it works from a theme file alone. `--diff` prints only what your theme file mentions, one row per leaf labeled `project` or `default` (`$schema` is not a leaf), and says on stderr where a family mixes the two. `--strict-theme=<families>` exits non-zero when one of the named families was partly inherited — the same flag and rule as `build`'s. `--contrast` runs the WCAG gate and prints its full JSON report; the Contrast page runs the same function in your browser.
-
-</div>
-
-<CliRun id="theme" />
-<CliRun id="theme-diff" />
-<CliRun id="theme-strict" />
-<CliRun id="theme-strict-scoped" />
-<CliRun id="theme-contrast" />
-
-<div className="doc-section">
-
-## uxdsl build --watch
-
-`uxdsl build --watch` builds, then rebuilds when a source changes. A broken edit is reported and the last good CSS stays on disk; the next valid save recovers. A session, recorded by the capture script as it edited the file:
+`uxdsl build --watch` rebuilds when a source, an import, the config or the theme file changes. A broken edit is reported and the last good CSS stays on disk; the next valid save recovers. A session recorded by the capture script as it edited a file:
 
 </div>
 
@@ -98,12 +92,35 @@ Fails the build, before writing anything, when one of the named families was par
 
 <div className="doc-section">
 
-## `--help`, `--version`, and what is not a command
+## The theme command: `--diff`, `--contrast`, `--strict-theme`
 
-Bare `uxdsl` prints the help instead of building; `uxdsl <command> --help` prints that command's options and nothing else (`uxdsl init --help` is where `--multi`, the theme-plus-panels scaffold, is described); `uxdsl --version` prints the one version of the installed `uxdsl` package — the CLI, the compiler and the theme model are one install. An unknown command is one line with a hint — `watch`, which used to be a command, points at `uxdsl build --watch`.
+`uxdsl theme` prints the effective theme (no CSS written; it works from a theme file alone). `--diff` prints only what the theme file mentions, each leaf labeled `project` or `default`. `--contrast` runs the WCAG gate of [Accessibility](/docs/accessibility). `--strict-theme=<families>` fails when a named family was partly inherited — on `build` too; a scope is required.
 
 </div>
 
-<CliRun id="help" />
-<CliRun id="build-help" />
-<CliRun id="unknown-command" />
+<CliRun id="theme-diff" collapsed />
+<CliRun id="theme-contrast" collapsed />
+<CliRun id="build-strict-theme" collapsed />
+<CliRun id="build-strict-theme-scoped" collapsed />
+<CliRun id="build-strict-theme-bare" collapsed />
+<CliRun id="generate-entry" collapsed />
+<CliRun id="unknown-command" collapsed />
+
+<div className="doc-section">
+
+## Editor support
+
+- **VS Code:** the `uxdsl-vscode` extension highlights `.uxdsl` files and completes the token functions, breakpoints, directives, `@uxdsl theme;`, and the roles, tones and sizes of the base theme (not yet a project's own roles). It does not compile or validate; the build does.
+- **The theme file:** `"$schema": "./node_modules/uxdsl/schema/theme.schema.json"` gives any JSON editor validation and completion of every family.
+- **The config:** `init` writes `// @ts-check` and a JSDoc type on the config object, so the editor flags a mistyped key; nothing is loaded at build time for it.
+
+## `uxdsl/engine`, for tools
+
+The per-family engines the compiler is built from, for editors, inspectors and generators. It is exempt from semantic versioning — do not build an application on it. Two of them, run on the active theme:
+
+</div>
+
+<div className="cap-grid">
+  <DirectiveDeclarations />
+  <ReferenceCheck />
+</div>

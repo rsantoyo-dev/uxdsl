@@ -1,19 +1,30 @@
 import { PageTitle } from '@/components/PageTitle'
 import ContrastReport from '@/components/ContrastReport'
 
+export const metadata = { title: 'Accessibility' }
+
 <PageTitle
   title="Accessibility"
-  subtitle="The WCAG gate, run on the theme you are looking at."
-  subtext="Switch the theme in the header and the report is recomputed."
+  subtitle="A WCAG contrast gate over every color pair the theme's roles produce, run here on the theme you are looking at."
 />
 
 <div className="doc-section">
 
-## What runs here
+## The gate
 
-`checkThemeContrast(resolveTheme(theme), { exceptions })` from `uxdsl/theme`, with the exceptions shipped next to the base theme (`uxdsl/theme/base.contrast-exceptions.json`) — the same call `uxdsl theme --contrast` makes in a terminal (its real output is on the CLI page). It checks every text, placeholder and border pair the Surface, Button and Input engines define, in light and dark mode, at every configured breakpoint width, against 4.5:1 for text and 3:1 for borders.
+`checkThemeContrast(resolveTheme(theme), { exceptions })` from `uxdsl/theme` — the same call `uxdsl theme --contrast` makes in a terminal, where a failing pair exits 1. It checks every text, placeholder and border pair the Surface, Button and Input engines define, in light and dark mode, at every configured breakpoint, against 4.5:1 for text and 3:1 for borders. Switch the theme in the header and the report below is recomputed; the browser walk compares it with the same call in Node.
 
-It checks the colors a theme resolves to, not a rendered page: it is not an accessibility certification. Since stability phase 5 the packaged base and this site's four themes pass it: zero failing pairs. Passing is not "every pair passed": the pairs the three shipped pattern exceptions cover — the canvas-identity families `surface`, `light` and `dark` used as a tone and drawn on the page itself — are listed below as excepted, with their real ratio and the exception that covers each, and a pattern that covered nothing would fail the verdict.
+It checks the colors a theme resolves to, not a rendered page: it is not an accessibility certification, and it says nothing about focus order, labels or semantics, which stay the job of your HTML.
+
+## Exceptions are patterns, and are listed
+
+The packaged base theme and this site's four themes pass with zero failing pairs. Passing is not "every pair passed": `uxdsl/theme/base.contrast-exceptions.json` ships three **pattern** records, one per canvas-identity family — `surface`, `light`, `dark` — used as a tone on a role that draws it on the page itself (outlined, flat, underline, a contained Input's focus border). That draws the canvas color on the canvas, and no value of the family can fix it without changing what the family is. Each excepted pair is listed below with its real ratio and the record that covers it; a pattern that covers nothing, a malformed record or a duplicate id fails the verdict.
+
+```json
+{ "id": "canvas-identity-tone-light", "tone": "light", "against": "ambient", "reason": "…" }
+```
+
+A project passes its own exceptions file with `{ exceptions }`. Use `surface`, `light` and `dark` as a tone only on `contained`, where they are a fill with their own `contrast` on top — that text pair is still checked.
 
 </div>
 

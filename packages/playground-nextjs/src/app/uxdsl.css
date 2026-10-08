@@ -1082,6 +1082,32 @@ input[type="range"]::-moz-range-thumb:hover {
   gap: var(--uxdsl__space__2);
   margin: 0;
 }
+/* A captured run shown as a disclosure: the title and exit status until it is opened. */
+.cap-run--collapsed {
+  border: var(--uxdsl__border__1);
+  border-radius: var(--uxdsl__radius__1);
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+  margin-bottom: var(--uxdsl__space__3);
+
+  & > summary {
+    cursor: pointer;
+    display: list-item;
+    border-radius: var(--uxdsl__radius__1);
+  }
+
+  & > summary:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
+  }
+
+  &[open] > summary {
+    margin-bottom: var(--uxdsl__space__3);
+  }
+}
+.cap-list {
+  display: grid;
+  min-width: 0;
+}
 .cap-terminal {
   margin: 0;
   overflow-x: auto;
@@ -1143,54 +1169,6 @@ input[type="range"]::-moz-range-thumb:hover {
   font-family: var(--uxdsl__font__code), ui-monospace, monospace;
   font-size: inherit;
   line-height: 1.55;
-}
-/* Color / Palette explanation. Was ColorDocumentation.module.css (MIG-B7-17 phase B):
-   classes are prefixed because .uxdsl is global; stable spacing uses space(); the code panel
-   uses Color identities, dark in both modes on purpose. */
-.color-documentation {
-  min-width: 0;
-  margin-block: var(--uxdsl__space__7);
-  line-height: 1.7;
-}
-.color-documentation h2 {
-  font-size: 1.5rem;
-  margin-block: var(--uxdsl__space__5);
-}
-.color-documentation h3 {
-  font-size: 1.2rem;
-  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
-}
-.color-documentation h4 {
-  margin-bottom: var(--uxdsl__space__4);
-}
-.color-documentation p {
-  margin-block: var(--uxdsl__space__4);
-}
-.color-documentation ul {
-  list-style: disc;
-  padding-inline-start: var(--uxdsl__space__6);
-}
-.color-documentation li {
-  margin-block: var(--uxdsl__space__3);
-}
-.color-documentation a {
-  text-decoration: underline;
-}
-.color-documentation pre {
-  overflow-x: auto;
-  background: var(--uxdsl__color__gray-900);
-  color: var(--uxdsl__color__gray-200);
-  padding: var(--uxdsl__space__5);
-  border-radius: 0.5rem;
-  font-size: 0.85rem;
-}
-.color-documentation__comparison {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: var(--uxdsl__space__5);
-}
-.color-documentation__comparison > div {
-  min-width: 0;
 }
 /* DemoBorders styles - Scoped */
 #DemoBorders {
@@ -4696,23 +4674,33 @@ input[type="range"]::-moz-range-thumb:hover {
   text-align: center;
   padding: var(--uxdsl__space__3);
 }
-/* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
-   documentation. Was BreakpointDocumentation.module.css, which those five components all
-   imported (MIG-B7-17 phase B): classes are prefixed because .uxdsl is global; stable spacing
-   uses space(); the code panel and table rules use Color identities, dark in both modes on
-   purpose. */
+/* The prose of every documentation page, and the disclosure the demos put their long token
+   grids behind. Shared by many components, so it stays in the global sheet. The code panel
+   is a Color identity, dark in both modes on purpose. */
 .doc-section {
   min-width: 0;
   margin-block: var(--uxdsl__space__7);
   line-height: 1.7;
 }
 .doc-section h2 {
-  font-size: 1.5rem;
-  margin-block: var(--uxdsl__space__5);
+  font-family: var(--uxdsl__typography__h4-font-family);
+  font-size: var(--uxdsl__typography__h4-font-size);
+  line-height: var(--uxdsl__typography__h4-line-height);
+  font-weight: var(--uxdsl__typography__h4-font-weight);
+  letter-spacing: var(--uxdsl__typography__h4-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h4-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h4-margin-block-end);
+  margin-block: var(--uxdsl__space__7) var(--uxdsl__space__4);
 }
 .doc-section h3 {
-  font-size: 1.2rem;
-  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__4);
+  font-family: var(--uxdsl__typography__h5-font-family);
+  font-size: var(--uxdsl__typography__h5-font-size);
+  line-height: var(--uxdsl__typography__h5-line-height);
+  font-weight: var(--uxdsl__typography__h5-font-weight);
+  letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
+  margin-block: var(--uxdsl__space__6) var(--uxdsl__space__3);
 }
 .doc-section h4 {
   margin-bottom: var(--uxdsl__space__4);
@@ -4720,21 +4708,33 @@ input[type="range"]::-moz-range-thumb:hover {
 .doc-section p {
   margin-block: var(--uxdsl__space__4);
 }
+.doc-section ul, .doc-section ol {
+  padding-inline-start: var(--uxdsl__space__6);
+}
+.doc-section li {
+  margin-block: var(--uxdsl__space__2);
+}
 .doc-section pre {
   overflow-x: auto;
+  max-width: 100%;
   background: var(--uxdsl__color__gray-900);
   color: var(--uxdsl__color__gray-200);
   padding: var(--uxdsl__space__5);
-  border-radius: 0.5rem;
+  border-radius: var(--uxdsl__radius__2);
   font-size: 0.85rem;
 }
-.doc-section__comparison {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: var(--uxdsl__space__5);
+.doc-section :not(pre) > code {
+  overflow-wrap: anywhere;
 }
-.doc-section__comparison > div {
-  min-width: 0;
+.doc-section a {
+  color: var(--uxdsl__palette__primary-main);
+  text-underline-offset: 2px;
+
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
+    border-radius: var(--uxdsl__radius__1);
+  }
 }
 .doc-section__table-wrap {
   overflow-x: auto;
@@ -4751,8 +4751,33 @@ input[type="range"]::-moz-range-thumb:hover {
   margin-bottom: var(--uxdsl__space__3);
 }
 .doc-section__table-wrap th, .doc-section__table-wrap td {
-  padding: var(--uxdsl__space__4);
-  border-bottom: 1px solid var(--uxdsl__color__gray-400);
+  padding: var(--uxdsl__space__3) var(--uxdsl__space__4);
+  border-bottom: var(--uxdsl__border__1);
+  vertical-align: top;
+}
+.demo-disclosure {
+  margin-block: var(--uxdsl__density__4);
+  border: var(--uxdsl__border__1);
+  border-radius: var(--uxdsl__radius__2);
+  padding: var(--uxdsl__density__2) var(--uxdsl__density__3);
+  min-width: 0;
+}
+.demo-disclosure__summary {
+  font-family: var(--uxdsl__typography__h6-font-family);
+  font-size: var(--uxdsl__typography__h6-font-size);
+  line-height: var(--uxdsl__typography__h6-line-height);
+  font-weight: var(--uxdsl__typography__h6-font-weight);
+  letter-spacing: var(--uxdsl__typography__h6-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
+  margin: 0;
+  cursor: pointer;
+  border-radius: var(--uxdsl__radius__1);
+
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: 2px;
+  }
 }
 /* The Density and Space edit dialogs (DemoDensity.tsx, DemoSpacing.tsx). MIG-B7-17 phase B (4):
    these rules were inline style={{}} in both components, written twice. Values on the scale use
@@ -5449,138 +5474,6 @@ input[type="range"]::-moz-range-thumb:hover {
   .pp-usage__note strong {
     color: var(--uxdsl__palette__text-primary);
   }
-}
-.inspector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: var(--uxdsl__density__4);
-}
-.selector-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: var(--uxdsl__density__3);
-}
-.inspector-item {
-  display: flex;
-  align-items: center;
-  gap: var(--uxdsl__density__4);
-  background: var(--uxdsl__palette__surface-main);
-  padding: 0.75rem;
-  border-radius: 6px;
-  border: 1px solid var(--uxdsl__palette__neutral-light);
-}
-.inspector-item-details {
-  display: flex;
-  flex-direction: column;
-}
-.inspector-item-meta {
-  display: flex;
-  gap: var(--uxdsl__density__2);
-  align-items: center;
-}
-/* MIG-B7-17 phase B (4): these rules were inline style={{}} in PaletteThemeExplorer.tsx; each
-   swatch's color is read from the token at runtime and stays inline, and the selected option's
-   border/opacity ternary is now .is-selected. */
-.pte {
-  padding-top: var(--uxdsl__space__6);
-}
-.pte-detail {
-  background: var(--uxdsl__palette__surface-light);
-  border: 1px solid var(--uxdsl__palette__neutral-light);
-  border-radius: 8px;
-  padding: var(--uxdsl__space__6);
-  margin-bottom: var(--uxdsl__space__7);
-}
-.pte-detail__header {
-  display: flex;
-  align-items: baseline;
-  gap: var(--uxdsl__space__4);
-  margin-bottom: var(--uxdsl__space__5);
-}
-.pte-detail h3.pte-detail__title {
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--uxdsl__palette__text-primary);
-  margin: 0;
-}
-.pte-detail__subtitle {
-  font-size: 0.8rem;
-  color: var(--uxdsl__palette__text-secondary);
-}
-.pte-detail p.pte-detail__hint {
-  margin-top: var(--uxdsl__space__4);
-  font-size: 0.75rem;
-  color: var(--uxdsl__palette__text-secondary);
-}
-.pte-swatch {
-  position: relative;
-  width: 40px;
-  height: 40px;
-}
-.pte-swatch__color {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
-  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 10%, transparent);
-}
-.pte-swatch__input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-.pte-item__variant {
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-.pte-item__hex {
-  font-size: 0.7rem;
-  font-family: monospace;
-  color: var(--uxdsl__palette__text-secondary);
-}
-.pte-item__rgb {
-  font-size: 0.6rem;
-  color: var(--uxdsl__palette__text-disabled);
-}
-.pte h5.pte-selector__heading {
-  font-size: 0.7rem;
-  color: var(--uxdsl__palette__text-secondary);
-  font-weight: 600;
-  text-transform: uppercase;
-  margin-bottom: var(--uxdsl__space__4);
-}
-.pte-selector__option {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--uxdsl__space__5);
-  background: var(--uxdsl__palette__surface-light);
-  border: 1px solid var(--uxdsl__palette__neutral-light);
-  border-radius: 6px;
-  padding: var(--uxdsl__space__3) var(--uxdsl__space__4);
-  cursor: pointer;
-  opacity: 0.8;
-  transition: all 0.2s;
-}
-.pte-selector__option.is-selected {
-  border-color: var(--uxdsl__palette__primary-main);
-  opacity: 1;
-}
-.pte-selector__name {
-  font-size: 0.7rem;
-  font-weight: 600;
-  color: var(--uxdsl__palette__text-primary);
-}
-.pte-selector__strip {
-  display: flex;
-  gap: var(--uxdsl__space__1);
-  width: 100px;
-}
-.pte-selector__chip {
-  flex: 1;
-  height: 18px;
-  border-radius: 2px;
-  border: 1px solid color-mix(in srgb, var(--uxdsl__color__black) 5%, transparent);
 }
 /* The home page's resizable frame. Its geometry comes in as three custom properties set by the
    component (--frame-width, --frame-height, --frame-scale); the frame is drawn scaled, so its
@@ -6974,6 +6867,52 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
   margin: 0;
   font-family: var(--uxdsl__font__code), monospace;
 }
+/* Tabs: a row of buttons over one visible panel. */
+.tabs {
+  margin-block: var(--uxdsl__density__4);
+  min-width: 0;
+}
+.tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--uxdsl__space__1);
+  border-bottom: var(--uxdsl__border__1);
+}
+.tabs__tab {
+  font-family: var(--uxdsl__typography__span-font-family);
+  font-size: var(--uxdsl__typography__span-font-size);
+  line-height: var(--uxdsl__typography__span-line-height);
+  font-weight: var(--uxdsl__typography__span-font-weight);
+  letter-spacing: var(--uxdsl__typography__span-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__span-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__span-margin-block-end);
+  margin: 0;
+  padding: var(--uxdsl__space__2) var(--uxdsl__space__4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--uxdsl__palette__text-secondary);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: var(--uxdsl__palette__primary-main);
+  }
+
+  &[aria-selected="true"] {
+    color: var(--uxdsl__palette__primary-main);
+    border-bottom-color: var(--uxdsl__palette__primary-main);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--uxdsl__palette__primary-main);
+    outline-offset: -2px;
+  }
+}
+.tabs__panel {
+  padding-top: var(--uxdsl__density__3);
+  min-width: 0;
+}
 /* The runtime JSON editor on /docs/config. MIG-B7-17 phase B (4): these rules were inline
    style={{}} in ThemeConfigJsonEditor.tsx; the error color was a ternary and is now .is-invalid.
    The radius fallbacks (6px/8px) were never used: radius 1 is always defined. */
@@ -7035,6 +6974,23 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 }
 .config-editor__status.is-invalid {
   color: var(--uxdsl__palette__error-main);
+}
+/* The version line on the quick start: which release these pages describe. */
+.version-line {
+  padding: var(--uxdsl__surface__outlined-padding);
+  border-radius: var(--uxdsl__surface__outlined-radius);
+  background: transparent;
+  color: var(--uxdsl__palette__info-main);
+  border: 1px solid var(--uxdsl__palette__info-main);
+  box-shadow: var(--uxdsl__surface__outlined-shadow);
+  font-family: var(--uxdsl__typography__span-font-family);
+  font-size: var(--uxdsl__typography__span-font-size);
+  line-height: var(--uxdsl__typography__span-line-height);
+  font-weight: var(--uxdsl__typography__span-font-weight);
+  letter-spacing: var(--uxdsl__typography__span-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__span-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__span-margin-block-end);
+  margin-block: var(--uxdsl__density__3);
 }
 /* Theme excerpt, then the source next to its compiled output (stacked on phones). */
 .write-get {
@@ -7184,329 +7140,6 @@ input:disabled, input[aria-disabled="true"] { opacity: var(--uxdsl__input__outli
 }
 .palette-docs__legacy-editor {
   margin-top: 3rem;
-}
-/* QuickStart styles - Scoped - Sober & Futuristic */
-#QuickStartPage {
-  .section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--uxdsl__density__6);
-    margin-bottom: var(--uxdsl__density__6);
-    margin-top: var(--uxdsl__density__4);
-  }
-
-  .step-card {
-    /* Minimalist container */
-    padding: var(--uxdsl__surface__flat-padding);
-    border-radius: var(--uxdsl__surface__flat-radius);
-    background: var(--uxdsl__surface__flat-bg);
-    color: var(--uxdsl__surface__flat-color);
-    border: var(--uxdsl__surface__flat-border);
-    box-shadow: var(--uxdsl__surface__flat-shadow);
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--uxdsl__density__3);
-    position: relative;
-    
-    /* Futuristic left border marker */
-    border-left: 2px solid var(--uxdsl__palette__neutral-light);
-    padding-left: var(--uxdsl__density__4);
-    transition: all 0.3s ease;
-  }
-
-  .step-card:hover {
-    border-left-color: var(--uxdsl__palette__primary-main);
-  }
-
-  .step-header {
-    display: flex;
-    align-items: baseline;
-    gap: var(--uxdsl__density__4);
-  }
-
-  .step-number {
-    /* Sober typographic number */
-    font-family: var(--uxdsl__typography__h6-font-family);
-    font-size: var(--uxdsl__typography__h6-font-size);
-    line-height: var(--uxdsl__typography__h6-line-height);
-    font-weight: var(--uxdsl__typography__h6-font-weight);
-    letter-spacing: var(--uxdsl__typography__h6-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__h6-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__h6-margin-block-end);
-    color: var(--uxdsl__palette__secondary-main); /* Secondary accent */
-    font-family: font(code);
-    font-weight: 700; 
-    line-height: 1;
-  }
-
-  .step-title {
-    font-family: var(--uxdsl__typography__h5-font-family);
-    font-size: var(--uxdsl__typography__h5-font-size);
-    line-height: var(--uxdsl__typography__h5-line-height);
-    font-weight: var(--uxdsl__typography__h5-font-weight);
-    letter-spacing: var(--uxdsl__typography__h5-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__h5-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__h5-margin-block-end);
-    margin: 0;
-    font-weight: 600;
-    color: var(--uxdsl__palette__surface-contrast);
-    letter-spacing: -0.5px;
-  }
-
-  .step-desc {
-    font-family: var(--uxdsl__typography__body-font-family);
-    font-size: var(--uxdsl__typography__body-font-size);
-    line-height: var(--uxdsl__typography__body-line-height);
-    font-weight: var(--uxdsl__typography__body-font-weight);
-    letter-spacing: var(--uxdsl__typography__body-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__body-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__body-margin-block-end);
-    color: var(--uxdsl__palette__surface-contrast); /* Full contrast */
-    font-weight: 400; /* Ensure it's not bold, standard body text */
-    max-width: 60ch;
-    margin: 0;
-  }
-
-  .info-box {
-    padding: var(--uxdsl__surface__outlined-padding);
-    border-radius: var(--uxdsl__surface__outlined-radius);
-    background: transparent;
-    color: var(--uxdsl__palette__neutral-main);
-    border: 1px solid var(--uxdsl__palette__neutral-main);
-    box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__3);
-    border-radius: var(--uxdsl__radius__1);
-    display: flex;
-    gap: var(--uxdsl__density__2);
-    align-items: flex-start;
-    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 50%, transparent);
-    border: 1px dashed var(--uxdsl__palette__neutral-main);
-  }
-
-  .info-icon {
-    color: var(--uxdsl__palette__primary-main);
-    margin-top: 2px;
-  }
-
-  .info-text {
-    font-family: var(--uxdsl__typography__body-sm-font-family);
-    font-size: var(--uxdsl__typography__body-sm-font-size);
-    line-height: var(--uxdsl__typography__body-sm-line-height);
-    font-weight: var(--uxdsl__typography__body-sm-font-weight);
-    letter-spacing: var(--uxdsl__typography__body-sm-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__body-sm-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__body-sm-margin-block-end);
-    margin: 0;
-    color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 80%, transparent);
-  }
-  
-  .code-wrapper {
-    margin-top: var(--uxdsl__density__4);
-    box-shadow: var(--uxdsl__shadow__2);
-  }
-
-  .warning-blockquote {
-    padding: var(--uxdsl__surface__outlined-padding);
-    border-radius: var(--uxdsl__surface__outlined-radius);
-    background: transparent;
-    color: var(--uxdsl__palette__warning-main);
-    border: 1px solid var(--uxdsl__palette__warning-main);
-    box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__4);
-    border-radius: var(--uxdsl__radius__1);
-    margin-bottom: var(--uxdsl__density__8);
-    color: var(--uxdsl__palette__text-primary);
-  }
-
-  /* MIG-B7-17 phase B (4): were inline style={{}} in page.mdx. #646cff is Vite's own brand color
-     (another product's identity, not this theme's): kept literal on purpose. */
-  .warning-blockquote__title {
-    display: flex;
-    align-items: center;
-    gap: var(--uxdsl__space__3);
-    margin: 0;
-    font-weight: 600;
-  }
-
-  .warning-blockquote__body {
-    margin: var(--uxdsl__space__3) 0 0 0;
-    font-size: 0.9rem;
-  }
-
-  .step-title.integrations-title {
-    margin-top: var(--uxdsl__space__7);
-    margin-bottom: var(--uxdsl__space__5);
-  }
-
-  .integrations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: var(--uxdsl__space__5);
-    margin-bottom: 3rem;
-  }
-
-  .step-card.step-card--vite {
-    border-left-color: #646cff;
-  }
-
-  .section-rule {
-    border-color: var(--uxdsl__palette__neutral-main);
-    opacity: 0.3;
-    margin: var(--uxdsl__space__7) 0;
-  }
-
-  .section-rule--wide {
-    margin: 3rem 0;
-  }
-
-  .inline-link {
-    color: var(--uxdsl__palette__primary-main);
-    text-decoration: underline;
-  }
-}
-/* Typography Docs Page Styles - Scoped */
-#TypographyPage {
-  .doc-content {
-    display: flex;
-    flex-direction: column;
-    gap: var(--uxdsl__density__3);
-  }
-
-  .doc-divider {
-    border: 0;
-    border-top: 1px solid var(--uxdsl__palette__neutral-light);
-    opacity: 0.6;
-    margin: var(--uxdsl__density__10) 0;
-  }
-
-  .doc-content h2.ds-typo {
-    font-family: var(--uxdsl__typography__h2-font-family);
-    font-size: var(--uxdsl__typography__h2-font-size);
-    line-height: var(--uxdsl__typography__h2-line-height);
-    font-weight: var(--uxdsl__typography__h2-font-weight);
-    letter-spacing: var(--uxdsl__typography__h2-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
-    margin: 0;
-    color: var(--uxdsl__palette__surface-contrast);
-  }
-
-  .doc-content h3.ds-typo {
-    font-family: var(--uxdsl__typography__h3-font-family);
-    font-size: var(--uxdsl__typography__h3-font-size);
-    line-height: var(--uxdsl__typography__h3-line-height);
-    font-weight: var(--uxdsl__typography__h3-font-weight);
-    letter-spacing: var(--uxdsl__typography__h3-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__h3-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__h3-margin-block-end);
-    margin: var(--uxdsl__density__4) 0 var(--uxdsl__density__2);
-    color: var(--uxdsl__palette__surface-contrast);
-  }
-
-  .doc-paragraph {
-    font-family: var(--uxdsl__typography__p-font-family);
-    font-size: var(--uxdsl__typography__p-font-size);
-    line-height: var(--uxdsl__typography__p-line-height);
-    font-weight: var(--uxdsl__typography__p-font-weight);
-    letter-spacing: var(--uxdsl__typography__p-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__p-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__p-margin-block-end);
-    margin: 0;
-    color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 85%, transparent);
-    max-width: 75ch;
-  }
-
-  .code-wrapper {
-    margin-top: var(--uxdsl__density__3);
-    box-shadow: var(--uxdsl__shadow__2);
-  }
-
-  .table-card {
-    padding: var(--uxdsl__surface__outlined-padding);
-    border-radius: var(--uxdsl__surface__outlined-radius);
-    background: var(--uxdsl__surface__outlined-bg);
-    color: var(--uxdsl__surface__outlined-color);
-    border: var(--uxdsl__surface__outlined-border);
-    box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__3);
-    border-radius: var(--uxdsl__radius__2);
-    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 35%, transparent);
-    overflow-x: auto;
-  }
-
-  .doc-table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-
-  .doc-table th {
-    font-family: var(--uxdsl__typography__small-font-family);
-    font-size: var(--uxdsl__typography__small-font-size);
-    line-height: var(--uxdsl__typography__small-line-height);
-    font-weight: var(--uxdsl__typography__small-font-weight);
-    letter-spacing: var(--uxdsl__typography__small-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__small-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__small-margin-block-end);
-    text-align: left;
-    padding: var(--uxdsl__density__2);
-    border-bottom: 2px solid var(--uxdsl__palette__neutral-light);
-    color: var(--uxdsl__palette__surface-contrast);
-    font-weight: 600;
-  }
-
-  .doc-table td {
-    font-family: var(--uxdsl__typography__body-font-family);
-    font-size: var(--uxdsl__typography__body-font-size);
-    line-height: var(--uxdsl__typography__body-line-height);
-    font-weight: var(--uxdsl__typography__body-font-weight);
-    letter-spacing: var(--uxdsl__typography__body-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__body-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__body-margin-block-end);
-    padding: var(--uxdsl__density__2);
-    border-bottom: 1px solid var(--uxdsl__palette__neutral-light);
-    color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 85%, transparent);
-    vertical-align: top;
-  }
-
-  .doc-table tr:last-child td {
-    border-bottom: 0;
-  }
-
-  .doc-table code {
-    background: var(--uxdsl__palette__neutral-light);
-    padding: 2px 6px;
-    border-radius: var(--uxdsl__radius__1);
-    font-family: font(code);
-    font-size: 0.9em;
-    color: var(--uxdsl__palette__primary-dark);
-  }
-
-  .info-box {
-    padding: var(--uxdsl__surface__outlined-padding);
-    border-radius: var(--uxdsl__surface__outlined-radius);
-    background: transparent;
-    color: var(--uxdsl__palette__neutral-main);
-    border: 1px solid var(--uxdsl__palette__neutral-main);
-    box-shadow: var(--uxdsl__surface__outlined-shadow);
-    padding: var(--uxdsl__density__3);
-    border-radius: var(--uxdsl__radius__2);
-    background: color-mix(in srgb, var(--uxdsl__palette__surface-light) 35%, transparent);
-    border: 1px dashed var(--uxdsl__palette__neutral-main);
-  }
-
-  .info-text {
-    font-family: var(--uxdsl__typography__small-font-family);
-    font-size: var(--uxdsl__typography__small-font-size);
-    line-height: var(--uxdsl__typography__small-line-height);
-    font-weight: var(--uxdsl__typography__small-font-weight);
-    letter-spacing: var(--uxdsl__typography__small-letter-spacing);
-    margin-block-start: var(--uxdsl__typography__small-margin-block-start);
-    margin-block-end: var(--uxdsl__typography__small-margin-block-end);
-    margin: 0;
-    color: color-mix(in srgb, var(--uxdsl__palette__surface-contrast) 85%, transparent);
-    max-width: 75ch;
-  }
 }
 /* NotFound styles - Scoped */
 .not-found-container {

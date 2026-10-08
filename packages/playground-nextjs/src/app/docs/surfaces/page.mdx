@@ -1,18 +1,21 @@
 import DemoSurfaces from '@/components/DemoSurfaces'
 import SurfaceGrid from '@/components/SurfaceGrid'
-import { SurfaceDocumentation } from '@/components/SurfaceDocumentation'
+import WriteGet from '@/components/WriteGet'
+import { SurfaceRules } from '@/components/SurfaceDocumentation'
 import { PageTitle } from '@/components/PageTitle'
+
+export const metadata = { title: 'Surfaces' }
 
 <PageTitle
   title="Surfaces"
-  subtitle="Shared container roles composed from your design system."
+  subtitle="A container role composes padding, corners, colors, border and shadow from the theme; a component names the role."
 />
 
-<SurfaceDocumentation />
-
-## Interactive Demo
-
 <DemoSurfaces />
+
+<WriteGet id="surfaces" />
+
+<SurfaceRules />
 
 <section id="productivity">
   <SurfaceGrid />

@@ -1,12 +1,14 @@
 import DemoButtons from '@/components/DemoButtons'
+import WriteGet from '@/components/WriteGet'
+import { ButtonRules } from '@/components/ButtonDocumentation'
 import { PageTitle } from '@/components/PageTitle'
-import { ButtonDocumentation } from '@/components/ButtonDocumentation'
 
-<PageTitle title="Buttons" subtitle="Shared action roles and interaction states, configured in the theme." />
+export const metadata = { title: 'Buttons' }
 
-<ButtonDocumentation />
-
-## Interactive Demo
+<PageTitle title="Buttons" subtitle="An action role is a surface plus its interaction states, defined in the theme; a button names the role." />
 
 <DemoButtons />
 
+<WriteGet id="buttons" />
+
+<ButtonRules />

@@ -1,16 +1,17 @@
 import DemoBorders from '@/components/DemoBorders'
-import BorderDocumentation from '@/components/BorderDocumentation'
+import WriteGet from '@/components/WriteGet'
+import BorderRules from '@/components/BorderDocumentation'
 import { PageTitle } from '@/components/PageTitle'
 
+export const metadata = { title: 'Borders & radii' }
+
 <PageTitle
-  title="Borders & Radii"
-  subtitle="Shared edge treatments and corner shapes, with explicit responsive behavior."
+  title="Borders & radii"
+  subtitle="Edges and corners are presets in the theme, static or stepping at breakpoints; a component names the preset."
 />
 
-<BorderDocumentation />
-
-## Interactive Demo
-
-Explore the browser preview below. Its local definitions and limitations are explained above.
-
 <DemoBorders />
+
+<WriteGet id="borders" />
+
+<BorderRules />

@@ -1,38 +1,31 @@
 import { PageTitle } from '@/components/PageTitle'
 import { DiagnosticsList, DiagnosticsCatalog } from '@/components/DiagnosticsCaptures'
 
+export const metadata = { title: 'Diagnostics' }
+
 <PageTitle
   title="Diagnostics"
-  subtitle="Real UXD_* errors from the compiler."
-  subtext="Each example was compiled by uxdsl build; the error under it is what the build printed."
+  subtitle="Every UXD_* code the compiler, the theme validator and the runtime can produce: what it means and what to do."
 />
 
 <div className="doc-section">
 
-## Every error has a code
-
-A UXDSL error names a `UXD_*` code, the file, line and column, and shows the line. The code is stable and searchable; the message says what exists instead (the configured breakpoints, the available preset keys, a close name). Nothing falls back silently: an unknown breakpoint, preset, role or reference stops the build.
-
-These are captured by `scripts/capture-capabilities.js`, which also fails when a case stops producing the code it is listed under — so a change to a diagnostic cannot leave this page showing the old one. The runtime reports its own codes on a result instead of throwing: `UXD_THEME_NOT_INITIALIZED` and `UXD_THEME_STRUCTURE` are produced live by the sandbox on the Runtime page.
-
-</div>
-
-<DiagnosticsList />
-
-<div className="doc-section">
-
-## One spelling per concept
-
-The language has no aliases: `shadow(n)` and `radius(n)` are the names, with `pill` and `circle` as the radius keywords. A spelling that was removed in stability phase 3 — `elevation(n)`, `rounded(n)`, `radius(full)`, `densities(…)`, a `@theme { … }` block — is an error that names what to write instead (`UXD_SYNTAX_REMOVED`, `UXD_THEME_BLOCK_REMOVED` above); it never reaches the browser as an unknown function it would silently discard.
-
-</div>
-
-<div className="doc-section">
+A UXDSL error names a `UXD_*` code, the file, line and column, and shows the line; the message says what exists instead (the configured breakpoints, the available keys, a close name). Nothing falls back silently: an unknown breakpoint, preset, role or reference stops the build. The runtime reports its codes on a result (`applyTheme(...).error.code`) instead of throwing.
 
 ## Every code
 
-The complete catalog, read from `uxdsl`'s own `DIAGNOSTIC_CATALOG` (exported from `uxdsl/language`, and on the `uxdsl/postcss` plugin): what each code means and what to do about it. A test fails when the compiler can produce a code the catalog does not list, when an entry is produced nowhere, or when no test provokes it.
+Read from `DIAGNOSTIC_CATALOG` (`uxdsl/language`), the catalog the compiler itself throws from: a test fails when the compiler can produce a code the catalog does not list, or when a listed code is produced nowhere.
 
 </div>
 
 <DiagnosticsCatalog />
+
+<div className="doc-section">
+
+## Real errors, captured
+
+Each source below was compiled by `uxdsl build`, and the error under it is what the build printed. `scripts/capture-capabilities.js` records them and fails when a case stops producing its code, so this page cannot show an error the compiler no longer reports. `UXD_THEME_NOT_INITIALIZED` and `UXD_THEME_STRUCTURE` are produced live by the sandbox on [Runtime](/docs/runtime).
+
+</div>
+
+<DiagnosticsList />

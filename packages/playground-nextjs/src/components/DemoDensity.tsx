@@ -191,13 +191,8 @@ export default function DemoDensity() {
         </div>
       </div>
 
-      <div className="demo-header demo-header--tokens">
-        <h3 className="demo-title">Global Density Tokens</h3>
-        <p className="demo-subtitle">
-          Update the tokens below to reflect changes in the UI.
-        </p>
-      </div>
-
+      <details className="demo-disclosure">
+      <summary className="demo-disclosure__summary">Every density token, its progression and an editor</summary>
       <div className="density-grid-container">
         <div className="density-grid">
           {densities.map((s) => {
@@ -284,6 +279,7 @@ export default function DemoDensity() {
           })}
         </div>
       </div>
+      </details>
 
       {editingLevel !== null && (
         <EditDensityDialog 

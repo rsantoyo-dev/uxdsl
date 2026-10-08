@@ -1,18 +1,57 @@
 import { PageTitle } from '@/components/PageTitle'
 import { SiteThemeState, RuntimeSandbox } from '@/components/RuntimeLab'
-import { ThemeResolution, DirectiveDeclarations, FontsImport, ValueGrammar, ReferenceCheck } from '@/components/RuntimeEngines'
+
+export const metadata = { title: 'Runtime' }
 
 <PageTitle
-  title="Runtime API"
-  subtitle="uxdsl/runtime, uxdsl/theme and uxdsl/engine, called for real on this page."
-  subtext="Nothing below is a description of a call: each panel runs the exported function and shows what it returned."
+  title="Runtime"
+  subtitle="applyTheme changes a compiled site's token values in the browser, and refuses what would need a rebuild."
 />
 
 <div className="doc-section">
 
+## One function, synchronous
+
+```ts
+import { applyTheme } from 'uxdsl/runtime'
+
+// Once, with the override the project was built with ({} for none):
+applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' })
+
+// Then any patch, any time:
+const result = applyTheme({ palette: { primary: { main: 'color(green.700)' } } })
+if (!result.ok) console.error(result.error.code, result.error.message)
+```
+
+`applyTheme` validates the patch, generates the theme CSS and compares its structure with what the build compiled, all before it touches the page. `ok: true` means the managed stylesheet already holds the new values; `ok: false` means nothing moved — no CSS, no state, no notification. The rest of the browser API is `getAppliedTheme`, `resetTheme`, `subscribeTheme` and `loadPersistedTheme({ key })`. `uxdsl/runtime` does not load PostCSS.
+
+## What it refuses
+
+It swaps custom properties; it cannot rewrite the rules a build compiled into your components. So a patch that would change *which declarations* a directive emits is refused with `UXD_THEME_STRUCTURE` and the instruction to rebuild:
+
+- moving an existing breakpoint (`{ breakpoints: { md: 900 } }`) — every component's media queries carry it;
+- adding or removing a `typography_details` field, or a Button or Input state the role does not emit;
+- changing a Button's or Input's surface, or removing `main`/`dark`/`contrast` from a palette family used as a tone.
+
+Token values, responsive expressions over the same breakpoints, dark-mode colors and new tokens apply. Before the first call, every other call is `UXD_THEME_NOT_INITIALIZED`.
+
+## On the server
+
+There is no state to share: `generateThemeCss(theme)` from `uxdsl/theme` is pure and returns the same string the build emits for that theme, so a server can render it per request and the browser can adopt it.
+
+```ts
+import { generateThemeCss } from 'uxdsl/theme'
+
+const css = generateThemeCss(effectiveTheme)   // render as <style id="uxdsl-ssr-theme">
+```
+
+## Light and dark
+
+Dark mode is part of the compiled theme, not a runtime patch: `data-theme="dark"` or `"light"` on `<html>` pins a mode, and with no attribute the OS preference decides. See [Theme](/docs/theme#dark-mode).
+
 ## The theme this site applied
 
-The site initializes the runtime once, in `ThemeContext`, with `applyTheme(themes.default, { replace: true, styleId: 'uxdsl-ssr-theme' })` — the override it was built with — and applies the other named themes the same way when you pick one in the header. The calls here only read that state: `getAppliedTheme()` returns the applied override, `subscribeTheme(listener)` is notified after each successful application, and the computed custom property is what the applied stylesheet produced.
+This site calls `applyTheme(themes.default, { replace: true, styleId: 'uxdsl-ssr-theme' })` once, then applies the header's other themes the same way. These panels only read that state.
 
 </div>
 
@@ -22,28 +61,8 @@ The site initializes the runtime once, in `ThemeContext`, with `applyTheme(theme
 
 ## Calls that change state run in a sandbox
 
-The runtime API is `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and `loadPersistedTheme`: one JSON theme per document, applied by replacing the custom properties of one managed stylesheet. On this page they would compete with `ThemeContext`, so they run in the frame below: a page compiled with this site's default theme (by the real compiler, at build time), with its own document and its own copy of the runtime. Run the steps in order, watch the frame and the report, and reload the sandbox to undo everything.
-
-One result is worth reading closely. `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`: a threshold is compiled into every component's media queries, so moving one is a rebuild, not a runtime patch. Changing one token — a color, a spacing value — is the same `applyTheme` call with a one-key patch; there is no separate per-token setter, and nothing writes inline styles on `<html>`.
-
-`loadPersistedTheme` is always called here with the lab's own `key`, so a saved lab override is never mistaken for the site's own; it reads that one key and nothing else.
+On this page they would compete with the site's own theme, so they run in the frame below: a page compiled with this site's default theme, with its own document and its own copy of the runtime. Run the steps in order; `applyTheme({ breakpoints: { md: 900 } })` is refused with `UXD_THEME_STRUCTURE`. Reload the sandbox to undo everything.
 
 </div>
 
 <RuntimeSandbox />
-
-<div className="doc-section">
-
-## Resolution, engines and fonts
-
-These functions are pure: they take a theme and return a value, so they run on this page against the active theme. `resolveTheme` is the one place an effective theme is built (the base with an override merged over it); `buttonDeclarations`, `inputDeclarations` and `resolveTypographyRole` are what `@ds-button`, `@ds-input` and `@ds-typo` expand to — the compiler calls the same functions; `googleFontsImportUrls` and `encodeGoogleFontFamily` build the Google Fonts `@import` both the compiler and `generateThemeCss` emit. `tokenValueToCss` is the one grammar every theme value goes through, on both CSS paths, `validateResponsiveExpression` and `analyzeResponsiveValue` are how the compiler checks and reads a responsive value before expanding it, `themeStructure` and `structuralChanges` are the comparison `applyTheme` runs before it applies a patch, and `inspectReferences` is the reference check every build runs (the last four from `uxdsl/engine`, the tooling entry).
-
-</div>
-
-<div className="cap-grid">
-  <ThemeResolution />
-  <DirectiveDeclarations />
-  <FontsImport />
-  <ValueGrammar />
-  <ReferenceCheck />
-</div>

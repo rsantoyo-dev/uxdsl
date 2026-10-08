@@ -1,46 +1,26 @@
+import Link from 'next/link'
+import { BUTTON_PROPERTIES, BUTTON_STATES, DEFAULT_BUTTONS } from 'uxdsl/engine'
 
-export function ButtonDocumentation() {
-  return <div className="documentation-content"><section className="section">
-    <h2 className="section-title">Shared action roles, built on Surfaces</h2>
-    <p><strong>Responsibility: define reusable visual action roles and their interaction states.</strong> A Button selects a Surface for its container treatment, then adds shared base overrides and states. Components choose the role; the theme owns its visual decisions. Native HTML and application code own behavior and accessibility.</p>
-    <p>Surfaces describe containers. Buttons add stateful action styling. Both read the theme JSON and share the same token and responsive engines. Preserve intent, not just the current computed value.</p>
-    <h3>Define the role in JSON</h3>
-    <pre><code className="language-json">{JSON.stringify({breakpoints:{xs:0,md:768},buttons:{checkout:{surface:'contained',base:{padding:'density(2)',shadow:'shadow(1)'},states:{hover:{bg:'palette(primary.dark)'},focusvisible:{outline:'2px solid palette(primary.main)','outline-offset':'3px'},selected:{shadow:'xs(shadow(1)) md(shadow(3))'},disabled:{opacity:'0.5',cursor:'not-allowed'}}}}},null,2)}</code></pre>
-    <p>This excerpt assumes its referenced tokens exist. Default roles are contained, outlined and flat. A custom role inherits contained defaults unless its configuration overrides them. Its <code>surface</code> selects an existing Surface; <code>base</code> overrides that composition; <code>states</code> overrides matching state fields. Each supplied string replaces its entire responsive expression.</p>
-    <pre><code className="language-css">{`.checkout { @ds-button(checkout); }
-/* Use a real <button type="button"> for an action. */`}</code></pre>
-    <h3>What the component keeps</h3>
-    <pre><code className="language-css">{`.checkout {
-  padding: var(--uxdsl__button__checkout-base-padding);
-  box-shadow: var(--uxdsl__button__checkout-base-shadow);
-  /* Other fields reference the selected Surface. */
+// The rules section of /docs/buttons. Roles, fields and states are the engine's own.
+export function ButtonRules() {
+  const list = (names: string[]) => names.map((name, i) => <span key={name}>{i ? ', ' : ''}<code>{name}</code></span>)
+  return (
+    <section className="doc-section" aria-labelledby="button-rules">
+      <h2 id="button-rules">Rules</h2>
+      <ul>
+        <li>A button role is a surface plus <code>base</code> overrides and per-state fields. Base roles: {list(Object.keys(DEFAULT_BUTTONS))}. Fields: {list(Object.keys(BUTTON_PROPERTIES))}. States: {list(Object.keys(BUTTON_STATES))}.</li>
+        <li><code>selected</code> matches <code>.is-selected</code>, <code>aria-pressed=&quot;true&quot;</code> and <code>aria-selected=&quot;true&quot;</code>; <code>disabled</code> matches <code>:disabled</code> and <code>aria-disabled=&quot;true&quot;</code>, and <code>hover</code>/<code>active</code> exclude a disabled control. Styling is not behavior: <code>aria-disabled</code> does not stop a click.</li>
+        <li>The base roles ship <code>hover</code>, <code>focusvisible</code> (a 2px outline in the tone), <code>selected</code> and <code>disabled</code>; <code>active</code> and <code>focus</code> are yours to add.</li>
+        <li>In a role’s value, <code>tone(main | dark | contrast)</code> follows the tone the component asks for; an explicit <code>palette(primary.dark)</code> keeps its meaning whatever the tone.</li>
+        <li>One <code>@ds-button</code> or <code>@ds-input</code> per rule (<code>UXD_DIRECTIVE_DUPLICATE</code>). An unknown role is <code>UXD_BUTTON_ROLE</code>, an unknown state <code>UXD_BUTTON_STATE</code>.</li>
+        <li>New values apply at run time; a new state or another surface is a structural change — rebuild (<Link href="/docs/runtime">Runtime</Link>).</li>
+      </ul>
+      <pre><code className="language-css">{`.save { @ds-button(contained success); }
+.save--quiet { @ds-button(outlined success 2); }
+.save--round { @ds-button(contained radius(pill)); }`}</code></pre>
+      <pre><code className="language-css">{`.buy { @ds-button(checkout); }  /* UXD_BUTTON_ROLE: the theme defines no checkout role */
+.cta { @ds-button(contained); @ds-button(outlined); }  /* UXD_DIRECTIVE_DUPLICATE: one control directive per rule */`}</code></pre>
+      <p>The guide for coding agents is on <Link href="/docs/for-ai-agents#ai-buttons-guide">For AI agents</Link>.</p>
+    </section>
+  )
 }
-.checkout:focus-visible {
-  outline: var(--uxdsl__button__checkout-focusvisible-outline);
-  outline-offset: var(--uxdsl__button__checkout-focusvisible-outline-offset);
-}`}</code></pre>
-    <p>At md, the example selected shadow changes to shadow-3 and persists until overridden. Padding follows Density independently. The component retains references instead of copying the current pixels. Replace managed theme CSS with <code>generateThemeCss(nextTheme)</code> to update existing token values. Adding or removing state fields, changing the selected Surface, or changing role structure requires regenerating component CSS too; <code>buttonComponentCss</code> does this in the demo.</p>
-    <h3>Tones, sizes and states</h3>
-    <pre><code className="language-css">{`.save { @ds-button(contained primary 2); }
-.special { @ds-button(outlined); border-style: dashed; }`}</code></pre>
-    <p>An optional configured Palette family overrides Surface colors. Default state colors follow the tone through shared references; explicitly configured Palette references keep their own meaning. A numeric size selects <code>density(n)</code> and <code>radius(n)</code>, not pixels. Explicit Button base overrides take precedence over the Surface composition, including its tone and size. Use local CSS after the directive for a deliberate exception.</p>
-    <p>Supported visual fields are padding, radius, bg, color, border, shadow, opacity, outline, outline-offset, transform, cursor and font-weight. Supported states are hover, active, focus, focusvisible, disabled and selected. Selected maps to .is-selected, aria-pressed=true or aria-selected=true; use only semantics appropriate to the actual element. Disabled styling also recognizes aria-disabled, which does not itself prevent activation. The base roles provide hover, focusvisible (a 2px outline in the tone, offset 2px), selected and disabled (opacity 0.6, cursor not-allowed) styling; define active and focus as needed. A disabled button that is hovered still receives the hover colors under its dimming, because the state selectors do not exclude :disabled.</p>
-    <p>Palette contrast tokens are assignments, not automatic contrast guarantees. Verify foreground/background combinations, keyboard focus, disabled behavior and touch use. Styling does not implement click handling or toggle state.</p>
-    <h3>One source and one shared engine</h3>
-    <pre><code className="language-json">{`{
-  "buttons": {
-    "checkout": {
-      "surface": "contained",
-      "base": { "padding": "density(2)" },
-      "states": {
-        "hover": { "bg": "palette(primary.dark)" },
-        "focusvisible": { "outline": "2px solid palette(primary.main)" }
-      }
-    }
-  }
-}`}</code></pre>
-    <pre><code className="language-css">{`.checkout { @ds-button(checkout); }`}</code></pre>
-    <p>A role is defined in the theme JSON and nowhere else: a <code>@theme</code> pack fails as <code>UXD_THEME_BLOCK_REMOVED</code>, and nothing leaks between compilations. PostCSS, runtime generation, inspection and this preview use the same Button engine. Unknown roles, fields, states and invalid responsive mappings fail clearly; inspect token dependencies and actual CSS because validation is not a complete CSS or accessibility audit.</p>
-  </section></div>
-}
-

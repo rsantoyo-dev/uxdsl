@@ -1,14 +1,17 @@
-import ShadowDocumentation from '@/components/ShadowDocumentation'
+import ShadowRules from '@/components/ShadowDocumentation'
 import DemoShadows from '@/components/DemoShadows'
+import WriteGet from '@/components/WriteGet'
 import { PageTitle } from '@/components/PageTitle'
 
-<PageTitle 
-  title="Shadows" 
-  subtitle="Elevation and depth tokens."
+export const metadata = { title: 'Shadows' }
+
+<PageTitle
+  title="Shadows"
+  subtitle="Depth is a preset in the theme, which can deepen at a breakpoint; a component names the preset."
 />
 
-<ShadowDocumentation />
-
-## Interactive Demo
-
 <DemoShadows />
+
+<WriteGet id="shadows" />
+
+<ShadowRules />

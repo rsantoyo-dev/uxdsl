@@ -13,10 +13,10 @@ type Diagnostic = { code: string; title: string; source: string; theme: unknown;
 export function DiagnosticsList() {
   const list = captures.diagnostics as Diagnostic[]
   return (
-    <div className="cap-grid">
+    <div className="cap-list">
       {list.map((d) => (
-        <figure key={d.code} id={`capture-${d.code.toLowerCase()}`} className="cap-run" data-diagnostic={d.code}>
-          <figcaption className="cap-run__title"><code>{d.code}</code> — {d.title}</figcaption>
+        <details key={d.code} id={`capture-${d.code.toLowerCase()}`} className="cap-run cap-run--collapsed" data-diagnostic={d.code}>
+          <summary className="cap-run__title"><code>{d.code}</code> — {d.title}</summary>
           {d.theme ? (<>
             <p className="cap-note"><code>uxdsl.theme.json</code></p>
             <pre className="cap-terminal"><code>{JSON.stringify(d.theme, null, 2)}</code></pre>
@@ -24,7 +24,7 @@ export function DiagnosticsList() {
           <p className="cap-note"><code>src/example.uxdsl</code></p>
           <pre className="cap-terminal"><code>{d.source.trimEnd()}</code></pre>
           <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {d.argv.join(' ')}</span><span className="cap-terminal__err">{`\n${d.stderr.trimEnd()}`}</span></code></pre>
-        </figure>
+        </details>
       ))}
     </div>
   )

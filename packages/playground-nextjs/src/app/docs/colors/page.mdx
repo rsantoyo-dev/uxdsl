@@ -1,28 +1,22 @@
 import DemoColors from '@/components/DemoColors'
 import PalettePlayground from '@/components/PalettePlayground'
-import PaletteThemeExplorer from '@/components/PaletteThemeExplorer'
-import DemoPaletteConfig from '@/components/DemoPaletteConfig'
-import { ColorExplanation } from '@/components/ColorDocumentation'
+import WriteGet from '@/components/WriteGet'
+import { ColorRules } from '@/components/ColorDocumentation'
 import { PageTitle } from '@/components/PageTitle'
+
+export const metadata = { title: 'Colors & palette' }
 
 <PageTitle
   title="Colors & palette"
-  subtitle="Colors are the values; the palette gives them roles that components name."
+  subtitle="Colors are the values; the palette gives them roles, with a dark value where one differs, and components name the role."
 />
 
-<ColorExplanation topic="colors" />
 <DemoColors />
-
-<ColorExplanation topic="palette" />
 
 <section id="usage" className="palette-docs__usage">
   <PalettePlayground />
 </section>
 
-<section id="explorer">
-  <PaletteThemeExplorer />
-</section>
+<WriteGet id="colors" />
 
-<section id="legacy-editor" className="palette-docs__legacy-editor">
-  <DemoPaletteConfig />
-</section>
+<ColorRules />

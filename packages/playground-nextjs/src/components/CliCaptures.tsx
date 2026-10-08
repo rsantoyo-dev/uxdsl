@@ -26,25 +26,51 @@ function Exit({ code }: { code: number }) {
   return <span className={code === 0 ? 'cap-exit cap-exit--ok' : 'cap-exit cap-exit--fail'}>exit {code}</span>
 }
 
-export function CliRun({ id }: { id: string }) {
+/** One captured run. `collapsed` shows only its title and exit status until opened;
+ *  `files={false}` leaves out the files it wrote (show one with CapturedFile). */
+export function CliRun({ id, collapsed = false, files = true }: { id: string; collapsed?: boolean; files?: boolean }) {
   const run = byId(id)
   if (!run) throw new Error(`no captured CLI run "${id}" — re-run scripts/capture-capabilities.js`)
   const out = (run.stdout || '').trimEnd()
   const err = (run.stderr || '').trimEnd()
+  const body = (<>
+    <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {run.argv.join(' ')}</span>{out ? `\n${out}` : ''}{err ? <span className="cap-terminal__err">{`\n${err}`}</span> : null}</code></pre>
+    {run.excerpt && (<>
+      <p className="cap-note">stdout is a JSON document{run.facts?.bytes ? ` of ${String(run.facts.bytes)} bytes` : ''}; an excerpt:</p>
+      <pre className="cap-terminal"><code>{run.excerpt}</code></pre>
+    </>)}
+    {files && run.files && Object.entries(run.files).map(([file, text]) => (
+      <div key={file}><p className="cap-note">It wrote <code>{file}</code>:</p><pre className="cap-terminal"><code>{text.trimEnd()}</code></pre></div>
+    ))}
+    {run.facts && !run.excerpt && Object.keys(run.facts).length > 0 && (
+      <dl className="cap-facts">{Object.entries(run.facts).map(([k, v]) => <div key={k} className="cap-facts__row"><dt>{k}</dt><dd><code>{typeof v === 'string' ? v : JSON.stringify(v)}</code></dd></div>)}</dl>
+    )}
+  </>)
+  if (collapsed) {
+    return (
+      <details className="cap-run cap-run--collapsed" data-cli-run={run.id}>
+        <summary className="cap-run__title">{run.title} <Exit code={run.exit} /></summary>
+        {body}
+      </details>
+    )
+  }
   return (
     <figure className="cap-run" data-cli-run={run.id}>
       <figcaption className="cap-run__title">{run.title} <Exit code={run.exit} /></figcaption>
-      <pre className="cap-terminal"><code><span className="cap-terminal__prompt">$ uxdsl {run.argv.join(' ')}</span>{out ? `\n${out}` : ''}{err ? <span className="cap-terminal__err">{`\n${err}`}</span> : null}</code></pre>
-      {run.excerpt && (<>
-        <p className="cap-note">stdout is a JSON document{run.facts?.bytes ? ` of ${String(run.facts.bytes)} bytes` : ''}; an excerpt:</p>
-        <pre className="cap-terminal"><code>{run.excerpt}</code></pre>
-      </>)}
-      {run.files && Object.entries(run.files).map(([file, text]) => (
-        <div key={file}><p className="cap-note">It wrote <code>{file}</code>:</p><pre className="cap-terminal"><code>{text.trimEnd()}</code></pre></div>
-      ))}
-      {run.facts && !run.excerpt && Object.keys(run.facts).length > 0 && (
-        <dl className="cap-facts">{Object.entries(run.facts).map(([k, v]) => <div key={k} className="cap-facts__row"><dt>{k}</dt><dd><code>{typeof v === 'string' ? v : JSON.stringify(v)}</code></dd></div>)}</dl>
-      )}
+      {body}
+    </figure>
+  )
+}
+
+/** One file a captured run wrote, exactly as it wrote it. */
+export function CapturedFile({ run: id, file }: { run: string; file: string }) {
+  const run = byId(id)
+  const text = run?.files?.[file]
+  if (text === undefined) throw new Error(`the captured run "${id}" wrote no ${file} — re-run scripts/capture-capabilities.js`)
+  return (
+    <figure className="cap-run" data-cli-run={`${id}:${file}`}>
+      <figcaption className="cap-run__title"><code>{file}</code>, as <code>uxdsl {run!.argv.join(' ')}</code> wrote it</figcaption>
+      <pre className="cap-terminal"><code>{text.trimEnd()}</code></pre>
     </figure>
   )
 }

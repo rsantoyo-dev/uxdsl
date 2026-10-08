@@ -1,9 +1,16 @@
 import DemoBreakpoints from '@/components/DemoBreakpoints'
-import { BreakpointExplanation, BreakpointLiveExample } from '@/components/BreakpointDocumentation'
+import DemoBreakpointsCards from '@/components/DemoBreakpointsCards'
+import WriteGet from '@/components/WriteGet'
+import { BreakpointRules } from '@/components/BreakpointDocumentation'
 import { PageTitle } from '@/components/PageTitle'
 
-<PageTitle title="Breakpoints" subtitle="Define responsive thresholds once. Keep layout and Density aligned with your theme." />
+export const metadata = { title: 'Breakpoints' }
 
-<BreakpointExplanation />
+<PageTitle title="Breakpoints" subtitle="The theme names the widths where values step; components name the breakpoint, never the pixel width." />
+
 <DemoBreakpoints />
-<BreakpointLiveExample />
+<DemoBreakpointsCards />
+
+<WriteGet id="breakpoints" />
+
+<BreakpointRules />
