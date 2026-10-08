@@ -6,11 +6,10 @@ import { compileShadowRules } from '../shadows';
 import { compileEdgeRules } from '../edges';
 import { compileTypographyRules, generateTypographyCss } from '../typography';
 import { generateFoundationCss } from '../foundations';
-import { renderThemeCss } from './theme-generator';
+import { renderTheme } from './theme-generator';
 import { resolveTheme } from '../default-theme';
 import { diagnosticCode, themeError } from '../diagnostics';
-import postcss, { Declaration } from 'postcss';
-import { enforceReferences, ReferenceIntegrityError, ReferenceOptions } from '../reference-integrity';
+import { enforceDeclarationReferences, ReferenceIntegrityError, ReferenceOptions } from '../reference-core';
 
 export type ThemeValidationIssue = {
   /** The `UXD_*` code. Structural problems are `UXD_THEME_INVALID`; an engine or
@@ -361,11 +360,8 @@ export function validateTheme<TTheme extends Record<string, any>>(
   if (!errors.length && opts.references !== false) {
     const references = opts.references || {};
     try {
-      const css = renderThemeCss(resolveTheme(theme));
-      const root = postcss.parse(css);
-      const declarations: Declaration[] = [];
-      root.walkDecls((node) => { declarations.push(node); });
-      enforceReferences(root, declarations, { ...references, onWarning: (issue) => {
+      const { declarations } = renderTheme(resolveTheme(theme));
+      enforceDeclarationReferences(declarations, { ...references, onWarning: (issue) => {
         warnings.push({ code: issue.code, path: issue.chain.join(' -> '), message: issue.message });
         references.onWarning?.(issue);
       } });

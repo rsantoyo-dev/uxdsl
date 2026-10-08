@@ -103,7 +103,7 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_VARIABLE_UNDEFINED: compiler('A `$name` in a value was never declared.', 'Declare `$name: …;` at the root of the file before the rule.'),
   UXD_REFERENCE_MISSING: compiler('An emitted var(--uxdsl__…) points at a custom property nothing defines.', 'Define the token in the theme, declare it in references.externalTokens, or fix the name; the message names the chain.'),
   UXD_REFERENCE_CYCLE: compiler('Theme tokens reference each other in a cycle.', 'Break the cycle; the message shows the chain.'),
-  UXD_REFERENCE_CONTEXT: compiler('A token is referenced from a scope (a mode) where it is not defined.', 'Define the token in that scope too, or reference one defined in every scope.'),
+  UXD_REFERENCE_CONTEXT: compiler('A `references` option cannot apply where it was given: an external token that is not a `--custom-property` name, or compiled `css` handed to generateThemeCss/validateTheme, which have no CSS parser.', 'Name externals as `--name`; give compiled dependency CSS to the PostCSS plugin (compile(), uxdsl build and the adapters pass it there) and only `externalTokens` to the theme paths.'),
   // --- the browser runtime (returned on a ThemeResult, never thrown) -----------
   UXD_THEME_ENVIRONMENT: runtime('applyTheme, loadPersistedTheme or resetTheme was called where there is no document.', 'Call them in the browser; use generateThemeCss on the server.'),
   UXD_THEME_NOT_INITIALIZED: runtime('loadPersistedTheme or resetTheme ran before the project theme was applied once.', 'Call applyTheme(projectOverride, { replace: true }) first.'),

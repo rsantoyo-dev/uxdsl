@@ -309,6 +309,14 @@ With `includeTheme: false`, the plugin already validates against the theme
 entry's output automatically — you do not need to pass `references.css`
 yourself for that case.
 
+`references.css` is compiled CSS, so only the PostCSS plugin reads it (and
+through it `compile()`, `uxdsl build` and the bundler adapters). The theme
+paths — `generateThemeCss(theme, references)`, `validateTheme(theme,
+{ references })` and `applyTheme` — check the generated theme against itself
+without a CSS parser, and refuse `references.css` with `UXD_REFERENCE_CONTEXT`
+rather than ignore it; give them `externalTokens` for tokens a stylesheet
+outside the theme provides.
+
 **Density and a partial spacing scale:** the shipped default Density scale
 (`DEFAULT_DENSITIES`) references `space(1)` through `space(16)`. A theme that
 defines only some spacing keys does not break it: the plugin resolves your
@@ -1385,7 +1393,7 @@ no rebuild. It is synchronous — when it returns `ok: true`, the stylesheet and
 the reported state already agree; when it returns `ok: false`, nothing moved.
 
 ```ts
-import { applyTheme, getAppliedTheme, resetTheme, subscribeTheme } from 'postcss-uxdsl/ds-runtime';
+import { applyTheme, getAppliedTheme, resetTheme, subscribeTheme } from 'uxdsl/runtime';
 
 // Once, at startup: hand it the override your project was built with.
 applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' });
@@ -1394,6 +1402,15 @@ applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' });
 const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } });
 if (!result.ok) console.error(result.error.message);
 ```
+
+`uxdsl/runtime` does not load PostCSS. It validates and generates with the same
+engines as the build, which build the theme as blocks of declarations and
+serialize them once (`src/css-blocks.ts`); the reference check reads those
+blocks rather than parsing the CSS it just wrote. A browser bundle of the five
+functions is about 95 KB minified, 30 KB gzip (it was 159 KB / 51 KB, PostCSS
+included) — `test/runtime-bundle.test.js` bundles it with esbuild, fails if a
+PostCSS module is in it, and holds it under a 110 KB budget. `uxdsl/theme` is
+held to the same rule.
 
 The first call has to be the override the project actually compiled with (`{}`
 for a zero-config project). The library cannot infer it: reading compiled CSS

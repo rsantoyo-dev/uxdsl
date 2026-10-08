@@ -3,6 +3,7 @@ import valueParser from 'postcss-value-parser';
 import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
 import { BASE_THEME } from './base-theme';
+import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 export type BreakpointMap = Record<string, number>;
 // Derived from theme/base.json (via BASE_THEME), not a
@@ -451,8 +452,5 @@ export function generateDensityCss(
   strategy: 'media' | 'container' = 'media',
   rewrite: (value: string) => string = tokenValueToCss,
 ): string {
-  return compileDensityRules(definitions, breakpoints, rewrite).map(rule => {
-    const body = `${selector} { ${Object.entries(rule.values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
-    return rule.minWidth === null ? body : `@${strategy} (min-width: ${rule.minWidth}px) { ${body} }`;
-  }).join('\n');
+  return serializeBlocks(responsiveBlocks(compileDensityRules(definitions, breakpoints, rewrite), selector, strategy));
 }

@@ -12,7 +12,7 @@
 // What stays open is open on purpose: role names, palette families, font family
 // names and typography role names are registries a project extends, so they are
 // `Record<string, …>`. `Record<string, any>` is never used to skip validation.
-import type { ReferenceOptions } from './reference-integrity';
+import type { ReferenceOptions } from './reference-core';
 import type { TYPOGRAPHY_PROPERTIES } from './typography';
 import type { SURFACE_PROPERTIES } from './surfaces';
 import type { BUTTON_PROPERTIES, BUTTON_STATES } from './buttons';

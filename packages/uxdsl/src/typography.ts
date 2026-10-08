@@ -1,6 +1,7 @@
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
 import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
+import { CssBlock, responsiveBlocks, serializeBlocks } from './css-blocks';
 
 /** JSON fields and the CSS property each one is: the public variable suffix
  * (`--uxdsl__typography__<role>-font-size`) and the declaration `@ds-typo`
@@ -75,17 +76,17 @@ export function compileTypographyRules(details: TypographyDetails, breakpoints: 
   return rules.filter(rule => Object.keys(rule.values).length);
 }
 
-/** Pure generation used identically by PostCSS, SSR and browser applications. */
-export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
+/** The font-family variables, then the typography roles' responsive rules. */
+export function typographyBlocks(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): CssBlock[] {
   const base: Record<string, string> = {};
   for (const [key, value] of Object.entries(theme.fonts?.families || {})) base[buildVarName('font', key)] = tokenValueToCss(String(value), theme);
-  const serialize = (values: Record<string, string>) => `:root { ${Object.entries(values).map(([key, value]) => `${key}: ${value};`).join(' ')} }`;
-  const output = Object.keys(base).length ? [serialize(base)] : [];
-  for (const rule of compileTypographyRules(theme.typography_details || {}, breakpoints, theme)) {
-    const body = serialize(rule.values);
-    output.push(rule.minWidth === null ? body : `@media (min-width: ${rule.minWidth}px) { ${body} }`);
-  }
-  return output.join('\n');
+  const blocks: CssBlock[] = Object.keys(base).length ? [{ selector: ':root', declarations: Object.entries(base) }] : [];
+  return blocks.concat(responsiveBlocks(compileTypographyRules(theme.typography_details || {}, breakpoints, theme)));
+}
+
+/** Pure generation used identically by PostCSS, SSR and browser applications. */
+export function generateTypographyCss(theme: Record<string, any>, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }): string {
+  return serializeBlocks(typographyBlocks(theme, breakpoints));
 }
 
 /** Resolve the same generated custom properties for a simulated viewport. */

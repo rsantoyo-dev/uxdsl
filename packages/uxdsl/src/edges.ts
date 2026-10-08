@@ -1,6 +1,7 @@
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, tokenValueToCss } from './language';
 import { BASE_THEME } from './base-theme';
+import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 // Stability phase 1: the radius keywords are part of the one value grammar
 // (language.ts); re-exported here for the callers that import them from edges.
@@ -37,10 +38,7 @@ export function compileEdgeRules(theme: EdgeTheme = {}, breakpoints: BreakpointM
 }
 
 export function generateEdgeCss(theme: EdgeTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root'): string {
-  return compileEdgeRules(theme, breakpoints).map(rule => {
-    const css = `${selector} { ${Object.entries(rule.values).map(([p, v]) => `${p}: ${v};`).join(' ')} }`;
-    return rule.minWidth === null ? css : `@media (min-width: ${rule.minWidth}px) { ${css} }`;
-  }).join('\n');
+  return serializeBlocks(responsiveBlocks(compileEdgeRules(theme, breakpoints), selector));
 }
 
 export function inspectEdgeTheme(theme: EdgeTheme, viewport: number) {

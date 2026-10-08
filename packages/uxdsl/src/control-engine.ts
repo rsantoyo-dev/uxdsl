@@ -1,10 +1,31 @@
-import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, requireRole } from './surfaces';
 import { parseDirectiveTokens, directiveArgumentsInner, toneError } from './directives';
 import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
+import { responsiveBlocks, serializeBlocks } from './css-blocks';
+
+/** Splits a selector list at its top-level commas — never inside `:is(…)`,
+ * `:where(…)`, `:not(…)`, `:has(…)` or a quoted attribute value — with the
+ * language's own value tokenizer, which keeps every other byte as written. */
+export function splitSelectorList(selector: string): string[] {
+  // A segment is the text between two commas, the whitespace the tokenizer
+  // attaches to each comma included; an empty one is dropped except the last,
+  // the same contract as postcss.list.comma.
+  const parts: string[] = [];
+  let current: valueParser.Node[] = [];
+  let carried = '';
+  for (const node of valueParser(selector).nodes) {
+    if (node.type !== 'div' || node.value !== ',') { current.push(node); continue; }
+    const segment = carried + valueParser.stringify(current) + node.before;
+    if (segment !== '') parts.push(segment.trim());
+    current = [];
+    carried = node.after;
+  }
+  parts.push((carried + valueParser.stringify(current)).trim());
+  return parts;
+}
 
 export interface ControlRole { surface?: string; base?: Record<string, string>; states?: Record<string, Record<string, string>> }
 export interface ControlTheme extends SurfaceTheme { [key: string]: any }
@@ -131,10 +152,7 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
   return compilePresetRules({ [family]: bucket }, breakpoints, errorPrefix, theme);
 }
 function generateCss(theme: ControlTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
-  return compileRules(theme, breakpoints).map(rule => {
-    const css = `${selector} { ${Object.entries(rule.values).map(([key,value]) => `${key}: ${value};`).join(' ')} }`;
-    return rule.minWidth === null ? css : `@media (min-width: ${rule.minWidth}px) { ${css} }`;
-  }).join('\n');
+  return serializeBlocks(responsiveBlocks(compileRules(theme, breakpoints), selector));
 }
 function declarations(theme: ControlTheme, role = 'contained', tone = '', size = '', radiusOverride = '', shadowOverride = '') {
   const pack = getTokens(theme)[role];
@@ -199,9 +217,9 @@ function componentCss(theme: ControlTheme, selector: string, role = 'contained',
   // `:has(...)`) since they contain commas of their own — `.btn:is(.x, .y)`
   // became the two bogus selectors `.btn:is(.x` and `.y)`, and appending a
   // state like `:hover` to each produced the invalid, silently-wrong
-  // `.btn:is(.x:hover, .y):hover`. `postcss.list.comma` is selector-aware
-  // and only splits top-level commas, outside any parentheses.
-  const selectors = postcss.list.comma(selector).map(value => value.trim());
+  // `.btn:is(.x:hover, .y):hover`. `splitSelectorList` only splits
+  // top-level commas, outside any parentheses or quotes.
+  const selectors = splitSelectorList(selector);
   const render = (targets: string[], declarations: Record<string,string>) => {
     const { placeholder, ...regular } = declarations;
     const result = [emit(targets.join(', '), regular)];

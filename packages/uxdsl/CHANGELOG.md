@@ -64,6 +64,38 @@ Also changed by the move:
   `schema`, `docs/agent-guide.md` and the three codemods; the CHANGELOG is
   linked from the README instead of shipped.
 
+### The browser runtime without PostCSS (stability phase 4, audit R5)
+
+`uxdsl/runtime` no longer pulls in the CSS parser. A browser bundle of
+`applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and
+`loadPersistedTheme` went from 159,440 bytes minified (50,816 gzip; 65 modules,
+28 of them PostCSS) to 95,050 (29,849 gzip; 30 modules, none of them PostCSS),
+measured with esbuild for the browser. `uxdsl/theme` is PostCSS-free too.
+
+- The engines build the theme as blocks — a selector, its declarations, at
+  most one at-rule — and one serializer writes them (`src/css-blocks.ts`).
+  The string is unchanged byte for byte; the reference check on the theme
+  paths reads the blocks instead of parsing the CSS it just wrote.
+- The reference engine works on declaration records
+  (`src/reference-core.ts`, `inspectDeclarationReferences` in
+  `uxdsl/engine`); `inspectReferences(root, consumers, options)` is the
+  PostCSS adapter the plugin uses, unchanged (the frozen equivalence oracle
+  still agrees issue for issue).
+- The contrast gate reads the foundation blocks, and a control directive
+  splits its selector list with the language's value tokenizer
+  (`splitSelectorList`, same contract as `postcss.list.comma`, except that a
+  comma inside a comment is not a separator).
+- **Changed:** `generateThemeCss(theme, { css })` and `validateTheme(theme,
+  { references: { css } })` throw `UXD_REFERENCE_CONTEXT` instead of parsing
+  `css`: compiled dependency CSS is the PostCSS plugin's option. The catalog
+  entry for `UXD_REFERENCE_CONTEXT` now says what it is thrown for (an
+  external token that is not a custom-property name, or this).
+
+No visual change: every theme stylesheet is the same string as before
+(`test/theme-blocks.test.js` compares the blocks with what PostCSS reads back
+from the CSS for the base theme and every playground theme;
+`test/runtime-bundle.test.js` pins the bundle).
+
 ### Stability phases 0–3 and 5 (before the package move)
 
 The entries below were written while the code still shipped as the five

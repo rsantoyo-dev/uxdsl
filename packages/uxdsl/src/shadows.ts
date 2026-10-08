@@ -1,6 +1,7 @@
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { BASE_THEME } from './base-theme';
+import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 // Derived from theme/base.json, not a second,
 // independently-maintained literal.
@@ -14,10 +15,7 @@ export function compileShadowRules(theme: ShadowTheme = {}, breakpoints: Breakpo
   return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW', theme);
 }
 export function generateShadowCss(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
-  return compileShadowRules(theme, breakpoints).map(rule => {
-    const css = `${selector} { ${Object.entries(rule.values).map(([p, v]) => `${p}: ${v};`).join(' ')} }`;
-    return rule.minWidth === null ? css : `@media (min-width: ${rule.minWidth}px) { ${css} }`;
-  }).join('\n');
+  return serializeBlocks(responsiveBlocks(compileShadowRules(theme, breakpoints), selector));
 }
 export function inspectShadowTheme(theme: ShadowTheme, viewport: number) {
   if (!Number.isFinite(viewport) || viewport < 0) throw new Error('UXD_SHADOW_VIEWPORT: Expected a non-negative width.');

@@ -2,6 +2,7 @@ import { DEFAULT_BORDER_COLORS } from './edges';
 import { TokenContext, tokenValueToCss } from './language';
 import { themeError } from './diagnostics';
 import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
+import { CssBlock, serializeBlocks } from './css-blocks';
 
 /** Emits `--uxdsl__<namespace>__<key>[-<subKey>]` for every entry of a flat-or-
  * nested token map, claiming each name in `names` so two different logical
@@ -16,24 +17,26 @@ import { buildVarName, buildNamespacedVarName, NameRegistry } from './naming';
  * `var(--uxdsl__…)` reference on both CSS paths — foundations used to be
  * emitted raw, and only the plugin's final pass over every declaration
  * resolved them at build time. */
-function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry, context: TokenContext): string[] {
-  const out: string[] = [];
+function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry, context: TokenContext): Array<[string, string]> {
+  const out: Array<[string, string]> = [];
   for (const [key, val] of Object.entries(map)) {
     if (typeof val === 'object' && val !== null) {
       for (const [subKey, subVal] of Object.entries(val as Record<string, unknown>)) {
         const identifier = `${namespace}.${key}.${subKey}`;
-        out.push(`${names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier)}: ${tokenValueToCss(String(subVal), context)}`);
+        out.push([names.claim(buildNamespacedVarName(namespace, `${key}-${subKey}`), identifier), tokenValueToCss(String(subVal), context)]);
       }
     } else {
-      out.push(`${names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`)}: ${tokenValueToCss(String(val), context)}`);
+      out.push([names.claim(buildNamespacedVarName(namespace, key), `${namespace}.${key}`), tokenValueToCss(String(val), context)]);
     }
   }
   return out;
 }
 
-/** Canonical JSON -> CSS mapping for foundational values and Palette modes. */
-export function generateFoundationCss(theme: Record<string, any>): string {
-  const cssVars: string[] = [];
+/** Canonical JSON -> CSS mapping for foundational values and Palette modes:
+ * the `:root` block, then — when the theme has a dark palette — the same
+ * overrides under `prefers-color-scheme: dark` and under `[data-theme='dark']`. */
+export function foundationBlocks(theme: Record<string, any>): CssBlock[] {
+  const cssVars: Array<[string, string]> = [];
   const names = new NameRegistry('UXD_FOUNDATION');
 
   // Palette
@@ -53,11 +56,11 @@ export function generateFoundationCss(theme: Record<string, any>): string {
   if (theme.spacing) {
     Object.entries(theme.spacing as Record<string, unknown>).forEach(([key, val]) => {
       if (key.startsWith('space-')) throw themeError('UXD_SPACING_KEY', `The "space-" prefix was removed from spacing keys; write "${key.slice('space-'.length)}" instead of "${key}"`, `spacing.${key}`);
-      cssVars.push(`${names.claim(buildVarName('space', key), `spacing.${key}`)}: ${tokenValueToCss(String(val), theme)}`);
+      cssVars.push([names.claim(buildVarName('space', key), `spacing.${key}`), tokenValueToCss(String(val), theme)]);
     });
   }
 
-  let cssContent = `:root { ${cssVars.join('; ')}; }`;
+  const blocks: CssBlock[] = [{ selector: ':root', declarations: cssVars }];
   // Dark Mode — a separate scope (its own selector), so its palette names
   // are tracked in their own registry rather than colliding with the base
   // palette's identical names, which is expected (that's the override).
@@ -65,11 +68,15 @@ export function generateFoundationCss(theme: Record<string, any>): string {
     const darkVars = namespacedVars('palette', theme.modes.dark.palette, new NameRegistry('UXD_FOUNDATION'), theme);
 
     if (darkVars.length > 0) {
-      const darkCss = darkVars.join('; ');
-      cssContent += ` @media (prefers-color-scheme: dark) { :root:not([data-theme='light']) { ${darkCss}; } }`;
-      cssContent += ` :root[data-theme='dark'] { ${darkCss}; }`;
+      blocks.push({ selector: ":root:not([data-theme='light'])", declarations: darkVars, condition: '@media (prefers-color-scheme: dark)' });
+      blocks.push({ selector: ":root[data-theme='dark']", declarations: darkVars });
     }
   }
 
-  return cssContent;
+  return blocks;
+}
+
+/** The foundation blocks as CSS, one line. */
+export function generateFoundationCss(theme: Record<string, any>): string {
+  return serializeBlocks(foundationBlocks(theme), ' ');
 }

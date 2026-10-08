@@ -8,6 +8,7 @@ import { ShadowTheme, getShadowTokens } from './shadows';
 import { buildVarName, buildNamespacedVarName } from './naming';
 import { themeError } from './diagnostics';
 import { BASE_THEME } from './base-theme';
+import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
 export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
@@ -68,10 +69,7 @@ export function compileSurfaceRules(theme: SurfaceTheme = {}, breakpoints: Break
   return compilePresetRules({ surface }, breakpoints, 'UXD_SURFACE', theme);
 }
 export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }, selector = ':root') {
-  return compileSurfaceRules(theme, breakpoints).map(rule => {
-    const css = `${selector} { ${Object.entries(rule.values).map(([p, v]) => `${p}: ${v};`).join(' ')} }`;
-    return rule.minWidth === null ? css : `@media (min-width: ${rule.minWidth}px) { ${css} }`;
-  }).join('\n');
+  return serializeBlocks(responsiveBlocks(compileSurfaceRules(theme, breakpoints), selector));
 }
 
 /**

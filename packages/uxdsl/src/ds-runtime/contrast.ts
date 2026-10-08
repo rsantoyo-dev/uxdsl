@@ -1,6 +1,5 @@
-import postcss from 'postcss';
 import { DEFAULT_BREAKPOINTS, BreakpointMap, getToneFamilies } from '../language';
-import { generateFoundationCss } from '../foundations';
+import { foundationBlocks } from '../foundations';
 import { inspectEdgeTheme } from '../edges';
 import { inspectShadowTheme } from '../shadows';
 import { inspectSurfaceTheme, surfaceDeclarations, getSurfaceTokens } from '../surfaces';
@@ -258,18 +257,21 @@ export function resolveExpression(expr: string, varMap: Record<string, string>, 
 // resolution above reads from — entirely from the real generators.
 // ---------------------------------------------------------------------
 
-function parseFlatRootDecls(css: string): Record<string, string> {
+/** Every custom property the foundation blocks of `theme` declare, the last
+ * declaration of a name winning — read from the blocks the generator builds,
+ * not from parsing the CSS it would write. */
+function foundationVariables(theme: Record<string, any>): Record<string, string> {
   const out: Record<string, string> = {};
-  postcss.parse(css).walkDecls(/^--/, (decl) => {
-    out[decl.prop] = decl.value;
-  });
+  for (const block of foundationBlocks(theme)) {
+    for (const [prop, value] of block.declarations) if (prop.startsWith('--')) out[prop] = value;
+  }
   return out;
 }
 
 interface ModeMaps { palette: Record<string, string> }
 
 function buildPaletteMaps(theme: Record<string, any>): { light: ModeMaps; dark: ModeMaps | null } {
-  const light = parseFlatRootDecls(generateFoundationCss({ ...theme, modes: undefined }));
+  const light = foundationVariables({ ...theme, modes: undefined });
   const darkPalette = theme.modes?.dark?.palette;
   if (!darkPalette || typeof darkPalette !== 'object') return { light: { palette: light }, dark: null };
   // Same merge foundations.ts's own dark-mode block conceptually applies
@@ -279,7 +281,7 @@ function buildPaletteMaps(theme: Record<string, any>): { light: ModeMaps; dark: 
   // resulting map comes from generateFoundationCss too, not a second
   // resolution path.
   const mergedDarkTheme = { ...theme, palette: deepMergeTheme(theme.palette || {}, darkPalette), modes: undefined };
-  const dark = parseFlatRootDecls(generateFoundationCss(mergedDarkTheme));
+  const dark = foundationVariables(mergedDarkTheme);
   return { light: { palette: light }, dark: { palette: dark } };
 }
 
