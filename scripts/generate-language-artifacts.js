@@ -1,32 +1,22 @@
-const { DEFAULT_INPUTS } = require('../packages/postcss-uxdsl/dist/inputs');
-const { DEFAULT_BUTTONS } = require('../packages/postcss-uxdsl/dist/buttons');
+const { DEFAULT_INPUTS } = require('../packages/uxdsl/dist/inputs');
+const { DEFAULT_BUTTONS } = require('../packages/uxdsl/dist/buttons');
 // The compiled browser-safe language module is the authoritative source.
 const fs = require('node:fs');
 const path = require('node:path');
 const root = path.resolve(__dirname, '..');
-const { DEFAULT_DENSITIES, DEFAULT_BREAKPOINTS, LANGUAGE_COMPLETIONS, getToneFamilies } = require('../packages/postcss-uxdsl/dist/language');
-const { DEFAULT_BORDERS, DEFAULT_RADII } = require('../packages/postcss-uxdsl/dist/edges');
-const { DEFAULT_SHADOWS } = require('../packages/postcss-uxdsl/dist/shadows');
-const { DEFAULT_SURFACES } = require('../packages/postcss-uxdsl/dist/surfaces');
-const { DEFAULT_THEME } = require('../packages/postcss-uxdsl/dist/default-theme');
-const { TYPOGRAPHY_PROPERTIES } = require('../packages/postcss-uxdsl/dist/typography');
+const { DEFAULT_DENSITIES, LANGUAGE_COMPLETIONS, getToneFamilies } = require('../packages/uxdsl/dist/language');
+const { DEFAULT_RADII } = require('../packages/uxdsl/dist/edges');
+const { DEFAULT_SURFACES } = require('../packages/uxdsl/dist/surfaces');
+const { DEFAULT_THEME } = require('../packages/uxdsl/dist/default-theme');
+const { TYPOGRAPHY_PROPERTIES } = require('../packages/uxdsl/dist/typography');
 // MIG-B6-27 (FEAT-008): the JSON Schema is generated from the very constants
 // the compiler branches on, so it cannot drift into describing a theme the
 // engine would reject (or rejecting one it accepts).
-const { KNOWN_THEME_FAMILIES } = require('../packages/postcss-uxdsl/dist/ds-runtime');
-const { SURFACE_PROPERTIES } = require('../packages/postcss-uxdsl/dist/surfaces');
-const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/postcss-uxdsl/dist/buttons');
-const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/postcss-uxdsl/dist/inputs');
-const manifestPath = 'packages/postcss-uxdsl/src/theme/theme-manifest.json';
-const manifest = JSON.parse(fs.readFileSync(path.join(root, manifestPath), 'utf8'));
-manifest.uxdslVersion = require('../packages/postcss-uxdsl/package.json').version;
-manifest.defaults.breakpoints = DEFAULT_BREAKPOINTS;
-manifest.tokens.density = { min: 1, max: Object.keys(DEFAULT_DENSITIES).length };
-// MIG-B6-29 (FEAT-008), step 5: the real palette keys, not a hand-maintained
-// list — this used to omit `text`/`divider`/`action` (real top-level
-// DEFAULT_THEME.palette keys that just don't qualify as a "tone" family)
-// because it was copied from getToneFamilies' own output once, by hand.
-manifest.tokens.paletteFamilies = Object.keys(DEFAULT_THEME.palette);
+const { KNOWN_THEME_FAMILIES } = require('../packages/uxdsl/dist/entries/engine');
+const { SURFACE_PROPERTIES } = require('../packages/uxdsl/dist/surfaces');
+const { BUTTON_PROPERTIES, BUTTON_STATES } = require('../packages/uxdsl/dist/buttons');
+const { INPUT_PROPERTIES, INPUT_STATES } = require('../packages/uxdsl/dist/inputs');
+const { DIRECTIVE_USAGE } = require('../packages/uxdsl/dist/directives');
 
 // MIG-B6-26 (FEAT-008): the vscode extension's directive-argument
 // completions, its TextMate grammar's function/directive alternations,
@@ -56,12 +46,12 @@ const fullCompletions = {
     ])
   ),
 };
+// The usage string of each directive comes from the grammar itself (src/directives.ts).
 const directiveDescriptions = {
-  theme: 'Legacy shared token pack (borders, radii, shadows, surfaces, buttons, inputs) inlined into the compiled theme. Prefer the theme JSON for new tokens.',
-  'ds-surface': "Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone and numeric size: @ds-surface(role [tone] [size]).",
-  'ds-button': 'Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone and numeric size: @ds-button(role [tone] [size]).',
-  'ds-input': 'Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone and numeric size: @ds-input(role [tone] [size]).',
-  'ds-typo': 'Applies a shared typography role\'s responsive font styles: @ds-typo(role).',
+  'ds-surface': `Applies a shared container role (padding, radius, background, border, shadow) composed from the theme. Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-surface']}.`,
+  'ds-button': `Applies a shared button role and its interaction states (hover, focus, disabled, selected). Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-button']}.`,
+  'ds-input': `Applies a shared field role and its interaction states (focus, invalid, disabled, readonly). Optional tone, numeric size and overrides: ${DIRECTIVE_USAGE['ds-input']}.`,
+  'ds-typo': `Applies a shared typography role's responsive font styles: ${DIRECTIVE_USAGE['ds-typo']}.`,
 };
 const customData = {
   version: 1.1,
@@ -95,37 +85,11 @@ const grammar = {
   },
 };
 
-// MIG-B6-29 (FEAT-008), step 6: every legacy `@theme` pack below is
-// deprecated (still generated, still supported, not removed in beta.6 —
-// see packages/postcss-uxdsl/README.md) now that postcss-uxdsl/theme/base.json
-// supplies the same defaults to every built-in preset with no import
-// needed. Deprecating does not authorize a second, hand-maintained map or
-// a precedence change: these still come from the exact same engine
-// defaults theme/base.json feeds, regenerated by this same script.
-const banner = '/* Generated by scripts/generate-language-artifacts.js. Do not edit.\n' +
-  ' * Deprecated (FEAT-008, MIG-B6-29): every built-in preset already reads\n' +
-  ' * these defaults from postcss-uxdsl/theme/base.json directly, with no\n' +
-  ' * import needed. Kept, unchanged in meaning, for a project that already\n' +
-  ' * imports this pack explicitly. Not removed in 0.5.0-beta.6. */\n';
 const files = {
-  'packages/postcss-uxdsl/src/theme/default-densities.uxdsl': banner + '@theme {\n' + Object.entries(DEFAULT_DENSITIES).map(([key, value]) => `  density-${key}: ${value};`).join('\n') + '\n}\n',
   'packages/uxdsl-vscode/src/generated-completions.ts': '// Generated by scripts/generate-language-artifacts.js. Do not edit.\nexport const completions = ' + JSON.stringify(fullCompletions, null, 2) + ' as const;\n',
   'packages/uxdsl-vscode/uxdsl.custom-data.json': JSON.stringify(customData, null, 2) + '\n',
   'packages/uxdsl-vscode/syntaxes/uxdsl.tmLanguage.json': JSON.stringify(grammar, null, 2) + '\n',
-  [manifestPath]: JSON.stringify(manifest, null, 2) + '\n',
 };
-files['packages/postcss-uxdsl/src/theme/default-spacing.css'] = banner + ':root {\n' + Object.entries(DEFAULT_THEME.spacing).map(([key, value]) => `  --uxdsl__space__${key}: ${value};`).join('\n') + '\n}\n';
-const typography = Object.entries(DEFAULT_THEME.fonts.families).map(([key, value]) => `  --uxdsl__font__${key}: ${value};`);
-for (const [role, fields] of Object.entries(DEFAULT_THEME.typography_details)) {
-  for (const [field, value] of Object.entries(fields)) typography.push(`  --uxdsl__typography__${role}-${TYPOGRAPHY_PROPERTIES[field]}: ${value};`);
-}
-files['packages/postcss-uxdsl/src/theme/default-typography.uxdsl'] = banner + ':root {\n' + typography.join('\n') + '\n}\n' + fs.readFileSync(path.join(__dirname, 'templates/typography-selectors.css'), 'utf8');
-for (const [family, prefix, tokens] of [['borders', 'border', DEFAULT_BORDERS], ['radii', 'radius', DEFAULT_RADII], ['shadows', 'shadow', DEFAULT_SHADOWS]]) {
-  files[`packages/postcss-uxdsl/src/theme/default-${family}.uxdsl`] = banner + '@theme {\n' + Object.entries(tokens).map(([key, value]) => `  ${prefix}-${key}: ${value};`).join('\n') + '\n}\n';
-}
-files['packages/postcss-uxdsl/src/theme/default-buttons.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_BUTTONS).map(([role, pack]) => `  button-${role}: {\n    @ds-surface(${pack.surface});\n${Object.entries(pack.states).map(([state, fields]) => `    :${state} {\n${Object.entries(fields).map(([key,value]) => `      ${key}: ${value};`).join('\n')}\n    }`).join('\n')}\n  }`).join('\n') + '\n}\n';
-files['packages/postcss-uxdsl/src/theme/default-inputs.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_INPUTS).map(([role, pack]) => `  input-${role}: {\n    @ds-surface(${pack.surface});\n${Object.entries(pack.base).map(([key,value]) => `    ${key}: ${value};`).join('\n')}\n${Object.entries(pack.states).map(([state, fields]) => `    :${state} {\n${Object.entries(fields).map(([key,value]) => `      ${key}: ${value};`).join('\n')}\n    }`).join('\n')}\n  }`).join('\n') + '\n}\n';
-files['packages/postcss-uxdsl/src/theme/default-surfaces.uxdsl'] = banner + '@theme {\n' + Object.entries(DEFAULT_SURFACES).map(([role, style]) => `  surface-${role}: {\n${Object.entries(style).map(([key, value]) => `    ${key}: ${value};`).join('\n')}\n  }`).join('\n') + '\n}\n';
 // --- MIG-B6-27 (FEAT-008): theme JSON Schema -------------------------------
 //
 // Editors read this through `"$schema"` in a `uxdsl.theme.json`, so it has to
@@ -134,23 +98,40 @@ files['packages/postcss-uxdsl/src/theme/default-surfaces.uxdsl'] = banner + '@th
 // below. The name registries a project extends — palette families, typography
 // roles, font family names, role names — stay open, with only a key *pattern*
 // enforced; closing them would reject `palette.brand`, which is valid.
-const NAME_PATTERN = '^[A-Za-z0-9][A-Za-z0-9_-]*$';
-const stringMap = (pattern = NAME_PATTERN) => ({
+//
+// Stability phase 1: the patterns are `validateTheme`'s own
+// (THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN in
+// ds-runtime/theme-validate.ts), so the schema and the compiler reject the
+// same names and the same leaves — a number, `null` or object where a string
+// belongs, an empty string, `;`/`{`/`}` in a value. What a regex cannot say
+// (balanced parentheses, a zero-width base breakpoint, a dangling reference)
+// the validator still checks and the schema documents in `description`.
+const { THEME_NAME_PATTERN, THEME_KEY_PATTERN, THEME_VALUE_PATTERN } = require('../packages/uxdsl/dist/entries/engine');
+const NAME_PATTERN = THEME_NAME_PATTERN.source;
+const KEY_PATTERN = THEME_KEY_PATTERN.source;
+const leaf = {
+  type: 'string',
+  minLength: 1,
+  pattern: THEME_VALUE_PATTERN.source,
+  description: 'A CSS value, a token reference (space(2), palette(primary.main), radius(2), …), a responsive expression (xs(…) md(…)) or var(). Nonempty; no ";", "{" or "}"; parentheses must balance.',
+};
+const stringMap = (pattern = KEY_PATTERN) => ({
   type: 'object',
   propertyNames: { pattern },
-  additionalProperties: { type: 'string' },
+  additionalProperties: leaf,
 });
 const closedFields = (properties) => ({
   type: 'object',
   additionalProperties: false,
-  properties: Object.fromEntries(Object.keys(properties).map((field) => [field, { type: 'string' }])),
+  properties: Object.fromEntries(Object.keys(properties).map((field) => [field, leaf])),
 });
 const paletteSchema = {
   type: 'object',
   propertyNames: { pattern: NAME_PATTERN },
   // A family needs no `main`: `action` in the base theme has only `disabled`.
   // The main/dark/contrast trio is the *tone* predicate Buttons and Inputs
-  // apply, not the definition of a valid family.
+  // apply, not the definition of a valid family. A family is always an
+  // object of variants, never a single color string.
   additionalProperties: stringMap(),
 };
 const controlSchema = (properties, states) => ({
@@ -160,7 +141,7 @@ const controlSchema = (properties, states) => ({
     type: 'object',
     additionalProperties: false,
     properties: {
-      surface: { type: 'string' },
+      surface: leaf,
       base: closedFields(properties),
       states: {
         type: 'object',
@@ -171,20 +152,23 @@ const controlSchema = (properties, states) => ({
   },
 });
 const familySchemas = {
-  breakpoints: { type: 'object', propertyNames: { pattern: NAME_PATTERN }, additionalProperties: { type: 'number' } },
-  // `spacing` accepts the bare key (`"1"`) and the prefixed form (`"space-1"`).
-  spacing: stringMap('^(space-)?[A-Za-z0-9][A-Za-z0-9_-]*$'),
+  breakpoints: {
+    type: 'object',
+    propertyNames: { pattern: NAME_PATTERN },
+    additionalProperties: { type: 'number', minimum: 0, description: 'Viewport width in pixels. Widths must be distinct and one breakpoint must be 0.' },
+  },
+  spacing: stringMap(),
   palette: paletteSchema,
   fonts: {
     type: 'object',
     additionalProperties: false,
-    properties: { families: stringMap(), google: { type: 'array', items: { type: 'string' } } },
+    properties: { families: stringMap(NAME_PATTERN), google: { type: 'array', items: { type: 'string', minLength: 1, pattern: '\\S', description: 'A Google Fonts css2 family spec, e.g. "Inter:wght@400;700". Percent-encoded into the @import URL, never emitted as CSS.' } } },
   },
   colors: {
     type: 'object',
     propertyNames: { pattern: NAME_PATTERN },
     // A standalone color (`white`) or a shade scale (`gray.300`).
-    additionalProperties: { anyOf: [{ type: 'string' }, stringMap()] },
+    additionalProperties: { anyOf: [leaf, stringMap()] },
   },
   typography_details: {
     type: 'object',
@@ -205,7 +189,6 @@ const familySchemas = {
     additionalProperties: false,
     properties: { dark: { type: 'object', additionalProperties: false, properties: { palette: paletteSchema } } },
   },
-  typography: stringMap(),
 };
 const knownFamilies = Array.from(KNOWN_THEME_FAMILIES);
 const missingFamilySchemas = knownFamilies.filter((family) => !familySchemas[family]);
@@ -233,7 +216,7 @@ const themeSchema = {
     ...Object.fromEntries(knownFamilies.map((family) => [family, familySchemas[family]])),
   },
 };
-files['packages/postcss-uxdsl/schema/theme.schema.json'] = JSON.stringify(themeSchema, null, 2) + '\n';
+files['packages/uxdsl/schema/theme.schema.json'] = JSON.stringify(themeSchema, null, 2) + '\n';
 
 for (const [file, content] of Object.entries(files)) {
   const target = path.join(root, file);

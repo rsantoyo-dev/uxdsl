@@ -1,0 +1,44 @@
+/* Tabs: a row of buttons over one visible panel. */
+
+.tabs {
+  margin-block: density(4);
+  min-width: 0;
+}
+
+.tabs__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: space(1);
+  border-bottom: border(1);
+}
+
+.tabs__tab {
+  @ds-typo(span);
+  margin: 0;
+  padding: space(2) space(4);
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: palette(text.secondary);
+  font-weight: 600;
+  cursor: pointer;
+
+  &:hover {
+    color: palette(primary.main);
+  }
+
+  &[aria-selected="true"] {
+    color: palette(primary.main);
+    border-bottom-color: palette(primary.main);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: -2px;
+  }
+}
+
+.tabs__panel {
+  padding-top: density(3);
+  min-width: 0;
+}

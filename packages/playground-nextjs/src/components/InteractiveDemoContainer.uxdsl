@@ -15,8 +15,8 @@
   align-items: center;
   gap: density(4);
   padding: density(3) density(4);
-  border-bottom: 1px solid palette(neutral-light);
-  background: palette(surface-main);
+  border-bottom: 1px solid palette(neutral.light);
+  background: palette(surface.main);
   flex-shrink: 0;
 }
 
@@ -32,7 +32,7 @@
   @ds-typo(caption);
   font-weight: 700;
   letter-spacing: 0.05em;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   text-transform: uppercase;
   white-space: nowrap;
   overflow: hidden;
@@ -46,8 +46,8 @@
 
 .InteractiveDemoContainer__toolbar {
   padding: density(3) density(4);
-  border-bottom: 1px solid palette(neutral-light);
-  background: palette(surface-light);
+  border-bottom: 1px solid palette(neutral.light);
+  background: palette(surface.light);
   display: flex;
   flex-direction: column;
   gap: density(2);

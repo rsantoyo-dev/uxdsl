@@ -4,8 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/components/ThemeContext';
 import { useTypographyDemo, initialTypographyItems } from './TypographyDemoContext';
 import { Edit2, Trash2, Monitor, Sparkles, Loader2 } from 'lucide-react';
-import { DEFAULT_BREAKPOINTS, inspectTypographyTheme, compileTypographyRules } from 'postcss-uxdsl/ds-runtime';
-import { inspectResponsiveValue } from 'postcss-uxdsl/language';
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
+import { inspectTypographyTheme, compileTypographyRules } from 'uxdsl/engine';
+import { inspectResponsiveValue } from 'uxdsl/language';
 import { BreakpointEditor } from './BreakpointEditor';
 import { InteractiveDemoContainer } from './InteractiveDemoContainer';
 // import { optimizeTypography } from '../utils/typographyOptimizer';

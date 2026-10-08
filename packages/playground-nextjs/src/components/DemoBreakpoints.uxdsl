@@ -19,7 +19,7 @@
     display: flex;
     flex-direction: column;
     gap: density(6);
-    background: palette(surface-light);
+    background: palette(surface.light);
   }
 
   .breakpoints-viz-container {
@@ -60,7 +60,7 @@
   }
 
   .breakpoints-segment.is-active {
-    box-shadow: inset 0 0 0 2px palette(surface-main);
+    box-shadow: inset 0 0 0 2px palette(surface.main);
     z-index: 1;
   }
 
@@ -78,11 +78,11 @@
   }
 
   /* Segment Colors - Using requested palette */
-  .breakpoints-segment--xs { background: palette(tertiary-light); color: palette(tertiary-dark); }
-  .breakpoints-segment--sm { background: palette(secondary-light); color: palette(secondary-dark); }
-  .breakpoints-segment--md { background: palette(primary-light); color: palette(primary-dark); }
-  .breakpoints-segment--lg { background: palette(info-light); color: palette(info-dark); }
-  .breakpoints-segment--xl { background: palette(error-light); color: palette(error-dark); }
+  .breakpoints-segment--xs { background: palette(tertiary.light); color: palette(tertiary.dark); }
+  .breakpoints-segment--sm { background: palette(secondary.light); color: palette(secondary.dark); }
+  .breakpoints-segment--md { background: palette(primary.light); color: palette(primary.dark); }
+  .breakpoints-segment--lg { background: palette(info.light); color: palette(info.dark); }
+  .breakpoints-segment--xl { background: palette(error.light); color: palette(error.dark); }
 
   /* Grid Layout */
   .breakpoints-grid {
@@ -102,7 +102,7 @@
   .breakpoints-subtitle {
     font-size: 1rem;
     font-weight: 600;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     margin-bottom: density(1);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -113,14 +113,14 @@
     align-items: center;
     gap: density(3);
     padding: density(2);
-    background: palette(surface-main);
+    background: palette(surface.main);
     border-radius: radius(2);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     transition: border-color 0.2s;
   }
 
   .breakpoints-control-row:hover {
-    border-color: palette(primary-light);
+    border-color: palette(primary.light);
   }
 
   .breakpoints-control-label {
@@ -128,7 +128,7 @@
     font-weight: 700;
     text-transform: uppercase;
     font-size: 0.85rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   .breakpoints-slider {
@@ -146,18 +146,18 @@
   .breakpoints-input-val {
     width: 80px;
     padding: space(2) space(3);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     border-radius: radius(1);
     font-family: font(code);
     text-align: right;
     font-size: 0.9rem;
-    color: palette(text-main);
+    color: palette(text.main);
     background: transparent;
   }
 
   .breakpoints-unit {
     font-size: 0.8rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   /* Info Panel Column */
@@ -166,9 +166,9 @@
     flex-direction: column;
     gap: density(3);
     padding: density(4);
-    background: palette(surface-main);
+    background: palette(surface.main);
     border-radius: radius(2);
-    border: 1px solid palette(neutral-light);
+    border: 1px solid palette(neutral.light);
     height: 100%;
   }
 
@@ -179,8 +179,8 @@
     justify-content: center;
     padding: density(3);
     border-radius: radius(2);
-    background: palette(surface-light);
-    border: 1px solid palette(neutral-light);
+    background: palette(surface.light);
+    border: 1px solid palette(neutral.light);
     text-align: center;
   }
 
@@ -191,7 +191,7 @@
   }
 
   .breakpoints-icon {
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   .breakpoints-info-content {
@@ -201,13 +201,13 @@
   }
 
   .breakpoints-info-card.is-highlighted {
-    background: palette(primary-light);
-    border-color: palette(primary-main);
-    color: palette(primary-contrast);
+    background: palette(primary.light);
+    border-color: palette(primary.main);
+    color: palette(primary.contrast);
   }
 
   .breakpoints-info-card.is-highlighted .breakpoints-info-label {
-    color: palette(primary-contrast);
+    color: palette(primary.contrast);
     opacity: 0.9;
   }
 
@@ -215,7 +215,7 @@
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     margin-bottom: 2px;
   }
 
@@ -231,7 +231,7 @@
 
   .breakpoints-info-desc {
     font-size: 0.85rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     text-align: center;
     line-height: 1.5;
     margin-top: auto;

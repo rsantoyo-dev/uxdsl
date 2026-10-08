@@ -1,6 +1,6 @@
 module.exports = {
   plugins: {
-    // 'postcss-uxdsl': {
+    // 'uxdsl/postcss': {
     //   breakpoints: {
     //     xs: 0,
     //     sm: 480,

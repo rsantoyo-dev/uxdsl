@@ -22,9 +22,10 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
-const { checkThemeContrast, resolveTheme, resolveTypographyRole } = require('postcss-uxdsl/ds-runtime');
-const { resolveResponsiveValue } = require('postcss-uxdsl/language');
-const contrastExceptions = require('postcss-uxdsl/theme/base.contrast-exceptions.json');
+const { checkThemeContrast, resolveTheme } = require('uxdsl/theme');
+const { resolveTypographyRole } = require('uxdsl/engine');
+const { resolveResponsiveValue } = require('uxdsl/language');
+const contrastExceptions = require('uxdsl/theme/base.contrast-exceptions.json');
 const { themes } = require(path.join(ROOT, 'themes.js'));
 
 const HEADINGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
@@ -90,8 +91,9 @@ function summarize(report) {
 
 export function contrastVerdict(reports) {
   const failures = reports.reduce((sum, report) => sum + report.failures.length, 0);
+  const excepted = reports.reduce((sum, report) => sum + (report.excepted ? report.excepted.length : 0), 0);
   const exceptionIssues = reports.reduce((sum, report) => sum + report.exceptionIssues.length, 0);
-  return { failures, exceptionIssues, passed: reports.every((report) => report.passed) };
+  return { failures, excepted, exceptionIssues, passed: reports.every((report) => report.passed) };
 }
 
 function main() {
@@ -101,8 +103,9 @@ function main() {
     const report = checkThemeContrast(resolveTheme(theme), { exceptions: contrastExceptions });
     reports.push(report);
     console.log(`\n=== Theme: ${name} ===`);
-    console.log(`Contrast (checkThemeContrast, shipped exceptions applied): ${report.passed ? 'PASS' : 'FAIL'} — ${report.checked.length} pairs checked, ${report.failures.length} failing.`);
+    console.log(`Contrast (checkThemeContrast, shipped exceptions applied): ${report.passed ? 'PASS' : 'FAIL'} — ${report.checked.length} pairs checked, ${report.failures.length} failing, ${report.excepted.length} excepted (failing, covered by an exception, not counted as passing).`);
     for (const line of summarize(report)) console.log(`  - ${line}`);
+    for (const exception of report.exceptions) console.log(`  - exception ${exception.id} (${exception.kind}): ${exception.matched ? `covers ${exception.covered}` : 'matches nothing'}`);
     for (const issue of report.exceptionIssues) console.log(`  - exception issue: ${issue}`);
     const warnings = auditTypography(theme);
     if (warnings.length) {
@@ -114,10 +117,10 @@ function main() {
   }
   const verdict = contrastVerdict(reports);
   if (!verdict.passed) {
-    console.error(`\nTheme audit FAILED: ${verdict.failures} failing contrast pair(s), ${verdict.exceptionIssues} exception issue(s) across these themes. Details per pair: \`uxdsl theme --contrast\`.`);
+    console.error(`\nTheme audit FAILED: ${verdict.failures} failing contrast pair(s), ${verdict.exceptionIssues} exception issue(s) across these themes (${verdict.excepted} more excepted). Details per pair: \`uxdsl theme --contrast\`.`);
     process.exitCode = 1;
   } else {
-    console.log('\nTheme audit PASSED.');
+    console.log(`\nTheme audit PASSED: 0 failing contrast pairs; ${verdict.excepted} excepted pair(s) across these themes are listed by \`uxdsl theme --contrast\`, not counted as passing.`);
   }
 }
 

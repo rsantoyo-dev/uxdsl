@@ -4,7 +4,25 @@
       "id": "package-export:.",
       "file": "packages/playground-nextjs/package.json",
       "needle": "uxdsl build",
-      "why": "the site's own stylesheet is compiled by `uxdsl build`, which runs the PostCSS plugin \u2014 there is no `import` of it to find"
+      "why": "the site's own stylesheet is compiled by `uxdsl build`, which runs `compile()` — the package root's pipeline — with no `import` of it to find"
+    },
+    {
+      "id": "package-export:./postcss",
+      "file": "packages/playground-nextjs/package.json",
+      "needle": "uxdsl build",
+      "why": "`uxdsl build` (the site's own stylesheet) runs the `uxdsl/postcss` plugin inside `compile()`; there is no `import` of it to find"
+    },
+    {
+      "id": "package-export:./vite",
+      "file": "fixtures/vite-adapter/run.js",
+      "needle": "require('uxdsl/vite')",
+      "why": "the playground is a Next.js site, so it cannot host a Vite build; fixtures/vite-adapter runs a real `vite build` and dev server with `uxdsl/vite` installed from the tarball (part of verify:1.0)"
+    },
+    {
+      "id": "package-export:./webpack",
+      "file": "fixtures/webpack-adapter/run.js",
+      "needle": "loader: 'uxdsl/webpack'",
+      "why": "Next.js owns the playground's webpack CSS pipeline; fixtures/webpack-adapter runs a real webpack build with `uxdsl/webpack` installed from the tarball (part of verify:1.0)"
     },
     {
       "id": "diagnostics:UXD_* error codes",
@@ -15,17 +33,17 @@
     {
       "id": "package-export:./schema/theme.schema.json",
       "file": "packages/playground-nextjs/uxdsl.theme.green.json",
-      "needle": "\"$schema\": \"./node_modules/postcss-uxdsl/schema/theme.schema.json\"",
+      "needle": "\"$schema\": \"./node_modules/uxdsl/schema/theme.schema.json\"",
       "why": "the green, purple and slate theme overrides declare the packaged schema as their $schema, so an editor validates and completes them; scripts/test-theme-inheritance.cjs resolves the export and checks each pointer reaches it. A JSON $schema is not an import, so the detector cannot see it."
     }
   ],
   "knownGaps": [],
   "dogfoodingBaseline": {
     "handWrittenMediaQueries": 2,
-    "hexColorsInUxdsl": 12,
-    "rgbHslInUxdsl": 1,
+    "hexColorsInUxdsl": 0,
+    "rgbHslInUxdsl": 0,
     "cssModuleFiles": 0,
-    "inlineStyleObjects": 28,
-    "hexColorsInTsx": 32
+    "inlineStyleObjects": 20,
+    "hexColorsInTsx": 10
   }
 }

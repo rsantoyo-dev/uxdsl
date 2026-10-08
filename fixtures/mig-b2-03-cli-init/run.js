@@ -22,7 +22,7 @@
  * immediately, only the theme entry defines `:root`, a second run is
  * idempotent (hash comparison), and plain `init` (no flag) is unaffected.
  *
- * (10) MIG-B7-12 (FEAT-009): from a real `npm pack` tarball of postcss-uxdsl
+ * (10) MIG-B7-12 (FEAT-009): from a real `npm pack` tarball of uxdsl
  * (not this checkout's directory), the `$schema` path the READMEs document
  * exists inside the installed package, is exported, and is the JSON Schema;
  * and the config `init` writes type-checks against that installed package —
@@ -37,8 +37,8 @@ const { execFileSync } = require('child_process');
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const { packAndInstall } = require('../lib/tarball-consumer');
-const CLI_BIN = path.join(REPO_ROOT, 'packages', 'uxdsl-cli', 'bin', 'uxdsl.js');
-const POSTCSS_UXDSL_DIR = path.join(REPO_ROOT, 'packages', 'postcss-uxdsl');
+const CLI_BIN = path.join(REPO_ROOT, 'packages', 'uxdsl', 'bin', 'uxdsl.js');
+const UXDSL_DIR = path.join(REPO_ROOT, 'packages', 'uxdsl');
 
 const failures = [];
 function check(label, condition) {
@@ -52,13 +52,11 @@ function mkProject() {
   return dir;
 }
 
-function installPostcssUxdsl(projectDir) {
-  // Matches the documented flow (`npm install -D uxdsl-cli postcss-uxdsl`):
-  // both packages installed as siblings in the project's own node_modules.
-  // Installed from this checkout's own directory (not a tarball) — MIG-B2-05
-  // is the story that owns tarball-fidelity gates; this one is about init/
-  // build actually working, using the CLI's real dependency-resolution path.
-  execFileSync('npm', ['install', '--no-audit', '--no-fund', '--no-save', POSTCSS_UXDSL_DIR], { cwd: projectDir, stdio: 'pipe' });
+function installUxdsl(projectDir) {
+  // Matches the documented flow (`npm i -D uxdsl`), installed from this
+  // checkout's own directory (not a tarball) — the release gate owns
+  // tarball fidelity; this one is about init/build actually working.
+  execFileSync('npm', ['install', '--no-audit', '--no-fund', '--no-save', UXDSL_DIR], { cwd: projectDir, stdio: 'pipe' });
 }
 
 function runCli(args, projectDir, opts = {}) {
@@ -86,18 +84,21 @@ function snapshotHashes(dir, relPaths) {
 async function main() {
   // --- 1/2/3/4: init in an empty project, then a real build ---
   const project = mkProject();
-  installPostcssUxdsl(project);
+  installUxdsl(project);
 
   const init1 = runCli(['init'], project);
   check('init exits 0 in an empty project with a minimal package.json', init1.ok && init1.code === 0);
   check('init creates uxdsl.config.cjs', fs.existsSync(path.join(project, 'uxdsl.config.cjs')));
   check('init creates src/uxdsl-entry.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')));
+  check('init creates src/styles.uxdsl, the file the user edits', fs.existsSync(path.join(project, 'src', 'styles.uxdsl')));
+  check('the generated entry imports src/styles.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && /@import '\.\/styles\.uxdsl';/.test(fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')));
+  check('init prints exactly one import path', init1.output.split('\n').filter((l) => /^\s*import '/.test(l)).length === 1);
   check('init does NOT create postcss.config.js (no Next.js marker present)', !fs.existsSync(path.join(project, 'postcss.config.js')));
   check('init output documents the generated CSS import and watch command', /src\/uxdsl\.css/.test(init1.output) && /uxdsl:watch/.test(init1.output));
   const entryContent = fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'))
     ? fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')
     : '';
-  check('generated entry does not duplicate the canonical theme with legacy default imports', !/postcss-uxdsl\/theme\/default-/.test(entryContent));
+  check('generated entry does not duplicate the canonical theme with legacy default imports', !/theme\/default-/.test(entryContent));
   const configContent = fs.existsSync(path.join(project, 'uxdsl.config.cjs')) ? fs.readFileSync(path.join(project, 'uxdsl.config.cjs'), 'utf8') : '';
   check('uxdsl.config.cjs uses relative paths for entry/outFile', /entry:\s*['"]\.\/?src/.test(configContent) && /outFile:\s*['"]\.\/?src/.test(configContent));
   const pkgAfterInit = JSON.parse(fs.readFileSync(path.join(project, 'package.json'), 'utf8'));
@@ -114,7 +115,7 @@ async function main() {
   }
 
   // --- 5: a second init changes nothing ---
-  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), 'package.json'];
+  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), path.join('src', 'styles.uxdsl'), 'package.json'];
   const before = snapshotHashes(project, trackedFiles);
   const init2 = runCli(['init'], project);
   const after = snapshotHashes(project, trackedFiles);
@@ -123,10 +124,10 @@ async function main() {
 
   // --- 6: a pre-existing uxdsl.config.cjs and postcss.config.js survive untouched ---
   const preserveProject = mkProject();
-  installPostcssUxdsl(preserveProject);
+  installUxdsl(preserveProject);
   fs.writeFileSync(path.join(preserveProject, 'next.config.js'), 'module.exports = {};\n');
   const canaryConfig = "module.exports = { entry: './src/custom-entry.uxdsl', outFile: './src/custom.css', watch: [] };\n// CANARY: hand-written, must survive init untouched\n";
-  const canaryPostcss = "module.exports = { plugins: { 'postcss-uxdsl': {}, 'autoprefixer': {} } };\n// CANARY: hand-written, must survive init untouched\n";
+  const canaryPostcss = "module.exports = { plugins: { 'uxdsl/postcss': {}, 'autoprefixer': {} } };\n// CANARY: hand-written, must survive init untouched\n";
   fs.writeFileSync(path.join(preserveProject, 'uxdsl.config.cjs'), canaryConfig);
   fs.writeFileSync(path.join(preserveProject, 'postcss.config.js'), canaryPostcss);
   runCli(['init'], preserveProject);
@@ -135,11 +136,17 @@ async function main() {
 
   // --- 7: Next.js detection creates postcss.config.js only when absent ---
   const nextProject = mkProject();
-  installPostcssUxdsl(nextProject);
+  installUxdsl(nextProject);
   fs.writeFileSync(path.join(nextProject, 'next.config.js'), 'module.exports = {};\n');
   const nextInit = runCli(['init'], nextProject);
   check('with a next.config.js marker present, init creates postcss.config.js', nextInit.ok && fs.existsSync(path.join(nextProject, 'postcss.config.js')));
-  check('the created postcss.config.js references postcss-uxdsl', fs.existsSync(path.join(nextProject, 'postcss.config.js')) && fs.readFileSync(path.join(nextProject, 'postcss.config.js'), 'utf8').includes('postcss-uxdsl'));
+  check('the created postcss.config.js references uxdsl/postcss', fs.existsSync(path.join(nextProject, 'postcss.config.js')) && fs.readFileSync(path.join(nextProject, 'postcss.config.js'), 'utf8').includes("'uxdsl/postcss'"));
+  check('the created postcss.config.js keeps Next\'s default plugins (flexbugs-fixes, preset-env) ahead of uxdsl/postcss', (() => {
+    const file = path.join(nextProject, 'postcss.config.js');
+    if (!fs.existsSync(file)) return false;
+    const keys = Object.keys(require(file).plugins);
+    return keys.join(',') === 'next/dist/compiled/postcss-flexbugs-fixes,next/dist/compiled/postcss-preset-env,uxdsl/postcss';
+  })());
 
   // --- 8: actionable error messages ---
   const missingEntry = runCli(['build', '--entry', 'src/does-not-exist.uxdsl', '--out', 'src/out.css'], project);
@@ -149,14 +156,14 @@ async function main() {
   check('a missing --config file fails with a clear, specific message', !missingConfig.ok && /Configuration file not found/.test(missingConfig.output) && /missing\.cjs/.test(missingConfig.output));
 
   const badConfigProject = mkProject();
-  installPostcssUxdsl(badConfigProject);
+  installUxdsl(badConfigProject);
   fs.writeFileSync(path.join(badConfigProject, 'uxdsl.config.cjs'), 'module.exports = { entry: 123, outFile: "./src/uxdsl.css" };\n');
   const badConfig = runCli(['build'], badConfigProject);
   check('an invalid config property (wrong type) names the file and the property', !badConfig.ok && /uxdsl\.config\.cjs/.test(badConfig.output) && /"entry"/.test(badConfig.output));
 
   // --- 9 (MIG-B4-03, FEAT-005): --multi scaffolds a "builds" project ---
   const multiProject = mkProject();
-  installPostcssUxdsl(multiProject);
+  installUxdsl(multiProject);
   const multiInit1 = runCli(['init', '--multi'], multiProject);
   check('init --multi exits 0 in an empty project', multiInit1.ok);
   check('init --multi creates uxdsl.config.cjs with a "builds" array', fs.existsSync(path.join(multiProject, 'uxdsl.config.cjs')) && /builds:\s*\[/.test(fs.readFileSync(path.join(multiProject, 'uxdsl.config.cjs'), 'utf8')));
@@ -187,21 +194,21 @@ async function main() {
   check('plain "init" (no --multi) still produces the single-entry form, unaffected by this story', !/builds:\s*\[/.test(configContent));
 
   // --- 10 (MIG-B7-12, FEAT-009): editor support from a real tarball ---
-  const tarball = packAndInstall({ names: ['postcss-uxdsl'], tmpPrefix: 'uxdsl-cli-init-tarball-' });
-  const DOCUMENTED_SCHEMA = './node_modules/postcss-uxdsl/schema/theme.schema.json';
+  const tarball = packAndInstall({ tmpPrefix: 'uxdsl-cli-init-tarball-' });
+  const DOCUMENTED_SCHEMA = './node_modules/uxdsl/schema/theme.schema.json';
   const schemaFile = path.join(tarball.dir, DOCUMENTED_SCHEMA);
   check('the documented $schema path exists inside the installed tarball', fs.existsSync(schemaFile));
   let schema = null;
   try { schema = JSON.parse(fs.readFileSync(schemaFile, 'utf8')); } catch (_) {}
   check('the documented $schema file is a JSON Schema', !!schema && typeof schema.$schema === 'string' && /json-schema/.test(schema.$schema));
   let exported = null;
-  try { exported = tarball.req.resolve('postcss-uxdsl/schema/theme.schema.json'); } catch (_) {}
-  check('postcss-uxdsl/schema/theme.schema.json is reachable through the exports map', exported === fs.realpathSync(schemaFile));
-  check('the installed tarball ships the config types the JSDoc imports', fs.existsSync(path.join(tarball.dir, 'node_modules', 'postcss-uxdsl', 'dist', 'config.d.ts')));
+  try { exported = tarball.req.resolve('uxdsl/schema/theme.schema.json'); } catch (_) {}
+  check('uxdsl/schema/theme.schema.json is reachable through the exports map', exported === fs.realpathSync(schemaFile));
+  check('the installed tarball ships the config types the JSDoc imports', fs.existsSync(path.join(tarball.dir, 'node_modules', 'uxdsl', 'dist', 'entries', 'config.d.ts')));
 
   const tarballInit = runCli(['init'], tarball.dir);
   check('init exits 0 in the tarball-installed project', tarballInit.ok);
-  const tsc = path.join(POSTCSS_UXDSL_DIR, 'node_modules', 'typescript', 'bin', 'tsc');
+  const tsc = path.join(UXDSL_DIR, 'node_modules', 'typescript', 'bin', 'tsc');
   const typeCheck = () => {
     try {
       execFileSync(process.execPath, [tsc, '--noEmit', '--allowJs', '--skipLibCheck', '--target', 'es2022', '--module', 'preserve', '--moduleResolution', 'bundler', 'uxdsl.config.cjs'], { cwd: tarball.dir, encoding: 'utf8', stdio: 'pipe' });

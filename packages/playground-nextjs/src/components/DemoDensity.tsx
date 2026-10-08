@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react'
 import { useBreakpoints } from '@/components/BreakpointsProvider'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
-import { responsiveEntries, resolveResponsiveValue, inspectResponsiveValue, getDensityTokens } from 'postcss-uxdsl/language'
+import { responsiveEntries, resolveResponsiveValue, inspectResponsiveValue } from 'uxdsl/language'
+import { getDensityTokens } from 'uxdsl/engine'
 import { useTheme } from './ThemeContext'
 import DensityExplanation from './DensityExplanation'
 
@@ -190,13 +191,8 @@ export default function DemoDensity() {
         </div>
       </div>
 
-      <div className="demo-header demo-header--tokens">
-        <h3 className="demo-title">Global Density Tokens</h3>
-        <p className="demo-subtitle">
-          Update the tokens below to reflect changes in the UI.
-        </p>
-      </div>
-
+      <details className="demo-disclosure">
+      <summary className="demo-disclosure__summary">Every density token, its progression and an editor</summary>
       <div className="density-grid-container">
         <div className="density-grid">
           {densities.map((s) => {
@@ -283,6 +279,7 @@ export default function DemoDensity() {
           })}
         </div>
       </div>
+      </details>
 
       {editingLevel !== null && (
         <EditDensityDialog 

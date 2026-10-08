@@ -1,6 +1,6 @@
 'use strict';
 
-// MIG-B6-20 (FEAT-008) acceptance gate: uxdsl-webpack-loader installed from
+// MIG-B6-20 (FEAT-008) acceptance gate: uxdsl/webpack, installed from
 // a real tarball (no workspace/symlink resolution back into this
 // monorepo), driving real webpack compilations with `css-loader` and
 // `MiniCssExtractPlugin` — not a mocked loader context. Exercises every
@@ -15,13 +15,14 @@ const { packAndInstall } = require('../lib/tarball-consumer');
 
 async function main() {
   const { dir, run, write } = packAndInstall({
-    names: ['postcss-uxdsl', 'uxdsl-core', 'uxdsl-webpack-loader'],
     tmpPrefix: 'uxdsl-webpack-adapter-',
     consumerPkg: { name: 'uxdsl-webpack-adapter-consumer', version: '1.0.0', private: true },
   });
   run('npm', ['install', 'webpack@^5', 'webpack-cli@^5', 'css-loader@^7', 'mini-css-extract-plugin@^2', '--no-audit', '--no-fund']);
 
-  write('uxdsl.theme.config.cjs', "module.exports = { theme: { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } } };\n");
+  // Breakpoints are declared in the theme file (there is no loader option for
+  // them); the 900px media query below proves the discovered theme is applied.
+  write('uxdsl.theme.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } }, breakpoints: { md: 900 } };\n");
   write('partial.uxdsl', '.partial { color: green; }\n');
   write('panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
   write('main.js', "import './panel.uxdsl';\n");
@@ -37,7 +38,7 @@ async function main() {
     "  module: {\n" +
     "    rules: [{\n" +
     "      test: /\\.uxdsl$/,\n" +
-    "      use: [MiniCssExtractPlugin.loader, 'css-loader', { loader: 'uxdsl-webpack-loader', options: { includeTheme: false, breakpoints: { xs: 0, md: 900 } } }],\n" +
+    "      use: [MiniCssExtractPlugin.loader, 'css-loader', { loader: 'uxdsl/webpack', options: { includeTheme: false } }],\n" +
     "    }],\n" +
     "  },\n" +
     "  plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],\n" +
@@ -51,9 +52,9 @@ async function main() {
   assert.ok(fs.existsSync(cssPath), 'MiniCssExtractPlugin must produce a real dist/styles.css');
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.a\s*\{[^}]*color:\s*red/, 'extracted CSS must contain the compiled rule');
-  assert.match(css, /900px/, "the loader's own options (breakpoints via getOptions()) must take effect");
+  assert.match(css, /900px/, "the discovered theme's own breakpoints must take effect");
   assert.match(css, /\.partial\s*\{[^}]*color:\s*green/, '@import-ed partial must be inlined into the same output');
-  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.config.cjs must be discovered and applied");
+  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.cjs must be discovered and applied");
   console.log('  ok  - css-loader + MiniCssExtractPlugin produce a real CSS file with the compiled rules, options and theme applied');
 
   // --- no absolute build-machine paths anywhere in dist/ ---
@@ -79,7 +80,7 @@ async function main() {
     "  module: {\n" +
     "    rules: [{\n" +
     "      test: /\\.uxdsl$/,\n" +
-    "      use: [MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { sourceMap: true } }, { loader: 'uxdsl-webpack-loader', options: { includeTheme: false, breakpoints: { xs: 0, md: 900 } } }],\n" +
+    "      use: [MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { sourceMap: true } }, { loader: 'uxdsl/webpack', options: { includeTheme: false } }],\n" +
     "    }],\n" +
     "  },\n" +
     "  plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],\n" +

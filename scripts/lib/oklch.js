@@ -3,9 +3,9 @@
 // sRGB <-> OKLCH conversion (Björn Ottosson, https://bottosson.github.io/posts/oklab/),
 // used only by scripts/fix-theme-contrast.js (FEAT-008 MIG-B6-29 phase 3, "paso 8") to
 // search for the minimal-lightness-change color that clears a WCAG contrast requirement
-// while preserving hue and chroma. This is NOT part of postcss-uxdsl's shipped runtime:
+// while preserving hue and chroma. This is NOT part of uxdsl's shipped runtime:
 // the compiler itself never converts colors to OKLCH, only composes/measures colors that
-// are already hex/rgb/hsl (see packages/postcss-uxdsl/src/ds-runtime/contrast.ts).
+// are already hex/rgb/hsl (see packages/uxdsl/src/ds-runtime/contrast.ts).
 
 function clamp(v, lo, hi) {
   return v < lo ? lo : v > hi ? hi : v;

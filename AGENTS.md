@@ -23,11 +23,26 @@ and finer control. UXDSL does not replace semantic HTML or application logic.
 | Breakpoints | Shared viewport transition thresholds | Named responsive declarations for local layout behavior |
 | Borders | Shared composite edge treatments | `border(n)`; explicit longhands for local overrides |
 | Radii | Shared corner shapes and progressions | `radius(n)` or intentional built-in shape keywords |
-| Shadows | Shared visual depth and inset treatments | `shadow(key)` / `elevation(key)` for box shadows |
-| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size])` |
-| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size])` |
-| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size])` |
+| Shadows | Shared visual depth and inset treatments | `shadow(key)` for box shadows |
+| Surfaces | Shared container treatments composed from system tokens | `@ds-surface(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Buttons | Shared action roles and visual interaction states | `@ds-button(role [tone] [size] [radius(k)] [shadow(k)])` |
+| Inputs | Shared field roles, caret, placeholder and visual states | `@ds-input(role [tone] [size] [radius(k)] [shadow(k)])` |
 | Typography | Shared text roles and their responsive behavior | `@ds-typo(role)`; HTML retains document semantics |
+
+The grammar has one spelling per construct (stability phase 3): a token
+function takes exactly one argument (`border(1, red, dashed)` is an error —
+write `border: border(1)` and the longhands after it), plus an optional alpha
+on `palette()`/`color()`; a Palette or Color entry is `family.variant`
+(`palette(primary.main)`, `color(gray.300)`; `palette(primary)` is its
+`main`), never dashed; a directive is `@ds-x(role [tone] [size] [radius(k)]
+[shadow(k)])` with the parentheses directly after the name and
+whitespace-separated arguments, the role first; names are case-insensitive.
+Every reference in a declaration is checked against the effective theme when
+it is rewritten (`UXD_SPACE_REFERENCE`, `UXD_PALETTE_REFERENCE`, …, with a
+"did you mean"), a tone with `getToneFamilies` (`UXD_SURFACE_TONE`), and a
+second `@ds-button`/`@ds-input` in one rule is `UXD_DIRECTIVE_DUPLICATE`.
+`scripts/codemod-canonical-grammar.js` in `uxdsl` rewrites the
+removed spellings.
 
 A matching value does not imply a matching responsibility. Do not replace:
 
@@ -111,8 +126,8 @@ Both live in the theme JSON.
   },
   "palette": {
     "primary": {
-      "main": "var(--uxdsl__color__blue-700)",
-      "contrast": "var(--uxdsl__color__white)"
+      "main": "color(blue.700)",
+      "contrast": "color(white)"
     }
   }
 }
@@ -124,7 +139,10 @@ Both live in the theme JSON.
   color: palette(primary.contrast);
 }
 .blue-swatch {
-  background: color(blue-700);
+  background: color(blue.700);
+}
+.scrim {
+  background: color(black, 0.5);
 }
 ```
 
@@ -133,11 +151,19 @@ Both live in the theme JSON.
   swatch. Shade numbers are keys, not calculated brightness or contrast guarantees.
 - Preserve explicit Palette-to-Color references. Matching hex values do not form
   a dependency. A literal Palette value is valid but does not track a Color token.
+- The base theme demonstrates this model (stability phase 5, audit DE-11):
+  `colors` holds `white`, `black` and every shade its palette uses (`gray`
+  50–950 plus `purple`, `pink`, `red`, `amber`, `green`, `sky`), and every
+  palette leaf, light and dark, is a `color(family.shade)` or `palette(…)`
+  reference — no literal. A shade key such as `gray.450` is a position in
+  that family's lightness order, not a promise about the value. `color(white)`
+  and `color(black)` work with no theme of the project's own, so
+  `color(white, 0.5)` is the way to write a translucent canvas.
 - Confirm roles, variants and referenced tokens exist. Inspect mode assignments
   and active overrides before changing them.
 - A variant named `contrast` is not automatic accessibility validation. Check
   actual foreground/background pairs, states and themes —
-  `checkThemeContrast(theme, { exceptions })` (`postcss-uxdsl/ds-runtime`,
+  `checkThemeContrast(theme, { exceptions })` (`uxdsl/theme`,
   MIG-B6-29) does this for a given effective theme; it is not run
   automatically as part of resolving or compiling one.
 
@@ -147,8 +173,60 @@ should receive the change. For “update blue-700 throughout the theme,” edit
 
 **Palette decision rule:** reassign a role when its purpose stays the same but its
 visual color should change. For “make primary actions blue-500,” change
-`palette.primary.main` to `var(--uxdsl__color__blue-500)` and keep components using
+`palette.primary.main` to `color(blue.500)` and keep components using
 `palette(primary.main)`. Direct blue-700 consumers retain their token.
+
+## Dark mode (`modes`)
+
+**Responsibility:** `modes` redefines Palette values for dark mode, nothing
+else. Its shape is public API (stability phase 5, audit DE-8): exactly
+`{ "dark": { "palette": { … } } }`. `dark` is the only mode and `palette`
+the only family it carries; the validator refuses any other key as
+`UXD_THEME_INVALID`. Spacing, radii, shadows, surfaces and typography have
+one value for both modes.
+
+```json
+{
+  "palette": { "primary": { "main": "color(purple.700)", "contrast": "color(white)" } },
+  "modes": { "dark": { "palette": { "primary": { "main": "color(purple.200)", "contrast": "color(black)" } } } }
+}
+```
+
+```css
+.cta {
+  background: palette(primary.main);  /* var(--uxdsl__palette__primary-main) */
+  color: palette(primary.contrast);
+}
+```
+
+- The switch is `data-theme` on `<html>`, over `prefers-color-scheme`. The
+  compiled output declares the dark palette twice: inside
+  `@media (prefers-color-scheme: dark)` for `:root:not([data-theme='light'])`,
+  and unconditionally for `:root[data-theme='dark']`. No attribute: the OS
+  preference decides; `data-theme="light"` pins light; `data-theme="dark"`
+  pins dark. The library never sets the attribute; a theme switcher writes
+  and persists it.
+- Components keep reading `palette(role.variant)` and get both modes. Do not
+  express dark mode with a second theme, a `.dark` class or `@media` in a
+  component; do not write dark values into `palette` and light ones into
+  `modes`.
+- A dark key you omit inherits the light value for that key (objects merge
+  by key), so a family that should look the same in both modes needs no
+  entry, and `modes: {}` changes nothing. There is no override that turns
+  dark mode off; a project that wants one look repeats its light values
+  under `modes.dark.palette`.
+- Override a dark value by writing only the keys that change under
+  `modes.dark.palette` — in the theme file, the `theme` option or an
+  `applyTheme` patch; all three use the same merge, and `applyTheme` treats
+  a dark value change as a value, not a structural change. A dark value is
+  written in the same grammar as a light one (`color(gray.950)`,
+  `palette(surface.light)`, a literal).
+- `checkThemeContrast` evaluates every pair in both modes; `uxdsl theme`
+  prints the effective `modes.dark.palette` after the merge. Generalizing to
+  `modes.<name>` later would be additive and is not promised.
+
+**Decision rule:** a color that differs in dark mode is a `modes.dark.palette`
+value; the component never knows which mode it is in.
 
 ## Breakpoints
 
@@ -178,8 +256,11 @@ Other CSS cascade rules still apply.
   an intentional local exception. Do not move a shared threshold for one card.
 - Change a threshold only when all affected transitions should move. Inspect
   component declarations, Density mappings and Typography progressions.
-- Define new thresholds through supported configuration before use. Check support
-  in each installed integration; do not assume every editor accepts custom names.
+- Define new thresholds in the theme's `breakpoints` family before use — it is
+  the only place a breakpoint is configured (the plugin's `breakpoints` option
+  was removed; passing it warns `UXD_OPTION_REMOVED` and is ignored). Check
+  support in each installed integration; do not assume every editor accepts
+  custom names.
 - Omitted built-in breakpoint names can retain engine defaults. Inspect the
   effective map, not just the keys shown in a partial theme excerpt.
 
@@ -276,18 +357,14 @@ supported; the former runtime copied them literally without resolving progressio
 }
 ```
 
-Legacy `border-n` and `radius-n` declarations in `@theme` remain supported in the
-same compilation. JSON overrides matching legacy entries; both override shared
-defaults. Import legacy definitions in each compilation that needs them. There
-is no cross-compilation Borders/Radii cache. The default .uxdsl files are generated
-from the shared module. Components consume `var(--uxdsl__border__n)`/`var(--uxdsl__radius__n)`;
-replacing the generated theme stylesheet updates their responsive behavior.
+The theme JSON is the only place a preset is defined: a `@theme { … }` block in
+a stylesheet fails as `UXD_THEME_BLOCK_REMOVED`, naming the family its
+declarations belong to, and nothing leaks between compilations. The built-in
+presets come from `theme/base.json`. Components consume
+`var(--uxdsl__border__n)`/`var(--uxdsl__radius__n)`; replacing the generated
+theme stylesheet updates their responsive behavior.
 
 ```css
-@theme {
-  border-1: xs(1px solid #64748b) md(2px solid #64748b);
-  radius-2: xs(8px) md(12px);
-}
 .card {
   border: border(1);
   border-radius: radius(2);
@@ -303,17 +380,23 @@ for component spacing, not automatically for border width or corner rounding.
   Preserve references instead of copying their current computed values.
 - Change a shared definition only when all its consumers should follow. Edit
   source configuration and rebuild or use the runtime; preview edits do not save it.
-- When a Border preset exists, optional arguments in
-  `border(1, palette(primary.main), dashed)` are ignored in favor of that preset.
+- `border(k)` takes exactly the preset key: `border(1, palette(primary.main), dashed)`
+  is `UXD_EDGE_ARGUMENT` (the extra arguments used to be ignored silently).
   For local changes, follow `border: border(1)` with explicit `border-color` or
   `border-style` longhands. The engine changes preset variables across thresholds; subsequent local
   longhands persist without repeating their breakpoint declarations. Do not
   alter the preset for a one-component request.
-- `radius(pill)` and `radius(full)` both compile to `9999px`; `radius(circle)`
-  compiles to `50%`. A circle needs equal width and height. `rounded()` is an alias.
-  Keywords are built-ins, not editable numbered presets. Border radius alone
-  does not clip child content.
-- Define numbered presets before use. The default radius-0 is an explicit square corner (`0`). Unknown Border/Radius references fail instead of inventing fallback
+- `radius(pill)` compiles to `9999px`; `radius(circle)` compiles to `50%`. A
+  circle needs equal width and height. One name per concept: the former
+  `rounded()` alias and `radius(full)` fail as `UXD_SYNTAX_REMOVED`, naming the
+  replacement. Keywords are built-ins, not editable numbered presets. Border
+  radius alone does not clip child content.
+- Define numbered presets before use. Every numbered family has an explicit
+  zero in the base theme: `radius(0)` is a square corner (`0`), `border(0)` is
+  `none`, `shadow(0)` is `none`, `space(0)` is `0` and `density(0)` is `0`
+  (stability phase 5 added the Spacing and Border ones). Write `border(0)`
+  to remove a shared edge rather than a literal `none`, so the intent stays
+  a token. Unknown Border/Radius references fail instead of inventing fallback
   values. Define the token before using it; do not rely on old fallback behavior.
 - For local independent shapes, use intentional native CSS or per-corner values.
   Trace Spacing and Palette dependencies before changing foundational tokens.
@@ -352,14 +435,14 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
 
 ```css
 .card { box-shadow: shadow(2); }
-.inset-panel { box-shadow: elevation(inset); }
+.inset-panel { box-shadow: shadow(inset); }
 ```
 
 - Select an existing suitable preset. Preserve its reference instead of copying
   the current resolved value. Components consume `var(--uxdsl__shadow__key)`.
 - Values can be static or responsive. Include a base value; the most recent
-  applicable declaration persists until overridden. `elevation()` is an alias
-  for `shadow()` and does not change stacking order.
+  applicable declaration persists until overridden. A shadow does not change
+  stacking order; the former `elevation()` alias fails as `UXD_SYNTAX_REMOVED`.
 - Preserve comma-separated layers, nested color functions, inset flags, units,
   and configured `space`, `density`, `color` or `palette` dependencies. Never
   parse a shadow list by splitting all commas. Not all box-shadow presets are
@@ -370,10 +453,9 @@ A preset key is not a pixel value, z-index or guaranteed strength ranking.
 - Define tokens before use. Missing references fail instead of using fallbacks.
 - PostCSS, `generateThemeCss`, `generateShadowCss` and `inspectShadowTheme` share
   `src/shadows.ts` and the preset engine. The demo consumes that same engine.
-  Defaults generate `default-shadows.uxdsl`; do not maintain a second default map.
-- Legacy `shadow-n` in `@theme` remains supported in the same compilation. JSON
-  overrides matching legacy definitions, followed by defaults. There is no
-  process-global Shadow cache; import legacy definitions in each relevant build.
+  The defaults are `theme/base.json`'s; do not maintain a second default map.
+- The theme JSON is the only source: a `shadow-n` declaration in a `@theme`
+  block is `UXD_THEME_BLOCK_REMOVED`. There is no process-global Shadow cache.
 - Update source configuration and rebuild or replace managed runtime theme CSS.
   Preview edits are scoped and do not save JSON. Invalid edits preserve the last
   valid preview. Inspect actual CSS; validation is not a complete CSS validator.
@@ -434,16 +516,23 @@ This excerpt assumes its referenced tokens and breakpoints exist.
   main foreground and a 1px solid main border. Flat uses transparent bg and main
   foreground, preserving its border. Contained/custom roles use main bg and
   contrast foreground, preserving the configured border.
+- `surface`, `light` and `dark` are canvas identities; use them as a tone only
+  on `contained`. On `outlined`, `flat` or `underline` (and as a contained
+  Input's focus border) their `main` is drawn on the page it is the color of,
+  which no value can fix; the shipped contrast exceptions cover exactly that
+  class as three patterns (`{ tone, against: "ambient" }`), and those pairs are
+  listed as excepted, never as passing.
 - Numeric size overrides padding with Density and corners with Radius. Inspect
   both tokens; n is not a pixel value. Omit arguments to follow all role fields.
 - Modify a shared Surface only for a shared change; choose another role or CSS
   after the directive for a local exception. Do not replace a role with values
   merely because they match the current viewport.
 - PostCSS, `generateSurfaceCss`, `generateThemeCss`, `surfaceDeclarations` and
-  `inspectSurfaceTheme` use one Surface engine. Defaults generate the legacy file.
-- Legacy `@theme` Surface packs remain supported in the same compilation; JSON
-  fields override legacy fields, followed by defaults. No cross-build Surface
-  cache is retained. Unknown roles/fields and Radius/Border/Shadow references fail.
+  `inspectSurfaceTheme` use one Surface engine; the defaults are `theme/base.json`'s.
+- The theme JSON is the only source (a `@theme` Surface pack is
+  `UXD_THEME_BLOCK_REMOVED`); a supplied field overrides the default role's.
+  No cross-build Surface cache is retained. Unknown roles/fields and
+  Radius/Border/Shadow references fail.
   Also inspect Density, Spacing and Palette dependencies; validation is not a
   complete token-graph, CSS grammar or accessibility checker.
 - Verify responsive boundaries and persistence, tone overrides, nested containers,
@@ -463,7 +552,7 @@ choose a role; theme JSON defines `buttons[role]` with `surface`, `base`, `state
 Surfaces own the container composition. HTML/application code own interaction.
 
 ```json
-{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
+{"buttons":{"checkout":{"surface":"contained","base":{"padding":"density(2)"},"states":{"hover":{"bg":"tone(dark)","color":"tone(contrast)"},"focusvisible":{"outline":"2px solid palette(primary.main)","outline-offset":"3px"},"selected":{"shadow":"xs(shadow(1)) md(shadow(3))"}}}}}
 ```
 
 ```css
@@ -477,21 +566,38 @@ Surfaces own the container composition. HTML/application code own interaction.
   supplied responsive strings replace a whole field. `surface` must exist.
 - Automatic Button/Input tone generation requires a Palette family with `main`,
   `dark` and `contrast`; partial semantic groups such as `divider` are not tones.
+  Palette aliases in a theme reference other roles with `palette(surface.light)`,
+  never with the compiled `var(--uxdsl__palette__…)` name.
 - Base fields override Surface composition, including optional tone and numeric
-  size. Size selects Density and Radius. Default state colors follow the optional
-  Palette tone; explicit Palette references retain their configured meaning.
+  size. Size selects Density and Radius. A value follows the component's optional
+  Palette tone by saying `tone(main|dark|contrast)` (falling back to `primary`
+  when no tone is given); an explicit Palette reference such as
+  `palette(primary.dark)` retains its configured meaning whichever tone is
+  requested. `tone()` is valid only in Button/Input values (`UXD_TONE_CONTEXT`
+  elsewhere); the former hand-written fallback chain
+  `var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))` is
+  deprecated and still substituted for one release. A per-tone variable
+  (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) exists only where the
+  tone changes the value; a component always references it with the role's
+  own variable as the `var()` fallback, so resolve through that fallback.
 - Supported fields: padding, radius, bg, color, border, shadow, opacity, outline,
   outline-offset, transform, cursor, font-weight. States: hover, active, focus,
-  focusvisible, disabled, selected. Defaults supply hover and selected only.
+  focusvisible, disabled, selected. The base roles supply hover, focusvisible
+  (`outline: 2px solid tone(main)`, `outline-offset: 2px` — a keyboard focus
+  ring in the tone, on every `@ds-button`), selected and disabled (`opacity:
+  0.6`, `cursor: not-allowed`); `active` and `focus` are left to the project.
+  `hover` and `active` exclude a disabled control (`:disabled`,
+  `[aria-disabled="true"]`) without raising specificity, so a disabled button
+  keeps its disabled look under the pointer.
 - Selected matches `.is-selected`, aria-pressed=true, aria-selected=true. Use
   correct element semantics. aria-disabled styling does not prevent activation.
   Maintain keyboard focus and validate actual contrast (`checkThemeContrast`,
-  `postcss-uxdsl/ds-runtime`, checks Button text/border pairs specifically —
+  `uxdsl/theme`, checks Button text/border pairs specifically —
   not run automatically, and not a substitute for a real accessibility review).
-- Legacy `button-role` packs in `@theme` share the same engine within a build.
-  JSON overrides matching legacy fields, then defaults. No global Button cache.
+- A role is defined in the theme JSON only (a `button-<role>` pack in a
+  `@theme` block is `UXD_THEME_BLOCK_REMOVED`). No global Button cache.
 - `generateButtonCss`, `inspectButtonTheme`, `buttonComponentCss`, PostCSS and
-  the demo share `src/buttons.ts`. Defaults generate default-buttons.uxdsl.
+  the demo share `src/buttons.ts`; the defaults are `theme/base.json`'s.
 - Updating existing values uses managed theme CSS. Structural changes (Surface
   selection, added/removed state fields) require regenerated component CSS too.
 - Verify all interaction states, responsive boundaries and affected consumers.
@@ -526,8 +632,10 @@ labels, validation and errors. Preserve intent, not just the current computed va
   pseudo-element, including within states. Underline maps to border-bottom; the
   built-in underline role explicitly clears full borders and shadows.
 - Tone overrides Surface colors and default caret/focus treatment when the effective
-  theme supplies that Palette family. Explicit assignments remain explicit; invalid
-  defaults retain the error role. Numeric size selects Density and Radius tokens.
+  theme supplies that Palette family; a field follows it by saying
+  `tone(main|dark|contrast)` (the base theme's caret and focus border do). Explicit
+  assignments remain explicit; invalid defaults retain the error role. Numeric
+  size selects Density and Radius tokens.
 - Use native labels, correct types, disabled/readOnly and associated help/error
   messages. Placeholder is not a label. aria-disabled does not prevent editing;
   aria-invalid does not validate data. Native :invalid may match before interaction.
@@ -535,8 +643,9 @@ labels, validation and errors. Preserve intent, not just the current computed va
   scope; do not apply this pack blindly to checkboxes, radios, range or file inputs.
   Defaults inherit typography, use border-box and width 100%; local CSS can override.
 - PostCSS, generateInputCss, inspectInputTheme and inputComponentCss use inputs.ts
-  and shared preset/Surface engines. Generated default-inputs.uxdsl is not a second
-  source. Legacy packs are per compilation; JSON fields win; no global Input cache.
+  and shared preset/Surface engines; the defaults are `theme/base.json`'s. A role is
+  defined in the theme JSON only (a `@theme` pack is `UXD_THEME_BLOCK_REMOVED`);
+  no global Input cache.
 - Existing values update through managed theme CSS. Structural field/Surface changes
   require regenerated component CSS. Preview changes are scoped, not saved to JSON.
 - Verify responsive boundaries, persistence, keyboard focus, hover, disabled,
@@ -547,6 +656,23 @@ keep interaction/validation semantics in HTML and application code.
 
 ## Build time, runtime and one source of truth
 
+UXDSL is one package, `uxdsl` (`npm i -D uxdsl`; it provides the `uxdsl`
+command). Import from the entry that owns the job: `uxdsl` (`compile()`,
+`resolveTheme`, `DEFAULT_THEME`, `defineConfig`, the types), `uxdsl/postcss`
+(the plugin; `'uxdsl/postcss'` in a `postcss.config.js`), `uxdsl/vite`,
+`uxdsl/webpack`, `uxdsl/runtime` (the browser API; it does not load PostCSS),
+`uxdsl/theme` (resolve, validate, generate, contrast — isomorphic),
+`uxdsl/language` (editor metadata and `DIAGNOSTIC_CODES`), `uxdsl/config` and
+`uxdsl/engine` (per-family engines for tooling — exempt from semver, so do
+not build an application on it). The five former package names
+(`postcss-uxdsl`, `uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`,
+`uxdsl-webpack-loader`) are deprecated re-exports; do not add them to a project.
+With the PostCSS plugin alone (Next.js, no CLI), configure
+`'uxdsl/postcss': { includeTheme: false }` and write `@uxdsl theme;` once, at
+the top level of the one global stylesheet: the theme is emitted there and
+nowhere else, and CSS Modules stay free of `:root` (`UXD_THEME_MARKER` for a
+misspelled, repeated or nested marker).
+
 FEAT-002 moved every emitted variable to `--uxdsl__<family>__<key>` in
 0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped
 `scripts/codemod-namespace.js` previews migration of selected consumer files;
@@ -556,12 +682,19 @@ emitted presets. In beta.2, `resolveTheme` merges partial overrides with canonic
 defaults for PostCSS, CLI and `generateThemeCss`. Use that resolver rather than
 inventing Spacing or disabling validation. Unknown references still fail.
 The CLI reloads local config dependencies on rebuild; list those files in
-`watch` to observe their edits. Changing `themeFile` or watch patterns updates
-the running watcher. Generate CSS successfully before recording a runtime
+`watch` to observe their edits. Changing the entry or the watch patterns
+updates the running watcher. Two files, two jobs: `uxdsl.config.js`/`.cjs`
+says what to compile and where (`entry`/`outFile` or `builds`, `watch`,
+`references`, `strictTheme`, `sourcemap`); the theme file next to it —
+`uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` exporting the theme
+object — holds the theme, `breakpoints` included. A build config that
+carries `theme`, `themeFile`, `breakpoints` or `output` is rejected with the
+new home of each; a theme file exporting `{ theme, references }` is refused
+the same way. Generate CSS successfully before recording a runtime
 theme as last-valid or replacing its managed stylesheet.
 
-The reviewed base theme ships inside `postcss-uxdsl` itself, at
-`postcss-uxdsl/theme/base.json` (`packages/postcss-uxdsl/src/theme/base.json`
+The reviewed base theme ships inside `uxdsl` itself, at
+`uxdsl/theme/base.json` (`packages/uxdsl/src/theme/base.json`
 in this repo) — it is `DEFAULT_THEME`, not a playground-only convenience file.
 The Next.js playground no longer keeps its own copy; `packages/playground-nextjs/themes.js`
 requires that same package path as `baseTheme`. Named
@@ -573,24 +706,32 @@ as a complete theme. Nested objects merge; arrays and responsive strings
 replace the whole field. Custom edits merge over the active effective theme;
 replace starts from the common base. Put shared roles and dependencies in the
 base (now the package's `theme/base.json` — see FEAT-008's MIG-B6-29 for its
-history). `postcss-uxdsl/ds-runtime` exports `checkThemeContrast(theme,
+history). `uxdsl/theme` exports `checkThemeContrast(theme,
 { exceptions })` (MIG-B6-29 phase 2) to verify text/border colors against
 WCAG for any effective theme, including a project's own. Phase 3 corrected
 16 of `theme/base.json`'s own colors (and the playground's own `green`/
 `slate` named themes) to clear it, in OKLCH, preserving hue and moving only
-lightness; `report.passed` is still honestly `false`. Of the three real,
-disclosed engine/architecture findings that phase 3 left, one is closed
-(FEAT-009's MIG-B7-01, unreleased as of 2026-09-28: the Input `placeholder`
+lightness. Of the three real, disclosed engine/architecture findings that
+phase 3 left, one is closed (FEAT-009's MIG-B7-01: the Input `placeholder`
 follows the requested tone on `contained`, the only role whose background
-tints). As of 2026-09-28 two remain (`light`/`dark`/`surface` used as an
-accent tone reading their own canvas-identity color as text; `warning.main`
-not dark enough for direct text use), plus one that MIG-B7-01 itself
-surfaced: the *untoned* placeholder default `neutral.dark` is not
-dark-mode-aware enough (9 failures, `tone: null`, pinned by
-`packages/postcss-uxdsl/test/input-placeholder-tone.test.js`). Each is
-recommended as follow-up work in its own story's evidence, not swept into ad
-hoc exceptions. `postcss-uxdsl/ds-runtime`
-also exports `encodeGoogleFontFamily`/`googleFontsImportUrls` (MIG-B6-29
+tints), and stability phase 5 (audit DE-7) settled the second as a property
+of the role rather than a color: `light`/`dark`/`surface` used as an accent
+tone draw their own canvas-identity color on the canvas, so
+`theme/base.contrast-exceptions.json` excepts that class as three
+**pattern** records (`{ tone, against: "ambient", reason }`) instead of one
+exact record per pair. An exception, exact or pattern, covers failing pairs:
+the report lists each under `excepted` with its real ratio and the
+exception's id, counts per exception (`matched`, `covered`), and fails on a
+pattern that matches nothing, a malformed record or a duplicate id. The
+remaining findings were values, fixed as values in the same phase (DE-7 /
+D-9 = b): light-mode `warning` re-chosen (`main` `#b45309`, `dark`
+`#92400e`, `contrast` `#ffffff`, dark-mode `dark` `#f59e0b`), dark-mode
+`neutral.dark` `#94a3b8` (also the *untoned* placeholder default, whose 9
+dark-mode failures `packages/uxdsl/test/input-placeholder-tone.test.js`
+now pins as a negative control) and dark-mode `light.dark` `#334155`. The
+base theme passes its own gate; the CHANGELOG's "Visual changes" table has
+every before/after. `uxdsl/theme`
+also exports `googleFontsImportUrls` (and `uxdsl/engine` `encodeGoogleFontFamily`; MIG-B6-29
 phase 4, closing that story) — the one shared encoder both the PostCSS
 plugin and `generateThemeCss` use for a theme's `fonts.google`, so the two
 now emit byte-identical `@import`s for the same theme instead of only the
@@ -602,10 +743,54 @@ still has the old placement), compiled output puts every `@import` — the
 theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
 overrides.
 
+In compiled output the generated theme is one contiguous run, inserted after
+the author's prelude (`@charset`, leading comments, the theme's `@import`s,
+then the author's `@layer` statements and `@import`s) and before the author's
+rules (stability phase 1, audit T10) — the exact string `generateThemeCss`
+returns for the same theme, so build and runtime are byte-identical. An
+author's own `:root { --uxdsl__… }` therefore follows the theme's declaration
+and wins the cascade; to override a token in a stylesheet, write that rule
+rather than editing generated CSS.
+
+Theme values have one grammar, in every family and on both CSS paths
+(stability phase 1, audit T1): a literal CSS value; a token function —
+`space(k)`, `density(k)`, `color(family.shade[, alpha])`,
+`palette(family[.variant][, alpha])`, `radius(k|pill|full|circle)`,
+`border(k)`, `shadow(k)` — compiling to its `var(--uxdsl__<family>__<key>)`
+reference; a responsive expression over the theme's breakpoints (not in
+Spacing, Colors, Palette or `fonts.families`); and `var(--…)` as the escape
+hatch. Write `palette(surface.contrast)` in a theme, not the compiled name
+`var(--uxdsl__palette__surface-contrast)`; the reference pass checks that the
+token exists. The engines resolve this grammar themselves (`tokenValueToCss`,
+`uxdsl/engine`), so the PostCSS plugin and `generateThemeCss` emit
+byte-identical blocks for the same theme — do not rely on a compiler pass to
+fix up a theme value, and do not add a second serializer.
+
+There is one theme validator, `validateTheme(theme, { references? })` from
+`uxdsl/theme` (the former `validateAndNormalizeTheme` is gone; nothing
+is normalized). The PostCSS plugin calls
+it on the effective theme before any engine runs, `generateThemeCss` and
+`applyTheme` call it, the CLI calls it, and the packaged JSON Schema is
+generated from its patterns. Its rules: every leaf is a nonempty string —
+numbers, `null`, arrays and objects where a string belongs are
+`UXD_THEME_INVALID` with the key path, and nothing is coerced (`"768"` is not
+a breakpoint, `700` is not a font weight); a theme value cannot contain `;`,
+`{` or `}` and its parentheses balance; `fonts` is closed to
+`families`/`google`, `modes` to `dark`, `modes.dark` to `palette`; a palette
+family is an object; role, family and breakpoint names match
+`^[a-z][a-z0-9-]*$` and token keys may also start with a digit. The breakpoint
+map is validated once as `UXD_BP_INVALID` (zero-width base, distinct, finite,
+non-negative widths); engines no longer restate it under their own code.
+Closed field sets stay the engines' own errors (`UXD_TYPO_FIELD`,
+`UXD_BUTTON_STATE`, …). An unknown top-level family is a warning
+(`UXD_THEME_FAMILY`), not an error. When generating a theme, write lowercase
+names and string leaves only; do not rely on any path to quote, number-coerce
+or clean a value for you.
+
 Edit source configuration, not generated CSS. Pass the same effective theme into
 build/runtime integrations. PostCSS accepts a `theme` option.
 
-In a browser, `applyTheme(patch, opts)` from `postcss-uxdsl/ds-runtime`
+In a browser, `applyTheme(patch, opts)` from `uxdsl/runtime`
 (MIG-B6-30) is the supported way to apply a theme. It is synchronous: it
 validates, generates and checks the patch against the applied structure before
 touching the DOM, so `ok: true` means the stylesheet and the reported state
@@ -616,7 +801,7 @@ singleton. Initialize once with the override the project was built with
 CSS back does not reconstruct the JSON.
 
 ```ts
-import { applyTheme } from 'postcss-uxdsl/ds-runtime'
+import { applyTheme } from 'uxdsl/runtime'
 
 applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-ssr-theme' })
 const result = applyTheme({ palette: { primary: { main: '#0ea5e9' } } })
@@ -626,24 +811,30 @@ if (!result.ok) console.error(result.error.message)
 `applyTheme` swaps custom properties; it cannot rewrite rules a build already
 compiled into the host's components. A patch that changes *which declarations a
 directive would emit* — a `typography_details` field added or removed, a state
-such as `focusvisible` introduced, a Button's or Input's Surface changed, an
+the role does not emit introduced (`active`, say; the base Button roles
+already ship `hover`, `focusvisible`, `selected` and `disabled`), a Button's
+or Input's Surface changed, an
 existing breakpoint threshold moved, a palette family losing `main`/`dark`/
 `contrast` — is refused with `UXD_THEME_STRUCTURE` and an instruction to
 rebuild. Token values, responsive expressions over the same thresholds,
 dark-mode colors and newly added tokens apply normally. Do not work around a
 refusal by writing CSS by hand; rebuild and reinitialize.
 
-The first `loadPersistedTheme()` with nothing under the managed key migrates the
-four pre-beta.6 keys (`uxdsl:palette`, `uxdsl:colors`, `uxdsl:spacing`,
-`uxdsl:breakpoints`) into one override, and only removes them after the new key
-is written *and* read back. Batching belongs outside `applyTheme`, in the editor
-that produces the patches.
+`applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme` and
+`loadPersistedTheme({ key })` are the whole browser API. The per-token setters
+(`updatePalette`, `updateColor`, `updateSpacing`, `updateBreakpoint`, the
+`breakpoints`/`spacing`/`colors` objects, `link`/`subscribe`) are removed
+(stability phase 2): they wrote inline styles on `<html>`, which beat the
+managed stylesheet. Express any of them as one `applyTheme` patch —
+`applyTheme({ spacing: { 4: '1rem' } })` for what `updateSpacing(4, '1rem')`
+did. `loadPersistedTheme` reads exactly one key and converts nothing.
+Batching belongs outside `applyTheme`, in the editor that produces the patches.
 
 On the server there is no state to share: use `generateThemeCss(theme)`, which
 is pure and per request, and render the result yourself.
 
 ```ts
-import { generateThemeCss } from 'postcss-uxdsl/ds-runtime'
+import { generateThemeCss } from 'uxdsl/theme'
 
 // nextTheme is the effective configuration, not an unrelated partial patch.
 const css = generateThemeCss(nextTheme)
@@ -656,14 +847,27 @@ element as long as it stays first, which `generateThemeCss` already
 guarantees; a consumer that itself prepends anything to `css` before
 assigning `textContent` must preserve that ordering. Browser edits do not save the source JSON automatically.
 Changing a token can update its consumers after the theme is applied; it does not
-rewrite independently compiled component media rules automatically. Use the
-supported breakpoint integration and verify actual stylesheet behavior.
+rewrite independently compiled component media rules — which is why a
+threshold cannot be moved at run time at all: `applyTheme({ breakpoints:
+{ md: 900 } })` is refused with `UXD_THEME_STRUCTURE`. Moving one is an edit
+to the theme file and a rebuild. There is no runtime breakpoint API.
+Simulating a width is inspection, not a change: `inspectResponsiveValue`
+(`uxdsl/language`) reports the active breakpoint and the resolved
+value at a supplied width without a document; that is what the playground's
+breakpoint demo does, not an actual browser resize. Validate real layouts
+with a real viewport too.
 
-The browser `breakpoints` API exposes `get()`, `update(name, width)` and
-`subscribe(listener)`; the returned unsubscribe function is used for cleanup.
-Its configuration notifications are not viewport-resize notifications.
-Playground breakpoint simulation is inspection at a supplied width, not an actual
-browser resize. Validate real layouts with a real viewport too.
+The SCSS subset `compile()` compiles (`$variables`, `@if/@else`, `@each` of a
+list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
+nesting forwarded as written) is UXDSL's own implementation
+(`packages/uxdsl/src/scss-subset.ts`, no Sass and no variables plugin) and is
+documented exactly once, in `packages/uxdsl/docs/integrations/compile.md`
+("The SCSS subset"); everything else Sass has — and anything the subset cannot
+evaluate exactly, such as `@else if`, `and`/`or`/`not` or an undefined
+`$variable` — fails as `UXD_SCSS_UNSUPPORTED`, `UXD_INCLUDE_ARGUMENT` or
+`UXD_NESTING_INVALID` naming what to write instead.
+`packages/uxdsl/test/core/scss-subset.test.js` pins the audit's 110-case
+matrix with no silent case, and `scss-expansion.test.js` the subset's rules.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
@@ -672,14 +876,24 @@ family is already unified. Compiler success does not guarantee every reference,
 CSS value or accessibility requirement was validated. Inspect actual output.
 
 
+Every `UXD_*` code is in `DIAGNOSTIC_CATALOG` (`uxdsl/language`, and on the
+`uxdsl/postcss` plugin) with its meaning and fix; read the fix there
+rather than guessing from the message, and add a new code to the catalog (with
+a test that provokes it) before throwing it — `diagnostic()` refuses an
+uncatalogued one.
+
 The active engine ownership and verification contract is documented in
 `docs/architecture/unified-engine-audit.md`. Use `getDensityTokens` for effective
 Density defaults and overrides. No token family should depend on a process-global
 compile cache. Use `responsiveEntries`/`resolveResponsiveValue` (exported from
-`postcss-uxdsl/language`) for inspection and
+`uxdsl/language`) for inspection and
 editing rather than writing demo parsers. Buttons and Inputs share
 `control-engine.ts`; their modules define family-specific schema and defaults.
 Foundation JSON and Palette modes share `foundations.ts` across build/runtime.
+A `ReferenceIntegrityError` message is one line per missing token with its
+consumers (author declarations first, with positions, capped at five); read
+the first token named, fix it, and recompile before chasing the rest — the
+others are usually the same dangling reference seen through the theme.
 
 Density keys are references, never values to coerce with parseInt. Undefined or
 fractional Density references fail. Density 0 explicitly means zero; the shipped
@@ -707,19 +921,18 @@ different responsibilities; use the shared kind-aware normalizer.
 ## Editor support in a consuming project
 
 `uxdsl init` writes a typed `uxdsl.config.cjs`: `// @ts-check`, then
-`/** @type {import('postcss-uxdsl/config').UxdslConfig} */` on a `const` that is
+`/** @type {import('uxdsl/config').UxdslConfig} */` on a `const` that is
 exported (FEAT-009's MIG-B7-12, in `0.5.0-beta.7`, unreleased as of
 2026-09-28). Keep that shape when editing the file: the
 `@type` placed directly above `module.exports = {…}` checks nothing, removing
 `// @ts-check` silences every error, and adding a run-time
-`require('postcss-uxdsl/config')` can fail the build where `postcss-uxdsl` is
-not resolvable from the project root (pnpm, installed only as a dependency of
-`uxdsl-cli`). Do not create a theme file just to hold `$schema`: it compiles to
+`require('uxdsl/config')` can fail the build where `uxdsl` is
+not resolvable from the config's directory (a global or `npx`-run CLI). Do not create a theme file just to hold `$schema`: it compiles to
 the same CSS but adds `[uxdsl] Theme config detected` to every build. Add
 `$schema` to a theme file the project already has or is creating. `.uxdsl`
 highlighting and completion come from the `uxdsl-vscode` extension, which is
 installed from a `.vsix` and completes the built-in default theme's roles, not
-the project's own. The uxdsl-cli README's "Editor support" section is the
+the project's own. The "Editor support" section of `packages/uxdsl/docs/integrations/cli.md` is the
 consumer-facing reference.
 
 ## Using this guide in another project
@@ -728,15 +941,15 @@ Installing UXDSL from npm does not guarantee an agent reads this guide. Agent
 discovery depends on the tool and project setup.
 
 Since `0.5.0-beta.7` (unreleased as of 2026-09-28; the published
-`0.5.0-beta.6` tarball does not contain it) the guide ships inside `postcss-uxdsl`, at
-`node_modules/postcss-uxdsl/docs/agent-guide.md` — generated from this file,
+`0.5.0-beta.6` tarball does not contain it) the guide ships inside the package — `uxdsl` since the package move — at
+`node_modules/uxdsl/docs/agent-guide.md` — generated from this file,
 so it is the guide for the version the project actually has installed and it
 updates with every upgrade. Point the consuming project's existing `AGENTS.md`
 (or its agent's supported instruction file) at it, without overwriting
 project-specific rules:
 
 > Before generating or modifying UXDSL UI, read
-> `node_modules/postcss-uxdsl/docs/agent-guide.md` and the active theme JSON.
+> `node_modules/uxdsl/docs/agent-guide.md` and the active theme JSON.
 > Preserve configured roles and responsive behavior.
 
 Adjust the path if `node_modules` is hoisted elsewhere (a monorepo root). Paths
@@ -752,7 +965,7 @@ https://github.com/rsantoyo-dev/uxdsl/blob/main/AGENTS.md
 ## Maintaining this guide in the UXDSL repository
 
 This file consolidates agent-facing guidance; it is not an automatic conversation
-archive. `packages/postcss-uxdsl/docs/agent-guide.md` is a generated copy of it
+archive. `packages/uxdsl/docs/agent-guide.md` is a generated copy of it
 that ships in the npm package: after editing this file, run
 `npm run generate:agent-guide` (`npm test` runs its `--check` and fails on drift).
 Never edit the copy. When changing a primitive's behavior or its AI documentation, update the
@@ -787,7 +1000,7 @@ or when a recorded gap has been closed and is still on the list. A new directive
 function, theme family, role, state or documented runtime function therefore shows up
 there by itself.
 
-A new file under `packages/postcss-uxdsl/src` must be classified in
+A new file under `packages/uxdsl/src` must be classified in
 `scripts/verify-docs-update.js` — a guarded visual-default file, or a not-visual
 file with its reason — or `npm test` fails.
 
@@ -824,12 +1037,13 @@ Density reference: https://uxdsl.io/docs/densities
 ## Beta.6 implementation planning and evidence
 
 MIG-B6-01 (shipped in `0.5.0-beta.6`) exports `KNOWN_THEME_FAMILIES`
-from `postcss-uxdsl/ds-runtime`. Reuse that registry for top-level family checks;
+from `uxdsl/theme`. Reuse that registry for top-level family checks;
 do not copy it or use it as a list of nested roles or complete Palette tones.
 `modes` and legacy `typography` are recognized families; unknown top-level names
-still warn (a warning from `validateAndNormalizeTheme`, printed by the CLI; the
-PostCSS plugin itself reports none), and invalid Typography fields still fail. This does not add new modes
-or change strict-theme behavior.
+still warn (`UXD_THEME_FAMILY`, a warning from `validateTheme`, printed by the
+CLI and reported by the PostCSS plugin through `result.warn`), and invalid
+Typography fields still fail. This does not add new modes or change strict-theme
+behavior.
 
 For FEAT-008 work, read `docs/features/FEAT-008/README.md` and the selected
 `MIG-B6-*.md` before implementation. The parent feature records product decisions;
@@ -850,17 +1064,21 @@ section above, which describes the contract as implemented. MIG-B6-29 (the packa
 accessibility contrast gate, its color-correction pass, and the shared
 Google Fonts encoder — this guide's own "Build time, runtime and one source
 of truth" section above already reflects all four) is fully landed across
-its 4 phases, closing that story. `checkThemeContrast` still correctly
-reports `passed: false` against `theme/base.json`: as of 2026-09-28, 123
-failing pairs with the shipped `theme/base.contrast-exceptions.json` applied
-(124 without it; 156 with it before FEAT-009's MIG-B7-01). Reproduce after
-building `postcss-uxdsl`, from the repository root:
-`node -e "const r=require('./packages/postcss-uxdsl/dist/ds-runtime'); const x=require('./packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'); console.log(r.checkThemeContrast(r.resolveTheme(), { exceptions: x }).failures.length)"`.
-No test pins that total yet; MIG-B7-11 (pending) is planned to pin the exact
-set — the remaining gaps are engine/
-architecture findings, not color choices; see MIG-B6-29's and MIG-B7-01's own
-evidence for exactly which ones and the recommended follow-up for each. That
-is by design, not a bug in the gate. `generateThemeCss` and the PostCSS
+its 4 phases, closing that story. `checkThemeContrast` against
+`theme/base.json` with the shipped `theme/base.contrast-exceptions.json`
+(three patterns, stability phase 5) reports `passed: true`: 1004 pairs
+checked, 0 failing, 111 excepted, no exception issue (824/0/98 before the
+phase added the Button `focusvisible`/`disabled` states; before the phase: 123
+failing with the single exact record, 124 without; 156 before FEAT-009's
+MIG-B7-01). Reproduce after building `packages/uxdsl`, from the repository root:
+`node -e "const r=require('./packages/uxdsl/dist/entries/engine'); const x=require('./packages/uxdsl/src/theme/base.contrast-exceptions.json'); const p=r.checkThemeContrast(r.resolveTheme(), { exceptions: x }); console.log(p.passed, p.failures.length, p.excepted.length, p.exceptionIssues)"`.
+`fixtures/release-1.0/contrast-baseline.json` pins the exact failing
+and excepted sets (re-pin deliberately with
+`node fixtures/release-1.0/run.js --write-contrast-baseline`);
+`test/base-theme-contrast.test.js` reverts each corrected value as a negative
+control. The playground's four named themes pass the same gate with their
+own values (`npm run theme:audit` exits 0). Excepted pairs are listed, never
+counted as passing. `generateThemeCss` and the PostCSS
 plugin now emit byte-identical Google Fonts `@import`s for the same theme;
 `packages/playground-nextjs`'s own `ThemeContext.tsx` used to hand-roll a
 separate client-side font `<link>` with a weaker encoder; MIG-B6-30 phase 3
@@ -885,8 +1103,6 @@ Implementation contracts clarified by this plan:
 - Runtime application is synchronous; the editor batches input outside the API.
   Initialize with the project's build/SSR override. Structural component changes
   require regeneration; variable parity alone is not behavioral parity.
-- Preserve legacy scopes/events/breakpoint behavior through documented adapters;
-  do not silently turn a scoped setter into a global theme change.
 - Extract configurable defaults into the base JSON while retaining defaults <
   same-compilation legacy < explicit project override precedence.
 - Per-file atomic rename is not a multi-file transaction. Watch must retain

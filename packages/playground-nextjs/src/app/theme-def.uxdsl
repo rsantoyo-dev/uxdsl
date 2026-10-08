@@ -1,14 +1,14 @@
 /* App-level theme overrides.
 
    Nothing lives here any more (MIG-B7-17 phase B): the playground's theme is the JSON in
-   uxdsl.theme.*.json, merged over postcss-uxdsl/theme/base.json by themes.js. What this file
+   uxdsl.theme.*.json, merged over uxdsl/theme/base.json by themes.js. What this file
    held was dead:
    - about 95 lines of commented-out palette aliases, font families, a typography scale and a
      spacing scale from before the theme moved to JSON;
    - `--uxdsl__font__code` and `--uxdsl__radius__full` on :root. The generated theme's own
      :root comes later in the same stylesheet and sets --uxdsl__font__code back to the theme's
      value (checked in Chrome: the computed value was `monospace`, never the JetBrains Mono
-     written here), and nothing reads --uxdsl__radius__full (radius(full) compiles to 9999px);
+     written here), and nothing reads --uxdsl__radius__full (radius(pill) compiles to 9999px);
    - an @theme block of density-1..6 overrides, which the JSON densities replace (JSON
      overrides legacy @theme; the compiled Density rules follow the JSON progression).
    To change a token, change the theme JSON. The file stays because generate-uxdsl-entry.js

@@ -5,13 +5,12 @@
 // page runs its state-changing runtime calls in (see src/runtime-sandbox/sandbox-entry.ts
 // for why they need their own document and realm).
 //
-//   1. runtime-sandbox/sandbox.uxdsl is compiled by uxdsl-core's compile() — the pipeline
+//   1. runtime-sandbox/sandbox.uxdsl is compiled by uxdsl's compile() — the pipeline
 //      `uxdsl build` uses — with the site's own default theme, so the sandbox is a real
-//      compiled UXDSL project, breakpoint metadata included (which is what the legacy
-//      breakpoint API rewrites).
+//      compiled UXDSL project.
 //   2. src/runtime-sandbox/sandbox-entry.ts is bundled with esbuild. Like next.config.js,
-//      it resolves postcss-uxdsl/ds-runtime to the package's current source.
-//   3. index.html inlines the CSS as a <style data-uxdsl> and loads the bundle.
+//      it resolves uxdsl/runtime and friends to the package's current source.
+//   3. index.html inlines the CSS as a <style> and loads the bundle.
 //
 // Runs as part of `npm run uxdsl:build`, so `dev` and `build` always serve a fresh one.
 // The output is generated and git-ignored.
@@ -24,8 +23,7 @@ const PLAYGROUND = path.resolve(__dirname, '..');
 const OUT = path.join(PLAYGROUND, 'public/runtime-sandbox');
 
 function loadCore() {
-  const cliRequire = require('node:module').createRequire(path.join(PLAYGROUND, '../uxdsl-cli/package.json'));
-  return cliRequire('uxdsl-core');
+  return require('uxdsl');
 }
 
 async function main() {
@@ -33,7 +31,7 @@ async function main() {
   const theme = themes.default;
   const { compile } = loadCore();
   const entry = path.join(PLAYGROUND, 'runtime-sandbox/sandbox.uxdsl');
-  const { css, warnings } = await compile({ entry }, { theme, breakpoints: theme.breakpoints });
+  const { css, warnings } = await compile({ entry }, { theme });
   if (warnings.length) throw new Error(`runtime sandbox: the compiler warned:\n${warnings.map((w) => w.text).join('\n')}`);
 
   const bundle = await esbuild.build({
@@ -44,10 +42,16 @@ async function main() {
     target: 'es2019',
     minify: true,
     write: false,
-    alias: {
-      'postcss-uxdsl/ds-runtime': path.resolve(PLAYGROUND, '../postcss-uxdsl/src/ds-runtime.ts'),
-      'postcss-uxdsl/language': path.resolve(PLAYGROUND, '../postcss-uxdsl/src/language.ts'),
-    },
+    // The package's entry points resolve to its current source (exact matches only:
+    // `uxdsl/theme/base.json` is a file of the package, not a path under the entry).
+    plugins: [{
+      name: 'uxdsl-source',
+      setup(build) {
+        build.onResolve({ filter: /^uxdsl\/(runtime|theme|language|engine)$/ }, (args) => ({
+          path: path.resolve(PLAYGROUND, '../uxdsl/src/entries', `${args.path.slice('uxdsl/'.length)}.ts`),
+        }));
+      },
+    }],
     logLevel: 'silent',
   });
 
@@ -57,15 +61,15 @@ async function main() {
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>UXDSL runtime sandbox</title>
-<style data-uxdsl>
+<style>
 ${css.replace(/<\/style/gi, '<\\/style')}
 </style>
 </head>
 <body>
 <main class="lab">
   <div class="lab-row">
-    <div class="lab-swatch lab-swatch--palette">background: palette(primary-main)</div>
-    <div class="lab-swatch lab-swatch--color">background: color(gray-300)</div>
+    <div class="lab-swatch lab-swatch--palette">background: palette(primary.main)</div>
+    <div class="lab-swatch lab-swatch--color">background: color(gray.300)</div>
   </div>
   <div class="lab-row">
     <div class="lab-box lab-box--space">padding: space(4)</div>

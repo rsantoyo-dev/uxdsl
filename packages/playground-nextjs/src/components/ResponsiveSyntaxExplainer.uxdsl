@@ -1,5 +1,5 @@
 .live-preview-box {
-  background: palette(surface-dark, 0.05);
+  background: palette(surface.dark, 0.05);
   border-radius: radius(1);
   position: relative;
   overflow: hidden;
@@ -8,8 +8,8 @@
   justify-content: flex-start;
 
   /* Subtle top/bottom dashed lines to define line-height visually */
-  border-top: 1px dashed palette(neutral-light, 0.5);
-  border-bottom: 1px dashed palette(neutral-light, 0.5);
+  border-top: 1px dashed palette(neutral.light, 0.5);
+  border-bottom: 1px dashed palette(neutral.light, 0.5);
   
   /* Architectonic Corner Marks */
   &::before, &::after, .top-right-corner::before, .bottom-left-corner::after {
@@ -17,7 +17,7 @@
     position: absolute;
     width: 10px; /* Small corner piece */
     height: 10px;
-    border-color: palette(neutral-main, 0.3);
+    border-color: palette(neutral.main, 0.3);
     border-style: solid;
     z-index: 1; /* Above text */
   }
@@ -39,7 +39,7 @@
     position: absolute;
     top: 0; right: 0;
     width: 10px; height: 10px;
-    border-color: palette(neutral-main, 0.3);
+    border-color: palette(neutral.main, 0.3);
     border-style: solid;
     border-width: 1px 1px 0 0;
     z-index: 1;
@@ -49,7 +49,7 @@
     position: absolute;
     bottom: 0; left: 0;
     width: 10px; height: 10px;
-    border-color: palette(neutral-main, 0.3);
+    border-color: palette(neutral.main, 0.3);
     border-style: solid;
     border-width: 0 0 1px 1px;
     z-index: 1;
@@ -76,7 +76,7 @@
 .typography-showcase {
   margin-top: density(6);
   padding: density(4);
-  background: palette(surface-main);
+  background: palette(surface.main);
   border-radius: radius(2);
   border: 1px solid palette(divider);
 }
@@ -84,7 +84,7 @@
 .showcase-title {
   font-size: 0.9rem;
   font-weight: 600;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   text-transform: uppercase;
   margin-bottom: density(4);
   letter-spacing: 0.05em;
@@ -112,10 +112,10 @@
 .showcase-tag {
   font-family: font(code);
   font-size: 0.75rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   text-align: right;
   padding-right: density(2);
-  border-right: 2px solid palette(primary-main);
+  border-right: 2px solid palette(primary.main);
   height: 100%;
   display: flex;
   align-items: center;
@@ -123,11 +123,11 @@
 }
 
 .showcase-text {
-  color: palette(text-primary);
+  color: palette(text.primary);
   margin: 0 !important;
   padding: 0 !important;
-  border: 1px solid palette(neutral-main, 0.2);
-  background: palette(surface-main);
+  border: 1px solid palette(neutral.main, 0.2);
+  background: palette(surface.main);
   width: 100%;
   text-align: left;
 }
@@ -135,10 +135,10 @@
 .live-preview-section {
   margin-bottom: 1.5rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid palette(neutral-light);
+  border-bottom: 1px solid palette(neutral.light);
   display: flex;
   justify-content: flex-start;
-  background: palette(surface-dark);
+  background: palette(surface.dark);
   border-radius: 8px;
   padding: 2rem 1rem;
   overflow: hidden;
@@ -179,9 +179,9 @@
   top: 0;
   bottom: 0;
   width: 4px;
-  border-left: 1px solid palette(primary-main);
-  border-top: 1px solid palette(primary-main);
-  border-bottom: 1px solid palette(primary-main);
+  border-left: 1px solid palette(primary.main);
+  border-top: 1px solid palette(primary.main);
+  border-bottom: 1px solid palette(primary.main);
   opacity: 0.3;
   pointer-events: none;
 }
@@ -192,7 +192,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  border: 1px dashed palette(primary-light);
+  border: 1px dashed palette(primary.light);
   opacity: 0.15;
   pointer-events: none;
 }
@@ -218,10 +218,10 @@
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  background: palette(surface-main);
+  background: palette(surface.main);
   padding: space(1);
   border-radius: 6px;
-  border: 1px solid palette(neutral-main);
+  border: 1px solid palette(neutral.main);
   flex: 1 1 auto;
   min-width: 0;
 }
@@ -229,7 +229,7 @@
 .control-button {
   padding: space(2) space(4);
   background: transparent;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -239,8 +239,8 @@
   justify-content: center;
 
   &.active {
-    background: palette(primary-light);
-    color: palette(primary-contrast);
+    background: palette(primary.light);
+    color: palette(primary.contrast);
   }
   
   &.is-default {
@@ -290,7 +290,7 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      color: palette(neutral-main);
+      color: palette(neutral.main);
       opacity: 0.5;
       padding: space(1);
       display: flex;
@@ -300,7 +300,7 @@
 
       &:hover {
         opacity: 1;
-        color: palette(primary-main);
+        color: palette(primary.main);
       }
     }
     
@@ -320,8 +320,8 @@
     justify-content: flex-end;
     
     button.fix-single {
-       background: palette(primary-main);
-       color: palette(primary-contrast);
+       background: palette(primary.main);
+       color: palette(primary.contrast);
        border: none;
        border-radius: 6px;
        padding: 6px 10px;
@@ -333,8 +333,8 @@
     
     button.fix-all {
        background: transparent;
-       color: palette(primary-main);
-       border: 1px solid palette(primary-main);
+       color: palette(primary.main);
+       border: 1px solid palette(primary.main);
        border-radius: 6px;
        padding: 6px 10px;
        cursor: pointer;
@@ -348,18 +348,18 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    color: palette(primary-main);
+    color: palette(primary.main);
     font-size: 0.8rem;
   }
 }
 
 .json-preview-container {
-  background: palette(surface-main);
+  background: palette(surface.main);
   padding: 1rem;
   border-radius: 6px;
   margin-bottom: 1.5rem;
-  border: 1px dashed palette(neutral-main);
-  color: palette(primary-dark);
+  border: 1px dashed palette(neutral.main);
+  color: palette(primary.dark);
   text-align: left;
   overflow-x: auto;
   display: flex;
@@ -375,7 +375,7 @@
 
   span {
     font-size: 0.8rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -385,8 +385,8 @@
 .css-usage-container {
   margin-bottom: 1.5rem;
   padding: 1rem;
-  background: palette(surface-light);
-  border: 1px solid palette(neutral-light);
+  background: palette(surface.light);
+  border: 1px solid palette(neutral.light);
   border-radius: 6px;
 }
 
@@ -398,7 +398,7 @@
   
   span {
     font-size: 0.8rem;
-    color: palette(text-secondary);
+    color: palette(text.secondary);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -406,50 +406,50 @@
 }
 
 .css-code-block {
-  background: palette(surface-dark);
+  background: palette(surface.dark);
   padding: 0.75rem;
   border-radius: 6px;
-  color: palette(text-primary);
+  color: palette(text.primary);
   display: flex;
   align-items: center;
   overflow-x: auto;
-  border: 1px solid palette(neutral-dark);
+  border: 1px solid palette(neutral.dark);
 
   .selector {
-    color: palette(secondary-light);
+    color: palette(secondary.light);
   }
 
   .bracket {
     margin-left: 0.5rem;
-    color: palette(text-disabled);
+    color: palette(text.disabled);
   }
 
   .mixin {
     margin-left: 0.5rem;
-    color: palette(primary-light);
+    color: palette(primary.light);
   }
 
   .paren {
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 
   .argument {
-    color: palette(warning-light);
+    color: palette(warning.light);
   }
 
   .semicolon {
-    color: palette(text-disabled);
+    color: palette(text.disabled);
   }
 }
 
 .css-usage-description {
   margin-top: 0.75rem;
   font-size: 0.8rem;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   line-height: 1.5;
   
   strong {
-    color: palette(text-primary);
+    color: palette(text.primary);
   }
 }
 
@@ -501,16 +501,16 @@
    nothing rendered (removed in MIG-B7-17 phase B (5)); it now lives with the only consumer. */
 .json-key {
   font-weight: 600;
-  color: palette(secondary-main);
+  color: palette(secondary.main);
 }
 
 .json-value-inherited {
-  color: palette(text-disabled);
+  color: palette(text.disabled);
 }
 
 .json-comment {
   font-size: 0.75rem;
-  color: palette(text-disabled);
+  color: palette(text.disabled);
   margin-left: 0.5rem;
 }
 
@@ -525,23 +525,23 @@
   border-radius: 4px;
   padding: space(2);
   cursor: pointer;
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s;
 
   &:hover {
-    color: palette(primary-main);
-    border-color: palette(primary-main);
+    color: palette(primary.main);
+    border-color: palette(primary.main);
   }
 
   &.delete-button {
     border: none;
-    color: palette(text-disabled);
+    color: palette(text.disabled);
 
     &:hover {
-      color: palette(error-main);
+      color: palette(error.main);
       background: transparent;
     }
   }
@@ -567,6 +567,6 @@
 /* MIG-B7-17 phase E: the editable samples are reachable by Tab (contentEditable) and their
    `outline: none` hid keyboard focus. */
 .editable-typography-element:focus-visible {
-  outline: 2px dashed palette(primary-main);
+  outline: 2px dashed palette(primary.main);
   outline-offset: 4px;
 }

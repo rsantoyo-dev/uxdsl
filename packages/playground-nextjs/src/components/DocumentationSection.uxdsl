@@ -1,8 +1,6 @@
-/* The prose section shared by the Breakpoint, Border, Shadow, Surface and Typography
-   documentation. Was BreakpointDocumentation.module.css, which those five components all
-   imported (MIG-B7-17 phase B): classes are prefixed because .uxdsl is global; stable spacing
-   uses space(); the code panel and table rules use Color identities, dark in both modes on
-   purpose. */
+/* The prose of every documentation page, and the disclosure the demos put their long token
+   grids behind. Shared by many components, so it stays in the global sheet. The code panel
+   is a Color identity, dark in both modes on purpose. */
 
 .doc-section {
   min-width: 0;
@@ -11,13 +9,13 @@
 }
 
 .doc-section h2 {
-  font-size: 1.5rem;
-  margin-block: space(5);
+  @ds-typo(h4);
+  margin-block: space(7) space(4);
 }
 
 .doc-section h3 {
-  font-size: 1.2rem;
-  margin-block: space(6) space(4);
+  @ds-typo(h5);
+  margin-block: space(6) space(3);
 }
 
 .doc-section h4 {
@@ -28,23 +26,37 @@
   margin-block: space(4);
 }
 
+.doc-section ul, .doc-section ol {
+  padding-inline-start: space(6);
+}
+
+.doc-section li {
+  margin-block: space(2);
+}
+
 .doc-section pre {
   overflow-x: auto;
-  background: color(gray-900);
-  color: color(gray-200);
+  max-width: 100%;
+  background: color(gray.900);
+  color: color(gray.200);
   padding: space(5);
-  border-radius: 0.5rem;
+  border-radius: radius(2);
   font-size: 0.85rem;
 }
 
-.doc-section__comparison {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr));
-  gap: space(5);
+.doc-section :not(pre) > code {
+  overflow-wrap: anywhere;
 }
 
-.doc-section__comparison > div {
-  min-width: 0;
+.doc-section a {
+  color: palette(primary.main);
+  text-underline-offset: 2px;
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+    border-radius: radius(1);
+  }
 }
 
 .doc-section__table-wrap {
@@ -65,6 +77,27 @@
 }
 
 .doc-section__table-wrap th, .doc-section__table-wrap td {
-  padding: space(4);
-  border-bottom: 1px solid color(gray-400);
+  padding: space(3) space(4);
+  border-bottom: border(1);
+  vertical-align: top;
+}
+
+.demo-disclosure {
+  margin-block: density(4);
+  border: border(1);
+  border-radius: radius(2);
+  padding: density(2) density(3);
+  min-width: 0;
+}
+
+.demo-disclosure__summary {
+  @ds-typo(h6);
+  margin: 0;
+  cursor: pointer;
+  border-radius: radius(1);
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
 }

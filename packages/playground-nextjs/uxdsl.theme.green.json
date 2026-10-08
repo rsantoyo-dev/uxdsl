@@ -1,5 +1,5 @@
 {
-  "$schema": "./node_modules/postcss-uxdsl/schema/theme.schema.json",
+  "$schema": "./node_modules/uxdsl/schema/theme.schema.json",
   "palette": {
     "primary": {
       "main": "#15803D",
@@ -8,7 +8,7 @@
       "contrast": "#FFFFFF"
     },
     "secondary": {
-      "main": "#D97706",
+      "main": "#b36100",
       "light": "#FFA726",
       "dark": "#b75b02",
       "contrast": "#000000"
@@ -25,9 +25,10 @@
       "disabled": "#a8a29e"
     },
     "tertiary": {
-      "main": "#a8a29e",
+      "main": "#7b7571",
       "light": "#d6d3d1",
-      "dark": "#57534e"
+      "dark": "#57534e",
+      "contrast": "#ffffff"
     },
     "info": {
       "main": "#0f766e",
@@ -37,7 +38,7 @@
     "warning": {
       "main": "#c05402",
       "light": "#fb923c",
-      "dark": "#ea580c"
+      "dark": "#ca4901"
     },
     "dark": {
       "main": "#1c1917",
@@ -90,7 +91,7 @@
         "neutral": {
           "main": "#a8a29e",
           "light": "#d6d3d1",
-          "dark": "#57534e"
+          "dark": "#88847e"
         },
         "tertiary": {
           "main": "#a8a29e",

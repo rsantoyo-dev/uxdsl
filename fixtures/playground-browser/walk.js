@@ -14,14 +14,14 @@
 //     resolves on the elements that rule applies to (computed style, not source text);
 //   - keyboard: Tab through the page; every element that takes focus shows a visible change
 //     (outline, box-shadow, border or background differ from the same element unfocused);
-//   - /docs/contrast: the report the page renders is the one checkThemeContrast gives in
+//   - /docs/accessibility: the report the page renders is the one checkThemeContrast gives in
 //     Node for the same theme — for the default theme and after switching to another one.
 //
 // Then, unless --no-negative-control, it proves each check can fail: it injects an undefined
 // var(), a console.error, a focus style that removes the indicator, and a wrong theme for the
 // contrast comparison, one at a time, and requires each to be reported.
 //
-//   node fixtures/playground-browser/walk.js [--build] [--routes /,/docs/cli] [--widths 390,768] [--no-negative-control]
+//   node fixtures/playground-browser/walk.js [--build] [--routes /,/docs/tooling] [--widths 390,768] [--no-negative-control]
 //
 // Exit 1 when anything fails. Needs playwright-core (fixtures/mig02-nextjs-cssmodules) and
 // Chrome (macOS default path or UXDSL_CHROME_PATH).
@@ -42,6 +42,9 @@ const flag = (name) => process.argv.includes(`--${name}`);
 const WIDTHS = arg('widths', '390,479,480,767,768,1023,1024,1279,1280,1440').split(',').map(Number);
 const SCHEMES = arg('schemes', 'light,dark').split(',');
 const FOCUS_WIDTHS = [390, 1280];
+// Every walked width: a page must never be wider than its viewport (code blocks scroll inside
+// themselves instead). 390px is the phone width the audit measured.
+const OVERFLOW_WIDTHS = WIDTHS;
 const PORT = Number(arg('port', 3919));
 const MAX_TABS = 80;
 
@@ -209,27 +212,92 @@ async function checkFocus(page, report, where) {
 }
 
 async function checkContrast(page, report, where, themeName) {
-  const { checkThemeContrast, resolveTheme } = require(path.join(ROOT, 'packages/postcss-uxdsl/dist/ds-runtime'));
-  const exceptions = require(path.join(ROOT, 'packages/postcss-uxdsl/src/theme/base.contrast-exceptions.json'));
+  const { checkThemeContrast, resolveTheme } = require(path.join(ROOT, 'packages/uxdsl/dist/entries/engine'));
+  const exceptions = require(path.join(ROOT, 'packages/uxdsl/src/theme/base.contrast-exceptions.json'));
   const { themes } = require(path.join(PLAYGROUND, 'themes.js'));
   const node = checkThemeContrast(resolveTheme(themes[themeName]), { exceptions });
-  const nodeSignatures = node.failures.map((f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`).sort();
+  const signatureOf = (f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`;
+  const nodeSignatures = node.failures.map(signatureOf).sort();
+  // Excepted pairs are compared too, each with the exception that covers it:
+  // the page must not show fewer covered pairs than the checker reports.
+  const nodeExcepted = node.excepted.map((f) => `${signatureOf(f)}|${f.exception}`).sort();
   const shown = await page.evaluate(() => {
     const el = document.querySelector('[data-testid="contrast-report"]');
-    return el ? { summary: JSON.parse(el.getAttribute('data-contrast-summary')), signatures: JSON.parse(el.getAttribute('data-contrast-signatures')), rows: el.querySelectorAll('tbody tr').length } : null;
+    return el ? {
+      summary: JSON.parse(el.getAttribute('data-contrast-summary')),
+      signatures: JSON.parse(el.getAttribute('data-contrast-signatures')),
+      excepted: JSON.parse(el.getAttribute('data-contrast-excepted') || 'null'),
+      exceptedRows: el.querySelectorAll('[data-testid="contrast-excepted"] tbody tr').length,
+    } : null;
   });
   if (!shown) { report.fail(where, 'contrast-mismatch the page rendered no report'); return null; }
-  const expected = { passed: node.passed, checked: node.checked.length, failures: node.failures.length, exceptions: node.exceptions.length, exceptionIssues: node.exceptionIssues.length };
-  const got = { passed: shown.summary.passed, checked: shown.summary.checked, failures: shown.summary.failures, exceptions: shown.summary.exceptions, exceptionIssues: shown.summary.exceptionIssues };
+  const expected = { passed: node.passed, checked: node.checked.length, failures: node.failures.length, excepted: node.excepted.length, exceptions: node.exceptions.length, exceptionIssues: node.exceptionIssues.length };
+  const got = { passed: shown.summary.passed, checked: shown.summary.checked, failures: shown.summary.failures, excepted: shown.summary.excepted, exceptions: shown.summary.exceptions, exceptionIssues: shown.summary.exceptionIssues };
   if (JSON.stringify(expected) !== JSON.stringify(got)) report.fail(where, `contrast-mismatch summary for ${themeName}: page ${JSON.stringify(got)} vs Node ${JSON.stringify(expected)}`);
   if (JSON.stringify(nodeSignatures) !== JSON.stringify(shown.signatures)) report.fail(where, `contrast-mismatch failing pairs for ${themeName} differ from Node's (${shown.signatures.length} vs ${nodeSignatures.length})`);
+  if (JSON.stringify(nodeExcepted) !== JSON.stringify(shown.excepted)) report.fail(where, `contrast-mismatch excepted pairs for ${themeName} differ from Node's (${shown.excepted ? shown.excepted.length : 'none exposed'} vs ${nodeExcepted.length})`);
+  if (shown.exceptedRows !== nodeExcepted.length) report.fail(where, `contrast-mismatch the page lists ${shown.exceptedRows} excepted pair(s) for ${themeName}, Node reports ${nodeExcepted.length}`);
   if (shown.summary.theme !== themeName) report.fail(where, `contrast-mismatch the page says theme "${shown.summary.theme}", expected "${themeName}"`);
   return { themeName, ...got };
 }
 
-async function walk(browser, { routes, widths, schemes, inject = null, focusWidths = FOCUS_WIDTHS, contrastThemes = ['default', 'green'] }) {
+/** In the page: the document is wider than the viewport; and the elements sticking out the most. */
+function findHorizontalOverflow() {
+  const root = document.documentElement;
+  if (root.scrollWidth <= root.clientWidth) return null;
+  const limit = root.clientWidth;
+  const culprits = [];
+  for (const el of document.body.querySelectorAll('*')) {
+    const rect = el.getBoundingClientRect();
+    if (rect.right > limit + 1 && rect.width > 0) {
+      // Only the outermost element that sticks out: its descendants follow it.
+      if (culprits.some((c) => c.el.contains(el))) continue;
+      culprits.push({ el, right: Math.round(rect.right) });
+    }
+  }
+  const describe = (el) => `${el.tagName.toLowerCase()}${el.id ? `#${el.id}` : ''}${typeof el.className === 'string' && el.className.trim() ? `.${el.className.trim().split(/\s+/).slice(0, 2).join('.')}` : ''}`;
+  return { scrollWidth: root.scrollWidth, clientWidth: root.clientWidth, culprits: culprits.sort((a, b) => b.right - a.right).slice(0, 3).map((c) => `${describe(c.el)} (right edge ${c.right}px)`) };
+}
+
+/** The home page's frame: its readout, read from the frame's own computed style, must be what
+ * the compiled theme says density(4) and the active breakpoint are at each frame width. */
+async function checkParadigm(page, report, where, inject) {
+  const { resolveTheme } = require(path.join(ROOT, 'packages/uxdsl/dist/entries/engine'));
+  const { inspectResponsiveValue } = require(path.join(ROOT, 'packages/uxdsl/dist/entries/language'));
+  const { themes } = require(path.join(PLAYGROUND, 'themes.js'));
+  const theme = resolveTheme(themes.default);
+  if (inject === 'paradigm-mismatch') {
+    await page.evaluate(() => {
+      const doc = document.querySelector('.paradigm-frame__iframe').contentDocument;
+      const style = doc.createElement('style');
+      style.textContent = ':root { --uxdsl__density__4: 7px !important; }';
+      doc.body.appendChild(style);
+    });
+  }
+  const seen = [];
+  for (const width of [390, 800, 1300]) {
+    await page.evaluate((value) => {
+      const input = document.querySelector('.paradigm-frame__control input[type="range"]');
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, String(value));
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, width);
+    await page.waitForTimeout(250);
+    const shown = await page.evaluate(() => { const el = document.querySelector('[data-testid="paradigm-readout"]'); return el ? { ...el.dataset } : null; });
+    const expected = inspectResponsiveValue(theme.densities['4'], width, theme.breakpoints);
+    const key = (/^space\(([\w-]+)\)$/.exec(expected.value) || [])[1];
+    const density = key ? theme.spacing[key] : expected.value;
+    if (!shown) { report.fail(where, 'paradigm-mismatch the home page rendered no frame readout'); return seen; }
+    if (Number(shown.width) !== width) report.fail(where, `paradigm-mismatch the slider set ${width}px but the frame reports ${shown.width}px`);
+    if (shown.breakpoint !== expected.active) report.fail(where, `paradigm-mismatch at ${width}px the frame says breakpoint "${shown.breakpoint}", the theme says "${expected.active}"`);
+    if (shown.density !== density) report.fail(where, `paradigm-mismatch at ${width}px the frame's --uxdsl__density__4 is "${shown.density}", the theme says ${expected.value} = "${density}"`);
+    seen.push(`${width}px: ${shown.breakpoint}, density(4) = ${shown.density} (${shown.padding}), h2 ${shown.fontSize}`);
+  }
+  return seen;
+}
+
+async function walk(browser, { routes, widths, schemes, inject = null, focusWidths = FOCUS_WIDTHS, contrastThemes = ['default', 'green'], overflowWidths = OVERFLOW_WIDTHS }) {
   const report = createReport();
-  const stats = { pages: 0, focusChecked: 0, contrast: [] };
+  const stats = { pages: 0, focusChecked: 0, contrast: [], paradigm: [] };
   for (const scheme of schemes) {
     const context = await newContext(browser, scheme);
     const page = await context.newPage();
@@ -243,6 +311,12 @@ async function walk(browser, { routes, widths, schemes, inject = null, focusWidt
         if (inject === 'undefined-var') await page.addStyleTag({ content: 'body { outline-color: var(--uxdsl__palette__does-not-exist); }' });
         if (inject === 'console-error') await page.evaluate(() => console.error('negative control: injected console.error'));
         for (const problem of await page.evaluate(findUnresolvedVars)) report.fail(where, `unresolved-var ${problem}`);
+        if (overflowWidths.includes(width)) {
+          if (inject === 'overflow') await page.evaluate(() => { const el = document.createElement('div'); el.className = 'negative-control-wide'; el.style.width = '2000px'; el.style.height = '1px'; document.body.appendChild(el); });
+          const overflow = await page.evaluate(findHorizontalOverflow);
+          if (overflow) report.fail(where, `horizontal-overflow the page is ${overflow.scrollWidth}px wide in a ${overflow.clientWidth}px viewport: ${overflow.culprits.join(', ') || 'no element found'}`);
+        }
+        if (route === '/' && width === 1280) stats.paradigm.push(...(await checkParadigm(page, report, where, inject)).map((line) => `${scheme} ${line}`));
         stats.pages++;
         if (focusWidths.includes(width)) {
           if (inject === 'no-focus') await page.addStyleTag({ content: '*:focus-visible, *:focus { outline: none !important; box-shadow: none !important; }' });
@@ -252,10 +326,10 @@ async function walk(browser, { routes, widths, schemes, inject = null, focusWidt
       process.stdout.write(`  ${scheme} ${route}\n`);
     }
     // The contrast page against Node, for the default theme and after switching theme in the header.
-    if (routes.includes('/docs/contrast')) {
-      where = `/docs/contrast ${scheme}`;
+    if (routes.includes('/docs/accessibility')) {
+      where = `/docs/accessibility ${scheme}`;
       await page.setViewportSize({ width: 1280, height: 900 });
-      await load(page, `http://localhost:${PORT}/docs/contrast`);
+      await load(page, `http://localhost:${PORT}/docs/accessibility`);
       for (const themeName of contrastThemes) {
         if (themeName !== 'default') {
           await page.locator(`#AppHeader .theme-color-btn--${themeName}`).first().click();
@@ -288,6 +362,7 @@ async function main() {
     console.log(`Walking ${routes.length} routes × ${SCHEMES.length} schemes × ${WIDTHS.length} widths (focus at ${FOCUS_WIDTHS.join(', ')})...`);
     const { report, stats } = await walk(browser, { routes, widths: WIDTHS, schemes: SCHEMES });
     console.log(`\npages loaded: ${stats.pages}; focusable elements checked: ${stats.focusChecked}`);
+    for (const line of stats.paradigm) console.log(`home frame = theme at ${line}`);
     for (const c of stats.contrast) console.log(`contrast page = Node for "${c.themeName}" (${c.scheme}): checked ${c.checked}, failing ${c.failures}, passed ${c.passed}`);
     console.log(`exempted (hosting-only, listed): ${report.exempt.length}${report.exempt.length ? ` — e.g. ${report.exempt[0]}` : ''}`);
     if (report.failures.length) {
@@ -301,10 +376,12 @@ async function main() {
     if (!flag('no-negative-control')) {
       console.log('\nNegative controls (each must be reported):');
       const controls = [
-        ['undefined-var', 'unresolved-var', { routes: ['/docs/cli'], widths: [1280], schemes: ['light'], focusWidths: [] }],
-        ['console-error', 'console-error', { routes: ['/docs/cli'], widths: [1280], schemes: ['light'], focusWidths: [] }],
+        ['undefined-var', 'unresolved-var', { routes: ['/docs/tooling'], widths: [1280], schemes: ['light'], focusWidths: [] }],
+        ['console-error', 'console-error', { routes: ['/docs/tooling'], widths: [1280], schemes: ['light'], focusWidths: [] }],
         ['no-focus', 'focus-invisible', { routes: ['/docs/runtime'], widths: [1280], schemes: ['light'], focusWidths: [1280] }],
-        ['contrast-mismatch', 'contrast-mismatch', { routes: ['/docs/contrast'], widths: [1280], schemes: ['light'], focusWidths: [], contrastThemes: ['default'] }],
+        ['contrast-mismatch', 'contrast-mismatch', { routes: ['/docs/accessibility'], widths: [1280], schemes: ['light'], focusWidths: [], contrastThemes: ['default'] }],
+        ['overflow', 'horizontal-overflow', { routes: ['/docs/tooling'], widths: [390], schemes: ['light'], focusWidths: [] }],
+        ['paradigm-mismatch', 'paradigm-mismatch', { routes: ['/'], widths: [1280], schemes: ['light'], focusWidths: [] }],
       ];
       for (const [inject, kind, options] of controls) {
         const { report: r } = await walk(browser, { ...options, inject });

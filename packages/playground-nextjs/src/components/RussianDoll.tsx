@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-export { generateDensityCss, spacingValueToCss as parseDensityValue, DEFAULT_DENSITIES } from 'postcss-uxdsl/language'
+export { generateDensityCss, spacingValueToCss as parseDensityValue, DEFAULT_DENSITIES } from 'uxdsl/engine'
 
 export const MAX_LAYERS = 14
 

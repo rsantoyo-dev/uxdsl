@@ -1,0 +1,7 @@
+/* The version line on the quick start: which release these pages describe. */
+
+.version-line {
+  @ds-surface(outlined info);
+  @ds-typo(span);
+  margin-block: density(3);
+}

@@ -67,7 +67,7 @@ no unresolved `var()` — every custom property a matching rule reads without a 
 on the elements the rule applies to, read from computed style. At 390 and 1280px it presses Tab
 through the page and requires every element that takes focus to match `:focus-visible` and to look
 different from the same element unfocused (outline, shadow, border, background or underline). On
-`/docs/contrast` it compares the report the page renders with `checkThemeContrast` run in Node for the
+`/docs/accessibility` it compares the report the page renders with `checkThemeContrast` run in Node for the
 same theme — the default one, and again after switching theme in the header.
 
 It then runs four negative controls, each of which must be reported: an injected undefined `var()`,

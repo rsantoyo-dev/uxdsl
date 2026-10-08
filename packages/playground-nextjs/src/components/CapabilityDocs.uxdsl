@@ -40,7 +40,7 @@
 
 .cap-note {
   @ds-typo(small);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
   margin: 0;
 }
 
@@ -53,7 +53,7 @@
 
 .cap-facts dt {
   @ds-typo(small);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .cap-facts dd {
@@ -125,21 +125,21 @@
 }
 
 .cap-log li.is-invalid {
-  color: palette(error-main);
+  color: palette(error.main);
 }
 
 .cap-event {
   @ds-typo(small);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }
 
 .cap-result {
-  color: palette(success-main);
+  color: palette(success.main);
   font-weight: 600;
 }
 
 .cap-result--error {
-  color: palette(error-main);
+  color: palette(error.main);
 }
 
 .cap-sandbox {
@@ -154,13 +154,14 @@
   align-items: start;
 }
 
-/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so moving md to 900
-   with updateBreakpoint visibly changes its layout. It scrolls sideways on a narrow screen. */
+/* The sandbox is 820px wide on purpose: between md (768) and lg (1024), so its layout row is
+   the md() rule at work. It scrolls sideways on a narrow screen. */
 .cap-frame-wrap {
+  max-width: 100%;
   overflow-x: auto;
-  border: 1px solid palette(neutral-light);
-  border-radius: rounded(2);
-  box-shadow: elevation(1);
+  border: 1px solid palette(neutral.light);
+  border-radius: radius(2);
+  box-shadow: shadow(1);
 }
 
 .cap-frame {
@@ -206,7 +207,7 @@
 .cap-table-wrap th,
 .cap-table-wrap td {
   padding: space(2) space(3);
-  border-bottom: 1px solid palette(neutral-light);
+  border-bottom: 1px solid palette(neutral.light);
   vertical-align: top;
 }
 
@@ -214,13 +215,16 @@
   display: flex;
   flex-wrap: wrap;
   gap: density(3);
-  border: 1px solid palette(neutral-light);
+  border: 1px solid palette(neutral.light);
   border-radius: radius(1);
   padding: space(2) space(4);
 }
 
 .cap-run {
   display: grid;
+  /* One column that cannot grow past the figure: a captured terminal line scrolls
+     inside its <pre> instead of widening the caption, the facts and the page. */
+  grid-template-columns: minmax(0, 1fr);
   gap: space(2);
   margin: 0 0 density(4);
   min-width: 0;
@@ -236,11 +240,39 @@
   margin: 0;
 }
 
+/* A captured run shown as a disclosure: the title and exit status until it is opened. */
+.cap-run--collapsed {
+  border: border(1);
+  border-radius: radius(1);
+  padding: space(2) space(4);
+  margin-bottom: space(3);
+
+  & > summary {
+    cursor: pointer;
+    display: list-item;
+    border-radius: radius(1);
+  }
+
+  & > summary:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+
+  &[open] > summary {
+    margin-bottom: space(3);
+  }
+}
+
+.cap-list {
+  display: grid;
+  min-width: 0;
+}
+
 .cap-terminal {
   margin: 0;
   overflow-x: auto;
-  background: color(gray-900);
-  color: color(gray-200);
+  background: color(gray.900);
+  color: color(gray.200);
   padding: space(4);
   border-radius: radius(1);
   font-family: var(--uxdsl__font__code, monospace);
@@ -250,11 +282,11 @@
 }
 
 .cap-terminal__prompt {
-  color: color(green-300);
+  color: color(green.300);
 }
 
 .cap-terminal__err {
-  color: color(red-300);
+  color: color(red.300);
 }
 
 .cap-exit {
@@ -264,38 +296,26 @@
 }
 
 .cap-exit--ok {
-  background: palette(success-main);
-  color: palette(success-contrast);
+  background: palette(success.main);
+  color: palette(success.contrast);
 }
 
 .cap-exit--fail {
-  background: palette(error-main);
-  color: palette(error-contrast);
+  background: palette(error.main);
+  color: palette(error.contrast);
 }
 
 .cap-transcript {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: density(2);
   padding-inline-start: space(6);
 }
 
-.cap-alias-demo {
-  display: grid;
-  gap: density(3);
-  align-content: start;
-}
-
-.cap-alias-box {
-  @ds-surface(flat);
-  padding: density(4);
-  background: palette(surface-main);
-  border: 1px solid palette(neutral-light);
-}
-
-/* The aliases under test: these two rules must render identically. */
-.cap-alias-box--alias {
-  box-shadow: elevation(2);
-  border-radius: rounded(2);
+/* A grid item defaults to min-width: auto and would grow to its longest captured line;
+   the step stays in the column and its terminal scrolls inside itself. */
+.cap-transcript > li {
+  min-width: 0;
 }
 
 .cap-alias-box--name {

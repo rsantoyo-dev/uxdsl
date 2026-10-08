@@ -21,8 +21,8 @@ const evidence = manualEvidence();
 const kinds = (kind) => rows.filter((r) => r.kind === kind);
 
 test('the capability list is derived from UXDSL\'s own sources, and covers every kind', () => {
-  const rt = require(path.join(ROOT, 'packages/postcss-uxdsl/dist/ds-runtime'));
-  const language = require(path.join(ROOT, 'packages/postcss-uxdsl/dist/language')).LANGUAGE_COMPLETIONS;
+  const rt = require(path.join(ROOT, 'packages/uxdsl/dist/entries/engine'));
+  const language = require(path.join(ROOT, 'packages/uxdsl/dist/language')).LANGUAGE_COMPLETIONS;
   assert.equal(kinds('directive').length, language.directives.length);
   assert.equal(kinds('family').length, rt.KNOWN_THEME_FAMILIES.size, 'one row per registered theme family');
   assert.equal(kinds('function').length + kinds('breakpoint-function').length, language.functions.length);

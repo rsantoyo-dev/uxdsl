@@ -1,33 +1,49 @@
-/* The "AI implementation guide" section that closes each documentation page.
-   Was AgentGuidance.module.css (MIG-B7-17 phase B): classes are prefixed because .uxdsl is
-   global. Stable spacing uses space(); the code panel and edge use Color identities, dark
-   in both modes on purpose. Font sizes are this section's own prose scale, not a role. */
+/* One primitive's guide on /docs/for-ai-agents, as a disclosure. The code panel is a Color
+   identity, dark in both modes on purpose. */
 
 .agent-guidance {
-  margin-block: 3rem;
-  padding: clamp(space(5), 3vw, space(7));
-  border: 1px solid color(gray-400);
-  border-radius: 0.75rem;
+  margin-block: space(4);
+  border: border(1);
+  border-radius: radius(2);
+  background: palette(surface.main);
   min-width: 0;
   line-height: 1.7;
-  scroll-margin-top: 5rem;
+  scroll-margin-top: space(11);
+
+  &[open] {
+    box-shadow: shadow(1);
+  }
 }
 
-.agent-guidance__label {
-  font-size: 0.8rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+.agent-guidance__summary {
+  cursor: pointer;
+  padding: density(3) density(4);
+  border-radius: radius(2);
+  list-style-position: inside;
+
+  &:hover {
+    background: palette(primary.main, 0.06);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
 }
 
-.agent-guidance h2 {
-  font-size: 1.5rem;
-  margin-block: space(3) space(5);
+.agent-guidance__title {
+  @ds-typo(h5);
+  margin: 0;
+}
+
+.agent-guidance__body {
+  padding: 0 density(4) density(4);
+  border-top: border(1);
 }
 
 .agent-guidance h3 {
-  font-size: 1.15rem;
-  margin-block: space(6) space(4);
+  @ds-typo(h6);
+  margin-block: space(6) space(3);
 }
 
 .agent-guidance p {
@@ -36,7 +52,7 @@
 
 .agent-guidance ul, .agent-guidance ol {
   padding-inline-start: space(6);
-  margin-block: space(5);
+  margin-block: space(4);
 }
 
 .agent-guidance ul {
@@ -48,20 +64,20 @@
 }
 
 .agent-guidance li {
-  margin-block: space(3);
+  margin-block: space(2);
 }
 
 .agent-guidance pre {
   overflow-x: auto;
   padding: space(5);
-  background: color(gray-900);
-  color: color(gray-200);
-  border-radius: 0.5rem;
+  background: color(gray.900);
+  color: color(gray.200);
+  border-radius: radius(2);
   font-size: 0.85rem;
 }
 
 .agent-guidance blockquote {
-  border-inline-start: 3px solid color(gray-400);
+  border-inline-start: 3px solid palette(divider.main);
   padding-inline-start: space(5);
-  margin-block: space(5);
+  margin-block: space(4);
 }

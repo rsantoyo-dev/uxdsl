@@ -57,14 +57,14 @@
       "patterns": [
         {
           "name": "keyword.control.at-rule.uxdsl",
-          "match": "@(theme|ds-surface|ds-typo|ds-button|ds-input)\\b"
+          "match": "@(ds-surface|ds-typo|ds-button|ds-input)\\b"
         }
       ]
     },
     "functions": {
       "patterns": [
         {
-          "match": "\\b(palette|color|radius|rounded|border|density|shadow|elevation|space|xs|sm|md|lg|xl)\\s*(?=\\()",
+          "match": "\\b(palette|color|radius|border|density|shadow|space|xs|sm|md|lg|xl)\\s*(?=\\()",
           "name": "support.function.uxdsl"
         }
       ]

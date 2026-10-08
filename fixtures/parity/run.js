@@ -1,7 +1,7 @@
 'use strict';
 
 // MIG-B6-18 (FEAT-008), story step 0: a golden-master guard that the CLI
-// (`uxdsl build`, spawned as a real subprocess) and `uxdsl-core`'s
+// (`uxdsl build`, spawned as a real subprocess) and `uxdsl`'s
 // `compile()` (required in-process) keep agreeing on every case here —
 // the exact two call sites MIG-B6-18 unified onto one shared pipeline.
 // For each case: run both, compare them to each other, then compare the
@@ -19,11 +19,11 @@ const { spawnSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '..', '..');
 const CASES_DIR = path.join(__dirname, 'cases');
 const EXPECTED_DIR = path.join(__dirname, 'expected');
-const CLI_BIN = path.join(ROOT, 'packages', 'uxdsl-cli', 'bin', 'uxdsl.js');
-const core = require(path.join(ROOT, 'packages', 'uxdsl-core', 'dist', 'index.js'));
-const viteModule = require(path.join(ROOT, 'packages', 'vite-plugin-uxdsl', 'dist', 'index.js'));
+const CLI_BIN = path.join(ROOT, 'packages', 'uxdsl', 'bin', 'uxdsl.js');
+const core = require(path.join(ROOT, 'packages', 'uxdsl', 'dist', 'entries', 'index.js'));
+const viteModule = require(path.join(ROOT, 'packages', 'uxdsl', 'dist', 'vite.js'));
 const uxdslVitePlugin = viteModule.default || viteModule;
-const webpackLoader = require(path.join(ROOT, 'packages', 'uxdsl-webpack-loader', 'index.js'));
+const webpackLoader = require(path.join(ROOT, 'packages', 'uxdsl', 'dist', 'webpack.js'));
 
 const UPDATE = process.argv.includes('--update');
 

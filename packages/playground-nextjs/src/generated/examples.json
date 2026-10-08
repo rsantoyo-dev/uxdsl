@@ -1,0 +1,226 @@
+{
+  "generatedBy": "packages/playground-nextjs/scripts/capture-examples.js — do not edit; run it to refresh",
+  "examples": {
+    "paradigm": {
+      "id": "paradigm",
+      "themePath": "paradigm/theme.json",
+      "theme": "{ \"densities\": { \"4\": \"xs(space(4)) md(space(5)) xl(space(6))\" } }",
+      "sourcePath": "paradigm/card.uxdsl",
+      "source": ".card {\n  @ds-surface(contained);\n  display: grid;\n  padding: density(4);\n  gap: xs(0.5rem) md(1rem);\n}\n.card h2 { @ds-typo(h2); }",
+      "output": ":root { --uxdsl__typography__h2-font-size: var(--uxdsl__space__6); }\n@media (min-width: 480px) { :root { --uxdsl__typography__h2-font-size: var(--uxdsl__space__7); } }\n@media (min-width: 1024px) { :root { --uxdsl__typography__h2-font-size: var(--uxdsl__space__8); } }\n@media (min-width: 1280px) { :root { --uxdsl__typography__h2-font-size: var(--uxdsl__space__9); } }\n:root { --uxdsl__density__4: var(--uxdsl__space__4); }\n@media (min-width: 768px) { :root { --uxdsl__density__4: var(--uxdsl__space__5); } }\n@media (min-width: 1280px) { :root { --uxdsl__density__4: var(--uxdsl__space__6); } }\n.card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: grid;\n  padding: var(--uxdsl__density__4);\n  gap: 0.5rem;\n}\n@media (min-width: 768px) { .card { gap: 1rem; } }\n.card h2 {\n  font-family: var(--uxdsl__typography__h2-font-family);\n  font-size: var(--uxdsl__typography__h2-font-size);\n  line-height: var(--uxdsl__typography__h2-line-height);\n  font-weight: var(--uxdsl__typography__h2-font-weight);\n  letter-spacing: var(--uxdsl__typography__h2-letter-spacing);\n  margin-block-start: var(--uxdsl__typography__h2-margin-block-start);\n  margin-block-end: var(--uxdsl__typography__h2-margin-block-end);\n}",
+      "tokens": [
+        "--uxdsl__density__4",
+        "--uxdsl__typography__h2-font-size"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 48101
+    },
+    "quick-start": {
+      "id": "quick-start",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{}",
+      "sourcePath": "src/styles.uxdsl",
+      "source": ".example {\n  @ds-surface(contained);\n  padding: density(3);\n}",
+      "output": ":root { --uxdsl__density__3: var(--uxdsl__space__3); }\n@media (min-width: 768px) { :root { --uxdsl__density__3: var(--uxdsl__space__4); } }\n@media (min-width: 1280px) { :root { --uxdsl__density__3: var(--uxdsl__space__5); } }\n.example {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  padding: var(--uxdsl__density__3);\n}",
+      "tokens": [
+        "--uxdsl__density__3"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47596
+    },
+    "breakpoints": {
+      "id": "breakpoints",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"breakpoints\": {\n    \"xs\": 0,\n    \"sm\": 480,\n    \"md\": 800,\n    \"lg\": 1024,\n    \"xl\": 1280\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".layout {\n  display: flex;\n  flex-direction: xs(column) md(row);\n  gap: density(3);\n}",
+      "output": ":root { --uxdsl__density__3: var(--uxdsl__space__3); }\n@media (min-width: 800px) { :root { --uxdsl__density__3: var(--uxdsl__space__4); } }\n@media (min-width: 1280px) { :root { --uxdsl__density__3: var(--uxdsl__space__5); } }\n.layout {\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__3);\n}\n@media (min-width: 800px) { .layout { flex-direction: row; } }",
+      "tokens": [
+        "--uxdsl__density__3"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 800,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47382
+    },
+    "spacing": {
+      "id": "spacing",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"spacing\": {\n    \"4\": \"0.75rem\",\n    \"5\": \"1rem\",\n    \"6\": \"1.5rem\"\n  },\n  \"densities\": {\n    \"4\": \"xs(space(4)) md(space(5)) xl(space(6))\"\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".card { padding: density(4); }\n.toolbar { gap: space(4); }",
+      "output": ":root {\n  --uxdsl__space__4: 0.75rem;\n  --uxdsl__space__5: 1rem;\n  --uxdsl__space__6: 1.5rem;\n}\n:root { --uxdsl__density__4: var(--uxdsl__space__4); }\n@media (min-width: 768px) { :root { --uxdsl__density__4: var(--uxdsl__space__5); } }\n@media (min-width: 1280px) { :root { --uxdsl__density__4: var(--uxdsl__space__6); } }\n.card { padding: var(--uxdsl__density__4); }\n.toolbar { gap: var(--uxdsl__space__4); }",
+      "tokens": [
+        "--uxdsl__space__4",
+        "--uxdsl__space__5",
+        "--uxdsl__space__6",
+        "--uxdsl__density__4"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47316
+    },
+    "colors": {
+      "id": "colors",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"colors\": {\n    \"blue\": {\n      \"500\": \"#3b82f6\",\n      \"700\": \"#1d4ed8\"\n    }\n  },\n  \"palette\": {\n    \"primary\": {\n      \"main\": \"color(blue.700)\",\n      \"contrast\": \"color(white)\"\n    }\n  },\n  \"modes\": {\n    \"dark\": {\n      \"palette\": {\n        \"primary\": {\n          \"main\": \"color(blue.500)\",\n          \"contrast\": \"color(black)\"\n        }\n      }\n    }\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".cta {\n  background: palette(primary.main);\n  color: palette(primary.contrast);\n}\n.swatch { background: color(blue.700); }\n.scrim { background: color(black, 0.5); }",
+      "output": ":root {\n  --uxdsl__palette__primary-main: var(--uxdsl__color__blue-700);\n  --uxdsl__palette__primary-contrast: var(--uxdsl__color__white);\n  --uxdsl__color__blue-500: #3b82f6;\n  --uxdsl__color__blue-700: #1d4ed8;\n}\n@media (prefers-color-scheme: dark) {\n  :root:not([data-theme='light']) {\n    --uxdsl__palette__primary-main: var(--uxdsl__color__blue-500);\n    --uxdsl__palette__primary-contrast: var(--uxdsl__color__black);\n  }\n}\n:root[data-theme='dark'] {\n  --uxdsl__palette__primary-main: var(--uxdsl__color__blue-500);\n  --uxdsl__palette__primary-contrast: var(--uxdsl__color__black);\n}\n.cta {\n  background: var(--uxdsl__palette__primary-main);\n  color: var(--uxdsl__palette__primary-contrast);\n}\n.swatch { background: var(--uxdsl__color__blue-700); }\n.scrim { background: color-mix(in srgb, var(--uxdsl__color__black) 50%, transparent); }",
+      "tokens": [
+        "--uxdsl__color__blue-500",
+        "--uxdsl__color__blue-700",
+        "--uxdsl__palette__primary-main",
+        "--uxdsl__palette__primary-contrast"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47546
+    },
+    "typography": {
+      "id": "typography",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"typography_details\": {\n    \"h2\": {\n      \"fontSize\": \"xs(space(6)) md(space(7)) xl(space(9))\",\n      \"lineHeight\": \"xs(1.25) md(1.3)\"\n    }\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".section-title { @ds-typo(h2); }",
+      "output": ":root {\n  --uxdsl__typography__h2-font-size: var(--uxdsl__space__6);\n  --uxdsl__typography__h2-line-height: 1.25;\n}\n@media (min-width: 768px) {\n  :root {\n    --uxdsl__typography__h2-font-size: var(--uxdsl__space__7);\n    --uxdsl__typography__h2-line-height: 1.3;\n  }\n}\n@media (min-width: 1280px) { :root { --uxdsl__typography__h2-font-size: var(--uxdsl__space__9); } }\n.section-title {\n  font-family: var(--uxdsl__typography__h2-font-family);\n  font-size: var(--uxdsl__typography__h2-font-size);\n  line-height: var(--uxdsl__typography__h2-line-height);\n  font-weight: var(--uxdsl__typography__h2-font-weight);\n  letter-spacing: var(--uxdsl__typography__h2-letter-spacing);\n  margin-block-start: var(--uxdsl__typography__h2-margin-block-start);\n  margin-block-end: var(--uxdsl__typography__h2-margin-block-end);\n}",
+      "tokens": [
+        "--uxdsl__typography__h2-font-size",
+        "--uxdsl__typography__h2-line-height"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47561
+    },
+    "borders": {
+      "id": "borders",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"borders\": {\n    \"1\": \"xs(1px solid palette(divider.main)) md(2px solid palette(divider.main))\"\n  },\n  \"radii\": {\n    \"2\": \"xs(space(2)) md(space(3))\"\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".card {\n  border: border(1);\n  border-radius: radius(2);\n}\n.chip { border-radius: radius(pill); }\n.avatar { border-radius: radius(circle); }",
+      "output": ":root {\n  --uxdsl__border__1: 1px solid var(--uxdsl__palette__divider-main);\n  --uxdsl__radius__2: var(--uxdsl__space__2);\n}\n@media (min-width: 768px) {\n  :root {\n    --uxdsl__border__1: 2px solid var(--uxdsl__palette__divider-main);\n    --uxdsl__radius__2: var(--uxdsl__space__3);\n  }\n}\n.card {\n  border: var(--uxdsl__border__1);\n  border-radius: var(--uxdsl__radius__2);\n}\n.chip { border-radius: 9999px; }\n.avatar { border-radius: 50%; }",
+      "tokens": [
+        "--uxdsl__border__1",
+        "--uxdsl__radius__2"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47494
+    },
+    "shadows": {
+      "id": "shadows",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"shadows\": {\n    \"2\": \"xs(0 1px 2px rgba(0, 0, 0, 0.12)) md(0 4px 12px rgba(0, 0, 0, 0.16))\"\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".card { box-shadow: shadow(2); }\n.flat { box-shadow: shadow(0); }",
+      "output": ":root {\n  --uxdsl__shadow__0: none;\n  --uxdsl__shadow__2: 0 1px 2px rgba(0, 0, 0, 0.12);\n}\n@media (min-width: 768px) { :root { --uxdsl__shadow__2: 0 4px 12px rgba(0, 0, 0, 0.16); } }\n.card { box-shadow: var(--uxdsl__shadow__2); }\n.flat { box-shadow: var(--uxdsl__shadow__0); }",
+      "tokens": [
+        "--uxdsl__shadow__0",
+        "--uxdsl__shadow__2"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47384
+    },
+    "surfaces": {
+      "id": "surfaces",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"surfaces\": {\n    \"contained\": {\n      \"shadow\": \"xs(shadow(1)) md(shadow(3))\"\n    }\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".card { @ds-surface(contained); }\n.notice { @ds-surface(outlined info 2); }",
+      "output": ":root { --uxdsl__surface__contained-shadow: var(--uxdsl__shadow__1); }\n@media (min-width: 768px) {\n  :root { --uxdsl__surface__contained-shadow: var(--uxdsl__shadow__3); }\n}\n.card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n}\n.notice {\n  padding: var(--uxdsl__density__2);\n  border-radius: var(--uxdsl__radius__2);\n  background: transparent;\n  color: var(--uxdsl__palette__info-main);\n  border: 1px solid var(--uxdsl__palette__info-main);\n  box-shadow: var(--uxdsl__surface__outlined-shadow);\n}",
+      "tokens": [
+        "--uxdsl__surface__contained-shadow"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 47902
+    },
+    "buttons": {
+      "id": "buttons",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"buttons\": {\n    \"checkout\": {\n      \"surface\": \"contained\",\n      \"base\": {\n        \"padding\": \"density(3)\"\n      },\n      \"states\": {\n        \"hover\": {\n          \"bg\": \"tone(dark)\"\n        }\n      }\n    }\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".checkout { @ds-button(checkout); }",
+      "output": ":root {\n  --uxdsl__button__checkout-base-padding: var(--uxdsl__density__3);\n  --uxdsl__button__checkout-hover-bg: var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark));\n}\n.checkout {\n  padding: var(--uxdsl__button__checkout-base-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n}\n.checkout:hover:not(:where(:disabled, [aria-disabled=\"true\"])) {\n  background: var(--uxdsl__button__checkout-hover-bg);\n  color: var(--uxdsl__button__checkout-hover-color);\n}\n.checkout:focus-visible {\n  outline: var(--uxdsl__button__checkout-focusvisible-outline);\n  outline-offset: var(--uxdsl__button__checkout-focusvisible-outline-offset);\n}\n.checkout.is-selected, .checkout[aria-pressed=\"true\"], .checkout[aria-selected=\"true\"] {\n  background: var(--uxdsl__button__checkout-selected-bg);\n  color: var(--uxdsl__button__checkout-selected-color);\n}\n.checkout:disabled, .checkout[aria-disabled=\"true\"] {\n  opacity: var(--uxdsl__button__checkout-disabled-opacity);\n  cursor: var(--uxdsl__button__checkout-disabled-cursor);\n}",
+      "tokens": [
+        "--uxdsl__button__checkout-base-padding",
+        "--uxdsl__button__checkout-hover-bg"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 54192
+    },
+    "inputs": {
+      "id": "inputs",
+      "themePath": "uxdsl.theme.json",
+      "theme": "{\n  \"inputs\": {\n    \"search\": {\n      \"surface\": \"outlined\",\n      \"base\": {\n        \"placeholder\": \"palette(neutral.dark)\"\n      },\n      \"states\": {\n        \"invalid\": {\n          \"border\": \"2px solid palette(error.main)\"\n        }\n      }\n    }\n  }\n}",
+      "sourcePath": "example.uxdsl",
+      "source": ".search { @ds-input(search); }",
+      "output": ":root {\n  --uxdsl__input__search-base-placeholder: var(--uxdsl__palette__neutral-dark);\n  --uxdsl__input__search-invalid-border: 2px solid var(--uxdsl__palette__error-main);\n}\n.search {\n  box-sizing: border-box;\n  font: inherit;\n  width: 100%;\n  padding: var(--uxdsl__surface__outlined-padding);\n  border-radius: var(--uxdsl__surface__outlined-radius);\n  background: var(--uxdsl__surface__outlined-bg);\n  color: var(--uxdsl__surface__outlined-color);\n  border: var(--uxdsl__surface__outlined-border);\n  box-shadow: var(--uxdsl__surface__outlined-shadow);\n  caret-color: var(--uxdsl__input__search-base-caret);\n}\n.search::placeholder { color: var(--uxdsl__input__search-base-placeholder); }\n.search:focus {\n  border: var(--uxdsl__input__search-focus-border);\n  box-shadow: var(--uxdsl__input__search-focus-shadow);\n}\n.search:invalid, .search[aria-invalid=\"true\"] { border: var(--uxdsl__input__search-invalid-border); }\n.search:disabled, .search[aria-disabled=\"true\"] {\n  color: var(--uxdsl__input__search-disabled-color);\n  opacity: var(--uxdsl__input__search-disabled-opacity);\n  cursor: var(--uxdsl__input__search-disabled-cursor);\n}",
+      "tokens": [
+        "--uxdsl__input__search-base-placeholder",
+        "--uxdsl__input__search-invalid-border"
+      ],
+      "breakpoints": {
+        "xs": 0,
+        "sm": 480,
+        "md": 768,
+        "lg": 1024,
+        "xl": 1280
+      },
+      "bytes": 50751
+    }
+  }
+}

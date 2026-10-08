@@ -30,7 +30,11 @@ const frame = () => new Promise((resolve) => window.requestAnimationFrame(() => 
 const settle = () => act(async () => { await frame(); await frame(); });
 const themeCss = () => (document.getElementById(STYLE_ID) || { textContent: '' }).textContent;
 const has = (hex) => new RegExp(hex.replace('#', '#?'), 'i').test(themeCss());
-const primaryOf = (name) => themes[name].palette.primary.main;
+// A theme leaf is written in the value grammar — the base says `color(purple.700)`
+// (stability phase 5), a named theme may say a literal — and the stylesheet carries
+// its compiled form, so the comparison goes through the same compiler.
+const { tokenValueToCss } = require('uxdsl/engine');
+const primaryOf = (name) => tokenValueToCss(themes[name].palette.primary.main);
 // The light-mode `--uxdsl__palette__primary-main` actually on the page. Searching
 // the whole stylesheet for a hex is a weak proxy: green's primary also appears in
 // purple's CSS under another role, so a wrong theme still "contained" it.
@@ -69,16 +73,16 @@ const scenarios = {
 
   async initializationRemovesOnlyWhatItRetired(component) {
     harness.installDom();
-    // Elements the provider used to manage (retired), one it never did, and inline
-    // properties: a runtime-owned one and an app-owned one.
+    // Elements the provider used to manage (retired), one it never did, and an
+    // inline property the app owns. Nothing writes inline `--uxdsl__*` tokens any
+    // more (the per-token runtime is gone), so the provider has no inline
+    // properties of its own to clear — and must not touch the app's.
     document.head.insertAdjacentHTML('beforeend', '<link id="uxdsl-google-fonts"><style id="uxdsl-typography-theme"></style><style id="app-owned"></style>');
-    document.documentElement.style.setProperty('--uxdsl__space__1', '99px');
     document.documentElement.style.setProperty('--app-token', 'keep');
     await mount(component);
     assert.equal(document.getElementById('uxdsl-google-fonts'), null, 'retired font <link> removed');
     assert.equal(document.getElementById('uxdsl-typography-theme'), null, 'retired typography <style> removed');
     assert.ok(document.getElementById('app-owned'), 'an element the app owns is left alone');
-    assert.equal(document.documentElement.style.getPropertyValue('--uxdsl__space__1'), '', 'a stale inline runtime token no longer covers the stylesheet');
     assert.equal(document.documentElement.style.getPropertyValue('--app-token'), 'keep', 'an inline property the app owns is left alone');
   },
 
@@ -229,11 +233,6 @@ const mutations = [
     label: 'switching theme no longer cancels the queued edit',
     scenario: 'abandonedEditNeverLands',
     edit: (src) => src.replace("scheduler?.cancel()\n    pendingCustomRef.current = null\n\n    let themeToApply", "pendingCustomRef.current = null\n\n    let themeToApply"),
-  },
-  {
-    label: 'stale inline runtime tokens are no longer cleared',
-    scenario: 'initializationRemovesOnlyWhatItRetired',
-    edit: (src) => src.replace('      clearRuntimeInlineTokens()\n', ''),
   },
   {
     label: 'the retired managed elements are no longer removed',

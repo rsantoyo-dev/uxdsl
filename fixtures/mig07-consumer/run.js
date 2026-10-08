@@ -2,7 +2,7 @@
 'use strict';
 
 /**
- * MIG-07: builds this fixture using postcss-uxdsl installed from a real
+ * MIG-07: builds this fixture using uxdsl installed from a real
  * `npm pack` tarball — never importing the monorepo's TypeScript source —
  * then checks the acceptance criteria that can be verified without a real
  * browser. See the "NOT VERIFIED" section printed at the end for what
@@ -23,7 +23,7 @@ const { cascadedVariables, mapsEqual } = require('./lib/css-cascade-compare');
 
 const ROOT = path.resolve(__dirname, '..', '..');
 const FIXTURE_DIR = __dirname;
-const PACKAGE_DIR = path.join(ROOT, 'packages/postcss-uxdsl');
+const PACKAGE_DIR = path.join(ROOT, 'packages/uxdsl');
 const ENTRIES_DIR = path.join(FIXTURE_DIR, 'entries');
 const OUT_DIR = path.join(FIXTURE_DIR, '.out');
 
@@ -35,8 +35,8 @@ function check(label, condition) {
 
 function packAndInstall() {
   execFileSync('npm', ['run', 'build'], { cwd: PACKAGE_DIR, stdio: 'inherit' });
-  console.log('Packing postcss-uxdsl (npm pack)...');
-  const packOutput = execFileSync('npm', ['pack', '--pack-destination', FIXTURE_DIR], { cwd: PACKAGE_DIR, encoding: 'utf8' });
+  console.log('Packing uxdsl (npm pack)...');
+  const packOutput = execFileSync('npm', ['pack', '--ignore-scripts', '--pack-destination', FIXTURE_DIR], { cwd: PACKAGE_DIR, encoding: 'utf8' });
   const tarballName = packOutput.trim().split('\n').filter(Boolean).pop();
   const tarballPath = path.join(FIXTURE_DIR, tarballName);
   if (!fs.existsSync(tarballPath)) throw new Error(`Expected tarball at ${tarballPath}, got pack output:\n${packOutput}`);
@@ -55,13 +55,13 @@ function loadInstalled() {
   // Resolve from the fixture's own node_modules — proves the tarball is
   // self-contained and never falls back to the monorepo source.
   const req = require('module').createRequire(path.join(FIXTURE_DIR, 'package.json'));
-  const pluginModule = req('postcss-uxdsl');
   return {
-    plugin: pluginModule.default || pluginModule,
+    plugin: req('uxdsl/postcss'),
+    // postcss is the package's peer: npm installed it next to uxdsl.
     postcss: req('postcss'),
-    runtime: req('postcss-uxdsl/ds-runtime'),
-    pkgJson: JSON.parse(fs.readFileSync(req.resolve('postcss-uxdsl/package.json'), 'utf8')),
-    pkgDir: path.dirname(req.resolve('postcss-uxdsl/package.json')),
+    runtime: { ...req('uxdsl/theme'), ...req('uxdsl/engine') },
+    pkgJson: JSON.parse(fs.readFileSync(req.resolve('uxdsl/package.json'), 'utf8')),
+    pkgDir: path.dirname(req.resolve('uxdsl/package.json')),
   };
 }
 
@@ -86,7 +86,7 @@ async function buildOnce(installed, theme) {
 
 async function main() {
   const tarballName = packAndInstall();
-  check('tarball installed under ./node_modules/postcss-uxdsl (not the monorepo source)', fs.existsSync(path.join(FIXTURE_DIR, 'node_modules/postcss-uxdsl/dist/index.js')));
+  check('tarball installed under ./node_modules/uxdsl (not the monorepo source)', fs.existsSync(path.join(FIXTURE_DIR, 'node_modules/uxdsl/dist/plugin.js')) && !fs.lstatSync(path.join(FIXTURE_DIR, 'node_modules/uxdsl')).isSymbolicLink());
 
   // Self-check: the comparison this script relies on below (cascadedVariables)
   // has its own regression coverage — run it before trusting its verdicts,
@@ -101,9 +101,11 @@ async function main() {
 
   const installed = loadInstalled();
   check('installed package.json declares main/types/exports for a consumer to resolve', !!(installed.pkgJson.main && installed.pkgJson.types && installed.pkgJson.exports));
-  for (const doc of ['README.md', 'CHANGELOG.md']) {
-    check(`installed tarball includes ${doc}`, fs.existsSync(path.join(installed.pkgDir, doc)));
-  }
+  check('installed tarball includes README.md', fs.existsSync(path.join(installed.pkgDir, 'README.md')));
+  // Stability phase 4: `files` ships what a consumer's code or editor reads.
+  // The CHANGELOG is linked from the README instead of riding along in every
+  // install.
+  check('installed tarball does not include CHANGELOG.md (linked, not shipped)', !fs.existsSync(path.join(installed.pkgDir, 'CHANGELOG.md')));
   // MIG-B6-28 (FEAT-008): docs/migration.md is deliberately *not* shipped
   // any more (package.json's new `files` field excludes it — it was 38.8KB
   // of pure prose bloating every install for something no code path reads
@@ -111,7 +113,14 @@ async function main() {
   // was switched from a relative repo path (which would 404 for anyone
   // reading the installed copy, e.g. via a local file browser or an IDE's
   // node_modules README preview) to an absolute GitHub URL.
-  check('installed tarball does not include docs/ (moved to an absolute README link instead)', !fs.existsSync(path.join(installed.pkgDir, 'docs')));
+  // MIG-B7-15 (FEAT-009) later added exactly one file under docs/ on purpose:
+  // the agent guide generated from AGENTS.md, so a consumer's AI agent can
+  // read it from node_modules. The prose migration guide stays out.
+  check('installed tarball does not include docs/migration.md (moved to an absolute README link instead)', !fs.existsSync(path.join(installed.pkgDir, 'docs/migration.md')));
+  check('installed tarball ships docs/agent-guide.md and nothing else under docs/', (() => {
+    const docsDir = path.join(installed.pkgDir, 'docs');
+    return fs.existsSync(docsDir) && fs.readdirSync(docsDir).sort().join(',') === 'agent-guide.md';
+  })());
   const installedReadme = fs.readFileSync(path.join(installed.pkgDir, 'README.md'), 'utf8');
   check('installed README links migration.md via an absolute URL, not a relative path that would 404 once unshipped', /\]\(https:\/\/github\.com\/[^)]*\/docs\/migration\.md\)/.test(installedReadme));
 
@@ -139,8 +148,8 @@ async function main() {
   fs.rmSync(typeDir, { recursive: true, force: true });
   fs.mkdirSync(typeDir, { recursive: true });
   fs.writeFileSync(path.join(typeDir, 'consumer.ts'), [
-    "import { defineConfig } from 'postcss-uxdsl/config';",
-    "import type { UxdslTheme, UxdslConfig, UxdslOptions } from 'postcss-uxdsl';",
+    "import { defineConfig } from 'uxdsl/config';",
+    "import type { UxdslTheme, UxdslConfig, UxdslOptions } from 'uxdsl';",
     "export const config: UxdslConfig = defineConfig({ entry: './a.uxdsl', outFile: './a.css' });",
     "export const theme: UxdslTheme = { palette: { brand: { main: '#000' } }, typography_details: { h1: { fontSize: '2rem' } } };",
     "export const options: UxdslOptions = { theme, includeTheme: false };",
@@ -217,7 +226,7 @@ async function main() {
   console.log('\nNOT VERIFIED by this script (documented gap, see docs/features/FEAT-002-beta-migration-hardening.md MIG-07):');
   console.log('  - Real browser-computed styles at each breakpoint (no headless browser available in this environment).');
   console.log('  - An actual CSS Modules build (e.g. webpack css-loader in strict mode) rejecting/accepting the panel output.');
-  console.log(`  - Coordinated multi-package install (only postcss-uxdsl@${installed.pkgJson.version} was packed; uxdsl-core/uxdsl-cli/vite-plugin-uxdsl were not exercised here).`);
+  console.log(`  - The CLI and the bundler adapters of uxdsl@${installed.pkgJson.version} (this script drives the PostCSS plugin; verify:1.0 drives the rest from the same tarball).`);
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   if (failures.length) {

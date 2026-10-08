@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import runtime from 'postcss-uxdsl/ds-runtime'
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter'
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism'
 import { useTheme } from './ThemeContext'
@@ -67,9 +66,8 @@ function ColorScaleToken({
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newHex = e.target.value;
     const newRgb = hexToRgbString(newHex);
-    // Update CSS variables globally via runtime
-    // This will also update any linked palette tokens
-    runtime.updateColor(`${family}-${shade}`, newHex, { persist: true })
+    // The theme JSON is the model: the parent writes colors.<family>.<shade>
+    // and ThemeContext applies it through applyTheme.
     onTokenChange(`${family}-${shade}`, newHex)
     
     // Dispatch event for other components (UI updates only)
@@ -115,12 +113,6 @@ export default function DemoColors() {
   const [textFamily, setTextFamily] = useState('gray')
   const [textShade, setTextShade] = useState('50')
 
-  useEffect(() => {
-    try {
-      runtime.loadPersistedColors()
-    } catch {}
-  }, [])
-
   const handleTokenChange = (token: string, value: string) => {
     const [family, shade] = token.split('-')
     if (!family || !shade) return
@@ -140,7 +132,7 @@ export default function DemoColors() {
         <p className="demo-subtitle">
           Full spectrum of generated color scales. Click any swatch to adjust the global theme variable.
           <br />
-          Usage example: <code>background: color(blue-500)</code>
+          Usage example: <code>background: color(blue.500)</code>
         </p>
       </div>
 
@@ -193,8 +185,8 @@ export default function DemoColors() {
                  wrapLines={true}
                >
 {`.my-element {
-  background-color: color(${bgFamily}-${bgShade});
-  color: color(${textFamily}-${textShade});
+  background-color: color(${bgFamily}.${bgShade});
+  color: color(${textFamily}.${textShade});
 }`}
                </SyntaxHighlighter>
              </div>
@@ -202,13 +194,8 @@ export default function DemoColors() {
         </div>
       </div>
 
-      <div className="demo-header">
-        <h3 className="demo-title">Global Palette</h3>
-        <p className="demo-subtitle">
-          Click on any color swatch to update the UX-DSL token.
-        </p>
-      </div>
-
+      <details className="demo-disclosure">
+      <summary className="demo-disclosure__summary">Every color of the collection; click a swatch to change it</summary>
       <div className="colors-stack">
         {families.map((fam) => (
           <article key={fam} className="color-family">
@@ -226,6 +213,7 @@ export default function DemoColors() {
           </article>
         ))}
       </div>
+      </details>
     </section>
   )
 }

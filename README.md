@@ -2,6 +2,30 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
+## One package: `uxdsl` (0.5.0-beta.7)
+
+```bash
+npm i -D uxdsl
+npx uxdsl init
+npx uxdsl build
+```
+
+The compiler, the CLI, the Vite plugin, the Webpack loader and the browser
+theme runtime are one package, [`uxdsl`](packages/uxdsl/README.md), with one
+entry point per job: `uxdsl` (`compile()`), `uxdsl/postcss`, `uxdsl/vite`,
+`uxdsl/webpack`, `uxdsl/runtime`, `uxdsl/theme`, `uxdsl/language`,
+`uxdsl/config` and `uxdsl/engine` (tooling, exempt from semver). It ships in
+`0.5.0-beta.7`, its first release under that name; `0.5.0-beta.6` and earlier
+were published as five packages. The old → new import table is in the
+[CHANGELOG](packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1);
+the five former names are deprecated in favour of `uxdsl`
+([release record and publish steps](docs/releases/0.5.0-beta.7.md)). `npm run verify:1.0`
+is the release gate: one tarball, installed the documented way, plus real
+Vite, Webpack, Next.js and Chrome runs.
+
+The release notes below describe what was published at the time, under the
+package names of the time.
+
 ## 0.5.0-beta.6 — published
 
 Published to npm on 2026-09-23, with `latest` and `beta` on it; the
@@ -14,14 +38,19 @@ defines; source maps; `applyTheme(json)` at run time; exported types,
 `defineConfig` and a generated theme JSON Schema; and reference validation that
 no longer grows quadratically (24,000 lines: 63.3 s → 0.79 s).
 
-`npm run verify:beta6` runs the release gate against real tarballs. Its
+`npm run verify:beta6` ran the release gate against real tarballs (replaced by `verify:1.0`). Its
 automated portion passed; as of 2026-09-28, external validation against a real
 consumer project is still pending and is listed, with the known limitations, in
-the release record — the most important being that the packaged base theme does
-not yet pass its own contrast gate (`checkThemeContrast` on
-`packages/postcss-uxdsl/src/theme/base.json` still reports `passed: false`: 123
-failing pairs with the shipped `base.contrast-exceptions.json`, 124 without it,
-as of 2026-09-28; `uxdsl theme --contrast` reproduces the 123). What comes next is planned in
+the release record. The most important of those — the packaged base theme not
+passing its own contrast gate (123 failing pairs as of 2026-09-28) — is closed
+by stability phase 5 (unreleased): `checkThemeContrast` on
+`packages/uxdsl/src/theme/base.json` with the shipped
+`base.contrast-exceptions.json` now reports `passed: true` — 1004 pairs checked,
+0 failing, 111 excepted (the canvas-identity families `surface`, `light` and
+`dark` used as a tone and drawn on the page, covered by three pattern
+exceptions and still listed pair by pair, never counted as passing);
+`uxdsl theme --contrast` in a zero-config project exits 0 and prints the same
+report. What comes next is planned in
 [FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md): `0.5.0-beta.7` first, then
 `0.5.0-rc.1`.
 
@@ -36,18 +65,19 @@ npm run uxdsl:build
 Import `src/uxdsl.css` once (from `src/app/layout.tsx`: `import '../uxdsl.css'`).
 Run `npm run uxdsl:watch` alongside the app's development server. After adding
 or removing `.uxdsl` files, run `npx uxdsl generate-entry`. See
-[`postcss-uxdsl`'s README](packages/postcss-uxdsl/README.md) for a 60-second
+[`postcss-uxdsl`'s README](packages/uxdsl/README.md) for a 60-second
 tour of the syntax itself — responsive values, palette tokens, density,
 buttons, and live theming with no rebuild.
 
 [FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on a
-real consumer's CI report: `--strict-theme`/`uxdsl theme --strict` now
-accept an optional family scope (`--strict-theme=palette,breakpoints`, or
+real consumer's CI report: `--strict-theme` (on `build` and `theme` alike)
+takes a family scope (`--strict-theme=palette,breakpoints`, or
 `strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
-the bare flag flags any documented partial theme override — not just in
-`typography_details`, but in the zero-config `palette` example this
-project's own README uses — as "incomplete". `true`/the bare flag is
-unchanged. `validateAndNormalizeTheme`'s top-level "Unknown theme family"
+the unscoped check flagged any documented partial theme override — not just
+in `typography_details`, but in the zero-config `palette` example this
+project's own README uses — as "incomplete". Since the stability plan's
+phase 2 the scope is required: the bare flag is refused with the scoped form
+spelled out. `validateTheme`'s top-level "Unknown theme family"
 warning also actually prints from a real `uxdsl build`/`watch` for the
 first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.
@@ -56,11 +86,11 @@ inside `typography_details`/`palette`/`fonts.families`; MIG-B6-01 of
 [FEAT-007](docs/features/FEAT-007-beta6-pre1-foundations.md) removed it as
 a false positive — those three families are open registries.)
 
-See the [migration recipe](packages/postcss-uxdsl/docs/migration.md) and the
+See the [migration recipe](packages/uxdsl/docs/migration.md) and the
 [published release record](docs/releases/0.5.0-beta.5.md).
-`npm run verify:beta5` installs all five packages from fresh tarballs and
-exercises the full scenario end to end; `verify:beta4`/`verify:beta3`/`verify:beta2`
-still cover their own earlier scenarios the same way.
+`npm run verify:beta5` installed all five packages from fresh tarballs and
+exercised the full scenario end to end, as `verify:beta4`/`verify:beta3`/`verify:beta2`
+did for theirs; `verify:1.0` now runs every one of those checks against the one package.
 
 Previous prereleases are recorded in
 [docs/releases/0.5.0-beta.4.md](docs/releases/0.5.0-beta.4.md),
@@ -70,10 +100,10 @@ Previous prereleases are recorded in
 ## FEAT-002 migration verification
 
 The published 0.5.0-beta.1 contract uses `--uxdsl__<family>__<key>`.
-Use the shipped `postcss-uxdsl/scripts/codemod-namespace.js` in preview mode
+Use the shipped `uxdsl/scripts/codemod-namespace.js` in preview mode
 before migrating selected consumer CSS/JSON; explicit mappings protect host
 tokens and handle custom typography roles. See the
-[migration guide](packages/postcss-uxdsl/docs/migration.md).
+[migration guide](packages/uxdsl/docs/migration.md).
 The beta.1 release is recorded in
 [docs/releases/0.5.0-beta.1.md](docs/releases/0.5.0-beta.1.md). Follow-up
 installation hardening is tracked in
@@ -93,7 +123,7 @@ Marketplace nor Open VSX (publishing is tracked as
 [MIG-B7-05](docs/features/FEAT-009/MIG-B7-05-publicar-extension.md)): it is installed
 from a `.vsix` built from `packages/uxdsl-vscode`. How to install it, and the
 typed config and theme `$schema` that work without it, are in
-[uxdsl-cli's "Editor support"](packages/uxdsl-cli/README.md#editor-support). CLI consumers
+[uxdsl-cli's "Editor support"](packages/uxdsl/docs/integrations/cli.md#editor-support). CLI consumers
 must use the same theme overrides across integrations and regenerate their CSS when
 adopting the namespace; no automatic legacy aliases are provided.
 
@@ -112,16 +142,25 @@ Keep this guide aligned when changing primitive behavior or AI documentation.
 
 ## Shared Borders and Radii engine
 
-`packages/postcss-uxdsl/src/edges.ts` owns Border/Radius defaults, token conversion,
+`packages/uxdsl/src/edges.ts` owns Border/Radius defaults, token conversion,
 responsive rules, CSS generation and viewport inspection. PostCSS, runtime
 `generateThemeCss`, and the Borders preview consume it. Configure `borders` and
 `radii` in the theme JSON; values may be literal CSS or responsive expressions.
-The default `.uxdsl` files are generated by `npm run generate:language`.
+The built-in presets are `uxdsl/theme/base.json`'s; the theme JSON is the
+only source of a preset (a `@theme` block is `UXD_THEME_BLOCK_REMOVED` since
+stability phase 3).
+
+The language has one spelling per construct (stability phase 3): `border(k)`,
+`radius(k)`, `shadow(k)`, `space(k)` and `density(k)` take exactly one
+argument, a Palette or Color entry is `palette(family.variant)`/`color(family.shade)`,
+and a directive is `@ds-x(role [tone] [size] [radius(k)] [shadow(k)])`; every
+other spelling is a located `UXD_*` error naming the grammar, and
+`uxdsl/scripts/codemod-canonical-grammar.js` rewrites the removed ones.
+See the uxdsl README, "The canonical grammar".
 
 Migration notes for `0.5.0-beta.1` (not included in npm 0.4.0):
 
-- Legacy `@theme` definitions remain supported in the same compilation. JSON
-  entries win over matching legacy entries, followed by shared defaults.
+- JSON entries win over shared defaults.
 - Components now consume CSS variables, so runtime theme replacement updates
   their presets and local longhand overrides persist across breakpoints.
 - Borders/Radii definitions no longer leak across independent compilations.
@@ -141,13 +180,14 @@ Run `npm test` for shared-engine and integration contracts. The documentation at
 `src/shadows.ts` owns Shadow defaults, generation and inspection. Its responsive
 preset compiler is shared with Borders/Radii, while the family-specific APIs stay
 separate. PostCSS and runtime consume the same `shadows` JSON map; the demo uses
-that engine with scoped previews. `shadow()` and `elevation()` preserve CSS variable
-references, including layered, inset, static and responsive values.
+that engine with scoped previews. `shadow()` preserves CSS variable
+references, including layered, inset, static and responsive values (the former
+`elevation()` alias was removed in stability phase 3).
 
 Since `0.5.0-beta.1`, undefined Shadow references are errors, shadow-0 is
-explicitly `none`, and legacy `@theme` definitions must be included in each
-compilation. JSON overrides matching legacy definitions; defaults are generated.
-The previous cross-compilation Shadow cache and fallback table are removed.
+explicitly `none`, and the previous cross-compilation Shadow cache and fallback
+table are removed (the legacy `@theme` definitions that followed were removed
+in stability phase 3).
 These changes are not included in the already published npm 0.4.0 release.
 
 ## Shared Surfaces engine
@@ -171,9 +211,9 @@ demo. These changes shipped in `0.5.0-beta.1`; they are not in 0.4.0.
 
 ### Shared language foundation (in progress)
 
-`postcss-uxdsl/language` owns responsive selection and Density rule
+`uxdsl/language` owns responsive selection and Density rule
 generation, and exports the breakpoint and Density defaults (since MIG-B6-29
-their values are read from `packages/postcss-uxdsl/src/theme/base.json`). PostCSS, the runtime theme
+their values are read from `packages/uxdsl/src/theme/base.json`). PostCSS, the runtime theme
 generator and the Density playground delegate to this module. Existing runtime
 breakpoint exports remain compatible. The module has no DOM or Node built-in
 dependencies; a production browser bundle remains to be measured.
@@ -239,22 +279,21 @@ update its custom theme model; they do not write source JSON files.
 
 ## Main packages
 
-- `packages/postcss-uxdsl` — Core compiler and runtime helpers.
-- `packages/vite-plugin-uxdsl` — Vite integration for `.uxdsl` files.
-- `packages/uxdsl-cli` — Build/watch CLI for framework-agnostic usage.
-- `packages/uxdsl-core` — Low-level processing engine used by integrations.
-- `packages/uxdsl-webpack-loader` — Webpack integration.
-- `packages/uxdsl-vscode` — VS Code language support.
+- `packages/uxdsl` — the `uxdsl` package: compiler (PostCSS plugin), `compile()`,
+  the `uxdsl` CLI, the Vite plugin, the Webpack loader and the theme runtime.
+- `packages/uxdsl-vscode` — VS Code language support (released separately, as a VSIX).
+- `packages/_deprecated/*` — the last versions of the five former package names,
+  re-exporting `uxdsl` (prepared, not published).
 - `packages/playground` / `packages/playground-nextjs` — Demo apps.
 
 ## Breakpoint source of truth
 
 Breakpoint defaults are defined once, in the `breakpoints` family of:
 
-- `packages/postcss-uxdsl/src/theme/base.json`
+- `packages/uxdsl/src/theme/base.json`
 
-`DEFAULT_BREAKPOINTS` is derived from it (`packages/postcss-uxdsl/src/language.ts`,
-re-exported by `postcss-uxdsl/ds-runtime` through `src/ds-runtime/breakpoints.ts`).
+`DEFAULT_BREAKPOINTS` is derived from it (`packages/uxdsl/src/language.ts`,
+exported by `uxdsl/theme`).
 Please reuse this shared default map (`DEFAULT_BREAKPOINTS`) in integrations and demos rather than redefining the values.
 
 Default values:
@@ -262,6 +301,16 @@ Default values:
 ```ts
 { xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }
 ```
+
+Since stability phase 1 the theme's `breakpoints` family is the only place a
+threshold is configured. The PostCSS plugin no longer has a `breakpoints`
+option: a value forwarded to it — from a `breakpoints` key in `uxdsl.config.cjs`
+through the CLI or `compile()`, or from a `breakpoints` option of
+`uxdsl/vite`/`uxdsl/webpack` — is ignored with a
+`UXD_OPTION_REMOVED` warning, and the build compiles against the theme's map.
+Put the thresholds in the theme (`{ "breakpoints": { "md": 800 } }` in
+`uxdsl.theme.json`, or the adapter's `theme` option). See
+[the changelog](packages/uxdsl/CHANGELOG.md).
 
 ## Quick start (Next.js playground)
 
@@ -278,8 +327,8 @@ To keep npm consumers and viewers informed, commits now enforce a docs update st
   - `packages/<pkg>/README.md`, or
   - root `README.md`
 - If a file that defines default visual output is staged (listed in
-  `scripts/verify-docs-update.js`, e.g. `packages/postcss-uxdsl/src/theme/base.json`),
-  you must also stage `packages/postcss-uxdsl/CHANGELOG.md`.
+  `scripts/verify-docs-update.js`, e.g. `packages/uxdsl/src/theme/base.json`),
+  you must also stage `packages/uxdsl/CHANGELOG.md`.
 
 This runs automatically in pre-commit via:
 
@@ -313,13 +362,13 @@ Bump-only variants (no publish):
 
 You can run these from repo root or from `packages/playground-nextjs` (proxied scripts are available there too).
 
-You can also include a short tweak note (stored in `packages/uxdsl-core/README.md`):
+You can also include a short tweak note (stored in `packages/uxdsl/docs/integrations/compile.md`):
 
 - `node scripts/release.js --bump patch --note "small parser fix"`
 
 ### Shared Button engine (`0.5.0-beta.1`)
 
-Button JSON roles (`surface`, `base`, `states`), legacy `@theme` packs, PostCSS,
+Button JSON roles (`surface`, `base`, `states`), PostCSS,
 runtime and the documentation preview now use `src/buttons.ts`. Custom roles,
 Palette tones, numeric Density/Radius sizes and responsive state fields share
 the same implementation. Default packs are generated; cross-build Button caches
@@ -332,7 +381,7 @@ See the Buttons docs and AGENTS.md for semantics and migration details.
 
 ### Shared Input engine (`0.5.0-beta.1`)
 
-Input JSON roles (`surface`, `base`, `states`), legacy `@theme`, PostCSS, runtime
+Input JSON roles (`surface`, `base`, `states`), PostCSS, runtime
 and the preview now share `src/inputs.ts`. Custom roles, tones, numeric sizes,
 responsive fields, placeholder and underline treatments use the same engine.
 Default packs are generated; process-global Input caches and demo state simulations

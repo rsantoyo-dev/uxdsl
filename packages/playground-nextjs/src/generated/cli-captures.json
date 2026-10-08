@@ -2,11 +2,11 @@
   "generatedBy": "packages/playground-nextjs/scripts/capture-capabilities.js — do not edit; run it to refresh",
   "fixture": "packages/playground-nextjs/capability-fixtures/cli-project",
   "project": {
-    "uxdsl.config.cjs": "// The build config of the small project whose real CLI output the playground's /docs/cli\n// page shows (captured by scripts/capture-capabilities.js). `defineConfig` is the typed\n// helper from `postcss-uxdsl/config`. The theme is not named here: `uxdsl build` discovers\n// `uxdsl.theme.json` next to this file.\nconst path = require('path');\nconst { defineConfig } = require('postcss-uxdsl/config');\n\nmodule.exports = defineConfig({\n  entry: path.join(__dirname, 'src/main.uxdsl'),\n  outFile: path.join(__dirname, 'dist/app.css'),\n});\n",
-    "uxdsl.theme.json": "{\n  \"$schema\": \"../../node_modules/postcss-uxdsl/schema/theme.schema.json\",\n  \"breakpoints\": { \"xs\": 0, \"sm\": 480, \"md\": 768, \"lg\": 1024, \"xl\": 1280 },\n  \"palette\": {\n    \"primary\": { \"main\": \"#0f766e\" }\n  }\n}\n",
+    "uxdsl.config.cjs": "// The build config of the small project whose real CLI output the playground's /docs/tooling\n// page shows (captured by scripts/capture-capabilities.js). `defineConfig` is the typed\n// helper from `uxdsl/config`. The theme is not named here: `uxdsl build` discovers\n// `uxdsl.theme.json` next to this file.\nconst path = require('path');\nconst { defineConfig } = require('uxdsl/config');\n\nmodule.exports = defineConfig({\n  entry: path.join(__dirname, 'src/main.uxdsl'),\n  outFile: path.join(__dirname, 'dist/app.css'),\n});\n",
+    "uxdsl.theme.json": "{\n  \"$schema\": \"../../node_modules/uxdsl/schema/theme.schema.json\",\n  \"breakpoints\": { \"xs\": 0, \"sm\": 480, \"md\": 768, \"lg\": 1024, \"xl\": 1280 },\n  \"palette\": {\n    \"primary\": { \"main\": \"#0f766e\" }\n  }\n}\n",
     "src/card.uxdsl": ".card {\n  @ds-surface(contained);\n  display: flex;\n  flex-direction: xs(column) md(row);\n  gap: density(4);\n}\n",
     "src/button.uxdsl": ".save {\n  @ds-button(contained primary 2);\n}\n",
-    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary-main);\n}\n"
+    "src/legacy.uxdsl": "/* Left out of the entry with --exclude: an old stylesheet nothing imports any more. */\n.old-banner {\n  color: palette(primary.main);\n}\n"
   },
   "runs": [
     {
@@ -35,11 +35,11 @@
         "build"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (52381 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/app.css (49478 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 52381,
-        "rootBlocks": 17,
+        "bytes": 49478,
+        "rootBlocks": 16,
         "mediaQueries": 9
       }
     },
@@ -66,11 +66,11 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (51359 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (47671 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 51359,
-        "rootBlocks": 17
+        "bytes": 47671,
+        "rootBlocks": 16
       }
     },
     {
@@ -85,11 +85,11 @@
         "--include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (51359 bytes)\n",
+      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (47671 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 51359,
-        "rootBlocks": 17
+        "bytes": 47671,
+        "rootBlocks": 16
       }
     },
     {
@@ -104,14 +104,14 @@
         "--no-include-theme"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] built dist/card-only.css (466 bytes)\n",
+      "stdout": "[uxdsl] built dist/card-only.css (464 bytes)\n",
       "stderr": "",
       "facts": {
-        "bytes": 466,
+        "bytes": 464,
         "rootBlocks": 0
       },
       "files": {
-        "dist/card-only.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n    flex-direction: row;\n}\n}\n"
+        "dist/card-only.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n"
       }
     },
     {
@@ -127,10 +127,10 @@
         "--sourcemap"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] built dist/card-mapped.css (510 bytes) + card-mapped.css.map (408 bytes)\n",
+      "stdout": "[uxdsl] built dist/card-mapped.css (508 bytes) + card-mapped.css.map (408 bytes)\n",
       "stderr": "",
       "files": {
-        "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n    flex-direction: row;\n}\n}\n\n/*# sourceMappingURL=card-mapped.css.map */"
+        "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n\n/*# sourceMappingURL=card-mapped.css.map */"
       },
       "facts": {
         "mapSources": [
@@ -143,18 +143,18 @@
     },
     {
       "id": "build-strict-theme",
-      "title": "With --strict-theme: fail when a family you declared was partly filled from the base",
+      "title": "With --strict-theme=palette: fail when a family you named was partly filled from the base",
       "argv": [
         "build",
-        "--strict-theme"
+        "--strict-theme=palette"
       ],
       "exit": 1,
       "stdout": "",
-      "stderr": "[uxdsl] Error: --strict-theme: the following theme families you declared are partially filled from defaults: palette. Provide every key of these families explicitly, or drop --strict-theme/strictTheme if inheriting some of them is intentional.\n"
+      "stderr": "[uxdsl] Error: --strict-theme (scoped to: palette): the following theme families you declared are partially filled from defaults: palette. Provide every key of these families explicitly, or drop --strict-theme/strictTheme if inheriting some of them is intentional.\n"
     },
     {
       "id": "build-strict-theme-scoped",
-      "title": "--strict-theme scoped to the families that must be complete",
+      "title": "--strict-theme=breakpoints: a family this project declares completely passes",
       "argv": [
         "build",
         "--strict-theme=breakpoints"
@@ -162,6 +162,17 @@
       "exit": 0,
       "stdout": "[uxdsl] Theme config detected\n[uxdsl] unchanged dist/app.css (compiled output identical to the file on disk; not rewritten)\n",
       "stderr": ""
+    },
+    {
+      "id": "build-strict-theme-bare",
+      "title": "The bare flag is refused: a scope is required",
+      "argv": [
+        "build",
+        "--strict-theme"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "[uxdsl] Error: --strict-theme needs a scope: name the families that must be completely declared, e.g. --strict-theme=palette,breakpoints. An unscoped check treats every partial override — the theme model itself — as incomplete, so it is not accepted.\n"
     },
     {
       "id": "theme",
@@ -186,19 +197,18 @@
           "surfaces",
           "buttons",
           "inputs",
-          "typography",
           "typography_details",
           "$schema"
         ],
-        "bytes": 13233,
+        "bytes": 14627,
         "primary": {
           "main": "#0f766e",
-          "light": "#a855f7",
-          "dark": "#581c87",
-          "contrast": "#ffffff"
+          "light": "color(purple.500)",
+          "dark": "color(purple.900)",
+          "contrast": "color(white)"
         }
       },
-      "excerpt": "{\n  \"palette\": {\n    \"primary\": {\n      \"main\": \"#0f766e\",\n      \"light\": \"#a855f7\",\n      \"dark\": \"#581c87\",\n      \"contrast\": \"#ffffff\"\n    }\n  }\n}"
+      "excerpt": "{\n  \"palette\": {\n    \"primary\": {\n      \"main\": \"#0f766e\",\n      \"light\": \"color(purple.500)\",\n      \"dark\": \"color(purple.900)\",\n      \"contrast\": \"color(white)\"\n    }\n  }\n}"
     },
     {
       "id": "theme-diff",
@@ -210,31 +220,31 @@
       "exit": 0,
       "stderr": "[uxdsl] palette.primary mixes your values (main) with base values (light, dark, contrast)\n",
       "facts": {
-        "rows": 58,
-        "project": 7,
+        "rows": 57,
+        "project": 6,
         "default": 51
       },
-      "excerpt": "[\n  {\n    \"path\": \"palette.primary.main\",\n    \"value\": \"#0f766e\",\n    \"source\": \"project\"\n  },\n  {\n    \"path\": \"palette.primary.light\",\n    \"value\": \"#a855f7\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.dark\",\n    \"value\": \"#581c87\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.contrast\",\n    \"value\": \"#ffffff\",\n    \"source\": \"default\"\n  }\n]"
+      "excerpt": "[\n  {\n    \"path\": \"palette.primary.main\",\n    \"value\": \"#0f766e\",\n    \"source\": \"project\"\n  },\n  {\n    \"path\": \"palette.primary.light\",\n    \"value\": \"color(purple.500)\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.dark\",\n    \"value\": \"color(purple.900)\",\n    \"source\": \"default\"\n  },\n  {\n    \"path\": \"palette.primary.contrast\",\n    \"value\": \"color(white)\",\n    \"source\": \"default\"\n  }\n]"
     },
     {
       "id": "theme-strict",
-      "title": "Fail when a declared family is partly inherited",
+      "title": "--strict-theme=palette: fail when the named family is partly inherited",
       "argv": [
         "theme",
-        "--strict"
+        "--strict-theme=palette"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: --strict: the following theme families you declared are partially filled from defaults: palette. Provide every key of these families explicitly, or drop --strict if inheriting some of them is intentional.\n",
+      "stderr": "[uxdsl] Error: --strict-theme (scoped to: palette): the following theme families you declared are partially filled from defaults: palette. Provide every key of these families explicitly, or drop --strict-theme if inheriting some of them is intentional.\n",
       "facts": {
         "stdoutIsTheJson": true
       }
     },
     {
       "id": "theme-strict-scoped",
-      "title": "--strict scoped to breakpoints, which this project declares completely",
+      "title": "--strict-theme=breakpoints, which this project declares completely",
       "argv": [
         "theme",
-        "--strict=breakpoints"
+        "--strict-theme=breakpoints"
       ],
       "exit": 0,
       "stderr": ""
@@ -246,54 +256,103 @@
         "theme",
         "--contrast"
       ],
-      "exit": 1,
-      "stderr": "[uxdsl] Error: --contrast: 123 contrast pairs fail WCAG for this theme. The JSON report on stdout lists each one with its mode, component, state, breakpoint and resolved colors.\n",
+      "exit": 0,
+      "stderr": "[uxdsl] --contrast: no blocking failure. 111 more pairs fail and are covered by an exception (listed under \"excepted\", not passing).\n",
       "facts": {
-        "passed": false,
-        "checked": 824,
-        "failures": 123,
-        "exceptions": 1,
-        "exceptionsMatched": 1,
+        "passed": true,
+        "checked": 1004,
+        "failures": 0,
+        "exceptions": 3,
+        "exceptionsMatched": 3,
         "exceptionIssues": [],
-        "bytes": 289550,
-        "byGroup": {
-          "light surface text": 5,
-          "light surface border": 2,
-          "light button text": 15,
-          "light button border": 5,
-          "light input border": 6,
-          "light input text": 18,
-          "dark surface text": 6,
-          "dark surface border": 3,
-          "dark button text": 19,
-          "dark button border": 8,
-          "dark input placeholder": 9,
-          "dark input border": 9,
-          "dark input text": 18
-        }
+        "bytes": 377744,
+        "byGroup": {}
       },
-      "excerpt": "[\n  {\n    \"mode\": \"light\",\n    \"family\": \"surface\",\n    \"component\": \"outlined\",\n    \"tone\": \"surface\",\n    \"state\": \"base\",\n    \"pair\": \"text\",\n    \"background\": \"own-bg-or-ambient\",\n    \"breakpoint\": 0,\n    \"required\": 4.5,\n    \"ratio\": 1,\n    \"reason\": \"1.00:1 < 4.5:1\"\n  },\n  {\n    \"mode\": \"light\",\n    \"family\": \"surface\",\n    \"component\": \"outlined\",\n    \"tone\": \"surface\",\n    \"state\": \"base\",\n    \"pair\": \"border\",\n    \"background\": \"ambient\",\n    \"breakpoint\": 0,\n    \"required\": 3,\n    \"ratio\": 1,\n    \"reason\": \"1.00:1 < 3:1\"\n  }\n]"
+      "excerpt": "[]"
+    },
+    {
+      "id": "init",
+      "title": "First run in an empty project: `uxdsl init`",
+      "argv": [
+        "init"
+      ],
+      "exit": 0,
+      "stdout": "[uxdsl] Initializing...\n  -> Created uxdsl.config.cjs\n  -> Created src/styles.uxdsl (edit this one)\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 1 imports.\n  -> Added script(s) to package.json: uxdsl:build, uxdsl:watch\n\n[uxdsl] Initialization complete.\nInstall it in this project: npm i -D uxdsl\nNext steps:\n1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: run \"npx uxdsl generate-entry\" after adding or removing .uxdsl files.\n2. Build: npm run uxdsl:build\n   Watch:  npm run uxdsl:watch\n3. Import the generated CSS once, from your root layout or app entry (path relative to that file):\n   import './src/uxdsl.css';\n\nEditor support: uxdsl.config.cjs is type-checked by your editor (// @ts-check).\nFor .uxdsl highlighting and completion (VS Code extension, installed from a .vsix)\nand theme JSON completion (\"$schema\"), see \"Editor support\" in the uxdsl README.\n",
+      "stderr": "",
+      "files": {
+        "src/styles.uxdsl": "/* Your styles. src/uxdsl-entry.uxdsl imports this file; that entry is\n   regenerated by `uxdsl generate-entry`, so write here, not there. */\n\n.example {\n  @ds-surface(contained);\n  padding: density(3);\n}\n",
+        "src/uxdsl-entry.uxdsl": "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n\n/* --- Application & Component Imports --- */\n@import './styles.uxdsl';\n",
+        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"includeThem\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css']\n};\n\nmodule.exports = config;\n",
+        "package.json": "{\n  \"name\": \"my-app\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"uxdsl:build\": \"uxdsl build\",\n    \"uxdsl:watch\": \"uxdsl build --watch\"\n  }\n}\n"
+      }
+    },
+    {
+      "id": "init-next",
+      "title": "The same in a Next.js project (a next.config.js is present)",
+      "argv": [
+        "init"
+      ],
+      "exit": 0,
+      "stdout": "[uxdsl] Initializing...\n  -> Detected Next.js\n  -> Created uxdsl.config.cjs\n  -> Created src/styles.uxdsl (edit this one)\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 1 imports.\n  -> Created postcss.config.js\n  -> Added script(s) to package.json: uxdsl:build, uxdsl:watch\n\n[uxdsl] Initialization complete.\nInstall it in this project: npm i -D uxdsl\nNext steps:\n1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: run \"npx uxdsl generate-entry\" after adding or removing .uxdsl files.\n2. Build: npm run uxdsl:build\n   Watch:  npm run uxdsl:watch (alongside next dev)\n3. Import the generated CSS once, from your root layout or app entry (path relative to that file):\n   import './src/uxdsl.css';\n\nEditor support: uxdsl.config.cjs is type-checked by your editor (// @ts-check).\nFor .uxdsl highlighting and completion (VS Code extension, installed from a .vsix)\nand theme JSON completion (\"$schema\"), see \"Editor support\" in the uxdsl README.\n",
+      "stderr": "",
+      "files": {
+        "postcss.config.js": "module.exports = {\n  plugins: {\n    // Next.js's own default PostCSS plugins, with Next's own options. A custom\n    // postcss.config.js replaces Next's defaults, so they are named here; these\n    // are the modules Next ships and uses for its default configuration. To\n    // pin your own versions instead, install postcss-flexbugs-fixes and\n    // postcss-preset-env and use those names.\n    'next/dist/compiled/postcss-flexbugs-fixes': {},\n    'next/dist/compiled/postcss-preset-env': {\n      autoprefixer: { flexbox: 'no-2009' },\n      stage: 3,\n      features: { 'custom-properties': false },\n    },\n    // The CLI-generated global CSS already contains the theme; the project's\n    // uxdsl.theme.json (or uxdsl.theme.js/.cjs), if any, is discovered\n    // automatically for everything else.\n    'uxdsl/postcss': { includeTheme: false },\n  },\n};\n",
+        "src/styles.uxdsl": "/* Your styles. src/uxdsl-entry.uxdsl imports this file; that entry is\n   regenerated by `uxdsl generate-entry`, so write here, not there. */\n\n.example {\n  @ds-surface(contained);\n  padding: density(3);\n}\n",
+        "src/uxdsl-entry.uxdsl": "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n\n/* --- Application & Component Imports --- */\n@import './styles.uxdsl';\n",
+        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"includeThem\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css']\n};\n\nmodule.exports = config;\n",
+        "package.json": "{\n  \"name\": \"my-app\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"uxdsl:build\": \"uxdsl build\",\n    \"uxdsl:watch\": \"uxdsl build --watch\"\n  }\n}\n"
+      }
+    },
+    {
+      "id": "help",
+      "title": "Bare uxdsl asks, it does not build: the general help",
+      "argv": [],
+      "exit": 0,
+      "stdout": "Usage: uxdsl <command> [options]\n\nCommands:\n  init              First-run setup: uxdsl.config.cjs, src/styles.uxdsl (the file you\n                    edit), the generated src/uxdsl-entry.uxdsl that imports it and,\n                    in a Next.js project, postcss.config.js. Never overwrites a file.\n  generate-entry    Rewrite the entry file's @import list from the .uxdsl files\n                    found under a directory. Run it after adding or removing files.\n  build             Compile the entry (or every entry in \"builds\") to CSS, once;\n                    --watch keeps rebuilding as files change.\n  theme             Print the effective theme as JSON: the same discovery and\n                    resolution as build, no CSS written.\n\nGlobal options:\n  --help, -h        This help. \"uxdsl <command> --help\" describes one command.\n  --version, -v     Print the installed uxdsl version.\n\nSet UXDSL_DEBUG=1 to log which config and theme files were discovered.\nAn unrecognized flag, or a flag used on the wrong command, fails with a\nsuggestion instead of being ignored.\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "build-help",
+      "title": "Per-command help: only that command's options",
+      "argv": [
+        "build",
+        "--help"
+      ],
+      "exit": 0,
+      "stdout": "Usage: uxdsl build [options]\n\nCompiles the entry from uxdsl.config.cjs (or --config, or --entry/--out) to\none CSS file. The theme comes from the theme file next to the config\n(uxdsl.theme.json, or uxdsl.theme.js/.cjs exporting a computed theme).\n\nOptions:\n  --config, -c      Path to the build config (default: uxdsl.config.cjs or\n                    uxdsl.config.js in the current directory).\n  --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.\n  --out, -o         Output CSS file path (with --entry).\n  --watch, -w       Rebuild on file changes. Survives a broken edit: the last\n                    good CSS stays on disk until the next valid save.\n  --include-theme, --no-include-theme\n                    Emit (or skip) the global :root token definitions.\n                    Default true. Pass --no-include-theme for a component or\n                    CSS-Module entry that consumes tokens another entry\n                    defines. Overrides \"includeTheme\" in the config.\n  --sourcemap, --sourcemap=inline, --no-sourcemap\n                    Emit a source map. Bare --sourcemap means \"external\":\n                    writes <outFile>.map and a sourceMappingURL comment;\n                    =inline embeds it as a data URI. Default off. Overrides\n                    \"sourcemap\" in the config.\n  --strict-theme=<family,...>, --no-strict-theme\n                    Fail the build, before writing anything, when one of the\n                    named theme families is only partly declared by the\n                    project and the rest was filled from the base theme\n                    (e.g. --strict-theme=palette,breakpoints). A scope is\n                    required: the theme model is partial overrides, so an\n                    unscoped check flagged the recommended usage as\n                    incomplete. --no-strict-theme turns off \"strictTheme\"\n                    from the config for one run.\n\n",
+      "stderr": ""
+    },
+    {
+      "id": "unknown-command",
+      "title": "An unknown command is one line with a hint",
+      "argv": [
+        "watch"
+      ],
+      "exit": 1,
+      "stdout": "",
+      "stderr": "[uxdsl] Unknown command \"watch\": use \"uxdsl build --watch\"\n"
     }
   ],
   "watch": {
     "argv": [
-      "watch"
+      "build",
+      "--watch"
     ],
     "steps": [
       {
-        "action": "start: uxdsl watch",
+        "action": "start: uxdsl build --watch",
         "output": [
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52381 bytes)",
+          "[uxdsl] built dist/app.css (49478 bytes)",
           "[uxdsl] watching for changes..."
         ]
       },
       {
-        "action": "edit src/card.uxdsl: add border-radius: rounded(3);",
+        "action": "edit src/card.uxdsl: add border-radius: radius(3);",
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52423 bytes)"
+          "[uxdsl] built dist/app.css (49520 bytes)"
         ]
       },
       {
@@ -301,7 +360,7 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "! [uxdsl] build failed: postcss-uxdsl: src/card.uxdsl:5:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl."
+          "! [uxdsl] build failed: uxdsl: src/card.uxdsl:5:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl."
         ]
       },
       {
@@ -309,12 +368,12 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "[uxdsl] built dist/app.css (52381 bytes)"
+          "[uxdsl] built dist/app.css (49478 bytes)"
         ]
       }
     ],
     "facts": {
-      "finalBytes": 52381
+      "finalBytes": 49478
     }
   }
 }

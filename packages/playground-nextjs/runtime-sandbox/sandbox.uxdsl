@@ -6,8 +6,8 @@
 html,
 body {
   margin: 0;
-  background: palette(surface-main);
-  color: palette(surface-contrast);
+  background: palette(surface.main);
+  color: palette(surface.contrast);
   font-family: var(--uxdsl__font__ui, system-ui, sans-serif);
 }
 
@@ -25,23 +25,23 @@ body {
 
 .lab-swatch {
   padding: space(3);
-  border-radius: rounded(2);
-  box-shadow: elevation(1);
+  border-radius: radius(2);
+  box-shadow: shadow(1);
   font-size: 0.8125rem;
 }
 
 .lab-swatch--palette {
-  background: palette(primary-main);
-  color: palette(primary-contrast);
+  background: palette(primary.main);
+  color: palette(primary.contrast);
 }
 
 .lab-swatch--color {
-  background: color(gray-300);
-  color: palette(surface-contrast);
+  background: color(gray.300);
+  color: palette(surface.contrast);
 }
 
 .lab-box {
-  border: 1px dashed palette(neutral-main);
+  border: 1px dashed palette(neutral.main);
   border-radius: radius(1);
   font-size: 0.8125rem;
 }
@@ -63,8 +63,8 @@ body {
 .lab-layout > div {
   flex: 1;
   padding: space(2);
-  background: palette(surface-light);
-  border: 1px solid palette(neutral-light);
+  background: palette(surface.light);
+  border: 1px solid palette(neutral.light);
   border-radius: radius(1);
   font-size: 0.8125rem;
 }

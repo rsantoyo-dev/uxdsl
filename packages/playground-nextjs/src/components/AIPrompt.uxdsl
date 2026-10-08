@@ -15,21 +15,21 @@
   display: flex;
   align-items: center;
   padding: space(2);
-  border-radius: radius(full);
-  background: palette(surface-paper);
+  border-radius: radius(pill);
+  background: palette(surface.paper);
   border: 1px solid palette(divider);
   transition: border-color 0.2s ease;
   position: relative;
   z-index: 1;
 
   &:focus-within {
-    border-color: palette(primary-main);
-    box-shadow: 0 0 0 2px palette(primary-light);
+    border-color: palette(primary.main);
+    box-shadow: 0 0 0 2px palette(primary.light);
   }
 }
 
 .ai-icon {
-  color: palette(primary-main);
+  color: palette(primary.main);
   margin-right: space(2);
 }
 
@@ -37,27 +37,27 @@
   flex: 1;
   border: none;
   background: transparent;
-  color: palette(text-primary);
+  color: palette(text.primary);
   font-size: 1rem;
   outline: none;
 
   &::placeholder {
-    color: palette(text-secondary);
+    color: palette(text.secondary);
   }
 
   /* MIG-B7-17 phase E: `outline: none` left keyboard focus invisible. */
   &:focus-visible {
-    outline: 2px solid palette(primary-main);
+    outline: 2px solid palette(primary.main);
     outline-offset: 2px;
   }
 }
 
 .ai-submit-btn {
- @ds-button (flat primary);
+ @ds-button(flat primary);
   
   &:disabled {
-    color: palette(action-disabled);
-    border-color: palette(action-disabled);
+    color: palette(action.disabled);
+    border-color: palette(action.disabled);
   }
 }
 
@@ -65,9 +65,9 @@
   margin-top: space(4);
   padding: space(4);
   border-radius: radius(3);
-  background: palette(surface-paper);
+  background: palette(surface.paper);
   border: 1px solid palette(divider);
-  color: palette(text-primary);
+  color: palette(text.primary);
   font-size: 0.95rem;
   line-height: 1.6;
 }
@@ -93,7 +93,7 @@
 
 .loading-spinner {
   animation: spin 1s linear infinite;
-  color: palette(primary-light);
+  color: palette(primary.light);
 }
 
 .loading-text {
@@ -108,7 +108,7 @@
   background: color(white, 0.1);
   padding: space(1) space(2);
   border-radius: radius(2);
-  color: palette(primary-light);
+  color: palette(primary.light);
 }
 
 @keyframes spin {

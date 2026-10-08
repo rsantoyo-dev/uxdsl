@@ -5,42 +5,45 @@ import PageToolbar from '@/components/PageToolbar'
 import ThemeScript from '@/components/ThemeScript'
 import { Providers } from '@/components/Providers'
 import { themes } from '../../themes'
+import { SITE_URL } from '@/lib/docs'
 import { Analytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+const DESCRIPTION = 'UXDSL is CSS where breakpoints belong to the theme, not to your components. Spacing, type, color and roles are defined once in a theme JSON; components name them, and the compiler turns them into plain CSS and refuses any reference it cannot resolve.'
+
 export const metadata: Metadata = {
-  metadataBase: new URL('https://uxdsl.vercel.app'),
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: 'UX-DSL - Type-safe Design System Language',
-    template: '%s | UX-DSL',
+    default: 'UXDSL — breakpoint-free components, responsive tokens',
+    template: '%s | UXDSL',
   },
-  description: 'A type-safe, compile-time design system language that bridges the gap between design tokens and CSS implementation. Write expressive, token-aware styles that compile to optimized CSS.',
-  keywords: ['Design System', 'CSS', 'TypeScript', 'UX', 'Design Tokens', 'Compiler', 'Style', 'Theme', 'UX Design System Language', 'UI/UX', 'Post-CSS', 'SCSS', 'Clean Code', 'Separation of Concerns'],
+  description: DESCRIPTION,
+  keywords: ['UXDSL', 'CSS', 'PostCSS', 'design tokens', 'design system', 'responsive design', 'theme JSON', 'breakpoints', 'CSS custom properties'],
+  alternates: { canonical: '/' },
   openGraph: {
-    title: 'UX-DSL',
-    description: 'Type-safe, compile-time design system language.',
-    url: 'https://uxdsl.vercel.app',
-    siteName: 'UX-DSL',
+    title: 'UXDSL',
+    description: 'Breakpoint-free components. Responsive tokens.',
+    url: SITE_URL,
+    siteName: 'UXDSL',
     locale: 'en_US',
     type: 'website',
     images: [
       {
         url: '/uxdsl-alpha.png',
-        width: 1200,
-        height: 630,
-        alt: 'UX-DSL Preview',
+        width: 448,
+        height: 448,
+        alt: 'UXDSL',
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'UX-DSL',
-    description: 'Type-safe, compile-time design system language.',
+    card: 'summary',
+    title: 'UXDSL',
+    description: 'Breakpoint-free components. Responsive tokens.',
     images: ['/uxdsl-alpha.png'],
-    creator: '@rsantoyo', 
   },
   robots: {
     index: true,

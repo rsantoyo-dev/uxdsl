@@ -8,8 +8,8 @@ html, body {
   padding: 0 !important; 
   width: 100%;
   font-family: var(--uxdsl__font__ui, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif);
-  background: palette(surface-main);
-  color: palette(surface-contrast);
+  background: palette(surface.main);
+  color: palette(surface.contrast);
   /* No overflow-x here: it would break the sticky positioning context. */
 }
 
@@ -17,7 +17,7 @@ html, body {
   display: block;
   min-height: 100vh;
   padding: space(6) space(4);
-  background: palette(surface-light);
+  background: palette(surface.light);
 }
 
 .container {
@@ -50,4 +50,22 @@ html, body {
 
 .layout__content {
   min-width: 0;
+}
+
+/* Content never widens the page. A code block scrolls inside itself; inline code
+   breaks anywhere rather than pushing the line out; images, video and tables
+   shrink to the column. Iframes are left alone: a demo frame's width is its
+   viewport, so each frame's container owns its own scrolling. The browser
+   walk fails on any horizontal overflow. */
+pre {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+:not(pre) > code {
+  overflow-wrap: anywhere;
+}
+
+img, video, table {
+  max-width: 100%;
 }

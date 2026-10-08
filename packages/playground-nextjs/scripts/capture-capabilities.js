@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 'use strict';
 
-// MIG-B7-17 (FEAT-009), phase C: what the /docs/cli and /docs/diagnostics pages show is
+// MIG-B7-17 (FEAT-009), phase C: what the /docs/tooling and /docs/diagnostics pages show is
 // real output, not text somebody typed.
 //
-// This runs the real `uxdsl` CLI (packages/uxdsl-cli, compiling with the local
-// postcss-uxdsl) against a small project, capability-fixtures/cli-project, and writes
+// This runs the real `uxdsl` CLI (packages/uxdsl/bin, compiling with the package it
+// ships in) against a small project, capability-fixtures/cli-project, and writes
 // what it printed — stdout, stderr, exit status and the files it wrote — to
 // src/generated/cli-captures.json. It also compiles a set of deliberately wrong sources
 // and themes through the same CLI and records the real UXD_* diagnostics, and records a
-// `uxdsl watch` session as a transcript. The pages import those JSON files.
+// `uxdsl build --watch` session as a transcript. The pages import those JSON files.
 //
 //   node scripts/capture-capabilities.js          rewrite the JSON files
 //   node scripts/capture-capabilities.js --check  fail when they differ from a fresh capture
@@ -27,10 +27,10 @@ const { spawnSync, spawn } = require('node:child_process');
 
 const PLAYGROUND = path.resolve(__dirname, '..');
 const FIXTURE = path.join(PLAYGROUND, 'capability-fixtures/cli-project');
-// Inside the playground so the project resolves postcss-uxdsl from the playground's own
+// Inside the playground so the project resolves uxdsl from the playground's own
 // node_modules (the local package), exactly like the fixture does in place.
 const WORK = path.join(PLAYGROUND, 'capability-fixtures/.work');
-const CLI = path.join(PLAYGROUND, '../uxdsl-cli/bin/uxdsl.js');
+const CLI = path.join(PLAYGROUND, '../uxdsl/bin/uxdsl.js');
 const OUT_DIR = path.join(PLAYGROUND, 'src/generated');
 const CLI_OUT = path.join(OUT_DIR, 'cli-captures.json');
 const DIAG_OUT = path.join(OUT_DIR, 'compiler-captures.json');
@@ -107,8 +107,9 @@ function captureCli() {
     const map = JSON.parse(read(d, 'dist/card-mapped.css.map'));
     return { files: { 'dist/card-mapped.css': css }, facts: { mapSources: map.sources, mapFile: map.file, sourceMappingURL: (css.match(/sourceMappingURL=([^\s*]+)/) || [])[1] || null } };
   });
-  add('build-strict-theme', 'With --strict-theme: fail when a family you declared was partly filled from the base', dir, ['build', '--strict-theme'], none);
-  add('build-strict-theme-scoped', '--strict-theme scoped to the families that must be complete', dir, ['build', '--strict-theme=breakpoints'], none);
+  add('build-strict-theme', 'With --strict-theme=palette: fail when a family you named was partly filled from the base', dir, ['build', '--strict-theme=palette'], none);
+  add('build-strict-theme-scoped', '--strict-theme=breakpoints: a family this project declares completely passes', dir, ['build', '--strict-theme=breakpoints'], none);
+  add('build-strict-theme-bare', 'The bare flag is refused: a scope is required', dir, ['build', '--strict-theme'], none);
 
   add('theme', 'Print the effective theme: the base with this project\'s override merged over it', dir, ['theme'], (r) => {
     const theme = JSON.parse(r.stdout);
@@ -118,8 +119,8 @@ function captureCli() {
     const rows = JSON.parse(r.stdout);
     return { stdout: undefined, facts: { rows: rows.length, project: rows.filter((x) => x.source === 'project').length, default: rows.filter((x) => x.source === 'default').length }, excerpt: JSON.stringify(rows.filter((x) => x.path.startsWith('palette.primary.')), null, 2) };
   });
-  add('theme-strict', 'Fail when a declared family is partly inherited', dir, ['theme', '--strict'], (r) => ({ stdout: undefined, facts: { stdoutIsTheJson: (() => { try { JSON.parse(r.stdout); return true; } catch { return false; } })() } }));
-  add('theme-strict-scoped', '--strict scoped to breakpoints, which this project declares completely', dir, ['theme', '--strict=breakpoints'], () => ({ stdout: undefined }));
+  add('theme-strict', '--strict-theme=palette: fail when the named family is partly inherited', dir, ['theme', '--strict-theme=palette'], (r) => ({ stdout: undefined, facts: { stdoutIsTheJson: (() => { try { JSON.parse(r.stdout); return true; } catch { return false; } })() } }));
+  add('theme-strict-scoped', '--strict-theme=breakpoints, which this project declares completely', dir, ['theme', '--strict-theme=breakpoints'], () => ({ stdout: undefined }));
   add('theme-contrast', 'Check every text and border pair of the effective theme against WCAG', dir, ['theme', '--contrast'], (r) => {
     const report = JSON.parse(r.stdout);
     const byGroup = {};
@@ -127,10 +128,41 @@ function captureCli() {
     return { stdout: undefined, facts: { passed: report.passed, checked: report.checked.length, failures: report.failures.length, exceptions: report.exceptions.length, exceptionsMatched: report.exceptions.filter((e) => e.matched).length, exceptionIssues: report.exceptionIssues, bytes: Buffer.byteLength(r.stdout), byGroup }, excerpt: JSON.stringify(report.failures.slice(0, 2), null, 2) };
   });
 
+  // `init` in an empty project, and in one that has a next.config.js: what it prints and
+  // every file it writes (the quick start shows these).
+  const initFiles = (d) => {
+    const files = {};
+    const walkDir = (rel) => {
+      for (const entry of fs.readdirSync(path.join(d, rel), { withFileTypes: true })) {
+        const child = rel ? `${rel}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) walkDir(child);
+        else if (!['package.json', 'next.config.js'].includes(child)) files[child] = read(d, child);
+      }
+    };
+    walkDir('');
+    files['package.json'] = read(d, 'package.json');
+    return files;
+  };
+  for (const [id, title, extra] of [
+    ['init', 'First run in an empty project: `uxdsl init`', {}],
+    ['init-next', 'The same in a Next.js project (a next.config.js is present)', { 'next.config.js': 'module.exports = {};\n' }],
+  ]) {
+    const initDir = path.join(WORK, id);
+    fs.rmSync(initDir, { recursive: true, force: true });
+    fs.mkdirSync(initDir, { recursive: true });
+    fs.writeFileSync(path.join(initDir, 'package.json'), `${JSON.stringify({ name: 'my-app', private: true, scripts: { dev: 'next dev' } }, null, 2)}\n`);
+    for (const [file, text] of Object.entries(extra)) fs.writeFileSync(path.join(initDir, file), text);
+    add(id, title, initDir, ['init'], (_, d) => ({ files: initFiles(d) }));
+  }
+
+  add('help', 'Bare uxdsl asks, it does not build: the general help', dir, [], none);
+  add('build-help', 'Per-command help: only that command\'s options', dir, ['build', '--help'], none);
+  add('unknown-command', 'An unknown command is one line with a hint', dir, ['watch'], none);
+
   return { fixture: 'packages/playground-nextjs/capability-fixtures/cli-project', project, runs };
 }
 
-// ------------------------------------------------------------ uxdsl watch ----
+// ---------------------------------------------------- uxdsl build --watch ----
 
 function waitFor(state, test, timeoutMs, label) {
   return new Promise((resolve, reject) => {
@@ -147,7 +179,7 @@ function waitFor(state, test, timeoutMs, label) {
 
 async function captureWatch() {
   const dir = freshProject('watch');
-  const child = spawn(process.execPath, [CLI, 'watch'], { cwd: dir, env: ENV });
+  const child = spawn(process.execPath, [CLI, 'build', '--watch'], { cwd: dir, env: ENV });
   const state = { lines: [], cursor: 0 };
   const collect = (stream, name) => {
     let buffer = '';
@@ -165,9 +197,9 @@ async function captureWatch() {
   const original = fs.readFileSync(card, 'utf8');
   const steps = [];
   try {
-    steps.push({ action: 'start: uxdsl watch', output: await waitFor(state, (l) => /watching for changes/.test(l), 30000, 'the first build') });
-    fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4);\n  border-radius: rounded(3);'));
-    steps.push({ action: 'edit src/card.uxdsl: add border-radius: rounded(3);', output: await waitFor(state, (l) => /\] built /.test(l), 30000, 'the rebuild') });
+    steps.push({ action: 'start: uxdsl build --watch', output: await waitFor(state, (l) => /watching for changes/.test(l), 30000, 'the first build') });
+    fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4);\n  border-radius: radius(3);'));
+    steps.push({ action: 'edit src/card.uxdsl: add border-radius: radius(3);', output: await waitFor(state, (l) => /\] built /.test(l), 30000, 'the rebuild') });
     fs.writeFileSync(card, original.replace('gap: density(4);', 'gap: density(4) xxl(2rem);'));
     steps.push({ action: 'edit src/card.uxdsl: add xxl(2rem), a breakpoint that is not configured', output: await waitFor(state, (l) => /build failed|watching for a fix/.test(l), 30000, 'the error') });
     fs.writeFileSync(card, original);
@@ -176,7 +208,7 @@ async function captureWatch() {
     child.kill('SIGTERM');
   }
   const css = normalize(fs.readFileSync(path.join(dir, 'dist/app.css'), 'utf8'), dir);
-  return { argv: ['watch'], steps, facts: { finalBytes: Buffer.byteLength(css) } };
+  return { argv: ['build', '--watch'], steps, facts: { finalBytes: Buffer.byteLength(css) } };
 }
 
 // ---------------------------------------------------------- diagnostics ----
@@ -188,15 +220,22 @@ const DIAGNOSTICS = [
   { expect: 'UXD_BREAKPOINT_UNKNOWN', title: 'A breakpoint the theme does not configure', css: '.hero {\n  padding: xs(1rem) xxl(2rem);\n}\n' },
   { expect: 'UXD_SHADOW_REFERENCE', title: 'A shadow preset that does not exist', css: '.card {\n  box-shadow: shadow(9);\n}\n' },
   { expect: 'UXD_EDGE_REFERENCE', title: 'A radius preset that does not exist', css: '.card {\n  border-radius: radius(12);\n}\n' },
-  { expect: 'UXD_DENSITY_REFERENCE', title: 'A fractional Density reference', css: '.card {\n  padding: density(2.5);\n}\n' },
+  { expect: 'UXD_TOKEN_KEY', title: 'A fractional Density reference (a key is a reference, never a number to scale)', css: '.card {\n  padding: density(2.5);\n}\n' },
   { expect: 'UXD_TYPO_REFERENCE', title: 'A typography role the theme does not define', css: '.title {\n  @ds-typo(hero);\n}\n' },
   { expect: 'UXD_SURFACE_REFERENCE', title: 'A Surface role that does not exist', css: '.panel {\n  @ds-surface(glass);\n}\n' },
   { expect: 'UXD_DIRECTIVE_CONTEXT', title: 'A directive outside the rule it styles', css: '@media (min-width: 768px) {\n  @ds-surface(contained);\n}\n' },
   { expect: 'UXD_DIRECTIVE_UNKNOWN', title: 'A directive UXDSL does not have', css: '.card {\n  @ds-card(contained);\n}\n' },
-  { expect: 'UXD_TOKEN_ALPHA', title: 'An alpha outside 0–1', css: '.overlay {\n  background: palette(primary-main, 2);\n}\n' },
-  { expect: 'UXD_TYPO_BP', title: 'A negative breakpoint in the theme (reported by the first engine that validates the map: Typography)', css: '.a {\n  padding: space(3);\n}\n', theme: { breakpoints: { xs: 0, sm: 480, md: -1, lg: 1024, xl: 1280 } } },
+  { expect: 'UXD_TOKEN_ALPHA', title: 'An alpha outside 0–1', css: '.overlay {\n  background: palette(primary.main, 2);\n}\n' },
+  { expect: 'UXD_BP_INVALID', title: 'A negative breakpoint in the theme (validated once, before any engine runs)', css: '.a {\n  padding: space(3);\n}\n', theme: { breakpoints: { xs: 0, sm: 480, md: -1, lg: 1024, xl: 1280 } } },
   { expect: 'UXD_TYPO_FIELD', title: 'A typography field the engine does not support', css: '.a {\n  padding: space(3);\n}\n', theme: { typography_details: { h1: { opacity: '0.8' } } } },
-  { expect: 'UXD_REFERENCE_MISSING', title: 'A theme value pointing at a token that does not exist', css: '.a {\n  color: palette(primary-main);\n}\n', theme: { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } } },
+  { expect: 'UXD_REFERENCE_MISSING', title: 'A theme value pointing at a token that does not exist', css: '.a {\n  color: palette(primary.main);\n}\n', theme: { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } } },
+  { expect: 'UXD_PALETTE_SYNTAX', title: 'The removed dashed spelling of a Palette entry', css: '.a {\n  color: palette(primary-main);\n}\n' },
+  { expect: 'UXD_PALETTE_REFERENCE', title: 'A Palette variant the family does not have', css: '.a {\n  color: palette(primary.mian);\n}\n' },
+  { expect: 'UXD_EDGE_ARGUMENT', title: 'A second argument on border()', css: '.card {\n  border: border(1, red, dashed);\n}\n' },
+  { expect: 'UXD_SURFACE_TONE', title: 'A Palette family that is not a tone', css: '.card {\n  @ds-surface(contained text);\n}\n' },
+  { expect: 'UXD_DIRECTIVE_DUPLICATE', title: 'Two control directives in one rule', css: '.cta {\n  @ds-button(contained);\n  @ds-button(outlined);\n}\n' },
+  { expect: 'UXD_SYNTAX_REMOVED', title: 'A spelling the language no longer has (the former elevation() alias)', css: '.card {\n  box-shadow: elevation(2);\n}\n' },
+  { expect: 'UXD_THEME_BLOCK_REMOVED', title: 'A @theme block: tokens are defined in the theme JSON', css: '@theme {\n  radius-2: 12px;\n}\n' },
 ];
 
 function captureDiagnostics() {
@@ -215,29 +254,15 @@ function captureDiagnostics() {
   return results;
 }
 
-// Same source, one with the aliases and one with the names they alias: the compiled
-// declarations must be identical, and the page shows both.
-function captureAliases() {
-  const dir = freshProject('aliases');
-  const source = '.with-alias {\n  box-shadow: elevation(2);\n  border-radius: rounded(2);\n}\n\n.with-name {\n  box-shadow: shadow(2);\n  border-radius: radius(2);\n}\n';
-  fs.writeFileSync(path.join(dir, 'src/aliases.uxdsl'), source);
-  const r = run(dir, ['build', '--entry', 'src/aliases.uxdsl', '--out', 'dist/aliases.css', '--no-include-theme']);
-  if (r.exit !== 0) throw new Error(`aliases did not compile:\n${r.stderr}`);
-  const css = read(dir, 'dist/aliases.css');
-  const body = (selector) => ((css.match(new RegExp(`\\${selector}\\s*\\{([^}]*)\\}`)) || [])[1] || '').trim();
-  if (!body('.with-alias') || body('.with-alias') !== body('.with-name')) throw new Error(`elevation()/rounded() no longer compile to the same declarations as shadow()/radius():\n${css}`);
-  return { source, argv: r.argv, css };
-}
-
 // ------------------------------------------------------------------ main ----
 
 async function main() {
-  if (!fs.existsSync(path.join(PLAYGROUND, 'node_modules/postcss-uxdsl/dist/index.js'))) throw new Error('postcss-uxdsl is not built: run `npm run local-deps` in packages/playground-nextjs first.');
+  if (!fs.existsSync(path.join(PLAYGROUND, 'node_modules/uxdsl/dist/entries/index.js'))) throw new Error('uxdsl is not built: run `npm run local-deps` in packages/playground-nextjs first.');
   fs.mkdirSync(WORK, { recursive: true });
   try {
     const cli = captureCli();
     cli.watch = await captureWatch();
-    const compiler = { diagnostics: captureDiagnostics(), aliases: captureAliases() };
+    const compiler = { diagnostics: captureDiagnostics() };
     const files = [[CLI_OUT, cli], [DIAG_OUT, compiler]].map(([file, data]) => [file, `${JSON.stringify({ generatedBy: 'packages/playground-nextjs/scripts/capture-capabilities.js — do not edit; run it to refresh', ...data }, null, 2)}\n`]);
     if (CHECK) {
       const stale = files.filter(([file, text]) => !fs.existsSync(file) || fs.readFileSync(file, 'utf8') !== text).map(([file]) => path.relative(PLAYGROUND, file));

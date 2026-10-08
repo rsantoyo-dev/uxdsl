@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { compileTypographyRules, DEFAULT_BREAKPOINTS } from 'postcss-uxdsl/ds-runtime';
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
+import { compileTypographyRules } from 'uxdsl/engine';
 import { useTheme } from './ThemeContext';
 
 interface BreakpointEditorProps {

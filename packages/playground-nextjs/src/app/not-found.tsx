@@ -20,19 +20,19 @@ export default function NotFound() {
           <p className="nav-card-desc">Return to the homepage and start fresh.</p>
         </Link>
 
-        <Link href="/docs/home" className="nav-card">
+        <Link href="/docs/introduction" className="nav-card">
           <div className="nav-card-icon"><Book size={20} /></div>
           <div className="nav-card-title">Documentation</div>
           <p className="nav-card-desc">Learn how to use UXDSL effectively.</p>
         </Link>
 
-        <Link href="/docs/densities" className="nav-card">
+        <Link href="/docs/spacing" className="nav-card">
           <div className="nav-card-icon"><Grid3X3 size={20} /></div>
           <div className="nav-card-title">Density System</div>
           <p className="nav-card-desc">Explore our responsive density tokens.</p>
         </Link>
 
-        <Link href="/docs/palette" className="nav-card">
+        <Link href="/docs/colors" className="nav-card">
           <div className="nav-card-icon"><Palette size={20} /></div>
           <div className="nav-card-title">Color Palette</div>
           <p className="nav-card-desc">Check out the deep theming system.</p>

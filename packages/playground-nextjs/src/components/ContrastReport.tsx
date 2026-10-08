@@ -9,8 +9,8 @@
 // against the same call made in Node for the same theme.
 
 import { useMemo, useState } from 'react'
-import { checkThemeContrast, resolveTheme } from 'postcss-uxdsl/ds-runtime'
-import exceptions from 'postcss-uxdsl/theme/base.contrast-exceptions.json'
+import { checkThemeContrast, resolveTheme } from 'uxdsl/theme'
+import exceptions from 'uxdsl/theme/base.contrast-exceptions.json'
 import { useTheme } from './ThemeContext'
 
 type Filter = 'all' | 'light' | 'dark'
@@ -27,20 +27,40 @@ export default function ContrastReport() {
   }, [report])
 
   const shown = report.failures.filter((f) => filter === 'all' || f.mode === filter)
-  const summary = { theme: currentTheme, passed: report.passed, checked: report.checked.length, failures: report.failures.length, exceptions: report.exceptions.length, exceptionIssues: report.exceptionIssues.length }
-  const signatures = report.failures.map((f) => `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`).sort()
+  const shownExcepted = report.excepted.filter((f) => filter === 'all' || f.mode === filter)
+  const summary = { theme: currentTheme, passed: report.passed, checked: report.checked.length, failures: report.failures.length, excepted: report.excepted.length, exceptions: report.exceptions.length, exceptionIssues: report.exceptionIssues.length }
+  const signatureOf = (f: { mode: string; family: string; component: string; tone: string | null; state: string; pair: string; background: string; breakpoint: number }) =>
+    `${f.mode}.${f.family}.${f.component}.${f.tone ?? '-'}.${f.state}.${f.pair}.${f.background}.${f.breakpoint}`
+  const signatures = report.failures.map(signatureOf).sort()
+  // Excepted is not passing: each covered pair is exposed with the exception that covers it.
+  const exceptedSignatures = report.excepted.map((f) => `${signatureOf(f)}|${f.exception}`).sort()
 
   return (
-    <div className="cap-contrast" data-testid="contrast-report" data-contrast-summary={JSON.stringify(summary)} data-contrast-signatures={JSON.stringify(signatures)}>
+    <div className="cap-contrast" data-testid="contrast-report" data-contrast-summary={JSON.stringify(summary)} data-contrast-signatures={JSON.stringify(signatures)} data-contrast-excepted={JSON.stringify(exceptedSignatures)}>
       <div className="cap-stats">
         <div className="cap-stat"><span className="cap-stat__label">Theme</span><span className="cap-stat__value">{currentTheme}</span></div>
         <div className="cap-stat"><span className="cap-stat__label">Verdict</span><span className={`cap-stat__value ${report.passed ? 'cap-result' : 'cap-result cap-result--error'}`}>{report.passed ? 'passed' : 'fails'}</span></div>
         <div className="cap-stat"><span className="cap-stat__label">Pairs checked</span><span className="cap-stat__value">{report.checked.length}</span></div>
         <div className="cap-stat"><span className="cap-stat__label">Failing pairs</span><span className="cap-stat__value">{report.failures.length}</span></div>
+        <div className="cap-stat"><span className="cap-stat__label">Excepted pairs (failing, not blocking)</span><span className="cap-stat__value">{report.excepted.length}</span></div>
         <div className="cap-stat"><span className="cap-stat__label">Exceptions (matched)</span><span className="cap-stat__value">{report.exceptions.length} ({report.exceptions.filter((e) => e.matched).length})</span></div>
         <div className="cap-stat"><span className="cap-stat__label">Exception issues</span><span className="cap-stat__value">{report.exceptionIssues.length}</span></div>
       </div>
       {report.exceptionIssues.map((issue) => <p key={issue} className="cap-result cap-result--error">{issue}</p>)}
+
+      <div className="cap-table-wrap">
+        <table data-testid="contrast-exceptions">
+          <caption>Exceptions applied: what each one covers, and why</caption>
+          <thead><tr><th>Exception</th><th>Kind</th><th>Covers</th><th>Reason</th></tr></thead>
+          <tbody>
+            {report.exceptions.map((e) => (
+              <tr key={e.id}>
+                <td><code>{e.id}</code></td><td>{e.kind}</td><td>{e.matched ? `${e.covered} pair(s)` : 'nothing (stale)'}</td><td>{e.record.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="cap-table-wrap">
         <table>
@@ -65,6 +85,20 @@ export default function ContrastReport() {
               <tr key={`${f.mode}-${f.family}-${f.component}-${f.tone}-${f.state}-${f.pair}-${f.background}-${i}`}>
                 <td>{f.mode}</td><td><code>{f.family}.{f.component}</code></td><td>{f.tone ?? '—'}</td><td>{f.state}</td><td>{f.pair}</td><td>{f.breakpoint}px</td>
                 <td>{f.ratio === null ? 'unresolved' : f.ratio.toFixed(2)}</td><td>{f.required}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="cap-table-wrap">
+        <table data-testid="contrast-excepted">
+          <caption>{shownExcepted.length} excepted pair(s): below the threshold, covered by an exception, not counted as passing</caption>
+          <thead><tr><th>Mode</th><th>Component</th><th>Tone</th><th>State</th><th>Pair</th><th>Against</th><th>Ratio</th><th>Needs</th><th>Exception</th></tr></thead>
+          <tbody>
+            {shownExcepted.map((f, i) => (
+              <tr key={`${f.mode}-${f.family}-${f.component}-${f.tone}-${f.state}-${f.pair}-${f.background}-${i}`}>
+                <td>{f.mode}</td><td><code>{f.family}.{f.component}</code></td><td>{f.tone ?? '—'}</td><td>{f.state}</td><td>{f.pair}</td><td>{f.against}</td>
+                <td>{f.ratio === null ? 'unresolved' : f.ratio.toFixed(2)}</td><td>{f.required}</td><td><code>{f.exception}</code></td>
               </tr>
             ))}
           </tbody>

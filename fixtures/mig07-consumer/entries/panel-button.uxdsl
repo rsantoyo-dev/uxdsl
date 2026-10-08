@@ -10,5 +10,5 @@
 }
 .label {
   @ds-typo(body);
-  color: palette(text-secondary);
+  color: palette(text.secondary);
 }

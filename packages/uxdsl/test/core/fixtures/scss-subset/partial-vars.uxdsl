@@ -1,0 +1,2 @@
+$from-uxdsl: 7px;
+.from-uxdsl { color: blue; }

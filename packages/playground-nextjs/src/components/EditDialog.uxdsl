@@ -14,7 +14,7 @@
 }
 
 .edit-dialog {
-  background: palette(surface-main);
+  background: palette(surface.main);
   padding: space(7);
   border-radius: 8px;
   width: 400px;
@@ -62,7 +62,7 @@
 .edit-dialog__input {
   padding: space(3);
   border-radius: 4px;
-  border: 1px solid color(gray-300);
+  border: 1px solid color(gray.300);
 }
 
 .edit-dialog__input--full {
@@ -90,7 +90,7 @@
 
 .edit-dialog__save {
   padding: space(3) space(5);
-  background: palette(primary-main);
+  background: palette(primary.main);
   color: color(white);
   border: none;
   border-radius: 4px;

@@ -1,8 +1,9 @@
  'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { generateButtonCss, getButtonTokens, inspectButtonTheme, buttonComponentCss, generateSurfaceCss, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'postcss-uxdsl/ds-runtime'
-import { generateDensityCss, DEFAULT_BREAKPOINTS, getDensityTokens } from 'postcss-uxdsl/ds-runtime'
+import { generateButtonCss, getButtonTokens, inspectButtonTheme, buttonComponentCss, generateSurfaceCss, generateEdgeCss, generateShadowCss, getEdgeTokens } from 'uxdsl/engine'
+import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
+import { generateDensityCss, getDensityTokens } from 'uxdsl/engine'
 import { useTheme } from './ThemeContext'
 
 export default function DemoButtons() {

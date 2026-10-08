@@ -1,8 +1,17 @@
-/* The frame around a highlighted code sample. MIG-B7-17 phase B (4): was inline style={{}} in
-   CodeBlock.tsx. */
+/* The frame around a highlighted code sample. It never widens the page: a long line scrolls
+   inside the block (the highlighter's <pre> has overflow-x: auto). */
 .code-block-frame {
+  min-width: 0;
+  max-width: 100%;
   border-radius: radius(2);
   overflow: hidden;
-  border: 1px solid palette(neutral-light);
-  font-size: 0.9rem;
+  border: border(1);
+  font-size: 0.85rem;
+}
+
+/* Light and dark highlighter themes size their text differently; the frame decides. */
+.code-block-frame__code {
+  font-family: var(--uxdsl__font__code), ui-monospace, monospace;
+  font-size: inherit;
+  line-height: 1.55;
 }

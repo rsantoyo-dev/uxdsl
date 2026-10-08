@@ -6,7 +6,7 @@
 // asserted here against a controllable frame clock rather than a real one.
 const assert = require('node:assert/strict');
 const { test } = require('node:test');
-const { deepMergeTheme } = require('postcss-uxdsl/ds-runtime');
+const { deepMergeTheme } = require('uxdsl/theme');
 const { createThemeScheduler } = require('../src/lib/theme-scheduler');
 
 /** A frame clock the test drives by hand. */

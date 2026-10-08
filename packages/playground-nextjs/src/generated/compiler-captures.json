@@ -14,7 +14,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl.\n  1 | .hero {\n> 2 |   padding: xs(1rem) xxl(2rem);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl.\n  1 | .hero {\n> 2 |   padding: xs(1rem) xxl(2rem);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_SHADOW_REFERENCE",
@@ -29,7 +29,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:15: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5.\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |               ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5.\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |               ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_EDGE_REFERENCE",
@@ -44,11 +44,11 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, full, pill.\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill.\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
     },
     {
-      "code": "UXD_DENSITY_REFERENCE",
-      "title": "A fractional Density reference",
+      "code": "UXD_TOKEN_KEY",
+      "title": "A fractional Density reference (a key is a reference, never a number to scale)",
       "source": ".card {\n  padding: density(2.5);\n}\n",
       "theme": null,
       "argv": [
@@ -59,7 +59,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:12: UXD_DENSITY_REFERENCE: density(2.5) does not exist; available keys: 0–15. Did you mean \"2\"?\n  1 | .card {\n> 2 |   padding: density(2.5);\n    |            ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:12: UXD_TOKEN_KEY: density(2.5) is not a token key: density(k). A key is a reference the theme defines, never a number to scale.\n  1 | .card {\n> 2 |   padding: density(2.5);\n    |            ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_TYPO_REFERENCE",
@@ -74,7 +74,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_TYPO_REFERENCE: ds-typo(hero) does not exist; available keys: body, body-sm, caption, code, default, h1, h2, h3, h4, h5, h6, p, pre, small, span, subtitle2, tag.\n  1 | .title {\n> 2 |   @ds-typo(hero);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_TYPO_REFERENCE: ds-typo(hero) does not exist; available keys: body, body-sm, caption, code, default, h1, h2, h3, h4, h5, h6, p, pre, small, span, subtitle2, tag.\n  1 | .title {\n> 2 |   @ds-typo(hero);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_SURFACE_REFERENCE",
@@ -89,7 +89,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_SURFACE_REFERENCE: Undefined surface or palette family glass.\n  1 | .panel {\n> 2 |   @ds-surface(glass);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_SURFACE_REFERENCE: Undefined surface role \"glass\"; roles: contained, flat, outlined.\n  1 | .panel {\n> 2 |   @ds-surface(glass);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_DIRECTIVE_CONTEXT",
@@ -104,7 +104,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; use responsive values on the properties instead, e.g. padding: xs(…) md(…).\n  1 | @media (min-width: 768px) {\n> 2 |   @ds-surface(contained);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_CONTEXT: Directives apply to a whole rule and are not responsive; use responsive values on the properties instead, e.g. padding: xs(…) md(…).\n  1 | @media (min-width: 768px) {\n> 2 |   @ds-surface(contained);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_DIRECTIVE_UNKNOWN",
@@ -119,12 +119,12 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_UNKNOWN: Unknown directive @ds-card.\n  1 | .card {\n> 2 |   @ds-card(contained);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_DIRECTIVE_UNKNOWN: Unknown directive @ds-card.\n  1 | .card {\n> 2 |   @ds-card(contained);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_TOKEN_ALPHA",
       "title": "An alpha outside 0–1",
-      "source": ".overlay {\n  background: palette(primary-main, 2);\n}\n",
+      "source": ".overlay {\n  background: palette(primary.main, 2);\n}\n",
       "theme": null,
       "argv": [
         "build",
@@ -134,11 +134,11 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: postcss-uxdsl: src/example.uxdsl:2:3: UXD_TOKEN_ALPHA: Expected a number between 0 and 1.\n  1 | .overlay {\n> 2 |   background: palette(primary-main, 2);\n    |   ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_TOKEN_ALPHA: palette(primary.main, 2): expected an alpha between 0 and 1, got \"2\".\n  1 | .overlay {\n> 2 |   background: palette(primary.main, 2);\n    |               ^\n  3 | }\n  4 | \n"
     },
     {
-      "code": "UXD_TYPO_BP",
-      "title": "A negative breakpoint in the theme (reported by the first engine that validates the map: Typography)",
+      "code": "UXD_BP_INVALID",
+      "title": "A negative breakpoint in the theme (validated once, before any engine runs)",
       "source": ".a {\n  padding: space(3);\n}\n",
       "theme": {
         "breakpoints": {
@@ -157,7 +157,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_TYPO_BP: Typography requires distinct non-negative breakpoint widths and a zero-width base (at breakpoints).\n"
+      "stderr": "[uxdsl] Error: uxdsl.theme.json: UXD_BP_INVALID: Expected named, distinct non-negative widths and a zero-width base.\n"
     },
     {
       "code": "UXD_TYPO_FIELD",
@@ -183,7 +183,7 @@
     {
       "code": "UXD_REFERENCE_MISSING",
       "title": "A theme value pointing at a token that does not exist",
-      "source": ".a {\n  color: palette(primary-main);\n}\n",
+      "source": ".a {\n  color: palette(primary.main);\n}\n",
       "theme": {
         "palette": {
           "primary": {
@@ -199,19 +199,112 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: src/example.uxdsl:2:3: UXD_REFERENCE_MISSING: color -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-selected-bg -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-selected-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-tone-primary-selected-bg -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__button__outlined-tone-primary-selected-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__contained-tone-primary-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__outlined-tone-primary-focus-border -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-tone-primary-base-caret -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-focus-underline -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\nUXD_REFERENCE_MISSING: --uxdsl__input__underline-tone-primary-focus-underline -> --uxdsl__palette__primary-main -> --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider.\n"
+      "stderr": "[uxdsl] Error: UXD_REFERENCE_MISSING: --uxdsl__color__brand-500 has no definition in the active theme/scope. Define it or declare its external provider. Referenced by 24 definitions: color (src/example.uxdsl:2:3), --uxdsl__palette__primary-main, --uxdsl__button__contained-focusvisible-outline, --uxdsl__button__contained-tone-primary-focusvisible-outline, --uxdsl__button__outlined-focusvisible-outline and 19 more.\n"
+    },
+    {
+      "code": "UXD_PALETTE_SYNTAX",
+      "title": "The removed dashed spelling of a Palette entry",
+      "source": ".a {\n  color: palette(primary-main);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:10: UXD_PALETTE_SYNTAX: palette(primary-main) is not a dotted path; write palette(primary.main).\n  1 | .a {\n> 2 |   color: palette(primary-main);\n    |          ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_PALETTE_REFERENCE",
+      "title": "A Palette variant the family does not have",
+      "source": ".a {\n  color: palette(primary.mian);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:10: UXD_PALETTE_REFERENCE: palette(primary.mian) does not exist; primary has: main, light, dark, contrast. Did you mean \"main\"?\n  1 | .a {\n> 2 |   color: palette(primary.mian);\n    |          ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_EDGE_ARGUMENT",
+      "title": "A second argument on border()",
+      "source": ".card {\n  border: border(1, red, dashed);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:11: UXD_EDGE_ARGUMENT: border(1, red, dashed) takes exactly one argument: border(k); write border(1) and set border-color/border-style as declarations after it.\n  1 | .card {\n> 2 |   border: border(1, red, dashed);\n    |           ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_SURFACE_TONE",
+      "title": "A Palette family that is not a tone",
+      "source": ".card {\n  @ds-surface(contained text);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_SURFACE_TONE: \"text\" is not a tone; a tone is a Palette family with main, dark and contrast: dark, error, info, light, neutral, primary, secondary, success, surface, tertiary, warning.\n  1 | .card {\n> 2 |   @ds-surface(contained text);\n    |   ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_DIRECTIVE_DUPLICATE",
+      "title": "Two control directives in one rule",
+      "source": ".cta {\n  @ds-button(contained);\n  @ds-button(outlined);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:3:3: UXD_DIRECTIVE_DUPLICATE: @ds-button(outlined) repeats @ds-button(contained) in the same rule; a rule takes one @ds-button or @ds-input. Choose one role, or split the selectors into two rules.\n  1 | .cta {\n  2 |   @ds-button(contained);\n> 3 |   @ds-button(outlined);\n    |   ^\n  4 | }\n  5 | \n"
+    },
+    {
+      "code": "UXD_SYNTAX_REMOVED",
+      "title": "A spelling the language no longer has (the former elevation() alias)",
+      "source": ".card {\n  box-shadow: elevation(2);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SYNTAX_REMOVED: elevation() was removed; use shadow(2).\n  1 | .card {\n> 2 |   box-shadow: elevation(2);\n    |               ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_THEME_BLOCK_REMOVED",
+      "title": "A @theme block: tokens are defined in the theme JSON",
+      "source": "@theme {\n  radius-2: 12px;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:1:1: UXD_THEME_BLOCK_REMOVED: @theme blocks were removed; define these tokens in the theme JSON (uxdsl.theme.json): density-<k> under \"densities\", radius-<k> under \"radii\", border-<k> under \"borders\", shadow-<k> under \"shadows\", and surface-/button-/input-<role> packs under \"surfaces\", \"buttons\" and \"inputs\".\n> 1 | @theme {\n    | ^\n  2 |   radius-2: 12px;\n  3 | }\n"
     }
-  ],
-  "aliases": {
-    "source": ".with-alias {\n  box-shadow: elevation(2);\n  border-radius: rounded(2);\n}\n\n.with-name {\n  box-shadow: shadow(2);\n  border-radius: radius(2);\n}\n",
-    "argv": [
-      "build",
-      "--entry",
-      "src/aliases.uxdsl",
-      "--out",
-      "dist/aliases.css",
-      "--no-include-theme"
-    ],
-    "css": ".with-alias {\n  box-shadow: var(--uxdsl__shadow__2);\n  border-radius: var(--uxdsl__radius__2);\n}\n\n.with-name {\n  box-shadow: var(--uxdsl__shadow__2);\n  border-radius: var(--uxdsl__radius__2);\n}\n"
-  }
+  ]
 }

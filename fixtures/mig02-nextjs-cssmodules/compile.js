@@ -15,11 +15,10 @@ const path = require('path');
 
 const FIXTURE_DIR = __dirname;
 const MIG07_DIR = path.resolve(FIXTURE_DIR, '..', 'mig07-consumer');
-const PACKAGE_DIR = path.join(MIG07_DIR, 'node_modules', 'postcss-uxdsl');
 const STYLES_DIR = path.join(FIXTURE_DIR, 'styles');
 
-const plugin = require(PACKAGE_DIR);
 const installedRequire = require('module').createRequire(path.join(MIG07_DIR, 'package.json'));
+const plugin = installedRequire('uxdsl/postcss');
 const postcss = installedRequire('postcss');
 const uxdsl = plugin.default || plugin;
 

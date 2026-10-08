@@ -1,0 +1,41 @@
+{
+  "name": "vite-plugin-uxdsl",
+  "version": "0.5.0-beta.7",
+  "description": "Deprecated: the UXDSL Vite plugin is now `uxdsl/vite` in the `uxdsl` package.",
+  "license": "MIT",
+  "author": "Ricardo Santoyo <rsantoyo-dev>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rsantoyo-dev/uxdsl.git",
+    "directory": "packages/_deprecated/vite-plugin-uxdsl"
+  },
+  "homepage": "https://uxdsl.io",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.d.ts",
+    "index.js"
+  ],
+  "dependencies": {
+    "uxdsl": "0.5.0-beta.7"
+  },
+  "peerDependencies": {
+    "postcss": "^8.4.31",
+    "vite": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "vite": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

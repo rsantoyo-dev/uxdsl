@@ -16,7 +16,7 @@ export default function SpacingAgentGuidance() {
         <li>Choose padding for internal space, margin for external separation, and gap for spacing between items in a compatible layout.</li>
         <li>Change a shared spacing value only when the intended change should affect all its consumers. Inspect direct references and Density mappings that depend on it.</li>
         <li>For a local adjustment, select another appropriate token in the component. Use a deliberate local exception when the design requires behavior independent of shared tokens.</li>
-        <li>Edit source theme definitions or use the supported runtime API. Do not hand-edit generated CSS as the source of truth.</li>
+        <li>Edit source theme definitions or apply them at run time with <code>applyTheme</code>. Do not hand-edit generated CSS as the source of truth.</li>
         <li>Account for the configured units. A stable <code>rem</code> value can have a different pixel size when the root font size changes; <code>space()</code> itself does not create breakpoint rules.</li>
         <li>Verify affected padding, margins and gaps, check shared consumers for overflow or wrapping, and test relevant themes. If Density references the edited token, also check its breakpoint boundaries.</li>
       </ul>

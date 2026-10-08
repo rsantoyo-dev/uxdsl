@@ -64,17 +64,27 @@ test('MIG-B6-28: bumpSemver patch/minor/major (unchanged behavior)', () => {
 });
 
 test('MIG-B6-28: parseArgs recognizes --check-pack and every existing flag', () => {
-  const options = parseArgs(['--version', '1.2.3', '--dry-run', '--skip-publish', '--skip-build', '--tag', 'next', '--otp', '123456', '--note', 'hi']);
+  const options = parseArgs(['--version', '1.2.3', '--dry-run', '--skip-publish', '--skip-build', '--tag', 'next', '--otp', '123456']);
   assert.equal(options.version, '1.2.3');
   assert.equal(options.dryRun, true);
   assert.equal(options.skipPublish, true);
   assert.equal(options.skipBuild, true);
   assert.equal(options.tag, 'next');
   assert.equal(options.otp, '123456');
-  assert.equal(options.note, 'hi');
   assert.equal(options.checkPack, false);
 
   assert.equal(parseArgs(['--check-pack']).checkPack, true);
+});
+
+test('phase 4: --note is gone (it appended to the former uxdsl-core README; the CHANGELOG is the release history)', () => {
+  assert.throws(() => parseArgs(['--note', 'hi']), /Unknown option: --note/);
+});
+
+test('phase 4: one npm package, and the extension packaged beside it', () => {
+  const { packages, EXTENSION, PACK_BUDGETS_KB } = require('./release');
+  assert.deepEqual(packages, [{ name: 'uxdsl', dir: 'packages/uxdsl', deps: [] }]);
+  assert.deepEqual(EXTENSION, { name: 'uxdsl-vscode', dir: 'packages/uxdsl-vscode' });
+  assert.deepEqual(Object.keys(PACK_BUDGETS_KB), ['uxdsl']);
 });
 
 test('MIG-B6-28: parseArgs throws (does not process.exit) on an unknown flag', () => {
@@ -154,28 +164,28 @@ test('MIG-B6-28: checkExportsPresent never flags package.json itself (npm always
 
 test('MIG-B6-28: checkVersionAlignment simulates "versión interna desalineada"', () => {
   const packageList = [
-    { name: 'uxdsl-cli', dir: 'packages/uxdsl-cli', deps: ['postcss-uxdsl'] },
+    { name: 'uxdsl-dependent', dir: 'packages/uxdsl-dependent', deps: ['uxdsl'] },
   ];
   const fakeReadJson = () => ({
     version: '0.5.0-beta.6',
-    dependencies: { 'postcss-uxdsl': '0.5.0-beta.5' }, // stale: bump forgot this one
+    dependencies: { 'uxdsl': '0.5.0-beta.5' }, // stale: bump forgot this one
   });
   const { violations } = checkVersionAlignment(packageList, '/fake-root', '0.5.0-beta.6', {
     readJsonFn: fakeReadJson,
   });
   assert.equal(violations.length, 1);
-  assert.equal(violations[0].field, 'dependencies.postcss-uxdsl');
+  assert.equal(violations[0].field, 'dependencies.uxdsl');
   assert.equal(violations[0].expected, '0.5.0-beta.6');
   assert.equal(violations[0].actual, '0.5.0-beta.5');
 });
 
 test('MIG-B6-28: checkVersionAlignment passes once every coordinated field matches', () => {
   const packageList = [
-    { name: 'uxdsl-cli', dir: 'packages/uxdsl-cli', deps: ['postcss-uxdsl'] },
+    { name: 'uxdsl-dependent', dir: 'packages/uxdsl-dependent', deps: ['uxdsl'] },
   ];
   const fakeReadJson = () => ({
     version: '0.5.0-beta.6',
-    dependencies: { 'postcss-uxdsl': '0.5.0-beta.6' },
+    dependencies: { 'uxdsl': '0.5.0-beta.6' },
   });
   const { violations } = checkVersionAlignment(packageList, '/fake-root', '0.5.0-beta.6', {
     readJsonFn: fakeReadJson,
@@ -185,7 +195,7 @@ test('MIG-B6-28: checkVersionAlignment passes once every coordinated field match
 
 test('MIG-B6-28: verifyDistTags reports ok once latest/beta both match, without exhausting retries', () => {
   let calls = 0;
-  const results = verifyDistTags(['postcss-uxdsl'], '0.5.0-beta.6', {
+  const results = verifyDistTags(['uxdsl'], '0.5.0-beta.6', {
     npmViewDistTagsFn: () => {
       calls += 1;
       return { latest: '0.5.0-beta.6', beta: '0.5.0-beta.6' };
@@ -199,7 +209,7 @@ test('MIG-B6-28: verifyDistTags reports ok once latest/beta both match, without 
 
 test('MIG-B6-28: verifyDistTags simulates "tag incorrecto" and reports remediation, not a republish', () => {
   let sleeps = 0;
-  const results = verifyDistTags(['postcss-uxdsl'], '0.5.0-beta.6', {
+  const results = verifyDistTags(['uxdsl'], '0.5.0-beta.6', {
     npmViewDistTagsFn: () => ({ latest: '0.5.0-beta.5', beta: '0.5.0-beta.6' }),
     retries: 3,
     sleepFn: () => { sleeps += 1; },
@@ -207,35 +217,35 @@ test('MIG-B6-28: verifyDistTags simulates "tag incorrecto" and reports remediati
   assert.equal(sleeps, 2); // retries between attempts, not after the last one
   const result = results[0];
   assert.equal(result.ok, false);
-  assert.match(result.message, /npm dist-tag add postcss-uxdsl@0\.5\.0-beta\.6 latest/);
+  assert.match(result.message, /npm dist-tag add uxdsl@0\.5\.0-beta\.6 latest/);
   assert.doesNotMatch(result.message, /npm publish/);
 });
 
 test('MIG-B6-28: verifyDistTags does not apply the beta latest/beta rule to rc or stable, and never calls npm for them', () => {
   const npmViewDistTagsFn = () => { throw new Error('must not be called for a non-beta channel'); };
-  const rcResult = verifyDistTags(['postcss-uxdsl'], '0.5.0-rc.1', { npmViewDistTagsFn })[0];
+  const rcResult = verifyDistTags(['uxdsl'], '0.5.0-rc.1', { npmViewDistTagsFn })[0];
   assert.equal(rcResult.checked, false);
   assert.equal(rcResult.ok, null);
-  const stableResult = verifyDistTags(['postcss-uxdsl'], '1.0.0', { npmViewDistTagsFn })[0];
+  const stableResult = verifyDistTags(['uxdsl'], '1.0.0', { npmViewDistTagsFn })[0];
   assert.equal(stableResult.checked, false);
   assert.equal(stableResult.ok, null);
 });
 
 // ---------------------------------------------------------------------
 // Subprocess tests: a real copy of release.js, a fake `npm` on PATH, a
-// disposable fake monorepo. release.js hardcodes its 5 package names/dirs,
-// so the fake repo must reproduce those exactly.
+// disposable fake monorepo. release.js hardcodes its package name/dir and the
+// extension's, so the fake repo must reproduce those exactly.
 // ---------------------------------------------------------------------
 
 const REAL_SCRIPT = path.resolve(__dirname, 'release.js');
-const PKG_NAMES = ['postcss-uxdsl', 'uxdsl-core', 'vite-plugin-uxdsl', 'uxdsl-webpack-loader', 'uxdsl-cli'];
+const PKG_NAMES = ['uxdsl'];
 
 function mkFakeMonorepo({ withGenerateStub = false } = {}) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-release-guard-'));
   fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
   fs.copyFileSync(REAL_SCRIPT, path.join(dir, 'scripts', 'release.js'));
   if (withGenerateStub) {
-    // The real generate-language-artifacts.js needs postcss-uxdsl's compiled
+    // The real generate-language-artifacts.js needs uxdsl's compiled
     // dist/; a full-flow test only needs the call site to succeed.
     fs.writeFileSync(path.join(dir, 'scripts', 'generate-language-artifacts.js'), 'process.exit(0);\n');
   }
@@ -249,6 +259,9 @@ function mkFakeMonorepo({ withGenerateStub = false } = {}) {
     );
     fs.writeFileSync(path.join(pkgDir, 'index.js'), '// fake\n');
   });
+  const extensionDir = path.join(dir, 'packages', 'uxdsl-vscode');
+  fs.mkdirSync(extensionDir, { recursive: true });
+  fs.writeFileSync(path.join(extensionDir, 'package.json'), JSON.stringify({ name: 'uxdsl-vscode', version: '0.1.0', scripts: { package: 'vsce package' } }, null, 2));
 
   return dir;
 }
@@ -269,6 +282,8 @@ const args = process.argv.slice(2);
 const repoRoot = path.resolve(process.cwd(), '..', '..');
 const mutationMarker = path.join(repoRoot, '.fake-npm-mutated');
 const publishLog = path.join(repoRoot, '.fake-npm-published');
+const packagedLog = path.join(repoRoot, '.fake-npm-packaged');
+const packCounter = path.join(repoRoot, '.fake-npm-packs');
 
 function readOwnPackageText() {
   try { return fs.readFileSync('package.json', 'utf8'); } catch { return ''; }
@@ -291,9 +306,18 @@ if (args[0] === 'pack' && args.includes('--dry-run')) {
   const mutated = fs.existsSync(mutationMarker) ? 'mutated' : '';
   const shasum = crypto.createHash('sha1').update(readOwnPackageText() + mutated).digest('hex');
   process.stdout.write(JSON.stringify([{ name, version: '0.0.1', size, unpackedSize: size, shasum, files }]));
+  // Simulates a source change landing on disk after the N-th pack — e.g.
+  // between validating the tarball and publishing it.
+  const packs = (fs.existsSync(packCounter) ? Number(fs.readFileSync(packCounter, 'utf8')) : 0) + 1;
+  fs.writeFileSync(packCounter, String(packs));
+  if (Number(process.env.FAKE_NPM_MUTATE_AFTER_PACKS) === packs) fs.writeFileSync(mutationMarker, '');
   process.exit(0);
 }
 if (args[0] === 'run' && args[1] === 'build') {
+  process.exit(0);
+}
+if (args[0] === 'run' && args[1] === 'package') {
+  fs.appendFileSync(packagedLog, readOwnPackageName() + '\\n');
   process.exit(0);
 }
 if (args[0] === 'whoami') {
@@ -348,21 +372,23 @@ function readFakeVersion(repoDir, name) {
   return JSON.parse(fs.readFileSync(path.join(repoDir, 'packages', name, 'package.json'), 'utf8')).version;
 }
 
-function publishedPackages(repoDir) {
-  const logFile = path.join(repoDir, '.fake-npm-published');
+function logged(repoDir, file) {
+  const logFile = path.join(repoDir, file);
   if (!fs.existsSync(logFile)) return [];
   return fs.readFileSync(logFile, 'utf8').split('\n').filter(Boolean);
 }
+const publishedPackages = (repoDir) => logged(repoDir, '.fake-npm-published');
+const packagedExtensions = (repoDir) => logged(repoDir, '.fake-npm-packaged');
 
 test('MIG-B6-28 (subprocess, fake npm): the preflight gate aborts an oversized package before any file is touched, and accepts an rc version string', () => {
   const dir = mkFakeMonorepo();
   const result = runRelease(dir, ['--version', '0.9.0-rc.1', '--skip-publish'], {
-    FAKE_NPM_OVERSIZE_PKG: 'uxdsl-webpack-loader',
+    FAKE_NPM_OVERSIZE_PKG: 'uxdsl',
   });
 
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stderr + result.stdout, /Pack budget exceeded/);
-  assert.match(result.stderr + result.stdout, /uxdsl-webpack-loader/);
+  assert.match(result.stderr + result.stdout, /uxdsl:/);
   assert.match(result.stderr, /Aborting release/);
   // The whole point of a *preflight* gate: nothing was bumped, anywhere.
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '0.0.1', `${name} must not have been bumped`));
@@ -371,72 +397,64 @@ test('MIG-B6-28 (subprocess, fake npm): the preflight gate aborts an oversized p
 test('MIG-B6-28 (subprocess, fake npm): the preflight gate aborts on a declared export missing from the tarball, before any file is touched', () => {
   const dir = mkFakeMonorepo();
   const result = runRelease(dir, ['--version', '0.9.0-rc.1', '--skip-publish'], {
-    FAKE_NPM_MISSING_EXPORT_PKG: 'uxdsl-core',
+    FAKE_NPM_MISSING_EXPORT_PKG: 'uxdsl',
   });
 
   assert.equal(result.status, 1, result.stdout + result.stderr);
   assert.match(result.stderr + result.stdout, /missing from the tarball/);
-  assert.match(result.stderr + result.stdout, /uxdsl-core/);
+  assert.match(result.stderr + result.stdout, /uxdsl:/);
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '0.0.1', `${name} must not have been bumped`));
 });
 
-test('MIG-B6-28 (subprocess, fake npm): a real publish failure ("publicación parcial") stops immediately and does not attempt the remaining packages', () => {
+test('MIG-B6-28 (subprocess, fake npm): a publish failure stops the release and packages no extension', () => {
   const dir = mkFakeMonorepo();
-  // uxdsl-core is the 2nd package in release.js's own publish order; a
-  // failure there must stop vite-plugin-uxdsl/uxdsl-webpack-loader/
-  // uxdsl-cli from ever being attempted. --skip-build sidesteps the
-  // unrelated generate-language-artifacts.js call, which does not exist in
-  // this minimal fake repo and is not what this test is about.
+  // --skip-build sidesteps the unrelated generate-language-artifacts.js call,
+  // which does not exist in this minimal fake repo.
   const result = runRelease(dir, ['--version', '9.9.9', '--skip-build'], {
-    FAKE_NPM_FAIL_PUBLISH_PKG: 'uxdsl-core',
+    FAKE_NPM_FAIL_PUBLISH_PKG: 'uxdsl',
   });
 
   assert.notEqual(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stderr, /Publish failed/);
   assert.match(result.stderr, /simulated publish failure/);
-  // Exactly the first package reached the registry; the failing 2nd one and
-  // the three after it were never attempted.
-  assert.deepEqual(publishedPackages(dir), ['postcss-uxdsl']);
-  // Every package.json was still bumped for real (the version-bump loop
-  // runs before publishing starts) — only the *publish step itself* is
-  // partial, which is exactly the state a human operator needs to see
-  // accurately to know what still needs `npm publish` run by hand.
+  assert.deepEqual(publishedPackages(dir), []);
+  assert.deepEqual(packagedExtensions(dir), []);
+  // The bump ran before publishing: the operator sees the real state.
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '9.9.9'));
 });
 
-test('MIG-B6-28 (subprocess, fake npm): a clean full release — no --dry-run/--skip-build/--skip-publish — publishes all five packages and completes', () => {
-  // Regression: the first version of this story recorded each tarball's
-  // shasum *before* the version-bump loop rewrote every package.json (and
-  // before generate-language-artifacts rewrote theme-manifest.json, which
-  // ships), then compared *after* — so every real release aborted with
-  // "changed after the prepublish gate ran" before publishing anything.
-  // None of the other subprocess tests reach a real publish with a real
-  // build path, and the fake npm used to return a constant shasum, which
-  // would have masked it even if they had.
+test('MIG-B6-28 (subprocess, fake npm): a clean full release publishes uxdsl, then packages the extension without publishing or bumping it', () => {
+  // Regression: the first version of this story recorded the tarball's
+  // shasum *before* the version bump rewrote package.json (and before
+  // generate-language-artifacts rewrote artifacts that ship), then compared
+  // *after* — so every real release aborted before publishing anything. The
+  // fake npm's content-derived shasum is what keeps that visible.
   const dir = mkFakeMonorepo({ withGenerateStub: true });
   const result = runRelease(dir, ['--version', '9.9.9']);
 
   assert.equal(result.status, 0, result.stdout + result.stderr);
   assert.match(result.stdout, /Release complete/);
-  assert.deepEqual(publishedPackages(dir), PKG_NAMES);
-  PKG_NAMES.forEach((name) => {
-    assert.equal(readFakeVersion(dir, name), '9.9.9');
-    assert.match(result.stdout, new RegExp(`validated ${name}@9\\.9\\.9: .*shasum [0-9a-f]{40}`));
-  });
+  assert.deepEqual(publishedPackages(dir), ['uxdsl']);
+  assert.equal(readFakeVersion(dir, 'uxdsl'), '9.9.9');
+  assert.match(result.stdout, /validated uxdsl@9\.9\.9: .*shasum [0-9a-f]{40}/);
+  assert.deepEqual(packagedExtensions(dir), ['uxdsl-vscode']);
+  assert.match(result.stdout, /Packaged packages\/uxdsl-vscode\/uxdsl-vscode-0\.1\.0\.vsix .*owner's step/);
+  assert.equal(readFakeVersion(dir, 'uxdsl-vscode'), '0.1.0', 'the extension keeps its own version');
 });
 
-test('MIG-B6-28 (subprocess, fake npm): a source change landing between validation and publish stops the loop before the affected package is published', () => {
+test('MIG-B6-28 (subprocess, fake npm): a source change landing between validation and publish stops the release before publishing', () => {
   const dir = mkFakeMonorepo({ withGenerateStub: true });
-  const result = runRelease(dir, ['--version', '9.9.9'], { FAKE_NPM_MUTATE_ON_FIRST_PUBLISH: '1' });
+  // Packs, in order: preflight budget (1) and exports (2), final budget (3,
+  // whose shasum is the validated one) and exports (4), then the recheck
+  // right before `npm publish` (5). A change after the 4th is the window.
+  const result = runRelease(dir, ['--version', '9.9.9'], { FAKE_NPM_MUTATE_AFTER_PACKS: '4' });
 
   assert.equal(result.status, 1, result.stdout + result.stderr);
-  // The mutation lands while publishing the 1st package; the 2nd package's
-  // own pre-publish recheck is the one that sees a different tarball.
-  assert.match(result.stderr, /uxdsl-core changed after it was validated/);
-  assert.match(result.stderr, /Already published: postcss-uxdsl/);
-  assert.match(result.stderr, /Not published: uxdsl-core, vite-plugin-uxdsl, uxdsl-webpack-loader, uxdsl-cli/);
-  assert.doesNotMatch(result.stderr, /npm publish/);
-  assert.deepEqual(publishedPackages(dir), ['postcss-uxdsl']);
+  assert.match(result.stderr, /uxdsl changed after it was validated/);
+  assert.match(result.stderr, /Already published: \(none\)/);
+  assert.match(result.stderr, /Not published: uxdsl/);
+  assert.deepEqual(publishedPackages(dir), []);
+  assert.deepEqual(packagedExtensions(dir), []);
 });
 
 test('MIG-B6-28 (subprocess, fake npm): --check-pack is a real, local, side-effect-free check that needs no --version at all', () => {
@@ -446,7 +464,7 @@ test('MIG-B6-28 (subprocess, fake npm): --check-pack is a real, local, side-effe
   assert.match(okResult.stdout, /ok/);
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '0.0.1'));
 
-  const overResult = runRelease(dir, ['--check-pack', '--skip-build'], { FAKE_NPM_OVERSIZE_PKG: 'postcss-uxdsl' });
+  const overResult = runRelease(dir, ['--check-pack', '--skip-build'], { FAKE_NPM_OVERSIZE_PKG: 'uxdsl' });
   assert.equal(overResult.status, 1, overResult.stdout + overResult.stderr);
   assert.match(overResult.stdout, /OVER BUDGET/);
   PKG_NAMES.forEach((name) => assert.equal(readFakeVersion(dir, name), '0.0.1'));

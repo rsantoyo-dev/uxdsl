@@ -4,15 +4,15 @@
 //
 // Two halves, on purpose:
 //   - "This site": read-only calls against the page you are on — getAppliedTheme,
-//     subscribeTheme, getPalette. They observe what ThemeContext applied; they change nothing.
+//     subscribeTheme, and the computed custom property the applied stylesheet produced. They
+//     observe what ThemeContext applied; they change nothing.
 //   - "Sandbox": every call that changes state runs in an iframe with its own document and
 //     its own copy of the runtime (src/runtime-sandbox/sandbox-entry.ts). Run on this page,
-//     resetTheme would restore the theme ThemeContext initialized with behind its back, and
-//     updateBreakpoint would reach the breakpoint adapter, which forwards it to applyTheme —
-//     which refuses it. Reloading the sandbox undoes everything it did.
+//     resetTheme would restore the theme ThemeContext initialized with behind its back.
+//     Reloading the sandbox undoes everything it did.
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { getAppliedTheme, subscribeTheme, getPalette } from 'postcss-uxdsl/ds-runtime'
+import { getAppliedTheme, subscribeTheme } from 'uxdsl/runtime'
 import type { UxdslLab } from '@/runtime-sandbox/sandbox-entry'
 import { useTheme } from './ThemeContext'
 
@@ -28,7 +28,7 @@ export function SiteThemeState() {
   const read = useCallback(() => {
     const override = getAppliedTheme()
     setApplied({ primary: override?.palette?.primary?.main ?? '(not set by the override)', families: Object.keys(override) })
-    setComputed(getPalette('primary-main'))
+    setComputed(getComputedStyle(document.documentElement).getPropertyValue('--uxdsl__palette__primary-main').trim())
   }, [])
 
   useEffect(() => {
@@ -52,11 +52,11 @@ export function SiteThemeState() {
         <dt>Theme selected in the header</dt><dd><code>{currentTheme}</code></dd>
         <dt><code>getAppliedTheme()</code> — families in the applied override</dt><dd>{applied.families.length ? applied.families.join(', ') : '{} (not initialized yet)'}</dd>
         <dt><code>getAppliedTheme().palette.primary.main</code></dt><dd><code>{applied.primary}</code></dd>
-        <dt><code>getPalette(&apos;primary-main&apos;)</code> — the computed custom property</dt><dd><code>{computed}</code></dd>
+        <dt><code>getComputedStyle(document.documentElement).getPropertyValue(&apos;--uxdsl__palette__primary-main&apos;)</code> — the computed custom property</dt><dd><code>{computed}</code></dd>
       </dl>
       <p className="cap-note">The two can differ: the override holds the light value, and in dark mode the stylesheet{' '}
         <code>applyTheme</code> generated switches <code>primary-main</code> to <code>modes.dark</code>&apos;s — which is what{' '}
-        <code>getPalette</code> reads.</p>
+        the computed style reads.</p>
       <h4 className="cap-card__subtitle"><code>subscribeTheme(listener)</code></h4>
       {entries.length === 0
         ? <p className="cap-note">No application yet since this page loaded. Switch the theme in the header: each successful <code>applyTheme</code> notifies this listener.</p>
@@ -72,25 +72,18 @@ const KEY = 'LAB_KEY'
 // The values the steps patch in. They are theme data handed to the runtime, not styling of
 // this page — which is why they are literals (the ratchet counts them; see capability-evidence.json).
 const TEAL = '#0f766e'
-const PINK = '#e11d48'
-const BLUE = '#1d4ed8'
 const AMBER = '#fde68a'
 const STEPS: Step[] = [
-  { group: 'Theme API', call: `loadPersistedTheme({ key: ${KEY}, migrateLegacy: false })`, note: 'Before the project theme was applied once: refused, nothing moves.', run: (lab) => lab.api.loadPersistedTheme({ key: lab.storageKey, migrateLegacy: false }) },
+  { group: 'Theme API', call: `loadPersistedTheme({ key: ${KEY} })`, note: 'Before the project theme was applied once: refused, nothing moves.', run: (lab) => lab.api.loadPersistedTheme({ key: lab.storageKey }) },
   { group: 'Theme API', call: `applyTheme(projectOverride, { replace: true, styleId: 'uxdsl-lab-theme' })`, note: 'Initialize with the override the sandbox was compiled with (this site\'s default theme).', run: (lab) => lab.api.applyTheme(lab.projectOverride, { replace: true, styleId: 'uxdsl-lab-theme' }) },
   { group: 'Theme API', call: `applyTheme({ palette: { primary: { main: '${TEAL}' } } }, { persist: ${KEY} })`, note: 'A value change: applied, and saved under the lab\'s own key.', run: (lab) => lab.api.applyTheme({ palette: { primary: { main: TEAL } } }, { persist: lab.storageKey }) },
   { group: 'Theme API', call: `applyTheme({ breakpoints: { md: 900 } })`, note: 'Moving a threshold changes what the compiler emitted: refused with UXD_THEME_STRUCTURE.', run: (lab) => lab.api.applyTheme({ breakpoints: { md: 900 } }) },
   { group: 'Theme API', call: 'resetTheme()', note: 'Back to the override it was initialized with — not the packaged base.', run: (lab) => lab.api.resetTheme() },
-  { group: 'Theme API', call: `loadPersistedTheme({ key: ${KEY}, migrateLegacy: false })`, note: 'The saved override comes back, validated like any patch.', run: (lab) => lab.api.loadPersistedTheme({ key: lab.storageKey, migrateLegacy: false }) },
+  { group: 'Theme API', call: `loadPersistedTheme({ key: ${KEY} })`, note: 'The saved override comes back, validated like any patch.', run: (lab) => lab.api.loadPersistedTheme({ key: lab.storageKey }) },
   { group: 'Theme API', call: 'getAppliedTheme()', note: 'What is applied now, as a copy.', run: (lab) => { const t = lab.api.getAppliedTheme(); return { families: Object.keys(t).length, 'palette.primary.main': t?.palette?.primary?.main } } },
   { group: 'Theme API', call: `resetTheme({ clearPersist: true, key: ${KEY} })`, note: 'Reset and forget the saved override.', run: (lab) => lab.api.resetTheme({ clearPersist: true, key: lab.storageKey }) },
-  { group: 'Per-token setters (pre-beta.6)', call: `updatePalette('primary-main', '${PINK}')`, note: 'Writes an inline custom property on <html>.', run: (lab) => lab.api.updatePalette('primary-main', PINK) },
-  { group: 'Per-token setters (pre-beta.6)', call: `getPalette('primary-main')`, note: 'Reads the computed value back.', run: (lab) => lab.api.getPalette('primary-main') },
-  { group: 'Per-token setters (pre-beta.6)', call: `applyTheme({ palette: { primary: { main: '${BLUE}' } } })`, note: 'Conflict: ok: true, but the swatch stays pink — the inline value beats the stylesheet. (Initialize with the second step first.)', run: (lab) => lab.api.applyTheme({ palette: { primary: { main: BLUE } } }) },
-  { group: 'Per-token setters (pre-beta.6)', call: `resetPalette('primary-main')`, note: 'Removes the inline value; the stylesheet shows again.', run: (lab) => lab.api.resetPalette('primary-main') },
-  { group: 'Per-token setters (pre-beta.6)', call: `updateColor('gray-300', '${AMBER}')`, note: 'Only color(gray-300) consumers follow.', run: (lab) => lab.api.updateColor('gray-300', AMBER) },
-  { group: 'Per-token setters (pre-beta.6)', call: `updateSpacing(5, '2rem')`, note: 'density(4) is space(5) at this width, so the Density box grows; the space(4) box does not.', run: (lab) => lab.api.updateSpacing(5, '2rem') },
-  { group: 'Per-token setters (pre-beta.6)', call: `updateBreakpoint('md', 900)`, note: 'Rewrites the compiled media queries: at 820px the layout drops below md. The theme stylesheet applyTheme manages is not rewritten, so Density still switches at 768.', run: (lab) => lab.api.updateBreakpoint('md', 900) },
+  { group: 'One token at a time — still applyTheme', call: `applyTheme({ colors: { gray: { 300: '${AMBER}' } } })`, note: 'A Color token: only color(gray.300) consumers follow. Where updateColor used to write an inline property, this replaces the custom property in the managed stylesheet.', run: (lab) => lab.api.applyTheme({ colors: { gray: { 300: AMBER } } }) },
+  { group: 'One token at a time — still applyTheme', call: `applyTheme({ spacing: { 5: '2rem' } })`, note: 'density(4) is space(5) at this width, so the Density box grows; the space(4) box does not.', run: (lab) => lab.api.applyTheme({ spacing: { 5: '2rem' } }) },
 ]
 
 type LogItem = { n: number; call: string; outcome: string; ok: boolean; events: string[]; after: string }
@@ -131,7 +124,7 @@ export function RuntimeSandbox() {
     const n = counter.current
     const events = lab.drainEvents().map((e) => `${e.source}: ${e.detail}`)
     const p = lab.probe()
-    const after = `after: primary-main ${p.primaryMain} · space(4)/density(4) ${p.spacePadding}/${p.densityPadding} · layout ${p.layoutDirection} · md ${p.legacyBreakpoints.md} (legacy) / ${p.appliedMd ?? '—'} (applied)`
+    const after = `after: primary-main ${p.primaryMain} · space(4)/density(4) ${p.spacePadding}/${p.densityPadding} · layout ${p.layoutDirection} · md ${p.appliedMd ?? '—'} (applied)`
     setLog((list) => [...list, { n, call: step.call, outcome: text, ok, events, after }])
     setProbe(p)
   }
@@ -165,15 +158,14 @@ export function RuntimeSandbox() {
           <dl className="cap-facts">
             <dt>Sandbox width</dt><dd>{probe.width}px</dd>
             <dt>Computed <code>--uxdsl__palette__primary-main</code></dt><dd><code>{probe.primaryMain}</code></dd>
-            <dt><code>palette(primary-main)</code> swatch</dt><dd><code>{probe.paletteSwatch}</code></dd>
-            <dt><code>color(gray-300)</code> swatch</dt><dd><code>{probe.colorSwatch}</code></dd>
+            <dt><code>palette(primary.main)</code> swatch</dt><dd><code>{probe.paletteSwatch}</code></dd>
+            <dt><code>color(gray.300)</code> swatch</dt><dd><code>{probe.colorSwatch}</code></dd>
             <dt><code>space(4)</code> / <code>density(4)</code> padding</dt><dd><code>{probe.spacePadding}</code> / <code>{probe.densityPadding}</code></dd>
             <dt>Layout <code>flex-direction</code></dt><dd><code>{probe.layoutDirection}</code></dd>
-            <dt><code>md</code>: <code>getBreakpoints()</code> vs <code>getAppliedTheme()</code></dt><dd><code>{probe.legacyBreakpoints.md}</code> vs <code>{probe.appliedMd ?? '—'}</code></dd>
-            <dt>Inline custom properties on <code>&lt;html&gt;</code></dt><dd>{probe.inline.length ? probe.inline.map((line) => <code key={line} className="cap-block">{line}</code>) : 'none'}</dd>
+            <dt><code>getAppliedTheme().breakpoints.md</code></dt><dd><code>{probe.appliedMd ?? '—'}</code></dd>
           </dl>
         )}
-        <h4 className="cap-card__subtitle">Calls, results, and what <code>subscribeTheme</code> / <code>subscribe</code> heard</h4>
+        <h4 className="cap-card__subtitle">Calls, results, and what <code>subscribeTheme</code> heard</h4>
         {log.length === 0 ? <p className="cap-note">Run a step. Each call&apos;s return value is shown as it came back.</p> : (
           <ol className="cap-log">
             {log.map((item) => (

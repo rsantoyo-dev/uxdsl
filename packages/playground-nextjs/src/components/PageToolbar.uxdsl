@@ -1,181 +1,202 @@
-/* PageToolbar styles - Scoped */
-#PageToolbar {
+/* The sticky bar under the header: breadcrumb on the left; on the right, the viewport width
+   and the theme breakpoint whose rules apply at it (a link to the Breakpoints page, with the
+   explanation in its title), and compact theme controls once the header scrolls away. */
+
+.page-toolbar {
   width: 100%;
-  background: palette(surface-light);
-  border-bottom: 1px solid palette(neutral-light);
-  position: -webkit-sticky; /* Safari */
+  background: palette(surface.light);
+  border-bottom: border(1);
   position: sticky;
   top: 0;
-  z-index: 1100; /* Higher than AppHeader (1000) to sit on top when stuck */
+  z-index: 1100;
 }
 
-#PageToolbar .page-toolbar {
+.page-toolbar__inner {
   max-width: 1400px;
   margin: 0 auto;
-  padding: density(1) density(4);
+  padding: space(2) xs(space(4)) md(space(6));
   display: flex;
   justify-content: space-between;
   align-items: center;
-  min-height: density(7);
-  flex-wrap: nowrap; /* Prevent wrapping */
+  gap: space(3);
+  min-height: space(9);
 }
 
-#PageToolbar .page-toolbar__left {
+.page-toolbar__left {
   display: flex;
   align-items: center;
-  gap: density(2);
-  flex: 1; /* Take available space */
-  min-width: 0; /* Allow shrinking for text overflow */
+  gap: space(3);
+  flex: 1;
+  min-width: 0;
+}
+
+.page-toolbar__title {
+  @ds-typo(span);
+  margin: 0;
+  color: palette(text.secondary);
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  white-space: nowrap;
   overflow: hidden;
+  min-width: 0;
 }
 
-#PageToolbar .page-toolbar__title {
-  @ds-typo(body);
-  color: palette(text-secondary);
+.breadcrumb-link-brand {
+  text-decoration: none;
+  color: inherit;
   display: flex;
   align-items: center;
-  gap: density(1);
-  white-space: nowrap; /* Keep on one line */
+  flex-shrink: 0;
+  border-radius: radius(1);
+
+  &:hover {
+    color: palette(primary.main);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+}
+
+.page-toolbar__brand-text {
+  color: palette(primary.main);
+  font-weight: 800;
+}
+
+.breadcrumb-link {
+  color: inherit;
+  text-decoration: none;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-#PageToolbar .breadcrumb-link-brand {
-  text-decoration: none;
-  color: inherit;
-  font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  transition: transform 0.2s;
-  display: flex;
-  align-items: center;
-  gap: density(1);
-  flex-shrink: 0; /* Don't shrink the brand */
+  border-radius: radius(1);
 
   &:hover {
-    transform: translateY(-1px);
-    color: palette(primary-main);
-  }
-}
-
-#PageToolbar .page-toolbar__brand-text {
-  @ds-typo (body);
-  color: palette(primary-main);
-  font-weight: 800;
-}
-
-#PageToolbar .breadcrumb-link {
-  color: inherit;
-  text-decoration: none;
-  transition: color 0.2s;
-  
-  &:hover {
-    color: palette(primary-main);
+    color: palette(primary.main);
     text-decoration: underline;
   }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
+
+  &[aria-current="page"] {
+    color: palette(surface.contrast);
+  }
 }
 
-#PageToolbar .breadcrumb-separator {
-  color: palette(neutral-dark);
-  opacity: 0.5;
+.breadcrumb-separator {
+  color: palette(text.secondary);
 }
 
-#PageToolbar .page-toolbar__burger {
+.page-toolbar__burger {
   background: transparent;
-  border: none;
-  color: palette(secondary-main);
+  border: border(1);
+  border-radius: radius(1);
+  color: palette(surface.contrast);
   cursor: pointer;
-  padding: 0;
-  display: flex;
+  padding: space(1);
+  display: xs(flex) lg(none);
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-}
 
-#PageToolbar .page-toolbar__burger:hover {
-  color: palette(secondary-dark);
-  background: transparent;
-}
+  &:hover {
+    color: palette(primary.main);
+  }
 
-#PageToolbar .page-toolbar__burger {
-  display: lg(none);
-}
-
-/* Right Side - Row Layout */
-#PageToolbar .page-toolbar__right {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: density(4);
-  margin-left: density(2); /* Separation from title */
-  flex-shrink: 0; /* Prevent right side from shrinking */
-  @ds-typo(caption);
-}
-
-#PageToolbar .page-toolbar__info-row {
-  display: flex;
-  align-items: center;
-  gap: density(4);
-}
-
-#PageToolbar .page-toolbar__theme-row {
-  display: flex;
-  align-items: center;
-  gap: density(2);
-  
-  /* Transition State */
-  opacity: 0;
-  transform: translateX(10px);
-  pointer-events: none;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
-  &.visible {
-    opacity: 1;
-    transform: translateX(0);
-    pointer-events: auto;
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
   }
 }
 
-#PageToolbar .page-toolbar__bp {
+.page-toolbar__right {
+  display: flex;
+  align-items: center;
+  gap: space(4);
+  flex-shrink: 0;
+}
+
+.page-toolbar__viewport {
   @ds-typo(caption);
-  background: palette(secondary-light, 0.1);
-  padding: density(1) density(2);
+  display: flex;
+  align-items: center;
+  gap: space(2);
+  margin: 0;
+  color: palette(text.secondary);
+  text-decoration: none;
   border-radius: radius(1);
-  line-height: 1;
+
+  &:hover {
+    color: palette(primary.main);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
 }
 
-#PageToolbar .page-toolbar__width {
-  @ds-typo(caption);
-  opacity: 0.7;
-  line-height: 1;
-  display: xs(none) md(block); /* hidden on small screens, shown on md and up */
+.page-toolbar__viewport-label {
+  display: xs(none) md(inline);
 }
 
-/* Mini Theme Buttons */
-#PageToolbar .mini-theme-btn {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 1px solid color(black, 0.1); /* Subtle border for light mode */
+.page-toolbar__width {
+  font-variant-numeric: tabular-nums;
+}
+
+.page-toolbar__bp {
+  background: palette(primary.main, 0.12);
+  color: palette(surface.contrast);
+  padding: space(1) space(3);
+  border-radius: radius(pill);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.page-toolbar__theme-row {
+  display: xs(none) sm(flex);
+  align-items: center;
+  gap: space(2);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+
+  &.is-visible {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+.mini-theme-btn {
+  width: 16px;
+  height: 16px;
+  border-radius: radius(circle);
+  border: 1px solid palette(divider.main);
   padding: 0;
   cursor: pointer;
-  opacity: 0.5;
-  transition: all 0.2s;
 
-  &:hover, &.active {
-    opacity: 1;
-    transform: scale(1.2);
-    border-color: palette(surface-contrast, 0.5);
+  &.is-active {
+    box-shadow: 0 0 0 2px palette(primary.main);
   }
 
-  &.default { background: color(purple-600); }
-  &.green { background: color(green-600); }
-  &.purple { background: color(purple-600); }
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
+  }
 }
 
-#PageToolbar .mini-theme-toggle {
-  width: 12px;
-  height: 12px;
+.mini-theme-btn--default { background: color(purple.600); }
+.mini-theme-btn--green { background: color(green.600); }
+.mini-theme-btn--slate { background: color(slate.800); }
+
+.mini-theme-toggle {
+  width: 20px;
+  height: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -183,12 +204,15 @@
   border: none;
   padding: 0;
   cursor: pointer;
-  color: palette(text-secondary);
-  opacity: 0.7;
-  transition: color 0.2s;
+  color: palette(text.secondary);
+  border-radius: radius(1);
 
   &:hover {
-    opacity: 1;
-    color: palette(primary-main);
+    color: palette(primary.main);
+  }
+
+  &:focus-visible {
+    outline: 2px solid palette(primary.main);
+    outline-offset: 2px;
   }
 }

@@ -29,7 +29,13 @@ const { execFileSync } = require('node:child_process');
 const ROOT = path.resolve(__dirname, '../..');
 const PLAYGROUND = 'packages/playground-nextjs';
 
-const runtime = () => require(path.join(ROOT, 'packages/postcss-uxdsl/dist/ds-runtime'));
+// The public functions a page can call: the engine plus the browser runtime and the
+// theme model (the three entries the former single runtime barrel was split into).
+const runtime = () => ({
+  ...require(path.join(ROOT, 'packages/uxdsl/dist/entries/engine')),
+  ...require(path.join(ROOT, 'packages/uxdsl/dist/entries/theme')),
+  ...require(path.join(ROOT, 'packages/uxdsl/dist/entries/runtime')),
+});
 const read = (rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8');
 
 // --- the playground's own source, as three views of it -------------------------
@@ -86,22 +92,30 @@ function manualEvidence() {
 
 /** Names the package's own docs put between backticks — the public runtime API. */
 function documentedRuntimeFunctions() {
-  const docs = ['packages/postcss-uxdsl/README.md', 'AGENTS.md'].map(read).join('\n');
+  const docs = ['packages/uxdsl/README.md', 'AGENTS.md'].map(read).join('\n');
   const exported = runtime();
   return Object.keys(exported)
     .filter((name) => name !== 'default' && typeof exported[name] === 'function' && /^[a-z]/.test(name) && new RegExp(`\`${escapeRe(name)}\\b`).test(docs))
     .sort();
 }
 
+// Help is per command (`uxdsl --help` lists the commands and the global flags;
+// `uxdsl <command> --help` lists that command's options), so the surface is
+// the union of all of them.
 function cliSurface() {
-  const help = execFileSync(process.execPath, [path.join(ROOT, 'packages/uxdsl-cli/bin/uxdsl.js'), '--help'], { encoding: 'utf8' });
-  const commands = [...help.matchAll(/^ {2}([a-z][a-z-]+) {2,}\S/gm)].map((m) => m[1]);
-  const flags = [...help.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)].map((m) => m[1]);
-  return { commands: [...new Set(commands)].sort(), flags: [...new Set(flags)].sort() };
+  const bin = path.join(ROOT, 'packages/uxdsl/bin/uxdsl.js');
+  const help = execFileSync(process.execPath, [bin, '--help'], { encoding: 'utf8' });
+  const commands = [...new Set([...help.matchAll(/^ {2}([a-z][a-z-]+) {2,}\S/gm)].map((m) => m[1]))];
+  const flags = new Set([...help.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)].map((m) => m[1]));
+  for (const command of commands) {
+    const commandHelp = execFileSync(process.execPath, [bin, command, '--help'], { encoding: 'utf8' });
+    for (const m of commandHelp.matchAll(/^ {2}(--[a-z][a-z-]*)/gm)) flags.add(m[1]);
+  }
+  return { commands: commands.sort(), flags: [...flags].sort() };
 }
 
 function packageExports() {
-  const exportsMap = JSON.parse(read('packages/postcss-uxdsl/package.json')).exports;
+  const exportsMap = JSON.parse(read('packages/uxdsl/package.json')).exports;
   return Object.keys(exportsMap).filter((key) => key !== './package.json' && !key.includes('*')).sort();
 }
 
@@ -146,7 +160,9 @@ const FAMILY_GENERATOR = {
   input: { directive: 'ds-input', runtime: DIRECTIVE_RUNTIME['ds-input'] },
 };
 
-const importedFromRuntime = (name) => new RegExp(`import\\s*(?:type\\s*)?\\{[^}]*\\b${escapeRe(name)}\\b[^}]*\\}\\s*from\\s*['"]postcss-uxdsl(?:/ds-runtime)?['"]`);
+// `export { … } from` counts too: a component that re-exports an engine function
+// for its siblings (RussianDoll does) is where the page takes it from.
+const importedFromRuntime = (name) => new RegExp(`(?:import|export)\\s*(?:type\\s*)?\\{[^}]*\\b${escapeRe(name)}\\b[^}]*\\}\\s*from\\s*['"]uxdsl(?:/(?:runtime|theme|engine|language))?['"]`);
 
 function liveFilesForDirective(sources, directive) {
   const inUxdsl = matching(sources.uxdsl, new RegExp(`@${escapeRe(directive)}\\(`));
@@ -164,13 +180,13 @@ function levelOf(live, documented, required) {
 function deriveCapabilities() {
   const sources = playgroundSources();
   const rt = runtime();
-  const L = require(path.join(ROOT, 'packages/postcss-uxdsl/dist/language')).LANGUAGE_COMPLETIONS;
+  const L = require(path.join(ROOT, 'packages/uxdsl/dist/language')).LANGUAGE_COMPLETIONS;
   const rows = [];
   const add = (kind, name, required, live, documented, note = '') => rows.push({ id: `${kind}:${name}`, kind, name, required, note, ...levelOf(live, documented, required) });
   const docsMention = (needle) => matching(sources.docs, needle);
 
   for (const directive of L.directives) {
-    add('directive', directive, directive === 'theme' ? 'documented' : 'live', liveFilesForDirective(sources, directive), docsMention(directive === 'theme' ? /@theme\b/ : `@${directive}`), directive === 'theme' ? 'deprecated legacy pack syntax' : '');
+    add('directive', directive, 'live', liveFilesForDirective(sources, directive), docsMention(`@${directive}`));
   }
   const BREAKPOINTS = new Set(Object.keys(rt.DEFAULT_BREAKPOINTS));
   for (const fn of L.functions) {
@@ -223,7 +239,7 @@ function deriveCapabilities() {
     add('cli-flag', flag, equivalent ? 'live' : 'documented', live, docsMention(flag), equivalent ? `same engine as ${equivalent}` : '');
   }
   for (const subpath of packageExports()) {
-    const importSpecifier = subpath === '.' ? 'postcss-uxdsl' : `postcss-uxdsl/${subpath.slice(2)}`;
+    const importSpecifier = subpath === '.' ? 'uxdsl' : `uxdsl/${subpath.slice(2)}`;
     const live = subpath === './schema/theme.schema.json' ? [] : matching(sources.code, new RegExp(`from\\s*['"]${escapeRe(importSpecifier)}['"]|require\\(\\s*['"]${escapeRe(importSpecifier)}['"]\\s*\\)`));
     add('package-export', subpath, 'live', live, docsMention(importSpecifier) .concat(subpath.includes('schema') ? docsMention('theme.schema.json') : []));
   }
