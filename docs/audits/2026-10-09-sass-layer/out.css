@@ -1,0 +1,66 @@
+.card {
+  margin: 0;
+}
+
+.card {
+  padding: var(--uxdsl__surface__contained-padding);
+  border-radius: var(--uxdsl__surface__contained-radius);
+  background: var(--uxdsl__surface__contained-bg);
+  color: var(--uxdsl__surface__contained-color);
+  border: var(--uxdsl__surface__contained-border);
+  box-shadow: var(--uxdsl__surface__contained-shadow);
+  padding: var(--uxdsl__density__4);
+  color: var(--uxdsl__palette__primary-main);
+  border-color: color-mix(in srgb, var(--uxdsl__palette__primary-main) 50%, transparent);
+  gap: 8px;
+}
+
+@media (min-width: 768px) {
+
+.card {
+  gap: 16px;
+}
+}
+.card__title {
+  font-family: var(--uxdsl__typography__h2-font-family);
+  font-size: var(--uxdsl__typography__h2-font-size);
+  line-height: var(--uxdsl__typography__h2-line-height);
+  font-weight: var(--uxdsl__typography__h2-font-weight);
+  letter-spacing: var(--uxdsl__typography__h2-letter-spacing);
+  margin-block-start: var(--uxdsl__typography__h2-margin-block-start);
+  margin-block-end: var(--uxdsl__typography__h2-margin-block-end);
+  color: var(--uxdsl__color__gray-900);
+}
+.card--active {
+  box-shadow: var(--uxdsl__shadow__2);
+}
+.card .icon {
+  width: 24px;
+}
+
+.btn-primary { padding: var(--uxdsl__density__1); border-radius: var(--uxdsl__radius__1); background: var(--uxdsl__palette__primary-main); color: var(--uxdsl__palette__primary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__primary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__primary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__primary-contrast);
+}
+
+.btn-primary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-primary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-primary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.btn-primary:focus-visible { outline: var(--uxdsl__button__contained-tone-primary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-primary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.btn-primary.is-selected, .btn-primary[aria-pressed="true"], .btn-primary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-primary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-primary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.btn-primary:disabled, .btn-primary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-primary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-primary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+.btn-secondary { padding: var(--uxdsl__density__2); border-radius: var(--uxdsl__radius__2); background: var(--uxdsl__palette__secondary-main); color: var(--uxdsl__palette__secondary-contrast); border: var(--uxdsl__surface__contained-border); box-shadow: var(--uxdsl__surface__contained-shadow); --uxdsl__button__tone-main: var(--uxdsl__palette__secondary-main); --uxdsl__button__tone-dark: var(--uxdsl__palette__secondary-dark); --uxdsl__button__tone-contrast: var(--uxdsl__palette__secondary-contrast);
+}
+
+.btn-secondary:hover:not(:where(:disabled, [aria-disabled="true"])) { background: var(--uxdsl__button__contained-tone-secondary-hover-bg, var(--uxdsl__button__contained-hover-bg)); color: var(--uxdsl__button__contained-tone-secondary-hover-color, var(--uxdsl__button__contained-hover-color)); }
+
+.btn-secondary:focus-visible { outline: var(--uxdsl__button__contained-tone-secondary-focusvisible-outline, var(--uxdsl__button__contained-focusvisible-outline)); outline-offset: var(--uxdsl__button__contained-tone-secondary-focusvisible-outline-offset, var(--uxdsl__button__contained-focusvisible-outline-offset)); }
+
+.btn-secondary.is-selected, .btn-secondary[aria-pressed="true"], .btn-secondary[aria-selected="true"] { background: var(--uxdsl__button__contained-tone-secondary-selected-bg, var(--uxdsl__button__contained-selected-bg)); color: var(--uxdsl__button__contained-tone-secondary-selected-color, var(--uxdsl__button__contained-selected-color)); }
+
+.btn-secondary:disabled, .btn-secondary[aria-disabled="true"] { opacity: var(--uxdsl__button__contained-tone-secondary-disabled-opacity, var(--uxdsl__button__contained-disabled-opacity)); cursor: var(--uxdsl__button__contained-tone-secondary-disabled-cursor, var(--uxdsl__button__contained-disabled-cursor)); }
+
+.x {
+  padding: var(--uxdsl__density__2);
+  width: calc(100% - 32px);
+}

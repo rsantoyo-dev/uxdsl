@@ -1,0 +1,34 @@
+.card {
+  margin: 0;
+}
+
+.card {
+  @ds-surface(contained);
+  padding: density(4);
+  color: palette(primary.main);
+  border-color: palette(primary.main, 0.5);
+  gap: xs(8px) md(16px);
+}
+.card__title {
+  @ds-typo(h2);
+  color: color(gray.900);
+}
+.card--active {
+  box-shadow: shadow(2);
+}
+.card .icon {
+  width: 24px;
+}
+
+.btn-primary {
+  @ds-button(contained primary 1);
+}
+
+.btn-secondary {
+  @ds-button(contained secondary 2);
+}
+
+.x {
+  padding: density(2);
+  width: calc(100% - 32px);
+}
