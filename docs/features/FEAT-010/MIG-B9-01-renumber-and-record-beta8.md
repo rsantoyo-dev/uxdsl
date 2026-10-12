@@ -241,4 +241,30 @@ pending.
 
 ## 15. Findings and follow-ups
 
-None yet.
+- **T3's rule, narrowed (stop rule of §7 applied to the test, not to the
+  contract).** The rule as written — any `0.5.0-beta.<n>` with `n < 9` outside
+  the history folders unless the sentence says "beta.8" or "published" —
+  flags about 45 true sentences about history (`Until 0.5.0-beta.6 this was
+  the separate uxdsl-cli package` in four integration pages, version fixtures
+  in `scripts/release.test.js`, the migration guide's measured upgrades). The
+  test implements what the rule is for: a version below the package's own
+  that is still called unreleased or pinned to a date ("as of 20…"), and the
+  never-published `0.5.0-beta.7` named without saying so. AC3 holds as
+  written (a planted `0.5.0-beta.7` in the package README fails it), and the
+  negative control plants both stale shapes and four truthful ones.
+- **C8:** no playground capture contains a version string at the base (`git
+  grep 0.5.0-beta.7 packages/playground-nextjs` is empty), so there is nothing
+  to regenerate.
+- **C6:** `fixtures/release-1.0/contrast-baseline.json`'s `version` is the
+  version at pin time (`contrastBaselineOf(report, version)`), and the gate
+  compares only the pair sets; it now reads `0.5.0-beta.9`.
+- `package-lock.json` was regenerated with `npm install --package-lock-only
+  --offline`: only the root `version` and `packages[""].version` changed.
+- The root README's sentence "as of 2026-09-28 both point to
+  `0.5.0-beta.6`" was stale (`latest` is `0.5.0-beta.8`); it now points at
+  the beta.8 record, which holds the tags as read on 2026-10-11.
+- The CHANGELOG's beta.9 section still holds FEAT-009's entries, which first
+  reached npm in beta.8; its intro says so, and the beta.8 section lists them.
+  Moving them is MIG-B9-52.
+- Preconditions 2 and 3 (`npm view …`) were not run: this session has no
+  access to the npm registry. The registry state is the one §2 records.

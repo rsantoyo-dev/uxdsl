@@ -995,10 +995,10 @@ page.
 (hue and chroma held fixed, only lightness moved, in both directions,
 smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
 full before/after table), and `report.passed` stayed honestly `false` for a
-while: 123 failing pairs as of 2026-09-28. MIG-B7-01 (FEAT-009) closed one
+while: 123 failing pairs in `0.5.0-beta.8`. MIG-B7-01 (FEAT-009) closed one
 of phase 3's three findings — `inputs.*.base.placeholder` follows the
 requested tone on `contained`, the only Input role whose background
-actually tints — and stability phase 5 (unreleased, `0.5.0-beta.7`) closed
+actually tints — and stability phase 5 (`0.5.0-beta.9`) closed
 the rest: `checkThemeContrast(resolveTheme(), { exceptions })` with the
 shipped exceptions file reports **`passed: true` — 1004 pairs checked, 0
 failing, 111 excepted, no exception issue** (824/0/98 before the same phase
@@ -1015,8 +1015,8 @@ three patterns, every covered pair still listed. The 111 excepted pairs are
 all of that class; reverting any corrected value makes the gate fail again,
 not through an exception (`test/base-theme-contrast.test.js`).
 
-**Input placeholder tone (MIG-B7-01, FEAT-009 — `0.5.0-beta.7`, unreleased as
-of 2026-09-28; `0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
+**Input placeholder tone (MIG-B7-01, FEAT-009 — published in `0.5.0-beta.8`;
+`0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
 
 ```css
 .field { @ds-input(contained error); }
@@ -1044,7 +1044,7 @@ before every other rule (and an `@charset` only as the very first thing);
 a browser silently discards one that follows a style rule. Through
 `0.5.0-beta.6` compiled output — the CLI, `compile()`, the plugin — put the
 theme's `:root` block above every import, so the font request was never made.
-From `0.5.0-beta.7` (unreleased as of 2026-09-28) the theme's imports come first (after your `@charset`, if you have one),
+From `0.5.0-beta.8` the theme's imports come first (after your `@charset`, if you have one),
 then any `@import` you wrote yourself in the order you wrote it, then the
 theme's `:root`. Nothing you wrote is reordered. Two consequences worth
 knowing: Inter is actually requested (and your visitors' browsers contact
@@ -1202,7 +1202,7 @@ one, so `uxdsl build` names both the file and the exact key. Every structural
 problem is `UXD_THEME_INVALID` with a key path (see "One theme validator"
 below); a breakpoint-map problem is `UXD_BP_INVALID`, reported once.
 Button/Input closed-set errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) do not carry a
-key path (as of 2026-09-29); they still preserve their code and message.
+key path yet; they still preserve their code and message.
 
 The per-family default constants (`DEFAULT_RADII`, `DEFAULT_SHADOWS`,
 `DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`,
@@ -1533,7 +1533,7 @@ is covered from the start in
 [the CLI guide's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#editor-support).
 
 **In a plain `uxdsl.config.cjs`**, with no TypeScript in the project — the form
-`uxdsl init` writes since `0.5.0-beta.7` (unreleased as of 2026-09-28),
+`uxdsl init` writes since `0.5.0-beta.8` (then the `uxdsl-cli` package),
 type-only, nothing loaded at run time:
 
 ```js
@@ -1673,7 +1673,7 @@ fails; `--no-include-theme` overrides every entry).
 
 ## Guide for AI agents
 
-Since `0.5.0-beta.7` (unreleased as of 2026-09-28), the package ships the UXDSL
+Since `0.5.0-beta.8` (then `postcss-uxdsl`), the package ships the UXDSL
 agent guide at `docs/agent-guide.md`, generated from
 the repository's `AGENTS.md` for this exact version. Point a consuming project's
 agent instructions at `node_modules/uxdsl/docs/agent-guide.md` rather

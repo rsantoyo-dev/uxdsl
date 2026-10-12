@@ -2,7 +2,7 @@
 
 UXDSL is a design-system-oriented CSS dialect with compiler + runtime tooling.
 
-## One package: `uxdsl` (0.5.0-beta.7)
+## One package: `uxdsl` (next release: 0.5.0-beta.9)
 
 ```bash
 npm i -D uxdsl
@@ -15,11 +15,12 @@ theme runtime are one package, [`uxdsl`](packages/uxdsl/README.md), with one
 entry point per job: `uxdsl` (`compile()`), `uxdsl/postcss`, `uxdsl/vite`,
 `uxdsl/webpack`, `uxdsl/runtime`, `uxdsl/theme`, `uxdsl/language`,
 `uxdsl/config` and `uxdsl/engine` (tooling, exempt from semver). It ships in
-`0.5.0-beta.7`, its first release under that name; `0.5.0-beta.6` and earlier
-were published as five packages. The old → new import table is in the
+`0.5.0-beta.9`, its first release under that name. `0.5.0-beta.8`
+(2026-10-08, [record](docs/releases/0.5.0-beta.8.md)) was the last release
+published as five packages; no `0.5.0-beta.7` was ever published. The old → new import table is in the
 [CHANGELOG](packages/uxdsl/CHANGELOG.md#package-layout-stability-phase-4-decision-de-1);
 the five former names are deprecated in favour of `uxdsl`
-([release record and publish steps](docs/releases/0.5.0-beta.7.md)). `npm run verify:1.0`
+([release record and publish steps](docs/releases/0.5.0-beta.9.md)). `npm run verify:1.0`
 is the release gate: one tarball, installed the documented way, plus real
 Vite, Webpack, Next.js and Chrome runs.
 
@@ -50,9 +51,9 @@ by stability phase 5 (unreleased): `checkThemeContrast` on
 `dark` used as a tone and drawn on the page, covered by three pattern
 exceptions and still listed pair by pair, never counted as passing);
 `uxdsl theme --contrast` in a zero-config project exits 0 and prints the same
-report. What comes next is planned in
-[FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md): `0.5.0-beta.7` first, then
-`0.5.0-rc.1`.
+report. What came next was planned in
+[FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md) and shipped as
+`0.5.0-beta.8`.
 
 ## 0.5.0-beta.5 — published
 
@@ -111,7 +112,8 @@ installation hardening is tracked in
 
 The five npm packages were published as `0.5.0-beta.1` with coordinated
 internal dependencies. Both `latest` and `beta` pointed to that release at the
-time; as of 2026-09-28 both point to `0.5.0-beta.6` (`npm view <package>
+time. Their current tags are recorded in
+[docs/releases/0.5.0-beta.8.md](docs/releases/0.5.0-beta.8.md) (`npm view <package>
 dist-tags`). The
 release script accepts beta versions and updates the CLI's actual dependency
 on `postcss-uxdsl`.
