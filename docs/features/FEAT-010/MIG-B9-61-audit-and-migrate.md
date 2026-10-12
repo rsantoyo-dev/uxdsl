@@ -175,4 +175,8 @@ To be filled in the delivering PR, with the parser decision of §7.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- A3/AC2 delete the strict test while §6 keeps its `.tsx` rules as a repository test; §7 leaves the parser undecided and suggests `postcss-scss` "as a devDependency", which consumers would not have and which MIG-B9-13 deletes. Cites `/docs/cli` (now `/docs/tooling`). Recommended: defer; keep the repository's strict test.

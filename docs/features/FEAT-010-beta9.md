@@ -104,11 +104,39 @@ questions; the register in [FEAT-010/README.md](FEAT-010/README.md) maps them.
 | DEC-12 | `surface`, `light` and `dark` as a tone on a transparent-background role (`outlined`, `flat`, `underline`) or on any Input are compile errors; the three pattern exceptions of the contrast gate are deleted. This reverses the audit's DE-7 on purpose. | **Recommended**, owner to confirm (plan D-8, §4.3) | MIG-B9-35 |
 | DEC-13 | Inputs show the invalid state on `:user-invalid` and `[aria-invalid="true"]`, not on `:invalid`. | **Recommended**, owner to confirm (plan §8 2c, F‑12) | MIG-B9-36 |
 | DEC-16 | Evidence is recorded once, in the story, in the same PR that delivers it; the merge commit identifies the delivery. No follow-up "fix SHA" commits. This reconciles the audit (§5.5: no evidence tables, no SHA commits) with AGENTS.md (record evidence in the story). | **Recommended**, owner to confirm | all |
+| DEC-17 | Names UXDSL reserves in Sass: whether `@function color/space/density/palette/radius/border/shadow` and mixins named after a breakpoint are compile errors (MIG-B9-11 R4), or are allowed and shadow the UXDSL function in that file with a warning. Reserving them breaks the rename promise of DEC-00 for SCSS that defines such helpers; allowing them makes a token call mean two things. | **Open**, raised by the review of 2026-10-11; no recommendation yet | MIG-B9-11, MIG-B9-15, MIG-B9-50 |
 
 A story whose decision is only recommended starts as **Blocked (DEC-nn)**.
 The owner can confirm several decisions in one message; the agent that reads
 it records the date in this table and in each story, and changes the status
 to Ready.
+
+### Review of 2026-10-11
+
+A static review of every story against `main` at `685c132` (three reviewers,
+one per group of waves) found the plan's measurements accurate and its
+direction sound, and raised findings that each story now lists in its §15
+under "Review of 2026-10-11". None changes a decision's state; they are the
+reviewer's recommendations for the owner:
+
+| Decision | Review recommendation |
+| --- | --- |
+| DEC-02, DEC-04, DEC-16 | Confirm as written. |
+| DEC-03 | (b), with MIG-B9-91 split into 91a (beta.9: waves 0–3, the Press Craftor re-run, an English beta.8 → beta.9 migration section) and 91b (beta.10). |
+| DEC-05 | Confirm, with every Sass construct detected (not only `$name`) and a specific message for `--x: $var`. |
+| DEC-06 | Confirm, with a warning whenever a build emits no theme (every host, watch included), not only for `builds`. |
+| DEC-07 | Defer to beta.10; compare with `@media (--lg)` first. |
+| DEC-08 | Confirm, keeping `:root[data-theme='dark']` in the selector, re-declaring only palette-dependent composites, and testing author overrides. |
+| DEC-09, DEC-10 | One inheritance rule for Surfaces, Buttons, Inputs and Typography: inherit by default, `"extends": "none" \| "<role>"`. Drop the removal of `default`'s margins (`h1` has no top margin of its own). |
+| DEC-11 | Defer, or confirm without hand-written compiled names in the base theme and with an opt-out. |
+| DEC-12 | Defer, or derive the rejection per mode from the contrast predicate instead of family names. |
+| DEC-13 | Confirm, emitting `:is(:user-invalid, [aria-invalid="true"])`. |
+| DEC-17 | Open; the owner's call. |
+
+Scope recommended by the review: beta.9 = waves 0–2 plus MIG-B9-31 and
+MIG-B9-36; MIG-B9-30, 32, 33's margin change and 35 later; MIG-B9-60, 61, 63
+and 65 when users ask; MIG-B9-64 cut. Waves 4–7 are marked "Draft
+(re-baseline after wave 3)" in the index.
 
 ## 3. Scope, in waves
 

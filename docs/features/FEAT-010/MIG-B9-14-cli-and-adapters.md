@@ -219,4 +219,11 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- A5: `uxdsl init` for Next.js does not write `@uxdsl theme;` today; `POSTCSS_SNIPPET` passes `includeTheme: false` (bin/uxdsl.js:1814). Correct the claim and say which story adds the marker.
+- A4: `@use` isolates variables. Today `@import` inlining shares `$vars` across files (that is why `PRIORITY_PATTERNS` lists `variables` and `theme-def`); with `@use … as ns` a shared variables file breaks. Document it, test it, and reconsider the generated entry.
+- A1: see MIG-B9-12 — the code frame must show the author's text, not the protected text.
+- The baseline reads another agent's worktree; use repository files only.

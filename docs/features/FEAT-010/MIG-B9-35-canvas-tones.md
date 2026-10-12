@@ -177,3 +177,11 @@ To be filled in the delivering PR.
 ## 15. Findings and follow-ups
 
 Remaining failing pairs after N1–N2, if any, with the owner's options.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- N1 rejects legible code: the contrast baseline excepts `dark` pairs only in dark mode (23 records, none in light), so `flat dark` passes in light mode and in any theme without `modes.dark`. Hard-coding family names also contradicts "palette names carry no fixed meaning"; it rejects `flat light` on a dark contained parent (the compiler assumes the background is `surface.main`) and checks the Surface's `bg` while a control's own `base.bg` can override it.
+- Recommended: derive the rejection per mode from the effective theme's contrast predicate, or make it a warning; otherwise defer.
+- The underline Input's focus treatment is `underline`, not `border`.
