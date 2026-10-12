@@ -1,0 +1,22 @@
+@use "sass:math";
+@use "sass:map";
+$tones: (primary: 1, secondary: 2);
+$gutter: 16px;
+@function half($v) { @return math.div($v, 2); }
+@mixin pad($v) { padding: $v; }
+%reset { margin: 0; }
+.card {
+  @extend %reset;
+  @ds-surface(contained);
+  padding: density(4);
+  color: palette(primary.main);
+  border-color: palette(primary.main, 0.5);
+  gap: xs(half($gutter)) md($gutter);
+  &__title { @ds-typo(h2); color: color(gray.900); }
+  &--active { box-shadow: shadow(2); }
+  .icon { width: math.div(48px, 2); }
+}
+@each $t, $n in $tones {
+  .btn-#{$t} { @ds-button(contained $t $n); }
+}
+.x { @include pad(density(2)); width: calc(100% - #{$gutter * 2}); }
