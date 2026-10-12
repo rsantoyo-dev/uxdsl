@@ -215,4 +215,14 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Blocking — silent loss of the theme.** M4 warns only for `builds` projects. Single-entry CLI builds, Vite and webpack apps and Next.js PostCSS-only setups lose every token without the marker, and M6 keeps the reference checks green, so nothing fails. Warn once per build when a CLI build emits no theme (single entry or `builds`); in Vite/webpack warn at the end of the build when no module, or more than one, emitted it.
+- Under `build --watch`, `runSelectiveBuild` compiles only some entries (`entryIndices`, bin/uxdsl.js ~1014): count `themeEmitted` over the last result of every entry, not the rebuilt subset.
+- A marker in a shared partial brings back the theme-per-module problem: every module that `@use`s the partial emits it. Make a marker reached through `@use`/`@import` from more than one module a warning.
+- Factual: the Next.js scaffold does not write the marker; `POSTCSS_SNIPPET` passes `includeTheme: false` (bin/uxdsl.js:1814). After M2 every CSS file Next compiles would warn: drop the option from the snippet in this story.
+- Scope is larger than listed: 43 test files use `includeTheme` 185 times; fixtures `mig07-consumer` (its TypeScript check of `{ theme, includeTheme: false }` runs in README §1's setup and breaks every later story), `parity/run.js`, `mig-b2-03-cli-init`, `webpack-adapter`; playground docs `quick-start/page.mdx:68,88`, `tooling/page.mdx:35-66`, `language/page.tsx:103`. Split the story (engine + CLI; tests and fixtures; docs).
+- AC4 pins 44 bytes measured on the old pipeline; after MIG-B9-13 the formatting is Sass's. Restate: no `:root` in the output, same length as the output of the same source without the marker.
+- Run MIG-B9-22 first: both edit `bin/uxdsl.js`, and 20's M7 is work that 22 then replaces.

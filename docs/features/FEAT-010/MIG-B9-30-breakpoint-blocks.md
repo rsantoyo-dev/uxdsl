@@ -210,3 +210,14 @@ To be filled in the delivering PR.
 - Owner's call recorded here: `not-found.uxdsl`'s 600 px threshold moves to
   `@md` (768 px) by default; keeping 600 px would need an allowlisted
   `@media` in MIG-B9-43.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Name collisions.** Breakpoint names are only checked against `^[a-z][a-z0-9-]*$` (theme-validate.ts:68), so a breakpoint called `page`, `layer`, `container`, `media`, `scope`, `theme`, `uxdsl`, `else` or `content` would turn those at-rules into breakpoint blocks. Reserve them in `validateTheme`.
+- Declarations directly in a top-level block (`@lg { color: red }`) pass Sass and become `@media { color: red }`, which browsers drop: make it an error.
+- A responsive function inside a block: with the plugin alone the at-rule branch (plugin.ts ~555-569) inserts the clone at the root without its selector; through Sass `md()` ends up applying from lg up. Make it `UXD_BREAKPOINT_CONTEXT`.
+- `@ds-button`/`@ds-input` inside a block creates a second set of states on another rule node and bypasses `UXD_DIRECTIVE_DUPLICATE`: define it, preferably as an error.
+- Cascade against `lg()`: the media query from `lg()` is inserted right after its rule and the block Sass moves out lands after it, so the block wins whatever the source order. Pin it with a test.
+- Value: directives under a nested `@media` already work (MIG-B9-10 D10; SideNav does it today). Consider `@media (--lg)` (CSS custom-media syntax: no name collisions, Sass merges it with outer queries) before adding an at-rule per breakpoint; the playground's stylelint `scss/at-rule-no-unknown` would also need the names. Recommended: defer to beta.10.

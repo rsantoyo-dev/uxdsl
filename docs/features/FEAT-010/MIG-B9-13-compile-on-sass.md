@@ -252,4 +252,13 @@ and after and the `uxdsl.css` diff summary.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **"Byte-identical" is not achievable through Sass.** Expanded style re-lays-out whitespace and one-line rules, turns `''` into `""` (the playground has 66 single-quoted strings), writes `.5` as `0.5` and `16 / 9` as `16/9`, drops empty rules and adds `@charset "UTF-8"` for non-ASCII text. Restate §5 and AC7 as "equal to Dart Sass's output for the same source", list Sass formatting as its own hunk category in the parity diff, and add a CHANGELOG line.
+- P2 is narrower than DEC-05: it catches only `$name`; `@include`, `@use`, `#{}` and `&__x` in a `.css` compiled by the plugin alone still pass silently. Detect all of them.
+- Sass does not evaluate `$var` inside a custom-property value (it needs `#{$var}`), so `--x: $gap` reaches the plugin through `compile()` and gets a message telling the author to use `compile()`. Today the subset substitutes it: a regression. Give it its own message ("write `#{$gap}`").
+- Plugin warnings are not mapped: a PostCSS `Warning` uses the node's generated position, not `input.origin`. P4 must map warnings as well as errors.
+- P5's "correct by one" is fragile across the `postcss` peer range `^8.4.31`; use `originalPositionFor` directly.
+- Tests owned by MIG-B9-14 (`watch-mode:496`, `vite:117`, `webpack:80`) need edits in this story; list them in Shares.

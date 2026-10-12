@@ -171,3 +171,10 @@ To be filled in the delivering PR.
 
 - Next 14's bundled `postcss` 8.4.31 remains in the playground lockfile until
   the playground moves to Next 16 (MIG-B9-43).
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- `fixtures/mig02-nextjs-cssmodules` has no lockfile, so "refresh" there means `npm install`; say which versions the fixture pins.
+- A precondition `cd ../..` depends on the previous line's `cd`; make each line runnable from the repository root.

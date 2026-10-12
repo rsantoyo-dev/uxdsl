@@ -149,4 +149,8 @@ To be filled in the delivering PR, with the bytes before and after.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Recommended cut.** Vite, webpack and Next's PostCSS compile each module alone; after MIG-B9-20 the marker file sees only its own references, so tokens used in other modules would be pruned silently, against clause 7. U2's "the CLI compiles every entry before writing" does not hold in watch mode (`runSelectiveBuild(indices)`, bin/uxdsl.js ~1508-1517). The 47 KB theme block is about 5 KB gzipped.

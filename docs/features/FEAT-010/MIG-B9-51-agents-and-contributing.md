@@ -155,4 +155,8 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- AGENTS.md is the repository's only agent instruction file (there is no CLAUDE.md) and the guide generator copies it byte for byte: moving "Maintaining this guide" to CONTRIBUTING.md removes the repository rules from what implementing agents load. Add a CLAUDE.md that points at CONTRIBUTING.md, or a repo-only section the generator strips.

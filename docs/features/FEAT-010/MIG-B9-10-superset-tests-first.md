@@ -361,4 +361,12 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **The case list is not in the repository.** The 63 protect/restore cases, the tokenizer prototype and its `lib.js` are referred to as normative, but `docs/audits/2026-10-09-sass-layer/` holds only the regex prototype. Commit them (as `test/core/fixtures/protect-cases.js` or under the audit folder) before MIG-B9-11, or 11 T6's control cannot be checked.
+- The source-map fixture is incomplete: no `c: $undefined`, `m.broken-pad` is never included (so Sass never emits it), and the "successful map" assertion expects `space(4)` while the file has `space(404)`.
+- §7.1 "UXDSL cases → today's `compile()` output" is wrong for every case that also nests (nest-09…12, mixin-07): Sass flattens. Record Dart Sass's output for those.
+- C6.6: with the theme emitted, Bootstrap's output is not a prefix of the result; compare with `includeTheme: false` or strip the theme run.
+- A precondition reads the owner's checkout or another agent's worktree, against README §1.2; use only files in the repository.

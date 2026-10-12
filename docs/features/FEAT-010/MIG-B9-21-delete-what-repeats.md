@@ -196,3 +196,10 @@ K6 decision.
 ## 15. Findings and follow-ups
 
 Dead exports of semver-bound entries found by K1 are listed here for 1.0.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- K5 leaves `themeVar`, `spaceVar` and `colorVar` silently ignored: the plugin never warns about an option it does not know. Add one generic unknown-option warning instead of a list of removed names.
+- `plugin.ts` is missing from this story's Shares and from README §7's row for it.
