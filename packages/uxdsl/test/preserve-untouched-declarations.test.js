@@ -53,5 +53,5 @@ test('MIG-B9-05 (positive control): a responsive value is still split, and an un
   const out = throughPlugin('a{margin: 0 /* c */ auto; padding: xs(1px) md(2px);}');
   assert.match(out, /margin: 0 \/\* c \*\/ auto;/);
   assert.match(out, /padding: 1px/);
-  assert.match(out, /@media \(min-width: \d+px\) \{\s*a\s*\{\s*padding: 2px/);
+  assert.match(out, /@media \(min-width: \d+px\)\s*\{\s*a\s*\{\s*padding: 2px;/);
 });
