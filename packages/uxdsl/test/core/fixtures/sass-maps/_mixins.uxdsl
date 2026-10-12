@@ -1,0 +1,12 @@
+// Partial: mixins that use UXDSL inside Sass constructs.
+@use "sass:math";
+
+@mixin card($tone, $size: 2) {
+  @ds-surface(outlined $tone $size);
+  gap: xs(math.div(16px, 2)) md(16px);
+  &__title { @ds-typo(h3); color: palette(#{$tone}.main); }
+}
+
+@mixin broken-pad {
+  padding: density(99);
+}

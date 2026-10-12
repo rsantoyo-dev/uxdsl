@@ -1314,6 +1314,14 @@ lists it), and a `$name` nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeR
 breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
 
+The SCSS subset is being replaced by real Dart Sass in `compile()` (FEAT-010,
+wave 1), so that a `.scss` file renamed to `.uxdsl` compiles to the CSS Dart
+Sass produces for it. The tests that pin that pipeline — the protect/restore
+cases, source-map positions through both stages, the pipeline behaviors and a
+Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
+of the implementation, as pending (`todo`) tests; until it lands, `compile()`
+behaves as described above.
+
 
 ### One theme validator (`validateTheme`)
 
