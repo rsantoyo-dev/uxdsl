@@ -36,7 +36,15 @@ jobs:
       - name: Prepare the consumer fixture (packs uxdsl, installs the tarball)
         run: node fixtures/mig07-consumer/run.js
       - name: Test
-        run: npm test
+        run: |
+          set +e
+          npm test > /tmp/test.log 2>&1
+          status=$?
+          grep -n -E -B2 -A30 "^not ok|^# fail [1-9]|not ok [0-9]|Stale|npm ERR|ERR!|Error:|failed" /tmp/test.log | head -300 > /tmp/fail.txt
+          tail -40 /tmp/test.log >> /tmp/fail.txt
+          msg=$(sed -e 's/%/%25/g' -e 's/\r//g' /tmp/fail.txt | awk '{printf "%s%%0A", $0}')
+          echo "::error title=npm test output::$msg"
+          exit $status
 
   gate:
     name: verify:1.0 (one tarball, real Chrome)

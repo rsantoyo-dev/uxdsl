@@ -9,13 +9,18 @@ that have not been published to npm — the package version stays at whatever
 [`docs/migration.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md)
 for a narrative migration guide covering the same ground.
 
-## 0.5.0-beta.7 — unreleased
+## 0.5.0-beta.9 — unreleased
 
-The first release of the one package, `uxdsl`. Everything in this section has
-been on `main` since 0.5.0-beta.6: FEAT-009's beta.7 stories and stability
-phases 0–5, the dependency replacements (no `braces`, no `postcss@7`) and the
-first half of phase 6 (the playground site). What is still open moves to
-0.5.0-beta.8; see `docs/releases/0.5.0-beta.7.md`.
+No `0.5.0-beta.7` was ever published. `0.5.0-beta.8` (2026-10-08) was the last
+release of the five-package layout, built from `0446d7c` without the stability
+work.
+
+The first release of the one package, `uxdsl`: stability phases 0–5, the
+dependency replacements (no `braces`, no `postcss@7`), the first half of phase
+6 (the playground site) and FEAT-010's beta.9 stories. This section also keeps
+the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
+reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
+them. See `docs/releases/0.5.0-beta.9.md`.
 
 ### Package layout (stability phase 4, decision DE-1)
 
@@ -1203,6 +1208,23 @@ FEAT-009, MIG-B7-15 (upgrade without surprises; no visual change):
   see families the project declared — measured from beta.5 to beta.6 — plus
   what that comparison cannot see (compiler changes: read `Visual changes`
   here) and how to retire local patches that a release made unnecessary.
+
+## 0.5.0-beta.8 — 2026-10-08
+
+The last release of the five former packages, each at `0.5.0-beta.8`:
+`postcss-uxdsl`, `uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl` and
+`uxdsl-webpack-loader`. Built from `0446d7c`, it contains FEAT-009's beta.7
+stories and none of the stability work; their entries are in the section
+above, marked "FEAT-009, MIG-B7-…":
+
+- the Google Fonts `@import` placed before every other rule (MIG-B7-14);
+- the typed `uxdsl.config.cjs` that `uxdsl init` writes (MIG-B7-12);
+- the upgrade flow, `uxdsl theme --diff` (MIG-B7-15);
+- the agent guide packaged at `node_modules/postcss-uxdsl/docs/agent-guide.md`;
+- the Input `placeholder` following the requested tone on `contained`
+  (MIG-B7-01).
+
+Record: `docs/releases/0.5.0-beta.8.md`.
 
 ## 0.5.0-beta.6 — 2026-09-23
 
