@@ -307,6 +307,10 @@ With `includeTheme: true` (the default) the compiled stylesheet is, in order:
 5. the author's rules, in written order, with the `@media` blocks the compiler
    creates for their responsive declarations right after each rule.
 
+A declaration the grammar does not change is printed exactly as written, with
+its spacing and inline comments (`margin: 0 /* c */ auto`, an empty
+`--x: ;`); a declaration whose tokens are rewritten keeps its comments too.
+
 So an author's own `:root { --uxdsl__palette__primary-main: … }` comes
 **after** the theme's declaration of the same name and wins the cascade, the
 way any later declaration of a custom property does. Before stability phase 1
