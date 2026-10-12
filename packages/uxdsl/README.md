@@ -307,6 +307,10 @@ With `includeTheme: true` (the default) the compiled stylesheet is, in order:
 5. the author's rules, in written order, with the `@media` blocks the compiler
    creates for their responsive declarations right after each rule.
 
+A declaration the grammar does not change is printed exactly as written, with
+its spacing and inline comments (`margin: 0 /* c */ auto`, an empty
+`--x: ;`); a declaration whose tokens are rewritten keeps its comments too.
+
 So an author's own `:root { --uxdsl__palette__primary-main: … }` comes
 **after** the theme's declaration of the same name and wins the cascade, the
 way any later declaration of a custom property does. Before stability phase 1
@@ -1309,6 +1313,14 @@ implementation of `$variables`, `@if`/`@else`, `@each`, `@for`,
 lists it), and a `$name` nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
 breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
+
+The SCSS subset is being replaced by real Dart Sass in `compile()` (FEAT-010,
+wave 1), so that a `.scss` file renamed to `.uxdsl` compiles to the CSS Dart
+Sass produces for it. The tests that pin that pipeline — the protect/restore
+cases, source-map positions through both stages, the pipeline behaviors and a
+Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
+of the implementation, as pending (`todo`) tests; until it lands, `compile()`
+behaves as described above.
 
 
 ### One theme validator (`validateTheme`)

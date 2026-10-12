@@ -1,0 +1,21 @@
+@use "sass:map";
+@use "./mixins" as m;
+
+$tones: (primary: 1, secondary: 2);
+$gutter: 16px;
+
+%reset { margin: 0; }
+
+.card {
+  @extend %reset;
+  @include m.card(primary);
+  .icon { width: $gutter * 2; color: palette(primary.main); border-color: palette(secondary.main, 0.5); }
+  @each $t, $n in $tones {
+    &--#{$t} { @ds-button(contained $t $n); }
+  }
+  &__body {
+    @media (min-width: 600px) {
+      padding: density(2); margin: space(1); outline: border(1); inset: space(4);
+    }
+  }
+}

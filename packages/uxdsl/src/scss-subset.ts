@@ -202,7 +202,10 @@ class Expansion {
   }
 
   private declaration(decl: Declaration): void {
-    decl.value = this.substitute(decl.value, decl);
+    // Assigned only on change: PostCSS prints the author's raw text (comments,
+    // spacing) only while the value is the one it parsed.
+    const substituted = this.substitute(decl.value, decl);
+    if (substituted !== decl.value) decl.value = substituted;
     if (VARIABLE_DECLARATION.test(decl.prop)) {
       this.declare(decl.parent as Node, decl.prop.slice(1), decl.value);
       decl.remove();
