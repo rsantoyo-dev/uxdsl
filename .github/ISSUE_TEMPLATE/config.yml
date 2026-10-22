@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Documentation
+    url: https://uxdsl.io
+    about: The language, the theme, the integrations and every UXD_* diagnostic.
+  - name: Stability policy
+    url: https://github.com/rsantoyo-dev/uxdsl/blob/main/STABILITY.md
+    about: What a version number promises before and after 1.0.
