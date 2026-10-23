@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None (owner decision of 2026-10-08: the first `uxdsl` release is `0.5.0-beta.9`) |
-| Status | Merged |
+| Status | In review (PR #33) |
 | Size | S |
 | Depends on | — (first story; creates the integration branch `feat/beta9`) |
 | Blocks | MIG-B9-03, MIG-B9-52, MIG-B9-91 |
