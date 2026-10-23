@@ -181,12 +181,12 @@ its wave can run in parallel with its siblings, within §7.
 
 | ID | Story | Wave | Decision gate | Size | Depends on | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| MIG-B9-01 | [Renumber to 0.5.0-beta.9 and record beta.8](MIG-B9-01-renumber-and-record-beta8.md) | 0 | — | S | — | Ready |
+| MIG-B9-01 | [Renumber to 0.5.0-beta.9 and record beta.8](MIG-B9-01-renumber-and-record-beta8.md) | 0 | — | S | — | Merged (PR #33) |
 | MIG-B9-02 | [Refresh the repository's dependencies](MIG-B9-02-dependencies.md) | 0 | — | S | — | Ready |
 | MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | Ready |
-| MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Ready |
+| MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Merged (PR #30) |
 | MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | Blocked (DEC-02) |
-| MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | Ready |
+| MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | In progress (part 1 merged, PR #34) |
 | MIG-B9-11 | [`src/sass/protect.ts`: protect and restore](MIG-B9-11-protect-and-restore.md) | 1 | DEC-01 | M | 10 | Ready |
 | MIG-B9-12 | [`src/sass/compile-sass.ts`: Dart Sass with the `.uxdsl` importer](MIG-B9-12-compile-sass.md) | 1 | DEC-01, DEC-04 | M | 11 | Blocked (DEC-04) |
 | MIG-B9-13 | [`compile()` on the new pipeline; the subset deleted](MIG-B9-13-compile-on-sass.md) | 1 | DEC-01, DEC-05 | M | 12 | Blocked (DEC-05) |
@@ -209,7 +209,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-50 | [README, home and quick start](MIG-B9-50-readme-home-quick-start.md) | 5 | — | M | 15, 20 | Draft (re-baseline after wave 3) |
 | MIG-B9-51 | [AGENTS.md and CONTRIBUTING.md](MIG-B9-51-agents-and-contributing.md) | 5 | — | M | 15 | Draft (re-baseline after wave 3) |
 | MIG-B9-52 | [Migration guide in English; CHANGELOG "What changes for you"](MIG-B9-52-migration-and-changelog.md) | 5 | — | S | 01 | Draft (re-baseline after wave 3) |
-| MIG-B9-53 | [Signals that it is maintained](MIG-B9-53-maintenance-signals.md) | 5 | — | S | — | Draft (re-baseline after wave 3) |
+| MIG-B9-53 | [Signals that it is maintained](MIG-B9-53-maintenance-signals.md) | 5 | — | S | — | Merged (PR #35) |
 | MIG-B9-54 | ["Why UXDSL" and the browser examples](MIG-B9-54-why-uxdsl-and-browser-examples.md) | 5 | — | M | 50 | Draft (re-baseline after wave 3) |
 | MIG-B9-55 | [The VS Code extension, packaged](MIG-B9-55-vscode-extension.md) | 5 | — | S | 30 | Draft (re-baseline after wave 3) |
 | MIG-B9-60 | [`uxdsl doctor [--fix]`](MIG-B9-60-doctor.md) | 6 | — | M | 20 | Draft (re-baseline after wave 3) |

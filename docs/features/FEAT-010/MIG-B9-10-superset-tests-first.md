@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | In progress (part 1 in review; C1–C2 pending a session with the npm registry) |
+| Status | In progress (part 1 merged, PR #34; C1–C2 need a session with the npm registry) |
 | Size | M |
 | Depends on | MIG-B9-05 (byte-preserving plugin) |
 | Blocks | MIG-B9-11, MIG-B9-12, MIG-B9-13 |
