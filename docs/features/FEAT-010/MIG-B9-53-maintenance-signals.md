@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
 | Wave | 5 |
 | Decision gate | None (plan §6.6, §6.7; audit §5.5) |
-| Status | Ready |
+| Status | In review (PR #35) |
 | Size | S |
 | Depends on | — |
 | Blocks | MIG-B9-50 (links to the files this story creates; can merge in either order if the links are added last) |
@@ -135,7 +135,25 @@ Branch `feat/b9-53-signals`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Base:** `feat/beta9` at `d8677d8`, stacked on MIG-B9-01 (#33). **PR:** #35.
+  **Commits:** `a6b2059` (the files), `c14d9cd` (the test in `npm test`),
+  `e460905` (merges `ci/npm-11`, PR #37).
+- **Environment:** a cloud session without npm registry access; CI on GitHub
+  Actions (ubuntu-latest, Node 20.20.2, npm 11, Chrome for the gate).
+- **Commands:**
+
+  | Command | Where | Exit |
+  | --- | --- | --- |
+  | `node --test scripts/docs-shape.test.js scripts/docs-provenance.test.js scripts/version-mentions.test.js` | local | 0 (16 pass) |
+  | `wc -l < STABILITY.md` / `wc -l < docs/ROADMAP.md` | local | 58 / 34 (AC2: ≤ 80 / ≤ 60) |
+  | `node scripts/verify-docs-update.js` | local | 0 |
+  | `npm test` (includes `scripts/docs-shape.test.js` and the compiled doc examples) | CI, run 39887973617 | 0 |
+  | `npm run verify:1.0` | CI, run 39887973617 | 0 |
+
+- **Controls:** T1's negative control (a README link into `docs/features`)
+  is caught.
+- **Owner steps pending:** open the repository's "New issue" page once to see
+  the three forms render; create the `idea` label if it should be applied.
 
 ## 15. Findings and follow-ups
 
