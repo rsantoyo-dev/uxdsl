@@ -1,0 +1,5 @@
+@use "./mixins" as m;
+
+.panel {
+  color: red; c: $undefined;
+}
