@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | Merged |
+| Status | In review (PR #30) |
 | Size | S |
 | Depends on | — |
 | Blocks | MIG-B9-10 (the Bootstrap corpus cannot be byte-identical without it) |
