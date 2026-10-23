@@ -2,9 +2,9 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. No story is implemented. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). Merged: MIG-B9-01, 05 and 53; in progress: MIG-B9-10. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
-| Release | `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package. Where beta.9 ends and beta.10 starts is DEC-03. |
+| Release | `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with every wave (DEC-03). |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
 | Index and stories | [FEAT-010/README.md](FEAT-010/README.md) holds the protocol, the test policy, the story template, the order of work and the status table. Each story is one file in [FEAT-010/](FEAT-010/). |
 | Backlog and reasons | [docs/audits/2026-10-08-plan-beta9.md](../audits/2026-10-08-plan-beta9.md) records every candidate with its options. This feature is the executable form of it. |
@@ -91,25 +91,30 @@ questions; the register in [FEAT-010/README.md](FEAT-010/README.md) maps them.
 | DEC-01 | UXDSL is a superset of SCSS through real Dart Sass, in beta.9 (plan D-1). | **Decided**, owner, 2026-10-09 | MIG-B9-10 to 15 |
 | DEC-14 | The playground is UXDSL's reference implementer: one component per concept, every principle demonstrated, nothing hand-written or hardcoded, and the superset shown live. | **Decided**, owner, 2026-10-08 and 2026-10-11 | MIG-B9-40 to 43 |
 | DEC-15 | Public documentation, the stories of this feature and their tests are written in English (audit DE-12). | **Decided**, audit 2026-09-29 | all |
-| DEC-02 | The spacing token function keeps the name `space()`. `spacing()` is an error that names `space()`, like the other removed spellings, and every near-miss of a UXDSL function name is an error with a "did you mean". | **Recommended**, owner to confirm | MIG-B9-04 |
-| DEC-03 | **The release cut.** (a) One release, `0.5.0-beta.9`, with every wave. (b) `0.5.0-beta.9` = waves 0–3 plus the playground changes those waves force; `0.5.0-beta.10` = waves 4–7. The stories and their order are the same either way; only the gate and the publish point move. | **Recommended: (b)**, owner to confirm. The package reaches npm months earlier, Press Craftor stops building on code that will be replaced, and the playground rewrite then runs on the final engine instead of chasing it. | MIG-B9-91 |
-| DEC-04 | `sass` is a regular dependency of `uxdsl` (zero setup for "rename and it works"), not an optional peer. | **Recommended**, owner to confirm | MIG-B9-12 |
-| DEC-05 | The PostCSS plugin used alone compiles CSS plus UXDSL, without Sass: its own `$variable` resolution is deleted, and Sass syntax in a file it compiles is a located error naming `compile()`. | **Recommended**, owner to confirm | MIG-B9-13 |
-| DEC-06 | The theme CSS is written only where `@uxdsl theme;` appears; the `includeTheme` option, config key and flags are removed. Generated entries and `uxdsl init` write the marker. | **Recommended**, owner to confirm | MIG-B9-20 |
-| DEC-07 | The last media query: a breakpoint name used as an at-rule with a block, `@lg { … }`, means "from lg up", exactly as `lg()` does for one value. (The plan's `lg { … }` cannot work: Sass reads it as the descendant selector `.nav lg`; verified.) | **Recommended**, owner to confirm (plan D-2, D-9) | MIG-B9-30 |
-| DEC-08 | Scoped palettes: palette modes match any element (`[data-theme='dark']`, `[data-theme='light']`), and composite tokens are re-declared on every element that carries `data-theme` or `data-uxdsl-scope`, so a palette override there reaches borders, surfaces and controls. | **Recommended**, owner to confirm (plan D-4, Press Craftor F‑16) | MIG-B9-31 |
-| DEC-09 | A custom Button or Input role starts from its own Surface with no states; `"extends": "<role>"` keeps another role's states and base. | **Recommended**, owner to confirm (plan D-5, F‑11) | MIG-B9-32 |
-| DEC-10 | Typography: `default` declares no margins; a role declares its own; `"extends": "none"` opts out of the `default` merge and `"extends": "<role>"` builds on another role. (`null` is not a valid theme leaf, so the plan's `"extends": null` becomes the string `"none"`.) | **Recommended**, owner to confirm (plan D-6, F‑9, F‑13) | MIG-B9-33 |
-| DEC-11 | A `focus` theme family (`outline`, `outline-offset`) and one generated `:where(…):focus-visible` rule; the base Button and Input `focusvisible` states reference it. | **Recommended**, owner to confirm (plan D-7, F‑14) | MIG-B9-34 |
-| DEC-12 | `surface`, `light` and `dark` as a tone on a transparent-background role (`outlined`, `flat`, `underline`) or on any Input are compile errors; the three pattern exceptions of the contrast gate are deleted. This reverses the audit's DE-7 on purpose. | **Recommended**, owner to confirm (plan D-8, §4.3) | MIG-B9-35 |
-| DEC-13 | Inputs show the invalid state on `:user-invalid` and `[aria-invalid="true"]`, not on `:invalid`. | **Recommended**, owner to confirm (plan §8 2c, F‑12) | MIG-B9-36 |
-| DEC-16 | Evidence is recorded once, in the story, in the same PR that delivers it; the merge commit identifies the delivery. No follow-up "fix SHA" commits. This reconciles the audit (§5.5: no evidence tables, no SHA commits) with AGENTS.md (record evidence in the story). | **Recommended**, owner to confirm | all |
-| DEC-17 | Names UXDSL reserves in Sass: whether `@function color/space/density/palette/radius/border/shadow` and mixins named after a breakpoint are compile errors (MIG-B9-11 R4), or are allowed and shadow the UXDSL function in that file with a warning. Reserving them breaks the rename promise of DEC-00 for SCSS that defines such helpers; allowing them makes a token call mean two things. | **Open**, raised by the review of 2026-10-11; no recommendation yet | MIG-B9-11, MIG-B9-15, MIG-B9-50 |
+| DEC-02 | The spacing token function keeps the name `space()`. `spacing()` is an error that names `space()`, like the other removed spellings, and every near-miss of a UXDSL function name is an error with a "did you mean". With the review's precisions: a real CSS function (`shape()`) is never flagged; a top-level name one edit from a breakpoint stays `UXD_BREAKPOINT_UNKNOWN`; the check lives in `language.ts`, so theme values fail the same way. | **Decided**, owner, 2026-10-23 | MIG-B9-04 |
+| DEC-03 | **The release cut: one release.** `0.5.0-beta.9` ships every wave, 0 to 7. There is no `0.5.0-beta.10` in this feature: the roadmap's beta.9 and beta.10 steps become one, and MIG-B9-91 stays one story. | **Decided**, owner, 2026-10-23: option (a). The plan and the review recommended (b). | MIG-B9-91 |
+| DEC-04 | `sass`, the pure-JavaScript Dart Sass package (not `sass-embedded`, so it also runs in the browser), is a regular dependency of `uxdsl` (zero setup for "rename and it works"), not an optional peer. It is loaded only when `compile()` runs: the PostCSS plugin used alone never loads it. | **Decided**, owner, 2026-10-23 | MIG-B9-12 |
+| DEC-05 | The PostCSS plugin used alone compiles CSS plus UXDSL, without Sass: its own `$variable` resolution is deleted, and Sass syntax in a file it compiles is a located error that names the fix (a `.uxdsl` file through `uxdsl build`, `compile()` or an adapter). Every Sass construct is detected, not only `$name`: `@use`, `@forward`, `@mixin`, `@include`, `@function`, `@extend`, the control rules, `#{…}`, `&`-suffix selectors and `%placeholders`. `--x: $var` has its own message: Sass keeps `$var` literally in a custom property; write `#{$var}`. | **Decided**, owner, 2026-10-23 | MIG-B9-13 |
+| DEC-06 | The theme CSS is written only where `@uxdsl theme;` appears; the `includeTheme` option, config key and flags are removed. Generated entries, `uxdsl init` and the Next.js scaffold write the marker. A build that emits no theme warns once, on every host (a single-entry CLI build, `builds`, `build --watch` counted over every entry's last result, Vite, webpack, Next.js), and so does a build in which more than one module emits it (a marker reached through a shared partial). | **Decided**, owner, 2026-10-23 | MIG-B9-20 |
+| DEC-07 | **Amended by the owner.** A block that applies from a breakpoint up is written `@media (--<breakpoint>) { … }`, the CSS custom-media syntax: UXDSL replaces `(--lg)` with the effective theme's `lg` query, so no value is copied by hand, and it combines with other conditions (`@media print and (--lg)`). `@lg { … }` is not added. What is written by hand wins: a literal query such as `@media (min-width: 1024px)` is plain CSS, compiled as written and never rewritten, and a project's own `@custom-media --lg …` replaces the theme's `--lg` in that build, with a warning (the DEC-17 rule). | **Decided**, owner, 2026-10-23: `@media (--lg)`, which the review proposed comparing, instead of `@lg { … }` | MIG-B9-30 |
+| DEC-08 | Scoped palettes: palette modes match any element (`[data-theme='dark']`, `[data-theme='light']`) while `:root[data-theme='dark']` stays in the selector, and the palette-dependent composite tokens, only those, are re-declared on every element that carries `data-theme` or `data-uxdsl-scope`, so a palette override there reaches borders, shadows, surfaces and controls. `[data-theme='light']` re-declares only the palette. Inside a scope the theme's composites win over a hand-written `:root` composite override; the documented place for an override is the theme JSON, and a test pins the rule. Style recalculation with many scopes is measured. | **Decided**, owner, 2026-10-23 | MIG-B9-31 |
+| DEC-09 | **Amended by the owner: one inheritance rule** for Surfaces, Buttons, Inputs and Typography. A role inherits as it does today (Surfaces, Buttons and Inputs from the same-named base role or `contained`; Typography from `default`); `"extends": "none"` starts from nothing but what the role declares; `"extends": "<role>"` inherits from that role instead. `none` is reserved as a role name. A theme that does not write `extends` compiles as before. | **Decided**, owner, 2026-10-23: the review's single rule instead of "a custom role inherits nothing" | MIG-B9-32, MIG-B9-33 |
+| DEC-10 | **Amended by the owner: the DEC-09 rule.** Typography follows it. `default` keeps `marginBlockStart` and `marginBlockEnd` at `0`, so no browser margin comes back; a weight-only role is `{ "extends": "none", "fontWeight": "700" }`. (`null` is not a valid theme leaf, hence the string `"none"`.) | **Decided**, owner, 2026-10-23: the plan's removal of `default`'s margins is dropped | MIG-B9-33 |
+| DEC-11 | A `focus` theme family (`outline`, `outline-offset`) and one generated `:where(…):focus-visible` rule emitted with the theme, at zero specificity. Its selector list covers every focusable element (links and areas with `href`, `button`, `input` including checkboxes, `select`, `textarea`, `summary`, `[tabindex]`, `[contenteditable]`), and a theme can switch the rule off. Base Buttons and Inputs keep their own focus states (the `tone(main)` ring, an Input's focus border), which win by specificity, so the base theme writes no compiled variable name by hand; a control styled by `@ds-button` or `@ds-input` looks focused exactly as it does today (checked in Chrome). | **Decided**, owner, 2026-10-23 | MIG-B9-34 |
+| DEC-12 | **Amended by the owner.** A tone on a transparent-background role (`outlined`, `flat`, `underline`) or on an Input is checked by contrast, not by family name: for each mode of the effective theme the compiler computes the contrast of the tone against the canvas and, below the contrast gate's threshold, emits a located warning with the fix. It never fails the build, because the compiler cannot know the real background (a `data-theme` scope, a contained parent). The contrast gate's three pattern exceptions are replaced by the same predicate; those pairs stay listed, as warned, never as passing (the audit's DE-7 honesty). | **Decided**, owner, 2026-10-23: a warning from the contrast predicate instead of an error by family name | MIG-B9-35 |
+| DEC-13 | Inputs show the invalid state on `:is(:user-invalid, [aria-invalid="true"])`, not on `:invalid`; a browser without `:user-invalid` still matches `[aria-invalid="true"]`, because `:is()` is forgiving. The CHANGELOG records it as a visual change: a form no longer turns red on load. | **Decided**, owner, 2026-10-23 | MIG-B9-36 |
+| DEC-16 | Evidence is recorded once, in the story, in the same PR that delivers it; the merge commit identifies the delivery. No follow-up "fix SHA" commits. This reconciles the audit (§5.5: no evidence tables, no SHA commits) with AGENTS.md (record evidence in the story). | **Decided**, owner, 2026-10-23 | all |
+| DEC-17 | **The author's SCSS wins.** A Sass `@function` named like a UXDSL function (a token function, `tone`, a breakpoint of the effective theme) is allowed. Where Sass calls it by its bare name (the same file, a file loaded with `@import`, `@use … as *`), the name means the author's function and the output is what Dart Sass produces; UXDSL emits one warning, located at the definition, naming the UXDSL function it replaces (`UXD_FUNCTION_SHADOWED`). A function reached only through a namespace (`helpers.space()`) shadows nothing, and mixins never conflict. Every loaded file is checked, `.scss` included, so no shadowing is silent. MIG-B9-11's R4 (`UXD_RESERVED_NAME`) is replaced by this rule. | **Decided**, owner, 2026-10-23: option (b) | MIG-B9-11, 12, 13, 15, 50, 60 |
 
 A story whose decision is only recommended starts as **Blocked (DEC-nn)**.
 The owner can confirm several decisions in one message; the agent that reads
 it records the date in this table and in each story, and changes the status
 to Ready.
+
+On 2026-10-23 the owner decided every open decision, one question at a time.
+No story is blocked by a decision. Each story a decision touches carries an
+"Owner decisions of 2026-10-23" block at the end of its §15; where that
+block and the story's contract differ, the block rules.
 
 ### Review of 2026-10-11
 
@@ -138,17 +143,23 @@ MIG-B9-36; MIG-B9-30, 32, 33's margin change and 35 later; MIG-B9-60, 61, 63
 and 65 when users ask; MIG-B9-64 cut. Waves 4–7 are marked "Draft
 (re-baseline after wave 3)" in the index.
 
+The owner's decisions of 2026-10-23 (§2) supersede this table where they
+differ: one release with every wave (DEC-03), `@media (--lg)` (DEC-07) and a
+contrast warning (DEC-12). MIG-B9-64's recommended cut, and shipping MIG-B9-60,
+61, 63 and 65 only when users ask, were not part of those questions and remain
+the owner's call.
+
 ## 3. Scope, in waves
 
-The stories are grouped in waves. A wave is an order, not a release; DEC-03
-says where the release line is drawn.
+The stories are grouped in waves. A wave is an order, not a release: under
+DEC-03 every wave ships in `0.5.0-beta.9`.
 
 | Wave | What | Stories |
 | --- | --- | --- |
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry. | MIG-B9-20 to 22 |
-| 3 | Output-changing decisions, each behind its DEC: breakpoint blocks, scoped palettes, custom roles, typography, focus, canvas tones, `:user-invalid`. | MIG-B9-30 to 36 |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. | MIG-B9-30 to 36 |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. | MIG-B9-40 to 43 |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. | MIG-B9-60 to 65 |
@@ -171,7 +182,7 @@ FEAT-009 stories that were still open on `main` and their fate here:
 | MIG-B7-07 (hygiene round 2) | MIG-B9-50 and MIG-B9-52. |
 | MIG-B7-08 (`theme --diff` for surfaces/buttons/inputs) | Absorbed by MIG-B9-62 (the generated reference) as a candidate; not a commitment. |
 | MIG-B7-10 (`!important` in the reference comparator) | Decided in MIG-B9-21 while deleting: either fixed with a test or deleted with the dead branch. |
-| MIG-B7-11 (gate for rc.1) | MIG-B9-91 is the gate; rc.1 comes after beta.10. |
+| MIG-B7-11 (gate for rc.1) | MIG-B9-91 is the gate; rc.1 comes after beta.9 (DEC-03). |
 | MIG-B7-13 (editor hover with the project theme) | MIG-B9-63. |
 | MIG-B7-17 phase D (playground, with the owner) | MIG-B9-42 and MIG-B9-43. |
 

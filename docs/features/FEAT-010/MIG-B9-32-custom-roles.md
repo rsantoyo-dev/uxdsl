@@ -1,11 +1,11 @@
-# MIG-B9-32 — Custom roles start from their own Surface
+# MIG-B9-32 — One inheritance rule for roles: `extends`
 
 | Field | Value |
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-09 (recommended: a custom Button or Input role inherits nothing; `extends` opts into another role) |
-| Status | Blocked (DEC-09) |
+| Decision gate | DEC-09 (decided 2026-10-23, amended: one inheritance rule, `"extends": "none" \| "<role>"`) |
+| Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-34 (the global focus rule keeps every control focusable before roles lose the inherited ring) |
 | Blocks | MIG-B9-40 |
@@ -167,3 +167,11 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 
 - Three inheritance rules for one concept: typography inherits by default with `"extends": "none"`, Buttons/Inputs inherit nothing, Surfaces still inherit `contained`. Use one rule for all three — inherit by default, `"extends": "none" | "<role>"` — and reserve `none` as a role name.
 - R1 silently removes hover from existing custom roles, and the detection tool (MIG-B9-60) ships later; R5 omits the Input base fields also lost (`caret`, `placeholder`). Recommended: defer to beta.10 or adopt the single rule above.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-09 replaces R1.** A custom role keeps inheriting as today (Surfaces, Buttons and Inputs from the same-named base role or `contained`). `"extends": "none"` starts from nothing but what the role declares; `"extends": "<role>"` inherits from that role instead. A theme without `extends` compiles byte for byte as before, so no existing custom role loses its hover.
+- One resolver serves Surfaces, Buttons, Inputs and Typography (MIG-B9-33): whichever of the two stories runs first writes it, the other reuses it. `none` is reserved as a role name; `extends` naming an unknown role, or a cycle, is a located theme error.
+- Press Craftor's F-11 becomes `"extends": "none"` on each of its 23 roles instead of every state spelled out.

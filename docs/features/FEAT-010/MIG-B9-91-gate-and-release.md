@@ -4,10 +4,10 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 7 |
-| Decision gate | DEC-03 (where the release line is drawn) |
-| Status | Blocked (DEC-03) |
+| Decision gate | DEC-03 (decided 2026-10-23: one release, `0.5.0-beta.9`, with every wave) |
+| Status | Draft (re-baseline after wave 3) |
 | Size | M |
-| Depends on | every story of the waves DEC-03 puts in beta.9; MIG-B9-90 |
+| Depends on | every story of waves 0 to 6 (DEC-03); MIG-B9-90 |
 | Blocks | the owner's publish |
 | Base | `feat/beta9` after those waves |
 | Owns | `docs/releases/0.5.0-beta.9.md`, `fixtures/release-1.0/run.js` (the DROPPED list and the new checks' wiring), `fixtures/release-1.0/contrast-baseline.json` |
@@ -164,3 +164,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 
 - **Blocking — DEC-03 (b) cannot run with this story.** Its precondition needs `fixtures/test-exercise/run.js` (MIG-B9-90), T2 runs `changelog-shape.test.js` (MIG-B9-52), and §2/G3 need tools, the VSIX and StackBlitz links from waves 5–7. Split it: **91a** for beta.9 (waves 0–3, the MIG-B9-03/14 Press Craftor re-run, a minimal English beta.8 → beta.9 migration section and "What changes for you") and **91b** for beta.10. Stop hard-coding "beta.9" in 52, 55 and 91.
 - G5: `0.5.0-beta.10-dev` sorts above `0.5.0-beta.10` (an alphanumeric identifier outranks a numeric one); use `0.5.0-beta.9.dev` after publishing beta.9.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-03 is (a): one release.** This story gates `0.5.0-beta.9` with every wave; there is no 91a/91b split and no beta.10 gate (the "repeated for beta.10" line is void). The review's blocking finding about (b) no longer applies.
+- The record's "moved to beta.10" section lists only what the owner cuts explicitly, if anything. G5's bump: the next version is `1.0.0-rc.1`; choose a development version that sorts below it (the review's note on G5 explains why `-dev` suffixes can sort above their release).

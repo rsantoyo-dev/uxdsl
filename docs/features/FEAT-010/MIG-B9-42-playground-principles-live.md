@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 4 |
 | Decision gate | DEC-14 (decided) |
 | Status | Ready |

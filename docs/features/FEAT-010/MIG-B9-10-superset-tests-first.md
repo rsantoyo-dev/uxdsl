@@ -204,7 +204,8 @@ expectation is what the end-to-end pipeline must produce.
 - Keys: K1 `space(0-5)`; K2 `space(10-2)`; K3 `palette(brand.100)`; K4
   uppercase key `color(Gray.900)`; K5 uppercase name `PALETTE(primary.main)`.
 - Other: O1 `@uxdsl theme;` passes through Sass; O2 `@function space`
-  shadows the token → `UXD_RESERVED_NAME`; O3 `@function md` → the same;
+  wins over the token: Sass's output and the `UXD_FUNCTION_SHADOWED` warning (DEC-17);
+  O3 `@function md` → the same;
   O4 a mixin named `border` is allowed; O5 `tone()` outside a theme →
   `UXD_TONE_CONTEXT`; O6 `$var` holding a token; O7 a mixin argument holding a
   token; O8 `@keyframes` with tokens; O9 pseudo-class and placeholder
@@ -405,3 +406,10 @@ progress until a session with the registry does C1 and C2.
   comparison with "compile() failed" (today's `compile()` rejects `@use`) and
   exit 1; the extras compile uses `includeTheme: false`, so the prefix check is
   exact (the review's C6.6 finding).
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-17:** a project `@function` named like a UXDSL function wins, with a warning. O2 and O3 in `test/core/protect.cases.js` now expect Sass's output and `UXD_FUNCTION_SHADOWED` (a case may carry `warning: '<code>'`), so ten cases carry a `verify` note, not twelve. In `sass-pipeline.test.js` the `UXD_RESERVED_NAME` case became three `todo` cases: the warning at the definition's line, a `.scss` partial loaded with `@import` (found, not silent), and a helper reached only through a namespace (shadows nothing).
+- **DEC-04:** C1 still adds `sass` as a devDependency for the tests; MIG-B9-12 moves it to `dependencies`. Both need a session with npm registry access.

@@ -1,11 +1,11 @@
-# MIG-B9-30 — Breakpoint blocks: `@lg { … }`
+# MIG-B9-30 — Breakpoint media queries: `@media (--lg)`
 
 | Field | Value |
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-07 (recommended: a breakpoint name as an at-rule with a block means "from that breakpoint up") |
-| Status | Blocked (DEC-07) |
+| Decision gate | DEC-07 (decided 2026-10-23, amended: `@media (--<breakpoint>)`, not `@lg { … }`) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40, MIG-B9-55, MIG-B9-62, MIG-B9-65 |
@@ -221,3 +221,12 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - `@ds-button`/`@ds-input` inside a block creates a second set of states on another rule node and bypasses `UXD_DIRECTIVE_DUPLICATE`: define it, preferably as an error.
 - Cascade against `lg()`: the media query from `lg()` is inserted right after its rule and the block Sass moves out lands after it, so the block wins whatever the source order. Pin it with a test.
 - Value: directives under a nested `@media` already work (MIG-B9-10 D10; SideNav does it today). Consider `@media (--lg)` (CSS custom-media syntax: no name collisions, Sass merges it with outer queries) before adding an at-rule per breakpoint; the playground's stylelint `scss/at-rule-no-unknown` would also need the names. Recommended: defer to beta.10.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-07 changes the syntax.** Rewrite §1 and §5 before implementing: the block form is `@media (--<breakpoint>) { … }`, the CSS custom-media syntax. `(--<bp>)` in an `@media` prelude is replaced with the effective theme's query for `<bp>`, the same one `<bp>()` produces, on both paths (`compile()` after Sass, and the plugin alone). It combines with other conditions (`@media print and (--lg)`); pin Sass's merge of nested media queries with a test.
+- **What is written by hand wins.** A literal query (`@media (min-width: 1024px)`) is compiled as written and never rewritten. A project's own `@custom-media --<bp> …` replaces the theme's `--<bp>` in that build, with one warning (the DEC-17 rule). `(--name)` that is neither a theme breakpoint nor a project `@custom-media` is `UXD_BREAKPOINT_UNKNOWN` with a "did you mean".
+- Directives inside `@media (--lg)` under a rule work as they do under a nested `@media` today (MIG-B9-10 D10). The playground's SideNav moves from `@media (min-width: 1024px)` to `@media (--lg)`; `not-found.uxdsl` keeps its deliberate local 600px.
+- The review's at-rule findings (name collisions, declarations at the top of a block, a second directive set inside a block, stylelint's `at-rule-no-unknown`) no longer apply; the cascade test against `lg()` still does.

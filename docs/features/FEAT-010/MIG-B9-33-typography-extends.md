@@ -1,11 +1,11 @@
-# MIG-B9-33 — Typography without inherited margins; `extends`
+# MIG-B9-33 — Typography `extends`
 
 | Field | Value |
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-10 (recommended: `default` declares no margins; `"extends": "none"` opts out of `default`; `"extends": "<role>"` builds on a role) |
-| Status | Blocked (DEC-10) |
+| Decision gate | DEC-10 (decided 2026-10-23, amended: the DEC-09 rule; `default` keeps its margins) |
+| Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40 |
@@ -175,3 +175,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - **Factual: `h1` has no top margin of its own.** `base.json` gives `h1` only `marginBlockEnd: "0.2em"`; its start margin is `default`'s `0`. After Y1 every `@ds-typo(h1)` gets the browser's 0.67em top margin, and T1 as titled fails.
 - The baseline snippet's `indexOf('.t{') || indexOf('.t {')` returns -1 (truthy) and prints the last character; after Sass formatting `.t{` never appears, so AC2 always passes. Rewrite it with `postcss.parse`.
 - The plan says no margins "is also what MUI does"; MUI's `Typography` root sets `margin: 0`, which is today's behavior. Recommended: keep `extends`, drop Y1; if Y1 stays, add `marginBlockStart: "0"` to `h1` and flag the return of browser margins on h2–h6 and p as breaking.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-10 drops Y1.** `default` keeps `marginBlockStart` and `marginBlockEnd` at `0`; no browser margin comes back, and `h1` needs no new field.
+- Typography follows the DEC-09 rule through the resolver MIG-B9-32 describes: `"extends": "none"` emits only the role's own fields (a weight-only role, `{ "extends": "none", "fontWeight": "700" }`, emits only `font-weight`); `"extends": "<role>"` builds on another role. Rewrite the baseline snippet with `postcss.parse`, as the review asks.

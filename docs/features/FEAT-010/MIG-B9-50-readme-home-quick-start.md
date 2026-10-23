@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 5 |
 | Decision gate | None (plan §6.1, §6.2, §6.5, §3.3 accepted) |
 | Status | Ready |
@@ -182,3 +182,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - This story creates hand-maintained `docs/language.md` and `docs/theme.md` while MIG-B9-62 generates `/docs/language` and `/docs/theme`: do 62 first and generate both from one source.
 - `files` ships only `docs/agent-guide.md`; the pages created here, `integrations/*.md` and `migration.md`, would be absent from `node_modules/uxdsl/docs/**`, which MIG-B9-90 reads. Add them and re-check the pack budget.
 - Precondition `grep "'packages/uxdsl/docs/integrations/"` exits 1 on the base (doc-examples.js:267 holds a regex); the package README has 22 `##` sections, not 24.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-07:** the quick start's "one breakpoint block" is `@media (--md)`.
+- **DEC-17:** the "SCSS works" line needs no qualification for reserved names; mention that a project function named like a UXDSL one wins, with a warning.

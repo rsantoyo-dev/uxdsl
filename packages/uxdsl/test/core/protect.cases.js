@@ -14,6 +14,8 @@
 //   generated CSS by hand;
 // - `'ERROR:<code>'`: compile() rejects the case with that code.
 //
+// `warning: '<code>'` adds that compile() reports a warning with that code.
+//
 // `verify: '…'` marks an expectation that depends on a Dart Sass behavior this
 // list was written without running Sass on (the session had no registry
 // access); MIG-B9-13 confirms each one against live Sass before flipping the
@@ -106,8 +108,9 @@ const CASES = [
 
   // --- Other.
   ['O1', '@uxdsl theme;\n.a { color: red; }', { sameAs: '@uxdsl theme;\n.a { color: red; }' }],
-  ['O2', '@function space($k) { @return $k; }\n.a { padding: space(2); }', 'ERROR:UXD_RESERVED_NAME', { verify: 'FEAT-010 DEC-17 (open): whether a Sass function may shadow a token function' }],
-  ['O3', '@function md($v) { @return $v; }\n.a { padding: md(2px); }', 'ERROR:UXD_RESERVED_NAME', { verify: 'FEAT-010 DEC-17 (open): as O2, for a breakpoint name' }],
+  // FEAT-010 DEC-17 (decided 2026-10-23): the author's function wins, with a warning.
+  ['O2', '@function space($k) { @return $k; }\n.a { padding: space(2); }', '.a { padding: 2; }', { warning: 'UXD_FUNCTION_SHADOWED' }],
+  ['O3', '@function md($v) { @return $v; }\n.a { padding: md(2px); }', '.a { padding: 2px; }', { warning: 'UXD_FUNCTION_SHADOWED' }],
   ['O4', '@mixin border($w) { border: $w solid red; }\n.a { @include border(1px); }', '.a { border: 1px solid red; }'],
   ['O5', '.a { color: tone(main); }', 'ERROR:UXD_TONE_CONTEXT'],
   ['O6', '$gap: space(2);\n.a { gap: $gap; }', { sameAs: '.a { gap: space(2); }' }],

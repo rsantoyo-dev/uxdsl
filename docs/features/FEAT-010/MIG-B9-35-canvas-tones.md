@@ -1,11 +1,11 @@
-# MIG-B9-35 — Canvas-identity tones are compile errors
+# MIG-B9-35 — Canvas-identity tones: a contrast warning
 
 | Field | Value |
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-12 (recommended: `surface`, `light`, `dark` as a tone on a transparent-background role or on any Input are errors; the three contrast exceptions are deleted). Reverses the audit's DE-7 on purpose. |
-| Status | Blocked (DEC-12) |
+| Decision gate | DEC-12 (decided 2026-10-23, amended: a contrast warning, not an error by family name) |
+| Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40, MIG-B9-91 (the gate's exact contrast sets) |
@@ -185,3 +185,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - N1 rejects legible code: the contrast baseline excepts `dark` pairs only in dark mode (23 records, none in light), so `flat dark` passes in light mode and in any theme without `modes.dark`. Hard-coding family names also contradicts "palette names carry no fixed meaning"; it rejects `flat light` on a dark contained parent (the compiler assumes the background is `surface.main`) and checks the Surface's `bg` while a control's own `base.bg` can override it.
 - Recommended: derive the rejection per mode from the effective theme's contrast predicate, or make it a warning; otherwise defer.
 - The underline Input's focus treatment is `underline`, not `border`.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-12 changes N1.** Rewrite §1 and §5 before implementing: a tone on a transparent-background role (`outlined`, `flat`, `underline`) or on an Input is checked by contrast, not by family name. For each mode of the effective theme, compute the contrast of the tone against the canvas with the contrast gate's predicate and threshold; below it, emit a located warning with the fix (`contained`, or another tone). It never fails the build: the compiler cannot know the real background (a `data-theme` scope, a contained parent).
+- The contrast gate's three pattern exceptions are replaced by the same predicate: those pairs stay listed, as warned, never as passing. Re-pin `fixtures/release-1.0/contrast-baseline.json` deliberately. The review's note on the underline Input (its focus treatment is `underline`, not `border`) applies.

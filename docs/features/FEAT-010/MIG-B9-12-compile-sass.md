@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
-| Decision gate | DEC-01 (decided); DEC-04 (recommended: `sass` is a regular dependency) |
-| Status | Blocked (DEC-04) |
+| Decision gate | DEC-01 (decided); DEC-04 (decided 2026-10-23: `sass` is a regular dependency, loaded lazily) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-11 |
 | Blocks | MIG-B9-13 |
@@ -279,3 +279,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - **Blocking — error locations.** Sass returns a source map only when asked; with the CLI default (no map) errors and warnings carry Sass-output coordinates under the entry's name (13 T3's own control expects line 29), so P5, A1 and gate S-3 (`heavy.uxdsl:18:66`) cannot hold. Always run Sass with a map internally and emit the final map only on request; measure the P10 budget with maps on.
 - The code frame (`sassFrame`, E1) is rendered from the text Sass received, so the CLI would print `#{"palette(…)"}`; re-render it from the original source.
 - IM5: `.uxdsl` files inside `node_modules` are unreachable through the importer as specified; define whether a package can ship `.uxdsl` partials.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-04, confirmed:** `sass` (the pure-JavaScript package, not `sass-embedded`) goes in `dependencies`, and `compile()` loads it at call time, so `require('uxdsl/postcss')` alone never loads it. Add a test that requiring `uxdsl/postcss` leaves `sass` out of `require.cache`. Updating the lockfile needs a session with npm registry access.
+- **DEC-17:** nothing throws `UXD_RESERVED_NAME`. `options.reserved` becomes the set of names checked for shadowing; E2 and T5 become the `UXD_FUNCTION_SHADOWED` warning located in the file that defines the function (`@function space` in a loaded partial: Sass's output and one warning at that file's line and column). The second compile MIG-B9-11 describes is this story's.

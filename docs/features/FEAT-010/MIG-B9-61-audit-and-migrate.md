@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · beta.10 under DEC-03 (b), or beta.9 under (a) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 6 |
 | Decision gate | None (plan §8.2; the ladder's steps 2 and 3) |
 | Status | Ready |

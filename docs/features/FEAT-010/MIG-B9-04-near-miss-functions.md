@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
-| Decision gate | DEC-02 (recommended: `space()` stays the name; `spacing()` and every near-miss is an error with a suggestion) |
-| Status | Blocked (DEC-02) |
+| Decision gate | DEC-02 (decided 2026-10-23: `space()` stays; `spacing()` and every near-miss is an error with a suggestion) |
+| Status | Ready |
 | Size | S |
 | Depends on | — |
 | Blocks | — (MIG-B9-10 cites the code once it exists; it does not wait for it — review 2026-10-11) |
@@ -194,3 +194,9 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - **Theme values.** C3 relies on `validateResponsiveExpression`, which checks only top-level functions (language.ts:59), so the owner's own `xs(spacing(2))` stays silent in a theme value. Put the near-miss check in `language.ts`, shared by `tokenValueToCss` and `rewriteTokens`.
 - C5 names `missingKeyMessage`, but Palette/Color suggestions come from `closestKey` in plugin.ts; name the function that actually produces them.
 - The header says this story blocks MIG-B9-10; it does not (README §5: 10 depends on 05). Removed from the order.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-02, confirmed** with the review's precisions, which are now part of the contract: a real CSS function is never flagged (audit `KNOWN_CSS_FUNCTIONS` against the CSS function list, or use distance 1 for names of five letters or fewer; `shape(…)` is a negative control); a top-level name one edit from a breakpoint stays `UXD_BREAKPOINT_UNKNOWN`; the check lives in `language.ts`, shared by `tokenValueToCss` and `rewriteTokens`, so a theme value such as `xs(spacing(2))` fails the same way.

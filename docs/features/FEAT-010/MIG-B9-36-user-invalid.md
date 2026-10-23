@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-13 (recommended: the invalid state matches `:user-invalid` and `[aria-invalid="true"]`) |
-| Status | Blocked (DEC-13) |
+| Decision gate | DEC-13 (decided 2026-10-23: `:is(:user-invalid, [aria-invalid="true"])`) |
+| Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40 |
@@ -132,3 +132,9 @@ To be filled in the delivering PR.
 Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
 
 - **The fallback in the Goal is false.** State selectors are joined into one selector list (control-engine.ts:229 with inputs.ts:7), and a browser that does not know `:user-invalid` drops the whole rule, `[aria-invalid="true"]` included. Emit `sel:is(:user-invalid, [aria-invalid="true"])`: `:is()` is forgiving and the specificity is the same.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-13, confirmed:** emit `:is(:user-invalid, [aria-invalid="true"])` (a browser without `:user-invalid` still matches the attribute, because `:is()` is forgiving). The CHANGELOG records it under "Visual changes": a form no longer turns red on load.
