@@ -272,4 +272,10 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Blocking — error locations.** Sass returns a source map only when asked; with the CLI default (no map) errors and warnings carry Sass-output coordinates under the entry's name (13 T3's own control expects line 29), so P5, A1 and gate S-3 (`heavy.uxdsl:18:66`) cannot hold. Always run Sass with a map internally and emit the final map only on request; measure the P10 budget with maps on.
+- The code frame (`sassFrame`, E1) is rendered from the text Sass received, so the CLI would print `#{"palette(…)"}`; re-render it from the original source.
+- IM5: `.uxdsl` files inside `node_modules` are unreachable through the importer as specified; define whether a package can ship `.uxdsl` partials.

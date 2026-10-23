@@ -208,3 +208,12 @@ count before and after.
 - Candidate for the CLI: `builds` accepting a glob entry
   (`{ entries: 'src/**/*.module.uxdsl', outFile: '[name].generated.module.css' }`),
   so the playground's config glob becomes a CLI feature. Not in beta.9.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- Labelled M, but it rewrites about 55 components across 19 routes, and L5 "looks the same" cannot hold while 78 literal font sizes become roles. Split: (a) the CSS-Modules move, visually neutral, checked by `compare.js`; (b) the role and token unification, reviewed by the owner.
+- The deletion list misses `typography-roles.uxdsl` (103 hand-written typography variables, literal fallbacks, the removed `opacity` field).
+- The Next 14 → 16 upgrade (lockfile: next 14.2.33) is hidden in MIG-B9-43 H5; make it its own story before this one.
+- README §5 omits the dependency on MIG-B9-22 that this story's header lists.

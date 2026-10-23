@@ -188,4 +188,11 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- Base Buttons would read `var(--uxdsl__focus__outline)`, a compiled name written by hand, which the one-grammar rule says a theme never contains. Drop `focusvisible` from the base Buttons (the global rule covers `button`) or add a token function.
+- A project cannot switch the global rule off (closed field set; a deep merge cannot delete a base key): add an opt-out.
+- The Goal says "everything" takes the ring, but the selector list excludes `select`, checkboxes, `area` and `contenteditable`: align them.
+- If MIG-B9-31 lands first, the focus variables must use its `ROOT_SCOPE`; say so.

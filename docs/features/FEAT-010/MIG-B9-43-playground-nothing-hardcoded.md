@@ -168,4 +168,9 @@ To be filled in the delivering PR, with the H5 decision.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **The rule cannot be enforced as written.** Token demos must build names from the live theme (DemoShadows.tsx:51, DemoBorders.tsx:51-60, DemoColors.tsx:171, RussianDoll.tsx:16 — 31 hits in 11 files); the regex text views cannot tell CodeBlock children from style strings (capabilities.js:52-66); "hex anywhere" catches theme patches used as data (RuntimeLab.tsx:74-75, RuntimeEngines.tsx:34, ColorGuide.tsx:7-9); the views walk only `src/`, so `paradigm/frame.uxdsl` and `runtime-sandbox/sandbox.uxdsl` escape; there is no font token function, and the `.uxdsl` files hold 26 hand-written `var(--uxdsl__font__…)`; "≤10 entries" counts allowlist entries, not hits.
+- Fix: scan a declared list of directories; move code samples to `src/examples/**`, excluded by path and compiled by a capture script; make one helper the only builder of `--uxdsl__` names (export `buildVarName` from `uxdsl/language`); keep theme patches in `.json`; allow `style` only when every key starts with `--` (checked with the TypeScript AST); fonts through typography roles; count allowlisted hits.

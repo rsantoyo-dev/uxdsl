@@ -172,4 +172,13 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- It leads with "existing project via `uxdsl/postcss`" (the pre-DEC-01 plan); for Sass teams that path cannot compile SCSS. Lead with the rename and give a per-host table (Vite plugin, webpack loader, Next.js via the CLI's `builds`).
+- Qualify the "TypeScript/SCSS works" line with the reserved names (DEC-17); add "not affiliated with MUI"; make the primary audience SCSS teams who want a design system without utility classes, and do not attack Tailwind by name.
+- The harness skips output blocks (doc-examples.js:23-24, 71): verifying the output block needs a harness change; add it to Owns.
+- This story creates hand-maintained `docs/language.md` and `docs/theme.md` while MIG-B9-62 generates `/docs/language` and `/docs/theme`: do 62 first and generate both from one source.
+- `files` ships only `docs/agent-guide.md`; the pages created here, `integrations/*.md` and `migration.md`, would be absent from `node_modules/uxdsl/docs/**`, which MIG-B9-90 reads. Add them and re-check the pack budget.
+- Precondition `grep "'packages/uxdsl/docs/integrations/"` exits 1 on the base (doc-examples.js:267 holds a regex); the package README has 22 `##` sections, not 24.
