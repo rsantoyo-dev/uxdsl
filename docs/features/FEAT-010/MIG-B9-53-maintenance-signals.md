@@ -140,3 +140,13 @@ To be filled in the delivering PR.
 ## 15. Findings and follow-ups
 
 - Candidates for later: `SECURITY.md`, a code of conduct.
+- S5 names `CONTRIBUTING.md`, which does not exist yet (MIG-B9-51 creates it):
+  the README does not link it; MIG-B9-51 adds the link with the file.
+- The root README's links into `docs/features` (FEAT-001, 003, 006, 007, 008,
+  009 and MIG-B7-05) now name the feature as plain text; the "Feature roadmap"
+  list points at `docs/ROADMAP.md`.
+- The issue forms apply the labels `bug`, `question` and `idea`; GitHub skips a
+  label the repository does not have, so `idea` is applied only once the owner
+  creates it.
+- Stacked on MIG-B9-01: the releases index lists the renamed records
+  (`0.5.0-beta.8.md`, `0.5.0-beta.9.md`).
