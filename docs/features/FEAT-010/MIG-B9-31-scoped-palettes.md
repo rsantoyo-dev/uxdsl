@@ -204,4 +204,12 @@ To be filled in the delivering PR, with the theme CSS sizes before and after.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- S1 lowers `:root[data-theme='dark']` (0,2,0) to `[data-theme='dark']` (0,1,0): an author's later `:root { --uxdsl__palette__… }` then wins in forced dark mode but still loses in OS dark mode (`:root:not(…)` is 0,2,0). Use `:root[data-theme='dark'], [data-theme='dark']` and flag the change.
+- Re-declaring composites on every scope overrides an author's `:root` composite overrides inside each scoped subtree — the override path AGENTS.md documents. Test it and document the rule.
+- `[data-theme='light']` also re-declares colors and spacing, because `foundationBlocks` emits one block (foundations.ts:63): re-declare only the palette for light, and only palette-dependent composites per scope.
+- Measure style recalculation with many scoped elements; T2's scan for `':root'` must skip comments.
+- Also edits `control-engine.ts` and `surfaces.ts` (missing from README §7).

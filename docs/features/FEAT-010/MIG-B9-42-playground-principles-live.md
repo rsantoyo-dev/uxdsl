@@ -180,4 +180,8 @@ To be filled in the delivering PR, including whether the in-page editor runs
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- P4: `theme --diff` exists only inside the CLI (`diffThemeAgainstDefaults`, bin/uxdsl.js ~1127), so it cannot update live in the page: export it from `uxdsl/theme` or drop the third view.

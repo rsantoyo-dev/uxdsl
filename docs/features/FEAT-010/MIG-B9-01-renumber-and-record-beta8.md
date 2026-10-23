@@ -241,4 +241,9 @@ pending.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- The baseline grep lists 31 files, not 29, and omits `fixtures/release-1.0/contrast-baseline.json`; re-record it.
+- Preconditions 2–3 (`npm view …`) need registry access; an environment without it records them as not run, never as PASS.

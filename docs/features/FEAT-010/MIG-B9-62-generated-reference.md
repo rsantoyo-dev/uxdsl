@@ -143,3 +143,9 @@ To be filled in the delivering PR.
 ## 15. Findings and follow-ups
 
 - `theme --diff` for surfaces/buttons/inputs if R5 was not done.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- Do this before MIG-B9-50, and generate both the docs pages and the markdown reference from one `reference.json`.

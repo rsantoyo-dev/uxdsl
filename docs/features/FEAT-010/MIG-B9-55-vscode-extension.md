@@ -145,4 +145,8 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- The dry run prints "would package" and builds no VSIX (release.js:310-313); there is no SVG mark in the playground's `public/` (only PNGs); it cites a session-scratch script that is not in the repository.

@@ -176,4 +176,11 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- D1: the doc-example harness compiles only pipeline examples (doc-examples.js:193-198) and per-statement error comments rely on `postcss.parse`; define how a Sass example is compiled and how an error example is marked.
+- D2 omits the limitation users hit first: tokens are opaque strings to Sass, so `darken(palette(…))`, `rgba(color(…), .5)` and Bootstrap's color mixins applied to tokens are Sass errors. Document it with the alternative (`palette(x, 0.5)`, `color-mix()`).
+- D3 ("every SCSS file is a valid UXDSL file") is false while MIG-B9-11 R4 reserves names; qualify it according to DEC-17.
+- AC2 already passes on the base (vacuous); give it a negative control.

@@ -209,4 +209,12 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Blocking — R1 protects too little.** R1 protects only keys that contain a dot; Dart Sass evaluates every other argument: `space(10-2)` becomes `space(8)` (a silently wrong token that exists in the base theme), `space(0-5)` becomes `space(-5)`, a key such as `2-inset` becomes `2 -inset`. K1/K2 cannot pass. Protect every UXDSL token call (`space density radius border shadow palette color`) whose first argument is key-like, and define `$v` and `#{…}` arguments explicitly; exempt only native `color(<color-space> …)` and `color(from …)`. R7 (identity on Bootstrap) still holds.
+- **`color()` in Dart Sass ≥ 1.79.** Sass now parses `color()` as the CSS Color 4 function, so `color(white)`, `color(black, 0.5)` (NC5, NC6 and R1's own exemption list) are probably errors or misparsed. Verify against the pinned `sass` version and add them to the case list.
+- `UXD_RESERVED_NAME` is produced here but catalogued in MIG-B9-12, so `test/diagnostics-catalog.test.js` fails this story's AC5. Add the catalog entry in this story.
+- §5.3 (accept a space between a directive name and its parenthesis) and R9 (restore the spacing Sass changes) are redundant, and §5.3 contradicts AGENTS.md ("the parentheses directly after the name"). Keep R9, drop §5.3.
+- **R4 needs an owner decision (DEC-17, open).** Reserving `@function color/space/shadow/…` and breakpoint-named mixins makes common SCSS fail after the rename, against DEC-00 ("a person renames .scss to .uxdsl and it works"); and a `.scss` dependency pulled in by `@import` is not scanned, so it can still shadow `color(white)` silently.
