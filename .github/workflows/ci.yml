@@ -24,6 +24,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: '**/package-lock.json'
+      # npm 10.8 (Node 20's) fails inside its own resolver ("Cannot read
+      # properties of null (reading 'edgesOut')", in #loadPeerSet) when it
+      # installs the uxdsl tarball into an empty project and walks optional
+      # peers; npm 11 installs the same tarball.
+      - name: npm 11
+        run: npm install -g npm@11 && npm -v
       - name: Install root, packages and fixtures
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
@@ -52,6 +58,12 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: '**/package-lock.json'
+      # npm 10.8 (Node 20's) fails inside its own resolver ("Cannot read
+      # properties of null (reading 'edgesOut')", in #loadPeerSet) when it
+      # installs the uxdsl tarball into an empty project and walks optional
+      # peers; npm 11 installs the same tarball.
+      - name: npm 11
+        run: npm install -g npm@11 && npm -v
       - name: Install root, packages and fixtures
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
