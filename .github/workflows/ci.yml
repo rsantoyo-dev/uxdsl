@@ -37,11 +37,16 @@ jobs:
         run: |
           set +e
           node fixtures/mig07-consumer/run.js > /tmp/fixture.log 2>&1
-          status=$?
-          { node -v; npm -v; cat /etc/os-release | head -3; tail -80 /tmp/fixture.log; } > /tmp/fail.txt
+          first=$?
+          log=$(ls -t ~/.npm/_logs/*-debug-0.log 2>/dev/null | head -1)
+          { echo "== npm $(npm -v), first attempt exit $first"; grep -n -B2 -A12 "edgesOut\|verbose stack" "$log" | head -60; } > /tmp/fail.txt
+          npm i -g npm@11 > /tmp/npm-up.log 2>&1
+          node fixtures/mig07-consumer/run.js > /tmp/fixture2.log 2>&1
+          second=$?
+          { echo "== npm $(npm -v), second attempt exit $second"; tail -25 /tmp/fixture2.log; } >> /tmp/fail.txt
           msg=$(sed -e 's/%/%25/g' -e 's/\r//g' /tmp/fail.txt | awk '{printf "%s%%0A", $0}')
           echo "::error title=consumer fixture output::$msg"
-          exit $status
+          exit $second
       - name: Test
         run: npm test
 
