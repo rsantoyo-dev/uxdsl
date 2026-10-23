@@ -738,9 +738,11 @@ now emit byte-identical `@import`s for the same theme instead of only the
 plugin emitting one at all. Byte-identical URLs did not mean the same
 placement: until FEAT-009's MIG-B7-14 the plugin/CLI output put that `@import`
 behind a `:root` block, where a browser discards it, and only `generateThemeCss`
-led with it. From `0.5.0-beta.7` (unreleased as of 2026-09-28; `0.5.0-beta.6`
-still has the old placement), compiled output puts every `@import` — the
-theme's and the author's — before every other rule, after any `@charset`. Put variant changes in the playground's own
+led with it. Since `0.5.0-beta.8` (published under the five former package
+names; `uxdsl@0.5.0-beta.9` is the first release of the one package), compiled
+output puts every `@import` — the theme's and the author's — before every other
+rule, after any `@charset`; `0.5.0-beta.6` and earlier still have the old
+placement. Put variant changes in the playground's own
 overrides.
 
 In compiled output the generated theme is one contiguous run, inserted after
@@ -922,8 +924,8 @@ different responsibilities; use the shared kind-aware normalizer.
 
 `uxdsl init` writes a typed `uxdsl.config.cjs`: `// @ts-check`, then
 `/** @type {import('uxdsl/config').UxdslConfig} */` on a `const` that is
-exported (FEAT-009's MIG-B7-12, in `0.5.0-beta.7`, unreleased as of
-2026-09-28). Keep that shape when editing the file: the
+exported (FEAT-009's MIG-B7-12, published in `0.5.0-beta.8` under the former
+`uxdsl-cli` name, and in `uxdsl@0.5.0-beta.9`). Keep that shape when editing the file: the
 `@type` placed directly above `module.exports = {…}` checks nothing, removing
 `// @ts-check` silences every error, and adding a run-time
 `require('uxdsl/config')` can fail the build where `uxdsl` is
@@ -940,8 +942,9 @@ consumer-facing reference.
 Installing UXDSL from npm does not guarantee an agent reads this guide. Agent
 discovery depends on the tool and project setup.
 
-Since `0.5.0-beta.7` (unreleased as of 2026-09-28; the published
-`0.5.0-beta.6` tarball does not contain it) the guide ships inside the package — `uxdsl` since the package move — at
+Since `0.5.0-beta.8` (published as `postcss-uxdsl`; the `0.5.0-beta.6`
+tarball does not contain it) the guide ships inside the package — `uxdsl` from
+`0.5.0-beta.9` — at
 `node_modules/uxdsl/docs/agent-guide.md` — generated from this file,
 so it is the guide for the version the project actually has installed and it
 updates with every upgrade. Point the consuming project's existing `AGENTS.md`
@@ -1053,10 +1056,12 @@ FEAT-007 stories 03–11 are deferred, not additional beta.6 acceptance requirem
 FEAT-008's documents describe what shipped in `0.5.0-beta.6`, published to npm
 on 2026-09-23 (`docs/releases/0.5.0-beta.6.md`). That release's automated gate
 (MIG-B6-12) passed; its external validation against a real consumer project was
-still pending as of 2026-09-28. FEAT-009 (`docs/features/FEAT-009-path-to-0.5.0.md`)
-plans what follows — `0.5.0-beta.7`, then `0.5.0-rc.1`. Its stories are not
-shipped capabilities: some are already merged to `main` but none is published
-until its release is; the package CHANGELOG's `unreleased` section, not a
+not run. FEAT-009 (`docs/features/FEAT-009-path-to-0.5.0.md`) planned what
+followed: its stories shipped in `0.5.0-beta.8` (2026-10-08, the last release
+under the five former package names, `docs/releases/0.5.0-beta.8.md`). The
+next release, `uxdsl@0.5.0-beta.9`, is planned by FEAT-010
+(`docs/features/FEAT-010-beta9.md`). A story is not a shipped capability until
+its release is published; the package CHANGELOG's `unreleased` section, not a
 story's status, says what a given build contains.
 `applyTheme` and the rest of the runtime theme API (MIG-B6-30) have landed
 across their 4 phases — see the "Build time, runtime and one source of truth"

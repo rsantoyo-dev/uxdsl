@@ -1,8 +1,9 @@
 'use strict';
 
 // Stability phase 4: the five former package names get one last version,
-// 0.5.0-beta.7, that depends on `uxdsl` and re-exports it. Prepared here, published by
-// the owner (docs/releases/0.5.0-beta.7.md).
+// 0.5.0-beta.9 (they last published 0.5.0-beta.8 on their own), that depends on
+// `uxdsl` and re-exports it. Prepared here, published by the owner
+// (docs/releases/0.5.0-beta.9.md).
 //
 // Each shim is installed the way npm would lay it out — its files copied into a
 // node_modules next to the built `uxdsl` — and required from outside. It must
@@ -22,7 +23,7 @@ const HERE = __dirname;
 const UXDSL_DIR = path.resolve(HERE, '../uxdsl');
 const SHIMS = ['postcss-uxdsl', 'uxdsl-core', 'uxdsl-cli', 'vite-plugin-uxdsl', 'uxdsl-webpack-loader'];
 
-/** What the packages exported at 0.5.0-beta.7-dev, the last state before the move. */
+/** What the packages exported just before the move (the repository's 0.5.0-beta.7-dev state, never published; 0.5.0-beta.8 was built from an earlier commit). */
 const FORMER = {
   'postcss-uxdsl/ds-runtime': ['BUTTON_PROPERTIES', 'BUTTON_STATES', 'DEFAULT_BORDERS', 'DEFAULT_BORDER_COLORS', 'DEFAULT_BREAKPOINTS', 'DEFAULT_BUTTONS', 'DEFAULT_DENSITIES', 'DEFAULT_INPUTS', 'DEFAULT_RADII', 'DEFAULT_SHADOWS', 'DEFAULT_SURFACES', 'DEFAULT_THEME', 'DEFAULT_THEME_STORAGE_KEY', 'DEFAULT_THEME_STYLE_ID', 'DIAGNOSTIC_CATALOG', 'DIAGNOSTIC_CODES', 'INPUT_PROPERTIES', 'INPUT_STATES', 'KNOWN_THEME_FAMILIES', 'NOT_DISABLED', 'RADIUS_KEYWORDS', 'ReferenceIntegrityError', 'SURFACE_PROPERTIES', 'THEME_KEY_PATTERN', 'THEME_NAME_PATTERN', 'THEME_SCHEMA_KEY', 'THEME_VALUE_PATTERN', 'TYPOGRAPHY_CSS_PROPERTIES', 'TYPOGRAPHY_PROPERTIES', 'applyTheme', 'buttonComponentCss', 'buttonDeclarations', 'checkThemeContrast', 'cloneThemeValue', 'compileButtonRules', 'compileEdgeRules', 'compileInputRules', 'compileShadowRules', 'compileSurfaceRules', 'compileTypographyRules', 'compositeOver', 'contrastRatio', 'deepMergeTheme', 'edgeValueToCss', 'encodeGoogleFontFamily', 'generateButtonCss', 'generateDensityCss', 'generateEdgeCss', 'generateInputCss', 'generateShadowCss', 'generateSurfaceCss', 'generateThemeCss', 'generateTypographyCss', 'getAppliedTheme', 'getButtonTokens', 'getDensityTokens', 'getEdgeTokens', 'getInputTokens', 'getShadowTokens', 'getSurfaceTokens', 'googleFontsImportUrls', 'inputComponentCss', 'inputDeclarations', 'inspectButtonTheme', 'inspectEdgeTheme', 'inspectInputTheme', 'inspectReferences', 'inspectShadowTheme', 'inspectSurfaceTheme', 'inspectTypographyTheme', 'loadPersistedTheme', 'parseButtonArguments', 'parseInputArguments', 'parseLiteralColor', 'parseSurfaceArguments', 'relativeLuminance', 'renderThemeCss', 'requireRole', 'resetTheme', 'resolveExpression', 'resolveTheme', 'resolveTypographyRole', 'structuralChanges', 'subscribeTheme', 'surfaceDeclarations', 'surfaceValueToCss', 'themeStructure', 'themeValidationError', 'typographyValueToCss', 'validateTheme'],
   'postcss-uxdsl/language': ['DEFAULT_BREAKPOINTS', 'DEFAULT_DENSITIES', 'KNOWN_CSS_FUNCTIONS', 'LANGUAGE_COMPLETIONS', 'RADIUS_KEYWORDS', 'REMOVED_RADIUS_FULL', 'TOKEN_FUNCTIONS', 'TOKEN_FUNCTION_CODES', 'analyzeResponsiveValue', 'compileDensityRules', 'generateDensityCss', 'getDensityTokens', 'getToneFamilies', 'inspectResponsiveValue', 'parseTokenReference', 'removedSyntaxMessage', 'resolveResponsiveValue', 'responsiveEntries', 'spacingValueToCss', 'tokenReferenceToCss', 'tokenValueToCss', 'validateBreakpoints', 'validateResponsiveExpression'],
@@ -68,12 +69,12 @@ function install() {
 
 const surface = (mod) => (typeof mod === 'function' || (mod && typeof mod === 'object') ? Object.keys(mod).filter((key) => key !== '__esModule').sort() : []);
 
-test('phase 4: each shim is 0.5.0-beta.7, depends on exactly uxdsl 0.5.0-beta.7, keeps the postcss peer and ships only re-exports', () => {
+test('phase 4: each shim is 0.5.0-beta.9, depends on exactly uxdsl 0.5.0-beta.9, keeps the postcss peer and ships only re-exports', () => {
   for (const shim of SHIMS) {
     const pkg = JSON.parse(fs.readFileSync(path.join(HERE, shim, 'package.json'), 'utf8'));
     assert.equal(pkg.name, shim);
-    assert.equal(pkg.version, '0.5.0-beta.7');
-    assert.deepEqual(pkg.dependencies, { uxdsl: '0.5.0-beta.7' });
+    assert.equal(pkg.version, '0.5.0-beta.9');
+    assert.deepEqual(pkg.dependencies, { uxdsl: '0.5.0-beta.9' });
     assert.equal(pkg.peerDependencies.postcss, '^8.4.31');
     assert.equal(pkg.publishConfig.access, 'public');
     for (const file of pkg.files) {

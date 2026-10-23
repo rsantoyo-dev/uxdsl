@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None (owner decision of 2026-10-08: the first `uxdsl` release is `0.5.0-beta.9`) |
-| Status | Ready |
+| Status | In review (PR #33) |
 | Size | S |
 | Depends on | — (first story; creates the integration branch `feat/beta9`) |
 | Blocks | MIG-B9-03, MIG-B9-52, MIG-B9-91 |
@@ -235,10 +235,61 @@ PR title the same; body: the §9 results and the two owner steps.
 
 ## 14. Closure record
 
-To be filled in the delivering PR: base SHA · PR · environment (OS, Node,
-Chrome if used) · each §12 command with exit code · controls run · owner steps
-pending.
+- **Base:** `feat/beta9` at `d8677d8`. **PR:** #33. **Commits:** `61258d2`
+  (the story), `38a91e2` (merges `ci/npm-11`, PR #37, so CI runs npm 11).
+- **Environment:** a cloud session without npm registry access: nothing was
+  installed or built locally and the pre-commit hook did not run. CI: GitHub
+  Actions, ubuntu-latest (Ubuntu 24.04), Node 20.20.2, npm 11 (after #37),
+  Chrome for the gate.
+- **Commands:**
+
+  | Command | Where | Exit |
+  | --- | --- | --- |
+  | `node --test scripts/version-mentions.test.js` | local | 0 (2 pass, the negative control included) |
+  | `node --test scripts/docs-provenance.test.js` | local | 0 |
+  | `node scripts/generate-agent-guide.js --check` | local | 0 |
+  | `node scripts/verify-docs-update.js` | local | 0 |
+  | `npm test` (includes `shims.test.js`, `scripts/version-mentions.test.js`, both `--check`s and parity) | CI, run 39887967720 | 0 |
+  | `npm run verify:1.0` (the full gate, I-5 included) | CI, run 39887967720 | 0 |
+
+  The first CI runs of `61258d2` failed for reasons outside the story: once
+  in the Test step (2026-10-12; the same commit passed `npm test` in a
+  diagnostic run the same day) and then in the consumer fixture's
+  `npm install`, an npm 10.8.2 resolver error that broke every branch from
+  about 2026-10-20 (fixed by PR #37).
+- **Controls:** T1's version assertions fail against the base's beta.7
+  manifests; T3's negative control plants both stale shapes.
+- **Not run:** preconditions 2–3 (`npm view …`, no registry access);
+  `node fixtures/parity/run.js` ran only inside `npm test`.
+- **Owner steps pending:** `npm dist-tag add <name>@0.5.0-beta.8 beta` for the
+  five former names; delete the untracked beta.8 draft in your checkout.
 
 ## 15. Findings and follow-ups
 
-None yet.
+- **T3's rule, narrowed (stop rule of §7 applied to the test, not to the
+  contract).** The rule as written — any `0.5.0-beta.<n>` with `n < 9` outside
+  the history folders unless the sentence says "beta.8" or "published" —
+  flags about 45 true sentences about history (`Until 0.5.0-beta.6 this was
+  the separate uxdsl-cli package` in four integration pages, version fixtures
+  in `scripts/release.test.js`, the migration guide's measured upgrades). The
+  test implements what the rule is for: a version below the package's own
+  that is still called unreleased or pinned to a date ("as of 20…"), and the
+  never-published `0.5.0-beta.7` named without saying so. AC3 holds as
+  written (a planted `0.5.0-beta.7` in the package README fails it), and the
+  negative control plants both stale shapes and four truthful ones.
+- **C8:** no playground capture contains a version string at the base (`git
+  grep 0.5.0-beta.7 packages/playground-nextjs` is empty), so there is nothing
+  to regenerate.
+- **C6:** `fixtures/release-1.0/contrast-baseline.json`'s `version` is the
+  version at pin time (`contrastBaselineOf(report, version)`), and the gate
+  compares only the pair sets; it now reads `0.5.0-beta.9`.
+- `package-lock.json` was regenerated with `npm install --package-lock-only
+  --offline`: only the root `version` and `packages[""].version` changed.
+- The root README's sentence "as of 2026-09-28 both point to
+  `0.5.0-beta.6`" was stale (`latest` is `0.5.0-beta.8`); it now points at
+  the beta.8 record, which holds the tags as read on 2026-10-11.
+- The CHANGELOG's beta.9 section still holds FEAT-009's entries, which first
+  reached npm in beta.8; its intro says so, and the beta.8 section lists them.
+  Moving them is MIG-B9-52.
+- Preconditions 2 and 3 (`npm view …`) were not run: this session has no
+  access to the npm registry. The registry state is the one §2 records.

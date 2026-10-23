@@ -56,8 +56,7 @@ filas de `typography_details`. (Tabla completa en el README de `uxdsl-cli`,
 
 **Lo que este flujo no ve:** compara el *tema*, no el CSS compilado. Un cambio en
 cómo el compilador emite CSS a partir del mismo tema — por ejemplo el orden del
-`@import` de Google Fonts corregido en `0.5.0-beta.7` (sin publicar a
-2026-09-28) — deja los dos archivos
+`@import` de Google Fonts corregido en `0.5.0-beta.8` — deja los dos archivos
 idénticos. Esos cambios sólo los anuncia el
 [CHANGELOG](../CHANGELOG.md): leer cada sección `### Visual changes` entre tu
 versión y la nueva.
@@ -250,8 +249,9 @@ Sin overrides, ambas entradas usan defaults. No cargar CSS precompilado de
 otra versión junto al tema nuevo.
 
 > **Alcance de este documento:** describe la migración desde las versiones
-> anteriores hacia beta.1 y las betas siguientes (beta.1 a beta.6 publicadas;
-> beta.7 sin publicar a 2026-09-28). Ver el
+> anteriores hacia beta.1 y las betas siguientes (beta.1 a beta.6 y beta.8
+> publicadas con los cinco nombres anteriores; beta.7 nunca se publicó;
+> `uxdsl@0.5.0-beta.9` es la primera versión del paquete único). Ver el
 > historial de cambios en [`CHANGELOG.md`](../CHANGELOG.md) y el contexto
 > completo (hallazgos, prioridades, estado de cada mejora) en el
 > [monorepo, FEAT-002](https://github.com/rsantoyo-dev/uxdsl/blob/main/docs/features/FEAT-002-beta-migration-hardening.md).
