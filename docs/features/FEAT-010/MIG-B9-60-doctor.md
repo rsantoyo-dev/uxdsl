@@ -171,4 +171,8 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- Cites `/docs/cli`, which redirects to `/docs/tooling` (next.config.js). Recommended: defer until users ask; the migration guide and the shipped codemods cover the one current consumer.

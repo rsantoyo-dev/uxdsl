@@ -1,0 +1,22 @@
+name: Question
+description: How do I express something with UXDSL?
+labels: [question]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: What are you trying to do?
+      description: The result you want on the page, in a sentence or two.
+    validations:
+      required: true
+  - type: textarea
+    id: tried
+    attributes:
+      label: What did you try?
+      description: The .uxdsl and theme you have so far, and where the documentation left you.
+      render: scss
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `npx uxdsl --version`.

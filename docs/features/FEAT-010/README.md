@@ -28,7 +28,16 @@ what every story shares.
 
 4. Run the story's **Preconditions** block. Every line is a command that must
    exit 0. If one fails, stop and report: the base moved, and the story must be
-   re-read against the new base before any code is written.
+   re-read against the new base before any code is written. A precondition
+   that is only stale (a line number, a count, a file an earlier story of this
+   feature renamed) may be corrected by the agent in the story itself, with the
+   old and new line recorded in §15; contracts and acceptance criteria are
+   never rewritten by the agent. Stories marked **Draft (re-baseline after
+   wave 3)** were measured on `685c132` before waves 1–3 rewrite the pipeline:
+   one S story after wave 3 re-runs all their preconditions and baselines and
+   updates them in a single PR for the owner, before any of them starts.
+   Every story's §15 "Review of 2026-10-11" block is applied (or rejected by
+   the owner) before the story starts.
 5. Run the story's **Baseline** block and compare its output with the recorded
    one. A different output is a finding to record, not a reason to skip it.
 
@@ -99,6 +108,17 @@ what every story shares.
   whose contract turns out to be wrong is set to Blocked with a finding; its
   acceptance criteria are never rewritten by the agent.
 
+### Verifying without the npm registry
+
+A session that cannot reach `registry.npmjs.org` cannot install, build or
+run the suite. It may still deliver a story: the failing test is pushed alone
+first and CI records the failure; the change follows; CI green on the branch
+is the evidence. The closure record says which checks ran only in CI, that
+the pre-commit hook did not run locally, and which checks (browser, Press
+Craftor) did not run at all. CI's job logs live on a host such a session may
+not reach either; the step that failed (`gh api …/actions/jobs/<id>`) is
+then the only failure detail, and the record says so.
+
 ## 3. Test policy
 
 What a story's tests must cover, as a checklist the reviewer reads against
@@ -161,12 +181,12 @@ its wave can run in parallel with its siblings, within §7.
 
 | ID | Story | Wave | Decision gate | Size | Depends on | Status |
 | --- | --- | --- | --- | --- | --- | --- |
-| MIG-B9-01 | [Renumber to 0.5.0-beta.9 and record beta.8](MIG-B9-01-renumber-and-record-beta8.md) | 0 | — | S | — | Ready |
+| MIG-B9-01 | [Renumber to 0.5.0-beta.9 and record beta.8](MIG-B9-01-renumber-and-record-beta8.md) | 0 | — | S | — | Merged (PR #33) |
 | MIG-B9-02 | [Refresh the repository's dependencies](MIG-B9-02-dependencies.md) | 0 | — | S | — | Ready |
 | MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | Ready |
+| MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Merged (PR #30) |
 | MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | Blocked (DEC-02) |
-| MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Ready |
-| MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | Ready |
+| MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | In progress (part 1 merged, PR #34) |
 | MIG-B9-11 | [`src/sass/protect.ts`: protect and restore](MIG-B9-11-protect-and-restore.md) | 1 | DEC-01 | M | 10 | Ready |
 | MIG-B9-12 | [`src/sass/compile-sass.ts`: Dart Sass with the `.uxdsl` importer](MIG-B9-12-compile-sass.md) | 1 | DEC-01, DEC-04 | M | 11 | Blocked (DEC-04) |
 | MIG-B9-13 | [`compile()` on the new pipeline; the subset deleted](MIG-B9-13-compile-on-sass.md) | 1 | DEC-01, DEC-05 | M | 12 | Blocked (DEC-05) |
@@ -182,28 +202,28 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-34 | [The `focus` family and one `:focus-visible` rule](MIG-B9-34-focus-family.md) | 3 | DEC-11 | M | 13 | Blocked (DEC-11) |
 | MIG-B9-35 | [Canvas-identity tones are compile errors](MIG-B9-35-canvas-tones.md) | 3 | DEC-12 | S | 13 | Blocked (DEC-12) |
 | MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Blocked (DEC-13) |
-| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 30, 33, 34 | Ready |
-| MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Ready |
-| MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Ready |
-| MIG-B9-43 | [Nothing hand-written, nothing hardcoded, enforced](MIG-B9-43-playground-nothing-hardcoded.md) | 4 | DEC-14 | M | 42 | Ready |
-| MIG-B9-50 | [README, home and quick start](MIG-B9-50-readme-home-quick-start.md) | 5 | — | M | 15, 20 | Ready |
-| MIG-B9-51 | [AGENTS.md and CONTRIBUTING.md](MIG-B9-51-agents-and-contributing.md) | 5 | — | M | 15 | Ready |
-| MIG-B9-52 | [Migration guide in English; CHANGELOG "What changes for you"](MIG-B9-52-migration-and-changelog.md) | 5 | — | S | 01 | Ready |
-| MIG-B9-53 | [Signals that it is maintained](MIG-B9-53-maintenance-signals.md) | 5 | — | S | — | Ready |
-| MIG-B9-54 | ["Why UXDSL" and the browser examples](MIG-B9-54-why-uxdsl-and-browser-examples.md) | 5 | — | M | 50 | Ready (owner-involved) |
-| MIG-B9-55 | [The VS Code extension, packaged](MIG-B9-55-vscode-extension.md) | 5 | — | S | 30 | Ready |
-| MIG-B9-60 | [`uxdsl doctor [--fix]`](MIG-B9-60-doctor.md) | 6 | — | M | 20 | Ready |
-| MIG-B9-61 | [`uxdsl audit` and `uxdsl migrate --suggest`](MIG-B9-61-audit-and-migrate.md) | 6 | — | M | 43 | Ready |
-| MIG-B9-62 | [The generated language reference](MIG-B9-62-generated-reference.md) | 6 | — | M | 30, 34 | Ready |
-| MIG-B9-63 | [`uxdsl explain` and editor hover with the project theme](MIG-B9-63-explain-and-hover.md) | 6 | — | M | 62 | Ready |
-| MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Ready |
-| MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Ready |
-| MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Ready |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | the wave DEC-03 names | Blocked (DEC-03) |
+| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34 | Draft (re-baseline after wave 3) |
+| MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Draft (re-baseline after wave 3) |
+| MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Draft (re-baseline after wave 3) |
+| MIG-B9-43 | [Nothing hand-written, nothing hardcoded, enforced](MIG-B9-43-playground-nothing-hardcoded.md) | 4 | DEC-14 | M | 42 | Draft (re-baseline after wave 3) |
+| MIG-B9-50 | [README, home and quick start](MIG-B9-50-readme-home-quick-start.md) | 5 | — | M | 15, 20 | Draft (re-baseline after wave 3) |
+| MIG-B9-51 | [AGENTS.md and CONTRIBUTING.md](MIG-B9-51-agents-and-contributing.md) | 5 | — | M | 15 | Draft (re-baseline after wave 3) |
+| MIG-B9-52 | [Migration guide in English; CHANGELOG "What changes for you"](MIG-B9-52-migration-and-changelog.md) | 5 | — | S | 01 | Draft (re-baseline after wave 3) |
+| MIG-B9-53 | [Signals that it is maintained](MIG-B9-53-maintenance-signals.md) | 5 | — | S | — | Merged (PR #35) |
+| MIG-B9-54 | ["Why UXDSL" and the browser examples](MIG-B9-54-why-uxdsl-and-browser-examples.md) | 5 | — | M | 50 | Draft (re-baseline after wave 3) |
+| MIG-B9-55 | [The VS Code extension, packaged](MIG-B9-55-vscode-extension.md) | 5 | — | S | 30 | Draft (re-baseline after wave 3) |
+| MIG-B9-60 | [`uxdsl doctor [--fix]`](MIG-B9-60-doctor.md) | 6 | — | M | 20 | Draft (re-baseline after wave 3) |
+| MIG-B9-61 | [`uxdsl audit` and `uxdsl migrate --suggest`](MIG-B9-61-audit-and-migrate.md) | 6 | — | M | 43 | Draft (re-baseline after wave 3) |
+| MIG-B9-62 | [The generated language reference](MIG-B9-62-generated-reference.md) | 6 | — | M | 30, 34 | Draft (re-baseline after wave 3) |
+| MIG-B9-63 | [`uxdsl explain` and editor hover with the project theme](MIG-B9-63-explain-and-hover.md) | 6 | — | M | 62 | Draft (re-baseline after wave 3) |
+| MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Draft — recommended cut (review 2026-10-11) |
+| MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Draft (re-baseline after wave 3) |
+| MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3) |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | the wave DEC-03 names | Blocked (DEC-03) — split into 91a/91b recommended |
 
-The three stories whose gate is a decision the owner has not confirmed also
-have a recommendation inside them; confirming DEC-02 to DEC-13 in one message
-unblocks waves 0–3 entirely.
+Twelve stories are gated by a decision the owner has not confirmed; each has a
+recommendation inside it. Confirming DEC-02 to DEC-13 (and DEC-17, opened by
+the review) in one message unblocks waves 0–3 entirely.
 
 ## 6. Branches and merges
 
@@ -220,24 +240,36 @@ unblocks waves 0–3 entirely.
 
 ## 7. Shared files, serialized
 
-Two stories that edit the same file in the same wave must not run at the
-same time; the later row in §5 waits for the earlier one to merge.
+Two stories that edit the same file must not run at the same time, in the
+same wave or not; the later row in §5 waits for the earlier one to merge. In
+particular every wave-3 story waits for MIG-B9-21, whose K7 rewrites comments
+in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
+`bin/uxdsl.js`).
 
 | File | Stories that edit it |
 | --- | --- |
-| `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 30, 31, 35 |
+| `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 30, 31, 35 |
 | `packages/uxdsl/src/compile.ts` | 13, 20, 21 |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 22, 60, 61, 63 |
-| `packages/uxdsl/src/diagnostics.ts` | 04, 12, 13, 30, 32, 33, 34, 35 |
+| `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 30, 32, 33, 34, 35 |
 | `packages/uxdsl/src/theme/base.json` and `base.contrast-exceptions.json` | 33, 34, 35 |
 | `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 32, 33, 34 |
 | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 31, 34 |
-| `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 32, 34, 35, 36 |
+| `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 31, 32, 34, 35, 36 |
 | `packages/uxdsl/CHANGELOG.md` | every story with output impact (append-only, one subsection per story) |
-| `AGENTS.md` and the generated agent guide | 15, 20, 30, 31, 33, 34, 35, 51 |
-| `scripts/verify-docs-update.js` | 11, 12, 13, 21 |
-| `fixtures/release-1.0/run.js` | 13, 14, 20, 30, 31, 91 |
-| `packages/playground-nextjs/**` | 22, 30, 40, 41, 42, 43 |
+| `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 51 |
+| `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
+| `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 30, 31, 91 |
+| `packages/playground-nextjs/**` | 20, 22, 30, 33, 34, 35, 36, 40, 41, 42, 43 |
+| `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13 |
+| `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story) |
+| `packages/uxdsl/src/typography.ts` | 31, 33 |
+| `packages/uxdsl/src/language.ts` | 04, 30, 31 |
+| `scripts/generate-language-artifacts.js` and its artifacts | 30, 32, 33, 34 |
+| `packages/uxdsl/src/contrast.ts`, `fixtures/release-1.0/contrast-baseline.json` | 34, 35 |
+| `fixtures/mig02-nextjs-cssmodules/browser*.js` | 34, 36 |
+| `fixtures/parity/expected/**` | 13, 31, 33, 34 |
+| `fixtures/mig07-consumer/**`, `fixtures/parity/run.js`, `fixtures/mig-b2-03-cli-init/**`, `fixtures/webpack-adapter/**` | 20 |
 
 ## 8. Decision register
 

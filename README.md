@@ -24,6 +24,11 @@ the five former names are deprecated in favour of `uxdsl`
 is the release gate: one tarball, installed the documented way, plus real
 Vite, Webpack, Next.js and Chrome runs.
 
+**The project:** [stability policy](STABILITY.md) ·
+[roadmap](docs/ROADMAP.md) · [release records](docs/releases/README.md) ·
+[what is in `docs/`](docs/README.md) ·
+[report a bug, ask a question or suggest an idea](https://github.com/rsantoyo-dev/uxdsl/issues/new/choose).
+
 The release notes below describe what was published at the time, under the
 package names of the time.
 
@@ -31,7 +36,7 @@ package names of the time.
 
 Published to npm on 2026-09-23, with `latest` and `beta` on it; the
 [release record](docs/releases/0.5.0-beta.6.md) has the registry reads, the
-checksums and what was verified. [FEAT-008](docs/features/FEAT-008/README.md)
+checksums and what was verified. FEAT-008
 delivered it: one shared compiler behind the CLI, `compile()`, Vite and Webpack;
 located diagnostics with `UXD_*` codes; strict flag parsing; the reviewed base
 theme shipped as the library default; `@ds-typo` emitting only what the theme
@@ -51,8 +56,7 @@ by stability phase 5 (unreleased): `checkThemeContrast` on
 `dark` used as a tone and drawn on the page, covered by three pattern
 exceptions and still listed pair by pair, never counted as passing);
 `uxdsl theme --contrast` in a zero-config project exits 0 and prints the same
-report. What came next was planned in
-[FEAT-009](docs/features/FEAT-009-path-to-0.5.0.md) and shipped as
+report. What came next was planned in FEAT-009 and shipped as
 `0.5.0-beta.8`.
 
 ## 0.5.0-beta.5 — published
@@ -70,7 +74,7 @@ or removing `.uxdsl` files, run `npx uxdsl generate-entry`. See
 tour of the syntax itself — responsive values, palette tokens, density,
 buttons, and live theming with no rebuild.
 
-[FEAT-006](docs/features/FEAT-006-beta5-scoped-strict-theme.md), based on a
+FEAT-006, based on a
 real consumer's CI report: `--strict-theme` (on `build` and `theme` alike)
 takes a family scope (`--strict-theme=palette,breakpoints`, or
 `strictTheme: ['palette', 'breakpoints']`), fixing a false positive where
@@ -84,7 +88,7 @@ first time; previously only the playground's theme editor called that
 function. Entirely additive — no migration steps needed from beta.4.
 (beta.5 also shipped a parallel warning one level deeper, for entry names
 inside `typography_details`/`palette`/`fonts.families`; MIG-B6-01 of
-[FEAT-007](docs/features/FEAT-007-beta6-pre1-foundations.md) removed it as
+FEAT-007 removed it as
 a false positive — those three families are open registries.)
 
 See the [migration recipe](packages/uxdsl/docs/migration.md) and the
@@ -108,7 +112,7 @@ tokens and handle custom typography roles. See the
 The beta.1 release is recorded in
 [docs/releases/0.5.0-beta.1.md](docs/releases/0.5.0-beta.1.md). Follow-up
 installation hardening is tracked in
-[FEAT-003](docs/features/FEAT-003-beta2-smooth-install.md).
+FEAT-003.
 
 The five npm packages were published as `0.5.0-beta.1` with coordinated
 internal dependencies. Both `latest` and `beta` pointed to that release at the
@@ -120,9 +124,8 @@ on `postcss-uxdsl`.
 
 VS Code now suggests `radius(key)` and `shadow(key)` inside Surface, Button
 and Input directives using generated shared-language metadata. That comes from
-the `uxdsl-vscode` extension, which as of 2026-09-28 is on neither the VS Code
-Marketplace nor Open VSX (publishing is tracked as
-[MIG-B7-05](docs/features/FEAT-009/MIG-B7-05-publicar-extension.md)): it is installed
+the `uxdsl-vscode` extension, which is not yet published on the VS Code
+Marketplace or Open VSX (its packaging is on the [roadmap](docs/ROADMAP.md)): it is installed
 from a `.vsix` built from `packages/uxdsl-vscode`. How to install it, and the
 typed config and theme `$schema` that work without it, are in
 [uxdsl-cli's "Editor support"](packages/uxdsl/docs/integrations/cli.md#editor-support). CLI consumers
@@ -209,7 +212,8 @@ demo. These changes shipped in `0.5.0-beta.1`; they are not in 0.4.0.
 
 ## Feature roadmap
 
-- [FEAT-001 — Unified UXDSL Language Engine](docs/features/FEAT-001-unified-language-engine.md): proposed roadmap to align PostCSS, runtime, playground and VS Code around shared semantics, with migration gates and contract tests.
+What comes next is in [docs/ROADMAP.md](docs/ROADMAP.md). The sections below
+record how the shared language engine (FEAT-001) was built.
 
 ### Shared language foundation (in progress)
 

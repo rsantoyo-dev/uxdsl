@@ -157,3 +157,10 @@ To be filled in the delivering PR, with both gate summaries.
 ## 15. Findings and follow-ups
 
 The known limitations the record lists, each with its story id.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Blocking — DEC-03 (b) cannot run with this story.** Its precondition needs `fixtures/test-exercise/run.js` (MIG-B9-90), T2 runs `changelog-shape.test.js` (MIG-B9-52), and §2/G3 need tools, the VSIX and StackBlitz links from waves 5–7. Split it: **91a** for beta.9 (waves 0–3, the MIG-B9-03/14 Press Craftor re-run, a minimal English beta.8 → beta.9 migration section and "What changes for you") and **91b** for beta.10. Stop hard-coding "beta.9" in 52, 55 and 91.
+- G5: `0.5.0-beta.10-dev` sorts above `0.5.0-beta.10` (an alphanumeric identifier outranks a numeric one); use `0.5.0-beta.9.dev` after publishing beta.9.

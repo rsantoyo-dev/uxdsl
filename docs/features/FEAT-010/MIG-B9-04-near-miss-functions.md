@@ -8,7 +8,7 @@
 | Status | Blocked (DEC-02) |
 | Size | S |
 | Depends on | — |
-| Blocks | MIG-B9-10 (the Sass matrix cites the code) |
+| Blocks | — (MIG-B9-10 cites the code once it exists; it does not wait for it — review 2026-10-11) |
 | Base | `feat/beta9` |
 | Owns | `packages/uxdsl/test/near-miss-functions.test.js` (new) |
 | Shares | `packages/uxdsl/src/language.ts`, `packages/uxdsl/src/plugin.ts`, `packages/uxdsl/src/diagnostics.ts`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |
@@ -185,4 +185,12 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Precedence with `UXD_BREAKPOINT_UNKNOWN`.** `rewriteTokens` runs before the unknown-function check (plugin.ts `expandResponsive`): a near-miss check inside `rewriteTokens` changes the code `xd(1px)` reports and breaks `test/breakpoint-unknown.test.js:41-44`. State the rule: a top-level name one edit from a breakpoint is `UXD_BREAKPOINT_UNKNOWN`; everything else near a token function is the new code.
+- **False positive.** Distance 2 from `space` flags the real CSS function `shape()`, which is not in `KNOWN_CSS_FUNCTIONS`. Audit `KNOWN_CSS_FUNCTIONS` against the CSS function list in the same change, or use distance 1 for names of five letters or fewer; add `shape(…)` as a negative control.
+- **Theme values.** C3 relies on `validateResponsiveExpression`, which checks only top-level functions (language.ts:59), so the owner's own `xs(spacing(2))` stays silent in a theme value. Put the near-miss check in `language.ts`, shared by `tokenValueToCss` and `rewriteTokens`.
+- C5 names `missingKeyMessage`, but Palette/Color suggestions come from `closestKey` in plugin.ts; name the function that actually produces them.
+- The header says this story blocks MIG-B9-10; it does not (README §5: 10 depends on 05). Removed from the order.

@@ -138,4 +138,8 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- The precondition `## 0.5.0-beta.9 — unreleased` fails once beta.9 is published, and the English "five packages → `uxdsl`" migration (C1) must ship with the release that renames the package. Under DEC-03 (b) that is beta.9: move C1 into the beta.9 gate (MIG-B9-91a). Summaries for the beta.1–7 sections add little; drop them.

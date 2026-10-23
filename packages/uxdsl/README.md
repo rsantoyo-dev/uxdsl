@@ -1675,6 +1675,11 @@ what caught `package.json`'s `exports` map missing `"./package.json"`,
 which broke `require("…/package.json")` for any consumer that
 reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 
+The package's own test files run in parallel against the built `dist/`, so
+none of them may rebuild it: the one test that inspects the packed file list
+runs `npm pack --dry-run --ignore-scripts`, since `prepack` would recompile
+`dist/` under the others.
+
 `fixtures/release-1.0/` (`npm run verify:1.0`) does the same from the one
 tarball, and among its checks exercises the CLI's
 `builds` array end to end: a theme entry and four component entries built

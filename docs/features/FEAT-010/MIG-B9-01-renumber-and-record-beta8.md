@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None (owner decision of 2026-10-08: the first `uxdsl` release is `0.5.0-beta.9`) |
-| Status | In review (PR #33) |
+| Status | Merged |
 | Size | S |
 | Depends on | — (first story; creates the integration branch `feat/beta9`) |
 | Blocks | MIG-B9-03, MIG-B9-52, MIG-B9-91 |
@@ -265,6 +265,15 @@ PR title the same; body: the §9 results and the two owner steps.
   five former names; delete the untracked beta.8 draft in your checkout.
 
 ## 15. Findings and follow-ups
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- The baseline grep lists 31 files, not 29, and omits `fixtures/release-1.0/contrast-baseline.json`; re-record it.
+- Preconditions 2–3 (`npm view …`) need registry access; an environment without it records them as not run, never as PASS.
+
+### Delivery findings (MIG-B9-01, PR #33)
 
 - **T3's rule, narrowed (stop rule of §7 applied to the test, not to the
   contract).** The rule as written — any `0.5.0-beta.<n>` with `n < 9` outside

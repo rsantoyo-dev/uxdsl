@@ -160,3 +160,10 @@ To be filled in the delivering PR.
   changed because of R1.
 - For the owner: Surface custom roles still inherit `contained`'s fields by
   the documented rule; aligning them with R1 is a separate decision.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- Three inheritance rules for one concept: typography inherits by default with `"extends": "none"`, Buttons/Inputs inherit nothing, Surfaces still inherit `contained`. Use one rule for all three — inherit by default, `"extends": "none" | "<role>"` — and reserve `none` as a role name.
+- R1 silently removes hover from existing custom roles, and the detection tool (MIG-B9-60) ships later; R5 omits the Input base fields also lost (`caret`, `placeholder`). Recommended: defer to beta.10 or adopt the single rule above.

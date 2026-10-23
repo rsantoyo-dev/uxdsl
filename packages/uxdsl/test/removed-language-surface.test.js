@@ -148,7 +148,11 @@ test('the legacy theme files and the ./theme/* glob export are gone; the two JSO
   assert.equal(pkg.exports['./theme/base.contrast-exceptions.json'], './src/theme/base.contrast-exceptions.json');
   assert.deepEqual(fs.readdirSync(path.join(packageRoot, 'src/theme')).sort(), ['base.contrast-exceptions.json', 'base.json']);
 
-  const packed = spawnSync('npm', ['pack', '--dry-run', '--json'], { cwd: packageRoot, encoding: 'utf8' });
+  // --ignore-scripts: `prepack` would rebuild dist/ while the other test files,
+  // which node --test runs in parallel, are loading it (a module read
+  // half-written fails as "enforceReferences is not a function"). The suite
+  // has already built dist/.
+  const packed = spawnSync('npm', ['pack', '--dry-run', '--json', '--ignore-scripts'], { cwd: packageRoot, encoding: 'utf8' });
   assert.equal(packed.status, 0, packed.stderr);
   const files = JSON.parse(packed.stdout)[0].files.map((file) => file.path);
   assert.deepEqual(files.filter((file) => /theme\/default-|theme-manifest|\.uxdsl$/.test(file)), []);

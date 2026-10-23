@@ -167,3 +167,11 @@ To be filled in the delivering PR.
 
 - For the owner: whether `h1` should keep its own margins (MUI's `h1` has
   none unless `gutterBottom`).
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- **Factual: `h1` has no top margin of its own.** `base.json` gives `h1` only `marginBlockEnd: "0.2em"`; its start margin is `default`'s `0`. After Y1 every `@ds-typo(h1)` gets the browser's 0.67em top margin, and T1 as titled fails.
+- The baseline snippet's `indexOf('.t{') || indexOf('.t {')` returns -1 (truthy) and prints the last character; after Sass formatting `.t{` never appears, so AC2 always passes. Rewrite it with `postcss.parse`.
+- The plan says no margins "is also what MUI does"; MUI's `Typography` root sets `margin: 0`, which is today's behavior. Recommended: keep `extends`, drop Y1; if Y1 stays, add `marginBlockStart: "0"` to `h1` and flag the return of browser margins on h2–h6 and p as breaking.

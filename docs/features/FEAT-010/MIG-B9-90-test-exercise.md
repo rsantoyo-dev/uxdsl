@@ -138,3 +138,11 @@ To be filled in the delivering PR, with the rounds and their findings.
 ## 15. Findings and follow-ups
 
 Filled per round.
+
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- X2 builds the Next app's renamed SCSS file through the PostCSS path, which DEC-05 forbids; MIG-B9-14 A8 routes it through the CLI's `builds`.
+- "Zero findings" with an LLM tester has no end: define blocking findings. X5 ("a different agent") cannot be verified: require a clean directory with no repository checkout.
+- It also depends on wave 4 (it reads the site), MIG-B9-54 and whichever wave-6 tools ship; and on MIG-B9-50 adding the docs to the package `files`.

@@ -147,4 +147,8 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Review of 2026-10-11 (apply before implementing)
+
+Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
+
+- `uxdsl theme --json` does not exist (bin/uxdsl.js ~1929): `uxdsl theme` already prints JSON and unknown flags fail. Recommended: defer; the extension is not published yet.

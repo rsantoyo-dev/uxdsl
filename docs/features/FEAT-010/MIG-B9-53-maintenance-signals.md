@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
 | Wave | 5 |
 | Decision gate | None (plan §6.6, §6.7; audit §5.5) |
-| Status | Ready |
+| Status | Merged |
 | Size | S |
 | Depends on | — |
 | Blocks | MIG-B9-50 (links to the files this story creates; can merge in either order if the links are added last) |
@@ -135,8 +135,36 @@ Branch `feat/b9-53-signals`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Base:** `feat/beta9` at `d8677d8`, stacked on MIG-B9-01 (#33). **PR:** #35.
+  **Commits:** `a6b2059` (the files), `c14d9cd` (the test in `npm test`),
+  `e460905` (merges `ci/npm-11`, PR #37).
+- **Environment:** a cloud session without npm registry access; CI on GitHub
+  Actions (ubuntu-latest, Node 20.20.2, npm 11, Chrome for the gate).
+- **Commands:**
+
+  | Command | Where | Exit |
+  | --- | --- | --- |
+  | `node --test scripts/docs-shape.test.js scripts/docs-provenance.test.js scripts/version-mentions.test.js` | local | 0 (16 pass) |
+  | `wc -l < STABILITY.md` / `wc -l < docs/ROADMAP.md` | local | 58 / 34 (AC2: ≤ 80 / ≤ 60) |
+  | `node scripts/verify-docs-update.js` | local | 0 |
+  | `npm test` (includes `scripts/docs-shape.test.js` and the compiled doc examples) | CI, run 39887973617 | 0 |
+  | `npm run verify:1.0` | CI, run 39887973617 | 0 |
+
+- **Controls:** T1's negative control (a README link into `docs/features`)
+  is caught.
+- **Owner steps pending:** open the repository's "New issue" page once to see
+  the three forms render; create the `idea` label if it should be applied.
 
 ## 15. Findings and follow-ups
 
 - Candidates for later: `SECURITY.md`, a code of conduct.
+- S5 names `CONTRIBUTING.md`, which does not exist yet (MIG-B9-51 creates it):
+  the README does not link it; MIG-B9-51 adds the link with the file.
+- The root README's links into `docs/features` (FEAT-001, 003, 006, 007, 008,
+  009 and MIG-B7-05) now name the feature as plain text; the "Feature roadmap"
+  list points at `docs/ROADMAP.md`.
+- The issue forms apply the labels `bug`, `question` and `idea`; GitHub skips a
+  label the repository does not have, so `idea` is applied only once the owner
+  creates it.
+- Stacked on MIG-B9-01: the releases index lists the renamed records
+  (`0.5.0-beta.8.md`, `0.5.0-beta.9.md`).
