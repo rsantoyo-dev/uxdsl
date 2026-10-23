@@ -42,7 +42,15 @@ jobs:
       - name: Prepare the consumer fixture (packs uxdsl, installs the tarball)
         run: node fixtures/mig07-consumer/run.js
       - name: Test
-        run: npm test
+        run: |
+          set +e
+          npm test > /tmp/test.log 2>&1
+          status=$?
+          enc() { sed -e 's/%/%25/g' -e 's/\r//g' | awk '{printf "%s%%0A", $0}'; }
+          first=$(grep -n "^not ok" /tmp/test.log | grep -v "# TODO" | head -1 | cut -d: -f1)
+          if [ -n "$first" ]; then echo "::error title=first failure::$(sed -n "$((first-2)),$((first+40))p" /tmp/test.log | cut -c1-160 | enc)"; fi
+          echo "::error title=log tail::$(tail -30 /tmp/test.log | cut -c1-160 | enc)"
+          exit $status
 
   gate:
     name: verify:1.0 (one tarball, real Chrome)
