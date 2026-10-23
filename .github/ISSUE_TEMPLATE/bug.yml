@@ -1,0 +1,56 @@
+name: Bug
+description: UXDSL compiled, applied or validated something differently from what the documentation says.
+labels: [bug]
+body:
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The output of `npx uxdsl --version`.
+      placeholder: uxdsl 0.5.0-beta.9
+    validations:
+      required: true
+  - type: dropdown
+    id: integration
+    attributes:
+      label: Integration
+      description: Where UXDSL runs in your project.
+      options:
+        - CLI (uxdsl build)
+        - PostCSS plugin (uxdsl/postcss)
+        - Vite plugin (uxdsl/vite)
+        - webpack loader (uxdsl/webpack)
+        - Runtime (uxdsl/runtime, applyTheme)
+        - compile() from Node
+        - Editor extension
+    validations:
+      required: true
+  - type: textarea
+    id: input
+    attributes:
+      label: The .uxdsl input
+      description: The smallest stylesheet that shows the problem.
+      render: scss
+    validations:
+      required: true
+  - type: textarea
+    id: theme
+    attributes:
+      label: Theme excerpt
+      description: The part of your theme JSON the input uses, or "the default theme".
+      render: json
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected output
+      render: css
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual output or error
+      description: Include the `UXD_*` code and the file:line:column if there is one.
+      render: text
+    validations:
+      required: true

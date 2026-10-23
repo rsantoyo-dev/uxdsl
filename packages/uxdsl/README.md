@@ -307,6 +307,10 @@ With `includeTheme: true` (the default) the compiled stylesheet is, in order:
 5. the author's rules, in written order, with the `@media` blocks the compiler
    creates for their responsive declarations right after each rule.
 
+A declaration the grammar does not change is printed exactly as written, with
+its spacing and inline comments (`margin: 0 /* c */ auto`, an empty
+`--x: ;`); a declaration whose tokens are rewritten keeps its comments too.
+
 So an author's own `:root { --uxdsl__palette__primary-main: … }` comes
 **after** the theme's declaration of the same name and wins the cascade, the
 way any later declaration of a custom property does. Before stability phase 1
@@ -995,10 +999,10 @@ page.
 (hue and chroma held fixed, only lightness moved, in both directions,
 smallest valid step — see the CHANGELOG's "phase 3 of 4" entry for the
 full before/after table), and `report.passed` stayed honestly `false` for a
-while: 123 failing pairs as of 2026-09-28. MIG-B7-01 (FEAT-009) closed one
+while: 123 failing pairs in `0.5.0-beta.8`. MIG-B7-01 (FEAT-009) closed one
 of phase 3's three findings — `inputs.*.base.placeholder` follows the
 requested tone on `contained`, the only Input role whose background
-actually tints — and stability phase 5 (unreleased, `0.5.0-beta.7`) closed
+actually tints — and stability phase 5 (`0.5.0-beta.9`) closed
 the rest: `checkThemeContrast(resolveTheme(), { exceptions })` with the
 shipped exceptions file reports **`passed: true` — 1004 pairs checked, 0
 failing, 111 excepted, no exception issue** (824/0/98 before the same phase
@@ -1015,8 +1019,8 @@ three patterns, every covered pair still listed. The 111 excepted pairs are
 all of that class; reverting any corrected value makes the gate fail again,
 not through an exception (`test/base-theme-contrast.test.js`).
 
-**Input placeholder tone (MIG-B7-01, FEAT-009 — `0.5.0-beta.7`, unreleased as
-of 2026-09-28; `0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
+**Input placeholder tone (MIG-B7-01, FEAT-009 — published in `0.5.0-beta.8`;
+`0.5.0-beta.6` still uses `palette(neutral.dark)` here):**
 
 ```css
 .field { @ds-input(contained error); }
@@ -1044,7 +1048,7 @@ before every other rule (and an `@charset` only as the very first thing);
 a browser silently discards one that follows a style rule. Through
 `0.5.0-beta.6` compiled output — the CLI, `compile()`, the plugin — put the
 theme's `:root` block above every import, so the font request was never made.
-From `0.5.0-beta.7` (unreleased as of 2026-09-28) the theme's imports come first (after your `@charset`, if you have one),
+From `0.5.0-beta.8` the theme's imports come first (after your `@charset`, if you have one),
 then any `@import` you wrote yourself in the order you wrote it, then the
 theme's `:root`. Nothing you wrote is reordered. Two consequences worth
 knowing: Inter is actually requested (and your visitors' browsers contact
@@ -1202,7 +1206,7 @@ one, so `uxdsl build` names both the file and the exact key. Every structural
 problem is `UXD_THEME_INVALID` with a key path (see "One theme validator"
 below); a breakpoint-map problem is `UXD_BP_INVALID`, reported once.
 Button/Input closed-set errors (`UXD_BUTTON_*`/`UXD_INPUT_*`) do not carry a
-key path (as of 2026-09-29); they still preserve their code and message.
+key path yet; they still preserve their code and message.
 
 The per-family default constants (`DEFAULT_RADII`, `DEFAULT_SHADOWS`,
 `DEFAULT_BORDERS`/`DEFAULT_BORDER_COLORS`, `DEFAULT_SURFACES`,
@@ -1309,6 +1313,14 @@ implementation of `$variables`, `@if`/`@else`, `@each`, `@for`,
 lists it), and a `$name` nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
 breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
+
+The SCSS subset is being replaced by real Dart Sass in `compile()` (FEAT-010,
+wave 1), so that a `.scss` file renamed to `.uxdsl` compiles to the CSS Dart
+Sass produces for it. The tests that pin that pipeline — the protect/restore
+cases, source-map positions through both stages, the pipeline behaviors and a
+Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
+of the implementation, as pending (`todo`) tests; until it lands, `compile()`
+behaves as described above.
 
 
 ### One theme validator (`validateTheme`)
@@ -1533,7 +1545,7 @@ is covered from the start in
 [the CLI guide's "Editor support"](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#editor-support).
 
 **In a plain `uxdsl.config.cjs`**, with no TypeScript in the project — the form
-`uxdsl init` writes since `0.5.0-beta.7` (unreleased as of 2026-09-28),
+`uxdsl init` writes since `0.5.0-beta.8` (then the `uxdsl-cli` package),
 type-only, nothing loaded at run time:
 
 ```js
@@ -1663,6 +1675,11 @@ what caught `package.json`'s `exports` map missing `"./package.json"`,
 which broke `require("…/package.json")` for any consumer that
 reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 
+The package's own test files run in parallel against the built `dist/`, so
+none of them may rebuild it: the one test that inspects the packed file list
+runs `npm pack --dry-run --ignore-scripts`, since `prepack` would recompile
+`dist/` under the others.
+
 `fixtures/release-1.0/` (`npm run verify:1.0`) does the same from the one
 tarball, and among its checks exercises the CLI's
 `builds` array end to end: a theme entry and four component entries built
@@ -1673,7 +1690,7 @@ fails; `--no-include-theme` overrides every entry).
 
 ## Guide for AI agents
 
-Since `0.5.0-beta.7` (unreleased as of 2026-09-28), the package ships the UXDSL
+Since `0.5.0-beta.8` (then `postcss-uxdsl`), the package ships the UXDSL
 agent guide at `docs/agent-guide.md`, generated from
 the repository's `AGENTS.md` for this exact version. Point a consuming project's
 agent instructions at `node_modules/uxdsl/docs/agent-guide.md` rather
