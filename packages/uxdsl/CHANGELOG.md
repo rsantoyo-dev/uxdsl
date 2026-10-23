@@ -22,6 +22,24 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Fixed: declarations the grammar does not change keep their raw text (MIG-B9-05)
+
+The compiler re-assigned every declaration's value, even when the UXDSL
+grammar had nothing to rewrite in it, and PostCSS then printed the
+re-serialized value instead of the author's text. An empty custom property
+lost its space (`--bs-btn-font-family: ;` became `--bs-btn-font-family:;`),
+and inline comments inside a value disappeared (`margin: 0 /* c */ auto`,
+`transform: rotate(360deg) /* rtl:ignore */`). A value is now assigned only
+when the grammar changes it, and a changed value keeps its comments
+(`padding: space(2) /* keep */` → `padding: var(--uxdsl__space__2) /* keep */`).
+Pinned by `test/preserve-untouched-declarations.test.js`, through
+`uxdsl/postcss` and through `compile()`.
+
+### Visual changes
+
+None in rendering. In the CSS text, untouched values keep the author's spacing
+and comments, so a diff against a previous build can show them reappearing.
+
 ### Package layout (stability phase 4, decision DE-1)
 
 The five packages are one: **`uxdsl`**. Install it with `npm i -D uxdsl`; it

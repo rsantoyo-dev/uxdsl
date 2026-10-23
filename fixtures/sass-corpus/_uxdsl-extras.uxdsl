@@ -1,0 +1,27 @@
+// UXDSL constructs mixed with Bootstrap's own Sass variables, functions and mixins.
+.card-x {
+  padding: density(4);
+  color: palette(primary.main);
+  border: 1px solid palette(primary.main, 0.5);
+  margin: xs($spacer * .5) md($spacer);
+  max-width: xs(100%) md(map-get($container-max-widths, md));
+  @include media-breakpoint-up(md) { gap: space(3); }
+  &__title { @ds-typo(h2); color: color(gray.900); }
+  &--raised { box-shadow: shadow(2); border-radius: radius(2); }
+}
+
+// A Surface directive inside a mixin, called from @each over Bootstrap's $theme-colors.
+@mixin x-tinted-surface($value) {
+  @ds-surface(contained);
+  border-color: $value;
+  --x-tint: #{tint-color($value, 80%)};
+}
+@each $name, $value in $theme-colors {
+  .surface-#{$name} { @include x-tinted-surface($value); }
+}
+
+// A Sass variable inside a directive's arguments: Bootstrap's names mapped to UXDSL palette families.
+$x-tones: (primary: primary, secondary: secondary, success: success, info: info, warning: warning, danger: error);
+@each $name, $tone in $x-tones {
+  .btn-x-#{$name} { @ds-button(contained $tone 2); }
+}

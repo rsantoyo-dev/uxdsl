@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | Ready |
+| Status | In progress (part 1 in review; C1–C2 pending a session with the npm registry) |
 | Size | M |
 | Depends on | MIG-B9-05 (byte-preserving plugin) |
 | Blocks | MIG-B9-11, MIG-B9-12, MIG-B9-13 |
@@ -361,4 +361,37 @@ To be filled in the delivering PR.
 
 ## 15. Findings and follow-ups
 
-None yet.
+### Part 1 (2026-10-11, a session without npm registry access)
+
+Delivered: C3 (the 63 protect/restore cases and their end-to-end test), C4
+(the source-map fixture and its tests), C5 (the pipeline behaviors), C6 (the
+Bootstrap corpus script, its extras file and README). Not delivered, because
+they need Dart Sass installed: **C1** (`sass` as a devDependency; the lockfile
+cannot be regenerated without the registry) and **C2** (the 110-case matrix
+re-recorded from live Dart Sass, `sass-matrix.*`). The story stays In
+progress until a session with the registry does C1 and C2.
+
+- **C3, the expectations.** The prototype's cases file was never committed (the
+  review of 2026-10-11), so the cases were written from §7.2's intents. Most
+  expectations are stated as `{ sameAs: <plain UXDSL> }`: the pipeline's output
+  must equal what the UXDSL plugin alone produces for the case written without
+  Sass, which pins UXDSL's semantics without restating generated CSS by hand.
+  CSS literals are used only where the case is plain CSS. Twelve cases carry a
+  `verify` note — a Dart Sass behavior this list was written without running
+  Sass on (S4 re-quoting, C5 comments in values, N6 `if()`, U3, D4, D7, NC3–NC6,
+  and O2/O3, which depend on DEC-17). MIG-B9-13 confirms each against live
+  Sass before flipping it from `todo`, and records any expectation it changes.
+- `flat()` normalizes whitespace around `{ } ; ,` as well as runs of
+  whitespace (the prototype collapsed runs only): Sass's expanded layout and
+  the plugin's media blocks differ in spacing around braces.
+- **C4.** `heavy.uxdsl` and `_mixins.uxdsl` are verbatim. Three small fixtures
+  close the gaps the review found: `ok.uxdsl` (heavy with `space(4)`, for the
+  successful map), `uses-broken.uxdsl` (calls `m.broken-pad`, which heavy never
+  includes) and `sass-error.uxdsl` (`$undefined` at 4:18). A test that runs now
+  pins the four positions.
+- **C5.** `silenceDeprecations` is assumed to be a `compile()` option; MIG-B9-12
+  owns its name.
+- **C6** was not run (no registry). On the base it should stop at the
+  comparison with "compile() failed" (today's `compile()` rejects `@use`) and
+  exit 1; the extras compile uses `includeTheme: false`, so the prefix check is
+  exact (the review's C6.6 finding).
