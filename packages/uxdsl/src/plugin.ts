@@ -372,7 +372,8 @@ function resolveVariables(c: Compilation) {
   root.walkDecls((decl) => {
     if (typeof decl.value !== 'string' || c.generated.has(decl)) return;
     if (Object.keys(vars).length > 0) {
-      decl.value = decl.value.replace(reference, (match, name) => (Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : match));
+      const substituted = decl.value.replace(reference, (match, name) => (Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : match));
+      if (substituted !== decl.value) decl.value = substituted;
     }
     // Strings are left alone: `content: "$5"` is text.
     for (const node of valueParser(decl.value).nodes) {
@@ -508,6 +509,37 @@ function checkResponsiveStructure(c: Compilation, decl: Declaration) {
   }
 }
 
+const COMMENT = /\/\*[\s\S]*?\*\//g;
+const withoutComments = (text: string) => text.replace(COMMENT, ' ').replace(/\s+/g, ' ').trim();
+const commentsOf = (text: string) => (text.match(COMMENT) || []).join('\n');
+
+/**
+ * Sets a declaration's value only when the grammar changed it. PostCSS prints
+ * the author's raw text (`raws.value.raw`, with its comments and spacing) only
+ * while `raws.value.value` equals `decl.value`, so assigning a value that is
+ * merely re-serialized or trimmed would drop that text from CSS the grammar
+ * had nothing to say about. When the value does change and the author's raw
+ * text carried comments, `rewriteRaw` applies the same rewrite to the raw text;
+ * the result is kept only if it holds exactly the same comments and, without
+ * them, the new value.
+ */
+function assignValue(decl: Declaration, next: string, rewriteRaw?: (raw: string) => string): void {
+  if (next.trim() === decl.value.trim()) return;
+  const raw = (decl.raws as any).value;
+  const rawInSync = raw && typeof raw.raw === 'string' && raw.value === decl.value;
+  decl.value = next;
+  if (!rawInSync || !rewriteRaw) return;
+  let rawNext: string;
+  try {
+    rawNext = rewriteRaw(raw.raw);
+  } catch {
+    return;
+  }
+  if (commentsOf(rawNext) === commentsOf(raw.raw) && withoutComments(rawNext) === withoutComments(next)) {
+    (decl.raws as any).value = { value: next, raw: rawNext };
+  }
+}
+
 /**
  * Rewrites the token functions of every author declaration and splits a
  * responsive value into its base value plus one `@media (min-width)` clone of
@@ -545,7 +577,7 @@ function expandResponsive(c: Compilation) {
           throw diagnostic(`UXD_BREAKPOINT_UNKNOWN: ${name}(...) is not a configured breakpoint or a known CSS function; configured breakpoints: ${Array.from(bpNames).join(', ')}.`);
         }
       }
-      if (!hasResponsive) { decl.value = parsed.toString().trim(); return; }
+      if (!hasResponsive) { assignValue(decl, parsed.toString().trim(), (raw) => rewriteTokens(c, raw)); return; }
       const resolved = ordered.map(({ name }) => ({ bp: name, text: rewriteTokens(c, resolveResponsiveValue(rewritten, name, bps)) }));
       const baseOut = resolved[0]?.text || '';
       const others = resolved.filter((entry, index) => index > 0 && entry.text && entry.text !== resolved[index - 1].text);
@@ -598,7 +630,7 @@ function expandResponsive(c: Compilation) {
   // and cloning; the generated theme is already resolved.
   root.walkDecls((decl) => {
     try {
-      if (typeof decl.value === 'string' && !c.generated.has(decl)) decl.value = rewriteTokens(c, decl.value);
+      if (typeof decl.value === 'string' && !c.generated.has(decl)) assignValue(decl, rewriteTokens(c, decl.value), (raw) => rewriteTokens(c, raw));
     } catch (error) {
       throw locateError(error, decl);
     }

@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | Ready |
+| Status | In review (PR #30) |
 | Size | S |
 | Depends on | — |
 | Blocks | MIG-B9-10 (the Bootstrap corpus cannot be byte-identical without it) |
@@ -136,8 +136,36 @@ Branch `feat/b9-05-preserve-untouched`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Base:** `feat/beta9` at `d8677d8`. **PR:** #30. **Commits:** `4fb2e0c`
+  (the test alone), `ca413c3` (the fix), `965c11d` (a control's regex).
+- **Environment:** a cloud session without npm registry access, so nothing
+  was installed, built or tested locally and the pre-commit hook did not run;
+  every suite ran in CI (GitHub Actions, ubuntu-latest, Node 20, Chrome for the
+  gate). Locally: a TypeScript syntax check of `plugin.ts` and `scss-subset.ts`
+  and `node scripts/verify-docs-update.js` (exit 0).
+- **Commands, in CI:**
+
+  | Commit | `npm test` | `verify:1.0` |
+  | --- | --- | --- |
+  | `4fb2e0c` (test only) | failure, in the Test step | skipped |
+  | `ca413c3` (fix) | failure: one control (T3's regex expected a space the plugin's compact output does not have); every other test passed | skipped |
+  | `965c11d` | success | success |
+
+  CI's job logs are served from a host this session cannot reach; the
+  `ca413c3` failure was read through a temporary branch that printed the
+  failing lines as a GitHub annotation (PR #32, closed). The `4fb2e0c` failure
+  is known only by its step.
+- **Controls:** T1 failed on the base (the test-only commit); T2 and the
+  responsive control pass after the fix; parity (T3) and theme byte-identity
+  (T4) are part of `npm test` and passed unchanged.
+- **Owner steps pending:** none.
 
 ## 15. Findings and follow-ups
 
-None yet.
+- C1's helper also rewrites the author's raw text when a value does change, so
+  C4 holds as written (`padding: space(2) /* keep */` keeps its comment): the
+  same token rewrite is applied to `raws.value.raw` and kept only when it holds
+  the same comments and, without them, the new value.
+- `compile()` needed `scss-subset.ts` to assign `$variable` substitutions only
+  on change, like the plugin; that file was not in the story's Shares. It is
+  deleted by MIG-B9-13 anyway.
