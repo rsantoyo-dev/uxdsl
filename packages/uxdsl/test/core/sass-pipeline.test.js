@@ -105,11 +105,41 @@ test.todo('MIG-B9-10: a bare package path resolves through node_modules', async 
   assert.match(flat((await build(dir)).css), /\.base \{ color: red; \}/);
 });
 
-test.todo('MIG-B9-10: @function space() is UXD_RESERVED_NAME at its line', async () => {
-  const dir = project({ 'entry.uxdsl': '.a { color: red; }\n@function space($k) { @return $k; }\n' });
-  const error = await failure(build(dir));
-  assert.match(String(error.message), /UXD_RESERVED_NAME/);
-  assert.equal(error.line, 2);
+// FEAT-010 DEC-17 (decided 2026-10-23): a project function named like a UXDSL
+// function wins where Sass calls it by its bare name, with one located warning.
+const shadowed = (result) => result.warnings.filter((warning) => /UXD_FUNCTION_SHADOWED/.test(warning.text));
+
+test.todo('MIG-B9-10: @function space() wins over the token and warns UXD_FUNCTION_SHADOWED at its line', async () => {
+  const dir = project({ 'entry.uxdsl': '.a { color: red; }\n@function space($k) { @return $k * 3px; }\n.b { padding: space(2); }\n' });
+  const result = await build(dir);
+  assert.match(flat(result.css), /\.b \{ padding: 6px; \}/);
+  const [warning, ...more] = shadowed(result);
+  assert.ok(warning, 'one warning names the replaced UXDSL function');
+  assert.equal(more.length, 0);
+  assert.equal(warning.line, 2);
+});
+
+test.todo('MIG-B9-10: a @function color in a .scss partial loaded with @import is found and warned', async () => {
+  const dir = project({
+    'entry.uxdsl': '@import "helpers";\n.a { color: color(brand); }\n',
+    '_helpers.scss': '@use "sass:map";\n$colors: (brand: #123456);\n@function color($name) { @return map.get($colors, $name); }\n',
+  });
+  const result = await build(dir);
+  assert.match(flat(result.css), /\.a \{ color: #123456; \}/);
+  const [warning] = shadowed(result);
+  assert.ok(warning, 'a shadowing function in a .scss partial is not silent');
+  assert.match(String(warning.file), /_helpers\.scss$/);
+});
+
+test.todo('MIG-B9-10: a helper reached only through a namespace shadows nothing', async () => {
+  const dir = project({
+    'entry.uxdsl': '@use "helpers";\n.a { margin: helpers.space(2); padding: space(2); }\n',
+    'plain.uxdsl': '.a { margin: 6px; padding: space(2); }\n',
+    '_helpers.scss': '@function space($k) { @return $k * 3px; }\n',
+  });
+  const result = await build(dir);
+  assert.equal(flat(result.css), flat((await build(dir, 'plain.uxdsl')).css));
+  assert.equal(shadowed(result).length, 0);
 });
 
 test.todo('MIG-B9-10: @ds-surface (contained) with a space compiles', async () => {

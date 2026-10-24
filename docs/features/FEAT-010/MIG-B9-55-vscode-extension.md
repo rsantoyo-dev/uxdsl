@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 5 |
 | Decision gate | None (plan §3.2) |
 | Status | Ready |
@@ -150,3 +150,9 @@ To be filled in the delivering PR.
 Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
 
 - The dry run prints "would package" and builds no VSIX (release.js:310-313); there is no SVG mark in the playground's `public/` (only PNGs); it cites a session-scratch script that is not in the repository.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-07:** there are no breakpoint at-rules. X2 highlights and completes `(--<breakpoint>)` inside an `@media` prelude instead of `@xs` … `@xl`; T1 checks that instead.

@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-08 (recommended: palette modes match any element; composites re-declared on `[data-theme]` and `[data-uxdsl-scope]`) |
-| Status | Blocked (DEC-08) |
+| Decision gate | DEC-08 (decided 2026-10-23: palette modes match any element; palette-dependent composites re-declared per scope) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-40 |
@@ -213,3 +213,9 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - `[data-theme='light']` also re-declares colors and spacing, because `foundationBlocks` emits one block (foundations.ts:63): re-declare only the palette for light, and only palette-dependent composites per scope.
 - Measure style recalculation with many scoped elements; T2's scan for `':root'` must skip comments.
 - Also edits `control-engine.ts` and `surfaces.ts` (missing from README §7).
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-08, confirmed** with the review's conditions, now part of the contract: the dark selector is `:root[data-theme='dark'], [data-theme='dark']` (flag the change); only palette-dependent composites are re-declared per scope; `[data-theme='light']` re-declares only the palette; a test pins, and the docs state, that inside a scope the theme's composites win over a hand-written `:root` composite override (the documented place for an override is the theme JSON); style recalculation with many scoped elements is measured; T2's scan for `':root'` skips comments; the story also edits `control-engine.ts` and `surfaces.ts`.

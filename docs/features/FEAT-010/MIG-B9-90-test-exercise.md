@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` (and repeated for beta.10) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 7 |
 | Decision gate | None (plan §2.2; audit phase 7) |
 | Status | Ready |

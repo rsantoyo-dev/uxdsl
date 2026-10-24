@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | DEC-11 (recommended: a `focus` theme family and one generated `:where(…):focus-visible` rule) |
-| Status | Blocked (DEC-11) |
+| Decision gate | DEC-11 (decided 2026-10-23: a `focus` family and one generated `:where(…):focus-visible` rule) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-32, MIG-B9-40, MIG-B9-62 |
@@ -196,3 +196,11 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - A project cannot switch the global rule off (closed field set; a deep merge cannot delete a base key): add an opt-out.
 - The Goal says "everything" takes the ring, but the selector list excludes `select`, checkboxes, `area` and `contenteditable`: align them.
 - If MIG-B9-31 lands first, the focus variables must use its `ROOT_SCOPE`; say so.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-11, confirmed** with the review's conditions: a theme can switch the global rule off; the selector list covers every focusable element (links and areas with `href`, `button`, `input` including checkboxes, `select`, `textarea`, `summary`, `[tabindex]`, `[contenteditable]`).
+- **Buttons and Inputs keep their own focus states** (the `tone(main)` ring; an Input's focus border), which win by specificity: the base theme writes no `var(--uxdsl__focus__…)` by hand, and the plan's "the base Button and Input states reference it" is dropped. A Chrome check pins that a control styled by `@ds-button` or `@ds-input` looks focused exactly as it does today, and that an unstyled link, `summary` and `[tabindex]` element shows the theme's ring.
+- If MIG-B9-31 lands first, the focus variables use its scope selector.
