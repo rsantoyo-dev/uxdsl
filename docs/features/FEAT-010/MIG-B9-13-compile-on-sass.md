@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
-| Decision gate | DEC-01 (decided); DEC-05 (recommended: the PostCSS plugin alone compiles CSS plus UXDSL, without `$variables`) |
-| Status | Blocked (DEC-05) |
+| Decision gate | DEC-01 (decided); DEC-05 (decided 2026-10-23: the PostCSS plugin alone compiles CSS plus UXDSL, without Sass) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-12 |
 | Blocks | MIG-B9-14, MIG-B9-20, MIG-B9-21, MIG-B9-30 to 36 |
@@ -262,3 +262,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - Plugin warnings are not mapped: a PostCSS `Warning` uses the node's generated position, not `input.origin`. P4 must map warnings as well as errors.
 - P5's "correct by one" is fragile across the `postcss` peer range `^8.4.31`; use `originalPositionFor` directly.
 - Tests owned by MIG-B9-14 (`watch-mode:496`, `vite:117`, `webpack:80`) need edits in this story; list them in Shares.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-05, confirmed** with the review's conditions: every Sass construct reaching the plugin alone is a located `UXD_SASS_CONTEXT` naming the fix (`$name`, `@use`, `@forward`, `@mixin`, `@include`, `@function`, `@extend`, the control rules, `#{…}`, `&`-suffix selectors, `%placeholders`), not only `$name`; `--x: $var` gets its own message (Sass keeps `$var` literally in a custom property; write `#{$var}`); warnings are mapped to the original position like errors.
+- **DEC-17:** the `core` diagnostics keep `UXD_SASS`, `UXD_SASS_WARNING` and `UXD_FUNCTION_SHADOWED` (a warning), not `UXD_RESERVED_NAME`. O2 and O3 in `test/core/protect.cases.js` already expect Sass's output plus that warning.

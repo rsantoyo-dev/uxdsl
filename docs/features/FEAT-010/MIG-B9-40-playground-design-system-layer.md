@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` (or beta.10 under DEC-03 (b)) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 4 |
 | Decision gate | DEC-14 (decided: the playground is the reference implementer) |
 | Status | Ready |
@@ -57,7 +57,7 @@ card and heading is deleted.
 test "$(ls packages/playground-nextjs/src/components/*.tsx | wc -l | tr -d ' ')" = "55"
 test ! -d packages/playground-nextjs/src/components/ds
 grep -q "entry: path.join(process.cwd(), 'src/app/uxdsl-entry.uxdsl')" packages/playground-nextjs/uxdsl.config.cjs
-grep -q "@lg" packages/playground-nextjs/src/components/SideNav.uxdsl   # MIG-B9-30 merged
+grep -q "(--lg)" packages/playground-nextjs/src/components/SideNav.uxdsl   # MIG-B9-30 merged (DEC-07)
 node -e "const t=require('./packages/uxdsl/src/theme/base.json');process.exit(t.focus?0:1)"   # MIG-B9-34 merged
 ```
 
@@ -217,3 +217,9 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - The deletion list misses `typography-roles.uxdsl` (103 hand-written typography variables, literal fallbacks, the removed `opacity` field).
 - The Next 14 → 16 upgrade (lockfile: next 14.2.33) is hidden in MIG-B9-43 H5; make it its own story before this one.
 - README §5 omits the dependency on MIG-B9-22 that this story's header lists.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-07:** there are no breakpoint at-rules; the precondition looks for `(--lg)` in SideNav.

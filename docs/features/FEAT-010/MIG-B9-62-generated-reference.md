@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · beta.10 under DEC-03 (b), or beta.9 under (a) |
+| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 6 |
 | Decision gate | None (plan §5.3) |
 | Status | Ready |
@@ -149,3 +149,9 @@ To be filled in the delivering PR.
 Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
 
 - Do this before MIG-B9-50, and generate both the docs pages and the markdown reference from one `reference.json`.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-07:** the reference documents `@media (--<breakpoint>)` where it said "the at-rules after MIG-B9-30".

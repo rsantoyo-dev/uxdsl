@@ -184,3 +184,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - D2 omits the limitation users hit first: tokens are opaque strings to Sass, so `darken(palette(…))`, `rgba(color(…), .5)` and Bootstrap's color mixins applied to tokens are Sass errors. Document it with the alternative (`palette(x, 0.5)`, `color-mix()`).
 - D3 ("every SCSS file is a valid UXDSL file") is false while MIG-B9-11 R4 reserves names; qualify it according to DEC-17.
 - AC2 already passes on the base (vacuous); give it a negative control.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-17:** D3 ("every SCSS file is a valid UXDSL file") holds without qualification: no name is reserved. Document `UXD_FUNCTION_SHADOWED` (meaning and fix) instead of `UXD_RESERVED_NAME`.
+- **DEC-07:** the media-query section documents `@media (--<breakpoint>)` once MIG-B9-30 ships.

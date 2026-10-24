@@ -185,23 +185,23 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-02 | [Refresh the repository's dependencies](MIG-B9-02-dependencies.md) | 0 | — | S | — | Ready |
 | MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | Ready |
 | MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Merged (PR #30) |
-| MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | Blocked (DEC-02) |
+| MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | Ready |
 | MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | In progress (part 1 merged, PR #34) |
-| MIG-B9-11 | [`src/sass/protect.ts`: protect and restore](MIG-B9-11-protect-and-restore.md) | 1 | DEC-01 | M | 10 | Ready |
-| MIG-B9-12 | [`src/sass/compile-sass.ts`: Dart Sass with the `.uxdsl` importer](MIG-B9-12-compile-sass.md) | 1 | DEC-01, DEC-04 | M | 11 | Blocked (DEC-04) |
-| MIG-B9-13 | [`compile()` on the new pipeline; the subset deleted](MIG-B9-13-compile-on-sass.md) | 1 | DEC-01, DEC-05 | M | 12 | Blocked (DEC-05) |
+| MIG-B9-11 | [`src/sass/protect.ts`: protect and restore](MIG-B9-11-protect-and-restore.md) | 1 | DEC-01, DEC-17 | M | 10 | Ready |
+| MIG-B9-12 | [`src/sass/compile-sass.ts`: Dart Sass with the `.uxdsl` importer](MIG-B9-12-compile-sass.md) | 1 | DEC-01, DEC-04 | M | 11 | Ready |
+| MIG-B9-13 | [`compile()` on the new pipeline; the subset deleted](MIG-B9-13-compile-on-sass.md) | 1 | DEC-01, DEC-05 | M | 12 | Ready |
 | MIG-B9-14 | [The CLI, Vite and webpack on the new pipeline](MIG-B9-14-cli-and-adapters.md) | 1 | DEC-01 | M | 13 | Ready |
 | MIG-B9-15 | [Documentation of the superset](MIG-B9-15-superset-docs.md) | 1 | DEC-01 | S | 14 | Ready |
-| MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | Blocked (DEC-06) |
+| MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | Ready |
 | MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13 | Ready |
 | MIG-B9-22 | [`build --watch` keeps the entry; the playground drops its own generator](MIG-B9-22-watch-keeps-the-entry.md) | 2 | — | S | 14 | Ready |
-| MIG-B9-30 | [Breakpoint blocks: `@lg { … }`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Blocked (DEC-07) |
-| MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Blocked (DEC-08) |
-| MIG-B9-32 | [Custom roles start from their own Surface](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Blocked (DEC-09) |
-| MIG-B9-33 | [Typography without inherited margins; `extends`](MIG-B9-33-typography-extends.md) | 3 | DEC-10 | S | 13 | Blocked (DEC-10) |
-| MIG-B9-34 | [The `focus` family and one `:focus-visible` rule](MIG-B9-34-focus-family.md) | 3 | DEC-11 | M | 13 | Blocked (DEC-11) |
-| MIG-B9-35 | [Canvas-identity tones are compile errors](MIG-B9-35-canvas-tones.md) | 3 | DEC-12 | S | 13 | Blocked (DEC-12) |
-| MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Blocked (DEC-13) |
+| MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Ready |
+| MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready |
+| MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready |
+| MIG-B9-33 | [Typography `extends`](MIG-B9-33-typography-extends.md) | 3 | DEC-10 | S | 13 | Ready |
+| MIG-B9-34 | [The `focus` family and one `:focus-visible` rule](MIG-B9-34-focus-family.md) | 3 | DEC-11 | M | 13 | Ready |
+| MIG-B9-35 | [Canvas-identity tones: a contrast warning](MIG-B9-35-canvas-tones.md) | 3 | DEC-12 | S | 13 | Ready |
+| MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Ready |
 | MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34 | Draft (re-baseline after wave 3) |
 | MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Draft (re-baseline after wave 3) |
 | MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Draft (re-baseline after wave 3) |
@@ -219,11 +219,12 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Draft — recommended cut (review 2026-10-11) |
 | MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Draft (re-baseline after wave 3) |
 | MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3) |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | the wave DEC-03 names | Blocked (DEC-03) — split into 91a/91b recommended |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 6; 90 | Draft (re-baseline after wave 3) |
 
-Twelve stories are gated by a decision the owner has not confirmed; each has a
-recommendation inside it. Confirming DEC-02 to DEC-13 (and DEC-17, opened by
-the review) in one message unblocks waves 0–3 entirely.
+The owner decided DEC-02 to DEC-13, DEC-16 and DEC-17 on 2026-10-23
+(FEAT-010 §2): no story is blocked by a decision. Each story a decision
+touches has an "Owner decisions of 2026-10-23" block at the end of its §15,
+which rules where it differs from the contract.
 
 ## 6. Branches and merges
 
@@ -233,8 +234,8 @@ the review) in one message unblocks waves 0–3 entirely.
   story merges its own PR into `feat/beta9` once CI is green and the closure
   record is written; it never merges into `main`.
 - The owner merges `feat/beta9` into `main` at the end of each wave (one
-  review per wave, in the order of §5), and at the release points DEC-03
-  names.
+  review per wave, in the order of §5), and before the one release
+  (DEC-03).
 - A story that needs a decision stops at `Blocked (DEC-nn)` with its branch
   pushed and the finding written in its §15.
 

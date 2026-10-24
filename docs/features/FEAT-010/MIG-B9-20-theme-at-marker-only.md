@@ -4,8 +4,8 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
-| Decision gate | DEC-06 (recommended: the marker is the only switch; `includeTheme` is removed) |
-| Status | Blocked (DEC-06) |
+| Decision gate | DEC-06 (decided 2026-10-23: the marker is the only switch; `includeTheme` is removed) |
+| Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-14 |
 | Blocks | MIG-B9-50, MIG-B9-60, MIG-B9-64 |
@@ -226,3 +226,11 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - Scope is larger than listed: 43 test files use `includeTheme` 185 times; fixtures `mig07-consumer` (its TypeScript check of `{ theme, includeTheme: false }` runs in README §1's setup and breaks every later story), `parity/run.js`, `mig-b2-03-cli-init`, `webpack-adapter`; playground docs `quick-start/page.mdx:68,88`, `tooling/page.mdx:35-66`, `language/page.tsx:103`. Split the story (engine + CLI; tests and fixtures; docs).
 - AC4 pins 44 bytes measured on the old pipeline; after MIG-B9-13 the formatting is Sass's. Restate: no `:root` in the output, same length as the output of the same source without the marker.
 - Run MIG-B9-22 first: both edit `bin/uxdsl.js`, and 20's M7 is work that 22 then replaces.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-06, confirmed** with the review's blocking condition: a build that emits no theme warns once on every host (a single-entry CLI build, `builds`, `build --watch` counted over the last result of every entry, Vite, webpack, Next.js), and so does a build in which more than one module emits it (a marker reached through a shared partial).
+- The Next.js scaffold writes `@uxdsl theme;` and drops `includeTheme: false` from `POSTCSS_SNIPPET`. The PostCSS plugin alone sees one file at a time and has no end of build: if it cannot tell that no file emitted the theme, say so in §15 rather than warning on every file, and let the scaffold and `uxdsl doctor` (MIG-B9-60) cover that host.
+- Split the story as the review asks if it helps (engine and CLI; tests and fixtures; docs).

@@ -4,7 +4,7 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
-| Decision gate | DEC-01 (decided) |
+| Decision gate | DEC-01 (decided); DEC-17 (decided 2026-10-23: the author's SCSS wins, with a warning) |
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-10 |
@@ -218,3 +218,12 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - `UXD_RESERVED_NAME` is produced here but catalogued in MIG-B9-12, so `test/diagnostics-catalog.test.js` fails this story's AC5. Add the catalog entry in this story.
 - §5.3 (accept a space between a directive name and its parenthesis) and R9 (restore the spacing Sass changes) are redundant, and §5.3 contradicts AGENTS.md ("the parentheses directly after the name"). Keep R9, drop §5.3.
 - **R4 needs an owner decision (DEC-17, open).** Reserving `@function color/space/shadow/…` and breakpoint-named mixins makes common SCSS fail after the rename, against DEC-00 ("a person renames .scss to .uxdsl and it works"); and a `.scss` dependency pulled in by `@import` is not scanned, so it can still shadow `color(white)` silently.
+
+### Owner decisions of 2026-10-23 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
+
+- **DEC-17: R4 is replaced.** `@function <name>`, where `<name>` is a token function, `tone` or a breakpoint, is not an error. Wherever Sass calls the author's function by its bare name (the same file, a file loaded with `@import`, `@use … as *`), `protect()` leaves those calls untouched so Dart Sass calls it, and the build emits one warning located at the definition: `UXD_FUNCTION_SHADOWED: @function <name> (<file>:<line>) replaces UXDSL's <name>() in this build; rename it to use the token`. Catalogue the code in this story. A call through a namespace (`helpers.space()`) is never protected and shadows nothing.
+- **Every loaded file is checked, `.scss` included**, so no shadowing is silent (the review's finding on `.scss` partials). One way that needs no import resolver of its own: after Sass compiles, scan the entry and every file Sass loaded (`loadedUrls`) for such definitions; when one exists, compile once more with those names unprotected. The second pass runs only in projects that shadow; MIG-B9-12 owns the call.
+- **T4 changes:** `@function space` and `@function md` produce Sass's output and `UXD_FUNCTION_SHADOWED` at their line and column; `@mixin border` produces nothing. `ProtectProblem` carries warnings, not errors. Mixins never conflict: UXDSL has no `@include`-able names, and DEC-07 adds no breakpoint at-rule.
+- The review's blocking R1 finding (protect every token call whose first argument is key-like) still applies; a name the author defines is removed from that set for the build.

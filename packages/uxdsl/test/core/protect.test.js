@@ -30,7 +30,8 @@ function oracle(source) {
 
 async function pipeline(source) {
   try {
-    return { css: (await core.compile({ source }, { theme: THEME, includeTheme: false })).css };
+    const result = await core.compile({ source }, { theme: THEME, includeTheme: false });
+    return { css: result.css, warnings: result.warnings.map((warning) => codeOf({ message: warning.text })) };
   } catch (error) {
     return { error: codeOf(error) };
   }
@@ -53,7 +54,7 @@ test('MIG-B9-10: every sameAs oracle is itself UXDSL without Sass (no $, #{ }, @
   }
 });
 
-for (const [id, source, expected] of CASES) {
+for (const [id, source, expected, options = {}] of CASES) {
   test.todo(`MIG-B9-10: protect/restore end to end: ${id}`, async () => {
     const actual = await pipeline(source);
     if (typeof expected === 'string' && expected.startsWith('ERROR:')) {
@@ -67,5 +68,6 @@ for (const [id, source, expected] of CASES) {
     }
     assert.equal(actual.error, undefined, `${id} failed: ${actual.error}`);
     assert.equal(flat(actual.css), flat(want.css), id);
+    if (options.warning) assert.ok(actual.warnings.includes(options.warning), `${id} should warn ${options.warning}`);
   });
 }
