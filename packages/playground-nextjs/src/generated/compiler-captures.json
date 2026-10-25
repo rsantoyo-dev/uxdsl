@@ -29,7 +29,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5.\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |               ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5. Did you mean \"5\"?\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |               ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_EDGE_REFERENCE",
@@ -44,7 +44,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill.\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill. Did you mean \"5\"?\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_TOKEN_KEY",
@@ -290,6 +290,21 @@
       ],
       "exit": 1,
       "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SYNTAX_REMOVED: elevation() was removed; use shadow(2).\n  1 | .card {\n> 2 |   box-shadow: elevation(2);\n    |               ^\n  3 | }\n  4 | \n"
+    },
+    {
+      "code": "UXD_FUNCTION_UNKNOWN",
+      "title": "A near-miss of a UXDSL function (the spacing function is space())",
+      "source": ".card {\n  padding: spacing(2);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:12: UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()?\n  1 | .card {\n> 2 |   padding: spacing(2);\n    |            ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_THEME_BLOCK_REMOVED",

@@ -26,6 +26,7 @@ the time.
    `@type` → `import('uxdsl/config').UxdslConfig`.
 4. Point `"$schema"` at `./node_modules/uxdsl/schema/theme.schema.json`, and an
    agent instruction at `node_modules/uxdsl/docs/agent-guide.md`.
+5. Fix the near-misses the build now names: a function spelled close to a UXDSL one — `spacing(2)` for `space(2)`, `palete(primary.main)`, `densty(2)`, `colour()`, `radii()` — is `UXD_FUNCTION_UNKNOWN` with the function meant, in a stylesheet or a theme value, where it used to reach CSS as a function the browser silently discarded (MIG-B9-04).
 
 The compiled CSS does not change with the move: the same theme produces the
 same bytes. Before and after, `npx uxdsl theme > effective.json` (below) shows

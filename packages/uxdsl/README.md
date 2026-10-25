@@ -517,6 +517,13 @@ palette(family[.variant][, alpha])      color(family[.shade][, alpha])
   so does a name far from any UXDSL name (`foo(1)`): CSS keeps adding
   functions. A top-level name one edit from a breakpoint (`xd(1rem)`) stays
   `UXD_BREAKPOINT_UNKNOWN`, which lists the configured names.
+
+  ```css
+  .card { padding: spacing(2); }  /* UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()? */
+  .card { padding: space(2); }    /* var(--uxdsl__space__2) */
+  .card { width: shape(from 0 0, line to 10px 10px); }
+  ```
+
 - A missing numeric key is suggested by position on the scale, not by
   spelling: `space(17)` offers `16`, `color(gray.350)` offers `340` or `400`
   (the nearest lower and higher keys that exist), while a named key keeps the

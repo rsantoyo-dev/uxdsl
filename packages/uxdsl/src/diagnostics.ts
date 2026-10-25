@@ -87,6 +87,7 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_COLOR_REFERENCE: compiler('color() names a family or shade the theme does not define.', 'Use a defined family and shade; the message lists them.'),
   UXD_COLOR_SYNTAX: compiler('A color() argument uses the removed dashed spelling or is not family[.shade].', 'Write color(family.shade), e.g. color(gray.300).'),
   UXD_SYNTAX_REMOVED: compiler('A spelling the language removed: rounded(), elevation(), densities() or radius(full).', 'Write radius(k), shadow(k), density(k) or radius(pill); the message names the replacement.'),
+  UXD_FUNCTION_UNKNOWN: compiler('A function, in a declaration or a theme value, that is neither a CSS function the compiler knows nor a UXDSL one but is spelled close to one: a near-miss of a token function, tone() or a breakpoint (palete(), densty(), colr()), or a spelling people write for one (spacing(), colour(), pallete(), radii(), borders(), shadows()).', 'Write the function the message suggests; a real CSS function the compiler does not know is left untouched, and a vendor-prefixed one (-webkit-…) always is.'),
   UXD_THEME_BLOCK_REMOVED: compiler('A `@theme { … }` block: in-stylesheet token packs were removed.', 'Define the tokens in the theme JSON under densities, radii, borders, shadows, surfaces, buttons or inputs.'),
   UXD_OPTION_REMOVED: compiler('A plugin option that no longer exists was passed (a warning; the option is ignored).', 'Remove the option; breakpoints live in the theme and variable names are the --uxdsl__ contract.'),
   UXD_DIRECTIVE_UNKNOWN: compiler('An at-rule in the reserved ds/ds-* namespace is not one of the four directives.', 'Use @ds-surface, @ds-button, @ds-input or @ds-typo; the message suggests the closest.'),
@@ -222,8 +223,32 @@ export function closestKey(key: string, keys: Iterable<string>): string | undefi
   return closest;
 }
 
+/**
+ * The keys to offer for one that does not exist. A numeric key is a position
+ * on a scale, so the offer is its nearest lower and higher numeric keys that
+ * do exist (`17` → `16`; `350` → `340`, `400`), never the key whose spelling
+ * happens to be closest (`50` for `350`). Any other key gets the closest
+ * spelling within two edits, or nothing.
+ */
+export function suggestKeys(key: string, keys: Iterable<string>): string[] {
+  const available = Array.from(new Set(Array.from(keys, String)));
+  if (!/^\d+$/.test(key)) {
+    const closest = closestKey(key, available);
+    return closest === undefined ? [] : [closest];
+  }
+  const target = Number(key);
+  const numeric = available.filter((candidate) => /^\d+$/.test(candidate)).map(Number);
+  const lower = numeric.filter((candidate) => candidate < target);
+  const higher = numeric.filter((candidate) => candidate > target);
+  return [...(lower.length ? [String(Math.max(...lower))] : []), ...(higher.length ? [String(Math.min(...higher))] : [])];
+}
+
+/** ` Did you mean "a" or "b"?` for the keys `suggestKeys` offers, or nothing. */
+export function didYouMean(suggestions: string[]): string {
+  return suggestions.length ? ` Did you mean ${suggestions.map((suggestion) => `"${suggestion}"`).join(' or ')}?` : '';
+}
+
 export function missingKeyMessage(code: string, functionName: string, key: string, keys: Iterable<string>): string {
   const available = Array.from(keys, String);
-  const suggestion = /^\d+$/.test(key) ? undefined : closestKey(key, available);
-  return `${code}: ${functionName}(${key}) does not exist; available keys: ${formatKeyList(available)}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`;
+  return `${code}: ${functionName}(${key}) does not exist; available keys: ${formatKeyList(available)}.${didYouMean(suggestKeys(key, available))}`;
 }

@@ -235,6 +235,7 @@ const DIAGNOSTICS = [
   { expect: 'UXD_SURFACE_TONE', title: 'A Palette family that is not a tone', css: '.card {\n  @ds-surface(contained text);\n}\n' },
   { expect: 'UXD_DIRECTIVE_DUPLICATE', title: 'Two control directives in one rule', css: '.cta {\n  @ds-button(contained);\n  @ds-button(outlined);\n}\n' },
   { expect: 'UXD_SYNTAX_REMOVED', title: 'A spelling the language no longer has (the former elevation() alias)', css: '.card {\n  box-shadow: elevation(2);\n}\n' },
+  { expect: 'UXD_FUNCTION_UNKNOWN', title: 'A near-miss of a UXDSL function (the spacing function is space())', css: '.card {\n  padding: spacing(2);\n}\n' },
   { expect: 'UXD_THEME_BLOCK_REMOVED', title: 'A @theme block: tokens are defined in the theme JSON', css: '@theme {\n  radius-2: 12px;\n}\n' },
 ];
 

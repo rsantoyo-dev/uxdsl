@@ -22,6 +22,43 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Diagnostics: a near-miss of a UXDSL function is an error with a suggestion (MIG-B9-04, DEC-02)
+
+A function spelled close to a UXDSL name used to reach the browser as an
+unknown CSS function it silently discarded: `padding: spacing(2)` compiled to
+`padding: spacing(2)`, and so did `palete(primary.main)` and `densty(2)`.
+Each now fails where it is written as `UXD_FUNCTION_UNKNOWN: spacing() is not
+a function CSS or UXDSL knows; did you mean space()?` — the spacing function
+keeps its name, `space()`. The rule fires for a name within one edit (two for
+names longer than five characters) of a token function, of `tone()` or of a
+breakpoint of the effective theme, and for the spellings people write for one
+(`spacing`, `colour`, `pallete`/`palete`/`pallet`, `radii`, `borders`,
+`shadows`); it is case-insensitive and runs in the one value grammar, so a
+theme value (`densities: { "x": "xs(spacing(2))" }`) fails the same way
+through `generateThemeCss`, `validateTheme` and the plugin. A real CSS
+function is never flagged: `KNOWN_CSS_FUNCTIONS` was audited against MDN's
+list and now also names `shape()`, `counter()`, `circle()`, `ray()`,
+`image()`, `src()`, `if()`, `calc-size()`, `contrast-color()` and the other
+shape, counter, font and timeline functions; a vendor-prefixed name
+(`-webkit-…()`), every breakpoint the theme defines (a custom `xxl()`
+included) and a name far from any UXDSL name (`foo(1)`) pass through as
+before. A top-level name one edit from a breakpoint (`xd(1rem)`) stays
+`UXD_BREAKPOINT_UNKNOWN`. Pinned by `test/near-miss-functions.test.js`.
+
+A missing numeric key is suggested by its position on the scale instead of
+by spelling: `space(17)` says `Did you mean "16"?`, `color(gray.350)` says
+`Did you mean "340" or "400"?` (the nearest lower and higher keys that exist;
+before, a numeric key got no suggestion and a numeric shade could be offered
+`50` for `350`). A named key keeps the closest spelling (`palette(primary.mian)`
+→ `"main"`).
+
+### Removed
+
+Inputs that compiled silently to invalid CSS: a function name that is a
+near-miss of `space()`, `density()`, `color()`, `palette()`, `radius()`,
+`border()`, `shadow()`, `tone()` or a breakpoint — `spacing()` first among
+them — now fails (`UXD_FUNCTION_UNKNOWN`, above). No valid input changes.
+
 ### Fixed: declarations the grammar does not change keep their raw text (MIG-B9-05)
 
 The compiler re-assigned every declaration's value, even when the UXDSL
