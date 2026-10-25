@@ -185,7 +185,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-02 | [Refresh the repository's dependencies](MIG-B9-02-dependencies.md) | 0 | — | S | — | Ready |
 | MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | Ready |
 | MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Merged (PR #30) |
-| MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | Ready |
+| MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | In review (PR #44) |
 | MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | In progress (part 1 merged, PR #34) |
 | MIG-B9-11 | [`src/sass/protect.ts`: protect and restore](MIG-B9-11-protect-and-restore.md) | 1 | DEC-01, DEC-17 | M | 10 | Ready |
 | MIG-B9-12 | [`src/sass/compile-sass.ts`: Dart Sass with the `.uxdsl` importer](MIG-B9-12-compile-sass.md) | 1 | DEC-01, DEC-04 | M | 11 | Ready |

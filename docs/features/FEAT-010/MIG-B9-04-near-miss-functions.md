@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | DEC-02 (decided 2026-10-23: `space()` stays; `spacing()` and every near-miss is an error with a suggestion) |
-| Status | Ready |
+| Status | In review (PR #44) |
 | Size | S |
 | Depends on | — |
 | Blocks | — (MIG-B9-10 cites the code once it exists; it does not wait for it — review 2026-10-11) |
@@ -181,9 +181,96 @@ Branch `feat/b9-04-near-miss-functions`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Base:** `feat/beta9` at `def145e`. **PR:** #44. **Commits:** `6d42162`
+  (the test alone, with the README paragraph the docs guard asks for),
+  `e24d8f6` (the change), then the closure record.
+- **Environment:** macOS (Darwin 27.0.0), Node 20.19.0, npm 11.19.0, Chrome at the
+  macOS default path; the worktree prepared as CI does (`npm ci --ignore-scripts`
+  at the root and in `uxdsl`, `uxdsl-vscode`, `playground-nextjs`; `npm install`
+  in `fixtures/mig02-nextjs-cssmodules`; `npm --prefix packages/uxdsl run build`;
+  `node fixtures/mig07-consumer/run.js` — all exit 0). The pre-commit hook ran
+  on both commits (docs guard and playground build).
+- **Preconditions (§3):** the four lines exit 0 on `def145e`.
+- **Baseline (§4):** on `def145e` the three inputs were echoed unchanged, as
+  recorded. After `e24d8f6`:
+  `x.uxdsl:1:12: UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()?`,
+  `x.uxdsl:1:10: … palete() … did you mean palette()?`,
+  `x.uxdsl:1:12: … densty() … did you mean density()?`.
+- **Failing first (AC1):** `node --test packages/uxdsl/test/near-miss-functions.test.js`
+  against the base build: T1 fails (`spacing(2)` compiles), T4 fails
+  (`generateThemeCss` with `xs(spacing(2))` does not throw), T5 fails
+  (`space(17)` gets no suggestion); T2 and T3, the negative controls, pass
+  (2 pass, 3 fail). After the change: 5 pass, 0 fail.
+- **Criteria → evidence:**
+
+  | Criterion | Command | Exit |
+  | --- | --- | --- |
+  | AC1 | `node --test packages/uxdsl/test/near-miss-functions.test.js` | 0 (5/5) |
+  | AC2 | `node --test packages/uxdsl/test/diagnostics-catalog.test.js` (with `breakpoint-unknown`, `language`, `diagnostics-coverage`, `diagnostics-location`, `entries`: 113/113) | 0 |
+  | AC3 | `node fixtures/parity/run.js` (8 cases, no `--update`) | 0 |
+  | AC4 | `npm test` (1360 tests, 0 fail; 85 `# TODO` are MIG-B9-10's pre-declared cases, present on the base) | 0 |
+  | AC4 | `npm --prefix packages/playground-nextjs run uxdsl:build` | 0 |
+  | AC4 | `node packages/playground-nextjs/scripts/capture-capabilities.js` (adds the `UXD_FUNCTION_UNKNOWN` capture; the `shadow(9)`/`radius(12)` captures now carry C5's `Did you mean "5"?`) | 0 |
+  | §10 | `npm run generate:capabilities`; `node --test scripts/capability-matrix.test.js` (7/7; the matrix file is unchanged — the one Diagnostics capability stays live) | 0 |
+  | §10 | `npm run generate:language`; `node scripts/generate-language-artifacts.js --check` (no artifact changed: the catalog does not feed the completions) | 0 |
+  | §10 | `npm run generate:agent-guide`; `node scripts/generate-agent-guide.js --check` | 0 |
+  | §12 | `npm run verify:doc-examples` (49 examples, 24 excerpts, 101 files; the README's `UXD_FUNCTION_UNKNOWN` example among them) | 0 |
+  | §2 | `npm run verify:1.0` | 0 (the automated gate; its manual, external and postpublish items remain owner steps, as it prints) |
+  | §2 | `npm run verify:playground-browser` | 0 (real Chrome: no console errors, no UXDSL warnings, no unresolved `var()`, visible keyboard focus) |
+
+- **Controls:** T2 (`log()`, `rem()`, `mod()`, `sign()`, `exp()`, `calc()`,
+  `color-mix()`, `-webkit-foo()`, `-moz-spcae()`, `shape()`, `counter()`,
+  `circle()`, `ray()`, `inset()`, `image()` byte-identical through the plugin
+  and `compile()`; `xxl()` with `breakpoints: { xxl: 1536 }` compiles alone,
+  next to `xs()`, and in a Density value); T3 (`foo(1)`, `myfn(1px, 2px)`,
+  `notAFunction(1)` untouched); in T1, `xd(1rem)` stays `UXD_BREAKPOINT_UNKNOWN`
+  and the canonical spellings compile; in T5, a planted shade list without 340
+  offers `300`, with 345 offers `345`, and `50` (one edit from `350`) is never
+  offered. `test/breakpoint-unknown.test.js`'s positive control now samples
+  every function added to `KNOWN_CSS_FUNCTIONS`. Stop rule: a scan of every
+  function name in the playground's sources, the package docs, the fixtures
+  and the architecture docs through `unknownFunctionMessage` flagged no real
+  CSS function — only the README's own near-miss examples, the documented
+  top-level `xxl()` (left to the breakpoint check) and names from selectors
+  and prose (`:is(`, `m(`, `ds(`), which are not declaration values.
+- **Decisions taken inside the contract:** the distance is one edit for names
+  of up to five characters and two for longer ones (the review's precision
+  under DEC-02; C1's "up to 4" would have made `shape()` depend on the list
+  alone), *and* `KNOWN_CSS_FUNCTIONS` was audited against MDN's list. The
+  effective breakpoint map inside the check is the theme's `breakpoints` over
+  `DEFAULT_BREAKPOINTS`, exactly as the plugin and `validateTheme` build
+  theirs; the plugin passes `c.bps`, the engines pass the theme object they
+  already hand to `tokenValueToCss`. In `validateResponsiveExpression` a
+  top-level near-miss is `UXD_FUNCTION_UNKNOWN` (as a removed spelling is
+  `UXD_SYNTAX_REMOVED` there); a far name keeps `UXD_<FAMILY>_VALUE`. C5's
+  Palette/Color suggestions come from `suggestKeys`/`didYouMean`
+  (`diagnostics.ts`), used by `missingKeyMessage` and by `checkReference` in
+  `plugin.ts`; a numeric variant is offered bare (`"340" or "400"`), the form
+  the existing `"main"` suggestion uses.
+- **Not run as PASS:** the Bootstrap corpus (`node fixtures/sass-corpus/run.js`):
+  without `--sass` it stops at "No Dart Sass found" (see §15); with
+  `--sass packages/playground-nextjs/node_modules/sass` it renames 92 files,
+  runs Dart Sass 1.94.2 (273,591 bytes) and stops before any comparison —
+  `compile() failed: postcss-import: … bootstrap.uxdsl:1:1: Failed to find
+  'mixins/banner'` — exit 1, the expected state of this base until MIG-B9-13.
+- **Owner steps pending:** merge of the PR into `feat/beta9` by the agent once
+  CI is green (README §6); nothing for the owner beyond the wave review.
 
 ## 15. Findings and follow-ups
+
+### Delivery of 2026-10-24
+
+- **`fixtures/sass-corpus/run.js` does not find the repository's own Dart Sass.**
+  `loadSass` resolves `sass/package.json` with `require.resolve`, which
+  `sass@1.94.2`'s `exports` map refuses (`ERR_PACKAGE_PATH_NOT_EXPORTED`), so
+  the playground's copy is never found and the runner exits with "No Dart Sass
+  found" even on a worktree prepared as CI does; `--sass <dir>` works. Proposed
+  for MIG-B9-10 (the file's owner) or MIG-B9-13, which wires the corpus into the
+  gate: resolve `sass` itself and read the `package.json` next to it. Not fixed
+  here.
+- **T4 also fails on the base**, besides T1 and T5 named by AC1: a theme value
+  `xs(spacing(2))` was emitted as CSS, so `generateThemeCss` did not throw.
+  Recorded as evidence, not a deviation.
 
 ### Review of 2026-10-11 (apply before implementing)
 
