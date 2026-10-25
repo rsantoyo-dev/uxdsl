@@ -88,14 +88,18 @@ test('phase 4: splitSelectorList splits a selector list exactly as postcss.list.
   const corpus = [
     '.btn', '.a, .b', '.a,.b', ' .a ,  .b ', '.btn:is(.x, .y)', '.btn:where(.a, .b):not(.c, .d)', ':is(.a, .b) .c, .d',
     'a[href="x,y"]', "a[title='a, b'], b", '.a:has(> .b, + .c)', '.a\\,b', '.x > .y ~ .z, .w + .v', 'html[data-theme="dark"] .btn, .btn.is-selected',
-    '.a:nth-child(2n + 1), .b:nth-of-type(odd)', '.a,', ',.a', '.a, , .b', '.€, .日本',
+    '.a:nth-child(2n + 1), .b:nth-of-type(odd)', '.a,', '.a, , .b', '.€, .日本',
+    // A comma inside a comment is not a separator. PostCSS keeps comments out
+    // of rule.selector, so the plugin never hands one over; a direct caller of
+    // buttonComponentCss/inputComponentCss gets the comment kept whole, and so
+    // does postcss.list.comma since postcss 8.5.29 (it split there before).
+    '.a /* c, d */, .b',
   ];
   for (const selector of corpus) assert.deepEqual(splitSelectorList(selector), postcss.list.comma(selector), JSON.stringify(selector));
-  // The one deliberate difference: a comma inside a comment is not a separator
-  // (postcss.list.comma splits there). PostCSS keeps comments out of
-  // rule.selector, so the plugin never hands one over; a direct caller of
-  // buttonComponentCss/inputComponentCss gets the comment kept whole.
-  assert.deepEqual(splitSelectorList('.a /* c, d */, .b'), ['.a /* c, d */', '.b']);
+  // The one difference: a list that starts with a comma, which is not a valid
+  // selector list. UXDSL drops the empty leading segment, as postcss did up to
+  // 8.5.26; postcss.list.comma keeps it (`['', '.a']`) since 8.5.27.
+  assert.deepEqual(splitSelectorList(',.a'), ['.a']);
 });
 
 test('phase 4: a control directive on a selector list keeps functional pseudo-classes whole', () => {

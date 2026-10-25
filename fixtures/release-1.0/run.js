@@ -109,6 +109,24 @@ function contrastReport(theme, req) {
   return theme.checkThemeContrast(theme.resolveTheme(undefined), { exceptions: req('uxdsl/theme/base.contrast-exceptions.json') });
 }
 
+/**
+ * `npm audit --json` of the lockfile in `cwd` (`node_modules` is not needed).
+ * Returns the summary line when it reports nothing; throws it, naming each
+ * finding, when anything of any severity remains, and throws when the audit
+ * itself could not run (no registry, no counts).
+ */
+function auditLockfile(cwd) {
+  const audit = spawnSync('npm', ['audit', '--json'], { cwd, encoding: 'utf8', maxBuffer: 1 << 26 });
+  let report;
+  try { report = JSON.parse(audit.stdout); } catch { throw new Error(`npm audit did not run: ${(audit.stderr || '').trim().split('\n')[0] || `exit ${audit.status}`}`); }
+  if (!report.metadata || !report.metadata.vulnerabilities) throw new Error(`npm audit returned no counts: ${JSON.stringify(report.error || report).slice(0, 160)}`);
+  const counts = report.metadata.vulnerabilities;
+  const chains = Object.entries(report.vulnerabilities || {}).map(([name, v]) => `${name} (${v.severity})`).join(', ');
+  const summary = `${['critical', 'high', 'moderate', 'low'].map((level) => `${counts[level] || 0} ${level}`).join(', ')}${chains ? ` — ${chains}` : ''}`;
+  if ((counts.total || 0) > 0) throw new Error(summary);
+  return summary;
+}
+
 function withImportsBehindFirstRule(postcss, css) {
   const root = postcss.parse(css);
   const imports = root.nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
@@ -757,8 +775,10 @@ async function main() {
   // --- Real bundlers and a real Next.js build, each from its own tarball ----
   console.log('\nReal builds (each fixture packs and installs the tarball itself):');
   await check('N-04', '[tarball] uxdsl/vite: a real `vite build` and dev server (fixtures/vite-adapter)', () => {
-    repoNode('fixtures/vite-adapter', ['fixtures/vite-adapter/run.js'], 600000);
-    return 'extraction, ?inline, no absolute paths, HMR graph';
+    const out = repoNode('fixtures/vite-adapter', ['fixtures/vite-adapter/run.js'], 900000);
+    const majors = out.split('\n').filter((line) => /^\s*vite@\^\d+ … ok/.test(line)).map((line) => line.trim().replace(/ … ok.*$/, ''));
+    if (majors.length < 2) throw new Error(`the fixture reported ${majors.length} Vite major(s), expected both ^5 and ^7`);
+    return `${majors.join(' and ')}: extraction, ?inline, no absolute paths, HMR graph`;
   });
   await check('N-03', '[tarball] uxdsl/webpack: a real webpack build and watch (fixtures/webpack-adapter)', () => {
     repoNode('fixtures/webpack-adapter', ['fixtures/webpack-adapter/run.js'], 600000);
@@ -809,6 +829,12 @@ async function main() {
     if ((counts.high || 0) > 0 || (counts.critical || 0) > 0) throw new Error(summary);
     return summary;
   });
+  // The repository's own lockfile, not the fresh install: the versions
+  // `packages/uxdsl/package-lock.json` pins are what the suite, the parity
+  // oracles and this gate run against, and a fresh install can be clean while
+  // they are behind an advisory. Nothing at all may remain here, dev
+  // dependencies included; an audit that cannot run fails the check.
+  await check('AUDIT-lock', '`npm audit` inside the repository\'s packages/uxdsl (its own lockfile, dev dependencies included): 0 vulnerabilities', () => auditLockfile(PACKAGE_DIR));
 
   // --- Measurements, reported rather than judged ----------------------------
   console.log('\nMeasured (reported, not a pass/fail):');
@@ -832,4 +858,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, DROPPED };
