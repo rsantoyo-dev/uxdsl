@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | In progress (part 1 merged, PR #34; C1–C2 need a session with the npm registry) |
+| Status | In review (PR #46; part 1 merged as PR #34) |
 | Size | M |
 | Depends on | MIG-B9-05 (byte-preserving plugin) |
 | Blocks | MIG-B9-11, MIG-B9-12, MIG-B9-13 |
@@ -48,8 +48,8 @@ Dart Sass. MIG-B9-13 turns them green.
 
 ```bash
 test -f packages/uxdsl/test/core/scss-subset.test.js
-test ! -d fixtures/sass-corpus
-node -e "require('/Users/ricardosantoyo/Documents/projects/uxdsl/packages/playground-nextjs/node_modules/sass/package.json')" 2>/dev/null || npm view sass version >/dev/null   # Dart Sass is reachable (the playground's copy, or the registry)
+test -f fixtures/sass-corpus/run.js && test -f packages/uxdsl/test/core/protect.cases.js && test ! -f packages/uxdsl/test/core/sass-matrix.cases.js   # part 1 (PR #34) is merged; part 2 has not started
+test -f packages/playground-nextjs/node_modules/sass/package.json || npm view sass version >/dev/null   # Dart Sass is reachable (this worktree's playground copy, or the registry)
 grep -q "assignValue" packages/uxdsl/src/plugin.ts   # MIG-B9-05 merged
 ```
 
@@ -356,11 +356,179 @@ npm test                           # background; exit 0
 Branch `feat/b9-10-superset-tests`. Commit:
 `test(FEAT-010): MIG-B9-10 - the superset's tests first: Sass matrix, protect cases, source maps, pipeline behaviors, Bootstrap corpus`.
 
+Delivered in two PRs (§14): part 1 on that branch (PR #34), part 2 — C1 and
+C2, which needed the npm registry — on `feat/b9-10-superset-tests-part2`.
+
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Two PRs: part 1 (PR #34, 2026-10-11, C3–C7 without the registry; its record is
+in §15 "Part 1") and part 2 below, which completes the story (C1 and C2, and C6
+run for the first time).
+
+### Part 2 (2026-10-29, a session with npm registry access)
+
+- **Base:** `feat/beta9` at `0c9fbf6` (MIG-B9-02's lockfile refresh and
+  MIG-B9-04's `UXD_FUNCTION_UNKNOWN` included). **Branch:**
+  `feat/b9-10-superset-tests-part2` (§13 names part 1's branch, already
+  merged). **PR:** #46.
+- **Environment:** macOS (Darwin 27.0.0, Apple Silicon), Node 20.19.0, npm
+  11.21.1 (CI: `node-version: 20` + `npm install -g npm@11`), Google Chrome at
+  the macOS default path. The worktree prepared exactly as `ci.yml` does
+  (README §1.3): every step exit 0 (`mig07-consumer`: `All checks passed`).
+- **Preconditions** (§3): as written on the base, line 2 (`test ! -d
+  fixtures/sass-corpus`) exited 1 — part 1 created the directory; a stale
+  precondition, corrected in §3 (old and new lines in §15), not a moved base.
+  Line 3 read the owner's checkout (the review of 2026-10-11 had flagged it);
+  corrected to this worktree's playground copy. Lines 1, 3 and 4: exit 0; the
+  corrected block: exit 0 on every line.
+- **Baseline** (§4): `node --test test/core/scss-subset.test.js` → 112 pass,
+  0 fail; the tally is `ok 69, error 41`, exactly as recorded.
+- **C1:** `npm install -D sass@^1.107.0 --ignore-scripts` in `packages/uxdsl`
+  (the current release, published 2026-10-28): resolved **`sass@1.107.0`**;
+  `added 10 packages` — `sass`, `immutable`, `@parcel/watcher` (optional, with
+  its 12 platform packages), `detect-libc`, `node-addon-api`, `is-glob`,
+  `is-extglob`, and `sass`'s own `chokidar`/`readdirp` nested under it (409
+  lockfile lines added, lockfile v3 from npm 11). `npm audit` in
+  `packages/uxdsl`: **`found 0 vulnerabilities`**, exit 0 — MIG-B9-02's
+  `AUDIT-lock` gate check keeps holding. DEC-04: MIG-B9-12 moves it to
+  `dependencies`.
+- **C2, the matrix** (`sass-matrix.cases.js`, `sass-matrix.record.js`,
+  `sass-matrix.test.js`): 110 cases, same names and sources as
+  `scss-subset.test.js` (a test pins it while that file exists). Groups: **75
+  `sass`** (no UXDSL construct; Dart Sass's own output, recorded by the
+  recorder — 73 compile, **2 are invalid Sass**, `expectedErrors = 2`:
+  `arith-03-unit-mismatch` "1rem and 2px have incompatible units.",
+  `ctrl-09-each-over-map-single-var` "expected selector." — a map's (key value)
+  pairs interpolated into a selector), **20 `today`** (`sass-tol-*`,
+  `interact-*`, `interp-03`, `interp-05`, `modern-08/10/11/12`: today's
+  `compile()` output after `normalize()`, recorded from the current build;
+  Dart Sass is structurally a no-op on them), **15 `mixed`** (Sass flattens or
+  protect is needed: `nest-09…12`, `mixin-04…08`, `mixin-11…13`, `ctrl-07`,
+  `import-03`, `interp-01`; recorded by hand from the two parts — Dart Sass on
+  the hand-protected source, then today's plugin on Sass's output — each with
+  a note, marked `reviewed`). Compared with the old matrix: 69 → **86 cases
+  compile** (`ok`), 41 → **24 fail** (2 `UXD_SASS`, 22 UXDSL codes: the 2 old
+  UXDSL errors `modern-11` and `mixin-08` keep their codes; every
+  `UXD_SCSS_UNSUPPORTED`/`UXD_NESTING_INVALID`/`postcss-import` case becomes
+  Sass's output or `UXD_SASS`). Expectations that change with the pipeline
+  are listed in §15 for MIG-B9-13. No case defines a shadowing `@function`
+  (`fn-01` defines `double`), so DEC-17 touches none of the 110. The stop rule
+  was not triggered: every Sass output is explained in its case's `note`
+  (`#{$i}0%` → `10 %`, `darken()` → `rgb(…%)` since Dart Sass 1.79, a `.css`
+  `@import` kept, `10px/2` kept as a separator).
+- **AC4:** `node test/core/sass-matrix.record.js --update` twice → the second
+  run prints `sass-matrix.cases.js is up to date (110 cases, 2 invalid-Sass
+  sources, sass 1.107.0)`, exit 0; without `--update` it exits 1 on drift,
+  naming each case.
+- **C6, first run** (`node fixtures/sass-corpus/run.js`, network): `--help`
+  exit 0 with the flags; the run installs `bootstrap@5.3.8`, renames **92**
+  files, compiles the original with the repository's own Dart Sass (found
+  through the corrected `loadSass`: **1.107.0**, 276,926 bytes, median 399 ms)
+  and stops before the comparison, as predicted: `byte-identical: false —
+  compile() failed: postcss-import: …/corpus/bootstrap.uxdsl:1:1: Failed to
+  find 'mixins/banner'`, **exit 1**. The expected state of this base, not a
+  pass (AC2). The README's wording ("rejects `@use`") was corrected to what
+  happens first.
+- **Commands** (every one ran locally):
+
+  | Command | Exit | Output |
+  | --- | --- | --- |
+  | `(cd packages/uxdsl && npm audit)` | 0 | `found 0 vulnerabilities` |
+  | `node --test packages/uxdsl/test/core/sass-matrix.test.js` (AC1) | 0 | **117 tests: 6 pass, 0 fail, 111 todo** — 110 case tests through `compile()` plus the tally through `compile()` are `todo` (§8: all todo until MIG-B9-13); passing now: the static tally (`CASES.length === 110`, `expectedErrors` = the `UXD_SASS` cases, 75/20/15), the names-and-sources check, **T2** `every recorded Sass expectation equals live Dart Sass`, its negative control, `every recorded Sass CSS is valid CSS with no Sass construct left`, and `every "today" expectation is what compile() produces today, byte for byte` |
+  | `node --test packages/uxdsl/test/core/scss-subset.test.js packages/uxdsl/test/core/scss-expansion.test.js` (C7) | 0 | 124 pass, 0 fail, 0 todo — kept until MIG-B9-13 |
+  | `node packages/uxdsl/test/core/sass-matrix.record.js --update` ×2, then without the flag (AC4) | 0, 0, 0 | second run and check: `up to date` |
+  | `node fixtures/sass-corpus/run.js --help` / `node fixtures/sass-corpus/run.js` (AC2) | 0 / 1 | above |
+  | `npm run verify:doc-examples` | 0 | 49 examples and 24 theme excerpts across 101 files |
+  | `node scripts/generate-language-artifacts.js --check` | 0 | no-op |
+  | `node scripts/generate-agent-guide.js --check` | 0 | no-op |
+  | `npm test` (AC3), background with a log | 0 | 1,381 `ok`, 0 failures outside `todo`, 196 `todo` (this part's 111 among them) |
+  | `npm run verify:1.0`, background with a log | 0 | `66/66 automated checks passed`; `AUDIT ok — 0 critical, 0 high, 0 moderate, 0 low`; `AUDIT-lock ok — 0 critical, 0 high, 0 moderate, 0 low` (with `sass` in the lockfile); `N-03`, `N-04`, `cssmod` (Chrome), `contrast`, `B7-16`, `B7-17` ok |
+  | `npm run verify:playground-browser` (real Chrome, one run) | 0 | `PASS`: 380 pages loaded, 2,218 focusable elements checked, no console errors, no UXDSL warnings, no unresolved `var()`, visible keyboard focus, contrast page = Node; 1,532 hosting-only 404s exempted and listed; the planted negative controls (`undefined-var`, `console-error`, `no-focus`, `contrast-mismatch`, `overflow`, `paradigm-mismatch`) all caught |
+
+- **Negative controls, encoded:** `… equals live Dart Sass (negative control)`
+  plants a wrong CSS literal, a wrong Sass message and CSS expected of a
+  source Sass rejects, and asserts each is noticed; the recorder refuses a
+  `sass`-group source that holds a UXDSL construct and an unreviewed `mixed`
+  case (`expectationFor`); of the 110 todo case tests, **58 fail today** (51
+  of the 75 `sass` cases, 7 of the 15 `mixed` ones — the flattened and the
+  interpolated) and 52 pass (24 `sass`, all 20 `today`, 8 `mixed`), plus the
+  tally through `compile()`; node:test reports them as `# TODO`, which is the
+  failing-test-first evidence MIG-B9-13 turns green.
+- **Guards (§10):** `package.json` changed → one sentence in
+  `packages/uxdsl/README.md` (appended to part 1's paragraph on the pending
+  pipeline tests rather than under "Install", because `sass` is not yet
+  something a consumer installs — MIG-B9-12 updates "Install" when DEC-04
+  lands); `packages/uxdsl/CHANGELOG.md` gained an append-only subsection under
+  `## 0.5.0-beta.9 — unreleased` stating there is no output impact; no file
+  under `packages/uxdsl/src` was added, so `scripts/verify-docs-update.js` is
+  untouched; `generate:language` and the agent guide are no-ops.
+- **Not run / not PASS:** nothing of the story's §12 was skipped. The corpus
+  comparison itself (`byte-identical: true`) cannot pass on this base and is
+  not claimed. CI's run of the PR is the evidence the lockfile installs on
+  `ubuntu-latest`.
+- **Owner steps pending:** merge of the PR into `feat/beta9` by the agent once
+  CI is green (README §6); the wave-1 review.
 
 ## 15. Findings and follow-ups
+
+### Part 2 (2026-10-29)
+
+- **Preconditions corrected** (README §1.4; recorded here, old → new). Line 2:
+  `test ! -d fixtures/sass-corpus` → `test -f fixtures/sass-corpus/run.js &&
+  test -f packages/uxdsl/test/core/protect.cases.js && test ! -f
+  packages/uxdsl/test/core/sass-matrix.cases.js` (part 1 created the
+  directory; the new line asserts part 1 is merged and part 2 not started).
+  Line 3: `node -e "require('/Users/ricardosantoyo/Documents/projects/uxdsl/packages/playground-nextjs/node_modules/sass/package.json')"
+  2>/dev/null || npm view sass version >/dev/null` → `test -f
+  packages/playground-nextjs/node_modules/sass/package.json || npm view sass
+  version >/dev/null` (it read the owner's checkout, the review's last
+  finding; it now reads the worktree's own copy).
+- **Expectations that change with the pipeline** — recorded in the matrix,
+  listed here so MIG-B9-13 (the CHANGELOG's "Visual changes") and MIG-B9-15
+  (the migration guide) name them for authors of today's `.uxdsl` files:
+  nesting flattens (`nest-01…12`, `mixin-07`, `mixin-09`: `.a .b`, `.a:hover`,
+  `.a-suffix`); an `@import` whose URL ends in `.css` stays a CSS `@import`
+  (`import-04`, `import-05`) where postcss-import inlined the file or failed —
+  the same rule `sass-pipeline.test.js` pins for `"x.css"`; `#{$i}0%` is the
+  string `10 %` (`ctrl-05`), not `10%`; `darken()`/`lighten()`/`color.adjust`
+  results are serialized as `rgb(…%)` with non-integer channels (Dart Sass
+  ≥ 1.79); `10px / 2` is kept as `10px/2`; `'<length>'` is written
+  `"<length>"`; `rgba(0,0,0,.5)` is written `rgba(0, 0, 0, 0.5)`; `#{density(2)}`
+  and `#{palette(primary.main)}` compile. Proposed for MIG-B9-13 and
+  MIG-B9-15.
+- **`normalize()` and the `today` group.** The 20 `today` literals carry the
+  subset's own raws (`.a { padding: 1px; }@media (min-width: 768px) {.a {
+  padding: 2px; } }`), which `normalize()` keeps. The pipeline's plugin runs
+  on Sass's expanded output, so its raws around `{`/`}` may differ while the
+  declarations are the same; if the byte-for-byte pin then fails on whitespace
+  only, MIG-B9-13 should compare through a punctuation-insensitive `flat()`
+  (as `protect.test.js` does) rather than re-record, and say so. Proposed for
+  MIG-B9-13.
+- **The recorder re-records `today` from the current build.** `--update`
+  writes the `today` group from whatever `compile()` produces, so run after
+  MIG-B9-13 it would silently accept a changed output. MIG-B9-13 should flip
+  the group to `reviewed` (or compare it against the committed literals) in
+  the same change that deletes `scss-subset.test.js`. Proposed for MIG-B9-13.
+- **`UXD_SASS` must carry Sass's message verbatim.** The todo case tests
+  assert `compile()`'s error message includes the recorded `sass` text
+  (`error.sassMessage`, e.g. "1rem and 2px have incompatible units."), the
+  plan's §9.2 contract. For MIG-B9-12.
+- **Bootstrap's file count.** C6.2 and FEAT-010 README §9 say 96 `.scss`
+  files; `bootstrap@5.3.8`'s `scss/**` holds 92 (the runner renames 92, as
+  MIG-B9-04's run also saw). Proposed for MIG-B9-13, which wires the corpus
+  into the gate, to reconcile the number (the "87 loaded by the entry" figure
+  is reported by the runner once the comparison runs).
+- **Dart Sass's output for Bootstrap moved between versions:** 273,591 bytes
+  with 1.94.2 (MIG-B9-04's run), 276,926 with 1.107.0. The corpus compares the
+  same Sass on both sides, so this is not a defect; the plan's §9 timings and
+  sizes were measured on 1.94.2. For MIG-B9-13's record.
+- **A stale package name in a case source:** `import-05-node-modules` imports
+  `postcss-uxdsl/theme/default-colors.css`, a package and file that no longer
+  exist; the source is kept by contract (same names and sources). Its
+  expectation does not depend on them (a `.css` URL stays a CSS `@import`).
+- **The `-part2` branch.** §13 names `feat/b9-10-superset-tests`, which part 1
+  used and merged; part 2 was delivered from
+  `feat/b9-10-superset-tests-part2` (noted in §13).
 
 ### Review of 2026-10-11 (apply before implementing)
 
