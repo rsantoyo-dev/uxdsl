@@ -19,10 +19,15 @@ deprecation warnings Bootstrap's own sources raise (by id) and the number of
 files the entry loads, then the first ten differing lines on a difference.
 
 **Network:** it installs `bootstrap@5.3.8` from the npm registry into a
-temporary directory. It compares against the repository's own Dart Sass
-(`--sass <path>` to choose another) and tests the repository build of
-`packages/uxdsl` (`--uxdsl <dir>` to test an installed tarball instead).
+temporary directory. It compares against the repository's own Dart Sass — the
+`sass` devDependency of `packages/uxdsl`, found by resolving the package's
+entry file, since its `exports` map hides `sass/package.json` (`--sass <path>`
+to choose another) — and tests the repository build of `packages/uxdsl`
+(`--uxdsl <dir>` to test an installed tarball instead).
 
 Until the Sass pipeline lands (MIG-B9-13), `compile()` emulates a subset of Sass
-and rejects Bootstrap's `@use`, so the script exits 1 at the comparison. That is
-the expected state of the base; MIG-B9-13 wires it into the release gate.
+and resolves `@import` with postcss-import, which cannot find Bootstrap's
+partials (`bootstrap.uxdsl:1:1: Failed to find 'mixins/banner'`), so the script
+stops before the comparison with `byte-identical: false — compile() failed: …`
+and exits 1. That is the expected state of the base; MIG-B9-13 wires it into
+the release gate.

@@ -22,6 +22,28 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Tests: the Sass matrix recorded from Dart Sass; `sass` as a devDependency (MIG-B9-10, part 2)
+
+No change to compiled output: tests, fixtures and a devDependency. The package
+now develops against Dart Sass — `sass@^1.107.0` is a devDependency (`npm
+audit` of the package's lockfile: 0 vulnerabilities); it becomes a regular
+dependency with the Sass pipeline (DEC-04, MIG-B9-12).
+`test/core/sass-matrix.cases.js` holds the 110-case SCSS matrix of
+`scss-subset.test.js`, same names and sources, re-expected to what `compile()`
+must produce once it runs on Dart Sass (MIG-B9-13): 75 Sass sources recorded
+from the `sass` package itself by `test/core/sass-matrix.record.js --update`
+(2 of them invalid Sass, expected as `UXD_SASS` carrying Sass's message), 20
+UXDSL sources pinned to today's output byte for byte, 15 mixed sources
+recorded by hand from the two parts (Sass flattens the nesting; the plugin
+resolves the tokens) and marked reviewed. `test/core/sass-matrix.test.js`
+runs every case through `compile()` as `todo` until MIG-B9-13 and, today,
+compares each recorded Sass literal with the installed Dart Sass, so a Sass
+upgrade that changes output fails the suite until the matrix is re-recorded.
+`scss-subset.test.js` and `scss-expansion.test.js` keep running until
+MIG-B9-13 deletes them. `fixtures/sass-corpus/run.js` now finds the
+repository's own Dart Sass (`sass`'s `exports` map hides its `package.json`;
+the runner resolves the entry file and reads the `package.json` next to it).
+
 ### Diagnostics: a near-miss of a UXDSL function is an error with a suggestion (MIG-B9-04, DEC-02)
 
 A function spelled close to a UXDSL name used to reach the browser as an

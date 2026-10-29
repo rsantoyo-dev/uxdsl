@@ -1348,7 +1348,14 @@ Sass produces for it. The tests that pin that pipeline — the protect/restore
 cases, source-map positions through both stages, the pipeline behaviors and a
 Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
 of the implementation, as pending (`todo`) tests; until it lands, `compile()`
-behaves as described above.
+behaves as described above. For those tests `sass` (Dart Sass, the current
+1.x) is a devDependency of this package: `test/core/sass-matrix.cases.js`
+re-expects the 110-case matrix to what `compile()` must produce on Dart Sass,
+with every Sass-valid source recorded from the `sass` package itself
+(`node test/core/sass-matrix.record.js --update`) and a test that runs today
+comparing each recorded literal with the installed Sass, so an upgrade that
+changes output is noticed; `sass` becomes a regular dependency with the
+pipeline (FEAT-010, DEC-04).
 
 
 ### One theme validator (`validateTheme`)

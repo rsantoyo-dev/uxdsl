@@ -47,12 +47,21 @@ function parseArgs(argv) {
   return args;
 }
 
+/** The directory of the package that owns `file`: the nearest ancestor with a package.json. */
+function packageDirOf(file) {
+  let dir = path.dirname(file);
+  while (!fs.existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
+  return dir;
+}
+
 function loadSass(explicit) {
   const read = (dir) => ({ sass: require(dir), version: JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8')).version });
   if (explicit) return read(explicit.endsWith('package.json') ? path.dirname(explicit) : explicit);
+  // `sass`'s `exports` map does not expose its package.json, so the package is
+  // found by resolving its entry file and reading the package.json next to it.
   for (const base of [path.join(REPO, 'packages/uxdsl'), path.join(REPO, 'packages/playground-nextjs'), REPO]) {
     try {
-      return read(path.dirname(require.resolve('sass/package.json', { paths: [base] })));
+      return read(packageDirOf(require.resolve('sass', { paths: [base] })));
     } catch {
       // not installed there; try the next place
     }
