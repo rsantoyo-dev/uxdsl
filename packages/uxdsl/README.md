@@ -39,6 +39,9 @@ npx uxdsl build
 Yarn install it automatically. With `--legacy-peer-deps`, pnpm in strict mode, or
 an older npm, add it yourself (`npm install -D postcss`). `vite` (`>=4`) and
 `webpack` (`^5`) are optional peers: only the adapter you use needs its bundler.
+`npm audit` reports 0 vulnerabilities both for a fresh `npm i -D uxdsl` and
+for the lockfile this package is built and tested from (release-gate checks
+`AUDIT` and `AUDIT-lock`).
 
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
