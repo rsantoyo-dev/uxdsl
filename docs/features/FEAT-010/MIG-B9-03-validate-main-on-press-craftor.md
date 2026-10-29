@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | In review (PR #46) |
+| Status | In review (PR #47) |
 | Size | M |
 | Depends on | MIG-B9-01 (the tarball must say beta.9) |
 | Blocks | MIG-B9-50, MIG-B9-52, MIG-B9-60 (they consume its findings) |
@@ -186,7 +186,7 @@ Branch `feat/b9-03-press-craftor`. Commit:
 ## 14. Closure record
 
 - **Base:** `feat/beta9` at `0c9fbf6` (after MIG-B9-01, 02, 04, 05, 53 and
-  part 1 of 10). **PR:** #46, branch `feat/b9-03-press-craftor`, into
+  part 1 of 10). **PR:** #47, branch `feat/b9-03-press-craftor`, into
   `feat/beta9`. Delivered 2026-10-29.
 - **Environment:** macOS 27.0.0, Node v20.19.0, npm 11.21.1, Google Chrome
   156.0.8078.74 via playwright-core 1.63.0, Next.js 16.3.5 (`next build
