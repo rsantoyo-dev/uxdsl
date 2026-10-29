@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | Ready |
+| Status | In review (PR #46) |
 | Size | M |
 | Depends on | MIG-B9-01 (the tarball must say beta.9) |
 | Blocks | MIG-B9-50, MIG-B9-52, MIG-B9-60 (they consume its findings) |
@@ -185,11 +185,86 @@ Branch `feat/b9-03-press-craftor`. Commit:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **Base:** `feat/beta9` at `0c9fbf6` (after MIG-B9-01, 02, 04, 05, 53 and
+  part 1 of 10). **PR:** #46, branch `feat/b9-03-press-craftor`, into
+  `feat/beta9`. Delivered 2026-10-29.
+- **Environment:** macOS 27.0.0, Node v20.19.0, npm 11.21.1, Google Chrome
+  156.0.8078.74 via playwright-core 1.63.0, Next.js 16.3.5 (`next build
+  --webpack`, the project's script). Press Craftor read at `dbec897`; §2 was
+  written at `983ed88` — the three commits in between are application work
+  (Draft 2, story collection) and change none of the files §2 names.
+- **Evidence:** [`evidence/MIG-B9-03-press-craftor.md`](evidence/MIG-B9-03-press-craftor.md)
+  — before/after table, every hunk classified, the findings, every command
+  with its exit code, the Chrome checks and the full patch.
+- **Commands and exit codes (summary; the evidence file has every one):**
+  preparation as CI, all exit 0; preconditions §3, four exit 0; `npm pack` →
+  `uxdsl-0.5.0-beta.9.tgz` (235,376 B, 90 files); baseline in the clone:
+  `git clone` 0, `npm ci` 0, `uxdsl:build` 0 (4 s), `npm run build` 0
+  (56 s); migration: `npm uninstall …` 0, `npm i -D <tarball>` 0,
+  `npx uxdsl --version` **1** (finding 1) → `npm i -D postcss` 0 → 0;
+  codemod preview/write over `src` 0/0; `uxdsl build` **1**
+  (`UXD_PALETTE_SYNTAX`, finding 2) → codemod over `uxdsl.config.js` 0/0 →
+  `uxdsl build` 0 (T1, 1 s); `npm run build` 0 (T2, 57 s) with the
+  workaround, 0 (56 s) without its `:root`-stripping half (C4), 0 (55 s)
+  final; audit `--json`/`--check` 0/0, totals identical to the baseline;
+  project plugin test 0 (2 pass); `uxdsl/postcss` by name in Next 16.3.5
+  webpack 0 (60 s).
+- **T3:** every hunk of the seven files is classified (a) with its CHANGELOG
+  reference, except one (b): the order of generated state rules (finding 5).
+- **T4 (Chrome 156.0.8078.74):** ran on `/login` (clean: no console error,
+  no UXDSL warning, no failed request, no unresolved `var()`, 390/1280 px,
+  light/dark) and `/help` (clean except finding 4's four `inherit`-valued
+  typography variables and an aborted prefetch of `/`), plus a static
+  harness of the two modules' CSS against the theme (512 unresolved pairs,
+  all 24 variables declared `inherit`, identical before and after). **Not
+  run:** the `radar-dashboard` (`/`) and `creative-draft-workspace` (story
+  and Draft 2) routes themselves — they need `DATABASE_URL` (Neon) and a
+  signed-in session; the owner's `.env.local` was not copied. `/` answered
+  500 (`DATABASE_URL is not configured`). No theme switcher exists in the
+  app. Not marked passed.
+- **T5:** `git -C …/story-radar status --porcelain` =
+  `?? 4f91cb9c-7c15-4f6d-bf64-0b3a71a8213b.png`, HEAD `dbec897`, identical
+  at the start, mid-story and at the end.
+- **Controls run:** the Chrome probe's negative control (an injected
+  undefined `var()` and a `console.error`, both reported); the codemod's
+  idempotency probe (a second run rewrites canonical names — finding 3); the
+  first static harness, which "passed" because `file://` stylesheets are
+  cross-origin for the CSSOM, was discarded and redone with inlined CSS.
+- **Owner steps pending:** apply the patch to the real project (evidence
+  §7: regenerate the lockfile, replace the tarball path with the published
+  version, decide on `.npmrc`'s `legacy-peer-deps`, expect the documented
+  visual changes, clear `.next/cache`); route the findings below to their
+  stories. `/tmp/press-craftor` is left in place for inspection.
+- **Guards:** no package code changed; `npm run verify:doc-examples` exit 0
+  (`docs/features` is not compiled); `git status` shows only this story's
+  three files.
 
 ## 15. Findings and follow-ups
 
-Filled by the story. Known before it starts: `uxdsl watch` is gone
-(`uxdsl build --watch`); `uxdsl.theme.config.cjs` is a removed name; the
-dashed palette grammar is an error; `postcss-uxdsl/ds-runtime` imports (if
-any) become `uxdsl/runtime`.
+Known before it started: `uxdsl watch` is gone (`uxdsl build --watch`);
+`uxdsl.theme.config.cjs` is a removed name; the dashed palette grammar is an
+error; `postcss-uxdsl/ds-runtime` imports (if any) become `uxdsl/runtime` —
+Press Craftor has none, and no `updatePalette`-style call.
+
+Findings of the run (details and exact messages in the evidence file §4):
+
+| # | Finding | Target |
+| --- | --- | --- |
+| 1 | After the documented uninstall/install, `uxdsl` fails with `Cannot find module 'postcss'` in a project with `legacy-peer-deps=true` (`.npmrc`); the migration steps do not name the `postcss` peer (the README's Install section does) | MIG-B9-52 (steps), MIG-B9-60 (`doctor` detects a missing peer) |
+| 2 | The documented codemod command targets `src` only; theme values at the project root (`uxdsl.config.js`, 98 dashed references) stay dashed and `uxdsl build` fails with `UXD_PALETTE_SYNTAX` naming the loaded theme file, not the module holding the value | MIG-B9-52 (run it over the theme module too), MIG-B9-60 |
+| 3 | The codemod is not idempotent: a second run rewrites `--uxdsl__typography__h1-font-size` to `h1-font-font-size`; the release notes prescribe the codemod twice | **new story** (fix the suffix regex, pin a second run as a no-op); MIG-B9-52 (one instruction) |
+| 4 | A theme value of `inherit` (Press Craftor's `emphasis`/`regular`/`inherit`/`multiline` roles, `color: "inherit"` Surfaces and Buttons) emits a `:root` custom property that is guaranteed-invalid; `var()` reads of it are unresolved in Chrome (24 variables, 512 pairs; pre-existing in beta.8) and the compiler is silent | **new story** (a located warning for CSS-wide keywords in token values); MIG-B9-33 documents `extends: "none"` as the replacement for the trick |
+| 5 | Generated state rules are emitted in the order `hover, focus-visible, selected, disabled` (was `hover, selected, focus-visible, disabled`); not in the CHANGELOG; no rendering change | MIG-B9-52 |
+| 6 | With both `uxdsl.config.cjs` and `uxdsl.config.js` present, `.cjs` wins silently; the documentation gives no order | MIG-B9-50; MIG-B9-60 (warn) |
+| 7 | The codemod rewrites and reports generated outputs under `src` (`*.generated.module.css`, `uxdsl.css`) | MIG-B9-52, or the codemod story |
+| 8 | The release-notes example names only `--theme uxdsl.theme.json`; `.js`/`.cjs` themes work and the text should say so | MIG-B9-52 |
+
+Confirmed, not findings: `references` at the top level of a `builds` config
+is accepted; the codemod loads a `.cjs` theme module (bare or wrapped);
+`uxdsl/postcss` by name works in a Next 16.3.5 webpack build (the Turbopack
+worker was not exercised — the project builds with webpack); the CLI emits no
+`:root` into `includeTheme: false` module entries, so the `:root`-stripping
+half of the workaround is gone (C4) and the composite re-declaration half
+stays until MIG-B9-31. For MIG-B9-14 and MIG-B9-31's "Press Craftor builds
+unchanged" re-runs: the clone and the "before" set are in `/tmp`, and the
+evidence file's §3 is the parity baseline to compare against.

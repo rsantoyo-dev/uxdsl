@@ -183,7 +183,7 @@ its wave can run in parallel with its siblings, within §7.
 | --- | --- | --- | --- | --- | --- | --- |
 | MIG-B9-01 | [Renumber to 0.5.0-beta.9 and record beta.8](MIG-B9-01-renumber-and-record-beta8.md) | 0 | — | S | — | Merged (PR #33) |
 | MIG-B9-02 | [Refresh the repository's dependencies](MIG-B9-02-dependencies.md) | 0 | — | S | — | In review (PR #45) |
-| MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | Ready |
+| MIG-B9-03 | [Validate `main` on Press Craftor from a local tarball](MIG-B9-03-validate-main-on-press-craftor.md) | 0 | — | M | 01 | In review (PR #46) |
 | MIG-B9-05 | [The plugin preserves untouched declarations byte for byte](MIG-B9-05-preserve-untouched-declarations.md) | 0 | — | S | — | Merged (PR #30) |
 | MIG-B9-04 | [Near-miss function names are errors](MIG-B9-04-near-miss-functions.md) | 0 | DEC-02 | S | — | In review (PR #44) |
 | MIG-B9-10 | [The superset's tests, first](MIG-B9-10-superset-tests-first.md) | 1 | DEC-01 | M | 05 | In progress (part 1 merged, PR #34) |
