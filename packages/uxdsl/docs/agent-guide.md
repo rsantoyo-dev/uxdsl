@@ -772,7 +772,18 @@ hatch. Write `palette(surface.contrast)` in a theme, not the compiled name
 token exists. The engines resolve this grammar themselves (`tokenValueToCss`,
 `uxdsl/engine`), so the PostCSS plugin and `generateThemeCss` emit
 byte-identical blocks for the same theme — do not rely on a compiler pass to
-fix up a theme value, and do not add a second serializer.
+fix up a theme value, and do not add a second serializer. The grammar has one
+spelling per function and a near-miss is an error, not CSS: the spacing
+function is `space()`, and `spacing(2)`, `palete(primary.main)`, `densty(2)`
+or `SPACING(2)` fail as `UXD_FUNCTION_UNKNOWN` naming the function meant, in a
+declaration and in a theme value alike (`xs(spacing(2))` in a Density fails
+the same way). A real CSS function is never flagged — `KNOWN_CSS_FUNCTIONS`
+(`log()`, `rem()`, `shape()`, `color-mix()`, …), every breakpoint the theme
+defines (a custom `xxl()` included), vendor-prefixed names and anything far
+from a UXDSL name (`foo()`) pass through — so when generating UXDSL, write the
+canonical names and do not expect an alias to be accepted. A missing numeric
+key is suggested by its neighbours on the scale (`space(17)` → `16`;
+`color(gray.350)` → `340` or `400`), a named key by spelling.
 
 There is one theme validator, `validateTheme(theme, { references? })` from
 `uxdsl/theme` (the former `validateAndNormalizeTheme` is gone; nothing

@@ -506,6 +506,31 @@ palette(family[.variant][, alpha])      color(family[.shade][, alpha])
 - Names are case-insensitive and normalized: `Space(1)`, `PALETTE(primary)`,
   `MD(2rem)` and `RADIUS(PILL)` compile exactly like their lowercase forms;
   they no longer pass through as unknown functions.
+- One spelling per function, and a near-miss is an error, not CSS: a name
+  within a couple of edits of a token function, of `tone()` or of a breakpoint
+  of the effective theme (`palete(primary.main)`, `densty(2)`, `colr(gray.300)`),
+  or one of the spellings people write for one (`spacing(2)` for `space(2)`,
+  `colour()`, `pallete()`/`pallet()`, `radii()`, `borders()`, `shadows()`), is
+  `UXD_FUNCTION_UNKNOWN`, located at the declaration and naming the function
+  meant — in a stylesheet and in a theme value alike (`densities: { "x":
+  "xs(spacing(2))" }` fails the same way). A real CSS function is never
+  flagged: every name in `KNOWN_CSS_FUNCTIONS` (`log()`, `rem()`, `mod()`,
+  `shape()`, `color-mix()`, …), every breakpoint the theme defines (a custom
+  `xxl()` included) and every vendor-prefixed `-webkit-…()` pass through, and
+  so does a name far from any UXDSL name (`foo(1)`): CSS keeps adding
+  functions. A top-level name one edit from a breakpoint (`xd(1rem)`) stays
+  `UXD_BREAKPOINT_UNKNOWN`, which lists the configured names.
+
+  ```css
+  .card { padding: spacing(2); }  /* UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()? */
+  .card { padding: space(2); }    /* var(--uxdsl__space__2) */
+  .card { width: shape(from 0 0, line to 10px 10px); }
+  ```
+
+- A missing numeric key is suggested by position on the scale, not by
+  spelling: `space(17)` offers `16`, `color(gray.350)` offers `340` or `400`
+  (the nearest lower and higher keys that exist), while a named key keeps the
+  closest spelling (`palette(primary.mian)` → `main`).
 
 **Directives**, each a direct child of the rule it styles:
 
