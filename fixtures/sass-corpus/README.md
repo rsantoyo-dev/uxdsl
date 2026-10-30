@@ -20,7 +20,7 @@ files the entry loads, then the first ten differing lines on a difference.
 
 **Network:** it installs `bootstrap@5.3.8` from the npm registry into a
 temporary directory. It compares against the repository's own Dart Sass — the
-`sass` devDependency of `packages/uxdsl`, found by resolving the package's
+`sass` dependency of `packages/uxdsl`, found by resolving the package's
 entry file, since its `exports` map hides `sass/package.json` (`--sass <path>`
 to choose another) — and tests the repository build of `packages/uxdsl`
 (`--uxdsl <dir>` to test an installed tarball instead).
