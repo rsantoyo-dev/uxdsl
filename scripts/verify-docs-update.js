@@ -92,6 +92,10 @@ const VISUAL_DEFAULT_FILES = [
   // Sass as, and the directive spacing restored after it. A change here changes
   // what the plugin receives for every `.uxdsl` file compiled through Sass.
   `${SRC}/sass/protect.ts`,
+  // The Sass stage: which files a `.uxdsl` build loads and how, and where a
+  // project function replaces a UXDSL token, so it decides the CSS Dart Sass
+  // produces for every `.uxdsl` file compiled through it.
+  `${SRC}/sass/compile-sass.ts`,
 ];
 
 // MIG-B7-16 (FEAT-009): the other half of the classification. Every file under

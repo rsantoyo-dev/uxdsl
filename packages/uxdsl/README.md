@@ -41,7 +41,10 @@ an older npm, add it yourself (`npm install -D postcss`). `vite` (`>=4`) and
 `webpack` (`^5`) are optional peers: only the adapter you use needs its bundler.
 `npm audit` reports 0 vulnerabilities both for a fresh `npm i -D uxdsl` and
 for the lockfile this package is built and tested from (release-gate checks
-`AUDIT` and `AUDIT-lock`).
+`AUDIT` and `AUDIT-lock`). `sass` (Dart Sass, the pure-JavaScript package)
+arrives with `uxdsl` as a regular dependency and is loaded only when a file is
+compiled through Dart Sass, never by the PostCSS plugin used alone
+(`uxdsl/postcss`). Dart Sass declares Node 20.19 or later in its `engines`.
 
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
@@ -1363,10 +1366,16 @@ pipeline (FEAT-010, DEC-04). The pipeline's first and third stages exist
 through the `sass` package in `test/core/protect.test.js`; a project
 `@function` named like a UXDSL function (`space`, `md`) wins where Sass calls
 it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration (FEAT-010,
-DEC-17). `compile()` still does not call them. The second stage,
-`src/sass/compile-sass.ts` — Dart Sass with an importer that resolves `.uxdsl`
-files next to `.scss`, `.sass` and `.css` — is specified by
-`test/core/compile-sass.test.js` ahead of its implementation.
+DEC-17). The second stage exists too (`src/sass/compile-sass.ts`,
+`compileSassStage`): Dart Sass with an importer that resolves `.uxdsl` files
+next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
+`node_modules` load paths, so a package can ship `.uxdsl` partials), Sass's
+errors as `UXD_SASS` and its warnings as `UXD_SASS_WARNING` at the author's
+file, line and column, a source map whose positions point at the author's
+files, and the project function decided per call — where Dart Sass calls its
+bare name, the author's function runs. `test/core/compile-sass.test.js` checks
+it against Dart Sass on the same project written as `.scss`. `compile()` still
+does not call these stages.
 
 
 ### One theme validator (`validateTheme`)

@@ -22,6 +22,71 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The Sass stage: Dart Sass with the `.uxdsl` importer (MIG-B9-12)
+
+No change to compiled output yet: `src/sass/compile-sass.ts` is a new module
+that nothing in the package calls until `compile()` runs on Dart Sass
+(MIG-B9-13). `compileSassStage({ entry, source? }, { reserved, sourceMap,
+loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
+
+- **Resolution is Dart Sass's**, with `.uxdsl` as a third Sass extension beside
+  `.sass` and `.scss`: `_partial` and `name`, `dir/index`, the `.import`
+  variants for `@import`, `.css` only when no Sass file matches, and Sass's own
+  `It's not clear which file to import` when a `.uxdsl` and a `.scss` (or a
+  partial and a non-partial) answer one URL. A URL with no scheme is tried
+  relative to the importing file, then against every `node_modules` from the
+  entry's directory up, so a package can ship `.uxdsl` partials; `pkg:` URLs
+  go through Dart Sass's `NodePackageImporter` (a package whose export is a
+  `.uxdsl` file is Sass's error); `~pkg/…` is not resolved. `@use "./x"`
+  inlines `x.css` and `@import "x.css"` stays a CSS `@import`, as in Sass. An
+  in-memory `source` compiles as if it were `entry`, which need not exist.
+- **Errors and warnings are located at the author's text.** A Sass failure is
+  `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
+  `.column`, the protected columns translated back), with Sass's message
+  verbatim (`sassMessage`), Sass's code frame and stack re-rendered from the
+  author's lines (`sassFrame`, never colored) and the `sass.Exception` as
+  `cause`; files are read as Dart Sass reads them (invalid UTF-8 is `UXD_SASS`
+  at the character); an I/O error is rethrown unchanged. Each Sass warning is
+  `UXD_SASS_WARNING: [<deprecation id>] …` or `UXD_SASS_WARNING: …` for an
+  `@warn` (located by its stack frame), under Sass's own cap of five per
+  deprecation type plus a summary; `sass.silenceDeprecations` and
+  `sass.quietDeps` are passed through, `@debug` output is dropped.
+- **The source map** (with `sourceMap: true`) has the author's columns,
+  absolute paths as sources and the original text as `sourcesContent`; the CSS
+  never carries a `sourceMappingURL` comment.
+- **The author's SCSS wins (DEC-17), decided by Sass per call.** When a loaded
+  file defines a `@function` named like a UXDSL function (a token function,
+  `tone`, a breakpoint of the effective theme — `.scss`, `.sass` and `pkg:`
+  files included), a probe compile records, at each such call written in a
+  `.uxdsl` file, whether Dart Sass resolves the bare name to the project
+  function there: such a call is left to Sass, any other keeps UXDSL's token
+  (`space(10-2)`, `palette(primary.main)`), and one seen both ways is written as
+  a choice Sass makes at each evaluation. Each definition some bare call
+  resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition; a
+  helper reached only through a namespace shadows nothing. A build without
+  such a definition runs Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`:
+  one compile, CSS byte-identical to Dart Sass, about 1.04× its time with the
+  map on).
+
+`protect()` gains an additive `site` option, which reports every call of a
+token function, `tone` or a breakpoint name and decides each token call; its
+output, column map and problems are unchanged without it.
+
+#### Dependencies
+
+`sass` (the pure-JavaScript Dart Sass, `^1.107.0`) and `source-map-js`
+(`^1.2.2`, the version `postcss` already requires) move from devDependencies to
+dependencies. `sass` is loaded only when the Sass stage runs: `require('uxdsl')`
+and `require('uxdsl/postcss')` never load it. A fresh install grows by about
+ten packages (Dart Sass, `immutable`, `chokidar` 5 nested beside the CLI's
+`chokidar` 4, and the optional `@parcel/watcher` binaries); `npm audit` stays
+at 0. Dart Sass declares Node 20.19 or later.
+
+#### Diagnostics
+
+Two new codes in `DIAGNOSTIC_CATALOG`, owner `core`: `UXD_SASS` (Dart Sass
+could not compile the stylesheet) and `UXD_SASS_WARNING` (Dart Sass warned).
+
 ### The Sass pipeline's protect pass and directive-spacing restore (MIG-B9-11)
 
 No change to compiled output yet: `src/sass/protect.ts` is a new module that

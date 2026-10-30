@@ -37,8 +37,9 @@ test('phase 4: the package is `uxdsl`, with one bin and the exports map of the 1
 test('phase 4: postcss is a peer; vite and webpack are optional peers; hard dependencies are only what the code needs', () => {
   assert.deepEqual(pkg.peerDependencies, { postcss: '^8.4.31', vite: '>=4.0.0', webpack: '^5.0.0' });
   assert.deepEqual(pkg.peerDependenciesMeta, { vite: { optional: true }, webpack: { optional: true } });
+  // sass (Dart Sass, loaded only when the Sass stage runs) and source-map-js (its map translation).
   assert.deepEqual(Object.keys(pkg.dependencies).sort(), [
-    'chokidar', 'minimist', 'picomatch', 'postcss-import', 'postcss-scss', 'postcss-value-parser',
+    'chokidar', 'minimist', 'picomatch', 'postcss-import', 'postcss-scss', 'postcss-value-parser', 'sass', 'source-map-js',
   ]);
   assert.equal(pkg.dependencies.postcss, undefined, 'postcss is never a hard dependency: one copy, the project\'s');
 });

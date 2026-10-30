@@ -39,7 +39,17 @@ import { TOKEN_FUNCTIONS } from '../language';
 //   never protected. `@mixin` and `@include` names are never calls;
 // - the output has exactly as many lines as the input: a rewrite spanning
 //   lines re-emits its newlines after the replacement, and the result maps
-//   every column of the output back to the input.
+//   every column of the output back to the input;
+// - `options.site`, when given, is called for every call of a token function,
+//   `tone` or a reserved name outside comments, strings and unquoted `url(…)`.
+//   A token call — one the first rule rewrites, or leaves bare after a
+//   definition or through `options.unprotected` — is decided by the return
+//   value: `undefined` applies the rules above, `null` leaves the call as
+//   written, a one-line string is written in its place (the call's newlines
+//   re-emitted after it, the column map kept). Any other call is reported as
+//   `plain`, never rewritten, and the scan continues inside its arguments.
+//   Without the option the output, the column map and the problems are those
+//   of the rules above.
 
 /** The token function names, lowercase, from the language's own table. */
 export const TOKEN_FUNCTION_NAMES: ReadonlySet<string> = new Set(Object.keys(TOKEN_FUNCTIONS).map((name) => name.toLowerCase()));
@@ -56,6 +66,23 @@ export interface ProtectProblem {
   name: string;
 }
 
+/** A call `options.site` is asked about. */
+export interface ProtectCall {
+  /** `token`: a token-function call whose first argument is key-like (the calls the first rule rewrites, including those left bare after a same-file definition or through `unprotected`). `plain`: any other call of a token function, `tone` or a reserved name, which is never rewritten. */
+  kind: 'token' | 'plain';
+  /** The called name as Sass resolves it (`_` read as `-`, case kept). */
+  name: string;
+  /** Source offsets of the call, from its name to its closing parenthesis, end exclusive. */
+  start: number;
+  end: number;
+  /** `source.slice(start, end)`. */
+  raw: string;
+  /** Token calls: the default rewrite (`#{"name(key)"}`). */
+  protectedText?: string;
+  /** Token calls: whether the rules above rewrite the call (false after a same-file definition or through `unprotected`). */
+  defaultProtected?: boolean;
+}
+
 export interface ProtectOptions {
   /** Names a project function may shadow besides the token functions and `tone`: the effective theme's breakpoint names. */
   reserved?: Iterable<string>;
@@ -63,6 +90,8 @@ export interface ProtectOptions {
   unprotected?: Iterable<string>;
   /** The file being protected, for the warning's location. */
   file?: string;
+  /** Asked about every token and plain call (see the file comment). For a token call, `undefined` applies the default rule, `null` leaves it as written and a one-line string replaces it; for a plain call the return value is ignored. */
+  site?: (call: ProtectCall) => string | null | undefined;
 }
 
 export interface ProtectResult {
@@ -195,6 +224,7 @@ class Protector {
     private readonly reserved: ReadonlySet<string>,
     private readonly unprotected: ReadonlySet<string>,
     private readonly file: string | undefined,
+    private readonly site: ((call: ProtectCall) => string | null | undefined) | undefined,
   ) {}
 
   run(): string {
@@ -337,14 +367,22 @@ class Protector {
       const prev = start > 0 ? s[start - 1] : undefined;
       const callable = prev === undefined || !(isIdentChar(prev) || NOT_A_CALL_AFTER.has(prev));
       if (callable) {
-        const lower = s.slice(start, j).toLowerCase();
+        const written = s.slice(start, j);
+        const lower = written.toLowerCase();
         if (lower === 'url') {
           let k = j + 1;
           while (k < end && WHITESPACE.test(s[k])) k++;
           const close = matchParen(s, j);
           if (s[k] !== '"' && s[k] !== "'" && close !== -1 && close < end) { this.i = close + 1; return; }
-        } else if (TOKEN_FUNCTION_NAMES.has(lower) && !this.isUnprotected(s.slice(start, j)) && this.protectCall(start, j, end)) {
-          return;
+        } else if (TOKEN_FUNCTION_NAMES.has(lower)) {
+          if (this.site) {
+            if (this.decideTokenCall(start, j, end)) return;
+            this.reportPlainCall(start, j, end);
+          } else if (!this.isUnprotected(written) && this.protectCall(start, j, end)) {
+            return;
+          }
+        } else if (this.site && (sassName(written) === 'tone' || this.reserved.has(sassName(written)))) {
+          this.reportPlainCall(start, j, end);
         }
       }
     } else if (mode === 'directive' && next === '.' && s[j + 1] === '$' && isIdentStart(s[j + 2])) {
@@ -363,20 +401,56 @@ class Protector {
 
   /** Rewrites `name(args)` at [start, …] when its first argument is key-like; returns false, leaving the text alone, otherwise. */
   private protectCall(start: number, paren: number, end: number): boolean {
+    const call = this.tokenCall(start, paren, end);
+    if (!call) return false;
+    this.rewrite(start, call.close + 1, call.text);
+    return true;
+  }
+
+  /** `name(args)` at [start, …] when its first argument is key-like: the index of its closing parenthesis and its rewrite; null otherwise. */
+  private tokenCall(start: number, paren: number, end: number): { close: number; text: string } | null {
     const s = this.src;
     const close = matchParen(s, paren);
-    if (close === -1 || close >= end) return false;
+    if (close === -1 || close >= end) return null;
     const args = splitArguments(s, paren + 1, close);
     const key = this.protectedKey(args[0][0], args[0][1]);
-    if (key === null) return false;
+    if (key === null) return null;
     let extras = '';
     for (const [from, to] of args.slice(1)) {
       const raw = s.slice(from, to).trim();
-      if (!raw) return false;
+      if (!raw) return null;
       extras += `, ${BARE_NUMBER.test(raw) || isOneInterpolation(raw) ? raw : `#{${raw}}`}`;
     }
-    this.rewrite(start, close + 1, `#{"${s.slice(start, paren)}(${key}${extras})"}`);
+    return { close, text: `#{"${s.slice(start, paren)}(${key}${extras})"}` };
+  }
+
+  /** Asks `options.site` about a token call and writes its decision; returns false, deciding nothing, when the call is not a token call. */
+  private decideTokenCall(start: number, paren: number, end: number): boolean {
+    const call = this.tokenCall(start, paren, end);
+    if (!call) return false;
+    const s = this.src;
+    const written = s.slice(start, paren);
+    const defaultProtected = !this.isUnprotected(written);
+    const decision = (this.site as NonNullable<ProtectOptions['site']>)({
+      kind: 'token', name: sassName(written), start, end: call.close + 1, raw: s.slice(start, call.close + 1), protectedText: call.text, defaultProtected,
+    });
+    const text = decision === undefined ? (defaultProtected ? call.text : null) : decision;
+    if (text === null) {
+      // Left as written: the scan continues inside the arguments, as for a call the rules leave bare.
+      this.i = paren;
+      return true;
+    }
+    if (/[\r\n]/.test(text)) throw new TypeError('protect: a site replacement must be one line');
+    this.rewrite(start, call.close + 1, text);
     return true;
+  }
+
+  /** Tells `options.site` about a call that is never rewritten; the scan then continues inside its arguments. */
+  private reportPlainCall(start: number, paren: number, end: number): void {
+    const s = this.src;
+    const close = matchParen(s, paren);
+    if (close === -1 || close >= end) return;
+    (this.site as NonNullable<ProtectOptions['site']>)({ kind: 'plain', name: sassName(s.slice(start, paren)), start, end: close + 1, raw: s.slice(start, close + 1) });
   }
 
   /** The key with its variables interpolated, or null when the text is not key-like. */
@@ -477,7 +551,7 @@ const normalizedSet = (names: Iterable<string> | undefined): ReadonlySet<string>
 
 /** Protects UXDSL's syntax in `source` so Dart Sass passes it through; see the file comment for the rules. */
 export function protect(source: string, options: ProtectOptions = {}): ProtectResult {
-  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file);
+  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file, options.site);
   const code = protector.run();
   return {
     code,

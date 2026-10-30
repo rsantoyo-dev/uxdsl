@@ -367,6 +367,8 @@ const ERRORS = [
   ['an undefined variable after a tab and a token', { 'entry.uxdsl': '.a {\n\tcolor: space(2) $nope;\n}\n' }],
   ['a multi-line span with a declaration span and a token on a frame line', { 'entry.uxdsl': '@mixin m($a, $b) { x: space(2) $a; }\n.a {\n  @include m(\n    space(2)\n  );\n}\n' }],
   ['a multi-line span ending on a line with a token', { 'entry.uxdsl': '@mixin m($a, $b) { x: $a; }\n.a {\n  @include m(\n    1,\n    border(1) radius(pill), 3);\n}\n' }],
+  ['a multi-line span starting after a token on its first line', { 'entry.uxdsl': '@mixin m($a) { x: $a; }\n.a { p: space(2); @include m(\n    1,\n    2); }\n' }],
+  ['a declaration span in another file, on a line with a token', { 'entry.uxdsl': '@use "m";\n.a { p: space(2); @include m.x(1, 2); }\n', '_m.uxdsl': '.z { q: border(1); } @mixin x($a) { r: $a; }\n' }],
   ['an @import loop with tokens (two regions)', { 'entry.uxdsl': '.z { p: space(2); } @import "a";\n', '_a.uxdsl': '.y { p: space(1); } @import "a";\n' }],
   ['a @use loop', { 'entry.uxdsl': '@use "a";\n', '_a.uxdsl': '@use "b";\n.a { p: space(1); }\n', '_b.uxdsl': '@use "a";\n' }],
   ['a missing @use after a token', { 'entry.uxdsl': '@use "sass:math";\n.a { p: space(2); }\n@import "nope";\n' }],
@@ -738,7 +740,8 @@ test('MIG-B9-12: an in-memory source whose entry path does not exist resolves it
 
 test('MIG-B9-12: an in-memory source whose entry path does not exist resolves its relative @use (negative control: another directory, and the text on disk never compiles)', () => {
   const dir = project({ '_part.uxdsl': '.p { c: red; }\n', 'real.uxdsl': '.disk { a: b; }\n' });
-  const elsewhere = stageError(() => stage({ entry: path.join(dir, 'elsewhere/virtual.uxdsl'), source: '@use "../../part";\n' }));
+  // Without load paths: as in Dart Sass, a load path such as <dir>/elsewhere/node_modules would also resolve "../../part".
+  const elsewhere = stageError(() => stage({ entry: path.join(dir, 'elsewhere/virtual.uxdsl'), source: '@use "../../part";\n' }, { loadPaths: [] }));
   assert.equal(elsewhere.code, 'UXD_SASS');
   assert.equal(elsewhere.sassMessage, "Can't find stylesheet to import.");
   const memory = stage({ entry: path.join(dir, 'real.uxdsl'), source: '@use "part";\n.mem { a: b; }\n' });
