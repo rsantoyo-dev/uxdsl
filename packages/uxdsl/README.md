@@ -1363,7 +1363,10 @@ pipeline (FEAT-010, DEC-04). The pipeline's first and third stages exist
 through the `sass` package in `test/core/protect.test.js`; a project
 `@function` named like a UXDSL function (`space`, `md`) wins where Sass calls
 it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration (FEAT-010,
-DEC-17). `compile()` still does not call them.
+DEC-17). `compile()` still does not call them. The second stage,
+`src/sass/compile-sass.ts` — Dart Sass with an importer that resolves `.uxdsl`
+files next to `.scss`, `.sass` and `.css` — is specified by
+`test/core/compile-sass.test.js` ahead of its implementation.
 
 
 ### One theme validator (`validateTheme`)

@@ -370,6 +370,74 @@ test('MIG-B9-11: protect handles the Bootstrap corpus in under 20 ms, and is the
   t.diagnostic(`Bootstrap corpus: ${files.length} files, ${bytes} bytes; protect ${ms.toFixed(1)} ms (first pass, cold: ${cold.ms.toFixed(1)} ms)`);
 });
 
+// --- the site option: the Sass stage's per-call decisions ----------------------------------
+
+/** Every column of every line of `code`, mapped by both results: equal maps on every position. */
+function sameColumnMap(a, b, code) {
+  code.split('\n').forEach((line, line0) => {
+    for (let column0 = 0; column0 <= line.length + 2; column0++) assert.equal(a.toOriginalColumn(line0, column0), b.toOriginalColumn(line0, column0), `${line0}:${column0}`);
+  });
+}
+
+test('MIG-B9-12: protect\'s site option reports token and plain calls and decides each token call; without it the output is unchanged', () => {
+  // A callback that decides nothing changes nothing, on every case of the list.
+  for (const [id, source] of CASES) {
+    const plain = protect(source, { reserved: RESERVED, file: 'case.uxdsl' });
+    const seen = [];
+    const observed = protect(source, { reserved: RESERVED, file: 'case.uxdsl', site: (call) => { seen.push(call); return undefined; } });
+    assert.equal(observed.code, plain.code, id);
+    assert.deepEqual(observed.problems, plain.problems, id);
+    sameColumnMap(observed, plain, plain.code);
+    for (const call of seen) assert.equal(call.raw, source.slice(call.start, call.end), id);
+  }
+  // Token calls: what the first rule rewrites, with its default text; null leaves the call, a string replaces it.
+  const source = '.a { padding: space(2); color: palette(primary.main); }';
+  const calls = [];
+  protect(source, { reserved: RESERVED, site: (call) => { calls.push(call); } });
+  assert.deepEqual(calls, [
+    { kind: 'token', name: 'space', start: 14, end: 22, raw: 'space(2)', protectedText: '#{"space(2)"}', defaultProtected: true },
+    { kind: 'token', name: 'palette', start: 31, end: 52, raw: 'palette(primary.main)', protectedText: '#{"palette(primary.main)"}', defaultProtected: true },
+  ]);
+  assert.equal(protect(source, { reserved: RESERVED, site: () => null }).code, source);
+  const replaced = protect(source, { reserved: RESERVED, site: (call) => (call.name === 'space' ? 'S' : undefined) });
+  assert.equal(replaced.code, '.a { padding: S; color: #{"palette(primary.main)"}; }');
+  assert.equal(replaced.toOriginalColumn(0, replaced.code.indexOf('color')), source.indexOf('color'));
+  // A replaced call that spans lines keeps the line count and an exact column map after it.
+  const multi = '.a {\n  padding: space(\n    2\n  ) red;\n}\n';
+  const spanned = protect(multi, { reserved: RESERVED, site: () => 'R' });
+  assert.equal(spanned.code, '.a {\n  padding: R\n\n red;\n}\n');
+  assert.equal(spanned.code.split('\n').length, multi.split('\n').length);
+  assert.equal(spanned.toOriginalColumn(3, 0), 3, 'the space before `red` is column 3 of source line 4');
+  assert.equal(spanned.toOriginalColumn(3, 1), 4);
+  assert.equal(spanned.toOriginalColumn(1, 11), 11, 'inside the replacement: the call\'s start');
+  // Plain calls: a breakpoint, tone() and a token call whose key is not key-like; reported, never rewritten, scanned inside.
+  const plainCalls = [];
+  const plainSource = '.a { padding: md(space(2)); color: tone(main); margin: space(2 + 1); }';
+  const plainResult = protect(plainSource, { reserved: RESERVED, site: (call) => { plainCalls.push(`${call.kind}:${call.name}:${call.raw}`); return 'IGNORED'; } });
+  assert.deepEqual(plainCalls, ['plain:md:md(space(2))', 'token:space:space(2)', 'plain:tone:tone(main)', 'plain:space:space(2 + 1)']);
+  assert.equal(plainResult.code, '.a { padding: md(IGNORED); color: tone(main); margin: space(2 + 1); }', 'a plain call is never rewritten; the token call inside it is decided');
+  // After a same-file definition the default leaves the call bare; the site sees it with defaultProtected false.
+  const defined = [];
+  const definedResult = protect('@function space($k) { @return $k; }\n.a { p: space(2); }', { reserved: RESERVED, site: (call) => { defined.push(call); } });
+  assert.deepEqual(defined.map((call) => [call.kind, call.raw, call.defaultProtected, call.protectedText]), [['token', 'space(2)', false, '#{"space(2)"}']]);
+  assert.equal(definedResult.code.split('\n')[1], '.a { p: space(2); }');
+  assert.equal(protect('@function space($k) { @return $k; }\n.a { p: space(2); }', { reserved: RESERVED, site: (call) => call.protectedText }).code.split('\n')[1], '.a { p: #{"space(2)"}; }', 'a decision overrides the default');
+  // Underscore and case: the name as Sass resolves it.
+  const named = [];
+  protect('.a { a: SPACE(2); b: x_large(1px); }', { reserved: ['x-large'], site: (call) => { named.push(`${call.kind}:${call.name}`); } });
+  assert.deepEqual(named, ['token:SPACE', 'plain:x-large']);
+  // Nothing inside comments, strings or an unquoted url() is reported.
+  const quiet = [];
+  protect('/* space(2) */ .a { content: "md(1px)"; background: url(space(2).png); } // tone(main)', { reserved: RESERVED, site: (call) => { quiet.push(call); } });
+  assert.deepEqual(quiet, []);
+});
+
+test('MIG-B9-12: protect\'s site option decides each token call (negative control: the callback is consulted, and a replacement must be one line)', () => {
+  const source = '.a { padding: space(2); }';
+  assert.notEqual(protect(source, { reserved: RESERVED, site: () => 'X' }).code, protect(source, { reserved: RESERVED }).code);
+  assert.throws(() => protect(source, { reserved: RESERVED, site: () => 'a\nb' }), TypeError);
+});
+
 // --- R9: the restore ----------------------------------------------------------------------
 
 test('MIG-B9-11: restoreDirectiveSpacing removes the space Dart Sass writes before a directive\'s parenthesis, and only there', () => {
