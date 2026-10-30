@@ -22,6 +22,46 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The Sass pipeline's protect pass and directive-spacing restore (MIG-B9-11)
+
+No change to compiled output yet: `src/sass/protect.ts` is a new module that
+nothing in the package calls until `compile()` runs on Dart Sass (MIG-B9-12,
+MIG-B9-13). `protect(source, { reserved, unprotected, file })` is the
+single-pass tokenizer that lets UXDSL's syntax through Dart Sass unchanged:
+every token-function call (`space density color palette radius border
+shadow`, case-insensitive) whose first argument is key-like — `palette(primary.main)`,
+`space(10-2)`, `color(white)`, `color(black, 0.5)`, `palette(#{$t}.main)`,
+`radius($r)` — is rewritten to `#{"name(key[, arg])"}` with `$v`/`ns.$v`
+interpolated, because Dart Sass 1.107 reads a dotted key as a module member
+access, evaluates `space(10-2)` to `space(8)` and, since 1.79, parses
+`color(white)` as the CSS Color 4 function and fails; a native `color(display-p3 …)`
+or `color(from …)` argument is not key-like and is left to Sass. Inside
+`@ds-*(…)`, `$var` and `ns.$var` become `#{$var}`/`#{ns.$var}`. Comments,
+strings and unquoted `url(…)` are never touched; the output keeps the input's
+line count and `toOriginalColumn(line, column)` maps every column back; a
+source with nothing to protect comes back byte-identical (Bootstrap 5.3.8's 92
+`.scss` files: identity, about 2 ms warm). `restoreDirectiveSpacing` is the
+PostCSS plugin (`uxdsl/sass-restore`) that removes the space Sass writes in
+`@ds-surface (contained)`; the directive grammar itself is unchanged and still
+wants the parentheses directly after the name. The 63 protect/restore cases
+of MIG-B9-10 now run end to end through the `sass` package in
+`test/core/protect.test.js` (no `todo` left in that file).
+
+One new diagnostic, following FEAT-010's DEC-17 (the author's SCSS wins):
+`UXD_FUNCTION_SHADOWED`, a **warning**, for a Sass `@function` named like a
+UXDSL function — a token function, `tone` or a breakpoint of the effective
+theme (`@function space`, `@function md`). Calls to that bare name are left
+to Dart Sass, which runs the author's function; the warning is located at the
+declaration (`@function space (entry.uxdsl:2) replaces UXDSL's space() in
+this build; rename it to use the token`). Sass resolves functions by exact
+name, so `@function Space` shadows nothing; a namespaced call
+(`helpers.space()`) is never protected; `@mixin` names never conflict.
+`findShadowingFunctions(source, options)` runs the same scan over a file
+Sass loaded without rewriting it, and `options.unprotected` names the
+functions found that way, so a build can re-run `protect` with them
+unprotected (MIG-B9-12 owns that call). The code is in `DIAGNOSTIC_CATALOG`;
+nothing in the package emits it as a `result.warn` yet.
+
 ### Tests: the Sass matrix recorded from Dart Sass; `sass` as a devDependency (MIG-B9-10, part 2)
 
 No change to compiled output: tests, fixtures and a devDependency. The package
