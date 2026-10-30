@@ -22,6 +22,65 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Tests: the Sass matrix recorded from Dart Sass; `sass` as a devDependency (MIG-B9-10, part 2)
+
+No change to compiled output: tests, fixtures and a devDependency. The package
+now develops against Dart Sass — `sass@^1.107.0` is a devDependency (`npm
+audit` of the package's lockfile: 0 vulnerabilities); it becomes a regular
+dependency with the Sass pipeline (DEC-04, MIG-B9-12).
+`test/core/sass-matrix.cases.js` holds the 110-case SCSS matrix of
+`scss-subset.test.js`, same names and sources, re-expected to what `compile()`
+must produce once it runs on Dart Sass (MIG-B9-13): 75 Sass sources recorded
+from the `sass` package itself by `test/core/sass-matrix.record.js --update`
+(2 of them invalid Sass, expected as `UXD_SASS` carrying Sass's message), 20
+UXDSL sources pinned to today's output byte for byte, 15 mixed sources
+recorded by hand from the two parts (Sass flattens the nesting; the plugin
+resolves the tokens) and marked reviewed. `test/core/sass-matrix.test.js`
+runs every case through `compile()` as `todo` until MIG-B9-13 and, today,
+compares each recorded Sass literal with the installed Dart Sass, so a Sass
+upgrade that changes output fails the suite until the matrix is re-recorded.
+`scss-subset.test.js` and `scss-expansion.test.js` keep running until
+MIG-B9-13 deletes them. `fixtures/sass-corpus/run.js` now finds the
+repository's own Dart Sass (`sass`'s `exports` map hides its `package.json`;
+the runner resolves the entry file and reads the `package.json` next to it).
+
+### Diagnostics: a near-miss of a UXDSL function is an error with a suggestion (MIG-B9-04, DEC-02)
+
+A function spelled close to a UXDSL name used to reach the browser as an
+unknown CSS function it silently discarded: `padding: spacing(2)` compiled to
+`padding: spacing(2)`, and so did `palete(primary.main)` and `densty(2)`.
+Each now fails where it is written as `UXD_FUNCTION_UNKNOWN: spacing() is not
+a function CSS or UXDSL knows; did you mean space()?` — the spacing function
+keeps its name, `space()`. The rule fires for a name within one edit (two for
+names longer than five characters) of a token function, of `tone()` or of a
+breakpoint of the effective theme, and for the spellings people write for one
+(`spacing`, `colour`, `pallete`/`palete`/`pallet`, `radii`, `borders`,
+`shadows`); it is case-insensitive and runs in the one value grammar, so a
+theme value (`densities: { "x": "xs(spacing(2))" }`) fails the same way
+through `generateThemeCss`, `validateTheme` and the plugin. A real CSS
+function is never flagged: `KNOWN_CSS_FUNCTIONS` was audited against MDN's
+list and now also names `shape()`, `counter()`, `circle()`, `ray()`,
+`image()`, `src()`, `if()`, `calc-size()`, `contrast-color()` and the other
+shape, counter, font and timeline functions; a vendor-prefixed name
+(`-webkit-…()`), every breakpoint the theme defines (a custom `xxl()`
+included) and a name far from any UXDSL name (`foo(1)`) pass through as
+before. A top-level name one edit from a breakpoint (`xd(1rem)`) stays
+`UXD_BREAKPOINT_UNKNOWN`. Pinned by `test/near-miss-functions.test.js`.
+
+A missing numeric key is suggested by its position on the scale instead of
+by spelling: `space(17)` says `Did you mean "16"?`, `color(gray.350)` says
+`Did you mean "340" or "400"?` (the nearest lower and higher keys that exist;
+before, a numeric key got no suggestion and a numeric shade could be offered
+`50` for `350`). A named key keeps the closest spelling (`palette(primary.mian)`
+→ `"main"`).
+
+### Removed
+
+Inputs that compiled silently to invalid CSS: a function name that is a
+near-miss of `space()`, `density()`, `color()`, `palette()`, `radius()`,
+`border()`, `shadow()`, `tone()` or a breakpoint — `spacing()` first among
+them — now fails (`UXD_FUNCTION_UNKNOWN`, above). No valid input changes.
+
 ### Fixed: declarations the grammar does not change keep their raw text (MIG-B9-05)
 
 The compiler re-assigned every declaration's value, even when the UXDSL
@@ -39,6 +98,65 @@ Pinned by `test/preserve-untouched-declarations.test.js`, through
 
 None in rendering. In the CSS text, untouched values keep the author's spacing
 and comments, so a diff against a previous build can show them reappearing.
+
+### Dependencies: the package's own lockfile audits clean; Vite 7 in the tests (MIG-B9-02)
+
+`npm audit` of a fresh `npm i -D uxdsl` was already at 0 (check `AUDIT`), but
+the lockfile the package is built, tested and packed from pinned versions
+behind advisories published since: `postcss` 8.5.6 (GHSA-qx2v-qp2m-jg93,
+GHSA-6g55-p6wh-862q, GHSA-fxqj-rqcc-2cmp, GHSA-r28c-9q8g-f849), `nanoid`
+3.3.11 (GHSA-28wg-ghj8-5hjv, GHSA-2v37-7h3g-55p8, GHSA-xwg4-73v4-xw9w),
+`source-map-js` 1.2.1 (GHSA-68fv-2mgg-jv7q), the test-only `vite` 5.4.21
+with its `esbuild` 0.21.5 (GHSA-4w7w-66w2-5vf9, GHSA-v6wh-96g9-6wx3,
+GHSA-fx2h-pf6j-xcff; GHSA-67mh-4wv8-2f99) and `fast-uri` 3.1.8.
+
+- `packages/uxdsl/package-lock.json` now pins `postcss` 8.5.31, `nanoid`
+  3.3.20, `source-map-js` 1.2.2 and `fast-uri` 3.1.9 (`npm audit fix`; the
+  package's own dependency and peer ranges are unchanged, so an install of
+  the published package is not affected by this). `npm audit` inside
+  `packages/uxdsl` reports 0 vulnerabilities, dev dependencies included.
+- The `vite` **dev** dependency (tests and the parity fixture only) moves
+  from `^5.4.21` to `^7.3.7` (its `esbuild` 0.28.2). The optional peer range
+  stays `vite: ">=4.0.0"`; nothing changes for a consumer. Vite 7 is ESM-only
+  and requires Node ≥ 20.19 (`require(esm)`), so the repository's own
+  test suite now needs that Node; CI's `node-version: 20` resolves to it.
+- The release gate (`npm run verify:1.0`) gains **`AUDIT-lock`**: `npm audit`
+  inside the repository's `packages/uxdsl` must report nothing of any
+  severity. `AUDIT` (the fresh install) stays. The negative control
+  (`fixtures/release-1.0/audit-lock.test.js`) pins `source-map-js` 1.2.1 in a
+  copy of the lockfile and the check fails naming it.
+- `fixtures/vite-adapter/run.js` (gate check `N-04`) installs the tarball
+  twice, into two fresh directories, with `vite@^5` (a CommonJS consumer,
+  `require('vite')`) and with `vite@^7` (an ESM consumer, `import`), and
+  runs every check — extraction, the project theme, `?inline`, no absolute
+  paths, the module graph — against both. The source-map outcome is the
+  same on both: Vite's CSS pipeline does not carry the `.uxdsl` source into
+  the emitted `.css.map`, so that support is still not advertised.
+- `.github/dependabot.yml`: weekly version updates, grouped minor and patch,
+  for each of the repository's five lockfiles. Security updates are enabled in
+  the repository's settings by the owner.
+- The `postcss` peer floor stays `^8.4.31`. Raising it to `^8.5.23` was
+  considered and declined: Next.js 14 and 15 run PostCSS plugins inside their
+  own bundled `postcss` 8.4.31, so the warning would fire in every such
+  project, while the advisories concern `sourceMappingURL` comments and
+  `</style>` in CSS an attacker controls — UXDSL compiles a project's own
+  sources and never reads untrusted CSS. A project that wants the fixed
+  `postcss` installs it itself; the range accepts it.
+
+### Visual changes
+
+None in rendering; the compiled CSS is identical once newlines are removed,
+and the eight parity oracles are unchanged. In the CSS text, blank lines can
+appear between rules the compiler inserts after another rule: `postcss`
+8.5.19 changed `Root.normalize` so that a node inserted with its own
+`raws.before` keeps it instead of inheriting the previous sibling's. The
+`@ds-button`/`@ds-input` state rules (generated with a blank line between
+them) and rules inlined from an `@import` are inserted that way, so with any
+audit-clean `postcss` (≥ 8.5.23) their blank lines now show where 8.5.6
+collapsed them to one newline; the generated theme blocks re-apply their own
+`raws.before` and are unaffected. The playground's captured CLI build grew by
+9 such newlines (49,478 → 49,487 bytes). A diff against a build made with
+`postcss` ≤ 8.5.18 shows exactly those lines.
 
 ### Package layout (stability phase 4, decision DE-1)
 

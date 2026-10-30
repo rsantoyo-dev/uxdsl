@@ -39,6 +39,9 @@ npx uxdsl build
 Yarn install it automatically. With `--legacy-peer-deps`, pnpm in strict mode, or
 an older npm, add it yourself (`npm install -D postcss`). `vite` (`>=4`) and
 `webpack` (`^5`) are optional peers: only the adapter you use needs its bundler.
+`npm audit` reports 0 vulnerabilities both for a fresh `npm i -D uxdsl` and
+for the lockfile this package is built and tested from (release-gate checks
+`AUDIT` and `AUDIT-lock`).
 
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
@@ -503,6 +506,31 @@ palette(family[.variant][, alpha])      color(family[.shade][, alpha])
 - Names are case-insensitive and normalized: `Space(1)`, `PALETTE(primary)`,
   `MD(2rem)` and `RADIUS(PILL)` compile exactly like their lowercase forms;
   they no longer pass through as unknown functions.
+- One spelling per function, and a near-miss is an error, not CSS: a name
+  within a couple of edits of a token function, of `tone()` or of a breakpoint
+  of the effective theme (`palete(primary.main)`, `densty(2)`, `colr(gray.300)`),
+  or one of the spellings people write for one (`spacing(2)` for `space(2)`,
+  `colour()`, `pallete()`/`pallet()`, `radii()`, `borders()`, `shadows()`), is
+  `UXD_FUNCTION_UNKNOWN`, located at the declaration and naming the function
+  meant — in a stylesheet and in a theme value alike (`densities: { "x":
+  "xs(spacing(2))" }` fails the same way). A real CSS function is never
+  flagged: every name in `KNOWN_CSS_FUNCTIONS` (`log()`, `rem()`, `mod()`,
+  `shape()`, `color-mix()`, …), every breakpoint the theme defines (a custom
+  `xxl()` included) and every vendor-prefixed `-webkit-…()` pass through, and
+  so does a name far from any UXDSL name (`foo(1)`): CSS keeps adding
+  functions. A top-level name one edit from a breakpoint (`xd(1rem)`) stays
+  `UXD_BREAKPOINT_UNKNOWN`, which lists the configured names.
+
+  ```css
+  .card { padding: spacing(2); }  /* UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()? */
+  .card { padding: space(2); }    /* var(--uxdsl__space__2) */
+  .card { width: shape(from 0 0, line to 10px 10px); }
+  ```
+
+- A missing numeric key is suggested by position on the scale, not by
+  spelling: `space(17)` offers `16`, `color(gray.350)` offers `340` or `400`
+  (the nearest lower and higher keys that exist), while a named key keeps the
+  closest spelling (`palette(primary.mian)` → `main`).
 
 **Directives**, each a direct child of the rule it styles:
 
@@ -1320,7 +1348,14 @@ Sass produces for it. The tests that pin that pipeline — the protect/restore
 cases, source-map positions through both stages, the pipeline behaviors and a
 Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
 of the implementation, as pending (`todo`) tests; until it lands, `compile()`
-behaves as described above.
+behaves as described above. For those tests `sass` (Dart Sass, the current
+1.x) is a devDependency of this package: `test/core/sass-matrix.cases.js`
+re-expects the 110-case matrix to what `compile()` must produce on Dart Sass,
+with every Sass-valid source recorded from the `sass` package itself
+(`node test/core/sass-matrix.record.js --update`) and a test that runs today
+comparing each recorded literal with the installed Sass, so an upgrade that
+changes output is noticed; `sass` becomes a regular dependency with the
+pipeline (FEAT-010, DEC-04).
 
 
 ### One theme validator (`validateTheme`)

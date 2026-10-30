@@ -1,7 +1,7 @@
 /** Environment-independent semantics shared by build and runtime adapters. */
 import valueParser from 'postcss-value-parser';
 import { buildVarName } from './naming';
-import { themeError } from './diagnostics';
+import { editDistance, themeError } from './diagnostics';
 import { BASE_THEME } from './base-theme';
 import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
@@ -16,38 +16,52 @@ export function validateBreakpoints(bps: BreakpointMap, prefix = 'UXD_BP_INVALID
   if (!ordered.length || ordered[0][1] !== 0 || ordered.some(([name,width]) => !/^[a-z][\w-]*$/i.test(name) || !Number.isFinite(width) || width < 0) || new Set(ordered.map(([,width]) => width)).size !== ordered.length) throw new Error(`${prefix}: Expected named, distinct non-negative widths and a zero-width base.`);
   return ordered;
 }
-// Every CSS/UXDSL function name a responsive-looking
-// value can legitimately use at its top level, shared by validateResponsiveExpression
-// (theme-level Density/Typography values) and index.ts's own UXD_BREAKPOINT_UNKNOWN
-// check (arbitrary user CSS declarations) — one inventory, not two independently
-// maintained lists that can drift apart. Not an exhaustive CSS grammar: functions
-// nested inside another function's arguments are never top-level breakpoint
-// candidates in the first place, so they don't need to be listed here.
+// Every CSS/UXDSL function name a value can legitimately use, shared by
+// validateResponsiveExpression (theme values), the plugin's UXD_BREAKPOINT_UNKNOWN
+// check (author declarations) and unknownFunctionMessage (both) — one
+// inventory, not three lists that drift apart. A name here is never flagged,
+// whatever UXDSL name it resembles; a name missing from it is flagged only
+// when it is a near-miss of a UXDSL name, so the list need not be exhaustive
+// for a far name (`foo()`) to pass through. It follows MDN's list of CSS
+// functions (vendor-prefixed names are recognized by their `-` prefix instead).
 //
-// Known trap: `log` sits at edit distance 1 from the `lg` breakpoint name. This
-// list is consulted before any edit-distance heuristic runs specifically so a
-// real `log(...)` in a value next to `lg(...)` is never misread as a typo of it.
+// Known traps: `log` is one edit from the `lg` breakpoint, `shape` two from
+// `space`. Being listed is what keeps a real `log(…)` or `shape(…)` from
+// reading as a typo.
 export const KNOWN_CSS_FUNCTIONS = [
   // UXDSL's own value functions. `tone` is valid in Button/Input theme values
   // only; it is listed so the grammar, not the breakpoint heuristic, reports
   // it elsewhere (UXD_TONE_CONTEXT, with the reason).
   'space', 'density', 'color', 'palette', 'radius', 'border', 'shadow', 'tone',
   // Math.
-  'calc', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
+  'calc', 'calc-size', 'min', 'max', 'clamp', 'round', 'mod', 'rem', 'abs', 'sign',
   'sin', 'cos', 'tan', 'asin', 'acos', 'atan', 'atan2', 'pow', 'sqrt', 'hypot', 'log', 'exp',
+  'random', 'progress', 'media-progress', 'container-progress', 'sibling-index', 'sibling-count',
   // Color.
-  'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color-mix', 'light-dark',
-  // Everything else: references, gradients, grid/sizing, easing, transforms, filters, anchoring.
-  'var', 'env', 'attr', 'url', 'image-set',
+  'rgb', 'rgba', 'hsl', 'hsla', 'hwb', 'lab', 'lch', 'oklab', 'oklch', 'color-mix', 'light-dark', 'contrast-color', 'device-cmyk', 'palette-mix',
+  // References and conditionals.
+  'var', 'env', 'attr', 'url', 'src', 'if', 'image-set',
+  // Images.
+  'image', 'cross-fade', 'element', 'paint',
   'linear-gradient', 'radial-gradient', 'conic-gradient',
   'repeating-linear-gradient', 'repeating-radial-gradient', 'repeating-conic-gradient',
-  'fit-content', 'repeat', 'minmax', 'cubic-bezier', 'steps',
+  // Counters and generated content.
+  'counter', 'counters', 'symbols', 'string', 'content', 'leader', 'running', 'target-counter', 'target-counters', 'target-text',
+  // Shapes.
+  'circle', 'ellipse', 'inset', 'rect', 'xywh', 'polygon', 'path', 'shape', 'ray',
+  // Grid and sizing; easing; animation timelines.
+  'fit-content', 'repeat', 'minmax', 'linear', 'cubic-bezier', 'steps', 'scroll', 'view',
+  // Transforms.
   'translate', 'translateX', 'translateY', 'translateZ', 'translate3d',
   'scale', 'scaleX', 'scaleY', 'scaleZ', 'scale3d',
   'rotate', 'rotateX', 'rotateY', 'rotateZ', 'rotate3d',
   'skew', 'skewX', 'skewY', 'matrix', 'matrix3d', 'perspective',
+  // Filters.
   'blur', 'brightness', 'contrast', 'drop-shadow', 'grayscale', 'hue-rotate', 'invert', 'opacity', 'saturate', 'sepia',
+  // Fonts (`src` descriptors and `font-variant-alternates`); anchoring; at-rule preludes.
+  'format', 'local', 'tech', 'stylistic', 'styleset', 'character-variant', 'swash', 'ornaments', 'annotation',
   'anchor', 'anchor-size',
+  'supports', 'selector', 'layer', 'font-tech', 'font-format',
 ] as const;
 /** Function names are case-insensitive: `MD(…)` names the `md` breakpoint. */
 const isBreakpoint = (bps: BreakpointMap, name: string) => Object.prototype.hasOwnProperty.call(bps, name.toLowerCase());
@@ -58,9 +72,10 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   parsed.walk(node => { if ((node as any).unclosed) throw new Error(`${prefix}: Unclosed expression.`); });
   for (const node of parsed.nodes) {
     if (node.type !== 'function' || isBreakpoint(bps, node.value) || KNOWN_FUNCTION_NAMES.has(node.value.toLowerCase())) continue;
-    // A removed spelling names its replacement instead of reading as a typo.
+    // A removed spelling names its replacement, and a near-miss the name
+    // meant, instead of reading as an unknown function.
     const removed = removedSyntaxMessage(node.value, valueParser.stringify(node.nodes));
-    throw new Error(removed || `${prefix}: Unknown function or breakpoint ${node.value}.`);
+    throw new Error(removed || unknownFunctionMessage(node.value, { breakpoints: bps }) || `${prefix}: Unknown function or breakpoint ${node.value}.`);
   }
 }
 
@@ -214,10 +229,66 @@ export function removedSyntaxMessage(name: string, args: string): string | undef
  * own `radii.full`; without one, the reference fails with this message. */
 export const REMOVED_RADIUS_FULL = 'UXD_SYNTAX_REMOVED: radius(full) was removed; use radius(pill).';
 
+/**
+ * Spellings that are not a typo of one letter but are what people write for a
+ * token function — the family's name, a plural, another language's spelling.
+ * Each fails as `UXD_FUNCTION_UNKNOWN` naming the function meant, like a
+ * one-letter typo does through the distance rule below; a removed spelling
+ * (`REMOVED_FUNCTIONS`) names its replacement instead and is consulted first.
+ */
+const NEAR_MISS_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
+  spacing: 'space', spaces: 'space',
+  colour: 'color', colours: 'color', colors: 'color',
+  palete: 'palette', pallete: 'palette', pallet: 'palette', pallette: 'palette', palettes: 'palette',
+  radii: 'radius', radiuses: 'radius',
+  borders: 'border',
+  shadows: 'shadow',
+});
+
+export interface UnknownFunctionOptions {
+  /** The theme's own breakpoints; the effective map is these over the defaults, as every compilation builds it. */
+  breakpoints?: BreakpointMap;
+  /** The name sits at the top level of an author's declaration value, where the breakpoint check runs after the grammar. */
+  topLevel?: boolean;
+}
+
+/**
+ * The `UXD_FUNCTION_UNKNOWN` message for a function name that is a near-miss
+ * of a UXDSL name — a token function, `tone`, or a breakpoint of the effective
+ * theme — or `undefined` for a name the grammar leaves alone: a known CSS
+ * function, a breakpoint, a vendor-prefixed function (`-webkit-…`), or a name
+ * too far from any UXDSL name (CSS keeps adding functions; `foo()` passes
+ * through). The explicit table comes first; then the closest UXDSL name within
+ * one edit for names of up to five characters, two edits for longer names, so
+ * a short real function such as `shape()` is never two substitutions from
+ * `space()`. Names are case-insensitive. At the top level of an author's
+ * declaration, a name one edit from a breakpoint is left to the breakpoint
+ * check (`UXD_BREAKPOINT_UNKNOWN`), which lists the configured names.
+ */
+export function unknownFunctionMessage(name: string, options: UnknownFunctionOptions = {}): string | undefined {
+  const lower = name.toLowerCase();
+  const bps: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...options.breakpoints };
+  if (lower.startsWith('-') || KNOWN_FUNCTION_NAMES.has(lower) || isBreakpoint(bps, lower)) return undefined;
+  const message = (suggestion: string) => `UXD_FUNCTION_UNKNOWN: ${name}() is not a function CSS or UXDSL knows; did you mean ${suggestion}()?`;
+  if (Object.prototype.hasOwnProperty.call(NEAR_MISS_FUNCTIONS, lower)) return message(NEAR_MISS_FUNCTIONS[lower]);
+  const breakpointNames = Object.keys(bps).map((bp) => bp.toLowerCase());
+  if (options.topLevel && breakpointNames.some((bp) => editDistance(lower, bp) === 1)) return undefined;
+  let closest: string | undefined;
+  let best = (lower.length <= 5 ? 1 : 2) + 1;
+  for (const candidate of [...Object.keys(TOKEN_FUNCTIONS), 'tone', ...breakpointNames]) {
+    const distance = editDistance(lower, candidate);
+    if (distance < best) { best = distance; closest = candidate; }
+  }
+  return closest === undefined ? undefined : message(closest);
+}
+
 /** What the grammar may consult to tell `palette(text-primary)` (a family
  * written with its dash) from the removed `palette(primary-main)` spelling:
- * the effective theme's own families. Optional — without it, no dash is split. */
-export interface TokenContext { palette?: Record<string, unknown>; colors?: Record<string, unknown> }
+ * the effective theme's own families. Optional — without it, no dash is split.
+ * `breakpoints` names the theme's own breakpoints, so a custom one is never
+ * read as a near-miss of a UXDSL function. An effective theme object is a
+ * valid context: the three keys are the theme's own. */
+export interface TokenContext { palette?: Record<string, unknown>; colors?: Record<string, unknown>; breakpoints?: BreakpointMap }
 
 /** The parsed arguments of one token function call. */
 export interface TokenReference {
@@ -317,7 +388,10 @@ export function tokenReferenceToCss(reference: TokenReference): string {
  * stylesheet does, on both paths, and the plugin's own author-side pass
  * validates every reference against the effective theme (with "did you mean")
  * before delegating here. `context` lets the dashed-path error name the dotted
- * spelling a family actually has.
+ * spelling a family actually has, and its `breakpoints` keep a custom
+ * breakpoint from reading as a near-miss. A function that is none of the
+ * above but is spelled close to a UXDSL name (`spacing()`, `palete()`) is
+ * `UXD_FUNCTION_UNKNOWN` here, so a theme value fails like a declaration.
  */
 export function tokenValueToCss(input: string, context?: TokenContext): string {
   const parsed = valueParser(input);
@@ -330,7 +404,11 @@ export function tokenValueToCss(input: string, context?: TokenContext): string {
     if (name === 'tone') throw new Error('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it.');
     const removed = removedSyntaxMessage(name, valueParser.stringify(node.nodes));
     if (removed) throw new Error(removed);
-    if (!Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, name)) return;
+    if (!Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, name)) {
+      const unknown = unknownFunctionMessage(node.value, { breakpoints: context?.breakpoints });
+      if (unknown) throw new Error(unknown);
+      return;
+    }
     const kind = TOKEN_FUNCTIONS[name];
     const args = argumentsOf(node);
     // `color()` is the one UXDSL token function that collides with a native

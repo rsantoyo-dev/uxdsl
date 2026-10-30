@@ -43,10 +43,10 @@ import { getEdgeTokens, DEFAULT_BORDER_COLORS, RADIUS_KEYWORDS } from './edges';
 import { directiveInner, parseTypoArguments } from './directives';
 import { buildVarName } from './naming';
 import { resolveTheme } from './default-theme';
-import { diagnostic, locateError, missingKeyMessage, closestKey, formatKeyList, editDistance, DIAGNOSTIC_CATALOG as CATALOG } from './diagnostics';
+import { diagnostic, locateError, missingKeyMessage, closestKey, suggestKeys, didYouMean, formatKeyList, editDistance, DIAGNOSTIC_CATALOG as CATALOG } from './diagnostics';
 import { discoverThemeSync } from './config';
 import {
-  resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, parseTokenReference, tokenReferenceToCss,
+  resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, unknownFunctionMessage, parseTokenReference, tokenReferenceToCss,
   TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS,
 } from './language';
 import type { TokenReference, TokenContext } from './language';
@@ -162,7 +162,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     shadows: getShadowTokens(theme),
     spacing: theme.spacing || {},
     palette, colors,
-    tokenContext: { palette, colors },
+    tokenContext: { palette, colors, breakpoints: bps },
     generated: new WeakSet<ChildNode>(),
   };
 }
@@ -429,17 +429,16 @@ function checkReference(c: Compilation, reference: TokenReference, call: string)
   const entry = map[family];
   const path = reference.written;
   if (entry === undefined) {
-    const suggestion = closestKey(family, Object.keys(map));
-    throw diagnostic(`${code}: ${kind}(${path}) does not exist; available families: ${formatKeyList(Object.keys(map))}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`, call);
+    throw diagnostic(`${code}: ${kind}(${path}) does not exist; available families: ${formatKeyList(Object.keys(map))}.${didYouMean(suggestKeys(family, Object.keys(map)))}`, call);
   }
   if (typeof entry !== 'object' || entry === null) {
     if (reference.variant) throw diagnostic(`${code}: ${kind}(${path}) does not exist; ${family} is a standalone color, written ${kind}(${family}).`, call);
     return;
   }
   if (!Object.prototype.hasOwnProperty.call(entry, reference.variant!)) {
+    // A numeric shade is offered by its neighbours on the scale (`350` → 340 or 400), a named variant by spelling.
     const variants = Object.keys(entry as Record<string, unknown>);
-    const suggestion = closestKey(reference.variant!, variants);
-    throw diagnostic(`${code}: ${kind}(${path}) does not exist; ${family} has: ${variants.join(', ')}.${suggestion ? ` Did you mean "${suggestion}"?` : ''}`, call);
+    throw diagnostic(`${code}: ${kind}(${path}) does not exist; ${family} has: ${variants.join(', ')}.${didYouMean(suggestKeys(reference.variant!, variants))}`, call);
   }
 }
 
@@ -461,7 +460,14 @@ function rewriteTokens(c: Compilation, input: string): string {
     if (name === 'tone') {
       throw diagnostic('UXD_TONE_CONTEXT: tone() is only valid inside a theme\'s buttons/inputs values, where a requested tone can supply it; a stylesheet names the tone through @ds-button(role tone) or @ds-input(role tone).', call);
     }
-    if (!Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, name)) return;
+    if (!Object.prototype.hasOwnProperty.call(TOKEN_FUNCTIONS, name)) {
+      // A near-miss of a UXDSL name fails here, naming the function meant; a
+      // top-level name one edit from a breakpoint is left to the breakpoint
+      // check in expandResponsive, which lists the configured names.
+      const unknown = unknownFunctionMessage(node.value, { breakpoints: c.bps, topLevel: parsed.nodes.includes(node) });
+      if (unknown) throw diagnostic(unknown, call);
+      return;
+    }
     const kind = TOKEN_FUNCTIONS[name];
     const args = tokenArguments(node);
     // A native `color(display-p3 …)`/`color(from …)` is not a token.

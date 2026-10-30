@@ -70,6 +70,17 @@ test('MIG-B6-14 (positive control): every function in the known-CSS-functions li
     anchor: '--x', 'anchor-size': '--x',
     space: '1', density: '1', color: 'gray.300', palette: 'primary', radius: '1', border: '1', shadow: '1', tone: 'main',
     calc: '1px + 1px', min: '1px, 2px', max: '1px, 2px', clamp: '1px, 2px, 3px',
+    'calc-size': 'auto, size', random: '1px, 10px', progress: '1, 0, 2', 'media-progress': 'width, 0px, 100px', 'container-progress': 'width, 0px, 100px',
+    'sibling-index': '', 'sibling-count': '',
+    'contrast-color': 'red', 'device-cmyk': '0 0 0 1', 'palette-mix': 'in lch, --a, --b',
+    src: '"x.woff2"', if: 'style(--x): 1px; else: 2px',
+    image: 'red', 'cross-fade': 'url(a.png), url(b.png)', element: '#x', paint: 'x',
+    counter: 'x', counters: 'x, "."', symbols: 'cyclic "*"', string: 'x', content: 'text', leader: 'dotted', running: 'x',
+    'target-counter': 'url(#x), page', 'target-counters': 'url(#x), page, "."', 'target-text': 'url(#x)',
+    circle: '50%', ellipse: '50% 50%', inset: '10px', rect: '0 10px 10px 0', xywh: '0 0 10px 10px', polygon: '0 0, 100% 0, 100% 100%', path: '"M 0 0"', shape: 'from 0 0, line to 10px 10px', ray: '45deg',
+    linear: '0, 1', scroll: 'root', view: 'block',
+    format: '"woff2"', local: 'Inter', tech: 'color-COLRv1', stylistic: '1', styleset: '1', 'character-variant': '1', swash: '1', ornaments: '1', annotation: '1',
+    supports: 'display: grid', selector: '.a', layer: 'x', 'font-tech': 'color-COLRv1', 'font-format': 'woff2',
   };
   for (const name of KNOWN_CSS_FUNCTIONS) {
     const args = sampleArgsByFunction[name];
