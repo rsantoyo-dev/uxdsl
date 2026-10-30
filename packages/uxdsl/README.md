@@ -1355,7 +1355,15 @@ with every Sass-valid source recorded from the `sass` package itself
 (`node test/core/sass-matrix.record.js --update`) and a test that runs today
 comparing each recorded literal with the installed Sass, so an upgrade that
 changes output is noticed; `sass` becomes a regular dependency with the
-pipeline (FEAT-010, DEC-04).
+pipeline (FEAT-010, DEC-04). The pipeline's first and third stages exist
+(`src/sass/protect.ts`: `protect()`, which lets dotted keys such as
+`palette(primary.main)` and `$var` inside `@ds-*(…)` through Dart Sass, and
+`restoreDirectiveSpacing`, which removes the space Sass writes in
+`@ds-surface (contained)`), and the 63 protect/restore cases run end to end
+through the `sass` package in `test/core/protect.test.js`; a project
+`@function` named like a UXDSL function (`space`, `md`) wins where Sass calls
+it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration (FEAT-010,
+DEC-17). `compile()` still does not call them.
 
 
 ### One theme validator (`validateTheme`)
