@@ -1355,7 +1355,10 @@ with every Sass-valid source recorded from the `sass` package itself
 (`node test/core/sass-matrix.record.js --update`) and a test that runs today
 comparing each recorded literal with the installed Sass, so an upgrade that
 changes output is noticed; `sass` becomes a regular dependency with the
-pipeline (FEAT-010, DEC-04).
+pipeline (FEAT-010, DEC-04). The 63 protect/restore cases run end to end
+through the `sass` package in `test/core/protect.test.js` (protect → Dart
+Sass → restore → the plugin), against the pipeline's first and third stages
+(`src/sass/protect.ts`).
 
 
 ### One theme validator (`validateTheme`)
