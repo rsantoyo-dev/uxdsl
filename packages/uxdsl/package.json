@@ -97,7 +97,7 @@
     "chokidar": "^4.0.3",
     "minimist": "^1.2.8",
     "picomatch": "^4.0.7",
-    "postcss-import": "^16.1.0",
+    "postcss-import": "^17.0.1",
     "postcss-scss": "^4.0.9",
     "postcss-value-parser": "^4.2.0"
   },
