@@ -56,9 +56,11 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
   `.column`, the protected columns translated back), with Sass's message
   verbatim (`sassMessage`), Sass's code frame and stack re-rendered from the
-  author's lines (`sassFrame`, never colored) and the `sass.Exception` as
-  `cause`; files are read as Dart Sass reads them (invalid UTF-8 is `UXD_SASS`
-  at the character); an I/O error is rethrown unchanged. Each Sass warning is
+  author's lines with every marker under the author's columns, however many
+  multi-line spans the frame draws (`sassFrame`, never colored), and the
+  `sass.Exception` as `cause`; files are read as Dart Sass reads them (invalid
+  UTF-8 is `UXD_SASS` at the character); an I/O error is rethrown unchanged.
+  Each Sass warning is
   `UXD_SASS_WARNING: [<deprecation id>] …` or `UXD_SASS_WARNING: …` for an
   `@warn` (located by its stack frame), under Sass's own cap of five per
   deprecation type plus a summary; `sass.silenceDeprecations` and

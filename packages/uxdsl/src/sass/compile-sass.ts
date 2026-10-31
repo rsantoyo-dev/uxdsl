@@ -120,8 +120,13 @@ const FOLDS_CASE = process.platform === 'darwin' || process.platform === 'win32'
 /** The namespace under which the probe and the dispatch reach `sass:meta`, so a project function named `function-exists` or `get-function` never answers for it. */
 const META_NAMESPACE = 'uxdsl-probe-meta';
 const META_PREFIX = `@use "sass:meta" as ${META_NAMESPACE}; `;
-/** The two-character column Sass's code frame draws before each line of a region that holds a multi-line span. */
-const CONNECTORS = new Set(['┌ ', '│ ', '  ']);
+/**
+ * The column Sass's code frame draws before each code line of a frame that holds
+ * multi-line spans: one character (a space, │, ┌, ┬, └, ┼ or ─) for each of the
+ * most multi-line spans that share a line of the frame, then a space. Its width is
+ * the same on every code line of the frame.
+ */
+const CONNECTOR = /^[ │┌┬└┼─]+ $/;
 
 /** Text that is not valid UTF-8, located at its first replacement character, as Dart Sass reports it. */
 class InvalidUtf8 extends Error {
@@ -1073,7 +1078,7 @@ function renderFrame(pass: Pass, exception: Sass.Exception): string {
   return restack(pass, out).join('\n');
 }
 
-/** The served line Sass showed (after an optional multi-line connector), or null when the shown text is not that line. */
+/** The served line Sass showed (after the frame's multi-line connector column, when it has one), or null when the shown text is not that line. */
 function codeLine(pass: Pass, region: string | null, line0: number, shown: string): CodeLine | null {
   const served = region ? pass.served.get(region) : undefined;
   if (!served || !served.protected || !region) return null;
@@ -1081,10 +1086,10 @@ function codeLine(pass: Pass, region: string | null, line0: number, shown: strin
   const originalLine = served.original.split('\n')[line0];
   if (servedLine === undefined || originalLine === undefined) return null;
   const expanded = expandTabs(servedLine);
-  let connector: string | null = null;
-  if (shown === expanded) connector = '';
-  else if (CONNECTORS.has(shown.slice(0, 2)) && shown.slice(2) === expanded) connector = shown.slice(0, 2);
-  if (connector === null) return null;
+  const width = shown.length - expanded.length;
+  if (width < 0 || shown.slice(width) !== expanded) return null;
+  const connector = shown.slice(0, width);
+  if (connector !== '' && !CONNECTOR.test(connector)) return null;
   return { file: region, line0, connector, served: servedLine, original: originalLine };
 }
 
@@ -1094,12 +1099,18 @@ const authorCharacter = (pass: Pass, code: CodeLine, servedDisplay: number): num
 /** A marker line under a re-rendered code line, at the author's columns; null when it is not a marker. */
 function redrawMarker(pass: Pass, code: CodeLine, gutter: string, body: string): string | null {
   const width = code.connector.length;
-  // A multi-line span that starts or ends inside a line: ┌ or └ in the connector column, dashes, and ^
-  // under the span's first or last character.
-  const edge = width === 2 ? /^([┌└])(─*)\^([\s\S]*)$/.exec(body) : null;
+  // Where a multi-line span starts or ends inside a line, the connector column (one character per
+  // span, ┌ or └ at this span's) is followed by dashes and a ^. Sass draws one dash more than the
+  // display column of the span's first character, or as many as the display column after its last.
+  const spans = Math.max(0, width - 1);
+  const area = body.slice(0, spans);
+  const edge = /[┌└]/.test(area) ? /^(─+)\^([\s\S]*)$/.exec(body.slice(spans)) : null;
   if (edge) {
-    const column = displayWidth(code.original, authorCharacter(pass, code, edge[2].length - 1));
-    return `${gutter}│ ${edge[1]}${'─'.repeat(column + 1)}^${edge[3]}`;
+    const dashes = edge[1].length;
+    const drawn = area.includes('┌')
+      ? 1 + displayWidth(code.original, authorCharacter(pass, code, dashes - 1))
+      : Math.max(1, displayWidth(code.original, authorCharacter(pass, code, dashes)));
+    return `${gutter}│ ${area}${'─'.repeat(drawn)}^${edge[2]}`;
   }
   const lead = body.slice(0, width);
   const single = /^( *)([\^━]+)([\s\S]*)$/.exec(body.slice(width));

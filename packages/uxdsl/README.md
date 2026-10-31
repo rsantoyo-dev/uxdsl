@@ -1374,7 +1374,8 @@ Sass searches a load path, so a package can ship `.uxdsl` partials and a
 `../x` that misses is never a file in another directory; in a package loaded
 through `pkg:`, Sass's own `.sass`, `.scss` and `.css` files answer a relative
 URL before a `.uxdsl` partial does), Sass's
-errors as `UXD_SASS` and its warnings as `UXD_SASS_WARNING` at the author's
+errors as `UXD_SASS` (Sass's code frame redrawn with the author's text and
+columns) and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column, a source map whose positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its
 bare name, the author's function runs, and a call Sass never evaluates (the
