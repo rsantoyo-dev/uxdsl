@@ -51,14 +51,19 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   call written in a `.uxdsl` file, whether the bare name means a project
 //   function there; a call Sass resolves to the project function is left as
 //   written, any other keeps UXDSL's token, and a call seen both ways is
-//   written as a choice Sass makes at each evaluation. Each definition some
-//   bare call resolves to is one `UXD_FUNCTION_SHADOWED` warning at the
-//   definition. A build with no such definition runs Dart Sass once.
+//   written as a choice Sass makes at each evaluation. A call Sass never
+//   evaluates (a pseudo-class argument it keeps as raw text) keeps the token,
+//   the text Sass leaves there. The probe reads visibility through
+//   `sass:meta`, so a project function named `function-exists` or
+//   `get-function` does not answer for it. Each definition some bare call
+//   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition. A
+//   build with no such definition runs Dart Sass once.
 // - Nothing is shared between calls: every cache lives in one call's state,
 //   and every position is translated with the pass that produced it. Every
 //   pass sees the text first read for each file the importer serves; a file
 //   Dart Sass loads itself (`pkg:`) is read by Sass in each pass. The
-//   `uxdsl-probe-` function prefix is reserved for the probe.
+//   `uxdsl-probe-` prefix is reserved for the probe: its functions, and the
+//   namespace under which it reaches `sass:meta`.
 
 export interface SassStageInput {
   /** Absolute path of the entry. With `source`, the text is compiled as if it were this file, which need not exist. */
@@ -112,8 +117,9 @@ type Decision = 'user' | 'token' | 'mixed';
 
 const SYNTAX: Record<Role, Sass.Syntax> = { uxdsl: 'scss', scss: 'scss', sass: 'indented', css: 'css' };
 const FOLDS_CASE = process.platform === 'darwin' || process.platform === 'win32';
-const DISPATCH_NAMESPACE = 'uxdsl-probe-meta';
-const DISPATCH_PREFIX = `@use "sass:meta" as ${DISPATCH_NAMESPACE}; `;
+/** The namespace under which the probe and the dispatch reach `sass:meta`, so a project function named `function-exists` or `get-function` never answers for it. */
+const META_NAMESPACE = 'uxdsl-probe-meta';
+const META_PREFIX = `@use "sass:meta" as ${META_NAMESPACE}; `;
 /** The two-character column Sass's code frame draws before each line of a region that holds a multi-line span. */
 const CONNECTORS = new Set(['┌ ', '│ ', '  ']);
 
@@ -152,7 +158,7 @@ interface Served {
   text: string;
   role: Role;
   protected: ProtectResult | null;
-  /** Where on line 1 the dispatch prefix was inserted, and its length (0 without one). */
+  /** Where on line 1 the `sass:meta` prefix was inserted, and its length (0 without one). */
   prefixAt: number;
   prefixLength: number;
 }
@@ -190,6 +196,7 @@ interface PassHooks {
   report: boolean;
   site?: (siteId: string, file: string, call: ProtectCall) => string | null | undefined;
   append?: (file: string, role: Role, served: { original: string; protected: ProtectResult | null; plainCalls: Site[] }) => string;
+  /** Whether a `.uxdsl` or `.scss` file gets the `sass:meta` prefix; asked after its calls were decided and its lines appended. */
   prefix?: (file: string) => boolean;
   functions?: Record<string, Sass.CustomFunction<'sync'>>;
 }
@@ -511,14 +518,14 @@ function serve(stage: Stage, pass: Pass, hooks: PassHooks, file: string): Served
       },
     });
     text = protectedResult.code;
-    if (hooks.prefix && hooks.prefix(file)) {
-      // After a BOM, which must stay the first character.
-      prefixAt = text.charCodeAt(0) === 0xfeff ? 1 : 0;
-      text = text.slice(0, prefixAt) + DISPATCH_PREFIX + text.slice(prefixAt);
-      prefixLength = DISPATCH_PREFIX.length;
-    }
   }
   if (hooks.append) text += hooks.append(file, role, { original, protected: protectedResult, plainCalls: filePlainCalls });
+  if ((role === 'uxdsl' || role === 'scss') && hooks.prefix && hooks.prefix(file)) {
+    // After a BOM, which must stay the first character.
+    prefixAt = text.charCodeAt(0) === 0xfeff ? 1 : 0;
+    text = text.slice(0, prefixAt) + META_PREFIX + text.slice(prefixAt);
+    prefixLength = META_PREFIX.length;
+  }
   const served: Served = { original, text, role, protected: protectedResult, prefixAt, prefixLength };
   pass.served.set(file, served);
   return served;
@@ -572,12 +579,12 @@ function runPass(stage: Stage, hooks: PassHooks): Pass {
 /** The column in the author's text for a column Sass reports in what `pass` served (0-based both). */
 function columnIn(pass: Pass, file: string, line0: number, column0: number): number {
   const served = pass.served.get(file);
-  if (!served || !served.protected) return column0;
+  if (!served) return column0;
   let column = column0;
   if (line0 === 0 && served.prefixLength > 0 && column0 >= served.prefixAt) {
     column = column0 < served.prefixAt + served.prefixLength ? served.prefixAt : column0 - served.prefixLength;
   }
-  return served.protected.toOriginalColumn(line0, column);
+  return served.protected ? served.protected.toOriginalColumn(line0, column) : column;
 }
 
 const messageOf = (error: unknown): string => (error instanceof Error ? error.message : String(error));
@@ -645,8 +652,8 @@ function blankIndentedComments(text: string): string {
 /** A call written on one line, as the probe and the dispatch write it. */
 const oneLine = (raw: string): string => raw.replace(/\r\n|\r|\n/g, ' ');
 
-/** What the bare name means where this expression is evaluated: the function, or null when no function of that name is visible. */
-const visibleFunction = (name: string): string => `if(sass(function-exists("${name}")): get-function("${name}"); else: null)`;
+/** What the bare name means where this expression is evaluated: the function, or null when no function of that name is visible. Read through `sass:meta` under the reserved namespace (the file gets the prefix). */
+const visibleFunction = (name: string): string => `if(sass(${META_NAMESPACE}.function-exists("${name}")): ${META_NAMESPACE}.get-function("${name}"); else: null)`;
 
 const textOf = (value: Sass.Value): string => value.assertString().text;
 
@@ -759,24 +766,46 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // condition records what the bare name means there and whose value is what the final pass emits,
   // so the probe evaluates exactly what the build will. Lines appended at the end of files record a
   // name's meaning where protect never rewrites its calls, and capture each definition for attribution.
+  // A file that holds any of them gets the `sass:meta` prefix its lookups use.
   let records = new Map<string, Array<{ fn: Sass.SassFunction | null }>>();
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
   let captures: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
+  // Calls Sass reads as raw text and never evaluates, where the probe's choice does not parse (a
+  // pseudo-class argument in a selector, which Sass ends at the first ";"): they keep the token,
+  // which is the text Sass leaves there.
+  const unevaluated = new Set<string>();
+  /** The probed call whose choice Sass could not parse: the probe failed inside its text before evaluating it. */
+  const unparsedSite = (pass: Pass, written: Map<string, string>): string | null => {
+    const error = pass.error;
+    if (!(error instanceof sass.Exception) || !error.span || !error.span.url || error.span.url.protocol !== 'file:') return null;
+    const served = pass.served.get(fileURLToPath(error.span.url));
+    if (!served) return null;
+    const offset = error.span.start.offset;
+    for (const [siteId, text] of written) {
+      if (records.has(siteId)) continue;
+      const at = served.text.indexOf(text);
+      if (at !== -1 && offset >= at && offset < at + text.length) return siteId;
+    }
+    return null;
+  };
   let probe = first;
   for (let round = 1; ; round++) {
-    if (round > parses.size + scanned.size + 2) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
+    if (round > parses.size + scanned.size + unevaluated.size + 2) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
     records = new Map();
     atEnd = [];
     captures = [];
-    const probed = new Set<string>();
+    const written = new Map<string, string>();
+    const withLookups = new Set<string>();
     const namesBefore = new Set(names);
     probe = runPass(stage, {
       report: false,
-      site: (siteId, _file, call) => {
+      site: (siteId, file, call) => {
         if (call.kind !== 'token' || !names.has(call.name)) return undefined;
-        if (!parseable(call)) return call.protectedText;
-        probed.add(siteId);
-        return `uxdsl-probe-pick(if(sass(uxdsl-probe-site("${siteId}", "${call.name}", ${visibleFunction(call.name)})): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
+        if (unevaluated.has(siteId) || !parseable(call)) return call.protectedText;
+        const text = `uxdsl-probe-pick(if(sass(uxdsl-probe-site("${siteId}", "${call.name}", ${visibleFunction(call.name)})): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
+        written.set(siteId, text);
+        withLookups.add(file);
+        return text;
       },
       append: (file, role, served) => {
         const fileId = idOf(stage, file);
@@ -790,8 +819,11 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
           const defined = role === 'uxdsl' && served.protected ? served.protected.problems : findShadowingFunctions(served.original, { reserved: stage.reserved, file });
           for (const name of new Set(defined.map((problem) => problem.name))) lines.push(`@debug uxdsl-probe-cap("${fileId}", "${name}", ${visibleFunction(name)});`);
         }
-        return lines.length > 0 ? `\n${lines.join('\n')}\n` : '';
+        if (lines.length === 0) return '';
+        withLookups.add(file);
+        return `\n${lines.join('\n')}\n`;
       },
+      prefix: (file) => withLookups.has(file),
       functions: {
         'uxdsl-probe-site($id, $name, $f)': (args) => {
           const fn = userFunction(textOf(args[1]), args[2]);
@@ -817,8 +849,10 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     checkParses(candidateRaws(probe));
     captureBuiltins();
     const grew = [...names].some((name) => !namesBefore.has(name));
-    const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !probed.has(siteId));
-    if (!grew && !unprobed) break;
+    const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !unevaluated.has(siteId) && !written.has(siteId));
+    const unparsed = probe.failed ? unparsedSite(probe, written) : null;
+    if (unparsed !== null) unevaluated.add(unparsed);
+    if (!grew && !unprobed && unparsed === null) break;
   }
 
   const decisions = new Map<string, Decision>();
@@ -843,9 +877,7 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     for (const [siteId, decision] of decisions) if (decision === 'mixed') mixedFiles.add((probe.sites.get(siteId) as Site).file);
     const dispatch = (call: ProtectCall): string => {
       const name = call.name;
-      const visible = builtins.has(name)
-        ? `uxdsl-probe-user("${name}", if(sass(${DISPATCH_NAMESPACE}.function-exists("${name}")): ${DISPATCH_NAMESPACE}.get-function("${name}"); else: null))`
-        : `${DISPATCH_NAMESPACE}.function-exists("${name}")`;
+      const visible = builtins.has(name) ? `uxdsl-probe-user("${name}", ${visibleFunction(name)})` : `${META_NAMESPACE}.function-exists("${name}")`;
       return `uxdsl-probe-pick(if(sass(${visible}): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
     };
     report = runPass(stage, {

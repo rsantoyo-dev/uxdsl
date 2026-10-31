@@ -705,6 +705,91 @@ test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare 
   assert.deepEqual(stage({ entry: path.join(tc, 'entry.uxdsl') }).warnings, []);
 });
 
+// A token call inside a pseudo-class or pseudo-element argument that Sass keeps as raw text
+// (::part(), :lang(), :state(), an unknown :foo()) is never evaluated: Dart Sass leaves it as
+// written, whatever function of that name is loaded. Each case: the files, the expected CSS
+// (null: Dart Sass's own output on the twin) and the UXD_FUNCTION_SHADOWED locations.
+const RAW_PSEUDO = [
+  ['::part, the helper reached only through a namespace', { 'entry.uxdsl': '@use "h";\n.a::part(space(2)) { b: h.space(1); }\n', '_h.scss': H }, null, []],
+  ['::part, the helper visible through @import', { 'entry.uxdsl': '@import "h";\n.a::part(space(2)) { b: space(1); }\n', '_h.scss': H }, null, ['_h.scss:1:11']],
+  ['::part, the helper visible through @use as *', { 'entry.uxdsl': '@use "h" as *;\n.a::part(space(2)) { b: space(1); }\n', '_h.scss': H }, null, ['_h.scss:1:11']],
+  ['::part, the function defined in the same file', { 'entry.uxdsl': `${H}.a::part(space(2)) { b: space(1); }\n` }, null, ['entry.uxdsl:1:11']],
+  ['::part, and a call the first pass cannot compile (space(2) * 2)', { 'entry.uxdsl': '@import "h";\n.a::part(space(2)) { b: c; }\n.b { margin: space(2) * 2; }\n', '_h.scss': '@function space($k) { @return $k * 4px; }\n' }, null, ['_h.scss:1:11']],
+  ['a nested &::part and @at-root', { 'entry.uxdsl': '@use "h";\n.a { &::part(space(2)) { b: h.space(1); } }\n.b { @at-root .c::part(space(3)) { d: e; } }\n', '_h.scss': H }, null, []],
+  [':lang, :dir, :state, ::highlight, ::view-transition-group and an unknown :foo', {
+    'entry.uxdsl': '@use "h";\n@use "e";\n.a:lang(space(2)) { b: h.space(1); }\n.b:dir(space(3)) { c: d; }\n.c:state(radius(pill)) { c: d; }\n.d::highlight(border(1)) { c: e.border(1); }\n.e::view-transition-group(space(4)) { c: d; }\n.f:foo(space(5)) { c: d; }\n',
+    '_h.scss': H,
+    '_e.scss': '@function border($k) { @return $k * 1px; }\n@function radius($k) { @return 1px; }\n',
+  }, null, []],
+  ['a placeholder and an @extend target', { 'entry.uxdsl': '@use "h";\n%p::part(space(2)) { b: h.space(1); }\n.a::part(space(3)) { c: d; }\n.x { @extend %p; }\n.y { @extend .a; }\n', '_h.scss': H }, null, []],
+  ['two on one line, then a call Sass evaluates', { 'entry.uxdsl': '@import "h";\n.a::part(space(2)), .b:lang(space(3)) { c: space(1); }\n', '_h.scss': H }, null, ['_h.scss:1:11']],
+  ['in one selector with a call Sass evaluates (interpolated)', { 'entry.uxdsl': '@import "h";\n.a-#{space(1)}::part(space(2)) { b: c; }\n', '_h.scss': H }, null, ['_h.scss:1:11']],
+  ['in a partial loaded after other calls were evaluated', { 'entry.uxdsl': '@import "h";\n.v { w: space(1); }\n@import "sel";\n', '_sel.uxdsl': '.a::part(space(2)) { b: space(3); }\n', '_h.scss': H }, null, ['_h.scss:1:11']],
+  // protect writes a call that spans lines on one line, its line break after it, with or without
+  // a helper; Sass keeps a selector's raw text, so the twin keeps the break inside the call.
+  ['a call written across two lines', { 'entry.uxdsl': '@use "h";\n.a::part(space(\n  2)) { b: h.space(1); }\n', '_h.scss': H }, '.a::part(space(2) ) { b: 3px; }', []],
+];
+
+test('MIG-B9-12: a token call inside a pseudo-class argument Sass keeps as raw text compiles as Dart Sass compiles it, whatever function of that name is loaded', () => {
+  for (const [label, files, expectCss, expectShadow] of RAW_PSEUDO) {
+    const run = twin(files);
+    if (expectCss === null) {
+      assertSameAsTwin(run, label);
+    } else {
+      assert.ok(!run.actual.error, `${label}: ${run.actual.error && run.actual.error.message}`);
+      assert.equal(flat(run.actual.css), expectCss, label);
+      assert.deepEqual(sassWarnings(run.actual.warnings).map(warningOf(run.ux)), run.expected.warnings.map(warningOf(run.sc)), `${label}: warnings`);
+    }
+    assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
+  }
+});
+
+test('MIG-B9-12: a token call inside a pseudo-class argument Sass keeps as raw text compiles as Dart Sass compiles it (negative control: a call Sass evaluates and that fails stays Sass\'s error, and the probe\'s form is not a selector)', () => {
+  // The mixin's call is the token at the first include and the helper's at the second, where
+  // 8px + red fails; the first pass alone (every call the token) would compile.
+  const files = { 'entry.uxdsl': '@import "m";\n.x { @include m; }\n@import "h";\n.y { @include m; }\n', '_m.uxdsl': '@mixin m { p: space(2) + red; }\n', '_h.scss': '@function space($k) { @return $k * 4px; }\n' };
+  const run = twin(files);
+  assert.equal(run.expected.error.sassMessage, 'Undefined operation "8px + red".');
+  assertSameAsTwin(run, 'a probed call Sass evaluates and that fails', { exactFrame: true });
+  const tokens = project(side({ ...files, '_h.scss': '' }, 'uxdsl'));
+  assert.equal(flat(stage({ entry: path.join(tokens, 'entry.uxdsl') }).css), '.x { p: space(2)red; } .y { p: space(2)red; }');
+  // Why such a call keeps the token: Sass ends a style rule's selector at the first ";", so a
+  // choice written as if(sass(…): …; else: …) does not parse there, while it compiles as a value.
+  const functions = { 'uxdsl-probe-pick($value)': (args) => args[0] };
+  const choice = 'uxdsl-probe-pick(if(sass(true): space(2); else: #{"space(2)"}))';
+  assert.throws(() => sass.compileString(`.a::part(${choice}) { b: c; }`, { functions, logger: sass.Logger.silent }), (error) => error.sassMessage === 'expected "{".');
+  assert.equal(flat(sass.compileString(`.a { b: ${choice}; }`, { functions, logger: sass.Logger.silent }).css), '.a { b: space(2); }');
+});
+
+// A project function named like one of Sass's own meta functions is the author's to call; the
+// stage's lookups of what a bare name means must not go through it.
+const META_NAMES = [
+  ['get-function defined in the entry', { 'entry.uxdsl': '@import "h";\n@function get-function($n) { @return 1; }\n.a { p: space(2); q: get-function(x); }\n', '_h.scss': H }, ['_h.scss:1:11']],
+  ['function-exists defined in the entry', { 'entry.uxdsl': '@import "h";\n@function function-exists($n) { @return false; }\n.a { p: space(2); }\n', '_h.scss': H }, ['_h.scss:1:11']],
+  ['function-exists with two required arguments', { 'entry.uxdsl': '@import "h";\n@function function-exists($a, $b) { @return false; }\n.a { p: space(2); }\n', '_h.scss': H }, ['_h.scss:1:11']],
+  ['get-function defined beside the helper', { 'entry.uxdsl': '@import "h";\n.a { p: space(2); }\n', '_h.scss': `@function get-function($n) { @return 1; }\n${H}` }, ['_h.scss:2:11']],
+  ['get-function and a call seen both ways', { 'entry.uxdsl': '@import "p";\n@function space($k) { @return $k * 3px; }\n@function get-function($n) { @return 1; }\n@import "p";\n', '_p.uxdsl': '.p { v: space(2); }\n' }, ['entry.uxdsl:2:11']],
+];
+
+test('MIG-B9-12: a project function named function-exists or get-function does not change which calls reach the author\'s function', () => {
+  for (const [label, files, expectShadow] of META_NAMES) {
+    const run = twin(files);
+    assertSameAsTwin(run, label);
+    assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
+  }
+});
+
+test('MIG-B9-12: a project function named function-exists or get-function does not change which calls reach the author\'s function (negative control: a helper reached only through a namespace still shadows nothing, and the author\'s own sass:meta is untouched)', () => {
+  // Every call the token, space(10-2) included, which Sass would evaluate to space(8) as written.
+  const namespaced = project({ 'entry.uxdsl': '@use "h";\n@function get-function($n) { @return 1; }\n.a { p: space(2); w: space(10-2); v: h.space(1); }\n', '_h.scss': H });
+  const result = stage({ entry: path.join(namespaced, 'entry.uxdsl') });
+  assert.equal(flat(result.css), '.a { p: space(2); w: space(10-2); v: 3px; }');
+  assert.deepEqual(result.warnings, []);
+  const run = twin({ 'entry.uxdsl': '@use "sass:meta";\n@import "h";\n.a { p: space(2); m: meta.function-exists("space"); n: meta.inspect(meta.get-function("space")); }\n', '_h.scss': H });
+  assertSameAsTwin(run, 'the author\'s own sass:meta');
+  assert.deepEqual(shadowOf(run.ux, run.actual), ['_h.scss:1:11']);
+});
+
 /** Counts the Dart Sass compiles of `fn` (the stage calls compileString on the module it shares with this test). */
 function countCompiles(fn) {
   const original = sass.compileString;

@@ -73,7 +73,11 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   `.uxdsl` file, whether Dart Sass resolves the bare name to the project
   function there: such a call is left to Sass, any other keeps UXDSL's token
   (`space(10-2)`, `palette(primary.main)`), and one seen both ways is written as
-  a choice Sass makes at each evaluation. Each definition some bare call
+  a choice Sass makes at each evaluation. A call Sass never evaluates keeps the
+  token, the text Sass leaves there (`.a::part(space(2))`: Sass keeps that
+  pseudo-element argument as raw text), and the probe asks `sass:meta` what a
+  name means, so a project function named `function-exists` or `get-function`
+  changes no decision. Each definition some bare call
   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition; a
   helper reached only through a namespace shadows nothing. A build without
   such a definition runs Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`:

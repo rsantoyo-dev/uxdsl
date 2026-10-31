@@ -1377,8 +1377,10 @@ URL before a `.uxdsl` partial does), Sass's
 errors as `UXD_SASS` and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column, a source map whose positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its
-bare name, the author's function runs. `test/core/compile-sass.test.js` checks
-it against Dart Sass on the same project written as `.scss`. `compile()` still
+bare name, the author's function runs, and a call Sass never evaluates (the
+raw argument of `::part(space(2))`) keeps the token.
+`test/core/compile-sass.test.js` checks it against Dart Sass on the same
+project written as `.scss`. `compile()` still
 does not call these stages.
 
 
