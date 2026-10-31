@@ -20,13 +20,14 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   `dir/index`, `.css` only when no Sass file matches, more than one match is
 //   Sass's ambiguity error). A URL with no scheme is resolved relative to the
 //   importing file, then under each load path in order (by default every
-//   `node_modules` from the entry's directory up), so a package can ship
-//   `.uxdsl` partials; a load path is searched as Dart Sass searches it, the
-//   URL joined to it unnormalized so that the filesystem walks a leading `..`
-//   from the load path itself (one that does not exist finds nothing). `pkg:`
-//   URLs are Dart Sass's `NodePackageImporter`'s. Canonical paths are
-//   normalized, have the on-disk case on case-insensitive systems and keep
-//   symlinks, as Dart Sass's filesystem importer does.
+//   `node_modules` from the entry's directory up) and each directory of
+//   `SASS_PATH` after them, so a package can ship `.uxdsl` partials. Each is
+//   searched as Dart Sass searches a load path: the URL is joined to it
+//   unnormalized, so the filesystem walks a leading `..` from that directory
+//   (one that does not exist finds nothing). `pkg:` URLs are Dart Sass's
+//   `NodePackageImporter`'s. Canonical paths are normalized, have the on-disk
+//   case on case-insensitive systems and keep symlinks, as Dart Sass's
+//   filesystem importer does.
 // - Files are read as Dart Sass reads them (UTF-8; a BOM is a character; text
 //   that is not valid UTF-8 is Sass's `Invalid UTF-8.` at the first bad
 //   character). A `.uxdsl` file goes through `protect()`; `.scss`, `.sass` and
@@ -65,7 +66,7 @@ export interface SassStageOptions {
   reserved: Iterable<string>;
   /** true: Dart Sass runs with a source map and the result carries it, translated. false: no map. */
   sourceMap: boolean;
-  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries resolve against `process.cwd()`. Default: every `node_modules` from the entry's directory up to the root, nearest first. */
+  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries resolve against `process.cwd()`. Default: every `node_modules` from the entry's directory up to the root, nearest first. The directories of the `SASS_PATH` environment variable are searched after these, as Dart Sass searches them. */
   loadPaths?: string[];
   /** Passed to Dart Sass; only these two keys are read. */
   sass?: { silenceDeprecations?: string[]; quietDeps?: boolean };
@@ -239,7 +240,7 @@ function openStage(sass: typeof Sass, input: SassStageInput, options: SassStageO
   return {
     sass,
     reserved: Array.from(options.reserved),
-    loadPaths: options.loadPaths ? options.loadPaths.map((entry) => path.resolve(entry)) : nodeModulesChain(entryPath),
+    loadPaths: [...(options.loadPaths ? options.loadPaths.map((entry) => path.resolve(entry)) : nodeModulesChain(entryPath)), ...sassPathDirectories()],
     entryPath,
     entryUrl: pathToFileURL(entryPath),
     sourceMap: options.sourceMap === true,
@@ -249,6 +250,18 @@ function openStage(sass: typeof Sass, input: SassStageInput, options: SassStageO
     texts,
     fileIds: new Map(),
   };
+}
+
+/**
+ * The directories of the `SASS_PATH` environment variable, which Dart Sass
+ * reads on every compile and searches after the load paths: split on `;` on
+ * win32 and `:` elsewhere, each resolved against the working directory (an
+ * empty entry is the working directory itself). The importer searches them
+ * itself, so a `.uxdsl` file there is found as a `.scss` file is.
+ */
+function sassPathDirectories(): string[] {
+  const value = process.env.SASS_PATH;
+  return value === undefined ? [] : value.split(process.platform === 'win32' ? ';' : ':').map((entry) => path.resolve(entry));
 }
 
 /** Every `node_modules` from the file's directory up to the root, nearest first. */

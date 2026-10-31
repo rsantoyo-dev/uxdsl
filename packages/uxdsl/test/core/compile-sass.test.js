@@ -394,6 +394,52 @@ test('MIG-B9-12: a URL that begins with .. is searched under each load path as D
   assert.equal(flat(both.actual.css), '.written { a: b; }');
 });
 
+/** Runs `fn` with the SASS_PATH environment variable set to `value` (undefined: unset), then restores it. */
+function withSassPath(value, fn) {
+  const before = process.env.SASS_PATH;
+  const set = (to) => {
+    if (to === undefined) delete process.env.SASS_PATH;
+    else process.env.SASS_PATH = to;
+  };
+  set(value);
+  try {
+    return fn();
+  } finally {
+    set(before);
+  }
+}
+
+// Each side's SASS_PATH is relative, so it names the directory of that side's own project (the working directory).
+const SHARED = { 'entry.uxdsl': '@use "shared";\n@import "legacy";\n', 'env/_shared.uxdsl': '.from-sass-path { b: c; }\n', 'env/_legacy.uxdsl': '.imported { b: c; }\n' };
+
+test('MIG-B9-12: the directories of SASS_PATH are searched after the load paths, for a .uxdsl as for a .scss, as Dart Sass searches them', () => {
+  withSassPath('env', () => {
+    const found = twin(SHARED);
+    assertSameAsTwin(found, 'SASS_PATH=env');
+    assert.equal(flat(found.actual.css), '.from-sass-path { b: c; } .imported { b: c; }');
+    assertSameAsTwin(twin({ 'entry.uxdsl': '@use "kit/base";\n', 'node_modules/kit/_base.uxdsl': '.node-modules { b: c; }\n', 'env/kit/_base.uxdsl': '.sass-path { b: c; }\n' }), 'the load paths come first');
+    assertSameAsTwin(twin({ 'entry.uxdsl': '@use "shared";\n', 'env/_shared.uxdsl': '@use "inner";\n', 'env/_inner.uxdsl': '.inner-partial { b: c; }\n', 'env/inner.css': '.inner-css { b: c; }\n' }), 'a SASS_PATH file\'s own relative partial, a .css beside it');
+    assertSameAsTwin(twin({ 'entry.uxdsl': '@use "../x";\n', '_x.uxdsl': '.x { b: c; }\n', env: null }), '"../x" walked from a SASS_PATH directory');
+    assertSameAsTwin(twin({ 'entry.uxdsl': '@use "shared";\n', 'env/_shared.uxdsl': '.a { b: c; }\n', 'env/shared.sass': '.s\n  b: c\n' }), 'two candidates in a SASS_PATH directory are Sass\'s ambiguity');
+    // A SASS_PATH file is a dependency: quietDeps silences its deprecations and keeps the entry's.
+    const deps = { 'entry.uxdsl': '@use "shared";\n.e { w: (10px/2); }\n', 'env/_shared.uxdsl': '.d { w: (10px/2); }\n' };
+    const quiet = twin(deps, { sassOptions: { quietDeps: true } });
+    assertSameAsTwin(quiet, 'quietDeps');
+    assert.deepEqual(quiet.actual.warnings.map((w) => path.relative(quiet.ux, w.file)), ['entry.uxdsl']);
+    assertSameAsTwin(twin(deps), 'without quietDeps');
+  });
+  withSassPath(['nope', 'env'].join(path.delimiter), () => assertSameAsTwin(twin(SHARED), 'two entries, the first missing'));
+  withSassPath('', () => assertSameAsTwin(twin({ 'sub/entry.uxdsl': '@use "top";\n', '_top.uxdsl': '.cwd { b: c; }\n' }, { entry: 'sub/entry' }), 'an empty SASS_PATH names the working directory'));
+});
+
+test('MIG-B9-12: the directories of SASS_PATH are searched after the load paths (negative control: without SASS_PATH the same directory is not searched)', () => {
+  withSassPath(undefined, () => {
+    const missed = twin(SHARED);
+    assertSameAsTwin(missed, 'no SASS_PATH');
+    assert.equal(missed.actual.error.sassMessage, "Can't find stylesheet to import.");
+  });
+});
+
 // --- T4: Sass errors (E1) ------------------------------------------------------------------
 
 const ERRORS = [

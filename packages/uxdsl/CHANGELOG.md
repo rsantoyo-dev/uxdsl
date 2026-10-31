@@ -35,16 +35,18 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   `It's not clear which file to import` when a `.uxdsl` and a `.scss` (or a
   partial and a non-partial) answer one URL. A URL with no scheme is tried
   relative to the importing file, then under every `node_modules` from the
-  entry's directory up, so a package can ship `.uxdsl` partials. Each is
-  searched as Dart Sass searches a load path: the URL is joined to it without
-  normalizing, so the filesystem walks a leading `..` from that directory and
-  one that does not exist finds nothing (a `../x` that misses beside its file
-  is Sass's `Can't find stylesheet to import`, never a same-named file in
-  another directory). `pkg:` URLs go through Dart Sass's `NodePackageImporter`
-  (a package whose export is a `.uxdsl` file is Sass's error); `~pkg/…` is not
-  resolved. `@use "./x"` inlines `x.css` and `@import "x.css"` stays a CSS
-  `@import`, as in Sass. An in-memory `source` compiles as if it were `entry`,
-  which need not exist.
+  entry's directory up, so a package can ship `.uxdsl` partials, and then under
+  each directory of the `SASS_PATH` environment variable, which Dart Sass
+  searches after its load paths (a `.uxdsl` file there is found as a `.scss`
+  file is). Each is searched as Dart Sass searches a load path: the URL is
+  joined to it without normalizing, so the filesystem walks a leading `..` from
+  that directory and one that does not exist finds nothing (a `../x` that misses
+  beside its file is Sass's `Can't find stylesheet to import`, never a
+  same-named file in another directory). `pkg:` URLs go through Dart Sass's
+  `NodePackageImporter` (a package whose export is a `.uxdsl` file is Sass's
+  error); `~pkg/…` is not resolved. `@use "./x"` inlines `x.css` and
+  `@import "x.css"` stays a CSS `@import`, as in Sass. An in-memory `source`
+  compiles as if it were `entry`, which need not exist.
 - **Errors and warnings are located at the author's text.** A Sass failure is
   `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
   `.column`, the protected columns translated back), with Sass's message
