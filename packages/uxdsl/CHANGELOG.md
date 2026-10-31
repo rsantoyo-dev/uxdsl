@@ -44,9 +44,14 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   beside its file is Sass's `Can't find stylesheet to import`, never a
   same-named file in another directory). `pkg:` URLs go through Dart Sass's
   `NodePackageImporter` (a package whose export is a `.uxdsl` file is Sass's
-  error); `~pkg/…` is not resolved. `@use "./x"` inlines `x.css` and
-  `@import "x.css"` stays a CSS `@import`, as in Sass. An in-memory `source`
-  compiles as if it were `entry`, which need not exist.
+  error), and so does a relative URL inside a package it loaded, Sass's own
+  `.sass`, `.scss` and `.css` candidates first: there a `.uxdsl` partial is
+  found only when none of them (nor a directory index) answers the URL, and
+  one beside a `.scss` of the same name is not reported as ambiguous, unlike
+  the same files reached through a load path. `~pkg/…` is not resolved.
+  `@use "./x"` inlines `x.css` and `@import "x.css"` stays a CSS `@import`, as
+  in Sass. An in-memory `source` compiles as if it were `entry`, which need not
+  exist.
 - **Errors and warnings are located at the author's text.** A Sass failure is
   `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
   `.column`, the protected columns translated back), with Sass's message

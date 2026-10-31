@@ -316,8 +316,18 @@ test('MIG-B9-12: pkg: resolves a package\'s scss and css; a bare package path re
     'app/node_modules/kit/_base.scss': '.near { b: c; }\n',
     'node_modules/kit/_base.uxdsl': '.outer { b: c; }\n',
   }, { entry: 'app/entry' }), 'nearest node_modules');
-  // A relative file beats a load path; a bare .uxdsl partial in a package is reached through the load paths.
+  // A relative file beats a load path (for the entry's own URLs Sass resolves it first, as a file: URL); a bare
+  // .uxdsl partial in a package is reached through the load paths.
   assertSameAsTwin(twin({ 'app/entry.uxdsl': '@use "kit/base";\n', 'app/kit/_base.uxdsl': '.relative{b:c}\n', 'app/node_modules/kit/_base.uxdsl': '.loadpath{b:c}\n' }, { entry: 'app/entry' }), 'relative first');
+  // In a package Sass loaded itself (pkg:), a URL its own extensions miss reaches the importer with the package
+  // file as the importing file: the importer tries beside that file before the load paths.
+  assertSameAsTwin(twin({
+    'entry.uxdsl': '@use "pkg:kit";\n',
+    'node_modules/kit/package.json': JSON.stringify({ name: 'kit', exports: { '.': { sass: './index.scss' } } }),
+    'node_modules/kit/index.scss': '@use "base";\n.kit { a: b; }\n',
+    'node_modules/kit/_base.uxdsl': '.relative { a: b; }\n',
+    'node_modules/base/_index.scss': '.loadpath { a: b; }\n',
+  }, { dartOptions: { importers: [new sass.NodePackageImporter()] } }), 'relative first inside a pkg: package');
   assertSameAsTwin(twin({ 'entry.uxdsl': '@use "kit";\n@import "kit/legacy";\n', 'node_modules/kit/_index.uxdsl': '.idx{b:c}\n', 'node_modules/kit/_legacy.import.uxdsl': '.imp{b:c}\n', 'node_modules/kit/_legacy.uxdsl': '.use{b:c}\n' }), 'package index and .import variant');
   // quietDeps: a load-path package's deprecations are silenced, its @warn is not, and the entry's relative partial is not a dependency.
   const deps = {
@@ -358,6 +368,44 @@ test('MIG-B9-12: pkg: resolves a package\'s scss and css; a bare package path re
   assert.equal(rejected.code, 'UXD_SASS');
   assert.match(rejected.sassMessage, /^The export for 'root' in 'ux-kit' resolved to '.*index\.uxdsl', which is not a '\.scss', '\.sass', or '\.css' file\.$/);
   assert.equal(`${path.basename(rejected.file)}:${rejected.line}:${rejected.column}`, 'entry.uxdsl:1:1');
+});
+
+// A stylesheet NodePackageImporter loaded has it as its base importer: for a relative URL there, Dart Sass asks
+// NodePackageImporter first, which knows only .sass, .scss and .css, and asks the stage's importer only when none
+// of those (nor a directory index) answers. This differs from the .scss twin and is recorded, not corrected: the
+// stage would have to resolve pkg: itself.
+const KIT = (files) => ({
+  'entry.uxdsl': '@use "pkg:kit";\n',
+  'node_modules/kit/package.json': JSON.stringify({ name: 'kit', exports: { '.': { sass: './index.scss' } } }),
+  'node_modules/kit/index.scss': '@use "tokens";\n.kit { b: c; }\n',
+  ...files,
+});
+
+test('MIG-B9-12: in a package loaded through pkg:, Sass\'s own .sass, .scss and .css candidates answer a relative URL before a .uxdsl partial (a recorded difference from the .scss twin)', () => {
+  const options = { dartOptions: { importers: [new sass.NodePackageImporter()] } };
+  const css = twin(KIT({ 'node_modules/kit/_tokens.uxdsl': '.from-sass-source { b: c; }\n', 'node_modules/kit/tokens.css': '.from-compiled-css { b: c; }\n' }), options);
+  assert.equal(flat(css.expected.css), '.from-sass-source { b: c; } .kit { b: c; }', 'Dart Sass on the twin loads the Sass partial');
+  assert.equal(flat(css.actual.css), '.from-compiled-css { b: c; } .kit { b: c; }', 'the stage loads the .css NodePackageImporter finds');
+  const index = twin(KIT({ 'node_modules/kit/_tokens.uxdsl': '.file { b: c; }\n', 'node_modules/kit/tokens/_index.scss': '.dir-index { b: c; }\n' }), options);
+  assert.equal(flat(index.expected.css), '.file { b: c; } .kit { b: c; }', 'Dart Sass on the twin: a file beats a directory index');
+  assert.equal(flat(index.actual.css), '.dir-index { b: c; } .kit { b: c; }', 'the stage loads the index NodePackageImporter finds');
+  // A .uxdsl beside a .scss of the same name: in the pkg: package Sass's .scss is loaded and nothing is reported;
+  // the same files reached through a load path are Sass's ambiguity error.
+  const pair = KIT({ 'node_modules/kit/_tokens.uxdsl': '.uxdsl-partial { b: c; }\n', 'node_modules/kit/_tokens.scss': '.scss-partial { b: c; }\n' });
+  const viaPkg = project(pair);
+  const loaded = stage({ entry: path.join(viaPkg, 'entry.uxdsl') });
+  assert.equal(flat(loaded.css), '.scss-partial { b: c; } .kit { b: c; }');
+  assert.deepEqual(loaded.warnings, []);
+  const viaLoadPath = project({ ...pair, 'entry.uxdsl': '@use "kit/index";\n' });
+  assert.equal(stageError(() => inDir(viaLoadPath, () => stage({ entry: path.join(viaLoadPath, 'entry.uxdsl') }))).sassMessage, "It's not clear which file to import. Found:\n  node_modules/kit/_tokens.scss\n  node_modules/kit/_tokens.uxdsl");
+});
+
+test('MIG-B9-12: in a package loaded through pkg:, Sass\'s own candidates answer first (negative control: a lone .uxdsl partial, and the same files through a load path, follow the .scss twin)', () => {
+  assertSameAsTwin(twin(KIT({ 'node_modules/kit/_tokens.uxdsl': '.alone { b: c; }\n' }), { dartOptions: { importers: [new sass.NodePackageImporter()] } }), 'a lone .uxdsl partial in the pkg: package');
+  const files = KIT({ 'node_modules/kit/_tokens.uxdsl': '.from-sass-source { b: c; }\n', 'node_modules/kit/tokens.css': '.from-compiled-css { b: c; }\n' });
+  const bare = twin({ ...files, 'entry.uxdsl': '@use "kit/index";\n' });
+  assertSameAsTwin(bare, 'the same package through a load path');
+  assert.equal(flat(bare.actual.css), '.from-sass-source { b: c; } .kit { b: c; }');
 });
 
 // Sass keeps only leading `..` segments in a URL, joins the URL to a load path without normalizing, and

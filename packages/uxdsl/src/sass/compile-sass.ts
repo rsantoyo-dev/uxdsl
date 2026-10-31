@@ -25,7 +25,11 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   searched as Dart Sass searches a load path: the URL is joined to it
 //   unnormalized, so the filesystem walks a leading `..` from that directory
 //   (one that does not exist finds nothing). `pkg:` URLs are Dart Sass's
-//   `NodePackageImporter`'s. Canonical paths are normalized, have the on-disk
+//   `NodePackageImporter`'s, and so is a relative URL inside a package it
+//   loaded, Sass's own extensions first: there a `.uxdsl` partial is found
+//   only when no `.sass`, `.scss` or `.css` file (nor a directory index)
+//   answers the URL, and one beside a `.scss` of the same name is not
+//   reported as ambiguous. Canonical paths are normalized, have the on-disk
 //   case on case-insensitive systems and keep symlinks, as Dart Sass's
 //   filesystem importer does.
 // - Files are read as Dart Sass reads them (UTF-8; a BOM is a character; text
@@ -51,7 +55,9 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   bare call resolves to is one `UXD_FUNCTION_SHADOWED` warning at the
 //   definition. A build with no such definition runs Dart Sass once.
 // - Nothing is shared between calls: every cache lives in one call's state,
-//   and every position is translated with the pass that produced it. The
+//   and every position is translated with the pass that produced it. Every
+//   pass sees the text first read for each file the importer serves; a file
+//   Dart Sass loads itself (`pkg:`) is read by Sass in each pass. The
 //   `uxdsl-probe-` function prefix is reserved for the probe.
 
 export interface SassStageInput {
@@ -134,7 +140,7 @@ interface Stage {
   silenceDeprecations: string[] | undefined;
   quietDeps: boolean | undefined;
   files: Files;
-  /** Successful reads, so every pass sees the same text. */
+  /** Successful reads, so every pass sees the same text of each file the importer serves (Dart Sass reads a file it loads itself, through `pkg:`, in each pass). */
   texts: Map<string, string>;
   fileIds: Map<string, number>;
 }
