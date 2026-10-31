@@ -1369,7 +1369,9 @@ it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration (FEAT-010,
 DEC-17). The second stage exists too (`src/sass/compile-sass.ts`,
 `compileSassStage`): Dart Sass with an importer that resolves `.uxdsl` files
 next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
-`node_modules` load paths, so a package can ship `.uxdsl` partials), Sass's
+`node_modules` load paths, each searched as Sass searches a load path, so a
+package can ship `.uxdsl` partials and a `../x` that misses is never a file in
+another directory), Sass's
 errors as `UXD_SASS` and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column, a source map whose positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its

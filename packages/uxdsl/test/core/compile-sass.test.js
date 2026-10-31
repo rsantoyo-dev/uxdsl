@@ -140,10 +140,12 @@ const stageLocation = (dir, error) => `${rel(dir)(error.file)}:${error.line}:${e
 /** Sass's own frame and stack: its message without the first line(s), which repeat sassMessage. */
 const sassFrameOf = (error) => (error.message.startsWith(`${error.sassMessage}\n`) ? error.message.slice(error.sassMessage.length + 1) : error.message);
 
-/** Compiles `files` with the stage and its twin with Dart Sass alone. */
-function twin(files, { entry = 'entry', sassOptions = {}, stageOptions = {}, dartOptions = {} } = {}) {
+/** Compiles `files` with the stage and its twin with Dart Sass alone; `prepare(dir)` runs on each side's directory first. */
+function twin(files, { entry = 'entry', sassOptions = {}, stageOptions = {}, dartOptions = {}, prepare = () => {} } = {}) {
   const ux = project(side(files, 'uxdsl'));
   const sc = project(side(files, 'scss'));
+  prepare(ux);
+  prepare(sc);
   const expected = dartSass(sc, `${entry}.scss`, { ...sassOptions, ...dartOptions });
   const actual = stageIn(ux, `${entry}.uxdsl`, { sass: sassOptions, ...stageOptions });
   return { ux, sc, expected, actual };
@@ -356,6 +358,40 @@ test('MIG-B9-12: pkg: resolves a package\'s scss and css; a bare package path re
   assert.equal(rejected.code, 'UXD_SASS');
   assert.match(rejected.sassMessage, /^The export for 'root' in 'ux-kit' resolved to '.*index\.uxdsl', which is not a '\.scss', '\.sass', or '\.css' file\.$/);
   assert.equal(`${path.basename(rejected.file)}:${rejected.line}:${rejected.column}`, 'entry.uxdsl:1:1');
+});
+
+// Sass keeps only leading `..` segments in a URL, joins the URL to a load path without normalizing, and
+// lets the filesystem walk that `..` from the load path itself: a `node_modules` that does not exist
+// finds nothing, even for "../x", and a symlinked one leads where the link points.
+const DOTDOT = [
+  ['"../x" from a/b, with only a/b/_x (the entry\'s sibling)', { 'a/b/entry.uxdsl': '@use "../x";\n', 'a/b/_x.uxdsl': '.sibling { b: c; }\n' }, 'a/b/entry'],
+  ['a stale "../../tokens", with only src/_tokens', { 'src/components/button.uxdsl': '@use "../../tokens";\n.b { c: d; }\n', 'src/_tokens.uxdsl': '.moved { a: b; }\n' }, 'src/components/button'],
+  ['a partial\'s "../tokens", with an unrelated a/_tokens', { 'a/b/entry.uxdsl': '@use "c/btn";\n', 'a/b/c/_btn.uxdsl': '@use "../tokens";\n', 'a/_tokens.uxdsl': '.unrelated { a: b; }\n' }, 'a/b/entry'],
+  ['"../theme" reaches the theme beside the one node_modules that exists', { 'app/src/main.uxdsl': '@use "../theme";\n', 'app/src/_theme.uxdsl': '.beside-the-entry { a: b; }\n', '_theme.uxdsl': '.beside-node-modules { a: b; }\n', node_modules: null }, 'app/src/main'],
+  ['control: with every node_modules on the way, "../x" from a/b reaches a/b/_x', { 'a/b/entry.uxdsl': '@use "../x";\n', 'a/b/_x.uxdsl': '.sibling { b: c; }\n', 'a/b/node_modules': null, 'a/node_modules': null, node_modules: null }, 'a/b/entry'],
+];
+
+/** Links `app/node_modules` to `store/nm` (a junction on win32, which needs no privilege). */
+const linkNodeModules = (dir) => fs.symlinkSync(path.join(dir, 'store/nm'), path.join(dir, 'app/node_modules'), 'junction');
+
+test('MIG-B9-12: a URL that begins with .. is searched under each load path as Dart Sass searches it: a load path that does not exist finds nothing', () => {
+  for (const [label, files, entry] of DOTDOT) assertSameAsTwin(twin(files, { entry }), label);
+  // An explicit load path, relative to the working directory, that does not exist; then the same one existing.
+  const part = { 'entry.uxdsl': '@use "../../part";\n', '_part.uxdsl': '.p { b: c; }\n' };
+  const options = { stageOptions: { loadPaths: ['nope/deeper'] }, dartOptions: { loadPaths: ['nope/deeper'] } };
+  const missing = twin(part, options);
+  assertSameAsTwin(missing, 'an explicit load path that does not exist');
+  assert.equal(missing.actual.error.sassMessage, "Can't find stylesheet to import.");
+  const present = twin({ ...part, 'nope/deeper': null }, options);
+  assertSameAsTwin(present, 'the same load path, existing');
+  assert.equal(flat(present.actual.css), '.p { b: c; }');
+  // A symlinked node_modules: Sass checks the file the filesystem reaches through the link's "..",
+  // then loads the path as written.
+  const linked = { 'app/src/deep/entry.uxdsl': '@use "../q";\n', 'app/_q.uxdsl': '.written { a: b; }\n', 'store/nm': null };
+  assertSameAsTwin(twin(linked, { entry: 'app/src/deep/entry', prepare: linkNodeModules }), 'a symlinked node_modules, nothing where its ".." leads');
+  const both = twin({ ...linked, 'store/_q.uxdsl': '.through-the-link { a: b; }\n' }, { entry: 'app/src/deep/entry', prepare: linkNodeModules });
+  assertSameAsTwin(both, 'a symlinked node_modules, a file where its ".." leads');
+  assert.equal(flat(both.actual.css), '.written { a: b; }');
 });
 
 // --- T4: Sass errors (E1) ------------------------------------------------------------------
@@ -740,10 +776,15 @@ test('MIG-B9-12: an in-memory source whose entry path does not exist resolves it
 
 test('MIG-B9-12: an in-memory source whose entry path does not exist resolves its relative @use (negative control: another directory, and the text on disk never compiles)', () => {
   const dir = project({ '_part.uxdsl': '.p { c: red; }\n', 'real.uxdsl': '.disk { a: b; }\n' });
-  // Without load paths: as in Dart Sass, a load path such as <dir>/elsewhere/node_modules would also resolve "../../part".
-  const elsewhere = stageError(() => stage({ entry: path.join(dir, 'elsewhere/virtual.uxdsl'), source: '@use "../../part";\n' }, { loadPaths: [] }));
+  // The same source in a sibling directory, with the default load paths: none of them exists, so "../../part" is not found.
+  const virtual = path.join(dir, 'elsewhere/virtual.uxdsl');
+  const elsewhere = stageError(() => stage({ entry: virtual, source: '@use "../../part";\n' }));
   assert.equal(elsewhere.code, 'UXD_SASS');
   assert.equal(elsewhere.sassMessage, "Can't find stylesheet to import.");
+  // Dart Sass on the .scss twin, with the same load paths, says the same.
+  const twinDir = project({ '_part.scss': '.p { c: red; }\n' });
+  const twinEntry = path.join(twinDir, 'elsewhere/virtual.scss');
+  assert.throws(() => sass.compileString('@use "../../part";\n', { url: pathToFileURL(twinEntry), loadPaths: nodeModulesChain(twinEntry), logger: sass.Logger.silent }), { sassMessage: "Can't find stylesheet to import." });
   const memory = stage({ entry: path.join(dir, 'real.uxdsl'), source: '@use "part";\n.mem { a: b; }\n' });
   assert.equal(memory.css, '.p {\n  c: red;\n}\n\n.mem {\n  a: b;\n}');
   assert.doesNotMatch(memory.css, /disk/);

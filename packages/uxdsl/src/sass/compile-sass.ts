@@ -19,10 +19,13 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   `.sass` and `.scss` (`_name` and `name`, `.import` variants for `@import`,
 //   `dir/index`, `.css` only when no Sass file matches, more than one match is
 //   Sass's ambiguity error). A URL with no scheme is resolved relative to the
-//   importing file, then against each load path in order (by default every
+//   importing file, then under each load path in order (by default every
 //   `node_modules` from the entry's directory up), so a package can ship
-//   `.uxdsl` partials; `pkg:` URLs are Dart Sass's `NodePackageImporter`'s.
-//   Canonical paths have the on-disk case on case-insensitive systems and keep
+//   `.uxdsl` partials; a load path is searched as Dart Sass searches it, the
+//   URL joined to it unnormalized so that the filesystem walks a leading `..`
+//   from the load path itself (one that does not exist finds nothing). `pkg:`
+//   URLs are Dart Sass's `NodePackageImporter`'s. Canonical paths are
+//   normalized, have the on-disk case on case-insensitive systems and keep
 //   symlinks, as Dart Sass's filesystem importer does.
 // - Files are read as Dart Sass reads them (UTF-8; a BOM is a character; text
 //   that is not valid UTF-8 is Sass's `Invalid UTF-8.` at the first bad
@@ -62,7 +65,7 @@ export interface SassStageOptions {
   reserved: Iterable<string>;
   /** true: Dart Sass runs with a source map and the result carries it, translated. false: no map. */
   sourceMap: boolean;
-  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file; relative entries resolve against `process.cwd()`. Default: every `node_modules` from the entry's directory up to the root, nearest first. */
+  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries resolve against `process.cwd()`. Default: every `node_modules` from the entry's directory up to the root, nearest first. */
   loadPaths?: string[];
   /** Passed to Dart Sass; only these two keys are read. */
   sass?: { silenceDeprecations?: string[]; quietDeps?: boolean };
@@ -346,12 +349,36 @@ const resolveUrl = (url: string, base: URL): string | null => {
   }
 };
 
+/** `name` appended to `dir` as Dart Sass appends it: nothing is normalized, so a `..` is left for the filesystem to walk. */
+const joinRaw = (dir: string, name: string): string => (dir.endsWith(path.sep) ? dir + name : dir + path.sep + name);
+
+/**
+ * Where Dart Sass looks for a URL with no scheme under `loadPath`: the URL's
+ * decoded path joined to the load path without normalizing. Sass has already
+ * removed every dot segment from the URL but its leading `..` segments, and the
+ * filesystem walks those from the load path itself: under a load path that does
+ * not exist nothing is found, and under a symlinked one `..` leads where the
+ * link points.
+ */
+function underLoadPath(loadPath: string, url: string): string | null {
+  const directory = loadPath.endsWith(path.sep) ? loadPath : loadPath + path.sep;
+  const base = pathToFileURL(directory);
+  const parents = (/^(?:\.\.(?:\/|$))*/.exec(url) as RegExpExecArray)[0];
+  if (parents === '') return resolveUrl(url, base);
+  // The rest has no dot segment left, so it resolves inside `directory`.
+  const inside = resolveUrl(`./${url.slice(parents.length)}`, base);
+  if (inside === null || !inside.startsWith(directory)) return null;
+  return directory + parents.split('/').join(path.sep) + inside.slice(directory.length);
+}
+
 /**
  * The importer's canonicalize. A `file:` URL (the entry's relative loads, which
  * Sass resolves first) is resolved as that path; a URL with no scheme (as
  * written, from the `importers` role) relative to the importing file and then
- * against each load path. The first base that resolves wins; more than one
- * candidate in one directory throws Sass's ambiguity message.
+ * under each load path, as Dart Sass searches a load path. The first base that
+ * resolves wins; more than one candidate in one directory throws Sass's
+ * ambiguity message. The file found is canonicalized as Sass does it:
+ * normalized, with the on-disk case where the filesystem folds case.
  */
 function canonicalize(stage: Stage, url: string, context: Sass.CanonicalizeContext): URL | null {
   const bases: string[] = [];
@@ -368,13 +395,13 @@ function canonicalize(stage: Stage, url: string, context: Sass.CanonicalizeConte
       if (file !== null) bases.push(file);
     }
     for (const loadPath of stage.loadPaths) {
-      const file = resolveUrl(url, pathToFileURL(loadPath + path.sep));
+      const file = underLoadPath(loadPath, url);
       if (file !== null) bases.push(file);
     }
   }
   for (const base of bases) {
     const found = resolveImportPath(stage, base, context.fromImport);
-    if (found !== null) return pathToFileURL(stage.files.realCase(found));
+    if (found !== null) return pathToFileURL(stage.files.realCase(path.resolve(found)));
   }
   return null;
 }
@@ -391,13 +418,13 @@ function resolveImportPath(stage: Stage, base: string, fromImport: boolean): str
   const direct = exactlyOne(withExtensions(stage, base));
   if (direct !== null) return direct;
   if (stage.files.kind(base) !== 'dir') return null;
-  const indexImport = fromImport ? exactlyOne(withExtensions(stage, path.join(base, 'index.import'))) : null;
-  return indexImport !== null ? indexImport : exactlyOne(withExtensions(stage, path.join(base, 'index')));
+  const indexImport = fromImport ? exactlyOne(withExtensions(stage, joinRaw(base, 'index.import'))) : null;
+  return indexImport !== null ? indexImport : exactlyOne(withExtensions(stage, joinRaw(base, 'index')));
 }
 
-/** The partial `_name` and then `name`, those that are files. */
+/** The partial `_name` and then `name`, those that are files; each path is checked as written, as Dart Sass checks it. */
 function candidates(stage: Stage, file: string): string[] {
-  return [path.join(path.dirname(file), `_${path.basename(file)}`), file].filter((candidate) => stage.files.kind(candidate) === 'file');
+  return [joinRaw(path.dirname(file), `_${path.basename(file)}`), file].filter((candidate) => stage.files.kind(candidate) === 'file');
 }
 
 function withExtensions(stage: Stage, base: string): string[] {
@@ -411,10 +438,11 @@ function exactlyOne(files: string[]): string | null {
   throw new Error(`It's not clear which file to import. Found:\n${files.map((file) => `  ${prettyPath(file)}`).join('\n')}`);
 }
 
-/** A path as Dart Sass prints it: relative to the working directory unless that takes more segments than the absolute path. */
+/** A path as Dart Sass prints it: normalized, and relative to the working directory unless that takes more segments than the absolute path. */
 function prettyPath(file: string): string {
-  const relative = path.relative(process.cwd(), file) || '.';
-  return segments(relative) > segments(file) ? file : relative;
+  const absolute = path.resolve(file);
+  const relative = path.relative(process.cwd(), absolute) || '.';
+  return segments(relative) > segments(absolute) ? absolute : relative;
 }
 
 const segments = (file: string): number => file.split(path.sep).filter((part, index) => part !== '' || index === 0).length;
