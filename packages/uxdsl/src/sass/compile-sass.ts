@@ -62,18 +62,21 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   `function-exists` or `get-function`, which would answer those, the probe
 //   reads them through `sass:meta` under a reserved namespace instead: a file
 //   Sass never `@import`s gets the `@use` that brings it in, and a file it
-//   `@import`s reaches the namespace of the file importing it. Where Sass
-//   evaluates such a file without one (the file has a `@use` of its own or is
-//   also loaded as a module, or a module in the indented syntax or one Dart
-//   Sass loads itself imports it), its lookups go back to the global
-//   functions, which the project's function then answers where it is visible
-//   there. Where two modules used `as *` define a name, the lookup fails as a
-//   bare call does, so such a call is left as written and the error is
-//   Sass's. Each definition some bare call resolves to is one
-//   `UXD_FUNCTION_SHADOWED` warning at the definition: the
-//   probe captures the function each evaluation of a definition creates (a
-//   file imported twice defines its functions twice, and a file may define a
-//   name twice), so the warning goes to the definition the call reached. Two
+//   `@import`s reaches the namespace of the file importing it; one that Sass
+//   evaluates at its top level apart from an importing file that has the
+//   namespace has a `@use` of its own, so it gets the `@use` too. Elsewhere (a
+//   file also loaded as a module; a file with a `@use` of its own that another
+//   imported file imports, or whose lookups are only in a mixin included
+//   elsewhere; a file that a module in the indented syntax or one Dart Sass
+//   loads itself imports) its lookups go back to the global functions, which
+//   the project's function then answers where it is visible there. Where two
+//   modules used `as *` define a name, the lookup fails as a bare call does,
+//   so such a call is left as written and the error is Sass's. Each
+//   definition some bare call resolves to is one `UXD_FUNCTION_SHADOWED`
+//   warning at the definition: the probe captures the function each
+//   evaluation of a definition creates (a file imported twice defines its
+//   functions twice, and a file may define a name twice), so the warning goes
+//   to the definition the call reached. Two
 //   definitions of one name in indented `.sass` files or in files Sass loads
 //   itself (`pkg:`), which the probe does not capture, both warn when either is
 //   reached. Dart Sass's own files are known only from a compile that
@@ -838,8 +841,10 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // instead: a file Sass never `@import`s gets the `@use` that brings it in; a file it `@import`s
   // never does, since Sass evaluates an imported file that has a `@use` apart from the importing
   // file's modules, and reaches the importing file's namespace. A file Sass evaluates somewhere
-  // without one (that lookup fails) goes back to the global functions. A round in which Sass
-  // `@import`ed a file that had the `@use` is not the build's and runs again without it.
+  // without one (that lookup fails) goes back to the global functions, unless Sass evaluated it at
+  // its top level for an `@import` in a file that had the `@use`: it has a `@use` of its own then,
+  // so it gets the `@use` too. A round in which Sass `@import`ed a file that got the `@use` without
+  // having one of its own is not the build's and runs again without it.
   let records = new Map<string, Array<{ fn: Sass.SassFunction | null }>>();
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
   /** The function each evaluation of a definition created, by definition (`<file id>:<line>:<column>`). */
@@ -857,6 +862,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   const imported = new Set<string>(first.imported);
   /** Files whose lookups go through the global meta functions in a build that defines one of their names: Sass found no namespace in the scope it evaluated them in. */
   const globalLookups = new Set<string>();
+  /** Files Sass `@import`s that have a `@use` or `@forward` of their own, so one more changes nothing: such a file gets the `@use` too. */
+  const ownModules = new Set<string>();
   let metaScanned = 0;
   let metaDefined = false;
   /** Whether a file scanned so far defines a function named like one of the meta functions the probe calls. */
@@ -873,15 +880,23 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
    * Where the failed probe stopped, when that is inside a text it wrote: a call's choice not yet
    * recorded, or a line at the end of a file. `lookup` when what failed is one of the probe's lookups
    * of the bare name; otherwise Sass could not parse the choice there. `namespace` when a lookup
-   * through the reserved namespace failed in `file` because the scope Sass evaluated holds none.
+   * through the reserved namespace failed in `file` because the scope Sass evaluated holds none;
+   * `ownModules` when that scope is the file's own although Sass evaluated it at its top level for
+   * an `@import` in a file that had the `@use`: Sass does that only for a file with a `@use` or
+   * `@forward` of its own.
    */
-  const failedAt = (pass: Pass, written: Map<string, string>, endLines: Map<string, string>): { file: string; siteId?: string; endKey?: string; lookup: boolean; namespace: boolean } | null => {
+  const failedAt = (pass: Pass, written: Map<string, string>, endLines: Map<string, string>, prefixed: Set<string>): { file: string; siteId?: string; endKey?: string; lookup: boolean; namespace: boolean; ownModules?: boolean } | null => {
     const error = pass.error;
     if (!(error instanceof sass.Exception) || !error.span || !error.span.url || error.span.url.protocol !== 'file:') return null;
     const file = fileURLToPath(error.span.url);
     const served = pass.served.get(file);
     if (!served) return null;
-    if (error.sassMessage === MISSING_NAMESPACE) return globalLookups.has(file) ? null : { file, lookup: true, namespace: true };
+    if (error.sassMessage === MISSING_NAMESPACE) {
+      if (globalLookups.has(file) || ownModules.has(file)) return null;
+      const frames = error.sassStack.split('\n').map((line) => (line ? parseStackLine(pass, line) : null));
+      const importedBy = frames.length > 1 && frames[0] && frames[0].file === file && frames[0].member === '@import' ? frames[1] : null;
+      return { file, lookup: true, namespace: true, ownModules: importedBy !== null && importedBy.file !== null && prefixed.has(importedBy.file) };
+    }
     const offset = error.span.start.offset;
     const lookup = LOOKUP_CALL.test(error.span.text);
     const inside = (text: string): boolean => {
@@ -894,7 +909,7 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   };
   let probe = first;
   for (let round = 1; ; round++) {
-    if (round > parses.size + scanned.size + unevaluated.size + noEndLookup.size + imported.size + globalLookups.size + 3) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
+    if (round > parses.size + scanned.size + unevaluated.size + noEndLookup.size + imported.size + globalLookups.size + ownModules.size + 3) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
     records = new Map();
     atEnd = [];
     captures = [];
@@ -941,7 +956,7 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         return lines.length === 0 ? out : `${out}\n${lines.join('\n')}\n`;
       },
       prefix: (file) => {
-        if (!meta || imported.has(file)) return false;
+        if (!meta || (imported.has(file) && !ownModules.has(file))) return false;
         prefixed.add(file);
         return true;
       },
@@ -967,9 +982,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     });
     scanPass(probe);
     for (const file of probe.imported) imported.add(file);
-    // A file that had the `@use` and that Sass `@import`ed was evaluated apart from the importing
-    // file's modules, which the build does not do.
-    const valid = ![...prefixed].some((file) => probe.imported.has(file));
+    // A file that got the `@use` without having one of its own, and that Sass `@import`ed, was
+    // evaluated apart from the importing file's modules, which the build does not do.
+    const valid = ![...prefixed].some((file) => probe.imported.has(file) && !ownModules.has(file));
     if (valid && !probe.failed) discovering = false;
     names = candidateNames();
     checkParses(candidateRaws(probe));
@@ -977,9 +992,9 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     if (!valid || metaShadowed() !== meta) continue;
     const grew = [...names].some((name) => !namesBefore.has(name));
     const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !unevaluated.has(siteId) && !ambiguous.has(siteId) && !written.has(siteId));
-    const failed = probe.failed ? failedAt(probe, written, endLines) : null;
+    const failed = probe.failed ? failedAt(probe, written, endLines, prefixed) : null;
     if (failed !== null && failed.namespace) {
-      globalLookups.add(failed.file);
+      (failed.ownModules ? ownModules : globalLookups).add(failed.file);
       continue;
     }
     if (failed !== null && failed.siteId !== undefined) (failed.lookup ? ambiguous : unevaluated).add(failed.siteId);

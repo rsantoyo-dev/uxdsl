@@ -1391,9 +1391,11 @@ that sees a helper its importer used with `as *`: the stage gives no
 `@import`ed file a `@use`, which would hide those modules from it), and a call
 Sass never evaluates (the raw argument of `::part(space(2))`) keeps the token;
 in a build that also defines a function named `get-function` or
-`function-exists`, an `@import`ed file with a `@use` of its own (or one also
-loaded with `@use`, or imported by an indented `.sass` module or a `pkg:` file)
-lets that function answer what such a name means there, where it is visible; a
+`function-exists`, an `@import`ed file the stage cannot reach with its own
+namespace (one also loaded with `@use`, one an indented `.sass` module or a
+`pkg:` file imports, or one with a `@use` of its own that another `@import`ed
+file imports or that is reached only through a mixin) lets that function
+answer what such a name means there, where it is visible; a
 call whose bare name two modules used with `as *` both define is Sass's own
 error there; each
 declaration a call reaches warns once, at the declaration, however many times

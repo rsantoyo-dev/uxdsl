@@ -89,16 +89,18 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   in an `@import`ed partial reaches a helper the entry used with `as *`, as in
   Dart Sass. It reads what a name means with Sass's `function-exists` and
   `get-function`; where a loaded file defines a function of one of those names,
-  it reads them through `sass:meta` under a reserved namespace that the files
-  Sass never `@import`s bring in, and only an `@import`ed file that Sass
-  evaluates without it (one with a `@use` of its own, one also loaded with
-  `@use`, or one an indented `.sass` module or a `pkg:` file imports) asks the
-  project's function, where that is visible there (recorded, not corrected). A
-  call whose bare name two modules used with `as *` both define is Dart Sass's
-  error at the call (`This function is available from multiple global
-  modules.`), and compiles where Sass keeps it as raw text, as in Dart Sass. A
-  `pkg:` file is known only from a compile that
-  succeeds, so when the first compile fails and a file names a `pkg:` URL,
+  it reads them through `sass:meta` under a reserved namespace. A file Sass
+  never `@import`s gets the `@use` that brings it in, and so does an
+  `@import`ed file found to have a `@use` of its own; any other `@import`ed
+  file reaches its importer's namespace, and only one that cannot (one also
+  loaded with `@use`, one an indented `.sass` module or a `pkg:` file imports,
+  or one with a `@use` of its own that another `@import`ed file imports or that
+  is reached only through a mixin) asks the project's function, where that is
+  visible there (recorded, not corrected). A call whose bare name two modules
+  used with `as *` both define is Dart Sass's error at the call (`This function
+  is available from multiple global modules.`), and compiles where Sass keeps
+  it as raw text, as in Dart Sass. A `pkg:` file is known only from a compile
+  that succeeds, so when the first compile fails and a file names a `pkg:` URL,
   every token call is probed until a probe compiles: a package's function used
   with `@use "pkg:…" as *` wins where Sass calls it even when UXDSL's token in
   its place would not compile (`space(2) * 2`, `rgba(color(primary), 0.5)`),

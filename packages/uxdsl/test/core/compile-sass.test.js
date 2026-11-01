@@ -908,6 +908,7 @@ const META_NAMES = [
   ['get-function in the entry, a mixin of an @imported partial', { 'entry.uxdsl': '@use "h" as *;\n@import "m";\n@function get-function($n) { @return 1; }\n.a { @include m; }\n', '_h.scss': H, '_m.uxdsl': '@mixin m { v: space(2); }\n' }, ['_h.scss:1:11']],
   ['get-function in the entry, an @imported partial with a @use of its own', { 'entry.uxdsl': '@use "h" as *;\n@import "p";\n@function get-function($n) { @return 1; }\n.e { w: space(1); }\n', '_h.scss': H, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, ['_h.scss:1:11']],
   ['get-function in the entry, a partial @imported only once the build gets past a call the first compile cannot compile', { 'entry.uxdsl': '@use "h" as *;\n@function get-function($n) { @return 1; }\n.a { m: space(2) * 2; }\n@import "p";\n', '_h.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' }, ['_h.scss:1:11']],
+  ['get-function visible in an @imported partial that has a @use of its own', { 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "p";\n`, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, ['entry.uxdsl:2:11']],
 ];
 
 test('MIG-B9-12: a project function named function-exists or get-function does not change which calls reach the author\'s function', () => {
@@ -929,18 +930,24 @@ test('MIG-B9-12: a project function named function-exists or get-function does n
   assert.deepEqual(shadowOf(run.ux, run.actual), ['_h.scss:1:11']);
 });
 
-// In such a build, a file Sass @imports never gets a @use (Sass would then evaluate it apart from
-// the importing file's modules) and reaches the namespace of the file importing it. Where one of
-// its evaluations sees none (it has a @use of its own, or it is also loaded as a module), its
-// lookups go through the global functions, which the project's function answers where it is
-// visible there. This differs from the .scss twin and is recorded, not corrected.
+// In such a build, a file Sass @imports never gets a @use unless it has one of its own (Sass would
+// otherwise evaluate it apart from the importing file's modules) and reaches the namespace of the
+// file importing it. Where Sass evaluates it without the namespace and the stage cannot tell that
+// it has a @use of its own (one with a @use of its own that another @imported file imports, a
+// mixin of such a file included elsewhere, a file also loaded as a module), its lookups go through
+// the global functions, which the project's function answers where it is visible there. This
+// differs from the .scss twin and is recorded, not corrected.
 const OWN_USE = '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n';
 
 test('MIG-B9-12: where a project get-function is visible in an @imported file that does not see the stage\'s namespace, it answers what a name means there (a recorded difference from the .scss twin)', () => {
-  const own = twin({ 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "p";\n`, '_p.uxdsl': OWN_USE });
-  assert.equal(flat(own.expected.css), '.p { v: 6px; w: 2px; }');
-  assert.equal(flat(own.actual.css), '.p { v: space(2); w: 2px; }', 'a @use of its own');
-  assert.deepEqual(shadowOf(own.ux, own.actual), []);
+  const chain = twin({ 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "a";\n`, '_a.uxdsl': '@import "p";\n', '_p.uxdsl': OWN_USE });
+  assert.equal(flat(chain.expected.css), '.p { v: 6px; w: 2px; }');
+  assert.equal(flat(chain.actual.css), '.p { v: space(2); w: 2px; }', 'imported through a file with no namespace of its own');
+  assert.deepEqual(shadowOf(chain.ux, chain.actual), []);
+  const mixin = twin({ 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "p";\n.a { @include m; }\n`, '_p.uxdsl': '@use "sass:math";\n@mixin m { v: space(2); w: math.div(4px, 2); }\n' });
+  assert.equal(flat(mixin.expected.css), '.a { v: 6px; w: 2px; }');
+  assert.equal(flat(mixin.actual.css), '.a { v: space(2); w: 2px; }', 'a mixin of a file with a @use of its own');
+  assert.deepEqual(shadowOf(mixin.ux, mixin.actual), []);
   const both = twin({ 'entry.uxdsl': `@use "helpers" as *;\n@use "p";\n@function get-function($n) { @return 1; }\n@import "p";\n`, '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' });
   assert.equal(flat(both.expected.css), '.p { v: space(2); } .p { v: 6px; }');
   assert.equal(flat(both.actual.css), '.p { v: space(2); } .p { v: space(2); }', 'also loaded with @use');
@@ -960,6 +967,16 @@ test('MIG-B9-12: where a project get-function is visible in an @imported file th
   assertSameAsTwin(imported, 'an @imported file loaded only with @import');
   assert.equal(flat(imported.actual.css), '.p { v: 6px; } .p { v: 6px; }');
   assert.deepEqual(shadowOf(imported.ux, imported.actual), ['_helpers.scss:1:11']);
+  // A file with no @use of its own, also loaded as a module, never gets one: its @import still sees the entry's modules.
+  const alsoUsed = twin({ 'entry.uxdsl': `@use "helpers" as *;\n@use "p";\n@import "p";\n@function get-function($n) { @return 1; }\n`, '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' });
+  assertSameAsTwin(alsoUsed, 'also loaded with @use, get-function defined after the import');
+  assert.equal(flat(alsoUsed.actual.css), '.p { v: space(2); } .p { v: 6px; }');
+  assert.deepEqual(shadowOf(alsoUsed.ux, alsoUsed.actual), ['_helpers.scss:1:11']);
+  // Nor one imported by a module whose scope holds no namespace of the stage's (an indented .sass file).
+  const indented = twin({ 'entry.uxdsl': '@use "ind";\n@import "late";\n', '_ind.sass': '@use "helpers" as *\n@import "p"\n', '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n', '_late.scss': '@function get-function($n) { @return 1; }\n' });
+  assertSameAsTwin(indented, 'imported by an indented .sass module');
+  assert.equal(flat(indented.actual.css), '.p { v: 6px; }');
+  assert.deepEqual(shadowOf(indented.ux, indented.actual), ['_helpers.scss:1:11']);
 });
 
 // Two modules used with `as *` that both define a function make its bare name ambiguous: Dart Sass
