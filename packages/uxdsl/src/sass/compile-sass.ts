@@ -80,7 +80,9 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   succeeds, so when the first compile fails and a file names a `pkg:` URL,
 //   every token call is probed until a probe compiles: a `pkg:` package's
 //   function wins where Sass calls it even when UXDSL's token in its place
-//   would not compile. A build with no such definition runs Dart Sass once.
+//   would not compile. A build with no such definition runs Dart Sass once,
+//   unless that compile fails and a file the importer served contains the text
+//   `pkg:`.
 // - Nothing is shared between calls: every cache lives in one call's state,
 //   and every position is translated with the pass that produced it. Every
 //   pass sees the text first read for each file the importer serves; a file

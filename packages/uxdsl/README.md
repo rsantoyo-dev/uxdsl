@@ -1396,7 +1396,9 @@ indented `.sass` module or a `pkg:` file) lets that function answer what such a
 name means there, where it is visible; a call whose bare
 name two modules used with `as *` both define is Sass's own error there; each
 declaration a call reaches warns once, at the declaration, however many times
-its file is evaluated.
+its file is evaluated; a build that defines no such function runs Dart Sass
+once, unless that compile fails and a file the stage's importer served contains
+`pkg:`.
 `test/core/compile-sass.test.js` checks it against Dart Sass on the same
 project written as `.scss`. `compile()` still
 does not call these stages.

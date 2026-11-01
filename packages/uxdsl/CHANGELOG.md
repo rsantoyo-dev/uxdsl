@@ -113,8 +113,9 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   is not found: its calls keep the token, with no warning, where Dart Sass
   calls the author's function (recorded, not corrected: finding it would mean
   modeling `@forward`'s prefixes). A build without such a definition runs
-  Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`: one compile, CSS
-  byte-identical to Dart Sass).
+  Dart Sass once, unless that compile fails and a file the importer served
+  contains the text `pkg:`, which makes every token call a candidate (Bootstrap
+  5.3.8 renamed to `.uxdsl`: one compile, CSS byte-identical to Dart Sass).
 
 `protect()` gains two additive options: `site`, which reports every call of a
 token function, `tone` or a breakpoint name and decides each token call, and
