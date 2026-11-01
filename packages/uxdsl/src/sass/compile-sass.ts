@@ -22,9 +22,10 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   importing file, then under each load path in order (by default every
 //   `node_modules` from the entry's directory up) and each directory of
 //   `SASS_PATH` after them, so a package can ship `.uxdsl` partials. Each is
-//   searched as Dart Sass searches a load path: the URL is joined to it
-//   unnormalized, so the filesystem walks a leading `..` from that directory
-//   (one that does not exist finds nothing). `pkg:` URLs are Dart Sass's
+//   searched as Dart Sass searches a load path: the URL is joined to it, both
+//   kept as written, so the filesystem walks a leading `..` in the URL, and any
+//   `..` in the load path, from the directories named (one that does not exist
+//   finds nothing). `pkg:` URLs are Dart Sass's
 //   `NodePackageImporter`'s, and so is a relative URL inside a package it
 //   loaded, Sass's own extensions first: there a `.uxdsl` partial is found
 //   only when no `.sass`, `.scss` or `.css` file (nor a directory index)
@@ -99,7 +100,7 @@ export interface SassStageOptions {
   reserved: Iterable<string>;
   /** true: Dart Sass runs with a source map and the result carries it, translated. false: no map. */
   sourceMap: boolean;
-  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries resolve against `process.cwd()`. Default: every `node_modules` from the entry's directory up to the root, nearest first. The directories of the `SASS_PATH` environment variable are searched after these, as Dart Sass searches them. */
+  /** Directories searched, in order, for a URL with no scheme that is not found relative to the importing file, each as Dart Sass searches a load path (a leading `..` in the URL is walked from the directory itself, so one that does not exist finds nothing); relative entries are appended to `process.cwd()`, each kept as written. Default: every `node_modules` from the entry's directory up to the root, nearest first. The directories of the `SASS_PATH` environment variable are searched after these, as Dart Sass searches them. */
   loadPaths?: string[];
   /** Passed to Dart Sass; only these two keys are read. */
   sass?: { silenceDeprecations?: string[]; quietDeps?: boolean };
@@ -289,7 +290,7 @@ function openStage(sass: typeof Sass, input: SassStageInput, options: SassStageO
   return {
     sass,
     reserved: Array.from(options.reserved),
-    loadPaths: [...(options.loadPaths ? options.loadPaths.map((entry) => path.resolve(entry)) : nodeModulesChain(entryPath)), ...sassPathDirectories()],
+    loadPaths: [...(options.loadPaths ? options.loadPaths.map(asWritten) : nodeModulesChain(entryPath)), ...sassPathDirectories()],
     entryPath,
     entryUrl: pathToFileURL(entryPath),
     sourceMap: options.sourceMap === true,
@@ -304,14 +305,17 @@ function openStage(sass: typeof Sass, input: SassStageInput, options: SassStageO
 /**
  * The directories of the `SASS_PATH` environment variable, which Dart Sass
  * reads on every compile and searches after the load paths: split on `;` on
- * win32 and `:` elsewhere, each resolved against the working directory (an
- * empty entry is the working directory itself). The importer searches them
- * itself, so a `.uxdsl` file there is found as a `.scss` file is.
+ * win32 and `:` elsewhere, each taken as written (an empty entry is the working
+ * directory itself). The importer searches them itself, so a `.uxdsl` file
+ * there is found as a `.scss` file is.
  */
 function sassPathDirectories(): string[] {
   const value = process.env.SASS_PATH;
-  return value === undefined ? [] : value.split(process.platform === 'win32' ? ';' : ':').map((entry) => path.resolve(entry));
+  return value === undefined ? [] : value.split(process.platform === 'win32' ? ';' : ':').map(asWritten);
 }
+
+/** A directory to search as Dart Sass keeps a load path: an absolute one as given, a relative one appended to the working directory, neither normalized, so the filesystem walks any `..` in it. */
+const asWritten = (directory: string): string => (path.isAbsolute(directory) ? directory : joinRaw(process.cwd(), directory));
 
 /** Every `node_modules` from the file's directory up to the root, nearest first. */
 function nodeModulesChain(file: string): string[] {
@@ -416,21 +420,26 @@ const joinRaw = (dir: string, name: string): string => (dir.endsWith(path.sep) ?
 
 /**
  * Where Dart Sass looks for a URL with no scheme under `loadPath`: the URL's
- * decoded path joined to the load path without normalizing. Sass has already
+ * decoded path joined to the load path, both as written. Sass has already
  * removed every dot segment from the URL but its leading `..` segments, and the
- * filesystem walks those from the load path itself: under a load path that does
- * not exist nothing is found, and under a symlinked one `..` leads where the
- * link points.
+ * filesystem walks those, and any `..` in the load path, from the directories
+ * named: under a load path that does not exist nothing is found, and under a
+ * symlinked one `..` leads where the link points. An absolute path in the URL
+ * replaces the load path, as Sass's join does.
  */
 function underLoadPath(loadPath: string, url: string): string | null {
   const directory = loadPath.endsWith(path.sep) ? loadPath : loadPath + path.sep;
+  // The URL is decoded against a file: URL of the directory, which normalizes it; the decoded rest
+  // is then appended to the directory as written.
   const base = pathToFileURL(directory);
+  const normalized = filePath(base);
+  if (normalized === null) return null;
   const parents = (/^(?:\.\.(?:\/|$))*/.exec(url) as RegExpExecArray)[0];
-  if (parents === '') return resolveUrl(url, base);
-  // The rest has no dot segment left, so it resolves inside `directory`.
-  const inside = resolveUrl(`./${url.slice(parents.length)}`, base);
-  if (inside === null || !inside.startsWith(directory)) return null;
-  return directory + parents.split('/').join(path.sep) + inside.slice(directory.length);
+  // The rest has no dot segment left, so it resolves inside the directory unless it is absolute.
+  const resolved = resolveUrl(parents === '' ? url : `./${url.slice(parents.length)}`, base);
+  if (resolved === null) return null;
+  if (!resolved.startsWith(normalized)) return parents === '' ? resolved : null;
+  return directory + parents.split('/').join(path.sep) + resolved.slice(normalized.length);
 }
 
 /**

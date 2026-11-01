@@ -472,6 +472,21 @@ test('MIG-B9-12: a URL that begins with .. is searched under each load path as D
   const both = twin({ ...linked, 'store/_q.uxdsl': '.through-the-link { a: b; }\n' }, { entry: 'app/src/deep/entry', prepare: linkNodeModules });
   assertSameAsTwin(both, 'a symlinked node_modules, a file where its ".." leads');
   assert.equal(flat(both.actual.css), '.written { a: b; }');
+  // A load path written with "..", in loadPaths or SASS_PATH alike, is kept as written: the
+  // filesystem walks that ".." too, so through a directory that does not exist nothing is found.
+  const through = { 'entry.uxdsl': '@use "tokens";\n', 'real/_tokens.uxdsl': '.t { a: b; }\n' };
+  const written = { stageOptions: { loadPaths: ['missing/../real'] }, dartOptions: { loadPaths: ['missing/../real'] } };
+  const unreachable = twin(through, written);
+  assertSameAsTwin(unreachable, 'a load path written through a directory that does not exist');
+  assert.equal(unreachable.actual.error.sassMessage, "Can't find stylesheet to import.");
+  withSassPath('missing/../real', () => {
+    const fromEnv = twin(through);
+    assertSameAsTwin(fromEnv, 'a SASS_PATH entry written through a directory that does not exist');
+    assert.equal(fromEnv.actual.error.sassMessage, "Can't find stylesheet to import.");
+  });
+  const reachable = twin({ ...through, missing: null }, written);
+  assertSameAsTwin(reachable, 'the same load path, the directory existing');
+  assert.equal(flat(reachable.actual.css), '.t { a: b; }');
 });
 
 /** Runs `fn` with the SASS_PATH environment variable set to `value` (undefined: unset), then restores it. */

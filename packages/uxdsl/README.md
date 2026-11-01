@@ -1372,9 +1372,10 @@ where Sass calls it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration
 its calls keep the token. The second stage exists too (`src/sass/compile-sass.ts`,
 `compileSassStage`): Dart Sass with an importer that resolves `.uxdsl` files
 next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
-`node_modules` load paths and the directories of `SASS_PATH`, each searched as
-Sass searches a load path, so a package can ship `.uxdsl` partials and a
-`../x` that misses is never a file in another directory; in a package loaded
+`node_modules` load paths and the directories of `SASS_PATH`, each kept as
+written and searched as Sass searches a load path, so a package can ship
+`.uxdsl` partials and a `../x` that misses is never a file in another
+directory; in a package loaded
 through `pkg:`, Sass's own `.sass`, `.scss` and `.css` files answer a relative
 URL before a `.uxdsl` partial does) and serves a `.css` file as the plain CSS
 it is (a `$variable` or `palette(primary.main)` in one is Sass's error, so

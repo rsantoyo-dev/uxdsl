@@ -39,9 +39,10 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   each directory of the `SASS_PATH` environment variable, which Dart Sass
   searches after its load paths (a `.uxdsl` file there is found as a `.scss`
   file is). Each is searched as Dart Sass searches a load path: the URL is
-  joined to it without normalizing, so the filesystem walks a leading `..` from
-  that directory and one that does not exist finds nothing (a `../x` that misses
-  beside its file is Sass's `Can't find stylesheet to import`, never a
+  joined to it, both kept as written, so the filesystem walks a leading `..` in
+  the URL, and any `..` in the load path (`missing/../real`), from the
+  directories named, and one that does not exist finds nothing (a `../x` that
+  misses beside its file is Sass's `Can't find stylesheet to import`, never a
   same-named file in another directory). `pkg:` URLs go through Dart Sass's
   `NodePackageImporter` (a package whose export is a `.uxdsl` file is Sass's
   error), and so does a relative URL inside a package it loaded, Sass's own
