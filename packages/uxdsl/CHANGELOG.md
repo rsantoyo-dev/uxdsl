@@ -80,15 +80,20 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   pseudo-element argument as raw text), and the probe asks `sass:meta` what a
   name means, so a project function named `function-exists` or `get-function`
   changes no decision. Each definition some bare call
-  resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition; a
-  helper reached only through a namespace shadows nothing. A build without
+  resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition,
+  however many times its file is evaluated (imported twice, or again by a
+  component); where a name is defined twice, only the definitions a call
+  reaches warn (both, when the two are in indented `.sass` files or in files
+  Sass loads itself through `pkg:`). A helper reached only through a namespace
+  shadows nothing. A build without
   such a definition runs Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`:
   one compile, CSS byte-identical to Dart Sass, about 1.04× its time with the
   map on).
 
-`protect()` gains an additive `site` option, which reports every call of a
-token function, `tone` or a breakpoint name and decides each token call; its
-output, column map and problems are unchanged without it.
+`protect()` gains two additive options: `site`, which reports every call of a
+token function, `tone` or a breakpoint name and decides each token call, and
+`bodies`, which gives each shadowing declaration the offset just after its
+body (`end`); its output, column map and problems are unchanged without them.
 
 #### Dependencies
 

@@ -799,6 +799,47 @@ test('MIG-B9-12: a project function named function-exists or get-function does n
   assert.deepEqual(shadowOf(run.ux, run.actual), ['_h.scss:1:11']);
 });
 
+// Every evaluation of a @function creates a new function: a file imported twice, re-imported by a
+// component or imported inside two rules defines its functions again, and a file that defines a
+// name twice holds two functions of that name. The warning goes to the definition whose evaluation
+// created the function a bare call reaches. Each case: the files and the UXD_FUNCTION_SHADOWED
+// locations; the CSS and Sass's warnings are Dart Sass's on the twin.
+const EVALUATED_AGAIN = [
+  ['a helper imported twice, the call after the second import', { 'entry.uxdsl': '@import "helpers";\n@import "helpers";\n.a { p: space(2); }\n', '_helpers.scss': H }, ['_helpers.scss:1:11']],
+  ['a .uxdsl helper imported twice', { 'entry.uxdsl': '@import "helpers";\n@import "helpers";\n.a { p: space(2); }\n', '_helpers.uxdsl': H }, ['_helpers.uxdsl:1:11']],
+  ['a component that imports its functions partial again', { 'entry.uxdsl': '@import "functions";\n@import "components";\n', '_components.uxdsl': '@import "functions";\n.btn { color: color(brand); background: color(white); }\n', '_functions.scss': '@function color($name) { @return #123456; }\n' }, ['_functions.scss:1:11']],
+  ['the helper imported inside two rules, the call in the second', { 'entry.uxdsl': '.x { @import "helpers"; }\n.y { @import "helpers"; p: space(2); }\n', '_helpers.scss': H }, ['_helpers.scss:1:11']],
+  ['one helper used with a namespace and imported', { 'entry.uxdsl': '@use "helpers";\n@import "helpers";\n.a { p: space(2); q: helpers.space(1); }\n', '_helpers.scss': H }, ['_helpers.scss:1:11']],
+  ['a partial imported twice that imports the helper', { 'entry.uxdsl': '@import "p";\n@import "p";\n.a { p: space(2); }\n', '_p.scss': '@import "helpers";\n', '_helpers.scss': H }, ['_helpers.scss:1:11']],
+  ['a breakpoint call after the helper is imported again', { 'entry.uxdsl': '@import "bp";\n@import "bp";\n.a { padding: md(2px); }\n', '_bp.scss': '@function md($v) { @return $v * 2; }\n' }, ['_bp.scss:1:11']],
+  ['tone() in a component that imports the helper again', { 'entry.uxdsl': '@import "fns";\n@import "comp";\n', '_comp.uxdsl': '@import "fns";\n.a { c: tone(main); }\n', '_fns.scss': '@function tone($k) { @return red; }\n' }, ['_fns.scss:1:11']],
+  ['define, call, define again', { 'entry.uxdsl': `${H}.a { p: space(2); }\n@function space($k) { @return $k * 5px; }\n` }, ['entry.uxdsl:1:11']],
+  ['a partial that defines the name twice, the call reaching the second', { 'entry.uxdsl': '@import "helpers";\n.a { p: space(2); }\n', '_helpers.scss': `${H}@function space($k) { @return $k * 5px; }\n` }, ['_helpers.scss:2:11']],
+  ['define, call, define again, call', { 'entry.uxdsl': `${H}.a { p: space(2); }\n@function space($k) { @return $k * 5px; }\n.b { p: space(2); }\n` }, ['entry.uxdsl:1:11', 'entry.uxdsl:3:11']],
+  ['a rule-local definition, then a top-level one, each called in its scope', { 'entry.uxdsl': '.x {\n  @function space($k) { @return 1px; }\n  a: space(2);\n}\n@function space($k) { @return $k * 3px; }\n.y { b: space(2); }\n' }, ['entry.uxdsl:2:13', 'entry.uxdsl:5:11']],
+  ['a top-level definition, then a rule-local one, the call outside the rule', { 'entry.uxdsl': `${H}.x {\n  @function space($k) { @return 1px; }\n  a: b;\n}\n.y { p: space(2); }\n` }, ['entry.uxdsl:1:11']],
+  ['a definition, then an import that defines the name again', { 'entry.uxdsl': `${H}@import "other";\n.a { p: space(2); }\n`, '_other.scss': '@function space($k) { @return $k * 5px; }\n' }, ['_other.scss:1:11']],
+];
+
+test('MIG-B9-12: each definition a bare call resolves to warns once, however many times its file is evaluated, and a name defined twice warns only where it is called', () => {
+  for (const [label, files, expectShadow] of EVALUATED_AGAIN) {
+    const run = twin(files);
+    assertSameAsTwin(run, label);
+    assert.deepEqual(shadowOf(run.ux, run.actual), [...expectShadow].sort(), `${label}: UXD_FUNCTION_SHADOWED`);
+  }
+});
+
+test('MIG-B9-12: each definition a bare call resolves to warns once, however many times its file is evaluated (negative control: a helper evaluated twice and called only where its bare name is not visible shadows nothing)', () => {
+  const outside = project({ 'entry.uxdsl': '.x { @import "helpers"; a: b; }\n.y { @import "helpers"; c: d; }\n.z { p: space(10-2); q: space(2); }\n', '_helpers.scss': H });
+  const result = stage({ entry: path.join(outside, 'entry.uxdsl') });
+  assert.equal(flat(result.css), '.x { a: b; } .y { c: d; } .z { p: space(10-2); q: space(2); }');
+  assert.deepEqual(shadowOf(outside, result), []);
+  const namespaced = project({ 'entry.uxdsl': '@use "helpers" as h;\n.x { @import "helpers"; a: b; }\n.a { p: h.space(1); q: space(10-2); }\n', '_helpers.scss': H });
+  const both = stage({ entry: path.join(namespaced, 'entry.uxdsl') });
+  assert.equal(flat(both.css), '.x { a: b; } .a { p: 3px; q: space(10-2); }');
+  assert.deepEqual(shadowOf(namespaced, both), []);
+});
+
 /** Counts the Dart Sass compiles of `fn` (the stage calls compileString on the module it shares with this test). */
 function countCompiles(fn) {
   const original = sass.compileString;

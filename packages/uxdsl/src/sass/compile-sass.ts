@@ -56,8 +56,13 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   the text Sass leaves there. The probe reads visibility through
 //   `sass:meta`, so a project function named `function-exists` or
 //   `get-function` does not answer for it. Each definition some bare call
-//   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition. A
-//   build with no such definition runs Dart Sass once.
+//   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition: the
+//   probe captures the function each evaluation of a definition creates (a
+//   file imported twice defines its functions twice, and a file may define a
+//   name twice), so the warning goes to the definition the call reached. Two
+//   definitions of one name in indented `.sass` files or in files Sass loads
+//   itself (`pkg:`), which the probe does not capture, both warn when either is
+//   reached. A build with no such definition runs Dart Sass once.
 // - Nothing is shared between calls: every cache lives in one call's state,
 //   and every position is translated with the pass that produced it. Every
 //   pass sees the text first read for each file the importer serves; a file
@@ -200,8 +205,9 @@ interface PassHooks {
   /** Reports to the caller: the real logger and the map option. Otherwise Sass's silent logger and no map. */
   report: boolean;
   site?: (siteId: string, file: string, call: ProtectCall) => string | null | undefined;
-  append?: (file: string, role: Role, served: { original: string; protected: ProtectResult | null; plainCalls: Site[] }) => string;
-  /** Whether a `.uxdsl` or `.scss` file gets the `sass:meta` prefix; asked after its calls were decided and its lines appended. */
+  /** The text Sass receives for a file, from what it would receive otherwise (protect's output for a `.uxdsl` file, the original for the others). */
+  instrument?: (file: string, role: Role, text: string, served: { protected: ProtectResult | null; plainCalls: Site[] }) => string;
+  /** Whether a `.uxdsl` or `.scss` file gets the `sass:meta` prefix; asked after its calls were decided and the file instrumented. */
   prefix?: (file: string) => boolean;
   functions?: Record<string, Sass.CustomFunction<'sync'>>;
 }
@@ -524,7 +530,7 @@ function serve(stage: Stage, pass: Pass, hooks: PassHooks, file: string): Served
     });
     text = protectedResult.code;
   }
-  if (hooks.append) text += hooks.append(file, role, { original, protected: protectedResult, plainCalls: filePlainCalls });
+  if (hooks.instrument) text = hooks.instrument(file, role, text, { protected: protectedResult, plainCalls: filePlainCalls });
   if ((role === 'uxdsl' || role === 'scss') && hooks.prefix && hooks.prefix(file)) {
     // After a BOM, which must stay the first character.
     prefixAt = text.charCodeAt(0) === 0xfeff ? 1 : 0;
@@ -769,12 +775,14 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
 
   // The probe: Sass's silent logger, no map. Each parseable candidate call becomes a choice whose
   // condition records what the bare name means there and whose value is what the final pass emits,
-  // so the probe evaluates exactly what the build will. Lines appended at the end of files record a
-  // name's meaning where protect never rewrites its calls, and capture each definition for attribution.
-  // A file that holds any of them gets the `sass:meta` prefix its lookups use.
+  // so the probe evaluates exactly what the build will. Lines appended at the end of `.uxdsl` files
+  // record a name's meaning where protect never rewrites its calls, and a statement after the body of
+  // each definition in a `.uxdsl` or `.scss` file captures the function that evaluation of it
+  // created, for attribution. A file that holds any of them gets the `sass:meta` prefix its lookups use.
   let records = new Map<string, Array<{ fn: Sass.SassFunction | null }>>();
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
-  let captures: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
+  /** The function each evaluation of a definition created, by definition (`<file id>:<line>:<column>`). */
+  let captures: Array<{ definition: string; fn: Sass.SassFunction }> = [];
   // Calls Sass reads as raw text and never evaluates, where the probe's choice does not parse (a
   // pseudo-class argument in a selector, which Sass ends at the first ";"): they keep the token,
   // which is the text Sass leaves there.
@@ -812,21 +820,30 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         withLookups.add(file);
         return text;
       },
-      append: (file, role, served) => {
+      instrument: (file, role, text, served) => {
         const fileId = idOf(stage, file);
+        let out = text;
+        if (role === 'uxdsl' || role === 'scss') {
+          // Right after a definition's body, in the scope that holds it, the bare name means the
+          // function that evaluation of the definition created. The braces keep the statement inert
+          // where Sass reads a value as raw text. Inserted from the last, so earlier offsets hold.
+          const defined = findShadowingFunctions(text, { reserved: stage.reserved, file, bodies: true });
+          for (const definition of defined.reverse()) {
+            if (definition.end === undefined) continue;
+            const column = served.protected ? served.protected.toOriginalColumn(definition.line - 1, definition.column - 1) + 1 : definition.column;
+            out = `${out.slice(0, definition.end)}@if true { @debug uxdsl-probe-cap("${fileId}:${definition.line}:${column}", ${visibleFunction(definition.name)}); }${out.slice(definition.end)}`;
+            withLookups.add(file);
+          }
+        }
         const lines: string[] = [];
         if (role === 'uxdsl') {
           for (const name of new Set(served.plainCalls.map((site) => site.call.name))) {
             if (names.has(name)) lines.push(`@debug uxdsl-probe-eof("${fileId}", "${name}", ${visibleFunction(name)});`);
           }
         }
-        if (role === 'uxdsl' || role === 'scss') {
-          const defined = role === 'uxdsl' && served.protected ? served.protected.problems : findShadowingFunctions(served.original, { reserved: stage.reserved, file });
-          for (const name of new Set(defined.map((problem) => problem.name))) lines.push(`@debug uxdsl-probe-cap("${fileId}", "${name}", ${visibleFunction(name)});`);
-        }
-        if (lines.length === 0) return '';
+        if (lines.length === 0) return out;
         withLookups.add(file);
-        return `\n${lines.join('\n')}\n`;
+        return `${out}\n${lines.join('\n')}\n`;
       },
       prefix: (file) => withLookups.has(file),
       functions: {
@@ -843,8 +860,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
           atEnd.push({ fileId: textOf(args[0]), name: textOf(args[1]), fn: userFunction(textOf(args[1]), args[2]) });
           return sass.sassNull;
         },
-        'uxdsl-probe-cap($file, $name, $f)': (args) => {
-          captures.push({ fileId: textOf(args[0]), name: textOf(args[1]), fn: args[2] instanceof sass.SassFunction ? args[2] : null });
+        'uxdsl-probe-cap($definition, $f)': (args) => {
+          if (args[1] instanceof sass.SassFunction) captures.push({ definition: textOf(args[0]), fn: args[1] });
           return sass.sassNull;
         },
       },
@@ -904,21 +921,21 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // The probe evaluates what the build emits: a probe that fails where the build does not is a bug here.
   if (probe.failed && !report.failed) throw new Error(`uxdsl: the Sass stage's probe failed where the build did not (an internal error): ${messageOf(probe.error)}`);
 
-  // One warning per definition that some evaluated bare call written in a .uxdsl file resolves to,
-  // attributed through the function each defining file captured at its end.
-  const captureOf = (definition: Definition): Sass.SassFunction | null => {
-    const fileId = String(idOf(stage, definition.file));
-    const found = captures.find((capture) => capture.fileId === fileId && capture.name === definition.name && capture.fn !== null);
-    return found ? found.fn : null;
-  };
+  // One warning per definition that some evaluated bare call written in a .uxdsl file resolves to:
+  // the definition one of whose evaluations created the function the call reached.
+  const created = new Map<string, Sass.SassFunction[]>();
+  for (const capture of captures) {
+    const list = created.get(capture.definition);
+    if (list) list.push(capture.fn);
+    else created.set(capture.definition, [capture.fn]);
+  }
+  const createdBy = (definition: Definition): Sass.SassFunction[] => created.get(`${idOf(stage, definition.file)}:${definition.line}:${definition.column}`) || [];
   const attributed = (fn: Sass.SassFunction, definition: Definition): boolean => {
-    const own = captureOf(definition);
-    if (own) return fn.equals(own);
-    return !definitions.some((other) => {
-      if (other === definition || other.name !== definition.name) return false;
-      const theirs = captureOf(other);
-      return theirs !== null && fn.equals(theirs);
-    });
+    const own = createdBy(definition);
+    if (own.length > 0) return own.some((captured) => fn.equals(captured));
+    // A definition the probe does not capture (in an indented .sass file, or a file Sass loads
+    // itself): any function no other definition of the name created.
+    return !definitions.some((other) => other !== definition && other.name === definition.name && createdBy(other).some((captured) => fn.equals(captured)));
   };
   const shadowing = definitions.filter((definition) => {
     for (const [siteId, decision] of decisions) {

@@ -49,7 +49,10 @@ import { TOKEN_FUNCTIONS } from '../language';
 //   re-emitted after it, the column map kept). Any other call is reported as
 //   `plain`, never rewritten, and the scan continues inside its arguments.
 //   Without the option the output, the column map and the problems are those
-//   of the rules above.
+//   of the rules above;
+// - `options.bodies`, when true, also gives each shadowing declaration the
+//   offset just after its body's closing brace (`ProtectProblem.end`), found
+//   with the same skipping of comments, strings and interpolation.
 
 /** The token function names, lowercase, from the language's own table. */
 export const TOKEN_FUNCTION_NAMES: ReadonlySet<string> = new Set(Object.keys(TOKEN_FUNCTIONS).map((name) => name.toLowerCase()));
@@ -64,6 +67,8 @@ export interface ProtectProblem {
   column: number;
   /** The declared name as Sass resolves it (`_` read as `-`). */
   name: string;
+  /** With `options.bodies`: the offset just after the closing brace of the declaration's body; absent when the name is not followed by a parameter list and a braced body (comments and whitespace between them allowed). */
+  end?: number;
 }
 
 /** A call `options.site` is asked about. */
@@ -92,6 +97,8 @@ export interface ProtectOptions {
   file?: string;
   /** Asked about every token and plain call (see the file comment). For a token call, `undefined` applies the default rule, `null` leaves it as written and a one-line string replaces it; for a plain call the return value is ignored. */
   site?: (call: ProtectCall) => string | null | undefined;
+  /** Also locate the end of each shadowing declaration's body (`ProtectProblem.end`). */
+  bodies?: boolean;
 }
 
 export interface ProtectResult {
@@ -159,8 +166,8 @@ function endOfInterpolation(s: string, from: number): number {
   return s.length;
 }
 
-/** `from` at `(`: the index of the matching `)`, or -1. */
-function matchParen(s: string, from: number): number {
+/** `from` at `open`: the index of the matching `close`, or -1. Strings, comments and interpolations do not count. */
+function matchBracket(s: string, from: number, open: string, close: string): number {
   let depth = 0;
   let k = from;
   while (k < s.length) {
@@ -169,11 +176,40 @@ function matchParen(s: string, from: number): number {
     if (c === '/' && s[k + 1] === '*') { k = endOfBlockComment(s, k); continue; }
     if (c === '/' && s[k + 1] === '/') { k = endOfLineComment(s, k); continue; }
     if (c === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); continue; }
-    if (c === '(') depth++;
-    else if (c === ')' && --depth === 0) return k;
+    if (c === open) depth++;
+    else if (c === close && --depth === 0) return k;
     k++;
   }
   return -1;
+}
+
+/** `from` at `(`: the index of the matching `)`, or -1. */
+function matchParen(s: string, from: number): number {
+  return matchBracket(s, from, '(', ')');
+}
+
+/** The index of the first character at or after `from` that is neither whitespace nor inside a comment. */
+function skipBlank(s: string, from: number): number {
+  let k = from;
+  while (k < s.length) {
+    if (WHITESPACE.test(s[k])) k++;
+    else if (s[k] === '/' && s[k + 1] === '*') k = endOfBlockComment(s, k);
+    else if (s[k] === '/' && s[k + 1] === '/') k = endOfLineComment(s, k);
+    else break;
+  }
+  return k;
+}
+
+/** `from` just after a `@function` name: the index after the closing brace of its body, or -1 when a parameter list and a braced body do not follow. */
+function endOfFunctionBody(s: string, from: number): number {
+  const open = skipBlank(s, from);
+  if (s[open] !== '(') return -1;
+  const close = matchParen(s, open);
+  if (close === -1) return -1;
+  const brace = skipBlank(s, close + 1);
+  if (s[brace] !== '{') return -1;
+  const end = matchBracket(s, brace, '{', '}');
+  return end === -1 ? -1 : end + 1;
 }
 
 /** The [from, to) ranges between the top-level commas of [from, to). */
@@ -225,6 +261,7 @@ class Protector {
     private readonly unprotected: ReadonlySet<string>,
     private readonly file: string | undefined,
     private readonly site: ((call: ProtectCall) => string | null | undefined) | undefined,
+    private readonly bodies: boolean,
   ) {}
 
   run(): string {
@@ -338,13 +375,18 @@ class Protector {
     this.defined.add(name);
     this.copy(from);
     const where = this.file ? `${this.file}:${this.line + 1}` : `line ${this.line + 1}`;
-    this.problems.push({
+    const problem: ProtectProblem = {
       code: 'UXD_FUNCTION_SHADOWED',
       message: `UXD_FUNCTION_SHADOWED: @function ${written} (${where}) replaces UXDSL's ${name}() in this build; rename it to use the token`,
       line: this.line + 1,
       column: from - this.lineStart + 1,
       name,
-    });
+    };
+    if (this.bodies) {
+      const end = endOfFunctionBody(this.src, to);
+      if (end !== -1) problem.end = end;
+    }
+    this.problems.push(problem);
   }
 
   private variable(end: number, mode: Mode): void {
@@ -551,7 +593,7 @@ const normalizedSet = (names: Iterable<string> | undefined): ReadonlySet<string>
 
 /** Protects UXDSL's syntax in `source` so Dart Sass passes it through; see the file comment for the rules. */
 export function protect(source: string, options: ProtectOptions = {}): ProtectResult {
-  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file, options.site);
+  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file, options.site, options.bodies === true);
   const code = protector.run();
   return {
     code,
