@@ -39,7 +39,20 @@ import { TOKEN_FUNCTIONS } from '../language';
 //   never protected. `@mixin` and `@include` names are never calls;
 // - the output has exactly as many lines as the input: a rewrite spanning
 //   lines re-emits its newlines after the replacement, and the result maps
-//   every column of the output back to the input.
+//   every column of the output back to the input;
+// - `options.site`, when given, is called for every call of a token function,
+//   `tone` or a reserved name outside comments, strings and unquoted `url(…)`.
+//   A token call — one the first rule rewrites, or leaves bare after a
+//   definition or through `options.unprotected` — is decided by the return
+//   value: `undefined` applies the rules above, `null` leaves the call as
+//   written, a one-line string is written in its place (the call's newlines
+//   re-emitted after it, the column map kept). Any other call is reported as
+//   `plain`, never rewritten, and the scan continues inside its arguments.
+//   Without the option the output, the column map and the problems are those
+//   of the rules above;
+// - `options.bodies`, when true, also gives each shadowing declaration the
+//   offset just after its body's closing brace (`ProtectProblem.end`), found
+//   with the same skipping of comments, strings and interpolation.
 
 /** The token function names, lowercase, from the language's own table. */
 export const TOKEN_FUNCTION_NAMES: ReadonlySet<string> = new Set(Object.keys(TOKEN_FUNCTIONS).map((name) => name.toLowerCase()));
@@ -54,6 +67,25 @@ export interface ProtectProblem {
   column: number;
   /** The declared name as Sass resolves it (`_` read as `-`). */
   name: string;
+  /** With `options.bodies`: the offset just after the closing brace of the declaration's body; absent when the name is not followed by a parameter list and a braced body (comments and whitespace between them allowed). */
+  end?: number;
+}
+
+/** A call `options.site` is asked about. */
+export interface ProtectCall {
+  /** `token`: a token-function call whose first argument is key-like (the calls the first rule rewrites, including those left bare after a same-file definition or through `unprotected`). `plain`: any other call of a token function, `tone` or a reserved name, which is never rewritten. */
+  kind: 'token' | 'plain';
+  /** The called name as Sass resolves it (`_` read as `-`, case kept). */
+  name: string;
+  /** Source offsets of the call, from its name to its closing parenthesis, end exclusive. */
+  start: number;
+  end: number;
+  /** `source.slice(start, end)`. */
+  raw: string;
+  /** Token calls: the default rewrite (`#{"name(key)"}`). */
+  protectedText?: string;
+  /** Token calls: whether the rules above rewrite the call (false after a same-file definition or through `unprotected`). */
+  defaultProtected?: boolean;
 }
 
 export interface ProtectOptions {
@@ -63,6 +95,10 @@ export interface ProtectOptions {
   unprotected?: Iterable<string>;
   /** The file being protected, for the warning's location. */
   file?: string;
+  /** Asked about every token and plain call (see the file comment). For a token call, `undefined` applies the default rule, `null` leaves it as written and a one-line string replaces it; for a plain call the return value is ignored. */
+  site?: (call: ProtectCall) => string | null | undefined;
+  /** Also locate the end of each shadowing declaration's body (`ProtectProblem.end`). */
+  bodies?: boolean;
 }
 
 export interface ProtectResult {
@@ -130,8 +166,8 @@ function endOfInterpolation(s: string, from: number): number {
   return s.length;
 }
 
-/** `from` at `(`: the index of the matching `)`, or -1. */
-function matchParen(s: string, from: number): number {
+/** `from` at `open`: the index of the matching `close`, or -1. Strings, comments and interpolations do not count. */
+function matchBracket(s: string, from: number, open: string, close: string): number {
   let depth = 0;
   let k = from;
   while (k < s.length) {
@@ -140,11 +176,40 @@ function matchParen(s: string, from: number): number {
     if (c === '/' && s[k + 1] === '*') { k = endOfBlockComment(s, k); continue; }
     if (c === '/' && s[k + 1] === '/') { k = endOfLineComment(s, k); continue; }
     if (c === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); continue; }
-    if (c === '(') depth++;
-    else if (c === ')' && --depth === 0) return k;
+    if (c === open) depth++;
+    else if (c === close && --depth === 0) return k;
     k++;
   }
   return -1;
+}
+
+/** `from` at `(`: the index of the matching `)`, or -1. */
+function matchParen(s: string, from: number): number {
+  return matchBracket(s, from, '(', ')');
+}
+
+/** The index of the first character at or after `from` that is neither whitespace nor inside a comment. */
+function skipBlank(s: string, from: number): number {
+  let k = from;
+  while (k < s.length) {
+    if (WHITESPACE.test(s[k])) k++;
+    else if (s[k] === '/' && s[k + 1] === '*') k = endOfBlockComment(s, k);
+    else if (s[k] === '/' && s[k + 1] === '/') k = endOfLineComment(s, k);
+    else break;
+  }
+  return k;
+}
+
+/** `from` just after a `@function` name: the index after the closing brace of its body, or -1 when a parameter list and a braced body do not follow. */
+function endOfFunctionBody(s: string, from: number): number {
+  const open = skipBlank(s, from);
+  if (s[open] !== '(') return -1;
+  const close = matchParen(s, open);
+  if (close === -1) return -1;
+  const brace = skipBlank(s, close + 1);
+  if (s[brace] !== '{') return -1;
+  const end = matchBracket(s, brace, '{', '}');
+  return end === -1 ? -1 : end + 1;
 }
 
 /** The [from, to) ranges between the top-level commas of [from, to). */
@@ -195,6 +260,8 @@ class Protector {
     private readonly reserved: ReadonlySet<string>,
     private readonly unprotected: ReadonlySet<string>,
     private readonly file: string | undefined,
+    private readonly site: ((call: ProtectCall) => string | null | undefined) | undefined,
+    private readonly bodies: boolean,
   ) {}
 
   run(): string {
@@ -308,13 +375,18 @@ class Protector {
     this.defined.add(name);
     this.copy(from);
     const where = this.file ? `${this.file}:${this.line + 1}` : `line ${this.line + 1}`;
-    this.problems.push({
+    const problem: ProtectProblem = {
       code: 'UXD_FUNCTION_SHADOWED',
       message: `UXD_FUNCTION_SHADOWED: @function ${written} (${where}) replaces UXDSL's ${name}() in this build; rename it to use the token`,
       line: this.line + 1,
       column: from - this.lineStart + 1,
       name,
-    });
+    };
+    if (this.bodies) {
+      const end = endOfFunctionBody(this.src, to);
+      if (end !== -1) problem.end = end;
+    }
+    this.problems.push(problem);
   }
 
   private variable(end: number, mode: Mode): void {
@@ -337,14 +409,22 @@ class Protector {
       const prev = start > 0 ? s[start - 1] : undefined;
       const callable = prev === undefined || !(isIdentChar(prev) || NOT_A_CALL_AFTER.has(prev));
       if (callable) {
-        const lower = s.slice(start, j).toLowerCase();
+        const written = s.slice(start, j);
+        const lower = written.toLowerCase();
         if (lower === 'url') {
           let k = j + 1;
           while (k < end && WHITESPACE.test(s[k])) k++;
           const close = matchParen(s, j);
           if (s[k] !== '"' && s[k] !== "'" && close !== -1 && close < end) { this.i = close + 1; return; }
-        } else if (TOKEN_FUNCTION_NAMES.has(lower) && !this.isUnprotected(s.slice(start, j)) && this.protectCall(start, j, end)) {
-          return;
+        } else if (TOKEN_FUNCTION_NAMES.has(lower)) {
+          if (this.site) {
+            if (this.decideTokenCall(start, j, end)) return;
+            this.reportPlainCall(start, j, end);
+          } else if (!this.isUnprotected(written) && this.protectCall(start, j, end)) {
+            return;
+          }
+        } else if (this.site && (sassName(written) === 'tone' || this.reserved.has(sassName(written)))) {
+          this.reportPlainCall(start, j, end);
         }
       }
     } else if (mode === 'directive' && next === '.' && s[j + 1] === '$' && isIdentStart(s[j + 2])) {
@@ -363,20 +443,56 @@ class Protector {
 
   /** Rewrites `name(args)` at [start, …] when its first argument is key-like; returns false, leaving the text alone, otherwise. */
   private protectCall(start: number, paren: number, end: number): boolean {
+    const call = this.tokenCall(start, paren, end);
+    if (!call) return false;
+    this.rewrite(start, call.close + 1, call.text);
+    return true;
+  }
+
+  /** `name(args)` at [start, …] when its first argument is key-like: the index of its closing parenthesis and its rewrite; null otherwise. */
+  private tokenCall(start: number, paren: number, end: number): { close: number; text: string } | null {
     const s = this.src;
     const close = matchParen(s, paren);
-    if (close === -1 || close >= end) return false;
+    if (close === -1 || close >= end) return null;
     const args = splitArguments(s, paren + 1, close);
     const key = this.protectedKey(args[0][0], args[0][1]);
-    if (key === null) return false;
+    if (key === null) return null;
     let extras = '';
     for (const [from, to] of args.slice(1)) {
       const raw = s.slice(from, to).trim();
-      if (!raw) return false;
+      if (!raw) return null;
       extras += `, ${BARE_NUMBER.test(raw) || isOneInterpolation(raw) ? raw : `#{${raw}}`}`;
     }
-    this.rewrite(start, close + 1, `#{"${s.slice(start, paren)}(${key}${extras})"}`);
+    return { close, text: `#{"${s.slice(start, paren)}(${key}${extras})"}` };
+  }
+
+  /** Asks `options.site` about a token call and writes its decision; returns false, deciding nothing, when the call is not a token call. */
+  private decideTokenCall(start: number, paren: number, end: number): boolean {
+    const call = this.tokenCall(start, paren, end);
+    if (!call) return false;
+    const s = this.src;
+    const written = s.slice(start, paren);
+    const defaultProtected = !this.isUnprotected(written);
+    const decision = (this.site as NonNullable<ProtectOptions['site']>)({
+      kind: 'token', name: sassName(written), start, end: call.close + 1, raw: s.slice(start, call.close + 1), protectedText: call.text, defaultProtected,
+    });
+    const text = decision === undefined ? (defaultProtected ? call.text : null) : decision;
+    if (text === null) {
+      // Left as written: the scan continues inside the arguments, as for a call the rules leave bare.
+      this.i = paren;
+      return true;
+    }
+    if (/[\r\n]/.test(text)) throw new TypeError('protect: a site replacement must be one line');
+    this.rewrite(start, call.close + 1, text);
     return true;
+  }
+
+  /** Tells `options.site` about a call that is never rewritten; the scan then continues inside its arguments. */
+  private reportPlainCall(start: number, paren: number, end: number): void {
+    const s = this.src;
+    const close = matchParen(s, paren);
+    if (close === -1 || close >= end) return;
+    (this.site as NonNullable<ProtectOptions['site']>)({ kind: 'plain', name: sassName(s.slice(start, paren)), start, end: close + 1, raw: s.slice(start, close + 1) });
   }
 
   /** The key with its variables interpolated, or null when the text is not key-like. */
@@ -477,7 +593,7 @@ const normalizedSet = (names: Iterable<string> | undefined): ReadonlySet<string>
 
 /** Protects UXDSL's syntax in `source` so Dart Sass passes it through; see the file comment for the rules. */
 export function protect(source: string, options: ProtectOptions = {}): ProtectResult {
-  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file);
+  const protector = new Protector(source, normalizedSet(options.reserved), normalizedSet(options.unprotected), options.file, options.site, options.bodies === true);
   const code = protector.run();
   return {
     code,

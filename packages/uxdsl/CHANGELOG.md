@@ -22,6 +22,123 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The Sass stage: Dart Sass with the `.uxdsl` importer (MIG-B9-12)
+
+No change to compiled output yet: `src/sass/compile-sass.ts` is a new module
+that nothing in the package calls until `compile()` runs on Dart Sass
+(MIG-B9-13). `compileSassStage({ entry, source? }, { reserved, sourceMap,
+loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
+
+- **Resolution is Dart Sass's**, with `.uxdsl` as a third Sass extension beside
+  `.sass` and `.scss`: `_partial` and `name`, `dir/index`, the `.import`
+  variants for `@import`, `.css` only when no Sass file matches, and Sass's own
+  `It's not clear which file to import` when a `.uxdsl` and a `.scss` (or a
+  partial and a non-partial) answer one URL. A URL with no scheme is tried
+  relative to the importing file, then under every `node_modules` from the
+  entry's directory up, so a package can ship `.uxdsl` partials, and then under
+  each directory of the `SASS_PATH` environment variable, which Dart Sass
+  searches after its load paths (a `.uxdsl` file there is found as a `.scss`
+  file is). Each is searched as Dart Sass searches a load path: the URL is
+  joined to it, both kept as written, so the filesystem walks a leading `..` in
+  the URL, and any `..` in the load path (`missing/../real`), from the
+  directories named, and one that does not exist finds nothing (a `../x` that
+  misses beside its file is Sass's `Can't find stylesheet to import`, never a
+  same-named file in another directory). `pkg:` URLs go through Dart Sass's
+  `NodePackageImporter` (a package whose export is a `.uxdsl` file is Sass's
+  error), and so does a relative URL inside a package it loaded, Sass's own
+  `.sass`, `.scss` and `.css` candidates first: there a `.uxdsl` partial is
+  found only when none of them (nor a directory index) answers the URL, and
+  one beside a `.scss` of the same name is not reported as ambiguous, unlike
+  the same files reached through a load path. `~pkg/…` is not resolved.
+  `@use "./x"` inlines `x.css` and `@import "x.css"` stays a CSS `@import`, as
+  in Sass; a `.css` file is plain CSS, served as written, so a `$variable` or
+  `palette(primary.main)` in it is Sass's error at the token. An in-memory
+  `source` compiles as if it were `entry`, which need not exist.
+- **Errors and warnings are located at the author's text.** A Sass failure is
+  `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
+  `.column`, the protected columns translated back), with Sass's message
+  verbatim (`sassMessage`), Sass's code frame and stack re-rendered from the
+  author's lines with every marker under the author's columns, however many
+  multi-line spans the frame draws, in a CRLF file too (`sassFrame`, never
+  colored), and the
+  `sass.Exception` as `cause`; files are read as Dart Sass reads them (invalid
+  UTF-8 is `UXD_SASS` at the character); an I/O error is rethrown unchanged.
+  Each Sass warning is
+  `UXD_SASS_WARNING: [<deprecation id>] …` or `UXD_SASS_WARNING: …` for an
+  `@warn` (located by its stack frame), under Sass's own cap of five per
+  deprecation type plus a summary; `sass.silenceDeprecations` and
+  `sass.quietDeps` are passed through (Sass's notice about an unknown, obsolete
+  or user-authored id there is a `UXD_SASS_WARNING` too, with no location, like
+  the summary), `@debug` output is dropped.
+- **The source map** (with `sourceMap: true`) has the author's columns,
+  absolute paths as sources and the original text as `sourcesContent`; the CSS
+  never carries a `sourceMappingURL` comment.
+- **The author's SCSS wins (DEC-17), decided by Sass per call.** When a loaded
+  file defines a `@function` named like a UXDSL function (a token function,
+  `tone`, a breakpoint of the effective theme — `.scss`, `.sass` and `pkg:`
+  files included), a probe compile records, at each such call written in a
+  `.uxdsl` file, whether Dart Sass resolves the bare name to the project
+  function there: such a call is left to Sass, any other keeps UXDSL's token
+  (`space(10-2)`, `palette(primary.main)`), and one seen both ways is written as
+  a choice that replays, at each evaluation, what the probe recorded there. A
+  call Sass never evaluates keeps the token, the text Sass leaves there
+  (`.a::part(space(2))`: Sass keeps that pseudo-element argument as raw text).
+  The probe gives no file Sass `@import`s a `@use`: Sass evaluates such a file
+  in the importing file's scope, with the modules that file used (`as *`
+  included), only while the imported file has no `@use` of its own, so a call
+  in an `@import`ed partial reaches a helper the entry used with `as *`, as in
+  Dart Sass. It reads what a name means with Sass's `function-exists` and
+  `get-function`; where a loaded file defines a function of one of those names,
+  it reads them through `sass:meta` under a reserved namespace. A file Sass
+  never `@import`s gets the `@use` that brings it in, and so does an
+  `@import`ed file found to have a `@use` of its own; any other `@import`ed
+  file reaches its importer's namespace, and only one that cannot (one also
+  loaded with `@use`, one an indented `.sass` module or a `pkg:` file imports,
+  or one with a `@use` of its own that another `@import`ed file imports or that
+  is reached only through a mixin) asks the project's function, where that is
+  visible there (recorded, not corrected). A call whose bare name two modules
+  used with `as *` both define is Dart Sass's error at the call (`This function
+  is available from multiple global modules.`), and compiles where Sass keeps
+  it as raw text, as in Dart Sass. A `pkg:` file is known only from a compile
+  that succeeds, so when the first compile fails and a file names a `pkg:` URL,
+  every token call is probed until a probe compiles: a package's function used
+  with `@use "pkg:…" as *` wins where Sass calls it even when UXDSL's token in
+  its place would not compile (`space(2) * 2`, `rgba(color(primary), 0.5)`),
+  and a build that fails anyway reports Dart Sass's error. Each definition
+  some bare call resolves to is one `UXD_FUNCTION_SHADOWED` warning at the
+  definition, however many times its file is evaluated (imported twice, or
+  again by a component); where a name is defined twice, only the definitions a
+  call reaches warn (both, when the two are in indented `.sass` files or in
+  files Sass loads itself through `pkg:`). A helper reached only through a
+  namespace shadows nothing. A function reached under a UXDSL name that no
+  `@function` spells, composed by `@forward "x" as spa*` from `@function ce`,
+  is not found: its calls keep the token, with no warning, where Dart Sass
+  calls the author's function (recorded, not corrected: finding it would mean
+  modeling `@forward`'s prefixes). A build without such a definition runs
+  Dart Sass once, unless that compile fails and a file the importer served
+  contains the text `pkg:`, which makes every token call a candidate (Bootstrap
+  5.3.8 renamed to `.uxdsl`: one compile, CSS byte-identical to Dart Sass).
+
+`protect()` gains two additive options: `site`, which reports every call of a
+token function, `tone` or a breakpoint name and decides each token call, and
+`bodies`, which gives each shadowing declaration the offset just after its
+body (`end`); its output, column map and problems are unchanged without them.
+
+#### Dependencies
+
+`sass` (the pure-JavaScript Dart Sass, `^1.107.0`) and `source-map-js`
+(`^1.2.2`, the version `postcss` already requires) move from devDependencies to
+dependencies. `sass` is loaded only when the Sass stage runs: `require('uxdsl')`
+and `require('uxdsl/postcss')` never load it. A fresh install grows by about
+ten packages (Dart Sass, `immutable`, `chokidar` 5 nested beside the CLI's
+`chokidar` 4, and the optional `@parcel/watcher` binaries); `npm audit` stays
+at 0. Dart Sass declares Node 20.19 or later.
+
+#### Diagnostics
+
+Two new codes in `DIAGNOSTIC_CATALOG`, owner `core`: `UXD_SASS` (Dart Sass
+could not compile the stylesheet) and `UXD_SASS_WARNING` (Dart Sass warned).
+
 ### The Sass pipeline's protect pass and directive-spacing restore (MIG-B9-11)
 
 No change to compiled output yet: `src/sass/protect.ts` is a new module that

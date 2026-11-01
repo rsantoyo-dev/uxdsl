@@ -267,3 +267,33 @@ test('MIG-B7-16: a not-visual file (diagnostics.ts) still needs only a README, a
   stage(dir, 'packages/uxdsl/src/diagnostics.ts', 'packages/uxdsl/README.md');
   assert.equal(runGuard(dir).status, 0);
 });
+
+// The Sass stage decides the CSS Dart Sass produces for every `.uxdsl` file compiled through it, and
+// the protect pass decides the text Sass receives for each of them, so a change to either is a change
+// to compiled output: both are visual-default files, and moving one to the not-visual list (which
+// only asks for a README) fails here, not only when a file is left unclassified.
+test('MIG-B9-12: src/sass/compile-sass.ts, and the protect pass it serves .uxdsl files through, are guarded visual-default files: a change to the stage needs the package CHANGELOG (AC4)', () => {
+  for (const file of [`${SRC_DIR}/sass/compile-sass.ts`, `${SRC_DIR}/sass/protect.ts`]) {
+    assert.ok(VISUAL_DEFAULT_FILES.includes(file), `${file} must be a guarded visual-default file`);
+    assert.ok(!Object.prototype.hasOwnProperty.call(NON_VISUAL_SOURCE_FILES, file), `${file} must not be listed as not-visual`);
+  }
+
+  const { dir, pkgDir } = mkFakeRepo();
+  fs.mkdirSync(path.join(pkgDir, 'src', 'sass'), { recursive: true });
+  fs.writeFileSync(path.join(pkgDir, 'src', 'sass', 'compile-sass.ts'), '// stage\n');
+  git(dir, ['add', '-A']);
+  git(dir, ['commit', '-q', '-m', 'add the Sass stage']);
+
+  fs.appendFileSync(path.join(pkgDir, 'src', 'sass', 'compile-sass.ts'), '// edit\n');
+  fs.appendFileSync(path.join(pkgDir, 'README.md'), '\nnote\n');
+  stage(dir, 'packages/uxdsl/src/sass/compile-sass.ts', 'packages/uxdsl/README.md');
+  const blocked = runGuard(dir);
+  assert.equal(blocked.status, 1);
+  assert.match(blocked.stderr, /Visual-default change without a CHANGELOG note/);
+  assert.match(blocked.stderr, /sass\/compile-sass\.ts/);
+
+  // Control: the same change with the CHANGELOG staged passes.
+  fs.appendFileSync(path.join(pkgDir, 'CHANGELOG.md'), '\n## note\n');
+  stage(dir, 'packages/uxdsl/CHANGELOG.md');
+  assert.equal(runGuard(dir).status, 0);
+});
