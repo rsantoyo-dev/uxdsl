@@ -56,9 +56,9 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   recorded at that evaluation. A call Sass never evaluates (a pseudo-class
 //   argument it keeps as raw text) keeps the token, the text Sass leaves
 //   there. The probe reads visibility with Sass's global meta functions
-//   (`function-exists`, `get-function`) and gives no file a `@use`, since Sass
-//   evaluates a file it `@import`s apart from the importing file's modules
-//   once that file has one. Where a loaded file defines a function named
+//   (`function-exists`, `get-function`) and gives no file Sass `@import`s a
+//   `@use`, since Sass evaluates such a file apart from the importing file's
+//   modules once it has one. Where a loaded file defines a function named
 //   `function-exists` or `get-function`, which would answer those, the probe
 //   reads them through `sass:meta` under a reserved namespace instead: a file
 //   Sass never `@import`s gets the `@use` that brings it in, and a file it
