@@ -752,6 +752,28 @@ test('MIG-B9-12: options.reserved names the breakpoints checked (negative contro
   assert.deepEqual(shadowOf(custom, stage({ entry: path.join(custom, 'entry.uxdsl') })), [], 'xxl is not a default breakpoint');
 });
 
+// A function reached under a UXDSL name that no @function spells, composed by @forward … as
+// <prefix>* (@forward "x" as spa* with @function ce gives space()), is not found: definitions are
+// found by the name a @function declares, and composing forwarded names would mean modeling
+// @forward. Its bare calls keep the token, with no warning, where Dart Sass calls the author's
+// function. This differs from the .scss twin and is recorded, not corrected.
+test('MIG-B9-12: a function whose UXDSL name is composed by @forward … as <prefix>* is not found, so its calls keep the token (a recorded difference from the .scss twin)', () => {
+  const composed = twin({ 'entry.uxdsl': '@use "lib" as *;\n.a { p: space(2); }\n', '_lib.scss': '@forward "x" as spa*;\n', '_x.scss': '@function ce($k) { @return $k * 3px; }\n' });
+  assert.equal(flat(composed.expected.css), '.a { p: 6px; }');
+  assert.equal(flat(composed.actual.css), '.a { p: space(2); }');
+  assert.deepEqual(composed.actual.warnings, []);
+  // A breakpoint call is never rewritten, so it compiles as Dart Sass compiles it; nothing warns.
+  const breakpoint = twin({ 'entry.uxdsl': '@use "lib" as *;\n.a { p: xl(2px); }\n', '_lib.scss': '@forward "x" as x*;\n', '_x.scss': '@function l($v) { @return $v * 3; }\n' });
+  assertSameAsTwin(breakpoint, 'a composed breakpoint');
+  assert.deepEqual(breakpoint.actual.warnings, []);
+});
+
+test('MIG-B9-12: a function whose UXDSL name is composed by @forward … as <prefix>* is not found (negative control: the same functions declared under their UXDSL names and forwarded are found)', () => {
+  const declared = twin({ 'entry.uxdsl': '@use "lib" as *;\n.a { p: space(2); q: xl(2px); }\n', '_lib.scss': '@forward "x";\n', '_x.scss': '@function space($k) { @return $k * 3px; }\n@function xl($v) { @return $v * 3; }\n' });
+  assertSameAsTwin(declared, 'declared under their UXDSL names');
+  assert.deepEqual(shadowOf(declared.ux, declared.actual), ['_x.scss:1:11', '_x.scss:2:11']);
+});
+
 // A token call inside a pseudo-class or pseudo-element argument that Sass keeps as raw text
 // (::part(), :lang(), :state(), an unknown :foo()) is never evaluated: Dart Sass leaves it as
 // written, whatever function of that name is loaded. Each case: the files, the expected CSS

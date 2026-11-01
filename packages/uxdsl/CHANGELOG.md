@@ -90,9 +90,13 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   again by a component); where a name is defined twice, only the definitions a
   call reaches warn (both, when the two are in indented `.sass` files or in
   files Sass loads itself through `pkg:`). A helper reached only through a
-  namespace shadows nothing. A build without such a definition runs Dart Sass
-  once (Bootstrap 5.3.8 renamed to `.uxdsl`: one compile, CSS byte-identical to
-  Dart Sass, about 1.04× its time with the map on).
+  namespace shadows nothing. A function reached under a UXDSL name that no
+  `@function` spells, composed by `@forward "x" as spa*` from `@function ce`,
+  is not found: its calls keep the token, with no warning, where Dart Sass
+  calls the author's function (recorded, not corrected: finding it would mean
+  modeling `@forward`'s prefixes). A build without such a definition runs
+  Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`: one compile, CSS
+  byte-identical to Dart Sass, about 1.04× its time with the map on).
 
 `protect()` gains two additive options: `site`, which reports every call of a
 token function, `tone` or a breakpoint name and decides each token call, and
