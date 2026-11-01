@@ -79,16 +79,20 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   token, the text Sass leaves there (`.a::part(space(2))`: Sass keeps that
   pseudo-element argument as raw text), and the probe asks `sass:meta` what a
   name means, so a project function named `function-exists` or `get-function`
-  changes no decision. Each definition some bare call
-  resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition,
-  however many times its file is evaluated (imported twice, or again by a
-  component); where a name is defined twice, only the definitions a call
-  reaches warn (both, when the two are in indented `.sass` files or in files
-  Sass loads itself through `pkg:`). A helper reached only through a namespace
-  shadows nothing. A build without
-  such a definition runs Dart Sass once (Bootstrap 5.3.8 renamed to `.uxdsl`:
-  one compile, CSS byte-identical to Dart Sass, about 1.04× its time with the
-  map on).
+  changes no decision. A `pkg:` file is known only from a compile that
+  succeeds, so when the first compile fails and a file names a `pkg:` URL,
+  every token call is probed until a probe compiles: a package's function used
+  with `@use "pkg:…" as *` wins where Sass calls it even when UXDSL's token in
+  its place would not compile (`space(2) * 2`, `rgba(color(primary), 0.5)`),
+  and a build that fails anyway reports Dart Sass's error. Each definition
+  some bare call resolves to is one `UXD_FUNCTION_SHADOWED` warning at the
+  definition, however many times its file is evaluated (imported twice, or
+  again by a component); where a name is defined twice, only the definitions a
+  call reaches warn (both, when the two are in indented `.sass` files or in
+  files Sass loads itself through `pkg:`). A helper reached only through a
+  namespace shadows nothing. A build without such a definition runs Dart Sass
+  once (Bootstrap 5.3.8 renamed to `.uxdsl`: one compile, CSS byte-identical to
+  Dart Sass, about 1.04× its time with the map on).
 
 `protect()` gains two additive options: `site`, which reports every call of a
 token function, `tone` or a breakpoint name and decides each token call, and

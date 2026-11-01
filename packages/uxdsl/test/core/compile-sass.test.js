@@ -606,6 +606,8 @@ test('MIG-B9-12: @function space in a loaded partial gives Sass\'s output and on
 // Each case: the files, the expected CSS (null: Dart Sass's own output on the twin), and the
 // UXD_FUNCTION_SHADOWED locations.
 const H = '@function space($k) { @return $k * 3px; }\n';
+/** A package `kit` whose Sass export, index.scss, holds `index`: Dart Sass loads it itself through pkg:. */
+const kitPackage = (index) => ({ 'node_modules/kit/package.json': JSON.stringify({ name: 'kit', exports: { '.': { sass: './index.scss' } } }), 'node_modules/kit/index.scss': index });
 const DEC17 = [
   ['T-a same file', { 'entry.uxdsl': '.a { color: red; }\n@function space($k) { @return $k * 3px; }\n.b { padding: space(2); }\n' }, null, ['entry.uxdsl:2:11']],
   ['T-b a .scss color via @import', { 'entry.uxdsl': '@import "helpers";\n.a { color: color(brand); }\n', '_helpers.scss': '@use "sass:map";\n$colors: (brand: #123456);\n@function color($name) { @return map.get($colors, $name); }\n' }, null, ['_helpers.scss:3:11']],
@@ -645,6 +647,10 @@ const DEC17 = [
     'node_modules/kit/package.json': JSON.stringify({ name: 'kit', exports: { '.': { sass: './index.scss' } } }),
     'node_modules/kit/index.scss': H,
   }, '.a { v: 6px; w: 24px; }', ['node_modules/kit/index.scss:1:11']],
+  ['PKG-P1 a pkg: helper used as *, the first pass failing (space(2) * 2)', { 'entry.uxdsl': '@use "pkg:kit" as *;\n.a { margin: space(2) * 2; w: space(10-2); }\n', ...kitPackage(H) }, null, ['node_modules/kit/index.scss:1:11']],
+  ['PKG-RGBA a pkg: color() inside rgba(), the first pass failing', { 'entry.uxdsl': '@use "pkg:kit" as *;\n.a { background: rgba(color(primary), 0.5); }\n', ...kitPackage('@function color($n) { @return rgb(51, 102, 255); }\n') }, null, ['node_modules/kit/index.scss:1:11']],
+  ['PKG-FWD a pkg: helper forwarded by a partial used as *, the first pass failing', { 'entry.uxdsl': '@use "lib" as *;\n.a { margin: space(2) * 2; }\n', '_lib.scss': '@forward "pkg:kit";\n', ...kitPackage(H) }, null, ['node_modules/kit/index.scss:1:11']],
+  ['PKG-ERR a pkg: helper used as *, and a later error Dart Sass reports', { 'entry.uxdsl': '@use "pkg:kit" as *;\n.a { margin: space(2) * 2; b: 1px + red; }\n', ...kitPackage(H) }, null, null],
   ['LP a load-path .uxdsl helper used only through a namespace', { 'entry.uxdsl': '@use "kit/helpers";\n.a { v: space(2); w: helpers.space(1); }\n', 'node_modules/kit/_helpers.uxdsl': H }, '.a { v: space(2); w: 3px; }', []],
   ['SASS an indented .sass helper', { 'entry.uxdsl': '@import "helpers";\n.a { v: space(2); }\n', '_helpers.sass': '@function space($k)\n  @return $k * 3px\n' }, null, ['_helpers.sass:1:11']],
   ['GRAY color(gray.300) with a visible project color()', { 'entry.uxdsl': '@import "helpers";\n.a { c: color(gray.300); d: color(brand); }\n', '_helpers.scss': '@function color($n) { @return red; }\n' }, '.a { c: red; d: red; }', ['_helpers.scss:1:11']],
@@ -712,6 +718,19 @@ test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare 
     assert.doesNotMatch(css, /space\(8\)/);
   }
   assert.deepEqual(stage({ entry: path.join(tc, 'entry.uxdsl') }).warnings, []);
+});
+
+test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare name, a pkg: helper included when the first pass fails (negative control: a pkg: helper reached only through a namespace leaves Sass\'s error, and a failing build that names no pkg: URL runs Dart Sass once)', () => {
+  const run = twin({ 'entry.uxdsl': '@use "pkg:kit";\n.a { margin: space(2) * 2; v: kit.space(1); }\n', ...kitPackage(H) }, { dartOptions: { importers: [new sass.NodePackageImporter()] } });
+  assert.equal(run.expected.error.sassMessage, 'Undefined operation "space(2) * 2".');
+  assertSameAsTwin(run, 'a pkg: helper reached only through a namespace', { exactFrame: true });
+  const plain = project({ 'entry.uxdsl': '.a { margin: space(2) * 2; }\n' });
+  let error;
+  const calls = countCompiles(() => {
+    error = stageError(() => stage({ entry: path.join(plain, 'entry.uxdsl') }));
+  });
+  assert.equal(error.code, 'UXD_SASS');
+  assert.equal(calls, 1, 'one Dart Sass compile');
 });
 
 // A token call inside a pseudo-class or pseudo-element argument that Sass keeps as raw text

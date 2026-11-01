@@ -7,7 +7,7 @@ import type * as Sass from 'sass';
 import type { RawSourceMap } from 'source-map-js';
 import type { CompileWarning } from '../compile';
 import { diagnostic } from '../diagnostics';
-import { findShadowingFunctions, protect } from './protect';
+import { findShadowingFunctions, protect, TOKEN_FUNCTION_NAMES } from './protect';
 import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 
 // The Sass stage: one synchronous function that compiles an entry with Dart
@@ -62,7 +62,11 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   name twice), so the warning goes to the definition the call reached. Two
 //   definitions of one name in indented `.sass` files or in files Sass loads
 //   itself (`pkg:`), which the probe does not capture, both warn when either is
-//   reached. A build with no such definition runs Dart Sass once.
+//   reached. Dart Sass's own files are known only from a compile that
+//   succeeds, so when the first compile fails and a file names a `pkg:` URL,
+//   every token call is probed until a probe compiles: a `pkg:` package's
+//   function wins where Sass calls it even when UXDSL's token in its place
+//   would not compile. A build with no such definition runs Dart Sass once.
 // - Nothing is shared between calls: every cache lives in one call's state,
 //   and every position is translated with the pass that produced it. Every
 //   pass sees the text first read for each file the importer serves; a file
@@ -711,7 +715,14 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   };
 
   scanPass(first);
-  let names = new Set(definitions.map((definition) => definition.name));
+  const definedNames = (): Set<string> => new Set(definitions.map((definition) => definition.name));
+  // Dart Sass loads a pkg: file itself, so the definitions in it are known only from a compile that
+  // succeeds. When the first pass failed and a file it served names a pkg: URL, every token function
+  // is a candidate until a probe compiles: Sass decides at each call whether the bare name means a
+  // function there, and the files a compiling probe loaded are scanned like the others.
+  let discovering = first.failed && [...first.served.values()].some((served) => served.original.includes('pkg:'));
+  const candidateNames = (): Set<string> => (discovering ? new Set([...TOKEN_FUNCTION_NAMES, ...definedNames()]) : definedNames());
+  let names = candidateNames();
   if (names.size === 0) return { report: first, shadowing: [] };
   const callsAName = (pass: Pass): boolean => [...pass.sites.values(), ...pass.plainCalls].some((site) => names.has(site.call.name));
   if (!first.failed && !callsAName(first)) return { report: first, shadowing: [] };
@@ -867,7 +878,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
       },
     });
     scanPass(probe);
-    names = new Set(definitions.map((definition) => definition.name));
+    if (!probe.failed) discovering = false;
+    names = candidateNames();
     checkParses(candidateRaws(probe));
     captureBuiltins();
     const grew = [...names].some((name) => !namesBefore.has(name));
