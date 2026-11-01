@@ -1364,9 +1364,10 @@ first and third stages exist
 `restoreDirectiveSpacing`, which removes the space Sass writes in
 `@ds-surface (contained)`), and the 63 protect/restore cases run end to end
 through the `sass` package in `test/core/protect.test.js`; a project
-`@function` named like a UXDSL function (`space`, `md`) wins where Sass calls
-it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration (FEAT-010,
-DEC-17). The second stage exists too (`src/sass/compile-sass.ts`,
+`@function` named like a UXDSL function (`space`, `tone`, or a breakpoint of
+the effective theme such as `md`, a project's own breakpoints included) wins
+where Sass calls it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration
+(FEAT-010, DEC-17). The second stage exists too (`src/sass/compile-sass.ts`,
 `compileSassStage`): Dart Sass with an importer that resolves `.uxdsl` files
 next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
 `node_modules` load paths and the directories of `SASS_PATH`, each searched as

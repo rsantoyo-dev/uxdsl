@@ -733,6 +733,25 @@ test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare 
   assert.equal(calls, 1, 'one Dart Sass compile');
 });
 
+// options.reserved is the set of breakpoint names a project @function is checked against besides
+// the token functions and tone(): a project theme's own breakpoint is checked, and a name the list
+// leaves out is not.
+test('MIG-B9-12: options.reserved names the breakpoints checked: a project @function named like a custom breakpoint gives Sass\'s output and one UXD_FUNCTION_SHADOWED', () => {
+  const run = twin({ 'entry.uxdsl': '@import "bp";\n.a { padding: xxl(2px); }\n', '_bp.scss': '@function xxl($v) { @return $v * 2; }\n' }, { stageOptions: { reserved: [...RESERVED, 'xxl'] } });
+  assertSameAsTwin(run, 'a custom breakpoint');
+  assert.equal(flat(run.actual.css), '.a { padding: 4px; }');
+  assert.deepEqual(shadowOf(run.ux, run.actual), ['_bp.scss:1:11']);
+});
+
+test('MIG-B9-12: options.reserved names the breakpoints checked (negative control: a name it leaves out, a default breakpoint included, is not checked)', () => {
+  const left = twin({ 'entry.uxdsl': '@import "bp";\n.a { padding: md(2px); }\n', '_bp.scss': '@function md($v) { @return $v * 2; }\n' }, { stageOptions: { reserved: RESERVED.filter((name) => name !== 'md') } });
+  assertSameAsTwin(left, 'md left out');
+  assert.deepEqual(shadowOf(left.ux, left.actual), []);
+  assert.deepEqual(shadowOf(left.ux, stageIn(left.ux, 'entry.uxdsl')), ['_bp.scss:1:11'], 'the same files with the default names');
+  const custom = project({ 'entry.uxdsl': '@import "bp";\n.a { padding: xxl(2px); }\n', '_bp.scss': '@function xxl($v) { @return $v * 2; }\n' });
+  assert.deepEqual(shadowOf(custom, stage({ entry: path.join(custom, 'entry.uxdsl') })), [], 'xxl is not a default breakpoint');
+});
+
 // A token call inside a pseudo-class or pseudo-element argument that Sass keeps as raw text
 // (::part(), :lang(), :state(), an unknown :foo()) is never evaluated: Dart Sass leaves it as
 // written, whatever function of that name is loaded. Each case: the files, the expected CSS
