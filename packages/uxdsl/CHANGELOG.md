@@ -65,7 +65,9 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   `UXD_SASS_WARNING: [<deprecation id>] …` or `UXD_SASS_WARNING: …` for an
   `@warn` (located by its stack frame), under Sass's own cap of five per
   deprecation type plus a summary; `sass.silenceDeprecations` and
-  `sass.quietDeps` are passed through, `@debug` output is dropped.
+  `sass.quietDeps` are passed through (Sass's notice about an unknown, obsolete
+  or user-authored id there is a `UXD_SASS_WARNING` too, with no location, like
+  the summary), `@debug` output is dropped.
 - **The source map** (with `sourceMap: true`) has the author's columns,
   absolute paths as sources and the original text as `sourcesContent`; the CSS
   never carries a `sourceMappingURL` comment.
