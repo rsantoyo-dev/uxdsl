@@ -540,6 +540,10 @@ const ERRORS = [
   ['overlapping multi-line spans, a token on the invocation\'s last line', { 'entry.uxdsl': '@mixin m(\n  $a\n) { x: $a; } .a { @include m(1,\n  radius(pill)); }\n' }],
   ['overlapping multi-line spans of a function, after a tab', { 'entry.uxdsl': '@function f(\n\t$a\n) { @return $a; } .a {\tp: space(2); w: f(1,\n  2); }\n' }],
   ['overlapping multi-line spans, the invocation ending its line after a token', { 'entry.uxdsl': '@mixin m(\n  $a\n) { x: $a; } .a { @include m(\n    1,\n    space(2))\n}\n' }],
+  // A CRLF file: Sass shows each line a multi-line span covers without the carriage return that ends it.
+  ['a CRLF file, a multi-line span starting after a token on its first line', { 'entry.uxdsl': '@mixin m($a) { x: $a; }\r\n.a { p: space(2); @include m(\r\n    1,\r\n    2); }\r\n' }],
+  ['a CRLF file, a multi-line span ending on a line with a token', { 'entry.uxdsl': '@mixin m($a) { x: $a; }\r\n.a { @include m(\r\n    1,\r\n    border(1) space(2)); }\r\n' }],
+  ['a CRLF file, overlapping multi-line spans, tokens on the shared line', { 'entry.uxdsl': '@mixin m(\r\n  $a\r\n) { x: space(2) $a; } .a { p: border(1); @include m(1,\r\n  2); }\r\n' }],
   ['an @import loop with tokens (two regions)', { 'entry.uxdsl': '.z { p: space(2); } @import "a";\n', '_a.uxdsl': '.y { p: space(1); } @import "a";\n' }],
   ['a @use loop', { 'entry.uxdsl': '@use "a";\n', '_a.uxdsl': '@use "b";\n.a { p: space(1); }\n', '_b.uxdsl': '@use "a";\n' }],
   ['a missing @use after a token', { 'entry.uxdsl': '@use "sass:math";\n.a { p: space(2); }\n@import "nope";\n' }],

@@ -1207,19 +1207,32 @@ function renderFrame(pass: Pass, exception: Sass.Exception): string {
   return restack(pass, out).join('\n');
 }
 
-/** The served line Sass showed (after the frame's multi-line connector column, when it has one), or null when the shown text is not that line. */
+/**
+ * The served line Sass showed (after the frame's multi-line connector column, when it has one), or
+ * null when the shown text is not that line. Sass shows a line that a multi-line span covers without
+ * the carriage return that ends it in a CRLF file; the author's line is then taken without its own.
+ */
 function codeLine(pass: Pass, region: string | null, line0: number, shown: string): CodeLine | null {
   const served = region ? pass.served.get(region) : undefined;
   if (!served || !served.protected || !region) return null;
   const servedLine = served.text.split('\n')[line0];
   const originalLine = served.original.split('\n')[line0];
   if (servedLine === undefined || originalLine === undefined) return null;
-  const expanded = expandTabs(servedLine);
+  const connector = connectorBefore(shown, servedLine);
+  if (connector !== null) return { file: region, line0, connector, served: servedLine, original: originalLine };
+  if (!servedLine.endsWith('\r')) return null;
+  const normalized = connectorBefore(shown, servedLine.slice(0, -1));
+  if (normalized === null) return null;
+  return { file: region, line0, connector: normalized, served: servedLine.slice(0, -1), original: originalLine.replace(/\r$/, '') };
+}
+
+/** What `shown` holds before `line` (tabs shown as four spaces): nothing or a multi-line connector column; null when `shown` does not end with that line. */
+function connectorBefore(shown: string, line: string): string | null {
+  const expanded = expandTabs(line);
   const width = shown.length - expanded.length;
   if (width < 0 || shown.slice(width) !== expanded) return null;
   const connector = shown.slice(0, width);
-  if (connector !== '' && !CONNECTOR.test(connector)) return null;
-  return { file: region, line0, connector, served: servedLine, original: originalLine };
+  return connector === '' || CONNECTOR.test(connector) ? connector : null;
 }
 
 /** The author's character index for a display column of the served line. */

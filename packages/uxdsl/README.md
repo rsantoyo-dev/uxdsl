@@ -1380,7 +1380,7 @@ URL before a `.uxdsl` partial does) and serves a `.css` file as the plain CSS
 it is (a `$variable` or `palette(primary.main)` in one is Sass's error, so
 UXDSL syntax goes in a `.uxdsl` partial), Sass's
 errors as `UXD_SASS` (Sass's code frame redrawn with the author's text and
-columns) and its warnings as `UXD_SASS_WARNING` at the author's
+columns, a CRLF file's included) and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column where Sass gives a location, a source map whose
 positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its
