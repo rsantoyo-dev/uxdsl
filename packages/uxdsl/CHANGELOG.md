@@ -78,14 +78,24 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   `.uxdsl` file, whether Dart Sass resolves the bare name to the project
   function there: such a call is left to Sass, any other keeps UXDSL's token
   (`space(10-2)`, `palette(primary.main)`), and one seen both ways is written as
-  a choice Sass makes at each evaluation. A call Sass never evaluates keeps the
-  token, the text Sass leaves there (`.a::part(space(2))`: Sass keeps that
-  pseudo-element argument as raw text), and the probe asks `sass:meta` what a
-  name means, so a project function named `function-exists` or `get-function`
-  changes no decision; a call whose bare name two modules used with `as *`
-  both define is Dart Sass's error at the call (`This function is available
-  from multiple global modules.`), and compiles where Sass keeps it as raw
-  text, as in Dart Sass. A `pkg:` file is known only from a compile that
+  a choice that replays, at each evaluation, what the probe recorded there. A
+  call Sass never evaluates keeps the token, the text Sass leaves there
+  (`.a::part(space(2))`: Sass keeps that pseudo-element argument as raw text).
+  The probe gives no file a `@use`: Sass evaluates a file it `@import`s in the
+  importing file's scope, with the modules that file used (`as *` included),
+  only while the imported file has no `@use` of its own, so a call in an
+  `@import`ed partial reaches a helper the entry used with `as *`, as in Dart
+  Sass. It reads what a name means with Sass's `function-exists` and
+  `get-function`; where a loaded file defines a function of one of those names,
+  it reads them through `sass:meta` under a reserved namespace that the files
+  Sass never `@import`s bring in, and only an `@import`ed file that Sass
+  evaluates without it (one with a `@use` of its own, one also loaded with
+  `@use`, or one an indented `.sass` module or a `pkg:` file imports) asks the
+  project's function, where that is visible there (recorded, not corrected). A
+  call whose bare name two modules used with
+  `as *` both define is Dart Sass's error at the call (`This function is
+  available from multiple global modules.`), and compiles where Sass keeps it
+  as raw text, as in Dart Sass. A `pkg:` file is known only from a compile that
   succeeds, so when the first compile fails and a file names a `pkg:` URL,
   every token call is probed until a probe compiles: a package's function used
   with `@use "pkg:…" as *` wins where Sass calls it even when UXDSL's token in

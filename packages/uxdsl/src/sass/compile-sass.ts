@@ -51,14 +51,25 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   call written in a `.uxdsl` file, whether the bare name means a project
 //   function there; a call Sass resolves to the project function is left as
 //   written, any other keeps UXDSL's token, and a call seen both ways is
-//   written as a choice Sass makes at each evaluation. A call Sass never
-//   evaluates (a pseudo-class argument it keeps as raw text) keeps the token,
-//   the text Sass leaves there. The probe reads visibility through
-//   `sass:meta`, so a project function named `function-exists` or
-//   `get-function` does not answer for it. Where two modules used `as *`
-//   define a name, that lookup fails as a bare call does, so such a call is
-//   left as written and the error is Sass's. Each definition some bare call
-//   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition: the
+//   written as a choice that replays, at each evaluation, what the probe
+//   recorded at that evaluation. A call Sass never evaluates (a pseudo-class
+//   argument it keeps as raw text) keeps the token, the text Sass leaves
+//   there. The probe reads visibility with Sass's global meta functions
+//   (`function-exists`, `get-function`) and gives no file a `@use`, since Sass
+//   evaluates a file it `@import`s apart from the importing file's modules
+//   once that file has one. Where a loaded file defines a function named
+//   `function-exists` or `get-function`, which would answer those, the probe
+//   reads them through `sass:meta` under a reserved namespace instead: a file
+//   Sass never `@import`s gets the `@use` that brings it in, and a file it
+//   `@import`s reaches the namespace of the file importing it. Where Sass
+//   evaluates such a file without one (the file has a `@use` of its own or is
+//   also loaded as a module, or a module in the indented syntax or one Dart
+//   Sass loads itself imports it), its lookups go back to the global
+//   functions, which the project's function then answers where it is visible
+//   there. Where two modules used `as *` define a name, the lookup fails as a
+//   bare call does, so such a call is left as written and the error is
+//   Sass's. Each definition some bare call resolves to is one
+//   `UXD_FUNCTION_SHADOWED` warning at the definition: the
 //   probe captures the function each evaluation of a definition creates (a
 //   file imported twice defines its functions twice, and a file may define a
 //   name twice), so the warning goes to the definition the call reached. Two
@@ -128,9 +139,15 @@ type Decision = 'user' | 'token' | 'mixed';
 
 const SYNTAX: Record<Role, Sass.Syntax> = { uxdsl: 'scss', scss: 'scss', sass: 'indented', css: 'css' };
 const FOLDS_CASE = process.platform === 'darwin' || process.platform === 'win32';
-/** The namespace under which the probe and the dispatch reach `sass:meta`, so a project function named `function-exists` or `get-function` never answers for it. */
+/** Sass's meta functions the probe calls to read what a bare name means; a project function of one of these names would answer a call by that name. */
+const META_FUNCTIONS = ['function-exists', 'get-function'];
+/** The namespace under which the probe reaches `sass:meta` in a build that defines a function named like one of META_FUNCTIONS. */
 const META_NAMESPACE = 'uxdsl-probe-meta';
 const META_PREFIX = `@use "sass:meta" as ${META_NAMESPACE}; `;
+/** Sass's error for a lookup through the namespace where the scope Sass evaluates holds none. */
+const MISSING_NAMESPACE = `There is no module with namespace "${META_NAMESPACE}".`;
+/** A span that is exactly one of the probe's lookups. */
+const LOOKUP_CALL = new RegExp(`^(?:${META_NAMESPACE}\\.)?(?:${META_FUNCTIONS.join('|')})\\("[^"]*"\\)$`);
 /**
  * The column Sass's code frame draws before each code line of a frame that holds
  * multi-line spans: one character (a space, │, ┌, ┬, └, ┼ or ─) for each of the
@@ -201,6 +218,8 @@ interface Pass {
   plainCalls: Site[];
   /** A read failure inside the importer, which Sass reports only as its own wrapper. */
   stash: Stash | null;
+  /** The files Sass loaded for an `@import`: it evaluates such a file in the importing file's scope, unless the file has a `@use` or `@forward` of its own. */
+  imported: Set<string>;
   warns: SassWarn[];
   result: Sass.CompileResult | null;
   failed: boolean;
@@ -213,7 +232,7 @@ interface PassHooks {
   site?: (siteId: string, file: string, call: ProtectCall) => string | null | undefined;
   /** The text Sass receives for a file, from what it would receive otherwise (protect's output for a `.uxdsl` file, the original for the others). */
   instrument?: (file: string, role: Role, text: string, served: { protected: ProtectResult | null; plainCalls: Site[] }) => string;
-  /** Whether a `.uxdsl` or `.scss` file gets the `sass:meta` prefix; asked after its calls were decided and the file instrumented. */
+  /** Whether a `.uxdsl` or `.scss` file gets the `sass:meta` prefix (a `@use`, so never for a file Sass may `@import`); asked after its calls were decided and the file instrumented. */
   prefix?: (file: string) => boolean;
   functions?: Record<string, Sass.CustomFunction<'sync'>>;
 }
@@ -493,7 +512,7 @@ const segments = (file: string): number => file.split(path.sep).filter((part, in
 // --- passes ----------------------------------------------------------------------------
 
 function newPass(): Pass {
-  return { served: new Map(), sites: new Map(), plainCalls: [], stash: null, warns: [], result: null, failed: false, error: undefined };
+  return { served: new Map(), sites: new Map(), plainCalls: [], stash: null, imported: new Set(), warns: [], result: null, failed: false, error: undefined };
 }
 
 /** The text Sass receives for `file` in this pass, read once per call and protected once per pass. */
@@ -552,7 +571,11 @@ function runPass(stage: Stage, hooks: PassHooks): Pass {
   const { sass } = stage;
   const pass = newPass();
   const importer: Sass.Importer<'sync'> = {
-    canonicalize: (url, context) => canonicalize(stage, url, context),
+    canonicalize: (url, context) => {
+      const found = canonicalize(stage, url, context);
+      if (found !== null && context.fromImport) pass.imported.add(fileURLToPath(found));
+      return found;
+    },
     load: (canonicalUrl) => {
       const served = serve(stage, pass, hooks, fileURLToPath(canonicalUrl));
       // Without sourceMapUrl, Sass names an importer's sources with data: URLs.
@@ -666,11 +689,14 @@ function blankIndentedComments(text: string): string {
   return lines.join('\n');
 }
 
-/** A call written on one line, as the probe and the dispatch write it. */
+/** A call written on one line, as the probe and the final pass write it in a choice. */
 const oneLine = (raw: string): string => raw.replace(/\r\n|\r|\n/g, ' ');
 
-/** What the bare name means where this expression is evaluated: the function, or null when no function of that name is visible. Read through `sass:meta` under the reserved namespace (the file gets the prefix). */
-const visibleFunction = (name: string): string => `if(sass(${META_NAMESPACE}.function-exists("${name}")): ${META_NAMESPACE}.get-function("${name}"); else: null)`;
+/** What the bare name means where this expression is evaluated: the function, or null when no function of that name is visible. Read with Sass's global meta functions, or through `sass:meta` under the reserved namespace when `namespaced`. */
+const visibleFunction = (name: string, namespaced: boolean): string => {
+  const via = namespaced ? `${META_NAMESPACE}.` : '';
+  return `if(sass(${via}function-exists("${name}")): ${via}get-function("${name}"); else: null)`;
+};
 
 const textOf = (value: Sass.Value): string => value.assertString().text;
 
@@ -685,9 +711,11 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   const { sass } = stage;
   const definitions: Definition[] = [];
   const scanned = new Set<string>();
+  const scannedTexts: Array<{ file: string; role: Role; text: string }> = [];
   const scanText = (file: string, role: Role, text: string, protectedResult: ProtectResult | null): void => {
     if (scanned.has(file)) return;
     scanned.add(file);
+    scannedTexts.push({ file, role, text });
     let problems: ProtectProblem[] = [];
     if (role === 'uxdsl') problems = protectedResult ? protectedResult.problems : protect(text, { reserved: stage.reserved, file }).problems;
     else if (role === 'scss') problems = findShadowingFunctions(text, { reserved: stage.reserved, file });
@@ -791,7 +819,16 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // so the probe evaluates exactly what the build will. Lines appended at the end of `.uxdsl` files
   // record a name's meaning where protect never rewrites its calls, and a statement after the body of
   // each definition in a `.uxdsl` or `.scss` file captures the function that evaluation of it
-  // created, for attribution. A file that holds any of them gets the `sass:meta` prefix its lookups use.
+  // created, for attribution.
+  //
+  // What a name means is read with Sass's global meta functions, function-exists and get-function,
+  // so no file changes how Sass evaluates it. Where a loaded file defines a function of one of those
+  // names, which would answer them, the lookups go through `sass:meta` under the reserved namespace
+  // instead: a file Sass never `@import`s gets the `@use` that brings it in; a file it `@import`s
+  // never does, since Sass evaluates an imported file that has a `@use` apart from the importing
+  // file's modules, and reaches the importing file's namespace. A file Sass evaluates somewhere
+  // without one (that lookup fails) goes back to the global functions. A round in which Sass
+  // `@import`ed a file that had the `@use` is not the build's and runs again without it.
   let records = new Map<string, Array<{ fn: Sass.SassFunction | null }>>();
   let atEnd: Array<{ fileId: string; name: string; fn: Sass.SassFunction | null }> = [];
   /** The function each evaluation of a definition created, by definition (`<file id>:<line>:<column>`). */
@@ -806,31 +843,55 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // that file can compile, so none is attributed.
   const ambiguous = new Set<string>();
   const noEndLookup = new Set<string>();
-  /** Where the failed probe stopped, when that is inside a text it wrote: a call's choice not yet recorded, or a line at the end of a file. `lookup` when what failed is Sass's lookup of the bare name; otherwise Sass could not parse the choice there. */
-  const failedAt = (pass: Pass, written: Map<string, string>, endLines: Map<string, string>): { siteId?: string; endKey?: string; lookup: boolean } | null => {
+  const imported = new Set<string>(first.imported);
+  /** Files whose lookups go through the global meta functions in a build that defines one of their names: Sass found no namespace in the scope it evaluated them in. */
+  const globalLookups = new Set<string>();
+  let metaScanned = 0;
+  let metaDefined = false;
+  /** Whether a file scanned so far defines a function named like one of the meta functions the probe calls. */
+  const metaShadowed = (): boolean => {
+    for (; metaScanned < scannedTexts.length && !metaDefined; metaScanned++) {
+      const { file, role, text } = scannedTexts[metaScanned];
+      if (role === 'css') continue;
+      const problems = findShadowingFunctions(role === 'sass' ? blankIndentedComments(text) : text, { reserved: META_FUNCTIONS, file });
+      metaDefined = problems.some((problem) => META_FUNCTIONS.includes(problem.name));
+    }
+    return metaDefined;
+  };
+  /**
+   * Where the failed probe stopped, when that is inside a text it wrote: a call's choice not yet
+   * recorded, or a line at the end of a file. `lookup` when what failed is one of the probe's lookups
+   * of the bare name; otherwise Sass could not parse the choice there. `namespace` when a lookup
+   * through the reserved namespace failed in `file` because the scope Sass evaluated holds none.
+   */
+  const failedAt = (pass: Pass, written: Map<string, string>, endLines: Map<string, string>): { file: string; siteId?: string; endKey?: string; lookup: boolean; namespace: boolean } | null => {
     const error = pass.error;
     if (!(error instanceof sass.Exception) || !error.span || !error.span.url || error.span.url.protocol !== 'file:') return null;
-    const served = pass.served.get(fileURLToPath(error.span.url));
+    const file = fileURLToPath(error.span.url);
+    const served = pass.served.get(file);
     if (!served) return null;
+    if (error.sassMessage === MISSING_NAMESPACE) return globalLookups.has(file) ? null : { file, lookup: true, namespace: true };
     const offset = error.span.start.offset;
-    const lookup = error.span.text.startsWith(`${META_NAMESPACE}.`);
+    const lookup = LOOKUP_CALL.test(error.span.text);
     const inside = (text: string): boolean => {
       const at = served.text.indexOf(text);
       return at !== -1 && offset >= at && offset < at + text.length;
     };
-    for (const [siteId, text] of written) if (!records.has(siteId) && inside(text)) return { siteId, lookup };
-    for (const [endKey, text] of endLines) if (lookup && inside(text)) return { endKey, lookup };
+    for (const [siteId, text] of written) if (!records.has(siteId) && inside(text)) return { file, siteId, lookup, namespace: false };
+    for (const [endKey, text] of endLines) if (lookup && inside(text)) return { file, endKey, lookup, namespace: false };
     return null;
   };
   let probe = first;
   for (let round = 1; ; round++) {
-    if (round > parses.size + scanned.size + unevaluated.size + noEndLookup.size + 2) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
+    if (round > parses.size + scanned.size + unevaluated.size + noEndLookup.size + imported.size + globalLookups.size + 3) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
     records = new Map();
     atEnd = [];
     captures = [];
     const written = new Map<string, string>();
     const endLines = new Map<string, string>();
-    const withLookups = new Set<string>();
+    const meta = metaShadowed();
+    const namespaced = (file: string): boolean => meta && !globalLookups.has(file);
+    const prefixed = new Set<string>();
     const namesBefore = new Set(names);
     probe = runPass(stage, {
       report: false,
@@ -838,9 +899,8 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         if (call.kind !== 'token' || !names.has(call.name)) return undefined;
         if (ambiguous.has(siteId)) return null;
         if (unevaluated.has(siteId) || !parseable(call)) return call.protectedText;
-        const text = `uxdsl-probe-pick(if(sass(uxdsl-probe-site("${siteId}", "${call.name}", ${visibleFunction(call.name)})): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
+        const text = `uxdsl-probe-pick(if(sass(uxdsl-probe-site("${siteId}", "${call.name}", ${visibleFunction(call.name, namespaced(file))})): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
         written.set(siteId, text);
-        withLookups.add(file);
         return text;
       },
       instrument: (file, role, text, served) => {
@@ -854,8 +914,7 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
           for (const definition of defined.reverse()) {
             if (definition.end === undefined) continue;
             const column = served.protected ? served.protected.toOriginalColumn(definition.line - 1, definition.column - 1) + 1 : definition.column;
-            out = `${out.slice(0, definition.end)}@if true { @debug uxdsl-probe-cap("${fileId}:${definition.line}:${column}", ${visibleFunction(definition.name)}); }${out.slice(definition.end)}`;
-            withLookups.add(file);
+            out = `${out.slice(0, definition.end)}@if true { @debug uxdsl-probe-cap("${fileId}:${definition.line}:${column}", ${visibleFunction(definition.name, namespaced(file))}); }${out.slice(definition.end)}`;
           }
         }
         const lines: string[] = [];
@@ -863,16 +922,18 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
           for (const name of new Set(served.plainCalls.map((site) => site.call.name))) {
             const endKey = `${fileId}:${name}`;
             if (!names.has(name) || noEndLookup.has(endKey)) continue;
-            const line = `@debug uxdsl-probe-eof("${fileId}", "${name}", ${visibleFunction(name)});`;
+            const line = `@debug uxdsl-probe-eof("${fileId}", "${name}", ${visibleFunction(name, namespaced(file))});`;
             endLines.set(endKey, line);
             lines.push(line);
           }
         }
-        if (lines.length === 0) return out;
-        withLookups.add(file);
-        return `${out}\n${lines.join('\n')}\n`;
+        return lines.length === 0 ? out : `${out}\n${lines.join('\n')}\n`;
       },
-      prefix: (file) => withLookups.has(file),
+      prefix: (file) => {
+        if (!meta || imported.has(file)) return false;
+        prefixed.add(file);
+        return true;
+      },
       functions: {
         'uxdsl-probe-site($id, $name, $f)': (args) => {
           const fn = userFunction(textOf(args[1]), args[2]);
@@ -894,13 +955,22 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
       },
     });
     scanPass(probe);
-    if (!probe.failed) discovering = false;
+    for (const file of probe.imported) imported.add(file);
+    // A file that had the `@use` and that Sass `@import`ed was evaluated apart from the importing
+    // file's modules, which the build does not do.
+    const valid = ![...prefixed].some((file) => probe.imported.has(file));
+    if (valid && !probe.failed) discovering = false;
     names = candidateNames();
     checkParses(candidateRaws(probe));
     captureBuiltins();
+    if (!valid || metaShadowed() !== meta) continue;
     const grew = [...names].some((name) => !namesBefore.has(name));
     const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !unevaluated.has(siteId) && !ambiguous.has(siteId) && !written.has(siteId));
     const failed = probe.failed ? failedAt(probe, written, endLines) : null;
+    if (failed !== null && failed.namespace) {
+      globalLookups.add(failed.file);
+      continue;
+    }
     if (failed !== null && failed.siteId !== undefined) (failed.lookup ? ambiguous : unevaluated).add(failed.siteId);
     if (failed !== null && failed.endKey !== undefined) noEndLookup.add(failed.endKey);
     // The build fails where a call's lookup fails, so no later probe can change a decision.
@@ -929,32 +999,39 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     if (decision === 'mixed' || !earlier || (decision === 'user') !== (earlier.call.defaultProtected === false)) reuse = false;
   }
   let report = first;
+  // A call seen both ways is written as a choice that replays, at each evaluation, what the probe
+  // recorded at the same evaluation: the build evaluates the same calls in the same order, since the
+  // values it writes are those the probe produced. It looks nothing up and adds no `@use`.
+  const replayed = new Map<string, number>();
+  let diverged = false;
   if (!reuse) {
-    const mixedFiles = new Set<string>();
-    for (const [siteId, decision] of decisions) if (decision === 'mixed') mixedFiles.add((probe.sites.get(siteId) as Site).file);
-    const dispatch = (call: ProtectCall): string => {
-      const name = call.name;
-      const visible = builtins.has(name) ? `uxdsl-probe-user("${name}", ${visibleFunction(name)})` : `${META_NAMESPACE}.function-exists("${name}")`;
-      return `uxdsl-probe-pick(if(sass(${visible}): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
-    };
     report = runPass(stage, {
       report: true,
-      prefix: (file) => mixedFiles.has(file),
       site: (siteId, _file, call) => {
         const decision = call.kind === 'token' ? decisions.get(siteId) : undefined;
         if (decision === undefined) return undefined;
         if (decision === 'user') return null;
         if (decision === 'token') return call.protectedText;
-        return dispatch(call);
+        return `uxdsl-probe-pick(if(sass(uxdsl-probe-replay("${siteId}")): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
       },
       functions: {
         'uxdsl-probe-pick($value)': (args) => args[0],
-        'uxdsl-probe-user($name, $f)': (args) => (userFunction(textOf(args[0]), args[1]) ? sass.sassTrue : sass.sassFalse),
+        'uxdsl-probe-replay($id)': (args) => {
+          const id = textOf(args[0]);
+          const index = replayed.get(id) || 0;
+          replayed.set(id, index + 1);
+          const record = (records.get(id) || [])[index];
+          if (record === undefined) diverged = true;
+          return record !== undefined && record.fn !== null ? sass.sassTrue : sass.sassFalse;
+        },
       },
     });
   }
-  // The probe evaluates what the build emits: a probe that fails where the build does not is a bug here.
+  // The probe evaluates what the build emits: a probe that fails where the build does not, or a
+  // build whose evaluations of a call differ from the probe's, is a bug here.
   if (probe.failed && !report.failed) throw new Error(`uxdsl: the Sass stage's probe failed where the build did not (an internal error): ${messageOf(probe.error)}`);
+  const unreplayed = !probe.failed && !report.failed && [...decisions].some(([siteId, decision]) => decision === 'mixed' && replayed.get(siteId) !== (records.get(siteId) || []).length);
+  if (diverged || unreplayed) throw new Error('uxdsl: the Sass stage\'s build evaluated a call other than its probe did (an internal error)');
 
   // One warning per definition that some evaluated bare call written in a .uxdsl file resolves to:
   // the definition one of whose evaluations created the function the call reached.

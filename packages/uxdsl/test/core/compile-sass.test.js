@@ -686,6 +686,20 @@ const DEC17 = [
   ['LP a load-path .uxdsl helper used only through a namespace', { 'entry.uxdsl': '@use "kit/helpers";\n.a { v: space(2); w: helpers.space(1); }\n', 'node_modules/kit/_helpers.uxdsl': H }, '.a { v: space(2); w: 3px; }', []],
   ['SASS an indented .sass helper', { 'entry.uxdsl': '@import "helpers";\n.a { v: space(2); }\n', '_helpers.sass': '@function space($k)\n  @return $k * 3px\n' }, null, ['_helpers.sass:1:11']],
   ['GRAY color(gray.300) with a visible project color()', { 'entry.uxdsl': '@import "helpers";\n.a { c: color(gray.300); d: color(brand); }\n', '_helpers.scss': '@function color($n) { @return red; }\n' }, '.a { c: red; d: red; }', ['_helpers.scss:1:11']],
+  // Sass evaluates a file it @imports in the importing file's scope, with the modules that file
+  // used (as * included), unless the imported file has a @use or @forward of its own: then the
+  // importer's functions and variables are visible there, and its modules are not.
+  ['IMP-A a call in an @imported partial, the helper used as * by the entry', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n', '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); w: border(1); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-B a breakpoint call in an @imported partial, the helper used as * by the entry', { 'entry.uxdsl': '@use "bp" as *;\n@import "p";\n', '_bp.scss': '@function md($v) { @return $v * 2; }\n', '_p.uxdsl': '.p { v: md(2px); }\n' }, null, ['_bp.scss:1:11']],
+  ['IMP-C the same partial, and a call in the entry', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n.e { w: space(1); }\n', '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-D a mixin of an @imported partial, included by the entry', { 'entry.uxdsl': '@use "helpers" as *;\n@import "m";\n.a { @include m; }\n', '_helpers.scss': H, '_m.uxdsl': '@mixin m { v: space(2); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-E a partial two @imports deep', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n', '_helpers.scss': H, '_p.uxdsl': '@import "q";\n', '_q.uxdsl': '.q { v: space(2); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-H1 an @imported helper whose body calls a function of a module the entry used as *', { 'entry.uxdsl': '@use "lib" as *;\n@import "helpers";\n.a { p: space(2); }\n', '_lib.scss': '@function base($k) { @return $k * 1px; }\n', '_helpers.scss': '@function space($k) { @return base($k) * 3; }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-H2 the same helper in an @imported .uxdsl partial', { 'entry.uxdsl': '@use "lib" as *;\n@import "helpers";\n.a { p: space(2); }\n', '_lib.scss': '@function base($k) { @return $k * 1px; }\n', '_helpers.uxdsl': '@function space($k) { @return base($k) * 3; }\n' }, null, ['_helpers.uxdsl:1:11']],
+  ['IMP-H3 an @imported helper reading a variable of a module the entry used as *', { 'entry.uxdsl': '@use "lib" as *;\n@import "helpers";\n.a { p: space(2); }\n', '_lib.scss': '$unit: 4px;\n', '_helpers.scss': '@function space($k) { @return $k * $unit; }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-N1 an @imported partial using the entry\'s sass:math namespace', { 'entry.uxdsl': '@use "sass:math";\n@import "helpers";\n@import "p";\n', '_helpers.scss': H, '_p.uxdsl': '.p { w: math.div(10px, 2); v: space(2); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-M a partial @imported by the entry, where the helper is visible, and by a module, where it is not', { 'entry.uxdsl': '@use "helpers" as *;\n@use "other";\n@import "p";\n', '_other.uxdsl': '@import "p";\n', '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' }, null, ['_helpers.scss:1:11']],
+  ['IMP-U an @imported partial with a @use of its own, where the entry\'s as * module is not visible', { 'entry.uxdsl': '@use "helpers" as *;\n@import "p";\n.e { w: space(1); }\n', '_helpers.scss': H, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, null, ['_helpers.scss:1:11']],
 ];
 
 test('MIG-B9-12: a project function wins exactly where Dart Sass calls its bare name, decided per call site', () => {
@@ -870,6 +884,11 @@ const META_NAMES = [
   ['function-exists with two required arguments', { 'entry.uxdsl': '@import "h";\n@function function-exists($a, $b) { @return false; }\n.a { p: space(2); }\n', '_h.scss': H }, ['_h.scss:1:11']],
   ['get-function defined beside the helper', { 'entry.uxdsl': '@import "h";\n.a { p: space(2); }\n', '_h.scss': `@function get-function($n) { @return 1; }\n${H}` }, ['_h.scss:2:11']],
   ['get-function and a call seen both ways', { 'entry.uxdsl': '@import "p";\n@function space($k) { @return $k * 3px; }\n@function get-function($n) { @return 1; }\n@import "p";\n', '_p.uxdsl': '.p { v: space(2); }\n' }, ['entry.uxdsl:2:11']],
+  // With @import, as * modules and a project get-function together.
+  ['get-function in the entry, a call in an @imported partial, the helper used as * by the entry', { 'entry.uxdsl': '@use "h" as *;\n@function get-function($n) { @return 1; }\n@import "p";\n', '_h.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' }, ['_h.scss:1:11']],
+  ['get-function in the entry, a mixin of an @imported partial', { 'entry.uxdsl': '@use "h" as *;\n@import "m";\n@function get-function($n) { @return 1; }\n.a { @include m; }\n', '_h.scss': H, '_m.uxdsl': '@mixin m { v: space(2); }\n' }, ['_h.scss:1:11']],
+  ['get-function in the entry, an @imported partial with a @use of its own', { 'entry.uxdsl': '@use "h" as *;\n@import "p";\n@function get-function($n) { @return 1; }\n.e { w: space(1); }\n', '_h.scss': H, '_p.uxdsl': '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n' }, ['_h.scss:1:11']],
+  ['get-function in the entry, a partial @imported only once the build gets past a call the first compile cannot compile', { 'entry.uxdsl': '@use "h" as *;\n@function get-function($n) { @return 1; }\n.a { m: space(2) * 2; }\n@import "p";\n', '_h.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' }, ['_h.scss:1:11']],
 ];
 
 test('MIG-B9-12: a project function named function-exists or get-function does not change which calls reach the author\'s function', () => {
@@ -889,6 +908,39 @@ test('MIG-B9-12: a project function named function-exists or get-function does n
   const run = twin({ 'entry.uxdsl': '@use "sass:meta";\n@import "h";\n.a { p: space(2); m: meta.function-exists("space"); n: meta.inspect(meta.get-function("space")); }\n', '_h.scss': H });
   assertSameAsTwin(run, 'the author\'s own sass:meta');
   assert.deepEqual(shadowOf(run.ux, run.actual), ['_h.scss:1:11']);
+});
+
+// In such a build, a file Sass @imports never gets a @use (Sass would then evaluate it apart from
+// the importing file's modules) and reaches the namespace of the file importing it. Where one of
+// its evaluations sees none (it has a @use of its own, or it is also loaded as a module), its
+// lookups go through the global functions, which the project's function answers where it is
+// visible there. This differs from the .scss twin and is recorded, not corrected.
+const OWN_USE = '@use "sass:math";\n.p { v: space(2); w: math.div(4px, 2); }\n';
+
+test('MIG-B9-12: where a project get-function is visible in an @imported file that does not see the stage\'s namespace, it answers what a name means there (a recorded difference from the .scss twin)', () => {
+  const own = twin({ 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "p";\n`, '_p.uxdsl': OWN_USE });
+  assert.equal(flat(own.expected.css), '.p { v: 6px; w: 2px; }');
+  assert.equal(flat(own.actual.css), '.p { v: space(2); w: 2px; }', 'a @use of its own');
+  assert.deepEqual(shadowOf(own.ux, own.actual), []);
+  const both = twin({ 'entry.uxdsl': `@use "helpers" as *;\n@use "p";\n@function get-function($n) { @return 1; }\n@import "p";\n`, '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' });
+  assert.equal(flat(both.expected.css), '.p { v: space(2); } .p { v: 6px; }');
+  assert.equal(flat(both.actual.css), '.p { v: space(2); } .p { v: space(2); }', 'also loaded with @use');
+  assert.deepEqual(shadowOf(both.ux, both.actual), []);
+});
+
+test('MIG-B9-12: where a project get-function is visible in an @imported file that does not see the stage\'s namespace, it answers what a name means there (negative control: defined after the import, or in a file that sees the namespace, it answers nothing)', () => {
+  const later = twin({ 'entry.uxdsl': `${H}@import "p";\n@function get-function($n) { @return 1; }\n`, '_p.uxdsl': OWN_USE });
+  assertSameAsTwin(later, 'get-function defined after the import');
+  assert.equal(flat(later.actual.css), '.p { v: 6px; w: 2px; }');
+  assert.deepEqual(shadowOf(later.ux, later.actual), ['entry.uxdsl:1:11']);
+  const inherited = twin({ 'entry.uxdsl': `@function get-function($n) { @return 1; }\n${H}@import "p";\n`, '_p.uxdsl': '.p { v: space(2); }\n' });
+  assertSameAsTwin(inherited, 'an @imported file with no @use of its own');
+  assert.equal(flat(inherited.actual.css), '.p { v: 6px; }');
+  assert.deepEqual(shadowOf(inherited.ux, inherited.actual), ['entry.uxdsl:2:11']);
+  const imported = twin({ 'entry.uxdsl': `@use "helpers" as *;\n@function get-function($n) { @return 1; }\n@import "p";\n@import "p";\n`, '_helpers.scss': H, '_p.uxdsl': '.p { v: space(2); }\n' });
+  assertSameAsTwin(imported, 'an @imported file loaded only with @import');
+  assert.equal(flat(imported.actual.css), '.p { v: 6px; } .p { v: 6px; }');
+  assert.deepEqual(shadowOf(imported.ux, imported.actual), ['_helpers.scss:1:11']);
 });
 
 // Two modules used with `as *` that both define a function make its bare name ambiguous: Dart Sass

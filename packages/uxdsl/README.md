@@ -1385,8 +1385,14 @@ file, line and column where Sass gives a location, a source map whose
 positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its
 bare name, the author's function runs (a `pkg:` package's too, even where
-UXDSL's token in its place would not compile), and a call Sass never evaluates
-(the raw argument of `::part(space(2))`) keeps the token; a call whose bare
+UXDSL's token in its place would not compile, and in an `@import`ed partial
+that sees a helper its importer used with `as *`: the stage gives no file a
+`@use`, which would hide those modules from it), and a call Sass never evaluates
+(the raw argument of `::part(space(2))`) keeps the token; in a build that also
+defines a function named `get-function` or `function-exists`, an `@import`ed
+file with a `@use` of its own (or one also loaded with `@use`, or imported by an
+indented `.sass` module or a `pkg:` file) lets that function answer what such a
+name means there, where it is visible; a call whose bare
 name two modules used with `as *` both define is Sass's own error there; each
 declaration a call reaches warns once, at the declaration, however many times
 its file is evaluated.
