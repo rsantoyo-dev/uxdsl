@@ -1376,7 +1376,9 @@ next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
 Sass searches a load path, so a package can ship `.uxdsl` partials and a
 `../x` that misses is never a file in another directory; in a package loaded
 through `pkg:`, Sass's own `.sass`, `.scss` and `.css` files answer a relative
-URL before a `.uxdsl` partial does), Sass's
+URL before a `.uxdsl` partial does) and serves a `.css` file as the plain CSS
+it is (a `$variable` or `palette(primary.main)` in one is Sass's error, so
+UXDSL syntax goes in a `.uxdsl` partial), Sass's
 errors as `UXD_SASS` (Sass's code frame redrawn with the author's text and
 columns) and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column, a source map whose positions point at the author's

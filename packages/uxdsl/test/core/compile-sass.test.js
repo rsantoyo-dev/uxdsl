@@ -287,6 +287,38 @@ test('MIG-B9-12: @import of a .uxdsl loads and warns UXD_SASS_WARNING [import] (
   assert.equal(quiet.css, loud.css);
 });
 
+// A .css file reached through Sass is plain CSS (IM4): served as written, with Sass's plain-CSS
+// syntax, never protected. Sass or UXDSL syntax that plain CSS rejects is therefore Sass's error at
+// the token, as Dart Sass reports it for the same file beside the .scss twin. Each case: the text
+// of plain.css, Sass's message and its location in plain.css.
+const PLAIN_CSS = [
+  ['a Sass variable', '$x: 1px;\n.p { w: $x; }\n', "Sass variables aren't allowed in plain CSS.", '1:1'],
+  ['a dotted key', '.p { c: palette(primary.main); }\n', 'expected "(".', '1:29'],
+  ['an operator in a key', '.p { w: space(10-2); }\n', "Operators aren't allowed in plain CSS.", '1:17'],
+];
+
+test('MIG-B9-12: a .css file is plain CSS, served as written: Sass or UXDSL syntax that plain CSS rejects is UXD_SASS at the token, as in Dart Sass', () => {
+  for (const [label, css, message, at] of PLAIN_CSS) {
+    const run = twin({ 'entry.uxdsl': '@use "plain";\n.a { padding: space(2); }\n', 'plain.css': css });
+    assertSameAsTwin(run, label);
+    assert.equal(run.actual.error.code, 'UXD_SASS', label);
+    assert.equal(run.actual.error.sassMessage, message, label);
+    assert.equal(stageLocation(run.ux, run.actual.error), `plain.css:${at}`, label);
+  }
+});
+
+test('MIG-B9-12: a .css file is plain CSS, served as written (negative control: simple keys and a directive pass through it as in Dart Sass, and the same text in a .uxdsl partial compiles)', () => {
+  const simple = twin({ 'entry.uxdsl': '@use "plain";\n', 'plain.css': '.p { c: color(white); b: border(1); w: xs(space(2)); }\n.q { @ds-surface(contained); }\n' });
+  assertSameAsTwin(simple, 'simple keys and a directive');
+  assert.match(simple.actual.css, /c: color\(white\);/);
+  // The error is plain CSS's: in a .uxdsl partial the same text compiles, its tokens kept.
+  const compiled = { 'a Sass variable': '.p { w: 1px; }', 'a dotted key': '.p { c: palette(primary.main); }', 'an operator in a key': '.p { w: space(10-2); }' };
+  for (const [label, css] of PLAIN_CSS) {
+    const dir = project({ 'entry.uxdsl': '@use "plain";\n', '_plain.uxdsl': css });
+    assert.equal(flat(stage({ entry: path.join(dir, 'entry.uxdsl') }).css), compiled[label], label);
+  }
+});
+
 // --- T3: pkg: and load paths (IM3, IM5) ---------------------------------------------------
 
 const PKG = {
@@ -1055,6 +1087,56 @@ test('MIG-B9-12: the map\'s original columns are translated (negative control: n
   const raw = sass.compileString(protect(fs.readFileSync(heavy, 'utf8'), { reserved: RESERVED }).code, { url: pathToFileURL(heavy), importer, sourceMap: true, logger: sass.Logger.silent });
   const position = new SourceMapConsumer(raw.sourceMap).originalPositionFor(insetPosition(raw.css));
   assert.equal(`${position.line}:${position.column}`, '18:80');
+});
+
+/** The map options of every Dart Sass compile of `fn` (the stage calls compileString on the module it shares with this test). */
+function mapOptionsOf(fn) {
+  const original = sass.compileString;
+  const seen = [];
+  sass.compileString = function recorded(text, options = {}) {
+    seen.push({ sourceMap: Boolean(options.sourceMap), sourceMapIncludeSources: Boolean(options.sourceMapIncludeSources) });
+    return original.apply(this, arguments);
+  };
+  try {
+    fn();
+  } finally {
+    sass.compileString = original;
+  }
+  return seen;
+}
+
+/** An entry that loads a package through pkg:, a file Dart Sass loads itself, so its sourcesContent can only come from Sass's own map. */
+const MAPPED = { 'entry.uxdsl': '@use "pkg:kit";\n.a { p: space(2); c: palette(primary.main); }\n', ...kitPackage('.kit { a: b; }\n') };
+
+test('MIG-B9-12: with sourceMap, Dart Sass runs with sourceMap and sourceMapIncludeSources, so a file it loads itself through pkg: keeps its own text in sourcesContent', () => {
+  const dir = project(MAPPED);
+  const entry = path.join(dir, 'entry.uxdsl');
+  let result;
+  assert.deepEqual(mapOptionsOf(() => {
+    result = stage({ entry }, { sourceMap: true });
+  }), [{ sourceMap: true, sourceMapIncludeSources: true }]);
+  const kit = path.join(dir, 'node_modules/kit/index.scss');
+  assert.deepEqual(result.map.sources.slice().sort(), [entry, kit].sort());
+  assert.equal(result.map.sourcesContent[result.map.sources.indexOf(kit)], fs.readFileSync(kit, 'utf8'));
+  assert.equal(result.map.sourcesContent[result.map.sources.indexOf(entry)], fs.readFileSync(entry, 'utf8'));
+});
+
+test('MIG-B9-12: with sourceMap, Dart Sass runs with sourceMap and sourceMapIncludeSources (negative control: without sourceMap no Dart Sass compile of the build runs with a map, a build that runs the probe included)', () => {
+  const plain = project(MAPPED);
+  let result;
+  assert.deepEqual(mapOptionsOf(() => {
+    result = stage({ entry: path.join(plain, 'entry.uxdsl') }, { sourceMap: false });
+  }), [{ sourceMap: false, sourceMapIncludeSources: false }]);
+  assert.equal(result.map, undefined);
+  // A shadowing function: every compile of the build (the first pass, the probe's two checks, the
+  // probe and the final pass) runs without a map.
+  const shadowed = project({ 'entry.uxdsl': '@import "p";\n@function space($k) { @return $k * 3px; }\n@import "p";\n', '_p.uxdsl': '.p { v: space(2); }\n' });
+  const passes = mapOptionsOf(() => {
+    result = stage({ entry: path.join(shadowed, 'entry.uxdsl') }, { sourceMap: false });
+  });
+  assert.ok(passes.length > 2, `${passes.length} compiles`);
+  assert.deepEqual(passes.filter((options) => options.sourceMap || options.sourceMapIncludeSources), []);
+  assert.equal(result.map, undefined);
 });
 
 // --- T8: loadedFiles (IM6) --------------------------------------------------------------------------

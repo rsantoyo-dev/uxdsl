@@ -50,8 +50,9 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   one beside a `.scss` of the same name is not reported as ambiguous, unlike
   the same files reached through a load path. `~pkg/…` is not resolved.
   `@use "./x"` inlines `x.css` and `@import "x.css"` stays a CSS `@import`, as
-  in Sass. An in-memory `source` compiles as if it were `entry`, which need not
-  exist.
+  in Sass; a `.css` file is plain CSS, served as written, so a `$variable` or
+  `palette(primary.main)` in it is Sass's error at the token. An in-memory
+  `source` compiles as if it were `entry`, which need not exist.
 - **Errors and warnings are located at the author's text.** A Sass failure is
   `UXD_SASS` at the author's file, line and column (`error.file`, `.line`,
   `.column`, the protected columns translated back), with Sass's message
