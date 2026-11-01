@@ -55,7 +55,9 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   evaluates (a pseudo-class argument it keeps as raw text) keeps the token,
 //   the text Sass leaves there. The probe reads visibility through
 //   `sass:meta`, so a project function named `function-exists` or
-//   `get-function` does not answer for it. Each definition some bare call
+//   `get-function` does not answer for it. Where two modules used `as *`
+//   define a name, that lookup fails as a bare call does, so such a call is
+//   left as written and the error is Sass's. Each definition some bare call
 //   resolves to is one `UXD_FUNCTION_SHADOWED` warning at the definition: the
 //   probe captures the function each evaluation of a definition creates (a
 //   file imported twice defines its functions twice, and a file may define a
@@ -798,33 +800,43 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
   // pseudo-class argument in a selector, which Sass ends at the first ";"): they keep the token,
   // which is the text Sass leaves there.
   const unevaluated = new Set<string>();
-  /** The probed call whose choice Sass could not parse: the probe failed inside its text before evaluating it. */
-  const unparsedSite = (pass: Pass, written: Map<string, string>): string | null => {
+  // Where two modules used `as *` define a name, Sass's own lookup of the bare name fails, as a bare
+  // call does. A probed call where it fails is left as written, so Sass reports its error there. A
+  // line at the end of a file where it fails is dropped: no bare call of that name Sass evaluates in
+  // that file can compile, so none is attributed.
+  const ambiguous = new Set<string>();
+  const noEndLookup = new Set<string>();
+  /** Where the failed probe stopped, when that is inside a text it wrote: a call's choice not yet recorded, or a line at the end of a file. `lookup` when what failed is Sass's lookup of the bare name; otherwise Sass could not parse the choice there. */
+  const failedAt = (pass: Pass, written: Map<string, string>, endLines: Map<string, string>): { siteId?: string; endKey?: string; lookup: boolean } | null => {
     const error = pass.error;
     if (!(error instanceof sass.Exception) || !error.span || !error.span.url || error.span.url.protocol !== 'file:') return null;
     const served = pass.served.get(fileURLToPath(error.span.url));
     if (!served) return null;
     const offset = error.span.start.offset;
-    for (const [siteId, text] of written) {
-      if (records.has(siteId)) continue;
+    const lookup = error.span.text.startsWith(`${META_NAMESPACE}.`);
+    const inside = (text: string): boolean => {
       const at = served.text.indexOf(text);
-      if (at !== -1 && offset >= at && offset < at + text.length) return siteId;
-    }
+      return at !== -1 && offset >= at && offset < at + text.length;
+    };
+    for (const [siteId, text] of written) if (!records.has(siteId) && inside(text)) return { siteId, lookup };
+    for (const [endKey, text] of endLines) if (lookup && inside(text)) return { endKey, lookup };
     return null;
   };
   let probe = first;
   for (let round = 1; ; round++) {
-    if (round > parses.size + scanned.size + unevaluated.size + 2) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
+    if (round > parses.size + scanned.size + unevaluated.size + noEndLookup.size + 2) throw new Error('uxdsl: the Sass stage\'s probe did not settle (an internal error)');
     records = new Map();
     atEnd = [];
     captures = [];
     const written = new Map<string, string>();
+    const endLines = new Map<string, string>();
     const withLookups = new Set<string>();
     const namesBefore = new Set(names);
     probe = runPass(stage, {
       report: false,
       site: (siteId, file, call) => {
         if (call.kind !== 'token' || !names.has(call.name)) return undefined;
+        if (ambiguous.has(siteId)) return null;
         if (unevaluated.has(siteId) || !parseable(call)) return call.protectedText;
         const text = `uxdsl-probe-pick(if(sass(uxdsl-probe-site("${siteId}", "${call.name}", ${visibleFunction(call.name)})): ${oneLine(call.raw)}; else: ${call.protectedText}))`;
         written.set(siteId, text);
@@ -849,7 +861,11 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
         const lines: string[] = [];
         if (role === 'uxdsl') {
           for (const name of new Set(served.plainCalls.map((site) => site.call.name))) {
-            if (names.has(name)) lines.push(`@debug uxdsl-probe-eof("${fileId}", "${name}", ${visibleFunction(name)});`);
+            const endKey = `${fileId}:${name}`;
+            if (!names.has(name) || noEndLookup.has(endKey)) continue;
+            const line = `@debug uxdsl-probe-eof("${fileId}", "${name}", ${visibleFunction(name)});`;
+            endLines.set(endKey, line);
+            lines.push(line);
           }
         }
         if (lines.length === 0) return out;
@@ -883,15 +899,22 @@ function resolveShadowing(stage: Stage, first: Pass): { report: Pass; shadowing:
     checkParses(candidateRaws(probe));
     captureBuiltins();
     const grew = [...names].some((name) => !namesBefore.has(name));
-    const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !unevaluated.has(siteId) && !written.has(siteId));
-    const unparsed = probe.failed ? unparsedSite(probe, written) : null;
-    if (unparsed !== null) unevaluated.add(unparsed);
-    if (!grew && !unprobed && unparsed === null) break;
+    const unprobed = [...probe.sites].some(([siteId, site]) => names.has(site.call.name) && parseable(site.call) && !unevaluated.has(siteId) && !ambiguous.has(siteId) && !written.has(siteId));
+    const failed = probe.failed ? failedAt(probe, written, endLines) : null;
+    if (failed !== null && failed.siteId !== undefined) (failed.lookup ? ambiguous : unevaluated).add(failed.siteId);
+    if (failed !== null && failed.endKey !== undefined) noEndLookup.add(failed.endKey);
+    // The build fails where a call's lookup fails, so no later probe can change a decision.
+    if (failed !== null && failed.siteId !== undefined && failed.lookup) break;
+    if (!grew && !unprobed && failed === null) break;
   }
 
   const decisions = new Map<string, Decision>();
   for (const [siteId, site] of probe.sites) {
     if (!names.has(site.call.name)) continue;
+    if (ambiguous.has(siteId)) {
+      decisions.set(siteId, 'user');
+      continue;
+    }
     const found = parseable(site.call) ? records.get(siteId) || [] : [];
     const user = found.some((record) => record.fn !== null);
     const token = found.some((record) => record.fn === null);

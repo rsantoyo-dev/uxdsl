@@ -1382,10 +1382,11 @@ columns) and its warnings as `UXD_SASS_WARNING` at the author's
 file, line and column, a source map whose positions point at the author's
 files, and the project function decided per call — where Dart Sass calls its
 bare name, the author's function runs (a `pkg:` package's too, even where
-UXDSL's token in its place would not compile), and a call Sass never evaluates (the
-raw argument of `::part(space(2))`) keeps the token; each declaration a call
-reaches warns once, at the declaration, however many times its file is
-evaluated.
+UXDSL's token in its place would not compile), and a call Sass never evaluates
+(the raw argument of `::part(space(2))`) keeps the token; a call whose bare
+name two modules used with `as *` both define is Sass's own error there; each
+declaration a call reaches warns once, at the declaration, however many times
+its file is evaluated.
 `test/core/compile-sass.test.js` checks it against Dart Sass on the same
 project written as `.scss`. `compile()` still
 does not call these stages.

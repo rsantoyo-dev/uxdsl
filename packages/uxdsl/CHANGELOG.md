@@ -79,7 +79,10 @@ loadPaths?, sass? })` compiles one entry synchronously with Dart Sass:
   token, the text Sass leaves there (`.a::part(space(2))`: Sass keeps that
   pseudo-element argument as raw text), and the probe asks `sass:meta` what a
   name means, so a project function named `function-exists` or `get-function`
-  changes no decision. A `pkg:` file is known only from a compile that
+  changes no decision; a call whose bare name two modules used with `as *`
+  both define is Dart Sass's error at the call (`This function is available
+  from multiple global modules.`), and compiles where Sass keeps it as raw
+  text, as in Dart Sass. A `pkg:` file is known only from a compile that
   succeeds, so when the first compile fails and a file names a `pkg:` URL,
   every token call is probed until a probe compiles: a package's function used
   with `@use "pkg:…" as *` wins where Sass calls it even when UXDSL's token in

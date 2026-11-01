@@ -859,6 +859,38 @@ test('MIG-B9-12: a project function named function-exists or get-function does n
   assert.deepEqual(shadowOf(run.ux, run.actual), ['_h.scss:1:11']);
 });
 
+// Two modules used with `as *` that both define a function make its bare name ambiguous: Dart Sass
+// fails at a bare call ("This function is available from multiple global modules."), and so does
+// the probe's own sass:meta lookup there. Such a call is one Sass evaluates and that fails: the
+// stage reports Sass's error at the call, as Dart Sass does, instead of keeping the token. Where
+// Sass keeps the call as raw text (a custom property), nothing fails, in Dart Sass or the stage.
+const AMBIGUOUS = { '_y1.scss': '@function space($k) { @return $k * 3px; }\n@function md($v) { @return $v * 2; }\n', '_y2.scss': '@function space($k) { @return $k * 5px; }\n@function md($v) { @return $v * 3; }\n' };
+
+test('MIG-B9-12: a call whose bare name two modules used with as * both define is Dart Sass\'s: its error where Sass evaluates the call, its CSS where Sass keeps the call as raw text', () => {
+  const cases = [
+    ['a token call in a rule', { 'entry.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n.a { p: space(2); q: border(1); }\n', ...AMBIGUOUS }, true],
+    ['a token call in a mixin', { 'entry.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n@mixin m { p: space(2); }\n.a { @include m; }\n', ...AMBIGUOUS }, true],
+    ['a token call in a partial', { 'entry.uxdsl': '@use "p";\n.e { v: space(1); }\n', '_p.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n.p { v: space(2); }\n', ...AMBIGUOUS }, true],
+    ['a breakpoint call', { 'entry.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n.a { p: md(2px); }\n', ...AMBIGUOUS }, true],
+    ['calls only in custom properties', { 'entry.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n.a { --x: md(2px); --y: space(2 + 1); --z: space(2); }\n', ...AMBIGUOUS }, false],
+  ];
+  for (const [label, files, fails] of cases) {
+    const run = twin(files);
+    assert.equal(run.expected.error ? run.expected.error.sassMessage : null, fails ? 'This function is available from multiple global modules.' : null, label);
+    assertSameAsTwin(run, label, { exactFrame: true });
+  }
+});
+
+test('MIG-B9-12: a call whose bare name two modules used with as * both define is Dart Sass\'s (negative control: reached through their namespaces, or not called, the same modules compile with no warning)', () => {
+  const namespaced = project({ 'entry.uxdsl': '@use "y1";\n@use "y2";\n.a { p: y1.space(2); q: y2.space(1); r: space(10-2); }\n', ...AMBIGUOUS });
+  const result = stage({ entry: path.join(namespaced, 'entry.uxdsl') });
+  assert.equal(flat(result.css), '.a { p: 6px; q: 5px; r: space(10-2); }');
+  assert.deepEqual(result.warnings, []);
+  const uncalled = twin({ 'entry.uxdsl': '@use "y1" as *;\n@use "y2" as *;\n.a { q: border(1); }\n', ...AMBIGUOUS });
+  assertSameAsTwin(uncalled, 'not called');
+  assert.deepEqual(uncalled.actual.warnings, []);
+});
+
 // Every evaluation of a @function creates a new function: a file imported twice, re-imported by a
 // component or imported inside two rules defines its functions again, and a file that defines a
 // name twice holds two functions of that name. The warning goes to the definition whose evaluation
