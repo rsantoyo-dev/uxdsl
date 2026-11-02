@@ -180,6 +180,28 @@ test('MIG-B9-13: every Sass construct fails alone as UXD_SASS_CONTEXT at the con
   }
 });
 
+test('MIG-B9-13: a %placeholder anywhere in a compound, and a // comment PostCSS read into a declaration\'s value (after a block\'s last declaration), fail alone as UXD_SASS_CONTEXT at the construct; compile() resolves both as Dart Sass does', async () => {
+  for (const [source, construct, word = construct] of [
+    ['a%primary {\n  color: red;\n}', '%primary'],
+    ['.a%b {\n  color: red;\n}', '%b'],
+    ['.x:is(.a%-b) {\n  color: red;\n}', '%-b'],
+    ['.card {\n  margin: 0;\n  padding: space(2) // inner spacing\n}', 'a // comment', '// inner spacing'],
+    ['.a {\n  color: red // note\n;\n}', 'a // comment', '// note'],
+    ['.a {\n  width: calc(100% - 1px // a hairline\n  );\n}', 'a // comment', '// a hairline'],
+    ['.a {\n  background: url(//cdn/x.png) // the CDN copy\n}', 'a // comment', '// the CDN copy'],
+  ]) {
+    const [code, reason, error] = errorOf(source);
+    assert.equal(code, 'UXD_SASS_CONTEXT', `${source}: ${reason}`);
+    assert.equal(reason, sassContext(construct), source);
+    assert.deepEqual([error.line, error.column], positionOf(source, word), source);
+  }
+  // Through compile(), Dart Sass extends the placeholder and drops the comment first.
+  const from = path.join(temporaryDirectory(), 'p.uxdsl');
+  const source = 'a%primary {\n  color: red;\n}\n.x {\n  @extend %primary;\n}\n.card {\n  margin: 0;\n  padding: space(2) // inner spacing\n}\n';
+  const { css } = await pipeline({ source, from }, { theme: {}, includeTheme: false });
+  assert.equal(css, 'a.x {\n  color: red;\n}\n\n.card {\n  margin: 0;\n  padding: var(--uxdsl__space__2);\n}');
+});
+
 test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from the plugin alone and through compile()', async () => {
   for (const [source, construct, where] of [
     ['.card {\n  --gap: $gap;\n}', '$gap', 'the custom property --gap'],
@@ -327,7 +349,7 @@ const LOOK_ALIKES = [
   '.a { &:hover { b: c; } & .x { b: c; } &.y { b: c; } .z & { b: c; } & + & { b: c; } &[data-x] { b: c; } &::before { b: c; } :is(&) { b: c; } && { b: c; } &#id { b: c; } &:not(&) { b: c; } > & { b: c; } }',
   // nested selectors with a pseudo-class, which Dart Sass reads as selectors, not as nested properties
   '.a { a:hover { b: c; } a :hover { b: c; } input:checked + label { b: c; } li:nth-child(2n + 1) { b: c; } a:not(.b) { b: c; } a::before { b: c; } a:-webkit-autofill { b: c; } a:\\68 over { b: c; } }',
-  '@keyframes k { 0% { a: b; } 50% { a: b; } 12.5% { a: b; } to { a: b; } }', '.a[data-x="a&b"] { b: c; }', '.a[data-x="50%a"] { b: c; }', '.a[data-x=\'#{x}\'] { b: c; }', 'a[href^="//"] { b: c; }',
+  '@keyframes k { 0% { a: b; } 50% { a: b; } 12.5% { a: b; } to { a: b; } }', '@keyframes k { entry 0% { a: b; } exit 100% { a: b; } 0%,50% { a: b; } cover 10%, contain 90% { a: b; } }', '.a[data-x="a&b"] { b: c; }', '.a[data-x="50%a"] { b: c; }', '.a[data-x=\'#{x}\'] { b: c; }', 'a[href^="//"] { b: c; }',
   // escaped selectors (Tailwind and hand-written)
   '.\\[\\&_p\\]\\:mt-4 p { b: c; }', '.a\\&b { b: c; }', '.w-\\[50\\%\\] { b: c; }', '.\\%x { b: c; }', '.\\$price { b: c; }', '.group-\\[\\&\\:hover\\]\\:x { b: c; }', '.\\26 x { b: c; }', '.sm\\:hover\\:bg-red:hover { b: c; }', '.\\/\\/x { b: c; }',
   // values
@@ -336,6 +358,8 @@ const LOOK_ALIKES = [
   '.a { filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#80000000\'); }', '.a { filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=80); }',
   // expression()'s argument is script, and a quoted url() is a string
   '.a { width: expression(document.getElementById("x").offsetWidth); height: expression(this.parentNode.offsetHeight + "px"); }', '.a { --x: url("$v"); }',
+  // a slash next to a comment, and a // that a custom property, a CSS @function body or script keeps
+  '.a { font: 12px //**/ 1.5 serif; --url: //cdn.example.com/x; width: expression(a // b); }', '@function --f() { result: a // b; }',
   // at-rules
   '@function --double(--n) { result: calc(var(--n) * 2); }', '@mixin --m() { color: red; }', '.a { @apply --m; }', '@when media(width >= 400px) { .a { b: c; } } @else { .a { b: d; } }',
   '@property --x { syntax: "<length>"; inherits: false; initial-value: 0px; }', '@layer base, comps;', '@container card (min-width: 400px) { .a { b: c; } }', '@scope (.card) to (.content) { img { b: c; } }', '@starting-style { .a { opacity: 0; } }',

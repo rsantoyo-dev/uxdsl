@@ -106,7 +106,10 @@ What to check when you upgrade:
    below ("Desde beta.6: cero salidas silenciosas del lenguaje") that a `$var`
    holding a responsive expression expands with the plugin alone no longer
    holds — and any Sass construct in it fails as `UXD_SASS_CONTEXT` at the
-   construct. Move the Sass into a `.uxdsl` file built by `uxdsl build`,
+   construct, except what PostCSS's own parser rejects first, as its located
+   `Unknown word` error: a `#{…}` in a selector, in a property name or bare in
+   a value, and a `//` comment after a `;` or on a line of its own inside a
+   block. Move the Sass into a `.uxdsl` file built by `uxdsl build`,
    `compile()` or an adapter, or remove it.
 
    ```css

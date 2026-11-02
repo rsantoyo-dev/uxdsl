@@ -1345,13 +1345,16 @@ no Sass (FEAT-010, DEC-05). A Sass construct reaching it — a `$variable`
 declaration or reference, `@use`, `@forward`, `@mixin`/`@include`,
 `@function`, `@extend`, `@if`/`@each`/`@for`/`@while` and the other Sass
 at-rules, `#{…}` interpolation, an `&`-suffix selector such as `&__title`, a
-`%placeholder`, a nested property such as `font: { family: x; }`, a namespaced
-call such as `math.div()` or a `//` comment — fails as `UXD_SASS_CONTEXT` at
+`%placeholder` anywhere in a compound (`%base`, `a%primary`), a nested property
+such as `font: { family: x; }`, a namespaced call such as `math.div()` or a
+`//` comment (before a rule, or after a block's last declaration, which
+PostCSS reads into that declaration's value) — fails as `UXD_SASS_CONTEXT` at
 the construct's line and column, naming the fix: name the file `.uxdsl` and
 compile it with `uxdsl build`, `compile()` or an adapter, where Dart Sass runs
 first, or remove the Sass. PostCSS's own parser rejects a `#{…}` in a selector,
-in a property name or bare in a value, and a `//` comment inside a block,
-before any plugin runs: those fail as its located `Unknown word` error. CSS
+in a property name or bare in a value, and a `//` comment after a `;`, on a
+line of its own inside a block or after the last rule, before any plugin runs:
+those fail as its located `Unknown word` error. CSS
 that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
 `a:hover`), `0%` keyframe selectors, escaped selectors such as Tailwind's
 `.\[\&_p\]\:mt-4`, `$` in a string, `url($img)` where Sass evaluates the call

@@ -199,8 +199,10 @@ const RULE_BLOCKS = new Set(['media', 'supports', '-moz-document']);
  * `calc()` itself included.
  */
 const KEPT_FUNCTION = /^(?:(?:-[^-]+-)?(?:element|expression)|-[^-]+-calc|type)$/i;
-/** `expression()`, whose argument is script: a dotted call there (`document.getElementById(…)`) is not a Sass call. */
+/** `expression()`, whose argument is script: a dotted call there (`document.getElementById(…)`) is not a Sass call, nor a `//` a Sass comment. */
 const SCRIPT_FUNCTION = /^(?:-[^-]+-)?expression$/i;
+/** A Sass placeholder in a masked selector: `%` and an identifier, anywhere in a compound (`%base`, `a%primary`); a keyframe's `50%` is followed by no name. */
+const PLACEHOLDER = /%(?:-?[a-zA-Z_\u0080-￿\u0001]|--)[\w\u0080-￿\u0001-]*/;
 
 /** A Sass construct in a value or a prelude: the node holding it, and the functions and parentheses it sits in, outermost first. */
 interface SassFinding {
@@ -367,6 +369,34 @@ function rejectSassInDeclaration(decl: Declaration) {
   }
   const place = keptPlaceOfDeclaration(decl);
   rejectFindings(decl.value, decl, () => place);
+  if (!place) rejectLineComment(decl);
+}
+
+/** The offset of the `/` a value node writes (a division, or a word inside `calc()`), or -1. */
+const slashAt = (node: valueParser.Node) =>
+  node.type === 'div' && node.value === '/' ? node.sourceIndex + node.before.length : node.type === 'word' && node.value === '/' ? node.sourceIndex : -1;
+
+/**
+ * A `//` comment PostCSS read into a declaration's value, as it does after a
+ * block's last declaration (`padding: 1px // note` and then `}`): Dart Sass
+ * drops the comment, a browser drops the whole declaration. Called only where
+ * Dart Sass evaluates the value (a custom property or a CSS `@function` body
+ * keeps a `//` as written); strings, comments, `url(…)` and the script of
+ * `expression(…)` are not read.
+ */
+function rejectLineComment(decl: Declaration) {
+  if (!decl.value.includes('//')) return;
+  let at = -1;
+  valueParser(decl.value).walk((node, index, nodes) => {
+    if (at !== -1) return false;
+    if (node.type === 'function' && (node.value.toLowerCase() === 'url' || SCRIPT_FUNCTION.test(node.value))) return false;
+    if (node.type === 'word' && node.value.includes('//')) at = node.sourceIndex + node.value.indexOf('//');
+    const slash = slashAt(node);
+    if (at === -1 && slash !== -1 && index + 1 < nodes.length && slashAt(nodes[index + 1]) === slash + 1) at = slash;
+    return undefined;
+  });
+  // The comment's own text, up to the end of its line, locates it.
+  if (at !== -1) throw locateError(diagnostic(sassContext('a // comment'), decl.value.slice(at).split('\n')[0].trimEnd()), decl);
 }
 
 function rejectSassInAtRule(at: AtRule) {
@@ -408,8 +438,9 @@ function nestedPropertyName(rule: Rule): string | null {
 /**
  * Sass in a selector: an interpolation, an `&` followed by an identifier
  * character (`&__title`, `&-x`; CSS nesting writes `&:hover`, `& .x`, `&.y`),
- * a `%placeholder` starting a compound, a `//` comment PostCSS read into the
- * selector, or a nested property PostCSS read as a rule. Escapes, strings and
+ * a `%placeholder` anywhere in a compound (`%base`, `a%primary`), a `//`
+ * comment PostCSS read into the selector, or a nested property PostCSS read
+ * as a rule. Escapes, strings and
  * attribute selectors are masked first, so `.a\&b`, `[data-x="a&b"]` and
  * `a[href^="//"]` are CSS.
  */
@@ -426,10 +457,9 @@ function rejectSassInSelector(rule: Rule) {
     const text = selector.slice(suffix.index, suffix.index + suffix[0].length);
     throw locateError(diagnostic(sassContext(text), text), rule);
   }
-  const placeholder = /(^|[\s>+~,(])(%[a-zA-Z_-][\w-]*)/.exec(masked);
+  const placeholder = PLACEHOLDER.exec(masked);
   if (placeholder) {
-    const start = placeholder.index + placeholder[1].length;
-    const text = selector.slice(start, start + placeholder[2].length);
+    const text = selector.slice(placeholder.index, placeholder.index + placeholder[0].length);
     throw locateError(diagnostic(sassContext(text), text), rule);
   }
   if (masked.includes('//')) throw locateError(diagnostic(sassContext('a // comment'), '//'), rule);
