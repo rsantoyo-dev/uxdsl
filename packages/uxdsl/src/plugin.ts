@@ -191,6 +191,16 @@ const NESTED_PROPERTY = /^(-?[a-zA-Z_\u0080-\uFFFF][\w\u0080-\uFFFF-]*)\s*:(?!:)
 const IDENTIFIER_START = /^(?:-?(?:[a-zA-Z_\u0080-\uFFFF\\]|#\{)|--)/;
 /** The at-rules whose blocks Dart Sass reads as rules only; every other block (a style rule's, an unknown at-rule's) holds declarations, nested properties included. */
 const RULE_BLOCKS = new Set(['media', 'supports', '-moz-document']);
+/**
+ * A function whose arguments Dart Sass keeps as written, as it keeps a custom
+ * property's value: `element()` and `expression()` with at most one vendor
+ * prefix (`-moz-element()`), `calc()` with one (`-webkit-calc()`), and
+ * `type()`, in any case. Sass evaluates the arguments of every other function,
+ * `calc()` itself included.
+ */
+const KEPT_FUNCTION = /^(?:(?:-[^-]+-)?(?:element|expression)|-[^-]+-calc|type)$/i;
+/** `expression()`, whose argument is script: a dotted call there (`document.getElementById(…)`) is not a Sass call. */
+const SCRIPT_FUNCTION = /^(?:-[^-]+-)?expression$/i;
 
 /** A Sass construct in a value or a prelude: the node holding it, and the functions and parentheses it sits in, outermost first. */
 interface SassFinding {
@@ -198,6 +208,10 @@ interface SassFinding {
   text: string;
   node: valueParser.Node;
   within: valueParser.FunctionNode[];
+  /** The outermost function holding the construct whose arguments Dart Sass keeps as written (`KEPT_FUNCTION`). */
+  keptIn?: valueParser.FunctionNode;
+  /** A variable in an unquoted `url(…)`, which Dart Sass reads as a call it evaluates, except where it keeps the text as written. */
+  inUrl?: boolean;
 }
 
 const sassContext = (construct: string) =>
@@ -213,29 +227,38 @@ function interpolationIn(text: string): string {
 }
 
 /**
- * The first Sass variable, interpolation or namespaced call in a value or an
- * at-rule's prelude. Strings and comments are text, and `url(…)` is CSS
- * (`url($img)` names a file) unless it holds an interpolation.
+ * The Sass variables, interpolations and namespaced calls in a value or an
+ * at-rule's prelude, in order. Strings and comments are text. Each finding
+ * records the function holding it whose arguments Dart Sass keeps as written,
+ * if any; in `expression()` a dotted call is script, not a Sass call. A
+ * variable in an unquoted `url(…)` is marked `inUrl`: where Sass evaluates the
+ * value it reads `url($img)` as a call, so the plugin alone sees a file name,
+ * and only where Sass keeps the text is the variable Sass (the caller
+ * decides). An interpolation in `url(…)` is Sass anywhere.
  */
-function findSass(text: string): SassFinding | null {
-  if (!SASS_HINT.test(text)) return null;
-  let found: SassFinding | null = null;
-  const visit = (nodes: valueParser.Node[], within: valueParser.FunctionNode[]) => {
+function findSass(text: string): SassFinding[] {
+  const found: SassFinding[] = [];
+  if (!SASS_HINT.test(text)) return found;
+  const visit = (nodes: valueParser.Node[], within: valueParser.FunctionNode[], keptIn?: valueParser.FunctionNode, script = false) => {
     for (const node of nodes) {
-      if (found) return;
       if (node.type === 'function') {
         if (node.value.toLowerCase() === 'url') {
+          // A quoted URL is a string; an unquoted one is read whole (the parser
+          // splits `URL(a/$v.png)`, which it does not take for a URL).
           const inner = valueParser.stringify(node.nodes);
-          if (inner.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(inner), node, within };
-        } else if (NAMESPACED_CALL.test(node.value)) {
-          found = { kind: 'call', text: valueParser.stringify(node), node, within };
+          const quoted = node.nodes.some((part) => part.type === 'string');
+          const variable = quoted ? null : SASS_VARIABLE.exec(valueParser.stringify(node.nodes.filter((part) => part.type !== 'comment')));
+          if (inner.includes('#{')) found.push({ kind: 'interpolation', text: interpolationIn(inner), node, within, keptIn });
+          else if (variable) found.push({ kind: 'variable', text: variable[0], node, within, keptIn, inUrl: true });
+        } else if (NAMESPACED_CALL.test(node.value) && !script) {
+          found.push({ kind: 'call', text: valueParser.stringify(node), node, within, keptIn });
         } else {
-          visit(node.nodes, [...within, node]);
+          visit(node.nodes, [...within, node], keptIn ?? (KEPT_FUNCTION.test(node.value) ? node : undefined), script || SCRIPT_FUNCTION.test(node.value));
         }
       } else if (node.type === 'word') {
         const variable = SASS_VARIABLE.exec(node.value);
-        if (node.value.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(node.value), node, within };
-        else if (variable) found = { kind: 'variable', text: variable[0], node, within };
+        if (node.value.includes('#{')) found.push({ kind: 'interpolation', text: interpolationIn(node.value), node, within, keptIn });
+        else if (variable) found.push({ kind: 'variable', text: variable[0], node, within, keptIn });
       }
     }
   };
@@ -283,12 +306,12 @@ function keptInSupportsCondition(nodes: valueParser.Node[], inner: valueParser.F
 
 /**
  * Where Dart Sass keeps an at-rule's prelude as written, or null where it
- * evaluates it. It evaluates `@media`, an `@import`'s media query, UXDSL's own
- * directives (whose `$variables` compile() serves to Sass) and, in a supports
- * condition, what `keptInSupportsCondition` says it evaluates; it keeps the
- * arguments of a `@supports` function (`selector()`, `font-tech()`) and of an
- * `@import` function other than `supports()` (`layer()`), and every other
- * prelude.
+ * evaluates it. It evaluates `@media`, an `@import`'s URL and media query,
+ * UXDSL's own directives (whose `$variables` compile() serves to Sass) and, in
+ * a supports condition, what `keptInSupportsCondition` says it evaluates; it
+ * keeps the arguments of a `@supports` function (`selector()`, `font-tech()`)
+ * and of an `@import` function other than `supports()` (`layer()`), and every
+ * other prelude.
  */
 function keptPlaceOfPrelude(at: AtRule, finding: SassFinding): string | null {
   const name = at.name.toLowerCase();
@@ -306,6 +329,9 @@ function keptPlaceOfPrelude(at: AtRule, finding: SassFinding): string | null {
   return `the @${at.name} prelude`;
 }
 
+/** Where Dart Sass keeps `finding` as written: the place the value is in (`place`), else the function holding it whose arguments Sass keeps; null where Sass evaluates it. */
+const keptWhere = (finding: SassFinding, place: string | null) => place ?? (finding.keptIn ? `${finding.keptIn.value}()` : null);
+
 /** The message for a finding: the kept one where Dart Sass keeps the text as written, the generic one otherwise (always for an interpolation). */
 function sassFindingMessage(finding: SassFinding, where: string | null): string {
   return finding.kind !== 'interpolation' && where ? keptBySass(finding.text, where) : sassContext(finding.text);
@@ -313,6 +339,19 @@ function sassFindingMessage(finding: SassFinding, where: string | null): string 
 
 /** The word that locates a finding in its node's text. */
 const findingWord = (finding: SassFinding) => (finding.kind === 'interpolation' ? '#{' : finding.kind === 'call' ? finding.text.slice(0, finding.text.indexOf('(')) : finding.text);
+
+/**
+ * Throws for the first finding in `text` that is Sass, at `node`. `placeOf`
+ * names where Dart Sass keeps a finding as written, or null where it
+ * evaluates it; there a variable in `url(…)` is a file name, and passes.
+ */
+function rejectFindings(text: string, node: Declaration | AtRule, placeOf: (finding: SassFinding) => string | null) {
+  for (const finding of findSass(text)) {
+    const where = keptWhere(finding, placeOf(finding));
+    if (finding.inUrl && !where) continue;
+    throw locateError(diagnostic(sassFindingMessage(finding, where), findingWord(finding)), node);
+  }
+}
 
 function rejectSassInDeclaration(decl: Declaration) {
   if (decl.prop.startsWith('$')) throw locateError(diagnostic(sassContext(decl.prop), decl.prop), decl);
@@ -326,8 +365,8 @@ function rejectSassInDeclaration(decl: Declaration) {
     if (variable) throw locateError(diagnostic(keptBySass(variable[0], 'a progid: value'), variable[0]), decl);
     return;
   }
-  const finding = findSass(decl.value);
-  if (finding) throw locateError(diagnostic(sassFindingMessage(finding, keptPlaceOfDeclaration(decl)), findingWord(finding)), decl);
+  const place = keptPlaceOfDeclaration(decl);
+  rejectFindings(decl.value, decl, () => place);
 }
 
 function rejectSassInAtRule(at: AtRule) {
@@ -336,8 +375,7 @@ function rejectSassInAtRule(at: AtRule) {
   if (SASS_AT_RULES.has(name) && !((name === 'function' || name === 'mixin') && /^\s*--/.test(at.params))) {
     throw locateError(diagnostic(sassContext(`@${at.name}`), `@${at.name}`), at);
   }
-  const finding = findSass(at.params);
-  if (finding) throw locateError(diagnostic(sassFindingMessage(finding, keptPlaceOfPrelude(at, finding)), findingWord(finding)), at);
+  rejectFindings(at.params, at, (finding) => keptPlaceOfPrelude(at, finding));
 }
 
 /**

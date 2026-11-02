@@ -225,6 +225,103 @@ test('MIG-B9-13: through compile(), a $variable Dart Sass keeps in a supports fu
   assert.match(css, /@import "x\.css" supports\(display: fn\(7px\)\);/);
 });
 
+// Dart Sass evaluates `url($v)` as a call wherever it evaluates a value, and keeps
+// it as written wherever it keeps the text (a custom property, a CSS @function
+// body, a kept prelude or supports condition, a function whose arguments it
+// keeps): there the variable is Sass, everywhere else `url($v)` names a file.
+const URL_PROBES = [
+  '.a { --x: url($v); }', '.a { --x: url( $v ); }', '.a { --x: URL(a/$v.png); }', '.a { --x: image-set(url($v) 1x); }',
+  '@function --f() { result: url($v); }', '@namespace x url($v);', '@foo url($v);', '@supports (--x: url($v)) { .a { b: c; } }',
+  '@import "x.css" supports(--x: url($v));', '@import "x.css" layer(url($v));', '.a { width: expression(url($v)); }',
+  '.a { background: url($v); }', '.a { background: URL( $v ); }', '@import url($v);', '@font-face { src: url($v); }',
+  '@supports (background: url($v)) { .a { b: c; } }', '@import "x.css" supports(background: url($v));', '@media screen { .a { background: url($v); } }',
+];
+
+/** The rows whose verdict is not "the kept message exactly where live Dart Sass keeps url($v) as written, and nothing where it evaluates the call". */
+function urlDisagreements(rows) {
+  const sassKeeps = (probe) => sass.compileString(`$v: 7px;\n${probe}`, { logger: sass.Logger.silent }).css.includes('$v');
+  return rows.filter(({ probe, verdict }) => verdict !== (sassKeeps(probe) ? 'kept' : 'none')).map(({ probe, verdict }) => `${verdict}: ${probe}`);
+}
+
+test('MIG-B9-13: a $variable in url() is Sass exactly where Dart Sass keeps the url() as written, with the kept message, and CSS where Sass evaluates the call (pinned against live Sass)', () => {
+  const rows = URL_PROBES.map((probe) => ({ probe, verdict: pluginVerdict(probe) }));
+  assert.deepEqual(urlDisagreements(rows), []);
+  assert.ok(rows.some(({ verdict }) => verdict === 'kept') && rows.some(({ verdict }) => verdict === 'none'), 'both verdicts occur');
+  const source = '.hero {\n  --hero-bg: url($image);\n}';
+  const [code, reason, error] = errorOf(source);
+  assert.equal(code, 'UXD_SASS_CONTEXT', reason);
+  assert.equal(reason, keptBySass('$image', 'the custom property --hero-bg'));
+  assert.deepEqual([error.line, error.column], positionOf(source, '$image'));
+});
+
+test('MIG-B9-13: the url() comparison rejects a planted wrong row (negative control)', () => {
+  assert.deepEqual(urlDisagreements([{ probe: '.a { background: url($v); }', verdict: 'kept' }]), ['kept: .a { background: url($v); }']);
+  assert.deepEqual(urlDisagreements([{ probe: '.a { --x: url($v); }', verdict: 'none' }]), ['none: .a { --x: url($v); }']);
+});
+
+test('MIG-B9-13: through compile(), a $variable in a url() Dart Sass keeps as written (a custom property, a CSS @function body, a plain-CSS prelude) is UXD_SASS_CONTEXT at the author\'s position, never silent output', async () => {
+  const from = path.join(temporaryDirectory(), 'u.uxdsl');
+  for (const [source, construct, where, line, column] of [
+    ['$image: "hero.png";\n.hero {\n  --hero-bg: url($image);\n  background-image: var(--hero-bg);\n}\n', '$image', 'the custom property --hero-bg', 3, 3],
+    ['$v: "x.png";\n@function --f() {\n  result: url($v);\n}\n', '$v', 'the CSS @function --f', 3, 3],
+    ['$v: "x.png";\n@namespace x url($v);\n', '$v', 'the @namespace prelude', 2, 1],
+  ]) {
+    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    assert.equal(error.name, 'CssSyntaxError', error.message);
+    assert.equal(error.reason, keptBySass(construct, where), source);
+    assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
+  }
+  // Interpolated, or where Sass evaluates the call, the same values compile (negative control).
+  const { css } = await pipeline({ source: '$image: "hero.png";\n.hero {\n  --hero-bg: url(#{$image});\n  background-image: url($image);\n}\n', from }, { theme: {}, includeTheme: false });
+  assert.equal(css, '.hero {\n  --hero-bg: url(hero.png);\n  background-image: url("hero.png");\n}');
+});
+
+test('MIG-B9-13: Dart Sass keeps the arguments of expression(), element(), type() and a vendor-prefixed calc() as written, so a $variable or a namespaced call there gets the kept message, from the plugin alone and through compile()', async () => {
+  for (const [source, construct, where, word = construct] of [
+    ['.a {\n  width: expression($w);\n}', '$w', 'expression()'],
+    ['.a {\n  width: EXPRESSION($w);\n}', '$w', 'EXPRESSION()'],
+    ['.a {\n  background: element($v);\n}', '$v', 'element()'],
+    ['.a {\n  background: -moz-element($v);\n}', '$v', '-moz-element()'],
+    ['.a {\n  width: type($v);\n}', '$v', 'type()'],
+    ['.a {\n  width: -webkit-calc(100% - $gap);\n}', '$gap', '-webkit-calc()'],
+    ['.a {\n  width: element(math.div(1, 2));\n}', 'math.div(1, 2)', 'element()', 'math.div'],
+    ['@media (min-width: expression($w)) {\n  .a { color: red; }\n}', '$w', 'expression()'],
+  ]) {
+    const [code, reason, error] = errorOf(source);
+    assert.equal(code, 'UXD_SASS_CONTEXT', `${source}: ${reason}`);
+    assert.equal(reason, keptBySass(construct, where), source);
+    assert.deepEqual([error.line, error.column], positionOf(source, word), source);
+  }
+  const from = path.join(temporaryDirectory(), 'k.uxdsl');
+  for (const [source, construct, where, line, column] of [
+    ['$w: 1px;\n.a {\n  width: expression($w);\n}\n', '$w', 'expression()', 3, 3],
+    ['$v: x;\n.a {\n  background: -moz-element($v);\n}\n', '$v', '-moz-element()', 3, 3],
+  ]) {
+    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    assert.equal(error.name, 'CssSyntaxError', error.message);
+    assert.equal(error.reason, keptBySass(construct, where), source);
+    assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
+  }
+  // A function whose arguments Sass evaluates keeps the generic message (negative control).
+  for (const source of ['.a {\n  width: -webkit-type($v);\n}', '.a {\n  width: -a-b-element($v);\n}', '.a {\n  width: calc(100% - $v);\n}']) {
+    assert.equal(errorOf(source)[1], sassContext('$v'), source);
+  }
+});
+
+test('MIG-B9-13: a dotted call in expression() is script, not a Sass call: the plugin alone passes it, and compile() prints what Dart Sass prints (negative control)', async () => {
+  const from = path.join(temporaryDirectory(), 'e.uxdsl');
+  for (const source of [
+    '.a {\n  width: expression(document.getElementById("x").offsetWidth);\n}',
+    '.a {\n  *zoom: expression(this.runtimeStyle.zoom="1", this.appendChild(document.createElement("br")).style.cssText="clear:both;font:0/0 serif");\n}',
+  ]) {
+    assert.equal(compile(source), source);
+    const { css } = await pipeline({ source: `${source}\n`, from }, { theme: {}, includeTheme: false });
+    assert.equal(css, sass.compileString(source, { style: 'expanded' }).css, source);
+  }
+  // A namespaced call in a custom property is still Sass kept as written (positive control).
+  assert.equal(errorOf('.a {\n  --x: math.div(10px, 2);\n}')[1], keptBySass('math.div(10px, 2)', 'the custom property --x'));
+});
+
 const LOOK_ALIKES = [
   // CSS nesting and selectors
   '.a { &:hover { b: c; } & .x { b: c; } &.y { b: c; } .z & { b: c; } & + & { b: c; } &[data-x] { b: c; } &::before { b: c; } :is(&) { b: c; } && { b: c; } &#id { b: c; } &:not(&) { b: c; } > & { b: c; } }',
@@ -237,6 +334,8 @@ const LOOK_ALIKES = [
   '.a::before { content: "$5"; content: "#{x}"; content: \'$t\'; content: "a // b"; }', '.a { background: url($img); background: url("a$b.png"); background: url(//cdn/x.png); }', '.a { --price: $5; --x: 1px; --y: a$b; --z: "$v"; }',
   '.a { color: if(style(--x: 1): red; else: blue); }', '.a { width: calc(100% / 3); margin: 1.5em .5em; font: 12px/1.5 a, b; }', '.a { transform: translate(-.5rem, .25rem); opacity: .5; }', '.a { grid-template-areas: "a b" "c d"; grid-area: 1 / 1; }',
   '.a { filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=\'#80000000\'); }', '.a { filter: progid:DXImageTransform.Microsoft.Alpha(Opacity=80); }',
+  // expression()'s argument is script, and a quoted url() is a string
+  '.a { width: expression(document.getElementById("x").offsetWidth); height: expression(this.parentNode.offsetHeight + "px"); }', '.a { --x: url("$v"); }',
   // at-rules
   '@function --double(--n) { result: calc(var(--n) * 2); }', '@mixin --m() { color: red; }', '.a { @apply --m; }', '@when media(width >= 400px) { .a { b: c; } } @else { .a { b: d; } }',
   '@property --x { syntax: "<length>"; inherits: false; initial-value: 0px; }', '@layer base, comps;', '@container card (min-width: 400px) { .a { b: c; } }', '@scope (.card) to (.content) { img { b: c; } }', '@starting-style { .a { opacity: 0; } }',
@@ -349,6 +448,10 @@ const KEPT_PROBES = [
   '@supports (display: fn($v)) { .a { b: c; } }', '@supports ($v: 1px) { .a { b: c; } }', '@supports ("--x": $v) { .a { b: c; } }',
   '@import "x.css" supports(--x: $v);', '@import "x.css" supports(selector(.a-$v));', '@import "x.css" supports(not (--x: $v));',
   '@import "x.css" supports(not (width: $v));', '@import "x.css" foo($v);',
+  // url() where Sass keeps it as written, and the functions whose arguments Sass keeps, beside functions it evaluates
+  '.a { --x: url($v); }', '.a { width: expression($v); }', '.a { width: EXPRESSION($v); }', '.a { width: element($v); }', '.a { width: -moz-element($v); }',
+  '.a { width: type($v); }', '.a { width: -webkit-calc($v + 1px); }', '@media (min-width: expression($v)) { .a { b: c; } }', '@supports (width: expression($v)) { .a { b: c; } }',
+  '.a { width: -webkit-type($v); }', '.a { width: -a-b-element($v); }', '.a { width: -x-y-calc($v); }', '.a { width: --element($v); }',
 ];
 
 /** The plugin alone's verdict on a probe: 'kept', 'generic', 'none' (it compiled) or the other error it threw. */
@@ -372,7 +475,7 @@ function disagreements(rows) {
 }
 
 test('MIG-B9-13: the places where the kept message applies are where Dart Sass keeps a $variable literally (pinned against live Sass)', () => {
-  assert.equal(KEPT_PROBES.length, 41);
+  assert.equal(KEPT_PROBES.length, 54);
   const rows = KEPT_PROBES.map((probe) => ({ probe, verdict: pluginVerdict(probe) }));
   assert.deepEqual(disagreements(rows), []);
   assert.ok(rows.some(({ verdict }) => verdict === 'kept') && rows.some(({ verdict }) => verdict === 'generic'), 'both verdicts occur');

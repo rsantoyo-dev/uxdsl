@@ -1354,17 +1354,21 @@ in a property name or bare in a value, and a `//` comment inside a block,
 before any plugin runs: those fail as its located `Unknown word` error. CSS
 that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
 `a:hover`), `0%` keyframe selectors, escaped selectors such as Tailwind's
-`.\[\&_p\]\:mt-4`, `$` in a string, `url($img)`, `--price: $5`, and CSS's own
+`.\[\&_p\]\:mt-4`, `$` in a string, `url($img)` where Sass evaluates the call
+(on a property that is not custom, as an `@import`'s URL), `--price: $5`, a
+dotted call in `expression()`, whose argument is script, and CSS's own
 `@function --name` and `@mixin --name`. Dart Sass keeps a `$variable` as
-written in a custom property (`--gap: $gap`), in the prelude of a plain-CSS
-at-rule it does not evaluate (`@container`, `@layer`, `@keyframes`,
-`@property`, an unknown at-rule, …), in a supports condition — in `@supports`
-or in an `@import`'s `supports()` — except a declaration's name and a value
-on a property that is not custom (it keeps `selector(.a-$gap)`,
-`font-tech($gap)` and `(--x: $gap)`, and evaluates `(width: $gap)`), in an
-`@import`'s `layer()`, in a `progid:` value and in a CSS `@function` body, so
-there `compile()` reports `UXD_SASS_CONTEXT` too, with the fix Sass needs:
-write `#{$gap}`.
+written, in a `url()` too, in a custom property (`--gap: $gap`,
+`--bg: url($image)`), in the prelude of a plain-CSS at-rule it does not
+evaluate (`@container`, `@layer`, `@keyframes`, `@property`, an unknown
+at-rule, …), in a supports condition — in `@supports` or in an `@import`'s
+`supports()` — except a declaration's name and a value on a property that is
+not custom (it keeps `selector(.a-$gap)`, `font-tech($gap)` and
+`(--x: $gap)`, and evaluates `(width: $gap)`), in an `@import`'s `layer()`, in
+a `progid:` value, in a CSS `@function` body and in the arguments of
+`expression()`, `element()`, `type()` and a vendor-prefixed `calc()` such as
+`-webkit-calc()`, so there `compile()` reports `UXD_SASS_CONTEXT` too, with
+the fix Sass needs: write `#{$gap}`.
 
 `compile()` — what the CLI, `uxdsl/vite` and `uxdsl/webpack` run — compiles a
 `.uxdsl` file with real Dart Sass (FEAT-010), so that a `.scss` file renamed to

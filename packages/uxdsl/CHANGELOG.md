@@ -147,7 +147,8 @@ What to check in a project when upgrading is in the migration guide,
   `@use`, `@forward`, `@mixin`/`@include`, `@function`, `@extend`,
   `@if`/`@each`/`@for`/`@while` and the other Sass at-rules, `#{…}`, an
   `&`-suffix selector, a `%placeholder`, a nested property
-  (`font: { family: x; }`), a namespaced call, a `//` comment — is a located
+  (`font: { family: x; }`), a namespaced call (outside `expression()`, whose
+  argument is script), a `//` comment — is a located
   `UXD_SASS_CONTEXT` naming the fix: a `.uxdsl` file compiled by
   `uxdsl build`, `compile()` or an adapter, or no Sass. PostCSS's own parser
   rejects a `#{…}` in a selector, in a property name or bare in a value, and a
@@ -158,9 +159,13 @@ What to check in a project when upgrading is in the migration guide,
   as `@container`, `@layer` or `@keyframes`, in a supports condition Sass does
   not evaluate (a function such as `selector()` or `font-tech()`, a custom
   property's `(--x: $v)`, in `@supports` or in an `@import`'s `supports()`),
-  in an `@import`'s `layer()`, in a `progid:` value or in a CSS `@function`
-  body — is `UXD_SASS_CONTEXT`, whose message says to write `#{$variable}`.
-  The SCSS subset substituted it there.
+  in an `@import`'s `layer()`, in a `progid:` value, in a CSS `@function`
+  body or in the arguments of `expression()`, `element()`, `type()` or a
+  vendor-prefixed `calc()` (`-webkit-calc()`), a `$variable` inside a `url()`
+  there included (`--bg: url($image)`) — is `UXD_SASS_CONTEXT`, whose message
+  says to write `#{$variable}`. The SCSS subset substituted it there. A
+  `url($image)` where Sass evaluates the call (on a property that is not
+  custom, as an `@import`'s URL) compiles as before.
 
 ### Removed
 
