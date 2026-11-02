@@ -320,6 +320,36 @@
       ],
       "exit": 1,
       "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:1:1: UXD_THEME_BLOCK_REMOVED: @theme blocks were removed; define these tokens in the theme JSON (uxdsl.theme.json): density-<k> under \"densities\", radius-<k> under \"radii\", border-<k> under \"borders\", shadow-<k> under \"shadows\", and surface-/button-/input-<role> packs under \"surfaces\", \"buttons\" and \"inputs\".\n> 1 | @theme {\n    | ^\n  2 |   radius-2: 12px;\n  3 | }\n"
+    },
+    {
+      "code": "UXD_SASS",
+      "title": "A Sass error: an undefined variable",
+      "source": ".card {\n  padding: $gap;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: src/example.uxdsl:2:12: UXD_SASS: Undefined variable.\n"
+    },
+    {
+      "code": "UXD_SASS_CONTEXT",
+      "title": "A $variable Sass keeps literally in a custom property (write #{$gap})",
+      "source": "$gap: 4px;\n.card {\n  --gap: $gap;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:3:3: UXD_SASS_CONTEXT: Sass keeps $gap literally in the custom property --gap; write #{$gap} (in a .uxdsl file compiled by uxdsl build, compile() or an adapter).\n  1 | $gap: 4px;\n  2 | .card {\n> 3 |   --gap: $gap;\n    |   ^\n  4 | }\n  5 | \n"
     }
   ]
 }
