@@ -379,3 +379,66 @@ test('MIG-B9-13: a plugin warning, an onWarning issue or a ReferenceIntegrityErr
   const located = await core.compile({ entry: file }, { includeTheme: false, references: { mode: 'warn' } });
   assert.deepEqual(located.warnings.filter((warning) => warning.text.startsWith('UXD_REFERENCE_MISSING: ')).map(where), ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
 });
+
+test('MIG-B9-13: a top-level comment whose text starts with "# sourceMappingURL=", which Dart Sass keeps, is removed in the three sourceMap modes alike, as PostCSS removes it when it writes no map', async () => {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-annotation-')));
+  const marker = '\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,';
+  const sources = {
+    spaced: '/* # sourceMappingURL=x.map */\n.a { padding: space(2); }\n',
+    multiline: '/*\n# sourceMappingURL=z.map\n*/\n.a { padding: space(2); }\n',
+    nested: '.a {\n  /* # sourceMappingURL=y.map */\n  padding: space(2);\n}\n',
+  };
+  const sass = require('sass');
+  assert.match(sass.compileString(sources.spaced, { style: 'expanded' }).css, /\/\* # sourceMappingURL=x\.map \*\//, 'Dart Sass keeps the comment');
+  for (const [name, source] of Object.entries(sources)) {
+    for (const includeTheme of [false, true]) {
+      const label = `${name}, includeTheme ${includeTheme}`;
+      const build = (sourceMap) => core.compile({ source, from: path.join(dir, `${name}.uxdsl`) }, { includeTheme, sourceMap });
+      const [off, external, inline] = [await build(false), await build('external'), await build('inline')];
+      assert.equal(external.css, off.css, `${label}: 'external' and false`);
+      assert.equal(inline.css.slice(0, inline.css.lastIndexOf(marker)), off.css, `${label}: 'inline' and false`);
+      if (name === 'nested') assert.match(off.css, /\/\* # sourceMappingURL=y\.map \*\//, `${label}: a comment inside a rule is kept, as PostCSS keeps it`);
+      else assert.doesNotMatch(off.css, /sourceMappingURL/, `${label}: removed`);
+    }
+  }
+});
+
+/** The author mappings of `map`, each named by its file's text (so the names a source map gives the files do not matter): generated line and column, file, original line and column. */
+function authorMappings(map) {
+  const consumer = new SourceMapConsumer(map);
+  const files = new Map([[read('ok.uxdsl'), 'ok.uxdsl'], [read('_mixins.uxdsl'), '_mixins.uxdsl']]);
+  const mappings = [];
+  consumer.eachMapping((mapping) => {
+    if (mapping.source === '<no source>') return;
+    mappings.push(`${mapping.generatedLine}:${mapping.generatedColumn} ${files.get(consumer.sourceContentFor(mapping.source, true)) || `(${mapping.source})`}:${mapping.originalLine}:${mapping.originalColumn}`);
+  });
+  return mappings;
+}
+
+test('MIG-B9-13: the final map keeps every author mapping when the stage names its files as Windows does (C:\\…, emulated) and `to` is in another directory', async () => {
+  // PostCSS joins a prev map's source onto the directory between `to` and the entry unless it starts with `/` or is a URL.
+  const stageModule = require('../../dist/sass/compile-sass.js');
+  const real = stageModule.compileSassStage;
+  const to = path.join(MAPS, 'out', 'ok.css');
+  const build = () => core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap: 'external', to });
+  const anonymous = () => rejection(core.compile({ source: '.a {\n  padding: space(404);\n}\n' }, { includeTheme: false, sourceMap: 'external', to }));
+  const posix = authorMappings(JSON.parse((await build()).map));
+  const unconverted = await anonymous();
+  stageModule.compileSassStage = (input, options) => {
+    const stage = real(input, options);
+    if (stage.map) stage.map = { ...stage.map, sources: stage.map.sources.map((file) => `C:${file.split('/').join('\\')}`) };
+    return stage;
+  };
+  let emulated;
+  let converted;
+  try {
+    emulated = authorMappings(JSON.parse((await build()).map));
+    converted = await anonymous();
+  } finally {
+    stageModule.compileSassStage = real;
+  }
+  assert.ok(posix.length > 100, `the build maps the author's files: ${posix.length} mappings`);
+  assert.deepEqual(emulated, posix, 'the same author mappings, with the files\' text');
+  // PostCSS still reads each source it is handed as an absolute path: a located error, never a TypeError from its URL handling.
+  for (const error of [unconverted, converted]) assert.deepEqual([error.name, error.line, error.column], ['CssSyntaxError', 2, 3]);
+});

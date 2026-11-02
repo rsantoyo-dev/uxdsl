@@ -19,7 +19,10 @@
 // 4. The UXDSL plugin (./plugin.ts) runs on Dart Sass's output, parsed by
 //    PostCSS's default parser: the theme, the directives, responsive values,
 //    token functions and the reference check. Nothing else in Sass's output
-//    changes. The parser reads all of that output but one shape: a
+//    changes, except that each top-level comment whose text starts with
+//    `# sourceMappingURL=` is removed, as PostCSS removes it when it writes
+//    no map, so the CSS is the same in the three `sourceMap` modes. The
+//    parser reads all of that output but one shape: a
 //    declaration value with a colon outside parentheses and strings, on a
 //    property that is not custom (`b: a:b`, which Sass prints for
 //    `string.unquote("a:b")`; a `progid:` filter is read), which it rejects
@@ -35,9 +38,9 @@
 
 import fs from 'fs';
 import path from 'path';
-import postcss, { Result, Warning } from 'postcss';
+import postcss, { Plugin, Result, Warning } from 'postcss';
 // Types only: source-map-js is loaded when a position or a map is needed.
-import type { SourceMapConsumer as Consumer } from 'source-map-js';
+import type { RawSourceMap, SourceMapConsumer as Consumer } from 'source-map-js';
 import uxdslPlugin = require('./plugin');
 import { compileSassStage } from './sass/compile-sass';
 import type { SassStageResult } from './sass/compile-sass';
@@ -101,9 +104,10 @@ export interface CompileWarning {
 }
 
 export interface CompileResult {
-  /** Dart Sass's expanded output with UXDSL's constructs resolved. The same in
-   * the three `sourceMap` modes, except that `'inline'` appends one final
-   * `sourceMappingURL` comment. */
+  /** Dart Sass's expanded output with UXDSL's constructs resolved and each
+   * top-level comment whose text starts with `# sourceMappingURL=` removed.
+   * The same in the three `sourceMap` modes, except that `'inline'` appends
+   * one final `sourceMappingURL` comment. */
   css: string;
   /** With `sourceMap` `'inline'` or `'external'`: the map, as a JSON string. */
   map?: string;
@@ -172,15 +176,16 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   }
 
   const locate = locator(stage, hidden);
-  const wantMap = sourceMap !== false;
+  // The stage's map, chained only when a map is requested; every position is
+  // located through the stage's map either way.
+  const prev = sourceMap !== false ? chainable(stage.map!) : undefined;
   const sourcesContent = config.sourcesContent !== false;
   let result: Result;
   try {
     // PostCSS's default parser, which reads Dart Sass's output as CSS but for
     // the colon in a value that stage 4 above describes. `from` is always
     // given (undefined for an anonymous source), so PostCSS never warns that
-    // it is missing. A map is chained only when one is requested; every
-    // position is located through the stage's map either way.
+    // it is missing.
     result = await postcss([
       restoreDirectiveSpacing,
       uxdslPlugin({
@@ -188,10 +193,11 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
         references: relocatingReferences(config.references, locate, stageEntry, hidden),
         includeTheme: config.includeTheme !== false,
       }),
+      dropAnnotations,
     ]).process(stage.css, {
       from: hidden ? undefined : stageEntry,
       to: config.to,
-      map: wantMap ? { prev: stage.map, inline: false, annotation: false, sourcesContent } : false,
+      map: prev ? { prev, inline: false, annotation: false, sourcesContent } : false,
     });
   } catch (error) {
     throw relocateError(error, stage.css, locate, stageEntry, hidden);
@@ -199,8 +205,8 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
 
   let css = result.css;
   let map: string | undefined;
-  if (wantMap) {
-    map = finalMap(result, stage, { to: config.to, sourcesContent, hidden });
+  if (prev) {
+    map = finalMap(result, prev, stage, { to: config.to, sourcesContent, hidden });
     // 'inline' is self-contained, so it is finished here, appended last:
     // only the final sourceMappingURL comment in a file counts. 'external'
     // returns the map and leaves the annotation to the writer, the only side
@@ -429,20 +435,51 @@ function hideInWarning(warning: CompileWarning, hidden: string): CompileWarning 
 // --- the source map --------------------------------------------------------------------
 
 /**
- * The final map: PostCSS's, chained with the stage's map through `map.prev`,
- * keeping only the mappings whose source is one of the stage's (the author's
- * files) or PostCSS's `<no source>` (a generated node). Every other mapping
- * names PostCSS's own input, Dart Sass's output, at its coordinates, and is
- * dropped. The author's files are named as PostCSS names a file, relative to
- * `to`'s directory (the working directory without `to`), URL-encoded; an
- * anonymous source is `<css input>`; `sourcesContent` is the author's text.
+ * Removes each top-level comment whose text starts with `# sourceMappingURL=`,
+ * as PostCSS does itself when it writes no map, so the CSS is the same in the
+ * three `sourceMap` modes. A comment inside a rule stays, as PostCSS leaves it.
  */
-function finalMap(result: Result, stage: SassStageResult, opts: { to?: string; sourcesContent: boolean; hidden: string | undefined }): string {
+const dropAnnotations: Plugin = {
+  postcssPlugin: 'uxdsl/drop-annotations',
+  Once(root) {
+    for (let index = root.nodes.length - 1; index >= 0; index--) {
+      const node = root.nodes[index];
+      if (node.type === 'comment' && node.text.startsWith('# sourceMappingURL=')) root.removeChild(index);
+    }
+  },
+};
+
+/**
+ * The stage's map as compile() hands it to PostCSS: a source that does not
+ * start with `/` (a Windows path, `C:\…`) is written from `/` (`/C:/…`); a
+ * POSIX path is unchanged. PostCSS keeps a prev map's source as written only
+ * when it starts with `/` or is a URL, and joins any other onto the directory
+ * between `to` and the entry. Written from `/`, a source also stays an
+ * absolute path where PostCSS looks a position up, which a URL is not for an
+ * input without `from`.
+ */
+function chainable(map: RawSourceMap): RawSourceMap {
+  return { ...map, sources: map.sources.map((source) => (source.startsWith('/') ? source : `/${source.replace(/\\/g, '/')}`)) };
+}
+
+/**
+ * The final map: PostCSS's, chained with the stage's map through `map.prev`
+ * (`prev`, the stage's map as `chainable` writes it), keeping only the
+ * mappings whose source is one of the stage's (the author's files) or
+ * PostCSS's `<no source>` (a generated node). Every other mapping names
+ * PostCSS's own input, Dart Sass's output, at its coordinates, and is dropped.
+ * The author's files are named as PostCSS names a file, relative to `to`'s
+ * directory (the working directory without `to`), URL-encoded; an anonymous
+ * source is `<css input>`; `sourcesContent` is the author's text.
+ */
+function finalMap(result: Result, prev: RawSourceMap, stage: SassStageResult, opts: { to?: string; sourcesContent: boolean; hidden: string | undefined }): string {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const { SourceMapConsumer, SourceMapGenerator } = require('source-map-js') as typeof import('source-map-js');
   const raw = result.map.toJSON();
   const stageConsumer = new SourceMapConsumer(stage.map!);
-  const stageSources = new Set(stageConsumer.sources);
+  // Each source as PostCSS kept it, with the author's file it names: both
+  // consumers list a map's sources in the map's order.
+  const authorFiles = new Map(new SourceMapConsumer(prev).sources.map((source, index) => [source, stageConsumer.sources[index]]));
   const base = opts.to ? path.dirname(path.resolve(opts.to)) : process.cwd();
   const urls = new Map<string, string>();
   const urlOf = (file: string): string => {
@@ -464,10 +501,12 @@ function finalMap(result: Result, stage: SassStageResult, opts: { to?: string; s
     const original = { line: mapping.originalLine, column: mapping.originalColumn };
     if (mapping.source === '<no source>') {
       out.addMapping({ generated, original, source: '<no source>' });
-    } else if (stageSources.has(mapping.source)) {
-      used.add(mapping.source);
-      out.addMapping({ generated, original, source: urlOf(mapping.source), name: mapping.name || undefined });
+      return;
     }
+    const file = authorFiles.get(mapping.source);
+    if (file === undefined) return;
+    used.add(file);
+    out.addMapping({ generated, original, source: urlOf(file), name: mapping.name || undefined });
   });
   if (opts.sourcesContent) {
     for (const file of used) {

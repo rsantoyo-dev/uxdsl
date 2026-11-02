@@ -1408,7 +1408,10 @@ changes only what it names:
    the theme, the directives, responsive values, token functions and the
    reference check; nothing else in Sass's output changes. A rule nested after
    `@ds-button` or `@ds-input` therefore follows the directive's generated
-   state rules. PostCSS's parser reads all of Dart Sass's output but one
+   state rules. `compile()` also removes a top-level comment whose text starts
+   with `# sourceMappingURL=` (Dart Sass keeps `/* # sourceMappingURL=… */`),
+   in every `sourceMap` mode, as PostCSS removes it when it writes no map.
+   PostCSS's parser reads all of Dart Sass's output but one
    shape: a declaration value with a colon outside parentheses and strings,
    on a property that is not custom (`b: a:b`, which Sass prints for
    `string.unquote("a:b")`, `#{"a:b"}` or `selector.nest(".a", "&:hover")` in

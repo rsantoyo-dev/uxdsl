@@ -55,7 +55,10 @@ output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
   author's files, relative to `to`, with their text as `sourcesContent`; no
   mapping points into Dart Sass's output. The CSS is identical with
   `sourceMap` `false`, `'external'` and `'inline'` (which appends its data URI
-  last).
+  last): in all three, a top-level comment whose text starts with
+  `# sourceMappingURL=` (Dart Sass keeps `/* # sourceMappingURL=… */`) is
+  removed, as PostCSS removes it when it writes no map; `'external'` and
+  `'inline'` used to keep it.
 - **The `sass` option**, `{ silenceDeprecations?: string[], quietDeps?: boolean }`,
   is passed to Dart Sass; any other key, or a value of the wrong type, is an
   error raised before anything is read.
