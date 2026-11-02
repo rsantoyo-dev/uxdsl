@@ -167,6 +167,11 @@ test('MIG-B9-13: every Sass construct fails alone as UXD_SASS_CONTEXT at the con
     ['.a, %b {\n  color: red;\n}', '%b'],
     ['.a {\n  width: math.div(10px, 2);\n}', 'math.div(10px, 2)', 'math.div'],
     ['// top\n.a {\n  color: red;\n}', 'a // comment', '//'],
+    ['.a {\n  font: {\n    family: x;\n    size: 2px;\n  }\n}', 'the nested property font:', 'font'],
+    ['.a {\n  margin: 1px {\n    top: 2px;\n  }\n}', 'the nested property margin:', 'margin'],
+    ['.a {\n  margin:-1px {\n    top: 2px;\n  }\n}', 'the nested property margin:', 'margin'],
+    ['.a {\n  @media screen {\n    font : {\n      family: x;\n    }\n  }\n}', 'the nested property font:', 'font'],
+    ['@layer base {\n  font: {\n    family: x;\n  }\n}', 'the nested property font:', 'font'],
   ]) {
     const [code, reason, error] = errorOf(source);
     assert.equal(code, 'UXD_SASS_CONTEXT', `${source}: ${reason}`);
@@ -203,6 +208,8 @@ test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from th
 const LOOK_ALIKES = [
   // CSS nesting and selectors
   '.a { &:hover { b: c; } & .x { b: c; } &.y { b: c; } .z & { b: c; } & + & { b: c; } &[data-x] { b: c; } &::before { b: c; } :is(&) { b: c; } && { b: c; } &#id { b: c; } &:not(&) { b: c; } > & { b: c; } }',
+  // nested selectors with a pseudo-class, which Dart Sass reads as selectors, not as nested properties
+  '.a { a:hover { b: c; } a :hover { b: c; } input:checked + label { b: c; } li:nth-child(2n + 1) { b: c; } a:not(.b) { b: c; } a::before { b: c; } a:-webkit-autofill { b: c; } a:\\68 over { b: c; } }',
   '@keyframes k { 0% { a: b; } 50% { a: b; } 12.5% { a: b; } to { a: b; } }', '.a[data-x="a&b"] { b: c; }', '.a[data-x="50%a"] { b: c; }', '.a[data-x=\'#{x}\'] { b: c; }', 'a[href^="//"] { b: c; }',
   // escaped selectors (Tailwind and hand-written)
   '.\\[\\&_p\\]\\:mt-4 p { b: c; }', '.a\\&b { b: c; }', '.w-\\[50\\%\\] { b: c; }', '.\\%x { b: c; }', '.\\$price { b: c; }', '.group-\\[\\&\\:hover\\]\\:x { b: c; }', '.\\26 x { b: c; }', '.sm\\:hover\\:bg-red:hover { b: c; }', '.\\/\\/x { b: c; }',
@@ -253,6 +260,15 @@ const SASS_SOURCE = [
   '  min-width: calc(#{$gap} + 1px);',
   '  background: url(#{$gap}/x.png);',
   '}',
+  '.n {',
+  '  font: {',
+  '    family: x;',
+  '    size: 2px;',
+  '  }',
+  '  margin: 1px {',
+  '    top: 2px;',
+  '  }',
+  '}',
   '@each $tone in primary, secondary {',
   '  .x-#{$tone} { color: red; }',
   '}',
@@ -281,6 +297,7 @@ test('MIG-B9-13: CSS that looks like Sass passes the plugin alone unchanged, and
     '.a {\n  margin: -4px 2px 2px;\n  width: 5px;\n  padding: 1px;\n  color: blue;\n  height: 1px;\n}',
     '.a__title {', '.a-x {', '.a--m {', '.b {',
     '.a {\n  min-width: calc(4px + 1px);\n  background: url(4px/x.png);\n}',
+    '.n {\n  font-family: x;\n  font-size: 2px;\n  margin: 1px;\n  margin-top: 2px;\n}',
     '.x-primary {', '.x-secondary {', '.w-1 {', '.w-2 {', '.v {', '@media (min-width: 4px) {\n  .m {',
   ]) {
     assert.ok(css.includes(expected), `${expected} in\n${css}`);
@@ -336,6 +353,52 @@ test('MIG-B9-13: the kept-message comparison rejects a planted wrong row (negati
   assert.deepEqual(disagreements([{ probe: '.a { width: $v; }', verdict: 'kept' }]), ['kept: .a { width: $v; }']);
   assert.deepEqual(disagreements([{ probe: '.a { --x: $v; }', verdict: 'generic' }]), ['generic: .a { --x: $v; }']);
   assert.deepEqual(disagreements([{ probe: '.a { --x: $v; }', verdict: 'none' }]), ['none: .a { --x: $v; }']);
+});
+
+// Dart Sass reads a nested property where it reads declarations (inside a style rule, or an at-rule
+// other than @media, @supports and @-moz-document): a name and a colon, then nothing, whitespace, or a
+// value that does not start like an identifier. An identifier right after the colon is a selector.
+const NESTED_PROBES = [
+  '.a { font: { family: x; } }', '.a { font:{family:x} }', '.a { font : { family: x; } }', '.a { margin: 1px { top: 2px; } }',
+  '.a { margin:-1px { top: 2px; } }', '.a { font:12px { family: x; } }', '.a { a: hover { color: red; } }', '.a { -webkit-box: { flex: 1; } }',
+  '.a { @media screen { font: { family: x; } } }', '@layer base { font: { family: x; } }', '@font-face { font: { family: x; } }', '@foo { @media screen { font: { family: x; } } }',
+  '.a { a:hover { color: red; } }', '.a { a :hover { color: red; } }', '.a { input:checked + label { color: red; } }', '.a { li:nth-child(2n + 1) { color: red; } }',
+  '.a { a::before { color: red; } }', '.a { a:-webkit-autofill { color: red; } }', '.a { a:--state { color: red; } }', '.a { a:\\68 over { color: red; } }',
+  '@media screen { font: { family: x; } }', '@supports (display: grid) { font: { family: x; } }',
+];
+
+/** Whether Dart Sass reads a nested property in `probe`: its output declares a property named after it (`font-family`, `margin-top`, `a-color`). A Sass error is not one. */
+function sassNests(probe) {
+  try {
+    return /(^|[\s{;])[\w-]+-(family|top|color|flex)\s*:/m.test(sass.compileString(probe, { logger: sass.Logger.silent }).css);
+  } catch {
+    return false;
+  }
+}
+/** The rows whose verdict (`flagged`: the plugin alone rejected the probe as a nested property) differs from live Dart Sass's reading. */
+function nestingDisagreements(rows) {
+  return rows.filter(({ probe, flagged }) => flagged !== sassNests(probe)).map(({ probe, flagged }) => `${flagged ? 'flagged' : 'passed'}: ${probe}`);
+}
+
+test('MIG-B9-13: the plugin alone rejects a nested property exactly where Dart Sass reads one (pinned against live Sass)', () => {
+  const rows = NESTED_PROBES.map((probe) => {
+    try {
+      compile(probe);
+      return { probe, flagged: false };
+    } catch (error) {
+      return { probe, flagged: String(error.reason).startsWith('UXD_SASS_CONTEXT: the nested property ') };
+    }
+  });
+  assert.deepEqual(nestingDisagreements(rows), []);
+  assert.ok(rows.some(({ flagged }) => flagged) && rows.some(({ flagged }) => !flagged), 'both verdicts occur');
+  // UXDSL's removed @theme pack has the same shape, and keeps the diagnostic that says where its tokens go.
+  assert.equal(errorOf('@theme { surface-contained: { bg: pink; } }')[0], 'UXD_THEME_BLOCK_REMOVED');
+  assert.equal(errorOf('@theme { .a { font: { family: x; } } }')[0], 'UXD_THEME_BLOCK_REMOVED');
+});
+
+test('MIG-B9-13: the nested-property comparison rejects a planted wrong row (negative control)', () => {
+  assert.deepEqual(nestingDisagreements([{ probe: '.a { a:hover { color: red; } }', flagged: true }]), ['flagged: .a { a:hover { color: red; } }']);
+  assert.deepEqual(nestingDisagreements([{ probe: '.a { margin: 1px { top: 2px; } }', flagged: false }]), ['passed: .a { margin: 1px { top: 2px; } }']);
 });
 
 test('analyzeResponsiveValue describes groups, bases, nesting and empties for editors', () => {

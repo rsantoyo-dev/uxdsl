@@ -121,9 +121,13 @@ What to check in a project when upgrading is in the migration guide,
   `$variable` declaration or reference (it used to resolve root-level ones),
   `@use`, `@forward`, `@mixin`/`@include`, `@function`, `@extend`,
   `@if`/`@each`/`@for`/`@while` and the other Sass at-rules, `#{…}`, an
-  `&`-suffix selector, a `%placeholder`, a namespaced call, a `//` comment —
-  is a located `UXD_SASS_CONTEXT` naming the fix: a `.uxdsl` file compiled by
-  `uxdsl build`, `compile()` or an adapter, or no Sass.
+  `&`-suffix selector, a `%placeholder`, a nested property
+  (`font: { family: x; }`), a namespaced call, a `//` comment — is a located
+  `UXD_SASS_CONTEXT` naming the fix: a `.uxdsl` file compiled by
+  `uxdsl build`, `compile()` or an adapter, or no Sass. PostCSS's own parser
+  rejects a `#{…}` in a selector, in a property name or bare in a value, and a
+  `//` comment inside a block, before the plugin runs, as its located
+  `Unknown word` error.
 - Through `compile()`, a `$variable` or a namespaced call Dart Sass keeps as
   written — in a custom property, in the prelude of a plain-CSS at-rule such
   as `@container`, `@layer` or `@keyframes`, in a `progid:` value or in a CSS

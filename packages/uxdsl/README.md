@@ -1345,18 +1345,22 @@ no Sass (FEAT-010, DEC-05). A Sass construct reaching it — a `$variable`
 declaration or reference, `@use`, `@forward`, `@mixin`/`@include`,
 `@function`, `@extend`, `@if`/`@each`/`@for`/`@while` and the other Sass
 at-rules, `#{…}` interpolation, an `&`-suffix selector such as `&__title`, a
-`%placeholder`, a namespaced call such as `math.div()` or a `//` comment — fails
-as `UXD_SASS_CONTEXT` at the construct's line and column, naming the fix: name
-the file `.uxdsl` and compile it with `uxdsl build`, `compile()` or an
-adapter, where Dart Sass runs first, or remove the Sass. CSS that looks
-similar passes: native nesting (`&:hover`, `& .x`, `&.y`), `0%` keyframe
-selectors, escaped selectors such as Tailwind's `.\[\&_p\]\:mt-4`, `$` in a
-string, `url($img)`, `--price: $5`, and CSS's own `@function --name` and
-`@mixin --name`. Dart Sass keeps a `$variable` as written in a custom property
-(`--gap: $gap`), in the prelude of a plain-CSS at-rule it does not evaluate
-(`@container`, `@layer`, `@keyframes`, `@property`, an unknown at-rule, …), in
-a `progid:` value and in a CSS `@function` body, so there `compile()` reports
-`UXD_SASS_CONTEXT` too, with the fix Sass needs: write `#{$gap}`.
+`%placeholder`, a nested property such as `font: { family: x; }`, a namespaced
+call such as `math.div()` or a `//` comment — fails as `UXD_SASS_CONTEXT` at
+the construct's line and column, naming the fix: name the file `.uxdsl` and
+compile it with `uxdsl build`, `compile()` or an adapter, where Dart Sass runs
+first, or remove the Sass. PostCSS's own parser rejects a `#{…}` in a selector,
+in a property name or bare in a value, and a `//` comment inside a block,
+before any plugin runs: those fail as its located `Unknown word` error. CSS
+that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
+`a:hover`), `0%` keyframe selectors, escaped selectors such as Tailwind's
+`.\[\&_p\]\:mt-4`, `$` in a string, `url($img)`, `--price: $5`, and CSS's own
+`@function --name` and `@mixin --name`. Dart Sass keeps a `$variable` as
+written in a custom property (`--gap: $gap`), in the prelude of a plain-CSS
+at-rule it does not evaluate (`@container`, `@layer`, `@keyframes`,
+`@property`, an unknown at-rule, …), in a `progid:` value and in a CSS
+`@function` body, so there `compile()` reports `UXD_SASS_CONTEXT` too, with
+the fix Sass needs: write `#{$gap}`.
 
 `compile()` — what the CLI, `uxdsl/vite` and `uxdsl/webpack` run — compiles a
 `.uxdsl` file with real Dart Sass (FEAT-010), so that a `.scss` file renamed to

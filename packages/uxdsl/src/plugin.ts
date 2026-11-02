@@ -185,6 +185,12 @@ const SASS_HINT = /\$|#\{|[\w-]\.[a-zA-Z_][\w-]*\(/;
 const QUOTED = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g;
 const SELECTOR_ESCAPE = /\\(?:[0-9a-fA-F]{1,6}\s?|[\s\S])/g;
 const SELECTOR_ATTRIBUTE = /\[[^\]]*\]/g;
+/** The selector PostCSS reads from a Sass nested property (`font: { … }`, `margin: 1px { … }`): a property name, a colon that does not start `::`, and what follows it. */
+const NESTED_PROPERTY = /^(-?[a-zA-Z_\u0080-\uFFFF][\w\u0080-\uFFFF-]*)\s*:(?!:)(\s*)([\s\S]*)$/;
+/** What starts an identifier for Dart Sass: a name character, an escape or an interpolation, after at most one `-`, or `--`. */
+const IDENTIFIER_START = /^(?:-?(?:[a-zA-Z_\u0080-\uFFFF\\]|#\{)|--)/;
+/** The at-rules whose blocks Dart Sass reads as rules only; every other block (a style rule's, an unknown at-rule's) holds declarations, nested properties included. */
+const RULE_BLOCKS = new Set(['media', 'supports', '-moz-document']);
 
 /** A Sass construct in a value or a prelude, and the functions it sits in. */
 interface SassFinding {
@@ -299,11 +305,39 @@ function rejectSassInAtRule(at: AtRule) {
 }
 
 /**
+ * The property name of a Sass nested property PostCSS read as `rule`
+ * (`font: { family: x; }`, `margin: 1px { top: 2px; }`), or null. Dart Sass
+ * reads one where it reads declarations, inside a style rule or an at-rule it
+ * does not know; after the colon comes nothing, whitespace, or a value that
+ * does not start like an identifier. An identifier right after the colon is a
+ * selector to Dart Sass, as to CSS: `a:hover`, `li:nth-child(2)`, `a :hover`.
+ * Inside `@theme`, the same shape is a pack of UXDSL's removed token blocks
+ * (`@theme { surface-contained: { … } }`), which UXD_THEME_BLOCK_REMOVED
+ * reports with where its tokens go.
+ */
+function nestedPropertyName(rule: Rule): string | null {
+  const shape = NESTED_PROPERTY.exec(rule.selector);
+  if (!shape) return null;
+  const [, name, space, rest] = shape;
+  if (rest !== '' && space === '' && IDENTIFIER_START.test(rest)) return null;
+  let declarations = false;
+  for (let ancestor: PostcssNode | undefined = rule.parent; ancestor; ancestor = ancestor.parent) {
+    if (ancestor.type === 'rule') declarations = true;
+    if (ancestor.type !== 'atrule') continue;
+    const at = (ancestor as AtRule).name.toLowerCase();
+    if (at === 'theme') return null;
+    if (!RULE_BLOCKS.has(at)) declarations = true;
+  }
+  return declarations ? name : null;
+}
+
+/**
  * Sass in a selector: an interpolation, an `&` followed by an identifier
  * character (`&__title`, `&-x`; CSS nesting writes `&:hover`, `& .x`, `&.y`),
- * a `%placeholder` starting a compound, or a `//` comment PostCSS read into
- * the selector. Escapes, strings and attribute selectors are masked first, so
- * `.a\&b`, `[data-x="a&b"]` and `a[href^="//"]` are CSS.
+ * a `%placeholder` starting a compound, a `//` comment PostCSS read into the
+ * selector, or a nested property PostCSS read as a rule. Escapes, strings and
+ * attribute selectors are masked first, so `.a\&b`, `[data-x="a&b"]` and
+ * `a[href^="//"]` are CSS.
  */
 function rejectSassInSelector(rule: Rule) {
   const { selector } = rule;
@@ -325,6 +359,8 @@ function rejectSassInSelector(rule: Rule) {
     throw locateError(diagnostic(sassContext(text), text), rule);
   }
   if (masked.includes('//')) throw locateError(diagnostic(sassContext('a // comment'), '//'), rule);
+  const nested = nestedPropertyName(rule);
+  if (nested) throw locateError(diagnostic(sassContext(`the nested property ${nested}:`), nested), rule);
 }
 
 /**
@@ -338,7 +374,7 @@ function rejectSassSyntax(c: Compilation) {
   c.root.walk((node) => {
     if (node.type === 'decl') rejectSassInDeclaration(node);
     else if (node.type === 'atrule') rejectSassInAtRule(node);
-    else if (node.type === 'rule' && /[&%#/]/.test(node.selector)) rejectSassInSelector(node);
+    else if (node.type === 'rule' && /[&%#/:]/.test(node.selector)) rejectSassInSelector(node);
   });
 }
 
