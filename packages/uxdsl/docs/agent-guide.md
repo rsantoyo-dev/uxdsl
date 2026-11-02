@@ -892,8 +892,8 @@ inlines a file, a file `@import`ed twice is emitted twice). A Sass failure is
 `UXD_SASS` and a Sass warning `UXD_SASS_WARNING`, at the author's line and
 column; a project `@function` named like a UXDSL function wins where Sass
 calls its bare name, with one `UXD_FUNCTION_SHADOWED` warning at the
-definition (DEC-17); every position `compile()` reports is the author's,
-found through the Sass stage's source map. The PostCSS plugin used alone
+definition (DEC-17); every position in Dart Sass's output that `compile()`
+reports is moved to the author's through the Sass stage's source map. The PostCSS plugin used alone
 (`uxdsl/postcss`) compiles CSS plus UXDSL and no Sass: a Sass construct
 reaching it is `UXD_SASS_CONTEXT`, and through `compile()` so is a
 `$variable` Dart Sass keeps as written (in a custom property or a plain-CSS

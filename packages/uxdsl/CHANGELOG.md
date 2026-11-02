@@ -34,14 +34,19 @@ output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
 `fixtures/sass-corpus`).
 
 - **Positions are the author's.** Every error, warning and reference issue
-  `compile()` reports names the author's file, line and column, found through
-  the Sass stage's source map: the start of the declaration or at-rule Dart
-  Sass mapped (`heavy.uxdsl:18:66`), or, for a value Sass copied, where it was
-  written (a `$variable`'s definition, an `@include` argument), the same on
-  every PostCSS of the `^8.4.31` peer range. `error.showSourceCode()` frames
-  the author's line; a `ReferenceIntegrityError`'s issues and the issue a
-  `references.onWarning` callback receives are relocated the same way, and so
-  is the frame PostCSS adds to an error's stack for the node it was thrown at.
+  `compile()` reports at a position in Dart Sass's output names the author's
+  file, line and column, found through the Sass stage's source map: the start
+  of the declaration or at-rule Dart Sass mapped (`heavy.uxdsl:18:66`), or, for
+  a value Sass copied, where it was written (a `$variable`'s definition, an
+  `@include` argument), the same on every PostCSS of the `^8.4.31` peer range.
+  `error.showSourceCode()` frames the author's line; a
+  `ReferenceIntegrityError`'s issues and the issue a `references.onWarning`
+  callback receives are relocated the same way, and so is the frame PostCSS
+  adds to an error's stack for the node it was thrown at. A position on a line
+  the map does not cover names the entry with no line or column. A parse error
+  in CSS the plugin parses itself (the theme it generates, a `references.css`
+  entry) keeps PostCSS's position in that CSS, `<css input>:line:column`,
+  under no file.
 - **Warnings** start with Dart Sass's (`UXD_SASS_WARNING` under Sass's own cap
   of five per deprecation type, then `UXD_FUNCTION_SHADOWED` at each
   definition), followed by the plugin's at the author's positions; a warning

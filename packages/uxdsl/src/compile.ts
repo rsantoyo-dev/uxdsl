@@ -25,10 +25,13 @@
 //    `string.unquote("a:b")`; a `progid:` filter is read), which it rejects
 //    as "Missed semicolon", located like any other error.
 //
-// Every position compile() reports (an error, a warning, a reference issue) is
-// the author's file, line and column, found through the Sass stage's map, the
-// same on every PostCSS of the peer range. A requested source map chains that
-// map with PostCSS's and names only the files the author wrote.
+// Every position in Dart Sass's output that compile() reports (an error, a
+// warning, a reference issue) is moved to the author's file, line and column
+// through the Sass stage's map, the same on every PostCSS of the peer range. A
+// parse error in CSS the plugin parses itself (the theme it generates, a
+// `references.css` entry) keeps PostCSS's position in that CSS, under no
+// author's file. A requested source map chains the stage's map with PostCSS's
+// and names only the files the author wrote.
 
 import fs from 'fs';
 import path from 'path';
@@ -191,7 +194,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
       map: wantMap ? { prev: stage.map, inline: false, annotation: false, sourcesContent } : false,
     });
   } catch (error) {
-    throw relocateError(error, locate, stageEntry, hidden);
+    throw relocateError(error, stage.css, locate, stageEntry, hidden);
   }
 
   let css = result.css;
@@ -298,39 +301,46 @@ function restack(error: Error, locate: Locate, entry: string, hidden: string | u
 }
 
 /**
- * A plugin or parser error on Dart Sass's output, at the author's position.
- * A CssSyntaxError keeps `input` (its position in Dart Sass's output), `reason`,
- * `plugin` and `cause`; its file, line, column and `source` become the
- * author's, so `showSourceCode()` frames the author's line. With no mapping on
- * its line it names the entry, without a line, column or frame. A
- * ReferenceIntegrityError's issues are relocated the same way. Anything else
- * is returned unchanged.
+ * An error the plugin or PostCSS's parser threw, with each position in Dart
+ * Sass's output (`stageCss`) moved to the author's. A CssSyntaxError in Dart
+ * Sass's output keeps `input` (its position there), `reason`, `plugin` and
+ * `cause`; its file, line, column and `source` become the author's, so
+ * `showSourceCode()` frames the author's line, and with no mapping on its line
+ * it names the entry, without a line, column or frame. A CssSyntaxError in CSS
+ * the plugin parses itself (the theme it generates, a directive's generated
+ * rules, a `references.css` entry) keeps PostCSS's file, line, column and
+ * frame: a position in that CSS, never under an author's file. A
+ * ReferenceIntegrityError's issues are relocated like the first. In every case
+ * the stack frames PostCSS adds for the nodes of Dart Sass's output the error
+ * was thrown inside are relocated too. Anything else is returned unchanged.
  */
-function relocateError(error: unknown, locate: Locate, entry: string, hidden: string | undefined): unknown {
+function relocateError(error: unknown, stageCss: string, locate: Locate, entry: string, hidden: string | undefined): unknown {
   if (!error || typeof error !== 'object') return error;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const e = error as any;
   if (e.name === 'CssSyntaxError' && e.input && typeof e.input.line === 'number' && typeof e.setMessage === 'function') {
-    const at = locate(e.input.line, e.input.column);
-    if (at) {
-      e.file = at.file;
-      e.line = at.line;
-      e.column = at.column;
-      // The start, not deleted: PostCSS frames a long line by its end column.
-      e.endLine = at.line;
-      e.endColumn = at.column;
-      if (at.source !== null) e.source = at.source;
-      else delete e.source;
-    } else {
-      e.file = hidden ? undefined : entry;
-      delete e.line;
-      delete e.column;
-      delete e.endLine;
-      delete e.endColumn;
-      delete e.source;
+    if (e.input.source === stageCss) {
+      const at = locate(e.input.line, e.input.column);
+      if (at) {
+        e.file = at.file;
+        e.line = at.line;
+        e.column = at.column;
+        // The start, not deleted: PostCSS frames a long line by its end column.
+        e.endLine = at.line;
+        e.endColumn = at.column;
+        if (at.source !== null) e.source = at.source;
+        else delete e.source;
+      } else {
+        e.file = hidden ? undefined : entry;
+        delete e.line;
+        delete e.column;
+        delete e.endLine;
+        delete e.endColumn;
+        delete e.source;
+      }
+      if (e.file === undefined) delete e.file;
+      e.setMessage();
     }
-    if (e.file === undefined) delete e.file;
-    e.setMessage();
     restack(e, locate, entry, hidden);
     return e;
   }

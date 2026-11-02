@@ -57,8 +57,10 @@ fails as `UXD_SASS_CONTEXT`. In the plugin, and in the runtime:
 - `sass/protect.ts`, `sass/compile-sass.ts`: SCSS — Sass's resolution, modules,
   nesting, mixins, functions and control rules — and its diagnostics
   (`UXD_SASS`, `UXD_SASS_WARNING`, `UXD_FUNCTION_SHADOWED`); no UXDSL engine
-  reimplements any of it. `compile.ts` maps every position the plugin reports
-  back to the author's file through the Sass stage's source map.
+  reimplements any of it. `compile.ts` maps every position in Dart Sass's
+  output that the plugin reports back to the author's file through the Sass
+  stage's source map; a parse error in CSS the plugin parses itself (the
+  generated theme, `references.css`) keeps PostCSS's position in that CSS.
 - `language.ts`: breakpoints, responsive resolution, Density map and compilation.
 - `preset-engine.ts`: common value validation and token normalization.
 - `foundations.ts`: JSON Colors, Palette, Spacing and Palette modes.

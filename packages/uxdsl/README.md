@@ -1415,14 +1415,18 @@ changes only what it names:
    a value; a `progid:` filter is read), which fails as PostCSS's located
    `Missed semicolon` error, with no UXD code.
 
-Every position `compile()` reports — an error, a warning, a reference issue,
-an `onWarning` issue — is the author's file, line and column, found through
-the Sass stage's source map: the start of the declaration or at-rule Dart Sass
-mapped (`heavy.uxdsl:18:66`), or, for a value Sass copied, where it was
-written (a `$variable`'s definition, an `@include` argument), the same on every
-PostCSS of the peer range; `error.showSourceCode()` frames the author's line,
-one over 160 characters included (an error's `endLine` and `endColumn` are its
-start). A requested source map (`sourceMap: 'inline' | 'external'`) chains the
+Every position in Dart Sass's output that `compile()` reports — an error, a
+warning, a reference issue, an `onWarning` issue — becomes the author's file,
+line and column, found through the Sass stage's source map: the start of the
+declaration or at-rule Dart Sass mapped (`heavy.uxdsl:18:66`), or, for a value
+Sass copied, where it was written (a `$variable`'s definition, an `@include`
+argument), the same on every PostCSS of the peer range; `error.showSourceCode()`
+frames the author's line, one over 160 characters included (an error's
+`endLine` and `endColumn` are its start). On a line the map does not cover,
+the diagnostic names the entry with no line or column. A parse error in CSS
+the plugin parses itself — the theme it generates (from a theme value with an
+unclosed comment, say) or a `references.css` entry — keeps PostCSS's position
+in that CSS, `<css input>:line:column`, under no file. A requested source map (`sourceMap: 'inline' | 'external'`) chains the
 stage's map with PostCSS's and names only the author's files, as PostCSS names
 a file — relative to `to` (to the working directory without it) and
 URL-encoded — with their text; the CSS is identical in the three modes, and,
