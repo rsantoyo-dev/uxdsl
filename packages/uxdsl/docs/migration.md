@@ -110,7 +110,12 @@ What to check when you upgrade:
    `Unknown word` error: a `#{…}` in a selector, in a property name or bare in
    a value, and a `//` comment after a `;` or on a line of its own inside a
    block. Move the Sass into a `.uxdsl` file built by `uxdsl build`,
-   `compile()` or an adapter, or remove it.
+   `compile()` or an adapter, or remove it. A PostCSS chain is no exception,
+   whatever the order of its plugins: `uxdsl/postcss` checks the stylesheet
+   before any plugin's visitors run, so `&_title` left for postcss-nested, or
+   `$gap` for postcss-simple-vars, fails as `UXD_SASS_CONTEXT`; run that plugin
+   in a PostCSS pass of its own before `uxdsl/postcss`, or move the file to
+   `.uxdsl`.
 
    ```css
    .card { padding: density(2); }

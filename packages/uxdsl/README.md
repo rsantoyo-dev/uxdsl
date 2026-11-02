@@ -1354,7 +1354,14 @@ compile it with `uxdsl build`, `compile()` or an adapter, where Dart Sass runs
 first, or remove the Sass. PostCSS's own parser rejects a `#{…}` in a selector,
 in a property name or bare in a value, and a `//` comment after a `;`, on a
 line of its own inside a block or after the last rule, before any plugin runs:
-those fail as its located `Unknown word` error. CSS
+those fail as its located `Unknown word` error. In a PostCSS chain the plugin
+checks the stylesheet in its `Once` listener, which PostCSS runs for every
+plugin before any plugin's visitors, so what another plugin resolves in a
+visitor reaches it first, in whichever order the plugins are listed:
+postcss-nested's `&_title` and postcss-simple-vars' `$gap` fail as
+`UXD_SASS_CONTEXT`. Run such a plugin in a PostCSS pass of its own before
+`uxdsl/postcss`, or move the file to `.uxdsl` and compile it with
+`compile()`, where Dart Sass resolves both. CSS
 that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
 `a:hover`), `0%` keyframe selectors, escaped selectors such as Tailwind's
 `.\[\&_p\]\:mt-4`, `$` in a string, `url($img)` where Sass evaluates the call

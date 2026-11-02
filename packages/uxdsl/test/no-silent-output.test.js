@@ -202,6 +202,32 @@ test('MIG-B9-13: a %placeholder anywhere in a compound, and a // comment PostCSS
   assert.equal(css, 'a.x {\n  color: red;\n}\n\n.card {\n  margin: 0;\n  padding: var(--uxdsl__space__2);\n}');
 });
 
+// A plugin that resolves Sass-like syntax in a visitor, as postcss-nested does in
+// its Rule listener: it moves a nested rule out, writing the parent in place of &.
+const unwrapNested = () => ({
+  postcssPlugin: 'unwrap-nested',
+  Rule(rule) {
+    if (rule.parent?.type !== 'rule') return;
+    const parent = rule.parent;
+    rule.selector = rule.selector.replace(/&/g, parent.selector);
+    parent.after(rule);
+  },
+});
+
+test('MIG-B9-13: in a PostCSS chain, Sass-like syntax another plugin resolves in a visitor (postcss-nested\'s &_title) reaches uxdsl/postcss first, in either order, because PostCSS runs every plugin\'s Once before any visitor; that plugin in a pass of its own first compiles', async () => {
+  const source = '.phone {\n  &_title {\n    padding: space(2);\n  }\n}\n';
+  const uxdsl = () => plugin({ discoverTheme: false, includeTheme: false });
+  for (const plugins of [[unwrapNested(), uxdsl()], [uxdsl(), unwrapNested()]]) {
+    const error = await postcss(plugins).process(source, { from: '/project/src/app.css' }).then(() => assert.fail(`expected ${plugins.map((p) => p.postcssPlugin).join(', ')} to fail`), (caught) => caught);
+    assert.equal(error.reason, sassContext('&_title'));
+    assert.deepEqual([error.line, error.column], [2, 3]);
+  }
+  // The other plugin in a pass of its own, then uxdsl/postcss (negative control).
+  const first = await postcss([unwrapNested()]).process(source, { from: '/project/src/app.css' });
+  const { css } = await postcss([uxdsl()]).process(first.css, { from: '/project/src/app.css' });
+  assert.match(css, /\.phone_title \{\s*padding: var\(--uxdsl__space__2\);\s*\}/);
+});
+
 test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from the plugin alone and through compile()', async () => {
   for (const [source, construct, where] of [
     ['.card {\n  --gap: $gap;\n}', '$gap', 'the custom property --gap'],

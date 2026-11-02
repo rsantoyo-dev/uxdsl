@@ -156,6 +156,13 @@ What to check in a project when upgrading is in the migration guide,
   value, and a `//` comment after a `;`, on a line of its own inside a block
   or after the last rule, before the plugin runs, as its located
   `Unknown word` error.
+- That includes a PostCSS chain, in either plugin order: `uxdsl/postcss`
+  checks the stylesheet in its `Once` listener, which PostCSS runs for every
+  plugin before any plugin's visitors, so syntax another plugin resolves in a
+  visitor reaches it first — postcss-nested's `&_title`, postcss-simple-vars'
+  `$gap` — and fails as `UXD_SASS_CONTEXT`. Both chains compiled before. Run
+  such a plugin in a PostCSS pass of its own before `uxdsl/postcss`, or move
+  the file to `.uxdsl` and compile it with `compile()`.
 - Through `compile()`, a `$variable` or a namespaced call Dart Sass keeps as
   written — in a custom property, in the prelude of a plain-CSS at-rule such
   as `@container`, `@layer` or `@keyframes`, in a supports condition Sass does

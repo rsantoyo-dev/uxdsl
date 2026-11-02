@@ -18,7 +18,10 @@
 //    at-rule, becomes `@ds-x(…)` again.
 // 4. The UXDSL plugin (./plugin.ts) runs on Dart Sass's output, parsed by
 //    PostCSS's default parser: the theme, the directives, responsive values,
-//    token functions and the reference check. Nothing else in Sass's output
+//    token functions and the reference check. A `$variable` or namespaced
+//    call Dart Sass kept as written (in a custom property, a plain-CSS
+//    at-rule's prelude, the arguments of `expression()`, …) fails there as
+//    UXD_SASS_CONTEXT, whose fix is `#{…}`. Nothing else in Sass's output
 //    changes, except that each top-level comment whose text starts with
 //    `# sourceMappingURL=` is removed, as PostCSS removes it when it writes
 //    no map, so the CSS is the same in the three `sourceMap` modes. The
