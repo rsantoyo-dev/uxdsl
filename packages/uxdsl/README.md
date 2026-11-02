@@ -1427,16 +1427,15 @@ changes only what it names:
    in every `sourceMap` mode, as PostCSS removes it when it writes no map.
    Text Dart Sass prints from a string (`string.unquote()`, `#{…}`) that is
    not CSS fails at the author's position. PostCSS's parser rejects it as its
-   own error, with no UXD code: a `;` or a brace (`Unknown word`), an
-   unclosed comment or string, an unclosed bracket in a declaration, and a
-   colon outside parentheses and strings in the value of a property that is
-   not custom (`b: a:b`, which Sass prints for `string.unquote("a:b")`,
-   `#{"a:b"}` or `selector.nest(".a", "&:hover")` in a value, is
-   `Missed semicolon`; a custom property or a `progid:` filter with such a
-   colon is read). The plugin reads a `//` printed in a value, outside a
-   string, a `url()` and a custom property, as a `//` comment:
-   `UXD_SASS_CONTEXT`, with the message it gives on its own, which suggests
-   `compile()`.
+   own error, with no UXD code: a `;` or a brace, an unclosed comment or
+   string, an unclosed bracket in a declaration, and a colon outside
+   parentheses and strings in the value of a property that is not custom
+   (`b: a:b`, which Sass prints for `string.unquote("a:b")`, `#{"a:b"}` or
+   `selector.nest(".a", "&:hover")` in a value, is `Missed semicolon`; a
+   custom property or a `progid:` filter with such a colon is read). The
+   plugin reads a `//` printed in a value, outside a string, a `url()` and a
+   custom property, as a `//` comment: `UXD_SASS_CONTEXT`, with the message
+   it gives on its own, which suggests `compile()`.
 
 Every position in Dart Sass's output that `compile()` reports — an error, a
 warning, a reference issue, an `onWarning` issue — becomes the author's file,

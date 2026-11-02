@@ -76,16 +76,16 @@ Sass prints that is not CSS.
 - **Text Dart Sass prints that is not CSS fails.** PostCSS's default parser
   reads Sass's output for the plugin, so text a string function or `#{…}`
   prints that is not CSS fails at the author's position as PostCSS's own
-  error, with no UXD code: a `;` or a brace (`Unknown word`), an unclosed
-  comment or string, an unclosed bracket in a declaration, and a colon
-  outside parentheses and strings in the value of a property that is not
-  custom (`b: a:b`, which Sass prints for `string.unquote("a:b")`,
-  `#{"a:b"}` or `selector.nest(".a", "&:hover")` in a value, is
-  `Missed semicolon`; a custom property and a `progid:` filter with such a
-  colon compile). The plugin reads a `//` printed in a value
-  (`string.unquote("a // c")`), outside a string, a `url()` and a custom
-  property, as a `//` comment: `UXD_SASS_CONTEXT`, with the message it gives
-  on its own, which suggests `compile()`.
+  error, with no UXD code: a `;` or a brace, an unclosed comment or string,
+  an unclosed bracket in a declaration, and a colon outside parentheses and
+  strings in the value of a property that is not custom (`b: a:b`, which
+  Sass prints for `string.unquote("a:b")`, `#{"a:b"}` or
+  `selector.nest(".a", "&:hover")` in a value, is `Missed semicolon`; a
+  custom property and a `progid:` filter with such a colon compile). The
+  plugin reads a `//` printed in a value (`string.unquote("a // c")`),
+  outside a string, a `url()` and a custom property, as a `//` comment:
+  `UXD_SASS_CONTEXT`, with the message it gives on its own, which suggests
+  `compile()`.
 - **Diagnostics.** `UXD_SASS_CONTEXT` (owner `compiler`) is new: Sass syntax
   that reaches the PostCSS plugin (see Breaking). `UXD_FUNCTION_SHADOWED` is
   now owner `core`, beside `UXD_SASS` and `UXD_SASS_WARNING`: the three codes

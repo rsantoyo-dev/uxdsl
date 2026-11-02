@@ -69,8 +69,9 @@ What to check when you upgrade:
    prints from a string that is not CSS (`b: a:b` from
    `string.unquote("a:b")`, a `;`, a brace, an unclosed comment or string),
    which fails as PostCSS's located error, with no UXD code (a `//` printed
-   in a value, as `UXD_SASS_CONTEXT`). Expect a large textual diff. Most of
-   it renders the same; these changes can matter in rendering:
+   in the value of a property that is not custom, as `UXD_SASS_CONTEXT`).
+   Expect a large textual diff. Most of it renders the same; these changes
+   can matter in rendering:
    - Dart Sass flattens a nested rule by writing the parent selector in place
      of `&`, where a browser reads the native nesting `compile()` used to
      forward as `:is()` of the parent. A parent list of mixed specificity

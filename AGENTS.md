@@ -900,7 +900,8 @@ arguments of `expression()`, `element()`, `type()` or a vendor-prefixed
 `calc()`, a `url()` there included — where the fix is `#{$variable}`. Text
 Dart Sass prints from a string that is not CSS (`b: a:b`, a `;`, a brace, an
 unclosed comment or string) is PostCSS's located parse error, with no UXD
-code, and a `//` it prints in a value is `UXD_SASS_CONTEXT`. When generating UXDSL,
+code, and a `//` it prints in the value of a property that is not custom is
+`UXD_SASS_CONTEXT`. When generating UXDSL,
 put Sass only in `.uxdsl` files compiled through `compile()`, and keep UXDSL's
 dotted tokens out of `.scss` and `.css` files, which Dart Sass reads as
 written. `packages/uxdsl/test/core/sass-matrix.test.js`,
