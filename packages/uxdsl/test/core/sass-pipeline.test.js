@@ -184,3 +184,22 @@ test('MIG-B9-13: sass.silenceDeprecations removes the [import] warnings', async 
   assert.deepEqual(importWarnings(quiet), []);
   assert.equal(flat(quiet.css), '.a { color: red; } .b { color: red; }');
 });
+
+test('MIG-B9-13: a declaration value with a colon outside parentheses and strings, which Dart Sass prints (b: a:b), is PostCSS\'s located "Missed semicolon" error with no UXD code; a custom property, a progid: filter and a quoted colon compile as Dart Sass prints them', async () => {
+  const sass = require('sass');
+  const entry = '@use "sass:string";\n.x {\n  b: string.unquote("a:b");\n}\n';
+  const controls = '@use "sass:selector";\n.x {\n  --sel: #{selector.nest(".a", "&:hover")};\n  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr="#80000000");\n  content: "a:b";\n}\n';
+  const dir = project({ 'entry.uxdsl': entry, 'controls.uxdsl': controls });
+  // Dart Sass prints the value; PostCSS's parser reads its top-level colon as a missing semicolon.
+  assert.equal(sass.compileString(entry, { style: 'expanded' }).css, '.x {\n  b: a:b;\n}');
+  const error = await failure(build(dir, 'entry.uxdsl', { theme: {} }));
+  assert.equal(error.name, 'CssSyntaxError');
+  assert.equal(error.reason, 'Missed semicolon');
+  assert.equal(error.code, undefined);
+  assert.deepEqual([error.file, error.line, error.column], [path.join(dir, 'entry.uxdsl'), 3, 3]);
+  assert.match(error.showSourceCode(false), /> 3 \|   b: string\.unquote\("a:b"\);/);
+  // A custom property, a progid: filter and a string hold the same colon and compile (negative control).
+  const { css } = await build(dir, 'controls.uxdsl', { theme: {} });
+  assert.equal(css, sass.compileString(controls, { style: 'expanded' }).css);
+  assert.match(css, /--sel: \.a:hover;/);
+});

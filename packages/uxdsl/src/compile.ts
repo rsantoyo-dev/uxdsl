@@ -19,7 +19,11 @@
 // 4. The UXDSL plugin (./plugin.ts) runs on Dart Sass's output, parsed by
 //    PostCSS's default parser: the theme, the directives, responsive values,
 //    token functions and the reference check. Nothing else in Sass's output
-//    changes.
+//    changes. The parser reads all of that output but one shape: a
+//    declaration value with a colon outside parentheses and strings, on a
+//    property that is not custom (`b: a:b`, which Sass prints for
+//    `string.unquote("a:b")`; a `progid:` filter is read), which it rejects
+//    as "Missed semicolon", located like any other error.
 //
 // Every position compile() reports (an error, a warning, a reference issue) is
 // the author's file, line and column, found through the Sass stage's map, the
@@ -169,7 +173,8 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   const sourcesContent = config.sourcesContent !== false;
   let result: Result;
   try {
-    // PostCSS's default parser: Dart Sass's output is CSS. `from` is always
+    // PostCSS's default parser, which reads Dart Sass's output as CSS but for
+    // the colon in a value that stage 4 above describes. `from` is always
     // given (undefined for an anonymous source), so PostCSS never warns that
     // it is missing. A map is chained only when one is requested; every
     // position is located through the stage's map either way.

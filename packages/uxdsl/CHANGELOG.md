@@ -62,6 +62,13 @@ output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
   directory, and the source is never a dependency. `compile({ source, from })`
   now lists `from` first in `dependencies`, even when that file does not exist
   (it used to be `[]`).
+- **One shape of Dart Sass's output is rejected.** PostCSS's default parser,
+  which reads Sass's output for the plugin, rejects a declaration value with a
+  colon outside parentheses and strings, on a property that is not custom
+  (`b: a:b`, which Sass prints for `string.unquote("a:b")`, `#{"a:b"}` or
+  `selector.nest(".a", "&:hover")` in a value), as its located
+  `Missed semicolon` error, with no UXD code; a custom property and a
+  `progid:` filter with such a colon compile.
 - **Diagnostics.** `UXD_SASS_CONTEXT` (owner `compiler`) is new: Sass syntax
   that reaches the PostCSS plugin (see Breaking). `UXD_FUNCTION_SHADOWED` is
   now owner `core`, beside `UXD_SASS` and `UXD_SASS_WARNING`: the three codes
