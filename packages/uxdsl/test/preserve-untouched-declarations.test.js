@@ -46,7 +46,7 @@ test('MIG-B9-13: declarations the grammar does not change are equal to Dart Sass
   for (const probe of PROBES) assert.equal(await throughCompile(probe), sass.compileString(probe, { style: 'expanded' }).css, probe);
 });
 
-test('MIG-B9-13 (positive control): a declaration with a token is still rewritten; uxdsl/postcss keeps its trailing comment, which Dart Sass drops before compile()\'s plugin runs', async () => {
+test('MIG-B9-13: a declaration with a token is still rewritten; uxdsl/postcss keeps its trailing comment, which Dart Sass drops before compile()\'s plugin runs (positive control)', async () => {
   const source = 'a{padding: space(2) /* keep */;}';
   assert.equal(throughPlugin(source), 'a{padding: var(--uxdsl__space__2) /* keep */;}');
   assert.equal(await throughCompile(source), 'a {\n  padding: var(--uxdsl__space__2);\n}');

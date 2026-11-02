@@ -143,6 +143,27 @@ test('MIG-B9-13: the final map names only the author\'s files, relative to `to`,
   assert.doesNotMatch(a.css, /foo\.css\.map/);
 });
 
+test('MIG-B9-13: the final map names an author\'s file as PostCSS names it: relative to `to` (to the working directory without it) and URL-encoded', async () => {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-encoded-')));
+  const file = path.join(dir, 'my src #1', 'a?.uxdsl');
+  const text = '.a {\n  color: red;\n}\n';
+  fs.mkdirSync(path.dirname(file));
+  fs.writeFileSync(file, text);
+  const to = path.join(dir, 'out', 'a.css');
+  const named = async (opts) => JSON.parse((await core.compile({ entry: file }, { includeTheme: false, sourceMap: 'external', ...opts })).map).sources;
+  const postcssNames = (opts) => postcss([]).process(text, { from: file, map: { inline: false, annotation: false }, ...opts }).map.toJSON().sources;
+  assert.deepEqual(await named({ to }), ['../my%20src%20%231/a%3F.uxdsl']);
+  assert.deepEqual(await named({ to }), postcssNames({ to }), 'the name PostCSS gives the same file for the same `to`');
+  const original = process.cwd();
+  process.chdir(dir);
+  try {
+    assert.deepEqual(await named({}), ['my%20src%20%231/a%3F.uxdsl']);
+    assert.deepEqual(await named({}), postcssNames({}), 'without `to`, the name PostCSS gives it from the working directory');
+  } finally {
+    process.chdir(original);
+  }
+});
+
 test('MIG-B9-13: the final map names only the author\'s files (negative control): without compile() the plugin reports Dart Sass\'s line 29, and PostCSS\'s chained map holds mappings outside ok.uxdsl\'s text', () => {
   let error;
   try {
@@ -176,6 +197,36 @@ test('MIG-B9-13: a relocated error\'s stack names the author\'s position, never 
     direct = caught;
   }
   assert.match(direct.stack, /heavy\.uxdsl:29:5/);
+});
+
+/** The line of `frame` PostCSS marks as the error's, and the column of its caret on the line below, as an index into the marked line. */
+function markedLine(frame) {
+  const lines = frame.split('\n');
+  const index = lines.findIndex((line) => line.startsWith('>'));
+  assert.notEqual(index, -1, `a marked line in the frame:\n${frame}`);
+  return { text: lines[index], caret: lines[index + 1].indexOf('^') };
+}
+
+test('MIG-B9-13: a relocated error ends where it starts and carries the author\'s text, so showSourceCode() frames the author\'s line, one over 160 characters too', async () => {
+  const error = await failure('heavy.uxdsl');
+  assert.deepEqual([error.line, error.column, error.endLine, error.endColumn], [18, 66, 18, 66], 'no position in Dart Sass\'s output is left on the error');
+  assert.equal(error.source, read('heavy.uxdsl'));
+  const heavy = markedLine(error.showSourceCode(false));
+  assert.ok(heavy.text.startsWith('> 18 |'), heavy.text);
+  assert.equal(heavy.caret, heavy.text.indexOf('inset: space(404)'), 'the caret is under column 66');
+
+  // PostCSS frames a line over 160 characters from 20 characters before the column to 20 after the end column.
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-long-')));
+  const long = `${Array.from({ length: 12 }, (_, index) => `.selector-number-${index}`).join(', ')} { padding: space(404); }`;
+  assert.ok(long.length > 160, 'the author\'s line is over 160 characters');
+  fs.writeFileSync(path.join(dir, 'long.uxdsl'), `${long}\n`);
+  const wide = await rejection(core.compile({ entry: path.join(dir, 'long.uxdsl') }, { includeTheme: false }));
+  const column = long.indexOf('padding: space(404)') + 1;
+  assert.deepEqual([where(wide), wide.endLine, wide.endColumn], [`long.uxdsl:1:${column}`, 1, column]);
+  const framed = markedLine(wide.showSourceCode(false));
+  assert.ok(framed.text.startsWith('> 1 |'), framed.text);
+  assert.notEqual(framed.text.indexOf('padding: space(404)'), -1, `the frame shows the author's declaration: ${framed.text}`);
+  assert.equal(framed.caret, framed.text.indexOf('padding: space(404)'), 'the caret is under the declaration');
 });
 
 /** A project whose partial's mixin and entry each hold a declaration referencing a palette token nothing defines. */

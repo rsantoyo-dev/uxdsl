@@ -474,6 +474,23 @@ test('MIG-B9-13: config.sass passes silenceDeprecations and quietDeps to Dart Sa
   assert.equal(quiet.css, loud.css);
 });
 
+test('MIG-B9-13: config.sass.quietDeps reaches Dart Sass: it silences the deprecations of a dependency loaded through the node_modules load paths, never those of the project\'s own files', async () => {
+  const dir = mkTmpDir();
+  write(dir, 'node_modules/dep/_index.scss', '@import "part";\n');
+  write(dir, 'node_modules/dep/_part.scss', '.dep { color: red; }\n');
+  write(dir, '_own.uxdsl', '.own { color: blue; }\n');
+  const entry = write(dir, 'entry.uxdsl', '@use "dep";\n@import "own";\n');
+  const positions = (result) => result.warnings.map((warning) => [warning.text.startsWith('UXD_SASS_WARNING: [import] '), warning.file, warning.line, warning.column]);
+  const loud = await core.compile({ entry }, { includeTheme: false });
+  assert.deepEqual(positions(loud), [
+    [true, entry, 2, 9],
+    [true, path.join(dir, 'node_modules', 'dep', '_index.scss'), 1, 9],
+  ], 'without the option, the dependency\'s [import] deprecation is reported after the entry\'s');
+  const quiet = await core.compile({ entry }, { includeTheme: false, sass: { quietDeps: true } });
+  assert.deepEqual(positions(quiet), [[true, entry, 2, 9]], 'quietDeps alone silences the dependency\'s deprecation, and only that one');
+  assert.equal(quiet.css, loud.css);
+});
+
 /** The selectors of `css`'s top-level rules, in order. */
 const selectorsOf = (css) => require('postcss').parse(css).nodes.filter((node) => node.type === 'rule').map((node) => node.selector);
 
@@ -527,4 +544,20 @@ test('MIG-B9-13: dependencies are what Dart Sass loaded (negative control): with
   assert.deepEqual(explicit.warnings, []);
   assert.deepEqual(explicit.dependencies, [path.join(dir, 'tab.uxdsl')], 'an explicit theme discovers nothing');
   assert.equal(explicit.css, '.a {\n  width: 1px;\n}');
+});
+
+test('MIG-B9-13: warnings are Dart Sass\'s, then the plugin\'s, at the author\'s positions; a plugin warning with no position is { text } alone', async () => {
+  const dir = mkTmpDir();
+  write(dir, '_a.uxdsl', '.a { color: red; }\n');
+  // Line 1 gives Dart Sass's [import] warning and line 2 the plugin's reference warning; the
+  // unknown theme family is the plugin's warning with no stylesheet position.
+  const entry = write(dir, 'entry.uxdsl', '@import "a";\n.b { box-shadow: 0 0 0 space(1) var(--uxdsl__palette__nope-main); }\n');
+  const { warnings } = await core.compile({ entry }, { includeTheme: false, theme: { unknownfamily: { a: 'b' } }, references: { mode: 'warn' } });
+  const codeOf = (warning) => (/^UXD_[A-Z_]+/.exec(warning.text) || ['(no code)'])[0];
+  assert.deepEqual(warnings.map((warning) => [codeOf(warning), Object.keys(warning).sort().join(','), warning.file, warning.line, warning.column]), [
+    ['UXD_SASS_WARNING', 'column,file,line,text', entry, 1, 9],
+    ['(no code)', 'text', undefined, undefined, undefined],
+    ['UXD_REFERENCE_MISSING', 'column,file,line,text', entry, 2, 6],
+  ]);
+  assert.match(warnings[1].text, /^Unknown theme family "unknownfamily"/);
 });

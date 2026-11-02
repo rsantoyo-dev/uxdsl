@@ -1411,15 +1411,21 @@ an `onWarning` issue — is the author's file, line and column, found through
 the Sass stage's source map: the start of the declaration or at-rule Dart Sass
 mapped (`heavy.uxdsl:18:66`), or, for a value Sass copied, where it was
 written (a `$variable`'s definition, an `@include` argument), the same on every
-PostCSS of the peer range; `error.showSourceCode()` frames the author's line.
-A requested source map (`sourceMap: 'inline' | 'external'`) chains the stage's
-map with PostCSS's and names only the author's files, relative to `to`, with
-their text; the CSS is identical in the three modes, and, like Dart Sass's own
-output, it does not end with a newline. `warnings` lists Dart Sass's warnings,
-then the plugin's; `dependencies` is every file Dart Sass loaded (the entry, or
-`from`, first), then the theme files the plugin discovered. The `sass` option
+PostCSS of the peer range; `error.showSourceCode()` frames the author's line,
+one over 160 characters included (an error's `endLine` and `endColumn` are its
+start). A requested source map (`sourceMap: 'inline' | 'external'`) chains the
+stage's map with PostCSS's and names only the author's files, as PostCSS names
+a file — relative to `to` (to the working directory without it) and
+URL-encoded — with their text; the CSS is identical in the three modes, and,
+like Dart Sass's own output, it does not end with a newline. `warnings` lists
+Dart Sass's warnings, then the plugin's; a warning with no position, such as
+an unknown theme family's, is `{ text }` alone. `dependencies` is every file
+Dart Sass loaded (the entry, or `from`, first), then the theme files the
+plugin discovered. The `sass` option
 (`{ silenceDeprecations?: string[], quietDeps?: boolean }`) is passed to Dart
-Sass; any other key, or a wrong type, is an error. `compile({ source, from })`
+Sass — `quietDeps: true` silences the deprecations of the files it loads
+through a load path or `pkg:`, never those of the project's own files — and
+any other key, or a wrong type, is an error. `compile({ source, from })`
 compiles `source` as the file `from`, which need not exist and whose extension
 decides how the text is read (`.scss`, `.sass` and `.css` as written, anything
 else as `.uxdsl`); without `from`, `source` is an anonymous `.uxdsl` file in

@@ -83,7 +83,7 @@ test('MIG-B9-13: near-miss names through compile(): palete, pallete and pallet(p
 /** Dart Sass's own output for `source`: what compile() must equal when the plugin has nothing to change. */
 const dartSass = (source) => sass.compileString(source, { style: 'expanded' }).css;
 
-test('MIG-B9-13 (negative control): log(), rem(), mod(), calc(), color-mix(), -webkit-foo() and a custom breakpoint xxl() are never flagged; through compile() the output is Dart Sass\'s for the same source', async () => {
+test('MIG-B9-13: log(), rem(), mod(), calc(), color-mix(), -webkit-foo() and a custom breakpoint xxl() are never flagged; through compile() the output is Dart Sass\'s for the same source (negative control)', async () => {
   const untouched = [
     'log(1, 2)', 'rem(10, 3)', 'mod(10, 3)', 'sign(-1)', 'exp(1)',
     'calc(1px + 1px)', 'color-mix(in srgb, red, blue)',
