@@ -1,10 +1,15 @@
 // The UXDSL PostCSS plugin.
 //
-//   Values      root-level `$var` declarations and substitutions; the token
-//               functions space(), density(), color(), palette(), radius(),
-//               border(), shadow(); responsive functions named after the
-//               theme's breakpoints (xs() md() …), `!important` preserved at
-//               every breakpoint.
+//   Sass        A stylesheet this plugin compiles alone is CSS plus UXDSL:
+//               Sass syntax in it fails as UXD_SASS_CONTEXT, naming uxdsl
+//               build, compile() or an adapter, where Dart Sass runs first.
+//               Behind compile(), the same check catches a $variable Dart
+//               Sass kept as written (a custom property, a plain-CSS
+//               at-rule's prelude), whose fix is #{$variable}.
+//   Values      the token functions space(), density(), color(), palette(),
+//               radius(), border(), shadow(); responsive functions named after
+//               the theme's breakpoints (xs() md() …), `!important` preserved
+//               at every breakpoint.
 //   Directives  @ds-surface, @ds-button, @ds-input, @ds-typo — each expanding
 //               to the declarations its role defines, states and
 //               pseudo-elements included. A directive is a direct child of the
@@ -25,11 +30,11 @@
 //               actually wrote.
 //
 // One compilation is one `Compilation` object, built by `validateOptions` and
-// handed through `emitTheme`, `expandDirectives`, `resolveVariables`,
+// handed through `rejectSassSyntax`, `emitTheme`, `expandDirectives`,
 // `expandResponsive`, `rejectLeftoverDirectives` and `checkReferences`, in that
 // order. Nothing is stored on the PostCSS root or on the plugin instance.
 
-import type { AtRule, ChildNode, Declaration, Result, Root, Rule } from 'postcss';
+import type { AtRule, ChildNode, Declaration, Node as PostcssNode, Result, Root, Rule } from 'postcss';
 import postcss from 'postcss';
 import valueParser from 'postcss-value-parser';
 import { enforceReferences, ReferenceOptions } from './reference-integrity';
@@ -165,6 +170,176 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     tokenContext: { palette, colors, breakpoints: bps },
     generated: new WeakSet<ChildNode>(),
   };
+}
+
+// --- rejectSassSyntax --------------------------------------------------------
+
+/** The at-rules only Sass defines. `@else` always follows an `@if`, and `@when … @else` is CSS. */
+const SASS_AT_RULES = new Set(['use', 'forward', 'mixin', 'include', 'function', 'return', 'extend', 'if', 'each', 'for', 'while', 'at-root', 'content', 'debug', 'warn', 'error']);
+/** A Sass variable: `$name`, `ns.$name`, `$-name`, `$--name`; never `$5`, `a$b` or an escaped `\$`. */
+const SASS_VARIABLE = /(?<![\w\\$.])(?:[a-zA-Z_][\w-]*\.)?\$(?:-?[a-zA-Z_]|--)[\w-]*/;
+/** A call through a Sass module's namespace: `math.div(…)`. */
+const NAMESPACED_CALL = /^[a-zA-Z_][\w-]*\.[a-zA-Z_][\w-]*$/;
+/** Text that may hold a variable, an interpolation or a namespaced call; anything else is not parsed. */
+const SASS_HINT = /\$|#\{|[\w-]\.[a-zA-Z_][\w-]*\(/;
+const QUOTED = /"(?:[^"\\\n]|\\.)*"|'(?:[^'\\\n]|\\.)*'/g;
+const SELECTOR_ESCAPE = /\\(?:[0-9a-fA-F]{1,6}\s?|[\s\S])/g;
+const SELECTOR_ATTRIBUTE = /\[[^\]]*\]/g;
+
+/** A Sass construct in a value or a prelude, and the functions it sits in. */
+interface SassFinding {
+  kind: 'variable' | 'interpolation' | 'call';
+  text: string;
+  within: valueParser.FunctionNode[];
+}
+
+const sassContext = (construct: string) =>
+  `UXD_SASS_CONTEXT: ${construct} is Sass; the PostCSS plugin compiles CSS plus UXDSL. Name the file .uxdsl and compile it with uxdsl build, compile() or an adapter, or remove the Sass.`;
+const keptBySass = (construct: string, where: string) =>
+  `UXD_SASS_CONTEXT: Sass keeps ${construct} literally in ${where}; write #{${construct}} (in a .uxdsl file compiled by uxdsl build, compile() or an adapter).`;
+
+/** The first `#{…}` written in `text`, for a message. */
+function interpolationIn(text: string): string {
+  const start = text.indexOf('#{');
+  const end = text.indexOf('}', start);
+  return end === -1 ? '#{…}' : text.slice(start, end + 1);
+}
+
+/**
+ * The first Sass variable, interpolation or namespaced call in a value or an
+ * at-rule's prelude. Strings and comments are text, and `url(…)` is CSS
+ * (`url($img)` names a file) unless it holds an interpolation.
+ */
+function findSass(text: string): SassFinding | null {
+  if (!SASS_HINT.test(text)) return null;
+  let found: SassFinding | null = null;
+  const visit = (nodes: valueParser.Node[], within: valueParser.FunctionNode[]) => {
+    for (const node of nodes) {
+      if (found) return;
+      if (node.type === 'function') {
+        if (node.value.toLowerCase() === 'url') {
+          const inner = valueParser.stringify(node.nodes);
+          if (inner.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(inner), within };
+        } else if (NAMESPACED_CALL.test(node.value)) {
+          found = { kind: 'call', text: valueParser.stringify(node), within };
+        } else {
+          visit(node.nodes, [...within, node]);
+        }
+      } else if (node.type === 'word') {
+        const variable = SASS_VARIABLE.exec(node.value);
+        if (node.value.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(node.value), within };
+        else if (variable) found = { kind: 'variable', text: variable[0], within };
+      }
+    }
+  };
+  visit(valueParser(text).nodes, []);
+  return found;
+}
+
+/** Where Dart Sass keeps a declaration's value as written (a custom property, a CSS `@function` body), or null where it evaluates it. */
+function keptPlaceOfDeclaration(decl: Declaration): string | null {
+  if (decl.prop.startsWith('--')) return `the custom property ${decl.prop}`;
+  for (let ancestor: PostcssNode | undefined = decl.parent; ancestor; ancestor = ancestor.parent) {
+    if (ancestor.type === 'atrule' && (ancestor as AtRule).name.toLowerCase() === 'function' && /^\s*--/.test((ancestor as AtRule).params)) {
+      return `the CSS @function ${(ancestor as AtRule).params.trim().split(/[\s(]/)[0]}`;
+    }
+  }
+  return null;
+}
+
+/**
+ * Where Dart Sass keeps an at-rule's prelude as written, or null where it
+ * evaluates it: it evaluates `@media`, a `@supports` condition on a property,
+ * an `@import`'s media query and `supports()`, and UXDSL's own directives
+ * (whose `$variables` compile() serves to Sass), and keeps every other prelude.
+ */
+function keptPlaceOfPrelude(at: AtRule, finding: SassFinding): string | null {
+  const name = at.name.toLowerCase();
+  if (name === 'media' || name.startsWith('ds-')) return null;
+  if (name === 'supports') {
+    const customProperty = (fn: valueParser.FunctionNode) => fn.value === '' && fn.nodes.find((node) => node.type !== 'space')?.value.startsWith('--');
+    return finding.within.some((fn) => fn.value.toLowerCase() === 'selector' || customProperty(fn)) ? 'the @supports prelude' : null;
+  }
+  if (name === 'import') return finding.within.some((fn) => fn.value.toLowerCase() === 'layer') ? 'the @import layer()' : null;
+  return `the @${at.name} prelude`;
+}
+
+/** The message for a finding: the kept one where Dart Sass keeps the text as written, the generic one otherwise (always for an interpolation). */
+function sassFindingMessage(finding: SassFinding, where: string | null): string {
+  return finding.kind !== 'interpolation' && where ? keptBySass(finding.text, where) : sassContext(finding.text);
+}
+
+/** The word that locates a finding in its node's text. */
+const findingWord = (finding: SassFinding) => (finding.kind === 'interpolation' ? '#{' : finding.kind === 'call' ? finding.text.slice(0, finding.text.indexOf('(')) : finding.text);
+
+function rejectSassInDeclaration(decl: Declaration) {
+  if (decl.prop.startsWith('$')) throw locateError(diagnostic(sassContext(decl.prop), decl.prop), decl);
+  if (decl.prop.includes('#{')) throw locateError(diagnostic(sassContext(interpolationIn(decl.prop)), '#{'), decl);
+  if (/^\s*progid:/i.test(decl.value)) {
+    // Dart Sass keeps a progid: value as written, interpolation aside; its
+    // dotted filter names are not Sass calls.
+    const text = decl.value.replace(QUOTED, '');
+    const variable = SASS_VARIABLE.exec(text);
+    if (text.includes('#{')) throw locateError(diagnostic(sassContext(interpolationIn(text)), '#{'), decl);
+    if (variable) throw locateError(diagnostic(keptBySass(variable[0], 'a progid: value'), variable[0]), decl);
+    return;
+  }
+  const finding = findSass(decl.value);
+  if (finding) throw locateError(diagnostic(sassFindingMessage(finding, keptPlaceOfDeclaration(decl)), findingWord(finding)), decl);
+}
+
+function rejectSassInAtRule(at: AtRule) {
+  const name = at.name.toLowerCase();
+  // CSS's own @function and @mixin take a --dashed name.
+  if (SASS_AT_RULES.has(name) && !((name === 'function' || name === 'mixin') && /^\s*--/.test(at.params))) {
+    throw locateError(diagnostic(sassContext(`@${at.name}`), `@${at.name}`), at);
+  }
+  const finding = findSass(at.params);
+  if (finding) throw locateError(diagnostic(sassFindingMessage(finding, keptPlaceOfPrelude(at, finding)), findingWord(finding)), at);
+}
+
+/**
+ * Sass in a selector: an interpolation, an `&` followed by an identifier
+ * character (`&__title`, `&-x`; CSS nesting writes `&:hover`, `& .x`, `&.y`),
+ * a `%placeholder` starting a compound, or a `//` comment PostCSS read into
+ * the selector. Escapes, strings and attribute selectors are masked first, so
+ * `.a\&b`, `[data-x="a&b"]` and `a[href^="//"]` are CSS.
+ */
+function rejectSassInSelector(rule: Rule) {
+  const { selector } = rule;
+  const masked = selector
+    .replace(SELECTOR_ESCAPE, (escape) => '\u0001'.repeat(escape.length))
+    .replace(QUOTED, (quoted) => '\u0002'.repeat(quoted.length))
+    .replace(SELECTOR_ATTRIBUTE, (attribute) => '\u0002'.repeat(attribute.length));
+  const interpolation = masked.indexOf('#{');
+  if (interpolation !== -1) throw locateError(diagnostic(sassContext(interpolationIn(selector.slice(interpolation))), '#{'), rule);
+  const suffix = /&[a-zA-Z0-9_\u0001-]+/.exec(masked);
+  if (suffix) {
+    const text = selector.slice(suffix.index, suffix.index + suffix[0].length);
+    throw locateError(diagnostic(sassContext(text), text), rule);
+  }
+  const placeholder = /(^|[\s>+~,(])(%[a-zA-Z_-][\w-]*)/.exec(masked);
+  if (placeholder) {
+    const start = placeholder.index + placeholder[1].length;
+    const text = selector.slice(start, start + placeholder[2].length);
+    throw locateError(diagnostic(sassContext(text), text), rule);
+  }
+  if (masked.includes('//')) throw locateError(diagnostic(sassContext('a // comment'), '//'), rule);
+}
+
+/**
+ * Sass that reaches this plugin is never CSS a browser can use: compile() runs
+ * Dart Sass first, so here it is either a stylesheet the plugin compiles alone
+ * or text Dart Sass kept as written. The first construct found fails as
+ * UXD_SASS_CONTEXT at its own line and column. Runs before the theme is
+ * emitted, so every node is the author's.
+ */
+function rejectSassSyntax(c: Compilation) {
+  c.root.walk((node) => {
+    if (node.type === 'decl') rejectSassInDeclaration(node);
+    else if (node.type === 'atrule') rejectSassInAtRule(node);
+    else if (node.type === 'rule' && /[&%#/]/.test(node.selector)) rejectSassInSelector(node);
+  });
 }
 
 // --- emitTheme ---------------------------------------------------------------
@@ -335,53 +510,6 @@ function expandDirectives(c: Compilation) {
         throw locateError(error, at);
       }
       at.remove();
-    }
-  });
-}
-
-// --- resolveVariables --------------------------------------------------------
-
-/**
- * Root-level `$var` declarations are collected, removed and substituted into
- * every author declaration — before the responsive pass, which decides whether
- * a declaration is responsive by looking at its current value, so a `$var`
- * holding `xs(…) md(…)` splits into media queries like an inline expression.
- * A `$var` declared inside a rule is the SCSS subset's block scope, which
- * compile() (the CLI and the adapters) resolves before this plugin runs; here
- * it would reach CSS as an invalid declaration, so it is an error naming that
- * pipeline. A `$name` nothing declared is an error too.
- */
-function resolveVariables(c: Compilation) {
-  const { root } = c;
-  root.walkDecls((decl) => {
-    if (decl.prop.startsWith('$') && decl.parent !== root) {
-      throw locateError(diagnostic(
-        `UXD_VARIABLE_CONTEXT: ${decl.prop} is declared inside a rule; the PostCSS plugin on its own resolves $variables declared at the root of the file. ` +
-        'Move it to the root, or compile through compile() / uxdsl build, whose SCSS subset has block scope.'
-      ), decl);
-    }
-  });
-  const vars: Record<string, string> = Object.create(null);
-  root.each((node) => {
-    if (node.type === 'decl' && node.prop.startsWith('$')) {
-      vars[node.prop.slice(1)] = node.value;
-      node.remove();
-    }
-  });
-  const reference = /\$([a-zA-Z_][\w-]*)/g;
-  root.walkDecls((decl) => {
-    if (typeof decl.value !== 'string' || c.generated.has(decl)) return;
-    if (Object.keys(vars).length > 0) {
-      const substituted = decl.value.replace(reference, (match, name) => (Object.prototype.hasOwnProperty.call(vars, name) ? vars[name] : match));
-      if (substituted !== decl.value) decl.value = substituted;
-    }
-    // Strings are left alone: `content: "$5"` is text.
-    for (const node of valueParser(decl.value).nodes) {
-      if (node.type === 'word' && /^\$[a-zA-Z_][\w-]*$/.test(node.value)) {
-        throw locateError(diagnostic(
-          `UXD_VARIABLE_UNDEFINED: ${node.value} is not defined; declare it at the root of the file (${node.value}: …;) before this rule.`, node.value
-        ), decl);
-      }
     }
   });
 }
@@ -632,8 +760,8 @@ function expandResponsive(c: Compilation) {
     }
   });
   for (const rule of emptied) rule.remove();
-  // The same rewriter once more over the author's nodes, after substitution
-  // and cloning; the generated theme is already resolved.
+  // The same rewriter once more over the author's nodes, after the split and
+  // its clones; the generated theme is already resolved.
   root.walkDecls((decl) => {
     try {
       if (typeof decl.value === 'string' && !c.generated.has(decl)) assignValue(decl, rewriteTokens(c, decl.value), (raw) => rewriteTokens(c, raw));
@@ -694,9 +822,9 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
     postcssPlugin: PLUGIN,
     Once(root: Root, { result }: { result: Result }) {
       const compilation = validateOptions(root, result, opts);
+      rejectSassSyntax(compilation);
       emitTheme(compilation);
       expandDirectives(compilation);
-      resolveVariables(compilation);
       expandResponsive(compilation);
       rejectLeftoverDirectives(compilation);
       checkReferences(compilation);

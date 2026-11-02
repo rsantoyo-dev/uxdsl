@@ -1301,10 +1301,12 @@ default theme's Colors" below), so `color(brand.500)` fails as
 .a { color: color(brand.500); }                  /* UXD_COLOR_REFERENCE: not in the default theme */
 ```
 
-A `$var` holding a responsive expression expands correctly when this
-plugin runs standalone (not only via a build that resolves `$var`s first):
-`$gap: xs(1rem) md(2rem); .a { gap: $gap; }` produces the same base value
-plus `@media` block as writing the responsive value inline.
+A `$var` holding a responsive expression expands like the expression written
+inline: through `compile()` (the CLI and the adapters), Dart Sass substitutes
+`$gap` in `$gap: xs(1rem) md(2rem); .a { gap: $gap; }`, and the plugin then
+splits the value into the same base value plus `@media` block. The plugin on
+its own reads no `$var`: it compiles CSS plus UXDSL, and Sass syntax there is
+`UXD_SASS_CONTEXT` (see below).
 
 ### The structure of a responsive expression (stability phase 3)
 
@@ -1335,13 +1337,26 @@ start at any breakpoint (`padding: md(2rem)` is "from md up"); when a value
 has other parts next to a group, every group needs a base so the value keeps
 the same number of parts at every width.
 
-The standalone plugin resolves `$variables` declared at the root of the file.
-One declared inside a rule is `UXD_VARIABLE_CONTEXT` (`compile()`, which the
-CLI and the adapters run, compiles the file with Dart Sass first, so there a
-`$variable` has Sass's scoping, block scope included), and a `$name` nothing
-declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
-breakpoints)` (`uxdsl/language`) reports the same structure — groups,
-bases, nesting, empties — for an editor.
+`analyzeResponsiveValue(value, breakpoints)` (`uxdsl/language`) reports the
+same structure — groups, bases, nesting, empties — for an editor.
+
+The PostCSS plugin on its own (`uxdsl/postcss`) compiles CSS plus UXDSL, and
+no Sass (FEAT-010, DEC-05). A Sass construct reaching it — a `$variable`
+declaration or reference, `@use`, `@forward`, `@mixin`/`@include`,
+`@function`, `@extend`, `@if`/`@each`/`@for`/`@while` and the other Sass
+at-rules, `#{…}` interpolation, an `&`-suffix selector such as `&__title`, a
+`%placeholder`, a namespaced call such as `math.div()` or a `//` comment — fails
+as `UXD_SASS_CONTEXT` at the construct's line and column, naming the fix: name
+the file `.uxdsl` and compile it with `uxdsl build`, `compile()` or an
+adapter, where Dart Sass runs first, or remove the Sass. CSS that looks
+similar passes: native nesting (`&:hover`, `& .x`, `&.y`), `0%` keyframe
+selectors, escaped selectors such as Tailwind's `.\[\&_p\]\:mt-4`, `$` in a
+string, `url($img)`, `--price: $5`, and CSS's own `@function --name` and
+`@mixin --name`. Dart Sass keeps a `$variable` as written in a custom property
+(`--gap: $gap`), in the prelude of a plain-CSS at-rule it does not evaluate
+(`@container`, `@layer`, `@keyframes`, `@property`, an unknown at-rule, …), in
+a `progid:` value and in a CSS `@function` body, so there `compile()` reports
+`UXD_SASS_CONTEXT` too, with the fix Sass needs: write `#{$gap}`.
 
 `compile()` — what the CLI, `uxdsl/vite` and `uxdsl/webpack` run — compiles a
 `.uxdsl` file with real Dart Sass (FEAT-010), so that a `.scss` file renamed to

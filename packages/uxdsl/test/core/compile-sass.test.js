@@ -1291,7 +1291,7 @@ test('MIG-B9-12: DIAGNOSTIC_CATALOG lists UXD_SASS and UXD_SASS_WARNING with own
     assert.ok(entry.meaning.length > 20 && entry.fix.length > 10, code);
   }
   assert.equal(DIAGNOSTIC_CATALOG.UXD_RESERVED_NAME, undefined, 'a shadowing @function is a warning (UXD_FUNCTION_SHADOWED), never an error');
-  assert.equal(DIAGNOSTIC_CATALOG.UXD_FUNCTION_SHADOWED.owner, 'compiler');
+  assert.equal(DIAGNOSTIC_CATALOG.UXD_FUNCTION_SHADOWED.owner, 'core');
   // Both codes are produced for real by the stage (T4 and T6 provoke them), and the catalog still refuses an unknown one.
   const dir = project({ 'entry.uxdsl': '@import "a";\n.b { c: $nope; }\n', '_a.uxdsl': '.a { b: c; }\n' });
   const error = stageError(() => stage({ entry: path.join(dir, 'entry.uxdsl') }));

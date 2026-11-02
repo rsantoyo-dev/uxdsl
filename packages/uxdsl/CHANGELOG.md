@@ -62,6 +62,10 @@ output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
   directory, and the source is never a dependency. `compile({ source, from })`
   now lists `from` first in `dependencies`, even when that file does not exist
   (it used to be `[]`).
+- **Diagnostics.** `UXD_SASS_CONTEXT` (owner `compiler`) is new: Sass syntax
+  that reaches the PostCSS plugin (see Breaking). `UXD_FUNCTION_SHADOWED` is
+  now owner `core`, beside `UXD_SASS` and `UXD_SASS_WARNING`: the three codes
+  of `compile()`'s Sass stage (FEAT-010, DEC-17). The catalog has 106 codes.
 
 Through `compile()`, the guarantees of MIG-B9-05 and MIG-B9-04 below now read
 as follows: a declaration the grammar does not change comes out as Dart Sass
@@ -102,6 +106,19 @@ Sass's located `UXD_SASS: expected "(".` before the plugin can suggest
   there), anything else as `.uxdsl`.
 - A diagnostic's position moves to the statement start Dart Sass maps: the
   CLI prints `src/partial.uxdsl:3:3` where it printed `src/partial.uxdsl:3:12`.
+- The PostCSS plugin on its own (`uxdsl/postcss`) compiles CSS plus UXDSL,
+  without Sass (FEAT-010, DEC-05). Every Sass construct reaching it — a
+  `$variable` declaration or reference (it used to resolve root-level ones),
+  `@use`, `@forward`, `@mixin`/`@include`, `@function`, `@extend`,
+  `@if`/`@each`/`@for`/`@while` and the other Sass at-rules, `#{…}`, an
+  `&`-suffix selector, a `%placeholder`, a namespaced call, a `//` comment —
+  is a located `UXD_SASS_CONTEXT` naming the fix: a `.uxdsl` file compiled by
+  `uxdsl build`, `compile()` or an adapter, or no Sass.
+- Through `compile()`, a `$variable` or a namespaced call Dart Sass keeps as
+  written — in a custom property, in the prelude of a plain-CSS at-rule such
+  as `@container`, `@layer` or `@keyframes`, in a `progid:` value or in a CSS
+  `@function` body — is `UXD_SASS_CONTEXT`, whose message says to write
+  `#{$variable}`. The SCSS subset substituted it there.
 
 ### Removed
 
@@ -114,6 +131,9 @@ Sass's located `UXD_SASS: expected "(".` before the plugin can suggest
 - The codes `UXD_SCSS_UNSUPPORTED`, `UXD_NESTING_INVALID`, `UXD_IMPORT_CYCLE`
   and `UXD_INCLUDE_ARGUMENT`: what they reported is valid Sass now, or Dart
   Sass's `UXD_SASS`.
+- The PostCSS plugin's `$variable` resolution, and its codes
+  `UXD_VARIABLE_CONTEXT` and `UXD_VARIABLE_UNDEFINED`: a `$variable` is Dart
+  Sass's, inside `compile()`, and `UXD_SASS_CONTEXT` everywhere else.
 
 ### The Sass stage: Dart Sass with the `.uxdsl` importer (MIG-B9-12)
 
