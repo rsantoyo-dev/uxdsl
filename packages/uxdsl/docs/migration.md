@@ -58,20 +58,35 @@ $gutter: 16px;
 What to check when you upgrade:
 
 1. **The CSS is Dart Sass's.** Nested rules come out flattened, with blank
-   lines between rules, `""` for `''`, `0.5` for `.5`, `16/9` for `16 / 9`,
-   `@charset "UTF-8";` first for any non-ASCII text, comments inside values
-   dropped and no final newline. Expect a large textual diff with one change
-   that can matter in rendering: a rule nested after `@ds-button` or
-   `@ds-input` now comes after the directive's generated state rules, so it
-   wins a tie with them (it used to lose). The CHANGELOG's `### Visual changes`
-   lists every change.
+   lines between rules, `""` for `''`, an attribute value that is an
+   identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`), `0.5` for
+   `.5`, `16/9` for `16 / 9`, `@charset "UTF-8";` first for any non-ASCII
+   text, comments inside values dropped and no final newline. Expect a large
+   textual diff. Most of it renders the same; these changes can matter in
+   rendering:
+   - Dart Sass flattens a nested rule by writing the parent selector in place
+     of `&`, where a browser reads the native nesting `compile()` used to
+     forward as `:is()` of the parent. A parent list of mixed specificity
+     (`.x, #y { .c { … } }`) now gives each flattened selector its own
+     specificity, so `.x .c` no longer weighs as much as `#y .c`; a rule
+     nested under a pseudo-element (`.q::before { & { … } }`), which matched
+     nothing, now applies; and `.c &` under a complex parent
+     (`.a .b { .c & { … } }`) becomes `.c .a .b`, which needs `.c` above
+     `.a`, where native nesting also matched a `.c` between `.a` and `.b`.
+   - A rule nested after `@ds-button` or `@ds-input` now comes after the
+     directive's generated state rules, so it wins a tie with them (it used
+     to lose).
+
+   The CHANGELOG's `### Visual changes` lists every change.
 2. **Imports follow Dart Sass.** `@import "x.css"`, and an `@import` with a
    media query, `layer()`, `supports()` or `url()` — of a `.uxdsl` file too —
    stays a plain CSS `@import` in the output: write `@use "./x"` (or
    `@include meta.load-css("./x")` under a condition) to inline a file. An
    `@import` of a `.uxdsl` partial still inlines it, with Dart Sass's
    `UXD_SASS_WARNING: [import]` deprecation, and a file `@import`ed twice is
-   emitted twice (one `@use`d twice, once). `~pkg/…` is not resolved: write
+   emitted twice (one `@use`d twice, once), so its rules apply again at the
+   second `@import` and win over the rules written between the two, where
+   `compile()` used to emit it once. `~pkg/…` is not resolved: write
    `pkg:name/…` or the bare `name/…` path. A cycle or a missing file is
    `UXD_SASS`, in Dart Sass's words, at the `@import` or `@use`.
 3. **A `$variable` in a custom property needs `#{…}`.** Dart Sass keeps

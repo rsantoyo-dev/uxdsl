@@ -95,17 +95,27 @@ What to check in a project when upgrading is in the migration guide,
 ### Visual changes
 
 - Nesting is flattened by Dart Sass: a nested rule becomes its own top-level
-  rule, and a nested `@media` bubbles up.
+  rule, and a nested `@media` bubbles up. Sass writes the parent selector in
+  place of `&`, where a browser reads the native nesting `compile()` used to
+  forward as `:is()` of the parent, so three patterns render differently: a
+  parent list of mixed specificity (`.x, #y { .c { … } }`) gives each
+  flattened selector its own specificity; a rule nested under a
+  pseudo-element (`.q::before { & { … } }`), which matched nothing, now
+  applies; and `.c &` under a complex parent (`.a .b`) becomes `.c .a .b`,
+  which needs `.c` above `.a`.
 - Dart Sass's formatting: blank lines between top-level rules, one-line rules
-  laid out over several lines, `""` for `''`, `0.5` for `.5`, `16/9` for
-  `16 / 9`, no final newline, `@charset "UTF-8";` first for any non-ASCII
-  text (comments included), a comment inside a value dropped, and CSS math on
-  plain numbers evaluated (`log(1, 2)` is `0`).
+  laid out over several lines, `""` for `''`, an attribute value that is an
+  identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`), `0.5` for
+  `.5`, `16/9` for `16 / 9`, no final newline, `@charset "UTF-8";` first for
+  any non-ASCII text (comments included), a comment inside a value dropped,
+  and CSS math on plain numbers evaluated (`log(1, 2)` is `0`).
 - A rule nested after `@ds-button` or `@ds-input` now follows the directive's
   generated state rules, so it wins a tie with them (it used to lose), and a
   responsive `@media` block now follows its own flat rule.
 - A file `@import`ed twice is emitted twice, as Dart Sass does (a module
-  loaded with `@use` is emitted once).
+  loaded with `@use` is emitted once), so its rules apply again at the second
+  `@import` and win over the rules written between the two, where `compile()`
+  used to emit it once.
 
 ### Breaking
 
