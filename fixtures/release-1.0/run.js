@@ -129,15 +129,21 @@ function auditLockfile(cwd) {
 
 /**
  * S-3's verdict on `uxdsl build` of heavy.uxdsl: the UXDSL error is printed at
- * the author's line 18, column 66, under a code frame of the author's line,
- * never of Dart Sass's output, where that declaration is on line 29.
+ * the author's line 18, column 66, under a code frame of the author's line
+ * with its caret under that column, never of Dart Sass's output, where that
+ * declaration is on line 29 and line 18 holds other text.
  */
 function assertAuthorLocated(built) {
   const stderr = built.stderr || '';
   if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
   if (!/heavy\.uxdsl:18:66: UXD_SPACE_REFERENCE/.test(stderr)) throw new Error(`stderr: ${stderr.trim().split('\n')[0]}`);
   if (/^> 29 \|/m.test(stderr)) throw new Error('the code frame shows line 29 of Dart Sass\'s output');
-  if (!/^> 18 \|/m.test(stderr)) throw new Error('no code frame of the author\'s line 18');
+  const lines = stderr.split('\n');
+  const marked = lines.findIndex((line) => /^> 18 \|/.test(line));
+  if (marked === -1) throw new Error('no code frame of the author\'s line 18');
+  const column = lines[marked].indexOf('inset: space(404);');
+  if (column === -1) throw new Error(`the code frame's line 18 is not the author's: ${lines[marked]}`);
+  if ((lines[marked + 1] || '').indexOf('^') !== column) throw new Error('the code frame\'s caret is not under the author\'s column 66');
   return 'heavy.uxdsl:18:66 UXD_SPACE_REFERENCE, framed at the author\'s line 18';
 }
 
