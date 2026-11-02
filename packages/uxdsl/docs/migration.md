@@ -32,6 +32,89 @@ The compiled CSS does not change with the move: the same theme produces the
 same bytes. Before and after, `npx uxdsl theme > effective.json` (below) shows
 that the effective theme is the same too.
 
+## beta.9 — Sass inside compile()
+
+`compile()` — and with it `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` —
+compiles a `.uxdsl` file with real Dart Sass first, then resolves UXDSL's
+constructs in Dart Sass's output (FEAT-010, MIG-B9-13). A `.scss` file renamed
+to `.uxdsl` compiles to the CSS Dart Sass produces for it: `@use`/`@forward`,
+`@mixin`/`@include`, `@function`, maps, `math.div()`, `&__title`,
+`%placeholder` with `@extend` and the control rules all work, and the SCSS
+subset's errors went with it (`UXD_SCSS_UNSUPPORTED`, `UXD_NESTING_INVALID`,
+`UXD_INCLUDE_ARGUMENT`, `UXD_IMPORT_CYCLE`).
+
+```scss
+@use "sass:math";
+$gutter: 16px;
+
+.card {
+  --gap: #{$gutter};
+  padding: density(2);
+  gap: math.div($gutter, 2);
+  &__title { @ds-typo(h3); }
+}
+```
+
+What to check when you upgrade:
+
+1. **The CSS is Dart Sass's.** Nested rules come out flattened, with blank
+   lines between rules, `""` for `''`, `0.5` for `.5`, `16/9` for `16 / 9`,
+   `@charset "UTF-8";` first for any non-ASCII text, comments inside values
+   dropped and no final newline. Expect a large textual diff with one change
+   that can matter in rendering: a rule nested after `@ds-button` or
+   `@ds-input` now comes after the directive's generated state rules, so it
+   wins a tie with them (it used to lose). The CHANGELOG's `### Visual changes`
+   lists every change.
+2. **Imports follow Dart Sass.** `@import "x.css"`, and an `@import` with a
+   media query, `layer()`, `supports()` or `url()` — of a `.uxdsl` file too —
+   stays a plain CSS `@import` in the output: write `@use "./x"` (or
+   `@include meta.load-css("./x")` under a condition) to inline a file. An
+   `@import` of a `.uxdsl` partial still inlines it, with Dart Sass's
+   `UXD_SASS_WARNING: [import]` deprecation, and a file `@import`ed twice is
+   emitted twice (one `@use`d twice, once). `~pkg/…` is not resolved: write
+   `pkg:name/…` or the bare `name/…` path. A cycle or a missing file is
+   `UXD_SASS`, in Dart Sass's words, at the `@import` or `@use`.
+3. **A `$variable` in a custom property needs `#{…}`.** Dart Sass keeps
+   `--gap: $gap` as written, so `compile()` reports `UXD_SASS_CONTEXT` there
+   (the SCSS subset substituted it): write `--gap: #{$gap}`, as in the example
+   above. The same holds in the prelude of a plain-CSS at-rule Sass does not
+   evaluate (`@container`, `@layer`, `@keyframes`, `@property`, …), in a
+   `progid:` value and in a CSS `@function` body.
+4. **The PostCSS plugin alone compiles CSS plus UXDSL.** A stylesheet compiled
+   by `uxdsl/postcss` without `compile()` (a `postcss.config.js` in Next.js,
+   for instance) no longer resolves root-level `$variables` — the beta.6 note
+   below ("Desde beta.6: cero salidas silenciosas del lenguaje") that a `$var`
+   holding a responsive expression expands with the plugin alone no longer
+   holds — and any Sass construct in it fails as `UXD_SASS_CONTEXT` at the
+   construct. Move the Sass into a `.uxdsl` file built by `uxdsl build`,
+   `compile()` or an adapter, or remove it.
+
+   ```css
+   .card { padding: density(2); }
+   .card { gap: $gap; }  /* UXD_SASS_CONTEXT: a $variable reaching the plugin alone */
+   ```
+
+5. **Positions are where Dart Sass mapped the text.** An error still names the
+   author's file, line and column, now at the start of the declaration or
+   at-rule (`src/partial.uxdsl:3:3` where `3:12` used to point at the token),
+   or, for a value Sass copied, where it was written (a `$variable`'s
+   definition).
+6. **A dotted near-miss is Dart Sass's error first.** Through `compile()`,
+   `palete(primary.main)` fails as `UXD_SASS: expected "(".` before the
+   plugin's `UXD_FUNCTION_UNKNOWN` suggestion can run: correct the spelling to
+   `palette(primary.main)`.
+7. **The file's extension decides how it is read.** A `.scss`, `.sass` or
+   `.css` file (an entry, a `from`, a partial) reaches Dart Sass as written, so
+   UXDSL's dotted tokens (`palette(primary.main)`) belong in `.uxdsl` files;
+   a webpack rule that applied `uxdsl/webpack` to `.css` files should match
+   `.uxdsl` instead.
+8. **`compile()`'s result and options.** The new `sass` option,
+   `{ silenceDeprecations?: string[], quietDeps?: boolean }`, is passed to Dart
+   Sass (any other key is an error); `warnings` starts with Dart Sass's;
+   `dependencies` lists every file Dart Sass loaded, and for
+   `compile({ source, from })` it lists `from` first even when that file does
+   not exist (it was `[]`).
+
 ## Antes de actualizar (cualquier versión)
 
 Un cambio de versión puede cambiar defaults en familias que tu tema **nunca

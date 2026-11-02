@@ -66,6 +66,13 @@ output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
   that reaches the PostCSS plugin (see Breaking). `UXD_FUNCTION_SHADOWED` is
   now owner `core`, beside `UXD_SASS` and `UXD_SASS_WARNING`: the three codes
   of `compile()`'s Sass stage (FEAT-010, DEC-17). The catalog has 106 codes.
+- **Time.** Every build runs Dart Sass with its source map, then the plugin
+  over Dart Sass's output. On Bootstrap 5.3.8 renamed to `.uxdsl`,
+  `fixtures/sass-corpus/run.js` asserts that `compile()`'s median time is at
+  most 1.5 times plain Dart Sass's (three runs each, in one process). A build
+  does more work than the SCSS subset did: on one machine, `compile()` of the
+  playground's stylesheet takes 213 ms against 113 ms before (medians, both
+  in one process), and loading Dart Sass adds about 0.1 s to a CLI run.
 
 Through `compile()`, the guarantees of MIG-B9-05 and MIG-B9-04 below now read
 as follows: a declaration the grammar does not change comes out as Dart Sass
@@ -74,6 +81,9 @@ dotted argument (`palete(primary.main)`, `pallete(…)`, `pallet(…)`) is Dart
 Sass's located `UXD_SASS: expected "(".` before the plugin can suggest
 `palette()`. Through `uxdsl/postcss` every near-miss keeps
 `UXD_FUNCTION_UNKNOWN` with its suggestion.
+
+What to check in a project when upgrading is in the migration guide,
+[beta.9 — Sass inside compile()](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md#beta9--sass-inside-compile).
 
 ### Visual changes
 

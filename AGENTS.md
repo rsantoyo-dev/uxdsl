@@ -870,17 +870,35 @@ value at a supplied width without a document; that is what the playground's
 breakpoint demo does, not an actual browser resize. Validate real layouts
 with a real viewport too.
 
-The SCSS subset `compile()` compiles (`$variables`, `@if/@else`, `@each` of a
-list, `@for`, `@mixin/@include`, `@content`, `@import` with a path, native
-nesting forwarded as written) is UXDSL's own implementation
-(`packages/uxdsl/src/scss-subset.ts`, no Sass and no variables plugin) and is
-documented exactly once, in `packages/uxdsl/docs/integrations/compile.md`
-("The SCSS subset"); everything else Sass has — and anything the subset cannot
-evaluate exactly, such as `@else if`, `and`/`or`/`not` or an undefined
-`$variable` — fails as `UXD_SCSS_UNSUPPORTED`, `UXD_INCLUDE_ARGUMENT` or
-`UXD_NESTING_INVALID` naming what to write instead.
-`packages/uxdsl/test/core/scss-subset.test.js` pins the audit's 110-case
-matrix with no silent case, and `scss-expansion.test.js` the subset's rules.
+`compile()` — what `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` run —
+compiles a `.uxdsl` file with real Dart Sass (FEAT-010, DEC-01), in four
+stages that each change only what they name: protect
+(`packages/uxdsl/src/sass/protect.ts`) lets UXDSL's own syntax through Dart
+Sass, Dart Sass (`packages/uxdsl/src/sass/compile-sass.ts`) compiles the SCSS,
+restore puts `@ds-x(…)` back together, and the UXDSL plugin resolves the
+theme, the directives, responsive values and token functions in Dart Sass's
+output and changes nothing else. A `.scss` file renamed to `.uxdsl` therefore
+compiles to the CSS Dart Sass produces for it (Bootstrap 5.3.8 is
+byte-identical, `fixtures/sass-corpus`): `@use`/`@forward`, mixins,
+functions, maps, nesting and control rules behave as Dart Sass defines them,
+and so do its import rules (`@import "x.css"` stays a CSS `@import`, `@use`
+inlines a file, a file `@import`ed twice is emitted twice). A Sass failure is
+`UXD_SASS` and a Sass warning `UXD_SASS_WARNING`, at the author's line and
+column; a project `@function` named like a UXDSL function wins where Sass
+calls its bare name, with one `UXD_FUNCTION_SHADOWED` warning at the
+definition (DEC-17); every position `compile()` reports is the author's,
+found through the Sass stage's source map. The PostCSS plugin used alone
+(`uxdsl/postcss`) compiles CSS plus UXDSL and no Sass: a Sass construct
+reaching it is `UXD_SASS_CONTEXT`, and through `compile()` so is a
+`$variable` Dart Sass keeps as written (in a custom property or a plain-CSS
+at-rule's prelude), where the fix is `#{$variable}`. When generating UXDSL,
+put Sass only in `.uxdsl` files compiled through `compile()`, and keep UXDSL's
+dotted tokens out of `.scss` and `.css` files, which Dart Sass reads as
+written. `packages/uxdsl/test/core/sass-matrix.test.js`,
+`sass-pipeline.test.js`, `protect.test.js`, `sass-source-maps.test.js` and
+`fixtures/sass-corpus` pin the pipeline, and the package README describes it;
+`packages/uxdsl/docs/integrations/compile.md` still describes the SCSS subset
+it replaced.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
