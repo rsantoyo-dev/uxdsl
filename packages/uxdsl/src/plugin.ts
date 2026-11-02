@@ -202,7 +202,7 @@ const KEPT_FUNCTION = /^(?:(?:-[^-]+-)?(?:element|expression)|-[^-]+-calc|type)$
 /** `expression()`, whose argument is script: a dotted call there (`document.getElementById(…)`) is not a Sass call, nor a `//` a Sass comment. */
 const SCRIPT_FUNCTION = /^(?:-[^-]+-)?expression$/i;
 /** A Sass placeholder in a masked selector: `%` and an identifier, anywhere in a compound (`%base`, `a%primary`); a keyframe's `50%` is followed by no name. */
-const PLACEHOLDER = /%(?:-?[a-zA-Z_\u0080-￿\u0001]|--)[\w\u0080-￿\u0001-]*/;
+const PLACEHOLDER = /%(?:-?[a-zA-Z_\u0080-\uFFFF\u0001]|--)[\w\u0080-\uFFFF\u0001-]*/;
 
 /** A Sass construct in a value or a prelude: the node holding it, and the functions and parentheses it sits in, outermost first. */
 interface SassFinding {

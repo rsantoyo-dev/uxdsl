@@ -24,12 +24,15 @@
 //    UXD_SASS_CONTEXT, whose fix is `#{…}`. Nothing else in Sass's output
 //    changes, except that each top-level comment whose text starts with
 //    `# sourceMappingURL=` is removed, as PostCSS removes it when it writes
-//    no map, so the CSS is the same in the three `sourceMap` modes. The
-//    parser reads all of that output but one shape: a
-//    declaration value with a colon outside parentheses and strings, on a
-//    property that is not custom (`b: a:b`, which Sass prints for
-//    `string.unquote("a:b")`; a `progid:` filter is read), which it rejects
-//    as "Missed semicolon", located like any other error.
+//    no map, so the CSS is the same in the three `sourceMap` modes. Text
+//    Sass prints from a string (`string.unquote()`, `#{…}`) that is not CSS
+//    fails, located like any other error: the parser rejects a `;` or a
+//    brace, an unclosed comment or string, an unclosed bracket in a
+//    declaration, and a colon outside parentheses and strings in the value
+//    of a property that is not custom (`b: a:b` is "Missed semicolon"; a
+//    `progid:` filter is read), and the plugin reads a `//` in such a value,
+//    outside a string and a `url()`, as a `//` comment: UXD_SASS_CONTEXT,
+//    with the message it gives on its own.
 //
 // Every position in Dart Sass's output that compile() reports (an error, a
 // warning, a reference issue) is moved to the author's file, line and column
@@ -185,10 +188,10 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   const sourcesContent = config.sourcesContent !== false;
   let result: Result;
   try {
-    // PostCSS's default parser, which reads Dart Sass's output as CSS but for
-    // the colon in a value that stage 4 above describes. `from` is always
-    // given (undefined for an anonymous source), so PostCSS never warns that
-    // it is missing.
+    // PostCSS's default parser, which reads Dart Sass's output as CSS and
+    // rejects the text Sass printed that is not CSS, as stage 4 above
+    // describes. `from` is always given (undefined for an anonymous source),
+    // so PostCSS never warns that it is missing.
     result = await postcss([
       restoreDirectiveSpacing,
       uxdslPlugin({

@@ -37,7 +37,8 @@ that the effective theme is the same too.
 `compile()` — and with it `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` —
 compiles a `.uxdsl` file with real Dart Sass first, then resolves UXDSL's
 constructs in Dart Sass's output (FEAT-010, MIG-B9-13). A `.scss` file renamed
-to `.uxdsl` compiles to the CSS Dart Sass produces for it: `@use`/`@forward`,
+to `.uxdsl` compiles to the CSS Dart Sass produces for it, but for the
+exceptions item 1 lists: `@use`/`@forward`,
 `@mixin`/`@include`, `@function`, maps, `math.div()`, `&__title`,
 `%placeholder` with `@extend` and the control rules all work, and the SCSS
 subset's errors went with it (`UXD_SCSS_UNSUPPORTED`, `UXD_NESTING_INVALID`,
@@ -61,9 +62,15 @@ What to check when you upgrade:
    lines between rules, `""` for `''`, an attribute value that is an
    identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`), `0.5` for
    `.5`, `16/9` for `16 / 9`, `@charset "UTF-8";` first for any non-ASCII
-   text, comments inside values dropped and no final newline. Expect a large
-   textual diff. Most of it renders the same; these changes can matter in
-   rendering:
+   text, comments inside values dropped and no final newline. What
+   `compile()` does not keep as Dart Sass prints it: a top-level comment
+   whose text starts with `# sourceMappingURL=`, which it removes; a
+   `$variable` Sass keeps as written, which fails (item 3); and text Sass
+   prints from a string that is not CSS (`b: a:b` from
+   `string.unquote("a:b")`, a `;`, a brace, an unclosed comment or string),
+   which fails as PostCSS's located error, with no UXD code (a `//` printed
+   in a value, as `UXD_SASS_CONTEXT`). Expect a large textual diff. Most of
+   it renders the same; these changes can matter in rendering:
    - Dart Sass flattens a nested rule by writing the parent selector in place
      of `&`, where a browser reads the native nesting `compile()` used to
      forward as `:is()` of the parent. A parent list of mixed specificity

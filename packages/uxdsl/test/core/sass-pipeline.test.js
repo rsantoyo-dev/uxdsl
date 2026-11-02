@@ -203,3 +203,38 @@ test('MIG-B9-13: a declaration value with a colon outside parentheses and string
   assert.equal(css, sass.compileString(controls, { style: 'expanded' }).css);
   assert.match(css, /--sel: \.a:hover;/);
 });
+
+test('MIG-B9-13: other text Dart Sass prints that is not CSS (a ";", a brace, an unclosed comment, string or bracket) is PostCSS\'s located error with no UXD code, and a "//" it prints in a value is UXD_SASS_CONTEXT with the message of the plugin alone; in a custom property or a string that "//" compiles', async () => {
+  const sass = require('sass');
+  const source = (value) => `@use "sass:string";\n.x {\n  b: string.unquote(${JSON.stringify(value)});\n}\n`;
+  const VALUES = ['a;c', 'a}c', 'a{c', 'a /* c', "a 'c", 'a(c', 'a // c'];
+  const controls = '@use "sass:string";\n.x {\n  --b: #{string.unquote("a // c")};\n  content: "a // c";\n}\n';
+  const dir = project({ ...Object.fromEntries(VALUES.map((value, i) => [`v${i}.uxdsl`, source(value)])), 'controls.uxdsl': controls });
+  const outcomes = [];
+  for (const [i, value] of VALUES.entries()) {
+    // Dart Sass prints the value as written, inside the declaration.
+    assert.equal(sass.compileString(source(value), { style: 'expanded' }).css, `.x {\n  b: ${value};\n}`);
+    try {
+      await build(dir, `v${i}.uxdsl`, { theme: {} });
+      outcomes.push(`${value}: compiled`);
+    } catch (error) {
+      // PostCSS before 8.5 says "Unknown word" without the word.
+      const reason = error.reason.replace(/^Unknown word .*/, 'Unknown word').split(';')[0];
+      const framed = /> 3 \|   b: string\.unquote\(/.test(error.showSourceCode(false));
+      outcomes.push(`${value}: ${error.name} ${reason} (code ${error.code}) at ${path.basename(error.file)}:${error.line}:${error.column}, author frame ${framed}`);
+      // The plugin cannot tell it runs inside compile(), so its message still names compile().
+      if (value === 'a // c') assert.match(error.reason, /compile it with uxdsl build, compile\(\) or an adapter/);
+    }
+  }
+  assert.deepEqual(outcomes, [
+    'a;c: CssSyntaxError Unknown word (code undefined) at v0.uxdsl:3:3, author frame true',
+    'a}c: CssSyntaxError Unknown word (code undefined) at v1.uxdsl:3:3, author frame true',
+    'a{c: CssSyntaxError Unknown word (code undefined) at v2.uxdsl:3:3, author frame true',
+    'a /* c: CssSyntaxError Unclosed comment (code undefined) at v3.uxdsl:3:3, author frame true',
+    "a 'c: CssSyntaxError Unclosed string (code undefined) at v4.uxdsl:3:3, author frame true",
+    'a(c: CssSyntaxError Unclosed bracket (code undefined) at v5.uxdsl:3:3, author frame true',
+    'a // c: CssSyntaxError UXD_SASS_CONTEXT: a // comment is Sass (code undefined) at v6.uxdsl:3:3, author frame true',
+  ]);
+  // In a custom property and in a string the same "//" is text, and compiles as Dart Sass prints it (negative control).
+  assert.equal((await build(dir, 'controls.uxdsl', { theme: {} })).css, sass.compileString(controls, { style: 'expanded' }).css);
+});
