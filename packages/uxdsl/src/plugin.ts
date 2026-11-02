@@ -192,10 +192,11 @@ const IDENTIFIER_START = /^(?:-?(?:[a-zA-Z_\u0080-\uFFFF\\]|#\{)|--)/;
 /** The at-rules whose blocks Dart Sass reads as rules only; every other block (a style rule's, an unknown at-rule's) holds declarations, nested properties included. */
 const RULE_BLOCKS = new Set(['media', 'supports', '-moz-document']);
 
-/** A Sass construct in a value or a prelude, and the functions it sits in. */
+/** A Sass construct in a value or a prelude: the node holding it, and the functions and parentheses it sits in, outermost first. */
 interface SassFinding {
   kind: 'variable' | 'interpolation' | 'call';
   text: string;
+  node: valueParser.Node;
   within: valueParser.FunctionNode[];
 }
 
@@ -225,16 +226,16 @@ function findSass(text: string): SassFinding | null {
       if (node.type === 'function') {
         if (node.value.toLowerCase() === 'url') {
           const inner = valueParser.stringify(node.nodes);
-          if (inner.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(inner), within };
+          if (inner.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(inner), node, within };
         } else if (NAMESPACED_CALL.test(node.value)) {
-          found = { kind: 'call', text: valueParser.stringify(node), within };
+          found = { kind: 'call', text: valueParser.stringify(node), node, within };
         } else {
           visit(node.nodes, [...within, node]);
         }
       } else if (node.type === 'word') {
         const variable = SASS_VARIABLE.exec(node.value);
-        if (node.value.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(node.value), within };
-        else if (variable) found = { kind: 'variable', text: variable[0], within };
+        if (node.value.includes('#{')) found = { kind: 'interpolation', text: interpolationIn(node.value), node, within };
+        else if (variable) found = { kind: 'variable', text: variable[0], node, within };
       }
     }
   };
@@ -253,20 +254,55 @@ function keptPlaceOfDeclaration(decl: Declaration): string | null {
   return null;
 }
 
+/** A node of a value that is written: not whitespace, not a comment. */
+const isWritten = (node: valueParser.Node) => node.type !== 'space' && node.type !== 'comment';
+
+/**
+ * Whether Dart Sass keeps `finding` as written inside a supports condition:
+ * `nodes` is the condition (the content of a parenthesized group, or of an
+ * `@import`'s `supports(…)`), `inner` the groups and functions within it that
+ * hold the finding, outermost first. A declaration (`name: value`) has its
+ * name evaluated, and its value too unless the name is a custom property's
+ * (`--x: $v` is kept, `width: $v` evaluated); `not (…)` and `(…) and (…)`
+ * leave it to the condition that holds the finding; a function's arguments
+ * and any other group (`foo $v`) are kept.
+ */
+function keptInSupportsCondition(nodes: valueParser.Node[], inner: valueParser.FunctionNode[], finding: SassFinding): boolean {
+  const colon = nodes.findIndex((node) => node.type === 'div' && node.value === ':');
+  if (colon !== -1) {
+    const name = nodes.find(isWritten);
+    return nodes.indexOf(inner[0] ?? finding.node) > colon && name?.type === 'word' && name.value.startsWith('--');
+  }
+  const first = nodes.find(isWritten);
+  const condition = first?.type === 'word' ? first.value.toLowerCase() === 'not' : first?.type === 'function' && first.value === '';
+  if (!condition) return true;
+  const [next, ...rest] = inner;
+  if (!next) return false;
+  return next.value !== '' || keptInSupportsCondition(next.nodes, rest, finding);
+}
+
 /**
  * Where Dart Sass keeps an at-rule's prelude as written, or null where it
- * evaluates it: it evaluates `@media`, a `@supports` condition on a property,
- * an `@import`'s media query and `supports()`, and UXDSL's own directives
- * (whose `$variables` compile() serves to Sass), and keeps every other prelude.
+ * evaluates it. It evaluates `@media`, an `@import`'s media query, UXDSL's own
+ * directives (whose `$variables` compile() serves to Sass) and, in a supports
+ * condition, what `keptInSupportsCondition` says it evaluates; it keeps the
+ * arguments of a `@supports` function (`selector()`, `font-tech()`) and of an
+ * `@import` function other than `supports()` (`layer()`), and every other
+ * prelude.
  */
 function keptPlaceOfPrelude(at: AtRule, finding: SassFinding): string | null {
   const name = at.name.toLowerCase();
   if (name === 'media' || name.startsWith('ds-')) return null;
+  const [outer, ...inner] = finding.within;
   if (name === 'supports') {
-    const customProperty = (fn: valueParser.FunctionNode) => fn.value === '' && fn.nodes.find((node) => node.type !== 'space')?.value.startsWith('--');
-    return finding.within.some((fn) => fn.value.toLowerCase() === 'selector' || customProperty(fn)) ? 'the @supports prelude' : null;
+    if (!outer) return null;
+    return outer.value !== '' || keptInSupportsCondition(outer.nodes, inner, finding) ? 'the @supports prelude' : null;
   }
-  if (name === 'import') return finding.within.some((fn) => fn.value.toLowerCase() === 'layer') ? 'the @import layer()' : null;
+  if (name === 'import') {
+    if (!outer || outer.value === '') return null;
+    if (outer.value.toLowerCase() !== 'supports') return `the @import ${outer.value}()`;
+    return keptInSupportsCondition(outer.nodes, inner, finding) ? 'the @import supports()' : null;
+  }
   return `the @${at.name} prelude`;
 }
 

@@ -205,6 +205,26 @@ test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from th
   }
 });
 
+test('MIG-B9-13: through compile(), a $variable Dart Sass keeps in a supports function or group, or in an @import\'s supports(), gets the kept message, not the advice to use compile()', async () => {
+  const from = path.join(temporaryDirectory(), 's.uxdsl');
+  for (const [source, where, line, column] of [
+    ['$v: 7px;\n@supports font-tech($v) {\n  .a { color: red; }\n}\n', 'the @supports prelude', 2, 1],
+    ['$v: 7px;\n@supports not font-format($v) {\n  .a { color: red; }\n}\n', 'the @supports prelude', 2, 1],
+    ['$v: 7px;\n@supports (foo $v) {\n  .a { color: red; }\n}\n', 'the @supports prelude', 2, 1],
+    ['$v: 7px;\n@import "x.css" supports(--x: $v);\n', 'the @import supports()', 2, 9],
+    ['$v: 7px;\n@import "x.css" supports(selector(.a-$v));\n', 'the @import supports()', 2, 9],
+  ]) {
+    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    assert.equal(error.name, 'CssSyntaxError', error.message);
+    assert.equal(error.reason, keptBySass('$v', where), source);
+    assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
+  }
+  // Where Sass evaluates the variable, the same file compiles (negative control).
+  const { css } = await pipeline({ source: '$v: 7px;\n@supports (width: $v) {\n  .a { color: red; }\n}\n@import "x.css" supports(display: fn($v));\n', from }, { theme: {}, includeTheme: false });
+  assert.match(css, /@supports \(width: 7px\) \{/);
+  assert.match(css, /@import "x\.css" supports\(display: fn\(7px\)\);/);
+});
+
 const LOOK_ALIKES = [
   // CSS nesting and selectors
   '.a { &:hover { b: c; } & .x { b: c; } &.y { b: c; } .z & { b: c; } & + & { b: c; } &[data-x] { b: c; } &::before { b: c; } :is(&) { b: c; } && { b: c; } &#id { b: c; } &:not(&) { b: c; } > & { b: c; } }',
@@ -310,7 +330,10 @@ test('MIG-B9-13: CSS that looks like Sass passes the plugin alone unchanged, and
 
 // Where Dart Sass keeps a $variable as written (a custom property, the prelude
 // of a plain-CSS at-rule it does not evaluate, a progid: value, a CSS @function
-// body), the message is the kept one; everywhere else Sass evaluates it.
+// body), the message is the kept one; everywhere else Sass evaluates it. In a
+// supports condition (@supports, an @import's supports()) Sass evaluates the
+// name of a declaration and the value of one on a property that is not custom,
+// and keeps a function's arguments and a group that is not a declaration.
 const KEPT_PROBES = [
   '@media (min-width: $v) { .a { b: c; } }', '@supports (width: $v) { .a { b: c; } }', '@supports (--x: $v) { .a { b: c; } }',
   '@supports selector(.a-$v) { .a { b: c; } }', '@container card (min-width: $v) { .a { b: c; } }', '@layer $v { .a { b: c; } }',
@@ -320,6 +343,12 @@ const KEPT_PROBES = [
   '@import "x.css" screen and (min-width: $v);', '@import "x.css" supports(width: $v);', '@import "x.css" layer($v);',
   '.a { --x: $v; }', '.a { --x: calc($v + 1px); }', '.a { filter: progid:DXImageTransform.Microsoft.gradient(startColorstr=$v); }',
   '.a { color: var(--x, $v); }', '@function --double(--x) { result: $v; }', '.a { width: $v; }', '@page { margin: $v; }',
+  // supports conditions, in @supports and in an @import's supports()
+  '@supports font-tech($v) { .a { b: c; } }', '@supports font-format($v) { .a { b: c; } }', '@supports not font-tech($v) { .a { b: c; } }',
+  '@supports (display: grid) and font-tech($v) { .a { b: c; } }', '@supports (foo $v) { .a { b: c; } }', '@supports (font-tech($v)) { .a { b: c; } }',
+  '@supports (display: fn($v)) { .a { b: c; } }', '@supports ($v: 1px) { .a { b: c; } }', '@supports ("--x": $v) { .a { b: c; } }',
+  '@import "x.css" supports(--x: $v);', '@import "x.css" supports(selector(.a-$v));', '@import "x.css" supports(not (--x: $v));',
+  '@import "x.css" supports(not (width: $v));', '@import "x.css" foo($v);',
 ];
 
 /** The plugin alone's verdict on a probe: 'kept', 'generic', 'none' (it compiled) or the other error it threw. */
@@ -343,7 +372,7 @@ function disagreements(rows) {
 }
 
 test('MIG-B9-13: the places where the kept message applies are where Dart Sass keeps a $variable literally (pinned against live Sass)', () => {
-  assert.equal(KEPT_PROBES.length, 27);
+  assert.equal(KEPT_PROBES.length, 41);
   const rows = KEPT_PROBES.map((probe) => ({ probe, verdict: pluginVerdict(probe) }));
   assert.deepEqual(disagreements(rows), []);
   assert.ok(rows.some(({ verdict }) => verdict === 'kept') && rows.some(({ verdict }) => verdict === 'generic'), 'both verdicts occur');

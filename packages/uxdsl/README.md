@@ -1358,9 +1358,13 @@ that looks similar passes: native nesting (`&:hover`, `& .x`, `&.y`, a nested
 `@function --name` and `@mixin --name`. Dart Sass keeps a `$variable` as
 written in a custom property (`--gap: $gap`), in the prelude of a plain-CSS
 at-rule it does not evaluate (`@container`, `@layer`, `@keyframes`,
-`@property`, an unknown at-rule, …), in a `progid:` value and in a CSS
-`@function` body, so there `compile()` reports `UXD_SASS_CONTEXT` too, with
-the fix Sass needs: write `#{$gap}`.
+`@property`, an unknown at-rule, …), in a supports condition — in `@supports`
+or in an `@import`'s `supports()` — except a declaration's name and a value
+on a property that is not custom (it keeps `selector(.a-$gap)`,
+`font-tech($gap)` and `(--x: $gap)`, and evaluates `(width: $gap)`), in an
+`@import`'s `layer()`, in a `progid:` value and in a CSS `@function` body, so
+there `compile()` reports `UXD_SASS_CONTEXT` too, with the fix Sass needs:
+write `#{$gap}`.
 
 `compile()` — what the CLI, `uxdsl/vite` and `uxdsl/webpack` run — compiles a
 `.uxdsl` file with real Dart Sass (FEAT-010), so that a `.scss` file renamed to

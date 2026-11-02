@@ -130,9 +130,12 @@ What to check in a project when upgrading is in the migration guide,
   `Unknown word` error.
 - Through `compile()`, a `$variable` or a namespaced call Dart Sass keeps as
   written — in a custom property, in the prelude of a plain-CSS at-rule such
-  as `@container`, `@layer` or `@keyframes`, in a `progid:` value or in a CSS
-  `@function` body — is `UXD_SASS_CONTEXT`, whose message says to write
-  `#{$variable}`. The SCSS subset substituted it there.
+  as `@container`, `@layer` or `@keyframes`, in a supports condition Sass does
+  not evaluate (a function such as `selector()` or `font-tech()`, a custom
+  property's `(--x: $v)`, in `@supports` or in an `@import`'s `supports()`),
+  in an `@import`'s `layer()`, in a `progid:` value or in a CSS `@function`
+  body — is `UXD_SASS_CONTEXT`, whose message says to write `#{$variable}`.
+  The SCSS subset substituted it there.
 
 ### Removed
 

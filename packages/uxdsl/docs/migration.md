@@ -79,7 +79,9 @@ What to check when you upgrade:
    (the SCSS subset substituted it): write `--gap: #{$gap}`, as in the example
    above. The same holds in the prelude of a plain-CSS at-rule Sass does not
    evaluate (`@container`, `@layer`, `@keyframes`, `@property`, …), in a
-   `progid:` value and in a CSS `@function` body.
+   supports condition Sass does not evaluate (`selector()`, `font-tech()`,
+   `(--x: …)`, in `@supports` or in an `@import`'s `supports()`), in an
+   `@import`'s `layer()`, in a `progid:` value and in a CSS `@function` body.
 4. **The PostCSS plugin alone compiles CSS plus UXDSL.** A stylesheet compiled
    by `uxdsl/postcss` without `compile()` (a `postcss.config.js` in Next.js,
    for instance) no longer resolves root-level `$variables` — the beta.6 note
