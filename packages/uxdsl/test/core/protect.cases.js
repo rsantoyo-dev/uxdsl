@@ -16,10 +16,11 @@
 //
 // `warning: '<code>'` adds that compile() reports a warning with that code.
 //
-// `verify: '…'` marks an expectation that depends on a Dart Sass behavior this
-// list was written without running Sass on (the session had no registry
-// access); MIG-B9-13 confirms each one against live Sass before flipping the
-// case from todo to test, and records any it had to change.
+// The expectations that depend on how Dart Sass prints or evaluates something
+// (S4's re-quoting, C5's dropped comment, N6's if(), U3's rejected url(), D4's
+// ten decimals, D7's comment in an at-rule's parameters, NC3–NC6's color
+// syntax) hold against Dart Sass 1.107.0 through both runs in protect.test.js:
+// the pipeline built from the `sass` package directly, and compile().
 
 // The theme every case runs against, merged over the base theme.
 const THEME = {
@@ -34,7 +35,7 @@ const CASES = [
   ['S1', '.a { content: "space(2)"; }', '.a { content: "space(2)"; }'],
   ['S2', '.a { content: "a (b) c"; padding: space(2); }', { sameAs: '.a { content: "a (b) c"; padding: space(2); }' }],
   ['S3', '.a { content: "@ds-surface(contained)"; }', '.a { content: "@ds-surface(contained)"; }'],
-  ['S4', '.a { content: "say \\"space(2)\\""; }', `.a { content: 'say "space(2)"'; }`, { verify: 'Dart Sass re-quotes a string holding double quotes with single quotes' }],
+  ['S4', '.a { content: "say \\"space(2)\\""; }', `.a { content: 'say "space(2)"'; }`],
   ['S5', '$t: primary;\n.a { content: "#{$t}.main"; }', '.a { content: "primary.main"; }'],
 
   // --- Comments.
@@ -42,7 +43,7 @@ const CASES = [
   ['C2', '.a {\n  color: red; // space(2)\n}', '.a { color: red; }'],
   ['C3', '/* @ds-surface($x) */\n.a { color: red; }', '/* @ds-surface($x) */ .a { color: red; }'],
   ['C4', '.a { content: "/*"; padding: space(2); }', { sameAs: '.a { content: "/*"; padding: space(2); }' }],
-  ['C5', '.a { padding: space(2) /* gap */; }', { sameAs: '.a { padding: space(2); }' }, { verify: 'Dart Sass drops a loud comment inside a declaration value' }],
+  ['C5', '.a { padding: space(2) /* gap */; }', { sameAs: '.a { padding: space(2); }' }],
 
   // --- Nested parentheses.
   ['N1', '.a { color: color-mix(in srgb, palette(primary.main) 50%, white); }', { sameAs: '.a { color: color-mix(in srgb, palette(primary.main) 50%, white); }' }],
@@ -50,7 +51,7 @@ const CASES = [
   ['N3', '.a { padding: xs(space(2)) md(space(4)); }', { sameAs: '.a { padding: xs(space(2)) md(space(4)); }' }],
   ['N4', '@use "sass:math";\n.a { color: palette(primary.main, math.div(1, 2)); }', { sameAs: '.a { color: palette(primary.main, 0.5); }' }],
   ['N5', '.a { box-shadow: 0 1px 2px palette(primary.main), 0 2px 4px palette(secondary.main); }', { sameAs: '.a { box-shadow: 0 1px 2px palette(primary.main), 0 2px 4px palette(secondary.main); }' }],
-  ['N6', '$on: true;\n.a { color: if($on, palette(primary.main), palette(secondary.main)); }', { sameAs: '.a { color: palette(primary.main); }' }, { verify: 'Sass\'s if() function (possibly deprecated in favor of CSS if() in the pinned Sass)' }],
+  ['N6', '$on: true;\n.a { color: if($on, palette(primary.main), palette(secondary.main)); }', { sameAs: '.a { color: palette(primary.main); }' }],
 
   // --- Interpolation.
   ['I1', '$t: primary;\n.a { color: palette(#{$t}.main); }', { sameAs: '.a { color: palette(primary.main); }' }],
@@ -63,16 +64,16 @@ const CASES = [
   // --- url().
   ['U1', '.a { background: url(//cdn.example.com/x.png); }', '.a { background: url(//cdn.example.com/x.png); }'],
   ['U2', '.a { background: url("space(2).png"); }', '.a { background: url("space(2).png"); }'],
-  ['U3', '.a { background: url(space(2).png); }', 'ERROR:UXD_SASS', { verify: 'Dart Sass rejects `(` inside an unquoted url() (the prototype saw "Expected digit")' }],
+  ['U3', '.a { background: url(space(2).png); }', 'ERROR:UXD_SASS'],
 
   // --- Directive parameters.
   ['D1', '$tones: (primary: 1, secondary: 2);\n@each $t, $n in $tones {\n  .s-#{$t} { @ds-surface(contained $t $n); }\n}', { sameAs: '.s-primary { @ds-surface(contained primary 1); }\n.s-secondary { @ds-surface(contained secondary 2); }' }],
   ['D2', '$tones: (primary: 1, secondary: 2);\n@each $t, $n in $tones {\n  .s-#{$t} { @ds-surface(contained #{$t} #{$n}); }\n}', { sameAs: '.s-primary { @ds-surface(contained primary 1); }\n.s-secondary { @ds-surface(contained secondary 2); }' }],
   ['D3', '$r: 3;\n.a { @ds-surface(contained radius($r)); }', { sameAs: '.a { @ds-surface(contained radius(3)); }' }],
-  ['D4', '@use "sass:math" as m;\n.a { @ds-surface(contained m.$e); }', { sameAs: '.a { @ds-surface(contained 2.7182818285); }' }, { verify: 'Sass serializes math.$e with ten decimals' }],
+  ['D4', '@use "sass:math" as m;\n.a { @ds-surface(contained m.$e); }', { sameAs: '.a { @ds-surface(contained 2.7182818285); }' }],
   ['D5', '.a { @ds-surface (contained); }', { sameAs: '.a { @ds-surface(contained); }' }],
   ['D6', '.a { @DS-SURFACE(contained); }', { sameAs: '.a { @ds-surface(contained); }' }],
-  ['D7', '.a { @ds-surface(contained /* ) */ primary); }', { sameAs: '.a { @ds-surface(contained primary); }' }, { verify: 'how Sass serializes a comment inside an unknown at-rule\'s parameters' }],
+  ['D7', '.a { @ds-surface(contained /* ) */ primary); }', { sameAs: '.a { @ds-surface(contained primary); }' }],
   ['D8', '@each $t in primary {\n  .b-#{$t} {\n    @ds-button(\n      contained\n      $t\n    );\n  }\n}', { sameAs: '.b-primary { @ds-button(contained primary); }' }],
   ['D9', '@mixin title($r) { @ds-typo($r); }\n.a { @include title(h2); }', { sameAs: '.a { @ds-typo(h2); }' }],
   ['D10', '.a {\n  @media (min-width: 600px) { @ds-surface(contained); }\n}', { sameAs: '@media (min-width: 600px) { .a { @ds-surface(contained); } }' }],
@@ -92,10 +93,10 @@ const CASES = [
   // --- Native color functions are never touched; color()/palette() tokens are.
   ['NC1', '.a { color: color(display-p3 1 0 0); }', '.a { color: color(display-p3 1 0 0); }'],
   ['NC2', '.a { color: color(srgb 1 0 0 / 0.5); }', '.a { color: color(srgb 1 0 0 / 0.5); }'],
-  ['NC3', '.a { color: color(from palette(primary.main) srgb r g b / 0.5); }', { sameAs: '.a { color: color(from palette(primary.main) srgb r g b / 0.5); }' }, { verify: 'Dart Sass passes relative color() syntax through' }],
-  ['NC4', '.a { color: rgb(from palette(primary.main) r g b / 50%); }', { sameAs: '.a { color: rgb(from palette(primary.main) r g b / 50%); }' }, { verify: 'Dart Sass passes relative rgb() syntax through' }],
-  ['NC5', '.a { color: color(white); }', { sameAs: '.a { color: color(white); }' }, { verify: 'Dart Sass >= 1.79 parses color() as CSS Color 4; protect must cover it' }],
-  ['NC6', '.a { color: color(black, 0.5); }', { sameAs: '.a { color: color(black, 0.5); }' }, { verify: 'as NC5' }],
+  ['NC3', '.a { color: color(from palette(primary.main) srgb r g b / 0.5); }', { sameAs: '.a { color: color(from palette(primary.main) srgb r g b / 0.5); }' }],
+  ['NC4', '.a { color: rgb(from palette(primary.main) r g b / 50%); }', { sameAs: '.a { color: rgb(from palette(primary.main) r g b / 50%); }' }],
+  ['NC5', '.a { color: color(white); }', { sameAs: '.a { color: color(white); }' }],
+  ['NC6', '.a { color: color(black, 0.5); }', { sameAs: '.a { color: color(black, 0.5); }' }],
   ['NC7', '.a { color: color(gray.900); }', { sameAs: '.a { color: color(gray.900); }' }],
   ['NC8', '.a { color: palette(primary); }', { sameAs: '.a { color: palette(primary); }' }],
 

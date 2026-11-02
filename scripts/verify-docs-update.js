@@ -76,10 +76,10 @@ const VISUAL_DEFAULT_FILES = [
   `${SRC}/foundations.ts`,
   `${SRC}/fonts.ts`,
   `${SRC}/plugin.ts`,
-  // The compile() pipeline around the plugin: `@import` inlining, the SCSS
-  // subset and its guard, `//` comment stripping — all change compiled output.
+  // compile(): which stages a stylesheet goes through, in what order (protect,
+  // Dart Sass, restore, the plugin), and what each receives — a change here
+  // changes the CSS of every file compiled through compile().
   `${SRC}/compile.ts`,
-  `${SRC}/scss-subset.ts`,
   `${SRC}/language.ts`,
   `${SRC}/preset-engine.ts`,
   `${SRC}/naming.ts`,

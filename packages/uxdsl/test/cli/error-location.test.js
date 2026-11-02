@@ -9,7 +9,7 @@ const { spawnSync } = require('node:child_process');
 
 const cli = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
 
-test('MIG-B6-13: a CSS error in an imported partial names the partial and prints its code frame', () => {
+test('MIG-B9-13: a CSS error in an imported partial names the partial at its declaration start and prints its code frame', () => {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-location-'));
   fs.mkdirSync(path.join(directory, 'src'));
   fs.writeFileSync(path.join(directory, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
@@ -18,8 +18,11 @@ test('MIG-B6-13: a CSS error in an imported partial names the partial and prints
 
   const result = spawnSync(process.execPath, [cli, 'build'], { cwd: directory, encoding: 'utf8' });
   assert.equal(result.status, 1);
-  assert.match(result.stderr, /src\/partial\.uxdsl:3:12: UXD_DENSITY_REFERENCE: density\(16\) does not exist; available keys: 0–15\./);
+  // Dart Sass maps the start of a declaration, so the position is where `padding` starts.
+  assert.match(result.stderr, /src\/partial\.uxdsl:3:3: UXD_DENSITY_REFERENCE: density\(16\) does not exist; available keys: 0–15\./);
   assert.match(result.stderr, />\s*3 \|\s+padding: density\(16\);/);
+  assert.doesNotMatch(result.stderr, /src\/a\.uxdsl:\d/, 'never the importing file');
+  assert.doesNotMatch(result.stderr, /:3:12:/, 'not the token column the former pipeline printed');
   assert.equal(fs.existsSync(path.join(directory, 'src', 'a.css')), false);
 });
 

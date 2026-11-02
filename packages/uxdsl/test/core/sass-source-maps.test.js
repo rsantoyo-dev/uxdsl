@@ -2,8 +2,8 @@
 
 // MIG-B9-10 (FEAT-010): positions survive two stages (Dart Sass, then the UXDSL
 // plugin). A diagnostic inside a file that uses @use, mixins, @extend, @each and
-// nesting points at the author's line and column, and the final map names the
-// author's files. `todo` until MIG-B9-12/13 put compile() on Dart Sass.
+// nesting points at the author's line and column, a warning and a reference
+// issue too, and the final map names the author's files.
 //
 // heavy.uxdsl and _mixins.uxdsl are the prototype's files verbatim (story §7.3).
 // ok.uxdsl is heavy.uxdsl with a token that exists (for the successful map),
@@ -11,10 +11,17 @@
 // sass-error.uxdsl holds an undefined Sass variable.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
+const postcss = require('postcss');
 const { SourceMapConsumer } = require('source-map-js');
 
 const core = require('../../dist/entries/index.js');
+const exported = require('../../dist/plugin');
+const plugin = exported.default || exported;
+const { compileSassStage } = require('../../dist/sass/compile-sass.js');
+const { restoreDirectiveSpacing } = require('../../dist/sass/protect.js');
 
 const MAPS = path.join(__dirname, 'fixtures/sass-maps');
 const entry = (name) => path.join(MAPS, name);
@@ -37,7 +44,7 @@ test('MIG-B9-10: the fixture positions the tests rely on are where the story say
   assert.equal(line('ok.uxdsl', 18).indexOf('inset: space(4)') + 1, 66);
 });
 
-test.todo('MIG-B9-10: a UXDSL error in a Sass-heavy file is reported at heavy.uxdsl:18:66', async () => {
+test('MIG-B9-10: a UXDSL error in a Sass-heavy file is reported at heavy.uxdsl:18:66', async () => {
   const error = await failure('heavy.uxdsl');
   assert.match(String(error.message), /UXD_SPACE_REFERENCE/);
   assert.equal(path.basename(error.file || ''), 'heavy.uxdsl');
@@ -45,7 +52,7 @@ test.todo('MIG-B9-10: a UXDSL error in a Sass-heavy file is reported at heavy.ux
   assert.equal(error.column, 66);
 });
 
-test.todo('MIG-B9-10: a UXDSL error inside a @use\'d mixin is reported at _mixins.uxdsl:11:3', async () => {
+test('MIG-B9-10: a UXDSL error inside a @use\'d mixin is reported at _mixins.uxdsl:11:3', async () => {
   const error = await failure('uses-broken.uxdsl');
   assert.match(String(error.message), /UXD_DENSITY_REFERENCE|UXD_TOKEN_KEY/);
   assert.equal(path.basename(error.file || ''), '_mixins.uxdsl');
@@ -53,7 +60,7 @@ test.todo('MIG-B9-10: a UXDSL error inside a @use\'d mixin is reported at _mixin
   assert.equal(error.column, 3);
 });
 
-test.todo('MIG-B9-10: a Sass error keeps its exact column', async () => {
+test('MIG-B9-10: a Sass error keeps its exact column', async () => {
   const error = await failure('sass-error.uxdsl');
   assert.match(String(error.message), /UXD_SASS/);
   assert.equal(path.basename(error.file || ''), 'sass-error.uxdsl');
@@ -61,7 +68,7 @@ test.todo('MIG-B9-10: a Sass error keeps its exact column', async () => {
   assert.equal(error.column, 18);
 });
 
-test.todo('MIG-B9-10: the final map names the original files with their content', async () => {
+test('MIG-B9-10: the final map names the original files with their content', async () => {
   const to = path.join(MAPS, 'out', 'ok.css');
   const result = await core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap: 'external', to });
   const map = JSON.parse(result.map);
@@ -77,4 +84,180 @@ test.todo('MIG-B9-10: the final map names the original files with their content'
   const original = consumer.originalPositionFor({ line: lineIndex + 1, column: lines[lineIndex].indexOf('inset') });
   assert.equal(path.basename(original.source || ''), 'ok.uxdsl');
   assert.equal(original.line, 18);
+});
+
+// --- The final map and the locations, end to end -------------------------------------
+
+const RESERVED = ['xs', 'sm', 'md', 'lg', 'xl'];
+const read = (name) => fs.readFileSync(entry(name), 'utf8');
+const where = (item) => `${path.basename(item.file || item.source || '')}:${item.line}:${item.column}`;
+const rejection = (promise) => promise.then(() => assert.fail('the compile succeeded; it should fail'), (error) => error);
+
+/** The plugin, with no compile() around it, on the Sass stage's output for `file`: what PostCSS reports by itself. */
+function pluginOnStage(file, { map = false, to, references } = {}) {
+  const stage = compileSassStage({ entry: file }, { reserved: RESERVED, sourceMap: true });
+  const options = { from: file, to, map: map ? { prev: stage.map, inline: false, annotation: false, ...map } : false };
+  return postcss([restoreDirectiveSpacing, plugin({ theme: {}, includeTheme: false, references })]).process(stage.css, options);
+}
+
+/** Every mapping of `map` whose source is a key of `texts` and that lies outside that file's text: a line past its end, or a column past its line's length. */
+function outsideMappings(map, texts) {
+  const outside = [];
+  new SourceMapConsumer(map).eachMapping((mapping) => {
+    const text = texts[mapping.source];
+    if (text === undefined) return;
+    const lines = text.split('\n');
+    if (mapping.originalLine > lines.length || mapping.originalColumn > lines[mapping.originalLine - 1].length) {
+      outside.push(`${mapping.source}:${mapping.originalLine}:${mapping.originalColumn}`);
+    }
+  });
+  return outside;
+}
+
+test('MIG-B9-13: the final map names only the author\'s files, relative to `to`, with their text, and no mapping points into Dart Sass\'s output; the CSS is identical in the three modes', async () => {
+  const to = path.join(MAPS, 'out', 'ok.css');
+  const build = (sourceMap) => core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap, to });
+  const external = await build('external');
+  const map = JSON.parse(external.map);
+  assert.deepEqual([...map.sources].sort(), ['../_mixins.uxdsl', '../ok.uxdsl', '<no source>']);
+  assert.equal(new Set(map.sources).size, map.sources.length, 'no duplicate sources');
+  assert.ok(map.sources.every((source) => !source.startsWith('file:') && !path.isAbsolute(source)), `relative sources, no file: URLs: ${map.sources}`);
+  const texts = { '../ok.uxdsl': read('ok.uxdsl'), '../_mixins.uxdsl': read('_mixins.uxdsl') };
+  map.sources.forEach((source, index) => assert.equal(map.sourcesContent[index], source === '<no source>' ? null : texts[source], `sourcesContent of ${source}`));
+  assert.deepEqual(outsideMappings(map, texts), [], 'every mapping lies inside the text of the file it names');
+
+  const marker = '\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,';
+  const off = await build(false);
+  const inline = await build('inline');
+  assert.equal(off.map, undefined);
+  assert.equal(external.css, off.css);
+  assert.equal(inline.css.lastIndexOf(marker), inline.css.indexOf(marker), 'one annotation');
+  assert.equal(inline.css.slice(0, inline.css.lastIndexOf(marker)), off.css);
+
+  // A source that holds a sourceMappingURL comment of its own: Dart Sass drops it, and the three modes still agree.
+  const annotated = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-annotated-')), 'annotated.uxdsl');
+  const compileAnnotated = (sourceMap) => core.compile({ source: '/*# sourceMappingURL=foo.css.map */\n.a { padding: space(2); }\n', from: annotated }, { includeTheme: false, sourceMap });
+  const [a, b, c] = [await compileAnnotated(false), await compileAnnotated('external'), await compileAnnotated('inline')];
+  assert.equal(b.css, a.css);
+  assert.equal(c.css.slice(0, c.css.lastIndexOf(marker)), a.css);
+  assert.doesNotMatch(a.css, /foo\.css\.map/);
+});
+
+test('MIG-B9-13: the final map names only the author\'s files (negative control): without compile() the plugin reports Dart Sass\'s line 29, and PostCSS\'s chained map holds mappings outside ok.uxdsl\'s text', () => {
+  let error;
+  try {
+    pluginOnStage(entry('heavy.uxdsl')).css;
+  } catch (caught) {
+    error = caught;
+  }
+  assert.ok(error, 'the plugin rejects space(404)');
+  assert.equal(path.basename(error.file), 'heavy.uxdsl');
+  assert.equal(error.line, 29);
+  assert.equal(error.column, 12);
+  assert.match(error.showSourceCode(false), /> 29 \|\s+inset: space\(404\);/);
+
+  const chained = pluginOnStage(entry('ok.uxdsl'), { map: { sourcesContent: true }, to: path.join(MAPS, 'out', 'ok.css') });
+  chained.css;
+  const raw = chained.map.toJSON();
+  assert.notDeepEqual(outsideMappings(raw, { '../ok.uxdsl': read('ok.uxdsl') }), [], 'PostCSS\'s own input, Dart Sass\'s output, is mapped under the entry\'s name');
+});
+
+test('MIG-B9-13: a relocated error\'s stack names the author\'s position, never one in Dart Sass\'s output', async () => {
+  const error = await failure('heavy.uxdsl');
+  const [head, firstFrame] = error.stack.split('\n');
+  assert.equal(head, `${error.name}: ${error.message}`);
+  assert.equal(firstFrame, `    at ${entry('heavy.uxdsl')}:18:66`);
+  assert.doesNotMatch(error.stack, /heavy\.uxdsl:29:/);
+  // Control: the plugin alone puts the node's position in Dart Sass's output in the stack.
+  let direct;
+  try {
+    pluginOnStage(entry('heavy.uxdsl')).css;
+  } catch (caught) {
+    direct = caught;
+  }
+  assert.match(direct.stack, /heavy\.uxdsl:29:5/);
+});
+
+/** A project whose partial's mixin and entry each hold a declaration referencing a palette token nothing defines. */
+function referenceProject() {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-references-')));
+  fs.writeFileSync(path.join(dir, '_mix.uxdsl'), '@mixin warned {\n  &__w {\n    box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main);\n  }\n}\n');
+  fs.writeFileSync(path.join(dir, 'entry.uxdsl'), '@use "mix";\n\n.card {\n  @include mix.warned;\n  .inner { color: red; box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main); }\n}\n');
+  return path.join(dir, 'entry.uxdsl');
+}
+
+test('MIG-B9-13: plugin warnings, references.onWarning issues and a ReferenceIntegrityError name the author\'s file, line and column', async () => {
+  const file = referenceProject();
+  const seen = [];
+  const warned = await core.compile({ entry: file }, { includeTheme: false, references: { mode: 'warn', onWarning: (issue) => seen.push(where(issue)) } });
+  const missing = warned.warnings.filter((warning) => warning.text.startsWith('UXD_REFERENCE_MISSING: '));
+  assert.deepEqual(missing.map(where), ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
+  assert.deepEqual(seen, ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
+
+  const error = await rejection(core.compile({ entry: file }, { includeTheme: false }));
+  assert.equal(error.name, 'ReferenceIntegrityError');
+  assert.equal(error.message, formatted(file));
+  assert.equal(where(error), '_mix.uxdsl:3:5');
+  assert.equal(error.issues[0].hint, ' Did you mean "primary"?', 'the non-enumerable hint survives the relocation');
+  assert.equal(error.stack.split('\n')[0], `ReferenceIntegrityError: ${error.message}`);
+});
+
+/** The one-line grouped message for referenceProject(), at the author's positions. */
+function formatted(file) {
+  const dir = path.dirname(file);
+  return 'UXD_REFERENCE_MISSING: --uxdsl__palette__primry-main has no definition in the active theme/scope. Define it or declare its external provider. ' +
+    `Did you mean "primary"? Referenced by 2 definitions: box-shadow (${path.join(dir, '_mix.uxdsl')}:3:5), box-shadow (${path.join(dir, 'entry.uxdsl')}:5:24).`;
+}
+
+test('MIG-B9-13: plugin warnings, references.onWarning issues and a ReferenceIntegrityError name the author\'s file, line and column (negative control)', () => {
+  // The plugin on the Sass stage's output, with no compile() around it, names the entry at Dart Sass's positions.
+  const result = pluginOnStage(referenceProject(), { references: { mode: 'warn', onWarning() {} } });
+  result.css;
+  assert.deepEqual(result.warnings().map((warning) => `${path.basename(warning.node.source.input.file)}:${warning.line}:${warning.column}`), ['entry.uxdsl:2:3', 'entry.uxdsl:6:3']);
+});
+
+test('MIG-B9-13: locations do not depend on PostCSS\'s prev-map arithmetic', async () => {
+  // PostCSS 8.4.31 to 8.5.15 report a prev map's column one less than 8.5.16 and later; the stub gives
+  // the installed PostCSS the older arithmetic.
+  const Input = require('postcss/lib/input');
+  const origin = Input.prototype.origin;
+  Input.prototype.origin = function oneLess(...args) {
+    const position = origin.apply(this, args);
+    if (position) position.column -= 1;
+    return position;
+  };
+  try {
+    const error = await rejection(core.compile({ entry: entry('heavy.uxdsl') }, { includeTheme: false, sourceMap: 'external', to: path.join(MAPS, 'out', 'heavy.css') }));
+    assert.equal(where(error), 'heavy.uxdsl:18:66');
+    // Control: under the same stub, PostCSS's own location through map.prev is one less.
+    let direct;
+    try {
+      pluginOnStage(entry('heavy.uxdsl'), { map: {} }).css;
+    } catch (caught) {
+      direct = caught;
+    }
+    assert.equal(where(direct), 'heavy.uxdsl:18:65');
+  } finally {
+    Input.prototype.origin = origin;
+  }
+});
+
+test('MIG-B9-13: a diagnostic with no author position names the entry without line, column or frame', async () => {
+  // compile()'s lookup goes through source-map-js's originalPositionFor, which nothing else calls on
+  // this path (sourceMap false): stubbed to find nothing, the error keeps only the entry.
+  const prototype = Object.getPrototypeOf(new SourceMapConsumer({ version: 3, sources: [], names: [], mappings: '' }));
+  const originalPositionFor = prototype.originalPositionFor;
+  prototype.originalPositionFor = () => ({ source: null, line: null, column: null, name: null });
+  let error;
+  try {
+    error = await failure('heavy.uxdsl');
+  } finally {
+    prototype.originalPositionFor = originalPositionFor;
+  }
+  assert.equal(error.file, entry('heavy.uxdsl'));
+  for (const key of ['line', 'column', 'endLine', 'endColumn', 'source']) assert.equal(key in error, false, `no ${key}`);
+  assert.equal(error.showSourceCode(false), '');
+  assert.ok(error.message.startsWith(`uxdsl: ${entry('heavy.uxdsl')}: UXD_SPACE_REFERENCE: `), error.message);
+  // Control: with the lookup restored, the same build is located.
+  assert.equal(where(await failure('heavy.uxdsl')), 'heavy.uxdsl:18:66');
 });

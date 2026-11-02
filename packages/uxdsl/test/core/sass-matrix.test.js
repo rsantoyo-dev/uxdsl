@@ -1,18 +1,13 @@
 'use strict';
 
-// MIG-B9-10 (FEAT-010): the Sass matrix. The 110 cases of scss-subset.test.js,
-// same names and sources, expected to what compile() must produce once it runs
-// on Dart Sass (MIG-B9-13): a Sass-valid source compiles to Dart Sass's CSS, an
-// invalid-Sass source fails as UXD_SASS, a UXDSL source compiles to what
-// compile() produces today. The expectations are in sass-matrix.cases.js,
-// recorded by sass-matrix.record.js; the "sass" group is recorded from the
-// `sass` package itself, so the test that compares those literals with live
-// Dart Sass runs now and notices a Sass upgrade that changes output.
-//
-// Each case through compile() is `todo` until MIG-B9-13: node:test runs it and
-// reports the result without failing the suite. What can pass today does:
-// the live-Sass comparison, the "today" literals against compile(), the shape
-// of the matrix, and the negative controls.
+// The Sass matrix: 110 cases expected to what compile() produces on Dart Sass.
+// A Sass-valid source compiles to Dart Sass's CSS, an invalid-Sass source fails
+// as UXD_SASS with Sass's message, and a UXDSL source compiles to its recorded
+// literal. The expectations are in sass-matrix.cases.js, recorded by
+// sass-matrix.record.js; the "sass" group is recorded from the `sass` package
+// itself, so the test that compares those literals with live Dart Sass notices
+// a Sass upgrade that changes output, and one more test compares compile()'s
+// output with live Dart Sass byte for byte.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -23,7 +18,7 @@ const csstree = require('css-tree');
 
 const core = require('../../dist/entries/index.js');
 const { CASES, expectedErrors, SASS_VERSION } = require('./sass-matrix.cases.js');
-const { normalize, liveSass, sassVersion } = require('./sass-matrix.record.js');
+const { normalize, liveSass, sassVersion, expectationFor } = require('./sass-matrix.record.js');
 
 const FIXTURES = path.join(__dirname, 'fixtures/scss-subset');
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-matrix-'));
@@ -76,7 +71,7 @@ function matchesLiveSass([name, source, expected]) {
 
 const byGroup = (group) => CASES.filter(([, , , meta]) => meta.group === group);
 
-// --- The shape of the matrix (runs now).
+// --- The shape of the matrix.
 
 test('MIG-B9-10: the matrix has 110 cases and its errors are exactly the invalid-Sass sources', () => {
   assert.equal(CASES.length, 110);
@@ -95,16 +90,8 @@ test('MIG-B9-10: the matrix has 110 cases and its errors are exactly the invalid
   assert.deepEqual({ sass: byGroup('sass').length, today: byGroup('today').length, mixed: byGroup('mixed').length }, { sass: 75, today: 20, mixed: 15 });
 });
 
-test('MIG-B9-10: the matrix has the same names and sources as scss-subset.test.js (while that file exists)', () => {
-  const old = path.join(__dirname, 'scss-subset.test.js');
-  if (!fs.existsSync(old)) return; // MIG-B9-13 deletes the old matrix; the names and sources live here from then on.
-  const text = fs.readFileSync(old, 'utf8');
-  const OLD = new Function('return ' + /const CASES = (\[[\s\S]*?\n\]);/.exec(text)[1])();
-  assert.deepEqual(CASES.map(([name, source]) => [name, source]), OLD.map(([name, source]) => [name, source]));
-});
-
-// --- Dart Sass is the oracle of the "sass" group (runs now; a Sass upgrade that
-// changes output fails it until the matrix is re-recorded).
+// --- Dart Sass is the oracle of the "sass" group (a Sass upgrade that changes
+// output fails it until the matrix is re-recorded).
 
 test('MIG-B9-10: every recorded Sass expectation equals live Dart Sass', () => {
   assert.equal(sassVersion(), SASS_VERSION, 're-record the matrix (sass-matrix.record.js --update) after a Sass upgrade');
@@ -131,8 +118,51 @@ test('MIG-B9-10: every recorded Sass CSS is valid CSS with no Sass construct lef
   }
 });
 
-// --- The "today" group is compile()'s output today, byte for byte (runs now, and
-// keeps running after MIG-B9-13: the UXDSL semantics do not change).
+// --- compile() adds nothing to Dart Sass's output: every "sass" case that
+// compiles is compared byte for byte with live Dart Sass on the same text.
+
+const bytesDir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-matrix-bytes-'));
+for (const file of fs.readdirSync(FIXTURES)) fs.copyFileSync(path.join(FIXTURES, file), path.join(bytesDir, file));
+const silentLogger = { warn() {}, debug() {} };
+
+/** Dart Sass's CSS for `source` written as `<name>.scss`, and compile()'s for the same text written as `<name>.uxdsl`, side by side in one directory holding the matrix fixtures. */
+async function bothCompilers(name, source) {
+  const scss = path.join(bytesDir, `${name}.scss`);
+  const uxdsl = path.join(bytesDir, `${name}.uxdsl`);
+  fs.writeFileSync(scss, source + '\n');
+  fs.writeFileSync(uxdsl, source + '\n');
+  const live = require('sass').compile(scss, { style: 'expanded', logger: silentLogger }).css;
+  const compiled = (await core.compile({ entry: uxdsl }, { theme: {}, includeTheme: false })).css;
+  return { live, compiled };
+}
+
+/** The comparison: identity, not normalize(). */
+const sameBytes = (live, compiled) => live === compiled;
+
+test('MIG-B9-13: every "sass" case that compiles equals live Dart Sass byte for byte through compile()', async () => {
+  const differ = [];
+  let compared = 0;
+  for (const [name, source, expected] of byGroup('sass')) {
+    if (expected.css === undefined) continue;
+    const { live, compiled } = await bothCompilers(name, source);
+    compared++;
+    if (!sameBytes(live, compiled)) differ.push(`${name}\n  Dart Sass: ${JSON.stringify(live)}\n  compile(): ${JSON.stringify(compiled)}`);
+  }
+  assert.equal(compared, byGroup('sass').length - expectedErrors, 'every "sass" case Dart Sass compiles is compared');
+  assert.deepEqual(differ, []);
+});
+
+test('MIG-B9-13: every "sass" case that compiles equals live Dart Sass byte for byte through compile() (negative control)', async () => {
+  const [name, source] = byGroup('sass').find(([, , expected]) => expected.css !== undefined);
+  const { live, compiled } = await bothCompilers(name, source);
+  assert.equal(sameBytes(live, compiled), true, 'control: the case itself is identical');
+  assert.equal(sameBytes(live, `${compiled}\n`), false, 'a final newline, which the former pipeline wrote, is a difference');
+  assert.equal(sameBytes(live, compiled.replace(';', ' !important;')), false, 'a changed declaration is a difference');
+  assert.equal(normalize(`${compiled}\n`), normalize(live), 'normalize() hides the final newline, so the matrix comparison alone is not identity');
+});
+
+// --- The "today" group: UXDSL sources whose literals were recorded from compile()
+// and are kept as written; the UXDSL semantics do not change with the pipeline.
 
 test('MIG-B9-10: every "today" expectation is what compile() produces today, byte for byte', async () => {
   for (const [name, source, expected] of byGroup('today')) {
@@ -142,11 +172,22 @@ test('MIG-B9-10: every "today" expectation is what compile() produces today, byt
   }
 });
 
-// --- Every case through compile() (todo until MIG-B9-13).
+test('MIG-B9-13: the recorder keeps the today group as written', async () => {
+  const [name, source, expected, meta] = byGroup('today').find(([, , e]) => e.css !== undefined);
+  const planted = { css: `${expected.css} .planted { color: red; }` };
+  assert.deepEqual(await expectationFor([name, source, planted, meta]), planted, 'a "today" expectation is kept as written, never re-recorded from the current build');
+  assert.deepEqual(await expectationFor([name, source, expected, meta]), expected);
+  // The test above, not the recorder, is what checks a "today" literal: it rejects the planted one.
+  const actual = await compiled(name, source);
+  assert.equal(actual.css, expected.css);
+  assert.notEqual(actual.css, planted.css);
+});
+
+// --- Every case through compile().
 
 const tally = { ok: 0, error: 0, sass: 0 };
 for (const [name, source, expected, meta] of CASES) {
-  test.todo(`MIG-B9-10: sass matrix: ${name}`, async () => {
+  test(`MIG-B9-10: sass matrix: ${name}`, async () => {
     const actual = await compiled(name, source);
     if (expected.error !== undefined) {
       assert.equal(actual.error, expected.error, `${name}: expected ${expected.error}, got ${actual.error || `output: ${actual.css}`}`);
@@ -163,7 +204,7 @@ for (const [name, source, expected, meta] of CASES) {
   });
 }
 
-test.todo('MIG-B9-10: the matrix has 110 cases and its errors are exactly the invalid-Sass sources (through compile())', () => {
+test('MIG-B9-10: the matrix has 110 cases and its errors are exactly the invalid-Sass sources (through compile())', () => {
   assert.equal(tally.ok + tally.error, 110, 'every case ran');
   assert.equal(tally.sass, expectedErrors, 'the UXD_SASS failures are the invalid-Sass sources');
   assert.equal(tally.error, CASES.filter(([, , expected]) => expected.error !== undefined).length);

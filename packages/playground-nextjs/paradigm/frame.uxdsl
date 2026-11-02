@@ -1,7 +1,7 @@
 /* The page inside the home page's resizable frame. card.uxdsl is the example the home page
    shows, verbatim; everything below is the frame's own chrome. The frame is an iframe, so its
    media queries follow the frame's width: dragging it crosses the theme's breakpoints. */
-@import './card.uxdsl';
+@use './card';
 
 html, body {
   margin: 0;

@@ -22,6 +22,99 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### compile() runs on Dart Sass; the SCSS subset is deleted (MIG-B9-13)
+
+`compile()` — the pipeline the CLI, `uxdsl/vite` and `uxdsl/webpack` share —
+now runs four stages: protect (`src/sass/protect.ts`), Dart Sass
+(`src/sass/compile-sass.ts`), restore, and the UXDSL plugin on Dart Sass's
+output, parsed by PostCSS's default parser. A `.scss` project renamed to
+`.uxdsl` compiles to the CSS Dart Sass produces for it, with UXDSL's
+constructs then resolved by the plugin, which changes nothing else in Sass's
+output (Bootstrap 5.3.8 renamed to `.uxdsl`: byte-identical,
+`fixtures/sass-corpus`).
+
+- **Positions are the author's.** Every error, warning and reference issue
+  `compile()` reports names the author's file, line and column, found through
+  the Sass stage's source map: the start of the declaration or at-rule Dart
+  Sass mapped (`heavy.uxdsl:18:66`), or, for a value Sass copied, where it was
+  written (a `$variable`'s definition, an `@include` argument), the same on
+  every PostCSS of the `^8.4.31` peer range. `error.showSourceCode()` frames
+  the author's line; a `ReferenceIntegrityError`'s issues and the issue a
+  `references.onWarning` callback receives are relocated the same way, and so
+  is the frame PostCSS adds to an error's stack for the node it was thrown at.
+- **Warnings** start with Dart Sass's (`UXD_SASS_WARNING` under Sass's own cap
+  of five per deprecation type, then `UXD_FUNCTION_SHADOWED` at each
+  definition), followed by the plugin's at the author's positions; a warning
+  with no position is `{ text }`.
+- **Source maps** chain the Sass stage's map with PostCSS's and name only the
+  author's files, relative to `to`, with their text as `sourcesContent`; no
+  mapping points into Dart Sass's output. The CSS is identical with
+  `sourceMap` `false`, `'external'` and `'inline'` (which appends its data URI
+  last).
+- **The `sass` option**, `{ silenceDeprecations?: string[], quietDeps?: boolean }`,
+  is passed to Dart Sass; any other key, or a value of the wrong type, is an
+  error raised before anything is read.
+- **`dependencies`** is every file Dart Sass loaded — the entry first, then
+  Sass's load order, each once, no `sass:` module and no plain-CSS `@import`
+  target — then the theme files the plugin discovered.
+- **`compile({ source })` without `from`** behaves as before: positions say
+  `<css input>` with no `file`, relative loads resolve from the working
+  directory, and the source is never a dependency. `compile({ source, from })`
+  now lists `from` first in `dependencies`, even when that file does not exist
+  (it used to be `[]`).
+
+Through `compile()`, the guarantees of MIG-B9-05 and MIG-B9-04 below now read
+as follows: a declaration the grammar does not change comes out as Dart Sass
+prints it (Sass drops a comment inside a value), and a near-miss with a
+dotted argument (`palete(primary.main)`, `pallete(…)`, `pallet(…)`) is Dart
+Sass's located `UXD_SASS: expected "(".` before the plugin can suggest
+`palette()`. Through `uxdsl/postcss` every near-miss keeps
+`UXD_FUNCTION_UNKNOWN` with its suggestion.
+
+### Visual changes
+
+- Nesting is flattened by Dart Sass: a nested rule becomes its own top-level
+  rule, and a nested `@media` bubbles up.
+- Dart Sass's formatting: blank lines between top-level rules, one-line rules
+  laid out over several lines, `""` for `''`, `0.5` for `.5`, `16/9` for
+  `16 / 9`, no final newline, `@charset "UTF-8";` first for any non-ASCII
+  text (comments included), a comment inside a value dropped, and CSS math on
+  plain numbers evaluated (`log(1, 2)` is `0`).
+- A rule nested after `@ds-button` or `@ds-input` now follows the directive's
+  generated state rules, so it wins a tie with them (it used to lose), and a
+  responsive `@media` block now follows its own flat rule.
+- A file `@import`ed twice is emitted twice, as Dart Sass does (a module
+  loaded with `@use` is emitted once).
+
+### Breaking
+
+- Dart Sass's import rules: `@import "x.css"`, and an `@import` with a media
+  query, `layer()`, `supports()` or `url()` — a `.uxdsl` target included —
+  stays a plain CSS `@import` instead of being inlined (`@use` or
+  `meta.load-css()` inlines a file); `@import` itself reports Sass's
+  `UXD_SASS_WARNING: [import]` deprecation; `~pkg/…` is not resolved.
+- An import cycle and a missing file are `UXD_SASS` at the `@import` or
+  `@use`, in Sass's words (`This file is already being loaded.`,
+  `Module loop: this module is already being loaded.`,
+  `Can't find stylesheet to import.`).
+- The extension of `entry` or `from` decides how the text is read: `.scss`,
+  `.sass` and `.css` as written (UXDSL's dotted tokens are Sass's error
+  there), anything else as `.uxdsl`.
+- A diagnostic's position moves to the statement start Dart Sass maps: the
+  CLI prints `src/partial.uxdsl:3:3` where it printed `src/partial.uxdsl:3:12`.
+
+### Removed
+
+- `src/scss-subset.ts`, UXDSL's own SCSS subset and its guard, and, in
+  `compile.ts`, the `postcss-import` resolver, the import-cycle pre-check and
+  the `//` comment stripping: Dart Sass does all of it.
+- The `postcss-import` and `postcss-scss` dependencies, with the packages only
+  they required: a fresh `npm i -D uxdsl` installs 20 packages (the release
+  gate's count).
+- The codes `UXD_SCSS_UNSUPPORTED`, `UXD_NESTING_INVALID`, `UXD_IMPORT_CYCLE`
+  and `UXD_INCLUDE_ARGUMENT`: what they reported is valid Sass now, or Dart
+  Sass's `UXD_SASS`.
+
 ### The Sass stage: Dart Sass with the `.uxdsl` importer (MIG-B9-12)
 
 No change to compiled output yet: `src/sass/compile-sass.ts` is a new module

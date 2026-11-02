@@ -551,8 +551,10 @@ async function main() {
       const map = JSON.parse(p.read('src/map.css.map'));
       if (map.version !== 3 || !map.sources.some((s) => s.endsWith('map.uxdsl')) || map.sources.some((s) => path.isAbsolute(s))) throw new Error(`bad map sources ${map.sources}`);
       const { SourceMapConsumer } = instrument('source-map-js');
+      // Dart Sass lays the rule out over several lines: the declaration is on its own line after `.m {`.
       const lines = external.split('\n');
-      const index = lines.findIndex((l) => l.includes('.m'));
+      const rule = lines.findIndex((l) => l.includes('.m {'));
+      const index = lines.findIndex((l, i) => i > rule && l.includes('padding'));
       const original = new SourceMapConsumer(map).originalPositionFor({ line: index + 1, column: lines[index].indexOf('padding') });
       if (!original.source || !original.source.endsWith('map.uxdsl')) throw new Error(`position resolved to ${original.source}`);
       p.uxdsl('build', '--sourcemap=inline');

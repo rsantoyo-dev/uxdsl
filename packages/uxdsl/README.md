@@ -1336,75 +1336,87 @@ has other parts next to a group, every group needs a base so the value keeps
 the same number of parts at every width.
 
 The standalone plugin resolves `$variables` declared at the root of the file.
-One declared inside a rule is `UXD_VARIABLE_CONTEXT` (the SCSS subset's block
-scope is `compile()`'s, which the CLI and the adapters run — UXDSL's own
-implementation of `$variables`, `@if`/`@else`, `@each`, `@for`,
-`@mixin`/`@include`/`@content`; "The SCSS subset" in the
-[compile guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/compile.md)
-lists it), and a `$name` nothing declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
+One declared inside a rule is `UXD_VARIABLE_CONTEXT` (`compile()`, which the
+CLI and the adapters run, compiles the file with Dart Sass first, so there a
+`$variable` has Sass's scoping, block scope included), and a `$name` nothing
+declared is `UXD_VARIABLE_UNDEFINED`. `analyzeResponsiveValue(value,
 breakpoints)` (`uxdsl/language`) reports the same structure — groups,
 bases, nesting, empties — for an editor.
 
-The SCSS subset is being replaced by real Dart Sass in `compile()` (FEAT-010,
-wave 1), so that a `.scss` file renamed to `.uxdsl` compiles to the CSS Dart
-Sass produces for it. The tests that pin that pipeline — the protect/restore
-cases, source-map positions through both stages, the pipeline behaviors and a
-Bootstrap 5.3.8 corpus (`fixtures/sass-corpus`) — are in the repository ahead
-of the implementation, as pending (`todo`) tests; until it lands, `compile()`
-behaves as described above. Those tests run on `sass` (Dart Sass, the current
-1.x), a regular dependency of this package (FEAT-010, DEC-04):
-`test/core/sass-matrix.cases.js` re-expects the 110-case matrix to what
-`compile()` must produce on Dart Sass, with every Sass-valid source recorded
-from the `sass` package itself (`node test/core/sass-matrix.record.js
---update`) and a test that runs today comparing each recorded literal with the
-installed Sass, so an upgrade that changes output is noticed. The pipeline's
-first and third stages exist
-(`src/sass/protect.ts`: `protect()`, which lets dotted keys such as
-`palette(primary.main)` and `$var` inside `@ds-*(…)` through Dart Sass, and
-`restoreDirectiveSpacing`, which removes the space Sass writes in
-`@ds-surface (contained)`), and the 63 protect/restore cases run end to end
-through the `sass` package in `test/core/protect.test.js`; a project
-`@function` named like a UXDSL function (`space`, `tone`, or a breakpoint of
-the effective theme such as `md`, a project's own breakpoints included) wins
-where Sass calls it, with a `UXD_FUNCTION_SHADOWED` warning at its declaration
-(FEAT-010, DEC-17); a function reached under such a name only through
-`@forward … as <prefix>*` (`spa*` forwarding `@function ce`) is not found, so
-its calls keep the token. The second stage exists too (`src/sass/compile-sass.ts`,
-`compileSassStage`): Dart Sass with an importer that resolves `.uxdsl` files
-next to `.scss`, `.sass` and `.css` by Sass's own rules (and through the
-`node_modules` load paths and the directories of `SASS_PATH`, each kept as
-written and searched as Sass searches a load path, so a package can ship
-`.uxdsl` partials and a `../x` that misses is never a file in another
-directory; in a package loaded
-through `pkg:`, Sass's own `.sass`, `.scss` and `.css` files answer a relative
-URL before a `.uxdsl` partial does) and serves a `.css` file as the plain CSS
-it is (a `$variable` or `palette(primary.main)` in one is Sass's error, so
-UXDSL syntax goes in a `.uxdsl` partial), Sass's
-errors as `UXD_SASS` (Sass's code frame redrawn with the author's text and
-columns, a CRLF file's included) and its warnings as `UXD_SASS_WARNING` at the author's
-file, line and column where Sass gives a location, a source map whose
-positions point at the author's
-files, and the project function decided per call — where Dart Sass calls its
-bare name, the author's function runs (a `pkg:` package's too, even where
-UXDSL's token in its place would not compile, and in an `@import`ed partial
-that sees a helper its importer used with `as *`: the stage gives no
-`@import`ed file a `@use`, which would hide those modules from it), and a call
-Sass never evaluates (the raw argument of `::part(space(2))`) keeps the token;
-in a build that also defines a function named `get-function` or
-`function-exists`, an `@import`ed file the stage cannot reach with its own
-namespace (one also loaded with `@use`, one an indented `.sass` module or a
-`pkg:` file imports, or one with a `@use` of its own that another `@import`ed
-file imports or that is reached only through a mixin) lets that function
-answer what such a name means there, where it is visible; a
-call whose bare name two modules used with `as *` both define is Sass's own
-error there; each
-declaration a call reaches warns once, at the declaration, however many times
-its file is evaluated; a build that defines no such function runs Dart Sass
-once, unless that compile fails and a file the stage's importer served contains
-`pkg:`.
-`test/core/compile-sass.test.js` checks it against Dart Sass on the same
-project written as `.scss`. `compile()` still
-does not call these stages.
+`compile()` — what the CLI, `uxdsl/vite` and `uxdsl/webpack` run — compiles a
+`.uxdsl` file with real Dart Sass (FEAT-010), so that a `.scss` file renamed to
+`.uxdsl` compiles to the CSS Dart Sass produces for it (Bootstrap 5.3.8, renamed,
+is byte-identical: `fixtures/sass-corpus`). It runs four stages, and each
+changes only what it names:
+
+1. **protect** (`src/sass/protect.ts`): in a `.uxdsl` file, UXDSL's own syntax
+   that Sass would read differently — dotted keys such as
+   `palette(primary.main)`, `$var` inside `@ds-*(…)` — is rewritten so that
+   Dart Sass passes it through, with a column map back to the author's text.
+   A `.scss`, `.sass` or `.css` file is served as written (a `$variable` or
+   `palette(primary.main)` in a `.css` file is Sass's error, so UXDSL syntax
+   goes in a `.uxdsl` partial).
+2. **Dart Sass** (`src/sass/compile-sass.ts`): the entry is compiled exactly
+   as Dart Sass compiles it — expanded style, nesting flattened (`&__title`
+   concatenates), `@use`/`@forward`/`@import`, mixins, functions, control
+   rules, maps and math — with `.uxdsl` resolved as a third Sass extension
+   beside `.scss` and `.sass` (by Sass's own rules, and through the
+   `node_modules` load paths and the directories of `SASS_PATH`, each kept as
+   written and searched as Sass searches a load path, so a package can ship
+   `.uxdsl` partials and a `../x` that misses is never a file in another
+   directory; in a package loaded through `pkg:`, Sass's own `.sass`, `.scss`
+   and `.css` files answer a relative URL before a `.uxdsl` partial does).
+   Sass's import rules apply: `@import "x.css"`, and an `@import` with a media
+   query, `layer()`, `supports()` or `url()`, stays a plain CSS `@import` (`@use`
+   or `meta.load-css()` inlines a file), a file `@import`ed twice is included
+   twice, `@import` reports Sass's `[import]` deprecation, and a loop or a
+   missing file is `UXD_SASS`. A Sass failure is `UXD_SASS` at the author's
+   file, line and column (Sass's code frame redrawn with the author's text and
+   columns, a CRLF file's included), a Sass warning `UXD_SASS_WARNING`, and a
+   project `@function` named like a UXDSL function (`space`, `tone`, or a
+   breakpoint of the effective theme such as `md`, a project's own breakpoints
+   included) wins where Dart Sass calls its bare name, with one
+   `UXD_FUNCTION_SHADOWED` warning at the declaration (FEAT-010, DEC-17); a
+   function reached under such a name only through `@forward … as <prefix>*`
+   is not found, so its calls keep the token.
+3. **restore**: `@ds-surface (contained)`, as Sass writes an unknown at-rule,
+   is `@ds-surface(contained)` again.
+4. **The UXDSL plugin**, on Dart Sass's output with PostCSS's default parser:
+   the theme, the directives, responsive values, token functions and the
+   reference check; nothing else in Sass's output changes. A rule nested after
+   `@ds-button` or `@ds-input` therefore follows the directive's generated
+   state rules.
+
+Every position `compile()` reports — an error, a warning, a reference issue,
+an `onWarning` issue — is the author's file, line and column, found through
+the Sass stage's source map: the start of the declaration or at-rule Dart Sass
+mapped (`heavy.uxdsl:18:66`), or, for a value Sass copied, where it was
+written (a `$variable`'s definition, an `@include` argument), the same on every
+PostCSS of the peer range; `error.showSourceCode()` frames the author's line.
+A requested source map (`sourceMap: 'inline' | 'external'`) chains the stage's
+map with PostCSS's and names only the author's files, relative to `to`, with
+their text; the CSS is identical in the three modes, and, like Dart Sass's own
+output, it does not end with a newline. `warnings` lists Dart Sass's warnings,
+then the plugin's; `dependencies` is every file Dart Sass loaded (the entry, or
+`from`, first), then the theme files the plugin discovered. The `sass` option
+(`{ silenceDeprecations?: string[], quietDeps?: boolean }`) is passed to Dart
+Sass; any other key, or a wrong type, is an error. `compile({ source, from })`
+compiles `source` as the file `from`, which need not exist and whose extension
+decides how the text is read (`.scss`, `.sass` and `.css` as written, anything
+else as `.uxdsl`); without `from`, `source` is an anonymous `.uxdsl` file in
+the working directory, named `<css input>` in positions and maps.
+
+The tests that pin the pipeline run on `sass` (Dart Sass, the current 1.x), a
+regular dependency of this package (FEAT-010, DEC-04):
+`test/core/sass-matrix.test.js` holds the 110-case matrix, every Sass-valid
+source recorded from the `sass` package itself (`node
+test/core/sass-matrix.record.js --update`) and compared with live Dart Sass,
+`compile()`'s output included, byte for byte; `test/core/protect.test.js` runs
+the 63 protect/restore cases through the `sass` package directly and through
+`compile()`; `test/core/sass-source-maps.test.js` pins positions and the final
+map through both stages, `test/core/sass-pipeline.test.js` the pipeline's
+behaviors, and `test/core/compile-sass.test.js` checks the Sass stage against
+Dart Sass on the same project written as `.scss`.
 
 
 ### One theme validator (`validateTheme`)
