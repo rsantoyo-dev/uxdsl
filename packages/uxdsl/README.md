@@ -64,7 +64,12 @@ prints `[uxdsl] build failed:` and leaves the last good CSS on disk. Every
 `UXD_FUNCTION_SHADOWED`, the plugin's) prints once per build as
 `[uxdsl] Warning: <file>:<line>:<column>: <text>`, and the build config's
 `sass` key (`{ silenceDeprecations?, quietDeps? }`, checked when the config
-loads) passes Dart Sass options to every entry.
+loads) passes Dart Sass options to every entry. `--watch` starts from the
+first build's dependency graph and follows every entry and every file Dart
+Sass loaded (a `.scss` partial, a file outside the entry's directory or in
+`node_modules`), so a change rebuilds only the entries that load the file; a
+partial a build could not find is noticed when it appears only where a
+`watch` pattern matches it.
 
 ## Entry points
 

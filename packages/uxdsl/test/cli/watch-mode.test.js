@@ -565,3 +565,114 @@ test('MIG-B9-14: in watch mode every failed build, the first one included, print
   assert.doesNotMatch(configFailure, /build failed:/);
   assert.equal(exited, false);
 });
+
+// `build --watch` starts from the first build's dependency graph and follows
+// every entry and every file Dart Sass loaded, through their directories, so
+// a `.scss` partial or a partial outside the entry's directory rebuilds the
+// entries that load it, and only those.
+test("MIG-B9-14: editing a @use'd partial rebuilds only the entries that load it; a missing partial keeps the previous output until it appears", async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  // No `watch` key: the patterns are the entries and src/**/*.uxdsl, which
+  // match neither the .scss partial nor anything under shared/.
+  put('uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
+    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+  ] };\n`);
+  put('src/a.uxdsl', '.a { color: red; }\n');
+  put('src/b.uxdsl', "@use './part';\n@use './tokens';\n@use '../shared/far';\n.b { color: blue; }\n");
+  put('src/_part.uxdsl', "@import './legacy';\n.part { color: olive; }\n");
+  put('src/_legacy.uxdsl', '.legacy { color: gray; }\n');
+  put('src/_tokens.scss', '.tok { color: gold; }\n');
+  put('shared/_far.uxdsl', '.far { color: teal; }\n');
+  put('shared/notes.txt', 'notes\n');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const bCss = () => fs.readFileSync(path.join(dir, 'out', 'b.css'), 'utf8');
+  const builtB = /\[uxdsl\] built out[\\/]b\.css/;
+  await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'b.css')));
+  await delay(WATCHER_SETTLE_MS);
+
+  // The first edit after start already rebuilds only b, from the first build's graph.
+  let mark = output.length;
+  put('src/_part.uxdsl', "@import './legacy';\n.part { color: maroon; }\n");
+  await waitFor(() => builtB.test(output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS);
+  const firstEdit = output.slice(mark);
+  assert.doesNotMatch(firstEdit, /out[\\/]a\.css/, `a does not load the partial, so it is not rebuilt:\n${firstEdit}`);
+  const beforeBuilt = firstEdit.slice(0, firstEdit.search(builtB));
+  assert.equal(beforeBuilt.split('\n').filter((line) => line === '[uxdsl] Warning: src/_part.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.').length, 1, firstEdit);
+  assert.match(bCss(), /maroon/);
+
+  // A .scss partial and a partial outside the entry's directory rebuild b.
+  put('src/_tokens.scss', '.tok { color: khaki; }\n');
+  await waitFor(() => bCss().includes('khaki'));
+  put('shared/_far.uxdsl', '.far { color: navy; }\n');
+  await waitFor(() => bCss().includes('navy'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // Negative control: a file beside a followed one is not followed.
+  mark = output.length;
+  put('shared/notes.txt', 'edited\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
+
+  // Deleting a loaded partial fails with UXD_SASS and keeps b's last output;
+  // re-creating it rebuilds b.
+  const lastGood = bCss();
+  mark = output.length;
+  fs.unlinkSync(path.join(dir, 'shared', '_far.uxdsl'));
+  await waitFor(() => /root stylesheet/.test(output.slice(mark)));
+  assert.match(output.slice(mark), /^\[uxdsl\] build failed: builds\[1\] \(out[\\/]b\.css\): src\/b\.uxdsl:3:1: UXD_SASS: Can't find stylesheet to import\.$/m, output.slice(mark));
+  assert.match(output.slice(mark), /^ {2}3 │ @use '\.\.\/shared\/far';$/m, output.slice(mark));
+  assert.equal(bCss(), lastGood, 'the last good output stays');
+  await delay(500);
+  put('shared/_far.uxdsl', '.far { color: lime; }\n');
+  await waitFor(() => bCss().includes('lime'));
+
+  // A partial b starts loading before it exists: the build fails and keeps the
+  // output; creating the file, where a watch pattern matches it, rebuilds.
+  await delay(500);
+  const beforeMissing = bCss();
+  mark = output.length;
+  put('src/b.uxdsl', "@use './part';\n@use './tokens';\n@use '../shared/far';\n@use './later';\n.b { color: blue; }\n");
+  await waitFor(() => /UXD_SASS: Can't find stylesheet to import\./.test(output.slice(mark)));
+  assert.equal(bCss(), beforeMissing);
+  await delay(500);
+  put('src/_later.uxdsl', '.later { color: plum; }\n');
+  await waitFor(() => bCss().includes('plum'));
+});
+
+test('MIG-B9-14: an entry the watch patterns do not match is still followed: a failed first build recovers when the entry is saved', async (t) => {
+  const dir = mkProject();
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.mkdirSync(path.join(dir, 'styles'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'styles', 'theme.uxdsl'), '.t { color: red; }\n');
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false, watch: ['styles/**'] };\n");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), "@use './missing';\n.a { color: red; }\n");
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  await waitFor(() => /watching for changes/.test(output) && /build failed:/.test(output));
+  await delay(WATCHER_SETTLE_MS);
+
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
+  await waitFor(() => /\[uxdsl\] built out[\\/]a\.css/.test(output));
+  await delay(WATCHER_SETTLE_MS);
+
+  // Negative control: a .uxdsl file beside the entry that no entry loads is not followed.
+  const mark = output.length;
+  fs.writeFileSync(path.join(dir, 'src', 'other.uxdsl'), '.other { color: blue; }\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
+});

@@ -85,6 +85,66 @@ test('createWatcher reports matching files only, and follows a glob whose base d
   assert.deepEqual(events.filter((e) => /note\.txt|addDir|unlinkDir/.test(e)), [], events.join('\n'));
 });
 
+// A followed file (an entry, or a file Sass loaded) is watched through its
+// directory, added to the running watcher in place: chokidar keeps reporting a
+// directory's file after it is deleted and created again, where it stops for a
+// file watched as its own root.
+test('MIG-B9-14: a followed file outside every watched root is reported through its directory: change, unlink, add, change; its siblings are not, and a file no longer followed stops being reported', async (t) => {
+  const s = cli.watchSelection([p('src/**/*.uxdsl')]);
+  const far = p('shared/_far.scss');
+  assert.deepEqual(s.follow([far, p('src/a.uxdsl')]), [p('shared'), p('src')], 'the directories of the newly followed files');
+  assert.deepEqual(s.follow([far, p('src/a.uxdsl')]), [], 'nothing new to add');
+  assert.equal(s.selects(far), true);
+  assert.equal(s.selects(p('shared/notes.txt')), false);
+  assert.equal(s.ignored(far, FILE), false);
+  assert.equal(s.ignored(p('shared'), DIR), false);
+  assert.equal(s.ignored(p('shared/notes.txt'), FILE), true, 'a sibling of a followed file is not watched');
+  assert.equal(s.ignored(p('shared/deep'), DIR), true, 'nor is a directory below it that no pattern reaches');
+  assert.deepEqual(s.follow([p('src/a.uxdsl')]), []);
+  assert.equal(s.selects(far), false, 'a file no longer followed is no longer selected');
+  assert.equal(s.ignored(far, FILE), true);
+
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-watch-follow-')));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'src'));
+  fs.writeFileSync(path.join(dir, 'src/a.uxdsl'), '.a {}');
+  fs.mkdirSync(path.join(dir, 'shared/deep'), { recursive: true });
+  const farFile = path.join(dir, 'shared/_far.scss');
+  fs.writeFileSync(farFile, '.far {}');
+  fs.writeFileSync(path.join(dir, 'shared/notes.txt'), 'x');
+  fs.writeFileSync(path.join(dir, 'shared/deep/x.scss'), '.x {}');
+  const watcher = cli.createWatcher([path.join(dir, 'src/**/*.uxdsl')]);
+  t.after(() => watcher.close());
+  const events = [];
+  watcher.on('all', (event, file) => events.push(`${event} ${path.relative(dir, file)}`));
+  await new Promise((resolve) => watcher.once('ready', resolve));
+  watcher.follow([farFile]);
+  await delay(300);
+  const farRel = path.join('shared', '_far.scss');
+  fs.writeFileSync(farFile, '.far { color: red; }');
+  await waitFor(() => events.includes(`change ${farRel}`));
+  fs.unlinkSync(farFile);
+  await waitFor(() => events.includes(`unlink ${farRel}`));
+  await delay(300);
+  fs.writeFileSync(farFile, '.far {}');
+  await waitFor(() => events.includes(`add ${farRel}`));
+  await delay(300);
+  const changes = () => events.filter((e) => e === `change ${farRel}`).length;
+  fs.writeFileSync(farFile, '.far { color: blue; }');
+  await waitFor(() => changes() === 2);
+
+  // Negative control: the followed file's siblings, a directory below it, and
+  // the file itself once it is no longer followed, report nothing.
+  fs.writeFileSync(path.join(dir, 'shared/notes.txt'), 'y');
+  fs.writeFileSync(path.join(dir, 'shared/deep/x.scss'), '.x { color: red; }');
+  watcher.follow([]);
+  await delay(300);
+  fs.writeFileSync(farFile, '.far { color: green; }');
+  await delay(1000);
+  assert.deepEqual(events.filter((e) => !e.endsWith(farRel)), [], events.join('\n'));
+  assert.equal(changes(), 2, events.join('\n'));
+});
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function waitFor(predicate, timeout = 10000) {
   const start = Date.now();

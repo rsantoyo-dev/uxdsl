@@ -1423,6 +1423,16 @@ function bootstrapWatchTargets(argv, cwd) {
 // its path matches the glob (picomatch, `dot: true`: what chokidar 3 matched
 // with); directories no glob can reach below are not traversed, and files no
 // glob matches are not watched.
+//
+// Beside the list, `follow(files)` names exact files to report as well: the
+// entries and every file their builds loaded. Each is watched through its
+// directory, never as a root of its own, because chokidar stops reporting a
+// file root once it is deleted, while a directory keeps reporting its file
+// when it is created again. A followed directory's other files and its
+// subdirectories stay unwatched unless the list reaches them. `follow`
+// replaces the followed files and returns the directories of those not
+// followed before, for the watcher to add; the directories it returned stay
+// watched.
 const toPosixPath = (file) => file.split(path.sep).join('/');
 
 function watchSelection(targets) {
@@ -1454,8 +1464,11 @@ function watchSelection(targets) {
   // A plain target, a directory inside one, or an ancestor chokidar needs to
   // reach one that does not exist yet.
   const nearPlain = (file) => plain.has(file) || plainList.some((p) => inside(file, p) || inside(p, file));
+  const followed = new Set();
+  const followedDirs = new Set();
   const selects = (file) => {
     const resolved = path.resolve(file);
+    if (followed.has(resolved)) return true;
     if (plain.has(resolved) || plainList.some((p) => inside(resolved, p))) return true;
     const posix = toPosixPath(resolved);
     return globs.some((g) => g.matches(posix));
@@ -1475,41 +1488,79 @@ function watchSelection(targets) {
   });
   const ignored = (file, stats) => {
     const resolved = path.resolve(file);
+    if (followed.has(resolved) || followedDirs.has(resolved)) return false;
     if (nearPlain(resolved)) return false;
     if (!stats) return false; // chokidar asks again with the stats
     if (stats.isDirectory()) return !mayContainMatches(resolved);
     return !globs.some((g) => g.matches(toPosixPath(resolved)));
   };
-  return { roots: [...roots], selects, ignored };
+  const follow = (files) => {
+    const before = new Set(followed);
+    followed.clear();
+    const dirs = new Set();
+    for (const file of files) {
+      const resolved = path.resolve(file);
+      followed.add(resolved);
+      if (!before.has(resolved)) dirs.add(path.dirname(resolved));
+    }
+    for (const dir of dirs) followedDirs.add(dir);
+    return [...dirs];
+  };
+  return { roots: [...roots], selects, ignored, follow };
 }
 
 // The CLI's watcher: chokidar 4 over `watchSelection(targets)`, emitting only
-// the selected paths' events (`all`), plus `ready` and `error`.
+// the selected paths' events (`all`), plus `ready` and `error`. `follow(files)`
+// adds the directories of newly followed files to this same watcher, so no
+// event is lost to a restart.
 function createWatcher(targets) {
-  const { roots, selects, ignored } = watchSelection(targets);
+  const { roots, selects, ignored, follow } = watchSelection(targets);
   const events = new EventEmitter();
   const watcher = chokidar.watch(roots, { ignoreInitial: true, ignored });
   watcher.on('all', (event, file) => { if (selects(file)) events.emit('all', event, file); });
   watcher.on('ready', () => events.emit('ready'));
   watcher.on('error', (error) => events.emit('error', error));
   events.close = () => watcher.close();
+  events.follow = (files) => {
+    const dirs = follow(files);
+    if (dirs.length) watcher.add(dirs);
+  };
   return events;
 }
 
-// `initialConfig` may be `null` — the caller's own initial `loadConfig`/
-// `buildOnce` already failed and was logged; this starts in "bootstrap"
-// mode (watching config/theme candidates only) instead of never reaching
-// watch mode at all (MIG-B6-23 item 1).
-function startWatch(initialConfig, argv, cwd, builder) {
+// Watches and rebuilds until the process ends. `initialConfig` is `null` when
+// the first load failed (already printed): the session then watches the
+// config and theme candidates until one loads. `initialResults` are the
+// first build's results, absent when it failed; they seed the dependency
+// graph, so the first change after start already rebuilds only the entries
+// it affects.
+//
+// Beside the config's `watch` patterns, the session follows every entry of
+// the current config and every file the graph holds (each file an entry's
+// last successful build loaded: a `.scss` or `.css` partial, a file outside
+// the entry's directory or in node_modules), through their directories on the
+// same watcher. A file a build fails to find is not followed, since Dart Sass
+// does not report the paths it tried: a missing partial is noticed when it
+// appears only where a `watch` pattern matches it.
+function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   let config = initialConfig;
   // Entry index -> Set<absolute dependency path>, from each entry's own
-  // `compile()` result (MIG-B6-18). Populated after every successful full
-  // build; a selective build only updates the indices it actually
-  // recompiled, leaving every other entry's last-known set alone. A failed
-  // build (full or selective) never touches this — the last valid graph is
-  // what a subsequent change is still checked against (item 3).
-  let dependencyGraph = new Map();
+  // compile() result: seeded by the first build, replaced by every successful
+  // full build, and updated for the entries a selective build recompiled. A
+  // failed build never touches it, so a later change is checked against the
+  // last valid graph.
+  let dependencyGraph = new Map((initialResults || []).map(({ index, dependencies }) => [index, new Set(dependencies)]));
   let watcher = createWatcher(config ? config.watch : bootstrapWatchTargets(argv, cwd));
+  // Follows every entry of the current config and every file of the graph.
+  function followAll() {
+    if (!config) return;
+    const files = new Set();
+    const entries = config.builds && config.builds.length ? config.builds.map((b) => b.entry) : [config.entry];
+    for (const entry of entries) if (entry) files.add(path.resolve(entry));
+    for (const dependencies of dependencyGraph.values()) for (const file of dependencies) files.add(file);
+    watcher.follow([...files]);
+  }
+  followAll();
   console.log('[uxdsl] watching for changes...');
   let building = false;
   // 'full' once any queued change requires one; otherwise a Set of the
@@ -1552,8 +1603,8 @@ function startWatch(initialConfig, argv, cwd, builder) {
     try {
       reloaded = await loadConfig(argv, cwd);
     } catch (err) {
-      // MIG-B6-23 item 1: a broken config must not end the process — log
-      // and keep watching (the bootstrap/previous watcher is untouched).
+      // A config that fails to load does not end the process: it is printed
+      // and the session keeps watching with the watcher it has.
       console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)} — watching for a fix...`);
       return;
     }
@@ -1575,9 +1626,13 @@ function startWatch(initialConfig, argv, cwd, builder) {
         watcher.once('error', reject);
       });
     }
+    // The reloaded config's entries are followed before it builds, so an
+    // entry whose first build fails is still watched.
+    followAll();
     try {
       const results = await builder(config);
       dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
+      followAll();
     } catch (err) {
       // The message and its frame, as a one-shot build prints them. The
       // previous dependency graph is kept: a failed rebuild does not
@@ -1592,6 +1647,7 @@ function startWatch(initialConfig, argv, cwd, builder) {
       for (const { index, dependencies } of results) {
         dependencyGraph.set(index, new Set(dependencies));
       }
+      followAll();
     } catch (err) {
       printFailure('[uxdsl] build failed: ', err);
     }
@@ -1602,11 +1658,10 @@ function startWatch(initialConfig, argv, cwd, builder) {
   function classify(resolvedFile) {
     if (!config || configRelatedPaths().has(resolvedFile)) return { full: true };
     const indices = entriesAffectedBy(resolvedFile);
-    // Not found in any entry's known dependency set — either a graph we
-    // never had (first run failed before compiling anything) or a file
-    // outside every entry's *previous* import graph, e.g. a previously
-    // missing partial just created. Rebuilding everything is the safe
-    // fallback (item 3's "recuperar el build"), not silently doing nothing.
+    // In no entry's known dependencies: a graph the session never had (the
+    // first build failed before compiling anything), or a file outside every
+    // entry's last graph, such as a missing partial just created. Rebuilding
+    // everything recovers the build rather than doing nothing.
     if (indices.length === 0) return { full: true };
     return { full: false, indices };
   }
@@ -1666,8 +1721,8 @@ function startWatch(initialConfig, argv, cwd, builder) {
     // `chokidar.watch()`'s `ignored` option at construction time, which
     // has no public API to update after the fact: a static `ignored`
     // would keep excluding the *original* outFile forever and never learn
-    // about a new one after a config change moved it. MIG-B3-02: a `builds`
-    // config has no single `config.outFile` — check every entry's outFile.
+    // about a new one after a config change moved it. With `builds`, every
+    // entry's outFile is checked.
     if (filePath && config && isOwnOutputFile(config, filePath)) {
       return;
     }
@@ -2096,8 +2151,9 @@ function parseCommandArgv(rawArgs) {
 // and returns `null`, so `startWatch` watches the config and theme candidates
 // until one loads; a build that fails prints `[uxdsl] build failed: ` with the
 // message and its frame, as every later failed build of the session does, and
-// returns the config.
-async function loadAndBuildForWatch(argv, watching) {
+// returns the config. A successful build's results go to `report.results`,
+// from which `startWatch` seeds its dependency graph.
+async function loadAndBuildForWatch(argv, watching, report) {
   let config = null;
   try {
     config = await loadConfig(argv);
@@ -2111,7 +2167,8 @@ async function loadAndBuildForWatch(argv, watching) {
     return config;
   }
   try {
-    await buildOnce(config);
+    const results = await buildOnce(config);
+    if (report) report.results = results;
   } catch (err) {
     if (!watching) throw err;
     printFailure('[uxdsl] build failed: ', err);
@@ -2169,12 +2226,13 @@ async function main() {
       case 'build':
         {
           const watching = !!argv.watch;
-          const config = await loadAndBuildForWatch(argv, watching);
+          const report = {};
+          const config = await loadAndBuildForWatch(argv, watching, report);
           if (!config && !watching) {
             throw new Error('Nothing to build: no uxdsl.config.cjs, no theme file and no --entry/--out. Run "npx uxdsl init" to set a project up, or pass --entry <file> --out <file>.');
           }
           if (watching) {
-            startWatch(config, argv, process.cwd(), buildOnce);
+            startWatch(config, argv, process.cwd(), buildOnce, report.results);
           }
         }
         break;
