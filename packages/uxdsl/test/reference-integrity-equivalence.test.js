@@ -10,7 +10,6 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const postcss = require('postcss');
-const postcssScss = require('postcss-scss');
 
 const implementation = require('../dist/reference-integrity');
 const oracle = require('./fixtures/reference-integrity-oracle');
@@ -53,7 +52,7 @@ async function capture(css, pluginOptions, from) {
     return original(root, consumers, options);
   };
   try {
-    await postcss([plugin(pluginOptions)]).process(css, { from, syntax: postcssScss });
+    await postcss([plugin(pluginOptions)]).process(css, { from });
   } catch (err) {
     // A reference error is a valid outcome to compare; anything else is a bug
     // in the fixture, not a result.

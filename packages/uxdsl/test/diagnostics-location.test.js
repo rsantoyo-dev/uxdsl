@@ -111,19 +111,32 @@ for (const [theme, code, keyPath] of [
   });
 }
 
-// MIG-B6-13 pending item from the story's own Pruebas section: a $var
-// substitution rewrites `decl.value` in place on the same PostCSS node
-// (see index.ts's "$var substitutions across all declarations" pass), so
-// an invalid reference reached only through an expanded $var must still
-// report the *consuming* declaration's own location, not the `$bad: ...`
-// declaration that defined the variable (which is removed from the tree
-// entirely before this check would even see it).
-test('MIG-B6-13: an invalid reference reached through $var expansion retains the consuming declaration\'s location', async () => {
-  const error = await compile('$bad: density(16);\n.a {\n  padding: $bad;\n}').then(() => null, caught => caught);
-  assert.ok(error, 'compilation fails');
-  assert.equal(error.file, file);
-  assert.equal(error.line, 3, 'the "padding: $bad" declaration, not the "$bad: density(16)" one on line 1');
-  assert.match(error.message, /UXD_DENSITY_REFERENCE/);
+// A $variable is Sass: compile() (uxdsl build, the adapters) runs Dart Sass
+// before the plugin, and a diagnostic on the substituted text is reported
+// where Dart Sass's source map puts that text — for a value Sass copied, where
+// it was written (the $variable's definition, an @include argument).
+const { compile: compileThroughSass } = require('../dist/entries/index.js');
+async function failureThroughSass(source) {
+  return compileThroughSass({ source, from: file }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+}
+
+test('MIG-B9-13: an invalid reference reached through Sass is reported where Sass mapped its text (the $variable\'s definition, 1:7, frame showing density(16))', async () => {
+  const error = await failureThroughSass('$bad: density(16);\n.a {\n  padding: $bad;\n}');
+  assert.equal(error.name, 'CssSyntaxError');
+  assert.match(error.reason, /^UXD_DENSITY_REFERENCE: /);
+  assert.deepEqual([error.file, error.line, error.column], [file, 1, 7]);
+  assert.match(error.showSourceCode(false), /^> 1 \| \$bad: density\(16\);$/m);
+  // An @include argument is reported at the argument, not inside the mixin's body.
+  const argument = await failureThroughSass('@mixin m($p) {\n  .x { padding: $p; }\n}\n.a { @include m(density(16)); }');
+  assert.match(argument.reason, /^UXD_DENSITY_REFERENCE: /);
+  assert.deepEqual([argument.file, argument.line, argument.column], [file, 4, 17]);
+});
+
+test('MIG-B9-13: the same invalid reference written in the declaration is reported at the declaration (negative control)', async () => {
+  const error = await failureThroughSass('.a {\n  padding: density(16);\n}');
+  assert.match(error.reason, /^UXD_DENSITY_REFERENCE: /);
+  assert.deepEqual([error.file, error.line, error.column], [file, 2, 3]);
+  assert.match(error.showSourceCode(false), /^> 2 \|   padding: density\(16\);$/m);
 });
 
 // MIG-B6-13 pending item: `locateError` sets `.cause` to the original,

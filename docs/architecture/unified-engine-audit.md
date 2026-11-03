@@ -13,7 +13,8 @@ Verified: `packages/uxdsl` (then `packages/postcss-uxdsl`) build/runtime exports
 playground, generated defaults and VS Code completion inventory. The old
 `packages/playground` application and its demo implementations are outside this
 verification; do not describe every historical application in the repository as
-migrated. CLI/Vite/Webpack continue to delegate through the PostCSS integration.
+migrated. The CLI, Vite and webpack run `compile()`: the Sass stage, then the PostCSS
+integration.
 
 ## Findings corrected
 
@@ -36,19 +37,37 @@ migrated. CLI/Vite/Webpack continue to delegate through the PostCSS integration.
 
 ## Process flow and ownership
 
+A stylesheet reaches the engines through `compile()` — what the CLI,
+`uxdsl/vite` and `uxdsl/webpack` run — in four stages, each changing only what
+it names: **protect** (`sass/protect.ts`) lets UXDSL's own syntax in a `.uxdsl`
+file through Dart Sass unchanged, with a column map back to the author's text;
+**Dart Sass** (`sass/compile-sass.ts`) compiles the SCSS exactly as Dart Sass
+does; **restore** puts `@ds-x(…)` back together; and **the UXDSL plugin**
+(`plugin.ts`) runs the family engines on Dart Sass's output, parsed by
+PostCSS's default parser. The PostCSS plugin used alone (`uxdsl/postcss`) is
+only that last stage: it compiles CSS plus UXDSL, and Sass syntax reaching it
+fails as `UXD_SASS_CONTEXT`. In the plugin, and in the runtime:
+
 1. Read the effective JSON and optional legacy definitions for this compilation.
 2. Merge defaults and overrides inside the relevant shared family engine.
 3. Resolve responsive expressions and token references using shared functions.
 4. Emit CSS variables; directives/components consume references and shared roles.
 5. Generate successfully before replacing managed runtime or preview styles.
 
+- `sass/protect.ts`, `sass/compile-sass.ts`: SCSS — Sass's resolution, modules,
+  nesting, mixins, functions and control rules — and its diagnostics
+  (`UXD_SASS`, `UXD_SASS_WARNING`, `UXD_FUNCTION_SHADOWED`); no UXDSL engine
+  reimplements any of it. `compile.ts` maps every position in Dart Sass's
+  output that the plugin reports back to the author's file through the Sass
+  stage's source map; a parse error in CSS the plugin parses itself (the
+  generated theme, `references.css`) keeps PostCSS's position in that CSS.
 - `language.ts`: breakpoints, responsive resolution, Density map and compilation.
 - `preset-engine.ts`: common value validation and token normalization.
 - `foundations.ts`: JSON Colors, Palette, Spacing and Palette modes.
 - `typography.ts`, `edges.ts`, `shadows.ts`, `surfaces.ts`: family semantics.
 - `control-engine.ts`: shared role inheritance, state fields, tones and emission.
 - `buttons.ts`, `inputs.ts`: family-specific fields, states, defaults, public API.
-- PostCSS: legacy syntax and stylesheet AST adapter; runtime: theme/style adapter.
+- PostCSS: legacy syntax and stylesheet AST adapter, on Dart Sass's output inside `compile()`; runtime: theme/style adapter.
 - Generated artifacts: default packs and editor inventory; never edit independently.
 
 ## Testing scenarios

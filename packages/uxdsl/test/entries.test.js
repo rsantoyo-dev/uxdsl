@@ -39,7 +39,7 @@ test('phase 4: postcss is a peer; vite and webpack are optional peers; hard depe
   assert.deepEqual(pkg.peerDependenciesMeta, { vite: { optional: true }, webpack: { optional: true } });
   // sass (Dart Sass, loaded only when the Sass stage runs) and source-map-js (its map translation).
   assert.deepEqual(Object.keys(pkg.dependencies).sort(), [
-    'chokidar', 'minimist', 'picomatch', 'postcss-import', 'postcss-scss', 'postcss-value-parser', 'sass', 'source-map-js',
+    'chokidar', 'minimist', 'picomatch', 'postcss-value-parser', 'sass', 'source-map-js',
   ]);
   assert.equal(pkg.dependencies.postcss, undefined, 'postcss is never a hard dependency: one copy, the project\'s');
 });

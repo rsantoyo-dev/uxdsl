@@ -1,13 +1,14 @@
 'use strict';
 
 // MIG-B9-10 (FEAT-010) wrote the protect/restore cases; MIG-B9-11 implements
-// src/sass/protect.ts and runs them end to end here with the `sass` package
-// directly — protect → Dart Sass → restoreDirectiveSpacing → the UXDSL plugin —
-// without compile(), which MIG-B9-13 puts on this pipeline. The unit tests of
-// protect() itself (its rules R1–R8) are below the case loop.
+// src/sass/protect.ts. The cases run end to end twice here: with the `sass`
+// package directly — protect → Dart Sass → restoreDirectiveSpacing → the UXDSL
+// plugin — and through compile(), which runs the same four stages. The unit
+// tests of protect() itself (its rules R1–R8) are below the case loops.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const postcss = require('postcss');
 const sass = require('sass');
@@ -61,7 +62,11 @@ const pipeline = (source) => pipelineWith((text) => protect(text, { reserved: RE
 
 /** One case against its expectation: returns null when it passes, the mismatch otherwise. */
 function verdict(id, source, expected, options, run) {
-  const actual = run(source);
+  return judge(id, run(source), expected, options);
+}
+
+/** One result (`{ css, warnings }` with warning codes, or `{ error }`) against a case's expectation. */
+function judge(id, actual, expected, options) {
   if (typeof expected === 'string' && expected.startsWith('ERROR:')) {
     const want = expected.slice('ERROR:'.length);
     return actual.error === want ? null : `${id} should fail with ${want}, got ${actual.error || 'CSS'}`;
@@ -98,6 +103,36 @@ for (const [id, source, expected, options = {}] of CASES) {
     assert.equal(verdict(id, source, expected, options, pipeline), null);
   });
 }
+
+// --- T2: the same 63 cases through compile() -------------------------------------
+
+const compileDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-protect-compile-')));
+
+/** compile() on a case, as the file `<id>.uxdsl`: `{ css, warnings, located }` (warning codes, and the warnings themselves) or `{ error }`. */
+async function throughCompile(id, source) {
+  try {
+    const result = await core.compile({ source, from: path.join(compileDir, `${id}.uxdsl`) }, { theme: THEME, includeTheme: false });
+    return { css: result.css, warnings: result.warnings.map((warning) => codeOf({ message: warning.text })), located: result.warnings };
+  } catch (error) {
+    return { error: codeOf(error), message: error.message };
+  }
+}
+
+test('MIG-B9-13: the 63 protect/restore cases through compile() (theme THEME, includeTheme false) give the expected CSS; O2 and O3 report UXD_FUNCTION_SHADOWED at O2.uxdsl:1:11 and O3.uxdsl:1:11', async () => {
+  const mismatches = [];
+  const shadowed = {};
+  for (const [id, source, expected, options = {}] of CASES) {
+    const actual = await throughCompile(id, source);
+    const problem = judge(id, actual, expected, options);
+    if (problem) mismatches.push(problem);
+    if (options.warning && actual.located) {
+      const warning = actual.located.find((item) => item.text.startsWith(`${options.warning}: `));
+      shadowed[id] = warning && `${path.basename(warning.file || '')}:${warning.line}:${warning.column}`;
+    }
+  }
+  assert.deepEqual(mismatches, []);
+  assert.deepEqual(shadowed, { O2: 'O2.uxdsl:1:11', O3: 'O3.uxdsl:1:11' });
+});
 
 // The regex prototype of 2026-10-09 (docs/audits/2026-10-09-sass-layer/run.js),
 // verbatim: it protected only lowercase dotted palette()/color() keys and `$var`

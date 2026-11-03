@@ -9,14 +9,36 @@ mixins and `$theme-colors` — and checks that Bootstrap's part is unchanged and
 the UXDSL constructs resolve.
 
 ```bash
-node fixtures/sass-corpus/run.js            # exit 0 when identical, 1 otherwise
-node fixtures/sass-corpus/run.js --keep     # keep the temporary directory
+node fixtures/sass-corpus/run.js                     # exit 0 when identical, within budget and every mixed check ok
+node fixtures/sass-corpus/run.js --no-timing-budget  # print the timing ratio without asserting it
+node fixtures/sass-corpus/run.js --keep              # keep the temporary directory
 node fixtures/sass-corpus/run.js --help
 ```
 
-It prints the sizes, the median of three timings for each compiler, the
-deprecation warnings Bootstrap's own sources raise (by id) and the number of
-files the entry loads, then the first ten differing lines on a difference.
+It prints the number of files the entry loads, the sizes, `byte-identical:`
+and, on a difference, the first ten differing lines; then the timing, the
+deprecation warnings and the five mixed checks (`ok` or `FAIL`). It exits 1 on
+any byte difference, on a failed mixed check, or over the timing budget.
+
+**Timing budget.** In one process, Dart Sass compiles `bootstrap.scss` three
+times, then `compile()` compiles `bootstrap.uxdsl` three times; `compile()`'s
+median must be at most 1.5 times Dart Sass's (FEAT-010, MIG-B9-13, P10).
+`compile()` always runs Dart Sass with its source map, which plain Dart Sass is
+not asked for. Every run's duration, both medians and the ratio are printed.
+`--no-timing-budget` prints the same figures without asserting the ratio: the
+release gate runs the corpus that way (`S-1`), since it does not control the
+machine's load.
+
+**Deprecation warnings.** Dart Sass delivers at most five warnings per
+deprecation type to a logger, then one summary of the rest; the
+`deprecation warnings Dart Sass delivered` line counts what arrives that way,
+which is also what `compile()` returns (its warning count is printed).
+`deprecation totals (verbose)` counts every one, from one more untimed Dart
+Sass compile with `verbose: true` (Bootstrap 5.3.8 on Dart Sass 1.107.0: 330,
+delivered as 21 warnings).
+
+`run.test.js` tests the timing verdict, the flag, the two deprecation counts
+and the byte comparison without the network; `npm test` runs it.
 
 **Network:** it installs `bootstrap@5.3.8` from the npm registry into a
 temporary directory. It compares against the repository's own Dart Sass — the
@@ -24,10 +46,3 @@ temporary directory. It compares against the repository's own Dart Sass — the
 entry file, since its `exports` map hides `sass/package.json` (`--sass <path>`
 to choose another) — and tests the repository build of `packages/uxdsl`
 (`--uxdsl <dir>` to test an installed tarball instead).
-
-Until the Sass pipeline lands (MIG-B9-13), `compile()` emulates a subset of Sass
-and resolves `@import` with postcss-import, which cannot find Bootstrap's
-partials (`bootstrap.uxdsl:1:1: Failed to find 'mixins/banner'`), so the script
-stops before the comparison with `byte-identical: false — compile() failed: …`
-and exits 1. That is the expected state of the base; MIG-B9-13 wires it into
-the release gate.

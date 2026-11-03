@@ -237,6 +237,8 @@ const DIAGNOSTICS = [
   { expect: 'UXD_SYNTAX_REMOVED', title: 'A spelling the language no longer has (the former elevation() alias)', css: '.card {\n  box-shadow: elevation(2);\n}\n' },
   { expect: 'UXD_FUNCTION_UNKNOWN', title: 'A near-miss of a UXDSL function (the spacing function is space())', css: '.card {\n  padding: spacing(2);\n}\n' },
   { expect: 'UXD_THEME_BLOCK_REMOVED', title: 'A @theme block: tokens are defined in the theme JSON', css: '@theme {\n  radius-2: 12px;\n}\n' },
+  { expect: 'UXD_SASS', title: 'A Sass error: an undefined variable', css: '.card {\n  padding: $gap;\n}\n' },
+  { expect: 'UXD_SASS_CONTEXT', title: 'A $variable Sass keeps literally in a custom property (write #{$gap})', css: '$gap: 4px;\n.card {\n  --gap: $gap;\n}\n' },
 ];
 
 function captureDiagnostics() {

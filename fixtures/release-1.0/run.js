@@ -127,6 +127,72 @@ function auditLockfile(cwd) {
   return summary;
 }
 
+/**
+ * S-3's verdict on `uxdsl build` of heavy.uxdsl: the UXDSL error is printed at
+ * the author's line 18, column 66, under a code frame of the author's line
+ * with its caret under that column, never of Dart Sass's output, where that
+ * declaration is on line 29 and line 18 holds other text.
+ */
+function assertAuthorLocated(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/heavy\.uxdsl:18:66: UXD_SPACE_REFERENCE/.test(stderr)) throw new Error(`stderr: ${stderr.trim().split('\n')[0]}`);
+  if (/^> 29 \|/m.test(stderr)) throw new Error('the code frame shows line 29 of Dart Sass\'s output');
+  const lines = stderr.split('\n');
+  const marked = lines.findIndex((line) => /^> 18 \|/.test(line));
+  if (marked === -1) throw new Error('no code frame of the author\'s line 18');
+  const column = lines[marked].indexOf('inset: space(404);');
+  if (column === -1) throw new Error(`the code frame's line 18 is not the author's: ${lines[marked]}`);
+  if ((lines[marked + 1] || '').indexOf('^') !== column) throw new Error('the code frame\'s caret is not under the author\'s column 66');
+  return 'heavy.uxdsl:18:66 UXD_SPACE_REFERENCE, framed at the author\'s line 18';
+}
+
+/** N-02's verdict on compile() of a file whose first line @imports a missing partial. */
+function assertMissingImport(error) {
+  if (!error) throw new Error('compiled');
+  const message = String(error.message).split('\n')[0];
+  if (error.code !== 'UXD_SASS') throw new Error(`code ${error.code}: ${message}`);
+  if (!message.includes('Can\'t find stylesheet to import.')) throw new Error(`message: ${message}`);
+  const where = `${path.basename(String(error.file))}:${error.line}:${error.column}`;
+  if (where !== 'missing-partial.uxdsl:1:9') throw new Error(`located at ${where}`);
+  return `UXD_SASS at ${where}: Can't find stylesheet to import.`;
+}
+
+/**
+ * What is wrong with a source map's record of the author file `name`: the
+ * sources hold no file: URL, no absolute path and no duplicate, and name the
+ * file once; its sourcesContent is the file's text; every mapping into it lies
+ * inside that text.
+ */
+function mapIntegrityProblems(map, name, text, SourceMapConsumer) {
+  const problems = [];
+  const sources = map.sources || [];
+  const list = JSON.stringify(sources);
+  if (sources.some((source) => source.startsWith('file:'))) problems.push(`a file: URL among the sources ${list}`);
+  if (sources.some((source) => path.isAbsolute(source))) problems.push(`an absolute path among the sources ${list}`);
+  if (new Set(sources).size !== sources.length) problems.push(`a source listed twice: ${list}`);
+  const named = (source) => source === name || source.endsWith(`/${name}`);
+  const own = sources.filter(named);
+  if (own.length !== 1) return [...problems, `${name} is named ${own.length} times among the sources ${list}`];
+  if (!map.sourcesContent || map.sourcesContent[sources.indexOf(own[0])] !== text) problems.push(`the sourcesContent of ${own[0]} is not the file's text`);
+  const lines = text.split('\n');
+  const consumer = new SourceMapConsumer(map);
+  const resolved = consumer.sources.find(named);
+  consumer.eachMapping((m) => {
+    if (m.source !== resolved) return;
+    const line = lines[m.originalLine - 1];
+    if (line === undefined || m.originalColumn > line.length) problems.push(`a mapping into ${own[0]} at ${m.originalLine}:${m.originalColumn} lies outside its text`);
+  });
+  return problems;
+}
+
+/** The directory of the Dart Sass package the installed uxdsl resolves (its `exports` map hides `sass/package.json`). */
+function sassPackageDir(pkgDir) {
+  let dir = path.dirname(createRequire(path.join(pkgDir, 'package.json')).resolve('sass'));
+  while (!fs.existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
+  return dir;
+}
+
 function withImportsBehindFirstRule(postcss, css) {
   const root = postcss.parse(css);
   const imports = root.nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
@@ -477,9 +543,10 @@ async function main() {
       return 'intact';
     });
     p.write('src/missing-partial.uxdsl', '@import "./nope.uxdsl";\n.a { color: red; }\n');
-    await check('N-02', 'a missing @import fails instead of reaching the browser', async () => {
-      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {}, includeTheme: false }); } catch { return 'rejected'; }
-      throw new Error('compiled');
+    await check('N-02', 'a missing @import fails as Dart Sass\'s UXD_SASS at the @import instead of reaching the browser', async () => {
+      let error;
+      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {}, includeTheme: false }); } catch (caught) { error = caught; }
+      return assertMissingImport(error);
     });
     await check('UX-03', 'errors carry file, line and column', async () => {
       try { await compileCss('.a { padding: density(999); }'); } catch (error) {
@@ -540,7 +607,7 @@ async function main() {
       if (/xs\(|md\(/.test(out.css) || !/@media/.test(out.css)) throw new Error('not expanded');
       return 'expanded';
     });
-    await check('UX-20', 'source maps: external, inline, and off byte-identical', () => {
+    await check('UX-20', 'source maps: external, inline, and off byte-identical; the map names map.uxdsl once, relative, with its text, every mapping inside it', () => {
       p.write('src/map.uxdsl', '.m { padding: density(2); }\n');
       p.write('uxdsl.config.cjs', "module.exports = { entry: './src/map.uxdsl', outFile: './src/map.css' };\n");
       p.uxdsl('build');
@@ -550,16 +617,24 @@ async function main() {
       if (!p.exists('src/map.css.map') || !/sourceMappingURL=map\.css\.map/.test(external)) throw new Error('no external map');
       const map = JSON.parse(p.read('src/map.css.map'));
       if (map.version !== 3 || !map.sources.some((s) => s.endsWith('map.uxdsl')) || map.sources.some((s) => path.isAbsolute(s))) throw new Error(`bad map sources ${map.sources}`);
-      const { SourceMapConsumer } = instrument('source-map-js');
+      const { SourceMapConsumer, SourceMapGenerator } = instrument('source-map-js');
+      const text = p.read('src/map.uxdsl');
+      const integrity = mapIntegrityProblems(map, 'map.uxdsl', text, SourceMapConsumer);
+      if (integrity.length) throw new Error(integrity[0]);
+      const planted = SourceMapGenerator.fromSourceMap(new SourceMapConsumer(map));
+      planted.addMapping({ generated: { line: 1, column: 0 }, original: { line: 5, column: 0 }, source: map.sources.find((s) => s.endsWith('map.uxdsl')) });
+      if (!mapIntegrityProblems(planted.toJSON(), 'map.uxdsl', text, SourceMapConsumer).length) throw new Error('negative control: a mapping past the file\'s text was not reported');
+      // Dart Sass lays the rule out over several lines: the declaration is on its own line after `.m {`.
       const lines = external.split('\n');
-      const index = lines.findIndex((l) => l.includes('.m'));
+      const rule = lines.findIndex((l) => l.includes('.m {'));
+      const index = lines.findIndex((l, i) => i > rule && l.includes('padding'));
       const original = new SourceMapConsumer(map).originalPositionFor({ line: index + 1, column: lines[index].indexOf('padding') });
       if (!original.source || !original.source.endsWith('map.uxdsl')) throw new Error(`position resolved to ${original.source}`);
       p.uxdsl('build', '--sourcemap=inline');
       if (!/sourceMappingURL=data:application\/json/.test(p.read('src/map.css')) || p.exists('src/map.css.map')) throw new Error('inline mode wrong');
       p.uxdsl('build', '--no-sourcemap');
       if (p.read('src/map.css') !== plain) throw new Error('off is not byte-identical');
-      return `position -> ${original.source}:${original.line}`;
+      return `position -> ${original.source}:${original.line}; sources ${JSON.stringify(map.sources)}, every mapping inside map.uxdsl's text`;
     });
     await check('UX-13', 'init writes no breakpoints, so the theme file decides', () => {
       const q = project('init-probe');
@@ -646,6 +721,27 @@ async function main() {
   await check('parity', '[repo] CLI, compile() and the adapters agree (fixtures/parity)', () => {
     repoNode('fixtures/parity', ['fixtures/parity/run.js']);
     return 'oracle agreement';
+  });
+
+  // --- beta.9: compile() runs on Dart Sass ----------------------------------
+  console.log('\ncompile() on Dart Sass (FEAT-010, MIG-B9-13):');
+  await check('S-1', '[tarball, network] Bootstrap 5.3.8 renamed to .uxdsl compiles through the installed compile() to Dart Sass\'s CSS, byte for byte (fixtures/sass-corpus)', () => {
+    const out = repoNode('fixtures/sass-corpus', ['fixtures/sass-corpus/run.js', '--uxdsl', pkgDir, '--sass', sassPackageDir(pkgDir), '--no-timing-budget']);
+    if (!/byte-identical: true/.test(out)) throw new Error('the corpus did not print "byte-identical: true"');
+    const ratio = /compile\(\)'s median is ([\d.]+)x/.exec(out);
+    return `byte-identical, the five mixed checks ok${ratio ? `; compile() ${ratio[1]}x Dart Sass (reported, not asserted)` : ''}`;
+  });
+  await check('S-2', '[repo] the Sass matrix\'s recorded literals and compile()\'s output equal live Dart Sass (packages/uxdsl/test/core/sass-matrix.test.js)', () => {
+    const out = repoNode('sass-matrix', ['--test', '--test-reporter=tap', '--test-name-pattern', 'equals live Dart Sass', 'packages/uxdsl/test/core/sass-matrix.test.js']);
+    const passed = Number((/^# pass (\d+)$/m.exec(out) || [])[1]);
+    if (!(passed >= 4)) throw new Error(`${passed || 0} tests passed; the four "equals live Dart Sass" tests, controls included, must run`);
+    return `${passed} tests, their negative controls included`;
+  });
+  await check('S-3', '[tarball] a UXDSL error in a Sass-heavy file is printed by the installed CLI at the author\'s line and column, framed from the author\'s text', () => {
+    const p = project('sass-heavy');
+    const fixtures = path.join(PACKAGE_DIR, 'test/core/fixtures/sass-maps');
+    for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) p.write(file, fs.readFileSync(path.join(fixtures, file), 'utf8'));
+    return assertAuthorLocated(p.spawn('build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'));
   });
 
   // --- beta.7: init, editor support, fonts, contrast -----------------------
@@ -858,4 +954,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertMissingImport, mapIntegrityProblems, DROPPED };

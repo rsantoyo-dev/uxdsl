@@ -67,7 +67,7 @@ test('DE-9: a misplaced, repeated or misspelled marker is UXD_THEME_MARKER, with
   assert.match(block.message, /UXD_THEME_MARKER/);
 });
 
-test('DE-9: the marker works through compile() (the SCSS-subset pipeline the CLI and the adapters run)', async () => {
+test('DE-9: the marker works through compile() (the pipeline the CLI and the adapters run)', async () => {
   const { css } = await compile({ source: '$gap: 1rem;\n@uxdsl theme;\n.a { gap: $gap; color: palette(primary.main); }\n', from: 'globals.uxdsl' }, { includeTheme: false, theme: {} });
   assert.ok(rootBlocks(css) > 0);
   assert.doesNotMatch(css, /@uxdsl/);
