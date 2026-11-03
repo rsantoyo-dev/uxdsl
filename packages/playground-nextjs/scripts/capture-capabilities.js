@@ -245,7 +245,27 @@ const DIAGNOSTICS = [
   { expect: 'UXD_FUNCTION_SHADOWED', warning: true, title: 'A project @function named like a UXDSL function: the author\'s SCSS wins, with one warning (DEC-17)', css: '@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n' },
 ];
 
+// What is wrong with a case's run, or null: its code must come first on stderr, with exit 0
+// for a warning case and a failing exit for an error case.
+function diagnosticMismatch(spec, exit, code) {
+  const exitMatches = spec.warning ? exit === 0 : exit !== 0;
+  if (exitMatches && code === spec.expect) return null;
+  return `expected ${spec.expect} and ${spec.warning ? 'a passing exit' : 'a failing exit'}, got ${code} (exit ${exit})`;
+}
+
+// The check's negative controls, run before the cases: each mismatch it exists to catch
+// must be reported, or the capture fails.
+const MISMATCH_CONTROLS = [
+  [{ expect: 'UXD_SASS_WARNING', warning: true }, 0, 'UXD_FUNCTION_SHADOWED'],
+  [{ expect: 'UXD_SASS', warning: true }, 1, 'UXD_SASS'],
+  [{ expect: 'UXD_FUNCTION_SHADOWED' }, 0, 'UXD_FUNCTION_SHADOWED'],
+  [{ expect: 'UXD_SASS' }, 1, 'UXD_SASS_CONTEXT'],
+];
+
 function captureDiagnostics() {
+  for (const [spec, exit, code] of MISMATCH_CONTROLS) {
+    if (!diagnosticMismatch(spec, exit, code)) throw new Error(`the diagnostic check accepts ${code} (exit ${exit}) for a ${spec.warning ? 'warning' : 'error'} case expecting ${spec.expect}`);
+  }
   const results = [];
   for (const [i, spec] of DIAGNOSTICS.entries()) {
     const dir = freshProject(`diag-${i}`);
@@ -253,9 +273,8 @@ function captureDiagnostics() {
     if (spec.theme) fs.writeFileSync(path.join(dir, 'uxdsl.theme.json'), `${JSON.stringify(spec.theme, null, 2)}\n`);
     const r = run(dir, ['build', '--entry', 'src/example.uxdsl', '--out', 'dist/example.css']);
     const code = (r.stderr.match(/\b(UXD_[A-Z0-9_]+)\b/) || [])[1] || null;
-    if (spec.warning ? (r.exit !== 0 || code !== spec.expect) : (r.exit === 0 || code !== spec.expect)) {
-      throw new Error(`diagnostic case "${spec.title}": expected ${spec.expect} and ${spec.warning ? 'a passing exit' : 'a failing exit'}, got ${code} (exit ${r.exit}).\n${r.stderr}`);
-    }
+    const mismatch = diagnosticMismatch(spec, r.exit, code);
+    if (mismatch) throw new Error(`diagnostic case "${spec.title}": ${mismatch}.\n${r.stderr}`);
     results.push({ code, title: spec.title, ...(spec.warning ? { warning: true } : {}), source: spec.css, theme: spec.theme || null, argv: r.argv, exit: r.exit, stderr: r.stderr });
   }
   return results;
