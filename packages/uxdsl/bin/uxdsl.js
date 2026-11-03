@@ -321,6 +321,15 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
       if (configModule.sourcemap !== undefined && configModule.sourcemap !== false && configModule.sourcemap !== 'inline' && configModule.sourcemap !== 'external') {
         throw new Error(`Invalid configuration in ${configPath}: "sourcemap" must be false, "inline" or "external".`);
       }
+      // `sass` is checked here, naming this file, rather than by compile() at
+      // build time; a Dart Sass option written outside it is refused rather
+      // than ignored.
+      validateSassConfig(configModule.sass, configPath);
+      for (const key of SASS_OPTION_KEYS) {
+        if (Object.prototype.hasOwnProperty.call(configModule, key)) {
+          throw new Error(`Invalid configuration in ${configPath}: "${key}" is a Dart Sass option; write it inside "sass": sass: { ${key}: … }.`);
+        }
+      }
       // Shared across every entry (single or `builds`) — the theme is one
       // thing per build, so this is validated once here regardless of which
       // branch below runs. A boolean falls through to
@@ -352,6 +361,9 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}]" must be an object.`);
           }
           rejectRemovedConfigKeys(buildEntry, configPath, `builds[${index}].`);
+          if (buildEntry.sass !== undefined) {
+            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].sass" is not a per-entry key: "sass" applies to every entry; set it once at the top level.`);
+          }
           if (typeof buildEntry.entry !== 'string') {
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].entry" must be a string path.`);
           }
@@ -379,6 +391,8 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
       // `references` has exactly one home: the build config. A theme file
       // carries none (its loader refuses the old { theme, references } wrapper).
       resolvedConfig.references = configModule.references;
+      // Dart Sass's options, passed to compile() for every entry.
+      resolvedConfig.sass = configModule.sass;
     }
   }
 
@@ -681,15 +695,43 @@ function rejectRemovedConfigKeys(object, configPath, prefix = '') {
   }
 }
 
-// Compiles one { entry, outFile, includeTheme } pair against the theme/
-// references every entry in a build shares. Returns the CSS to
-// write without writing it — MIG-B3-02's multi-entry buildOnce compiles
-// every entry to memory first, so a failure partway through a `builds`
-// array leaves nothing written at all rather than some files updated and
-// others stale.
+// The keys of the build config's `sass`: compile()'s `sass` option, passed to
+// Dart Sass for every entry.
+const SASS_OPTION_KEYS = ['silenceDeprecations', 'quietDeps'];
+
+/** The build config's `sass`, absent or an object of SASS_OPTION_KEYS: by the
+ * rules compile() applies to its own `sass` option, each failure naming the
+ * file and the key. */
+function validateSassConfig(sass, configPath) {
+  if (sass === undefined) return;
+  if (sass === null || typeof sass !== 'object' || Array.isArray(sass)) {
+    throw new Error(`Invalid configuration in ${configPath}: "sass" must be an object: { silenceDeprecations?: string[], quietDeps?: boolean }.`);
+  }
+  for (const key of Object.keys(sass)) {
+    if (SASS_OPTION_KEYS.includes(key)) continue;
+    const suggestion = closestMatch(key, SASS_OPTION_KEYS);
+    throw new Error(
+      `Invalid configuration in ${configPath}: "sass.${key}" is not a sass option; "sass" passes only silenceDeprecations and quietDeps to Dart Sass.` +
+      (suggestion ? ` Did you mean "sass.${suggestion}"?` : '')
+    );
+  }
+  const { silenceDeprecations, quietDeps } = sass;
+  if (silenceDeprecations !== undefined && (!Array.isArray(silenceDeprecations) || silenceDeprecations.some((id) => typeof id !== 'string'))) {
+    throw new Error(`Invalid configuration in ${configPath}: "sass.silenceDeprecations" must be an array of Dart Sass deprecation ids (strings), e.g. ['import'].`);
+  }
+  if (quietDeps !== undefined && typeof quietDeps !== 'boolean') {
+    throw new Error(`Invalid configuration in ${configPath}: "sass.quietDeps" must be a boolean.`);
+  }
+}
+
+// Compiles one { entry, outFile, includeTheme } pair against the theme,
+// references and Dart Sass options every entry in a build shares. Returns the
+// CSS to write without writing it: buildOnce compiles every entry to memory
+// first, so a failure partway through a `builds` array leaves nothing written
+// rather than some files updated and others stale.
 async function compileEntryToCss(entryConfig, sharedConfig) {
-  // MIG-B2-03 item 7: each of these has a concrete, actionable fix, not a
-  // generic "invalid configuration".
+  // Each of these names its concrete fix, not a generic "invalid
+  // configuration".
   if (!entryConfig || !entryConfig.entry) {
     throw new Error('No entry file configured. Pass --entry <path>, or set "entry" in uxdsl.config.cjs (run "npx uxdsl init" to create one).');
   }
@@ -699,22 +741,22 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   if (!fs.existsSync(entryConfig.entry)) {
     throw new Error(`Entry file not found: ${entryConfig.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
   }
-  // MIG-B3-01: `includeTheme` defaults to true, matching the plugin's own
-  // default — an omitted config/flag means "this entry defines the theme".
+  // `includeTheme` defaults to true, as the plugin's own option does: an
+  // omitted config key or flag means "this entry defines the theme".
   const includeTheme = entryConfig.includeTheme !== false;
   // Don't claim a theme was "detected" (i.e. will be emitted) for an entry
   // that only uses it to resolve/validate references against — that's
   // exactly what includeTheme: false means.
   if (sharedConfig.theme && includeTheme) console.log('[uxdsl] Theme config detected');
 
-  // Delegates to compile() — the one pipeline (postcss-scss syntax,
-  // postcss-import with the shared resolver, the SCSS subset, the plugin)
-  // every integration uses, so the CLI has no copy of its own to drift.
-  // MIG-B6-21 (FEAT-008): `to` is the absolute outFile, which is also where
-  // an external `.map` lands, so PostCSS resolves `sources` relative to the
-  // right place for both modes without any prefix trimming.
+  // Delegates to compile(), the one pipeline every integration runs (protect,
+  // Dart Sass, restore, the UXDSL plugin), so the CLI has no copy of its own
+  // to drift. `to` is the absolute outFile, which is also where an external
+  // `.map` lands, so the map's `sources` are relative to the right place in
+  // both modes. `sass` is the config's Dart Sass options, shared by every
+  // entry.
   const sourceMap = sharedConfig.sourceMap || false;
-  const { css: compiledCss, map, dependencies } = await uxdslCore.compile(
+  const { css: compiledCss, map, dependencies, warnings } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
       theme: sharedConfig.theme,
@@ -722,6 +764,7 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
       includeTheme,
       to: entryConfig.outFile,
       sourceMap,
+      sass: sharedConfig.sass,
     }
   );
 
@@ -736,21 +779,23 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
     finalCss = `${finalCss}\n/*# sourceMappingURL=${path.basename(mapFile)} */`;
   }
 
-  // MIG-B6-23 (FEAT-008): `dependencies` (entry first, every transitively
-  // @import-ed file) lets watch mode rebuild only the entries a changed
-  // file actually affects, instead of every entry on every change.
-  return { outFile: entryConfig.outFile, finalCss, dependencies, mapFile, mapContent: map };
+  // `dependencies` (the entry first, then every file Dart Sass loaded, then
+  // the theme files discovered) lets watch mode rebuild only the entries a
+  // changed file affects. `warnings` are compile()'s, each at the author's
+  // file, line and column when it has a position; buildOnce prints them.
+  return { outFile: entryConfig.outFile, finalCss, dependencies, warnings, mapFile, mapContent: map };
 }
 
-// MIG-B5-02 (FEAT-006): deduplicated across watch-mode rebuilds, same
-// reasoning as `warnedBuildConfigShapes` above — without this, an unfixed
-// typo'd family name would reprint on every unrelated save. Unlike that
-// Map (keyed by file, cleared when the specific file's shape changes),
-// this is a flat Set of exact warning strings: simpler, at the cost of
-// not re-warning if the *same* message recurs later in one process after
-// being fixed in between — an acceptable trade-off for best-effort
-// diagnostic output, not a build-correctness gate.
+// The theme's "Unknown …" warnings (validateTheme's), printed as
+// `[uxdsl] Warning: <path>: <message>` once per process: an unfixed misspelled
+// family does not reprint on every save of a watch session. The set holds the
+// exact printed strings, so the same message is not printed again in one
+// process even after it was fixed in between; it is a diagnostic, not a gate.
 const warnedUnknownThemeKeys = new Set();
+// The texts of those warnings, printed or not. compile() reports the same
+// theme warnings with no file and no path; buildOnce skips them, so each is
+// printed once, in the form above that names its path.
+const themeWarningTexts = new Set();
 
 function warnUnknownThemeKeys(theme) {
   if (theme === undefined) return;
@@ -762,11 +807,27 @@ function warnUnknownThemeKeys(theme) {
   }
   for (const w of warnings || []) {
     if (!/^Unknown /.test(w.message)) continue;
+    themeWarningTexts.add(w.message);
     const key = `${w.path}: ${w.message}`;
     if (warnedUnknownThemeKeys.has(key)) continue;
     warnedUnknownThemeKeys.add(key);
     console.warn(`[uxdsl] Warning: ${key}`);
   }
+}
+
+// One compile() warning as one line, with the working directory removed from
+// every path in it, as from an error's message:
+// `[uxdsl] Warning: <file>:<line>:<column>: <text>`, `<file>:<line>: <text>`
+// without a column, `<file>: <text>` with a file only, and the text alone
+// without a position (Dart Sass's summary of the deprecations it omitted, an
+// unknown deprecation id).
+function formatCompileWarning(warning) {
+  const where = warning.file
+    ? (warning.line != null
+      ? `${warning.file}:${warning.line}${warning.column != null ? `:${warning.column}` : ''}: `
+      : `${warning.file}: `)
+    : '';
+  return formatCliDiagnostic(`[uxdsl] Warning: ${where}${warning.text}`);
 }
 
 function annotateThemeError(err, config) {
@@ -979,22 +1040,21 @@ function commitCompiled(compiled) {
   return byEntry;
 }
 
-// MIG-B3-02 (FEAT-004): `config.builds` (an array of { entry, outFile,
-// includeTheme }) compiles several entries against the one shared theme/
-// references in a single `uxdsl build`/`watch` invocation,
-// instead of running the CLI once per entry. Single-entry configs
-// (config.builds absent) take the exact same path they always did —
-// entries becomes a one-element array built from config.entry/outFile/
-// includeTheme, so this refactor changes nothing observable for them.
+// One build: every entry of `config.builds` (or the single entry/outFile)
+// compiled against the one shared theme and references, all of them to
+// memory before anything is written, so a failure leaves every output as it
+// was. `entryIndices` compiles and commits only those entries (watch mode's
+// selective rebuild); the others are not recompiled, rewritten or returned.
+// Returns each compiled entry's `dependencies`, from which watch mode builds
+// its graph.
 //
-// MIG-B6-23 (FEAT-008): `entryIndices` (optional) compiles/commits only
-// those entries — used by watch mode's dependency-graph-based selective
-// rebuild — instead of always every entry. Omitted (every existing call
-// site: `build`, `build --watch`'s and `watch`'s own initial build)
-// behaves exactly as before. Returns each compiled entry's own
-// `dependencies` (from compile(), MIG-B6-18) so a caller can build/update
-// that graph; entries not included in `entryIndices` are left completely
-// untouched — not recompiled, not rewritten, not part of the return value.
+// Each entry's compile() warnings print as soon as that entry compiles, so
+// they come before a later entry's error and before anything is written, one
+// line each (formatCompileWarning). A line identical to one already printed
+// in this build is not printed again (a partial two entries load warns once);
+// every build that recompiles an entry prints its warnings again. A theme
+// warning compile() reports without a file is skipped: warnUnknownThemeKeys
+// prints it with its path.
 async function buildOnce(config, entryIndices) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
@@ -1014,21 +1074,8 @@ async function buildOnce(config, entryIndices) {
     }
   }
 
-  // MIG-B5-02 (FEAT-006): `validateTheme`'s "Unknown theme
-  // family" warning (MIG-B3-03) was never actually reachable from a real
-  // build — only the playground's theme editor called this function at
-  // all. Surfacing just `/^Unknown /`-prefixed warnings here (not the
-  // others `validateTheme` can produce, e.g. color-format
-  // hints, which nobody asked to see from `build` and the plugin's own
-  // reference-integrity pass already covers differently) closes that gap
-  // without changing what a normal build reports beyond it. MIG-B5-02
-  // also briefly added a second, one-level-deeper "Unknown <family> key"
-  // warning (typography_details/palette/fonts.families); MIG-B6-01
-  // (FEAT-007) removed that check at the source for being a false
-  // positive on any project with a richer palette/fonts/typography set
-  // than DEFAULT_THEME's minimal fallback — nothing here needed to change
-  // for that fix, since this just forwards whatever the runtime reports.
-  // Checked once per build, same as `--strict-theme`.
+  // The theme's "Unknown …" warnings (an unknown top-level family), with
+  // their path, checked once per build like `--strict-theme`.
   warnUnknownThemeKeys(config && config.theme);
 
   const entries = config && config.builds && config.builds.length
@@ -1038,9 +1085,18 @@ async function buildOnce(config, entryIndices) {
   const indices = entryIndices || entries.map((_, i) => i);
 
   const compiled = [];
+  const printedWarnings = new Set();
   for (const i of indices) {
     try {
-      compiled.push({ index: i, ...(await compileEntryToCss(entries[i], config || {})) });
+      const result = await compileEntryToCss(entries[i], config || {});
+      for (const warning of result.warnings || []) {
+        if (!warning.file && themeWarningTexts.has(warning.text)) continue;
+        const line = formatCompileWarning(warning);
+        if (printedWarnings.has(line)) continue;
+        printedWarnings.add(line);
+        console.warn(line);
+      }
+      compiled.push({ index: i, ...result });
     } catch (err) {
       annotateThemeError(err, config || {});
       if (multi) {
@@ -1721,6 +1777,13 @@ const CONFIG_TYPE_HEADER = `// @ts-check
 /** @type {import('uxdsl/config').UxdslConfig} */
 `;
 
+// The last lines of both config templates: the `sass` key, commented out, so
+// the exported object stays what it is without them.
+const SASS_CONFIG_COMMENT = `  // Dart Sass options for every entry: the deprecations to silence (they are
+  // printed as UXD_SASS_WARNING) and whether to silence those of packages.
+  // sass: { silenceDeprecations: ['import'], quietDeps: true },
+`;
+
 async function init(argv) {
   const cwd = process.cwd();
   const isNext = ['next.config.js', 'next.config.mjs', 'next.config.ts'].some(file => fs.existsSync(path.join(cwd, file)));
@@ -1753,8 +1816,8 @@ async function init(argv) {
     { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
   ],
   // Watch patterns for HMR/Rebuilds
-  watch: ['src/**/*.uxdsl']
-};
+  watch: ['src/**/*.uxdsl'],
+${SASS_CONFIG_COMMENT}};
 `
       : `const config = {
   // Entry point for your styles (generated or manual)
@@ -1762,8 +1825,8 @@ async function init(argv) {
   // Output CSS file
   outFile: './src/uxdsl.css',
   // Watch patterns for HMR/Rebuilds
-  watch: ['src/**/*.uxdsl', 'src/**/*.css']
-};
+  watch: ['src/**/*.uxdsl', 'src/**/*.css'],
+${SASS_CONFIG_COMMENT}};
 `) + '\nmodule.exports = config;\n';
     fs.writeFileSync(configPath, configContent);
     console.log(`  -> Created uxdsl.config.cjs`);

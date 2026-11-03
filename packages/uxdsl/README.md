@@ -59,7 +59,12 @@ The CLI prints a compile error at the author's file, line and column, then a
 frame of the author's source: Dart Sass's own frame and stack for `UXD_SASS`,
 PostCSS's for a UXDSL error. It does so in a one-shot build and under
 `--watch`, where every failed build of the session, the first one included,
-prints `[uxdsl] build failed:` and leaves the last good CSS on disk.
+prints `[uxdsl] build failed:` and leaves the last good CSS on disk. Every
+`compile()` warning (Dart Sass's deprecations and `@warn`,
+`UXD_FUNCTION_SHADOWED`, the plugin's) prints once per build as
+`[uxdsl] Warning: <file>:<line>:<column>: <text>`, and the build config's
+`sass` key (`{ silenceDeprecations?, quietDeps? }`, checked when the config
+loads) passes Dart Sass options to every entry.
 
 ## Entry points
 

@@ -1666,3 +1666,219 @@ test('phase 2 (3): `theme --diff` never lists $schema as a project leaf, and --s
   const strict = runCli(dir, 'theme', '--strict-theme=breakpoints');
   assert.equal(strict.status, 0, strict.stderr);
 });
+
+// --- compile() warnings and the config's `sass` key -------------------------
+//
+// Every compile() warning prints once per build, one line at its position,
+// `[uxdsl] Warning: <file>:<line>:<column>: <text>` with paths relative to the
+// working directory. The config's `sass` key passes Dart Sass options to every
+// entry and is validated when the config loads.
+
+const IMPORT_WARNING = 'UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+const SHADOWED_WARNING = "[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/_helpers.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token";
+
+function sassProject(extraConfig = '') {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false${extraConfig} };\n`);
+  write(dir, 'src/entry.uxdsl', "@import './card';\n@import './helpers';\n.e { padding: space(2); }\n");
+  write(dir, 'src/_card.uxdsl', '.card { color: red; }\n');
+  write(dir, 'src/_helpers.uxdsl', '@function space($n) { @return $n * 4px; }\n');
+  return dir;
+}
+
+function twoEntryProject() {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },\n  { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },\n] };\n");
+  return dir;
+}
+
+const warningLines = (stderr) => stderr.split('\n').filter((line) => line.startsWith('[uxdsl] Warning: '));
+
+test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecations removes a type; an invalid sass key is a config error', () => {
+  // Every warning, at its position, relative to the working directory.
+  const dir = sassProject();
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.deepEqual(warningLines(built.stderr), [
+    `[uxdsl] Warning: src/entry.uxdsl:1:9: ${IMPORT_WARNING}`,
+    `[uxdsl] Warning: src/entry.uxdsl:2:9: ${IMPORT_WARNING}`,
+    SHADOWED_WARNING,
+  ]);
+  assert.equal(built.stderr, `${warningLines(built.stderr).join('\n')}\n`, 'nothing else on stderr');
+  assert.equal(built.stderr.includes(dir), false, 'no absolute path');
+  assert.match(fs.readFileSync(path.join(dir, 'out', 'entry.css'), 'utf8'), /padding: 8px/);
+
+  // A partial two entries load prints its warning once per build.
+  const shared = twoEntryProject();
+  write(shared, 'src/a.uxdsl', "@use './shared';\n.a { color: red; }\n");
+  write(shared, 'src/b.uxdsl', "@use './shared';\n.b { color: blue; }\n");
+  write(shared, 'src/_shared.uxdsl', "@import './legacy';\n.shared { color: green; }\n");
+  write(shared, 'src/_legacy.uxdsl', '.legacy { color: gray; }\n');
+  const once = runCli(shared, 'build');
+  assert.equal(once.status, 0, once.stderr);
+  assert.deepEqual(warningLines(once.stderr), [`[uxdsl] Warning: src/_shared.uxdsl:1:9: ${IMPORT_WARNING}`]);
+
+  // Sass's cap: five located warnings of one type, then Sass's own summary, which has no position.
+  const capped = mkTmpDir();
+  write(capped, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false };\n");
+  write(capped, 'src/entry.uxdsl', `${[1, 2, 3, 4, 5, 6, 7].map((n) => `@import './p${n}';`).join('\n')}\n`);
+  for (const n of [1, 2, 3, 4, 5, 6, 7]) write(capped, `src/_p${n}.uxdsl`, `.p${n} { color: red; }\n`);
+  const cap = runCli(capped, 'build');
+  assert.equal(cap.status, 0, cap.stderr);
+  assert.deepEqual(warningLines(cap.stderr), [
+    ...[1, 2, 3, 4, 5].map((line) => `[uxdsl] Warning: src/entry.uxdsl:${line}:9: ${IMPORT_WARNING}`),
+    '[uxdsl] Warning: UXD_SASS_WARNING: 2 repetitive deprecation warnings omitted.',
+  ]);
+
+  // An entry's warnings print as soon as it compiles, so before a later entry's error.
+  const failing = twoEntryProject();
+  write(failing, 'src/a.uxdsl', "@import './p';\n.a { color: red; }\n");
+  write(failing, 'src/_p.uxdsl', '.p { color: green; }\n');
+  write(failing, 'src/b.uxdsl', "@use './missing';\n");
+  const broken = runCli(failing, 'build');
+  assert.equal(broken.status, 1, broken.stderr);
+  const lines = broken.stderr.split('\n');
+  assert.equal(lines[0], `[uxdsl] Warning: src/a.uxdsl:1:9: ${IMPORT_WARNING}`);
+  assert.equal(lines[1], "[uxdsl] Error: builds[1] (out/b.css): src/b.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import.");
+  assert.equal(fs.existsSync(path.join(failing, 'out')), false, 'nothing is written');
+
+  // sass.silenceDeprecations removes that type and nothing else; an unknown id is
+  // Sass's own warning, once; quietDeps builds.
+  const silenced = runCli(sassProject(", sass: { silenceDeprecations: ['import'] }"), 'build');
+  assert.equal(silenced.status, 0, silenced.stderr);
+  assert.deepEqual(warningLines(silenced.stderr), [SHADOWED_WARNING]);
+  const unknownId = runCli(sassProject(", sass: { silenceDeprecations: ['nope'] }"), 'build');
+  assert.equal(unknownId.status, 0, unknownId.stderr);
+  assert.equal(warningLines(unknownId.stderr).filter((line) => line === '[uxdsl] Warning: UXD_SASS_WARNING: Invalid deprecation "nope".').length, 1, unknownId.stderr);
+  const quiet = runCli(sassProject(', sass: { quietDeps: true }'), 'build');
+  assert.equal(quiet.status, 0, quiet.stderr);
+
+  // Every invalid shape is a config error naming the file and the key, and nothing is written.
+  for (const [config, expected] of [
+    ["sass: 'x'", /"sass" must be an object: \{ silenceDeprecations\?: string\[\], quietDeps\?: boolean \}\./],
+    ['sass: null', /"sass" must be an object/],
+    ['sass: []', /"sass" must be an object/],
+    ['sass: { bogus: 1 }', /"sass\.bogus" is not a sass option; "sass" passes only silenceDeprecations and quietDeps to Dart Sass\.$/m],
+    ['sass: { silenceDeprecation: [] }', /"sass\.silenceDeprecation" is not a sass option; .* Did you mean "sass\.silenceDeprecations"\?$/m],
+    ["sass: { silenceDeprecations: 'import' }", /"sass\.silenceDeprecations" must be an array of Dart Sass deprecation ids \(strings\), e\.g\. \['import'\]\./],
+    ['sass: { silenceDeprecations: [1] }', /"sass\.silenceDeprecations" must be an array of Dart Sass deprecation ids/],
+    ["sass: { quietDeps: 'yes' }", /"sass\.quietDeps" must be a boolean\./],
+    ["silenceDeprecations: ['import']", /"silenceDeprecations" is a Dart Sass option; write it inside "sass": sass: \{ silenceDeprecations: … \}\./],
+    ['quietDeps: true', /"quietDeps" is a Dart Sass option; write it inside "sass": sass: \{ quietDeps: … \}\./],
+  ]) {
+    const invalid = cliProject();
+    write(invalid, 'uxdsl.config.cjs', `module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', ${config} };\n`);
+    const refused = runCli(invalid, 'build');
+    assert.equal(refused.status, 1, `${config}: ${refused.stderr}`);
+    assert.match(refused.stderr, /^\[uxdsl\] Error: Invalid configuration in uxdsl\.config\.cjs: /, config);
+    assert.match(refused.stderr, expected, config);
+    assert.equal(fs.existsSync(path.join(invalid, 'out')), false, `${config}: nothing is written`);
+  }
+  const perEntry = cliProject();
+  write(perEntry, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.css', sass: { quietDeps: true } }] };\n");
+  const perEntryRefused = runCli(perEntry, 'build');
+  assert.equal(perEntryRefused.status, 1, perEntryRefused.stderr);
+  assert.match(perEntryRefused.stderr, /^\[uxdsl\] Error: Invalid configuration in uxdsl\.config\.cjs: "builds\[0\]\.sass" is not a per-entry key: "sass" applies to every entry; set it once at the top level\./);
+  assert.equal(fs.existsSync(path.join(perEntry, 'out')), false);
+
+  // `uxdsl theme` prints the same theme whether a valid sass key is there or not.
+  const themed = sassProject();
+  write(themed, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  const without = runCli(themed, 'theme');
+  write(themed, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false, sass: { silenceDeprecations: ['import'], quietDeps: true } };\n");
+  const withSass = runCli(themed, 'theme');
+  assert.equal(without.status, 0, without.stderr);
+  assert.equal(withSass.status, 0, withSass.stderr);
+  assert.equal(withSass.stdout, without.stdout);
+  assert.equal(withSass.stderr, without.stderr);
+});
+
+test('MIG-B9-14: an unknown theme family prints once, though compile() also reports it without a file (negative control)', async () => {
+  const theme = { migB914UnknownFamily: { x: '1' } };
+  // compile() reports the theme's warning too, with no file: printed as it
+  // comes, it would be a second line.
+  const { compile } = require('../../dist/compile');
+  const { warnings } = await compile({ source: '.a { color: red; }', from: path.join(mkTmpDir(), 'a.uxdsl') }, { theme, includeTheme: false });
+  assert.ok(warnings.some((w) => /Unknown theme family "migB914UnknownFamily"/.test(w.text) && w.file === undefined), JSON.stringify(warnings));
+
+  const dir = cliProject();
+  write(dir, 'uxdsl.theme.json', JSON.stringify(theme));
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.equal((built.stderr.match(/Unknown theme family "migB914UnknownFamily"/g) || []).length, 1, built.stderr);
+  assert.match(built.stderr, /^\[uxdsl\] Warning: migB914UnknownFamily: Unknown theme family "migB914UnknownFamily"/m);
+});
+
+// The CLI checks `sass` when the config loads, so it names the file; compile()
+// checks the same option at build time. A probe table pins that the two accept
+// exactly the same values, and a coverage check that every key of compile()'s
+// `sass` option is probed, so a key compile() adds later cannot go unchecked.
+const SASS_PROBES = {
+  valid: [{}, { silenceDeprecations: [] }, { silenceDeprecations: ['import'] }, { quietDeps: true }, { quietDeps: false }, { silenceDeprecations: ['import'], quietDeps: true }],
+  invalid: [null, 'x', [], 5, { bogus: 1 }, { silenceDeprecation: [] }, { silenceDeprecations: 'import' }, { silenceDeprecations: [1] }, { quietDeps: 'yes' }],
+};
+
+/** The keys of `sass?: { … }` in src/compile.ts's CompileConfig. */
+function compileSassKeys() {
+  const source = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'compile.ts'), 'utf8');
+  const config = source.match(/interface CompileConfig \{([\s\S]*?)\n\}/);
+  assert.ok(config, 'interface CompileConfig not found in src/compile.ts');
+  const sass = config[1].match(/^\s*sass\?:\s*\{([^}]*)\}/m);
+  assert.ok(sass, 'CompileConfig has no sass?: { … } member');
+  return [...sass[1].matchAll(/(\w+)\??:/g)].map((m) => m[1]);
+}
+
+/** The keys the probe table does not exercise with both a valid and an invalid value. */
+function unprobedSassKeys(keys, probes) {
+  const uses = (probe, key) => probe !== null && typeof probe === 'object' && !Array.isArray(probe) && Object.prototype.hasOwnProperty.call(probe, key);
+  return keys.filter((key) => !probes.valid.some((p) => uses(p, key)) || !probes.invalid.some((p) => uses(p, key)));
+}
+
+test("MIG-B9-14: the CLI's config accepts exactly the sass values compile() accepts", async () => {
+  const keys = compileSassKeys();
+  assert.ok(keys.length > 0, 'no key parsed from compile()\'s sass option');
+  assert.deepEqual(unprobedSassKeys(keys, SASS_PROBES), [], 'every sass key needs a valid and an invalid probe');
+  const { compile } = require('../../dist/compile');
+  for (const probe of [...SASS_PROBES.valid, ...SASS_PROBES.invalid]) {
+    // One directory per probe: require() caches a config file by path.
+    const dir = mkTmpDir();
+    write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './a.uxdsl', outFile: './a.css', sass: ${JSON.stringify(probe)} };\n`);
+    write(dir, 'a.uxdsl', '.a{}\n');
+    const cliAccepts = await cli.loadConfig({}, dir).then(() => true, () => false);
+    const compileAccepts = await compile({ source: '.a{}', from: path.join(dir, 'a.uxdsl') }, { theme: {}, includeTheme: false, sass: probe }).then(() => true, () => false);
+    assert.equal(cliAccepts, compileAccepts, `sass: ${JSON.stringify(probe)} — loadConfig ${cliAccepts ? 'accepts' : 'refuses'} it, compile() ${compileAccepts ? 'accepts' : 'refuses'} it`);
+  }
+});
+
+test('MIG-B9-14: the sass probe coverage check reports a key with no probe (negative control)', () => {
+  assert.deepEqual(unprobedSassKeys(['silenceDeprecations', 'quietDeps', 'loadPaths'], SASS_PROBES), ['loadPaths']);
+});
+
+// The config type's `sass` is compile()'s own `sass` option, written a second
+// time in types.ts (which cannot import compile.ts). tsc reads the published
+// declarations and must find the two identical, optional members included.
+const TSC = path.join(fs.realpathSync(path.join(__dirname, '..', '..')), 'node_modules', 'typescript', 'bin', 'tsc');
+
+function sassTypeCheck(configSassType) {
+  const dir = mkTmpDir();
+  const dist = path.join(__dirname, '..', '..', 'dist');
+  write(dir, 'same.ts', [
+    `import type { CompileConfig } from ${JSON.stringify(path.join(dist, 'compile'))};`,
+    `import type { UxdslConfigShared } from ${JSON.stringify(path.join(dist, 'types'))};`,
+    'type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;',
+    `export const same: Equals<CompileConfig['sass'], ${configSassType}> = true;`,
+    '',
+  ].join('\n'));
+  return spawnSync(process.execPath, [TSC, '--noEmit', '--strict', '--skipLibCheck', '--target', 'es2022', '--module', 'commonjs', path.join(dir, 'same.ts')], { encoding: 'utf8' });
+}
+
+test("MIG-B9-14: the config type's sass is compile()'s sass option: tsc reads the two as one type", () => {
+  const same = sassTypeCheck("UxdslConfigShared['sass']");
+  assert.equal(same.status, 0, `${same.stdout}${same.stderr}`);
+});
+
+test('MIG-B9-14: the sass type check fails for a shape that drops an optional member (negative control)', () => {
+  const different = sassTypeCheck('{ silenceDeprecations?: string[] } | undefined');
+  assert.notEqual(different.status, 0, 'a type without quietDeps must not read as the same type');
+  assert.match(`${different.stdout}${different.stderr}`, /TS2322/);
+});

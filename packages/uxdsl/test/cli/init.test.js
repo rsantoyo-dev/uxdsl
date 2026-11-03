@@ -285,3 +285,42 @@ test('phase 4: init says `npm i -D uxdsl` when the project does not list uxdsl, 
     assert.doesNotMatch(quiet.stdout, /npm i/, `[${field}] already installed: no install line`);
   }
 });
+
+// --- The config comment that names the `sass` key ----------------------------
+
+test("MIG-B9-14: init's config comment names the sass key; uncommented it type-checks and builds, and the exported object is unchanged", () => {
+  const commented = "  // sass: { silenceDeprecations: ['import'], quietDeps: true },\n";
+  for (const branch of ['plain', 'multi']) {
+    const dir = mkProject(branch);
+    assert.equal(run(BRANCHES[branch].args, dir).status, 0);
+    const configPath = path.join(dir, 'uxdsl.config.cjs');
+    const generated = fs.readFileSync(configPath, 'utf8');
+    assert.ok(generated.includes(commented), `[${branch}] the comment names the key:\n${generated}`);
+    assert.match(generated, /\n {2}\/\/ Dart Sass options for every entry/, `[${branch}] the comment says what the key is for`);
+
+    // Commented out, it changes nothing: the object is the one init always wrote.
+    const legacyFile = path.join(dir, 'legacy.config.cjs');
+    fs.writeFileSync(legacyFile, branch === 'multi' ? LEGACY_MULTI : LEGACY_SINGLE);
+    assert.deepEqual(require(configPath), require(legacyFile));
+
+    // Uncommented, the line type-checks and builds.
+    fs.writeFileSync(configPath, generated.replace(commented, "  sass: { silenceDeprecations: ['import'], quietDeps: true },\n"));
+    for (const opts of RESOLUTIONS) {
+      const clean = typeCheck(dir, 'uxdsl.config.cjs', opts);
+      assert.equal(clean.status, 0, `[${branch} ${opts.moduleResolution}] expected a clean check:\n${clean.output}`);
+    }
+    const built = run(['build'], dir);
+    assert.equal(built.status, 0, `[${branch}] ${built.stdout}${built.stderr}`);
+
+    // Negative control: a misspelled key is reported by the editor and refused by the build.
+    fs.writeFileSync(configPath, generated.replace(commented, "  sass: { silenceDeprecation: ['import'], quietDeps: true },\n"));
+    for (const opts of RESOLUTIONS) {
+      const bad = typeCheck(dir, 'uxdsl.config.cjs', opts);
+      assert.notEqual(bad.status, 0, `[${branch} ${opts.moduleResolution}] the misspelled key must be reported`);
+      assert.match(bad.output, /TS2353|TS2561/, bad.output);
+    }
+    const refused = run(['build'], dir);
+    assert.equal(refused.status, 1, `[${branch}] ${refused.stdout}${refused.stderr}`);
+    assert.match(refused.stderr, /Invalid configuration in uxdsl\.config\.cjs: "sass\.silenceDeprecation" is not a sass option;.* Did you mean "sass\.silenceDeprecations"\?/);
+  }
+});
