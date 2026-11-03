@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). Merged: MIG-B9-01, 05 and 53; in progress: MIG-B9-10. The index has each story's status. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. Merged: MIG-B9-01 to 05, 10 to 13 and 53. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
 | Release | `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with every wave (DEC-03). |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
@@ -158,7 +158,7 @@ DEC-03 every wave ships in `0.5.0-beta.9`.
 | --- | --- | --- |
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 |
-| 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry. | MIG-B9-20 to 22 |
+| 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. | MIG-B9-20 to 23 |
 | 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. | MIG-B9-30 to 36 |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. | MIG-B9-40 to 43 |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 |

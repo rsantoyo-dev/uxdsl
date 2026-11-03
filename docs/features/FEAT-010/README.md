@@ -259,7 +259,7 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 32, 33, 34 |
 | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 31, 34 |
 | `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 31, 32, 34, 35, 36 |
-| `packages/uxdsl/CHANGELOG.md` | every story with output impact, and 23, whose `compile-sass.ts` the docs guard lists as a visual-default file (append-only, one subsection per story) |
+| `packages/uxdsl/CHANGELOG.md` | every story that lists it in Owns or Shares (append-only, one subsection per story) |
 | `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 51 |
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
 | `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 30, 31, 91 |

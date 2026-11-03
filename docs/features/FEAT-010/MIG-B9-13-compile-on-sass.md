@@ -783,7 +783,7 @@ The owner answered one question about flag 1 above, after the delivery and befor
 
 - **The question:** how to resolve AC1, this story's time budget, before merging #63.
 - **Decided: merge now, and do the performance work after** (the option recommended to the owner):
-  - PR #63 is merged into `feat/beta9` with AC1 recorded as not met on its timing half. The corpus stayed byte-identical: every delivery run printed `byte-identical: true`. The ratio was over 1.5× (flag 1).
+  - PR #63 is merged into `feat/beta9` with AC1 recorded as not met on its timing half. The corpus stayed byte-identical: every delivery run printed `byte-identical: true`. The ratio was over 1.5× on four of the six delivery runs, three of them in a row (flag 1).
   - P10's 1.5× budget is carried by [MIG-B9-23](MIG-B9-23-compile-within-budget.md). That performance story brings the corpus to at most 1.5× and must pass before `0.5.0-beta.9` is published. In the option's words, it would cover the Sass stage, the plugin's fixed costs and the double theme discovery (K3).
   - The merge unblocks MIG-B9-14 and MIG-B9-15.
 - **Not chosen:**
