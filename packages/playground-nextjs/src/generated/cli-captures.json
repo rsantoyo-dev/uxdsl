@@ -360,7 +360,13 @@
         "output": [
           "[uxdsl] change src/card.uxdsl",
           "[uxdsl] Theme config detected",
-          "! [uxdsl] build failed: uxdsl: src/card.uxdsl:5:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl."
+          "! [uxdsl] build failed: uxdsl: src/card.uxdsl:5:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl.",
+          "!   3 |   display: flex;",
+          "!   4 |   flex-direction: xs(column) md(row);",
+          "! > 5 |   gap: density(4) xxl(2rem);",
+          "!     |   ^",
+          "!   6 | }",
+          "!   7 | "
         ]
       },
       {

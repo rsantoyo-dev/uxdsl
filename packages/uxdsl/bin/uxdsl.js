@@ -840,6 +840,29 @@ function formatCliDiagnostic(message) {
   return String(message).split('\n').map(line => line.split(cwdPrefix).join('')).join('\n');
 }
 
+// The frame printed under a failure's message, chosen by the error's own
+// `code`, never parsed from its message. A UXD_SASS error carries Sass's own
+// frame and stack, drawn with the author's text and columns and without the
+// message line (`sassFrame`), printed verbatim with every line indented by two
+// spaces; its stack paths are already relative to the working directory. A
+// PostCSS error carries a frame of the author's source (`showSourceCode`).
+// `error.cause` is never printed: it shows the text Sass compiled, not the
+// author's.
+function errorFrame(err) {
+  if (err && err.code === 'UXD_SASS' && typeof err.sassFrame === 'string' && err.sassFrame.trim()) {
+    return err.sassFrame.split('\n').map((line) => `  ${line}`).join('\n');
+  }
+  return err && typeof err.showSourceCode === 'function' ? err.showSourceCode(false) : '';
+}
+
+// One failure on stderr: `prefix` and the message with the working directory
+// removed from its paths, then the frame when there is one.
+function printFailure(prefix, err) {
+  console.error(`${prefix}${formatCliDiagnostic(err && err.message)}`);
+  const frame = errorFrame(err);
+  if (frame) console.error(frame);
+}
+
 // MIG-B6-23 (FEAT-008): writes only what actually changed, and does so
 // atomically per file. Reads the existing file first — identical content
 // means no write at all, so an unaffected entry keeps its mtime/inode
@@ -1500,9 +1523,10 @@ function startWatch(initialConfig, argv, cwd, builder) {
       const results = await builder(config);
       dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
     } catch (err) {
-      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
-      // Keep the previous dependencyGraph (item 3): a failed rebuild
-      // doesn't invalidate what the last successful one already knew.
+      // The message and its frame, as a one-shot build prints them. The
+      // previous dependency graph is kept: a failed rebuild does not
+      // invalidate what the last successful one knew.
+      printFailure('[uxdsl] build failed: ', err);
     }
   }
 
@@ -1513,7 +1537,7 @@ function startWatch(initialConfig, argv, cwd, builder) {
         dependencyGraph.set(index, new Set(dependencies));
       }
     } catch (err) {
-      console.error(`[uxdsl] build failed: ${formatCliDiagnostic(err.message)}`);
+      printFailure('[uxdsl] build failed: ', err);
     }
   }
 
@@ -2002,14 +2026,14 @@ function parseCommandArgv(rawArgs) {
   return { cmd, argv };
 }
 
-// MIG-B6-23 (FEAT-008): the initial load+build a watch session starts
-// from. Any failure here is fatal for a one-shot `build` (`watching:
-// false` — unchanged: the error propagates to main()'s own outer
-// try/catch, which exits 1). For `watch`/`build --watch`, the same
-// failure is logged and this returns whatever it has (a real config, or
-// `null`) instead of ending the process before a single file is even
-// watched — `startWatch` accepts `null` and falls back to watching
-// config/theme candidates until one loads successfully.
+// The first load and build of `uxdsl build`, with or without `--watch`.
+// Without it, any failure propagates to main(), which prints it and exits 1.
+// With it, a failure never ends the process before a file is watched: a
+// config that fails to load prints `[uxdsl] Error: … — watching for a fix...`
+// and returns `null`, so `startWatch` watches the config and theme candidates
+// until one loads; a build that fails prints `[uxdsl] build failed: ` with the
+// message and its frame, as every later failed build of the session does, and
+// returns the config.
 async function loadAndBuildForWatch(argv, watching) {
   let config = null;
   try {
@@ -2027,25 +2051,19 @@ async function loadAndBuildForWatch(argv, watching) {
     await buildOnce(config);
   } catch (err) {
     if (!watching) throw err;
-    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
+    printFailure('[uxdsl] build failed: ', err);
   }
   return config;
 }
 
-// MIG-B6-12 (FEAT-008): `process.exitCode` everywhere, never `process.exit()`.
+// Sets `process.exitCode` and returns, never `process.exit()`: a write to a
+// pipe is asynchronous, so exiting at once discards whatever is still
+// buffered (`uxdsl theme --contrast | jq` would read JSON cut at 64 KiB).
+// Node exits once stdout has drained, with the same status. Watch mode keeps
+// the process alive through its own handles.
 //
-// Found by the beta.6 release gate: `uxdsl theme --contrast | jq` produced
-// truncated JSON. `process.exit()` terminates immediately, and a write to a
-// *pipe* is asynchronous — so anything still buffered is discarded. Redirected
-// to a file the same command wrote 302,816 bytes; piped, it wrote 65,536 and
-// the JSON ended mid-string. `--contrast` is the command large enough to show
-// it today (302 KB, against 13 KB for `theme` and 5 KB for `theme --diff`),
-// but the defect is in the exit path, not in any one command's size, so every
-// documented `| jq` usage was one large theme away from the same truncation.
-//
-// Setting `exitCode` and returning lets Node exit once stdout has drained,
-// with the same status. Watch mode is unaffected: it keeps the process alive
-// through its own handles, which is what it did before.
+// A failure prints `[uxdsl] Error: ` with the message, then its frame
+// (errorFrame), and exits 1.
 async function main() {
   let cmd, argv;
   try {
@@ -2102,9 +2120,7 @@ async function main() {
         break;
     }
   } catch (err) {
-    console.error(`[uxdsl] Error: ${formatCliDiagnostic(err.message)}`);
-    const frame = err && typeof err.showSourceCode === 'function' ? err.showSourceCode(false) : '';
-    if (frame) console.error(frame);
+    printFailure('[uxdsl] Error: ', err);
     process.exitCode = 1;
   }
 }

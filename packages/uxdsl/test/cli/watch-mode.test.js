@@ -503,7 +503,9 @@ test('MIG-B6-23: creating a previously-missing partial recovers the build (unkno
   child.stdout.on('data', (chunk) => { output += chunk.toString(); });
   child.stderr.on('data', (chunk) => { output += chunk.toString(); });
 
-  await waitFor(() => /error/i.test(output));
+  // The first build of a watch session fails like any later one, as
+  // `[uxdsl] build failed: … UXD_SASS: Can't find stylesheet to import.`.
+  await waitFor(() => /UXD_SASS|error/i.test(output));
   await delay(WATCHER_SETTLE_MS);
   const cssPath = path.join(dir, 'src', 'uxdsl.css');
   assert.equal(fs.existsSync(cssPath), false, 'nothing should have been written for the initial failed build');
@@ -513,4 +515,53 @@ test('MIG-B6-23: creating a previously-missing partial recovers the build (unkno
   fs.writeFileSync(path.join(dir, 'src', 'missing-partial.uxdsl'), '.imported { color: green; }');
   await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('color: green'));
   assert.equal(exited, false, 'the process must still be running after the missing partial is created');
+});
+
+// A compile failure in a watch session, the first build included, prints
+// `[uxdsl] build failed: ` with the same message and frame as a one-shot build;
+// a config failure keeps `[uxdsl] Error: … — watching for a fix...`.
+test('MIG-B9-14: in watch mode every failed build, the first one included, prints build failed: with the same frame, and the process keeps watching', async (t) => {
+  const dir = mkProject();
+  fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false };\n");
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), "@use './missing';\n.a { color: red; }\n");
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let exited = false;
+  child.on('exit', () => { exited = true; });
+  let stderr = '';
+  child.stderr.on('data', (chunk) => { stderr += chunk.toString(); });
+  child.stdout.on('data', () => {});
+
+  await waitFor(() => /root stylesheet/.test(stderr));
+  assert.match(stderr, /^\[uxdsl\] build failed: src\/a\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.\n {4}╷\n {2}1 │ @use '\.\/missing';\n {4}│ \^{16}\n {4}╵\n {4}src\/a\.uxdsl 1:1 {2}root stylesheet\n/, stderr);
+  assert.doesNotMatch(stderr, /\[uxdsl\] Error:/, 'the first build of a watch session is a build failure like any later one');
+  await delay(WATCHER_SETTLE_MS);
+
+  const cssPath = path.join(dir, 'out', 'a.css');
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a {\n  color: red;\n}\n');
+  await waitFor(() => fs.existsSync(cssPath) && fs.readFileSync(cssPath, 'utf8').includes('color: red'));
+  const lastGood = fs.readFileSync(cssPath, 'utf8');
+  await delay(300);
+
+  // A UXDSL error prints PostCSS's frame of the author's source.
+  const before = stderr.length;
+  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a {\n  color: red;\n  padding: density(99);\n}\n');
+  await waitFor(() => /^> 3 \|/m.test(stderr.slice(before)));
+  const failure = stderr.slice(before);
+  assert.match(failure, /^\[uxdsl\] build failed: uxdsl: src\/a\.uxdsl:3:3: UXD_DENSITY_REFERENCE: density\(99\) does not exist/m, failure);
+  assert.match(failure, /^> 3 \| {3}padding: density\(99\);$/m, failure);
+  assert.equal(fs.readFileSync(cssPath, 'utf8'), lastGood, 'the last good output stays on disk');
+  assert.equal(exited, false, 'the process keeps watching');
+
+  // Negative control: a config that fails to load is not a build failure.
+  const configBefore = stderr.length;
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), 'module.exports = { this is not valid javascript');
+  await waitFor(() => /watching for a fix/.test(stderr.slice(configBefore)));
+  await delay(500);
+  const configFailure = stderr.slice(configBefore);
+  assert.match(configFailure, /^\[uxdsl\] Error: [\s\S]* — watching for a fix\.\.\.$/m, configFailure);
+  assert.doesNotMatch(configFailure, /build failed:/);
+  assert.equal(exited, false);
 });

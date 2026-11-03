@@ -334,7 +334,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: src/example.uxdsl:2:12: UXD_SASS: Undefined variable.\n"
+      "stderr": "[uxdsl] Error: src/example.uxdsl:2:12: UXD_SASS: Undefined variable.\n    ╷\n  2 │   padding: $gap;\n    │            ^^^^\n    ╵\n    src/example.uxdsl 2:12  root stylesheet\n"
     },
     {
       "code": "UXD_SASS_CONTEXT",
