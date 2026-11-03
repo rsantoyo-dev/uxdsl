@@ -150,6 +150,62 @@ What to check when you upgrade:
    `dependencies` lists every file Dart Sass loaded, and for
    `compile({ source, from })` it lists `from` first even when that file does
    not exist (it was `[]`).
+9. **Regenerate the entry.** `npx uxdsl generate-entry`, with the options
+   you used before, now writes one `@use '<path>' as <namespace>;` per file
+   instead of `@import`, in the same order, with a third header line; it
+   warns once when it replaces an entry that listed its files with
+   `@import`. Each file becomes its own Sass module. The `@import` entry gave
+   every listed file one scope, so a file could read a `$variable`, mixin,
+   function or `%placeholder` another file defined; after regenerating, such
+   a file fails as `UXD_SASS` (`Undefined variable.`, `Undefined mixin.`,
+   `The target selector was not found.`), or, in three cases, compiles
+   differently without an error: a call to another file's `@function` stays
+   in the CSS as written, a `!default` an earlier file set no longer applies,
+   and a project `@function` named like a UXDSL function (`space()`) no
+   longer replaces the token in the files that do not `@use` it. Give each
+   file its own `@use` for what it reads:
+
+   ```scss
+   // src/card.uxdsl, which reads $brand from src/_variables.uxdsl
+   @use './variables' as *;
+
+   .card { color: $brand; }
+   ```
+
+   A module that another file configures (`@use './variables' with (…)`)
+   must be configured before anything loads it: put the configuring file
+   first with `--first` (`generate-entry --first brand.uxdsl`), since a file
+   named like `variables` is otherwise listed first. A partial and a file of
+   the same name side by side (`_card.uxdsl` and `card.uxdsl`), or a `.scss`
+   file beside a `.uxdsl` file of the same name while you rename it, make the
+   path ambiguous (`UXD_SASS: It's not clear which file to import`): rename
+   one. The entry's CSS gains its new header line, and a file that another
+   listed file `@use`s is emitted once, where the `@import` entry emitted it
+   twice. `init` writes the `@use` entry from the start.
+10. **The CLI prints Dart Sass's frame and every warning.** A `UXD_SASS`
+    error is followed by Dart Sass's frame and stack of your source, every
+    line indented by two spaces. Under `--watch` every failed build, the
+    first one included, prints `[uxdsl] build failed:` and its frame; a
+    script that waited for `[uxdsl] Error:` from the first build of a watch
+    session should wait for either. Every `compile()` warning now prints once
+    per build as `[uxdsl] Warning: <file>:<line>:<column>: <text>`: expect
+    Dart Sass's `[import]` deprecation for each `@import` of a partial until
+    it becomes a `@use` (item 2). The build config's new `sass` key silences
+    a type, `sass: { silenceDeprecations: ['import'] }`; a misspelled key,
+    `sass` inside a `builds` entry, or `silenceDeprecations` or `quietDeps`
+    written at the top level is now a configuration error that names the
+    file.
+11. **`--watch` follows every file Dart Sass loaded**, a `.scss` partial and a
+    file outside the `watch` patterns included, and starts from the first
+    build's dependency graph, so the first edit rebuilds only the entries
+    that load the file. A `watch` pattern is still what notices a partial a
+    build could not find when it is created: the default patterns match the
+    `.uxdsl` files under the entry's directory, so add one to `watch` for a
+    `.scss` partial or another directory.
+12. **`uxdsl/vite` and `uxdsl/webpack` take `sass`**, with the same keys (an
+    unknown one fails the load or the module), and their warnings now read
+    `<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
+    webpack's `rootContext`.
 
 ## Antes de actualizar (cualquier versión)
 

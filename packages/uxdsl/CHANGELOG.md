@@ -22,6 +22,115 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)
+
+`uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` now expose what `compile()`
+reports since MIG-B9-13: Dart Sass's errors with their frame, every warning
+at its position, the `sass` option, and the files Dart Sass loaded.
+`generate-entry` and `init` write `@use` entries.
+
+#### CLI
+
+- **A Sass error prints Dart Sass's frame.** A `UXD_SASS` error prints its
+  head line, `[uxdsl] Error: <file>:<line>:<column>: UXD_SASS: <message>`,
+  then Dart Sass's frame and stack of the author's source, every line
+  indented by two spaces. The frame shows the author's text, never the
+  protected `#{…}` text. A UXDSL error keeps PostCSS's frame of the author's
+  line (`heavy.uxdsl:18:66`, `> 18 |`).
+- **Watch mode prints the same frames.** Every failed build of a
+  `build --watch` session prints `[uxdsl] build failed:` with the same head
+  line and frame (watch mode printed no frame before), and that includes the
+  session's first build, which printed `[uxdsl] Error:`. A config that fails
+  to load keeps `[uxdsl] Error: … — watching for a fix...`.
+- **Warnings are printed.** Every `compile()` warning (Dart Sass's
+  deprecations and `@warn`, `UXD_FUNCTION_SHADOWED`, the plugin's) goes to
+  stderr as `[uxdsl] Warning: <file>:<line>:<column>: <text>`, or
+  `<file>: <text>`, or the text alone without a position; the CLI printed
+  none. Each entry's warnings print as soon as it compiles, a line is printed
+  once per build, and every build that recompiles an entry prints its
+  warnings again. Dart Sass's cap (five per deprecation type, then its
+  summary) is unchanged, and so is the exit status.
+- **The `sass` config key**, `{ silenceDeprecations?: string[], quietDeps?: boolean }`,
+  is passed to Dart Sass for every entry and typed in `UxdslConfig`. It is
+  checked when the config loads, naming the file: a value that is not an
+  object, another key (with a suggestion), a value of the wrong type,
+  `builds[i].sass`, and a top-level `silenceDeprecations` or `quietDeps` are
+  configuration errors, where the CLI used to accept and ignore all of them.
+  `--entry`/`--out` reads no config, so no `sass` applies there. The config
+  `init` writes ends with a commented `sass` line.
+- **`build --watch` follows what Dart Sass loaded.** The session starts from
+  the first build's dependency graph, so the first change rebuilds only the
+  entries that load the changed file (it rebuilt every entry). Every entry and
+  every file Dart Sass loaded is followed through its directory — a `.scss`
+  partial, a file outside the entry's directory or in `node_modules`, an entry
+  the `watch` patterns miss — so an edit to it rebuilds its entries and
+  deleting and re-creating it is seen. A partial a build could not find is
+  noticed when it appears only where a `watch` pattern matches it.
+- **`generate-entry` writes `@use`.** Each listed file is loaded with
+  `@use '<path>' as <namespace>;`: the path relative to the entry, without
+  `.uxdsl` and without a partial's `_`, with `%`, `#`, `?` and `'`
+  percent-encoded; the namespace is that path lowercased, with `-` for every
+  other character and `f-` before a leading digit or `-`, made unique with
+  `-2`, `-3` and so on. The order without `--first` is unchanged. The new
+  `--first a,b` lists those files first, in that order, then the rest by path;
+  an item that matches no file, names an excluded file or appears twice exits
+  1 and writes nothing. A third header line says how to regenerate the file,
+  stdout counts `@use` rules, and replacing an entry that listed its files
+  with `@import` prints one warning about module isolation (see Breaking).
+- **`init`'s entry** is `@use './styles' as styles;`, and `src/styles.uxdsl`'s
+  comment says the entry loads it with `@use`. The Next.js PostCSS setup is
+  unchanged (`'uxdsl/postcss': { includeTheme: false }`, no `@uxdsl theme;`).
+- **Next.js**: the CLI guide documents CSS Modules written in `.uxdsl`, built
+  by `uxdsl build` into a `.module.css` file that Next.js imports;
+  `fixtures/mig02-nextjs-cssmodules` builds one with the installed CLI and
+  reads its computed styles in Chrome on the served page.
+
+#### Adapters
+
+- **`uxdsl/vite` and `uxdsl/webpack` take `sass`**, the same
+  `{ silenceDeprecations?, quietDeps? }`, and pass it to `compile()`, which
+  validates it: an unknown key or a value of the wrong type fails the load or
+  the module with `compile()`'s message. Both ignored the option before.
+- **Warnings carry their position.** `this.warn()` and `this.emitWarning()`
+  receive `<file>:<line>:<column>: <text>`, the file relative to Vite's root
+  or to webpack's `rootContext`, and the text alone for a warning with no
+  position; they received the text only.
+- Unchanged, and now pinned by tests: every file Dart Sass loaded, `@use`d
+  partials included, is a watch file or a dependency and an edit to it
+  recompiles; the map's `sources` name the partials; `?inline` is untouched.
+  Vite 5.4.21 and 7.3.7 still do not carry the `.uxdsl` source into the CSS
+  map they emit (`fixtures/vite-adapter`), so source maps through Vite stay
+  not advertised.
+
+### Visual changes
+
+- A regenerated entry's CSS gains the header's third comment line
+  (`/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */`):
+  the entry's comments are emitted at the top of the CSS.
+- Under a regenerated entry, a listed file that another listed file `@use`s
+  is emitted once, at its first load; the `@import` entry emitted it twice,
+  at its own line and where the other file loaded it. The other rules are the
+  same, in the same order.
+
+### Breaking
+
+- **A regenerated entry makes each file its own Sass module.** The `@import`
+  entry gave every listed file one scope; under the `@use … as <namespace>`
+  entry `generate-entry` and `init` now write, a file that reads another
+  listed file's `$variable`, mixin or `%placeholder` fails as `UXD_SASS`
+  (`Undefined variable.`, `Undefined mixin.`,
+  `The target selector was not found.`), and three cases compile differently
+  without an error: a call to another file's `@function` stays in the CSS as
+  written, a `!default` an earlier listed file set no longer applies, and a
+  project `@function` named like a UXDSL function (DEC-17) replaces the token
+  only in the files that `@use` its file. The fix is in each file: its own
+  `@use` for what it reads (`@use './variables' as *;`), and, for a module
+  configured with `@use … with (…)`, `--first` naming the configuring file,
+  since a file named like `variables` is listed first otherwise. Nothing
+  changes until the entry is regenerated, and `generate-entry` warns once
+  when it replaces an `@import` entry. See "Regenerate the entry" in the
+  migration guide.
+
 ### compile() runs on Dart Sass; the SCSS subset is deleted (MIG-B9-13)
 
 `compile()` — the pipeline the CLI, `uxdsl/vite` and `uxdsl/webpack` share —
