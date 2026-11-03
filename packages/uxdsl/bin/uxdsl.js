@@ -1436,10 +1436,14 @@ function bootstrapWatchTargets(argv, cwd) {
 // directory, never as a root of its own, because chokidar stops reporting a
 // file root once it is deleted, while a directory keeps reporting its file
 // when it is created again. A followed directory's other files and its
-// subdirectories stay unwatched unless the list reaches them. `follow`
-// replaces the followed files and returns the directories of those not
-// followed before, for the watcher to add; the directories it returned stay
-// watched.
+// subdirectories stay unwatched unless the list reaches them. The directories
+// above a followed directory are not ignored either (their other entries are,
+// unless the list reaches them), so a followed directory that does not exist,
+// or no longer does, is reported when it appears below one that is watched.
+// `follow` replaces the followed files and returns the directories of those
+// not followed before, for the watcher to add; the directories it returned
+// stay followed. `followedDirsIn(dir)` is the followed directories at or below
+// `dir`.
 const toPosixPath = (file) => file.split(path.sep).join('/');
 
 function watchSelection(targets) {
@@ -1473,6 +1477,8 @@ function watchSelection(targets) {
   const nearPlain = (file) => plain.has(file) || plainList.some((p) => inside(file, p) || inside(p, file));
   const followed = new Set();
   const followedDirs = new Set();
+  // Every directory above a followed directory, up to the file system's root.
+  const aboveFollowed = new Set();
   const selects = (file) => {
     const resolved = path.resolve(file);
     if (followed.has(resolved)) return true;
@@ -1495,7 +1501,7 @@ function watchSelection(targets) {
   });
   const ignored = (file, stats) => {
     const resolved = path.resolve(file);
-    if (followed.has(resolved) || followedDirs.has(resolved)) return false;
+    if (followed.has(resolved) || followedDirs.has(resolved) || aboveFollowed.has(resolved)) return false;
     if (nearPlain(resolved)) return false;
     if (!stats) return false; // chokidar asks again with the stats
     if (stats.isDirectory()) return !mayContainMatches(resolved);
@@ -1510,16 +1516,34 @@ function watchSelection(targets) {
       followed.add(resolved);
       if (!before.has(resolved)) dirs.add(path.dirname(resolved));
     }
-    for (const dir of dirs) followedDirs.add(dir);
+    for (const dir of dirs) {
+      followedDirs.add(dir);
+      for (let up = path.dirname(dir); !aboveFollowed.has(up); up = path.dirname(up)) {
+        aboveFollowed.add(up);
+        if (path.dirname(up) === up) break;
+      }
+    }
     return [...dirs];
   };
-  return { roots: [...roots], selects, ignored, follow };
+  const followedDirsIn = (dir) => {
+    const resolved = path.resolve(dir);
+    return [...followedDirs].filter((followedDir) => followedDir === resolved || inside(followedDir, resolved));
+  };
+  return { roots: [...roots], selects, ignored, follow, followedDirsIn };
 }
 
 // The CLI's watcher: chokidar 4 over `watchSelection(targets)`, emitting only
 // the selected paths' events (`all`), plus `ready` and `error`. `follow(files)`
 // adds the directories of newly followed files to this same watcher, so no
 // event is lost to a restart.
+//
+// chokidar stops watching a directory once it is deleted. It watches a path
+// that does not exist through its parent, for that one name, and a parent it
+// watches for two such names reports only one of them. So a followed directory
+// that does not exist when it is followed, or that is deleted (an `unlinkDir`
+// of it or of a directory above it), is watched through the nearest directory
+// above it that exists, as a directory: when the followed directory appears,
+// its followed files are reported as added, and it is watched again.
 //
 // Once a file it was ignoring is followed, chokidar reports it as `add` when
 // a change in its directory next makes chokidar read that directory, though
@@ -1546,12 +1570,23 @@ function fileTimeResolutionMs(stats) {
 }
 
 function createWatcher(targets) {
-  const { roots, selects, ignored, follow } = watchSelection(targets);
+  const { roots, selects, ignored, follow, followedDirsIn } = watchSelection(targets);
   const events = new EventEmitter();
   const watcher = chokidar.watch(roots, { ignoreInitial: true, ignored });
+  // Watches each of `dirs`, or the nearest directory above it that exists.
+  const watchDirs = (dirs) => {
+    const watched = new Set();
+    for (const dir of dirs) {
+      let existing = dir;
+      while (!fs.existsSync(existing) && path.dirname(existing) !== existing) existing = path.dirname(existing);
+      watched.add(existing);
+    }
+    if (watched.size) watcher.add([...watched]);
+  };
   // Absolute file -> its stats when it was followed, for the files above.
   const unchanged = new Map();
   watcher.on('all', (event, file) => {
+    if (event === 'unlinkDir') watchDirs(followedDirsIn(file));
     if (!selects(file)) return;
     const resolved = path.resolve(file);
     const known = unchanged.get(resolved);
@@ -1580,7 +1615,7 @@ function createWatcher(targets) {
         }
       }
     }
-    if (dirs.length) watcher.add(dirs);
+    watchDirs(dirs);
     return kept;
   };
   return events;
@@ -1597,9 +1632,11 @@ function createWatcher(targets) {
 // the current config and every file the graph holds (each file an entry's
 // last successful build loaded: a `.scss` or `.css` partial, a file outside
 // the entry's directory or in node_modules), through their directories on the
-// same watcher. A file a build fails to find is not followed, since Dart Sass
-// does not report the paths it tried: a missing partial is noticed when it
-// appears only where a `watch` pattern matches it.
+// same watcher; a directory of them that is deleted is watched for again, so
+// restoring it rebuilds the entries that load its files. A file a build fails
+// to find is not followed, since Dart Sass does not report the paths it tried:
+// a missing partial is noticed when it appears only where a `watch` pattern
+// matches it.
 function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   let config = initialConfig;
   // Entry index -> Set<absolute dependency path>, from each entry's own

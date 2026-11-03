@@ -68,9 +68,10 @@ loads) passes Dart Sass options to every entry. `--watch` starts from the
 first build's dependency graph and follows every entry and every file Dart
 Sass loaded (a `.scss` partial, a file outside the entry's directory or in
 `node_modules`), so a change rebuilds only the entries that load the file,
-once, a save that makes an entry start loading a file included; a partial a
-build could not find is noticed when it appears only where a `watch` pattern
-matches it. `init` and `generate-entry` write an entry that
+once, a save that makes an entry start loading a file included, and restoring
+such a file, or a directory of them, after deleting it rebuilds them; a
+partial a build could not find is noticed when it appears only where a
+`watch` pattern matches it. `init` and `generate-entry` write an entry that
 loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;`, every
 namespace unique (`generate-entry --first a,b` lists those files first), so
 each file is its own Sass module and `@use`s what it reads from another;

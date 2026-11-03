@@ -183,6 +183,79 @@ test('MIG-B9-14: a file followed after the build that loaded it keeps its stats 
   assert.deepEqual(watcher.follow(names.map(file)), []);
 });
 
+// chokidar stops watching a directory once it is deleted, and watches a path
+// that does not exist through its parent, for that one name. A followed
+// directory that is deleted, or that does not exist yet, is therefore watched
+// through the highest missing directory above it, so its followed files are
+// reported when they appear: the directories above a followed directory are
+// never ignored.
+test('MIG-B9-14: a deleted followed directory is watched for again from the nearest directory above it that exists, one level down or two, and so is one that does not exist yet; its other files are not reported', async (t) => {
+  const s = cli.watchSelection([p('src/**/*.uxdsl')]);
+  assert.equal(s.ignored(p('lib'), DIR), true, 'no pattern reaches lib/');
+  s.follow([p('lib/deep/_x.scss')]);
+  assert.equal(s.ignored(p('lib'), DIR), false, 'a directory above a followed directory');
+  assert.equal(s.ignored(p('lib/other'), DIR), true, 'not its other directories');
+  assert.equal(s.ignored(p('lib/notes.txt'), FILE), true, 'nor its files');
+  assert.deepEqual(s.followedDirsIn(p('lib')), [p('lib/deep')]);
+  assert.deepEqual(s.followedDirsIn(p('lib/deep')), [p('lib/deep')]);
+  assert.deepEqual(s.followedDirsIn(p('src')), []);
+
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-watch-return-')));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const put = (rel, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, rel)), { recursive: true });
+    fs.writeFileSync(path.join(dir, rel), text);
+  };
+  put('src/a.uxdsl', '.a {}');
+  put('shared/_far.scss', '.far {}');
+  put('lib/deep/_x.scss', '.x {}');
+  put('lib/deep/notes.txt', 'x');
+  fs.mkdirSync(path.join(dir, 'out'));
+  const far = path.join('shared', '_far.scss');
+  const deep = path.join('lib', 'deep', '_x.scss');
+  const later = path.join('out', 'gen', 'styles', '_y.scss');
+  const watcher = cli.createWatcher([path.join(dir, 'src/**/*.uxdsl')]);
+  t.after(() => watcher.close());
+  const events = [];
+  watcher.on('all', (event, file) => events.push(`${event} ${path.relative(dir, file)}`));
+  await new Promise((resolve) => watcher.once('ready', resolve));
+  watcher.follow([far, deep].map((rel) => path.join(dir, rel)));
+  await delay(300);
+
+  // Two sibling directories go at once: shared/, a followed directory, and
+  // lib/, two levels above the followed lib/deep/.
+  fs.rmSync(path.join(dir, 'shared'), { recursive: true, force: true });
+  fs.rmSync(path.join(dir, 'lib'), { recursive: true, force: true });
+  await waitFor(() => events.includes(`unlink ${far}`) && events.includes(`unlink ${deep}`));
+  await delay(300);
+  put('shared/_far.scss', '.far { color: red; }');
+  put('lib/deep/_x.scss', '.x { color: red; }');
+  put('lib/deep/notes.txt', 'y');
+  await waitFor(() => events.includes(`add ${far}`) && events.includes(`add ${deep}`));
+  await delay(300);
+  put('shared/_far.scss', '.far { color: blue; }');
+  put('lib/deep/_x.scss', '.x { color: blue; }');
+  await waitFor(() => events.includes(`change ${far}`) && events.includes(`change ${deep}`));
+
+  // A followed file whose directory, and the one above it, do not exist yet,
+  // below out/, a directory nothing watched.
+  watcher.follow([far, deep, later].map((rel) => path.join(dir, rel)));
+  await delay(300);
+  put('out/gen/styles/_y.scss', '.y {}');
+  await waitFor(() => events.includes(`add ${later}`));
+
+  // Negative control: the other files of the restored directories, and of a
+  // directory above one, are not reported. A file the patterns select is still
+  // reported meanwhile; only lib/ is counted.
+  put('lib/deep/notes.txt', 'z');
+  put('lib/other.scss', '.o {}');
+  put('src/a.uxdsl', '.a { color: red; }');
+  await waitFor(() => events.includes(`change ${path.join('src', 'a.uxdsl')}`));
+  await delay(1000);
+  const inLib = events.filter((e) => e.slice(e.indexOf(' ') + 1).startsWith(`lib${path.sep}`));
+  assert.deepEqual(inLib.filter((e) => !e.endsWith(deep)), [], events.join('\n'));
+});
+
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 async function waitFor(predicate, timeout = 10000) {
   const start = Date.now();

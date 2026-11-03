@@ -365,6 +365,10 @@ Either way the last good CSS stays on disk until the next valid save. A source
 change recompiles only the `builds` entries that depend on it; a config or
 theme change rebuilds all. Deleting a file an entry still loads fails that
 entry with `UXD_SASS` and keeps its CSS; creating the file again rebuilds it.
+The same holds for a followed file's directory (`rm -rf shared/`, a switch to
+a branch without it): it is watched for again from the nearest directory
+above it that remains, so restoring it rebuilds the entries that load its
+files, and every later edit rebuilds them too.
 
 A partial a build could not find (`Can't find stylesheet to import.`) is
 noticed when it appears only where a `watch` pattern matches it, since Dart

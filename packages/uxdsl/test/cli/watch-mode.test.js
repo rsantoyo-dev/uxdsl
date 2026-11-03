@@ -813,3 +813,103 @@ test('MIG-B9-14: an entry the watch patterns do not match is still followed: a f
   await delay(WATCHER_SETTLE_MS * 1.5);
   assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
 });
+
+// A followed file's directory that is deleted is watched for again, from the
+// nearest directory above it that still exists: the build fails and keeps the
+// last good CSS, restoring the file rebuilds the entries that load it, and
+// every later edit of it rebuilds them again.
+test('MIG-B9-14: a deleted directory of followed files outside the watch patterns is followed again once restored, one level below the project or two: restoring the file rebuilds its entry, and every later edit does too', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  // No `watch` key: the patterns are the entries and src/**/*.uxdsl, which reach neither shared/ nor lib/.
+  put('uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
+    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+  ] };\n`);
+  put('src/a.uxdsl', "@use '../shared/far';\n.a { color: red; }\n");
+  put('src/b.uxdsl', "@use '../lib/deep/x';\n.b { color: blue; }\n");
+  put('shared/_far.uxdsl', '.far { color: teal; }\n');
+  put('shared/notes.txt', 'notes\n');
+  put('lib/deep/_x.uxdsl', '.x { color: teal; }\n');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const css = (name) => {
+    const file = path.join(dir, 'out', `${name}.css`);
+    return fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  };
+  await waitFor(() => /watching for changes/.test(output) && css('a') && css('b'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // shared/ goes: a fails and keeps its CSS; restoring the file rebuilds a, and
+  // so does each later edit.
+  let mark = output.length;
+  fs.rmSync(path.join(dir, 'shared'), { recursive: true, force: true });
+  await waitFor(() => /^\[uxdsl\] build failed: builds\[0\] \(out[\\/]a\.css\): src\/a\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m.test(output.slice(mark)));
+  assert.match(css('a'), /teal/, 'the last good output stays');
+  await delay(WATCHER_SETTLE_MS);
+  put('shared/_far.uxdsl', '.far { color: lime; }\n');
+  await waitFor(() => css('a').includes('lime'));
+  for (const color of ['coral', 'plum']) {
+    await delay(WATCHER_SETTLE_MS);
+    put('shared/_far.uxdsl', `.far { color: ${color}; }\n`);
+    await waitFor(() => css('a').includes(color));
+  }
+
+  // Negative control: the restored directory's other files are not followed.
+  await delay(WATCHER_SETTLE_MS);
+  mark = output.length;
+  put('shared/notes.txt', 'edited\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
+
+  // lib/ goes, two levels above the followed lib/deep/: restoring the file
+  // rebuilds b, and so does a later edit.
+  mark = output.length;
+  fs.rmSync(path.join(dir, 'lib'), { recursive: true, force: true });
+  await waitFor(() => /^\[uxdsl\] build failed: builds\[1\] \(out[\\/]b\.css\): src\/b\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m.test(output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS);
+  put('lib/deep/_x.uxdsl', '.x { color: lime; }\n');
+  await waitFor(() => css('b').includes('lime'));
+  await delay(WATCHER_SETTLE_MS);
+  put('lib/deep/_x.uxdsl', '.x { color: coral; }\n');
+  await waitFor(() => css('b').includes('coral'));
+});
+
+test('MIG-B9-14: an entry outside the watch patterns whose directory is deleted is followed again once restored: restoring it rebuilds it, and a later edit does too', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false, watch: ['styles/**'] };\n");
+  put('styles/theme.uxdsl', '.t { color: red; }\n');
+  put('src/a.uxdsl', '.a { color: red; }\n');
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const cssPath = path.join(dir, 'out', 'a.css');
+  const css = () => (fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '');
+  await waitFor(() => /watching for changes/.test(output) && css());
+  await delay(WATCHER_SETTLE_MS);
+
+  const mark = output.length;
+  fs.rmSync(path.join(dir, 'src'), { recursive: true, force: true });
+  await waitFor(() => /^\[uxdsl\] build failed: Entry file not found: src[\\/]a\.uxdsl\./m.test(output.slice(mark)));
+  assert.match(css(), /color: red/, 'the last good output stays');
+  await delay(WATCHER_SETTLE_MS);
+  put('src/a.uxdsl', '.a { color: navy; }\n');
+  await waitFor(() => css().includes('navy'));
+  await delay(WATCHER_SETTLE_MS);
+  put('src/a.uxdsl', '.a { color: maroon; }\n');
+  await waitFor(() => css().includes('maroon'));
+});

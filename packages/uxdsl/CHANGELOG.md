@@ -63,9 +63,11 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   entries that load the changed file (it rebuilt every entry). Every entry and
   every file Dart Sass loaded is followed through its directory — a `.scss`
   partial, a file outside the entry's directory or in `node_modules`, an entry
-  the `watch` patterns miss — so an edit to it rebuilds its entries and
-  deleting and re-creating it is seen. A partial a build could not find is
-  noticed when it appears only where a `watch` pattern matches it.
+  the `watch` patterns miss — so an edit to it rebuilds its entries, and
+  deleting and re-creating it, or the directory it is in, is seen: a deleted
+  directory is watched for again from the nearest directory above it that
+  remains. A partial a build could not find is noticed when it appears only
+  where a `watch` pattern matches it.
 - **`generate-entry` writes `@use`.** Each listed file is loaded with
   `@use '<path>' as <namespace>;`: the path relative to the entry, without
   `.uxdsl` and without a partial's `_`, with `%`, `#`, `?` and `'`
