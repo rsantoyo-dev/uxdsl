@@ -1,0 +1,16 @@
+/* Panel — compiled by the uxdsl CLI into panel.generated.module.css (non-ASCII: «é»). */
+@use "sass:math";
+
+$gap: math.div(48px, 3);
+$radius: $gap * 0.5;
+
+.panel {
+  padding: $gap;
+  border-radius: $radius;
+  border: 1px solid palette(primary.main);
+
+  &__title {
+    color: palette(primary.main);
+    margin: 0 0 math.div($gap, 2);
+  }
+}

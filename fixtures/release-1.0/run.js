@@ -147,6 +147,49 @@ function assertAuthorLocated(built) {
   return 'heavy.uxdsl:18:66 UXD_SPACE_REFERENCE, framed at the author\'s line 18';
 }
 
+/**
+ * S-4's verdict on `uxdsl build` of src/a.uxdsl, `.a { color: palette(primary.main); width: $nope; }`:
+ * exit 1, the UXD_SASS head line at the author's position, then Dart Sass's
+ * frame and stack, every line indented by two spaces, showing the author's
+ * `palette(primary.main)` and never the protected `#{…}` text.
+ */
+function assertSassFramed(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  const [head, ...frame] = stderr.replace(/\n+$/, '').split('\n');
+  if (!/^\[uxdsl\] Error: src\/a\.uxdsl:1:\d+: UXD_SASS: Undefined variable\.$/.test(head)) throw new Error(`head line: ${head}`);
+  if (frame.length === 0) throw new Error('no frame after the head line');
+  if (/#\{/.test(stderr)) throw new Error('the frame shows the protected text (#{…}), not the author\'s');
+  const unindented = frame.find((line) => !line.startsWith('  '));
+  if (unindented !== undefined) throw new Error(`a frame line is not indented by two spaces: ${unindented}`);
+  if (!frame.some((line) => line.includes('palette(primary.main)'))) throw new Error('no frame line shows the author\'s palette(primary.main)');
+  if (!frame.some((line) => /^ {4}src\/a\.uxdsl 1:\d+ +root stylesheet$/.test(line))) throw new Error('no stack line "src/a.uxdsl 1:<column>  root stylesheet"');
+  return `${head.replace('[uxdsl] Error: ', '')}, framed (${frame.length} lines)`;
+}
+
+/**
+ * S-4's verdict on `uxdsl build` of an entry whose line 1 @imports a partial:
+ * exit 0 and the output written, with Dart Sass's deprecation printed once as
+ * `[uxdsl] Warning: src/a.uxdsl:1:9: UXD_SASS_WARNING: [import] …`; with
+ * `sass: { silenceDeprecations: ['import'] }` in the config (`silenced`), no
+ * `[import]` line at all.
+ */
+function assertLocatedWarning(built, { silenced }) {
+  const stderr = built.stderr || '';
+  if (built.status !== 0) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/^\[uxdsl\] (built|unchanged) out\/a\.css/m.test(built.stdout || '')) throw new Error(`stdout: ${(built.stdout || '').trim().split('\n')[0] || '(empty)'}`);
+  const deprecations = stderr.split('\n').filter((line) => line.includes('[import]'));
+  if (silenced) {
+    if (deprecations.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${deprecations[0]}`);
+    return 'no [import] warning with sass.silenceDeprecations';
+  }
+  if (deprecations.length !== 1) throw new Error(`${deprecations.length} [import] warnings, expected 1`);
+  if (!/^\[uxdsl\] Warning: src\/a\.uxdsl:1:9: UXD_SASS_WARNING: \[import\] Sass @import rules are deprecated/.test(deprecations[0])) {
+    throw new Error(`the warning is not located at src/a.uxdsl:1:9: ${deprecations[0]}`);
+  }
+  return 'the [import] deprecation at src/a.uxdsl:1:9';
+}
+
 /** N-02's verdict on compile() of a file whose first line @imports a missing partial. */
 function assertMissingImport(error) {
   if (!error) throw new Error('compiled');
@@ -744,6 +787,21 @@ async function main() {
     return assertAuthorLocated(p.spawn('build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'));
   });
 
+  // --- beta.9: the CLI and the adapters on Dart Sass -------------------------
+  console.log('\nThe CLI and the adapters on Dart Sass (FEAT-010, MIG-B9-14):');
+  await check('S-4', '[tarball] the installed CLI prints a Sass error with Dart Sass\'s frame of the author\'s text, and a deprecated @import as a warning at its file, line and column that sass.silenceDeprecations removes', () => {
+    const p = project('cli-sass');
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
+    p.write('src/a.uxdsl', '.a { color: palette(primary.main); width: $nope; }\n');
+    const framed = assertSassFramed(p.spawn('build'));
+    p.write('src/a.uxdsl', "@import './b';\n.a { color: red; }\n");
+    p.write('src/_b.uxdsl', '.b { color: blue; }\n');
+    const warned = assertLocatedWarning(p.spawn('build'), { silenced: false });
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', sass: { silenceDeprecations: ['import'] } };\n");
+    const silenced = assertLocatedWarning(p.spawn('build'), { silenced: true });
+    return `${framed}; ${warned}; ${silenced}`;
+  });
+
   // --- beta.7: init, editor support, fonts, contrast -----------------------
   console.log('\nInit, editor support, fonts and contrast (from verify:beta7):');
   {
@@ -880,9 +938,9 @@ async function main() {
     repoNode('fixtures/webpack-adapter', ['fixtures/webpack-adapter/run.js'], 600000);
     return 'css-loader + MiniCssExtractPlugin, source maps, watch';
   });
-  await check('cssmod', '[tarball, Chrome] Next.js CSS Modules build and the runtime in Chrome (fixtures/mig02-nextjs-cssmodules)', () => {
+  await check('cssmod', '[tarball, Chrome] Next.js CSS Modules build, a CLI-built .module.uxdsl on the served page, and the runtime in Chrome (fixtures/mig02-nextjs-cssmodules)', () => {
     repoNode('verify:cssmodules-build', ['fixtures/mig02-nextjs-cssmodules/run.js'], 900000);
-    return 'pure-mode build, computed styles, applyTheme on a page';
+    return 'pure-mode build, computed styles, the CLI-built module on the served page, applyTheme on a page';
   });
   await check('DE-9', '[tarball, Chrome] Next.js with PostCSS only: `@uxdsl theme;` in globals.css, tokens in a CSS Module (fixtures/mig02-nextjs-cssmodules/postcss-only.js)', () => {
     repoNode('postcss-only', ['fixtures/mig02-nextjs-cssmodules/postcss-only.js'], 900000);
@@ -954,4 +1012,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertMissingImport, mapIntegrityProblems, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertMissingImport, mapIntegrityProblems, DROPPED };
