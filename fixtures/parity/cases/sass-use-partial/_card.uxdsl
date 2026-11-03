@@ -1,0 +1,6 @@
+@use './tokens';
+
+.card {
+  color: palette(primary.main);
+  margin: tokens.$gap;
+}
