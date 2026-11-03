@@ -350,6 +350,22 @@
       ],
       "exit": 1,
       "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:3:3: UXD_SASS_CONTEXT: Sass keeps $gap literally in the custom property --gap; write #{$gap} (in a .uxdsl file compiled by uxdsl build, compile() or an adapter).\n  1 | $gap: 4px;\n  2 | .card {\n> 3 |   --gap: $gap;\n    |   ^\n  4 | }\n  5 | \n"
+    },
+    {
+      "code": "UXD_FUNCTION_SHADOWED",
+      "title": "A project @function named like a UXDSL function: the author's SCSS wins, with one warning (DEC-17)",
+      "warning": true,
+      "source": "@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 0,
+      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/example.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token\n"
     }
   ]
 }

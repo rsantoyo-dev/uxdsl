@@ -215,8 +215,10 @@ async function captureWatch() {
 // ---------------------------------------------------------- diagnostics ----
 
 // Each case is a real source (and, where the mistake is in the theme, a real theme file)
-// compiled by `uxdsl build`. `expect` is the code the compiler must report; a case that
-// reports something else fails the capture instead of showing the wrong thing.
+// compiled by `uxdsl build`. `expect` is the code the compiler must report first on stderr:
+// with a failing exit for an error, and with exit 0 for a case marked `warning: true`. A
+// case that reports something else, or exits otherwise, fails the capture instead of
+// showing the wrong thing.
 const DIAGNOSTICS = [
   { expect: 'UXD_BREAKPOINT_UNKNOWN', title: 'A breakpoint the theme does not configure', css: '.hero {\n  padding: xs(1rem) xxl(2rem);\n}\n' },
   { expect: 'UXD_SHADOW_REFERENCE', title: 'A shadow preset that does not exist', css: '.card {\n  box-shadow: shadow(9);\n}\n' },
@@ -240,6 +242,7 @@ const DIAGNOSTICS = [
   { expect: 'UXD_THEME_BLOCK_REMOVED', title: 'A @theme block: tokens are defined in the theme JSON', css: '@theme {\n  radius-2: 12px;\n}\n' },
   { expect: 'UXD_SASS', title: 'A Sass error: an undefined variable', css: '.card {\n  padding: $gap;\n}\n' },
   { expect: 'UXD_SASS_CONTEXT', title: 'A $variable Sass keeps literally in a custom property (write #{$gap})', css: '$gap: 4px;\n.card {\n  --gap: $gap;\n}\n' },
+  { expect: 'UXD_FUNCTION_SHADOWED', warning: true, title: 'A project @function named like a UXDSL function: the author\'s SCSS wins, with one warning (DEC-17)', css: '@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n' },
 ];
 
 function captureDiagnostics() {
@@ -250,10 +253,10 @@ function captureDiagnostics() {
     if (spec.theme) fs.writeFileSync(path.join(dir, 'uxdsl.theme.json'), `${JSON.stringify(spec.theme, null, 2)}\n`);
     const r = run(dir, ['build', '--entry', 'src/example.uxdsl', '--out', 'dist/example.css']);
     const code = (r.stderr.match(/\b(UXD_[A-Z0-9_]+)\b/) || [])[1] || null;
-    if (r.exit === 0 || code !== spec.expect) {
-      throw new Error(`diagnostic case "${spec.title}": expected ${spec.expect} and a failing exit, got ${code} (exit ${r.exit}).\n${r.stderr}`);
+    if (spec.warning ? (r.exit !== 0 || code !== spec.expect) : (r.exit === 0 || code !== spec.expect)) {
+      throw new Error(`diagnostic case "${spec.title}": expected ${spec.expect} and ${spec.warning ? 'a passing exit' : 'a failing exit'}, got ${code} (exit ${r.exit}).\n${r.stderr}`);
     }
-    results.push({ code, title: spec.title, source: spec.css, theme: spec.theme || null, argv: r.argv, exit: r.exit, stderr: r.stderr });
+    results.push({ code, title: spec.title, ...(spec.warning ? { warning: true } : {}), source: spec.css, theme: spec.theme || null, argv: r.argv, exit: r.exit, stderr: r.stderr });
   }
   return results;
 }
