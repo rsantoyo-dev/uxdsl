@@ -69,7 +69,12 @@ first build's dependency graph and follows every entry and every file Dart
 Sass loaded (a `.scss` partial, a file outside the entry's directory or in
 `node_modules`), so a change rebuilds only the entries that load the file; a
 partial a build could not find is noticed when it appears only where a
-`watch` pattern matches it.
+`watch` pattern matches it. `init` and `generate-entry` write an entry that
+loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;`, every
+namespace unique (`generate-entry --first a,b` lists those files first), so
+each file is its own Sass module and `@use`s what it reads from another;
+`generate-entry` warns once when it replaces an entry that listed its files
+with `@import`.
 
 ## Entry points
 

@@ -157,6 +157,7 @@ function captureCli() {
 
   add('help', 'Bare uxdsl asks, it does not build: the general help', dir, [], none);
   add('build-help', 'Per-command help: only that command\'s options', dir, ['build', '--help'], none);
+  add('generate-entry-help', 'Per-command help for generate-entry: --src, --out, --first, --exclude', dir, ['generate-entry', '--help'], none);
   add('unknown-command', 'An unknown command is one line with a hint', dir, ['watch'], none);
 
   return { fixture: 'packages/playground-nextjs/capability-fixtures/cli-project', project, runs };

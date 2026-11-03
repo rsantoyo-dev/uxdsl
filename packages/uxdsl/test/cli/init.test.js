@@ -240,7 +240,7 @@ test('phase 2 (3): init scaffolds src/styles.uxdsl — the file to edit — impo
     const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
     assert.match(styles, /write here, not there/, `[${branch}] styles.uxdsl says what it is for`);
     const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
-    assert.match(entry, /^@import '\.\/styles\.uxdsl';$/m, `[${branch}] the generated entry imports it`);
+    assert.match(entry, /^@use '\.\/styles' as styles;$/m, `[${branch}] the generated entry loads it with @use`);
     const importLines = r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^import '/.test(l));
     assert.deepEqual(importLines, ["import './src/uxdsl.css';"], `[${branch}] exactly one import path:\n${r.stdout}`);
     assert.match(r.stdout, /Edit src\/styles\.uxdsl/, `[${branch}] the next steps point at the file to edit`);
@@ -323,4 +323,62 @@ test("MIG-B9-14: init's config comment names the sass key; uncommented it type-c
     assert.equal(refused.status, 1, `[${branch}] ${refused.stdout}${refused.stderr}`);
     assert.match(refused.stderr, /Invalid configuration in uxdsl\.config\.cjs: "sass\.silenceDeprecation" is not a sass option;.* Did you mean "sass\.silenceDeprecations"\?/);
   }
+});
+
+// --- The entry init writes ---------------------------------------------------
+
+/** Every file init scaffolded under `dir` (package.json and markers excluded), relative path → text. */
+function scaffolded(dir, branch) {
+  const out = {};
+  const walk = (rel) => {
+    for (const entry of fs.readdirSync(path.join(dir, rel), { withFileTypes: true })) {
+      const child = rel ? path.join(rel, entry.name) : entry.name;
+      if (entry.isDirectory()) walk(child);
+      else if (child !== 'package.json' && !(child in BRANCHES[branch].markers)) out[child] = fs.readFileSync(path.join(dir, child), 'utf8');
+    }
+  };
+  walk('');
+  return out;
+}
+
+test("MIG-B9-14: init's entry uses @use and the project builds", () => {
+  for (const branch of ['plain', 'next', 'vite']) {
+    const dir = mkProject(branch);
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    assert.equal(r.stderr, '', `[${branch}] there was no entry to replace, so no warning`);
+    const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
+    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './styles' as styles;"], `[${branch}] the entry:\n${entry}`);
+    const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
+    assert.match(styles, /src\/uxdsl-entry\.uxdsl loads this file with @use/, `[${branch}] styles.uxdsl says how it is loaded`);
+    assert.match(styles, /`uxdsl generate-entry`/, `[${branch}] and what regenerates the entry`);
+    assert.match(styles, /write here, not there/, `[${branch}]`);
+    const built = run(['build'], dir);
+    assert.equal(built.status, 0, `[${branch}] ${built.stdout}${built.stderr}`);
+    assert.equal(built.stderr, '', `[${branch}] the build prints nothing on stderr`);
+    assert.match(fs.readFileSync(path.join(dir, 'src/uxdsl.css'), 'utf8'), /\.example\s*\{/);
+  }
+
+  // No scaffolded .uxdsl file of any branch, --multi included, has an @import;
+  // none writes the theme marker, and Next's PostCSS config still passes
+  // includeTheme: false.
+  for (const branch of Object.keys(BRANCHES)) {
+    const dir = mkProject(branch);
+    assert.equal(run(BRANCHES[branch].args, dir).status, 0);
+    const files = scaffolded(dir, branch);
+    const uxdslFiles = Object.keys(files).filter((file) => file.endsWith('.uxdsl'));
+    assert.ok(uxdslFiles.length >= 2, `[${branch}] scaffolded .uxdsl files: ${uxdslFiles.join(', ')}`);
+    for (const file of uxdslFiles) assert.doesNotMatch(files[file], /@import/, `[${branch}] ${file}`);
+    for (const [file, text] of Object.entries(files)) assert.doesNotMatch(text, /@uxdsl theme;/, `[${branch}] ${file}`);
+    if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], { includeTheme: false });
+  }
+
+  // Negative control: the entry init used to write reports a deprecation in the
+  // same build, so the empty stderr above is the @use entry's doing.
+  const control = mkProject('plain');
+  assert.equal(run(['init'], control).status, 0);
+  fs.writeFileSync(path.join(control, 'src/uxdsl-entry.uxdsl'), "@import './styles.uxdsl';\n");
+  const legacy = run(['build'], control);
+  assert.equal(legacy.status, 0, legacy.stdout + legacy.stderr);
+  assert.match(legacy.stderr, /^\[uxdsl\] Warning: src\/uxdsl-entry\.uxdsl:1:9: UXD_SASS_WARNING: \[import\] /m);
 });
