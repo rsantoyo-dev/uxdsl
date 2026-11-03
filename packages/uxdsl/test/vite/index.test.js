@@ -176,6 +176,82 @@ test('MIG-B6-20: compile warnings surface through this.warn(), not swallowed', a
   assert.deepEqual(ctx.warnings, []);
 });
 
+// --- Dart Sass through compile(): what Sass loaded, the map, the sass option, located warnings ---
+
+const IMPORT_DEPRECATION = 'UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+
+// styles/panel.uxdsl @uses a partial that @imports another: Dart Sass loads
+// three files and reports one deprecation, at _partial.uxdsl:1:9.
+function sassProject() {
+  const dir = mkTmpDir();
+  const entry = write(dir, 'styles/panel.uxdsl', "@use './partial';\n.panel {\n  color: palette(primary.main);\n  &__title { padding: space(2); }\n}\n");
+  write(dir, 'styles/_partial.uxdsl', "@import './legacy';\n.partial { color: green; }\n");
+  write(dir, 'styles/_legacy.uxdsl', '.legacy { color: olive; }\n');
+  return { dir, entry };
+}
+
+// A load after configResolved, as Vite runs it: `root` is the project's
+// directory, and a build's sourcemap setting asks compile() for a map.
+async function loadThroughVite(dir, entry, options = {}, { resolveConfig = true } = {}) {
+  const plugin = uxdsl({ includeTheme: false, ...options });
+  if (resolveConfig) plugin.configResolved({ root: dir, build: { sourcemap: true }, css: {} });
+  const ctx = makeCtx();
+  const result = await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
+  return { ctx, result };
+}
+
+test('MIG-B9-14: load() adds every Sass-loaded file as a watch file and the map names the partial', async () => {
+  const { dir, entry } = sassProject();
+  const { ctx, result } = await loadThroughVite(dir, entry);
+
+  assert.deepEqual(
+    ctx.watched.map((file) => path.relative(dir, file)),
+    [path.join('styles', 'panel.uxdsl'), path.join('styles', '_partial.uxdsl'), path.join('styles', '_legacy.uxdsl')],
+    'the entry, the @use\'d partial and the file it @imports'
+  );
+  assert.match(result.code, /\.panel__title \{\s*padding: var\(--uxdsl__space__2\);/);
+  assert.ok(result.map, 'build.sourcemap asks compile() for a map');
+  for (const source of ['panel.uxdsl', '_partial.uxdsl', '_legacy.uxdsl']) {
+    assert.ok(result.map.sources.includes(source), `map.sources ${JSON.stringify(result.map.sources)} names ${source}`);
+  }
+
+  // Each warning reaches this.warn() at its file, relative to Vite's root,
+  // and at its line and column.
+  assert.deepEqual(ctx.warnings, [`${path.join('styles', '_partial.uxdsl')}:1:9: ${IMPORT_DEPRECATION}`]);
+
+  // Before configResolved runs, the root is the working directory.
+  const early = await loadThroughVite(dir, entry, {}, { resolveConfig: false });
+  assert.deepEqual(early.ctx.warnings, [`${path.relative(process.cwd(), path.join(dir, 'styles', '_partial.uxdsl'))}:1:9: ${IMPORT_DEPRECATION}`]);
+});
+
+test('MIG-B9-14: load() passes the sass option to compile(): silenceDeprecations removes a deprecation, an unknown key fails the load', async () => {
+  const { dir, entry } = sassProject();
+
+  // Negative control: without the option the same load reports the
+  // deprecation, so its absence below comes from the option.
+  const plain = await loadThroughVite(dir, entry);
+  assert.equal(plain.ctx.warnings.length, 1, JSON.stringify(plain.ctx.warnings));
+
+  const silenced = await loadThroughVite(dir, entry, { sass: { silenceDeprecations: ['import'] } });
+  assert.deepEqual(silenced.ctx.warnings, []);
+  assert.equal(silenced.result.code, plain.result.code, 'silencing a deprecation changes no CSS');
+
+  const quiet = await loadThroughVite(dir, entry, { sass: { quietDeps: true } });
+  assert.equal(quiet.result.code, plain.result.code);
+
+  // compile() validates the option: an unknown key fails the load with its message.
+  await assert.rejects(loadThroughVite(dir, entry, { sass: { bogus: 1 } }), /unknown sass option "bogus"/);
+  await assert.rejects(loadThroughVite(dir, entry, { sass: { silenceDeprecations: 'import' } }), /sass\.silenceDeprecations must be an array/);
+
+  // An unknown deprecation id is Dart Sass's own warning, which has no
+  // position: this.warn() receives its text alone.
+  const unknownId = await loadThroughVite(dir, entry, { sass: { silenceDeprecations: ['nope'] } });
+  assert.deepEqual(unknownId.ctx.warnings, [
+    'UXD_SASS_WARNING: Invalid deprecation "nope".',
+    `${path.join('styles', '_partial.uxdsl')}:1:9: ${IMPORT_DEPRECATION}`,
+  ]);
+});
+
 // --- Stability phase 2: what the plugin no longer accepts ---
 
 test('phase 2: breakpoints come from the theme (discovered or explicit); there is no plugin option for them', async () => {

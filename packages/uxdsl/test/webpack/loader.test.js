@@ -162,6 +162,114 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
   }), /UXD_PALETTE_REFERENCE/);
 });
 
+// --- Dart Sass through compile(): what Sass loaded, watch, the sass option, located warnings ---
+
+const IMPORT_DEPRECATION = 'UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+
+// styles/panel.uxdsl @uses a partial that @imports another: Dart Sass loads
+// three files and reports one deprecation, at _partial.uxdsl:1:9.
+function sassProject() {
+  const dir = mkTmpDir();
+  const partial = write(dir, 'styles/_partial.uxdsl', "@import './legacy';\n.partial { color: green; }\n");
+  const legacy = write(dir, 'styles/_legacy.uxdsl', '.legacy { color: olive; }\n');
+  write(dir, 'styles/panel.uxdsl', "@use './partial';\n.panel { color: red; }\n");
+  const entry = write(dir, 'entry.js', "import './styles/panel.uxdsl';");
+  return { dir, entry, partial, legacy };
+}
+
+function sassConfig(dir, entry, loaderOptions) {
+  return {
+    mode: 'development',
+    context: dir,
+    entry,
+    output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+    module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { includeTheme: false, ...loaderOptions } }] }] },
+  };
+}
+
+// The text the loader emitted, without the "Module Warning (from <loader>):"
+// line webpack puts before it.
+function loaderWarnings(stats) {
+  return stats.compilation.warnings.map((warning) => warning.message.slice(warning.message.indexOf('\n') + 1));
+}
+
+// compiler.watch(), one build at a time: each call resolves with the next
+// build's stats. The watcher is closed when the test ends.
+function watchBuilds(t, config) {
+  const ready = [];
+  const waiting = [];
+  const watching = webpack(config).watch({ aggregateTimeout: 50 }, (err, stats) => {
+    const build = { err, stats };
+    const next = waiting.shift();
+    if (next) next(build); else ready.push(build);
+  });
+  t.after(() => new Promise((resolve) => watching.close(() => resolve())));
+  return () => new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('timed out waiting for a webpack build')), 20000);
+    const deliver = ({ err, stats }) => {
+      clearTimeout(timer);
+      if (err) return reject(err);
+      if (stats.hasErrors()) return reject(new Error(stats.toString({ colors: false })));
+      resolve(stats);
+    };
+    const build = ready.shift();
+    if (build) deliver(build); else waiting.push(deliver);
+  });
+}
+
+test("MIG-B9-14: a @use'd partial is a dependency and a change to it recompiles", async (t) => {
+  const { dir, entry, partial, legacy } = sassProject();
+  // Files written just before the watcher starts can look changed to it and
+  // trigger one more build; dating them ten seconds back avoids that.
+  const past = new Date(Date.now() - 10000);
+  for (const file of [partial, legacy, path.join(dir, 'styles/panel.uxdsl'), entry]) fs.utimesSync(file, past, past);
+  const nextBuild = watchBuilds(t, sassConfig(dir, entry, {}));
+
+  const first = await nextBuild();
+  const fileDependencies = [...first.compilation.fileDependencies].map((file) => path.resolve(file));
+  assert.ok(fileDependencies.includes(path.resolve(partial)), 'the @use\'d partial is a webpack file dependency');
+  assert.ok(fileDependencies.includes(path.resolve(legacy)), 'and so is the file it @imports');
+  assert.match(fs.readFileSync(path.join(dir, 'dist/bundle.js'), 'utf8'), /\.partial \{[^}]*color: green;/);
+
+  // Each warning is emitted at its file, relative to webpack's rootContext,
+  // and at its line and column.
+  assert.deepEqual(loaderWarnings(first), [`${path.join('styles', '_partial.uxdsl')}:1:9: ${IMPORT_DEPRECATION}`]);
+
+  // Give the watcher a moment to start, then edit the partial: webpack
+  // rebuilds with the new value. A build that started before the edit
+  // landed may still carry the old one, so wait for the build that has it;
+  // each wait times out after 20 s.
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  fs.writeFileSync(partial, "@import './legacy';\n.partial { color: teal; }\n");
+  const bundlePath = path.join(dir, 'dist/bundle.js');
+  let rebuilt;
+  do {
+    rebuilt = await nextBuild();
+  } while (!/color: teal/.test(fs.readFileSync(bundlePath, 'utf8')));
+  const bundle = fs.readFileSync(bundlePath, 'utf8');
+  assert.match(bundle, /\.partial \{[^}]*color: teal;/);
+  assert.doesNotMatch(bundle, /color: green/);
+  assert.deepEqual(loaderWarnings(rebuilt), [`${path.join('styles', '_partial.uxdsl')}:1:9: ${IMPORT_DEPRECATION}`]);
+});
+
+test('MIG-B9-14: the loader passes its sass option to compile(): silenceDeprecations removes a deprecation, an unknown key fails the module', async () => {
+  const { dir, entry } = sassProject();
+
+  // Negative control: without the option the deprecation is there, so its
+  // absence below comes from the option.
+  const plain = await runWebpack(sassConfig(dir, entry, {}));
+  assert.equal(loaderWarnings(plain).length, 1, JSON.stringify(loaderWarnings(plain)));
+
+  const silenced = await runWebpack(sassConfig(dir, entry, { sass: { silenceDeprecations: ['import'] } }));
+  assert.deepEqual(loaderWarnings(silenced), []);
+
+  await runWebpack(sassConfig(dir, entry, { sass: { quietDeps: true } }));
+
+  // compile() validates the option: an unknown key fails the module with its message.
+  await assert.rejects(runWebpack(sassConfig(dir, entry, { sass: { bogus: 1 } })), /unknown sass option "bogus"/);
+  await assert.rejects(runWebpack(sassConfig(dir, entry, { sass: { quietDeps: 'yes' } })), /sass\.quietDeps must be a boolean/);
+});
+
 test('phase 2: a theme file exporting { theme, references } fails the compilation with the loader\'s own message', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");

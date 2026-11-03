@@ -74,7 +74,10 @@ loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;`, every
 namespace unique (`generate-entry --first a,b` lists those files first), so
 each file is its own Sass module and `@use`s what it reads from another;
 `generate-entry` warns once when it replaces an entry that listed its files
-with `@import`.
+with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
+which `compile()` validates, and report each warning as
+`<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
+webpack's `rootContext`.
 
 ## Entry points
 
