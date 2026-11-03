@@ -1870,11 +1870,12 @@ const ENTRY_HEADER = [
   '/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */',
 ];
 
-// The characters a URL reads as something else (an escape, a fragment, a
-// query) or that end the quoted string, percent-encoded; every other
+// The characters a URL reads as something else (a percent escape, a fragment,
+// a query), that end the quoted string, or that start an escape in it (a
+// backslash, which a POSIX file name may hold), percent-encoded; every other
 // character is written as it is.
 function encodeEntryUrl(urlPath) {
-  return urlPath.replace(/[%#?']/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
+  return urlPath.replace(/[%#?'\\]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 }
 
 // A file's natural namespace, from its URL path: lowercased, every character

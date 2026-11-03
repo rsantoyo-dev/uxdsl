@@ -1912,7 +1912,7 @@ test('MIG-B9-14: the sass type check fails for a shape that drops an optional me
 //
 // The entry loads every listed file with `@use '<url>' as <namespace>;`. The URL
 // is the file's path relative to the entry, without `.uxdsl` and without a
-// partial's underscore, with `%`, `#`, `?` and `'` percent-encoded. The
+// partial's underscore, with `%`, `#`, `?`, `'` and `\` percent-encoded. The
 // namespace is that path lowercased, every character outside [a-z0-9-] a `-`,
 // with `f-` before a leading digit or `-`, and `-2`, `-3`… for a name a file
 // earlier in path order already took. Each listed file is its own Sass module.
@@ -2040,6 +2040,24 @@ test('MIG-B9-14: two files named alike through @use without `as` collide in Sass
   const built = runCli(dir, 'build');
   assert.equal(built.status, 1, built.stderr);
   assert.match(built.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:2:1: UXD_SASS: There's already a module with namespace "card"\.$/m);
+});
+
+// A POSIX file name may hold a backslash, which starts an escape inside a
+// quoted Sass URL: the entry writes it percent-encoded.
+test('MIG-B9-14: generate-entry percent-encodes a backslash in a file name, and the entry loads the file; the backslash written as it is does not load (negative control)', { skip: process.platform === 'win32' ? 'a backslash separates paths on Windows' : false }, () => {
+  const dir = entryProject({ 'src/a\\b.uxdsl': '.slash { color: olive; }\n' });
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './a%5Cb' as a-b;"]);
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.slash \{\n {2}color: olive;\n\}/);
+
+  fs.writeFileSync(entryPath, "@use './a\\b' as a-b;\n");
+  const raw = runCli(dir, 'build');
+  assert.equal(raw.status, 1, raw.stderr);
+  assert.match(raw.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m);
 });
 
 // Each case: two files, what a generated @use entry gives (the UXD_SASS head

@@ -74,8 +74,9 @@ once, a save that makes an entry start loading a file included, and restoring
 such a file, or a directory of them, after deleting it rebuilds them; a
 partial a build could not find is noticed when it appears only where a
 `watch` pattern matches it. `init` and `generate-entry` write an entry that
-loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;`, every
-namespace unique (`generate-entry --first a,b` lists those files first), so
+loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;` (a `%`,
+`#`, `?`, `'` or `\` in the path percent-encoded), every namespace unique
+(`generate-entry --first a,b` lists those files first), so
 each file is its own Sass module and `@use`s what it reads from another;
 `generate-entry` warns once when it replaces an entry that listed its files
 with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,

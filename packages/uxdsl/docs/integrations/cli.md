@@ -124,7 +124,7 @@ The entry has one `@use` per file, after a header that says how to rebuild it:
 
 - **The path** is the file's path relative to the entry's directory, starting
   with `./` (or `../`), without `.uxdsl` and without a partial's leading `_`
-  (`_variables.uxdsl` is `./variables`). `%`, `#`, `?` and `'` are
+  (`_variables.uxdsl` is `./variables`). `%`, `#`, `?`, `'` and `\` are
   percent-encoded: `a#b.uxdsl` is `./a%23b`.
 - **The namespace** is that path without its leading `./`, lowercased, with
   `-` for every character outside `a-z`, `0-9` and `-`, and `f-` in front of

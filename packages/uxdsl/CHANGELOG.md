@@ -72,7 +72,7 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   where a `watch` pattern matches it.
 - **`generate-entry` writes `@use`.** Each listed file is loaded with
   `@use '<path>' as <namespace>;`: the path relative to the entry, without
-  `.uxdsl` and without a partial's `_`, with `%`, `#`, `?` and `'`
+  `.uxdsl` and without a partial's `_`, with `%`, `#`, `?`, `'` and `\`
   percent-encoded; the namespace is that path lowercased, with `-` for every
   other character and `f-` before a leading digit or `-`, made unique with
   `-2`, `-3` and so on. The order without `--first` is unchanged. The new
