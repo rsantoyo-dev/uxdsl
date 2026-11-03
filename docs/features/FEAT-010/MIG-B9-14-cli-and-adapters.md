@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | Ready |
+| Status | In progress |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-15, MIG-B9-20, MIG-B9-22 |
@@ -59,7 +59,7 @@ test -f fixtures/mig02-nextjs-cssmodules/browser.js
 ## 4. Baseline
 
 ```bash
-cd /tmp && rm -rf ge && mkdir -p ge/src/components && cd ge && printf '.a{color:red}' > src/components/card.uxdsl && printf '.b{color:blue}' > src/card.uxdsl && node /Users/ricardosantoyo/Documents/projects/uxdsl/.claude/worktrees/agent-acc09a777d09819dc/packages/uxdsl/bin/uxdsl.js generate-entry --src ./src && cat src/uxdsl-entry.uxdsl
+cli="$PWD/packages/uxdsl/bin/uxdsl.js" && d="$(mktemp -d "${TMPDIR:-/tmp}/ge.XXXXXX")" && mkdir -p "$d/src/components" && printf '.a{color:red}' > "$d/src/components/card.uxdsl" && printf '.b{color:blue}' > "$d/src/card.uxdsl" && cd "$d" && node "$cli" generate-entry --src ./src && cat src/uxdsl-entry.uxdsl   # from the worktree root
 ```
 
 Recorded: two `@import` lines (`./card.uxdsl`, `./components/card.uxdsl`).
@@ -227,3 +227,29 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - A4: `@use` isolates variables. Today `@import` inlining shares `$vars` across files (that is why `PRIORITY_PATTERNS` lists `variables` and `theme-def`); with `@use … as ns` a shared variables file breaks. Document it, test it, and reconsider the generated entry.
 - A1: see MIG-B9-12 — the code frame must show the author's text, not the protected text.
 - The baseline reads another agent's worktree; use repository files only.
+
+### Applied before implementing (2026-11-03)
+
+Applied by the first implementer before any code, as README §1 item 4 requires, on the base `7aec3e0`. The contract (§5) and the acceptance criteria (§9) are not edited: where the review corrects a claim of the contract, the reading the implementation follows is stated here.
+
+- **§3 Preconditions.** All four exit 0 on `7aec3e0` with `/usr/bin/grep`. P2 exits 1 only when `grep` is this session's zsh function, which runs ugrep with `--ignore-files` and reads the `$` in the middle of the pattern as an anchor; `/usr/bin/grep` (BSD grep 2.6.0) matches `bin/uxdsl.js:1670`. The line is not stale; the preconditions are run with `/usr/bin/grep`.
+- **§4 Baseline (review item 4: repository files only).** The line read another agent's worktree and wrote a fixed `/tmp/ge`. Old line:
+
+  ```bash
+  cd /tmp && rm -rf ge && mkdir -p ge/src/components && cd ge && printf '.a{color:red}' > src/components/card.uxdsl && printf '.b{color:blue}' > src/card.uxdsl && node /Users/ricardosantoyo/Documents/projects/uxdsl/.claude/worktrees/agent-acc09a777d09819dc/packages/uxdsl/bin/uxdsl.js generate-entry --src ./src && cat src/uxdsl-entry.uxdsl
+  ```
+
+  New line, run from the worktree root with this repository's CLI:
+
+  ```bash
+  cli="$PWD/packages/uxdsl/bin/uxdsl.js" && d="$(mktemp -d "${TMPDIR:-/tmp}/ge.XXXXXX")" && mkdir -p "$d/src/components" && printf '.a{color:red}' > "$d/src/components/card.uxdsl" && printf '.b{color:blue}' > "$d/src/card.uxdsl" && cd "$d" && node "$cli" generate-entry --src ./src && cat src/uxdsl-entry.uxdsl   # from the worktree root
+  ```
+
+  The template is explicit because macOS `mktemp` ignores `TMPDIR` without one. On `7aec3e0` it exits 0 and prints `[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 imports.` and the two recorded `@import` lines. The recorded consequences (a namespace collision under `@use` with default namespaces, two `[import]` deprecations under `@import`) were re-verified, so the "Recorded:" paragraph is unchanged.
+- **A5 (review item 1).** A5's "the Next.js variant is unchanged (PostCSS path, `@uxdsl theme;`)" is read as corrected: `uxdsl init` for Next.js writes no `@uxdsl theme;` today, and `POSTCSS_SNIPPET` passes `'uxdsl/postcss': { includeTheme: false }` (`bin/uxdsl.js:1814`). This story leaves that PostCSS path as it is. MIG-B9-20, under DEC-06, writes the marker in the Next.js scaffold and drops `includeTheme: false` from the snippet. The Next.js init writes the same generated entry as the single scaffold, so that entry uses `@use` like the others. The `--multi` scaffold's entries import nothing today (`theme.uxdsl` is a comment, `panel-a.uxdsl` one rule), so "the `--multi` scaffold's entries use `@use`" holds vacuously; T5 asserts that no scaffolded `.uxdsl` file contains `@import`.
+- **A4 (review item 2).** `@use` isolates variables, where `@import` shared `$variables`, mixins and functions across the entry's files (the reason `PRIORITY_PATTERNS` lists `variables` and `theme-def`). Under a generated `@use … as <namespace>` entry each listed file is its own Sass module:
+  - a file that reads another listed file's `$variable`, mixin or placeholder fails loudly as `UXD_SASS`;
+  - three cases change the output without an error: a call to another file's `@function` stays in the CSS as written, a `!default` set by an earlier listed file no longer applies, and a project `@function` named like a UXDSL function (DEC-17) no longer shadows the token in the other files.
+
+  The entry is reconsidered within A4 and keeps `@use … as <namespace>`: no entry shape restores sharing, because Sass refuses `@use` after any other rule and an `@import`ed file would still not share with the `@use`d modules. The change is documented (cli.md, migration.md, the CHANGELOG's "Breaking"), tested by T4b against an `@import`-entry negative control, and announced by one warning when `generate-entry` replaces an entry that listed its files with `@import` (T4c). An owner flag offers the alternatives (an `--import` escape hatch for one release, or detecting an unresolved project `@function` call, which needs `compile-sass.ts` and a new catalog code), and another records that `PRIORITY_PATTERNS`, kept as A4 says, now only orders the output.
+- **A1 (review item 3).** The code frame shows the author's text, never the protected text. The CLI prints `error.sassFrame`, which the Sass stage redraws with the author's text and columns, and never `error.cause.message`, which shows protect's `#{"palette(…)"}`. The frame is chosen by `error.code === 'UXD_SASS'`, since `diagnosticCode()` returns `undefined` for a message that starts with a location (MIG-B9-12 flag 13). T1's negative control compiles `.a { color: palette(primary.main); border-color: color(gray.300); width: $nope; }` in-process, asserts that `error.cause.message` contains `#{`, then asserts that the CLI prints `palette(primary.main)` in the frame with the caret under `$nope` (column 74) and no `#{` anywhere on stderr.
