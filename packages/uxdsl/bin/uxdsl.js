@@ -1520,17 +1520,68 @@ function watchSelection(targets) {
 // the selected paths' events (`all`), plus `ready` and `error`. `follow(files)`
 // adds the directories of newly followed files to this same watcher, so no
 // event is lost to a restart.
+//
+// Once a file it was ignoring is followed, chokidar reports it as `add` when
+// a change in its directory next makes chokidar read that directory, though
+// nothing changed the file: the save of a file beside it, when the build of
+// that save is what starts loading it. `follow(files, loadedSince)` is told
+// when the build that loaded the files started; a newly followed file the
+// watch list does not select, last modified before then by more than the file
+// system's time resolution (so the build read its current content), keeps its
+// stats, and an event that finds them unchanged is dropped. The first event
+// that finds them changed, or the file gone, is reported, and the file is then
+// reported like any other.
+function fileStats(file) {
+  try {
+    return fs.statSync(file, { throwIfNoEntry: false }) || null;
+  } catch (_) {
+    return null;
+  }
+}
+
+// A time in whole seconds comes from a file system that keeps seconds (FAT
+// keeps two): two seconds then; otherwise a margin for a coarse kernel clock.
+function fileTimeResolutionMs(stats) {
+  return stats.mtimeMs % 1000 === 0 ? 2000 : 100;
+}
+
 function createWatcher(targets) {
   const { roots, selects, ignored, follow } = watchSelection(targets);
   const events = new EventEmitter();
   const watcher = chokidar.watch(roots, { ignoreInitial: true, ignored });
-  watcher.on('all', (event, file) => { if (selects(file)) events.emit('all', event, file); });
+  // Absolute file -> its stats when it was followed, for the files above.
+  const unchanged = new Map();
+  watcher.on('all', (event, file) => {
+    if (!selects(file)) return;
+    const resolved = path.resolve(file);
+    const known = unchanged.get(resolved);
+    if (known) {
+      const now = fileStats(resolved);
+      if (now && now.mtimeMs === known.mtimeMs && now.size === known.size && now.ino === known.ino) return;
+      unchanged.delete(resolved);
+    }
+    events.emit('all', event, file);
+  });
   watcher.on('ready', () => events.emit('ready'));
   watcher.on('error', (error) => events.emit('error', error));
   events.close = () => watcher.close();
-  events.follow = (files) => {
+  // Returns the newly followed files that keep their stats.
+  events.follow = (files, loadedSince) => {
+    const unselected = files.map((file) => path.resolve(file)).filter((file) => !selects(file));
     const dirs = follow(files);
+    for (const file of unchanged.keys()) if (!selects(file)) unchanged.delete(file);
+    const kept = [];
+    if (loadedSince !== undefined) {
+      for (const file of unselected) {
+        const stats = fileStats(file);
+        if (stats && stats.mtimeMs < loadedSince - fileTimeResolutionMs(stats)) {
+          unchanged.set(file, stats);
+          kept.push(file);
+        }
+      }
+    }
     if (dirs.length) watcher.add(dirs);
+    return kept;
   };
   return events;
 }
@@ -1559,13 +1610,15 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   let dependencyGraph = new Map((initialResults || []).map(({ index, dependencies }) => [index, new Set(dependencies)]));
   let watcher = createWatcher(config ? config.watch : bootstrapWatchTargets(argv, cwd));
   // Follows every entry of the current config and every file of the graph.
-  function followAll() {
+  // `loadedSince` is when the successful build that produced the graph
+  // started (see createWatcher).
+  function followAll(loadedSince) {
     if (!config) return;
     const files = new Set();
     const entries = config.builds && config.builds.length ? config.builds.map((b) => b.entry) : [config.entry];
     for (const entry of entries) if (entry) files.add(path.resolve(entry));
     for (const dependencies of dependencyGraph.values()) for (const file of dependencies) files.add(file);
-    watcher.follow([...files]);
+    watcher.follow([...files], loadedSince);
   }
   followAll();
   console.log('[uxdsl] watching for changes...');
@@ -1637,9 +1690,10 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     // entry whose first build fails is still watched.
     followAll();
     try {
+      const startedAt = Date.now();
       const results = await builder(config);
       dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
-      followAll();
+      followAll(startedAt);
     } catch (err) {
       // The message and its frame, as a one-shot build prints them. The
       // previous dependency graph is kept: a failed rebuild does not
@@ -1650,11 +1704,12 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
 
   async function runSelectiveBuild(indices) {
     try {
+      const startedAt = Date.now();
       const results = await builder(config, indices);
       for (const { index, dependencies } of results) {
         dependencyGraph.set(index, new Set(dependencies));
       }
-      followAll();
+      followAll(startedAt);
     } catch (err) {
       printFailure('[uxdsl] build failed: ', err);
     }

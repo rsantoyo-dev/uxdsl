@@ -650,6 +650,143 @@ test("MIG-B9-14: editing a @use'd partial rebuilds only the entries that load it
   await waitFor(() => bCss().includes('plum'));
 });
 
+// A file an entry starts loading is followed once that build succeeds. The
+// watcher first sees such a file when it next reads the file's directory, and
+// that is the directory of the file just saved when the two sit together: what
+// it then reports is the file the build has just loaded, not a change, so the
+// save builds the entry once and prints its warnings once.
+test('MIG-B9-14: an entry that starts loading an existing file beside the file just saved builds once for that save and prints its warning once; an edit of that file then rebuilds the entry', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  put('uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
+    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+  ] };\n`);
+  put('src/a.uxdsl', '.a { color: red; }\n');
+  put('src/b.uxdsl', '.b { color: blue; }\n');
+  put('src/_x.scss', '.x { color: teal; }\n');
+  put('src/_legacy.uxdsl', '.legacy { color: gray; }\n');
+  // Files that existed well before the session, as a project's partials do.
+  const past = (Date.now() - 10000) / 1000;
+  for (const file of ['uxdsl.config.cjs', 'src/a.uxdsl', 'src/b.uxdsl', 'src/_x.scss', 'src/_legacy.uxdsl']) fs.utimesSync(path.join(dir, file), past, past);
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const bCss = () => fs.readFileSync(path.join(dir, 'out', 'b.css'), 'utf8');
+  const buildsOfB = (text) => (text.match(/\[uxdsl\] (built|unchanged) out[\\/]b\.css/g) || []).length;
+  await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'b.css')));
+  await delay(WATCHER_SETTLE_MS);
+
+  // b starts loading src/_x.scss, which no watch pattern matches, beside b itself.
+  let mark = output.length;
+  put('src/b.uxdsl', "@use './x';\n@import './legacy';\n.b { color: blue; }\n");
+  await waitFor(() => bCss().includes('teal'));
+  await delay(WATCHER_SETTLE_MS * 2.5);
+  const save = output.slice(mark);
+  assert.equal(buildsOfB(save), 1, `one save, one build of b:\n${save}`);
+  assert.equal(save.split('\n').filter((line) => line === '[uxdsl] Warning: src/b.uxdsl:2:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.').length, 1, save);
+  assert.doesNotMatch(save, /\[uxdsl\] add src[\\/]_x\.scss/, save);
+
+  // The file is followed: editing it rebuilds b, once, with the new content.
+  mark = output.length;
+  put('src/_x.scss', '.x { color: coral; }\n');
+  await waitFor(() => bCss().includes('coral'));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.equal(buildsOfB(output.slice(mark)), 1, output.slice(mark));
+});
+
+// The files followed are every entry and the files the last successful build
+// of each entry loaded: what a rebuild starts loading is followed from then
+// on, and what it stops loading is not.
+test('MIG-B9-14: a file an entry starts loading after start is followed once that rebuild succeeds, and is no longer followed once the entry stops loading it', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  // No `watch` key: the patterns are the entry and src/**/*.uxdsl, which do not reach lib/.
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false };\n");
+  put('src/a.uxdsl', '.a { color: red; }\n');
+  put('lib/_x.uxdsl', '.x { color: teal; }\n');
+  const past = (Date.now() - 10000) / 1000;
+  for (const file of ['uxdsl.config.cjs', 'src/a.uxdsl', 'lib/_x.uxdsl']) fs.utimesSync(path.join(dir, file), past, past);
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const aCss = () => fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8');
+  await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'a.css')));
+  await delay(WATCHER_SETTLE_MS);
+
+  // a starts loading lib/_x.uxdsl: once that rebuild succeeds, an edit of it rebuilds a.
+  put('src/a.uxdsl', "@use '../lib/x';\n.a { color: red; }\n");
+  await waitFor(() => aCss().includes('teal'));
+  await delay(WATCHER_SETTLE_MS);
+  put('lib/_x.uxdsl', '.x { color: navy; }\n');
+  await waitFor(() => aCss().includes('navy'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // a stops loading it: an edit of it no longer rebuilds anything.
+  put('src/a.uxdsl', '.a { color: red; }\n');
+  await waitFor(() => !aCss().includes('navy'));
+  await delay(WATCHER_SETTLE_MS);
+  const mark = output.length;
+  put('lib/_x.uxdsl', '.x { color: plum; }\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
+});
+
+// A config edit that moves an entry follows the moved entry before its first
+// build, so a failure there recovers when the entry is saved, whatever the
+// `watch` list matches; a file that recovering full rebuild loads is followed.
+test('MIG-B9-14: an entry a config edit moves outside the watch patterns is followed before its first build: a failure there recovers when it is saved, and a file that full rebuild loads is followed', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  const config = (entry) => `module.exports = { entry: './src/${entry}.uxdsl', outFile: './out/${entry}.css', includeTheme: false, watch: ['styles/**'] };\n`;
+  put('uxdsl.config.cjs', config('a'));
+  put('styles/theme.uxdsl', '.t { color: red; }\n');
+  put('src/a.uxdsl', '.a { color: red; }\n');
+  put('src/c.uxdsl', "@use './missing';\n.c { color: green; }\n");
+  put('lib/_y.uxdsl', '.y { color: teal; }\n');
+  const past = (Date.now() - 10000) / 1000;
+  for (const file of ['uxdsl.config.cjs', 'styles/theme.uxdsl', 'src/a.uxdsl', 'src/c.uxdsl', 'lib/_y.uxdsl']) fs.utimesSync(path.join(dir, file), past, past);
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const cCssPath = path.join(dir, 'out', 'c.css');
+  const cCss = () => (fs.existsSync(cCssPath) ? fs.readFileSync(cCssPath, 'utf8') : '');
+  await waitFor(() => /watching for changes/.test(output) && fs.existsSync(path.join(dir, 'out', 'a.css')));
+  await delay(WATCHER_SETTLE_MS);
+
+  // The entry moves to src/c.uxdsl, which `watch: ['styles/**']` does not
+  // match, and its first build fails; the list is unchanged, so the watcher is
+  // the same one.
+  put('uxdsl.config.cjs', config('c'));
+  await waitFor(() => /^\[uxdsl\] build failed: src\/c\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m.test(output));
+  await delay(WATCHER_SETTLE_MS);
+
+  // Saving it recovers; that full rebuild loads lib/_y.uxdsl, and an edit of it rebuilds c.
+  put('src/c.uxdsl', "@use '../lib/y';\n.c { color: green; }\n");
+  await waitFor(() => cCss().includes('teal'));
+  await delay(WATCHER_SETTLE_MS);
+  put('lib/_y.uxdsl', '.y { color: navy; }\n');
+  await waitFor(() => cCss().includes('navy'));
+});
+
 test('MIG-B9-14: an entry the watch patterns do not match is still followed: a failed first build recovers when the entry is saved', async (t) => {
   const dir = mkProject();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });

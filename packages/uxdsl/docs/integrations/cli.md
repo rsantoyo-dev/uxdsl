@@ -353,7 +353,8 @@ entry the patterns miss, so a first build that failed recovers when the entry
 is saved. A file is followed through its directory, which keeps an editor's
 save by rename visible; the directory's other files are not followed. The
 files followed are every entry and the files the last successful build of
-each entry loaded.
+each entry loaded. A file a build starts loading is followed once that build
+succeeds, and the save that made the entry load it builds the entry once.
 
 It reloads the config and the theme from disk on every rebuild, never
 re-triggers on its own output file, and survives errors. Every failed build of

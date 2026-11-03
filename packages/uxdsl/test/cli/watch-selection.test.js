@@ -134,15 +134,53 @@ test('MIG-B9-14: a followed file outside every watched root is reported through 
   await waitFor(() => changes() === 2);
 
   // Negative control: the followed file's siblings, a directory below it, and
-  // the file itself once it is no longer followed, report nothing.
+  // the file itself once it is no longer followed, report nothing. A file the
+  // patterns select is still reported meanwhile; only shared/ is counted, so
+  // its events (a late one for a write made before the watcher started
+  // included) are no part of the control.
   fs.writeFileSync(path.join(dir, 'shared/notes.txt'), 'y');
   fs.writeFileSync(path.join(dir, 'shared/deep/x.scss'), '.x { color: red; }');
   watcher.follow([]);
   await delay(300);
   fs.writeFileSync(farFile, '.far { color: green; }');
+  fs.writeFileSync(path.join(dir, 'src/a.uxdsl'), '.a { color: red; }');
+  await waitFor(() => events.includes(`change ${path.join('src', 'a.uxdsl')}`));
   await delay(1000);
-  assert.deepEqual(events.filter((e) => !e.endsWith(farRel)), [], events.join('\n'));
+  const inShared = events.filter((e) => e.slice(e.indexOf(' ') + 1).startsWith(`shared${path.sep}`));
+  assert.deepEqual(inShared.filter((e) => !e.endsWith(farRel)), [], events.join('\n'));
   assert.equal(changes(), 2, events.join('\n'));
+});
+
+// A file followed after the build that loaded it keeps its stats, so that the
+// `add` chokidar reports when it first reads such a file (an event that finds
+// the stats unchanged) is dropped; watch-mode.test.js drives that end to end.
+// Only a file the watch list did not select, last modified before the build
+// started by more than the file system's time resolution, keeps them: one
+// modified during the build is reported, whatever its stats.
+test('MIG-B9-14: a file followed after the build that loaded it keeps its stats only when the watch list did not select it and it was last modified before that build started, by more than the time resolution', async (t) => {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-watch-kept-')));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'src'));
+  const names = ['a.uxdsl', '_old.uxdsl', '_old.scss', '_recent.scss', '_whole.scss', '_fraction.scss'];
+  const file = (name) => path.join(dir, 'src', name);
+  for (const name of names) fs.writeFileSync(file(name), '.x {}');
+  const startedAt = Date.now();
+  const setTime = (name, ms) => fs.utimesSync(file(name), ms / 1000, ms / 1000);
+  setTime('_old.uxdsl', startedAt - 10000);
+  setTime('_old.scss', startedAt - 10000);
+  setTime('_recent.scss', startedAt - 50.5);
+  // Less than two seconds back, in whole seconds: a file system that keeps
+  // seconds may have rounded down a write made after the build started.
+  setTime('_whole.scss', Math.ceil((startedAt - 1900) / 1000) * 1000);
+  // As far back, with a fraction of a millisecond: a file system with finer times.
+  setTime('_fraction.scss', startedAt - 1500.5);
+  const watcher = cli.createWatcher([path.join(dir, 'src/**/*.uxdsl')]);
+  t.after(() => watcher.close());
+  await new Promise((resolve) => watcher.once('ready', resolve));
+  assert.deepEqual(watcher.follow(names.map(file), startedAt), [file('_old.scss'), file('_fraction.scss')]);
+  // Without a build's start (the follow at start, and before a full build), none keeps them.
+  watcher.follow([]);
+  assert.deepEqual(watcher.follow(names.map(file)), []);
 });
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
