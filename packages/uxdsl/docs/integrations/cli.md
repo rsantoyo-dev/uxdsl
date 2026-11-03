@@ -495,9 +495,13 @@ That is `<file>:<line>:<column>: <text>`, `<file>: <text>` when a warning has
 a file and no line, or the text alone when it has no position, as Dart Sass's
 own summary does: Dart Sass reports five warnings of each deprecation type,
 then that summary. Each entry's warnings print as soon as the entry compiles,
-before a later entry's error. A line already printed in the same build is not
-repeated (a partial two entries load), and every build that recompiles an
-entry, in watch mode too, prints that entry's warnings again. To stop
+before a later entry's error. A line with a file already printed in the same
+build is not repeated (a partial two entries load). A line without a position
+is the warning of the entry that reported it, so each entry prints its own,
+even when two read the same: Dart Sass's summary counts what it omitted for
+that entry, and an unknown id in `sass.silenceDeprecations` is reported by
+every entry. Every build that recompiles an entry, in watch mode too, prints
+that entry's warnings again. To stop
 reporting a deprecation type, name it in the config's
 `sass.silenceDeprecations` (`['import']`); `sass.quietDeps` silences the
 deprecations of packages. A failed compile prints its error and not the

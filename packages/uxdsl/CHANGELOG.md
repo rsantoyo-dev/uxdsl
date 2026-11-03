@@ -46,10 +46,12 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   deprecations and `@warn`, `UXD_FUNCTION_SHADOWED`, the plugin's) goes to
   stderr as `[uxdsl] Warning: <file>:<line>:<column>: <text>`, or
   `<file>: <text>`, or the text alone without a position; the CLI printed
-  none. Each entry's warnings print as soon as it compiles, a line is printed
-  once per build, and every build that recompiles an entry prints its
-  warnings again. Dart Sass's cap (five per deprecation type, then its
-  summary) is unchanged, and so is the exit status.
+  none. Each entry's warnings print as soon as it compiles, a line with a
+  file is printed once per build (a partial two entries load), a line without
+  a position once for each entry that reports it, and every build that
+  recompiles an entry prints its warnings again. Dart Sass's cap (five per
+  deprecation type, then its summary, which each entry prints for itself) is
+  unchanged, and so is the exit status.
 - **The `sass` config key**, `{ silenceDeprecations?: string[], quietDeps?: boolean }`,
   is passed to Dart Sass for every entry and typed in `UxdslConfig`. It is
   checked when the config loads, naming the file: a value that is not an

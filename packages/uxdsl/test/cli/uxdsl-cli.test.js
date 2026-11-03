@@ -1793,6 +1793,31 @@ test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecatio
   assert.equal(withSass.stderr, without.stderr);
 });
 
+// A located warning is the same warning whichever entry's compile reports it
+// (a partial two entries load): it prints once per build. A warning without a
+// position is the warning of the entry whose compile reported it, Dart Sass's
+// count of the deprecations it omitted for that entry above all: each entry
+// prints its own, though two entries' lines read the same.
+test("MIG-B9-14: each entry prints Dart Sass's summary of the deprecations it omitted, though two entries' summaries read the same; a located warning two entries report prints once", () => {
+  const dir = twoEntryProject();
+  write(dir, 'src/_shared.uxdsl', '$m: (w: 1px);\n.shared { width: map-get($m, w); }\n');
+  for (const name of ['a', 'b']) {
+    write(dir, `src/${name}.uxdsl`, `@use './shared';\n${[1, 2, 3, 4, 5, 6, 7].map((n) => `@import './${name}${n}';`).join('\n')}\n`);
+    for (const n of [1, 2, 3, 4, 5, 6, 7]) write(dir, `src/_${name}${n}.uxdsl`, `.${name}${n} { color: red; }\n`);
+  }
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  const imports = (file) => [2, 3, 4, 5, 6].map((line) => `[uxdsl] Warning: ${file}:${line}:9: ${IMPORT_WARNING}`);
+  const summary = '[uxdsl] Warning: UXD_SASS_WARNING: 2 repetitive deprecation warnings omitted.';
+  assert.deepEqual(warningLines(built.stderr), [
+    ...imports('src/a.uxdsl'),
+    '[uxdsl] Warning: src/_shared.uxdsl:2:18: UXD_SASS_WARNING: [global-builtin] Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.',
+    summary,
+    ...imports('src/b.uxdsl'),
+    summary,
+  ]);
+});
+
 test('MIG-B9-14: an unknown theme family prints once, though compile() also reports it without a file (negative control)', async () => {
   const theme = { migB914UnknownFamily: { x: '1' } };
   // compile() reports the theme's warning too, with no file: printed as it

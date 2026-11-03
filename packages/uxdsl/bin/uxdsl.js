@@ -1057,11 +1057,14 @@ function commitCompiled(compiled) {
 //
 // Each entry's compile() warnings print as soon as that entry compiles, so
 // they come before a later entry's error and before anything is written, one
-// line each (formatCompileWarning). A line identical to one already printed
-// in this build is not printed again (a partial two entries load warns once);
-// every build that recompiles an entry prints its warnings again. A theme
-// warning compile() reports without a file is skipped: warnUnknownThemeKeys
-// prints it with its path.
+// line each (formatCompileWarning). A warning with a file is the same warning
+// whichever entry reports it: a line identical to one already printed in this
+// build is not printed again (a partial two entries load warns once). A
+// warning without a position is the reporting entry's own (Dart Sass's count
+// of the deprecations it omitted for that entry), so each entry prints its
+// own, though two entries' lines read the same. Every build that recompiles an
+// entry prints its warnings again. A theme warning compile() reports without a
+// file is skipped: warnUnknownThemeKeys prints it with its path.
 async function buildOnce(config, entryIndices) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
@@ -1099,8 +1102,9 @@ async function buildOnce(config, entryIndices) {
       for (const warning of result.warnings || []) {
         if (!warning.file && themeWarningTexts.has(warning.text)) continue;
         const line = formatCompileWarning(warning);
-        if (printedWarnings.has(line)) continue;
-        printedWarnings.add(line);
+        const key = warning.file ? line : `${i}\n${line}`;
+        if (printedWarnings.has(key)) continue;
+        printedWarnings.add(key);
         console.warn(line);
       }
       compiled.push({ index: i, ...result });
