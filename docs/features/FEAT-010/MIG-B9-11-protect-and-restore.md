@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided); DEC-17 (decided 2026-10-23: the author's SCSS wins, with a warning) |
-| Status | In review (PR #49) |
+| Status | Merged (PR #49) |
 | Size | M |
 | Depends on | MIG-B9-10 |
 | Blocks | MIG-B9-12 |

@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | In review (PR #45) |
+| Status | Merged (PR #45) |
 | Size | S |
 | Depends on | — |
 | Blocks | MIG-B9-91 (the gate's audit check) |

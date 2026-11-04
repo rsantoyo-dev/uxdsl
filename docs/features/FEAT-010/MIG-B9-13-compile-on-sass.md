@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided); DEC-05 (decided 2026-10-23: the PostCSS plugin alone compiles CSS plus UXDSL, without Sass) |
-| Status | In review (PR #63) |
+| Status | Merged (PR #63) |
 | Size | M |
 | Depends on | MIG-B9-12 |
 | Blocks | MIG-B9-14, MIG-B9-20, MIG-B9-21, MIG-B9-30 to 36 |
@@ -776,3 +776,37 @@ The `UXD_FUNCTION_SHADOWED` capture stays open for MIG-B9-14.
 - **A `//color: blue;` line parses as a declaration named `//color`.** A browser drops it, as Dart Sass drops the comment, so it is left as is.
 - **`@-moz-document url-prefix($v)` never reaches the plugin through `compile()`.** It is a Dart Sass error (`Expected string.`).
 - **MIG-B9-12's orphan process, PID 85045,** was gone when this run started.
+
+### Owner decision of 2026-11-02
+
+The owner answered one question about flag 1 above, after the delivery and before the merge. The owner writes in Spanish; this record is in English. Where it differs from this story's contract, it rules.
+
+- **The question:** how to resolve AC1, this story's time budget, before merging #63.
+- **Decided: merge now, and do the performance work after** (the option recommended to the owner):
+  - PR #63 is merged into `feat/beta9` with AC1 recorded as not met on its timing half. The corpus stayed byte-identical: every delivery run printed `byte-identical: true`. The ratio was over 1.5× on four of the six delivery runs, three of them in a row (flag 1).
+  - P10's 1.5× budget is carried by [MIG-B9-23](MIG-B9-23-compile-within-budget.md). That performance story brings the corpus to at most 1.5× and must pass before `0.5.0-beta.9` is published. In the option's words, it would cover the Sass stage, the plugin's fixed costs and the double theme discovery (K3).
+  - The merge unblocks MIG-B9-14 and MIG-B9-15.
+- **Not chosen:**
+  - the performance work inside this story, on its branch, before merging;
+  - restating P10 and merging: for example a budget of 1.75× on a local machine, or 1.5× asserted only in CI, where the gate's S-1 reported 1.09×.
+- **The merge:** PR #63 was merged into `feat/beta9` as `7aec3e0` on 2026-11-02 (02:30 UTC on 2026-11-03).
+- **Still open.** This answers flag 1. The other owner flags of "Delivery of 2026-11-02" stay open, and this answer decides none of them:
+  - 2: P1 as built (RR-4);
+  - 3: LM-2, P9 against "equal to Dart Sass's output";
+  - 4: "must stay byte-identical" restated;
+  - 5: DEC-05 applied beyond its enumerated text;
+  - 6: an error, not a warning, for a `$variable` Sass keeps;
+  - 7: CT-5, the Sass PostCSS's own parser rejects first;
+  - 8: F3, PostCSS chains;
+  - 9: RR-2, a `//` Dart Sass prints into a value;
+  - 10: DEC-02 partly regresses through `compile()`;
+  - 11: location precision;
+  - 12: the anonymous source and `dependencies`;
+  - 13: the extension of `entry` or `from` decides how the text is read;
+  - 14: Sass's import rules are breaking;
+  - 15: the cascade and nesting changes;
+  - 16: RussianDoll.uxdsl emitted twice in the playground;
+  - 17: SO-4 and RR-2, text Dart Sass prints that is not CSS;
+  - 18: Shares as delivered;
+  - 19: the inputs this run contradicted;
+  - 20: Windows is unverified.

@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided); DEC-04 (decided 2026-10-23: `sass` is a regular dependency, loaded lazily) |
-| Status | In review (PR #62) |
+| Status | Merged (PR #62) |
 | Size | M |
 | Depends on | MIG-B9-11 |
 | Blocks | MIG-B9-13 |

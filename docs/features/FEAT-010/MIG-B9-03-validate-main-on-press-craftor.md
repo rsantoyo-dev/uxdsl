@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | None |
-| Status | In review (PR #47) |
+| Status | Merged (PR #47) |
 | Size | M |
 | Depends on | MIG-B9-01 (the tarball must say beta.9) |
 | Blocks | MIG-B9-50, MIG-B9-52, MIG-B9-60 (they consume its findings) |
