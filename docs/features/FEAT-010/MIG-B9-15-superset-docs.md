@@ -191,3 +191,10 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ 
 
 - **DEC-17:** D3 ("every SCSS file is a valid UXDSL file") holds without qualification: no name is reserved. Document `UXD_FUNCTION_SHADOWED` (meaning and fix) instead of `UXD_RESERVED_NAME`.
 - **DEC-07:** the media-query section documents `@media (--<breakpoint>)` once MIG-B9-30 ships.
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists those that concern this story. Where they differ from this story's contract, from the review above or from the owner decisions of 2026-10-23, they rule.
+
+- **A kept `$variable` stays an error (D6, MIG-B9-13's owner flag 6).** A `$variable` Dart Sass keeps as written stays `UXD_SASS_CONTEXT`, not a warning, and a literal `$identifier` cannot be emitted except through the `\$` escape. This story documents the limitation and the escape's caveat (MIG-B9-13 §15, flag 6: only `\$x` passes, and Chrome then reads `\$x`).
+- **PostCSS chains, the documentation side of D7 (MIG-B9-13's owner flag 8, F3).** That `uxdsl/postcss` placed after postcss-nested or postcss-simple-vars fails, in either order, is accepted as documented for now, with the workaround the README, the migration guide and the CHANGELOG give: a PostCSS pass of its own, or a `.uxdsl` file through `compile()`. Where this story documents `uxdsl/postcss`, it states that limitation and its workaround. MIG-B9-27 (wave 2) runs the Sass-syntax checks at `OnceExit` if that keeps every contract, and verifies `tailwindcss/nesting`.

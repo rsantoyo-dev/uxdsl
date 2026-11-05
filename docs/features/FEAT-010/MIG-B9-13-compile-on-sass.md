@@ -810,3 +810,13 @@ The owner answered one question about flag 1 above, after the delivery and befor
   - 18: Shares as delivered;
   - 19: the inputs this run contradicted;
   - 20: Windows is unverified.
+
+### Owner decisions of 2026-11-04
+
+The owner decided the flags the decision of 2026-11-02 left open (2 to 20) on 2026-11-04. The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). This record is in English and lists those that concern this story. Where they differ from this story's contract, they rule.
+
+- **Accepted as delivered (D18):** flags 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18 and 19. Flag 1 was decided on 2026-11-02 (above). For flag 14, the proposed CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL stays with MIG-B9-14.
+- **Flag 6 (D6):** a `$variable` Dart Sass keeps as written stays an error (`UXD_SASS_CONTEXT`), not a warning, which is the flag's option (a); a literal `$identifier` cannot be emitted except through the `\$` escape. MIG-B9-15 documents the limitation and the escape's caveat.
+- **Flag 8, F3 (D7):** `uxdsl/postcss` after postcss-nested or postcss-simple-vars failing, in either order, is accepted as documented for now (the flag's option (a)). MIG-B9-27 is registered, "`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract" (S, wave 2, after MIG-B9-21, since it edits `plugin.ts`); it takes up the flag's option (b) on that condition, and also verifies `tailwindcss/nesting`.
+- **Flag 10 (D5):** MIG-B9-26 is registered to answer it, "Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning" (S, wave 2, after MIG-B9-14, which makes the CLI print `compile()`'s warnings). The flag's own question, whether the fix waits for a follow-up story or comes here, is answered: it waits for MIG-B9-26.
+- **Flag 20 (D11):** CI runs on Windows before the release. MIG-B9-28 is registered, "CI on Windows" (wave 2; its scout sizes it, S or split, since the suites may assume POSIX paths), and MIG-B9-91 depends on it.

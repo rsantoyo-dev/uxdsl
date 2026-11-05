@@ -268,3 +268,11 @@ half of the workaround is gone (C4) and the composite re-declaration half
 stays until MIG-B9-31. For MIG-B9-14 and MIG-B9-31's "Press Craftor builds
 unchanged" re-runs: the clone and the "before" set are in `/tmp`, and the
 evidence file's §3 is the parity baseline to compare against.
+
+### Owner decisions of 2026-11-04
+
+The owner decided findings 3 and 4 above, and when the patch is applied, on 2026-11-04. The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). This record is in English and lists those that concern this story. Where they differ from this story's contract, they rule.
+
+- **Finding 3 (D4):** registered as MIG-B9-29, "The canonical-grammar codemod is idempotent" (S, wave 2): a second run is a no-op, pinned by a test; MIG-B9-52's release-notes instruction follows.
+- **Finding 4 (D4):** registered as MIG-B9-37, "A located warning for a CSS-wide keyword as a theme token value" (S, wave 3): `inherit`, `initial`, `unset`, `revert` and `revert-layer` emit a guaranteed-invalid `:root` property today, silently.
+- **The patch (D17):** the Press Craftor patch, this story's evidence, is applied to the real project after beta.9 is published.

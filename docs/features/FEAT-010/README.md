@@ -108,6 +108,14 @@ what every story shares.
   whose contract turns out to be wrong is set to Blocked with a finding; its
   acceptance criteria are never rewritten by the agent.
 
+### Process by story size
+
+The owner decided on 2026-11-04 (FEAT-010 §2, D1): an S story is delivered
+by a light flow, with a scout, one implementer, one review and the
+deliverer; the full flow, with a design panel, several implementers, review
+lenses and a mutation re-review, is kept for M stories that change the
+engine. Every rule of this section still applies to both.
+
 ### Verifying without the npm registry
 
 A session that cannot reach `registry.npmjs.org` cannot install, build or
@@ -196,6 +204,12 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13 | Ready |
 | MIG-B9-22 | [`build --watch` keeps the entry; the playground drops its own generator](MIG-B9-22-watch-keeps-the-entry.md) | 2 | — | S | 14 | Ready |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Ready |
+| MIG-B9-25 | The test suites remove the temporary directories they create | 2 | — | S | 13 | Draft (story file to be written; proposed in MIG-B9-23 §15) |
+| MIG-B9-26 | Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning | 2 | DEC-02 | S | 14 | Draft (story file to be written; proposed in MIG-B9-13 §15, flag 10, and MIG-B9-12 §15, flag 8) |
+| MIG-B9-27 | `uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract | 2 | DEC-05 | S | 21 | Draft (story file to be written; proposed in MIG-B9-13 §15, flag 8) |
+| MIG-B9-28 | CI on Windows | 2 | — | S or split (its scout sizes it) | — | Draft (story file to be written; proposed in MIG-B9-13 §15, flag 20, and MIG-B9-23 §15) |
+| MIG-B9-29 | The canonical-grammar codemod is idempotent | 2 | — | S | — | Draft (story file to be written; proposed in MIG-B9-03 §15, finding 3) |
+| MIG-B9-24 | The plugin's fixed per-build costs | 2 | — | S | 20, 21 | Draft (story file to be written; proposed in MIG-B9-23 §15) |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Ready |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready |
@@ -203,29 +217,41 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-34 | [The `focus` family and one `:focus-visible` rule](MIG-B9-34-focus-family.md) | 3 | DEC-11 | M | 13 | Ready |
 | MIG-B9-35 | [Canvas-identity tones: a contrast warning](MIG-B9-35-canvas-tones.md) | 3 | DEC-12 | S | 13 | Ready |
 | MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Ready |
-| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34 | Draft (re-baseline after wave 3) |
-| MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Draft (re-baseline after wave 3) |
-| MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Draft (re-baseline after wave 3) |
-| MIG-B9-43 | [Nothing hand-written, nothing hardcoded, enforced](MIG-B9-43-playground-nothing-hardcoded.md) | 4 | DEC-14 | M | 42 | Draft (re-baseline after wave 3) |
-| MIG-B9-50 | [README, home and quick start](MIG-B9-50-readme-home-quick-start.md) | 5 | — | M | 15, 20 | Draft (re-baseline after wave 3) |
-| MIG-B9-51 | [AGENTS.md and CONTRIBUTING.md](MIG-B9-51-agents-and-contributing.md) | 5 | — | M | 15 | Draft (re-baseline after wave 3) |
-| MIG-B9-52 | [Migration guide in English; CHANGELOG "What changes for you"](MIG-B9-52-migration-and-changelog.md) | 5 | — | S | 01 | Draft (re-baseline after wave 3) |
+| MIG-B9-37 | A located warning for a CSS-wide keyword as a theme token value | 3 | — | S | 13 | Draft (story file to be written; proposed in MIG-B9-03 §15, finding 4) |
+| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-43 | [Nothing hand-written, nothing hardcoded, enforced](MIG-B9-43-playground-nothing-hardcoded.md) | 4 | DEC-14 | M | 42 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-50 | [README, home and quick start](MIG-B9-50-readme-home-quick-start.md) | 5 | — | M | 15, 20 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-51 | [AGENTS.md and CONTRIBUTING.md](MIG-B9-51-agents-and-contributing.md) | 5 | — | M | 15 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-52 | [Migration guide in English; CHANGELOG "What changes for you"](MIG-B9-52-migration-and-changelog.md) | 5 | — | S | 01 | Draft (re-baseline after wave 3); ships in beta.10 |
 | MIG-B9-53 | [Signals that it is maintained](MIG-B9-53-maintenance-signals.md) | 5 | — | S | — | Merged (PR #35) |
-| MIG-B9-54 | ["Why UXDSL" and the browser examples](MIG-B9-54-why-uxdsl-and-browser-examples.md) | 5 | — | M | 50 | Draft (re-baseline after wave 3) |
-| MIG-B9-55 | [The VS Code extension, packaged](MIG-B9-55-vscode-extension.md) | 5 | — | S | 30 | Draft (re-baseline after wave 3) |
-| MIG-B9-60 | [`uxdsl doctor [--fix]`](MIG-B9-60-doctor.md) | 6 | — | M | 20 | Draft (re-baseline after wave 3) |
-| MIG-B9-61 | [`uxdsl audit` and `uxdsl migrate --suggest`](MIG-B9-61-audit-and-migrate.md) | 6 | — | M | 43 | Draft (re-baseline after wave 3) |
-| MIG-B9-62 | [The generated language reference](MIG-B9-62-generated-reference.md) | 6 | — | M | 30, 34 | Draft (re-baseline after wave 3) |
-| MIG-B9-63 | [`uxdsl explain` and editor hover with the project theme](MIG-B9-63-explain-and-hover.md) | 6 | — | M | 62 | Draft (re-baseline after wave 3) |
-| MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Draft — recommended cut (review 2026-10-11) |
-| MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Draft (re-baseline after wave 3) |
-| MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3) |
-| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 6; 90 | Draft (re-baseline after wave 3) |
+| MIG-B9-54 | ["Why UXDSL" and the browser examples](MIG-B9-54-why-uxdsl-and-browser-examples.md) | 5 | — | M | 50 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-55 | [The VS Code extension, packaged](MIG-B9-55-vscode-extension.md) | 5 | — | S | 30 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-60 | [`uxdsl doctor [--fix]`](MIG-B9-60-doctor.md) | 6 | — | M | 20 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-61 | [`uxdsl audit` and `uxdsl migrate --suggest`](MIG-B9-61-audit-and-migrate.md) | 6 | — | M | 43 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-62 | [The generated language reference](MIG-B9-62-generated-reference.md) | 6 | — | M | 30, 34 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-63 | [`uxdsl explain` and editor hover with the project theme](MIG-B9-63-explain-and-hover.md) | 6 | — | M | 62 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Draft — recommended cut (review 2026-10-11); ships in beta.10 |
+| MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3); ships in beta.10 |
+| MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |
+| MIG-B9-92 | The beta.10 gate and release record | 7 | DEC-03 | M | every story of waves 4 to 6; 90 | Draft (story file to be written; proposed in MIG-B9-91 §15, review of 2026-10-11, as 91b) |
 
 The owner decided DEC-02 to DEC-13, DEC-16 and DEC-17 on 2026-10-23
 (FEAT-010 §2): no story is blocked by a decision. Each story a decision
 touches has an "Owner decisions of 2026-10-23" block at the end of its §15,
 which rules where it differs from the contract.
+
+On 2026-11-04 the owner revised DEC-03 to two releases and registered
+MIG-B9-24 to 29, MIG-B9-37 and MIG-B9-92, whose story files are still to be
+written (FEAT-010 §2, "Owner decisions of 2026-11-04"). `0.5.0-beta.9` ships
+waves 0 to 3 and MIG-B9-91 closes it after wave 3; `0.5.0-beta.10` ships
+waves 4 to 6 and MIG-B9-90 and MIG-B9-92 close it. MIG-B9-25 is early in
+wave 2 and MIG-B9-24 is low priority (D2, D3), so their rows come first and
+last after MIG-B9-23. The stories those decisions concern carry an "Owner
+decisions of 2026-11-04" block at the end of their §15, which rules where it
+differs from the contract or from an earlier block.
 
 ## 6. Branches and merges
 
@@ -235,8 +261,9 @@ which rules where it differs from the contract.
   story merges its own PR into `feat/beta9` once CI is green and the closure
   record is written; it never merges into `main`.
 - The owner merges `feat/beta9` into `main` at the end of each wave (one
-  review per wave, in the order of §5), and before the one release
-  (DEC-03).
+  review per wave, in the order of §5), and before each of the two releases
+  (DEC-03): `0.5.0-beta.9` after wave 3 and MIG-B9-91, `0.5.0-beta.10` after
+  wave 6, MIG-B9-90 and MIG-B9-92.
 - A story that needs a decision stops at `Blocked (DEC-nn)` with its branch
   pushed and the finding written in its §15.
 
@@ -250,21 +277,25 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 
 | File | Stories that edit it |
 | --- | --- |
-| `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 30, 31, 35 |
-| `packages/uxdsl/src/compile.ts` | 13, 20, 21 |
-| `packages/uxdsl/src/sass/compile-sass.ts` | 12, 23 |
+| `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 24, 27, 30, 31, 35 |
+| `packages/uxdsl/src/compile.ts` | 13, 20, 21, 24 |
+| `packages/uxdsl/src/sass/compile-sass.ts` | 12, 23, 26 |
+| `packages/uxdsl/src/sass/protect.ts` | 11, 26 |
+| `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25 |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 22, 60, 61, 63 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 30, 32, 33, 34, 35 |
 | `packages/uxdsl/src/theme/base.json` and `base.contrast-exceptions.json` | 33, 34, 35 |
-| `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 32, 33, 34 |
+| `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 24, 32, 33, 34, 37 |
+| `packages/uxdsl/src/ds-runtime/theme-generator.ts` | 24, 34 |
 | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 31, 34 |
 | `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 31, 32, 34, 35, 36 |
 | `packages/uxdsl/CHANGELOG.md` | every story that lists it in Owns or Shares (append-only, one subsection per story) |
 | `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 51 |
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
-| `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 30, 31, 91 |
+| `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 30, 31, 91, 92 |
+| `fixtures/sass-corpus/run.js` | 10, 23, 25 |
 | `packages/playground-nextjs/**` | 20, 22, 30, 33, 34, 35, 36, 40, 41, 42, 43 |
-| `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13 |
+| `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 91 |
 | `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story) |
 | `packages/uxdsl/src/typography.ts` | 31, 33 |
 | `packages/uxdsl/src/language.ts` | 04, 30, 31 |
