@@ -191,3 +191,10 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ 
 
 - **DEC-17:** D3 ("every SCSS file is a valid UXDSL file") holds without qualification: no name is reserved. Document `UXD_FUNCTION_SHADOWED` (meaning and fix) instead of `UXD_RESERVED_NAME`.
 - **DEC-07:** the media-query section documents `@media (--<breakpoint>)` once MIG-B9-30 ships.
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists those that concern this story. Where they differ from this story's contract, from the review above or from the owner decisions of 2026-10-23, they rule.
+
+- **A kept `$variable` stays an error (decision D6 of 2026-11-04, on MIG-B9-13's owner flag 6).** A `$variable` Dart Sass keeps as written stays `UXD_SASS_CONTEXT`, not a warning, and a literal `$identifier` cannot be emitted except through the `\$` escape. This story documents the limitation and the escape's caveat (MIG-B9-13 §15, flag 6: only `\$x` passes, and Chrome then reads `\$x`).
+- **PostCSS chains, for information only (decision D7 of 2026-11-04, on MIG-B9-13's owner flag 8, F3).** Decision D7 accepts as documented for now that `uxdsl/postcss` placed after postcss-nested or postcss-simple-vars fails, in either order; the README, the migration guide and the CHANGELOG already give the workaround (MIG-B9-13 §15, flag 8). MIG-B9-27 (wave 2) may remove the limitation. Decision D7 gives this story no task.

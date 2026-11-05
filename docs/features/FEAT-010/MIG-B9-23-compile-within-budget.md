@@ -11,7 +11,7 @@
 | Blocks | MIG-B9-91 |
 | Base | `feat/beta9` after MIG-B9-13 (`7aec3e0` or later), within §7 (§15, finding 1). Every comparison is against BASE, the story's own base (§3) |
 | Owns | `packages/uxdsl/test/core/sass-stage-case.test.js` (new), `fixtures/mig-b9-23-compile-budget/` (new: `run.js`, `README.md`) |
-| Shares | `packages/uxdsl/src/sass/compile-sass.ts` (`filesystem()`'s `realCase`; MIG-B9-12's module), `packages/uxdsl/CHANGELOG.md` (the docs guard lists `compile-sass.ts` as a visual-default file), `packages/uxdsl/README.md` (one sentence) |
+| Shares | `packages/uxdsl/src/sass/compile-sass.ts` (`filesystem()`'s `realCase`; MIG-B9-12's module), `fixtures/sass-corpus/run.js` (P10's corrected method; the owner's decision D8 of 2026-11-04, §15), `packages/uxdsl/CHANGELOG.md` (the docs guard lists `compile-sass.ts` as a visual-default file), `packages/uxdsl/README.md` (one sentence) |
 | Output impact | none |
 
 ## 1. Goal
@@ -873,3 +873,12 @@ its method or the owner's decision.
   by caller: 8.4 ms under `validateTheme`'s engines, 7.9 under the
   reference pass's theme render, 7.7 under `expandResponsive`, and none
   under `rejectSassSyntax`.
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists those that concern this story. Of the findings for the owner in "The profile of 2026-11-02" above, they answer findings 2 and 3, which are also §9's two owner checks, and keep finding 1's scope as the merge of this plan (PR #64) accepted it. Finding 1's §7 question, whether the append-only CHANGELOG and README rows serialize stories, is not among these decisions and stays open for the owner. Where they differ from this story's contract, they rule.
+
+- **P10's measuring method is corrected; the budget stays 1.5× (decision D8 of 2026-11-04; finding 2 and the first owner check of §9).** The cold first run is discarded, Dart Sass and `compile()` alternate, and the corpus is compiled from a fresh directory. Decision D8 amends C1's method: C1 uses the corrected method, which this story implements in `fixtures/sass-corpus/run.js`, and that file joins this story's Shares (the header lists it). C2 (location independence) stays. Where this story keeps the runner unedited or P10's method as written (§5's C1 and its byte-identical list, §6, §7's stop rule, §8's T1, §9's AC1), decision D8 rules.
+- **MIG-B9-91 re-measures P10 (decision D9 of 2026-11-04; finding 3 and the second owner check of §9)** on the owner's Mac, with the corrected method, before publishing.
+- **MIG-B9-24 registered (decision D3 of 2026-11-04; finding 1's scope),** "The plugin's fixed per-build costs": S, wave 2, low priority, as proposed in "By story" above. It stays a story of its own, so this story's scope stays the Sass stage.
+- **MIG-B9-25 registered (decision D2 of 2026-11-04),** "The test suites remove the temporary directories they create": S, wave 2, early, as proposed in "By story" above. It and this story both edit `fixtures/sass-corpus/run.js` (the index's §7).

@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 5 |
 | Decision gate | None (plan §3.3; DEC-16 for the evidence rule) |
 | Status | Ready |

@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 7 |
 | Decision gate | None (plan §2.2; audit phase 7) |
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-50, MIG-B9-51 (the docs it tests) |
-| Blocks | MIG-B9-91 |
+| Blocks | MIG-B9-92 (DEC-03, revised 2026-11-04) |
 | Base | `feat/beta9` after wave 5 |
 | Owns | `fixtures/test-exercise/**` (new: the app, its build script, its Chrome check, the findings log) |
 | Shares | `fixtures/release-1.0/run.js` (one check) |
@@ -146,3 +146,9 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 - X2 builds the Next app's renamed SCSS file through the PostCSS path, which DEC-05 forbids; MIG-B9-14 A8 routes it through the CLI's `builds`.
 - "Zero findings" with an LLM tester has no end: define blocking findings. X5 ("a different agent") cannot be verified: require a clean directory with no repository checkout.
 - It also depends on wave 4 (it reads the site), MIG-B9-54 and whichever wave-6 tools ship; and on MIG-B9-50 adding the docs to the package `files`.
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists the one that concerns this story. Where it differs from this story's contract or from the review above, it rules.
+
+- **Two releases (decision D13 of 2026-11-04, DEC-03 revised).** This story ships in `0.5.0-beta.10` and blocks MIG-B9-92, the beta.10 gate and release record, which depends on it. MIG-B9-91, the beta.9 gate, no longer depends on it.
