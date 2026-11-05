@@ -2,14 +2,14 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 5 |
 | Decision gate | None (plan §6.1, §6.2, §6.5, §3.3 accepted) |
 | Status | Ready |
 | Size | M |
 | Depends on | MIG-B9-15, MIG-B9-20 |
 | Blocks | MIG-B9-54, MIG-B9-90 |
-| Base | `feat/beta9` after MIG-B9-20 (and after wave 4 when the home page is rewritten under DEC-03 (a)) |
+| Base | `feat/beta9` after MIG-B9-20 (and after wave 4 when the home page is rewritten) |
 | Owns | `README.md` (root), `packages/uxdsl/README.md`, `packages/uxdsl/docs/*.md` (new reference pages the README's sections move to), `packages/playground-nextjs/src/app/docs/quick-start/page.mdx`, `src/app/page.tsx` (copy) |
 | Shares | `scripts/lib/doc-examples.js` (the file list), `AGENTS.md` (the "Using this guide" paragraph) |
 | Output impact | none |

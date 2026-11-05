@@ -673,7 +673,7 @@ New facts from the design, the implementation, the review and the fixes, each wi
 
 The owner decided the flags of "Delivery of 2026-11-01" above on 2026-11-04. The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). This record is in English and lists those that concern this story. Where they differ from this story's contract, they rule.
 
-- **Accepted as delivered (D19):** flags 1, 2, 3, 4, 5, 7, 9, 14, 15, 16, 17, 18, 19, 20, 21 and 22. Flag 15's lockfile item goes to MIG-B9-91.
-- **Settled by MIG-B9-13 and MIG-B9-14 (D19):** flags 6, 10, 12 and 13.
-- **Flag 8, `@debug` (D12):** Sass's `@debug` output is accepted as dropped for now; MIG-B9-26, "Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning" (S, wave 2, after MIG-B9-14), shows it as a warning.
-- **Flag 11, Node engines (D10):** `uxdsl` declares `"engines": { "node": ">=20.19" }`, in MIG-B9-91, with the release note in the beta.9 migration section.
+- **Accepted as delivered (decision D19 of 2026-11-04):** flags 1, 2, 3, 4, 5, 7, 9, 14, 15, 16, 17, 18, 19, 20, 21 and 22. Flag 15's lockfile item goes to MIG-B9-91.
+- **Settled by MIG-B9-13 and MIG-B9-14 (decision D19 of 2026-11-04):** flags 6, 10, 12 and 13.
+- **Flag 8, `@debug` (decision D12 of 2026-11-04):** Sass's `@debug` output is accepted as dropped for now; MIG-B9-26, "Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning" (S, wave 2, after MIG-B9-14), shows it as a warning.
+- **Flag 11, Node engines (decision D10 of 2026-11-04):** `uxdsl` declares `"engines": { "node": ">=20.19" }`, in MIG-B9-91, with the release note in the beta.9 migration section.

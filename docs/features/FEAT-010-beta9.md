@@ -114,7 +114,7 @@ to Ready.
 On 2026-10-23 the owner decided every open decision, one question at a time.
 No story is blocked by a decision. Each story a decision touches carries an
 "Owner decisions of 2026-10-23" block at the end of its §15; where that
-block and the story's contract differ, the block rules. Six stories also
+block and the story's contract differ, the block rules. Eight stories also
 carry an "Owner decisions of 2026-11-04" block (below), which rules where it
 differs from an earlier block.
 
@@ -164,10 +164,12 @@ and answered, verbatim:
 ("I will follow all your recommendations.") Every recommendation below is
 therefore the owner's decision of 2026-11-04; this record is in English. D1
 to D19 number them in the order they were given; the numbers belong to this
-list only and are neither `DEC-nn` nor the beta.9 plan's `D-n`. Each story a
-decision concerns carries an "Owner decisions of 2026-11-04" block at the end
-of its §15 (MIG-B9-03, 12, 13, 15, 23 and 91), and the index registers the
-new stories.
+list only and are neither `DEC-nn` nor the beta.9 plan's `D-n`, and a story
+cites one as "decision D4 of 2026-11-04". Eight stories carry an "Owner
+decisions of 2026-11-04" block at the end of their §15: MIG-B9-03, 12, 13,
+15, 23, 52, 90 and 91. The other unmerged stories that D13 moves to
+`0.5.0-beta.10` name that release in their header, and the index registers
+the new stories.
 
 - **D1 — Process by story size.** An S story is delivered by a light flow (a scout, one implementer, one review, the deliverer); the full flow (a design panel, several implementers, review lenses, a mutation re-review) is kept for M stories that change the engine. Every rule of the index's §2 still applies to both.
 - **D2 — MIG-B9-25 registered,** "The test suites remove the temporary directories they create": S, wave 2, early. Proposed in MIG-B9-23 §15: the owner's `$TMPDIR` held 127,359 entries left by the suites, 99,469 of them `uxdsl-sass-stage-*` from `compile-sass.test.js`.
@@ -183,8 +185,8 @@ new stories.
 - **D12 — Sass's `@debug` output** is accepted as dropped for now; MIG-B9-26 shows it as a warning.
 - **D13 — DEC-03 is revised to option (b)** (the table above): `0.5.0-beta.9` ships waves 0 to 3 and MIG-B9-91, the beta.9 gate, which includes the Press Craftor re-run and an English beta.8 → beta.9 migration section; `0.5.0-beta.10` ships waves 4 to 6, MIG-B9-90 and a new MIG-B9-92, the beta.10 gate and release record (the plan's "91b"). The new stories 24 to 29 (wave 2) and 37 (wave 3) ship in beta.9. The review of 2026-10-11 recommended (b) and the owner chose (a), one release, on 2026-10-23; the owner was told that this reverses that decision.
 - **D14 — Ten Dependabot pull requests were closed** on 2026-11-05 (UTC), each with a comment giving the reason: #58 (`postcss-import`, no longer a dependency on `feat/beta9`), #57 and #51 (TypeScript 7, a major upgrade), #60 and #61 (majors whose CI fails), #56 (a group whose CI fails), #54 and #55 (React 19 in the CSS-modules fixture, which fails), #53 (`@types/node` 26, above the extension's runtime) and #50 (`@types/vscode` above `engines.vscode` `^1.80.0`).
-- **D15 — #52 (`playwright-core`) and #59 (the playground's minor-and-patch group),** green, are merged into `main` by the owner (`main` is the owner's).
-- **D16 — The owner enables Dependabot security updates** in GitHub.
+- **D15 — #52 (`playwright-core`) and #59 (the playground's minor-and-patch group),** green, are merged into `main` by the owner (`main` is the owner's). Both were still open on 2026-11-05.
+- **D16 — The owner enables Dependabot security updates** in GitHub. They were not yet enabled on 2026-11-05.
 - **D17 — The Press Craftor patch** (MIG-B9-03's evidence) is applied to the real project after beta.9 is published.
 - **D18 — MIG-B9-13's owner flags 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18 and 19 are accepted as delivered** (flag 1 was decided on 2026-11-02; flags 6, 8, 10 and 20 are D6, D7, D5 and D11). For flag 14, the proposed CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL stays with MIG-B9-14.
 - **D19 — MIG-B9-12's owner flags 1, 2, 3, 4, 5, 7, 9, 14, 15, 16, 17, 18, 19, 20, 21 and 22 are accepted as delivered** (flag 15's lockfile item goes to MIG-B9-91); flags 6, 10, 12 and 13 were settled by MIG-B9-13 and MIG-B9-14; flag 8 is D12 and flag 11 is D10.
@@ -194,7 +196,10 @@ new stories.
 The stories are grouped in waves. A wave is an order, not a release: under
 DEC-03, as revised on 2026-11-04, waves 0 to 3 ship in `0.5.0-beta.9`, which
 MIG-B9-91 closes after wave 3, and waves 4 to 6 ship in `0.5.0-beta.10`,
-which MIG-B9-90 and MIG-B9-92 close.
+which MIG-B9-90 and MIG-B9-92 close. MIG-B9-91 is the one story out of its
+wave's order: it belongs to wave 7 but integrates after wave 3 and before
+wave 4, since `0.5.0-beta.9` ships waves 0 to 3 (D13), and its row in the
+index's §5 sits there.
 
 | Wave | What | Stories | Release |
 | --- | --- | --- | --- |
@@ -205,7 +210,7 @@ which MIG-B9-90 and MIG-B9-92 close.
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. | MIG-B9-40 to 43 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. | MIG-B9-60 to 65 | `0.5.0-beta.10` |
-| 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 after wave 3; MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |
+| 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 after wave 3, before wave 4; MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |
 
 **Not in this feature, on purpose:** the MUI theme import (plan D-11, a
 mapping table in the docs is part of MIG-B9-50), container queries, fluid
