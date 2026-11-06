@@ -8090,13 +8090,14 @@ its declarations, compared as multisets and then for the order of the common
 rules (a longest common subsequence); then every rule that differs is paired
 by position, since the rule counts are equal and no common rule moved, and
 classified by applying the documented rewrites in turn until the two rules
-are equal (`pc-compare.js`).
+are equal (`pc-compare.js`). The blank-line column counts empty lines
+(`grep -c '^$'`).
 
 | File | Raw diff, lines − / + | Rules | Rules that differ | Common rules moved | `@charset "UTF-8";` first | Blank lines | Final newline |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | `uxdsl.css` | 2 / 2 | 22 → 22 | 0 | 0 | added | 7 → 6 | dropped |
-| `radar-dashboard` | 1,273 / 6,644 | 1,604 → 1,604 | 86 | 0 | added | 743 → 1,646 | dropped |
-| `creative-draft-workspace` | 290 / 1,546 | 896 → 896 | 45 | 0 | added | 748 → 950 | dropped |
+| `radar-dashboard` | 1,273 / 6,644 | 1,604 → 1,604 | 86 | 0 | added | 754 → 1,646 | dropped |
+| `creative-draft-workspace` | 290 / 1,546 | 896 → 896 | 45 | 0 | added | 750 → 950 | dropped |
 | `draft-2-canvas` | 302 / 1,996 | 233 → 233 | 34 | 0 | added | 17 → 196 | dropped |
 | `editorial-profile-panel` | 25 / 122 | 44 → 44 | 1 | 0 | no | 25 → 47 | dropped |
 | `topic-configuration-panel` | 86 / 635 | 143 → 143 | 2 | 0 | no | 71 → 150 | dropped |
@@ -8110,8 +8111,8 @@ either side (the sources have no nesting), the comment counts are equal (4,
 | --- | --- | --- | --- |
 | Dart Sass's layout: one declaration per line, a blank line between top-level rules, no final newline | — (every file: the raw-diff, blank-line and final-newline columns) | — | documented: MIG-B9-13's `### Visual changes`, "Dart Sass's formatting" |
 | `@charset "UTF-8";` first, in the four files whose sources hold non-ASCII text | — | 4 | documented: the same bullet ("`@charset "UTF-8";` first for any non-ASCII text (comments included)") |
-| An attribute value that is an identifier, unquoted in the author's selectors: `[type="checkbox"]` → `[type=checkbox]`, `[aria-pressed="true"]` → `[aria-pressed=true]`, `[data-state="open"]` → `[data-state=open]`. The `[aria-invalid="true"]` and `[aria-disabled="true"]` that the plugin writes for `@ds-input` and `@ds-button` states, after Dart Sass ran, keep their quotes | 134 | 160 | documented: the same bullet ("an attribute value that is an identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`)") |
-| `16 / 9` written `16/9`: `grid-column: 1 / -1` (15) and `aspect-ratio: 4 / 5` (18) | 33 | 33 | documented: the same bullet ("`16/9` for `16 / 9`") |
+| An attribute value that is an identifier, unquoted in the author's selectors: `[type="checkbox"]` → `[type=checkbox]`, `[aria-pressed="true"]` → `[aria-pressed=true]`, `[data-state="running"]` → `[data-state=running]`. The `[aria-disabled="true"]`, `[aria-invalid="true"]`, `[aria-pressed="true"]` and `[aria-selected="true"]` that the plugin writes for the `@ds-button` and `@ds-input` states, after Dart Sass ran, keep their quotes (350, 68, 141 and 141 in the superset) | 134 | 160 | documented: the same bullet ("an attribute value that is an identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`)") |
+| `16 / 9` written `16/9`: `grid-column: 1 / -1` (12), `grid-column: 2 / -1` (3), `aspect-ratio: 4 / 5` (16) and `aspect-ratio: 3 / 2` (2) | 33 | 33 | documented: the same bullet ("`16/9` for `16 / 9`") |
 | A `calc()` directly inside `min()`, `max()` or `clamp()` written without `calc()` | 9 | 9 | **finding 9** |
 | `""` for `''`, `0.5` for `.5`, a comment inside a value dropped, CSS math on plain numbers evaluated | 0 | 0 | — |
 | A flattened rule, a dropped `//` comment | 0 | 0 | — (the sources have neither) |

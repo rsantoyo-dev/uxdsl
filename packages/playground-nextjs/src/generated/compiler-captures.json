@@ -353,7 +353,7 @@
     },
     {
       "code": "UXD_FUNCTION_SHADOWED",
-      "title": "A project @function named like a UXDSL function: the author's SCSS wins, with one warning (DEC-17)",
+      "title": "A project @function named like a UXDSL function: the author's SCSS wins, with one warning",
       "warning": true,
       "source": "@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n",
       "theme": null,
