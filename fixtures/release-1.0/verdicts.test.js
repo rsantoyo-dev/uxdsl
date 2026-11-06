@@ -6,10 +6,14 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
-const { assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertMissingImport } = require('./run');
+const { createRequire } = require('node:module');
+const { pathToFileURL } = require('node:url');
+const {
+  assertAuthorLocated, assertSassFramed, assertLocatedWarning, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
+} = require('./run');
 const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 
-// The release gate's S-3, S-4 and N-02 verdicts, on the output they must
+// The release gate's S-3 to S-6 and N-02 verdicts, on the output they must
 // accept and on the failures they exist to catch. The gate applies them to the
 // installed tarball; here the accepted output comes from this repository's own
 // build.
@@ -97,6 +101,82 @@ test('MIG-B9-14: S-4 rejects an error with no frame, the protected text or an un
     assert.throws(() => assertLocatedWarning({ status: 0, stdout: warned.stdout, stderr }, { silenced: false }), { message: reason }, stderr);
   }
   assert.throws(() => assertLocatedWarning(warned, { silenced: true }), { message: /did not remove the deprecation/ });
+});
+
+// S-5 and S-6 run the adapters with the repository's bundlers, as the gate
+// does; here the adapters are this repository's own build. Each record is
+// made once and read by both tests of its check.
+const instrument = createRequire(path.join(PACKAGE_DIR, 'package.json'));
+let webpackRecord;
+const webpackRecordOnce = () => {
+  webpackRecord ||= webpackAdapterRecord({
+    webpack: instrument('webpack'),
+    MiniCssExtractPlugin: instrument('mini-css-extract-plugin'),
+    cssLoader: instrument.resolve('css-loader'),
+    SourceMapConsumer: instrument('source-map-js').SourceMapConsumer,
+  }, path.join(PACKAGE_DIR, 'dist/webpack.js'), temporaryDirectory());
+  return webpackRecord;
+};
+let viteRecord;
+const viteRecordOnce = () => {
+  viteRecord ||= import(pathToFileURL(instrument.resolve('vite')).href).then((vite) => {
+    const mod = require(path.join(PACKAGE_DIR, 'dist/vite.js'));
+    return viteAdapterRecord(vite, mod.default || mod, temporaryDirectory());
+  });
+  return viteRecord;
+};
+
+test('MIG-B9-14: S-5 accepts uxdsl/webpack in real webpack builds: the located deprecation that sass.silenceDeprecations removes, the unknown key\'s failure, the partials as dependencies, and a CSS map that names each file at its path', async () => {
+  const record = await webpackRecordOnce();
+  assert.equal(assertWebpackAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path', JSON.stringify(record));
+});
+
+test('MIG-B9-14: S-5 rejects an unlocated or unsilenced warning, an unknown key that does not fail, a partial that is not a dependency, and a map that names a file beside the module (negative control)', async () => {
+  const record = await webpackRecordOnce();
+  for (const [changes, reason] of [
+    // What the loader emitted before warnings carried their position.
+    [{ warnings: [record.warnings[0].replace('styles/_partial.uxdsl:1:9: ', '')] }, /^warnings: /],
+    [{ warnings: [] }, /^warnings: \[\]/],
+    [{ silencedWarnings: record.warnings }, /did not remove the deprecation/],
+    // What the loader did before it passed `sass` on: the key was ignored.
+    [{ unknownKeyError: null }, /^an unknown sass key did not fail the module$/],
+    [{ unknownKeyError: 'Module build failed (from uxdsl/webpack):\nError: something else' }, /failed with another message/],
+    [{ dependencies: record.dependencies.filter((file) => file !== 'styles/_legacy.uxdsl') }, /^not a file dependency: styles\/_legacy\.uxdsl/],
+    // The map webpack emitted, built from the project's directory, while the
+    // loader handed css-loader sources relative to the module.
+    [{ mapSources: ['_legacy.uxdsl', '_partial.uxdsl', 'panel.uxdsl', 'styles/panel.uxdsl'] }, /the CSS map's \.uxdsl sources are/],
+    [{ lookup: '_partial.uxdsl:2' }, /maps back to _partial\.uxdsl:2, expected/],
+  ]) {
+    assert.throws(() => assertWebpackAdapter({ ...record, ...changes }), { message: reason }, JSON.stringify(changes));
+  }
+});
+
+test('MIG-B9-14: S-6 accepts uxdsl/vite in real `vite build`s and a dev server: the located deprecation that sass.silenceDeprecations removes, the unknown key\'s failure, and the partials in the module graph; the record leaves NODE_ENV as it found it', async () => {
+  // Vite sets NODE_ENV when it is unset; the gate's later checks run npm in
+  // child processes that would inherit it.
+  const nodeEnv = process.env.NODE_ENV;
+  delete process.env.NODE_ENV;
+  try {
+    const record = await viteRecordOnce();
+    assert.equal(process.env.NODE_ENV, undefined, 'NODE_ENV is unset again after the record');
+    assert.equal(assertViteAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the build; the three files are in the dev server\'s module graph', JSON.stringify(record));
+  } finally {
+    if (nodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = nodeEnv;
+  }
+});
+
+test('MIG-B9-14: S-6 rejects an unlocated or unsilenced warning, an unknown key that does not fail, and a partial missing from the module graph (negative control)', async () => {
+  const record = await viteRecordOnce();
+  for (const [changes, reason] of [
+    // What the plugin passed to this.warn() before warnings carried their position.
+    [{ warnings: [record.warnings[0].replace('styles/_partial.uxdsl:1:9: ', '')] }, /^warnings: /],
+    [{ silencedWarnings: record.warnings }, /did not remove the deprecation/],
+    // What the plugin did before it passed `sass` on: the key was ignored.
+    [{ unknownKeyError: null }, /^an unknown sass key did not fail the build$/],
+    [{ watched: record.watched.filter((file) => file !== 'styles/_partial.uxdsl') }, /^not in the dev server's module graph under the CSS module: styles\/_partial\.uxdsl/],
+  ]) {
+    assert.throws(() => assertViteAdapter({ ...record, ...changes }), { message: reason }, JSON.stringify(changes));
+  }
 });
 
 /** compile() of a file whose first line @imports a missing partial, as N-02 runs it: the rejection. */
