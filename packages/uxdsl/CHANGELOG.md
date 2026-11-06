@@ -99,12 +99,26 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   receive `<file>:<line>:<column>: <text>`, the file relative to Vite's root
   or to webpack's `rootContext`, and the text alone for a warning with no
   position; they received the text only.
+- **webpack's CSS map names each file at its path.** `uxdsl/webpack` hands
+  css-loader its map with absolute paths as sources. css-loader resolved the
+  relative ones it received against the working directory, not against the
+  module, so where the `.uxdsl` files live in a subdirectory of the project
+  the map webpack emitted named the module and every partial at the wrong
+  path, listed the module twice, and, built from another directory, held
+  that directory's absolute path. The map is now the same from any working
+  directory, and a lookup in a partial lands in that partial.
 - Unchanged, and now pinned by tests: every file Dart Sass loaded, `@use`d
-  partials included, is a watch file or a dependency and an edit to it
-  recompiles; the map's `sources` name the partials; `?inline` is untouched.
-  Vite 5.4.21 and 7.3.7 still do not carry the `.uxdsl` source into the CSS
-  map they emit (`fixtures/vite-adapter`), so source maps through Vite stay
-  not advertised.
+  partials included, is a watch file or a dependency, and an edit to it
+  recompiles; `load()`'s map names the partials. Two exceptions remain: a
+  file under `node_modules`, which Vite's dev server does not watch and
+  webpack's default `snapshot.managedPaths` treats as changed only with its
+  package's version; and a compile that fails, after which webpack watches
+  only the module's own file and Vite does not watch a partial that the
+  failing load was the first to load, so fixing that partial recompiles once
+  the module's file is saved. `?inline` is unchanged, covered by the existing
+  `resolveId` test and `fixtures/vite-adapter`. Vite 5.4.21 and 7.3.7 still
+  do not carry the `.uxdsl` source into the CSS map they emit
+  (`fixtures/vite-adapter`), so source maps through Vite stay not advertised.
 
 ### Visual changes
 

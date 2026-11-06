@@ -22,8 +22,14 @@ loader.
 - **Direct Imports**: `import './styles.uxdsl';` works out of the box.
 - **Real dependency tracking**: every file Dart Sass loaded — a `@use`d,
   `@forward`ed or `@import`ed partial, a `.scss` file — and the discovered
-  theme file are registered via `this.addDependency()`, so webpack's cache and
-  watch mode actually see an edit to any of them.
+  theme file are registered via `this.addDependency()` after each compile
+  that succeeds, so webpack's cache and watch mode see an edit to any of
+  them. Two exceptions. A file under the `node_modules` directory webpack
+  itself is installed in: webpack's default `snapshot.managedPaths` treats it
+  as changed only when its package's version changes. And a compile that
+  fails registers only the module's own file, so fixing a partial that broke
+  it, or re-creating a partial it could not find, rebuilds once that `.uxdsl`
+  file is saved.
 - **Project theme discovery**: reads `uxdsl.theme.json` /
   `uxdsl.theme.{js,cjs}` from `rootContext` automatically, the same
   way the `uxdsl` CLI does.
@@ -142,7 +148,14 @@ The loader follows webpack's own `this.sourceMap` (set from `devtool`), so
 no loader option is needed; pass `sourceMap: true`/`false` in the loader
 options only to override it. The map is handed to the next loader as a real
 object, never as a JSON string or an inline data URI, so `css-loader` can
-compose it with its own.
+compose it with its own. Its sources are absolute paths, as sass-loader and
+postcss-loader hand theirs, so the map webpack emits names the module and
+every file Dart Sass loaded for it at its path from the project's
+directory, whatever the working directory: `css-loader` resolves a relative
+source against the working directory, not against the module.
+`packages/uxdsl/test/webpack/loader.test.js` builds a project whose entry
+and partial are in a subdirectory, from three working directories, and
+resolves a declaration of the partial back to it.
 
 ## License
 

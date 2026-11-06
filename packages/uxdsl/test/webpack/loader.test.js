@@ -270,6 +270,113 @@ test('MIG-B9-14: the loader passes its sass option to compile(): silenceDeprecat
   await assert.rejects(runWebpack(sassConfig(dir, entry, { sass: { quietDeps: 'yes' } })), /sass\.quietDeps must be a boolean/);
 });
 
+// --- The CSS map webpack emits, from any working directory ---
+
+// styles/panel.uxdsl @uses styles/_partial.uxdsl and shared/_far.uxdsl: the
+// entry is in a subdirectory, and one partial is outside the entry's
+// directory.
+function nestedMapProject() {
+  const dir = mkTmpDir();
+  write(dir, 'styles/panel.uxdsl', "@use './partial';\n@use '../shared/far';\n.panel { color: red; }\n");
+  write(dir, 'styles/_partial.uxdsl', '.partial { color: green; }\n');
+  write(dir, 'shared/_far.uxdsl', '.far { color: navy; }\n');
+  const entry = write(dir, 'entry.js', "import './styles/panel.uxdsl';");
+  return { dir, entry };
+}
+
+const NESTED_SOURCES = ['shared/_far.uxdsl', 'styles/_partial.uxdsl', 'styles/panel.uxdsl'];
+
+// The .uxdsl sources of a map webpack emitted, as paths from the project's
+// directory: without `webpack://<namespace>/` (MiniCssExtractPlugin's map)
+// or `webpack://` (the map css-loader embeds for style-loader), and without
+// a leading `./`.
+function uxdslSourcesOf(map) {
+  return map.sources
+    .filter((source) => source.endsWith('.uxdsl'))
+    .map((source) => source.replace(/^webpack:\/\/[^/]*\//, '').replace(/^\.\//, ''))
+    .sort();
+}
+
+// One build of the nested project with `use` (right to left, as webpack runs
+// it) and devtool 'source-map', run from `cwd`.
+async function buildFrom(cwd, dir, entry, use, plugins = []) {
+  const before = process.cwd();
+  process.chdir(cwd);
+  try {
+    await runWebpack({
+      mode: 'development',
+      devtool: 'source-map',
+      context: dir,
+      entry,
+      output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+      module: { rules: [{ test: /\.uxdsl$/, use }] },
+      plugins,
+      optimization: { minimize: false },
+    });
+  } finally {
+    process.chdir(before);
+  }
+}
+
+// MiniCssExtractPlugin's main.css and main.css.map: the .uxdsl sources, and
+// the file and line each needle's declaration maps back to.
+function extractedMap(dir, needles) {
+  const { SourceMapConsumer } = require('source-map-js');
+  const map = JSON.parse(fs.readFileSync(path.join(dir, 'dist/main.css.map'), 'utf8'));
+  const lines = fs.readFileSync(path.join(dir, 'dist/main.css'), 'utf8').split('\n');
+  const consumer = new SourceMapConsumer(map);
+  const lookups = {};
+  for (const needle of needles) {
+    const index = lines.findIndex((line) => line.includes(needle));
+    assert.notEqual(index, -1, `main.css holds ${needle}`);
+    const original = consumer.originalPositionFor({ line: index + 1, column: lines[index].indexOf(needle) });
+    lookups[needle] = `${String(original.source).replace(/^webpack:\/\/[^/]*\//, '').replace(/^\.\//, '')}:${original.line}`;
+  }
+  return { sources: uxdslSourcesOf(map), lookups };
+}
+
+const NESTED_LOOKUPS = { 'color: green': 'styles/_partial.uxdsl:1', 'color: navy': 'shared/_far.uxdsl:1', 'color: red': 'styles/panel.uxdsl:3' };
+
+test('MIG-B9-14: the CSS map webpack emits names each .uxdsl file at its own path from any working directory, and a declaration of a partial maps back to that partial', async () => {
+  const { dir, entry } = nestedMapProject();
+  const extract = [MiniCssExtractPlugin.loader, CSS_LOADER, { loader: LOADER, options: { includeTheme: false } }];
+  // The test's own directory, the project's and the entry's: css-loader
+  // resolves a source it receives as a relative path against the working
+  // directory, so a map built from any of them must name the same files.
+  for (const cwd of [process.cwd(), dir, path.join(dir, 'styles')]) {
+    await buildFrom(cwd, dir, entry, extract, [new MiniCssExtractPlugin({ filename: 'main.css' })]);
+    const { sources, lookups } = extractedMap(dir, Object.keys(NESTED_LOOKUPS));
+    assert.deepEqual(sources, NESTED_SOURCES, `the map's .uxdsl sources, built from ${cwd}`);
+    assert.deepEqual(lookups, NESTED_LOOKUPS, `each declaration maps back to its file and line, built from ${cwd}`);
+  }
+
+  // style-loader's chain: the map css-loader embeds in the bundle names the
+  // same files.
+  await buildFrom(dir, dir, entry, [STYLE_LOADER, { loader: CSS_LOADER, options: { sourceMap: true } }, { loader: LOADER, options: { includeTheme: false } }]);
+  const embedded = /"sources":(\[[^\]]*\])/.exec(fs.readFileSync(path.join(dir, 'dist/bundle.js'), 'utf8'));
+  assert.ok(embedded, 'css-loader embeds the module\'s map in the bundle');
+  assert.deepEqual(uxdslSourcesOf({ sources: JSON.parse(embedded[1]) }), NESTED_SOURCES, 'the map css-loader embeds for style-loader');
+});
+
+test('MIG-B9-14: a map whose sources reach css-loader relative to the module names the wrong files from the project\'s directory (negative control)', async () => {
+  const { dir, entry } = nestedMapProject();
+  // A loader between css-loader and uxdsl/webpack that hands css-loader the
+  // map's sources relative to the module's directory, as compile() writes
+  // them.
+  const relativize = write(dir, 'relative-sources-loader.js', [
+    "const path = require('path');",
+    'module.exports = function relativeSources(css, map) {',
+    '  const sources = map.sources.map((source) => (source.startsWith(\'<\') ? source : path.relative(path.dirname(this.resourcePath), source).split(path.sep).join(\'/\')));',
+    '  this.callback(null, css, { ...map, sources });',
+    '};',
+    '',
+  ].join('\n'));
+  await buildFrom(dir, dir, entry, [MiniCssExtractPlugin.loader, CSS_LOADER, relativize, { loader: LOADER, options: { includeTheme: false } }], [new MiniCssExtractPlugin({ filename: 'main.css' })]);
+  const { sources, lookups } = extractedMap(dir, Object.keys(NESTED_LOOKUPS));
+  assert.notDeepEqual(sources, NESTED_SOURCES, JSON.stringify(sources));
+  assert.notEqual(lookups['color: green'], NESTED_LOOKUPS['color: green'], JSON.stringify(lookups));
+});
+
 test('phase 2: a theme file exporting { theme, references } fails the compilation with the loader\'s own message', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");

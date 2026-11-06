@@ -159,7 +159,13 @@ Every `compile()` warning reaches Vite through `this.warn()` as one line,
 `N repetitive deprecation warnings omitted.`) is its text alone. Every file
 Dart Sass loaded for the module (a `@use`d, `@forward`ed or `@import`ed
 partial, a `.scss` file, a package's file) and the discovered theme file are
-added with `addWatchFile`, so an edit to any of them recompiles it.
+added with `addWatchFile`, so an edit to any of them recompiles it, with two
+exceptions. The dev server does not watch `node_modules` (Vite's default
+`server.watch.ignored`), so an edit to a package's file is not seen. And a
+load that fails adds no file: a partial an earlier load added stays
+watched, but one the failing load was the first to load (a new `@use`
+whose file has an error) recompiles nothing when it is fixed, until the
+`.uxdsl` file Vite imports is saved.
 
 ### No SCSS pre-pass
 

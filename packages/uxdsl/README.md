@@ -82,7 +82,9 @@ each file is its own Sass module and `@use`s what it reads from another;
 with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
 which `compile()` validates, and report each warning as
 `<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
-webpack's `rootContext`. The CLI guide's
+webpack's `rootContext`; `uxdsl/webpack` hands css-loader a map whose
+sources are absolute paths, so the map webpack emits names each `.uxdsl`
+file at its path whatever the working directory. The CLI guide's
 [`generate-entry`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#generate-entry),
 [Watch mode](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#watch-mode)
 and [Diagnostics](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#diagnostics)

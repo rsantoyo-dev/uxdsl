@@ -6,7 +6,8 @@
 // theme file's own require() tree) is added with `this.addDependency()`, so
 // webpack's cache and watch mode see an edit to any of them. Each compile()
 // warning is emitted with `this.emitWarning()` at its file (relative to
-// `rootContext`), line and column. Use it as
+// `rootContext`), line and column. The map goes to the next loader with
+// absolute paths as its sources. Use it as
 // `use: ['style-loader', 'css-loader', 'uxdsl/webpack']` (or
 // MiniCssExtractPlugin's loader in place of style-loader).
 import path from 'path';
@@ -53,6 +54,17 @@ function formatWarning(warning: CompileWarning, root: string): string {
   const file = path.relative(root, warning.file);
   if (warning.line == null) return `${file}: ${warning.text}`;
   return `${file}:${warning.line}${warning.column != null ? `:${warning.column}` : ''}: ${warning.text}`;
+}
+
+// compile()'s map names each file by a URL relative to the module's
+// directory. The next loader receives every such source as an absolute path
+// (`<css input>` and `<no source>` stay as they are), as sass-loader and
+// postcss-loader hand theirs: css-loader resolves a relative source against
+// the working directory, not against the module, and would then name the
+// wrong file in the map webpack emits.
+function withAbsoluteSources(map: { sources: string[] }, resourcePath: string): { sources: string[] } {
+  const dir = path.dirname(resourcePath);
+  return { ...map, sources: map.sources.map((source) => (source.startsWith('<') ? source : path.resolve(dir, decodeURIComponent(source)))) };
 }
 
 async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
@@ -108,7 +120,7 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     // compile() returns — passing the string through makes the next loader
     // silently drop it, which looks like "no map support" rather than a
     // type mismatch.
-    callback(null, css, map ? JSON.parse(map) : undefined);
+    callback(null, css, map ? withAbsoluteSources(JSON.parse(map), this.resourcePath) : undefined);
   } catch (err) {
     callback(err);
   }
