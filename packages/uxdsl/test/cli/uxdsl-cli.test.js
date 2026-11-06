@@ -2000,7 +2000,7 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   const current = fs.readFileSync(entryPath, 'utf8');
   for (const [args, expected] of [
     [['--first', 'components/crad'], /^\[uxdsl\] Error: --first "components\/crad" matches no \.uxdsl file under src \(paths are relative to --src\)\. Did you mean "components\/card\.uxdsl"\?$/m],
-    [['--first', 'card', '--exclude', 'card.uxdsl'], /^\[uxdsl\] Error: --first "card" names a file the entry leaves out \(--exclude, or the output file itself\)\.$/m],
+    [['--first', 'card', '--exclude', 'card.uxdsl'], /^\[uxdsl\] Error: --first "card" names a file the entry leaves out \(--exclude, or a file with the entry's file name, uxdsl-entry\.uxdsl\)\.$/m],
     [['--first', './uxdsl-entry.uxdsl'], /^\[uxdsl\] Error: --first "\.\/uxdsl-entry\.uxdsl" names a file the entry leaves out/m],
     [['--first', 'card,./card.uxdsl'], /^\[uxdsl\] Error: --first lists "\.\/card\.uxdsl" twice\.$/m],
     [['--first', ' , '], /^\[uxdsl\] Error: --first needs at least one path \(comma-separated, relative to --src\)\.$/m],
@@ -2058,6 +2058,30 @@ test('MIG-B9-14: generate-entry percent-encodes a backslash in a file name, and 
   const raw = runCli(dir, 'build');
   assert.equal(raw.status, 1, raw.stderr);
   assert.match(raw.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m);
+});
+
+// The entry is never listed, and neither is any other file with its file name:
+// the rule compares file names, as --exclude does.
+test("MIG-B9-14: generate-entry leaves out every file with the entry's file name, in any directory under --src, and a --first item naming one says why", () => {
+  const files = { 'src/card.uxdsl': '.card { color: red; }\n', 'src/pages/main.uxdsl': '.main { color: blue; }\n' };
+  const dir = entryProject(files);
+  const entryPath = path.join(dir, 'src', 'main.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.match(generated.stdout, /with 1 @use rule\.\n$/);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './card' as card;"], 'src/pages/main.uxdsl has the file name of the entry src/main.uxdsl');
+
+  const current = fs.readFileSync(entryPath, 'utf8');
+  const refused = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'pages/main');
+  assert.equal(refused.status, 1, `${refused.stdout}${refused.stderr}`);
+  assert.match(refused.stderr, /^\[uxdsl\] Error: --first "pages\/main" names a file the entry leaves out \(--exclude, or a file with the entry's file name, main\.uxdsl\)\.$/m);
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), current, 'the entry is left as it was');
+
+  // The same files under an entry with another name: that file is listed (negative control).
+  const control = entryProject(files);
+  const listed = runCli(control, 'generate-entry', '--src', 'src', '--out', 'src/entry.uxdsl', '--first', 'pages/main');
+  assert.equal(listed.status, 0, listed.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(control, 'src', 'entry.uxdsl'), 'utf8')), ["@use './pages/main' as pages-main;", "@use './card' as card;"]);
 });
 
 // Each case: two files, what a generated @use entry gives (the UXD_SASS head
@@ -2167,6 +2191,57 @@ test('MIG-B9-14: through a hand-written @import entry the same files share their
   }
 });
 
+// A file's own namespaced @use (the form the generated entry writes) brings the
+// module's members in under the namespace only: a bare variable or mixin fails,
+// while a bare function call is plain CSS to Sass, so it stays as written, and
+// one named like a UXDSL function becomes the token.
+test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's @function stays in the CSS and one named like a UXDSL function stays the token, with no error or warning, while a bare variable or mixin fails; through the namespace, or under `as *`, each is the module's", () => {
+  const dir = entryProject({
+    'src/_helpers.uxdsl': '@function space($n) { @return $n * 4px; }\n@function double($x) { @return $x * 2; }\n$gap: 3px;\n@mixin pad { padding: 1px; }\n',
+    'src/pad.uxdsl': "@use './helpers';\n.p { padding: space(2); height: double(4px); }\n",
+  });
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './helpers' as helpers;", "@use './pad' as pad;"]);
+  const css = () => fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+
+  const bare = runCli(dir, 'build');
+  assert.equal(bare.status, 0, bare.stderr);
+  assert.equal(bare.stderr, '', 'no error and no warning');
+  assert.match(css(), /\.p \{\n {2}padding: var\(--uxdsl__space__2\);\n {2}height: double\(4px\);\n\}/);
+
+  write(dir, 'src/pad.uxdsl', "@use './helpers';\n.p { padding: helpers.space(2); height: helpers.double(4px); }\n");
+  const qualified = runCli(dir, 'build');
+  assert.equal(qualified.status, 0, qualified.stderr);
+  assert.equal(qualified.stderr, '', 'a call through the namespace replaces no token, so nothing warns');
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+
+  // The same bare calls under `as *` are the module's: the bare form above is not
+  // the module's call (negative control), and the function named like space() warns.
+  write(dir, 'src/pad.uxdsl', "@use './helpers' as *;\n.p { padding: space(2); height: double(4px); }\n");
+  const star = runCli(dir, 'build');
+  assert.equal(star.status, 0, star.stderr);
+  assert.deepEqual(star.stderr.split('\n').filter(Boolean), ["[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/_helpers.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token"]);
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+  // And so are they in a file that @imports the module.
+  write(dir, 'src/pad.uxdsl', "@import './helpers';\n.p { padding: space(2); height: double(4px); }\n");
+  const imported = runCli(dir, 'build');
+  assert.equal(imported.status, 0, imported.stderr);
+  assert.match(imported.stderr, /^\[uxdsl\] Warning: src\/_helpers\.uxdsl:1:11: UXD_FUNCTION_SHADOWED: /m);
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+
+  for (const [rule, message] of [['.q { margin: $gap; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined variable\.$/m], ['.q { @include pad; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined mixin\.$/m]]) {
+    write(dir, 'src/pad.uxdsl', `@use './helpers';\n${rule}\n`);
+    const loud = runCli(dir, 'build');
+    assert.equal(loud.status, 1, `${rule}: ${loud.stderr}`);
+    assert.match(loud.stderr, message, rule);
+  }
+  write(dir, 'src/pad.uxdsl', "@use './helpers';\n.q { margin: helpers.$gap; @include helpers.pad; }\n");
+  const members = runCli(dir, 'build');
+  assert.equal(members.status, 0, members.stderr);
+  assert.match(css(), /\.q \{\n {2}margin: 3px;\n {2}padding: 1px;\n\}/);
+});
+
 test('MIG-B9-14: generate-entry warns once when it replaces an entry that loaded its files with @import', () => {
   const dir = entryProject({
     'src/card.uxdsl': '.card { color: red; }\n',
@@ -2177,7 +2252,7 @@ test('MIG-B9-14: generate-entry warns once when it replaces an entry that loaded
   const lines = replaced.stderr.split('\n').filter(Boolean);
   assert.equal(lines.length, 1, replaced.stderr);
   assert.match(lines[0], /^\[uxdsl\] Warning: src\/uxdsl-entry\.uxdsl listed its files with @import; it now loads each with @use/);
-  for (const fragment of ['UXD_SASS', '@function', '!default', "@use './variables' as *;", 'migration guide']) {
+  for (const fragment of ['UXD_SASS', '@function', '!default', "@use './variables' as *;", 'namespace', 'migration guide']) {
     assert.ok(lines[0].includes(fragment), `the warning names ${fragment}: ${lines[0]}`);
   }
   assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './card' as card;"]);

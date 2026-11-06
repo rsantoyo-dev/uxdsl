@@ -160,10 +160,12 @@ What to check when you upgrade:
    a file fails as `UXD_SASS` (`Undefined variable.`, `Undefined mixin.`,
    `The target selector was not found.`), or, in three cases, compiles
    differently without an error: a call to another file's `@function` stays
-   in the CSS as written, a `!default` an earlier file set no longer applies,
-   and a project `@function` named like a UXDSL function (`space()`) no
-   longer replaces the token in the files that do not `@use` it. Give each
-   file its own `@use` for what it reads:
+   in the CSS as written, a value an earlier file set for a variable that
+   another file declares `!default` no longer applies, and a project
+   `@function` named like a UXDSL function (`space()`) replaces the token only
+   in a file that `@use`s its file `as *` (or `@import`s it), and in a call
+   through the namespace (`helpers.space(2)`). Give each file its own `@use`
+   for what it reads:
 
    ```scss
    // src/card.uxdsl, which reads $brand from src/_variables.uxdsl
@@ -171,6 +173,13 @@ What to check when you upgrade:
 
    .card { color: $brand; }
    ```
+
+   With `as *` the module's members keep their bare names. With a namespaced
+   `@use` (`@use './variables';`, `@use './helpers';`), write each one
+   through the namespace (`variables.$brand`, `helpers.double(4px)`): a bare
+   variable or mixin fails there, but a function called by its bare name
+   stays in the CSS as written, and one named like a UXDSL function stays the
+   token, without an error.
 
    A module that another file configures (`@use './variables' with (…)`)
    must be configured before anything loads it: put the configuring file

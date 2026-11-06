@@ -77,7 +77,9 @@ partial a build could not find is noticed when it appears only where a
 loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;` (a `%`,
 `#`, `?`, `'` or `\` in the path percent-encoded), every namespace unique
 (`generate-entry --first a,b` lists those files first), so
-each file is its own Sass module and `@use`s what it reads from another;
+each file is its own Sass module and `@use`s what it reads from another, `as *`
+or with each member written through the namespace (under a namespaced `@use`
+a function called by its bare name stays in the CSS, with no error);
 `generate-entry` warns once when it replaces an entry that listed its files
 with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
 which `compile()` validates, and report each warning as

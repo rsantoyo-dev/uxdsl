@@ -77,8 +77,10 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   other character and `f-` before a leading digit or `-`, made unique with
   `-2`, `-3` and so on. The order without `--first` is unchanged. The new
   `--first a,b` lists those files first, in that order, then the rest by path;
-  an item that matches no file, names an excluded file or appears twice exits
-  1 and writes nothing. A third header line says how to regenerate the file,
+  an item that matches no file, names a file the entry leaves out (an
+  `--exclude` name, or a file with the entry's file name, in any directory) or
+  appears twice exits 1 and writes nothing, and so does a `--first` with no
+  item. A third header line says how to regenerate the file,
   stdout counts `@use` rules, and replacing an entry that listed its files
   with `@import` prints one warning about module isolation (see Breaking).
 - **`init`'s entry** is `@use './styles' as styles;`, and `src/styles.uxdsl`'s
@@ -139,10 +141,17 @@ at its position, the `sass` option, and the files Dart Sass loaded.
   (`Undefined variable.`, `Undefined mixin.`,
   `The target selector was not found.`), and three cases compile differently
   without an error: a call to another file's `@function` stays in the CSS as
-  written, a `!default` an earlier listed file set no longer applies, and a
-  project `@function` named like a UXDSL function (DEC-17) replaces the token
-  only in the files that `@use` its file. The fix is in each file: its own
-  `@use` for what it reads (`@use './variables' as *;`), and, for a module
+  written, a value an earlier listed file set for a variable that another file
+  declares `!default` no longer applies, and a project `@function` named like
+  a UXDSL function (DEC-17) replaces the token only in a file that `@use`s its
+  file `as *` (or `@import`s it), and in a call through the namespace
+  (`helpers.space(2)`). The fix is in each file: its own `@use` for what it
+  reads, `as *`
+  (`@use './variables' as *;`) or namespaced with every member written
+  through the namespace (`variables.$brand`, `helpers.double(4px)`), since
+  under a namespaced `@use` a bare variable or mixin fails but a function
+  called by its bare name stays in the CSS as written, and one named like a
+  UXDSL function stays the token, without an error; and, for a module
   configured with `@use … with (…)`, `--first` naming the configuring file,
   since a file named like `variables` is listed first otherwise. Nothing
   changes until the entry is regenerated, and `generate-entry` warns once

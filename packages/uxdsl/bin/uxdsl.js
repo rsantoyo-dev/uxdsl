@@ -123,11 +123,15 @@ Options:
 Rewrites the entry file: one "@use '<path>' as <namespace>;" per .uxdsl file
 found under --src, each namespace unique. Each file is its own Sass module, so
 a file that reads another file's variables, mixins or functions loads it with
-its own @use.
+its own @use, "as *" or with each member written through the namespace: under
+a namespaced @use, a function called by its bare name stays in the CSS as
+written, with no error.
 
 Options:
-  --src             Source directory to scan (default: ./src)
-  --out, -o         Output file path (default: ./src/uxdsl-entry.uxdsl)
+  --src             Source directory to scan (default: ./src, or the current
+                    directory when it has no src/)
+  --out, -o         Output file path (default: uxdsl-entry.uxdsl in the --src
+                    directory). No file with its file name is listed.
   --first           Comma-separated files to load first, in that order (paths
                     relative to --src; ./ and .uxdsl optional). Without it,
                     files named like theme-def, layout, app or variables come
@@ -1896,8 +1900,11 @@ async function generateEntry(argv) {
   const outputDir = path.dirname(outFile);
 
   const excludedFiles = String(argv.exclude || '').split(',').map((s) => s.trim()).filter(Boolean);
-  // The output file is never listed: an entry that loads itself is a loop.
-  excludedFiles.push(path.basename(outFile));
+  // A file is left out by its file name, in any directory under --src, as the
+  // --exclude names are; the output file's own name is always among them, since
+  // an entry that loads itself is a loop.
+  const outName = path.basename(outFile);
+  excludedFiles.push(outName);
 
   const firstItems = argv.first === undefined ? null : String(argv.first).split(',').map((s) => s.trim()).filter(Boolean);
   if (firstItems && firstItems.length === 0) {
@@ -1961,7 +1968,7 @@ async function generateEntry(argv) {
       const match = listed.find((file) => file.fromSrc === wanted);
       if (match) return match;
       if (found.some((file) => file.excluded && file.fromSrc === wanted)) {
-        throw new Error(`--first "${item}" names a file the entry leaves out (--exclude, or the output file itself).`);
+        throw new Error(`--first "${item}" names a file the entry leaves out (--exclude, or a file with the entry's file name, ${outName}).`);
       }
       const suggestion = closestMatch(wanted, listed.map((file) => file.fromSrc));
       throw new Error(`--first "${item}" matches no .uxdsl file under ${srcDirArg} (paths are relative to --src).${suggestion ? ` Did you mean "${suggestion}"?` : ''}`);
@@ -1986,7 +1993,7 @@ async function generateEntry(argv) {
   // An entry that listed its files with @import gave them one shared scope;
   // with @use each is its own module. Said once, when such an entry is replaced.
   if (previous !== null && /^\s*@import\b/m.test(previous)) {
-    console.warn(`[uxdsl] Warning: ${outRel} listed its files with @import; it now loads each with @use, so each file is its own Sass module: a file that reads another file's $variable, mixin or placeholder now fails (UXD_SASS), and one that calls another file's @function (one named like a UXDSL function included) or relies on a !default an earlier file set compiles differently, without an error. Give each such file its own @use (for example @use './variables' as *;); see "Regenerate the entry" in the migration guide.`);
+    console.warn(`[uxdsl] Warning: ${outRel} listed its files with @import; it now loads each with @use, so each file is its own Sass module: a file that reads another file's $variable, mixin or placeholder now fails (UXD_SASS), and one that calls another file's @function (one named like a UXDSL function included) or relies on a value an earlier file set for a variable it declares !default compiles differently, without an error. Give each such file its own @use, with as * (for example @use './variables' as *;) or with each member written through the namespace, since under a namespaced @use a function called by its bare name also stays in the CSS without an error; see "Regenerate the entry" in the migration guide.`);
   }
 }
 

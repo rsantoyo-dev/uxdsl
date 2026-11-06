@@ -58,7 +58,7 @@ a theme and several CSS-Module panels.
 | Command | Does |
 | --- | --- |
 | `uxdsl init [--multi]` | First-run setup (above). `--multi`: a theme entry plus one component entry. |
-| `uxdsl generate-entry [--src <dir>] [--out <file>] [--first <a,b>] [--exclude <a,b>]` | Rewrites the entry: one `@use` per `.uxdsl` file under `--src` (default `./src`; output default `./src/uxdsl-entry.uxdsl`). Run it after adding or removing files (see [`generate-entry`](#generate-entry)). |
+| `uxdsl generate-entry [--src <dir>] [--out <file>] [--first <a,b>] [--exclude <a,b>]` | Rewrites the entry: one `@use` per `.uxdsl` file under `--src` (default `./src`, or the working directory when it has no `src/`), written by default to `uxdsl-entry.uxdsl` in that directory. Run it after adding or removing files (see [`generate-entry`](#generate-entry)). |
 | `uxdsl build [options]` | Compiles the entry — or every entry in `builds` — to CSS, once. `--watch` keeps rebuilding. |
 | `uxdsl theme [options]` | Prints the effective theme as JSON: the same discovery and resolution as `build`, no CSS written. |
 | `uxdsl --help`, `uxdsl <command> --help` | The general help, or one command's options. Bare `uxdsl` prints the help; it does not build. |
@@ -104,10 +104,10 @@ from `uxdsl/language`, not by reading the leaf as a color.
 
 | Flag | Does |
 | --- | --- |
-| `--src <dir>` | The directory scanned for `.uxdsl` files, subdirectories included. Default `./src`. |
-| `--out <file>`, `-o` | The entry it writes. Default `./src/uxdsl-entry.uxdsl`. The entry never lists itself. |
+| `--src <dir>` | The directory scanned for `.uxdsl` files, subdirectories included. Default `./src`, or the working directory when it has no `src/`. |
+| `--out <file>`, `-o` | The entry it writes. Default: `uxdsl-entry.uxdsl` in the `--src` directory. No file with the entry's file name is listed, in any directory under `--src`, as with an `--exclude` name: with `--out src/main.uxdsl`, `src/pages/main.uxdsl` is left out too, without a message. |
 | `--first <a,b>` | The files to load first, in that order: paths relative to `--src`, comma-separated, `./` and `.uxdsl` optional. |
-| `--exclude <a,b>` | File names to leave out. |
+| `--exclude <a,b>` | File names to leave out, in any directory under `--src`. |
 
 The entry has one `@use` per file, after a header that says how to rebuild it:
 
@@ -136,18 +136,21 @@ The entry has one `@use` per file, after a header that says how to rebuild it:
   `layout`, `app` or `variables` first, then the others by path. With
   `--first`, the files it names, in its order, then every other file by path.
   An item that matches no file (with a suggestion), names a file the entry
-  leaves out (`--exclude`, or the entry itself) or appears twice exits 1 and
-  writes nothing.
+  leaves out (an `--exclude` name, or a file with the entry's file name) or
+  appears twice exits 1 and writes nothing, and so does a `--first` with no
+  item.
 
 Each file is its own Sass module. An entry that `@import`ed its files gave
 them one scope; with `@use`, a file that reads another file's `$variable`,
 mixin or `%placeholder` fails as `UXD_SASS` (`Undefined variable.`,
 `Undefined mixin.`, `The target selector was not found.`), and three cases
 compile differently, without an error: a call to another file's `@function`
-stays in the CSS as written, a `!default` an earlier file set no longer
-applies, and a project `@function` named like a UXDSL function (`space()`)
-replaces the token only in the files that `@use` it. Give each file its own
-`@use` for what it reads:
+stays in the CSS as written, a value an earlier file set for a variable that
+another file declares `!default` no longer applies, and a project `@function`
+named like a UXDSL function (`space()`) replaces the token only in a file
+that `@use`s its file `as *` (or `@import`s it), and in a call through the
+namespace (`helpers.space(2)`). Give each file its own `@use` for what it
+reads:
 
 ```scss
 // src/card.uxdsl reads $brand from src/_variables.uxdsl
@@ -155,6 +158,13 @@ replaces the token only in the files that `@use` it. Give each file its own
 
 .card { color: $brand; }
 ```
+
+With `as *` the module's members keep their bare names. With a namespaced
+`@use` (`@use './variables';`, `@use './helpers';`), write each one through
+the namespace (`variables.$brand`, `helpers.double(4px)`): a bare variable or
+mixin fails there, but a function called by its bare name stays in the CSS as
+written, and one named like a UXDSL function stays the token, without an
+error.
 
 A module that a file configures with `@use … with (…)` must be configured
 before anything else loads it: name the configuring file in `--first`, since a
