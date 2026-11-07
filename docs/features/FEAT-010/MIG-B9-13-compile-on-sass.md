@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided); DEC-05 (decided 2026-10-23: the PostCSS plugin alone compiles CSS plus UXDSL, without Sass) |
-| Status | In review (PR #63) |
+| Status | Merged (PR #63) |
 | Size | M |
 | Depends on | MIG-B9-12 |
 | Blocks | MIG-B9-14, MIG-B9-20, MIG-B9-21, MIG-B9-30 to 36 |
@@ -776,3 +776,47 @@ The `UXD_FUNCTION_SHADOWED` capture stays open for MIG-B9-14.
 - **A `//color: blue;` line parses as a declaration named `//color`.** A browser drops it, as Dart Sass drops the comment, so it is left as is.
 - **`@-moz-document url-prefix($v)` never reaches the plugin through `compile()`.** It is a Dart Sass error (`Expected string.`).
 - **MIG-B9-12's orphan process, PID 85045,** was gone when this run started.
+
+### Owner decision of 2026-11-02
+
+The owner answered one question about flag 1 above, after the delivery and before the merge. The owner writes in Spanish; this record is in English. Where it differs from this story's contract, it rules.
+
+- **The question:** how to resolve AC1, this story's time budget, before merging #63.
+- **Decided: merge now, and do the performance work after** (the option recommended to the owner):
+  - PR #63 is merged into `feat/beta9` with AC1 recorded as not met on its timing half. The corpus stayed byte-identical: every delivery run printed `byte-identical: true`. The ratio was over 1.5× on four of the six delivery runs, three of them in a row (flag 1).
+  - P10's 1.5× budget is carried by [MIG-B9-23](MIG-B9-23-compile-within-budget.md). That performance story brings the corpus to at most 1.5× and must pass before `0.5.0-beta.9` is published. In the option's words, it would cover the Sass stage, the plugin's fixed costs and the double theme discovery (K3).
+  - The merge unblocks MIG-B9-14 and MIG-B9-15.
+- **Not chosen:**
+  - the performance work inside this story, on its branch, before merging;
+  - restating P10 and merging: for example a budget of 1.75× on a local machine, or 1.5× asserted only in CI, where the gate's S-1 reported 1.09×.
+- **The merge:** PR #63 was merged into `feat/beta9` as `7aec3e0` on 2026-11-02 (02:30 UTC on 2026-11-03).
+- **Still open.** This answers flag 1. The other owner flags of "Delivery of 2026-11-02" stay open, and this answer decides none of them:
+  - 2: P1 as built (RR-4);
+  - 3: LM-2, P9 against "equal to Dart Sass's output";
+  - 4: "must stay byte-identical" restated;
+  - 5: DEC-05 applied beyond its enumerated text;
+  - 6: an error, not a warning, for a `$variable` Sass keeps;
+  - 7: CT-5, the Sass PostCSS's own parser rejects first;
+  - 8: F3, PostCSS chains;
+  - 9: RR-2, a `//` Dart Sass prints into a value;
+  - 10: DEC-02 partly regresses through `compile()`;
+  - 11: location precision;
+  - 12: the anonymous source and `dependencies`;
+  - 13: the extension of `entry` or `from` decides how the text is read;
+  - 14: Sass's import rules are breaking;
+  - 15: the cascade and nesting changes;
+  - 16: RussianDoll.uxdsl emitted twice in the playground;
+  - 17: SO-4 and RR-2, text Dart Sass prints that is not CSS;
+  - 18: Shares as delivered;
+  - 19: the inputs this run contradicted;
+  - 20: Windows is unverified.
+
+### Owner decisions of 2026-11-04
+
+The owner decided the flags the decision of 2026-11-02 left open (2 to 20) on 2026-11-04. The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). This record is in English and lists those that concern this story. Where they differ from this story's contract, they rule.
+
+- **Accepted as delivered (decision D18 of 2026-11-04):** flags 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18 and 19. Flag 1 was decided on 2026-11-02 (above). For flag 14, the proposed CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL stays with MIG-B9-14.
+- **Flag 6 (decision D6 of 2026-11-04):** a `$variable` Dart Sass keeps as written stays an error (`UXD_SASS_CONTEXT`), not a warning, which is the flag's option (a); a literal `$identifier` cannot be emitted except through the `\$` escape. MIG-B9-15 documents the limitation and the escape's caveat.
+- **Flag 8, F3 (decision D7 of 2026-11-04):** `uxdsl/postcss` after postcss-nested or postcss-simple-vars failing, in either order, is accepted as documented for now (the flag's option (a)). MIG-B9-27 is registered, "`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract" (S, wave 2, after MIG-B9-21, since it edits `plugin.ts`); it is a narrower form of the flag's option (b), in which only the Sass-syntax checks move, and only if every contract holds. It also verifies `tailwindcss/nesting`.
+- **Flag 10 (decision D5 of 2026-11-04):** MIG-B9-26 is registered to answer it, "Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning" (S, wave 2, after MIG-B9-14, which makes the CLI print `compile()`'s warnings). The flag's own question, whether the fix waits for a follow-up story or comes here, is answered: it waits for MIG-B9-26.
+- **Flag 20 (decision D11 of 2026-11-04):** CI runs on Windows before the release. MIG-B9-28 is registered, "CI on Windows" (wave 2; its scout sizes it, S or split, since the suites may assume POSIX paths), and MIG-B9-91 depends on it.

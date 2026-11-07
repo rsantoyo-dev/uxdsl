@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 0 |
 | Decision gate | DEC-02 (decided 2026-10-23: `space()` stays; `spacing()` and every near-miss is an error with a suggestion) |
-| Status | In review (PR #44) |
+| Status | Merged (PR #44) |
 | Size | S |
 | Depends on | — |
 | Blocks | — (MIG-B9-10 cites the code once it exists; it does not wait for it — review 2026-10-11) |
