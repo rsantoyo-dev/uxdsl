@@ -8032,3 +8032,195 @@ index 80b6520..0000000
 -  },
 -};
 ````
+
+## On the superset pipeline
+
+[MIG-B9-14](../MIG-B9-14-cli-and-adapters.md)'s A10 (AC6): the procedure of
+§1–§6 repeated on a copy of Press Craftor against a tarball of
+`feat/b9-14-cli-adapters`, where `compile()` runs on Dart Sass (MIG-B9-13),
+and the seven generated files compared with the "after" set of §2.
+
+Run on 2026-11-03. Environment: macOS 27.0 (Darwin 27.0.0), Node v20.19.0,
+npm 11.21.1, Google Chrome 156.0.8078.80 (macOS default path) driven by
+playwright-core 1.63.0 from `fixtures/mig02-nextjs-cssmodules`, Next.js 16.3.5
+(`next build --webpack`, the project's own script), postcss 8.5.32. Dart Sass
+1.107.1 in the clone: a fresh install resolves it from the tarball's
+`sass: ^1.107.0`, while the repository's lockfile holds 1.107.0; both write
+the same seven files (see "Cross-checks"). UXDSL at `e51b775` (this branch)
+for the tarball and at `0c9fbf6` for the after set; Press Craftor at
+`dbec897`. Every directory named below is in the session's scratch directory
+(`<scratch>` = `/private/tmp/claude-501/…/scratchpad/b9-14`); nothing was
+written in the repository or in `story-radar`. The comparison and probe
+scripts named below are in `<scratch>/i3/bin`.
+
+### Steps, with exit codes
+
+| # | Step | Command | Exit |
+| --- | --- | --- | --- |
+| 1 | The clone. `/tmp/press-craftor` and its siblings were gone: macOS's daily `/tmp` cleaning had left their directories without files | `git clone --quiet /Users/ricardosantoyo/Documents/projects/story-radar <scratch>/press-craftor`, then `git checkout --quiet dbec897eaa573db1b8a84aada7626a8f03aaca57`; the owner's repository was only read, and no `.env.local` was copied | 0; 0 |
+| 2 | Two working copies with §8's patch | `git clone --quiet <scratch>/press-craftor <scratch>/i3/pc-after` (and `pc-superset`), `checkout dbec897`, `git apply --check`, `git apply` (15 files) | 0 for each |
+| 3 | The after set, rebuilt | `git archive 0c9fbf6 packages/uxdsl tsconfig.base.json \| tar -x -C <scratch>/i3/uxdsl-0c9fbf6`; in its `packages/uxdsl`, `npm ci --ignore-scripts --no-audit --no-fund` (106 packages) and `npm run build`; then that CLI, `node <scratch>/i3/uxdsl-0c9fbf6/packages/uxdsl/bin/uxdsl.js build`, in `pc-after` | 0; 0; 0; 0 |
+| 3a | The size check, where a mismatch would have stopped the comparison | `wc -c` of the seven files: 89,566 / 497,778 / 293,052 / 62,247 / 10,796 / 43,633 / 39,982 bytes, §2's sizes exactly; `cmp` with the set the story's design rebuilt independently: identical | 0 |
+| 3b | The tarball of `0c9fbf6`, for information | `npm pack` in that tree: 235,376 bytes, 90 files, shasum `5f81c183aa02ca605bff18b89fc35550dd39f7c1`, §1's | 0 |
+| 4 | This branch's tarball | `npm --prefix packages/uxdsl run build`, then in `packages/uxdsl` at `e51b775`, `npm pack --pack-destination <scratch>/press-craftor-tarball`: `uxdsl-0.5.0-beta.9.tgz`, 267,640 bytes packed, 987,008 unpacked, 92 files, shasum `f8ff8f14074a3ce024ba9307c2a3052e559b4bf6` | 0; 0 |
+| 5 | The install in `pc-superset` | `package.json`'s `uxdsl` pointed at `file:<scratch>/press-craftor-tarball/uxdsl-0.5.0-beta.9.tgz`; `npm install --no-audit --no-fund` (579 packages, 17 s; the patch carries no lockfile, so npm reconciled the clone's beta.8 lockfile) | 0 |
+| 5a | Finding 1's workaround | `npm i -D postcss`: "up to date", since the patch already declares `postcss ^8.5.32`; `npx uxdsl --version` prints `uxdsl 0.5.0-beta.9` | 0; 0 |
+| 6 | The seven files | `npm run uxdsl:build`: seven `built` lines and no warning | 0 |
+| 7 | `next build` | `npm run build`, 71 s: `uxdsl build` reports the seven files unchanged, then `next build --webpack` compiles in 29.4 s and generates 70 static pages | 0 |
+| 8 | Chrome | `next start` on a free 127.0.0.1 port with only `PATH`, `HOME`, `NODE_ENV=production` and `NEXT_TELEMETRY_DISABLED=1` in its environment, then §6's probe of `/login` and `/help` (`pc-serve-probe.js`, `pc-probe.js`); the server's process group is stopped at the end | 0 |
+| 9 | Steps 5 to 8 on `pc-after` with the `0c9fbf6` tarball, as the reference for steps 7 and 8 | `npm install` (575 packages), `npm i -D postcss` (up to date), `npm run build` (its `uxdsl build` rewrote the seven files byte for byte as step 3 wrote them; compiled in 31.1 s, 70 static pages), the probe | 0; 0; 0; 0 |
+
+### Sizes
+
+| File | Before (beta.8, §2) | After (MIG-B9-03, `0c9fbf6`) | Superset (this branch) |
+| --- | --- | --- | --- |
+| `src/app/uxdsl.css` | 368,181 B | 89,566 B | 89,582 B |
+| `src/app/radar-dashboard.generated.module.css` | 463,716 B | 497,778 B | 506,158 B |
+| `src/app/creative-draft-workspace.generated.module.css` | 276,300 B | 293,052 B | 294,878 B |
+| `src/app/draft-2-canvas.generated.module.css` | 60,710 B | 62,247 B | 65,112 B |
+| `src/app/editorial-profile-panel.generated.module.css` | 10,460 B | 10,796 B | 10,915 B |
+| `src/app/topic-configuration-panel.generated.module.css` | 41,507 B | 43,633 B | 44,495 B |
+| `src/app/ui/primitives.generated.module.css` | 35,764 B | 39,982 B | 41,169 B |
+
+### The seven files compared, after set to superset
+
+The method is §3's: a raw `diff`; then PostCSS's rule-level comparison,
+whitespace-insensitive, where each rule is its at-rule chain, its selector and
+its declarations, compared as multisets and then for the order of the common
+rules (a longest common subsequence); then every rule that differs is paired
+by position, since the rule counts are equal and no common rule moved, and
+classified by applying the documented rewrites in turn until the two rules
+are equal (`pc-compare.js`). The blank-line column counts empty lines
+(`grep -c '^$'`).
+
+| File | Raw diff, lines − / + | Rules | Rules that differ | Common rules moved | `@charset "UTF-8";` first | Blank lines | Final newline |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `uxdsl.css` | 2 / 2 | 22 → 22 | 0 | 0 | added | 7 → 6 | dropped |
+| `radar-dashboard` | 1,273 / 6,644 | 1,604 → 1,604 | 86 | 0 | added | 754 → 1,646 | dropped |
+| `creative-draft-workspace` | 290 / 1,546 | 896 → 896 | 45 | 0 | added | 750 → 950 | dropped |
+| `draft-2-canvas` | 302 / 1,996 | 233 → 233 | 34 | 0 | added | 17 → 196 | dropped |
+| `editorial-profile-panel` | 25 / 122 | 44 → 44 | 1 | 0 | no | 25 → 47 | dropped |
+| `topic-configuration-panel` | 86 / 635 | 143 → 143 | 2 | 0 | no | 71 → 150 | dropped |
+| `ui/primitives` | 110 / 876 | 128 → 128 | 7 | 0 | no | 0 → 120 | dropped |
+
+No rule appears or disappears, no common rule moves, no rule is nested on
+either side (the sources have no nesting), the comment counts are equal (4,
+37, 25, 44, 2, 4 and 0), and neither side has an `@import`.
+
+| Class of difference | Rules | Occurrences | Classification |
+| --- | --- | --- | --- |
+| Dart Sass's layout: one declaration per line, a blank line between top-level rules, no final newline | — (every file: the raw-diff, blank-line and final-newline columns) | — | documented: MIG-B9-13's `### Visual changes`, "Dart Sass's formatting" |
+| `@charset "UTF-8";` first, in the four files whose sources hold non-ASCII text | — | 4 | documented: the same bullet ("`@charset "UTF-8";` first for any non-ASCII text (comments included)") |
+| An attribute value that is an identifier, unquoted in the author's selectors: `[type="checkbox"]` → `[type=checkbox]`, `[aria-pressed="true"]` → `[aria-pressed=true]`, `[data-state="running"]` → `[data-state=running]`. The `[aria-disabled="true"]`, `[aria-invalid="true"]`, `[aria-pressed="true"]` and `[aria-selected="true"]` that the plugin writes for the `@ds-button` and `@ds-input` states, after Dart Sass ran, keep their quotes (350, 68, 141 and 141 in the superset) | 134 | 160 | documented: the same bullet ("an attribute value that is an identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`)") |
+| `16 / 9` written `16/9`: `grid-column: 1 / -1` (12), `grid-column: 2 / -1` (3), `aspect-ratio: 4 / 5` (16) and `aspect-ratio: 3 / 2` (2) | 33 | 33 | documented: the same bullet ("`16/9` for `16 / 9`") |
+| A `calc()` directly inside `min()`, `max()` or `clamp()` written without `calc()` | 9 | 9 | **finding 9** |
+| `""` for `''`, `0.5` for `.5`, a comment inside a value dropped, CSS math on plain numbers evaluated | 0 | 0 | — |
+| A flattened rule, a dropped `//` comment | 0 | 0 | — (the sources have neither) |
+
+175 rules differ in all, each by the classes above: **no hunk is
+unexplained**. A rule that differs by two classes is counted under each
+(`draft-2-canvas`'s `.studioStage` has both a `min(100%, calc(…))` and an
+`aspect-ratio: 4 / 5`).
+
+9. **Dart Sass writes a `calc()` nested in `min()`, `max()` or `clamp()`
+   without `calc()`, and no CHANGELOG says so.** Dart Sass parses `calc()`
+   as a calculation and, inside another math function, prints only its
+   expression, so these nine declarations change text:
+
+   | File | Rule | After set | Superset |
+   | --- | --- | --- | --- |
+   | `radar-dashboard` | `@media (min-width: 768px)` `.contentViewer` | `max-height: min(820px, calc(100svh - 48px))` | `max-height: min(820px, 100svh - 48px)` |
+   | `radar-dashboard` | `.demoCreditsPanel` | `width: min(390px, calc(100vw - 24px))` | `width: min(390px, 100vw - 24px)` |
+   | `radar-dashboard` | `.accountPanel` | `width: min(280px, calc(100vw - 24px))` | `width: min(280px, 100vw - 24px)` |
+   | `creative-draft-workspace` | `.routeError, .routeLoading` | `width: min(700px, calc(100% - 2rem))` | `width: min(700px, 100% - 2rem)` |
+   | `creative-draft-workspace` | `.routeRefresh` | `width: min(1320px, calc(100% - 2rem))` | `width: min(1320px, 100% - 2rem)` |
+   | `creative-draft-workspace` | `.helpContent` | `width: min(760px, calc(100% - 2rem))` | `width: min(760px, 100% - 2rem)` |
+   | `draft-2-canvas` | `.notice` | `width: min(68rem, calc(100% - 2rem))` | `width: min(68rem, 100% - 2rem)` |
+   | `draft-2-canvas` | `.studioStage` | `width: min(100%, calc((100svh - 17rem) * 0.8))` | `width: min(100%, (100svh - 17rem) * 0.8)` |
+   | `ui/primitives` | `@media (min-width: 768px)` `.dialog` | `max-height: min(820px, calc(100svh - 48px))` | `max-height: min(820px, 100svh - 48px)` |
+
+   The two forms are the same CSS (the arguments of a math function are
+   calculations), and Chrome 156 computes the same value for each of these
+   nine declarations and for `.studioStage`'s `aspect-ratio: 4/5`, at
+   390×700, 1280×900 and 1920×1080 (`pc-calc-chrome.js`: 0 different out of
+   30; its negative control, `min(9999px, calc(100svh - 48px))` against
+   `min(9999px, 100svh - 96px)`, is reported different at all three sizes).
+   A consumer diffing output sees moved text; nothing renders differently.
+   Target: **MIG-B9-15** or **MIG-B9-52**: one more item in the CHANGELOG's
+   Dart Sass formatting bullet and in migration.md's "beta.9 — Sass inside
+   compile()" item 1. MIG-B9-13's CHANGELOG entry is append-only, so
+   MIG-B9-14 does not edit it.
+
+### Rendering
+
+**Run — the routes that render without data**, with §6's probe: walk.js's
+`findUnresolvedVars`, extracted verbatim from
+`fixtures/playground-browser/walk.js`, plus console errors, page errors,
+failed requests and responses of 400 or more, at 390 and 1280 px, in light and
+dark `prefers-color-scheme`, after a negative control (a page with
+`.x { color: var(--uxdsl__nope); }` and a `console.error`, both reported).
+The superset and the after set give the same result, §6's:
+
+- `/login` (`ui/primitives` and `uxdsl.css`): 200 in all four cases, no
+  problem.
+- `/help` (`creative-draft-workspace`): 200 in all four cases; the four
+  `emphasis` typography variables of finding 4
+  (`--uxdsl__typography__emphasis-font-family`, `-font-size`,
+  `-line-height`, `-letter-spacing`, read by `.helpContent a`) and the
+  aborted prefetch of `/` (`net::ERR_ABORTED`; `/` answers 500 because
+  `DATABASE_URL` is not configured). At 1280 px light the superset's run
+  logged two aborted prefetches of `/` where every other run logged one: a
+  prefetch of the failing route, not UXDSL.
+- The built CSS: seven chunks in `.next/static/css` on both sides, `:root`
+  only in the global one (11 blocks, 124,806 bytes, byte-identical between
+  the two builds). The superset's `radar-dashboard` chunk starts with
+  `@charset "UTF-8";` at offset 0; Next's CSS minifier removed it from the
+  other three modules' chunks, and none is left inside a chunk.
+
+**Run — §6's static proxy, on both sets, compared computed style by computed
+style.** One page per CSS Module with `uxdsl.css` and the module inlined, and
+a `div`, `button`, `input`, `textarea`, `select`, `a` and `span` for each
+class the module's selectors name (494, 322, 145, 17, 51 and 55 classes:
+7,588 elements), measured at 390 and 1280 px in light and dark: every computed
+property of every element, hashed per element, with animations paused at
+their first frame and transitions off, the same on both sides
+(`pc-static-compare.js`). Result: **0 elements differ** on all 24 pages, and
+the `findUnresolvedVars` lists are identical on every page (51, 41, 6, 2, 4
+and 4 entries); at 1280 px light they name 16 custom properties, the same on
+both sides: the 14 that `uxdsl.css` declares `inherit` (finding 4), and
+`--font-geist-sans` with the typography variable that reads it, which
+`next/font` provides on a real page. The negative control, the superset's
+module with one rule appended for its first class, changes exactly that
+class's seven elements on every page. One page load out of the 145 read
+differed from two agreeing loads of the same page, in every element (a
+load-level race of the headless browser: the environment it reports is the
+same), so each page is loaded until two loads agree and that load is
+counted, not hidden.
+
+**Not run**, never counted as a pass:
+
+- The two routes that use `radar-dashboard` (`/`) and
+  `creative-draft-workspace` with data (the story and Draft 2 pages): they
+  need `DATABASE_URL` and a sign-in (§6), and `/` answers 500 without them.
+  The static proxy stands in for their CSS and proves nothing about layout,
+  hydration or the topic-palette scoping.
+- Interaction states (`:hover`, `:focus-visible`, `[aria-pressed=true]`)
+  were not driven on a page; their rules differ only by the attribute-quoting
+  class, which the CSS specification makes equivalent.
+- A visual review (screenshots), the owner's project (§7: applying the patch
+  is the owner's step), Vercel.
+
+### Cross-checks
+
+- MIG-B9-14 changes no compiled byte: the base `7aec3e0`'s CLI (a build of
+  `git archive 7aec3e0`) and this repository's CLI at `e51b775` (Dart Sass
+  1.107.0), run in `pc-after` over the same patched sources, write the seven
+  files byte for byte as the tarball's install (Dart Sass 1.107.1) wrote
+  them.
+- Every difference above therefore comes from MIG-B9-13, `compile()` on Dart
+  Sass, and none from MIG-B9-10 (part 2), 11 or 12, which changed no compiled
+  output (their CHANGELOG entries say so).
+- `story-radar` was only read (step 1's `git clone`): after the run its HEAD
+  is `ff0e6cdc04a47e68497cc0b56eb05773ffe731b3`, as the story's scout read it
+  before, and `git status --porcelain` prints the one untracked file §7
+  records (`?? 4f91cb9c-7c15-4f6d-bf64-0b3a71a8213b.png`).

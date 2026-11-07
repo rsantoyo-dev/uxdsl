@@ -22,9 +22,9 @@ Read from `DIAGNOSTIC_CATALOG` (`uxdsl/language`), the catalog the compiler itse
 
 <div className="doc-section">
 
-## Real errors, captured
+## Real errors and warnings, captured
 
-Each source below was compiled by `uxdsl build`, and the error under it is what the build printed. `scripts/capture-capabilities.js` records them and fails when a case stops producing its code, so this page cannot show an error the compiler no longer reports. `UXD_THEME_NOT_INITIALIZED` and `UXD_THEME_STRUCTURE` are produced live by the sandbox on [Runtime](/docs/runtime).
+Each source below was compiled by `uxdsl build`, and what is under it is what the build printed: an error, with a failing exit, or for `UXD_FUNCTION_SHADOWED` a warning, with exit 0. `scripts/capture-capabilities.js` records them and fails when a case stops producing its code or its exit, so this page cannot show a diagnostic the compiler no longer reports. `UXD_THEME_NOT_INITIALIZED` and `UXD_THEME_STRUCTURE` are produced live by the sandbox on [Runtime](/docs/runtime).
 
 </div>
 

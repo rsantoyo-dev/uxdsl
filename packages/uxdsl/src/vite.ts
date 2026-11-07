@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compile } from './compile';
+import type { CompileConfig, CompileWarning } from './compile';
 import { discoverThemeAsync } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
@@ -14,8 +15,11 @@ import { discoverThemeAsync } from './config';
 // `vite:css`/`vite:css-post` plugins take it from there — extraction in
 // `vite build`, native HMR, and an empty/no-op SSR module, all for free.
 //
-// There is no Sass pre-pass and no `breakpoints` option: `$var`, `@each` and
-// `@mixin` are handled by the shared pipeline itself, and breakpoints are a
+// compile() runs Dart Sass itself, so there is no Sass pre-pass here: the
+// `sass` option goes to compile(), which validates it and passes it to Dart
+// Sass. Every file Dart Sass loaded is added with `addWatchFile`, and each
+// compile() warning reaches `this.warn()` at its file (relative to Vite's
+// root), line and column. There is no `breakpoints` option: breakpoints are a
 // theme family — declared under `breakpoints` in the theme file (or the
 // `theme` option), the one place every integration reads them from.
 
@@ -39,6 +43,12 @@ export interface UxDslPluginOptions {
    * project root (`config.root`), not `process.cwd()` — the two commonly
    * differ (a monorepo running Vite with a non-default `root`). */
   configRoot?: string;
+  /** Passed to Dart Sass through compile(): the deprecation ids to silence
+   * (each is reported as UXD_SASS_WARNING otherwise) and whether to silence
+   * the deprecations of packages loaded from load paths or `pkg:`. compile()
+   * validates it: any other key, or a value of the wrong type, fails the
+   * load. */
+  sass?: CompileConfig['sass'];
 }
 
 // A previously-resolved id of ours always carries this marker in its query
@@ -67,6 +77,18 @@ function realPathFromVirtualId(id: string): string {
 // exactly as it would for a real `.css?inline` import.
 function buildVirtualId(absPath: string, inline: boolean): string {
   return `${absPath}?uxdsl${inline ? '&inline' : ''}&lang.css`;
+}
+
+// A compile() warning as one line, in the CLI's shape:
+// `<file>:<line>:<column>: <text>` with the file relative to `root`,
+// `<file>:<line>: <text>` without a column, `<file>: <text>` with a file only,
+// and the text alone when the warning has no position (Dart Sass's
+// `N repetitive deprecation warnings omitted.`, for one).
+function formatWarning(warning: CompileWarning, root: string): string {
+  if (!warning.file) return warning.text;
+  const file = path.relative(root, warning.file);
+  if (warning.line == null) return `${file}: ${warning.text}`;
+  return `${file}:${warning.line}${warning.column != null ? `:${warning.column}` : ''}: ${warning.text}`;
 }
 
 export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
@@ -142,11 +164,12 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         includeTheme: userOptions.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: absPath,
+        sass: userOptions.sass,
       });
 
       for (const dep of dependencies) this.addWatchFile(dep);
       if (discovered) for (const dep of discovered.dependencies) this.addWatchFile(dep);
-      for (const warning of warnings) this.warn(warning.text);
+      for (const warning of warnings) this.warn(formatWarning(warning, projectRoot));
 
       // This is the map for the CSS this hook just produced. It is returned
       // as the module's own map only because the module *is* that CSS —

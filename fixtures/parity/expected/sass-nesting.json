@@ -1,0 +1,3 @@
+{
+  "css": ".card {\n  color: var(--uxdsl__palette__primary-main);\n}\n.card__title {\n  padding: var(--uxdsl__density__2);\n}\n.card:hover {\n  color: var(--uxdsl__palette__primary-dark);\n}\n.icon .card {\n  border: var(--uxdsl__border__1);\n}\n@media (min-width: 600px) {\n  .card {\n    padding: var(--uxdsl__space__4);\n  }\n}"
+}

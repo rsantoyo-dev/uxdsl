@@ -49,11 +49,55 @@ compiled through Dart Sass, never by the PostCSS plugin used alone
 `init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
 default theme is built in); `build` compiles it once
 to a plain `.css` file you import from your app like any other stylesheet.
-`npx uxdsl build --watch` recompiles as you edit (the config's `watch` globs
-select what it follows — "Watch mode" in the CLI guide). See
+`npx uxdsl build --watch` recompiles as you edit (it follows every entry and
+every file Dart Sass loaded, and the config's `watch` globs add paths —
+"Watch mode" in the CLI guide). See
 [the CLI guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md) for the full setup
 (Next.js/Vite detection, `uxdsl:build`/`uxdsl:watch` scripts, multi-entry
 projects).
+
+The CLI prints a compile error at the author's file, line and column, then a
+frame of the author's source: Dart Sass's own frame and stack for `UXD_SASS`,
+PostCSS's for a UXDSL error. It does so in a one-shot build and under
+`--watch`, where every failed build of the session, the first one included,
+prints `[uxdsl] build failed:` and leaves the last good CSS on disk. Every
+`compile()` warning (Dart Sass's deprecations and `@warn`,
+`UXD_FUNCTION_SHADOWED`, the plugin's) prints once per build as
+`[uxdsl] Warning: <file>:<line>:<column>: <text>` (one without a position,
+such as Dart Sass's summary of the deprecations it omitted, once for each
+entry that reports it), and the build config's
+`sass` key (`{ silenceDeprecations?, quietDeps? }`, checked when the config
+loads) passes Dart Sass options to every entry. `--watch` starts from the
+first build's dependency graph and follows every entry and every file Dart
+Sass loaded (a `.scss` partial, a file outside the entry's directory or in
+`node_modules`), so a change rebuilds only the entries that load the file,
+once (a save that makes an entry start loading a file too, unless that file
+was written within moments of the save), and restoring such a file, or a
+directory of them, after deleting it rebuilds them; a
+partial a build could not find is noticed when it appears only where a
+`watch` pattern matches it. `init` and `generate-entry` write an entry that
+loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;` (a `%`,
+`#`, `?`, `'` or `\` in the path percent-encoded), every namespace unique
+(`generate-entry --first a,b` lists those files first), so
+each file is its own Sass module and `@use`s what it reads from another, `as *`
+or with each member written through the namespace (under a namespaced `@use`
+a function called by its bare name stays in the CSS, with no error);
+`generate-entry` warns once when it replaces an entry that listed its files
+with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
+which `compile()` validates, and report each warning as
+`<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
+webpack's `rootContext`; `uxdsl/webpack` hands css-loader a map whose
+sources are absolute paths, so the map webpack emits names each `.uxdsl`
+file at its path whatever the working directory. The CLI guide's
+[`generate-entry`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#generate-entry),
+[Watch mode](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#watch-mode)
+and [Diagnostics](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#diagnostics)
+sections describe each of these, its
+[Next.js section](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#nextjs-css-modules-written-in-uxdsl)
+how to write a CSS Module in `.uxdsl`, and the migration guide's
+"Regenerate the entry" item
+([beta.9 — Sass inside compile()](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md#beta9--sass-inside-compile))
+what a regenerated entry changes in a project.
 
 ## Entry points
 

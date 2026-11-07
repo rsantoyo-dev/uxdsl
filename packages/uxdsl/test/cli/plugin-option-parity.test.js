@@ -122,3 +122,54 @@ test('MIG-B6-18: every one of those same UxdslOptions keys is also forwarded by 
     'Either forward them in compileEntryToCss(), or add them to KNOWN_UNFORWARDED_PLUGIN_OPTIONS with a reason.'
   );
 });
+
+// compile()'s own options. Every key of `CompileConfig` reaches compile() from
+// each host's call, or is listed here with the reason it is not forwarded.
+const KNOWN_UNFORWARDED_COMPILE_OPTIONS = {
+  sourcesContent: "every host keeps the default: maps carry the author's text",
+};
+
+const VITE_SRC = path.resolve(__dirname, '..', '..', 'src', 'vite.ts');
+const WEBPACK_SRC = path.resolve(__dirname, '..', '..', 'src', 'webpack.ts');
+
+const COMPILE_CALL_HOSTS = [
+  ['the CLI', CLI_SRC, /uxdslCore\.compile\(\s*\{[\s\S]*?\},\s*\{([\s\S]*?)\}\s*\)/],
+  ['uxdsl/vite', VITE_SRC, /\bcompile\(\s*\{[\s\S]*?\},\s*\{([\s\S]*?)\}\s*\)/],
+  ['uxdsl/webpack', WEBPACK_SRC, /\bcompile\(\s*\{[\s\S]*?\},\s*\{([\s\S]*?)\}\s*\)/],
+];
+
+function unforwardedCompileOptions(optionKeys, hostSource, callPattern, describeFor) {
+  const forwarded = new Set(extractObjectLiteralKeys(hostSource, callPattern, describeFor));
+  return optionKeys.filter((key) => !Object.prototype.hasOwnProperty.call(KNOWN_UNFORWARDED_COMPILE_OPTIONS, key) && !forwarded.has(key));
+}
+
+test("MIG-B9-14: every compile() option is forwarded by each host's compile() call, or listed with its reason", () => {
+  const optionKeys = extractInterfaceKeys(fs.readFileSync(CORE_SRC, 'utf8'), 'CompileConfig', CORE_SRC);
+  assert.ok(optionKeys.includes('sass') && optionKeys.includes('sourcesContent'), JSON.stringify(optionKeys));
+  const missingByHost = {};
+  for (const [host, file, callPattern] of COMPILE_CALL_HOSTS) {
+    const missing = unforwardedCompileOptions(optionKeys, fs.readFileSync(file, 'utf8'), callPattern, `${host}'s compile() call in ${file}`);
+    if (missing.length) missingByHost[`${host} (${path.relative(path.resolve(__dirname, '..', '..'), file)})`] = missing;
+  }
+  assert.deepEqual(
+    missingByHost,
+    {},
+    `CompileConfig key(s) not forwarded by a host's compile() call: ${JSON.stringify(missingByHost)}. ` +
+    'Forward them, or add them to KNOWN_UNFORWARDED_COMPILE_OPTIONS with a reason.'
+  );
+});
+
+test('MIG-B9-14: the forwarding check reports an option a compile() call leaves out (negative control)', () => {
+  const call = 'await uxdslCore.compile(\n  { entry },\n  {\n    theme,\n    references,\n    includeTheme,\n    to,\n    sourceMap,\n  }\n);';
+  const keys = ['theme', 'references', 'includeTheme', 'to', 'sourcesContent', 'sourceMap', 'sass'];
+  assert.deepEqual(unforwardedCompileOptions(keys, call, COMPILE_CALL_HOSTS[0][2], 'a call without sass'), ['sass']);
+  // The adapters' call shapes, in COMPILE_CALL_HOSTS's order: uxdsl/vite's
+  // compile({ entry: absPath }, { … }) and uxdsl/webpack's compile({ source, from }, { … }).
+  const adapterCalls = [
+    'const { css } = await compile({ entry: absPath }, {\n  theme: theme as Record<string, unknown>,\n  references: userOptions.references,\n  includeTheme: userOptions.includeTheme,\n  sourceMap: wantMap ? \'external\' : false,\n  to: absPath,\n});',
+    'const { css } = await compile(\n  { source, from: this.resourcePath },\n  {\n    theme: theme as Record<string, unknown>,\n    references,\n    includeTheme: options.includeTheme,\n    sourceMap: wantMap ? \'external\' : false,\n    to: this.resourcePath,\n  }\n);',
+  ];
+  for (const [index, adapterCall] of adapterCalls.entries()) {
+    assert.deepEqual(unforwardedCompileOptions(keys, adapterCall, COMPILE_CALL_HOSTS[1 + index][2], 'an adapter call without sass'), ['sass']);
+  }
+});

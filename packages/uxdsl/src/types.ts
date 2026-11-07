@@ -212,6 +212,17 @@ export interface UxdslConfigShared {
    * every entry — there are no per-entry map overrides. Spelled like the
    * `--sourcemap` flag. */
   sourcemap?: false | 'inline' | 'external';
+  /** Passed to Dart Sass for every entry: the deprecation ids to silence (each
+   * is printed as `UXD_SASS_WARNING` otherwise) and whether to silence the
+   * deprecations of packages loaded through load paths (`node_modules`) or
+   * `pkg:`. Checked when the config loads; there is no per-entry `sass`.
+   *
+   * The shape is `compile()`'s own `sass` option (`CompileConfig` in
+   * compile.ts), written here rather than imported: an import would bring
+   * compile.ts, whose `import … = require()` a program that emits ES modules
+   * rejects, into every program that type-checks these types from source. A
+   * CLI test has tsc read the two as one type. */
+  sass?: { silenceDeprecations?: string[]; quietDeps?: boolean };
 }
 
 /**
