@@ -654,8 +654,11 @@ test("MIG-B9-14: editing a @use'd partial rebuilds only the entries that load it
 // watcher first sees such a file when it next reads the file's directory, and
 // that is the directory of the file just saved when the two sit together: what
 // it then reports is the file the build has just loaded, not a change, so the
-// save builds the entry once and prints its warnings once.
-test('MIG-B9-14: an entry that starts loading an existing file beside the file just saved builds once for that save and prints its warning once; an edit of that file then rebuilds the entry', async (t) => {
+// save builds the entry once and prints its warnings once. Whether or not the
+// watcher reads that directory after the build, an event that finds the file as
+// the build read it (here, its times written again as they were) builds nothing
+// until the file changes.
+test('MIG-B9-14: an entry that starts loading an existing file beside the file just saved builds once for that save and prints its warning once, and an event that finds that file unchanged builds nothing; an edit of that file then rebuilds the entry', async (t) => {
   const dir = mkProject();
   const put = (file, text) => {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
@@ -692,6 +695,63 @@ test('MIG-B9-14: an entry that starts loading an existing file beside the file j
   assert.equal(buildsOfB(save), 1, `one save, one build of b:\n${save}`);
   assert.equal(save.split('\n').filter((line) => line === '[uxdsl] Warning: src/b.uxdsl:2:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.').length, 1, save);
   assert.doesNotMatch(save, /\[uxdsl\] add src[\\/]_x\.scss/, save);
+
+  // An event that finds the file as that build read it builds nothing.
+  mark = output.length;
+  fs.utimesSync(path.join(dir, 'src', '_x.scss'), past, past);
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
+
+  // The file is followed: editing it rebuilds b, once, with the new content.
+  mark = output.length;
+  put('src/_x.scss', '.x { color: coral; }\n');
+  await waitFor(() => bCss().includes('coral'));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.equal(buildsOfB(output.slice(mark)), 1, output.slice(mark));
+});
+
+// The same holds for a save that rebuilds every entry, as the save of an entry
+// whose first build failed does, since the session has no graph for it yet.
+test('MIG-B9-14: an entry whose first build failed, saved so that it loads an existing file beside it, builds once for that save and prints its warning once, and an event that finds that file unchanged builds nothing; an edit of that file then rebuilds the entry', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
+    fs.writeFileSync(path.join(dir, file), text);
+  };
+  // No `watch` key: the patterns are the entry and src/**/*.uxdsl, which do not match src/_x.scss.
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false };\n");
+  put('src/b.uxdsl', "@use './missing';\n.b { color: blue; }\n");
+  put('src/_x.scss', '.x { color: teal; }\n');
+  put('src/_legacy.uxdsl', '.legacy { color: gray; }\n');
+  const past = (Date.now() - 10000) / 1000;
+  for (const file of ['uxdsl.config.cjs', 'src/b.uxdsl', 'src/_x.scss', 'src/_legacy.uxdsl']) fs.utimesSync(path.join(dir, file), past, past);
+
+  const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
+  t.after(() => child.kill());
+  let output = '';
+  child.stdout.on('data', (chunk) => { output += chunk.toString(); });
+  child.stderr.on('data', (chunk) => { output += chunk.toString(); });
+  const cssPath = path.join(dir, 'out', 'b.css');
+  const bCss = () => (fs.existsSync(cssPath) ? fs.readFileSync(cssPath, 'utf8') : '');
+  const buildsOfB = (text) => (text.match(/\[uxdsl\] (built|unchanged) out[\\/]b\.css/g) || []).length;
+  await waitFor(() => /watching for changes/.test(output) && /^\[uxdsl\] build failed: src\/b\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m.test(output));
+  await delay(WATCHER_SETTLE_MS);
+
+  // The save rebuilds every entry, and that build starts loading src/_x.scss.
+  let mark = output.length;
+  put('src/b.uxdsl', "@use './x';\n@import './legacy';\n.b { color: blue; }\n");
+  await waitFor(() => bCss().includes('teal'));
+  await delay(WATCHER_SETTLE_MS * 2.5);
+  const save = output.slice(mark);
+  assert.equal(buildsOfB(save), 1, `one save, one build of b:\n${save}`);
+  assert.equal(save.split('\n').filter((line) => line === '[uxdsl] Warning: src/b.uxdsl:2:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.').length, 1, save);
+  assert.doesNotMatch(save, /\[uxdsl\] add src[\\/]_x\.scss/, save);
+
+  // An event that finds the file as that build read it builds nothing.
+  mark = output.length;
+  fs.utimesSync(path.join(dir, 'src', '_x.scss'), past, past);
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(output.slice(mark), /\[uxdsl\] (built|unchanged|change|add)\b/, output.slice(mark));
 
   // The file is followed: editing it rebuilds b, once, with the new content.
   mark = output.length;

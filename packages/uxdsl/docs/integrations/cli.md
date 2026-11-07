@@ -364,7 +364,11 @@ is saved. A file is followed through its directory, which keeps an editor's
 save by rename visible; the directory's other files are not followed. The
 files followed are every entry and the files the last successful build of
 each entry loaded. A file a build starts loading is followed once that build
-succeeds, and the save that made the entry load it builds the entry once.
+succeeds, and the save that made the entry load it builds the entry once if
+the file was last written more than 100 ms before that build started (2 s on
+a file system that keeps whole seconds). A file written later, as a "save
+all" or a branch switch that writes it with the entry can do, may build the
+entry a second time and print its warnings twice.
 
 It reloads the config and the theme from disk on every rebuild, never
 re-triggers on its own output file, and survives errors. Every failed build of

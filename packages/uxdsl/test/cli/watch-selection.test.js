@@ -183,6 +183,55 @@ test('MIG-B9-14: a file followed after the build that loaded it keeps its stats 
   assert.deepEqual(watcher.follow(names.map(file)), []);
 });
 
+// What a kept file's stats decide, whatever chokidar reports for the file: an
+// event that finds them as they were is dropped, the first that finds them
+// changed is reported, and from then on the file is reported like any other.
+// The event here is the file's times written again as they were, which leaves
+// the stats compared as they were and which chokidar reports as a change when
+// it happens, while the `add` it reports at its next read of the directory
+// comes or not depending on when the file system's events arrive. A file
+// followed without keeping its stats is reported for the same write.
+test("MIG-B9-14: an event that finds a kept file's stats as they were is dropped, while a file that did not keep its stats is reported; the first event that finds them changed is reported, and so is every later one", async (t) => {
+  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-watch-drop-')));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(dir, 'src'));
+  const file = (name) => path.join(dir, 'src', name);
+  for (const name of ['a.uxdsl', '_kept.scss', '_recent.scss']) fs.writeFileSync(file(name), '.x {}');
+  const startedAt = Date.now();
+  const setTime = (name, ms) => fs.utimesSync(file(name), ms / 1000, ms / 1000);
+  const keptAt = startedAt - 10000;
+  const recentAt = startedAt - 50.5;
+  setTime('_kept.scss', keptAt);
+  setTime('_recent.scss', recentAt);
+  const watcher = cli.createWatcher([path.join(dir, 'src/**/*.uxdsl')]);
+  t.after(() => watcher.close());
+  const events = [];
+  watcher.on('all', (event, reported) => events.push(`${event} ${path.basename(reported)}`));
+  await new Promise((resolve) => watcher.once('ready', resolve));
+  assert.deepEqual(watcher.follow([file('_kept.scss'), file('_recent.scss')], startedAt), [file('_kept.scss')]);
+  await delay(500);
+  const of = (name, from) => events.slice(from).filter((e) => e.endsWith(` ${name}`));
+
+  // Both files' times written again as they were: only the file that did not keep its stats is reported.
+  let mark = events.length;
+  setTime('_kept.scss', keptAt);
+  await delay(300);
+  setTime('_recent.scss', recentAt);
+  await waitFor(() => of('_recent.scss', mark).length > 0);
+  await delay(300);
+  assert.deepEqual(of('_kept.scss', mark), [], events.join('\n'));
+
+  // The kept file's time changes, then goes back to the stats it kept: both are reported.
+  mark = events.length;
+  setTime('_kept.scss', keptAt + 1000);
+  await waitFor(() => of('_kept.scss', mark).length === 1);
+  await delay(300);
+  setTime('_kept.scss', keptAt);
+  await waitFor(() => of('_kept.scss', mark).length === 2);
+  await delay(300);
+  assert.deepEqual(of('_kept.scss', mark), ['change _kept.scss', 'change _kept.scss'], events.join('\n'));
+});
+
 // chokidar stops watching a directory once it is deleted, and watches a path
 // that does not exist through its parent, for that one name. A followed
 // directory that is deleted, or that does not exist yet, is therefore watched
