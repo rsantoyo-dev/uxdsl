@@ -75,6 +75,15 @@ Then in your application code:
 import './styles.uxdsl';
 ```
 
+Apply the loader to `.uxdsl` files, as the rule above does. It compiles each
+module as the file it is, so the file's extension decides how Dart Sass reads
+it: a rule that sends `.css` or `.scss` files through `uxdsl/webpack`
+compiles them as written, and UXDSL's dotted tokens fail there
+(`UXD_SASS: expected "(".`). A `.uxdsl` file may `@use` a `.scss`, `.sass` or
+`.css` file, which Dart Sass reads as written too. No `sass-loader` is needed
+for `.uxdsl` files: `compile()` runs Dart Sass itself (the `compile()` guide's
+[Sass inside `compile()`](compile.md#sass-inside-compile)).
+
 ## Options
 
 ```js

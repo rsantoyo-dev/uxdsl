@@ -163,6 +163,7 @@ test('every documentation surface with examples is found (the extractor cannot s
     'AGENTS.md': 8,
     'packages/uxdsl/README.md': 8,
     'packages/uxdsl/docs/integrations/cli.md': 1,
+    'packages/uxdsl/docs/integrations/compile.md': 5,
     'packages/playground-nextjs/src/components/ButtonDocumentation.tsx': 2,
     'packages/playground-nextjs/src/components/SurfaceDocumentation.tsx': 3,
     'packages/playground-nextjs/src/components/ColorDocumentation.tsx': 1,
@@ -192,4 +193,27 @@ test('AGENTS.md: every file it tells contributors to keep aligned exists', () =>
   assert.ok(listed.length >= 11 || all.length >= 11, 'the list itself was not found');
   const missing = all.filter((file) => !fs.existsSync(path.join(ROOT, file)));
   assert.deepEqual(missing, [], 'AGENTS.md lists a file that does not exist');
+});
+
+// --- 4. what the READMEs and the guide say UXDSL is ------------------------
+
+// UXDSL is SCSS plus a design-system engine: it does not replace SCSS, its output is
+// media queries, and it is inspired by Material UI rather than being it.
+const RETIRED_CLAIMS = /replaces SCSS|no media queries/gi;
+const POSITIONING_SLIPS = /is MUI|Material UI's engine/gi;
+const matches = (text, pattern) => text.match(pattern) || [];
+
+test('MIG-B9-15: the READMEs and AGENTS.md make neither retired claim', () => {
+  for (const file of ['README.md', 'packages/uxdsl/README.md', 'AGENTS.md']) {
+    const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.deepEqual(matches(text, RETIRED_CLAIMS), [], `${file} makes a retired claim`);
+    assert.deepEqual(matches(text, POSITIONING_SLIPS), [], `${file}: UXDSL is inspired by Material UI, never "is MUI"`);
+  }
+  assert.match(fs.readFileSync(path.join(ROOT, 'packages/uxdsl/README.md'), 'utf8'), /inspired by Material UI/, 'the package README says where UXDSL comes from');
+});
+
+test('MIG-B9-15: the READMEs and AGENTS.md make neither retired claim (negative control)', () => {
+  assert.deepEqual(matches('UXDSL replaces SCSS, and there are No media queries.', RETIRED_CLAIMS), ['replaces SCSS', 'No media queries']);
+  assert.deepEqual(matches("UXDSL is MUI for CSS, built on Material UI's engine.", POSITIONING_SLIPS), ['is MUI', "Material UI's engine"]);
+  assert.deepEqual(matches("SCSS plus a design-system engine inspired by Material UI's theme engine.", POSITIONING_SLIPS), []);
 });

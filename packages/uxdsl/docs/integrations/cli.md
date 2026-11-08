@@ -79,6 +79,14 @@ suggestion when there is a close one, instead of being ignored.
 | `--sourcemap` / `--sourcemap=inline` / `--no-sourcemap` | Bare means `external`: `<outFile>.map` next to the CSS plus a `sourceMappingURL` comment; `inline` embeds a data URI. Default off. Overrides `sourcemap` in the config. |
 | `--strict-theme=<family,...>` / `--no-strict-theme` | Fail, before writing anything, when a named family is only partly declared by the project (see [Strict theme](#strict-theme-families-that-must-be-complete)). `--no-strict-theme` turns a config's `strictTheme` off for one run. |
 
+An entry's extension decides how Dart Sass reads it. A `.uxdsl` entry carries
+UXDSL's syntax through Sass; a `.css`, `.scss` or `.sass` entry
+(`--entry src/app.css`, or `entry: './src/app.scss'` in the config) is read as
+written, as plain Dart Sass reads it, so a dotted token there fails
+(`UXD_SASS: expected "(".`). Name entries `.uxdsl`. How `@use` and `@import`
+find files, which `@import`s stay CSS and what each extension decides are in
+the `compile()` guide's [Sass inside `compile()`](compile.md#sass-inside-compile).
+
 ### `theme`
 
 | Flag | Does |
@@ -294,10 +302,10 @@ theme at all is a warning, not an error.
 ## Next.js: CSS Modules written in `.uxdsl`
 
 Next.js compiles a `.module.scss` file with its own Sass, which reads UXDSL's
-dotted tokens as Sass and stops at them: `palette(primary.main)` is Dart
-Sass's `expected "("`. Write the module in `.uxdsl` instead, and let the CLI
-compile it into a `.module.css` file that Next.js imports like any other CSS
-Module:
+tokens as Sass and stops at them (`palette(primary.main)` is Dart Sass's
+`expected "("`, `color(white)` its `$description: white is not a string.`).
+Write the module in `.uxdsl` instead, and let the CLI compile it into a
+`.module.css` file that Next.js imports like any other CSS Module:
 
 ```js
 // uxdsl.config.cjs

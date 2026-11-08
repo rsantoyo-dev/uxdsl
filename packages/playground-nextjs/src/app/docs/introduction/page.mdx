@@ -24,14 +24,14 @@ Design decisions — spacing, type, color, borders, shadows, and how each of the
 
 ## What UXDSL is
 
-- **CSS with a few additions.** A `.uxdsl` file is CSS, native nesting included, plus value functions (`space()`, `density()`, `color()`, `palette()`, `radius()`, `border()`, `shadow()`, and one per breakpoint, `xs()` … `xl()`), four directives (`@ds-surface`, `@ds-button`, `@ds-input`, `@ds-typo`) and a documented SCSS-style subset (`$variables`, `@if`/`@else`, `@each` over a list, `@for`, `@mixin`/`@include`, `@content`, `@import`). The [Language](/docs/language) page has the whole grammar.
-- **A compiler with one pipeline.** The CLI (`uxdsl build`), the PostCSS plugin (`uxdsl/postcss`), the Vite plugin and the Webpack loader all run the same `compile()`. The output is plain CSS: custom properties and `min-width` media queries, nothing at run time.
+- **SCSS with a few additions.** A `.uxdsl` file is SCSS — Dart Sass compiles it first, so `@use`, mixins, functions, maps and nesting work as in any `.scss` file — plus value functions (`space()`, `density()`, `color()`, `palette()`, `radius()`, `border()`, `shadow()`, and one per breakpoint, `xs()` … `xl()`) and four directives (`@ds-surface`, `@ds-button`, `@ds-input`, `@ds-typo`). The [Language](/docs/language) page has the whole grammar.
+- **A compiler with one pipeline.** The CLI (`uxdsl build`), the Vite plugin and the Webpack loader all run the same `compile()`: Dart Sass, then UXDSL. The PostCSS plugin (`uxdsl/postcss`) used alone compiles CSS plus UXDSL, without Sass. The output is plain CSS: custom properties and `min-width` media queries, nothing at run time.
 - **One theme model.** One JSON, validated against one schema and merged over a reviewed base theme. The same file is compiled, applied in the browser with `applyTheme`, and audited with `uxdsl theme --diff` and `uxdsl theme --contrast`.
 - **Validated.** Every reference is checked at build time. An unknown token, breakpoint, role or a misplaced directive is a `UXD_*` error with file, line, column and a suggestion — never a silent fallback. See [Diagnostics](/docs/diagnostics).
 
 ## What UXDSL is not
 
-- **Not Sass.** It compiles the subset listed above; any other Sass feature fails with `UXD_SCSS_UNSUPPORTED` naming what to write instead.
+- **Not a Sass of its own.** Dart Sass itself compiles the SCSS; UXDSL resolves its tokens and directives in Dart Sass's output.
 - **Not free of media queries.** The output is media queries; you stop writing them in components. They are viewport `min-width` queries: there are no container queries — use native `@container` next to UXDSL.
 - **Not typed.** The theme has a JSON Schema and every reference is checked at build time; the CSS itself is not type-checked.
 - **Not fluid.** Values step at breakpoints. The base theme has no `clamp()` scales (a `clamp()` is still a valid literal value).
@@ -50,7 +50,7 @@ Design decisions — spacing, type, color, borders, shadows, and how each of the
 <tr><td>Tailwind CSS v4</td><td>On every element: <code>p-3 md:p-4 xl:p-6</code></td><td>Container queries, arbitrary variants, a large ecosystem</td><td>The progression is defined once, on the token, and every component that names it follows</td></tr>
 <tr><td>Open Props</td><td>In the token, as fluid <code>clamp()</code> scales; no build step</td><td>Fluid scales, zero tooling</td><td>Roles (surfaces, buttons, inputs), build-time validation, the theme as JSON</td></tr>
 <tr><td>Panda CSS / vanilla-extract</td><td>In typed recipes and conditions; Panda can also express responsive tokens</td><td>Full typing, recipes, container-query conditions</td><td>Authoring in CSS with no code generation; an optional runtime; diagnostics with file and line</td></tr>
-<tr><td>Sass</td><td>Wherever you write the mixin</td><td>A complete language</td><td>Theme tokens and roles with references checked against a schema; UXDSL does not pretend to be a language</td></tr>
+<tr><td>Sass</td><td>Wherever you write the mixin</td><td>Nothing in the language: a <code>.uxdsl</code> file is compiled by Dart Sass</td><td>Theme tokens and roles, with references checked against a schema</td></tr>
 <tr><td>Style Dictionary / DTCG</td><td>In the token pipeline, exported to many platforms</td><td>The DTCG format, export to iOS, Android and design tools</td><td>The consumption side in CSS; its JSON is its own format, not DTCG</td></tr>
 </tbody>
 </table>
