@@ -1,0 +1,7 @@
+@use './tokens' as t;
+@use './card';
+
+.entry {
+  padding: t.$gap;
+  @include t.stack;
+}

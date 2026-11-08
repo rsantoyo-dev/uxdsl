@@ -1,0 +1,3 @@
+{
+  "css": ".card {\n  color: var(--uxdsl__palette__primary-main);\n  margin: var(--uxdsl__space__2);\n}\n\n.entry {\n  padding: var(--uxdsl__space__2);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__2);\n}\n\n@media (min-width: 768px) {\n\n.entry {\n  flex-direction: row;\n}\n}"
+}

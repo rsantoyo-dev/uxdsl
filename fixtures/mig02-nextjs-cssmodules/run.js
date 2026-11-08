@@ -13,9 +13,12 @@
  *
  * Two runs:
  *  1. Positive: the compiled theme entry as global CSS + the 4 panels as
- *     `.module.css` (includeTheme: false, so none contain `:root`) — must
- *     build clean, with no workaround (no `:global()`, no disabling pure
- *     mode) needed.
+ *     `.module.css` (includeTheme: false, so none contain `:root`), and
+ *     styles/panel.generated.module.css, which the installed CLI builds from
+ *     styles/panel.module.uxdsl — must build clean, with no workaround (no
+ *     `:global()`, no disabling pure mode) needed. browser.js then reads
+ *     computed styles in Chrome, in a controlled document and, for the
+ *     CLI-built module, on the served build.
  *  2. Negative control: the same theme output, but saved with a
  *     `.module.css` extension and imported from a throwaway page — must
  *     FAIL with css-loader's real "is not pure" error, proving check #1
@@ -54,16 +57,16 @@ async function main() {
     execFileSync('npm', ['install', '--no-audit', '--no-fund'], { cwd: FIXTURE_DIR, stdio: 'inherit' });
   }
 
-  console.log('Compiling theme + 4 panel entries with the freshly installed tarball...');
+  console.log('Compiling theme + 4 panel entries with the freshly installed tarball, then styles/panel.module.uxdsl with its CLI...');
   const compileResult = run('node', ['compile.js']);
-  check('theme.css + 4 panel .module.css files compiled', compileResult.ok);
+  check('theme.css + 4 panel .module.css files compiled, and the installed CLI built panel.generated.module.css with no :root', compileResult.ok);
   if (!compileResult.ok) console.log(compileResult.output);
   if (!compileResult.ok) throw new Error('Compilation failed; refusing to test stale CSS.');
 
   fs.rmSync(path.join(FIXTURE_DIR, '.next'), { recursive: true, force: true });
-  console.log('\nBuilding (positive control): 1 theme entry (global CSS) + 4 CSS-Module panels...');
+  console.log('\nBuilding (positive control): 1 theme entry (global CSS) + 4 CSS-Module panels + the CLI-built module...');
   const positive = run('npx', ['next', 'build']);
-  check('next build succeeds with the compiled theme + 4 panels, no :root/pure-mode workaround needed', positive.ok);
+  check('next build succeeds with the compiled theme + 4 panels and the CLI-built module, no :root/pure-mode workaround needed', positive.ok);
   if (!positive.ok) console.log(positive.output);
   if (!positive.ok) throw new Error('Positive Next.js build failed.');
   execFileSync(process.execPath, [path.join(FIXTURE_DIR, 'browser.js')], { cwd: FIXTURE_DIR, stdio: 'inherit' });
@@ -100,7 +103,7 @@ async function main() {
   fs.rmSync(path.join(FIXTURE_DIR, '.next'), { recursive: true, force: true });
 
   console.log('\nNOT VERIFIED by this script (documented gap, see docs/features/FEAT-002-beta-migration-hardening.md MIG-02):');
-  console.log('  - Visual review of all product pages; Chrome verifies computed styles in a controlled document using the installed package.');
+  console.log('  - Visual review of all product pages; Chrome verifies computed styles in a controlled document using the installed package, and those of the CLI-built module on the served build.');
   console.log('  - The App Router (`app/`) CSS Modules pipeline specifically — this fixture uses the Pages Router; next/dist/build/webpack/config/blocks/css/loaders/modules.js is shared by both, so the mechanism under test is the same either way, but it was not additionally exercised through app/.');
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);

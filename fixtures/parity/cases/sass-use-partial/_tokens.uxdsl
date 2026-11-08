@@ -1,0 +1,7 @@
+$gap: space(2);
+
+@mixin stack {
+  display: flex;
+  flex-direction: xs(column) md(row);
+  gap: density(2);
+}

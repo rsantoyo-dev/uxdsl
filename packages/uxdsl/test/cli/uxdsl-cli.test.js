@@ -259,7 +259,7 @@ test('MIG-B2-03: generated entries rely on the canonical plugin theme instead of
   await cli.generateEntry({ src: path.join(dir, 'src'), out: outFile });
   const generated = fs.readFileSync(outFile, 'utf8');
   assert.doesNotMatch(generated, /postcss-uxdsl\/theme\/default-/);
-  assert.match(generated, /components\/Button\.uxdsl/);
+  assert.match(generated, /^@use '\.\/components\/Button' as components-button;$/m);
 });
 
 // --- MIG-B3-01 (FEAT-004): includeTheme/breakpoints reach the plugin ---
@@ -1665,4 +1665,605 @@ test('phase 2 (3): `theme --diff` never lists $schema as a project leaf, and --s
   assert.ok(rows.some((r) => r.path === 'breakpoints.md' && r.source === 'project'), 'control: a real family still appears');
   const strict = runCli(dir, 'theme', '--strict-theme=breakpoints');
   assert.equal(strict.status, 0, strict.stderr);
+});
+
+// --- compile() warnings and the config's `sass` key -------------------------
+//
+// Every compile() warning prints once per build, one line at its position,
+// `[uxdsl] Warning: <file>:<line>:<column>: <text>` with paths relative to the
+// working directory. The config's `sass` key passes Dart Sass options to every
+// entry and is validated when the config loads.
+
+const IMPORT_WARNING = 'UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+const SHADOWED_WARNING = "[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/_helpers.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token";
+
+function sassProject(extraConfig = '') {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false${extraConfig} };\n`);
+  write(dir, 'src/entry.uxdsl', "@import './card';\n@import './helpers';\n.e { padding: space(2); }\n");
+  write(dir, 'src/_card.uxdsl', '.card { color: red; }\n');
+  write(dir, 'src/_helpers.uxdsl', '@function space($n) { @return $n * 4px; }\n');
+  return dir;
+}
+
+function twoEntryProject() {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },\n  { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },\n] };\n");
+  return dir;
+}
+
+const warningLines = (stderr) => stderr.split('\n').filter((line) => line.startsWith('[uxdsl] Warning: '));
+
+test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecations removes a type; an invalid sass key is a config error', () => {
+  // Every warning, at its position, relative to the working directory.
+  const dir = sassProject();
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.deepEqual(warningLines(built.stderr), [
+    `[uxdsl] Warning: src/entry.uxdsl:1:9: ${IMPORT_WARNING}`,
+    `[uxdsl] Warning: src/entry.uxdsl:2:9: ${IMPORT_WARNING}`,
+    SHADOWED_WARNING,
+  ]);
+  assert.equal(built.stderr, `${warningLines(built.stderr).join('\n')}\n`, 'nothing else on stderr');
+  assert.equal(built.stderr.includes(dir), false, 'no absolute path');
+  assert.match(fs.readFileSync(path.join(dir, 'out', 'entry.css'), 'utf8'), /padding: 8px/);
+
+  // A partial two entries load prints its warning once per build.
+  const shared = twoEntryProject();
+  write(shared, 'src/a.uxdsl', "@use './shared';\n.a { color: red; }\n");
+  write(shared, 'src/b.uxdsl', "@use './shared';\n.b { color: blue; }\n");
+  write(shared, 'src/_shared.uxdsl', "@import './legacy';\n.shared { color: green; }\n");
+  write(shared, 'src/_legacy.uxdsl', '.legacy { color: gray; }\n');
+  const once = runCli(shared, 'build');
+  assert.equal(once.status, 0, once.stderr);
+  assert.deepEqual(warningLines(once.stderr), [`[uxdsl] Warning: src/_shared.uxdsl:1:9: ${IMPORT_WARNING}`]);
+
+  // Sass's cap: five located warnings of one type, then Sass's own summary, which has no position.
+  const capped = mkTmpDir();
+  write(capped, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false };\n");
+  write(capped, 'src/entry.uxdsl', `${[1, 2, 3, 4, 5, 6, 7].map((n) => `@import './p${n}';`).join('\n')}\n`);
+  for (const n of [1, 2, 3, 4, 5, 6, 7]) write(capped, `src/_p${n}.uxdsl`, `.p${n} { color: red; }\n`);
+  const cap = runCli(capped, 'build');
+  assert.equal(cap.status, 0, cap.stderr);
+  assert.deepEqual(warningLines(cap.stderr), [
+    ...[1, 2, 3, 4, 5].map((line) => `[uxdsl] Warning: src/entry.uxdsl:${line}:9: ${IMPORT_WARNING}`),
+    '[uxdsl] Warning: UXD_SASS_WARNING: 2 repetitive deprecation warnings omitted.',
+  ]);
+
+  // An entry's warnings print as soon as it compiles, so before a later entry's error.
+  const failing = twoEntryProject();
+  write(failing, 'src/a.uxdsl', "@import './p';\n.a { color: red; }\n");
+  write(failing, 'src/_p.uxdsl', '.p { color: green; }\n');
+  write(failing, 'src/b.uxdsl', "@use './missing';\n");
+  const broken = runCli(failing, 'build');
+  assert.equal(broken.status, 1, broken.stderr);
+  const lines = broken.stderr.split('\n');
+  assert.equal(lines[0], `[uxdsl] Warning: src/a.uxdsl:1:9: ${IMPORT_WARNING}`);
+  assert.equal(lines[1], "[uxdsl] Error: builds[1] (out/b.css): src/b.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import.");
+  assert.equal(fs.existsSync(path.join(failing, 'out')), false, 'nothing is written');
+
+  // sass.silenceDeprecations removes that type and nothing else; an unknown id is
+  // Sass's own warning, once; quietDeps builds.
+  const silenced = runCli(sassProject(", sass: { silenceDeprecations: ['import'] }"), 'build');
+  assert.equal(silenced.status, 0, silenced.stderr);
+  assert.deepEqual(warningLines(silenced.stderr), [SHADOWED_WARNING]);
+  const unknownId = runCli(sassProject(", sass: { silenceDeprecations: ['nope'] }"), 'build');
+  assert.equal(unknownId.status, 0, unknownId.stderr);
+  assert.equal(warningLines(unknownId.stderr).filter((line) => line === '[uxdsl] Warning: UXD_SASS_WARNING: Invalid deprecation "nope".').length, 1, unknownId.stderr);
+  const quiet = runCli(sassProject(', sass: { quietDeps: true }'), 'build');
+  assert.equal(quiet.status, 0, quiet.stderr);
+
+  // Every invalid shape is a config error naming the file and the key, and nothing is written.
+  for (const [config, expected] of [
+    ["sass: 'x'", /"sass" must be an object: \{ silenceDeprecations\?: string\[\], quietDeps\?: boolean \}\./],
+    ['sass: null', /"sass" must be an object/],
+    ['sass: []', /"sass" must be an object/],
+    ['sass: { bogus: 1 }', /"sass\.bogus" is not a sass option; "sass" passes only silenceDeprecations and quietDeps to Dart Sass\.$/m],
+    ['sass: { silenceDeprecation: [] }', /"sass\.silenceDeprecation" is not a sass option; .* Did you mean "sass\.silenceDeprecations"\?$/m],
+    ["sass: { silenceDeprecations: 'import' }", /"sass\.silenceDeprecations" must be an array of Dart Sass deprecation ids \(strings\), e\.g\. \['import'\]\./],
+    ['sass: { silenceDeprecations: [1] }', /"sass\.silenceDeprecations" must be an array of Dart Sass deprecation ids/],
+    ["sass: { quietDeps: 'yes' }", /"sass\.quietDeps" must be a boolean\./],
+    ["silenceDeprecations: ['import']", /"silenceDeprecations" is a Dart Sass option; write it inside "sass": sass: \{ silenceDeprecations: … \}\./],
+    ['quietDeps: true', /"quietDeps" is a Dart Sass option; write it inside "sass": sass: \{ quietDeps: … \}\./],
+  ]) {
+    const invalid = cliProject();
+    write(invalid, 'uxdsl.config.cjs', `module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', ${config} };\n`);
+    const refused = runCli(invalid, 'build');
+    assert.equal(refused.status, 1, `${config}: ${refused.stderr}`);
+    assert.match(refused.stderr, /^\[uxdsl\] Error: Invalid configuration in uxdsl\.config\.cjs: /, config);
+    assert.match(refused.stderr, expected, config);
+    assert.equal(fs.existsSync(path.join(invalid, 'out')), false, `${config}: nothing is written`);
+  }
+  const perEntry = cliProject();
+  write(perEntry, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.css', sass: { quietDeps: true } }] };\n");
+  const perEntryRefused = runCli(perEntry, 'build');
+  assert.equal(perEntryRefused.status, 1, perEntryRefused.stderr);
+  assert.match(perEntryRefused.stderr, /^\[uxdsl\] Error: Invalid configuration in uxdsl\.config\.cjs: "builds\[0\]\.sass" is not a per-entry key: "sass" applies to every entry; set it once at the top level\./);
+  assert.equal(fs.existsSync(path.join(perEntry, 'out')), false);
+
+  // `uxdsl theme` prints the same theme whether a valid sass key is there or not.
+  const themed = sassProject();
+  write(themed, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  const without = runCli(themed, 'theme');
+  write(themed, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false, sass: { silenceDeprecations: ['import'], quietDeps: true } };\n");
+  const withSass = runCli(themed, 'theme');
+  assert.equal(without.status, 0, without.stderr);
+  assert.equal(withSass.status, 0, withSass.stderr);
+  assert.equal(withSass.stdout, without.stdout);
+  assert.equal(withSass.stderr, without.stderr);
+});
+
+// A located warning is the same warning whichever entry's compile reports it
+// (a partial two entries load): it prints once per build. A warning without a
+// position is the warning of the entry whose compile reported it, Dart Sass's
+// count of the deprecations it omitted for that entry above all: each entry
+// prints its own, though two entries' lines read the same.
+test("MIG-B9-14: each entry prints Dart Sass's summary of the deprecations it omitted, though two entries' summaries read the same; a located warning two entries report prints once", () => {
+  const dir = twoEntryProject();
+  write(dir, 'src/_shared.uxdsl', '$m: (w: 1px);\n.shared { width: map-get($m, w); }\n');
+  for (const name of ['a', 'b']) {
+    write(dir, `src/${name}.uxdsl`, `@use './shared';\n${[1, 2, 3, 4, 5, 6, 7].map((n) => `@import './${name}${n}';`).join('\n')}\n`);
+    for (const n of [1, 2, 3, 4, 5, 6, 7]) write(dir, `src/_${name}${n}.uxdsl`, `.${name}${n} { color: red; }\n`);
+  }
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  const imports = (file) => [2, 3, 4, 5, 6].map((line) => `[uxdsl] Warning: ${file}:${line}:9: ${IMPORT_WARNING}`);
+  const summary = '[uxdsl] Warning: UXD_SASS_WARNING: 2 repetitive deprecation warnings omitted.';
+  assert.deepEqual(warningLines(built.stderr), [
+    ...imports('src/a.uxdsl'),
+    '[uxdsl] Warning: src/_shared.uxdsl:2:18: UXD_SASS_WARNING: [global-builtin] Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.',
+    summary,
+    ...imports('src/b.uxdsl'),
+    summary,
+  ]);
+});
+
+test('MIG-B9-14: an unknown theme family prints once, though compile() also reports it without a file (negative control)', async () => {
+  const theme = { migB914UnknownFamily: { x: '1' } };
+  // compile() reports the theme's warning too, with no file: printed as it
+  // comes, it would be a second line.
+  const { compile } = require('../../dist/compile');
+  const { warnings } = await compile({ source: '.a { color: red; }', from: path.join(mkTmpDir(), 'a.uxdsl') }, { theme, includeTheme: false });
+  assert.ok(warnings.some((w) => /Unknown theme family "migB914UnknownFamily"/.test(w.text) && w.file === undefined), JSON.stringify(warnings));
+
+  const dir = cliProject();
+  write(dir, 'uxdsl.theme.json', JSON.stringify(theme));
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.equal((built.stderr.match(/Unknown theme family "migB914UnknownFamily"/g) || []).length, 1, built.stderr);
+  assert.match(built.stderr, /^\[uxdsl\] Warning: migB914UnknownFamily: Unknown theme family "migB914UnknownFamily"/m);
+});
+
+// The CLI checks `sass` when the config loads, so it names the file; compile()
+// checks the same option at build time. A probe table pins that the two accept
+// exactly the same values, and a coverage check that every key of compile()'s
+// `sass` option is probed, so a key compile() adds later cannot go unchecked.
+const SASS_PROBES = {
+  valid: [{}, { silenceDeprecations: [] }, { silenceDeprecations: ['import'] }, { quietDeps: true }, { quietDeps: false }, { silenceDeprecations: ['import'], quietDeps: true }],
+  invalid: [null, 'x', [], 5, { bogus: 1 }, { silenceDeprecation: [] }, { silenceDeprecations: 'import' }, { silenceDeprecations: [1] }, { quietDeps: 'yes' }],
+};
+
+/** The keys of `sass?: { … }` in src/compile.ts's CompileConfig. */
+function compileSassKeys() {
+  const source = fs.readFileSync(path.join(__dirname, '..', '..', 'src', 'compile.ts'), 'utf8');
+  const config = source.match(/interface CompileConfig \{([\s\S]*?)\n\}/);
+  assert.ok(config, 'interface CompileConfig not found in src/compile.ts');
+  const sass = config[1].match(/^\s*sass\?:\s*\{([^}]*)\}/m);
+  assert.ok(sass, 'CompileConfig has no sass?: { … } member');
+  return [...sass[1].matchAll(/(\w+)\??:/g)].map((m) => m[1]);
+}
+
+/** The keys the probe table does not exercise with both a valid and an invalid value. */
+function unprobedSassKeys(keys, probes) {
+  const uses = (probe, key) => probe !== null && typeof probe === 'object' && !Array.isArray(probe) && Object.prototype.hasOwnProperty.call(probe, key);
+  return keys.filter((key) => !probes.valid.some((p) => uses(p, key)) || !probes.invalid.some((p) => uses(p, key)));
+}
+
+test("MIG-B9-14: the CLI's config accepts exactly the sass values compile() accepts", async () => {
+  const keys = compileSassKeys();
+  assert.ok(keys.length > 0, 'no key parsed from compile()\'s sass option');
+  assert.deepEqual(unprobedSassKeys(keys, SASS_PROBES), [], 'every sass key needs a valid and an invalid probe');
+  const { compile } = require('../../dist/compile');
+  for (const probe of [...SASS_PROBES.valid, ...SASS_PROBES.invalid]) {
+    // One directory per probe: require() caches a config file by path.
+    const dir = mkTmpDir();
+    write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './a.uxdsl', outFile: './a.css', sass: ${JSON.stringify(probe)} };\n`);
+    write(dir, 'a.uxdsl', '.a{}\n');
+    const cliAccepts = await cli.loadConfig({}, dir).then(() => true, () => false);
+    const compileAccepts = await compile({ source: '.a{}', from: path.join(dir, 'a.uxdsl') }, { theme: {}, includeTheme: false, sass: probe }).then(() => true, () => false);
+    assert.equal(cliAccepts, compileAccepts, `sass: ${JSON.stringify(probe)} — loadConfig ${cliAccepts ? 'accepts' : 'refuses'} it, compile() ${compileAccepts ? 'accepts' : 'refuses'} it`);
+  }
+});
+
+test('MIG-B9-14: the sass probe coverage check reports a key with no probe (negative control)', () => {
+  assert.deepEqual(unprobedSassKeys(['silenceDeprecations', 'quietDeps', 'loadPaths'], SASS_PROBES), ['loadPaths']);
+});
+
+// The config type's `sass` is compile()'s own `sass` option, written a second
+// time in types.ts (which cannot import compile.ts). tsc reads the published
+// declarations and must find the two identical, optional members included.
+const TSC = path.join(fs.realpathSync(path.join(__dirname, '..', '..')), 'node_modules', 'typescript', 'bin', 'tsc');
+
+function sassTypeCheck(configSassType) {
+  const dir = mkTmpDir();
+  const dist = path.join(__dirname, '..', '..', 'dist');
+  write(dir, 'same.ts', [
+    `import type { CompileConfig } from ${JSON.stringify(path.join(dist, 'compile'))};`,
+    `import type { UxdslConfigShared } from ${JSON.stringify(path.join(dist, 'types'))};`,
+    'type Equals<X, Y> = (<T>() => T extends X ? 1 : 2) extends (<T>() => T extends Y ? 1 : 2) ? true : false;',
+    `export const same: Equals<CompileConfig['sass'], ${configSassType}> = true;`,
+    '',
+  ].join('\n'));
+  return spawnSync(process.execPath, [TSC, '--noEmit', '--strict', '--skipLibCheck', '--target', 'es2022', '--module', 'commonjs', path.join(dir, 'same.ts')], { encoding: 'utf8' });
+}
+
+test("MIG-B9-14: the config type's sass is compile()'s sass option: tsc reads the two as one type", () => {
+  const same = sassTypeCheck("UxdslConfigShared['sass']");
+  assert.equal(same.status, 0, `${same.stdout}${same.stderr}`);
+});
+
+test('MIG-B9-14: the sass type check fails for a shape that drops an optional member (negative control)', () => {
+  const different = sassTypeCheck('{ silenceDeprecations?: string[] } | undefined');
+  assert.notEqual(different.status, 0, 'a type without quietDeps must not read as the same type');
+  assert.match(`${different.stdout}${different.stderr}`, /TS2322/);
+});
+
+// --- generate-entry: one @use per .uxdsl file --------------------------------
+//
+// The entry loads every listed file with `@use '<url>' as <namespace>;`. The URL
+// is the file's path relative to the entry, without `.uxdsl` and without a
+// partial's underscore, with `%`, `#`, `?`, `'` and `\` percent-encoded. The
+// namespace is that path lowercased, every character outside [a-z0-9-] a `-`,
+// with `f-` before a leading digit or `-`, and `-2`, `-3`… for a name a file
+// earlier in path order already took. Each listed file is its own Sass module.
+
+const ENTRY_HEADER = [
+  '/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */',
+  '/* Generated by uxdsl generate-entry */',
+  '/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */',
+  '',
+  '/* --- Application & Component Imports --- */',
+];
+
+const useLines = (text) => text.split('\n').filter((line) => line.startsWith('@use '));
+
+/** A project whose config compiles src/uxdsl-entry.uxdsl, with `files` written. */
+function entryProject(files) {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n");
+  for (const [rel, content] of Object.entries(files)) write(dir, rel, content);
+  return dir;
+}
+
+/** The order generate-entry has always listed files in, without --first: a file
+ * whose name contains theme-def, layout, app or variables first, then by the path
+ * relative to the entry (with `./`, the underscore and `.uxdsl`), localeCompare. */
+function previousOrder(keys) {
+  const priority = (key) => ['theme-def', 'layout', 'app', 'variables'].some((p) => path.posix.basename(key).includes(p));
+  return [...keys].sort((a, b) => (priority(a) === priority(b) ? a.localeCompare(b) : priority(a) ? -1 : 1));
+}
+
+/** The URL of a path relative to the entry, for names with nothing to encode. */
+const urlOfKey = (key) => `${path.posix.dirname(key)}/${path.posix.basename(key, '.uxdsl').replace(/^_/, '')}`;
+
+test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two files named alike, honours --first, and the entry compiles', () => {
+  // Two files named card.uxdsl get two namespaces, and the entry compiles with both.
+  const dir = entryProject({ 'src/card.uxdsl': '.b { color: blue; }\n', 'src/components/card.uxdsl': '.a { color: red; }\n' });
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.equal(generated.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n');
+  assert.equal(generated.stderr, '', 'no entry was replaced, so no warning');
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...ENTRY_HEADER, "@use './card' as card;", "@use './components/card' as components-card;", ''].join('\n'));
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.equal(built.stderr, '', 'an @use entry reports no deprecation');
+  const css = fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+  assert.match(css, /\.b \{\n {2}color: blue;\n\}/);
+  assert.match(css, /\.a \{\n {2}color: red;\n\}/);
+
+  // A file whose natural namespace an earlier path also has: the earlier path
+  // keeps the name, the later one gets the next free suffix. A partial is listed
+  // without its underscore, a leading digit gets f-, and # is percent-encoded.
+  write(dir, 'src/components-card.uxdsl', '.c { color: green; }\n');
+  write(dir, 'src/_variables.uxdsl', '$unused: 1px;\n');
+  write(dir, 'src/2col.uxdsl', '.two { color: teal; }\n');
+  write(dir, 'src/a#b.uxdsl', '.hash { color: olive; }\n');
+  const lineOf = {
+    './card.uxdsl': "@use './card' as card;",
+    './components/card.uxdsl': "@use './components/card' as components-card-2;",
+    './components-card.uxdsl': "@use './components-card' as components-card;",
+    './_variables.uxdsl': "@use './variables' as variables;",
+    './2col.uxdsl': "@use './2col' as f-2col;",
+    './a#b.uxdsl': "@use './a%23b' as a-b;",
+  };
+  const regenerated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(regenerated.status, 0, regenerated.stderr);
+  assert.match(regenerated.stdout, /with 6 @use rules\.\n$/);
+  assert.equal(regenerated.stderr, '', 'the replaced entry already used @use');
+  const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
+  assert.equal(lines[0], lineOf['./_variables.uxdsl'], 'a file named like variables comes first');
+  assert.deepEqual(lines, previousOrder(Object.keys(lineOf)).map((key) => lineOf[key]), 'the order generate-entry always wrote');
+  const rebuilt = runCli(dir, 'build');
+  assert.equal(rebuilt.status, 0, rebuilt.stderr);
+  assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.hash \{\n {2}color: olive;\n\}/, 'a#b.uxdsl loads through its encoded URL');
+
+  // --first: those files first, in that order, then every other file in path
+  // order, with no name heuristic. The namespaces do not depend on --first.
+  const first = runCli(dir, 'generate-entry', '--src', 'src', '--first', 'components/card.uxdsl,card');
+  assert.equal(first.status, 0, first.stderr);
+  const rest = Object.keys(lineOf).filter((key) => key !== './components/card.uxdsl' && key !== './card.uxdsl').sort((a, b) => a.localeCompare(b));
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [lineOf['./components/card.uxdsl'], lineOf['./card.uxdsl'], ...rest.map((key) => lineOf[key])]);
+  assert.equal(runCli(dir, 'build').status, 0);
+
+  // Each --first mistake exits 1 and leaves the entry as it was.
+  const current = fs.readFileSync(entryPath, 'utf8');
+  for (const [args, expected] of [
+    [['--first', 'components/crad'], /^\[uxdsl\] Error: --first "components\/crad" matches no \.uxdsl file under src \(paths are relative to --src\)\. Did you mean "components\/card\.uxdsl"\?$/m],
+    [['--first', 'card', '--exclude', 'card.uxdsl'], /^\[uxdsl\] Error: --first "card" names a file the entry leaves out \(--exclude, or a file with the entry's file name, uxdsl-entry\.uxdsl\)\.$/m],
+    [['--first', './uxdsl-entry.uxdsl'], /^\[uxdsl\] Error: --first "\.\/uxdsl-entry\.uxdsl" names a file the entry leaves out/m],
+    [['--first', 'card,./card.uxdsl'], /^\[uxdsl\] Error: --first lists "\.\/card\.uxdsl" twice\.$/m],
+    [['--first', ' , '], /^\[uxdsl\] Error: --first needs at least one path \(comma-separated, relative to --src\)\.$/m],
+    [['--first'], /^\[uxdsl\] Error: --first needs at least one path/m],
+  ]) {
+    const refused = runCli(dir, 'generate-entry', '--src', 'src', ...args);
+    assert.equal(refused.status, 1, `${args.join(' ')}: ${refused.stdout}${refused.stderr}`);
+    assert.match(refused.stderr, expected, args.join(' '));
+    assert.equal(fs.readFileSync(entryPath, 'utf8'), current, `${args.join(' ')}: the entry is left as it was`);
+  }
+
+  // An entry above its files: the namespace is the path relative to the entry.
+  const nested = entryProject({ 'src/components/card.uxdsl': '.a { color: red; }\n' });
+  const out = runCli(nested, 'generate-entry', '--src', 'src', '--out', 'src/app/entry.uxdsl');
+  assert.equal(out.status, 0, out.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(nested, 'src', 'app', 'entry.uxdsl'), 'utf8')), ["@use '../components/card' as f----components-card;"]);
+  const nestedBuilt = runCli(nested, 'build', '--entry', 'src/app/entry.uxdsl', '--out', 'out/nested.css', '--no-include-theme');
+  assert.equal(nestedBuilt.status, 0, nestedBuilt.stderr);
+  assert.match(fs.readFileSync(path.join(nested, 'out', 'nested.css'), 'utf8'), /\.a \{\n {2}color: red;\n\}/);
+
+  // Without --first, a mixed set keeps the order generate-entry always wrote:
+  // the extension stays in the sort key (./card-x.uxdsl before ./card.uxdsl), and
+  // a name containing app anywhere is a priority file, as it always was.
+  const mixedFiles = ['src/_variables.uxdsl', 'src/layout.uxdsl', 'src/theme-def.uxdsl', 'src/applause.uxdsl', 'src/card.uxdsl', 'src/card-x.uxdsl', 'src/_card-y.uxdsl', 'src/components/Button.uxdsl', 'src/components/button-group.uxdsl', 'src/2col.uxdsl', 'src/zeta/app.uxdsl'];
+  const mixed = entryProject(Object.fromEntries(mixedFiles.map((file) => [file, '/* a file */\n'])));
+  assert.equal(runCli(mixed, 'generate-entry', '--src', 'src').status, 0);
+  const urls = useLines(fs.readFileSync(path.join(mixed, 'src', 'uxdsl-entry.uxdsl'), 'utf8')).map((line) => line.match(/^@use '([^']+)' as /)[1]);
+  assert.deepEqual(urls, previousOrder(mixedFiles.map((file) => `./${path.posix.relative('src', file)}`)).map(urlOfKey));
+});
+
+test('MIG-B9-14: two files named alike through @use without `as` collide in Sass (negative control)', () => {
+  const dir = entryProject({
+    'src/card.uxdsl': '.b { color: blue; }\n',
+    'src/components/card.uxdsl': '.a { color: red; }\n',
+    'src/uxdsl-entry.uxdsl': "@use './card';\n@use './components/card';\n",
+  });
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 1, built.stderr);
+  assert.match(built.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:2:1: UXD_SASS: There's already a module with namespace "card"\.$/m);
+});
+
+// A POSIX file name may hold a backslash, which starts an escape inside a
+// quoted Sass URL: the entry writes it percent-encoded.
+test('MIG-B9-14: generate-entry percent-encodes a backslash in a file name, and the entry loads the file; the backslash written as it is does not load (negative control)', { skip: process.platform === 'win32' ? 'a backslash separates paths on Windows' : false }, () => {
+  const dir = entryProject({ 'src/a\\b.uxdsl': '.slash { color: olive; }\n' });
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './a%5Cb' as a-b;"]);
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.slash \{\n {2}color: olive;\n\}/);
+
+  fs.writeFileSync(entryPath, "@use './a\\b' as a-b;\n");
+  const raw = runCli(dir, 'build');
+  assert.equal(raw.status, 1, raw.stderr);
+  assert.match(raw.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m);
+});
+
+// The entry is never listed, and neither is any other file with its file name:
+// the rule compares file names, as --exclude does.
+test("MIG-B9-14: generate-entry leaves out every file with the entry's file name, in any directory under --src, and a --first item naming one says why", () => {
+  const files = { 'src/card.uxdsl': '.card { color: red; }\n', 'src/pages/main.uxdsl': '.main { color: blue; }\n' };
+  const dir = entryProject(files);
+  const entryPath = path.join(dir, 'src', 'main.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.match(generated.stdout, /with 1 @use rule\.\n$/);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './card' as card;"], 'src/pages/main.uxdsl has the file name of the entry src/main.uxdsl');
+
+  const current = fs.readFileSync(entryPath, 'utf8');
+  const refused = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'pages/main');
+  assert.equal(refused.status, 1, `${refused.stdout}${refused.stderr}`);
+  assert.match(refused.stderr, /^\[uxdsl\] Error: --first "pages\/main" names a file the entry leaves out \(--exclude, or a file with the entry's file name, main\.uxdsl\)\.$/m);
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), current, 'the entry is left as it was');
+
+  // The same files under an entry with another name: that file is listed (negative control).
+  const control = entryProject(files);
+  const listed = runCli(control, 'generate-entry', '--src', 'src', '--out', 'src/entry.uxdsl', '--first', 'pages/main');
+  assert.equal(listed.status, 0, listed.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(control, 'src', 'entry.uxdsl'), 'utf8')), ["@use './pages/main' as pages-main;", "@use './card' as card;"]);
+});
+
+// Each case: two files, what a generated @use entry gives (the UXD_SASS head
+// line, or the CSS it compiles to without an error), the @use the reading file
+// adds to read the member again, and the CSS the shared member gives.
+const ISOLATION_CASES = [
+  {
+    name: "another file's $variable",
+    files: { 'src/_variables.uxdsl': '$brand: red;\n', 'src/card.uxdsl': '.card { color: $brand; }\n' },
+    loud: /^\[uxdsl\] Error: src\/card\.uxdsl:1:\d+: UXD_SASS: Undefined variable\.$/m,
+    reader: 'src/card.uxdsl',
+    use: "@use './variables' as *;\n",
+    shared: /\.card \{\n {2}color: red;\n\}/,
+  },
+  {
+    name: "another file's mixin",
+    files: { 'src/_mixins.uxdsl': '@mixin pad { padding: 1px; }\n', 'src/box.uxdsl': '.box { @include pad; }\n' },
+    loud: /^\[uxdsl\] Error: src\/box\.uxdsl:1:\d+: UXD_SASS: Undefined mixin\.$/m,
+    reader: 'src/box.uxdsl',
+    use: "@use './mixins' as *;\n",
+    shared: /\.box \{\n {2}padding: 1px;\n\}/,
+  },
+  {
+    name: "another file's placeholder",
+    files: { 'src/_reset.uxdsl': '%reset { margin: 0; }\n', 'src/list.uxdsl': '.list { @extend %reset; }\n' },
+    loud: /^\[uxdsl\] Error: src\/list\.uxdsl:1:\d+: UXD_SASS: The target selector was not found\.$/m,
+    reader: 'src/list.uxdsl',
+    use: "@use './reset';\n",
+    shared: /\.list \{\n {2}margin: 0;\n\}/,
+  },
+  {
+    name: "another file's @function",
+    files: { 'src/_helpers.uxdsl': '@function double($x) { @return $x * 2; }\n', 'src/widget.uxdsl': '.w { width: double(4px); }\n' },
+    silent: /\.w \{\n {2}width: double\(4px\);\n\}/,
+    reader: 'src/widget.uxdsl',
+    use: "@use './helpers' as *;\n",
+    shared: /\.w \{\n {2}width: 8px;\n\}/,
+  },
+  {
+    name: 'a !default an earlier file sets',
+    files: { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': '$tone: blue !default;\n.btn { color: $tone; }\n' },
+    silent: /\.btn \{\n {2}color: blue;\n\}/,
+    reader: 'src/b-button.uxdsl',
+    use: "@use './a-config' as *;\n",
+    shared: /\.btn \{\n {2}color: red;\n\}/,
+  },
+  {
+    name: 'a project @function named like a UXDSL function',
+    files: { 'src/_shadow.uxdsl': '@function space($n) { @return $n * 4px; }\n', 'src/pad.uxdsl': '.p { padding: space(2); }\n' },
+    silent: /\.p \{\n {2}padding: var\(--uxdsl__space__2\);\n\}/,
+    reader: 'src/pad.uxdsl',
+    use: "@use './shadow' as *;\n",
+    shared: /\.p \{\n {2}padding: 8px;\n\}/,
+  },
+];
+
+test('MIG-B9-14: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, a function call and a !default change without an error, and the file\'s own @use restores each', () => {
+  for (const c of ISOLATION_CASES) {
+    // One project per case, so that one loud failure cannot hide another case.
+    const dir = entryProject(c.files);
+    const generated = runCli(dir, 'generate-entry', '--src', 'src');
+    assert.equal(generated.status, 0, `${c.name}: ${generated.stderr}`);
+    const built = runCli(dir, 'build');
+    if (c.loud) {
+      assert.equal(built.status, 1, `${c.name}: ${built.stderr}`);
+      assert.match(built.stderr, c.loud, c.name);
+    } else {
+      assert.equal(built.status, 0, `${c.name}: ${built.stderr}`);
+      assert.equal(built.stderr, '', `${c.name}: no error and no warning`);
+      assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.silent, c.name);
+    }
+    // The reading file's own @use reads the member again.
+    write(dir, c.reader, c.use + fs.readFileSync(path.join(dir, c.reader), 'utf8'));
+    const fixed = runCli(dir, 'build');
+    assert.equal(fixed.status, 0, `${c.name}, with its own @use: ${fixed.stderr}`);
+    assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.shared, `${c.name}, with its own @use`);
+  }
+
+  // A module another file configures with `with (...)` must be loaded there
+  // first: listed first for its name, it is already loaded unconfigured, and
+  // --first naming the configuring file restores the order.
+  const configured = entryProject({
+    'src/_variables.uxdsl': '$brand: red !default;\n.v { color: $brand; }\n',
+    'src/brand.uxdsl': "@use './variables' with ($brand: blue);\n.brand { color: variables.$brand; }\n",
+  });
+  assert.equal(runCli(configured, 'generate-entry', '--src', 'src').status, 0);
+  const refused = runCli(configured, 'build');
+  assert.equal(refused.status, 1, refused.stderr);
+  assert.match(refused.stderr, /^\[uxdsl\] Error: src\/brand\.uxdsl:1:1: UXD_SASS: This module was already loaded, so it can't be configured using "with"\.$/m);
+  assert.equal(runCli(configured, 'generate-entry', '--src', 'src', '--first', 'brand').status, 0);
+  const ordered = runCli(configured, 'build');
+  assert.equal(ordered.status, 0, ordered.stderr);
+  const css = fs.readFileSync(path.join(configured, 'out', 'app.css'), 'utf8');
+  assert.match(css, /\.v \{\n {2}color: blue;\n\}/);
+  assert.match(css, /\.brand \{\n {2}color: blue;\n\}/);
+});
+
+test('MIG-B9-14: through a hand-written @import entry the same files share their members (negative control)', () => {
+  for (const c of ISOLATION_CASES) {
+    const dir = entryProject(c.files);
+    // The defining file first, as a generated entry lists it.
+    const imports = Object.keys(c.files).map((rel) => `@import './${path.posix.basename(rel, '.uxdsl').replace(/^_/, '')}';`);
+    write(dir, 'src/uxdsl-entry.uxdsl', `${imports.join('\n')}\n`);
+    const built = runCli(dir, 'build');
+    assert.equal(built.status, 0, `${c.name}: ${built.stderr}`);
+    assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), c.shared, c.name);
+  }
+});
+
+// A file's own namespaced @use (the form the generated entry writes) brings the
+// module's members in under the namespace only: a bare variable or mixin fails,
+// while a bare function call is plain CSS to Sass, so it stays as written, and
+// one named like a UXDSL function becomes the token.
+test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's @function stays in the CSS and one named like a UXDSL function stays the token, with no error or warning, while a bare variable or mixin fails; through the namespace, or under `as *`, each is the module's", () => {
+  const dir = entryProject({
+    'src/_helpers.uxdsl': '@function space($n) { @return $n * 4px; }\n@function double($x) { @return $x * 2; }\n$gap: 3px;\n@mixin pad { padding: 1px; }\n',
+    'src/pad.uxdsl': "@use './helpers';\n.p { padding: space(2); height: double(4px); }\n",
+  });
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './helpers' as helpers;", "@use './pad' as pad;"]);
+  const css = () => fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+
+  const bare = runCli(dir, 'build');
+  assert.equal(bare.status, 0, bare.stderr);
+  assert.equal(bare.stderr, '', 'no error and no warning');
+  assert.match(css(), /\.p \{\n {2}padding: var\(--uxdsl__space__2\);\n {2}height: double\(4px\);\n\}/);
+
+  write(dir, 'src/pad.uxdsl', "@use './helpers';\n.p { padding: helpers.space(2); height: helpers.double(4px); }\n");
+  const qualified = runCli(dir, 'build');
+  assert.equal(qualified.status, 0, qualified.stderr);
+  assert.equal(qualified.stderr, '', 'a call through the namespace replaces no token, so nothing warns');
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+
+  // The same bare calls under `as *` are the module's: the bare form above is not
+  // the module's call (negative control), and the function named like space() warns.
+  write(dir, 'src/pad.uxdsl', "@use './helpers' as *;\n.p { padding: space(2); height: double(4px); }\n");
+  const star = runCli(dir, 'build');
+  assert.equal(star.status, 0, star.stderr);
+  assert.deepEqual(star.stderr.split('\n').filter(Boolean), ["[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/_helpers.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token"]);
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+  // And so are they in a file that @imports the module.
+  write(dir, 'src/pad.uxdsl', "@import './helpers';\n.p { padding: space(2); height: double(4px); }\n");
+  const imported = runCli(dir, 'build');
+  assert.equal(imported.status, 0, imported.stderr);
+  assert.match(imported.stderr, /^\[uxdsl\] Warning: src\/_helpers\.uxdsl:1:11: UXD_FUNCTION_SHADOWED: /m);
+  assert.match(css(), /\.p \{\n {2}padding: 8px;\n {2}height: 8px;\n\}/);
+
+  for (const [rule, message] of [['.q { margin: $gap; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined variable\.$/m], ['.q { @include pad; }', /^\[uxdsl\] Error: src\/pad\.uxdsl:2:\d+: UXD_SASS: Undefined mixin\.$/m]]) {
+    write(dir, 'src/pad.uxdsl', `@use './helpers';\n${rule}\n`);
+    const loud = runCli(dir, 'build');
+    assert.equal(loud.status, 1, `${rule}: ${loud.stderr}`);
+    assert.match(loud.stderr, message, rule);
+  }
+  write(dir, 'src/pad.uxdsl', "@use './helpers';\n.q { margin: helpers.$gap; @include helpers.pad; }\n");
+  const members = runCli(dir, 'build');
+  assert.equal(members.status, 0, members.stderr);
+  assert.match(css(), /\.q \{\n {2}margin: 3px;\n {2}padding: 1px;\n\}/);
+});
+
+test('MIG-B9-14: generate-entry warns once when it replaces an entry that loaded its files with @import', () => {
+  const dir = entryProject({
+    'src/card.uxdsl': '.card { color: red; }\n',
+    'src/uxdsl-entry.uxdsl': "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n\n/* --- Application & Component Imports --- */\n@import './card.uxdsl';\n",
+  });
+  const replaced = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(replaced.status, 0, replaced.stderr);
+  const lines = replaced.stderr.split('\n').filter(Boolean);
+  assert.equal(lines.length, 1, replaced.stderr);
+  assert.match(lines[0], /^\[uxdsl\] Warning: src\/uxdsl-entry\.uxdsl listed its files with @import; it now loads each with @use/);
+  for (const fragment of ['UXD_SASS', '@function', '!default', "@use './variables' as *;", 'namespace', 'migration guide']) {
+    assert.ok(lines[0].includes(fragment), `the warning names ${fragment}: ${lines[0]}`);
+  }
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './card' as card;"]);
+
+  // No warning on a second run: the entry it replaces already uses @use.
+  const again = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(again.status, 0, again.stderr);
+  assert.equal(again.stderr, '');
+  // No warning when there was no entry to replace, as when init runs it.
+  const fresh = entryProject({ 'src/card.uxdsl': '.card { color: red; }\n' });
+  const created = runCli(fresh, 'generate-entry', '--src', 'src');
+  assert.equal(created.status, 0, created.stderr);
+  assert.equal(created.stderr, '');
 });
