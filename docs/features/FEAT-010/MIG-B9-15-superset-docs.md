@@ -29,8 +29,10 @@ Sass stage reports. Every example compiles through the real pipeline.
 - Vision (plan): "UXDSL is to SCSS what TypeScript is to JavaScript"; the
   positioning always says "inspired by Material UI".
 - `packages/uxdsl/docs/integrations/compile.md` has `## The SCSS subset`
-  (line 109 on `main`); `AGENTS.md` describes the subset at "The SCSS subset
-  `compile()` compiles (`$variables`, `@if/@else`, …" (around line 860).
+  (line 109 on `main`); `AGENTS.md` lines 873–911 (rewritten by MIG-B9-13)
+  describe the Sass pipeline and end with "`packages/uxdsl/docs/integrations/compile.md`
+  still describes the SCSS subset it replaced." (line 910); the build-config
+  keys sentence (lines 686–688) lists no `sass`.
 - `scripts/lib/doc-examples.js`: fenced `css`, `scss` and `uxdsl` blocks that
   contain UXDSL syntax are compiled; most through the plugin
   (`postcss([plugin({ theme, includeTheme: false })])`), "a few" through
@@ -43,7 +45,7 @@ Sass stage reports. Every example compiles through the real pipeline.
 
 ```bash
 grep -q "^## The SCSS subset" packages/uxdsl/docs/integrations/compile.md
-grep -q "The SCSS subset" AGENTS.md
+grep -q "still describes the SCSS subset" AGENTS.md
 grep -q "core.compile(" scripts/lib/doc-examples.js
 ```
 
@@ -53,8 +55,9 @@ grep -q "core.compile(" scripts/lib/doc-examples.js
 npm run verify:doc-examples 2>&1 | tail -3
 ```
 
-Recorded: the count of examples and theme excerpts compiled (48 examples, 24
-excerpts in 101 files on `main` at beta.7; record the current figures).
+Recorded on `feat/beta9` at `db0e28d`: `52 examples and 24 theme excerpts
+checked across 101 documentation files. All documentation examples hold.`
+(exit 0).
 
 ## 5. Contract
 
@@ -168,7 +171,7 @@ npm test                                           # background; exit 0
 ## 13. Delivery
 
 Branch `feat/b9-15-superset-docs`. Commit:
-`docs(FEAT-010): MIG-B9-15 - Sass inside compile(): From SCSS, the importer rules, reserved names, warnings; examples compile through compile()`.
+`docs(FEAT-010): MIG-B9-15 - Sass inside compile(): From SCSS, the importer rules, functions named like UXDSL's, warnings; examples compile through compile()`.
 
 ## 14. Closure record
 
@@ -198,3 +201,12 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). 
 
 - **A kept `$variable` stays an error (decision D6 of 2026-11-04, on MIG-B9-13's owner flag 6).** A `$variable` Dart Sass keeps as written stays `UXD_SASS_CONTEXT`, not a warning, and a literal `$identifier` cannot be emitted except through the `\$` escape. This story documents the limitation and the escape's caveat (MIG-B9-13 §15, flag 6: only `\$x` passes, and Chrome then reads `\$x`).
 - **PostCSS chains, for information only (decision D7 of 2026-11-04, on MIG-B9-13's owner flag 8, F3).** Decision D7 accepts as documented for now that `uxdsl/postcss` placed after postcss-nested or postcss-simple-vars fails, in either order; the README, the migration guide and the CHANGELOG already give the workaround (MIG-B9-13 §15, flag 8). MIG-B9-27 (wave 2) may remove the limitation. Decision D7 gives this story no task.
+
+### Stale corrections before implementing (2026-11-08)
+
+Corrected by the agent on `feat/beta9` at `db0e28d`, per [README §1 item 4](README.md#1-before-anything-read-prepare-verify): each line was only stale, because an earlier story of this feature moved what it pointed at. No contract line or acceptance criterion changed.
+
+- §3 Preconditions, line 2. Old: `grep -q "The SCSS subset" AGENTS.md` (exits 1 on `db0e28d`: MIG-B9-13 rewrote AGENTS.md's SCSS paragraph). New: `grep -q "still describes the SCSS subset" AGENTS.md` (exits 0; it pins the sentence this story replaces, AGENTS.md:910).
+- §4 Baseline. Old: "Recorded: the count of examples and theme excerpts compiled (48 examples, 24 excerpts in 101 files on `main` at beta.7; record the current figures)." New: "Recorded on `feat/beta9` at `db0e28d`: `52 examples and 24 theme excerpts checked across 101 documentation files. All documentation examples hold.` (exit 0)." MIG-B9-12, 13 and 14 brought the count to 49, 51 and 52.
+- §2 Sources, the AGENTS.md reference. Old: "`AGENTS.md` describes the subset at "The SCSS subset `compile()` compiles (`$variables`, `@if/@else`, …" (around line 860)." New: AGENTS.md lines 873–911, rewritten by MIG-B9-13, ending with the line-910 sentence; the build-config keys sentence (686–688) lists no `sass`.
+- §13 Delivery, the commit subject. Old: "… From SCSS, the importer rules, reserved names, warnings; …". New: "… From SCSS, the importer rules, functions named like UXDSL's, warnings; …". DEC-17 reserves no name; wording only.

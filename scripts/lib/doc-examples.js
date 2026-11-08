@@ -5,21 +5,43 @@
 // A code example in documentation that nobody compiles is a claim without a
 // proof, and it ages silently. This module finds every UXDSL example in the
 // documentation surfaces, pairs each one with the theme excerpt the page shows
-// for it, and compiles it with the real compiler — the plugin in
-// packages/uxdsl, and its compile() for the few examples that
-// need the CLI pipeline (@mixin, $variables). There is no parser of its own and
-// no default values of its own: what the compiler accepts is what an example
-// may show.
+// for it, and compiles it with the real compiler in packages/uxdsl. There is
+// no parser of its own and no default values of its own: what the compiler
+// accepts is what an example may show.
 //
-// Conventions an example can rely on (all already in use in the docs):
+// The fence language decides first which compiler an example goes through
+// (routeOf):
+//   - `css`: the PostCSS plugin alone (`uxdsl/postcss`), whatever the code
+//     holds. A css example shows what the plugin does with a stylesheet, CSS
+//     plus UXDSL, so Sass in it fails as UXD_SASS_CONTEXT unless the example
+//     documents that error.
+//   - `scss`: compile(), as the file docs/doc-example.uxdsl: Dart Sass, then
+//     the plugin. The fence language only chooses the highlighting.
+//   - any other language (`uxdsl`, or an example given without one):
+//     compile() when the code holds a Sass-only construct (SASS_ONLY), the
+//     plugin alone otherwise.
+//
+// Conventions an example can rely on:
 //   - A page that shows a theme excerpt (a JSON block) and then CSS that uses
 //     it: the CSS is compiled against that excerpt, merged over the defaults.
 //     The excerpt applies until the next `#`/`##` heading.
-//   - A statement followed on the same line by a comment that BEGINS with a
-//     UXD_ code — `/* UXD_DIRECTIVE_CONTEXT: at the document root */` — is
-//     expected to FAIL with exactly that code. Anything else must compile.
-//   - A statement whose trailing comment is a single `var(--…)` claims that
-//     output; the compiled CSS must contain it.
+//   - In an example the plugin compiles, a top-level statement followed on
+//     the same line by a comment that BEGINS with a UXD_ code —
+//     `/* UXD_DIRECTIVE_CONTEXT: at the document root */` — is expected to
+//     FAIL with exactly that code. In such a block every statement is compiled
+//     on its own, every other statement must compile, and a statement whose
+//     trailing comment is a single `var(--…)` claims that output: the CSS it
+//     compiles to must contain it. A block without such a comment is compiled
+//     whole and must compile.
+//   - An example compile() compiles is compiled whole: PostCSS cannot parse
+//     its Sass, and compile() stops at the first error, so the example
+//     documents at most one, on a line that ends with a comment beginning with
+//     a UXD_ code. It must fail with exactly that code (the error's `code`,
+//     else the first code in its message), at that line, and compile with
+//     that line removed; without such a line it must compile. A line that
+//     ends with a comment that is a single `var(--…)` claims that output: the
+//     compiled CSS, without its comments (Dart Sass keeps a `/* … */`
+//     comment), must contain it.
 //   - `<!-- doc-example: output -->` (markdown only) on the line before a block
 //     marks it as compiled output being shown rather than input, and skips it.
 
@@ -34,8 +56,15 @@ const postcss = require(require.resolve('postcss', { paths: [PKG('uxdsl')] }));
 const load = (rel) => require(path.join(ROOT, rel));
 
 const UXDSL_SYNTAX = /@ds-|@theme\b|\b(?:palette|density|space|color|radius|rounded|border|shadow|elevation)\(|\b(?:xs|sm|md|lg|xl)\(/; // the removed spellings stay listed so an example showing one is compiled (and must document its error)
-const NEEDS_PIPELINE = /@mixin\b|@include\b|^\s*\$[\w-]+\s*:/m;
+// A Sass-only construct: it sends an example whose fence is neither css nor scss through compile().
+const SASS_ONLY = /@(?:use|forward|mixin|include|function|return|each|for|if|else|while|extend|at-root|content|debug|warn|error)\b|^\s*\$[\w-]+\s*:|#\{|&/m;
 const CODE = /\bUXD_[A-Z0-9_]+/;
+// In an example compile() compiles: a line that ends with a comment beginning with a UXD_ code
+// (the error it documents), and a line that ends with a comment that is a single var(--…) (the output it claims).
+const LINE_MARK = /\/\*\s*(UXD_[A-Z0-9_]+)\b(?:(?!\*\/).)*\*\/\s*$/;
+const LINE_CLAIM = /\/\*\s*(var\(--[\w-]+\))\s*\*\/\s*$/;
+// The file an example compile() compiles is compiled as; it need not exist.
+const DOC_EXAMPLE_FILE = path.join(ROOT, 'docs', 'doc-example.uxdsl');
 
 /** The line each character offset falls on (1-based). */
 const lineOf = (text, index) => text.slice(0, index).split('\n').length;
@@ -150,7 +179,7 @@ function collectExamples(relPath) {
       continue;
     }
     if (!['css', 'scss', 'uxdsl'].includes(lang) || skip || !UXDSL_SYNTAX.test(code)) continue;
-    examples.push({ file: relPath, line, code, theme });
+    examples.push({ file: relPath, line, lang, code, theme });
   }
   return { examples, themes };
 }
@@ -180,23 +209,62 @@ async function compileWithPlugin(css, theme) {
 
 async function compileWithPipeline(css, theme) {
   const core = load('packages/uxdsl/dist/entries/index.js');
-  const from = path.join(ROOT, 'docs', 'doc-example.uxdsl');
-  const out = await core.compile({ source: css, from }, { includeTheme: false, theme: theme || {} });
+  const out = await core.compile({ source: css, from: DOC_EXAMPLE_FILE }, { includeTheme: false, theme: theme || {} });
   return typeof out === 'string' ? out : out.css;
 }
 
-const errorCode = (error) => (CODE.exec(String((error && error.message) || error)) || [])[0] || null;
-const firstLine = (error) => String((error && error.message) || error).split('\n')[0].replace(/^uxdsl: <css input>:\d+:\d+: /, '').slice(0, 160);
+/** Which compiler an example goes through, `'plugin'` or `'compile'`: the fence language decides first. */
+function routeOf({ lang, code }) {
+  if (lang === 'css') return 'plugin';
+  if (lang === 'scss') return 'compile';
+  return SASS_ONLY.test(code) ? 'compile' : 'plugin';
+}
+
+const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The location an error message starts with: the plugin's anonymous input, or the file compile() compiles an example as.
+const LOCATION = new RegExp(`^(?:uxdsl: )?(?:<css input>|${escapeRegExp(DOC_EXAMPLE_FILE)}):\\d+:\\d+: `);
+
+/** The error's UXD_ code: its `code` property when it is one (UXD_SASS), else the first code in its message. */
+const errorCode = (error) => (error && typeof error.code === 'string' && /^UXD_[A-Z0-9_]+$/.test(error.code) ? error.code : (CODE.exec(String((error && error.message) || error)) || [])[0] || null);
+const firstLine = (error) => String((error && error.message) || error).split('\n')[0].replace(LOCATION, '').slice(0, 160);
+const withoutComments = (css) => css.replace(/\/\*[\s\S]*?\*\//g, '');
+
+/** An example compile() compiles: whole, documenting at most one error (see the conventions above). */
+async function runCompiled(code, theme) {
+  const lines = code.split('\n');
+  const marks = [];
+  const claims = [];
+  lines.forEach((text, i) => {
+    const mark = LINE_MARK.exec(text);
+    if (mark) marks.push({ line: i + 1, code: mark[1] });
+    const claim = LINE_CLAIM.exec(text);
+    if (claim) claims.push(claim[1]);
+  });
+  if (marks.length > 1) {
+    return [`documents ${marks.length} errors (lines ${marks.map((m) => m.line).join(', ')}); compile() stops at the first, so an example it compiles documents one`];
+  }
+  let source = code;
+  if (marks.length === 1) {
+    const [mark] = marks;
+    let failure = null;
+    try { await compileWithPipeline(code, theme); } catch (error) { failure = error; }
+    if (!failure) return [`line ${mark.line} is documented as ${mark.code} but the example compiles`];
+    const got = errorCode(failure);
+    if (got !== mark.code) return [`line ${mark.line} is documented as ${mark.code} but the example fails with ${got || firstLine(failure)}`];
+    if (failure.line !== mark.line) return [`line ${mark.line} is documented as ${mark.code}, but compile() reports it at line ${failure.line}`];
+    source = lines.filter((_, i) => i + 1 !== mark.line).join('\n');
+  }
+  let output;
+  try { output = withoutComments(await compileWithPipeline(source, theme)); } catch (error) {
+    return [marks.length ? `without line ${marks[0].line}, the example fails to compile: ${firstLine(error)}` : `fails to compile as shown: ${firstLine(error)}`];
+  }
+  return claims.filter((claim) => !output.includes(claim)).map((claim) => `is documented as producing ${claim} but does not`);
+}
 
 /** Runs one example. Returns a list of problems; empty means it holds. */
 async function runExample(example) {
   const { code, theme } = example;
-  const compile = NEEDS_PIPELINE.test(code) ? compileWithPipeline : compileWithPlugin;
-  // Pipeline examples (@mixin, $variables) are SCSS-flavored; only the pipeline's
-  // own parser can read them, so they are checked by compiling and nothing else.
-  if (compile === compileWithPipeline) {
-    try { await compile(code, theme); return []; } catch (error) { return [`fails to compile as shown: ${firstLine(error)}`]; }
-  }
+  if (routeOf(example) === 'compile') return runCompiled(code, theme);
   let root;
   try { root = postcss.parse(code); } catch (error) { return [`does not parse as CSS: ${firstLine(error)}`]; }
 
@@ -205,14 +273,14 @@ async function runExample(example) {
     return n.type !== 'comment' && next && next.type === 'comment' && next.source.start.line === n.source.end.line && /^UXD_[A-Z0-9_]+\b/.test(next.text.trim());
   });
   if (!marked) {
-    try { await compile(code, theme); return []; } catch (error) { return [`fails to compile as shown: ${firstLine(error)}`]; }
+    try { await compileWithPlugin(code, theme); return []; } catch (error) { return [`fails to compile as shown: ${firstLine(error)}`]; }
   }
 
   const problems = [];
   for (const st of statementsOf(code)) {
     let output = null;
     let failure = null;
-    try { output = await compile(st.css, theme); } catch (error) { failure = error; }
+    try { output = await compileWithPlugin(st.css, theme); } catch (error) { failure = error; }
     if (st.expectCode) {
       if (!failure) problems.push(`\`${st.css.split('\n').pop().slice(0, 70)}\` is documented as ${st.expectCode} but compiles`);
       else if (errorCode(failure) !== st.expectCode) problems.push(`\`${st.css.split('\n').pop().slice(0, 70)}\` is documented as ${st.expectCode} but fails with ${errorCode(failure) || firstLine(failure)}`);
@@ -269,4 +337,4 @@ function discoverSurfaces() {
     || /^packages\/playground-nextjs\/src\/.*\.(tsx|mdx)$/.test(f)).sort();
 }
 
-module.exports = { ROOT, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, runExample, verifySurfaces, validateThemes, parseTheme };
+module.exports = { ROOT, discoverSurfaces, extractMarkdown, extractJsx, collectExamples, statementsOf, routeOf, runExample, verifySurfaces, validateThemes, parseTheme };
