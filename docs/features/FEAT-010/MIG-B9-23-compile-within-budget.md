@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (the owner's decision of 2026-11-02 on MIG-B9-13's AC1 asks for this story; it is recorded in MIG-B9-13 §15) |
-| Status | In review (PR #75) |
+| Status | Merged (PR #75) |
 | Size | S |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-91 |
