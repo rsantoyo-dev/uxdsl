@@ -29,7 +29,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5. Did you mean \"5\"?\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |               ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_SHADOW_REFERENCE: shadow(9) does not exist; available keys: 0–5. Did you mean \"5\"?\n  1 | .card {\n> 2 |   box-shadow: shadow(9);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_EDGE_REFERENCE",
@@ -44,7 +44,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:18: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill. Did you mean \"5\"?\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |                  ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_EDGE_REFERENCE: radius(12) does not exist; available keys: 0–5, circle, pill. Did you mean \"5\"?\n  1 | .card {\n> 2 |   border-radius: radius(12);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_TOKEN_KEY",
@@ -59,7 +59,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:12: UXD_TOKEN_KEY: density(2.5) is not a token key: density(k). A key is a reference the theme defines, never a number to scale.\n  1 | .card {\n> 2 |   padding: density(2.5);\n    |            ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_TOKEN_KEY: density(2.5) is not a token key: density(k). A key is a reference the theme defines, never a number to scale.\n  1 | .card {\n> 2 |   padding: density(2.5);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_TYPO_REFERENCE",
@@ -134,7 +134,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_TOKEN_ALPHA: palette(primary.main, 2): expected an alpha between 0 and 1, got \"2\".\n  1 | .overlay {\n> 2 |   background: palette(primary.main, 2);\n    |               ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_TOKEN_ALPHA: palette(primary.main, 2): expected an alpha between 0 and 1, got \"2\".\n  1 | .overlay {\n> 2 |   background: palette(primary.main, 2);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_BP_INVALID",
@@ -214,7 +214,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:10: UXD_PALETTE_SYNTAX: palette(primary-main) is not a dotted path; write palette(primary.main).\n  1 | .a {\n> 2 |   color: palette(primary-main);\n    |          ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_PALETTE_SYNTAX: palette(primary-main) is not a dotted path; write palette(primary.main).\n  1 | .a {\n> 2 |   color: palette(primary-main);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_PALETTE_REFERENCE",
@@ -229,7 +229,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:10: UXD_PALETTE_REFERENCE: palette(primary.mian) does not exist; primary has: main, light, dark, contrast. Did you mean \"main\"?\n  1 | .a {\n> 2 |   color: palette(primary.mian);\n    |          ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_PALETTE_REFERENCE: palette(primary.mian) does not exist; primary has: main, light, dark, contrast. Did you mean \"main\"?\n  1 | .a {\n> 2 |   color: palette(primary.mian);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_EDGE_ARGUMENT",
@@ -244,7 +244,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:11: UXD_EDGE_ARGUMENT: border(1, red, dashed) takes exactly one argument: border(k); write border(1) and set border-color/border-style as declarations after it.\n  1 | .card {\n> 2 |   border: border(1, red, dashed);\n    |           ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_EDGE_ARGUMENT: border(1, red, dashed) takes exactly one argument: border(k); write border(1) and set border-color/border-style as declarations after it.\n  1 | .card {\n> 2 |   border: border(1, red, dashed);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_SURFACE_TONE",
@@ -289,7 +289,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:15: UXD_SYNTAX_REMOVED: elevation() was removed; use shadow(2).\n  1 | .card {\n> 2 |   box-shadow: elevation(2);\n    |               ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_SYNTAX_REMOVED: elevation() was removed; use shadow(2).\n  1 | .card {\n> 2 |   box-shadow: elevation(2);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_FUNCTION_UNKNOWN",
@@ -304,7 +304,7 @@
         "dist/example.css"
       ],
       "exit": 1,
-      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:12: UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()?\n  1 | .card {\n> 2 |   padding: spacing(2);\n    |            ^\n  3 | }\n  4 | \n"
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:2:3: UXD_FUNCTION_UNKNOWN: spacing() is not a function CSS or UXDSL knows; did you mean space()?\n  1 | .card {\n> 2 |   padding: spacing(2);\n    |   ^\n  3 | }\n  4 | \n"
     },
     {
       "code": "UXD_THEME_BLOCK_REMOVED",
@@ -320,6 +320,68 @@
       ],
       "exit": 1,
       "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:1:1: UXD_THEME_BLOCK_REMOVED: @theme blocks were removed; define these tokens in the theme JSON (uxdsl.theme.json): density-<k> under \"densities\", radius-<k> under \"radii\", border-<k> under \"borders\", shadow-<k> under \"shadows\", and surface-/button-/input-<role> packs under \"surfaces\", \"buttons\" and \"inputs\".\n> 1 | @theme {\n    | ^\n  2 |   radius-2: 12px;\n  3 | }\n"
+    },
+    {
+      "code": "UXD_SASS",
+      "title": "A Sass error: an undefined variable",
+      "source": ".card {\n  padding: $gap;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: src/example.uxdsl:2:12: UXD_SASS: Undefined variable.\n    ╷\n  2 │   padding: $gap;\n    │            ^^^^\n    ╵\n    src/example.uxdsl 2:12  root stylesheet\n"
+    },
+    {
+      "code": "UXD_SASS_CONTEXT",
+      "title": "A $variable Sass keeps literally in a custom property (write #{$gap})",
+      "source": "$gap: 4px;\n.card {\n  --gap: $gap;\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 1,
+      "stderr": "[uxdsl] Error: uxdsl: src/example.uxdsl:3:3: UXD_SASS_CONTEXT: Sass keeps $gap literally in the custom property --gap; write #{$gap} (in a .uxdsl file compiled by uxdsl build, compile() or an adapter).\n  1 | $gap: 4px;\n  2 | .card {\n> 3 |   --gap: $gap;\n    |   ^\n  4 | }\n  5 | \n"
+    },
+    {
+      "code": "UXD_FUNCTION_SHADOWED",
+      "title": "A project @function named like a UXDSL function: the author's SCSS wins, with one warning",
+      "warning": true,
+      "source": "@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 0,
+      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/example.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token\n"
+    },
+    {
+      "code": "UXD_SASS_WARNING",
+      "title": "A Dart Sass deprecation: @import of a partial (write @use; the build still succeeds)",
+      "warning": true,
+      "source": "@import './card';\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 0,
+      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.\n"
     }
   ]
 }

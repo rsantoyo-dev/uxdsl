@@ -76,10 +76,10 @@ const VISUAL_DEFAULT_FILES = [
   `${SRC}/foundations.ts`,
   `${SRC}/fonts.ts`,
   `${SRC}/plugin.ts`,
-  // The compile() pipeline around the plugin: `@import` inlining, the SCSS
-  // subset and its guard, `//` comment stripping — all change compiled output.
+  // compile(): which stages a stylesheet goes through, in what order (protect,
+  // Dart Sass, restore, the plugin), and what each receives — a change here
+  // changes the CSS of every file compiled through compile().
   `${SRC}/compile.ts`,
-  `${SRC}/scss-subset.ts`,
   `${SRC}/language.ts`,
   `${SRC}/preset-engine.ts`,
   `${SRC}/naming.ts`,
@@ -88,6 +88,14 @@ const VISUAL_DEFAULT_FILES = [
   // The one serializer every generated theme rule goes through (stability
   // phase 4): a change to it changes every theme stylesheet.
   `${SRC}/css-blocks.ts`,
+  // The Sass pipeline's first and third stages: what UXDSL syntax reaches Dart
+  // Sass as, and the directive spacing restored after it. A change here changes
+  // what the plugin receives for every `.uxdsl` file compiled through Sass.
+  `${SRC}/sass/protect.ts`,
+  // The Sass stage: which files a `.uxdsl` build loads and how, and where a
+  // project function replaces a UXDSL token, so it decides the CSS Dart Sass
+  // produces for every `.uxdsl` file compiled through it.
+  `${SRC}/sass/compile-sass.ts`,
 ];
 
 // MIG-B7-16 (FEAT-009): the other half of the classification. Every file under

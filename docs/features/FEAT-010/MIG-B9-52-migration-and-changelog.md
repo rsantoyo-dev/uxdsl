@@ -2,13 +2,13 @@
 
 | Field | Value |
 | --- | --- |
-| Feature · Release | FEAT-010 · `0.5.0-beta.9` |
+| Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 5 |
 | Decision gate | None (audit DE-12; plan §3.3 and §8 item 6) |
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-01 (and every story with output impact, whose entries it organizes) |
-| Blocks | MIG-B9-91 |
+| Blocks | MIG-B9-92 (DEC-03, revised 2026-11-04) |
 | Base | `feat/beta9` after wave 3 |
 | Owns | `packages/uxdsl/docs/migration.md`, `packages/uxdsl/CHANGELOG.md` (structure) |
 | Shares | `scripts/lib/doc-examples.js` (compiles `migration.md` already) |
@@ -143,3 +143,11 @@ To be filled in the delivering PR.
 Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
 
 - The precondition `## 0.5.0-beta.9 — unreleased` fails once beta.9 is published, and the English "five packages → `uxdsl`" migration (C1) must ship with the release that renames the package. Under DEC-03 (b) that is beta.9: move C1 into the beta.9 gate (MIG-B9-91a). Summaries for the beta.1–7 sections add little; drop them.
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists those that concern this story. Where they differ from this story's contract or from the review above, they rule.
+
+- **Two releases (decision D13 of 2026-11-04, DEC-03 revised).** This story ships in `0.5.0-beta.10` and blocks MIG-B9-92, the beta.10 gate and release record, instead of MIG-B9-91. MIG-B9-91, the beta.9 gate, includes an English beta.8 → beta.9 migration section; the review above, written for option (b), asks to move C1 into that gate.
+- **The codemod (decision D4 of 2026-11-04).** MIG-B9-03's finding 3 is registered as MIG-B9-29, "The canonical-grammar codemod is idempotent" (S, wave 2): a second run is a no-op, pinned by a test, and "MIG-B9-52's release-notes instruction follows". The finding's target for this story is "MIG-B9-52 (one instruction)" (MIG-B9-03 §15).
+- **The `engines` release note (decision D10 of 2026-11-04).** `uxdsl` declares `"engines": { "node": ">=20.19" }` in MIG-B9-91, with the release note in the beta.9 migration section. MIG-B9-12's owner flag 11 had proposed that note for this story.

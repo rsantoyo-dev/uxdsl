@@ -203,3 +203,12 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 
 - K5 leaves `themeVar`, `spaceVar` and `colorVar` silently ignored: the plugin never warns about an option it does not know. Add one generic unknown-option warning instead of a list of removed names.
 - `plugin.ts` is missing from this story's Shares and from README §7's row for it.
+
+### Owner decisions of 2026-11-08 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). The owner was given numbered recommendations, in Spanish, on the owner flags of MIG-B9-14 and MIG-B9-15, and answered, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation is the owner's decision of 2026-11-08. This record is in English and lists those that concern this story. Where they differ from this story's contract or from the review above, they rule.
+
+- **`error.warnings` (the decision on MIG-B9-14's flag 11).** `error.warnings` goes to this story. Today it does not exist, so every host loses the warnings `compile()` produced before it threw, a Dart Sass deprecation printed before a UXDSL error included. MIG-B9-14 §15 proposed it for `compile.ts` and `compile-sass.ts`, and says that the CLI's printer is ready for it.
+- **The files Dart Sass loaded, for information (the decision on MIG-B9-14's flag 16).** Flag 16 offered this story as the alternative to a new one, if `compile()` should put the files Dart Sass loaded on its error. The decision registers MIG-B9-39 instead, in which the adapters re-register the last good dependencies and `err.file`; MIG-B9-39 depends on this story.
+
+A fact, not a decision: `compile-sass.ts` is in neither this story's Shares nor README §7's row for that file (MIG-B9-12, 23 and 26). Its `finish()` throws the Sass stage's error without the warnings Sass raised before it (line 664 at `4ecdc51`), so `error.warnings` likely needs that file. Listing this story on that row makes MIG-B9-23 and MIG-B9-26, later rows, wait for it (README §7).

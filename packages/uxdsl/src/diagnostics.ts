@@ -4,7 +4,7 @@ const CODE_PATTERN = /^(UXD_[A-Z0-9_]+):/;
 
 /** Who produces a code: the PostCSS compiler, the theme validator and engines
  * (both CSS paths), the browser runtime (returned on a result, never thrown),
- * or `compile()`'s SCSS-subset pass. */
+ * or compile()'s Sass stage before the plugin (protect and Dart Sass). */
 export type DiagnosticOwner = 'compiler' | 'theme' | 'runtime' | 'core';
 
 export interface DiagnosticEntry {
@@ -100,8 +100,7 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_BREAKPOINT_EMPTY: compiler('A breakpoint function has no value, e.g. xs().', 'Write the value inside the parentheses, or remove the breakpoint.'),
   UXD_BREAKPOINT_IMPORTANT: compiler('`!important` appears inside a breakpoint group.', 'Put `!important` after the groups; it then applies at every breakpoint.'),
   UXD_BREAKPOINT_BASE: compiler('In a multi-part value, a responsive group has no value at the base breakpoint, so the value would change shape between widths.', 'Give the group a base, e.g. xs(…), or make the whole value one responsive expression.'),
-  UXD_VARIABLE_CONTEXT: compiler('A `$variable` is declared inside a rule, which the standalone plugin does not scope.', 'Declare it at the root of the file, or compile through compile() / uxdsl build.'),
-  UXD_VARIABLE_UNDEFINED: compiler('A `$name` in a value was never declared.', 'Declare `$name: …;` at the root of the file before the rule.'),
+  UXD_SASS_CONTEXT: compiler('Sass syntax reached the PostCSS plugin: a construct only Dart Sass evaluates ($variables, @use, @forward, @mixin/@include, @function, @extend, @if/@each/@for/@while and the other Sass at-rules, #{…} interpolation, &-suffix selectors, %placeholders, nested properties, namespaced calls, // comments) in a stylesheet the plugin compiles alone, or a $variable or namespaced call Sass kept as written (in a custom property, a plain-CSS at-rule prelude, a progid: value, a CSS @function body or the arguments of expression(), element(), type() or a vendor-prefixed calc(), a url() there included).', 'Name the file .uxdsl and compile it with uxdsl build, compile() or an adapter, or remove the Sass; where Sass keeps a $variable as written, write #{$variable}.'),
   UXD_THEME_MARKER: compiler('`@uxdsl theme;` is misspelled, written twice, or written inside a rule or an at-rule.', 'Write `@uxdsl theme;` once, as a top-level statement of the one global stylesheet that should carry the theme.'),
   UXD_REFERENCE_MISSING: compiler('An emitted var(--uxdsl__…) points at a custom property nothing defines.', 'Define the token in the theme, declare it in references.externalTokens, or fix the name; the message names the chain.'),
   UXD_REFERENCE_CYCLE: compiler('Theme tokens reference each other in a cycle.', 'Break the cycle; the message shows the chain.'),
@@ -113,11 +112,10 @@ export const DIAGNOSTIC_CATALOG: Readonly<Record<string, DiagnosticEntry>> = Obj
   UXD_THEME_STYLE_ELEMENT: runtime('The element with the requested id is not a <style>.', 'Use an id that is free or belongs to a <style> element.'),
   UXD_THEME_STRUCTURE: runtime('The patch changes what the compiler would emit (a field, state, surface or breakpoint), which custom properties cannot express.', 'Change the theme file and rebuild; apply values, not structure, at run time.'),
   UXD_THEME_PERSIST: runtime('Browser storage could not be read, written or cleared.', 'Check storage availability; the theme was still applied.'),
-  // --- compile() (the SCSS subset) ---------------------------------------------
-  UXD_SCSS_UNSUPPORTED: core('A Sass construct outside the subset, or one the subset cannot evaluate: @extend, @use, a %placeholder, !global, a Sass function, interpolation around a non-variable, an undefined $var or mixin, @else if, and/or/not, a keyword or variadic argument, an @import inside a block, or arithmetic outside calc().', 'Write the CSS the message names instead; the subset is $variables, @if/@else, @each, @for, @mixin/@include/@content, @import at the top.'),
-  UXD_NESTING_INVALID: core('A selector concatenates the parent with &-suffix, &__x or &--x, which native CSS nesting cannot express.', 'Write the full selector, e.g. .block__item.'),
-  UXD_IMPORT_CYCLE: core('Two or more .uxdsl files import each other in a cycle.', 'Break the cycle; the message lists the files in order.'),
-  UXD_INCLUDE_ARGUMENT: core('An @include whose arguments do not parse (unbalanced parentheses, text after the list) or do not fit the mixin (too many, a missing one, a content block the mixin has no @content for).', 'Write @include name(arg, arg) with one argument per parameter that has no default.'),
+  // --- compile()'s Sass stage, before the plugin (protect and Dart Sass) ---
+  UXD_SASS: core('Dart Sass could not compile the stylesheet: a syntax error, an @error, an undefined variable or mixin, a stylesheet it cannot find or that is ambiguous, a loop of @use or @import, or text that is not valid UTF-8; the message is Sass\'s own, at the author\'s file, line and column.', 'Read Sass\'s message and the code frame below the location, and fix the source there.'),
+  UXD_SASS_WARNING: core('Dart Sass warned: a deprecation, with its id in brackets, an @warn, or Sass\'s notice about an id in the sass option\'s silenceDeprecations (an unknown, obsolete or user-authored one); Sass reports five warnings per deprecation type and then a summary, and the summary and the notices carry no location.', 'Follow Sass\'s suggestion, or silence that deprecation type with the sass option\'s silenceDeprecations (quietDeps for dependencies).'),
+  UXD_FUNCTION_SHADOWED: core('A Sass @function is named like a UXDSL function — a token function, tone() or a breakpoint of the effective theme — so where Sass calls that bare name the author\'s function runs and UXDSL\'s is not available (a warning, located at the declaration; the author\'s SCSS wins).', 'Rename the function to use the UXDSL token; a function reached only through a namespace (helpers.space()) shadows nothing, and a @mixin never conflicts.'),
 });
 
 /** The Button/Input codes the control engine composes from one template. */

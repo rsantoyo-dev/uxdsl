@@ -21,7 +21,6 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
-const postcssScss = require('postcss-scss');
 
 const implementation = require('../../dist/reference-integrity');
 const plugin = require('../../dist/plugin');
@@ -61,7 +60,7 @@ async function prepare(blocks) {
   };
   try {
     await postcss([plugin({ includeTheme: true, references: { mode: 'off' } })])
-      .process(source(blocks), { from: `perf-${blocks}.uxdsl`, syntax: postcssScss });
+      .process(source(blocks), { from: `perf-${blocks}.uxdsl` });
   } finally {
     implementation.enforceReferences = original;
   }

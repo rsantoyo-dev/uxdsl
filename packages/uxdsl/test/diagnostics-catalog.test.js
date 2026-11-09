@@ -2,10 +2,9 @@
 
 // The diagnostics catalog is exact in both directions: every UXD_* code the
 // sources can produce is in it (with a meaning and a fix), every entry is
-// produced somewhere, and every entry is asserted by a test — in this package
-// for the compiler, theme and runtime codes, in uxdsl-core for the SCSS-subset
-// codes. Codes composed from a family prefix (`${prefix}_VALUE`) are expanded
-// per the inventory below so none of them bypasses the check.
+// produced somewhere, and every entry is asserted by a test in this package.
+// Codes composed from a family prefix (`${prefix}_VALUE`) are expanded per the
+// inventory below so none of them bypasses the check.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
@@ -90,6 +89,15 @@ test('every catalog entry is asserted by a test', () => {
     .map((file) => fs.readFileSync(file, 'utf8')).join('\n');
   const untested = [...DIAGNOSTIC_CODES].filter((code) => !new RegExp(`\\b${code}\\b`).test(tests));
   assert.deepEqual(untested.sort(), [], 'Every code needs a test that provokes it (or, for a runtime code, receives it).');
+});
+
+test('MIG-B9-13: the six SCSS-subset and $variable codes are retired, UXD_SASS_CONTEXT is a compiler code, and core is exactly UXD_SASS, UXD_SASS_WARNING and UXD_FUNCTION_SHADOWED', () => {
+  for (const retired of ['UXD_SCSS_UNSUPPORTED', 'UXD_NESTING_INVALID', 'UXD_IMPORT_CYCLE', 'UXD_INCLUDE_ARGUMENT', 'UXD_VARIABLE_CONTEXT', 'UXD_VARIABLE_UNDEFINED', 'UXD_RESERVED_NAME']) {
+    assert.equal(DIAGNOSTIC_CODES.has(retired), false, `${retired} is not in the catalog`);
+  }
+  assert.equal(DIAGNOSTIC_CATALOG.UXD_SASS_CONTEXT?.owner, 'compiler');
+  const core = Object.keys(DIAGNOSTIC_CATALOG).filter((code) => DIAGNOSTIC_CATALOG[code].owner === 'core').sort();
+  assert.deepEqual(core, ['UXD_FUNCTION_SHADOWED', 'UXD_SASS', 'UXD_SASS_WARNING']);
 });
 
 test('diagnostic() refuses a code the catalog does not list', () => {

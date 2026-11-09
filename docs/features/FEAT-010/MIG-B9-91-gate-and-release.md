@@ -4,14 +4,14 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 7 |
-| Decision gate | DEC-03 (decided 2026-10-23: one release, `0.5.0-beta.9`, with every wave) |
+| Decision gate | DEC-03 (revised 2026-11-04: option (b), two releases; this story gates `0.5.0-beta.9`, with waves 0 to 3, and MIG-B9-92 gates `0.5.0-beta.10`) |
 | Status | Draft (re-baseline after wave 3) |
 | Size | M |
-| Depends on | every story of waves 0 to 6 (DEC-03); MIG-B9-90 |
-| Blocks | the owner's publish |
+| Depends on | every story of waves 0 to 3 (DEC-03); MIG-B9-28 (CI on Windows) |
+| Blocks | the owner's publish of `0.5.0-beta.9` |
 | Base | `feat/beta9` after those waves |
 | Owns | `docs/releases/0.5.0-beta.9.md`, `fixtures/release-1.0/run.js` (the DROPPED list and the new checks' wiring), `fixtures/release-1.0/contrast-baseline.json` |
-| Shares | `packages/uxdsl/CHANGELOG.md` (the date), `README.md` (the status line) |
+| Shares | `packages/uxdsl/CHANGELOG.md` (the date), `README.md` (the status line), `packages/uxdsl/package.json` and `packages/uxdsl/package-lock.json` (the `engines` field; the owner's decision D10 of 2026-11-04, §15) |
 | Output impact | none |
 
 ## 1. Goal
@@ -171,3 +171,14 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ 
 
 - **DEC-03 is (a): one release.** This story gates `0.5.0-beta.9` with every wave; there is no 91a/91b split and no beta.10 gate (the "repeated for beta.10" line is void). The review's blocking finding about (b) no longer applies.
 - The record's "moved to beta.10" section lists only what the owner cuts explicitly, if anything. G5's bump: the next version is `1.0.0-rc.1`; choose a development version that sorts below it (the review's note on G5 explains why `-dev` suffixes can sort above their release).
+
+### Owner decisions of 2026-11-04 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). The owner was given 19 numbered recommendations, in Spanish, and answered, verbatim, "voy a seguir todas tus recomendciones" ("I will follow all your recommendations"): each recommendation is the owner's decision of 2026-11-04. This record is in English and lists those that concern this story. Where they differ from this story's contract, from the review above or from the owner decisions of 2026-10-23, they rule.
+
+- **DEC-03 is (b): two releases (decision D13 of 2026-11-04).** `0.5.0-beta.9` ships waves 0 to 3 and this story, the beta.9 gate, which includes the Press Craftor re-run and an English beta.8 → beta.9 migration section. `0.5.0-beta.10` ships waves 4 to 6, MIG-B9-90 and MIG-B9-92, the beta.10 gate and release record (the plan's "91b"). The stories registered on 2026-11-04 ship in beta.9: MIG-B9-24 to 29 (wave 2) and MIG-B9-37 (wave 3). The DEC-03 item of the block of 2026-10-23 above is superseded, and the review's blocking finding above applies again, with this story as its 91a and MIG-B9-92 as its 91b. The header's Decision gate, Depends on and Blocks follow this decision (Depends on also follows decision D11, below, and Shares follows decision D10).
+- **What decision D13 changes in the block of 2026-10-23:** the record's "moved to beta.10" section is no longer limited to what the owner cuts, since decision D13 moves waves 4 to 6 and MIG-B9-90 to beta.10; and G5's next version after `0.5.0-beta.9` is `0.5.0-beta.10`, not `1.0.0-rc.1`, so the development version must sort below `0.5.0-beta.10` (the review's note on G5 above).
+- **P10 re-measured before the publish (decision D9 of 2026-11-04).** On the owner's Mac, with the corrected method of decision D8 (MIG-B9-23), this story re-measures P10 before publishing.
+- **`engines` (decision D10 of 2026-11-04).** `uxdsl` declares `"engines": { "node": ">=20.19" }` (MIG-B9-12's owner flag 11: `sass` 1.107.0, `chokidar` 5 and `readdirp` 5 require it), in this story, with the release note in the beta.9 migration section.
+- **CI on Windows (decision D11 of 2026-11-04).** CI runs on Windows before the release: this story depends on MIG-B9-28, "CI on Windows" (wave 2; its scout sizes it, S or split). Windows is unverified today (MIG-B9-13's owner flag 20; MIG-B9-23's `realCase` path runs on win32).
+- **The playground's lockfile (decision D19 of 2026-11-04).** MIG-B9-12's owner flag 15 is accepted as delivered, and its lockfile item goes to this story: the playground's lockfile records `../uxdsl`'s manifest, stale for devDependencies since MIG-B9-10, while `npm ci` there still passes.

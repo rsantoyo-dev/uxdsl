@@ -1,192 +1,105 @@
-/**
- * Core processing engine for UXDSL files.
- *
- * This is the one shared `compile()` the CLI, and
- * Vite/Webpack adapters all use — the exact same pipeline
- * (`postcss-scss` syntax, `postcss-import` with a shared resolver, the
- * SCSS subset of ./scss-subset.ts, the UXDSL plugin) instead of three
- * independently-drifted compilers for the same language. The previous
- * version of this file stripped `//` comments and inlined `@import`s with
- * its own line-by-line string manipulation, which corrupted valid CSS
- * (`url(https://...)`, a `//` inside a block comment) without ever
- * erroring, and silently left a nonexistent import's `@import` line in the
- * output instead of failing.
- */
+// compile(): the one pipeline the CLI, uxdsl/vite and uxdsl/webpack share.
+//
+// It runs four stages, and each may change only what it names:
+//
+// 1. protect (./sass/protect.ts), inside the Sass stage. In a `.uxdsl` file it
+//    rewrites UXDSL's own syntax (dotted token keys such as
+//    `palette(primary.main)`, `$var` inside `@ds-*(…)`) so that Dart Sass
+//    passes it through, keeping a column map back to the author's text.
+//    `.scss`, `.sass` and `.css` files are served as written.
+// 2. Dart Sass (./sass/compile-sass.ts) compiles the entry exactly as Dart Sass
+//    does: expanded style, Sass's resolution of `@use`, `@forward` and
+//    `@import`, nesting, mixins, functions and control rules, so a `.scss`
+//    project renamed to `.uxdsl` compiles to Dart Sass's CSS. A Sass failure is
+//    `UXD_SASS`, a Sass warning `UXD_SASS_WARNING`, and a project `@function`
+//    that replaces a UXDSL function `UXD_FUNCTION_SHADOWED`. The stage always
+//    produces a source map, which locates everything after it.
+// 3. restore (./sass/protect.ts): `@ds-x (…)`, as Dart Sass writes an unknown
+//    at-rule, becomes `@ds-x(…)` again.
+// 4. The UXDSL plugin (./plugin.ts) runs on Dart Sass's output, parsed by
+//    PostCSS's default parser: the theme, the directives, responsive values,
+//    token functions and the reference check. A `$variable` or namespaced
+//    call Dart Sass kept as written (in a custom property, a plain-CSS
+//    at-rule's prelude, the arguments of `expression()`, …) fails there as
+//    UXD_SASS_CONTEXT, whose fix is `#{…}`. Nothing else in Sass's output
+//    changes, except that each top-level comment whose text starts with
+//    `# sourceMappingURL=` is removed, as PostCSS removes it when it writes
+//    no map, so the CSS is the same in the three `sourceMap` modes. Text
+//    Sass prints from a string (`string.unquote()`, `#{…}`) that is not CSS
+//    fails, located like any other error: the parser rejects a `;` or a
+//    brace, an unclosed comment or string, an unclosed bracket in a
+//    declaration, and a colon outside parentheses and strings in the value
+//    of a property that is not custom (`b: a:b` is "Missed semicolon"; a
+//    `progid:` filter is read), and the plugin reads a `//` in such a value,
+//    outside a string and a `url()`, as a `//` comment: UXD_SASS_CONTEXT,
+//    with the message it gives on its own.
+//
+// Every position in Dart Sass's output that compile() reports (an error, a
+// warning, a reference issue) is moved to the author's file, line and column
+// through the Sass stage's map, the same on every PostCSS of the peer range. A
+// parse error in CSS the plugin parses itself (the theme it generates, a
+// `references.css` entry) keeps PostCSS's position in that CSS, under no
+// author's file. A requested source map chains the stage's map with PostCSS's
+// and names only the files the author wrote.
 
 import fs from 'fs';
 import path from 'path';
-import postcss, { Result, Warning } from 'postcss';
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const postcssScss = require('postcss-scss');
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const postcssImport = require('postcss-import');
-// The plugin is part of this package: the pipeline and the plugin can never
-// come from two different installs.
+import postcss, { Plugin, Result, Warning } from 'postcss';
+// Types only: source-map-js is loaded when a position or a map is needed.
+import type { RawSourceMap, SourceMapConsumer as Consumer } from 'source-map-js';
 import uxdslPlugin = require('./plugin');
-
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const postcssImportDefaultResolveId = require('postcss-import/lib/resolve-id');
-import { scssSubset, sassLeftoverGuard } from './scss-subset';
-
-/** The one import resolver of `compile()`. Supports a `~package/file.uxdsl`-style bare specifier resolved
- * through Node's own module resolution (so a project can import a
- * `.uxdsl` file shipped inside an installed package), otherwise resolves
- * relative to `basedir`. Found while wiring this up: a `resolve` option
- * that returns *any* path — found or not — makes postcss-import load that
- * exact path unconditionally, surfacing a raw, unlocated `ENOENT` for a
- * missing import instead of postcss-import's own well-formed, located
- * "Failed to find '...' in [...]" message (which only fires from *its*
- * default resolver, verified empirically — this was already true of the
- * CLI's pre-existing resolver, not something this refactor introduced,
- * but it's exactly the missing-import contract this story requires: "an
- * error naming the importing file and line"). So the relative-path branch
- * now checks existence first, and only the `~` bare-specifier branch is
- * genuinely reported as unresolvable directly, falling back to
- * postcss-import's own default resolver — reused via its internal
- * `resolve-id` module rather than reimplemented — for every other case,
- * so a real miss gets its real error instead of a synthetic one. */
-function createImportResolver(entry: string) {
-  const entryDir = path.dirname(entry);
-  return (id: string, basedir: string, importOptions: unknown, astNode: unknown) => {
-    const request = id.startsWith('~') ? id.slice(1) : id;
-    if (request.startsWith('.') || request.startsWith('/')) {
-      const direct = path.resolve(basedir, request);
-      if (fs.existsSync(direct)) return direct;
-    } else {
-      // Bare specifier — a package import (e.g. `some-package/tokens.css`),
-      // `~`-prefixed or not.
-      // Real node resolution, not existsSync(path.resolve(...)), since
-      // it lives in node_modules, not relative to the importing file.
-      try {
-        return require.resolve(request, { paths: [basedir, entryDir, process.cwd()] });
-      } catch (_) {
-        // Fall through: let postcss-import's own resolver produce the error.
-      }
-    }
-    return postcssImportDefaultResolveId(id, basedir, importOptions, astNode);
-  };
-}
-
-/** A minimal, existence-checked resolve used only by the cycle pre-check
- * below — deliberately not the full `createImportResolver` (which falls
- * back to postcss-import's own resolver for a `~` specifier or a genuine
- * miss): a nonexistent or unresolvable import is simply not part of a
- * cycle, so this returns `undefined` for it instead of ever needing that
- * fallback (which requires postcss-import's own `importOptions`/`astNode`
- * context this pre-check doesn't have). */
-function resolveForCycleCheck(id: string, basedir: string, entryDir: string): string | undefined {
-  if (id.startsWith('~')) {
-    try {
-      return require.resolve(id.slice(1), { paths: [basedir, entryDir, process.cwd()] });
-    } catch (_) {
-      return undefined;
-    }
-  }
-  const direct = path.resolve(basedir, id);
-  return fs.existsSync(direct) ? direct : undefined;
-}
-
-/** Postcss-import does not reliably error on a real
- * import cycle — verified empirically: `a.uxdsl` importing `b.uxdsl`
- * importing `a.uxdsl` back compiles successfully, silently duplicating
- * `a`'s rules once instead of failing. The "no silent
- * output that doesn't match the input") requires an error here, so this
- * walks the same `.uxdsl` import graph the real compile is about to,
- * purely to detect a cycle before handing off to postcss-import for the
- * actual inlining. A nonexistent import is deliberately left alone here —
- * postcss-import's own error for that case already names the importing
- * file and the exact line (verified), so duplicating that check would
- * only risk giving a worse message.
- *
- * Also called for a `{ source, from }` compile, not
- * just `{ entry }` — the Vite plugin's optional Sass pre-pass and every
- * single Webpack loader compilation use that shape exclusively.
- * Discovered via the shared parity fixture: without this, a cycle
- * reached only through `{ source, from }` (never `{ entry }`) silently
- * duplicated content again, defeating this exact guard for one of the
- * two call shapes `compile()` accepts. */
-function checkImportCycles(
-  entry: string,
-  entryDir: string,
-  visited: Set<string> = new Set(),
-  stack: string[] = [],
-  // The top-level node's own content, for a
-  // `{ source, from }` call — `from` need not exist on disk at all (an
-  // unsaved editor buffer, or Sass-preprocessed content upstream), so this
-  // reads from the caller's in-memory string instead of `fs.readFileSync`
-  // for exactly the first (outermost) call only. Every nested import found
-  // from there is still a real file, resolved and read from disk exactly
-  // as before — only the walk's own starting point can be virtual.
-  initialSource?: string
-): void {
-  if (stack.includes(entry)) {
-    const cycleStart = stack.indexOf(entry);
-    const cycle = stack.slice(cycleStart).concat(entry).map((p) => path.relative(process.cwd(), p));
-    throw new Error(`UXD_IMPORT_CYCLE: Circular import detected: ${cycle.join(' -> ')}`);
-  }
-  if (visited.has(entry)) return; // Already walked from here with no cycle found.
-  visited.add(entry);
-  stack.push(entry);
-
-  let source: string;
-  if (initialSource !== undefined) {
-    source = initialSource;
-  } else {
-    try {
-      source = fs.readFileSync(entry, 'utf8');
-    } catch (_) {
-      stack.pop();
-      return; // Unreadable/missing — postcss-import reports this on the real pass.
-    }
-  }
-  const root = postcssScss.parse(source, { from: entry });
-  const importTargets: string[] = [];
-  root.walkAtRules('import', (at: any) => {
-    const raw = String(at.params || '').trim()
-      .replace(/^url\((.*)\)$/i, '$1').trim()
-      .replace(/^(['"])(.*)\1$/, '$2');
-    if (raw.endsWith('.uxdsl')) importTargets.push(raw);
-  });
-  for (const rel of importTargets) {
-    const dep = resolveForCycleCheck(rel, path.dirname(entry), entryDir);
-    if (dep !== undefined) checkImportCycles(dep, entryDir, visited, stack);
-  }
-  stack.pop();
-}
+import { compileSassStage } from './sass/compile-sass';
+import type { SassStageResult } from './sass/compile-sass';
+import { restoreDirectiveSpacing } from './sass/protect';
+import { resolveTheme } from './default-theme';
+import { discoverThemeSync } from './config';
+import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
+import { formatReferenceIssues } from './reference-core';
+import type { ReferenceIssue } from './reference-core';
 
 export interface CompileInput {
-  /** Absolute or cwd-relative path to the entry `.uxdsl` file. Mutually
-   * exclusive with `source`. */
+  /** The entry file, absolute or relative to the working directory; Dart Sass
+   * reads it. Mutually exclusive with `source`. */
   entry?: string;
-  /** In-memory UXDSL source. `@import`s inside it resolve relative to
-   * `from` if provided (matching postcss's own `from` contract) — a
-   * bare/`~`-prefixed specifier resolves the same way it would for
-   * `entry`, and the same cycle pre-detection applies, both starting from
-   * this in-memory content rather than reading `from` off disk (which
-   * need not exist as a real file at all). */
+  /** The entry's text, compiled as if it were the file `from`. */
   source?: string;
-  /** Origin path for an in-memory `source`, for relative `@import`
-   * resolution, bare/`~`-specifier resolution, cycle detection and
-   * diagnostics location. Ignored when `entry` is given. */
+  /** The path `source` is compiled as, absolute or relative to the working
+   * directory; the file need not exist. Relative `@use`, `@forward` and
+   * `@import` resolve from its directory, positions and the source map name
+   * it, it is listed first in `dependencies`, and its extension decides how
+   * the text is read: `.scss`, `.sass` and `.css` as written, anything else as
+   * `.uxdsl`. Without it, `source` is an anonymous `.uxdsl` file in the
+   * working directory: relative loads resolve from there, positions print
+   * `<css input>` with no `file`, and it is never a dependency. Ignored with
+   * `entry`. */
   from?: string;
 }
 
 export interface CompileConfig {
-  /** The theme override, same shape as the PostCSS plugin's `theme` option. Its
-   * `breakpoints` family is the one source of thresholds; there is no
-   * separate `breakpoints` option here. */
+  /** The theme override, the PostCSS plugin's `theme` option. Its
+   * `breakpoints` family is the one source of thresholds. Omitted, the theme
+   * file is discovered from the working directory, as the plugin does. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   theme?: Record<string, any>;
+  /** The plugin's `references` option. An `onWarning` callback receives each
+   * issue at the author's file, line and column. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   references?: Record<string, any>;
+  /** Whether this compilation emits the theme. Default `true`. */
   includeTheme?: boolean;
+  /** Where the CSS will be written: a source map's `sources` are relative to
+   * its directory (to the working directory without it). */
   to?: string;
+  /** Whether a source map carries the author's text. Default `true`. */
   sourcesContent?: boolean;
   /** `false` (no map, the default), `'inline'` (a data URI appended last) or
    * `'external'` (returned as `map`; the caller writes the file and the
    * annotation). Any other value is an error, never silently ignored. */
   sourceMap?: false | 'inline' | 'external';
+  /** Passed to Dart Sass: the deprecation ids to silence, and whether to
+   * silence the deprecations of dependencies loaded through load paths or
+   * `pkg:`. Any other key, or a value of the wrong type, is an error. */
+  sass?: { silenceDeprecations?: string[]; quietDeps?: boolean };
 }
 
 export interface CompileWarning {
@@ -197,24 +110,43 @@ export interface CompileWarning {
 }
 
 export interface CompileResult {
+  /** Dart Sass's expanded output with UXDSL's constructs resolved and each
+   * top-level comment whose text starts with `# sourceMappingURL=` removed.
+   * The same in the three `sourceMap` modes, except that `'inline'` appends
+   * one final `sourceMappingURL` comment. */
   css: string;
+  /** With `sourceMap` `'inline'` or `'external'`: the map, as a JSON string. */
   map?: string;
-  /** Every file this compilation actually read, entry first, in a stable
-   * order — from postcss-import's own `dependency` messages. */
+  /** Every file Dart Sass loaded, absolute: the entry (or `from`) first, then
+   * Sass's load order, each once, with no `sass:` module and no plain-CSS
+   * `@import` target; then the theme files the plugin discovered. */
   dependencies: string[];
+  /** Dart Sass's warnings (`UXD_SASS_WARNING` in Sass's order, then
+   * `UXD_FUNCTION_SHADOWED` at each definition), then the plugin's; each at
+   * the author's file, line and column when it has a position. */
   warnings: CompileWarning[];
 }
 
+/** How positions and the source map name an anonymous source. */
+const ANONYMOUS = '<css input>';
+/** The file name an anonymous source is compiled as, in the working directory; it never surfaces. */
+const ANONYMOUS_FILE = '__uxdsl_css_input__.uxdsl';
+
+/** An author's position: the file (undefined for an anonymous source), 1-based line and column, and the file's text when the map carries it. */
+interface AuthorPosition {
+  file?: string;
+  line: number;
+  column: number;
+  source: string | null;
+}
+
+/** Maps a position in Dart Sass's output (1-based line and column) to the author's, or null where the stage's map has no mapping on that line. */
+type Locate = (line: number, column?: number) => AuthorPosition | null;
+
 /**
- * The one shared compilation pipeline: `postcss-scss` syntax (so native
- * SCSS-like nesting/comments parse correctly), `postcss-import` (with the
- * shared resolver) for `@import` inlining, the SCSS subset (`scssSubset`)
- * for `$var` resolution — *before* the UXDSL plugin ever sees the source,
- * so a `$var` holding a responsive expression expands the same way
- * the plugin used alone does — and finally
- * the plugin itself. `compile()` is the package root's API: the
- * callable `processUxdsl(source, { fileId })` default export it used to
- * carry was a second signature for the same pipeline (stability phase 2).
+ * Compiles `input` through the four stages above. Input, `sourceMap` and
+ * `sass` are checked before anything is read; a failure is thrown as the
+ * stage that failed reports it, at the author's position.
  */
 export async function compile(input: CompileInput, config: CompileConfig = {}): Promise<CompileResult> {
   if (!input || (typeof input.entry !== 'string' && typeof input.source !== 'string')) {
@@ -223,119 +155,370 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   if (input.entry !== undefined && input.source !== undefined) {
     throw new Error('uxdsl: compile() accepts either { entry } or { source }, not both.');
   }
-  // Implemented. Still validated strictly rather than
-  // coerced, so a typo ('External', true) fails loudly instead of silently
-  // producing no map — the same reason this threw while it was unimplemented.
+  // Validated strictly rather than coerced: a typo ('External', true) fails
+  // loudly instead of silently producing no map.
   const sourceMap = config.sourceMap ?? false;
   if (sourceMap !== false && sourceMap !== 'inline' && sourceMap !== 'external') {
     throw new Error(`uxdsl: invalid sourceMap option ${JSON.stringify(sourceMap)} — expected false, 'inline' or 'external'.`);
   }
+  validateSassOption(config.sass);
 
   const entry = input.entry !== undefined ? path.resolve(input.entry) : undefined;
-  const from = entry ?? (input.from !== undefined ? path.resolve(input.from) : undefined);
-
   if (entry !== undefined && !fs.existsSync(entry)) {
     throw new Error(`uxdsl: entry file not found: ${entry}`);
   }
-  const source = entry !== undefined ? fs.readFileSync(entry, 'utf8') : (input.source as string);
-  // Both the import resolver (bare/`~` specifiers)
-  // and cycle detection key off `from`, not just `entry` — a `{ source,
-  // from }` call needs exactly the same guarantees an `{ entry }` call
-  // gets, since the Vite plugin's Sass pre-pass and every Webpack loader
-  // compilation only ever use this shape. `initialSource` supplies the
-  // top-level node's own content for the cycle walk, since `from` need
-  // not exist on disk at all in this shape.
-  const resolveImport = from !== undefined ? createImportResolver(from) : undefined;
-  if (from !== undefined) {
-    checkImportCycles(from, path.dirname(from), undefined, undefined, entry === undefined ? source : undefined);
+  const anonymous = entry === undefined && input.from === undefined;
+  const stageEntry = entry ?? (input.from !== undefined ? path.resolve(input.from) : path.join(process.cwd(), ANONYMOUS_FILE));
+  const hidden = anonymous ? stageEntry : undefined;
+
+  let stage: SassStageResult;
+  try {
+    stage = compileSassStage(
+      entry !== undefined ? { entry } : { entry: stageEntry, source: input.source as string },
+      { reserved: reservedNames(config.theme), sourceMap: true, sass: config.sass }
+    );
+  } catch (error) {
+    throw hidden ? hideInError(error, hidden) : error;
   }
 
-  const includeTheme = config.includeTheme !== false;
-  // The SCSS subset: `scssSubset` expands $variables, @if/@else, @each, @for,
-  // @mixin/@include and @content, and `sassLeftoverGuard` fails on anything
-  // Sass-only left after it — see ./scss-subset.ts and "The SCSS subset" in
-  // docs/integrations/compile.md.
-  const plugins = [
-    postcssImport(resolveImport ? { resolve: resolveImport } : {}),
-    scssSubset(),
-    sassLeftoverGuard(),
-    uxdslPlugin({
-      theme: config.theme,
-      references: config.references,
-      includeTheme,
-    }),
+  const locate = locator(stage, hidden);
+  // The stage's map, chained only when a map is requested; every position is
+  // located through the stage's map either way.
+  const prev = sourceMap !== false ? chainable(stage.map!) : undefined;
+  const sourcesContent = config.sourcesContent !== false;
+  let result: Result;
+  try {
+    // PostCSS's default parser, which reads Dart Sass's output as CSS and
+    // rejects the text Sass printed that is not CSS, as stage 4 above
+    // describes. `from` is always given (undefined for an anonymous source),
+    // so PostCSS never warns that it is missing.
+    result = await postcss([
+      restoreDirectiveSpacing,
+      uxdslPlugin({
+        theme: config.theme,
+        references: relocatingReferences(config.references, locate, stageEntry, hidden),
+        includeTheme: config.includeTheme !== false,
+      }),
+      dropAnnotations,
+    ]).process(stage.css, {
+      from: hidden ? undefined : stageEntry,
+      to: config.to,
+      map: prev ? { prev, inline: false, annotation: false, sourcesContent } : false,
+    });
+  } catch (error) {
+    throw relocateError(error, stage.css, locate, stageEntry, hidden);
+  }
+
+  let css = result.css;
+  let map: string | undefined;
+  if (prev) {
+    map = finalMap(result, prev, stage, { to: config.to, sourcesContent, hidden });
+    // 'inline' is self-contained, so it is finished here, appended last:
+    // only the final sourceMappingURL comment in a file counts. 'external'
+    // returns the map and leaves the annotation to the writer, the only side
+    // that knows what the `.map` file is called.
+    if (sourceMap === 'inline') {
+      css = `${css}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,${Buffer.from(map, 'utf8').toString('base64')} */`;
+    }
+  }
+
+  const dependencies = stage.loadedFiles.filter((file) => file !== hidden);
+  for (const message of result.messages) {
+    const file = (message as { file?: unknown }).file;
+    if (message.type === 'dependency' && typeof file === 'string' && !dependencies.includes(file)) dependencies.push(file);
+  }
+
+  const warnings: CompileWarning[] = [
+    ...stage.warnings.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)),
+    ...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)),
   ];
 
-  // `annotation: false` — 'inline' adds its own data URI at the
-  // very end below, and 'external' leaves the annotation to whoever knows
-  // the final `.map` filename (the CLI). `inline: false` keeps the map out
-  // of the CSS in both cases so there is exactly one place that decides.
-  // `sources` are resolved by PostCSS against `to` — the CLI passes the
-  // absolute outFile, which is also where the external `.map` lands, so one
-  // `to` serves both modes. Without `to`, PostCSS falls back to `from`'s
-  // directory; an in-memory compile with neither has no meaningful base and
-  // its `sources` are left exactly as PostCSS reports them.
-  const result: Result = await postcss(plugins).process(source, {
-    from,
-    to: config.to,
-    syntax: postcssScss,
-    map: sourceMap === false
-      ? false
-      : { inline: false, annotation: false, sourcesContent: config.sourcesContent !== false },
-  });
+  return { css, map, dependencies, warnings };
+}
 
-  // SCSS "//" line comments parse fine under postcss-scss but are not
-  // valid CSS — a sass compiler drops them, it doesn't turn them into
-  // `/* */` comments. Left alone, postcss-scss's stringifier would emit
-  // them verbatim into the final stylesheet. Real block comments
-  // (`/* ... */`, including ones that happen to contain a URL) are
-  // untouched: only `raws.inline` (the "//" form) is stripped.
-  result.root.walkComments((comment) => {
-    if (comment.raws.inline) comment.remove();
-  });
+// --- options -----------------------------------------------------------------
 
-  // The map is only produced by PostCSS's own stringification, so
-  // the mapped path has to read `result.css`. The unmapped path keeps calling
-  // `root.toString(postcssScss)` exactly as before, so `sourceMap: false`
-  // stays byte-identical to this same compiler without the option — which is
-  // this story's own acceptance criterion, and why the two are not unified.
-  //
-  // Nothing is appended after the stylesheet any more. The `/*@uxdsl-bp …*/`
-  // comment and `#uxdsl-bp-meta` rule that used to follow it existed only for
-  // the removed breakpoint rewriter (stability phase 2): the runtime no longer
-  // reads breakpoints back from CSS, and a marker that named thresholds the
-  // theme could override anyway was one more thing that could lie.
-  let finalCss = sourceMap === false ? result.root.toString(postcssScss) : result.css;
-
-  // 'inline' is self-contained, so it is finished here — appended last,
-  // because a sourceMappingURL comment only counts when it is the final one
-  // in the file. 'external' returns the map instead and leaves the annotation
-  // to the writer, which is the only side that knows what the `.map` will be
-  // called.
-  let map: string | undefined;
-  if (sourceMap !== false) {
-    map = result.map.toString();
-    if (sourceMap === 'inline') {
-      const encoded = Buffer.from(map, 'utf8').toString('base64');
-      finalCss = `${finalCss}\n/*# sourceMappingURL=data:application/json;charset=utf-8;base64,${encoded} */`;
+/** `config.sass`: an object holding only `silenceDeprecations` (strings) and `quietDeps` (a boolean), or absent. */
+function validateSassOption(sass: unknown): void {
+  if (sass === undefined) return;
+  if (sass === null || typeof sass !== 'object' || Array.isArray(sass)) {
+    throw new Error('uxdsl: the sass option must be an object: { silenceDeprecations?: string[], quietDeps?: boolean }.');
+  }
+  for (const key of Object.keys(sass)) {
+    if (key !== 'silenceDeprecations' && key !== 'quietDeps') {
+      throw new Error(`uxdsl: unknown sass option "${key}"; compile() passes only silenceDeprecations and quietDeps to Dart Sass.`);
     }
   }
+  const { silenceDeprecations, quietDeps } = sass as Record<string, unknown>;
+  if (silenceDeprecations !== undefined && (!Array.isArray(silenceDeprecations) || silenceDeprecations.some((id) => typeof id !== 'string'))) {
+    throw new Error('uxdsl: sass.silenceDeprecations must be an array of deprecation ids (strings).');
+  }
+  if (quietDeps !== undefined && typeof quietDeps !== 'boolean') {
+    throw new Error('uxdsl: sass.quietDeps must be a boolean.');
+  }
+}
 
-  const dependencies: string[] = [];
-  if (entry !== undefined) dependencies.push(entry);
-  for (const message of result.messages) {
-    if (message.type === 'dependency' && typeof (message as any).file === 'string') {
-      const file = (message as any).file as string;
-      if (!dependencies.includes(file)) dependencies.push(file);
+/**
+ * The breakpoint names of the effective theme the plugin will compile with:
+ * `theme`, or the theme file discovered from the working directory when it is
+ * omitted, over the default breakpoints. They are the names, beside the token
+ * functions and `tone`, that a project `@function` replaces with a warning.
+ */
+function reservedNames(theme: CompileConfig['theme']): string[] {
+  const override = theme !== undefined ? theme : discoverThemeSync(process.cwd())?.theme;
+  const breakpoints = resolveTheme(override).breakpoints;
+  const own = breakpoints && typeof breakpoints === 'object' && !Array.isArray(breakpoints) ? breakpoints : {};
+  return Object.keys({ ...DEFAULT_BREAKPOINTS, ...own });
+}
+
+// --- positions -----------------------------------------------------------------
+
+/** A `Locate` over the stage's map, which has the author's columns, absolute paths as sources and the author's text. The consumer is built on first use. */
+function locator(stage: SassStageResult, hidden: string | undefined): Locate {
+  let consumer: Consumer | undefined;
+  return (line, column) => {
+    if (!stage.map || !(line >= 1)) return null;
+    if (!consumer) {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { SourceMapConsumer } = require('source-map-js') as typeof import('source-map-js');
+      consumer = new SourceMapConsumer(stage.map);
+    }
+    // The nearest mapping at or before the position on its line: the start of
+    // the declaration or at-rule Dart Sass mapped, or, for a value Sass copied,
+    // where it was written.
+    const at = consumer.originalPositionFor({ line, column: Math.max(0, (column || 1) - 1) });
+    if (at.source == null || at.line == null || at.column == null) return null;
+    return { file: at.source === hidden ? undefined : at.source, line: at.line, column: at.column + 1, source: consumer.sourceContentFor(at.source, true) };
+  };
+}
+
+/**
+ * `error.stack` with its first line rewritten to the error's current message,
+ * and each frame PostCSS adds for the node an error was thrown at
+ * (`at <input>:<line>:<column>`, a position in Dart Sass's output) moved to
+ * the author's position, or removed where its line has no mapping.
+ */
+function restack(error: Error, locate: Locate, entry: string, hidden: string | undefined): void {
+  const stack = error.stack || '';
+  const start = stack.indexOf('\n    at ');
+  const frames = start === -1 ? [] : stack.slice(start + 1).split('\n');
+  const input = (name: string) => (hidden ? /^<input css [^>]*>$/.test(name) : name === entry);
+  const moved = frames.flatMap((frame) => {
+    const node = /^ {4}at (.+):(\d+):(\d+)$/.exec(frame);
+    if (!node || !input(node[1])) return [frame];
+    const at = locate(Number(node[2]), Number(node[3]));
+    return at ? [`    at ${at.file ?? ANONYMOUS}:${at.line}:${at.column}`] : [];
+  });
+  error.stack = [`${error.name}: ${error.message}`, ...moved].join('\n');
+}
+
+/**
+ * An error the plugin or PostCSS's parser threw, with each position in Dart
+ * Sass's output (`stageCss`) moved to the author's. A CssSyntaxError in Dart
+ * Sass's output keeps `input` (its position there), `reason`, `plugin` and
+ * `cause`; its file, line, column and `source` become the author's, so
+ * `showSourceCode()` frames the author's line, and with no mapping on its line
+ * it names the entry, without a line, column or frame. A CssSyntaxError in CSS
+ * the plugin parses itself (the theme it generates, a directive's generated
+ * rules, a `references.css` entry) keeps PostCSS's file, line, column and
+ * frame: a position in that CSS, never under an author's file. A
+ * ReferenceIntegrityError's issues are relocated like the first. In every case
+ * the stack frames PostCSS adds for the nodes of Dart Sass's output the error
+ * was thrown inside are relocated too. Anything else is returned unchanged.
+ */
+function relocateError(error: unknown, stageCss: string, locate: Locate, entry: string, hidden: string | undefined): unknown {
+  if (!error || typeof error !== 'object') return error;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const e = error as any;
+  if (e.name === 'CssSyntaxError' && e.input && typeof e.input.line === 'number' && typeof e.setMessage === 'function') {
+    if (e.input.source === stageCss) {
+      const at = locate(e.input.line, e.input.column);
+      if (at) {
+        e.file = at.file;
+        e.line = at.line;
+        e.column = at.column;
+        // The start, not deleted: PostCSS frames a long line by its end column.
+        e.endLine = at.line;
+        e.endColumn = at.column;
+        if (at.source !== null) e.source = at.source;
+        else delete e.source;
+      } else {
+        e.file = hidden ? undefined : entry;
+        delete e.line;
+        delete e.column;
+        delete e.endLine;
+        delete e.endColumn;
+        delete e.source;
+      }
+      if (e.file === undefined) delete e.file;
+      e.setMessage();
+    }
+    restack(e, locate, entry, hidden);
+    return e;
+  }
+  if (e.name === 'ReferenceIntegrityError' && Array.isArray(e.issues)) {
+    for (const issue of e.issues as ReferenceIssue[]) relocateIssue(issue, locate, entry, hidden);
+    e.message = formatReferenceIssues(e.issues);
+    const located = (e.issues as ReferenceIssue[]).find((issue) => issue.source);
+    if (located) {
+      e.file = located.source;
+      e.line = located.line;
+      e.column = located.column;
+    } else {
+      delete e.file;
+      delete e.line;
+      delete e.column;
+    }
+    restack(e, locate, entry, hidden);
+    return e;
+  }
+  return error;
+}
+
+/** A reference issue at the author's position, in place (in place keeps its non-enumerable hint and node). */
+function relocateIssue(issue: ReferenceIssue, locate: Locate, entry: string, hidden: string | undefined): void {
+  if (typeof issue.line !== 'number') return;
+  const at = locate(issue.line, issue.column ?? 1);
+  if (at) {
+    issue.line = at.line;
+    issue.column = at.column;
+    if (at.file === undefined) delete issue.source;
+    else issue.source = at.file;
+    return;
+  }
+  if (hidden) delete issue.source;
+  else issue.source = entry;
+  delete issue.line;
+  delete issue.column;
+}
+
+/** The `references` option with its `onWarning` callback receiving each issue at the author's position. */
+function relocatingReferences(references: CompileConfig['references'], locate: Locate, entry: string, hidden: string | undefined): CompileConfig['references'] {
+  if (!references || typeof references.onWarning !== 'function') return references;
+  const onWarning = references.onWarning as (issue: ReferenceIssue) => void;
+  return {
+    ...references,
+    onWarning: (issue: ReferenceIssue) => {
+      relocateIssue(issue, locate, entry, hidden);
+      onWarning(issue);
+    },
+  };
+}
+
+/** A plugin warning at the author's position: `{ text }` when it has none, the entry when its line has no mapping. */
+function relocateWarning(warning: Warning, locate: Locate, entry: string, hidden: string | undefined): CompileWarning {
+  if (typeof warning.line !== 'number') return { text: warning.text };
+  const at = locate(warning.line, warning.column);
+  if (!at) return hidden ? { text: warning.text } : { text: warning.text, file: entry };
+  return at.file !== undefined
+    ? { text: warning.text, file: at.file, line: at.line, column: at.column }
+    : { text: warning.text, line: at.line, column: at.column };
+}
+
+// --- the anonymous source ---------------------------------------------------------
+
+/** `text` with the anonymous source's file name, absolute or as Sass prints it, replaced by `<css input>`. */
+function hide(text: string, hidden: string): string {
+  return text.split(hidden).join(ANONYMOUS).split(path.basename(hidden)).join(ANONYMOUS);
+}
+
+function hideInError(error: unknown, hidden: string): unknown {
+  if (!error || typeof error !== 'object') return error;
+  const e = error as Record<string, unknown>;
+  for (const key of ['message', 'stack', 'sassFrame']) {
+    if (typeof e[key] === 'string') e[key] = hide(e[key] as string, hidden);
+  }
+  if (e.file === hidden) delete e.file;
+  return error;
+}
+
+function hideInWarning(warning: CompileWarning, hidden: string): CompileWarning {
+  const out: CompileWarning = { ...warning, text: hide(warning.text, hidden) };
+  if (out.file === hidden) delete out.file;
+  return out;
+}
+
+// --- the source map --------------------------------------------------------------------
+
+/**
+ * Removes each top-level comment whose text starts with `# sourceMappingURL=`,
+ * as PostCSS does itself when it writes no map, so the CSS is the same in the
+ * three `sourceMap` modes. A comment inside a rule stays, as PostCSS leaves it.
+ */
+const dropAnnotations: Plugin = {
+  postcssPlugin: 'uxdsl/drop-annotations',
+  Once(root) {
+    for (let index = root.nodes.length - 1; index >= 0; index--) {
+      const node = root.nodes[index];
+      if (node.type === 'comment' && node.text.startsWith('# sourceMappingURL=')) root.removeChild(index);
+    }
+  },
+};
+
+/**
+ * The stage's map as compile() hands it to PostCSS: a source that does not
+ * start with `/` (a Windows path, `C:\…`) is written from `/` (`/C:/…`); a
+ * POSIX path is unchanged. PostCSS keeps a prev map's source as written only
+ * when it starts with `/` or is a URL, and joins any other onto the directory
+ * between `to` and the entry. Written from `/`, a source also stays an
+ * absolute path where PostCSS looks a position up, which a URL is not for an
+ * input without `from`.
+ */
+function chainable(map: RawSourceMap): RawSourceMap {
+  return { ...map, sources: map.sources.map((source) => (source.startsWith('/') ? source : `/${source.replace(/\\/g, '/')}`)) };
+}
+
+/**
+ * The final map: PostCSS's, chained with the stage's map through `map.prev`
+ * (`prev`, the stage's map as `chainable` writes it), keeping only the
+ * mappings whose source is one of the stage's (the author's files) or
+ * PostCSS's `<no source>` (a generated node). Every other mapping names
+ * PostCSS's own input, Dart Sass's output, at its coordinates, and is dropped.
+ * The author's files are named as PostCSS names a file, relative to `to`'s
+ * directory (the working directory without `to`), URL-encoded; an anonymous
+ * source is `<css input>`; `sourcesContent` is the author's text.
+ */
+function finalMap(result: Result, prev: RawSourceMap, stage: SassStageResult, opts: { to?: string; sourcesContent: boolean; hidden: string | undefined }): string {
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { SourceMapConsumer, SourceMapGenerator } = require('source-map-js') as typeof import('source-map-js');
+  const raw = result.map.toJSON();
+  const stageConsumer = new SourceMapConsumer(stage.map!);
+  // Each source as PostCSS kept it, with the author's file it names: both
+  // consumers list a map's sources in the map's order.
+  const authorFiles = new Map(new SourceMapConsumer(prev).sources.map((source, index) => [source, stageConsumer.sources[index]]));
+  const base = opts.to ? path.dirname(path.resolve(opts.to)) : process.cwd();
+  const urls = new Map<string, string>();
+  const urlOf = (file: string): string => {
+    let url = urls.get(file);
+    if (url === undefined) {
+      const relative = path.relative(base, file);
+      url = file === opts.hidden
+        ? ANONYMOUS
+        : encodeURI(path.sep === '\\' ? relative.replace(/\\/g, '/') : relative).replace(/[#?]/g, encodeURIComponent);
+      urls.set(file, url);
+    }
+    return url;
+  };
+  const used = new Set<string>();
+  const out = new SourceMapGenerator(raw.file ? { file: raw.file } : undefined);
+  new SourceMapConsumer(raw).eachMapping((mapping) => {
+    if (mapping.source == null || mapping.originalLine == null || mapping.originalColumn == null) return;
+    const generated = { line: mapping.generatedLine, column: mapping.generatedColumn };
+    const original = { line: mapping.originalLine, column: mapping.originalColumn };
+    if (mapping.source === '<no source>') {
+      out.addMapping({ generated, original, source: '<no source>' });
+      return;
+    }
+    const file = authorFiles.get(mapping.source);
+    if (file === undefined) return;
+    used.add(file);
+    out.addMapping({ generated, original, source: urlOf(file), name: mapping.name || undefined });
+  });
+  if (opts.sourcesContent) {
+    for (const file of used) {
+      const text = stageConsumer.sourceContentFor(file, true);
+      if (text != null) out.setSourceContent(urlOf(file), text);
     }
   }
-
-  const warnings: CompileWarning[] = result.warnings().map((w: Warning) => ({
-    text: w.text,
-    file: w.node?.source?.input.file,
-    line: w.line,
-    column: w.column,
-  }));
-
-  return { css: finalCss, map, dependencies, warnings };
+  return out.toString();
 }

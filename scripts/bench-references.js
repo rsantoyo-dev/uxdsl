@@ -19,7 +19,6 @@ const { spawnSync } = require('node:child_process');
 const root = path.resolve(__dirname, '..');
 const pkgDir = path.join(root, 'packages', 'uxdsl');
 const postcss = require(require.resolve('postcss', { paths: [pkgDir] }));
-const postcssScss = require(require.resolve('postcss-scss', { paths: [pkgDir] }));
 const uxdsl = require(path.join(pkgDir, 'dist', 'index.js'));
 const plugin = uxdsl.default || uxdsl;
 
@@ -51,7 +50,7 @@ function sourceForLines(lines) {
 
 async function compileOnce(css, mode) {
   const result = await postcss([plugin({ includeTheme: true, references: { mode } })])
-    .process(css, { from: 'bench.uxdsl', syntax: postcssScss });
+    .process(css, { from: 'bench.uxdsl' });
   // Touching `css` forces the full stringification, so neither pass can look
   // faster merely by leaving work unfinished in PostCSS's lazy result.
   return result.css.length;

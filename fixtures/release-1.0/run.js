@@ -32,6 +32,7 @@ const os = require('node:os');
 const path = require('node:path');
 const { execFileSync, spawnSync, spawn } = require('node:child_process');
 const { createRequire } = require('node:module');
+const { pathToFileURL } = require('node:url');
 const { packAndInstall, REPO_ROOT, PACKAGE_DIR } = require('../lib/tarball-consumer');
 const { cascadedVariables } = require('../mig07-consumer/lib/css-cascade-compare');
 
@@ -125,6 +126,286 @@ function auditLockfile(cwd) {
   const summary = `${['critical', 'high', 'moderate', 'low'].map((level) => `${counts[level] || 0} ${level}`).join(', ')}${chains ? ` — ${chains}` : ''}`;
   if ((counts.total || 0) > 0) throw new Error(summary);
   return summary;
+}
+
+/**
+ * S-3's verdict on `uxdsl build` of heavy.uxdsl: the UXDSL error is printed at
+ * the author's line 18, column 66, under a code frame of the author's line
+ * with its caret under that column, never of Dart Sass's output, where that
+ * declaration is on line 29 and line 18 holds other text.
+ */
+function assertAuthorLocated(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/heavy\.uxdsl:18:66: UXD_SPACE_REFERENCE/.test(stderr)) throw new Error(`stderr: ${stderr.trim().split('\n')[0]}`);
+  if (/^> 29 \|/m.test(stderr)) throw new Error('the code frame shows line 29 of Dart Sass\'s output');
+  const lines = stderr.split('\n');
+  const marked = lines.findIndex((line) => /^> 18 \|/.test(line));
+  if (marked === -1) throw new Error('no code frame of the author\'s line 18');
+  const column = lines[marked].indexOf('inset: space(404);');
+  if (column === -1) throw new Error(`the code frame's line 18 is not the author's: ${lines[marked]}`);
+  if ((lines[marked + 1] || '').indexOf('^') !== column) throw new Error('the code frame\'s caret is not under the author\'s column 66');
+  return 'heavy.uxdsl:18:66 UXD_SPACE_REFERENCE, framed at the author\'s line 18';
+}
+
+/**
+ * S-4's verdict on `uxdsl build` of src/a.uxdsl, `.a { color: palette(primary.main); width: $nope; }`:
+ * exit 1, the UXD_SASS head line at the author's position, then Dart Sass's
+ * frame and stack, every line indented by two spaces, showing the author's
+ * `palette(primary.main)` and never the protected `#{…}` text.
+ */
+function assertSassFramed(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  const [head, ...frame] = stderr.replace(/\n+$/, '').split('\n');
+  if (!/^\[uxdsl\] Error: src\/a\.uxdsl:1:\d+: UXD_SASS: Undefined variable\.$/.test(head)) throw new Error(`head line: ${head}`);
+  if (frame.length === 0) throw new Error('no frame after the head line');
+  if (/#\{/.test(stderr)) throw new Error('the frame shows the protected text (#{…}), not the author\'s');
+  const unindented = frame.find((line) => !line.startsWith('  '));
+  if (unindented !== undefined) throw new Error(`a frame line is not indented by two spaces: ${unindented}`);
+  if (!frame.some((line) => line.includes('palette(primary.main)'))) throw new Error('no frame line shows the author\'s palette(primary.main)');
+  if (!frame.some((line) => /^ {4}src\/a\.uxdsl 1:\d+ +root stylesheet$/.test(line))) throw new Error('no stack line "src/a.uxdsl 1:<column>  root stylesheet"');
+  return `${head.replace('[uxdsl] Error: ', '')}, framed (${frame.length} lines)`;
+}
+
+/**
+ * S-4's verdict on `uxdsl build` of an entry whose line 1 @imports a partial:
+ * exit 0 and the output written, with Dart Sass's deprecation printed once as
+ * `[uxdsl] Warning: src/a.uxdsl:1:9: UXD_SASS_WARNING: [import] …`; with
+ * `sass: { silenceDeprecations: ['import'] }` in the config (`silenced`), no
+ * `[import]` line at all.
+ */
+function assertLocatedWarning(built, { silenced }) {
+  const stderr = built.stderr || '';
+  if (built.status !== 0) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/^\[uxdsl\] (built|unchanged) out\/a\.css/m.test(built.stdout || '')) throw new Error(`stdout: ${(built.stdout || '').trim().split('\n')[0] || '(empty)'}`);
+  const deprecations = stderr.split('\n').filter((line) => line.includes('[import]'));
+  if (silenced) {
+    if (deprecations.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${deprecations[0]}`);
+    return 'no [import] warning with sass.silenceDeprecations';
+  }
+  if (deprecations.length !== 1) throw new Error(`${deprecations.length} [import] warnings, expected 1`);
+  if (!/^\[uxdsl\] Warning: src\/a\.uxdsl:1:9: UXD_SASS_WARNING: \[import\] Sass @import rules are deprecated/.test(deprecations[0])) {
+    throw new Error(`the warning is not located at src/a.uxdsl:1:9: ${deprecations[0]}`);
+  }
+  return 'the [import] deprecation at src/a.uxdsl:1:9';
+}
+
+/**
+ * The project S-5 and S-6 build: styles/panel.uxdsl @uses styles/_partial.uxdsl,
+ * which @imports styles/_legacy.uxdsl, so Dart Sass loads the three files and
+ * reports one deprecation, at styles/_partial.uxdsl:1:9.
+ */
+const ADAPTER_PROJECT = {
+  'styles/panel.uxdsl': "@use './partial';\n.panel { color: palette(primary.main); }\n",
+  'styles/_partial.uxdsl': "@import './legacy';\n.partial { color: green; }\n",
+  'styles/_legacy.uxdsl': '.legacy { color: olive; }\n',
+  'main.js': "import './styles/panel.uxdsl';\n",
+};
+const ADAPTER_FILES = ['styles/_legacy.uxdsl', 'styles/_partial.uxdsl', 'styles/panel.uxdsl'];
+const ADAPTER_DEPRECATION = 'styles/_partial.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+
+function writeAdapterProject(root) {
+  for (const [file, text] of Object.entries(ADAPTER_PROJECT)) {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+  }
+}
+
+const posixPath = (file) => file.split(path.sep).join('/');
+/** A source of a map webpack emitted, as a path from the project's directory: without `webpack://<namespace>/` and a leading `./`. */
+const fromProject = (source) => String(source).replace(/^webpack:\/\/[^/]*\//, '').replace(/^\.\//, '');
+
+/**
+ * S-5's record of the webpack loader at `loader` in three real webpack builds
+ * of the adapter project at `root` — MiniCssExtractPlugin, css-loader and
+ * devtool 'source-map' — with no `sass` option, with
+ * `sass: { silenceDeprecations: ['import'] }` and with an unknown sass key.
+ * `tools` holds `webpack`, `MiniCssExtractPlugin`, css-loader's path
+ * (`cssLoader`) and source-map-js's `SourceMapConsumer`.
+ */
+async function webpackAdapterRecord(tools, loader, root) {
+  const { webpack, MiniCssExtractPlugin, cssLoader, SourceMapConsumer } = tools;
+  writeAdapterProject(root);
+  const build = (name, sass) => new Promise((resolve, reject) => {
+    const outDir = path.join(root, `dist-webpack-${name}`);
+    webpack({
+      mode: 'development',
+      devtool: 'source-map',
+      context: root,
+      entry: './main.js',
+      output: { path: outDir, filename: 'bundle.js' },
+      module: { rules: [{ test: /\.uxdsl$/, use: [MiniCssExtractPlugin.loader, cssLoader, { loader, options: { includeTheme: false, ...(sass ? { sass } : {}) } }] }] },
+      plugins: [new MiniCssExtractPlugin({ filename: 'main.css' })],
+      optimization: { minimize: false },
+    }, (error, stats) => (error ? reject(error) : resolve({ stats, outDir })));
+  });
+  // The text the loader emitted, without webpack's "Module Warning (from …):" line.
+  const warningsOf = (stats) => stats.compilation.warnings.map((warning) => warning.message.slice(warning.message.indexOf('\n') + 1));
+  const firstError = (stats) => (stats.hasErrors() ? String(stats.compilation.errors[0].message) : null);
+
+  const plain = await build('plain');
+  if (plain.stats.hasErrors()) throw new Error(`webpack build failed: ${firstError(plain.stats).split('\n').slice(0, 2).join(' ')}`);
+  const map = JSON.parse(fs.readFileSync(path.join(plain.outDir, 'main.css.map'), 'utf8'));
+  const css = fs.readFileSync(path.join(plain.outDir, 'main.css'), 'utf8').split('\n');
+  const line = css.findIndex((text) => text.includes('color: green'));
+  const position = line === -1 ? null : new SourceMapConsumer(map).originalPositionFor({ line: line + 1, column: css[line].indexOf('color: green') });
+  const silenced = await build('silenced', { silenceDeprecations: ['import'] });
+  const unknownKey = await build('unknown-key', { bogus: 1 });
+  return {
+    warnings: warningsOf(plain.stats),
+    silencedWarnings: silenced.stats.hasErrors() ? [`the build failed: ${firstError(silenced.stats).split('\n').slice(0, 2).join(' ')}`] : warningsOf(silenced.stats),
+    unknownKeyError: firstError(unknownKey.stats),
+    dependencies: [...plain.stats.compilation.fileDependencies].map((file) => posixPath(path.relative(root, file))).filter((file) => file.endsWith('.uxdsl')).sort(),
+    mapSources: map.sources.filter((source) => source.endsWith('.uxdsl')).map(fromProject).sort(),
+    lookup: position && position.source ? `${fromProject(position.source)}:${position.line}` : null,
+  };
+}
+
+/**
+ * S-5's verdict on `webpackAdapterRecord`: the deprecation in the @use'd
+ * partial is one warning, at styles/_partial.uxdsl:1:9, which
+ * sass.silenceDeprecations removes; an unknown sass key fails the module with
+ * compile()'s message; the three files are file dependencies; and the CSS map
+ * webpack emits names each at its path from the project's directory, the
+ * partial's declaration mapping back to the partial's line 2.
+ */
+function assertWebpackAdapter(record) {
+  if (JSON.stringify(record.warnings) !== JSON.stringify([ADAPTER_DEPRECATION])) throw new Error(`warnings: ${JSON.stringify(record.warnings)}, expected one, at styles/_partial.uxdsl:1:9`);
+  if (record.silencedWarnings.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${JSON.stringify(record.silencedWarnings)}`);
+  if (!/unknown sass option "bogus"/.test(record.unknownKeyError || '')) throw new Error(record.unknownKeyError ? `the unknown sass key failed with another message: ${record.unknownKeyError.split('\n').slice(0, 2).join(' ')}` : 'an unknown sass key did not fail the module');
+  const missing = ADAPTER_FILES.filter((file) => !record.dependencies.includes(file));
+  if (missing.length) throw new Error(`not a file dependency: ${missing.join(', ')} (${JSON.stringify(record.dependencies)})`);
+  if (JSON.stringify(record.mapSources) !== JSON.stringify(ADAPTER_FILES)) throw new Error(`the CSS map's .uxdsl sources are ${JSON.stringify(record.mapSources)}, expected ${JSON.stringify(ADAPTER_FILES)}`);
+  if (record.lookup !== 'styles/_partial.uxdsl:2') throw new Error(`the partial's declaration maps back to ${record.lookup}, expected styles/_partial.uxdsl:2`);
+  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path';
+}
+
+/**
+ * S-6's record of the Vite plugin factory `plugin`, run by the Vite module
+ * `vite`, for the adapter project at `root`: three real `vite build`s — no
+ * `sass` option, `sass: { silenceDeprecations: ['import'] }`, an unknown sass
+ * key — and the files a dev server's module graph lists under the CSS module
+ * once it is served.
+ */
+async function viteAdapterRecord(vite, plugin, root) {
+  writeAdapterProject(root);
+  const build = async (name, sass) => {
+    const warnings = [];
+    try {
+      await vite.build({
+        root,
+        configFile: false,
+        logLevel: 'silent',
+        plugins: [plugin({ includeTheme: false, ...(sass ? { sass } : {}) })],
+        build: {
+          outDir: `dist-vite-${name}`,
+          emptyOutDir: true,
+          rollupOptions: {
+            input: path.join(root, 'main.js'),
+            onwarn(warning) {
+              if (warning.plugin === 'uxdsl') warnings.push(String(warning.message).replace(/^\[plugin uxdsl\] /, ''));
+            },
+          },
+        },
+      });
+      return { warnings, error: null };
+    } catch (error) {
+      return { warnings, error: String(error && error.message ? error.message : error) };
+    }
+  };
+  // Vite's config resolution sets process.env.NODE_ENV (to 'production' for a
+  // build) when it is unset, and every process started after it would inherit
+  // that: an `npm install` then leaves out devDependencies. The environment is
+  // put back as it was.
+  const environment = { ...process.env };
+  try {
+    const plain = await build('plain');
+    if (plain.error) throw new Error(`vite build failed: ${plain.error.split('\n')[0]}`);
+    const silenced = await build('silenced', { silenceDeprecations: ['import'] });
+    const unknownKey = await build('unknown-key', { bogus: 1 });
+    const server = await vite.createServer({ root, configFile: false, logLevel: 'silent', appType: 'custom', server: { middlewareMode: true, hmr: false }, plugins: [plugin({ includeTheme: false })] });
+    let watched = [];
+    try {
+      await server.transformRequest('/main.js');
+      await server.transformRequest('/styles/panel.uxdsl?uxdsl&lang.css');
+      const css = [...(server.moduleGraph.getModulesByFile(path.join(root, 'styles/panel.uxdsl')) || [])].find((mod) => mod.id && mod.id.includes('?uxdsl'));
+      if (css) watched = [...css.importedModules].map((mod) => mod.file).filter(Boolean).map((file) => posixPath(path.relative(root, file))).sort();
+    } finally {
+      await server.close();
+    }
+    return {
+      warnings: plain.warnings,
+      silencedWarnings: silenced.error ? [`the build failed: ${silenced.error.split('\n')[0]}`] : silenced.warnings,
+      unknownKeyError: unknownKey.error,
+      watched,
+    };
+  } finally {
+    for (const key of Object.keys(process.env)) if (!(key in environment)) delete process.env[key];
+    Object.assign(process.env, environment);
+  }
+}
+
+/**
+ * S-6's verdict on `viteAdapterRecord`: the deprecation in the @use'd partial
+ * is one warning, at styles/_partial.uxdsl:1:9, which sass.silenceDeprecations
+ * removes; an unknown sass key fails the build with compile()'s message; and
+ * the dev server's module graph lists the three files under the CSS module,
+ * so an edit to any of them updates it.
+ */
+function assertViteAdapter(record) {
+  if (JSON.stringify(record.warnings) !== JSON.stringify([ADAPTER_DEPRECATION])) throw new Error(`warnings: ${JSON.stringify(record.warnings)}, expected one, at styles/_partial.uxdsl:1:9`);
+  if (record.silencedWarnings.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${JSON.stringify(record.silencedWarnings)}`);
+  if (!/unknown sass option "bogus"/.test(record.unknownKeyError || '')) throw new Error(record.unknownKeyError ? `the unknown sass key failed with another message: ${record.unknownKeyError.split('\n')[0]}` : 'an unknown sass key did not fail the build');
+  const missing = ADAPTER_FILES.filter((file) => !record.watched.includes(file));
+  if (missing.length) throw new Error(`not in the dev server's module graph under the CSS module: ${missing.join(', ')} (${JSON.stringify(record.watched)})`);
+  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the build; the three files are in the dev server\'s module graph';
+}
+
+/** N-02's verdict on compile() of a file whose first line @imports a missing partial. */
+function assertMissingImport(error) {
+  if (!error) throw new Error('compiled');
+  const message = String(error.message).split('\n')[0];
+  if (error.code !== 'UXD_SASS') throw new Error(`code ${error.code}: ${message}`);
+  if (!message.includes('Can\'t find stylesheet to import.')) throw new Error(`message: ${message}`);
+  const where = `${path.basename(String(error.file))}:${error.line}:${error.column}`;
+  if (where !== 'missing-partial.uxdsl:1:9') throw new Error(`located at ${where}`);
+  return `UXD_SASS at ${where}: Can't find stylesheet to import.`;
+}
+
+/**
+ * What is wrong with a source map's record of the author file `name`: the
+ * sources hold no file: URL, no absolute path and no duplicate, and name the
+ * file once; its sourcesContent is the file's text; every mapping into it lies
+ * inside that text.
+ */
+function mapIntegrityProblems(map, name, text, SourceMapConsumer) {
+  const problems = [];
+  const sources = map.sources || [];
+  const list = JSON.stringify(sources);
+  if (sources.some((source) => source.startsWith('file:'))) problems.push(`a file: URL among the sources ${list}`);
+  if (sources.some((source) => path.isAbsolute(source))) problems.push(`an absolute path among the sources ${list}`);
+  if (new Set(sources).size !== sources.length) problems.push(`a source listed twice: ${list}`);
+  const named = (source) => source === name || source.endsWith(`/${name}`);
+  const own = sources.filter(named);
+  if (own.length !== 1) return [...problems, `${name} is named ${own.length} times among the sources ${list}`];
+  if (!map.sourcesContent || map.sourcesContent[sources.indexOf(own[0])] !== text) problems.push(`the sourcesContent of ${own[0]} is not the file's text`);
+  const lines = text.split('\n');
+  const consumer = new SourceMapConsumer(map);
+  const resolved = consumer.sources.find(named);
+  consumer.eachMapping((m) => {
+    if (m.source !== resolved) return;
+    const line = lines[m.originalLine - 1];
+    if (line === undefined || m.originalColumn > line.length) problems.push(`a mapping into ${own[0]} at ${m.originalLine}:${m.originalColumn} lies outside its text`);
+  });
+  return problems;
+}
+
+/** The directory of the Dart Sass package the installed uxdsl resolves (its `exports` map hides `sass/package.json`). */
+function sassPackageDir(pkgDir) {
+  let dir = path.dirname(createRequire(path.join(pkgDir, 'package.json')).resolve('sass'));
+  while (!fs.existsSync(path.join(dir, 'package.json'))) dir = path.dirname(dir);
+  return dir;
 }
 
 function withImportsBehindFirstRule(postcss, css) {
@@ -477,9 +758,10 @@ async function main() {
       return 'intact';
     });
     p.write('src/missing-partial.uxdsl', '@import "./nope.uxdsl";\n.a { color: red; }\n');
-    await check('N-02', 'a missing @import fails instead of reaching the browser', async () => {
-      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {}, includeTheme: false }); } catch { return 'rejected'; }
-      throw new Error('compiled');
+    await check('N-02', 'a missing @import fails as Dart Sass\'s UXD_SASS at the @import instead of reaching the browser', async () => {
+      let error;
+      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {}, includeTheme: false }); } catch (caught) { error = caught; }
+      return assertMissingImport(error);
     });
     await check('UX-03', 'errors carry file, line and column', async () => {
       try { await compileCss('.a { padding: density(999); }'); } catch (error) {
@@ -540,7 +822,7 @@ async function main() {
       if (/xs\(|md\(/.test(out.css) || !/@media/.test(out.css)) throw new Error('not expanded');
       return 'expanded';
     });
-    await check('UX-20', 'source maps: external, inline, and off byte-identical', () => {
+    await check('UX-20', 'source maps: external, inline, and off byte-identical; the map names map.uxdsl once, relative, with its text, every mapping inside it', () => {
       p.write('src/map.uxdsl', '.m { padding: density(2); }\n');
       p.write('uxdsl.config.cjs', "module.exports = { entry: './src/map.uxdsl', outFile: './src/map.css' };\n");
       p.uxdsl('build');
@@ -550,16 +832,24 @@ async function main() {
       if (!p.exists('src/map.css.map') || !/sourceMappingURL=map\.css\.map/.test(external)) throw new Error('no external map');
       const map = JSON.parse(p.read('src/map.css.map'));
       if (map.version !== 3 || !map.sources.some((s) => s.endsWith('map.uxdsl')) || map.sources.some((s) => path.isAbsolute(s))) throw new Error(`bad map sources ${map.sources}`);
-      const { SourceMapConsumer } = instrument('source-map-js');
+      const { SourceMapConsumer, SourceMapGenerator } = instrument('source-map-js');
+      const text = p.read('src/map.uxdsl');
+      const integrity = mapIntegrityProblems(map, 'map.uxdsl', text, SourceMapConsumer);
+      if (integrity.length) throw new Error(integrity[0]);
+      const planted = SourceMapGenerator.fromSourceMap(new SourceMapConsumer(map));
+      planted.addMapping({ generated: { line: 1, column: 0 }, original: { line: 5, column: 0 }, source: map.sources.find((s) => s.endsWith('map.uxdsl')) });
+      if (!mapIntegrityProblems(planted.toJSON(), 'map.uxdsl', text, SourceMapConsumer).length) throw new Error('negative control: a mapping past the file\'s text was not reported');
+      // Dart Sass lays the rule out over several lines: the declaration is on its own line after `.m {`.
       const lines = external.split('\n');
-      const index = lines.findIndex((l) => l.includes('.m'));
+      const rule = lines.findIndex((l) => l.includes('.m {'));
+      const index = lines.findIndex((l, i) => i > rule && l.includes('padding'));
       const original = new SourceMapConsumer(map).originalPositionFor({ line: index + 1, column: lines[index].indexOf('padding') });
       if (!original.source || !original.source.endsWith('map.uxdsl')) throw new Error(`position resolved to ${original.source}`);
       p.uxdsl('build', '--sourcemap=inline');
       if (!/sourceMappingURL=data:application\/json/.test(p.read('src/map.css')) || p.exists('src/map.css.map')) throw new Error('inline mode wrong');
       p.uxdsl('build', '--no-sourcemap');
       if (p.read('src/map.css') !== plain) throw new Error('off is not byte-identical');
-      return `position -> ${original.source}:${original.line}`;
+      return `position -> ${original.source}:${original.line}; sources ${JSON.stringify(map.sources)}, every mapping inside map.uxdsl's text`;
     });
     await check('UX-13', 'init writes no breakpoints, so the theme file decides', () => {
       const q = project('init-probe');
@@ -646,6 +936,58 @@ async function main() {
   await check('parity', '[repo] CLI, compile() and the adapters agree (fixtures/parity)', () => {
     repoNode('fixtures/parity', ['fixtures/parity/run.js']);
     return 'oracle agreement';
+  });
+
+  // --- beta.9: compile() runs on Dart Sass ----------------------------------
+  console.log('\ncompile() on Dart Sass (FEAT-010, MIG-B9-13):');
+  await check('S-1', '[tarball, network] Bootstrap 5.3.8 renamed to .uxdsl compiles through the installed compile() to Dart Sass\'s CSS, byte for byte (fixtures/sass-corpus)', () => {
+    const out = repoNode('fixtures/sass-corpus', ['fixtures/sass-corpus/run.js', '--uxdsl', pkgDir, '--sass', sassPackageDir(pkgDir), '--no-timing-budget']);
+    if (!/byte-identical: true/.test(out)) throw new Error('the corpus did not print "byte-identical: true"');
+    const ratio = /compile\(\)'s median is ([\d.]+)x/.exec(out);
+    return `byte-identical, the five mixed checks ok${ratio ? `; compile() ${ratio[1]}x Dart Sass (reported, not asserted)` : ''}`;
+  });
+  await check('S-2', '[repo] the Sass matrix\'s recorded literals and compile()\'s output equal live Dart Sass (packages/uxdsl/test/core/sass-matrix.test.js)', () => {
+    const out = repoNode('sass-matrix', ['--test', '--test-reporter=tap', '--test-name-pattern', 'equals live Dart Sass', 'packages/uxdsl/test/core/sass-matrix.test.js']);
+    const passed = Number((/^# pass (\d+)$/m.exec(out) || [])[1]);
+    if (!(passed >= 4)) throw new Error(`${passed || 0} tests passed; the four "equals live Dart Sass" tests, controls included, must run`);
+    return `${passed} tests, their negative controls included`;
+  });
+  await check('S-3', '[tarball] a UXDSL error in a Sass-heavy file is printed by the installed CLI at the author\'s line and column, framed from the author\'s text', () => {
+    const p = project('sass-heavy');
+    const fixtures = path.join(PACKAGE_DIR, 'test/core/fixtures/sass-maps');
+    for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) p.write(file, fs.readFileSync(path.join(fixtures, file), 'utf8'));
+    return assertAuthorLocated(p.spawn('build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'));
+  });
+
+  // --- beta.9: the CLI and the adapters on Dart Sass -------------------------
+  console.log('\nThe CLI and the adapters on Dart Sass (FEAT-010, MIG-B9-14):');
+  await check('S-4', '[tarball] the installed CLI prints a Sass error with Dart Sass\'s frame of the author\'s text, and a deprecated @import as a warning at its file, line and column that sass.silenceDeprecations removes', () => {
+    const p = project('cli-sass');
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
+    p.write('src/a.uxdsl', '.a { color: palette(primary.main); width: $nope; }\n');
+    const framed = assertSassFramed(p.spawn('build'));
+    p.write('src/a.uxdsl', "@import './b';\n.a { color: red; }\n");
+    p.write('src/_b.uxdsl', '.b { color: blue; }\n');
+    const warned = assertLocatedWarning(p.spawn('build'), { silenced: false });
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', sass: { silenceDeprecations: ['import'] } };\n");
+    const silenced = assertLocatedWarning(p.spawn('build'), { silenced: true });
+    return `${framed}; ${warned}; ${silenced}`;
+  });
+  // The bundlers are instruments, from the repository; the adapters under test
+  // are the installed package's.
+  await check('S-5', '[tarball] the installed uxdsl/webpack in real webpack builds (the repository\'s webpack, css-loader and MiniCssExtractPlugin): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, an unknown sass key fails the module, the partials are file dependencies, and the CSS map names each file at its path', async () => {
+    const tools = {
+      webpack: instrument('webpack'),
+      MiniCssExtractPlugin: instrument('mini-css-extract-plugin'),
+      cssLoader: instrument.resolve('css-loader'),
+      SourceMapConsumer: instrument('source-map-js').SourceMapConsumer,
+    };
+    return assertWebpackAdapter(await webpackAdapterRecord(tools, req.resolve('uxdsl/webpack'), project('webpack-sass').root));
+  });
+  await check('S-6', '[tarball] the installed uxdsl/vite in real `vite build`s and a dev server (the repository\'s Vite): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, an unknown sass key fails the build, and the partials are in the module graph', async () => {
+    const vite = await import(pathToFileURL(instrument.resolve('vite')).href);
+    const mod = req('uxdsl/vite');
+    return assertViteAdapter(await viteAdapterRecord(vite, mod.default || mod, project('vite-sass').root));
   });
 
   // --- beta.7: init, editor support, fonts, contrast -----------------------
@@ -784,9 +1126,9 @@ async function main() {
     repoNode('fixtures/webpack-adapter', ['fixtures/webpack-adapter/run.js'], 600000);
     return 'css-loader + MiniCssExtractPlugin, source maps, watch';
   });
-  await check('cssmod', '[tarball, Chrome] Next.js CSS Modules build and the runtime in Chrome (fixtures/mig02-nextjs-cssmodules)', () => {
+  await check('cssmod', '[tarball, Chrome] Next.js CSS Modules build, a CLI-built .module.uxdsl on the served page, and the runtime in Chrome (fixtures/mig02-nextjs-cssmodules)', () => {
     repoNode('verify:cssmodules-build', ['fixtures/mig02-nextjs-cssmodules/run.js'], 900000);
-    return 'pure-mode build, computed styles, applyTheme on a page';
+    return 'pure-mode build, computed styles, the CLI-built module on the served page, applyTheme on a page';
   });
   await check('DE-9', '[tarball, Chrome] Next.js with PostCSS only: `@uxdsl theme;` in globals.css, tokens in a CSS Module (fixtures/mig02-nextjs-cssmodules/postcss-only.js)', () => {
     repoNode('postcss-only', ['fixtures/mig02-nextjs-cssmodules/postcss-only.js'], 900000);
@@ -858,4 +1200,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };

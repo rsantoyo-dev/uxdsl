@@ -10,6 +10,8 @@ const assert = require('node:assert/strict');
 const path = require('node:path');
 const postcss = require('postcss');
 
+const sass = require('sass');
+
 const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 const core = require('../dist/entries/index.js');
@@ -37,7 +39,11 @@ const NEAR_MISSES = [
   ['tne(main)', 'tne', 'tone'],
 ];
 
-test('MIG-B9-04: spacing(), palete(), densty() and SPACING() are UXD_FUNCTION_UNKNOWN with the right suggestion, located', async () => {
+// Dart Sass reads a dotted argument as a module member, so through compile() a near-miss of
+// palette() with a dotted key fails in Sass, located, before the plugin can name the function meant.
+const SASS_REJECTS = new Set(['palete(primary.main)', 'pallete(primary.main)', 'pallet(primary.main)']);
+
+test('MIG-B9-13: near-miss names through compile(): palete, pallete and pallet(primary.main) fail located as UXD_SASS; the other 8 keep UXD_FUNCTION_UNKNOWN with the suggestion; all 11 keep it through uxdsl/postcss', async () => {
   for (const [call, name, suggestion] of NEAR_MISSES) {
     const source = `.a {\n  padding: ${call};\n}\n`;
     const viaPlugin = await failure(throughPlugin(source));
@@ -49,7 +55,16 @@ test('MIG-B9-04: spacing(), palete(), densty() and SPACING() are UXD_FUNCTION_UN
 
     const viaCompile = await failure(throughCompile(source));
     assert.ok(viaCompile, `${call} fails through compile()`);
+    if (SASS_REJECTS.has(call)) {
+      assert.equal(viaCompile.code, 'UXD_SASS', call);
+      assert.equal(viaCompile.sassMessage, 'expected "(".', call);
+      assert.equal(viaCompile.file, file, `${call} names the file`);
+      assert.equal(viaCompile.line, 2, `${call} is located on its line`);
+      continue;
+    }
     assert.match(viaCompile.message, new RegExp(unknownFunction(name, suggestion).replace(/[()?.]/g, '\\$&')));
+    assert.equal(viaCompile.file, file, `${call} names the file`);
+    assert.equal(viaCompile.line, 2, `${call} is located at the declaration`);
   }
 
   // Control: the canonical spellings compile to their variables in the same run.
@@ -65,7 +80,10 @@ test('MIG-B9-04: spacing(), palete(), densty() and SPACING() are UXD_FUNCTION_UN
   assert.doesNotMatch(breakpointTypo.message, /UXD_FUNCTION_UNKNOWN/);
 });
 
-test('MIG-B9-04 (negative control): log(), rem(), mod(), calc(), color-mix(), -webkit-foo() and a custom breakpoint xxl() are never flagged', async () => {
+/** Dart Sass's own output for `source`: what compile() must equal when the plugin has nothing to change. */
+const dartSass = (source) => sass.compileString(source, { style: 'expanded' }).css;
+
+test('MIG-B9-13: log(), rem(), mod(), calc(), color-mix(), -webkit-foo() and a custom breakpoint xxl() are never flagged; through compile() the output is Dart Sass\'s for the same source (negative control)', async () => {
   const untouched = [
     'log(1, 2)', 'rem(10, 3)', 'mod(10, 3)', 'sign(-1)', 'exp(1)',
     'calc(1px + 1px)', 'color-mix(in srgb, red, blue)',
@@ -77,7 +95,10 @@ test('MIG-B9-04 (negative control): log(), rem(), mod(), calc(), color-mix(), -w
     const source = `.a { width: ${call}; }`;
     const result = await throughPlugin(source);
     assert.equal(result.css, source, `${call} passes through byte for byte`);
-    assert.equal((await throughCompile(source)).css, source, `${call} passes through compile() byte for byte`);
+    // Dart Sass evaluates CSS math with numbers (log(1, 2) is 0) and lays the rule out; the plugin adds nothing.
+    const compiled = (await throughCompile(source)).css;
+    assert.equal(compiled, dartSass(source), `${call}: compile() equals Dart Sass's output`);
+    assert.doesNotMatch(compiled, /UXD_FUNCTION_UNKNOWN/);
   }
 
   // A breakpoint the effective theme defines is a breakpoint, however close
@@ -92,11 +113,12 @@ test('MIG-B9-04 (negative control): log(), rem(), mod(), calc(), color-mix(), -w
   assert.match(inTheme, /--uxdsl__density__wide: var\(--uxdsl__space__2\)/);
 });
 
-test('MIG-B9-04: a far name such as foo(1) passes through untouched', async () => {
+test('MIG-B9-13: a far name such as foo(1) passes through uxdsl/postcss untouched, and through compile() as Dart Sass prints it', async () => {
   for (const call of ['foo(1)', 'myfn(1px, 2px)', 'notAFunction(1)']) {
     const source = `.a { width: ${call}; }`;
     assert.equal((await throughPlugin(source)).css, source, call);
-    assert.equal((await throughCompile(source)).css, source, call);
+    assert.equal((await throughCompile(source)).css, dartSass(source), call);
+    assert.equal((await throughCompile(source)).css, `.a {\n  width: ${call};\n}`, call);
   }
 });
 

@@ -1,0 +1,16 @@
+// a // comment Sass drops
+.card {
+  color: palette(primary.main);
+  &__title {
+    padding: density(2);
+  }
+  &:hover {
+    color: palette(primary.dark);
+  }
+  .icon & {
+    border: border(1);
+  }
+  @media (min-width: 600px) {
+    padding: space(4);
+  }
+}

@@ -1,12 +1,15 @@
 'use strict';
 
-// A declaration the UXDSL grammar does not change leaves the compiler exactly
-// as it entered: its value's whitespace, its inline comments, an empty custom
+// A declaration the UXDSL grammar does not change leaves the plugin exactly as
+// it entered: its value's whitespace, its inline comments, an empty custom
 // property. "Rename .scss to .uxdsl and get the same CSS" needs the plugin to
-// be an identity on CSS it has nothing to say about.
+// be an identity on CSS it has nothing to say about: through compile(), whose
+// plugin runs on Dart Sass's output, the result is Dart Sass's own output for
+// the same source.
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const postcss = require('postcss');
+const sass = require('sass');
 
 const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
@@ -38,15 +41,15 @@ test('MIG-B9-05: declarations the grammar does not change are byte-identical thr
   for (const probe of PROBES) assert.equal(throughPlugin(probe), probe, probe);
 });
 
-test('MIG-B9-05: declarations the grammar does not change are byte-identical through compile()', async () => {
-  for (const probe of PROBES) assert.equal((await throughCompile(probe)).trim(), probe, probe);
+test('MIG-B9-13: declarations the grammar does not change are equal to Dart Sass\'s output through compile()', async () => {
+  // Dart Sass lays each rule out and drops a comment inside a value; the plugin rewrites nothing else.
+  for (const probe of PROBES) assert.equal(await throughCompile(probe), sass.compileString(probe, { style: 'expanded' }).css, probe);
 });
 
-test('MIG-B9-05 (positive control): a declaration with a token is still rewritten, and keeps its trailing comment', async () => {
+test('MIG-B9-13: a declaration with a token is still rewritten; uxdsl/postcss keeps its trailing comment, which Dart Sass drops before compile()\'s plugin runs (positive control)', async () => {
   const source = 'a{padding: space(2) /* keep */;}';
-  const expected = 'a{padding: var(--uxdsl__space__2) /* keep */;}';
-  assert.equal(throughPlugin(source), expected);
-  assert.equal((await throughCompile(source)).trim(), expected);
+  assert.equal(throughPlugin(source), 'a{padding: var(--uxdsl__space__2) /* keep */;}');
+  assert.equal(await throughCompile(source), 'a {\n  padding: var(--uxdsl__space__2);\n}');
 });
 
 test('MIG-B9-05 (positive control): a responsive value is still split, and an untouched sibling keeps its comment', () => {

@@ -34,7 +34,7 @@ const OWNERS: Array<[string, string]> = [
   ['compiler', 'The compiler (your stylesheet)'],
   ['theme', 'The theme (validateTheme and the engines, build and run time alike)'],
   ['runtime', 'The browser runtime (returned on a result, never thrown)'],
-  ['core', 'compile() (the SCSS subset and imports)'],
+  ['core', "compile()'s Sass stage (protect and Dart Sass, before the plugin)"],
 ]
 
 export function DiagnosticsCatalog() {

@@ -7,15 +7,24 @@
  * into real files a
  * Next.js app can import: styles/theme.css (global, no CSS Modules) and
  * styles/panel-*.module.css (CSS Modules, includeTheme: false, so no
- * `:root`).
+ * `:root`). Then the installed CLI builds styles/panel.module.uxdsl (Dart
+ * Sass: `@use "sass:math"`, `$variables`, nesting with `&__title`) into
+ * styles/panel.generated.module.css, from uxdsl-cli/uxdsl.config.cjs and the
+ * theme file next to it.
  */
 
 const fs = require('fs');
 const path = require('path');
+const { spawnSync } = require('child_process');
 
 const FIXTURE_DIR = __dirname;
 const MIG07_DIR = path.resolve(FIXTURE_DIR, '..', 'mig07-consumer');
 const STYLES_DIR = path.join(FIXTURE_DIR, 'styles');
+// The CLI's project: its build config and theme file. They sit in their own
+// directory because a theme file at the fixture's root would be discovered by
+// browser-import-order.js, which compiles with the plugin's theme discovery.
+const CLI_PROJECT_DIR = path.join(FIXTURE_DIR, 'uxdsl-cli');
+const CLI_MODULE = path.join(STYLES_DIR, 'panel.generated.module.css');
 
 const installedRequire = require('module').createRequire(path.join(MIG07_DIR, 'package.json'));
 const plugin = installedRequire('uxdsl/postcss');
@@ -43,6 +52,18 @@ async function main() {
   }
 
   console.log(`Compiled theme.css + ${panels.length} panel .module.css files into ${path.relative(process.cwd(), STYLES_DIR)}/`);
+
+  // The installed CLI, as a Next.js project runs it beside `next build`.
+  fs.rmSync(CLI_MODULE, { force: true });
+  const cli = path.join(path.dirname(installedRequire.resolve('uxdsl/package.json')), 'bin', 'uxdsl.js');
+  const built = spawnSync(process.execPath, [cli, 'build'], { cwd: CLI_PROJECT_DIR, encoding: 'utf8' });
+  process.stdout.write(built.stdout || '');
+  if (built.status !== 0) throw new Error(`uxdsl build exited ${built.status}:\n${built.stderr}`);
+  if (/\[uxdsl\] Warning/.test(built.stderr || '')) throw new Error(`uxdsl build warned:\n${built.stderr}`);
+  const moduleCss = fs.readFileSync(CLI_MODULE, 'utf8');
+  if (/:root/.test(moduleCss)) throw new Error(`${path.relative(FIXTURE_DIR, CLI_MODULE)} holds :root; a CSS Module must not`);
+  if (!moduleCss.includes('.panel__title')) throw new Error(`${path.relative(FIXTURE_DIR, CLI_MODULE)} has no .panel__title rule:\n${moduleCss}`);
+  console.log(`The installed CLI built ${path.relative(FIXTURE_DIR, CLI_MODULE)} (${Buffer.byteLength(moduleCss)} bytes, no :root).`);
 }
 
 main().catch((err) => {

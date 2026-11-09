@@ -46,8 +46,8 @@ test('MIG-B7-14: compile({ entry }) with the default theme leads with the Google
 });
 
 test('MIG-B7-14: an author @import that arrives through a partial is still honored', async () => {
-  // postcss-import inlines the local partial; the remote import it contains is
-  // left as an at-rule and must not end up behind the theme's :root.
+  // Dart Sass inlines the local partial and hoists the remote import it contains
+  // to the top of its output; it must not end up behind the theme's :root.
   const dir = project({
     'entry.uxdsl': '@import "./partial.uxdsl";\n.a { padding: density(2); }\n',
     'partial.uxdsl': '@import url("https://example.com/author.css");\n.b { color: red; }\n',

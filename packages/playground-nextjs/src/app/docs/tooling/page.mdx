@@ -21,7 +21,7 @@ Each panel is the real stdout, stderr and exit status of the `uxdsl` CLI in this
 
 <div className="doc-section">
 
-`uxdsl init --multi` scaffolds a theme entry plus one component entry instead of one entry. `uxdsl generate-entry --src <dir> --out <file> --exclude <a,b>` rewrites the entry's `@import` list from the `.uxdsl` files under a directory. `uxdsl <command> --help` prints one command's options, `uxdsl --version` the installed version. An unknown command or flag fails before anything runs, with a suggestion.
+`uxdsl init --multi` scaffolds a theme entry plus one component entry instead of one entry. `uxdsl generate-entry --src <dir> --out <file> --first <a,b> --exclude <a,b>` rewrites the entry's `@use` list from the `.uxdsl` files under a directory: one `@use` per file, each with its own namespace, so each file is its own Sass module and `@use`s what it reads from another. `--first` puts the files it names first, in that order. `uxdsl <command> --help` prints one command's options, `uxdsl --version` the installed version. An unknown command or flag fails before anything runs, with a suggestion.
 
 ## Two files, two jobs
 
@@ -38,6 +38,7 @@ The **build config**, `uxdsl.config.cjs` (or `.js`), says what to compile and wh
 <tr><td><code>references</code></td><td>Tokens defined outside the theme (<code>externalTokens</code>, <code>css</code>) and how strictly a missing one fails.</td></tr>
 <tr><td><code>strictTheme</code></td><td>Families the project must declare completely, such as <code>['palette']</code>.</td></tr>
 <tr><td><code>sourcemap</code></td><td><code>false</code>, <code>'inline'</code> or <code>'external'</code>.</td></tr>
+<tr><td><code>sass</code></td><td>Dart Sass options for every entry: <code>{"{ silenceDeprecations?, quietDeps? }"}</code>.</td></tr>
 </tbody>
 </table>
 </div>
@@ -104,6 +105,7 @@ The first entry defines every token in `:root`, once (`--include-theme`, the def
 <CliRun id="build-strict-theme-scoped" collapsed />
 <CliRun id="build-strict-theme-bare" collapsed />
 <CliRun id="generate-entry" collapsed />
+<CliRun id="generate-entry-help" collapsed />
 <CliRun id="unknown-command" collapsed />
 
 <div className="doc-section">

@@ -105,6 +105,7 @@ uxdsl({
   includeTheme,       // emit (or skip) the global :root token definitions — default true
   discoverTheme,      // default true; see "Project theme" below
   configRoot,         // directory theme discovery searches from — default Vite's own project root
+  sass,               // Dart Sass options, passed to compile(): { silenceDeprecations?, quietDeps? }
 })
 ```
 
@@ -136,12 +137,53 @@ module.exports = { breakpoints: { xl: 1440 } }; // xs/sm/md/lg keep UXDSL's defa
 There is no `breakpoints` plugin option. With no theme at all, the defaults
 are `{ xs: 0, sm: 480, md: 768, lg: 1024, xl: 1280 }`.
 
-### No SCSS pre-pass
+### Dart Sass options (`sass`)
 
-`$var`, `@each`, `@mixin`/`@include` and `@if` are handled by the shared
-compile pipeline itself. The former `scss: 'on'` option ran the `sass`
-package over a `.uxdsl` file first; a `.uxdsl` file's own syntax is not valid
-SCSS, so that was a second compiler with no parity guarantee, and it is gone.
+```js
+uxdsl({ sass: { silenceDeprecations: ['import'], quietDeps: true } })
+```
+
+`compile()` passes `sass` to Dart Sass: `silenceDeprecations` lists the
+deprecation ids it stops reporting (each is otherwise a `UXD_SASS_WARNING`),
+and `quietDeps` silences the deprecations of packages loaded from load paths
+or `pkg:`. `compile()` validates it: another key, or a value of the wrong
+type, fails the load with its message (`uxdsl: unknown sass option "…"`). It
+is the same option as the CLI's `sass` config key.
+
+### Warnings and watched files
+
+Every `compile()` warning reaches Vite through `this.warn()` as one line,
+`<file>:<line>:<column>: <text>`, with the file relative to Vite's root —
+`styles/_partial.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.`
+— and a warning with no position (Dart Sass's
+`N repetitive deprecation warnings omitted.`) is its text alone. Every file
+Dart Sass loaded for the module (a `@use`d, `@forward`ed or `@import`ed
+partial, a `.scss` file, a package's file) and the discovered theme file are
+added with `addWatchFile`, so an edit to any of them recompiles it, with two
+exceptions. The dev server does not watch `node_modules` (Vite's default
+`server.watch.ignored`), so an edit to a package's file is not seen. And a
+load that fails adds no file: a partial an earlier load added stays
+watched, but one the failing load was the first to load (a new `@use`
+whose file has an error) recompiles nothing when it is fixed, until the
+`.uxdsl` file Vite imports is saved.
+
+### Dart Sass runs inside `compile()`
+
+`compile()` runs Dart Sass itself, so the plugin needs no Sass pre-pass: a
+`.uxdsl` file reaches Vite as compiled CSS, Vite's own
+`css.preprocessorOptions` do not apply to it, and Dart Sass's options go in
+`sass` (above). The former `scss: 'on'` option, which ran the `sass` package
+over a `.uxdsl` file before the pipeline, is gone. A `.uxdsl` file may `@use`
+a `.scss`, `.sass` or `.css` file, which Dart Sass reads as written, so
+UXDSL's dotted tokens belong in the `.uxdsl` files:
+
+```scss
+// src/app.uxdsl
+@use 'vendor' as v;   // src/_vendor.scss: plain SCSS, read as written
+```
+
+The `compile()` guide's [Sass inside `compile()`](compile.md#sass-inside-compile)
+has the importer rules and what each extension decides.
 
 ---
 

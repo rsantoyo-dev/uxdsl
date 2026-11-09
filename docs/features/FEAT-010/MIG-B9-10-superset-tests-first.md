@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | In review (PR #46; part 1 merged as PR #34) |
+| Status | Merged (PR #34, PR #46) |
 | Size | M |
 | Depends on | MIG-B9-05 (byte-preserving plugin) |
 | Blocks | MIG-B9-11, MIG-B9-12, MIG-B9-13 |

@@ -19,7 +19,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 48101
+      "bytes": 48118
     },
     "quick-start": {
       "id": "quick-start",
@@ -38,7 +38,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47596
+      "bytes": 47595
     },
     "breakpoints": {
       "id": "breakpoints",
@@ -57,7 +57,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47382
+      "bytes": 47381
     },
     "spacing": {
       "id": "spacing",
@@ -79,7 +79,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47316
+      "bytes": 47321
     },
     "colors": {
       "id": "colors",
@@ -101,7 +101,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47546
+      "bytes": 47552
     },
     "typography": {
       "id": "typography",
@@ -121,7 +121,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47561
+      "bytes": 47574
     },
     "borders": {
       "id": "borders",
@@ -141,7 +141,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47494
+      "bytes": 47500
     },
     "shadows": {
       "id": "shadows",
@@ -161,7 +161,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47384
+      "bytes": 47389
     },
     "surfaces": {
       "id": "surfaces",
@@ -180,7 +180,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 47902
+      "bytes": 47927
     },
     "buttons": {
       "id": "buttons",
@@ -200,7 +200,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 54192
+      "bytes": 54191
     },
     "inputs": {
       "id": "inputs",
@@ -220,7 +220,7 @@
         "lg": 1024,
         "xl": 1280
       },
-      "bytes": 50751
+      "bytes": 50750
     }
   }
 }
