@@ -223,7 +223,8 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-38 | A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS | 3 | — | S | 14, 22 | Draft (story file to be written; registered by the decision of 2026-11-08 on MIG-B9-14's flag 12, as proposed in its §15; it answers MIG-B9-13 §15, flag 14, and takes over the warning that D18 of 2026-11-04 kept with MIG-B9-14) |
 | MIG-B9-39 | Every host's watch recovers after a failed compile | 3 | — | S or split (its scout sizes it) | 14, 21, 22 | Draft (story file to be written; registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in its §15) |
 | MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |
-| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34 | Draft (re-baseline after wave 3) |
+| MIG-B9-44 | The playground's visual comparison harness is deterministic | 4 | — | S | — | Draft (story file to be written; registered by decision 12 of 2026-11-09, as MIG-B9-22's delivery proposed in its §15) |
+| MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34, 44 | Draft (re-baseline after wave 3) |
 | MIG-B9-41 | [One demo frame, one token editor](MIG-B9-41-playground-demo-frame-and-editor.md) | 4 | DEC-14 | M | 40 | Draft (re-baseline after wave 3) |
 | MIG-B9-42 | [Every principle demonstrated live, the superset included](MIG-B9-42-playground-principles-live.md) | 4 | DEC-14 | M | 41 | Draft (re-baseline after wave 3) |
 | MIG-B9-43 | [Nothing hand-written, nothing hardcoded, enforced](MIG-B9-43-playground-nothing-hardcoded.md) | 4 | DEC-14 | M | 42 | Draft (re-baseline after wave 3) |
@@ -291,6 +292,19 @@ carry an "Owner decisions of 2026-11-08" block at the end of their §15
 (MIG-B9-14, 15, 20, 21, 22 and 62), which rules where it differs from the
 contract or from an earlier block.
 
+On 2026-11-09 the owner settled the flags of MIG-B9-22 and MIG-B9-23, both
+merged, and registered MIG-B9-44, whose story file is still to be written
+(FEAT-010 §2, "Owner decisions of 2026-11-09", whose list numbers the
+decisions 1 to 13). Every wave-4 story relies on
+`fixtures/playground-browser/compare.js`, so MIG-B9-44 merges before any of
+them starts: its row is the first of wave 4, right after MIG-B9-91's, and
+MIG-B9-40 depends on it. It ships in `0.5.0-beta.10` with its wave, so
+`0.5.0-beta.9`'s scope does not change. Under §7 it shares
+`fixtures/playground-browser/**` with MIG-B9-40 to 43, which follow it. Four
+stories carry an "Owner decisions of 2026-11-09" block at the end of their
+§15 (MIG-B9-22, 23, 40 and 91), which rules where it differs from the
+contract or from an earlier block.
+
 ## 6. Branches and merges
 
 - One integration branch, `feat/beta9`, created from `main` by the first
@@ -320,7 +334,7 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `packages/uxdsl/src/sass/compile-sass.ts` | 12, 23, 26 |
 | `packages/uxdsl/src/sass/protect.ts` | 11, 26 |
 | `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25 |
-| `packages/uxdsl/test/cli/**` | 14, 25, 39 |
+| `packages/uxdsl/test/cli/**` | 14, 22, 25, 39 |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 22, 38, 39, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 30, 32, 33, 34, 35, 37, 38 |
@@ -333,8 +347,9 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 51 |
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
 | `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 30, 31, 91, 92 |
-| `fixtures/sass-corpus/run.js` | 10, 23, 25 |
+| `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore` | 10, 23, 25 |
 | `packages/playground-nextjs/**` | 16, 20, 22, 30, 33, 34, 35, 36, 39, 40, 41, 42, 43 |
+| `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
 | `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 91 |
 | `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story) |
 | `packages/uxdsl/src/typography.ts` | 31, 33 |
@@ -343,17 +358,19 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `packages/uxdsl/src/contrast.ts`, `fixtures/release-1.0/contrast-baseline.json` | 34, 35 |
 | `fixtures/mig02-nextjs-cssmodules/browser*.js` | 34, 36 |
 | `fixtures/parity/expected/**` | 13, 31, 33, 34 |
-| `fixtures/mig07-consumer/**`, `fixtures/parity/run.js`, `fixtures/mig-b2-03-cli-init/**`, `fixtures/webpack-adapter/**` | 20 |
+| `fixtures/mig07-consumer/**`, `fixtures/parity/run.js`, `fixtures/webpack-adapter/**` | 20 |
+| `fixtures/mig-b2-03-cli-init/**` | 20, 22 |
 
 The rows that name MIG-B9-24 to 29, 37 and 92 come from their proposals,
-and those that name MIG-B9-16, 38 and 39 from the decisions of 2026-11-08
-that registered them, before their story files exist; they are provisional:
+those that name MIG-B9-16, 38 and 39 from the decisions of 2026-11-08 that
+registered them, and MIG-B9-44's from decision 12 of 2026-11-09, before
+their story files exist; they are provisional:
 each story file states its Owns and Shares, and this table follows them
 before the story starts.
 MIG-B9-28 has no row yet: its scout sizes it (decision D11 of 2026-11-04),
 and its story file names the suites it edits.
 
-Three files that the decisions of 2026-11-08 may add to earlier stories are
+Two files that the decisions of 2026-11-08 may add to earlier stories are
 not in the table yet. Each story file states its Shares before the story
 starts, and listing these changes who waits:
 
@@ -364,9 +381,9 @@ starts, and listing these changes who waits:
   detection of isolation's silent cases needs (MIG-B9-14 §15, flag 3; the
   `compile-sass.ts` row lists 26 already): MIG-B9-30, 32 to 35, 37 and 38
   would wait for MIG-B9-26.
-- `packages/uxdsl/test/cli/**` for MIG-B9-22, whose header already shares
-  `watch-mode.test.js` and which the decision on flag 8 gives a test of
-  `uxdsl theme`: MIG-B9-25 would wait for MIG-B9-22.
+
+A third, `packages/uxdsl/test/cli/**` for MIG-B9-22, is in the table since
+decision 11 of 2026-11-09; MIG-B9-22 is merged, so no story waits for it.
 
 ## 8. Decision register
 

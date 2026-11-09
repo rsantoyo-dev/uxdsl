@@ -1082,3 +1082,15 @@ Written by the deliverer with PR #75. It records new facts, the owner flags, Sha
 - **MIG-B9-24.** The plugin's fixed per-build costs are the lever if the margin of new fact 2 shrinks. A forced GC is not (new fact 7).
 - **MIG-B9-26.** It edits `compile-sass.ts` after this story, and rebases on it.
 - **The next FEAT-010 documentation PR.** README §7's `fixtures/sass-corpus` row (flag 2), and finding 1's §7 answer (flag 6), if the owner accepts them.
+
+### Owner decisions of 2026-11-09
+
+The owner decided the flags of "Delivery of 2026-11-09" above on 2026-11-09, after this story merged (PR #75, `dfcd216`) and reached `main` (PR #78). The owner was given 13 numbered recommendations, in Spanish, on the owner flags of this story and MIG-B9-22 and on three housekeeping items, and answered, verbatim, "todoc omo recomendadi" ("todo como recomendado", "everything as recommended"): each recommendation is the owner's decision of 2026-11-09, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-09), which numbers them 1 to 13. This record is in English and lists those that concern this story. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Flag 1, where D8's fresh directory lives (decision 1):** confirmed, the first reading. The corpus runner compiles from `fixtures/sass-corpus/.work/run-XXXXXX/corpus-root`, git-ignored, outside `os.tmpdir()` and holding nothing else, so `$TMPDIR`'s size reaches no measurement; not a fresh subdirectory of `os.tmpdir()`.
+- **Flag 2, D8's other files (decision 11):** the index's §7 row for `fixtures/sass-corpus` lists `run.js`, `run.test.js`, `README.md` and `.gitignore`, for MIG-B9-10, 23 and 25.
+- **Flag 3, an execute-only directory (decision 2):** accepted. A directory that can be searched but not listed keeps the spelling as written, the base's behavior, through `access(R_OK)` (T9b), unlike Dart Sass and a realpath-only spelling.
+- **Flag 4, T3's statistic (decision 4):** kept. The budget fixture keeps the difference of the two medians, with 61 rounds by default (C2 allows at least 9); MIG-B9-91 decides whether T3 also reports a paired statistic, the median of per-round differences.
+- **Flag 5, AC1's triple (decision 3):** accepted. The review's fix to `run.js` (`f442d02`) restarted the count: the first three runner invocations after it (1.33×, 1.31× and 1.36×, from 11:26 EST on 2026-11-09) are AC1's triple; the 13 earlier invocations after the Sass stage's change are recorded in §14.
+
+Flags 6 to 8 were not among the recommendations; they are not decided by this block and stay as the delivery wrote them.
