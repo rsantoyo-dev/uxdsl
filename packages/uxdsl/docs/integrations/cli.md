@@ -113,7 +113,7 @@ from `uxdsl/language`, not by reading the leaf as a color.
 | Flag | Does |
 | --- | --- |
 | `--src <dir>` | The directory scanned for `.uxdsl` files, subdirectories included. Default `./src`, or the working directory when it has no `src/`. |
-| `--out <file>`, `-o` | The entry it writes. Default: `uxdsl-entry.uxdsl` in the `--src` directory. No file with the entry's file name is listed, in any directory under `--src`, as with an `--exclude` name: with `--out src/main.uxdsl`, `src/pages/main.uxdsl` is left out too, without a message. |
+| `--out <file>`, `-o` | The entry it writes. Default: `uxdsl-entry.uxdsl` in the `--src` directory. The entry never lists itself; a file with its file name in another directory (`src/pages/main.uxdsl` beside `--out src/main.uxdsl`) is listed like any other. |
 | `--first <a,b>` | The files to load first, in that order: paths relative to `--src`, comma-separated, `./` and `.uxdsl` optional. |
 | `--exclude <a,b>` | File names to leave out, in any directory under `--src`. |
 
@@ -125,28 +125,29 @@ The entry has one `@use` per file, after a header that says how to rebuild it:
 /* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */
 
 /* --- Application & Component Imports --- */
-@use './variables' as variables;
-@use './card' as card;
-@use './components/card' as components-card;
+@use './variables.uxdsl' as variables;
+@use './card.uxdsl' as card;
+@use './components/card.uxdsl' as components-card;
 ```
 
 - **The path** is the file's path relative to the entry's directory, starting
-  with `./` (or `../`), without `.uxdsl` and without a partial's leading `_`
-  (`_variables.uxdsl` is `./variables`). `%`, `#`, `?`, `'` and `\` are
-  percent-encoded: `a#b.uxdsl` is `./a%23b`.
-- **The namespace** is that path without its leading `./`, lowercased, with
-  `-` for every character outside `a-z`, `0-9` and `-`, and `f-` in front of
-  a leading digit or `-`: `2col.uxdsl` is `f-2col`, and from an entry in
-  `src/app/`, `../components/card` is `f----components-card`. Two files that
-  would share a namespace (`components/card.uxdsl` and `components-card.uxdsl`)
-  get it in path order: the first keeps it, the next gets `-2`, then `-3`.
-- **The order**, without `--first`: the files whose name contains `theme-def`,
-  `layout`, `app` or `variables` first, then the others by path. With
-  `--first`, the files it names, in its order, then every other file by path.
-  An item that matches no file (with a suggestion), names a file the entry
-  leaves out (an `--exclude` name, or a file with the entry's file name) or
-  appears twice exits 1 and writes nothing, and so does a `--first` with no
-  item.
+  with `./` (or `../`), with `.uxdsl` and without a partial's leading `_`
+  (`_variables.uxdsl` is `./variables.uxdsl`, which Dart Sass finds as the
+  partial). `%`, `#`, `?`, `'` and `\` are percent-encoded: `a#b.uxdsl` is
+  `./a%23b.uxdsl`.
+- **The namespace** is the file's path relative to `--src`, without `.uxdsl`
+  and without a partial's leading `_`, lowercased, with `-` for every
+  character outside `a-z`, `0-9` and `-`, and `f-` in front of a leading digit
+  or `-`: `2col.uxdsl` is `f-2col`, and `components/card.uxdsl` is
+  `components-card` wherever the entry is. Two files that would share a
+  namespace (`components/card.uxdsl` and `components-card.uxdsl`) get it in
+  path order: the first keeps it, the next gets `-2`, then `-3`.
+- **The order** is the path order: by the path relative to the entry, as on
+  disk. A file's name never moves it first. With `--first`, the files it
+  names, in its order, then every other file by path. An item that matches no
+  file (with a suggestion), names the entry itself or a file `--exclude`
+  leaves out, or appears twice exits 1 and writes nothing, and so does a
+  `--first` with no item.
 
 Each file is its own Sass module. An entry that `@import`ed its files gave
 them one scope; with `@use`, a file that reads another file's `$variable`,
@@ -175,17 +176,17 @@ written, and one named like a UXDSL function stays the token, without an
 error.
 
 A module that a file configures with `@use … with (…)` must be configured
-before anything else loads it: name the configuring file in `--first`, since a
-file named like `variables` is otherwise listed first. When `generate-entry`
-replaces an entry that listed its files with `@import`, it prints one
-`[uxdsl] Warning:` that says so and points to the migration guide; it prints
-nothing for a new entry or an entry already on `@use`.
+before anything else loads it: name the configuring file in `--first` when the
+module comes first in path order (`_variables.uxdsl` before `brand.uxdsl`).
+When `generate-entry` replaces an entry that listed its files with `@import`,
+it prints one `[uxdsl] Warning:` that says so and points to the migration
+guide; it prints nothing for a new entry or an entry already on `@use`.
 
-A partial and a file of the same name side by side (`_card.uxdsl` beside
-`card.uxdsl`), or a `.scss` file beside a `.uxdsl` file of the same name (in
-the middle of a rename), make the path without its extension ambiguous: Dart
-Sass's located `UXD_SASS: It's not clear which file to import` names both.
-Rename one.
+A `.scss` or `.sass` file beside a `.uxdsl` file of the same name (in the
+middle of a rename) is never loaded by the entry, whose path names `.uxdsl`. A
+partial and a file of the same name side by side (`_card.uxdsl` beside
+`card.uxdsl`) are one path to Dart Sass, which fails with a located
+`UXD_SASS: It's not clear which file to import` that names both. Rename one.
 
 ## Two files, two jobs
 

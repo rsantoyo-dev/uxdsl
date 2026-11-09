@@ -102,6 +102,12 @@ how to write a CSS Module in `.uxdsl`, and the migration guide's
 ([beta.9 — Sass inside compile()](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md#beta9--sass-inside-compile))
 what a regenerated entry changes in a project.
 
+`generate-entry` writes each path with its `.uxdsl` extension, so a `.scss`
+file of the same name beside it is never the one loaded, makes each namespace
+from the file's path relative to `--src`, lists the files by path unless
+`--first` names files to load first, and leaves out only its own output file
+and the `--exclude` names.
+
 ## From SCSS: rename and keep building
 
 UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid

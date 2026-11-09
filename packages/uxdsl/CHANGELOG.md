@@ -22,6 +22,55 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### `generate-entry`: `.uxdsl` paths, namespaces from `--src`, path order (MIG-B9-22)
+
+`generate-entry` names each file by its path with `.uxdsl` and takes its
+namespace from its path relative to `--src`; it lists the files by path
+unless `--first` names files to load first, and leaves out only its own
+output file. This replaces four statements of MIG-B9-14's subsection below:
+the path written without `.uxdsl`, the namespace made from the path relative
+to the entry, the order without `--first` ("unchanged"), and the exclusion of
+every file with the entry's file name, in any directory.
+
+#### CLI
+
+- **Each `@use` names its file with `.uxdsl`**: `@use './card.uxdsl' as card;`,
+  and `./variables.uxdsl` for `_variables.uxdsl`, which Dart Sass finds as the
+  partial. A `.scss` or `.sass` file beside a `.uxdsl` file of the same name is
+  never the file loaded, where the entry failed with
+  `UXD_SASS: It's not clear which file to import`. A partial beside a file of
+  the same name is still that error.
+- **The namespace is the file's path relative to `--src`**: from an entry in
+  `src/app/`, `src/components/card.uxdsl` is `components-card`, where it was
+  `f----components-card`. No file reads the namespaces of an entry's `@use`s,
+  so the CSS does not change.
+- **Without `--first`, the files are listed by path.** The files whose name
+  contained `theme-def`, `layout`, `app` or `variables` were listed first;
+  `--first` is now the only way to list files first.
+- **Only the output file is left out** (compared by its resolved path), with
+  the `--exclude` names. A file with the entry's file name in another
+  directory is listed, and `--first` can name it. A `--first` item that names
+  the entry itself exits 1 and says it is the entry; one that names a file
+  `--exclude` leaves out says that.
+
+### Visual changes
+
+- In a regenerated entry's CSS, the rules of a file whose name contains
+  `theme-def`, `layout`, `app` or `variables` move to that file's place in
+  path order, unless `--first` names it.
+- A file with the entry's file name in another directory is now listed, so
+  its rules are in a regenerated entry's CSS.
+
+### Breaking
+
+- **Without `--first`, the order is the path order.** A project that relied on
+  files named like `theme-def`, `layout`, `app` or `variables` being listed
+  first names them with `--first`, in the order it needs
+  (`--first theme-def,layout`).
+- **Another file with the entry's file name is listed**: in another directory
+  (another entry, for instance), it is no longer left out; `--exclude <name>`
+  leaves out every file with that name, as before.
+
 ### The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)
 
 `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` now expose what `compile()`

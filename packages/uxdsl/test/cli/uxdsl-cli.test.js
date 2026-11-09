@@ -259,7 +259,7 @@ test('MIG-B2-03: generated entries rely on the canonical plugin theme instead of
   await cli.generateEntry({ src: path.join(dir, 'src'), out: outFile });
   const generated = fs.readFileSync(outFile, 'utf8');
   assert.doesNotMatch(generated, /postcss-uxdsl\/theme\/default-/);
-  assert.match(generated, /^@use '\.\/components\/Button' as components-button;$/m);
+  assert.match(generated, /^@use '\.\/components\/Button\.uxdsl' as components-button;$/m);
 });
 
 // --- MIG-B3-01 (FEAT-004): includeTheme/breakpoints reach the plugin ---
@@ -1793,6 +1793,38 @@ test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecatio
   assert.equal(withSass.stderr, without.stderr);
 });
 
+// `uxdsl theme` loads the build config as build does, so it refuses what build
+// refuses, with the same message, and prints no theme on stdout.
+test("MIG-B9-22: uxdsl theme refuses an invalid sass config, a Dart Sass option outside sass, builds[i].sass and an invalid sourcemap, with the build's message and nothing on stdout", () => {
+  const configs = [
+    ...["sass: 'x'", 'sass: null', 'sass: { bogus: 1 }', 'sass: { silenceDeprecation: [] }', "sass: { quietDeps: 'yes' }", "sass: { silenceDeprecations: 'import' }", "silenceDeprecations: ['import']", 'quietDeps: true', "sourcemap: 'External'"]
+      .map((key) => `module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', ${key} };\n`),
+    "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.css', sass: { quietDeps: true } }] };\n",
+  ];
+  for (const config of configs) {
+    const dir = cliProject();
+    write(dir, 'uxdsl.config.cjs', config);
+    const theme = runCli(dir, 'theme');
+    const build = runCli(dir, 'build');
+    assert.equal(theme.status, 1, `${config}${theme.stdout}${theme.stderr}`);
+    assert.equal(theme.stdout, '', `${config}: nothing on stdout`);
+    assert.match(theme.stderr, /^\[uxdsl\] Error: Invalid configuration in uxdsl\.config\.cjs: /, config);
+    assert.equal(build.status, 1, config);
+    assert.equal(theme.stderr, build.stderr, `${config}: the build's message`);
+    if (config.includes('silenceDeprecation:')) assert.match(theme.stderr, / Did you mean "sass\.silenceDeprecations"\?$/m, 'with the suggestion');
+  }
+
+  // Negative control: a valid sass key prints the theme, the same JSON as no sass key.
+  const dir = cliProject();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
+  const without = runCli(dir, 'theme');
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', sass: { silenceDeprecations: ['import'], quietDeps: true }, sourcemap: 'inline' };\n");
+  const valid = runCli(dir, 'theme');
+  assert.equal(valid.status, 0, valid.stderr);
+  assert.equal(JSON.parse(valid.stdout).palette.primary.main, '#123456');
+  assert.equal(valid.stdout, without.stdout);
+});
+
 // A located warning is the same warning whichever entry's compile reports it
 // (a partial two entries load): it prints once per build. A warning without a
 // position is the warning of the entry whose compile reported it, Dart Sass's
@@ -1910,12 +1942,14 @@ test('MIG-B9-14: the sass type check fails for a shape that drops an optional me
 
 // --- generate-entry: one @use per .uxdsl file --------------------------------
 //
-// The entry loads every listed file with `@use '<url>' as <namespace>;`. The URL
-// is the file's path relative to the entry, without `.uxdsl` and without a
-// partial's underscore, with `%`, `#`, `?`, `'` and `\` percent-encoded. The
-// namespace is that path lowercased, every character outside [a-z0-9-] a `-`,
-// with `f-` before a leading digit or `-`, and `-2`, `-3`… for a name a file
-// earlier in path order already took. Each listed file is its own Sass module.
+// The entry loads every listed file with `@use '<url>' as <namespace>;`, in path
+// order unless --first names files to load first. The URL is the file's path
+// relative to the entry, with `.uxdsl` and without a partial's underscore, with
+// `%`, `#`, `?`, `'` and `\` percent-encoded. The namespace is the file's path
+// relative to --src, without `.uxdsl` and the underscore, lowercased, every
+// character outside [a-z0-9-] a `-`, with `f-` before a leading digit or `-`,
+// and `-2`, `-3`… for a name a file earlier in path order already took. Each
+// listed file is its own Sass module.
 
 const ENTRY_HEADER = [
   '/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */',
@@ -1935,16 +1969,20 @@ function entryProject(files) {
   return dir;
 }
 
-/** The order generate-entry has always listed files in, without --first: a file
- * whose name contains theme-def, layout, app or variables first, then by the path
- * relative to the entry (with `./`, the underscore and `.uxdsl`), localeCompare. */
+/** Path order: by the path relative to the entry (with `./`, the underscore and
+ * `.uxdsl`), localeCompare. */
+const pathOrder = (keys) => [...keys].sort((a, b) => a.localeCompare(b));
+
+/** The order generate-entry listed files in without --first before it listed
+ * them by path: a file whose name contains theme-def, layout, app or variables
+ * first, then path order. */
 function previousOrder(keys) {
   const priority = (key) => ['theme-def', 'layout', 'app', 'variables'].some((p) => path.posix.basename(key).includes(p));
   return [...keys].sort((a, b) => (priority(a) === priority(b) ? a.localeCompare(b) : priority(a) ? -1 : 1));
 }
 
 /** The URL of a path relative to the entry, for names with nothing to encode. */
-const urlOfKey = (key) => `${path.posix.dirname(key)}/${path.posix.basename(key, '.uxdsl').replace(/^_/, '')}`;
+const urlOfKey = (key) => `${path.posix.dirname(key)}/${path.posix.basename(key, '.uxdsl').replace(/^_/, '')}.uxdsl`;
 
 test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two files named alike, honours --first, and the entry compiles', () => {
   // Two files named card.uxdsl get two namespaces, and the entry compiles with both.
@@ -1954,7 +1992,7 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   assert.equal(generated.status, 0, generated.stderr);
   assert.equal(generated.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n');
   assert.equal(generated.stderr, '', 'no entry was replaced, so no warning');
-  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...ENTRY_HEADER, "@use './card' as card;", "@use './components/card' as components-card;", ''].join('\n'));
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...ENTRY_HEADER, "@use './card.uxdsl' as card;", "@use './components/card.uxdsl' as components-card;", ''].join('\n'));
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   assert.equal(built.stderr, '', 'an @use entry reports no deprecation');
@@ -1970,29 +2008,28 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   write(dir, 'src/2col.uxdsl', '.two { color: teal; }\n');
   write(dir, 'src/a#b.uxdsl', '.hash { color: olive; }\n');
   const lineOf = {
-    './card.uxdsl': "@use './card' as card;",
-    './components/card.uxdsl': "@use './components/card' as components-card-2;",
-    './components-card.uxdsl': "@use './components-card' as components-card;",
-    './_variables.uxdsl': "@use './variables' as variables;",
-    './2col.uxdsl': "@use './2col' as f-2col;",
-    './a#b.uxdsl': "@use './a%23b' as a-b;",
+    './card.uxdsl': "@use './card.uxdsl' as card;",
+    './components/card.uxdsl': "@use './components/card.uxdsl' as components-card-2;",
+    './components-card.uxdsl': "@use './components-card.uxdsl' as components-card;",
+    './_variables.uxdsl': "@use './variables.uxdsl' as variables;",
+    './2col.uxdsl': "@use './2col.uxdsl' as f-2col;",
+    './a#b.uxdsl': "@use './a%23b.uxdsl' as a-b;",
   };
   const regenerated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(regenerated.status, 0, regenerated.stderr);
   assert.match(regenerated.stdout, /with 6 @use rules\.\n$/);
   assert.equal(regenerated.stderr, '', 'the replaced entry already used @use');
   const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
-  assert.equal(lines[0], lineOf['./_variables.uxdsl'], 'a file named like variables comes first');
-  assert.deepEqual(lines, previousOrder(Object.keys(lineOf)).map((key) => lineOf[key]), 'the order generate-entry always wrote');
+  assert.deepEqual(lines, pathOrder(Object.keys(lineOf)).map((key) => lineOf[key]), 'path order');
   const rebuilt = runCli(dir, 'build');
   assert.equal(rebuilt.status, 0, rebuilt.stderr);
   assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.hash \{\n {2}color: olive;\n\}/, 'a#b.uxdsl loads through its encoded URL');
 
   // --first: those files first, in that order, then every other file in path
-  // order, with no name heuristic. The namespaces do not depend on --first.
+  // order. The namespaces do not depend on --first.
   const first = runCli(dir, 'generate-entry', '--src', 'src', '--first', 'components/card.uxdsl,card');
   assert.equal(first.status, 0, first.stderr);
-  const rest = Object.keys(lineOf).filter((key) => key !== './components/card.uxdsl' && key !== './card.uxdsl').sort((a, b) => a.localeCompare(b));
+  const rest = pathOrder(Object.keys(lineOf).filter((key) => key !== './components/card.uxdsl' && key !== './card.uxdsl'));
   assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [lineOf['./components/card.uxdsl'], lineOf['./card.uxdsl'], ...rest.map((key) => lineOf[key])]);
   assert.equal(runCli(dir, 'build').status, 0);
 
@@ -2000,8 +2037,8 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   const current = fs.readFileSync(entryPath, 'utf8');
   for (const [args, expected] of [
     [['--first', 'components/crad'], /^\[uxdsl\] Error: --first "components\/crad" matches no \.uxdsl file under src \(paths are relative to --src\)\. Did you mean "components\/card\.uxdsl"\?$/m],
-    [['--first', 'card', '--exclude', 'card.uxdsl'], /^\[uxdsl\] Error: --first "card" names a file the entry leaves out \(--exclude, or a file with the entry's file name, uxdsl-entry\.uxdsl\)\.$/m],
-    [['--first', './uxdsl-entry.uxdsl'], /^\[uxdsl\] Error: --first "\.\/uxdsl-entry\.uxdsl" names a file the entry leaves out/m],
+    [['--first', 'card', '--exclude', 'card.uxdsl'], /^\[uxdsl\] Error: --first "card" names a file --exclude leaves out\.$/m],
+    [['--first', './uxdsl-entry.uxdsl'], /^\[uxdsl\] Error: --first "\.\/uxdsl-entry\.uxdsl" names the entry itself \(src[\\/]uxdsl-entry\.uxdsl\), which never lists itself\.$/m],
     [['--first', 'card,./card.uxdsl'], /^\[uxdsl\] Error: --first lists "\.\/card\.uxdsl" twice\.$/m],
     [['--first', ' , '], /^\[uxdsl\] Error: --first needs at least one path \(comma-separated, relative to --src\)\.$/m],
     [['--first'], /^\[uxdsl\] Error: --first needs at least one path/m],
@@ -2011,24 +2048,76 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
     assert.match(refused.stderr, expected, args.join(' '));
     assert.equal(fs.readFileSync(entryPath, 'utf8'), current, `${args.join(' ')}: the entry is left as it was`);
   }
+});
 
-  // An entry above its files: the namespace is the path relative to the entry.
-  const nested = entryProject({ 'src/components/card.uxdsl': '.a { color: red; }\n' });
-  const out = runCli(nested, 'generate-entry', '--src', 'src', '--out', 'src/app/entry.uxdsl');
-  assert.equal(out.status, 0, out.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(path.join(nested, 'src', 'app', 'entry.uxdsl'), 'utf8')), ["@use '../components/card' as f----components-card;"]);
-  const nestedBuilt = runCli(nested, 'build', '--entry', 'src/app/entry.uxdsl', '--out', 'out/nested.css', '--no-include-theme');
-  assert.equal(nestedBuilt.status, 0, nestedBuilt.stderr);
-  assert.match(fs.readFileSync(path.join(nested, 'out', 'nested.css'), 'utf8'), /\.a \{\n {2}color: red;\n\}/);
+// The namespace comes from the path relative to --src, so it does not change
+// with the entry's place; the URL is relative to the entry.
+test("MIG-B9-22: each @use's namespace is the file's path relative to --src, wherever the entry is, and the URL stays relative to the entry", () => {
+  const dir = entryProject({ 'src/components/card.uxdsl': '.a { color: red; }\n', 'src/theme/_tokens.uxdsl': '.t { color: blue; }\n', 'src/2col.uxdsl': '.c { color: green; }\n' });
+  const entryPath = path.join(dir, 'src', 'app', 'entry.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/app/entry.uxdsl');
+  assert.equal(generated.status, 0, generated.stderr);
+  const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
+  assert.deepEqual(lines, [
+    "@use '../2col.uxdsl' as f-2col;",
+    "@use '../components/card.uxdsl' as components-card;",
+    "@use '../theme/tokens.uxdsl' as theme-tokens;",
+  ]);
+  // Negative control: the name made from the path relative to the entry is not written.
+  assert.equal(lines.some((line) => / as f----/.test(line)), false, lines.join('\n'));
 
-  // Without --first, a mixed set keeps the order generate-entry always wrote:
-  // the extension stays in the sort key (./card-x.uxdsl before ./card.uxdsl), and
-  // a name containing app anywhere is a priority file, as it always was.
+  // The CSS is the same under that name: no file reads an entry's namespaces.
+  const build = () => runCli(dir, 'build', '--entry', 'src/app/entry.uxdsl', '--out', 'out/nested.css', '--no-include-theme');
+  const built = build();
+  assert.equal(built.status, 0, built.stderr);
+  const css = fs.readFileSync(path.join(dir, 'out', 'nested.css'), 'utf8');
+  assert.match(css, /\.a \{\n {2}color: red;\n\}/);
+  assert.match(css, /\.t \{\n {2}color: blue;\n\}/);
+  fs.writeFileSync(entryPath, fs.readFileSync(entryPath, 'utf8').replace(' as components-card;', ' as f----components-card;').replace(' as theme-tokens;', ' as f----theme-tokens;'));
+  const renamed = build();
+  assert.equal(renamed.status, 0, renamed.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'out', 'nested.css'), 'utf8'), css);
+});
+
+// The URL names the file with its extension, so Dart Sass never has to choose
+// between a .uxdsl file and a .scss or .sass file of the same name.
+test('MIG-B9-22: each @use names its file with .uxdsl, so a .scss file beside a .uxdsl file of the same name builds, and a partial is named without its underscore', () => {
+  const dir = entryProject({ 'src/zeta.uxdsl': '.zeta { color: teal; }\n', 'src/zeta.scss': '.zeta-scss { color: maroon; }\n', 'src/_variables.uxdsl': '.v { color: red; }\n' });
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './variables.uxdsl' as variables;", "@use './zeta.uxdsl' as zeta;"]);
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  const css = fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+  assert.match(css, /\.zeta \{\n {2}color: teal;\n\}/);
+  assert.match(css, /\.v \{\n {2}color: red;\n\}/);
+  assert.doesNotMatch(css, /zeta-scss/, 'the .scss file is not loaded');
+
+  // Negative control: the same line without the extension is ambiguous.
+  fs.writeFileSync(entryPath, fs.readFileSync(entryPath, 'utf8').replace("@use './zeta.uxdsl'", "@use './zeta'"));
+  const ambiguous = runCli(dir, 'build');
+  assert.equal(ambiguous.status, 1, ambiguous.stderr);
+  assert.match(ambiguous.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:\d+:1: UXD_SASS: It's not clear which file to import\./m);
+});
+
+// Without --first, the order is the path order alone: a file's name never moves
+// it first.
+test('MIG-B9-22: without --first, generate-entry lists files by path only, and --first still lists the files it names first', () => {
+  // The extension stays in the sort key (./card-x.uxdsl before ./card.uxdsl), and
+  // names that contain theme-def, layout, app or variables are listed by path too.
   const mixedFiles = ['src/_variables.uxdsl', 'src/layout.uxdsl', 'src/theme-def.uxdsl', 'src/applause.uxdsl', 'src/card.uxdsl', 'src/card-x.uxdsl', 'src/_card-y.uxdsl', 'src/components/Button.uxdsl', 'src/components/button-group.uxdsl', 'src/2col.uxdsl', 'src/zeta/app.uxdsl'];
-  const mixed = entryProject(Object.fromEntries(mixedFiles.map((file) => [file, '/* a file */\n'])));
-  assert.equal(runCli(mixed, 'generate-entry', '--src', 'src').status, 0);
-  const urls = useLines(fs.readFileSync(path.join(mixed, 'src', 'uxdsl-entry.uxdsl'), 'utf8')).map((line) => line.match(/^@use '([^']+)' as /)[1]);
-  assert.deepEqual(urls, previousOrder(mixedFiles.map((file) => `./${path.posix.relative('src', file)}`)).map(urlOfKey));
+  const keys = mixedFiles.map((file) => `./${path.posix.relative('src', file)}`);
+  const dir = entryProject(Object.fromEntries(mixedFiles.map((file) => [file, '/* a file */\n'])));
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const urls = () => useLines(fs.readFileSync(entryPath, 'utf8')).map((line) => line.match(/^@use '([^']+)' as /)[1]);
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
+  assert.deepEqual(urls(), pathOrder(keys).map(urlOfKey));
+  // Negative control: the order the file names gave is another order.
+  assert.notDeepEqual(previousOrder(keys), pathOrder(keys));
+
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src', '--first', 'theme-def,layout').status, 0);
+  assert.deepEqual(urls(), ['./theme-def.uxdsl', './layout.uxdsl', ...pathOrder(keys.filter((key) => key !== './theme-def.uxdsl' && key !== './layout.uxdsl')).map(urlOfKey)]);
 });
 
 test('MIG-B9-14: two files named alike through @use without `as` collide in Sass (negative control)', () => {
@@ -2049,39 +2138,43 @@ test('MIG-B9-14: generate-entry percent-encodes a backslash in a file name, and 
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './a%5Cb' as a-b;"]);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './a%5Cb.uxdsl' as a-b;"]);
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.slash \{\n {2}color: olive;\n\}/);
 
-  fs.writeFileSync(entryPath, "@use './a\\b' as a-b;\n");
+  fs.writeFileSync(entryPath, "@use './a\\b.uxdsl' as a-b;\n");
   const raw = runCli(dir, 'build');
   assert.equal(raw.status, 1, raw.stderr);
   assert.match(raw.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import\.$/m);
 });
 
-// The entry is never listed, and neither is any other file with its file name:
-// the rule compares file names, as --exclude does.
-test("MIG-B9-14: generate-entry leaves out every file with the entry's file name, in any directory under --src, and a --first item naming one says why", () => {
-  const files = { 'src/card.uxdsl': '.card { color: red; }\n', 'src/pages/main.uxdsl': '.main { color: blue; }\n' };
-  const dir = entryProject(files);
+// The entry never lists itself, compared by resolved path; a file elsewhere with
+// its file name is a file like any other.
+test('MIG-B9-22: generate-entry leaves out only its output file: a file with its file name in another directory is listed and can be named in --first, and a --first item naming the entry says it is the entry', () => {
+  const dir = entryProject({ 'src/card.uxdsl': '.card { color: red; }\n', 'src/pages/main.uxdsl': '.main { color: blue; }\n' });
   const entryPath = path.join(dir, 'src', 'main.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.match(generated.stdout, /with 1 @use rule\.\n$/);
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './card' as card;"], 'src/pages/main.uxdsl has the file name of the entry src/main.uxdsl');
+  assert.match(generated.stdout, /with 2 @use rules\.\n$/);
+  const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
+  assert.deepEqual(lines, ["@use './card.uxdsl' as card;", "@use './pages/main.uxdsl' as pages-main;"]);
+  // Negative control: the entry, which the scan finds under --src, is not listed.
+  assert.equal(lines.some((line) => line.startsWith("@use './main.uxdsl'")), false, lines.join('\n'));
+
+  const ordered = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'pages/main');
+  assert.equal(ordered.status, 0, ordered.stderr);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './pages/main.uxdsl' as pages-main;", "@use './card.uxdsl' as card;"]);
+  const built = runCli(dir, 'build', '--entry', 'src/main.uxdsl', '--out', 'out/main.css', '--no-include-theme');
+  assert.equal(built.status, 0, built.stderr);
+  const css = fs.readFileSync(path.join(dir, 'out', 'main.css'), 'utf8');
+  assert.ok(css.indexOf('.main {') >= 0 && css.indexOf('.main {') < css.indexOf('.card {'), css);
 
   const current = fs.readFileSync(entryPath, 'utf8');
-  const refused = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'pages/main');
+  const refused = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'main');
   assert.equal(refused.status, 1, `${refused.stdout}${refused.stderr}`);
-  assert.match(refused.stderr, /^\[uxdsl\] Error: --first "pages\/main" names a file the entry leaves out \(--exclude, or a file with the entry's file name, main\.uxdsl\)\.$/m);
+  assert.match(refused.stderr, /^\[uxdsl\] Error: --first "main" names the entry itself \(src[\\/]main\.uxdsl\), which never lists itself\.$/m);
   assert.equal(fs.readFileSync(entryPath, 'utf8'), current, 'the entry is left as it was');
-
-  // The same files under an entry with another name: that file is listed (negative control).
-  const control = entryProject(files);
-  const listed = runCli(control, 'generate-entry', '--src', 'src', '--out', 'src/entry.uxdsl', '--first', 'pages/main');
-  assert.equal(listed.status, 0, listed.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(path.join(control, 'src', 'entry.uxdsl'), 'utf8')), ["@use './pages/main' as pages-main;", "@use './card' as card;"]);
 });
 
 // Each case: two files, what a generated @use entry gives (the UXD_SASS head
@@ -2161,8 +2254,9 @@ test('MIG-B9-14: under a generated @use entry each file is its own module: a var
   }
 
   // A module another file configures with `with (...)` must be loaded there
-  // first: listed first for its name, it is already loaded unconfigured, and
-  // --first naming the configuring file restores the order.
+  // first: listed first in path order (./_variables.uxdsl before
+  // ./brand.uxdsl), it is already loaded unconfigured, and --first naming the
+  // configuring file restores the order.
   const configured = entryProject({
     'src/_variables.uxdsl': '$brand: red !default;\n.v { color: $brand; }\n',
     'src/brand.uxdsl': "@use './variables' with ($brand: blue);\n.brand { color: variables.$brand; }\n",
@@ -2202,7 +2296,7 @@ test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's
   });
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './helpers' as helpers;", "@use './pad' as pad;"]);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './helpers.uxdsl' as helpers;", "@use './pad.uxdsl' as pad;"]);
   const css = () => fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
 
   const bare = runCli(dir, 'build');
@@ -2255,7 +2349,7 @@ test('MIG-B9-14: generate-entry warns once when it replaces an entry that loaded
   for (const fragment of ['UXD_SASS', '@function', '!default', "@use './variables' as *;", 'namespace', 'migration guide']) {
     assert.ok(lines[0].includes(fragment), `the warning names ${fragment}: ${lines[0]}`);
   }
-  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './card' as card;"]);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './card.uxdsl' as card;"]);
 
   // No warning on a second run: the entry it replaces already uses @use.
   const again = runCli(dir, 'generate-entry', '--src', 'src');

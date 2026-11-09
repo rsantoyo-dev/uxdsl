@@ -3,5 +3,5 @@
 /* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */
 
 /* --- Application & Component Imports --- */
-@use './button' as button;
-@use './card' as card;
+@use './button.uxdsl' as button;
+@use './card.uxdsl' as card;
