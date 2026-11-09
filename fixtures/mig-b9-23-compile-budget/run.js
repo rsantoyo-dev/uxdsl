@@ -7,14 +7,17 @@
 // - The corpus runner's two verdicts (fixtures/sass-corpus/run.js): a compile()
 //   250 ms slower per call exits 1 over the budget, and one that changes a byte
 //   exits 1 with `byte-identical: false`.
-// - compile()'s median moves at most 15 ms when the directory that holds the
-//   corpus root also holds 129,944 empty entries. The control, a compile() that
-//   lists that directory on each call, must move more.
 // - compile() equals a base build's css, map, dependencies and warnings in the
 //   three sourceMap modes, with the entry as written and, where the filesystem
 //   folds case, miscased and through a symlinked ancestor written in another
 //   case. The control, a compile() that changes the case of one dependency,
 //   must differ.
+// - compile()'s median moves at most 15 ms when the directory that holds the
+//   corpus root also holds 129,944 empty entries. The control, a compile() that
+//   lists that directory on each call, must move more. It runs last, as long
+//   after the entries are written as the run allows, and its default of 61
+//   rounds keeps a run-to-run spread of tens of milliseconds well inside the
+//   15 ms.
 //
 // Everything it makes is under one directory of the temporary directory,
 // removed at the end, the 129,944 entries included. Network: three installs
@@ -32,6 +35,8 @@ const RUNNER = path.join(REPO, 'fixtures/sass-corpus/run.js');
 const ENTRIES = 129944;
 /** How far compile()'s median may move between the two copies. */
 const MOVE_MS = 15;
+/** Measured rounds of the location check by default. */
+const ROUNDS = 61;
 const SLOW_MS = 250;
 const WARMUPS = 2;
 const FOLDS_CASE = process.platform === 'darwin' || process.platform === 'win32';
@@ -46,7 +51,7 @@ function usage() {
 
   --base <dir>    a build of the base to compare against: a uxdsl package directory with dist/
   --uxdsl <dir>   the uxdsl package to test; default: the repository build, packages/uxdsl
-  --rounds <n>    measured rounds of the location check, after ${WARMUPS} warm-up rounds; at least 9, default 11
+  --rounds <n>    measured rounds of the location check, after ${WARMUPS} warm-up rounds; at least 9, default ${ROUNDS}
   --help          this text
 
 Exits 0 when every check and every control prints ok, 1 otherwise, 2 on a usage error.
@@ -54,7 +59,7 @@ Needs network access to install bootstrap@5.3.8.`;
 }
 
 function parseArgs(argv) {
-  const args = { base: null, uxdsl: path.join(REPO, 'packages/uxdsl'), rounds: 11 };
+  const args = { base: null, uxdsl: path.join(REPO, 'packages/uxdsl'), rounds: ROUNDS };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--help' || arg === '-h') { console.log(usage()); process.exit(0); }
@@ -132,18 +137,20 @@ async function medians(compile, roots, rounds) {
 const ms = (value) => `${value.toFixed(1)} ms`;
 const signed = (value) => `${value >= 0 ? '+' : ''}${value.toFixed(1)} ms`;
 
-async function t3(roots, compile, rounds) {
+async function t3(roots, compile, rounds, written) {
   const entries = (where) => fs.readdirSync(path.dirname(roots[where])).length;
-  console.log(`  the small directory holds ${entries('small')} entry, the large one ${entries('large')}; ${WARMUPS} warm-up rounds, then ${rounds}; load ${load()}`);
-  const real = await medians(compile, roots, rounds);
-  report(Math.abs(real.move) <= MOVE_MS, TITLES.t3, `small ${ms(real.small)}, large ${ms(real.large)}, ${signed(real.move)} (at most ${MOVE_MS} ms either way)`);
-  // The control lists the directory that holds the compiled copy's corpus root on each call.
+  console.log(`  the small directory holds ${entries('small')} entry, the large one ${entries('large')}; ${WARMUPS} warm-up rounds, then ${rounds}; ${Math.round((Date.now() - written) / 1000)} s after the entries were written; load ${load()}`);
+  // The control lists the directory that holds the compiled copy's corpus root on each call. It
+  // runs first, so the check itself starts later still after the entries were written.
   const listing = (input, config) => {
     fs.readdirSync(path.dirname(path.dirname(path.dirname(input.entry))));
     return compile(input, config);
   };
   const planted = await medians(listing, roots, rounds);
   report(Math.abs(planted.move) > MOVE_MS, `${TITLES.t3} (planted control: a compile() that lists the directory holding the corpus root on each call fails it)`, `small ${ms(planted.small)}, large ${ms(planted.large)}, ${signed(planted.move)}`);
+  console.log(`  ${Math.round((Date.now() - written) / 1000)} s after the entries were written; load ${load()}`);
+  const real = await medians(compile, roots, rounds);
+  report(Math.abs(real.move) <= MOVE_MS, TITLES.t3, `small ${ms(real.small)}, large ${ms(real.large)}, ${signed(real.move)} (at most ${MOVE_MS} ms either way)`);
   console.log(`  load ${load()}`);
 }
 
@@ -197,6 +204,7 @@ async function main() {
     const large = path.join(work, 'large');
     fs.mkdirSync(large);
     for (let i = 0; i < ENTRIES; i++) fs.closeSync(fs.openSync(path.join(large, `entry-${String(i).padStart(6, '0')}`), 'w'));
+    const written = Date.now();
     const roots = { small: path.join(work, 'small/corpus-root'), large: path.join(large, 'corpus-root') };
     fs.mkdirSync(roots.small, { recursive: true });
     installCorpus(roots.small);
@@ -205,10 +213,10 @@ async function main() {
 
     console.log('\nThe corpus runner\'s verdicts can fail:');
     t2(work, args.uxdsl);
-    console.log('\nWherever the project is:');
-    await t3(roots, candidate.compile, args.rounds);
     console.log('\nThe output is the base build\'s:');
     await t4(work, roots.small, base, candidate);
+    console.log('\nWherever the project is:');
+    await t3(roots, candidate.compile, args.rounds, written);
   } finally {
     fs.rmSync(work, { recursive: true, force: true });
   }
