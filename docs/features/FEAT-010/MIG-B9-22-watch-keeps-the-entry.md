@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (plan §5.2, accepted as a UX improvement that changes no syntax) |
-| Status | In review (PR #76) |
+| Status | Merged (PR #76) |
 | Size | M (written as S; re-sized by the scout after the decisions of 2026-11-08, §14) |
 | Depends on | MIG-B9-14 (and MIG-B9-20 if merged first: the generated theme file) |
 | Blocks | MIG-B9-40 |
