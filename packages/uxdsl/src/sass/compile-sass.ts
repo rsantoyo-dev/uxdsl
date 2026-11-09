@@ -32,7 +32,12 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   answers the URL, and one beside a `.scss` of the same name is not
 //   reported as ambiguous. Canonical paths are normalized, have the on-disk
 //   case on case-insensitive systems and keep symlinks, as Dart Sass's
-//   filesystem importer does.
+//   filesystem importer does: each component's case is read from its real
+//   path, and a directory is listed only to spell a symlink's own name. Three
+//   names keep a spelling that differs from Dart Sass's: a name stored in NFD
+//   and written in NFC keeps its written name, a symlinked directory written
+//   in another case keeps the link's name as its directory lists it, and a
+//   name in a directory that cannot be listed keeps its written case.
 // - Files are read as Dart Sass reads them (UTF-8; a BOM is a character; text
 //   that is not valid UTF-8 is Sass's `Invalid UTF-8.` at the first bad
 //   character). A `.uxdsl` file goes through `protect()`; `.scss`, `.sass` and
@@ -358,10 +363,11 @@ function readLikeSass(file: string): string {
 
 // --- resolution ---------------------------------------------------------------------
 
-/** Stat and on-disk case, cached for one call. */
+/** Stat, on-disk case and whether a directory can be listed, cached for one call. */
 function filesystem(): Files {
   const kinds = new Map<string, Kind>();
   const cases = new Map<string, string>();
+  const listable = new Map<string, boolean>();
   const kind = (file: string): Kind => {
     let found = kinds.get(file);
     if (found === undefined) {
@@ -375,33 +381,82 @@ function filesystem(): Files {
     }
     return found;
   };
-  // Each component spelled as the directory lists it, symlink names kept: what
-  // Dart Sass's filesystem importer canonicalizes to on darwin and win32.
-  const realCase = (file: string): string => {
+  const canList = (dir: string): boolean => {
+    let found = listable.get(dir);
+    if (found === undefined) {
+      try {
+        fs.accessSync(dir, fs.constants.R_OK);
+        found = true;
+      } catch {
+        found = false;
+      }
+      listable.set(dir, found);
+    }
+    return found;
+  };
+  const isSymlink = (file: string): boolean => {
+    try {
+      return fs.lstatSync(file).isSymbolicLink();
+    } catch {
+      return false;
+    }
+  };
+  // `name` as `dir` lists it: the one entry equal to it under toLowerCase(), else the name as written.
+  const listedName = (dir: string, name: string): string => {
+    try {
+      const lower = name.toLowerCase();
+      const matches = fs.readdirSync(dir).filter((entry) => entry.toLowerCase() === lower);
+      return matches.length === 1 ? matches[0] : name;
+    } catch {
+      return name;
+    }
+  };
+  // Each component in its on-disk case, symlinks kept, as Dart Sass's filesystem
+  // importer canonicalizes on darwin and win32; a directory is listed only to
+  // spell a symlink's own name.
+  // - A component that is not a symlink takes its name from its real path:
+  //   `real` when the caller has it, else fs.realpathSync.native. Its directory
+  //   is given the real path's directory, which is that directory's own real
+  //   path, since the component is not a symlink. The real path's name is kept
+  //   where it equals the name as written under toLowerCase() and its directory
+  //   can be listed; elsewhere (a name stored in NFD and written in NFC, a
+  //   directory that cannot be listed, a path with no real path) the name stays
+  //   as written.
+  // - A symlink keeps its own name, spelled as its directory lists it, and that
+  //   directory is spelled from its own real path, never from the link's target.
+  const spell = (file: string, real?: string): string => {
     if (!FOLDS_CASE) return file;
     const cached = cases.get(file);
     if (cached !== undefined) return cached;
     const dir = path.dirname(file);
+    const base = path.basename(file);
     let result: string;
     if (dir === file) {
       result = process.platform === 'win32' ? file.charAt(0).toUpperCase() + file.slice(1) : file;
+    } else if (isSymlink(file)) {
+      const realDir = spell(dir);
+      result = path.join(realDir, listedName(realDir, base));
     } else {
-      const realDir = realCase(dir);
-      const base = path.basename(file);
-      let name = base;
-      try {
-        const lower = base.toLowerCase();
-        const matches = fs.readdirSync(realDir).filter((entry) => entry.toLowerCase() === lower);
-        if (matches.length === 1) name = matches[0];
-      } catch {
-        // An unreadable directory keeps the spelling as written.
+      let resolved = real;
+      if (resolved === undefined) {
+        try {
+          resolved = fs.realpathSync.native(file);
+        } catch {
+          // No real path: the name stays as written.
+        }
       }
-      result = path.join(realDir, name);
+      if (resolved === undefined) {
+        result = path.join(spell(dir), base);
+      } else {
+        const realDir = spell(dir, path.dirname(resolved));
+        const onDisk = path.basename(resolved);
+        result = path.join(realDir, onDisk !== base && onDisk.toLowerCase() === base.toLowerCase() && canList(realDir) ? onDisk : base);
+      }
     }
     cases.set(file, result);
     return result;
   };
-  return { kind, realCase };
+  return { kind, realCase: (file) => spell(file) };
 }
 
 const filePath = (url: string | URL): string | null => {

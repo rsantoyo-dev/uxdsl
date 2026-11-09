@@ -91,7 +91,7 @@ async function main() {
   check('init creates uxdsl.config.cjs', fs.existsSync(path.join(project, 'uxdsl.config.cjs')));
   check('init creates src/uxdsl-entry.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')));
   check('init creates src/styles.uxdsl, the file the user edits', fs.existsSync(path.join(project, 'src', 'styles.uxdsl')));
-  check('the generated entry loads src/styles.uxdsl with @use', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && /@use '\.\/styles' as styles;/.test(fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')));
+  check('the generated entry loads src/styles.uxdsl with @use', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && /@use '\.\/styles\.uxdsl' as styles;/.test(fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')));
   check('init prints exactly one import path', init1.output.split('\n').filter((l) => /^\s*import '/.test(l)).length === 1);
   check('init does NOT create postcss.config.js (no Next.js marker present)', !fs.existsSync(path.join(project, 'postcss.config.js')));
   check('init output documents the generated CSS import and watch command', /src\/uxdsl\.css/.test(init1.output) && /uxdsl:watch/.test(init1.output));

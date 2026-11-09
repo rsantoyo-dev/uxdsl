@@ -240,7 +240,7 @@ test('phase 2 (3): init scaffolds src/styles.uxdsl — the file to edit — impo
     const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
     assert.match(styles, /write here, not there/, `[${branch}] styles.uxdsl says what it is for`);
     const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
-    assert.match(entry, /^@use '\.\/styles' as styles;$/m, `[${branch}] the generated entry loads it with @use`);
+    assert.match(entry, /^@use '\.\/styles\.uxdsl' as styles;$/m, `[${branch}] the generated entry loads it with @use`);
     const importLines = r.stdout.split('\n').map((l) => l.trim()).filter((l) => /^import '/.test(l));
     assert.deepEqual(importLines, ["import './src/uxdsl.css';"], `[${branch}] exactly one import path:\n${r.stdout}`);
     assert.match(r.stdout, /Edit src\/styles\.uxdsl/, `[${branch}] the next steps point at the file to edit`);
@@ -348,7 +348,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.equal(r.stderr, '', `[${branch}] there was no entry to replace, so no warning`);
     const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
-    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './styles' as styles;"], `[${branch}] the entry:\n${entry}`);
+    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './styles.uxdsl' as styles;"], `[${branch}] the entry:\n${entry}`);
     const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
     assert.match(styles, /src\/uxdsl-entry\.uxdsl loads this file with @use/, `[${branch}] styles.uxdsl says how it is loaded`);
     assert.match(styles, /`uxdsl generate-entry`/, `[${branch}] and what regenerates the entry`);

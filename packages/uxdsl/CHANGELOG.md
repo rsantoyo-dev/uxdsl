@@ -22,6 +22,142 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### `build --watch` keeps a generated entry current; `generate-entry` records its invocation, writes `.uxdsl` paths and namespaces from `--src`, in path order (MIG-B9-22)
+
+`generate-entry` records its invocation in the entry's header and, with no
+arguments, runs again what each entry of the build config records;
+`build --watch` runs it again when a `.uxdsl` file is added or removed under
+its `--src`, so a new component needs no command. It names
+each file by its path with `.uxdsl` and takes its namespace from its path
+relative to `--src`; it lists the files by path unless `--first` names files
+to load first, and leaves out only its own output file. This replaces four
+statements of MIG-B9-14's subsection below: the path written without `.uxdsl`,
+the namespace made from the path relative to the entry, the order without
+`--first` ("unchanged"), and the exclusion of every file with the entry's file
+name, in any directory.
+
+#### CLI
+
+- **The entry records its invocation.** The header's third line is the run's
+  command, `/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */`:
+  `--src` and `--out` always, relative to the working directory, then
+  `--first` (each item relative to `--src`, with `.uxdsl`) and `--exclude`
+  when given; a value with whitespace, a `"`, a `\`, `*/` or `#{` is a JSON
+  string, and one starting with `-` follows an `=`. The fourth line, which
+  said to run `generate-entry` again with the same options, now says that
+  `build --watch` and `generate-entry` with no arguments regenerate the entry
+  from that line.
+- **`generate-entry` with no arguments runs the recorded invocation again**
+  for each entry of the build config whose header records one (each entry of
+  `builds`, in order), its paths resolved against the config's directory, and
+  prints `[uxdsl] <entry> records: <invocation>`. An entry that records none
+  is left as it is. When no entry records one, the file the defaults write
+  (`src/uxdsl-entry.uxdsl`) is written again from the invocation its own
+  header records, so its options are kept, and the defaults apply, as before,
+  when it records none. A recorded line that does not parse, that writes
+  another file, or whose `--first` no longer matches exits 1, naming the
+  entry, and writes nothing, whichever entry it is, before any entry is
+  written.
+- **`build --watch` regenerates a generated entry.** For each entry of the
+  config whose header records its invocation, the session also watches every
+  `.uxdsl` file under the recorded `--src`, and the `add` or `unlink` of one
+  (a rename is both) runs the invocation again before the build:
+  `[uxdsl] regenerated <entry> (<n> files)` when the content changed, then
+  one build, since the entry's own write is not reported as a change. An
+  entry that starts recording its invocation while the session runs has its
+  `--src` watched from the build of that change. A `change` never
+  regenerates, nor does an event on an entry; an entry that records no
+  invocation is never written. A regeneration that cannot be done
+  prints `[uxdsl] Error: regenerating <entry>: …`, writes nothing, and the
+  session keeps watching. Before, an added file built the old entry, and a
+  removed or renamed one failed the build with
+  `UXD_SASS: Can't find stylesheet to import.`
+- **The entry is written only when its content changes**, atomically, so a
+  second identical run keeps its bytes and modification time and prints
+  `[uxdsl] Entry file at <entry> is up to date with <n> @use rules (…)`.
+- **Each `@use` names its file with `.uxdsl`**: `@use './card.uxdsl' as card;`,
+  and `./variables.uxdsl` for `_variables.uxdsl`, which Dart Sass finds as the
+  partial. A `.scss` or `.sass` file beside a `.uxdsl` file of the same name is
+  never the file loaded, where the entry failed with
+  `UXD_SASS: It's not clear which file to import`. A partial beside a file of
+  the same name is still that error.
+- **The namespace is the file's path relative to `--src`**: from an entry in
+  `src/app/`, `src/components/card.uxdsl` is `components-card`, where it was
+  `f----components-card`. No file reads the namespaces of an entry's `@use`s,
+  so the CSS does not change.
+- **Without `--first`, the files are listed by path.** The files whose name
+  contained `theme-def`, `layout`, `app` or `variables` were listed first;
+  `--first` is now the only way to list files first.
+- **Only the output file is left out** (compared by its resolved path), with
+  the `--exclude` names. A file with the entry's file name in another
+  directory is listed, and `--first` can name it. A `--first` item that names
+  the entry itself exits 1 and says it is the entry; one that names a file
+  `--exclude` leaves out says that.
+
+### Visual changes
+
+- A regenerated entry's CSS starts with the header's new comment lines: the
+  recorded invocation, then the reworded fourth line.
+- In a regenerated entry's CSS, the rules of a file whose name contains
+  `theme-def`, `layout`, `app` or `variables` move to that file's place in
+  path order, unless `--first` names it.
+- A file with the entry's file name in another directory is now listed, so
+  its rules are in a regenerated entry's CSS.
+
+### Breaking
+
+- **Without `--first`, the order is the path order.** A project that relied on
+  files named like `theme-def`, `layout`, `app` or `variables` being listed
+  first names them with `--first`, in the order it needs
+  (`--first theme-def,layout`).
+- **Another file with the entry's file name is listed**: in another directory
+  (another entry, for instance), it is no longer left out; `--exclude <name>`
+  leaves out every file with that name, as before.
+- **`generate-entry` with no arguments runs the build entry's recorded
+  invocation** instead of the defaults, once the entry records one, and reads
+  the build config to find it: a build config or theme file that fails to
+  load fails the command.
+
+### compile() on macOS and Windows no longer lists the directories above the project (MIG-B9-23)
+
+Where the filesystem folds case (macOS, Windows), the Sass stage spells each
+file it loads in its on-disk case. It now reads that case from the file's real
+path (`fs.realpathSync.native`) and lists a directory only to spell a
+symlink's own name. It used to list every directory above every loaded file,
+in each call, so `compile()` slowed down with the number of entries in those
+directories: on one machine, Bootstrap 5.3.8 renamed to `.uxdsl` took about
+140 ms longer per `compile()` when the directory holding the project also held
+129,944 empty entries. `fixtures/mig-b9-23-compile-budget` checks that the two
+locations now differ by at most 15 ms.
+
+Every spelling stays as it was, in `compile()`'s `dependencies` and in the
+positions it reports:
+
+- a symlink keeps its own name and is not resolved; written in another case,
+  it is spelled as its directory lists it, where Dart Sass keeps the case
+  written;
+- a name stored in NFD and written in NFC keeps the written name, where Dart
+  Sass gives the NFD name;
+- a name in a directory that cannot be listed keeps the case it is written in,
+  where Dart Sass gives the case on disk;
+- nothing is kept from one call to the next, so a file renamed in case only is
+  spelled as the disk now spells it.
+
+`compile()`'s `css`, `map`, `dependencies` and warnings are unchanged.
+
+`fixtures/sass-corpus/run.js` still asserts that `compile()`'s median time on
+the corpus is at most 1.5 times plain Dart Sass's (P10), measured by the method
+the owner's decision D8 of 2026-11-04 set, in place of three runs each:
+
+- Dart Sass and `compile()` run alternately in one process, Dart Sass first,
+  four times each, and each one's first, cold run is left out of its median.
+- The corpus root is made in a fresh directory that holds nothing else, under
+  the fixture's git-ignored `.work/`, outside the temporary directory.
+
+### Visual changes
+
+None: compiled output is byte-identical.
+
 ### The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)
 
 `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` now expose what `compile()`

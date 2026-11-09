@@ -87,7 +87,9 @@ Commands:
                     edit), the generated src/uxdsl-entry.uxdsl that loads it and,
                     in a Next.js project, postcss.config.js. Never overwrites a file.
   generate-entry    Rewrite the entry file: one @use per .uxdsl file found under a
-                    directory. Run it after adding or removing files.
+                    directory, the options recorded in its header. With no
+                    option, run again what the build's entry records, as
+                    build --watch does when a .uxdsl file is added or removed.
   build             Compile the entry (or every entry in "builds") to CSS, once;
                     --watch keeps rebuilding as files change.
   theme             Print the effective theme as JSON: the same discovery and
@@ -120,22 +122,30 @@ Options:
 `,
   'generate-entry': `Usage: uxdsl generate-entry [--src <dir>] [--out <file>] [--first <a,b>] [--exclude <a,b>]
 
-Rewrites the entry file: one "@use '<path>' as <namespace>;" per .uxdsl file
-found under --src, each namespace unique. Each file is its own Sass module, so
-a file that reads another file's variables, mixins or functions loads it with
-its own @use, "as *" or with each member written through the namespace: under
-a namespaced @use, a function called by its bare name stays in the CSS as
-written, with no error.
+Rewrites the entry file: one "@use '<path>.uxdsl' as <namespace>;" per .uxdsl
+file found under --src, each namespace unique and made from the file's path
+relative to --src. Each file is its own Sass module, so a file that reads
+another file's variables, mixins or functions loads it with its own @use,
+"as *" or with each member written through the namespace: under a namespaced
+@use, a function called by its bare name stays in the CSS as written, with no
+error.
+
+The entry's header records the invocation that wrote it, its paths relative
+to the working directory. With no option, generate-entry runs again the
+invocation each entry of the build config records (paths relative to the
+config's directory); when none records one, the invocation the default
+--out records, or the defaults below when it records none. build --watch
+runs it again when a .uxdsl file under --src is added or removed. The file is
+written only when its content changes.
 
 Options:
   --src             Source directory to scan (default: ./src, or the current
                     directory when it has no src/)
   --out, -o         Output file path (default: uxdsl-entry.uxdsl in the --src
-                    directory). No file with its file name is listed.
+                    directory). The entry never lists itself.
   --first           Comma-separated files to load first, in that order (paths
                     relative to --src; ./ and .uxdsl optional). Without it,
-                    files named like theme-def, layout, app or variables come
-                    first.
+                    the files are listed by path.
   --exclude         Comma-separated list of file names to leave out
 `,
   build: `Usage: uxdsl build [options]
@@ -150,7 +160,10 @@ Options:
   --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.
   --out, -o         Output CSS file path (with --entry).
   --watch, -w       Rebuild on file changes. Survives a broken edit: the last
-                    good CSS stays on disk until the next valid save.
+                    good CSS stays on disk until the next valid save. An entry
+                    that records the generate-entry run that wrote it is
+                    regenerated when a .uxdsl file that run scans is added or
+                    removed.
   --include-theme, --no-include-theme
                     Emit (or skip) the global :root token definitions.
                     Default true. Pass --no-include-theme for a component or
@@ -1563,6 +1576,10 @@ function watchSelection(targets) {
 // stats, and an event that finds them unchanged is dropped. The first event
 // that finds them changed, or the file gone, is reported, and the file is then
 // reported like any other.
+//
+// `keep(file)` does the same for a selected file the session has just written
+// itself (a regenerated entry): the event of that write finds the stats kept
+// and is dropped; a later change is reported.
 function fileStats(file) {
   try {
     return fs.statSync(file, { throwIfNoEntry: false }) || null;
@@ -1626,6 +1643,11 @@ function createWatcher(targets) {
     watchDirs(dirs);
     return kept;
   };
+  events.keep = (file) => {
+    const resolved = path.resolve(file);
+    const stats = fileStats(resolved);
+    if (stats) unchanged.set(resolved, stats);
+  };
   return events;
 }
 
@@ -1645,6 +1667,18 @@ function createWatcher(targets) {
 // to find is not followed, since Dart Sass does not report the paths it tried:
 // a missing partial is noticed when it appears only where a `watch` pattern
 // matches it.
+//
+// An entry of the config whose header records the invocation that generated
+// it (recordedEntryOptions) is kept current: every .uxdsl file under its --src
+// is watched too, from the first build (full or not) after its header records
+// the invocation, and the `add` or `unlink` of one, before it is built, plans
+// the entry again from that invocation and writes it when its content changed,
+// printing `[uxdsl] regenerated <entry> (<n> files)`. The event of that write
+// is dropped (`keep`), so the add or unlink builds once. A `change` never
+// regenerates, nor does an event on an entry itself; an entry whose header
+// records no invocation is never written. A regeneration that fails prints
+// `[uxdsl] Error: regenerating <entry>: …` and writes nothing; the event is
+// then built as any other.
 function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   let config = initialConfig;
   // Entry index -> Set<absolute dependency path>, from each entry's own
@@ -1653,15 +1687,42 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   // failed build never touches it, so a later change is checked against the
   // last valid graph.
   let dependencyGraph = new Map((initialResults || []).map(({ index, dependencies }) => [index, new Set(dependencies)]));
-  let watcher = createWatcher(config ? config.watch : bootstrapWatchTargets(argv, cwd));
+  // The configured entries that record their invocation, each with the
+  // options it gives or the error reading them gave. Read from the entries'
+  // headers each time.
+  function generatedEntries() {
+    if (!config) return [];
+    const base = config.configPath ? path.dirname(config.configPath) : cwd;
+    const generated = [];
+    for (const entry of configEntryFiles(config)) {
+      try {
+        const options = recordedEntryOptions(entry, base);
+        if (options) generated.push({ entry, options });
+      } catch (error) {
+        generated.push({ entry, error });
+      }
+    }
+    return generated;
+  }
+  // The config's `watch` patterns and, for each generated entry, every .uxdsl
+  // file under its --src.
+  function watchTargets() {
+    const targets = [...config.watch];
+    for (const { options } of generatedEntries()) {
+      if (!options) continue;
+      const sources = path.join(options.srcDir, '**/*.uxdsl');
+      if (!targets.includes(sources)) targets.push(sources);
+    }
+    return targets;
+  }
+  let watchedTargets = config ? watchTargets() : bootstrapWatchTargets(argv, cwd);
+  let watcher = createWatcher(watchedTargets);
   // Follows every entry of the current config and every file of the graph.
   // `loadedSince` is when the successful build that produced the graph
   // started (see createWatcher).
   function followAll(loadedSince) {
     if (!config) return;
-    const files = new Set();
-    const entries = config.builds && config.builds.length ? config.builds.map((b) => b.entry) : [config.entry];
-    for (const entry of entries) if (entry) files.add(path.resolve(entry));
+    const files = new Set(configEntryFiles(config));
     for (const dependencies of dependencyGraph.values()) for (const file of dependencies) files.add(file);
     watcher.follow([...files], loadedSince);
   }
@@ -1697,6 +1758,25 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     return indices;
   }
 
+  // Recreates the watcher when watchTargets() differs from what it watches: a
+  // reloaded config, or an entry whose header started or stopped recording an
+  // invocation or records another --src. Returns whether it was recreated.
+  async function refreshWatcher() {
+    const nextTargets = watchTargets();
+    if (JSON.stringify([...watchedTargets].sort()) === JSON.stringify([...nextTargets].sort())) return false;
+    // Recreate to handle overlapping globs without unwatch() leaving
+    // exclusions behind. Keep config errors recoverable on the old watcher.
+    await watcher.close();
+    watchedTargets = nextTargets;
+    watcher = createWatcher(watchedTargets);
+    watcher.on('all', onChange);
+    await new Promise((resolve, reject) => {
+      watcher.once('ready', resolve);
+      watcher.once('error', reject);
+    });
+    return true;
+  }
+
   async function runFullBuild() {
     // The changed file could be uxdsl.config.cjs or the theme file
     // itself — reload both from disk (past their require() cache)
@@ -1717,20 +1797,8 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
       if (!config) console.error('[uxdsl] No configuration found — watching for one to appear...');
       return;
     }
-    const previousWatch = (config ? config.watch : bootstrapWatchTargets(argv, cwd)).slice().sort();
-    const nextWatch = [...reloaded.watch].sort();
     config = reloaded;
-    if (JSON.stringify(previousWatch) !== JSON.stringify(nextWatch)) {
-      // Recreate to handle overlapping globs without unwatch() leaving
-      // exclusions behind. Keep config errors recoverable on the old watcher.
-      await watcher.close();
-      watcher = createWatcher(config.watch);
-      watcher.on('all', onChange);
-      await new Promise((resolve, reject) => {
-        watcher.once('ready', resolve);
-        watcher.once('error', reject);
-      });
-    }
+    await refreshWatcher();
     // The reloaded config's entries are followed before it builds, so an
     // entry whose first build fails is still watched.
     followAll();
@@ -1748,6 +1816,9 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   }
 
   async function runSelectiveBuild(indices) {
+    // A change of an entry can make its header record an invocation: its
+    // --src is watched from this build on.
+    if (await refreshWatcher()) followAll();
     try {
       const startedAt = Date.now();
       const results = await builder(config, indices);
@@ -1835,7 +1906,27 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     }
     const rel = path.relative(process.cwd(), filePath);
     console.log(`[uxdsl] ${event} ${rel}`);
+    if ((event === 'add' || event === 'unlink') && filePath && filePath.endsWith('.uxdsl')) regenerateEntries(path.resolve(filePath));
     trigger(filePath ? path.resolve(filePath) : undefined);
+  }
+
+  // Writes again, before the event of `resolvedFile` is built, each generated
+  // entry whose --src holds that file, when its plan differs from the file.
+  function regenerateEntries(resolvedFile) {
+    if (!config || configEntryFiles(config).includes(resolvedFile)) return;
+    for (const { entry, options, error } of generatedEntries()) {
+      const entryRel = path.relative(process.cwd(), entry);
+      try {
+        if (error) throw error;
+        if (!resolvedFile.startsWith(options.srcDir.endsWith(path.sep) ? options.srcDir : options.srcDir + path.sep)) continue;
+        const plan = planRecordedEntry(options);
+        if (commitFileIfChanged(entry, plan.content) !== 'written') continue;
+        watcher.keep(entry);
+        console.log(`[uxdsl] regenerated ${entryRel} (${plan.count} file${plan.count === 1 ? '' : 's'})`);
+      } catch (err) {
+        console.error(`[uxdsl] Error: regenerating ${entryRel}: ${formatCliDiagnostic(err.message)}`);
+      }
+    }
   }
   watcher.on('all', onChange);
 }
@@ -1864,15 +1955,18 @@ function findFiles(dir, extension, fileList = []) {
 // placeholders only through its own @use. The entry lists the project's files
 // and nothing else; the theme comes from the theme file, which the compiler
 // emits once.
+//
+// Its header records the invocation that wrote it, on the line after the
+// first two (invocationLine): `uxdsl generate-entry` with no option, and
+// `build --watch` when a .uxdsl file under --src is added or removed, run that
+// line again for an entry of the build config.
 
-// Without --first, a file whose name contains one of these comes first.
-const ENTRY_PRIORITY_PATTERNS = ['theme-def', 'layout', 'app', 'variables'];
-
-const ENTRY_HEADER = [
+const ENTRY_HEADER_START = [
   '/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */',
   '/* Generated by uxdsl generate-entry */',
-  '/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */',
 ];
+const ENTRY_HEADER_END = "/* As the build's entry, it is regenerated by uxdsl build --watch when a .uxdsl file under --src is added or removed, and by uxdsl generate-entry with no arguments, from the line above. */";
+const RECORDED_INVOCATION_START = '/* uxdsl generate-entry';
 
 // The characters a URL reads as something else (a percent escape, a fragment,
 // a query), that end the quoted string, or that start an escape in it (a
@@ -1882,56 +1976,180 @@ function encodeEntryUrl(urlPath) {
   return urlPath.replace(/[%#?'\\]/g, (c) => `%${c.charCodeAt(0).toString(16).toUpperCase()}`);
 }
 
-// A file's natural namespace, from its URL path: lowercased, every character
-// outside [a-z0-9-] a `-`, and `f-` before a leading digit (Sass does not
-// start an identifier with one) or `-`.
-function entryNamespace(urlPath) {
-  const name = urlPath.replace(/^\.\//, '').toLowerCase().replace(/[^a-z0-9-]/g, '-');
-  return /^[0-9-]/.test(name) ? `f-${name}` : name;
+// A file's path as Sass names it: its directory, and its file name without
+// `.uxdsl` and without the underscore before a partial's name (a file named
+// `_.uxdsl` keeps it).
+function sassPathParts(posixPath) {
+  const stem = path.posix.basename(posixPath, '.uxdsl');
+  return { dir: path.posix.dirname(posixPath), name: stem.length > 1 ? stem.replace(/^_/, '') : stem };
 }
 
-async function generateEntry(argv) {
-  const cwd = process.cwd();
-  // --src defaults to ./src, or to the working directory when it has no src/.
-  const srcDirArg = argv.src || (fs.existsSync(path.join(cwd, 'src')) ? './src' : '.');
-  const srcDir = path.resolve(cwd, srcDirArg);
-  const outArg = argv.out || argv.o || path.join(srcDir, 'uxdsl-entry.uxdsl');
-  const outFile = path.resolve(cwd, outArg);
-  const outputDir = path.dirname(outFile);
+// A file's natural namespace, from its path relative to --src as Sass names it:
+// lowercased, every character outside [a-z0-9-] a `-`, and `f-` before a
+// leading digit (Sass does not start an identifier with one) or `-`.
+function entryNamespace(fromSrc) {
+  const { dir, name } = sassPathParts(fromSrc);
+  const natural = path.posix.join(dir, name).toLowerCase().replace(/[^a-z0-9-]/g, '-');
+  return /^[0-9-]/.test(natural) ? `f-${natural}` : natural;
+}
 
-  const excludedFiles = String(argv.exclude || '').split(',').map((s) => s.trim()).filter(Boolean);
-  // A file is left out by its file name, in any directory under --src, as the
-  // --exclude names are; the output file's own name is always among them, since
-  // an entry that loads itself is a loop.
-  const outName = path.basename(outFile);
-  excludedFiles.push(outName);
+// A --first item as a path relative to --src: without `./`, with `.uxdsl`.
+function firstItemPath(item) {
+  const relative = toPosixPath(item).replace(/^\.\//, '');
+  return relative.endsWith('.uxdsl') ? relative : `${relative}.uxdsl`;
+}
 
-  const firstItems = argv.first === undefined ? null : String(argv.first).split(',').map((s) => s.trim()).filter(Boolean);
-  if (firstItems && firstItems.length === 0) {
-    throw new Error('--first needs at least one path (comma-separated, relative to --src).');
+// A path as the recorded invocation writes it: POSIX, relative to `base`,
+// starting with `./` (or `../`), and `.` for `base` itself.
+function invocationPath(file, base) {
+  const relative = toPosixPath(path.relative(base, file));
+  if (relative === '') return '.';
+  if (path.isAbsolute(relative) || relative === '..' || relative.startsWith('../')) return relative;
+  return `./${relative}`;
+}
+
+// A recorded value as one word: as it is, or as a JSON string when it holds
+// whitespace, a `"`, a `\`, `*/` or `#{`. In the JSON string `*/` is written
+// `*\/`, so the comment does not end there, and `#{` as `\u0023{`, since Dart
+// Sass interpolates `#{…}` in a comment.
+function invocationWord(value) {
+  if (!/[\s"\\]/.test(value) && !value.includes('*/') && !value.includes('#{')) return value;
+  return JSON.stringify(value).split('*/').join('*\\/').split('#{').join('\\u0023{');
+}
+
+// The header line that records a run: `uxdsl generate-entry`, --src and --out
+// (always, relative to `base`), then --first (each item relative to --src) and
+// --exclude when the run had them. A value that starts with `-` follows an `=`,
+// since on its own it would read as a flag.
+function invocationLine(options) {
+  const words = ['uxdsl', 'generate-entry'];
+  const flag = (name, value) => {
+    if (value.startsWith('-')) words.push(`--${name}=${invocationWord(value)}`);
+    else words.push(`--${name}`, invocationWord(value));
+  };
+  flag('src', invocationPath(options.srcDir, options.base));
+  flag('out', invocationPath(options.outFile, options.base));
+  if (options.first) flag('first', options.first.map(firstItemPath).join(','));
+  if (options.exclude.length) flag('exclude', options.exclude.join(','));
+  return `/* ${words.join(' ')} */`;
+}
+
+// The words of a recorded invocation, separated by whitespace. A word is a run
+// of characters other than whitespace and `"`, a JSON string, or both side by
+// side (`--first="a b.uxdsl"`).
+function invocationWords(text) {
+  const words = [];
+  let i = 0;
+  while (i < text.length) {
+    if (/\s/.test(text[i])) {
+      i += 1;
+      continue;
+    }
+    let word = '';
+    while (i < text.length && !/\s/.test(text[i])) {
+      if (text[i] !== '"') {
+        word += text[i];
+        i += 1;
+        continue;
+      }
+      let end = i + 1;
+      while (end < text.length && text[end] !== '"') end += text[end] === '\\' ? 2 : 1;
+      if (end >= text.length) throw new Error(`a quoted value does not end: ${text.slice(i)}`);
+      word += JSON.parse(text.slice(i, end + 1));
+      i = end + 1;
+    }
+    words.push(word);
   }
+  return words;
+}
 
-  console.log(`[uxdsl] Scanning ${srcDirArg} for .uxdsl files...`);
+// The line of an entry's header that records its invocation, or null. The
+// header is the file's comment lines up to its first other line.
+function recordedInvocationLine(text) {
+  for (const raw of text.split('\n')) {
+    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+    if (line.trim() === '') continue;
+    if (!line.startsWith('/*') || !line.endsWith('*/')) return null;
+    if (line === `${RECORDED_INVOCATION_START} */` || (line.startsWith(`${RECORDED_INVOCATION_START} `) && line.endsWith(' */'))) return line;
+  }
+  return null;
+}
 
+// The options the invocation an entry records gives, every path resolved
+// against `base` (the directory of the build config, or the working directory
+// without one), or null when the entry records none or does not exist. The
+// line's words are parsed by parseCommandArgv, as the command line is. Throws
+// when the line does not parse, has a word generate-entry does not take, or
+// writes another file than that entry.
+function recordedEntryOptions(entryFile, base) {
+  let text;
+  try {
+    text = fs.readFileSync(entryFile, 'utf8');
+  } catch (_) {
+    return null;
+  }
+  const line = recordedInvocationLine(text);
+  if (line === null) return null;
+  const recorded = line.slice(3, -3).trim();
+  let options;
+  try {
+    const { argv } = parseCommandArgv(invocationWords(recorded).slice(1));
+    const extra = [...argv._.map((word) => JSON.stringify(String(word))), ...['help', 'version'].filter((name) => argv[name]).map((name) => `--${name}`)];
+    if (extra.length) throw new Error(`generate-entry does not take ${extra.join(', ')} there`);
+    options = entryOptions(argv, base);
+  } catch (err) {
+    throw new Error(`its recorded invocation does not parse (${err.message}): ${recorded}`);
+  }
+  if (options.outFile !== path.resolve(entryFile)) {
+    const baseRel = path.relative(process.cwd(), base) || '.';
+    throw new Error(`its recorded invocation writes ${path.relative(process.cwd(), options.outFile)}, not this file: its paths are resolved against ${baseRel}, the directory of the build config (the working directory without one), so run generate-entry with its options from there: ${recorded}`);
+  }
+  return options;
+}
+
+// One generate-entry run's options, every path resolved against `base`: --src
+// defaults to ./src, or to `base` itself when it has no src/; --out to
+// uxdsl-entry.uxdsl in the --src directory.
+function entryOptions(argv, base) {
+  const srcArg = argv.src || (fs.existsSync(path.join(base, 'src')) ? './src' : '.');
+  const srcDir = path.resolve(base, srcArg);
+  const outArg = argv.out || argv.o;
+  const outFile = outArg ? path.resolve(base, outArg) : path.join(srcDir, 'uxdsl-entry.uxdsl');
+  const exclude = String(argv.exclude || '').split(',').map((s) => s.trim()).filter(Boolean);
+  let first = null;
+  if (argv.first !== undefined) {
+    first = String(argv.first).split(',').map((s) => s.trim()).filter(Boolean);
+    if (first.length === 0) throw new Error('--first needs at least one path (comma-separated, relative to --src).');
+  }
+  return { base, srcArg, srcDir, outFile, exclude, first };
+}
+
+// The entry one run writes, as `{ outFile, content, count }`, from what is on
+// disk under --src; nothing is written here. The entry lists every .uxdsl file
+// found under --src except itself and the files whose name --exclude gives.
+// Every --first item is checked here, so a mistake writes nothing.
+function planEntry(options) {
+  const { srcArg, srcDir, outFile, exclude, first } = options;
+  const outputDir = path.dirname(outFile);
   const found = findFiles(srcDir, '.uxdsl').map((file) => {
     // The path relative to the entry as on disk, with `./`, a partial's
-    // underscore and `.uxdsl`: the key the entry's order has always used.
+    // underscore and `.uxdsl`: the key of the entry's path order.
     let key = toPosixPath(path.relative(outputDir, file));
     if (!key.startsWith('.')) key = `./${key}`;
-    // Sass's URL: no extension, and no underscore before a partial's name.
-    const stem = path.posix.basename(key, '.uxdsl');
-    const urlPath = `${path.posix.dirname(key)}/${stem.length > 1 ? stem.replace(/^_/, '') : stem}`;
-    const basename = path.basename(file);
+    const fromSrc = toPosixPath(path.relative(srcDir, file));
+    // Sass's URL, relative to the entry: the extension written, so a .scss or
+    // .sass file of the same name beside it is never the one loaded.
+    const url = sassPathParts(key);
     return {
       key,
-      fromSrc: toPosixPath(path.relative(srcDir, file)),
-      url: encodeEntryUrl(urlPath),
-      natural: entryNamespace(urlPath),
-      excluded: excludedFiles.includes(basename),
-      isPriority: ENTRY_PRIORITY_PATTERNS.some((pattern) => basename.includes(pattern)),
+      fromSrc,
+      url: encodeEntryUrl(`${url.dir}/${url.name}.uxdsl`),
+      natural: entryNamespace(fromSrc),
+      isEntry: path.resolve(file) === outFile,
+      excluded: exclude.includes(path.basename(file)),
     };
   });
-  const listed = found.filter((file) => !file.excluded);
+  const listed = found.filter((file) => !file.isEntry && !file.excluded);
   const byKey = [...listed].sort((a, b) => a.key.localeCompare(b.key));
 
   // One namespace per file, whatever the order: in key order, the first file
@@ -1950,51 +2168,130 @@ async function generateEntry(argv) {
     file.namespace = name;
   }
 
-  // With --first, its files come first in the order given, then every other
-  // file in key order. Without it, the files named like the priority patterns
-  // come first, then key order. Every --first item is checked before anything
-  // is written.
-  let ordered;
-  if (firstItems) {
-    const normalize = (item) => {
-      const p = toPosixPath(item).replace(/^\.\//, '');
-      return p.endsWith('.uxdsl') ? p : `${p}.uxdsl`;
-    };
+  // The files in path order (the key's), or, with --first, its files first in
+  // the order given, then every other file in path order.
+  let ordered = byKey;
+  if (first) {
     const seen = new Set();
-    const firsts = firstItems.map((item) => {
-      const wanted = normalize(item);
+    const firsts = first.map((item) => {
+      const wanted = firstItemPath(item);
       if (seen.has(wanted)) throw new Error(`--first lists "${item}" twice.`);
       seen.add(wanted);
       const match = listed.find((file) => file.fromSrc === wanted);
       if (match) return match;
+      if (found.some((file) => file.isEntry && file.fromSrc === wanted)) {
+        throw new Error(`--first "${item}" names the entry itself (${path.relative(process.cwd(), outFile)}), which never lists itself.`);
+      }
       if (found.some((file) => file.excluded && file.fromSrc === wanted)) {
-        throw new Error(`--first "${item}" names a file the entry leaves out (--exclude, or a file with the entry's file name, ${outName}).`);
+        throw new Error(`--first "${item}" names a file --exclude leaves out.`);
       }
       const suggestion = closestMatch(wanted, listed.map((file) => file.fromSrc));
-      throw new Error(`--first "${item}" matches no .uxdsl file under ${srcDirArg} (paths are relative to --src).${suggestion ? ` Did you mean "${suggestion}"?` : ''}`);
+      throw new Error(`--first "${item}" matches no .uxdsl file under ${srcArg} (paths are relative to --src).${suggestion ? ` Did you mean "${suggestion}"?` : ''}`);
     });
     ordered = [...firsts, ...byKey.filter((file) => !firsts.includes(file))];
-  } else {
-    ordered = [...listed].sort((a, b) => (a.isPriority === b.isPriority ? a.key.localeCompare(b.key) : a.isPriority ? -1 : 1));
   }
 
-  const lines = [
-    ...ENTRY_HEADER,
+  const content = [
+    ...ENTRY_HEADER_START,
+    invocationLine(options),
+    ENTRY_HEADER_END,
     '',
     '/* --- Application & Component Imports --- */',
     ...ordered.map((file) => `@use '${file.url}' as ${file.namespace};`),
     '',
-  ];
+  ].join('\n');
+  return { outFile, content, count: ordered.length };
+}
+
+// Writes one planned entry when its content changed (atomically, through
+// commitFileIfChanged), and says which. An entry that listed its files with
+// @import gave them one shared scope; with @use each is its own module: said
+// once, when such an entry is replaced.
+function writeEntry(plan) {
+  const { outFile, content, count } = plan;
   const previous = fs.existsSync(outFile) ? fs.readFileSync(outFile, 'utf8') : null;
-  fs.mkdirSync(outputDir, { recursive: true });
-  fs.writeFileSync(outFile, lines.join('\n'));
-  const outRel = path.relative(cwd, outFile);
-  console.log(`[uxdsl] Generated entry file at ${outRel} with ${ordered.length} @use rule${ordered.length === 1 ? '' : 's'}.`);
-  // An entry that listed its files with @import gave them one shared scope;
-  // with @use each is its own module. Said once, when such an entry is replaced.
+  const outRel = path.relative(process.cwd(), outFile);
+  const rules = `${count} @use rule${count === 1 ? '' : 's'}`;
+  if (commitFileIfChanged(outFile, content) === 'unchanged') {
+    console.log(`[uxdsl] Entry file at ${outRel} is up to date with ${rules} (identical to the file on disk; not rewritten).`);
+    return;
+  }
+  console.log(`[uxdsl] Generated entry file at ${outRel} with ${rules}.`);
   if (previous !== null && /^\s*@import\b/m.test(previous)) {
     console.warn(`[uxdsl] Warning: ${outRel} listed its files with @import; it now loads each with @use, so each file is its own Sass module: a file that reads another file's $variable, mixin or placeholder now fails (UXD_SASS), and one that calls another file's @function (one named like a UXDSL function included) or relies on a value an earlier file set for a variable it declares !default compiles differently, without an error. Give each such file its own @use, with as * (for example @use './variables' as *;) or with each member written through the namespace, since under a namespaced @use a function called by its bare name also stays in the CSS without an error; see "Regenerate the entry" in the migration guide.`);
   }
+}
+
+// The entry files of a config, in config order: each entry of "builds", or the
+// single entry.
+function configEntryFiles(config) {
+  const entries = config.builds && config.builds.length ? config.builds.map((b) => b.entry) : [config.entry];
+  return [...new Set(entries.filter(Boolean).map((entry) => path.resolve(entry)))];
+}
+
+// The entries build compiles, found as build finds them, and the directory
+// their recorded invocations resolve against: the build config's, or the
+// working directory without one. Without a config and without
+// src/uxdsl-entry.uxdsl there is no entry yet (generate-entry is what writes
+// it), rather than build's "no entry" error.
+async function configuredEntries(cwd) {
+  if (!findConfigPath(cwd) && !fs.existsSync(path.resolve(cwd, DEFAULT_ENTRY_REL))) return { base: cwd, entries: [] };
+  const config = await loadConfig({}, cwd);
+  if (!config) return { base: cwd, entries: [] };
+  return { base: config.configPath ? path.dirname(config.configPath) : cwd, entries: configEntryFiles(config) };
+}
+
+// Plans an entry from the invocation it records, `options`; a failure says
+// it is the recorded invocation's.
+function planRecordedEntry(options) {
+  try {
+    return planEntry(options);
+  } catch (err) {
+    throw new Error(`its recorded invocation fails: ${err.message}`);
+  }
+}
+
+// The plans of those of `entries` whose header records an invocation, from
+// that invocation, in order; nothing is written here. Throws, naming the
+// entry, at the first that cannot be planned.
+function planRecordedEntries(entries, base, cwd) {
+  const plans = [];
+  for (const entry of entries) {
+    const rel = path.relative(cwd, entry);
+    try {
+      const options = recordedEntryOptions(entry, base);
+      if (!options) continue;
+      console.log(`[uxdsl] ${rel} records: ${invocationLine(options).slice(3, -3)}`);
+      console.log(`[uxdsl] Scanning ${options.srcArg} for .uxdsl files...`);
+      plans.push(planRecordedEntry(options));
+    } catch (err) {
+      throw new Error(`${rel}: ${err.message}`);
+    }
+  }
+  return plans;
+}
+
+// With an option, one run with those options. With none (and no argument),
+// every entry of the build config whose header records an invocation is
+// written again from it, in config order, each checked before any is written.
+// When no entry of the config records one, the file the defaults write is
+// written again from the invocation its own header records, when it records
+// one, and otherwise with the defaults.
+async function generateEntry(argv) {
+  const cwd = process.cwd();
+  const bare = ['src', 'out', 'o', 'first', 'exclude'].every((name) => argv[name] === undefined) && !(argv._ && argv._.length);
+  if (bare) {
+    const { base, entries } = await configuredEntries(cwd);
+    let plans = planRecordedEntries(entries, base, cwd);
+    if (!plans.length) plans = planRecordedEntries([entryOptions(argv, cwd).outFile], base, cwd);
+    if (plans.length) {
+      for (const plan of plans) writeEntry(plan);
+      return;
+    }
+  }
+  const options = entryOptions(argv, cwd);
+  console.log(`[uxdsl] Scanning ${options.srcArg} for .uxdsl files...`);
+  writeEntry(planEntry(options));
 }
 
 // --- Command: Init ---
@@ -2207,7 +2504,7 @@ ${SASS_CONFIG_COMMENT}};
     console.log('3. Add more component entries to the "builds" array in uxdsl.config.cjs as the project grows.');
   } else {
     const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
-    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: run "npx uxdsl generate-entry" after adding or removing .uxdsl files.`);
+    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: the watch below regenerates it when a .uxdsl file is added or removed; without it, run "npx uxdsl generate-entry".`);
     console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
     console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}${isNext ? ' (alongside next dev)' : isVite ? ' (alongside vite)' : ''}`);
     console.log(`3. Import the generated CSS once, from your root layout or app entry (path relative to that file):`);

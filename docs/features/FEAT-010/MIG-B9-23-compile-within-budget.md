@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (the owner's decision of 2026-11-02 on MIG-B9-13's AC1 asks for this story; it is recorded in MIG-B9-13 §15) |
-| Status | Ready |
+| Status | Merged (PR #75) |
 | Size | S |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-91 |
@@ -649,7 +649,127 @@ The body:
 
 ## 14. Closure record
 
-Filled once, in the delivering PR.
+Delivered in one PR (#75), from `feat/b9-23-compile-within-budget`, by the light flow the owner chose for an S story on 2026-11-04 (FEAT-010 §2, D1): one scout, one implementer, one review and the deliverer. Where this record differs from §5 to §9, the owner's decisions of 2026-11-04 rule (§15), D8 first: P10's method is corrected and the budget stays 1.5×. The scout's report, the implementer's evidence and the review stay with the run's evidence outside the repository. What they decided is summarized below.
+
+- **Base and merges.**
+  - The story started from `feat/beta9` at `4ecdc51` (wave 1 complete).
+  - Before the PR, `origin/feat/beta9` had moved to `7e8d7b4` (PR #74, the owner's decisions of 2026-11-08, documentation only). It was merged into the branch as `4401f7b`, a merge commit with no rebase or force-push. BASE is now `7e8d7b4`.
+  - `packages/`, `fixtures/` and `tsconfig.base.json` are identical at `4ecdc51` and `7e8d7b4`, so every comparison with a build of `4ecdc51` is a comparison with BASE. The merge changes no file this story edits.
+  - The story commits:
+    - by the implementer: `1038d94` (D8's runner), `0f6f5d9` (the Sass stage, its tests, the fixture, the CHANGELOG and the README) and `4248603` (the fixture's 61-round default and its order);
+    - by the deliverer: `f442d02` (the review's fixes), `4401f7b` (the merge) and this record.
+- **Environment.**
+  - MacBookPro18,3: Apple M1 Pro, 8 cores, 16 GB; macOS 27.0 (26A428, Darwin 27.0.0).
+  - Node 20.19.0 and npm 11.21.1, CI's versions. Dart Sass 1.107.0 and PostCSS 8.5.31 in the repository.
+  - Every command ran with `TMPDIR` set to a scratch directory of the role's own, except the AC1 triple. That ran with the owner's `$TMPDIR` as found, as C1 says; the corrected runner does not use it.
+  - The scout prepared the worktree as `ci.yml` does, and every step exited 0. `npm run prepare` installed husky's hooks, so the pre-commit hook (the docs guard, then the full playground build) ran on every commit. No commit used `--no-verify` or `HUSKY=0`.
+  - Running throughout and not touched: the owner's dev servers (story-radar's `next dev` and `uxdsl watch`; the playground's `next dev` in the owner's checkout), the endpoint security agent, and MIG-B9-22's workflow in its own worktree. Before each timing that counts, the deliverer waited until none of that workflow's tests, builds or fixtures was running and the 1-minute load was below 6.
+- **Preconditions (§3).**
+  - On `4ecdc51` all six exit 0 (the scout).
+  - On the head, line 3 exits 1, because this story replaced the case lookup it pins. The other five exit 0.
+- **Baseline (§4), re-recorded by the scout on `4ecdc51` on 2026-11-08.**
+  - P10's runner as written, with `$TMPDIR` holding 130,041 entries, exited 1, 0, 1 (1.57×, 1.49×, 1.56×). Every compared line matched §4.
+  - The location A/B: `compile()` +140.3 ms beside 129,944 entries, plain Dart Sass +1.7 ms. 103 `readdirSync` per warm `compile()`.
+  - The playground's `uxdsl build`: real 2.04, 1.54 and 1.00 s.
+  - The core suite: 337 tests, 336 pass, 1 skipped. `DIAGNOSTIC_CATALOG` holds 106 codes.
+- **Failing test first.** Each test below was run against the base before the change it guards:
+  - `run.test.js`'s two D8 tests, against the base runner: 4 pass, 2 fail (`undefined !== 4`, because `ROUNDS` does not exist, and `freshCorpusRoot is not a function`).
+  - T5 and its control, with `TMPDIR` empty, on the base build: T5 fails with 17 listings over 14 directories, from `/` down. The control fails because the base lists every ancestor, not only the directory that holds the symlink. T6, T9 and T9b pass on the base, by design.
+  - T3, with `--uxdsl <base build>`: FAIL at +142.6 ms (11 rounds) and +145.7 ms (61 rounds). T2, T4 and the planted control are ok.
+  - The review's R1 test (a whole run of `runCorpus()` on fakes) fails under each of the review's three mutations of the runner: the cold runs in the medians, the root under `os.tmpdir()`, and no alternation.
+  - The review's R3 case in T6 fails under the mutant that spells a symlink's directory from the target's, and passes on the base and the head.
+- **Contract as delivered.**
+  - **C1, by D8's method.** `fixtures/sass-corpus/run.js` exits 0 on the triple below.
+    - Dart Sass and `compile()` alternate, Dart Sass first, four runs each. Each first, cold run is printed as discarded and left out of the median.
+    - The corpus root is `fixtures/sass-corpus/.work/run-XXXXXX/corpus-root`: git-ignored, alone in its directory, outside `os.tmpdir()`, removed unless `--keep`.
+    - Unchanged from P10: `TIMING_BUDGET = 1.5`, the plain Dart Sass baseline without a map, the timed `compile({ entry }, { includeTheme: false })`, the flags, the byte comparison, the deprecation counts and the five mixed checks.
+    - `main()` is a thin shell around an exported `runCorpus()` (review R1).
+  - **C2.** T3 moves +0.7 ms. On darwin a directory is listed only to spell a symlink's own name.
+  - **C3.** T4 is equal to the base in 9 of 9 combinations. The three spellings where Dart Sass differs stay the base's, pinned by T9 and T9b:
+    - a name stored in NFD and written in NFC;
+    - a symlinked directory written in another case;
+    - a name in a directory that cannot be listed (execute-only).
+  - **C4.** Every cache lives in one `filesystem()`, made per call. T6's case-only rename between two calls is spelled as the disk spells it.
+  - **The fixture directory.** `git diff --name-only 7e8d7b4 -- fixtures/sass-corpus` lists `.gitignore`, `README.md`, `run.js` and `run.test.js`; `_uxdsl-extras.uxdsl` is unedited.
+- **Deviations from the plan.**
+  - **The fixture's T3** takes 61 measured rounds by default, not 11 (C2 allows any number from 9), and it runs last, after its planted control. With 11 rounds, this machine's spread falsely failed 9–25% of bootstrap draws (§15).
+  - **Test titles.**
+    - T9b's title ends "(an execute-only directory)", which states behavior where the plan's ending stated history.
+    - T5's negative control is a test of its own. It also asserts that the only directory listed is the one that holds the symlink.
+  - **`run.js`'s exports.** Beyond the plan: `installCorpus` (which the fixture reuses), `removeCorpusRoot`, `WORK` and `runCorpus`.
+  - **The Sass stage.** The plan's `realCase(file, real?)` is an internal `spell(file, real?)`, exposed as `realCase: (file) => spell(file)`. A short-circuit, `onDisk !== base`, comes first, so `accessSync` runs only for a name written in another case: 0 calls per warm `compile()` of the corpus.
+- **The review and its outcome.** One review read `4248603`. It raised R1 to R3 as should-fix and R4 as a nit. The deliverer reproduced each one before fixing it, in `f442d02`:
+  - **R1, fixed.**
+    - Reproduction: three mutations of `main()` (the cold runs in the medians, the root under `os.tmpdir()`, no alternation) each passed `run.test.js` 6 of 6.
+    - Fix: `runCorpus()` takes the install, Dart Sass, `compile()`, the clock and the output. A new `run.test.js` test runs it whole on fakes, and each mutation now fails it.
+    - The fixture's T2 also checks, in both of its runner runs:
+      - the corpus-root line;
+      - four runs of each compiler, the first marked cold;
+      - a printed ratio equal, within rounding, to the three warm runs' medians.
+
+      The parser was checked on a real output and on five planted variants.
+  - **R2, resolved by the order of the runs.** R1's fix edits `run.js`, so the count of invocations restarted at `f442d02`. The AC1 triple below is the first three invocations after it.
+    - Before `f442d02`, after the last Sass-stage change `0f6f5d9`, the runner had been invoked 13 times:
+      - once plain, by the implementer, at 2026-11-08 21:32:48 EST (1.25×, exit 0);
+      - 6 times by the implementer's T2 wrappers, at 21:33, 08:52 and 09:01 (the last two around the base build);
+      - 6 times by the review's T2 wrappers, at 09:31:23, 09:34:33 and 09:38:13.
+    - After the triple, AC2's T2 invoked it twice (wrapped) and `verify:1.0`'s S-1 once (`--no-timing-budget`).
+  - **R3, fixed.**
+    - Reproduction: the mutant `spell(dir, path.dirname(real))` in the symlink branch passed all 5 stage tests.
+    - Fix: T6 adds `links/Link` → `targets/t`, written `LINKS/Link/entry.uxdsl` and reached by `@use "LINKS/LINK/part"`. The head and the base spell `links/Link/…`, the mutant `LINKS/Link/…`, so the mutant now fails T6. The fixture's T4 also writes the link's directory in another case.
+  - **R4, fixed.** The package README sentence names the spellings kept as written, and says that a directory holding a symlink on a loaded file's path is still listed.
+- **Final verification, on `4401f7b`, by the deliverer, on 2026-11-09.** The commands ran in this order. `4401f7b` is the head before this record, whose commit changes only `docs/features/FEAT-010`.
+
+  | Command | Exit | Result |
+  | --- | --- | --- |
+  | AC1 `node fixtures/sass-corpus/run.js`, three in a row | 0, 0, 0 | See the triple below. |
+  | AC2 `node fixtures/mig-b9-23-compile-budget/run.js --base <build of 4ecdc51>` (11:52:33–11:55:13 EST) | 0 | `All checks ok.` T2: 1.99× and `FAIL  compile() is over the 1.5x budget`; `byte-identical: false`; the method check ok. T4: 9 of 9 equal (276,926 bytes, 792,018 inline, 87 dependencies, 21 warnings), and its control differs. T3: see C2 below. `TMPDIR` and `.work` were left empty. |
+  | AC3 `TMPDIR=<empty dir> node --test packages/uxdsl/test/core/sass-stage-case.test.js` | 0 | 5 tests, 5 pass, 0 skipped; the directory stays empty |
+  | `node --test fixtures/sass-corpus/run.test.js` | 0 | 7 of 7 (the 4 tests of MIG-B9-13 and 3 of this story) |
+  | AC7 `npm --prefix packages/playground-nextjs run uxdsl:build` (12:05:58) | 0 | `[uxdsl] unchanged src/app/uxdsl.css` (337,214 bytes, sha256 `1f7eb19e75490097…`); `examples.json` sha256 `57f326055f415f11…` unchanged |
+  | AC7 `/usr/bin/time -p npx uxdsl build` ×3, in `packages/playground-nextjs` (12:06:01–12:06:03, load 3.19–3.50) | 0, 0, 0 | real 1.11, 1.04 and 1.04 s (user 1.66–1.69, sys 0.12–0.13). The base, by the scout: 2.04, 1.54 and 1.00 s. The implementer, after: 1.01, 0.92 and 0.94 s. |
+  | AC4 `node --test packages/uxdsl/test/core/*.test.js` | 0 | 342 tests, 341 pass, 0 fail, 1 skipped (protect's Bootstrap test without `UXDSL_SASS_CORPUS`, as on the base) |
+  | AC4 `git diff --exit-code 7e8d7b4 -- packages/uxdsl/test/core/compile-sass.test.js` | 0 | unedited |
+  | AC5 `node fixtures/parity/run.js`; `git diff --exit-code 7e8d7b4 -- fixtures/parity/expected` | 0; 0 | `PASS: 10 parity case(s)`; expected unchanged |
+  | AC6 `npm test` (12:06:42–12:09:58) | 0 | 1,538 tests: 1,537 pass, 0 fail, 1 skipped, no `not ok`. `Captured CLI and compiler output is up to date.`, `Compiled examples are up to date (11).`, parity `PASS`, mig07 `All checks passed.` |
+  | AC6 `npm run verify:1.0 -- --skip-playground-walk` (12:09:58–12:11:47) | 0 | `71/71 automated checks passed.` The tarball is 272,626 bytes packed, 92 files. S-1 says `byte-identical, the five mixed checks ok; compile() 1.35x Dart Sass (reported, not asserted)`. S-2, S-3 (`heavy.uxdsl:18:66`), N-02 and UX-20 are ok. |
+  | Invariants | — | `DIAGNOSTIC_CATALOG` holds 106 codes; `grep -c "const TIMING_BUDGET = 1.5;" fixtures/sass-corpus/run.js` prints 1; `git status --short` is empty after every run |
+
+- **The AC1 triple (C1).**
+  - Which runs count: the first three invocations of the runner after its last change (`f442d02`, 2026-11-09 09:59:53 EST), from the repository root, one after another. None was discarded or repeated.
+  - When: the moment was chosen before the first one started. The 1-minute load had been below 6, with no test, build, fixture or install running, for 60 s, from 11:26:42 EST.
+  - `$TMPDIR` is the owner's, as found: 3,411 entries before and after each one. The scout counted 130,041 there on 2026-11-08, before someone else removed the suites' entries.
+
+  | # | Start (EST) | `vm.loadavg` | `$TMPDIR` | Dart Sass runs, ms | `compile()` runs, ms | Warm medians | Ratio | Exit |
+  | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+  | 1 | 11:26:42 | 2.09 3.96 5.49 | 3,411 | 613 (cold, discarded), 341, 323, 319 | 633 (cold, discarded), 482, 429, 430 | 323 / 430 | 1.33× | 0 |
+  | 2 | 11:26:48 | 2.64 4.04 5.51 | 3,411 | 587 (cold, discarded), 348, 329, 351 | 633 (cold, discarded), 498, 447, 454 | 348 / 454 | 1.31× | 0 |
+  | 3 | 11:26:54 | 2.59 4.01 5.49 | 3,411 | 588 (cold, discarded), 350, 323, 321 | 636 (cold, discarded), 494, 437, 439 | 323 / 439 | 1.36× | 0 |
+
+  Each invocation printed:
+  - `Bootstrap 5.3.8: 92 files renamed to .uxdsl, 87 loaded by the entry; Dart Sass 1.107.0`;
+  - `corpus root: …/fixtures/sass-corpus/.work/run-XXXXXX/corpus-root (fresh, alone in its directory, outside the temporary directory)`;
+  - `Dart Sass: 276926 bytes` and `compile(): 276926 bytes`, then `byte-identical: true`;
+  - the runs line and `timing: compile()'s median is <r>x Dart Sass's (budget 1.5x; each median is of the 3 warm runs, the cold first run left out; compile() always runs Dart Sass with its source map)`;
+  - the deprecations delivered, `{"import":5,"if-function":5,"global-builtin":5,"color-functions":5,"other":1}`, and the verbose totals, `{"import":87,"if-function":83,"global-builtin":154,"color-functions":6}`;
+  - `compile() returned 21 warnings`;
+  - the five mixed checks `ok`.
+
+  No `.work` was left behind.
+- **C2: T3 in the AC2 run.**
+  - The planted control started 24 s after the 129,944 entries were written, at load 11.98: small 427.4 ms, large 569.4 ms, +142.0 ms. It fails, as it must.
+  - The check started 87 s after, at load 6.19: small 428.9 ms, large 429.6 ms, **+0.7 ms**, ok.
+- **CI.** PR #75's checks run on the branch tip after this record is pushed. Their result is the PR's, not this record's.
+- **Not run, or not a pass.**
+  - Windows (MIG-B9-28, MIG-B9-91). CI's ubuntu job skips `sass-stage-case.test.js`, with its reason, because the filesystem does not fold case there.
+  - Nothing in CI asserts P10: S-1 runs `--no-timing-budget`. MIG-B9-91 re-measures it on the owner's Mac (D9).
+  - Folders protected by macOS privacy controls (TCC) cannot be tested on this machine.
+  - The budget fixture is not in `npm test`: it needs the network and a quiet machine.
+  - `verify:playground-browser`, Press Craftor and `fixtures/parity/run.js --update` were not run: the compiled output does not change.
+- **Owner steps.**
+  - Review PR #75, and answer the owner flags in §15's "Delivery of 2026-11-09".
+  - Merge the PR into `feat/beta9`. This run does not merge it.
+  - `main` receives this story when `feat/beta9` is next merged into it, as PR #73 did.
 
 ## 15. Findings and follow-ups
 
@@ -882,3 +1002,83 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). 
 - **MIG-B9-91 re-measures P10 (decision D9 of 2026-11-04; finding 3 and the second owner check of §9)** on the owner's Mac, with the corrected method, before publishing.
 - **MIG-B9-24 registered (decision D3 of 2026-11-04; finding 1's scope),** "The plugin's fixed per-build costs": S, wave 2, low priority, as proposed in "By story" above. It stays a story of its own, so this story's scope stays the Sass stage.
 - **MIG-B9-25 registered (decision D2 of 2026-11-04),** "The test suites remove the temporary directories they create": S, wave 2, early, as proposed in "By story" above. It and this story both edit `fixtures/sass-corpus/run.js` (the index's §7).
+
+### Delivery of 2026-11-09
+
+Written by the deliverer with PR #75. It records new facts, the owner flags, Shares as delivered and the follow-ups, each with the story proposed for it. §14 has the evidence.
+
+**New facts.**
+
+1. **`feat/beta9` moved during the run.** It went from `4ecdc51` to `7e8d7b4` (PR #74, the owner's decisions of 2026-11-08, documentation only). The branch merged it as `4401f7b`. `packages/`, `fixtures/` and `tsconfig.base.json` are identical at both, so BASE is `7e8d7b4` and the base build made from `4ecdc51` is a build of BASE.
+2. **By D8's method, the budget no longer tells the base from the change where the corpus sits in a clean directory.**
+   - This change: 1.33×, 1.31× and 1.36× (§14's triple). The implementer measured 1.25×, and `verify:1.0`'s S-1 reports 1.35× from the tarball.
+   - The base's Sass stage in a clean directory: 1.36–1.39× (the scout's prototype of D8's runner, and the implementer's corrected runner).
+   - In a fresh directory whose grandparent held 129,946 entries, the base gave 1.71–1.77× and the change 1.35–1.38× (the scout).
+   - The change rests on C2: T3, and T5's zero listings. The margin under the budget is about 0.14–0.19×.
+3. **What the Sass stage asks of the filesystem, per warm `compile()` of the corpus.**
+
+   | Call | Before | After |
+   | --- | --- | --- |
+   | `readdirSync` | 103 | 0 (1, of `/`, when the project is under `/var` or `/tmp`, which are symlinks on macOS) |
+   | `lstatSync` | — | 103 |
+   | `realpathSync.native` | — | 87 |
+   | `accessSync` | — | 0 (it runs only for a name written in another case) |
+
+   `existsSync` (11), `statSync` (1,205) and `readFileSync` (87) are unchanged. A project with no symlink on its path lists no directory. Through a symlinked directory, the only directory listed is the one that holds the link.
+4. **`realpathSync.native` as a spelling source on APFS (scout, implementer, review).**
+   - It returns a hard link's own path, even right after the other link is read.
+   - It keeps firmlink paths (`/Users`, `/System/Volumes/Data/…`) as written.
+   - It resolves a mode-000 file, and names in execute-only and ACL deny-list directories, where `readdir` and `access(R_OK)` both fail.
+   - It returns the NFD name of a file stored in NFD.
+
+   The `toLowerCase()` guard and the `access(R_OK)` check keep the base's spelling in the last two cases.
+5. **T3's measure is noisy on this machine.**
+   - One `compile()` of the corpus varies by tens of milliseconds from run to run. Settled, the true move between the two copies is about −2 to +4 ms: −2.3 ms over 122 rounds, and +4.3 ms over 93 rounds.
+   - With 11 rounds, the difference of the two medians exceeds 15 ms in 8.8% (morning) to 24.6% (evening) of bootstrap draws. With 61 rounds, 0.0–0.8%.
+   - The fixture's 61-round default gave +8.2 ms (implementer), −0.4 ms (review) and +0.7 ms (§14). With C2's minimum of 9 rounds at load 11–13, the review measured +12.6 ms.
+6. **Writing 129,944 files sets off the endpoint security agent.** The agent, and Spotlight, keep the load at 10–12 for minutes. In the first 50 s, 5-round blocks of T3 swung from −62 to +152 ms. Writing hard links instead of files does not avoid it. The fixture therefore runs T3 last and prints how long after the write it starts.
+7. **A forced full GC before each `compile()`** made it about 45% slower (median 625 against 428 ms) and widened the spread. It is not a lever for MIG-B9-24.
+8. **The suites' temporary directories (MIG-B9-25).**
+   - One `npm test` run left 929 entries in its `TMPDIR`: 492 `uxdsl-sass-stage-*`, 152 `uxdsl-cli-test-*`, 26 `postcss-uxdsl-config-test-*`, 24 `uxdsl-theme-cmd-test-*`, 22 `uxdsl-cli-watch-*`, 21 `uxdsl-core-test-*`, 20 `uxdsl-sass-pipeline-*` and 15 `vite-plugin-uxdsl-test-*`.
+   - One run of the core suite alone left 559, and `verify:1.0` left 18.
+   - All were removed, from the roles' own scratch only.
+   - The owner's `$TMPDIR` held 130,041 entries on 2026-11-08 and 3,411 on 2026-11-09. Someone outside this run removed the difference between the two, so §4's "as found" counts and §14's are not comparable.
+
+**Owner flags.**
+
+1. **Where D8's fresh directory lives.** The runner makes the corpus root in `fixtures/sass-corpus/.work/run-XXXXXX/`: git-ignored, outside `os.tmpdir()`, and holding nothing else. This follows recommendation 8's reason, that the corpus lived in the temporary directory. The consequence is new fact 2: AC1 no longer fails on the base's spelling in a clean location, and C2 carries the change.
+
+   The other reading, a fresh subdirectory of `os.tmpdir()`, would keep `$TMPDIR`'s size in the base's figure. Recommendation: confirm the first reading.
+2. **D8's implementation edits more than `run.js`.** It also changes `run.test.js` (the failing-first tests and the whole-run test), `README.md` (the method) and a new `.gitignore` (`.work/`), all in `fixtures/sass-corpus`.
+   - This story's header Shares and README §7's `fixtures/sass-corpus/run.js` row name only `run.js`.
+   - This record updates only README §5's MIG-B9-23 row.
+
+   Recommendation: the §7 row reads `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore`, for 10, 23 and 25.
+3. **An execute-only directory keeps the base's spelling.** In a directory that can be searched but not listed, the base keeps the written case, and so does this change (T9b), through an `access(R_OK)` check, a system call rather than a listing. Dart Sass and a realpath-only spelling give the on-disk case. §7's traps did not list this input; C3's "every input" covers it. Recommendation: accept, since C3 asks for the base's output everywhere.
+4. **T3's statistic.** The fixture defaults to 61 rounds; C2 allows any number from 9. A paired statistic (the median of per-round differences, −1.7 ms over 122 rounds) would be sturdier than the difference of the two medians that C2 names. Recommendation: keep C2's statistic with the 61-round default, and decide in MIG-B9-91 whether its re-measure should also use the paired one.
+5. **"Before any other invocation of the runner" (C1, AC1).** The runner was invoked 13 times after the Sass stage's last change (§14). The review's fix then changed the runner (`f442d02`), which restarted the count, and the triple was the first three invocations after it. Recommendation: accept the triple. Read literally from the Sass stage's change alone, no triple could satisfy the clause any more.
+6. **The CHANGELOG and the package README are append-only, shared with MIG-B9-22.** MIG-B9-22 runs in parallel and has no PR yet. Following the owner's "si fusiona y arranca" of 2026-11-04 (finding 1's §7 question), the story that merges second rebases its CHANGELOG subsection and README sentence. Recommendation: record that answer to finding 1's question.
+7. **MIG-B9-21 and `compile-sass.ts`.** MIG-B9-21's `error.warnings` (the decision on MIG-B9-14's flag 11) likely needs `compile-sass.ts`'s `finish()`. README §7 says that listing 21 on that file's row makes 23 and 26 wait for it. This story changes only `filesystem()`, which is disjoint from `finish()`. Recommendation: merge this story first, and let MIG-B9-21 rebase on it when it adds the file to its Shares.
+8. **The PR targets `feat/beta9`, as the plan says.** `main` gets it at the next `feat/beta9` → `main` merge, as PR #73 did.
+
+**Shares as delivered.**
+- `packages/uxdsl/src/sass/compile-sass.ts`: `filesystem()`, and the header paragraph on canonical paths.
+- `fixtures/sass-corpus/`: `run.js` (D8's three corrections and `runCorpus()`), `run.test.js` (three tests), `README.md` and the new `.gitignore`. `_uxdsl-extras.uxdsl` is unedited.
+- `packages/uxdsl/CHANGELOG.md`: one subsection, at the top of `## 0.5.0-beta.9 — unreleased`, with `### Visual changes`: none.
+- `packages/uxdsl/README.md`: one sentence in step 2 of the Sass pipeline list.
+- Owns: `packages/uxdsl/test/core/sass-stage-case.test.js` (5 tests) and `fixtures/mig-b9-23-compile-budget/` (`run.js`, `README.md`).
+- Not touched: `compile-sass.test.js`, `fixtures/parity/expected`, the diagnostics catalog (106 codes), `AGENTS.md` and the generated artifacts.
+
+**Follow-ups, each with its proposed story.**
+- **MIG-B9-91.**
+  - Re-measure P10 on the owner's Mac with the corrected runner (D9). It prints where the corpus root is.
+  - Decide flag 4's paired statistic for T3.
+- **MIG-B9-28.** On Windows, check `realpathSync.native`, `lstat` on junctions, `access(R_OK)` and 8.3 short names. `sass-stage-case.test.js` runs on win32, and T9's NFD half is skipped there with its reason.
+- **MIG-B9-25.**
+  - The suites' leftovers (new fact 8).
+  - `run.js --keep` now keeps a root under `fixtures/sass-corpus/.work/`, which protect's `UXDSL_SASS_CORPUS` test reads.
+  - MIG-B9-25 also edits `run.js`, after this story.
+- **MIG-B9-20.** It owns dropping `run.js`'s `{ includeTheme: false }` (its M2). This story left it as it was.
+- **MIG-B9-24.** The plugin's fixed per-build costs are the lever if the margin of new fact 2 shrinks. A forced GC is not (new fact 7).
+- **MIG-B9-26.** It edits `compile-sass.ts` after this story, and rebases on it.
+- **The next FEAT-010 documentation PR.** README §7's `fixtures/sass-corpus` row (flag 2), and finding 1's §7 answer (flag 6), if the owner accepts them.

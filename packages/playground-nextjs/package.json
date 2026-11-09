@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "local-deps": "npm install --include=dev --prefix ../uxdsl && npm run build --prefix ../uxdsl",
-    "uxdsl:build": "node scripts/generate-uxdsl-entry.js && uxdsl build && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js",
-    "uxdsl:watch": "node scripts/generate-uxdsl-entry.js && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js && uxdsl build --watch",
+    "uxdsl:build": "uxdsl generate-entry --src src --out src/app/uxdsl-entry.uxdsl --first app/typography-roles.uxdsl,app/theme-def.uxdsl,app/layout.uxdsl,app/app.uxdsl && uxdsl build && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js",
+    "uxdsl:watch": "uxdsl generate-entry --src src --out src/app/uxdsl-entry.uxdsl --first app/typography-roles.uxdsl,app/theme-def.uxdsl,app/layout.uxdsl,app/app.uxdsl && node scripts/build-runtime-sandbox.js && node scripts/build-paradigm-frame.js && node scripts/capture-examples.js && uxdsl build --watch",
     "capture:capabilities": "node scripts/capture-capabilities.js",
     "theme:audit": "node scripts/audit-themes.mjs",
     "test:themes": "node --test scripts/test-theme-inheritance.cjs",
