@@ -189,4 +189,7 @@ Five decisions on MIG-B9-14's flags extend this story's scope:
 - **The `sass` refusals that reach `uxdsl theme` (flag 8).** They are kept, and this story pins them with a test.
 - **The exclusion by file name (flag 17).** `generate-entry` excludes only the output file, instead of every file with the entry's file name in any directory; this matters for MIG-B9-20's `uxdsl-theme.uxdsl`.
 
-With this scope, its scout re-sizes the story, splitting it if it outgrows S.
+Two facts, not decisions:
+
+- The constant flag 4 names is `ENTRY_PRIORITY_PATTERNS` in `bin/uxdsl.js` (line 1869 at `4ecdc51`), and it holds four patterns: `theme-def`, `layout`, `app` and `variables`. The decision names `variables` and `theme-def` only, so the scout asks the owner about `layout` and `app` before removing them.
+- The five items above go beyond the contract (§5) on which this story was sized S. Under README §4 a story is S or M, and one larger than M is split into stories.

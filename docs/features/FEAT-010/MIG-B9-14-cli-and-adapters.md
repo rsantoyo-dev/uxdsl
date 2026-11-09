@@ -680,7 +680,7 @@ Written by the deliverer with PR #71. It records new facts, the owner flags, Sha
 
 The owner decided the flags of "Delivery of 2026-11-06" above on 2026-11-08. The owner was given numbered recommendations, in Spanish, on this story's 18 owner flags and on MIG-B9-15's, and answered, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation is the owner's decision of 2026-11-08, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). This record is in English and gives the answer to every owner flag of this story. Where they differ from this story's contract, they rule.
 
-- **Flag 1, the namespace basis:** `generate-entry` computes each namespace from the path relative to `--src`, not to the entry, which today gives the playground names like `f----components-…`. MIG-B9-22 does it.
+- **Flag 1, the namespace basis:** `generate-entry` computes each namespace from the path relative to `--src`, not to the entry (today, relative to the entry, the playground gets names like `f----components-…`). MIG-B9-22 does it.
 - **Flag 2, "without extension":** `generate-entry` writes the extension in each `@use` (`@use './x.uxdsl'`), so a `.scss` twin beside a `.uxdsl` file is not ambiguous. MIG-B9-22 does it.
 - **Flag 3, isolation's silent cases:** MIG-B9-26 detects them: another file's `@function` called, a `!default` set by an earlier file, a project `@function` shadowing a token, and a bare call under a namespaced `@use`.
 - **Flag 4, `PRIORITY_PATTERNS`:** `PRIORITY_PATTERNS` (`variables`, `theme-def`) is removed, since it now only orders the output and listing `_variables` first can break a `with (…)` configured elsewhere. MIG-B9-22 does it.
@@ -691,7 +691,7 @@ The owner decided the flags of "Delivery of 2026-11-06" above on 2026-11-08. The
 - **Flag 9, T9 beyond its wording:** accepted as delivered, with the gate's extra S-4 to S-6.
 - **Flag 10, T10:** a strict comparison of error oracles in `fixtures/parity/run.js`, whose line 150 compares by substring in both directions, goes to MIG-B9-20.
 - **Flag 11, warnings lost when `compile()` throws:** `error.warnings` goes to MIG-B9-21.
-- **Flag 12, MIG-B9-13's flag 14:** MIG-B9-38 is registered as proposed in the follow-ups above, "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS" (S, wave 3, depends on MIG-B9-14 and 22), with one new catalogued code. It answers MIG-B9-13's flag 14 and decision D18 of 2026-11-04.
+- **Flag 12, MIG-B9-13's flag 14:** MIG-B9-38 is registered as proposed in the follow-ups above, "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS" (S, wave 3, depends on MIG-B9-14 and 22), with one new catalogued code. It answers MIG-B9-13's flag 14 and moves to MIG-B9-38 the warning that decision D18 of 2026-11-04 kept with this story, which did not implement it.
 - **Flag 13, MIG-B9-13's flag 4:** accepted as delivered: the CLI keeps `compile()`'s bytes.
 - **Flag 14, A5's `--multi`:** accepted as delivered: the `--multi` scaffold uses `@use` vacuously.
 - **Flag 15, A3's full-rebuild fallback:** accepted as delivered, with its documented limits.

@@ -203,15 +203,14 @@ verbatim:
 > todo como recomendado
 
 ("everything as recommended.") Every recommendation below is therefore the
-owner's decision of 2026-11-08; this record is in English. The
-recommendations followed the flags, so this list adds no numbering of its
-own: a story cites a decision by the flag it answers, as "the decision of
-2026-11-08 on MIG-B9-14's flag 12". MIG-B9-14 was merged as PR #71
-(`db0e28d`) and MIG-B9-15 as PR #72 (`4ecdc51`), so wave 1 is complete. Six
-stories carry an "Owner decisions of 2026-11-08" block at the end of their
-§15: MIG-B9-14, 15, 20, 21, 22 and 62. The index registers the three new
-stories, MIG-B9-16 (wave 2) and MIG-B9-38 and 39 (wave 3), which ship in
-`0.5.0-beta.9` with their waves.
+owner's decision of 2026-11-08; this record is in English. This list adds no
+numbering of its own: a story cites a decision by the flag it answers, as
+"the decision of 2026-11-08 on MIG-B9-14's flag 12". MIG-B9-14 was merged as
+PR #71 (`db0e28d`) and MIG-B9-15 as PR #72 (`4ecdc51`), so wave 1 is
+complete. Six stories carry an "Owner decisions of 2026-11-08" block at the
+end of their §15: MIG-B9-14, 15, 20, 21, 22 and 62. The index registers the
+three new stories, MIG-B9-16 (wave 2) and MIG-B9-38 and 39 (wave 3), which
+ship in `0.5.0-beta.9` with their waves.
 
 MIG-B9-14's flags:
 
@@ -223,16 +222,17 @@ MIG-B9-14's flags:
 - **Flag 8 — the `sass` refusals that reach `uxdsl theme`.** They are kept, and MIG-B9-22 pins them with a test.
 - **Flag 10 — the error oracles.** A strict comparison of error oracles in `fixtures/parity/run.js` (line 150 compares by substring both ways) goes to MIG-B9-20.
 - **Flag 11 — warnings lost when `compile()` throws.** `error.warnings` goes to MIG-B9-21.
-- **Flag 12 — MIG-B9-38 registered,** "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS": S, wave 3, depends on MIG-B9-14 and 22; one new catalogued code. It answers MIG-B9-13's flag 14 and decision D18 of 2026-11-04.
+- **Flag 12 — MIG-B9-38 registered,** "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS": S, wave 3, depends on MIG-B9-14 and 22; one new catalogued code. It answers MIG-B9-13's flag 14 and moves to MIG-B9-38 the warning that decision D18 of 2026-11-04 kept with MIG-B9-14, which did not implement it.
 - **Flag 16 — MIG-B9-39 registered,** "Every host's watch recovers after a failed compile": wave 3, S or split by its scout, depends on MIG-B9-14, 21 and 22; the adapters re-register the last good dependencies and `err.file`. It also owns the flaky watch-mode test that failed on CI's ubuntu runner for PR #71 and PR #72 (`waitFor timed out`) and the occasionally stale `cli-captures.json` `--check` (MIG-B9-15 §15).
 - **Flag 17 — the exclusion by file name.** `generate-entry` excludes only the output file, instead of every file with the entry's file name in any directory: MIG-B9-22 (it matters for MIG-B9-20's `uxdsl-theme.uxdsl`).
 
 The five decisions on MIG-B9-15 are recorded once, in its §15, "Owner
 decisions of 2026-11-08", merged with PR #72, and are not repeated here:
-flag 1, D3's sentence; flag 2, D1's reading; flag 3, `/docs/language`, which
-registers MIG-B9-16, "The playground's `/docs/language` page on the
-superset"; flag 4, the files outside Owns and Shares; and the flaky watch
-test, which goes to MIG-B9-39.
+flag 1, D3's sentence, which also gives MIG-B9-26 the removal of the
+`uxdsl-probe-` prefix exception; flag 2, D1's reading; flag 3,
+`/docs/language`, which registers MIG-B9-16, "The playground's
+`/docs/language` page on the superset"; flag 4, the files outside Owns and
+Shares; and the flaky watch test, which goes to MIG-B9-39.
 
 ## 3. Scope, in waves
 
