@@ -79,7 +79,8 @@ was written within moments of the save), and restoring such a file, or a
 directory of them, after deleting it rebuilds them; a
 partial a build could not find is noticed when it appears only where a
 `watch` pattern matches it. `init` and `generate-entry` write an entry that
-loads each `.uxdsl` file with its own `@use '<path>' as <namespace>;` (a `%`,
+loads each `.uxdsl` file with its own
+`@use '<path>.uxdsl' as <namespace>;` (a `%`,
 `#`, `?`, `'` or `\` in the path percent-encoded), every namespace unique
 (`generate-entry --first a,b` lists those files first), so
 each file is its own Sass module and `@use`s what it reads from another, `as *`
@@ -101,6 +102,17 @@ how to write a CSS Module in `.uxdsl`, and the migration guide's
 "Regenerate the entry" item
 ([beta.9 — Sass inside compile()](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/migration.md#beta9--sass-inside-compile))
 what a regenerated entry changes in a project.
+
+`generate-entry` writes each path with its `.uxdsl` extension, so a `.scss`
+file of the same name beside it is never the one loaded, makes each namespace
+from the file's path relative to `--src`, lists the files by path unless
+`--first` names files to load first, leaves out only its own output file and
+the `--exclude` names, and records its invocation in the entry's header,
+which `generate-entry` with no arguments runs again for each entry of the
+build config (for the file the defaults write when no entry of the config
+records one), writing an entry only when its content changes; `build --watch`
+runs it again when a `.uxdsl` file is added or removed under its `--src`,
+before it rebuilds, so a new component needs no command.
 
 ## From SCSS: rename and keep building
 
