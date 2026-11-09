@@ -170,12 +170,13 @@ What to check when you upgrade:
    record them
    (`/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */`);
    from then on `npx uxdsl generate-entry` with no arguments runs it again for
-   the build's entry; an entry generated before has no such line, so the
-   no-argument run uses the defaults for it, as before. Each file becomes its
-   own Sass module. The `@import` entry gave every listed file one scope, so a
-   file could read a `$variable`, mixin, function or `%placeholder` another
-   file defined; after regenerating, such a file fails as `UXD_SASS`
-   (`Undefined variable.`, `Undefined mixin.`,
+   the build's entry, and so does `build --watch` when a `.uxdsl` file is
+   added or removed; an entry generated before has no such line, so the
+   no-argument run uses the defaults for it, as before, and `build --watch`
+   never rewrites it. Each file becomes its own Sass module. The `@import`
+   entry gave every listed file one scope, so a file could read a `$variable`,
+   mixin, function or `%placeholder` another file defined; after regenerating,
+   such a file fails as `UXD_SASS` (`Undefined variable.`, `Undefined mixin.`,
    `The target selector was not found.`), or, in three cases, compiles
    differently without an error: a call to another file's `@function` stays in
    the CSS as written, a value an earlier file set for a variable that another

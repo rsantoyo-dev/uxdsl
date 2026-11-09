@@ -88,7 +88,8 @@ Commands:
                     in a Next.js project, postcss.config.js. Never overwrites a file.
   generate-entry    Rewrite the entry file: one @use per .uxdsl file found under a
                     directory, the options recorded in its header. With no
-                    option, run again what the build's entry records.
+                    option, run again what the build's entry records, as
+                    build --watch does when a .uxdsl file is added or removed.
   build             Compile the entry (or every entry in "builds") to CSS, once;
                     --watch keeps rebuilding as files change.
   theme             Print the effective theme as JSON: the same discovery and
@@ -132,8 +133,9 @@ error.
 The entry's header records the invocation that wrote it, its paths relative
 to the working directory. With no option, generate-entry runs again the
 invocation each entry of the build config records (paths relative to the
-config's directory), or uses the defaults below when none records one. The
-file is written only when its content changes.
+config's directory), or uses the defaults below when none records one, and
+build --watch runs it again when a .uxdsl file under --src is added or
+removed. The file is written only when its content changes.
 
 Options:
   --src             Source directory to scan (default: ./src, or the current
@@ -157,7 +159,10 @@ Options:
   --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.
   --out, -o         Output CSS file path (with --entry).
   --watch, -w       Rebuild on file changes. Survives a broken edit: the last
-                    good CSS stays on disk until the next valid save.
+                    good CSS stays on disk until the next valid save. An entry
+                    that records the generate-entry run that wrote it is
+                    regenerated when a .uxdsl file that run scans is added or
+                    removed.
   --include-theme, --no-include-theme
                     Emit (or skip) the global :root token definitions.
                     Default true. Pass --no-include-theme for a component or
@@ -1570,6 +1575,10 @@ function watchSelection(targets) {
 // stats, and an event that finds them unchanged is dropped. The first event
 // that finds them changed, or the file gone, is reported, and the file is then
 // reported like any other.
+//
+// `keep(file)` does the same for a selected file the session has just written
+// itself (a regenerated entry): the event of that write finds the stats kept
+// and is dropped; a later change is reported.
 function fileStats(file) {
   try {
     return fs.statSync(file, { throwIfNoEntry: false }) || null;
@@ -1633,6 +1642,11 @@ function createWatcher(targets) {
     watchDirs(dirs);
     return kept;
   };
+  events.keep = (file) => {
+    const resolved = path.resolve(file);
+    const stats = fileStats(resolved);
+    if (stats) unchanged.set(resolved, stats);
+  };
   return events;
 }
 
@@ -1652,6 +1666,17 @@ function createWatcher(targets) {
 // to find is not followed, since Dart Sass does not report the paths it tried:
 // a missing partial is noticed when it appears only where a `watch` pattern
 // matches it.
+//
+// An entry of the config whose header records the invocation that generated
+// it (recordedEntryOptions) is kept current: every .uxdsl file under its --src
+// is watched too, and the `add` or `unlink` of one, before it is built, plans
+// the entry again from that invocation and writes it when its content changed,
+// printing `[uxdsl] regenerated <entry> (<n> files)`. The event of that write
+// is dropped (`keep`), so the add or unlink builds once. A `change` never
+// regenerates, nor does an event on an entry itself; an entry whose header
+// records no invocation is never written. A regeneration that fails prints
+// `[uxdsl] Error: regenerating <entry>: …` and writes nothing; the event is
+// then built as any other.
 function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   let config = initialConfig;
   // Entry index -> Set<absolute dependency path>, from each entry's own
@@ -1660,15 +1685,42 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   // failed build never touches it, so a later change is checked against the
   // last valid graph.
   let dependencyGraph = new Map((initialResults || []).map(({ index, dependencies }) => [index, new Set(dependencies)]));
-  let watcher = createWatcher(config ? config.watch : bootstrapWatchTargets(argv, cwd));
+  // The configured entries that record their invocation, each with the
+  // options it gives or the error reading them gave. Read from the entries'
+  // headers each time.
+  function generatedEntries() {
+    if (!config) return [];
+    const base = config.configPath ? path.dirname(config.configPath) : cwd;
+    const generated = [];
+    for (const entry of configEntryFiles(config)) {
+      try {
+        const options = recordedEntryOptions(entry, base);
+        if (options) generated.push({ entry, options });
+      } catch (error) {
+        generated.push({ entry, error });
+      }
+    }
+    return generated;
+  }
+  // The config's `watch` patterns and, for each generated entry, every .uxdsl
+  // file under its --src.
+  function watchTargets() {
+    const targets = [...config.watch];
+    for (const { options } of generatedEntries()) {
+      if (!options) continue;
+      const sources = path.join(options.srcDir, '**/*.uxdsl');
+      if (!targets.includes(sources)) targets.push(sources);
+    }
+    return targets;
+  }
+  let watchedTargets = config ? watchTargets() : bootstrapWatchTargets(argv, cwd);
+  let watcher = createWatcher(watchedTargets);
   // Follows every entry of the current config and every file of the graph.
   // `loadedSince` is when the successful build that produced the graph
   // started (see createWatcher).
   function followAll(loadedSince) {
     if (!config) return;
-    const files = new Set();
-    const entries = config.builds && config.builds.length ? config.builds.map((b) => b.entry) : [config.entry];
-    for (const entry of entries) if (entry) files.add(path.resolve(entry));
+    const files = new Set(configEntryFiles(config));
     for (const dependencies of dependencyGraph.values()) for (const file of dependencies) files.add(file);
     watcher.follow([...files], loadedSince);
   }
@@ -1724,14 +1776,14 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
       if (!config) console.error('[uxdsl] No configuration found — watching for one to appear...');
       return;
     }
-    const previousWatch = (config ? config.watch : bootstrapWatchTargets(argv, cwd)).slice().sort();
-    const nextWatch = [...reloaded.watch].sort();
     config = reloaded;
-    if (JSON.stringify(previousWatch) !== JSON.stringify(nextWatch)) {
+    const nextTargets = watchTargets();
+    if (JSON.stringify([...watchedTargets].sort()) !== JSON.stringify([...nextTargets].sort())) {
       // Recreate to handle overlapping globs without unwatch() leaving
       // exclusions behind. Keep config errors recoverable on the old watcher.
       await watcher.close();
-      watcher = createWatcher(config.watch);
+      watchedTargets = nextTargets;
+      watcher = createWatcher(watchedTargets);
       watcher.on('all', onChange);
       await new Promise((resolve, reject) => {
         watcher.once('ready', resolve);
@@ -1842,7 +1894,27 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     }
     const rel = path.relative(process.cwd(), filePath);
     console.log(`[uxdsl] ${event} ${rel}`);
+    if ((event === 'add' || event === 'unlink') && filePath && filePath.endsWith('.uxdsl')) regenerateEntries(path.resolve(filePath));
     trigger(filePath ? path.resolve(filePath) : undefined);
+  }
+
+  // Writes again, before the event of `resolvedFile` is built, each generated
+  // entry whose --src holds that file, when its plan differs from the file.
+  function regenerateEntries(resolvedFile) {
+    if (!config || configEntryFiles(config).includes(resolvedFile)) return;
+    for (const { entry, options, error } of generatedEntries()) {
+      const entryRel = path.relative(process.cwd(), entry);
+      try {
+        if (error) throw error;
+        if (!resolvedFile.startsWith(options.srcDir.endsWith(path.sep) ? options.srcDir : options.srcDir + path.sep)) continue;
+        const plan = planRecordedEntry(options);
+        if (commitFileIfChanged(entry, plan.content) !== 'written') continue;
+        watcher.keep(entry);
+        console.log(`[uxdsl] regenerated ${entryRel} (${plan.count} file${plan.count === 1 ? '' : 's'})`);
+      } catch (err) {
+        console.error(`[uxdsl] Error: regenerating ${entryRel}: ${formatCliDiagnostic(err.message)}`);
+      }
+    }
   }
   watcher.on('all', onChange);
 }
@@ -1873,14 +1945,15 @@ function findFiles(dir, extension, fileList = []) {
 // emits once.
 //
 // Its header records the invocation that wrote it, on the line after the
-// first two (invocationLine): `uxdsl generate-entry` with no option runs that
+// first two (invocationLine): `uxdsl generate-entry` with no option, and
+// `build --watch` when a .uxdsl file under --src is added or removed, run that
 // line again for an entry of the build config.
 
 const ENTRY_HEADER_START = [
   '/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */',
   '/* Generated by uxdsl generate-entry */',
 ];
-const ENTRY_HEADER_END = "/* As the build's entry, it is regenerated by uxdsl generate-entry with no arguments, from the line above. */";
+const ENTRY_HEADER_END = "/* As the build's entry, it is regenerated by uxdsl build --watch when a .uxdsl file under --src is added or removed, and by uxdsl generate-entry with no arguments, from the line above. */";
 const RECORDED_INVOCATION_START = '/* uxdsl generate-entry';
 
 // The characters a URL reads as something else (a percent escape, a fragment,

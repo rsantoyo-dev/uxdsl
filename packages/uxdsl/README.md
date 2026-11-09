@@ -108,7 +108,9 @@ from the file's path relative to `--src`, lists the files by path unless
 `--first` names files to load first, leaves out only its own output file and
 the `--exclude` names, and records its invocation in the entry's header,
 which `generate-entry` with no arguments runs again for each entry of the
-build config, writing an entry only when its content changes.
+build config, writing an entry only when its content changes; `build --watch`
+runs it again when a `.uxdsl` file is added or removed under its `--src`,
+before it rebuilds, so a new component needs no command.
 
 ## From SCSS: rename and keep building
 
