@@ -1145,6 +1145,41 @@ test('MIG-B9-22: a file added in a new subdirectory, under a --src that the watc
   assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/forms/input.uxdsl' as components-forms-input;", "@use './page.uxdsl' as app-page;"]);
 });
 
+// The entry starts recording its invocation while the session runs, written by
+// generate-entry over a hand-written one: the build of that change watches its
+// --src, so a file the watch patterns do not reach regenerates it without a
+// restart or a change of the config.
+test('MIG-B9-22: an entry that records its invocation from a change made while the session runs has its --src watched from the build of that change', async (t) => {
+  // No `watch` key: the patterns are the entry and src/app/**/*.uxdsl.
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/app/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'src/app/uxdsl-entry.uxdsl': "@use '../components/card';\n",
+    'src/components/card.uxdsl': '.card { color: blue; }\n',
+  });
+  const entryPath = path.join(dir, 'src', 'app', 'uxdsl-entry.uxdsl');
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.card {'));
+  await delay(WATCHER_SETTLE_MS);
+
+  let mark = session.output.length;
+  const generated = spawnSync(process.execPath, [CLI_BIN, 'generate-entry', '--src', 'src', '--out', 'src/app/uxdsl-entry.uxdsl'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(generated.status, 0, `${generated.stdout}${generated.stderr}`);
+  await waitFor(() => buildLines(session.output.slice(mark), 'out/app.css').length > 0);
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(session.output.slice(mark), /regenerated/, session.output.slice(mark));
+
+  mark = session.output.length;
+  putFile(dir, 'src/components/new.uxdsl', '.new { color: teal; }\n');
+  await waitFor(() => css().includes('.new {'));
+  await delay(WATCHER_SETTLE_MS * 2);
+  const lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/new.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
+  assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/new.uxdsl' as components-new;"]);
+  assert.equal(session.exited, false);
+});
+
 test('MIG-B9-22: a generated builds[1] entry is regenerated beside a hand-written builds[0], which stays byte-identical, as does any entry that records no invocation when a file is added next to it', async (t) => {
   const mainText = "@use './card';\n.main { color: red; }\n";
   const dir = generatedProject({

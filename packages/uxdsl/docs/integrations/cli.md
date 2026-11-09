@@ -205,12 +205,16 @@ and runs again the invocation each of its entries records, in config order,
 its paths resolved against the config's directory (the working directory
 without a config). It prints `[uxdsl] <entry> records: <invocation>` for each.
 An entry whose header records no invocation, written by hand or generated
-before the header recorded one, is left as it is; when no entry records one,
-the command runs with the defaults above. Run `generate-entry` once with your
-options to record them. A recorded line that does not parse (an unknown flag,
-an argument, `--help`), that writes another file than the entry that records
-it, or whose `--first` names a file that is gone exits 1, naming the entry,
-and writes nothing; so does a build config or theme file that fails to load.
+before the header recorded one, is left as it is. When no entry of the config
+records one, the file the defaults write (`uxdsl-entry.uxdsl` in `./src`, or
+in the working directory without `src/`) is written again from the invocation
+its own header records, with the same `records:` line, so the options it
+records are kept; when it records none, the command runs with the defaults
+above. Run `generate-entry` once with your options to record them. A recorded
+line that does not parse (an unknown flag, an argument, `--help`), that writes
+another file than the entry that records it, or whose `--first` names a file
+that is gone exits 1, naming the entry, and writes nothing, no other entry
+included; so does a build config or theme file that fails to load.
 
 Every run writes the entry only when its content changes, atomically (a
 temporary file renamed over it). Otherwise it prints
@@ -429,8 +433,10 @@ files, and every later edit rebuilds them too.
 single entry, or an entry of `builds`) records the invocation that generated
 it ([`generate-entry`](#generate-entry)), the session also watches every
 `.uxdsl` file under that invocation's `--src`, where the `watch` patterns do
-not reach too, and the `add` or `unlink` of one runs the invocation again
-before it is built: the entry is written when its content changes, and
+not reach too (an entry that starts recording one while the session runs,
+because `generate-entry` wrote it, from the build of that change), and the
+`add` or `unlink` of one runs the invocation again before it is built: the
+entry is written when its content changes, and
 `[uxdsl] regenerated src/uxdsl-entry.uxdsl (4 files)` says so. The build that
 follows runs once, since the entry's own write is not reported as a change. A
 rename is an `add` and an `unlink`, and each file of a new subdirectory an

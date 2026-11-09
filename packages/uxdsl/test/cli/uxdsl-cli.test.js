@@ -2461,6 +2461,57 @@ test('MIG-B9-22: with no arguments, a configured entry that records no invocatio
   }
 });
 
+// When no entry of the build config records an invocation, the file the
+// defaults would write is read first: its own recorded invocation is run
+// again, so the options it records are kept rather than replaced by the
+// defaults.
+test('MIG-B9-22: with no arguments and no configured entry that records an invocation, the file the defaults write is written again from the invocation it records, never with the defaults over it', () => {
+  const recorded = 'uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl --first b.uxdsl --exclude legacy.uxdsl';
+  for (const [name, config] of [
+    ['without a build config or a theme file', null],
+    ['with a build config whose entry is another file, written by hand', "module.exports = { entry: './main.uxdsl', outFile: './out/app.css', includeTheme: false };\n"],
+  ]) {
+    const dir = mkTmpDir();
+    if (config) write(dir, 'uxdsl.config.cjs', config);
+    const mainText = "@use './src/a';\n";
+    const mainPath = config ? write(dir, 'main.uxdsl', mainText) : null;
+    write(dir, 'src/a.uxdsl', '.a { color: red; }\n');
+    write(dir, 'src/b.uxdsl', '.b { color: blue; }\n');
+    write(dir, 'src/legacy.uxdsl', '.legacy { color: gray; }\n');
+    const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+    const generated = runCli(dir, 'generate-entry', '--first', 'b', '--exclude', 'legacy.uxdsl');
+    assert.equal(generated.status, 0, `${name}: ${generated.stderr}`);
+    const text = fs.readFileSync(entryPath, 'utf8');
+    assert.equal(text, [...entryHeader(recorded), "@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", ''].join('\n'), name);
+
+    // Nothing changed: the recorded invocation, which writes nothing.
+    const before = fs.statSync(entryPath);
+    const again = runCli(dir, 'generate-entry');
+    assert.equal(again.status, 0, `${name}: ${again.stderr}`);
+    assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 2 @use rules (identical to the file on disk; not rewritten).\n`, name);
+    assert.equal(fs.readFileSync(entryPath, 'utf8'), text, name);
+    assert.equal(fs.statSync(entryPath).mtimeMs, before.mtimeMs, `${name}: not written`);
+
+    // A file added since is listed with the recorded options.
+    write(dir, 'src/c.uxdsl', '.c { color: green; }\n');
+    const regenerated = runCli(dir, 'generate-entry');
+    assert.equal(regenerated.status, 0, `${name}: ${regenerated.stderr}`);
+    assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", "@use './c.uxdsl' as c;"], name);
+    if (mainPath) assert.equal(fs.readFileSync(mainPath, 'utf8'), mainText, name);
+
+    // A recorded line that does not parse: exit 1, naming the file, and nothing
+    // is written, where the defaults used to write over it.
+    const current = fs.readFileSync(entryPath, 'utf8');
+    const broken = current.replace(`/* ${recorded} */`, `/* ${recorded} --bogus */`);
+    assert.notEqual(broken, current);
+    fs.writeFileSync(entryPath, broken);
+    const refused = runCli(dir, 'generate-entry');
+    assert.equal(refused.status, 1, `${name}: ${refused.stdout}${refused.stderr}`);
+    assert.match(refused.stderr, /^\[uxdsl\] Error: src\/uxdsl-entry\.uxdsl: its recorded invocation does not parse \(Unknown option --bogus\.\): uxdsl generate-entry --src /m, name);
+    assert.equal(fs.readFileSync(entryPath, 'utf8'), broken, `${name}: nothing is written`);
+  }
+});
+
 test('MIG-B9-22: with no arguments, generate-entry re-runs, in config order, the invocation each entry of "builds" records, and leaves an entry that records none', () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/main.uxdsl', outFile: './out/main.css', includeTheme: false },\n  { entry: './src/b/entry.uxdsl', outFile: './out/b.css', includeTheme: false },\n  { entry: './src/a/entry.uxdsl', outFile: './out/a.css', includeTheme: false },\n] };\n");
@@ -2486,4 +2537,21 @@ test('MIG-B9-22: with no arguments, generate-entry re-runs, in config order, the
   assert.equal(fs.existsSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl')), false, 'the defaults do not run');
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
+
+  // One entry whose recorded line does not parse: exit 1, naming it, and no
+  // entry is written, not even one planned before it (src/b/entry.uxdsl comes
+  // first in config order and would list five.uxdsl).
+  write(dir, 'src/b/five.uxdsl', '.five { color: red; }\n');
+  const bPath = path.join(dir, 'src', 'b', 'entry.uxdsl');
+  const aPath = path.join(dir, 'src', 'a', 'entry.uxdsl');
+  const bText = fs.readFileSync(bPath, 'utf8');
+  const aLine = '/* uxdsl generate-entry --src ./src/a --out ./src/a/entry.uxdsl */';
+  const aBroken = fs.readFileSync(aPath, 'utf8').replace(aLine, aLine.replace(' */', ' --bogus */'));
+  assert.ok(aBroken.includes('--bogus'), aBroken);
+  fs.writeFileSync(aPath, aBroken);
+  const refused = runCli(dir, 'generate-entry');
+  assert.equal(refused.status, 1, `${refused.stdout}${refused.stderr}`);
+  assert.match(refused.stderr, /^\[uxdsl\] Error: src\/a\/entry\.uxdsl: its recorded invocation does not parse \(Unknown option --bogus\.\): /m);
+  assert.equal(fs.readFileSync(bPath, 'utf8'), bText, 'the entry planned before the failing one is not written');
+  assert.equal(fs.readFileSync(aPath, 'utf8'), aBroken);
 });

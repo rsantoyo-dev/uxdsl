@@ -133,9 +133,10 @@ error.
 The entry's header records the invocation that wrote it, its paths relative
 to the working directory. With no option, generate-entry runs again the
 invocation each entry of the build config records (paths relative to the
-config's directory), or uses the defaults below when none records one, and
-build --watch runs it again when a .uxdsl file under --src is added or
-removed. The file is written only when its content changes.
+config's directory); when none records one, the invocation the default
+--out records, or the defaults below when it records none. build --watch
+runs it again when a .uxdsl file under --src is added or removed. The file is
+written only when its content changes.
 
 Options:
   --src             Source directory to scan (default: ./src, or the current
@@ -1669,7 +1670,8 @@ function createWatcher(targets) {
 //
 // An entry of the config whose header records the invocation that generated
 // it (recordedEntryOptions) is kept current: every .uxdsl file under its --src
-// is watched too, and the `add` or `unlink` of one, before it is built, plans
+// is watched too, from the first build (full or not) after its header records
+// the invocation, and the `add` or `unlink` of one, before it is built, plans
 // the entry again from that invocation and writes it when its content changed,
 // printing `[uxdsl] regenerated <entry> (<n> files)`. The event of that write
 // is dropped (`keep`), so the add or unlink builds once. A `change` never
@@ -1756,6 +1758,25 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     return indices;
   }
 
+  // Recreates the watcher when watchTargets() differs from what it watches: a
+  // reloaded config, or an entry whose header started or stopped recording an
+  // invocation or records another --src. Returns whether it was recreated.
+  async function refreshWatcher() {
+    const nextTargets = watchTargets();
+    if (JSON.stringify([...watchedTargets].sort()) === JSON.stringify([...nextTargets].sort())) return false;
+    // Recreate to handle overlapping globs without unwatch() leaving
+    // exclusions behind. Keep config errors recoverable on the old watcher.
+    await watcher.close();
+    watchedTargets = nextTargets;
+    watcher = createWatcher(watchedTargets);
+    watcher.on('all', onChange);
+    await new Promise((resolve, reject) => {
+      watcher.once('ready', resolve);
+      watcher.once('error', reject);
+    });
+    return true;
+  }
+
   async function runFullBuild() {
     // The changed file could be uxdsl.config.cjs or the theme file
     // itself — reload both from disk (past their require() cache)
@@ -1777,19 +1798,7 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
       return;
     }
     config = reloaded;
-    const nextTargets = watchTargets();
-    if (JSON.stringify([...watchedTargets].sort()) !== JSON.stringify([...nextTargets].sort())) {
-      // Recreate to handle overlapping globs without unwatch() leaving
-      // exclusions behind. Keep config errors recoverable on the old watcher.
-      await watcher.close();
-      watchedTargets = nextTargets;
-      watcher = createWatcher(watchedTargets);
-      watcher.on('all', onChange);
-      await new Promise((resolve, reject) => {
-        watcher.once('ready', resolve);
-        watcher.once('error', reject);
-      });
-    }
+    await refreshWatcher();
     // The reloaded config's entries are followed before it builds, so an
     // entry whose first build fails is still watched.
     followAll();
@@ -1807,6 +1816,9 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
   }
 
   async function runSelectiveBuild(indices) {
+    // A change of an entry can make its header record an invocation: its
+    // --src is watched from this build on.
+    if (await refreshWatcher()) followAll();
     try {
       const startedAt = Date.now();
       const results = await builder(config, indices);
@@ -2239,28 +2251,39 @@ function planRecordedEntry(options) {
   }
 }
 
+// The plans of those of `entries` whose header records an invocation, from
+// that invocation, in order; nothing is written here. Throws, naming the
+// entry, at the first that cannot be planned.
+function planRecordedEntries(entries, base, cwd) {
+  const plans = [];
+  for (const entry of entries) {
+    const rel = path.relative(cwd, entry);
+    try {
+      const options = recordedEntryOptions(entry, base);
+      if (!options) continue;
+      console.log(`[uxdsl] ${rel} records: ${invocationLine(options).slice(3, -3)}`);
+      console.log(`[uxdsl] Scanning ${options.srcArg} for .uxdsl files...`);
+      plans.push(planRecordedEntry(options));
+    } catch (err) {
+      throw new Error(`${rel}: ${err.message}`);
+    }
+  }
+  return plans;
+}
+
 // With an option, one run with those options. With none (and no argument),
 // every entry of the build config whose header records an invocation is
-// written again from it, in config order, each checked before any is written;
-// when no entry records one, one run with the defaults.
+// written again from it, in config order, each checked before any is written.
+// When no entry of the config records one, the file the defaults write is
+// written again from the invocation its own header records, when it records
+// one, and otherwise with the defaults.
 async function generateEntry(argv) {
   const cwd = process.cwd();
   const bare = ['src', 'out', 'o', 'first', 'exclude'].every((name) => argv[name] === undefined) && !(argv._ && argv._.length);
   if (bare) {
     const { base, entries } = await configuredEntries(cwd);
-    const plans = [];
-    for (const entry of entries) {
-      const rel = path.relative(cwd, entry);
-      try {
-        const options = recordedEntryOptions(entry, base);
-        if (!options) continue;
-        console.log(`[uxdsl] ${rel} records: ${invocationLine(options).slice(3, -3)}`);
-        console.log(`[uxdsl] Scanning ${options.srcArg} for .uxdsl files...`);
-        plans.push(planRecordedEntry(options));
-      } catch (err) {
-        throw new Error(`${rel}: ${err.message}`);
-      }
-    }
+    let plans = planRecordedEntries(entries, base, cwd);
+    if (!plans.length) plans = planRecordedEntries([entryOptions(argv, cwd).outFile], base, cwd);
     if (plans.length) {
       for (const plan of plans) writeEntry(plan);
       return;
@@ -2481,7 +2504,7 @@ ${SASS_CONFIG_COMMENT}};
     console.log('3. Add more component entries to the "builds" array in uxdsl.config.cjs as the project grows.');
   } else {
     const outFileRel = path.relative(cwd, path.join(srcDir, 'uxdsl.css')).split(path.sep).join('/');
-    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: run "npx uxdsl generate-entry" after adding or removing .uxdsl files.`);
+    console.log(`1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: the watch below regenerates it when a .uxdsl file is added or removed; without it, run "npx uxdsl generate-entry".`);
     console.log(`2. Build: ${addedScripts ? 'npm run uxdsl:build' : 'npx uxdsl build'}`);
     console.log(`   Watch:  ${addedScripts ? 'npm run uxdsl:watch' : 'npx uxdsl build --watch'}${isNext ? ' (alongside next dev)' : isVite ? ' (alongside vite)' : ''}`);
     console.log(`3. Import the generated CSS once, from your root layout or app entry (path relative to that file):`);

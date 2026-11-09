@@ -51,17 +51,23 @@ name, in any directory.
   for each entry of the build config whose header records one (each entry of
   `builds`, in order), its paths resolved against the config's directory, and
   prints `[uxdsl] <entry> records: <invocation>`. An entry that records none
-  is left as it is; when no entry records one, the defaults apply, as before.
-  A recorded line that does not parse, that writes another file, or whose
-  `--first` no longer matches exits 1, naming the entry, and writes nothing.
+  is left as it is. When no entry records one, the file the defaults write
+  (`src/uxdsl-entry.uxdsl`) is written again from the invocation its own
+  header records, so its options are kept, and the defaults apply, as before,
+  when it records none. A recorded line that does not parse, that writes
+  another file, or whose `--first` no longer matches exits 1, naming the
+  entry, and writes nothing, whichever entry it is, before any entry is
+  written.
 - **`build --watch` regenerates a generated entry.** For each entry of the
   config whose header records its invocation, the session also watches every
   `.uxdsl` file under the recorded `--src`, and the `add` or `unlink` of one
   (a rename is both) runs the invocation again before the build:
   `[uxdsl] regenerated <entry> (<n> files)` when the content changed, then
-  one build, since the entry's own write is not reported as a change. A
-  `change` never regenerates, nor does an event on an entry; an entry that
-  records no invocation is never written. A regeneration that cannot be done
+  one build, since the entry's own write is not reported as a change. An
+  entry that starts recording its invocation while the session runs has its
+  `--src` watched from the build of that change. A `change` never
+  regenerates, nor does an event on an entry; an entry that records no
+  invocation is never written. A regeneration that cannot be done
   prints `[uxdsl] Error: regenerating <entry>: …`, writes nothing, and the
   session keeps watching. Before, an added file built the old entry, and a
   removed or renamed one failed the build with
