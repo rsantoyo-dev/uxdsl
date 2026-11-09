@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). Merged: MIG-B9-01 to 05, 10 to 13 and 53. The index has each story's status. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). Merged: MIG-B9-01 to 05, 10 to 15 and 53; wave 1 is complete. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
 | Release | Two releases (DEC-03, revised on 2026-11-04): `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with waves 0 to 3 and MIG-B9-91; then `uxdsl@0.5.0-beta.10`, with waves 4 to 6, MIG-B9-90 and MIG-B9-92. |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
@@ -116,7 +116,8 @@ No story is blocked by a decision. Each story a decision touches carries an
 "Owner decisions of 2026-10-23" block at the end of its §15; where that
 block and the story's contract differ, the block rules. Eight stories also
 carry an "Owner decisions of 2026-11-04" block (below), which rules where it
-differs from an earlier block.
+differs from an earlier block, and six carry an "Owner decisions of
+2026-11-08" block (below), which rules in the same way.
 
 ### Review of 2026-10-11
 
@@ -191,6 +192,48 @@ the new stories.
 - **D18 — MIG-B9-13's owner flags 2, 3, 4, 5, 7, 9, 11, 12, 13, 14, 15, 16, 17, 18 and 19 are accepted as delivered** (flag 1 was decided on 2026-11-02; flags 6, 8, 10 and 20 are D6, D7, D5 and D11). For flag 14, the proposed CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL stays with MIG-B9-14.
 - **D19 — MIG-B9-12's owner flags 1, 2, 3, 4, 5, 7, 9, 14, 15, 16, 17, 18, 19, 20, 21 and 22 are accepted as delivered** (flag 15's lockfile item goes to MIG-B9-91); flags 6, 10, 12 and 13 were settled by MIG-B9-13 and MIG-B9-14; flag 8 is D12 and flag 11 is D10.
 
+### Owner decisions of 2026-11-08
+
+On 2026-11-08 the owner was given numbered recommendations, in Spanish, on
+the owner flags of the last two stories of wave 1: MIG-B9-14's 18 flags (its
+§15, "Delivery of 2026-11-06", and the body of PR #71) and five on MIG-B9-15
+(its §15, "Delivery of 2026-11-08", and PR #72). The owner answered,
+verbatim:
+
+> todo como recomendado
+
+("everything as recommended.") Every recommendation below is therefore the
+owner's decision of 2026-11-08; this record is in English. This list adds no
+numbering of its own: a story cites a decision by the flag it answers, as
+"the decision of 2026-11-08 on MIG-B9-14's flag 12". MIG-B9-14 was merged as
+PR #71 (`db0e28d`) and MIG-B9-15 as PR #72 (`4ecdc51`), so wave 1 is
+complete. Six stories carry an "Owner decisions of 2026-11-08" block at the
+end of their §15: MIG-B9-14, 15, 20, 21, 22 and 62. The index registers the
+three new stories, MIG-B9-16 (wave 2) and MIG-B9-38 and 39 (wave 3), which
+ship in `0.5.0-beta.9` with their waves.
+
+MIG-B9-14's flags:
+
+- **Flag 1 — the namespace basis.** `generate-entry`'s namespaces are computed from the path relative to `--src`, not to the entry (today the playground gets names like `f----components-…`): MIG-B9-22 does it.
+- **Flag 2 — the extension in each `@use`.** `generate-entry` writes the extension in each `@use` (`@use './x.uxdsl'`), so a `.scss` twin beside a `.uxdsl` file is not ambiguous: MIG-B9-22.
+- **Flag 3 — isolation's silent cases.** The silent cases of `@use`'s module isolation (another file's `@function` called, a `!default` set by an earlier file, a project `@function` shadowing a token, a bare call under a namespaced `@use`) are detected by MIG-B9-26.
+- **Flag 4 — `PRIORITY_PATTERNS`.** `PRIORITY_PATTERNS` (`variables`, `theme-def`) is removed, since it now only orders the output and listing `_variables` first can break a `with (…)` configured elsewhere: MIG-B9-22.
+- **Flags 5, 6, 7, 9, 13, 14, 15 and 18 — accepted as delivered:** watch's first failure prints `build failed:`; warnings are reprinted on every rebuild; adapter warnings are located as text; the gate's extra S-4 to S-6; the CLI keeps `compile()`'s bytes; `--multi` uses `@use` vacuously; A3's fallback limits; Shares as delivered, with MIG-B9-21, 31, 33, 34, 36 and wave 3's playground stories serialized after PR #71.
+- **Flag 8 — the `sass` refusals that reach `uxdsl theme`.** They are kept, and MIG-B9-22 pins them with a test.
+- **Flag 10 — the error oracles.** A strict comparison of error oracles in `fixtures/parity/run.js` (line 150 compares by substring both ways) goes to MIG-B9-20.
+- **Flag 11 — warnings lost when `compile()` throws.** `error.warnings` goes to MIG-B9-21.
+- **Flag 12 — MIG-B9-38 registered,** "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS": S, wave 3, depends on MIG-B9-14 and 22; one new catalogued code. It answers MIG-B9-13's flag 14 and moves to MIG-B9-38 the warning that decision D18 of 2026-11-04 kept with MIG-B9-14, which did not implement it.
+- **Flag 16 — MIG-B9-39 registered,** "Every host's watch recovers after a failed compile": wave 3, S or split by its scout, depends on MIG-B9-14, 21 and 22; the adapters re-register the last good dependencies and `err.file`. It also owns the flaky watch-mode test that failed on CI's ubuntu runner for PR #71 and PR #72 (`waitFor timed out`) and the occasionally stale `cli-captures.json` `--check` (MIG-B9-15 §15).
+- **Flag 17 — the exclusion by file name.** `generate-entry` excludes only the output file, instead of every file with the entry's file name in any directory: MIG-B9-22 (it matters for MIG-B9-20's `uxdsl-theme.uxdsl`).
+
+The five decisions on MIG-B9-15 are recorded once, in its §15, "Owner
+decisions of 2026-11-08", merged with PR #72, and are not repeated here:
+flag 1, D3's sentence, which also gives MIG-B9-26 the removal of the
+`uxdsl-probe-` prefix exception; flag 2, D1's reading; flag 3,
+`/docs/language`, which registers MIG-B9-16, "The playground's
+`/docs/language` page on the superset"; flag 4, the files outside Owns and
+Shares; and the flaky watch test, which goes to MIG-B9-39.
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
@@ -205,8 +248,8 @@ index's §5 sits there.
 | --- | --- | --- | --- |
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 | `0.5.0-beta.9` |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
-| 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. | MIG-B9-20 to 29 | `0.5.0-beta.9` |
-| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. | MIG-B9-30 to 37 | `0.5.0-beta.9` |
+| 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. | MIG-B9-16, MIG-B9-20 to 29 | `0.5.0-beta.9` |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. | MIG-B9-30 to 39 | `0.5.0-beta.9` |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. | MIG-B9-40 to 43 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. | MIG-B9-60 to 65 | `0.5.0-beta.10` |

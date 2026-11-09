@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | In review (PR #72) |
+| Status | Merged (PR #72) |
 | Size | S |
 | Depends on | MIG-B9-14 |
 | Blocks | MIG-B9-50, MIG-B9-51 |
