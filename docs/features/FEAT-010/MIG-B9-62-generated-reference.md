@@ -155,3 +155,9 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
 
 - **DEC-07:** the reference documents `@media (--<breakpoint>)` where it said "the at-rules after MIG-B9-30".
+
+### Owner decisions of 2026-11-08 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08) and, for the decision below, in [MIG-B9-15 §15](MIG-B9-15-superset-docs.md#owner-decisions-of-2026-11-08). The owner was given numbered recommendations, in Spanish, on the owner flags of MIG-B9-14 and MIG-B9-15, and answered, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation is the owner's decision of 2026-11-08. This record is in English and lists those that concern this story. Where they differ from this story's contract, from the review above or from the owner decisions of 2026-10-23, they rule.
+
+- **`/docs/language` before beta.9 (the decision on MIG-B9-15's flag 3).** MIG-B9-16, a new S story, rewrites the page's SCSS-subset section (`page.tsx:28` and lines 107 to 133) for the superset before `0.5.0-beta.9` ships; this story keeps the page in `0.5.0-beta.10`.

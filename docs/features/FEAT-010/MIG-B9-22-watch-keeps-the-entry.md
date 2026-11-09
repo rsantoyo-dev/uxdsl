@@ -176,3 +176,17 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 
 - Regeneration should skip the write when the file list is unchanged and ignore events on the generated files themselves, or watch loops.
 - Runs before MIG-B9-20 (both edit `bin/uxdsl.js`).
+
+### Owner decisions of 2026-11-08 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). The owner was given numbered recommendations, in Spanish, on the owner flags of MIG-B9-14 and MIG-B9-15, and answered, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation is the owner's decision of 2026-11-08. This record is in English and lists those that concern this story. Where they differ from this story's contract or from the review above, they rule.
+
+Five decisions on MIG-B9-14's flags extend this story's scope:
+
+- **The namespace basis (the decision on MIG-B9-14's flag 1).** `generate-entry` computes its namespaces from the path relative to `--src`, not to the entry (today the playground gets names like `f----components-…`).
+- **The extension in each `@use` (flag 2).** `generate-entry` writes the extension in each `@use` (`@use './x.uxdsl'`), so a `.scss` twin beside a `.uxdsl` file is not ambiguous.
+- **`PRIORITY_PATTERNS` (flag 4).** `PRIORITY_PATTERNS` (`variables`, `theme-def`) is removed, since it now only orders the output and listing `_variables` first can break a `with (…)` configured elsewhere.
+- **The `sass` refusals that reach `uxdsl theme` (flag 8).** They are kept, and this story pins them with a test.
+- **The exclusion by file name (flag 17).** `generate-entry` excludes only the output file, instead of every file with the entry's file name in any directory; this matters for MIG-B9-20's `uxdsl-theme.uxdsl`.
+
+With this scope, its scout re-sizes the story, splitting it if it outgrows S.

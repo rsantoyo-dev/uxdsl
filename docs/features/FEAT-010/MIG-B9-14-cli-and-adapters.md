@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 1 |
 | Decision gate | DEC-01 (decided) |
-| Status | In review (PR #71) |
+| Status | Merged (PR #71) |
 | Size | M |
 | Depends on | MIG-B9-13 |
 | Blocks | MIG-B9-15, MIG-B9-20, MIG-B9-22 |
@@ -675,3 +675,26 @@ Written by the deliverer with PR #71. It records new facts, the owner flags, Sha
     - a glob root or plain `watch` path that holds no followed file, which is not watched again once deleted and re-created;
     - a file modified during the build that first loads it, after Dart Sass read it, which chokidar then discovers without an event;
     - a missing partial created where no pattern matches (owner flag 15).
+
+### Owner decisions of 2026-11-08
+
+The owner decided the flags of "Delivery of 2026-11-06" above on 2026-11-08. The owner was given numbered recommendations, in Spanish, on this story's 18 owner flags and on MIG-B9-15's, and answered, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation is the owner's decision of 2026-11-08, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). This record is in English and gives the answer to every owner flag of this story. Where they differ from this story's contract, they rule.
+
+- **Flag 1, the namespace basis:** `generate-entry` computes each namespace from the path relative to `--src`, not to the entry, which today gives the playground names like `f----components-…`. MIG-B9-22 does it.
+- **Flag 2, "without extension":** `generate-entry` writes the extension in each `@use` (`@use './x.uxdsl'`), so a `.scss` twin beside a `.uxdsl` file is not ambiguous. MIG-B9-22 does it.
+- **Flag 3, isolation's silent cases:** MIG-B9-26 detects them: another file's `@function` called, a `!default` set by an earlier file, a project `@function` shadowing a token, and a bare call under a namespaced `@use`.
+- **Flag 4, `PRIORITY_PATTERNS`:** `PRIORITY_PATTERNS` (`variables`, `theme-def`) is removed, since it now only orders the output and listing `_variables` first can break a `with (…)` configured elsewhere. MIG-B9-22 does it.
+- **Flag 5, A1 in watch mode:** accepted as delivered: the first failure of a watch session prints `[uxdsl] build failed:`.
+- **Flag 6, A2's "prints once":** accepted as delivered: warnings are printed again on every rebuild.
+- **Flag 7, located adapter warnings:** accepted as delivered, located as text.
+- **Flag 8, the `sass` refusals beyond A2, and A9:** the refusals that reach `uxdsl theme` are kept, and MIG-B9-22 pins them with a test.
+- **Flag 9, T9 beyond its wording:** accepted as delivered, with the gate's extra S-4 to S-6.
+- **Flag 10, T10:** a strict comparison of error oracles in `fixtures/parity/run.js`, whose line 150 compares by substring in both directions, goes to MIG-B9-20.
+- **Flag 11, warnings lost when `compile()` throws:** `error.warnings` goes to MIG-B9-21.
+- **Flag 12, MIG-B9-13's flag 14:** MIG-B9-38 is registered as proposed in the follow-ups above, "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS" (S, wave 3, depends on MIG-B9-14 and 22), with one new catalogued code. It answers MIG-B9-13's flag 14 and decision D18 of 2026-11-04.
+- **Flag 13, MIG-B9-13's flag 4:** accepted as delivered: the CLI keeps `compile()`'s bytes.
+- **Flag 14, A5's `--multi`:** accepted as delivered: the `--multi` scaffold uses `@use` vacuously.
+- **Flag 15, A3's full-rebuild fallback:** accepted as delivered, with its documented limits.
+- **Flag 16, the adapters after a failed compile:** MIG-B9-39 is registered as proposed in the follow-ups above, "Every host's watch recovers after a failed compile" (wave 3, S or split by its scout, depends on MIG-B9-14, 21 and 22): the adapters re-register the last good dependencies and `err.file`. It also owns the flaky watch-mode test that failed on CI's ubuntu runner for PR #71 and PR #72 (`waitFor timed out`), and the occasionally stale `cli-captures.json` `--check` (MIG-B9-15 §15).
+- **Flag 17, `generate-entry`'s exclusion by file name:** `generate-entry` excludes only the output file, instead of every file with the entry's file name in any directory. MIG-B9-22 does it; it matters for MIG-B9-20's `uxdsl-theme.uxdsl`.
+- **Flag 18, Shares as delivered:** accepted as delivered, with MIG-B9-21, 31, 33, 34, 36 and wave 3's playground stories serialized after PR #71.
