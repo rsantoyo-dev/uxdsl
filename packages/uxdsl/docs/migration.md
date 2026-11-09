@@ -157,27 +157,33 @@ What to check when you upgrade:
    `dependencies` lists every file Dart Sass loaded, and for
    `compile({ source, from })` it lists `from` first even when that file does
    not exist (it was `[]`).
-9. **Regenerate the entry.** `npx uxdsl generate-entry`, with the options
-   you used before, now writes one `@use '<path>.uxdsl' as <namespace>;` per
-   file instead of `@import`, with a third header line; it warns once when it
-   replaces an entry that listed its files with `@import`. The namespace is
-   the file's path relative to `--src`. The files are listed in path order:
-   a file whose name contains `theme-def`, `layout`, `app` or `variables` is
-   no longer listed first, so name the files that must load first with
-   `--first` (`--first theme-def,layout`). A file with the entry's file name
-   in another directory is now listed; leave it out with `--exclude` when it
-   is another entry. Each file becomes its own Sass module. The `@import`
-   entry gave every listed file one scope, so a file could read a
-   `$variable`, mixin, function or `%placeholder` another file defined; after
-   regenerating, such a file fails as `UXD_SASS` (`Undefined variable.`,
-   `Undefined mixin.`, `The target selector was not found.`), or, in three
-   cases, compiles differently without an error: a call to another file's
-   `@function` stays in the CSS as written, a value an earlier file set for a
-   variable that another file declares `!default` no longer applies, and a
-   project `@function` named like a UXDSL function (`space()`) replaces the
-   token only in a file that `@use`s its file `as *` (or `@import`s it), and
-   in a call through the namespace (`helpers.space(2)`). Give each file its
-   own `@use` for what it reads:
+9. **Regenerate the entry.** `npx uxdsl generate-entry`, with the options you
+   used before, now writes one `@use '<path>.uxdsl' as <namespace>;` per file
+   instead of `@import`, after a header that records the invocation; it warns
+   once when it replaces an entry that listed its files with `@import`. The
+   namespace is the file's path relative to `--src`. The files are listed in
+   path order: a file whose name contains `theme-def`, `layout`, `app` or
+   `variables` is no longer listed first, so name the files that must load
+   first with `--first` (`--first theme-def,layout`). A file with the entry's
+   file name in another directory is now listed; leave it out with `--exclude`
+   when it is another entry. Run `generate-entry` once with your options to
+   record them
+   (`/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */`);
+   from then on `npx uxdsl generate-entry` with no arguments runs it again for
+   the build's entry; an entry generated before has no such line, so the
+   no-argument run uses the defaults for it, as before. Each file becomes its
+   own Sass module. The `@import` entry gave every listed file one scope, so a
+   file could read a `$variable`, mixin, function or `%placeholder` another
+   file defined; after regenerating, such a file fails as `UXD_SASS`
+   (`Undefined variable.`, `Undefined mixin.`,
+   `The target selector was not found.`), or, in three cases, compiles
+   differently without an error: a call to another file's `@function` stays in
+   the CSS as written, a value an earlier file set for a variable that another
+   file declares `!default` no longer applies, and a project `@function` named
+   like a UXDSL function (`space()`) replaces the token only in a file that
+   `@use`s its file `as *` (or `@import`s it), and in a call through the
+   namespace (`helpers.space(2)`). Give each file its own `@use` for what it
+   reads:
 
    ```scss
    // src/card.uxdsl, which reads $brand from src/_variables.uxdsl
@@ -201,7 +207,7 @@ What to check when you upgrade:
    (`_card.uxdsl` and `card.uxdsl`) make the path ambiguous
    (`UXD_SASS: It's not clear which file to import`): rename one. A `.scss`
    file beside a `.uxdsl` file of the same name is not loaded, since each
-   path names `.uxdsl`. The entry's CSS gains its new header line, and a file
+   path names `.uxdsl`. The entry's CSS gains its new header lines, and a file
    that another listed file `@use`s is emitted once, where the `@import`
    entry emitted it twice. `init` writes the `@use` entry from the start.
 10. **The CLI prints Dart Sass's frame and every warning.** A `UXD_SASS`

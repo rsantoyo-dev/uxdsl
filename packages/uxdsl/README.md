@@ -105,8 +105,10 @@ what a regenerated entry changes in a project.
 `generate-entry` writes each path with its `.uxdsl` extension, so a `.scss`
 file of the same name beside it is never the one loaded, makes each namespace
 from the file's path relative to `--src`, lists the files by path unless
-`--first` names files to load first, and leaves out only its own output file
-and the `--exclude` names.
+`--first` names files to load first, leaves out only its own output file and
+the `--exclude` names, and records its invocation in the entry's header,
+which `generate-entry` with no arguments runs again for each entry of the
+build config, writing an entry only when its content changes.
 
 ## From SCSS: rename and keep building
 

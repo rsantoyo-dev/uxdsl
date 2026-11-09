@@ -22,18 +22,38 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
-### `generate-entry`: `.uxdsl` paths, namespaces from `--src`, path order (MIG-B9-22)
+### `generate-entry` records its invocation; `.uxdsl` paths, namespaces from `--src`, path order (MIG-B9-22)
 
-`generate-entry` names each file by its path with `.uxdsl` and takes its
-namespace from its path relative to `--src`; it lists the files by path
-unless `--first` names files to load first, and leaves out only its own
-output file. This replaces four statements of MIG-B9-14's subsection below:
-the path written without `.uxdsl`, the namespace made from the path relative
-to the entry, the order without `--first` ("unchanged"), and the exclusion of
-every file with the entry's file name, in any directory.
+`generate-entry` records its invocation in the entry's header and, with no
+arguments, runs again what each entry of the build config records. It names
+each file by its path with `.uxdsl` and takes its namespace from its path
+relative to `--src`; it lists the files by path unless `--first` names files
+to load first, and leaves out only its own output file. This replaces four
+statements of MIG-B9-14's subsection below: the path written without `.uxdsl`,
+the namespace made from the path relative to the entry, the order without
+`--first` ("unchanged"), and the exclusion of every file with the entry's file
+name, in any directory.
 
 #### CLI
 
+- **The entry records its invocation.** The header's third line is the run's
+  command, `/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */`:
+  `--src` and `--out` always, relative to the working directory, then
+  `--first` (each item relative to `--src`, with `.uxdsl`) and `--exclude`
+  when given; a value with whitespace, a `"`, a `\`, `*/` or `#{` is a JSON
+  string, and one starting with `-` follows an `=`. The fourth line, which
+  said to run `generate-entry` again with the same options, now says that
+  `generate-entry` with no arguments regenerates the entry from that line.
+- **`generate-entry` with no arguments runs the recorded invocation again**
+  for each entry of the build config whose header records one (each entry of
+  `builds`, in order), its paths resolved against the config's directory, and
+  prints `[uxdsl] <entry> records: <invocation>`. An entry that records none
+  is left as it is; when no entry records one, the defaults apply, as before.
+  A recorded line that does not parse, that writes another file, or whose
+  `--first` no longer matches exits 1, naming the entry, and writes nothing.
+- **The entry is written only when its content changes**, atomically, so a
+  second identical run keeps its bytes and modification time and prints
+  `[uxdsl] Entry file at <entry> is up to date with <n> @use rules (…)`.
 - **Each `@use` names its file with `.uxdsl`**: `@use './card.uxdsl' as card;`,
   and `./variables.uxdsl` for `_variables.uxdsl`, which Dart Sass finds as the
   partial. A `.scss` or `.sass` file beside a `.uxdsl` file of the same name is
@@ -55,6 +75,8 @@ every file with the entry's file name, in any directory.
 
 ### Visual changes
 
+- A regenerated entry's CSS starts with the header's new comment lines: the
+  recorded invocation, then the reworded fourth line.
 - In a regenerated entry's CSS, the rules of a file whose name contains
   `theme-def`, `layout`, `app` or `variables` move to that file's place in
   path order, unless `--first` names it.
@@ -70,6 +92,10 @@ every file with the entry's file name, in any directory.
 - **Another file with the entry's file name is listed**: in another directory
   (another entry, for instance), it is no longer left out; `--exclude <name>`
   leaves out every file with that name, as before.
+- **`generate-entry` with no arguments runs the build entry's recorded
+  invocation** instead of the defaults, once the entry records one, and reads
+  the build config to find it: a build config or theme file that fails to
+  load fails the command.
 
 ### The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)
 
