@@ -1547,7 +1547,13 @@ changes only what it names:
    found through a load path that exists (`<root>/node_modules/../x` is
    `<root>/x`), as in plain Dart Sass; in a package loaded through `pkg:`,
    Sass's own `.sass`, `.scss` and `.css` files answer a relative URL before
-   a `.uxdsl` partial does).
+   a `.uxdsl` partial does). On macOS and Windows each loaded file is spelled
+   in its on-disk case, read from its real path, except that a name stored in
+   NFD and written in NFC, or one in a directory that cannot be listed, keeps
+   the spelling it is written in; a directory is listed only to spell a
+   symlink's own name, so a build slows down with the number of entries in a
+   directory above the project only where that directory holds a symlink on a
+   loaded file's path.
    Sass's import rules apply: `@import "x.css"`, and an `@import` with a media
    query, `layer()`, `supports()` or `url()`, stays a plain CSS `@import` (`@use`
    or `meta.load-css()` inlines a file), a file `@import`ed twice is included
