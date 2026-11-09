@@ -885,11 +885,12 @@ restore puts `@ds-x(…)` back together, and the UXDSL plugin resolves the
 theme, the directives, responsive values and token functions in Dart Sass's
 output. A `.scss` file renamed to `.uxdsl` therefore compiles to the CSS Dart
 Sass produces for it (Bootstrap 5.3.8 is byte-identical,
-`fixtures/sass-corpus`), with three exceptions: a top-level comment whose
-text starts with `# sourceMappingURL=` is removed, and two things fail, as
-described below — a `$variable` Dart Sass keeps as written, and text it
-prints from a string that is not CSS. `@use`/`@forward`, mixins, functions,
-maps, nesting and control rules behave as Dart Sass defines them, and so do
+`fixtures/sass-corpus`), with three exceptions besides the recorded
+differences of functions named like UXDSL's (`compile.md`): a top-level
+comment whose text starts with `# sourceMappingURL=` is removed, and two
+things fail, as described below — a `$variable` Dart Sass keeps as written,
+and text it prints from a string that is not CSS. `@use`/`@forward`, mixins,
+functions, maps, nesting and control rules behave as Dart Sass defines them, and so do
 its import rules (`@import "x.css"` stays a CSS `@import`, `@use` inlines a
 file, a file `@import`ed twice is emitted twice). A Sass failure is
 `UXD_SASS` and a Sass warning `UXD_SASS_WARNING`, at the author's line and
@@ -1063,9 +1064,12 @@ documentation components through the real compiler (`scripts/doc-examples.test.j
   `compile()` stops at the first error, so an example it compiles documents one,
   on the line `compile()` reports it: the example must fail there with that
   code, and compile with that line removed.
-- A trailing comment that is a single `var(--…)` claims that output, and the
-  compiled CSS must contain it (for an example `compile()` compiles, the CSS
-  without its comments, which Dart Sass keeps).
+- A comment that is a single `var(--…)` claims that output where the
+  harness checks it: at the end of a top-level statement in a `css` example
+  that documents an error (that statement's CSS must contain it), and at the
+  end of any line in an example `compile()` compiles (its CSS, without the
+  comments Dart Sass keeps, must contain it). Anywhere else it is only a
+  comment.
 - `<!-- doc-example: output -->` on the line before a block marks compiled output
   being shown rather than input (markdown only).
 

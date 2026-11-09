@@ -112,9 +112,10 @@ const { css, map, dependencies, warnings } = await compile(
   deliberately left unmapped rather than pointed at an invented file.
 - **Every `@import` in the output precedes every other rule** (after an
   `@charset`, if there is one) — the theme's Google Fonts import first, then
-  yours in the order you wrote them, then the theme's `:root`. Nothing you
-  wrote is reordered. `includeTheme: false` emits no theme `:root` and no
-  theme import.
+  yours in the order you wrote them, then the theme's `:root`. Dart Sass
+  moves an `@import` you wrote after another rule up there; nothing else is
+  reordered. `includeTheme: false` emits no theme `:root` and no theme
+  import.
 - The output ends with the stylesheet's last rule, and, like Dart Sass's own
   output, without a final newline. Nothing is appended after it (an earlier
   version added a `/*@uxdsl-bp*/` comment and a `#uxdsl-bp-meta` rule for a
@@ -205,11 +206,12 @@ compiles to:
 }
 ```
 
-Three things differ from plain Dart Sass: `compile()` removes a top-level
-comment whose text starts with `# sourceMappingURL=`, and two things fail, a
-`$variable` Sass keeps as written
-([below](#a-variable-sass-keeps-as-written)) and text Sass prints that is not
-CSS ([below](#text-sass-prints-that-is-not-css)).
+Apart from the recorded differences of functions named like UXDSL's
+([below](#functions-named-like-uxdsls)), three things differ from plain Dart
+Sass: `compile()` removes a top-level comment whose text starts with
+`# sourceMappingURL=`, and two things fail, a `$variable` Sass keeps as
+written ([below](#a-variable-sass-keeps-as-written)) and text Sass prints
+that is not CSS ([below](#text-sass-prints-that-is-not-css)).
 
 ### Tokens are strings to Sass
 
@@ -284,9 +286,11 @@ a third Sass extension beside `.scss` and `.sass`:
   root, nearest first, then each directory of the `SASS_PATH` environment
   variable. A candidate beside the importing file wins over a load path, and
   files in different directories are never ambiguous. Each load path is
-  searched as Dart Sass searches one, the URL joined to it as written, so a
-  `../x` that misses beside its file is never a same-named file in another
-  directory.
+  searched as Dart Sass searches one: the URL is joined to it as written, and
+  the file system resolves its `..`. A load path that does not exist
+  therefore finds nothing, but through one that exists a `../x` that misses
+  beside its file can still be found: `<root>/node_modules/../x` is
+  `<root>/x`, as in plain Dart Sass.
 - **Packages.** A package can ship `.uxdsl` partials: a bare path
   (`@use 'kit/scss/tokens'`) finds them under `node_modules`, and they `@use`
   each other relatively. `pkg:` URLs are Dart Sass's `NodePackageImporter`'s,
@@ -312,11 +316,15 @@ Sass reads it:
 
 - A `.uxdsl` file goes through protect, so UXDSL's words pass through Sass.
 - A `.scss`, `.sass` or `.css` file is read as written, as plain Dart Sass
-  reads it, so the UXDSL syntax Sass reads differently fails there as
-  `UXD_SASS`: a dotted key (`palette(primary.main)`) is `expected "(".`, and
-  a `color()` token fails even without a dot (`color(white)` is
-  `$description: white is not a string.` in a `.scss` file). A `$variable` in
-  a `.css` file is `Sass variables aren't allowed in plain CSS.`
+  reads it, so the UXDSL syntax Sass reads differently is Sass's there. A
+  dotted key fails as `UXD_SASS` (`palette(primary.main)` is
+  `expected "(".`). In a `.scss` or `.sass` file a `color()` token fails even
+  without a dot (`color(white)` is `$description: white is not a string.`),
+  an arithmetic key is evaluated (`space(10-2)` becomes `space(8)`, where a
+  `.uxdsl` file reports `UXD_SPACE_REFERENCE`), and a `$var` inside
+  `@ds-*(…)` stays as written, so it fails as `UXD_SASS_CONTEXT`. In a `.css`
+  file a `$variable` is `Sass variables aren't allowed in plain CSS.`, and an
+  operator `Operators aren't allowed in plain CSS.`
 - So write UXDSL's tokens in `.uxdsl` files, name an entry `.uxdsl`
   (`uxdsl build --entry src/app.css` reads the file as CSS), and apply
   `uxdsl/webpack` to `.uxdsl` files rather than `.css`. A `.uxdsl` file may

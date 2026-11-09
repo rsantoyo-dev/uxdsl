@@ -302,10 +302,13 @@ theme at all is a warning, not an error.
 ## Next.js: CSS Modules written in `.uxdsl`
 
 Next.js compiles a `.module.scss` file with its own Sass, which reads UXDSL's
-tokens as Sass and stops at them (`palette(primary.main)` is Dart Sass's
-`expected "("`, `color(white)` its `$description: white is not a string.`).
-Write the module in `.uxdsl` instead, and let the CLI compile it into a
-`.module.css` file that Next.js imports like any other CSS Module:
+dotted tokens and `color()` tokens as Sass and stops at them
+(`palette(primary.main)` is Dart Sass's `expected "("`, `color(white)` its
+`$description: white is not a string.`), and writes a directive as
+`@ds-surface (contained)`, which `uxdsl/postcss` refuses
+(`UXD_SURFACE_ARGUMENT`). Write the module in `.uxdsl` instead, and let the
+CLI compile it into a `.module.css` file that Next.js imports like any other
+CSS Module:
 
 ```js
 // uxdsl.config.cjs

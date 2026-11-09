@@ -159,10 +159,13 @@ compiles to:
 Two limits:
 
 - **A `.scss` file that a host compiles with its own Sass cannot carry
-  UXDSL's tokens.** Next.js compiles a `.module.scss` with its own Sass,
-  which stops at `palette(primary.main)` (`expected "("`) and at
-  `color(white)` (`$description: white is not a string.`). Write the module
-  in `.uxdsl` and let the CLI compile it to a `.module.css`
+  UXDSL's dotted tokens, `color()` tokens or directives.** Next.js compiles
+  a `.module.scss` with its own Sass, which stops at `palette(primary.main)`
+  (`expected "("`) and at `color(white)` (`$description: white is not a
+  string.`), and writes `@ds-surface(contained)` as
+  `@ds-surface (contained)`, which `uxdsl/postcss` refuses
+  (`UXD_SURFACE_ARGUMENT`). Write the module in `.uxdsl` and let the CLI
+  compile it to a `.module.css`
   ([the CLI guide's Next.js section](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#nextjs-css-modules-written-in-uxdsl)).
 - **`~pkg` imports become `pkg:` or a bare path.** `@use '~kit/tokens'` is
   `UXD_SASS: Can't find stylesheet to import.`: write `@use 'pkg:kit/tokens'`
@@ -171,8 +174,9 @@ Two limits:
 Where `compile()` differs from plain Dart Sass — the three things in Dart
 Sass's output it does not keep as printed (a `# sourceMappingURL=` comment,
 which it removes, and a `$variable` Sass keeps as written or text Sass prints
-that is not CSS, which fail), how files are found, and what each file
-extension decides — is in the `compile()` guide's
+that is not CSS, which fail), the recorded differences of functions named
+like UXDSL's, how files are found, and what each file extension decides — is
+in the `compile()` guide's
 [Sass inside `compile()`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile).
 
 ## Entry points
@@ -1201,7 +1205,9 @@ a browser silently discards one that follows a style rule. Through
 theme's `:root` block above every import, so the font request was never made.
 From `0.5.0-beta.8` the theme's imports come first (after your `@charset`, if you have one),
 then any `@import` you wrote yourself in the order you wrote it, then the
-theme's `:root`. Nothing you wrote is reordered. Two consequences worth
+theme's `:root`. Through `compile()`, Dart Sass also moves an `@import` you
+wrote after another rule up with them (the PostCSS plugin used alone leaves
+it where it is); nothing else you wrote is reordered. Two consequences worth
 knowing: Inter is actually requested (and your visitors' browsers contact
 `fonts.googleapis.com`), and an `@import` of your own that used to be silently
 dropped applies. `fonts: { google: [] }` still opts out of the theme's.
@@ -1520,9 +1526,11 @@ changes only what it names:
    beside `.scss` and `.sass` (by Sass's own rules, and through the
    `node_modules` load paths and the directories of `SASS_PATH`, each kept as
    written and searched as Sass searches a load path, so a package can ship
-   `.uxdsl` partials and a `../x` that misses is never a file in another
-   directory; in a package loaded through `pkg:`, Sass's own `.sass`, `.scss`
-   and `.css` files answer a relative URL before a `.uxdsl` partial does).
+   `.uxdsl` partials, and a `../x` that misses beside its file can still be
+   found through a load path that exists (`<root>/node_modules/../x` is
+   `<root>/x`), as in plain Dart Sass; in a package loaded through `pkg:`,
+   Sass's own `.sass`, `.scss` and `.css` files answer a relative URL before
+   a `.uxdsl` partial does).
    Sass's import rules apply: `@import "x.css"`, and an `@import` with a media
    query, `layer()`, `supports()` or `url()`, stays a plain CSS `@import` (`@use`
    or `meta.load-css()` inlines a file), a file `@import`ed twice is included
