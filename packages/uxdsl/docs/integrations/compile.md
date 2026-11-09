@@ -382,7 +382,9 @@ this changes for a project that compiled with the earlier SCSS subset.
 
 ### Functions named like UXDSL's
 
-No name is reserved. A project `@function` named like a UXDSL function — a
+No UXDSL name is reserved; the one exception is the Sass stage's own helper
+prefix, `uxdsl-probe-` (see the recorded differences below). A project
+`@function` named like a UXDSL function — a
 token function (`space`, `palette`, …), `tone`, or a breakpoint of the
 effective theme (`md`, or a project's own `xxl`) — wins wherever Dart Sass
 calls its bare name, as it would in plain Dart Sass, and `compile()` reports

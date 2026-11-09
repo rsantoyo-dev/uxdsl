@@ -426,3 +426,13 @@ Within Owns, `scripts/lib/doc-examples.js` changed beyond the `scss` fence rule:
 - **MIG-B9-91.** `docs/releases/0.5.0-beta.9.md:59` records the doc-examples gate as "48 examples and 24 theme excerpts in 101 files"; the head has 62.
 - **MIG-B9-39, or the story that owns the captures.** `capture-capabilities.js --check` sometimes reports `src/generated/cli-captures.json` as stale while the file is byte-identical (new fact 6). The likely cause is the timing-dependent `uxdsl build --watch` transcript in `captureWatch()`.
 - **MIG-B9-25.** The 930 entries one `npm test` run leaves in `TMPDIR` (new fact 7).
+
+### Owner decisions of 2026-11-08
+
+The owner answered the flags of "Delivery of 2026-11-08" (and MIG-B9-14's) with, verbatim, "todo como recomendado" ("everything as recommended"): each recommendation below is the owner's decision. This record is in English; FEAT-010 §2 lists the full set. Where they differ from this story's contract or from the earlier blocks, they rule.
+
+- **Flag 1, D3's sentence:** qualified rather than left unqualified. The package README, `compile.md` and the introduction page now say that every SCSS file is a valid UXDSL file except in the three cases `compile.md` documents: a `$variable` Sass keeps as written (`UXD_SASS_CONTEXT`), text Sass prints that is not CSS (a parse error), and a project function named with the Sass stage's internal prefix `uxdsl-probe-`. "No name is reserved" now reads "No UXDSL name is reserved", with the prefix named as the one exception. MIG-B9-26 removes the prefix exception (a located error for a project definition with the prefix, or an unguessable prefix). Applied in this PR, after the closure record, by the commit that adds this block.
+- **Flag 2, D1's reading:** confirmed. The fence language decides first: a `css` fence always goes through the plugin alone, even when it holds Sass, so `UXD_SASS_CONTEXT` examples can be documented.
+- **Flag 3, `/docs/language`:** a new S story, MIG-B9-16, rewrites the page's SCSS-subset section (page.tsx:28 and 107-133) for the superset before `0.5.0-beta.9` ships; MIG-B9-62 keeps the page in beta.10.
+- **Flag 4, files outside Owns and Shares** (`capture-capabilities.js`, the regenerated `compiler-captures.json`, the introduction page): accepted. The wave-2 and wave-3 playground stories serialize after this PR.
+- **The flaky watch test** (`watch-mode.test.js`, "waitFor timed out" on CI's ubuntu runner): owned by MIG-B9-39.

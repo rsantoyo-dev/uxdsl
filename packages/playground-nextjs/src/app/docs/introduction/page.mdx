@@ -50,7 +50,7 @@ Design decisions — spacing, type, color, borders, shadows, and how each of the
 <tr><td>Tailwind CSS v4</td><td>On every element: <code>p-3 md:p-4 xl:p-6</code></td><td>Container queries, arbitrary variants, a large ecosystem</td><td>The progression is defined once, on the token, and every component that names it follows</td></tr>
 <tr><td>Open Props</td><td>In the token, as fluid <code>clamp()</code> scales; no build step</td><td>Fluid scales, zero tooling</td><td>Roles (surfaces, buttons, inputs), build-time validation, the theme as JSON</td></tr>
 <tr><td>Panda CSS / vanilla-extract</td><td>In typed recipes and conditions; Panda can also express responsive tokens</td><td>Full typing, recipes, container-query conditions</td><td>Authoring in CSS with no code generation; an optional runtime; diagnostics with file and line</td></tr>
-<tr><td>Sass</td><td>Wherever you write the mixin</td><td>Nothing in the language: a <code>.uxdsl</code> file is compiled by Dart Sass</td><td>Theme tokens and roles, with references checked against a schema</td></tr>
+<tr><td>Sass</td><td>Wherever you write the mixin</td><td>Nothing in the language, apart from three edge cases the <code>compile()</code> guide documents: a <code>.uxdsl</code> file is compiled by Dart Sass</td><td>Theme tokens and roles, with references checked against a schema</td></tr>
 <tr><td>Style Dictionary / DTCG</td><td>In the token pipeline, exported to many platforms</td><td>The DTCG format, export to iOS, Android and design tools</td><td>The consumption side in CSS; its JSON is its own format, not DTCG</td></tr>
 </tbody>
 </table>

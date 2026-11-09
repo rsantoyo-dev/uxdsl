@@ -105,10 +105,15 @@ what a regenerated entry changes in a project.
 ## From SCSS: rename and keep building
 
 UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid
-UXDSL file. Dart Sass compiles a `.uxdsl` file first, so `@use`, mixins,
-functions, maps, nesting and the rest of Sass work as they always have, and
-UXDSL's tokens, responsive values and directives are there when you want
-them. No name is reserved: a project `@function` named like a UXDSL function
+UXDSL file, except in three cases that
+[`compile.md`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile)
+documents: a `$variable` Sass keeps as written fails as `UXD_SASS_CONTEXT`,
+text Sass prints that is not CSS fails as a parse error, and a project
+function named with the Sass stage's internal prefix `uxdsl-probe-` can
+change the output. Dart Sass compiles a `.uxdsl` file first, so `@use`,
+mixins, functions, maps, nesting and the rest of Sass work as they always
+have, and UXDSL's tokens, responsive values and directives are there when you
+want them. No UXDSL name is reserved: a project `@function` named like a UXDSL function
 (`space()`, `md()`) keeps working, and the build warns, once per definition,
 with `UXD_FUNCTION_SHADOWED`, that it hides the token of that name.
 
