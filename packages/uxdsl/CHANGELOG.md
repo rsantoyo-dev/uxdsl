@@ -22,6 +22,46 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### compile() on macOS and Windows no longer lists the directories above the project (MIG-B9-23)
+
+Where the filesystem folds case (macOS, Windows), the Sass stage spells each
+file it loads in its on-disk case. It now reads that case from the file's real
+path (`fs.realpathSync.native`) and lists a directory only to spell a
+symlink's own name. It used to list every directory above every loaded file,
+in each call, so `compile()` slowed down with the number of entries in those
+directories: on one machine, Bootstrap 5.3.8 renamed to `.uxdsl` took about
+140 ms longer per `compile()` when the directory holding the project also held
+129,944 empty entries. `fixtures/mig-b9-23-compile-budget` checks that the two
+locations now differ by at most 15 ms.
+
+Every spelling stays as it was, in `compile()`'s `dependencies` and in the
+positions it reports:
+
+- a symlink keeps its own name and is not resolved; written in another case,
+  it is spelled as its directory lists it, where Dart Sass keeps the case
+  written;
+- a name stored in NFD and written in NFC keeps the written name, where Dart
+  Sass gives the NFD name;
+- a name in a directory that cannot be listed keeps the case it is written in,
+  where Dart Sass gives the case on disk;
+- nothing is kept from one call to the next, so a file renamed in case only is
+  spelled as the disk now spells it.
+
+`compile()`'s `css`, `map`, `dependencies` and warnings are unchanged.
+
+`fixtures/sass-corpus/run.js` still asserts that `compile()`'s median time on
+the corpus is at most 1.5 times plain Dart Sass's (P10), measured by the method
+the owner's decision D8 of 2026-11-04 set, in place of three runs each:
+
+- Dart Sass and `compile()` run alternately in one process, Dart Sass first,
+  four times each, and each one's first, cold run is left out of its median.
+- The corpus root is made in a fresh directory that holds nothing else, under
+  the fixture's git-ignored `.work/`, outside the temporary directory.
+
+### Visual changes
+
+None: compiled output is byte-identical.
+
 ### The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)
 
 `uxdsl build`, `uxdsl/vite` and `uxdsl/webpack` now expose what `compile()`
