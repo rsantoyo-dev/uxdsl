@@ -99,6 +99,55 @@ test('statementsOf makes every top-level node a statement (a @theme block too) a
   assert.equal(found[2].expectCode, null);
 });
 
+test('MIG-B9-15: a scss fence or a Sass construct routes through compile(), a css fence through the plugin', async () => {
+  // A scss fence is a .uxdsl file compiled by compile(): Dart Sass first, then the plugin.
+  assert.deepEqual(await runExample({ lang: 'scss', code: "@use 'sass:math';\n.a { padding: space(2); width: math.div(10px, 4); }", theme: null }), []);
+  // So is a fence of another language whose code holds a Sass-only construct.
+  assert.deepEqual(await runExample({ lang: 'uxdsl', code: '.card {\n  padding: space(2);\n  &__title { color: palette(primary.main); }\n}', theme: null }), []);
+  // A css fence shows what uxdsl/postcss does with a stylesheet: CSS plus UXDSL, no Sass.
+  const css = await runExample({ lang: 'css', code: '$gap: 4px;\n.a { margin: $gap; padding: space(2); }', theme: null });
+  assert.equal(css.length, 1, JSON.stringify(css));
+  assert.match(css[0], /UXD_SASS_CONTEXT/);
+  assert.deepEqual(await runExample({ lang: 'css', code: '.a { padding: space(2); }', theme: null }), []);
+});
+
+test('MIG-B9-15: a Sass example documents one error, on the line compile() reports, and compiles without that line', async () => {
+  const ok = [
+    '.a { padding: space(2); }',
+    '.b { color: darken(palette(primary.main), 10%); }  /* UXD_SASS: a token is a string to Sass */',
+    '.c { color: palette(primary.main, 0.5); }',
+  ].join('\n');
+  assert.deepEqual(await runExample({ lang: 'scss', code: ok, theme: null }), []);
+
+  const one = async (code) => {
+    const problems = await runExample({ lang: 'scss', code, theme: null });
+    assert.equal(problems.length, 1, JSON.stringify(problems));
+    return problems[0];
+  };
+  assert.match(await one('.b { color: darken(palette(primary.main), 10%); }  /* UXD_SASS_CONTEXT: not what happens */'), /documented as UXD_SASS_CONTEXT but the example fails with UXD_SASS\b/);
+  assert.match(await one('.b { color: palette(primary.main, 0.5); }  /* UXD_SASS: this compiles */'), /documented as UXD_SASS but the example compiles/);
+  assert.match(await one('.b {  /* UXD_SASS: the wrong line */\n  color: darken(palette(primary.main), 10%);\n}'), /compile\(\) reports it at line 2/);
+  assert.match(await one('.a { color: darken(palette(primary.main), 10%); }  /* UXD_SASS */\n.b { color: lighten(palette(primary.main), 10%); }  /* UXD_SASS */'), /documents 2 errors/);
+  assert.match(await one('.a { color: darken(palette(primary.main), 10%); }  /* UXD_SASS */\n.b { padding: space(99); }'), /without line 1, the example fails to compile: .*UXD_SPACE_REFERENCE/);
+});
+
+test('MIG-B9-15: a Sass example\'s claimed output must appear in the compiled CSS, not only in its own comment', async () => {
+  // Dart Sass keeps a /* … */ comment in its output, so the claim is checked against the CSS without comments.
+  const good = "@use 'sass:math';\n.a { color: palette(primary.main); }  /* var(--uxdsl__palette__primary-main) */";
+  assert.deepEqual(await runExample({ lang: 'scss', code: good, theme: null }), []);
+  const bad = "@use 'sass:math';\n.a { color: palette(primary.main); }  /* var(--uxdsl__palette__primary-dark) */";
+  const problems = await runExample({ lang: 'scss', code: bad, theme: null });
+  assert.equal(problems.length, 1, JSON.stringify(problems));
+  assert.match(problems[0], /documented as producing var\(--uxdsl__palette__primary-dark\) but does not/);
+});
+
+test('MIG-B9-15: a planted invalid Sass example without an error comment fails the run (negative control)', async () => {
+  // The plugin alone passes darken() through as an unknown function; Dart Sass rejects a token as its color.
+  const problems = await runExample({ lang: 'scss', code: '.a { color: darken(palette(primary.main), 10%); }', theme: null });
+  assert.equal(problems.length, 1, JSON.stringify(problems));
+  assert.match(problems[0], /fails to compile as shown: .*UXD_SASS: \$color: palette\(primary\.main\) is not a color\./);
+});
+
 // --- 2. the real documentation --------------------------------------------
 
 const surfaces = discoverSurfaces();
@@ -114,6 +163,7 @@ test('every documentation surface with examples is found (the extractor cannot s
     'AGENTS.md': 8,
     'packages/uxdsl/README.md': 8,
     'packages/uxdsl/docs/integrations/cli.md': 1,
+    'packages/uxdsl/docs/integrations/compile.md': 5,
     'packages/playground-nextjs/src/components/ButtonDocumentation.tsx': 2,
     'packages/playground-nextjs/src/components/SurfaceDocumentation.tsx': 3,
     'packages/playground-nextjs/src/components/ColorDocumentation.tsx': 1,
@@ -143,4 +193,27 @@ test('AGENTS.md: every file it tells contributors to keep aligned exists', () =>
   assert.ok(listed.length >= 11 || all.length >= 11, 'the list itself was not found');
   const missing = all.filter((file) => !fs.existsSync(path.join(ROOT, file)));
   assert.deepEqual(missing, [], 'AGENTS.md lists a file that does not exist');
+});
+
+// --- 4. what the READMEs and the guide say UXDSL is ------------------------
+
+// UXDSL is SCSS plus a design-system engine: it does not replace SCSS, its output is
+// media queries, and it is inspired by Material UI rather than being it.
+const RETIRED_CLAIMS = /replaces SCSS|no media queries/gi;
+const POSITIONING_SLIPS = /is MUI|Material UI's engine/gi;
+const matches = (text, pattern) => text.match(pattern) || [];
+
+test('MIG-B9-15: the READMEs and AGENTS.md make neither retired claim', () => {
+  for (const file of ['README.md', 'packages/uxdsl/README.md', 'AGENTS.md']) {
+    const text = fs.readFileSync(path.join(ROOT, file), 'utf8');
+    assert.deepEqual(matches(text, RETIRED_CLAIMS), [], `${file} makes a retired claim`);
+    assert.deepEqual(matches(text, POSITIONING_SLIPS), [], `${file}: UXDSL is inspired by Material UI, never "is MUI"`);
+  }
+  assert.match(fs.readFileSync(path.join(ROOT, 'packages/uxdsl/README.md'), 'utf8'), /inspired by Material UI/, 'the package README says where UXDSL comes from');
+});
+
+test('MIG-B9-15: the READMEs and AGENTS.md make neither retired claim (negative control)', () => {
+  assert.deepEqual(matches('UXDSL replaces SCSS, and there are No media queries.', RETIRED_CLAIMS), ['replaces SCSS', 'No media queries']);
+  assert.deepEqual(matches("UXDSL is MUI for CSS, built on Material UI's engine.", POSITIONING_SLIPS), ['is MUI', "Material UI's engine"]);
+  assert.deepEqual(matches("SCSS plus a design-system engine inspired by Material UI's theme engine.", POSITIONING_SLIPS), []);
 });

@@ -167,12 +167,23 @@ watched, but one the failing load was the first to load (a new `@use`
 whose file has an error) recompiles nothing when it is fixed, until the
 `.uxdsl` file Vite imports is saved.
 
-### No SCSS pre-pass
+### Dart Sass runs inside `compile()`
 
-`$var`, `@each`, `@mixin`/`@include` and `@if` are handled by the shared
-compile pipeline itself. The former `scss: 'on'` option ran the `sass`
-package over a `.uxdsl` file first; a `.uxdsl` file's own syntax is not valid
-SCSS, so that was a second compiler with no parity guarantee, and it is gone.
+`compile()` runs Dart Sass itself, so the plugin needs no Sass pre-pass: a
+`.uxdsl` file reaches Vite as compiled CSS, Vite's own
+`css.preprocessorOptions` do not apply to it, and Dart Sass's options go in
+`sass` (above). The former `scss: 'on'` option, which ran the `sass` package
+over a `.uxdsl` file before the pipeline, is gone. A `.uxdsl` file may `@use`
+a `.scss`, `.sass` or `.css` file, which Dart Sass reads as written, so
+UXDSL's dotted tokens belong in the `.uxdsl` files:
+
+```scss
+// src/app.uxdsl
+@use 'vendor' as v;   // src/_vendor.scss: plain SCSS, read as written
+```
+
+The `compile()` guide's [Sass inside `compile()`](compile.md#sass-inside-compile)
+has the importer rules and what each extension decides.
 
 ---
 

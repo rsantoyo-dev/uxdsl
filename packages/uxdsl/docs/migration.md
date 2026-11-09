@@ -42,7 +42,10 @@ exceptions item 1 lists: `@use`/`@forward`,
 `@mixin`/`@include`, `@function`, maps, `math.div()`, `&__title`,
 `%placeholder` with `@extend` and the control rules all work, and the SCSS
 subset's errors went with it (`UXD_SCSS_UNSUPPORTED`, `UXD_NESTING_INVALID`,
-`UXD_INCLUDE_ARGUMENT`, `UXD_IMPORT_CYCLE`).
+`UXD_INCLUDE_ARGUMENT`, `UXD_IMPORT_CYCLE`; item 13 says what reports each
+now). The `compile()` guide's
+[Sass inside `compile()`](integrations/compile.md#sass-inside-compile)
+describes the pipeline in full.
 
 ```scss
 @use "sass:math";
@@ -62,7 +65,11 @@ What to check when you upgrade:
    lines between rules, `""` for `''`, an attribute value that is an
    identifier unquoted (`[data-typo=h1]` for `[data-typo="h1"]`), `0.5` for
    `.5`, `16/9` for `16 / 9`, `@charset "UTF-8";` first for any non-ASCII
-   text, comments inside values dropped and no final newline. What
+   text, `//` comments dropped (the SCSS subset stripped them too) and
+   comments inside values with them, a `calc()` inside `min()`, `max()` or
+   `clamp()` written without `calc()` (`min(700px, 100% - 2rem)` for
+   `min(700px, calc(100% - 2rem))`, which a browser computes the same), and
+   no final newline. What
    `compile()` does not keep as Dart Sass prints it: a top-level comment
    whose text starts with `# sourceMappingURL=`, which it removes; a
    `$variable` Sass keeps as written, which fails (item 3); and text Sass
@@ -215,6 +222,17 @@ What to check when you upgrade:
     unknown one fails the load or the module), and their warnings now read
     `<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
     webpack's `rootContext`.
+13. **Six codes are retired.** A script, a test or a CI filter that looks
+    for one of them should look for what reports it now:
+
+    | Retired code | What reports it now |
+    | --- | --- |
+    | `UXD_SCSS_UNSUPPORTED` | Nothing: the construct is Sass, which Dart Sass compiles; where Dart Sass rejects it, its own `UXD_SASS` |
+    | `UXD_NESTING_INVALID` | Nothing: `&__item` concatenates the parent selector (`.block__item`) |
+    | `UXD_INCLUDE_ARGUMENT` | `UXD_SASS`, in Dart Sass's words (`Only 1 argument allowed, but 2 were passed.`) |
+    | `UXD_IMPORT_CYCLE` | `UXD_SASS`: `Module loop: this module is already being loaded.` through `@use`, `This file is already being loaded.` through `@import` |
+    | `UXD_VARIABLE_UNDEFINED` | Through `compile()`, `UXD_SASS: Undefined variable.`; with the PostCSS plugin alone, `UXD_SASS_CONTEXT` |
+    | `UXD_VARIABLE_CONTEXT` | Through `compile()`, nothing: a `$variable` declared in a rule is Sass, scoped to that rule; with the PostCSS plugin alone, `UXD_SASS_CONTEXT` |
 
 ## Antes de actualizar (cualquier versión)
 

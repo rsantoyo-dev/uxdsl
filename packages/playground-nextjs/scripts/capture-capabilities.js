@@ -243,6 +243,7 @@ const DIAGNOSTICS = [
   { expect: 'UXD_SASS', title: 'A Sass error: an undefined variable', css: '.card {\n  padding: $gap;\n}\n' },
   { expect: 'UXD_SASS_CONTEXT', title: 'A $variable Sass keeps literally in a custom property (write #{$gap})', css: '$gap: 4px;\n.card {\n  --gap: $gap;\n}\n' },
   { expect: 'UXD_FUNCTION_SHADOWED', warning: true, title: 'A project @function named like a UXDSL function: the author\'s SCSS wins, with one warning', css: '@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n' },
+  { expect: 'UXD_SASS_WARNING', warning: true, title: 'A Dart Sass deprecation: @import of a partial (write @use; the build still succeeds)', css: "@import './card';\n" },
 ];
 
 // What is wrong with a case's run, or null: its code must come first on stderr, with exit 0

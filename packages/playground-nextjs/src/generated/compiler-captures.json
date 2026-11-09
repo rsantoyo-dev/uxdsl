@@ -366,6 +366,22 @@
       ],
       "exit": 0,
       "stderr": "[uxdsl] Warning: src/example.uxdsl:1:11: UXD_FUNCTION_SHADOWED: @function space (src/example.uxdsl:1) replaces UXDSL's space() in this build; rename it to use the token\n"
+    },
+    {
+      "code": "UXD_SASS_WARNING",
+      "title": "A Dart Sass deprecation: @import of a partial (write @use; the build still succeeds)",
+      "warning": true,
+      "source": "@import './card';\n",
+      "theme": null,
+      "argv": [
+        "build",
+        "--entry",
+        "src/example.uxdsl",
+        "--out",
+        "dist/example.css"
+      ],
+      "exit": 0,
+      "stderr": "[uxdsl] Warning: src/example.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.\n"
     }
   ]
 }

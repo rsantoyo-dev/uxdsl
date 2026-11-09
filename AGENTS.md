@@ -685,7 +685,7 @@ The CLI reloads local config dependencies on rebuild; list those files in
 `watch` to observe their edits. Changing the entry or the watch patterns
 updates the running watcher. Two files, two jobs: `uxdsl.config.js`/`.cjs`
 says what to compile and where (`entry`/`outFile` or `builds`, `watch`,
-`references`, `strictTheme`, `sourcemap`); the theme file next to it —
+`references`, `strictTheme`, `sourcemap`, `sass`); the theme file next to it —
 `uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` exporting the theme
 object — holds the theme, `breakpoints` included. A build config that
 carries `theme`, `themeFile`, `breakpoints` or `output` is rejected with the
@@ -879,11 +879,12 @@ restore puts `@ds-x(…)` back together, and the UXDSL plugin resolves the
 theme, the directives, responsive values and token functions in Dart Sass's
 output. A `.scss` file renamed to `.uxdsl` therefore compiles to the CSS Dart
 Sass produces for it (Bootstrap 5.3.8 is byte-identical,
-`fixtures/sass-corpus`), with three exceptions: a top-level comment whose
-text starts with `# sourceMappingURL=` is removed, and two things fail, as
-described below — a `$variable` Dart Sass keeps as written, and text it
-prints from a string that is not CSS. `@use`/`@forward`, mixins, functions,
-maps, nesting and control rules behave as Dart Sass defines them, and so do
+`fixtures/sass-corpus`), with three exceptions besides the recorded
+differences of functions named like UXDSL's (`compile.md`): a top-level
+comment whose text starts with `# sourceMappingURL=` is removed, and two
+things fail, as described below — a `$variable` Dart Sass keeps as written,
+and text it prints from a string that is not CSS. `@use`/`@forward`, mixins,
+functions, maps, nesting and control rules behave as Dart Sass defines them, and so do
 its import rules (`@import "x.css"` stays a CSS `@import`, `@use` inlines a
 file, a file `@import`ed twice is emitted twice). A Sass failure is
 `UXD_SASS` and a Sass warning `UXD_SASS_WARNING`, at the author's line and
@@ -901,14 +902,34 @@ arguments of `expression()`, `element()`, `type()` or a vendor-prefixed
 Dart Sass prints from a string that is not CSS (`b: a:b`, a `;`, a brace, an
 unclosed comment or string) is PostCSS's located parse error, with no UXD
 code, and a `//` it prints in the value of a property that is not custom is
-`UXD_SASS_CONTEXT`. When generating UXDSL,
-put Sass only in `.uxdsl` files compiled through `compile()`, and keep UXDSL's
-dotted tokens out of `.scss` and `.css` files, which Dart Sass reads as
-written. `packages/uxdsl/test/core/sass-matrix.test.js`,
-`sass-pipeline.test.js`, `protect.test.js`, `sass-source-maps.test.js` and
-`fixtures/sass-corpus` pin the pipeline, and the package README describes it;
-`packages/uxdsl/docs/integrations/compile.md` still describes the SCSS subset
-it replaced.
+`UXD_SASS_CONTEXT`. With the plugin alone, PostCSS's own parser rejects a
+`#{…}` in a selector, in a property name or bare in a value, and a `//`
+comment after a `;` or on a line of its own inside a block, before the
+plugin runs: its `Unknown word`, with no UXD code. When generating UXDSL,
+write Sass's features — variables, maps, mixins, functions, `@use`,
+nesting, control rules — freely in `.uxdsl` files, and never emulate one
+with a UXDSL construct; put Sass only in `.uxdsl` files compiled through
+`compile()`, and keep UXDSL's tokens out of `.scss` and `.css` files, which
+Dart Sass reads as written (a dotted key or a `color()` token fails there).
+A token is an opaque string to Sass: never hand one to a Sass color or math
+function or operator (`darken()`, `rgba()`, `mix()`, `math.div()`, `*`),
+which fails as `UXD_SASS` or leaves CSS the browser cannot use; write
+`palette(role.variant, alpha)`, `color-mix()` or `calc()` instead. Outside a
+string, a `$name` meant as text reaches the CSS only as the escape
+`\$name`, which a browser then reads with its backslash.
+
+```scss
+.badge {
+  background: palette(primary.main, 0.15);
+  color: darken(palette(primary.main), 10%);  /* UXD_SASS: a token is a string to Sass, not a color */
+}
+```
+
+`packages/uxdsl/test/core/sass-matrix.test.js`, `sass-pipeline.test.js`,
+`protect.test.js`, `sass-source-maps.test.js` and `fixtures/sass-corpus` pin
+the pipeline. `packages/uxdsl/docs/integrations/compile.md` ("Sass inside
+`compile()`") describes it, the importer and import rules included, and the
+package README's "From SCSS" section how a project moves to it.
 
 Reuse shared language and Typography generators/resolvers. Do not add separate
 parsers or hardcoded breakpoint behavior to the playground, runtime or editor.
@@ -1026,11 +1047,23 @@ documentation components through the real compiler (`scripts/doc-examples.test.j
   next `#`/`##` heading; the CSS is compiled against that excerpt merged over
   the defaults. An excerpt must itself be a valid theme, references included —
   a `var(--…)` in it has to resolve.
+- The fence decides the compiler. A `css` example is what the PostCSS plugin
+  alone does with a stylesheet, so Sass in it is `UXD_SASS_CONTEXT` unless the
+  example documents that error. A `scss` example, or one in another fence that
+  holds a Sass-only construct (`@use`, `@mixin`, `@include`, `@each`, `$name:`,
+  `&`, `#{`), is compiled whole by `compile()`, as a `.uxdsl` file.
 - To document an error, end the statement's line with a comment that begins with
   the code: `.a { padding: xs(1rem) xxl(2rem); }  /* UXD_BREAKPOINT_UNKNOWN: … */`.
   The example must fail with exactly that code. Every other statement must compile.
-- A trailing comment that is a single `var(--…)` claims that output, and the
-  compiled CSS must contain it.
+  `compile()` stops at the first error, so an example it compiles documents one,
+  on the line `compile()` reports it: the example must fail there with that
+  code, and compile with that line removed.
+- A comment that is a single `var(--…)` claims that output where the
+  harness checks it: at the end of a top-level statement in a `css` example
+  that documents an error (that statement's CSS must contain it), and at the
+  end of any line in an example `compile()` compiles (its CSS, without the
+  comments Dart Sass keeps, must contain it). Anywhere else it is only a
+  comment.
 - `<!-- doc-example: output -->` on the line before a block marks compiled output
   being shown rather than input (markdown only).
 
