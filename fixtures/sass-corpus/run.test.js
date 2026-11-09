@@ -1,8 +1,9 @@
 'use strict';
 
 // The corpus runner's own instruments, without the network: the timing verdict
-// and the flag that turns its assertion off, the two counts of Dart Sass's
-// deprecation warnings, and the byte comparison's report. run.js itself
+// and the flag that turns its assertion off, the alternated timing and its warm
+// runs, the fresh directory the corpus root is made in, the two counts of Dart
+// Sass's deprecation warnings, and the byte comparison's report. run.js itself
 // installs Bootstrap 5.3.8 from the registry: it runs by hand and in the
 // release gate (S-1), not in `npm test`.
 const { test } = require('node:test');
@@ -10,7 +11,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { parseArgs, timingVerdict, deprecationCounter, firstDifferences, loadSass, TIMING_BUDGET } = require('./run');
+const { spawnSync } = require('node:child_process');
+const { parseArgs, timingVerdict, deprecationCounter, firstDifferences, loadSass, TIMING_BUDGET, alternate, warm, freshCorpusRoot, removeCorpusRoot, ROUNDS, WORK } = require('./run');
 
 test('MIG-B9-13: the corpus runner fails compile() above 1.5x Dart Sass\'s median time and passes it at 1.5x or below', () => {
   assert.equal(TIMING_BUDGET, 1.5);
@@ -52,4 +54,60 @@ test('MIG-B9-13: the corpus runner\'s comparison reports a byte Dart Sass did no
   const lines = firstDifferences(sassCss, `${sassCss}\n`);
   assert.equal(lines.length, 1);
   assert.match(lines[0], /^line 4\n/);
+});
+
+/** Two compilers on a fake clock: each call advances the clock by its next scripted duration (ms) and records its name. */
+function scripted(plainMs, pipedMs) {
+  let clock = 0n;
+  const calls = [];
+  const step = (name, durations) => () => {
+    const ms = durations[calls.filter((call) => call === name).length];
+    calls.push(name);
+    clock += BigInt(ms) * 1000000n;
+    return { name, ms };
+  };
+  return { calls, plain: step('plain', plainMs), piped: step('piped', pipedMs), now: () => clock };
+}
+
+test('MIG-B9-23: the corpus runner times Dart Sass and compile() alternately, Dart Sass first, and takes each median from the three warm runs, the cold first run left out', async () => {
+  assert.equal(ROUNDS, 4, 'four runs each: one cold, three warm');
+  const run = scripted([900, 300, 310, 320], [1500, 400, 420, 410]);
+  const timings = await alternate(ROUNDS, run.plain, run.piped, run.now);
+  assert.deepEqual(run.calls, ['plain', 'piped', 'plain', 'piped', 'plain', 'piped', 'plain', 'piped']);
+  assert.deepEqual(timings.plain.durations, [900, 300, 310, 320], 'every run is recorded, the cold one first');
+  assert.deepEqual(timings.piped.durations, [1500, 400, 420, 410]);
+  assert.deepEqual(timings.plain.result, { name: 'plain', ms: 320 }, 'the last run\'s result');
+  assert.deepEqual(timings.piped.result, { name: 'piped', ms: 410 });
+  assert.deepEqual(warm(timings.plain.durations), [300, 310, 320]);
+  assert.deepEqual(warm(timings.piped.durations), [400, 420, 410]);
+  const verdict = timingVerdict(warm(timings.plain.durations), warm(timings.piped.durations));
+  assert.equal(verdict.ratio, 410 / 310, 'the medians of the warm runs');
+  assert.equal(verdict.failed, false);
+  // A cold run of any length leaves the verdict where the warm runs put it.
+  const slowCold = scripted([5000, 300, 310, 320], [9000, 400, 420, 410]);
+  const again = await alternate(ROUNDS, slowCold.plain, slowCold.piped, slowCold.now);
+  assert.deepEqual(timingVerdict(warm(again.plain.durations), warm(again.piped.durations)), verdict);
+  // The cold runs inside the median would move it: what the warm runs leave out.
+  assert.notEqual(timingVerdict(again.plain.durations, again.piped.durations).ratio, verdict.ratio);
+});
+
+test('MIG-B9-23: the corpus runner makes the corpus root in a fresh directory that holds nothing else, outside the temporary directory', () => {
+  const made = [];
+  try {
+    const root = freshCorpusRoot();
+    made.push(root);
+    const other = freshCorpusRoot();
+    made.push(other);
+    assert.equal(path.basename(root), 'corpus-root');
+    assert.deepEqual(fs.readdirSync(path.dirname(root)), ['corpus-root'], 'its directory holds the corpus root alone');
+    assert.deepEqual(fs.readdirSync(root), [], 'the corpus root starts empty');
+    assert.notEqual(path.dirname(other), path.dirname(root), 'each run gets its own directory');
+    assert.equal(path.dirname(path.dirname(root)), WORK);
+    const outside = path.relative(fs.realpathSync(os.tmpdir()), fs.realpathSync(root));
+    assert.ok(outside === '..' || outside.startsWith(`..${path.sep}`) || path.isAbsolute(outside), `${root} is not under the temporary directory ${os.tmpdir()}`);
+    const ignored = spawnSync('git', ['check-ignore', '--quiet', root], { cwd: __dirname });
+    assert.equal(ignored.status, 0, 'git ignores the work directory');
+  } finally {
+    for (const root of made) removeCorpusRoot(root);
+  }
 });
