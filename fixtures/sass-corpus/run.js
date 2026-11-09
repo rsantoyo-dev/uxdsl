@@ -209,16 +209,20 @@ function firstDifferences(expected, actual, limit = 10) {
 /** Every run's duration, in ms, the first marked as the cold run left out of the median. */
 const runs = (durations) => durations.map((ms, i) => (i === 0 ? `${Math.round(ms)} (cold, discarded)` : `${Math.round(ms)}`)).join(', ');
 
-async function main() {
-  const args = parseArgs(process.argv.slice(2));
-  const { sass, version: sassVersion } = loadSass(args.sass);
-  const { compile } = require(path.join(args.uxdsl, 'dist/entries/index.js'));
+/**
+ * One run of the corpus, printed line by line through `log`: the corpus root
+ * made fresh, the corpus installed into it, Dart Sass and compile() timed
+ * alternately, their CSS compared, the deprecation warnings counted and the
+ * mixed checks run. Whether every check passed. main() passes the real Dart
+ * Sass, compile(), install, clock and console; `now` is the clock, in ns.
+ */
+async function runCorpus({ args, sass, sassVersion, compile, install = installCorpus, now, log = console.log }) {
   const extras = fs.readFileSync(path.join(__dirname, '_uxdsl-extras.uxdsl'), 'utf8');
 
   const root = freshCorpusRoot();
   let failed = false;
   try {
-    const { corpus, entryScss, entryUxdsl, renamed } = installCorpus(root);
+    const { corpus, entryScss, entryUxdsl, renamed } = install(root);
 
     const delivered = deprecationCounter();
     let compileError = null;
@@ -228,14 +232,13 @@ async function main() {
     });
     let timings;
     try {
-      timings = await alternate(ROUNDS, () => sass.compile(entryScss, { style: 'expanded', logger: delivered.logger }), piped);
+      timings = await alternate(ROUNDS, () => sass.compile(entryScss, { style: 'expanded', logger: delivered.logger }), piped, now);
     } catch (error) {
       if (error !== compileError) throw error;
-      console.log(`Bootstrap 5.3.8: ${renamed} files renamed to .uxdsl; Dart Sass ${sassVersion}`);
-      console.log(`  corpus root: ${root} (${placement(root)})`);
-      console.log(`  byte-identical: false — compile() failed: ${String(error && error.message).split('\n')[0]}`);
-      failed = true;
-      return;
+      log(`Bootstrap 5.3.8: ${renamed} files renamed to .uxdsl; Dart Sass ${sassVersion}`);
+      log(`  corpus root: ${root} (${placement(root)})`);
+      log(`  byte-identical: false — compile() failed: ${String(error && error.message).split('\n')[0]}`);
+      return false;
     }
     for (const id of Object.keys(delivered.counts)) delivered.counts[id] = Math.round(delivered.counts[id] / ROUNDS);
     const plainWarm = warm(timings.plain.durations);
@@ -244,30 +247,30 @@ async function main() {
     const expected = timings.plain.result.css;
     const actual = timings.piped.result.css;
     const identical = expected === actual;
-    console.log(`Bootstrap 5.3.8: ${renamed} files renamed to .uxdsl, ${timings.plain.result.loadedUrls.length} loaded by the entry; Dart Sass ${sassVersion}`);
-    console.log(`  corpus root: ${root} (${placement(root)})`);
-    console.log(`  Dart Sass: ${Buffer.byteLength(expected)} bytes, median ${Math.round(median(plainWarm))} ms`);
-    console.log(`  compile(): ${Buffer.byteLength(actual)} bytes, median ${Math.round(median(pipedWarm))} ms`);
-    console.log(`  byte-identical: ${identical}`);
+    log(`Bootstrap 5.3.8: ${renamed} files renamed to .uxdsl, ${timings.plain.result.loadedUrls.length} loaded by the entry; Dart Sass ${sassVersion}`);
+    log(`  corpus root: ${root} (${placement(root)})`);
+    log(`  Dart Sass: ${Buffer.byteLength(expected)} bytes, median ${Math.round(median(plainWarm))} ms`);
+    log(`  compile(): ${Buffer.byteLength(actual)} bytes, median ${Math.round(median(pipedWarm))} ms`);
+    log(`  byte-identical: ${identical}`);
     if (!identical) {
       failed = true;
-      console.log(firstDifferences(expected, actual).join('\n'));
+      log(firstDifferences(expected, actual).join('\n'));
     }
 
     const timing = timingVerdict(plainWarm, pipedWarm, { budget: args.budget });
-    console.log(`  Dart Sass runs: ${runs(timings.plain.durations)} ms; compile() runs: ${runs(timings.piped.durations)} ms (alternated, Dart Sass first)`);
-    console.log(`  timing: compile()'s median is ${timing.ratio.toFixed(2)}x Dart Sass's (budget ${TIMING_BUDGET}x${args.budget ? '' : ', not asserted: --no-timing-budget'}; each median is of the ${ROUNDS - 1} warm runs, the cold first run left out; compile() always runs Dart Sass with its source map)`);
+    log(`  Dart Sass runs: ${runs(timings.plain.durations)} ms; compile() runs: ${runs(timings.piped.durations)} ms (alternated, Dart Sass first)`);
+    log(`  timing: compile()'s median is ${timing.ratio.toFixed(2)}x Dart Sass's (budget ${TIMING_BUDGET}x${args.budget ? '' : ', not asserted: --no-timing-budget'}; each median is of the ${ROUNDS - 1} warm runs, the cold first run left out; compile() always runs Dart Sass with its source map)`);
     if (timing.failed) {
       failed = true;
-      console.log(`  FAIL  compile() is over the ${TIMING_BUDGET}x budget (--no-timing-budget reports the ratio without asserting it)`);
+      log(`  FAIL  compile() is over the ${TIMING_BUDGET}x budget (--no-timing-budget reports the ratio without asserting it)`);
     }
 
     // Untimed, after the timed runs, so that it warms neither compiler.
     const totals = deprecationCounter();
     sass.compile(entryScss, { style: 'expanded', verbose: true, logger: totals.logger });
-    console.log(`  deprecation warnings Dart Sass delivered (capped at five per type, then a summary): ${JSON.stringify(delivered.counts)}`);
-    console.log(`  deprecation totals (verbose): ${JSON.stringify(totals.counts)}`);
-    console.log(`  compile() returned ${timings.piped.result.warnings.length} warnings`);
+    log(`  deprecation warnings Dart Sass delivered (capped at five per type, then a summary): ${JSON.stringify(delivered.counts)}`);
+    log(`  deprecation totals (verbose): ${JSON.stringify(totals.counts)}`);
+    log(`  compile() returned ${timings.piped.result.warnings.length} warnings`);
 
     // UXDSL on top of Bootstrap's own Sass: Bootstrap's part must not move.
     fs.writeFileSync(path.join(corpus, '_uxdsl-extras.uxdsl'), extras);
@@ -282,14 +285,21 @@ async function main() {
       ['a Button per mapped tone, Bootstrap\'s danger as UXDSL\'s error', /\.btn-x-danger/.test(mixed) && mixed.includes('--uxdsl__palette__error-main')],
     ];
     for (const [label, ok] of checks) {
-      console.log(`  ${ok ? 'ok' : 'FAIL'}  ${label}`);
+      log(`  ${ok ? 'ok' : 'FAIL'}  ${label}`);
       if (!ok) failed = true;
     }
   } finally {
-    if (args.keep) console.log(`Kept ${root}`);
+    if (args.keep) log(`Kept ${root}`);
     else removeCorpusRoot(root);
-    process.exitCode = failed ? 1 : 0;
   }
+  return !failed;
+}
+
+async function main() {
+  const args = parseArgs(process.argv.slice(2));
+  const { sass, version: sassVersion } = loadSass(args.sass);
+  const { compile } = require(path.join(args.uxdsl, 'dist/entries/index.js'));
+  process.exitCode = (await runCorpus({ args, sass, sassVersion, compile })) ? 0 : 1;
 }
 
 if (require.main === module) {
@@ -299,4 +309,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { parseArgs, loadSass, timingVerdict, deprecationCounter, firstDifferences, alternate, warm, freshCorpusRoot, removeCorpusRoot, installCorpus, TIMING_BUDGET, ROUNDS, WORK };
+module.exports = { parseArgs, loadSass, timingVerdict, deprecationCounter, firstDifferences, alternate, warm, freshCorpusRoot, removeCorpusRoot, installCorpus, runCorpus, TIMING_BUDGET, ROUNDS, WORK };

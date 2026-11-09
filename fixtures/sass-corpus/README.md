@@ -49,8 +49,9 @@ Sass compile with `verbose: true` (Bootstrap 5.3.8 on Dart Sass 1.107.0: 330,
 delivered as 21 warnings).
 
 `run.test.js` tests the timing verdict, the flag, the alternated timing and
-its warm runs, the fresh directory, the two deprecation counts and the byte
-comparison without the network; `npm test` runs it.
+its warm runs, the fresh directory, the two deprecation counts, the byte
+comparison, and a whole run as `main()` makes it on a fake install, Dart Sass,
+`compile()` and clock, without the network; `npm test` runs it.
 
 **Network:** it installs `bootstrap@5.3.8` from the npm registry into the
 corpus root. It compares against the repository's own Dart Sass — the

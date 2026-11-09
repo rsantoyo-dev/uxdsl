@@ -43,7 +43,10 @@ function project(t, files, links = {}) {
     fs.mkdirSync(path.dirname(abs), { recursive: true });
     fs.writeFileSync(abs, text);
   }
-  for (const [link, target] of Object.entries(links)) fs.symlinkSync(path.join(dir, target), path.join(dir, link), 'junction');
+  for (const [link, target] of Object.entries(links)) {
+    fs.mkdirSync(path.dirname(path.join(dir, link)), { recursive: true });
+    fs.symlinkSync(path.join(dir, target), path.join(dir, link), 'junction');
+  }
   return dir;
 }
 
@@ -102,7 +105,10 @@ test('MIG-B9-23: the Sass stage spells a file as the disk does in each call, in 
     '_part.uxdsl': '.p { a: b; }\n',
     'real/entry.uxdsl': '@use "PART";\n',
     'real/_part.uxdsl': '.r { a: b; }\n',
-  }, { alias: 'real' });
+    'outside.uxdsl': '@use "LINKS/LINK/part";\n',
+    'targets/t/entry.uxdsl': '@use "PART";\n',
+    'targets/t/_part.uxdsl': '.t { a: b; }\n',
+  }, { alias: 'real', 'links/Link': 'targets/t' });
   const onDisk = under(dir, ['Entry.uxdsl', '_part.uxdsl']);
   for (const written of ['Entry.uxdsl', 'entry.uxdsl', 'ENTRY.UXDSL']) {
     assert.deepEqual(stage(path.join(dir, written)).loadedFiles, onDisk, `the entry written ${written}`);
@@ -111,6 +117,14 @@ test('MIG-B9-23: the Sass stage spells a file as the disk does in each call, in 
   const throughLink = under(dir, ['alias/entry.uxdsl', 'alias/_part.uxdsl']);
   assert.deepEqual(stage(path.join(dir, 'ALIAS/entry.uxdsl')).loadedFiles, throughLink, 'the symlinked ancestor kept, in its own name');
   assert.deepEqual(await dependencies(path.join(dir, 'ALIAS/entry.uxdsl')), throughLink);
+  // A symlink whose target is in another directory: the directory that holds the
+  // link is spelled from its own real path, never from the target's directory.
+  const throughOtherDir = under(dir, ['links/Link/entry.uxdsl', 'links/Link/_part.uxdsl']);
+  assert.deepEqual(stage(path.join(dir, 'LINKS/Link/entry.uxdsl')).loadedFiles, throughOtherDir, 'the link\'s directory in its on-disk case, the target\'s names nowhere');
+  assert.deepEqual(await dependencies(path.join(dir, 'LINKS/Link/entry.uxdsl')), throughOtherDir);
+  const fromOutside = under(dir, ['outside.uxdsl', 'links/Link/_part.uxdsl']);
+  assert.deepEqual(stage(path.join(dir, 'outside.uxdsl')).loadedFiles, fromOutside, '@use "LINKS/LINK/part" from outside the link');
+  assert.deepEqual(await dependencies(path.join(dir, 'outside.uxdsl')), fromOutside);
   const before = stage(path.join(dir, 'entry.uxdsl')).loadedFiles;
   fs.renameSync(path.join(dir, '_part.uxdsl'), path.join(dir, '_PART.uxdsl'));
   const after = stage(path.join(dir, 'entry.uxdsl')).loadedFiles;

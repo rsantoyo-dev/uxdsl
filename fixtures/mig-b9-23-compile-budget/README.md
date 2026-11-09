@@ -12,7 +12,7 @@ node fixtures/mig-b9-23-compile-budget/run.js --base <dir> --rounds 31      # an
 
 | Check | What it runs | Passes when | Its control |
 | --- | --- | --- | --- |
-| T2 | `fixtures/sass-corpus/run.js --uxdsl <wrapper>`, twice | the runner exits 1 both times | a `compile()` 250 ms slower per call must print `FAIL  compile() is over the 1.5x budget`; one that changes the last byte of its CSS must print `byte-identical: false` |
+| T2 | `fixtures/sass-corpus/run.js --uxdsl <wrapper>`, twice | the runner exits 1 both times; each run also shows the runner's method: its corpus root fresh, alone in its directory and outside the temporary directory, four runs of each compiler with the first marked cold, and a ratio that is the three warm runs' medians, within the rounding of the printed milliseconds | a `compile()` 250 ms slower per call must print `FAIL  compile() is over the 1.5x budget`; one that changes the last byte of its CSS must print `byte-identical: false` |
 | T4 | `compile()` from `--uxdsl` and from `--base`, in one process, for `sourceMap` `false`, `'inline'` and `'external'` | `css`, `map`, `dependencies` and warnings (text, file, line, column) are equal | a `compile()` that changes the case of one `dependencies` entry must differ |
 | T3 | `compile()` on two copies of the corpus root, interleaved in one process, the order swapped each round: 2 warm-up rounds, then 61 (`--rounds`, at least 9) | the two medians differ by at most 15 ms | the same with a `compile()` that lists the directory holding the corpus root on each call, as the base build's `realCase` does, must differ by more; it runs before the check |
 
@@ -27,8 +27,9 @@ default, runs last, as long as possible after the entries are written, and print
 after.
 
 T4 compiles the entry as written and, where the filesystem folds case (macOS, Windows), also
-written in another case and through a symlinked ancestor written in another case; elsewhere those
-two are skipped, with the reason printed.
+written in another case, and through a symlink whose target is in another directory, with the link
+and the directory that holds it written in another case; elsewhere those two are skipped, with the
+reason printed.
 
 Every line is `ok`, `FAIL` or `skip`, and the run exits 0 when no line is `FAIL`, 1 otherwise, and
 2 on a usage error (`--base` is required).

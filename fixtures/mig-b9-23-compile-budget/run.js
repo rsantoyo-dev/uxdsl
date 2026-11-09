@@ -6,10 +6,14 @@
 //
 // - The corpus runner's two verdicts (fixtures/sass-corpus/run.js): a compile()
 //   250 ms slower per call exits 1 over the budget, and one that changes a byte
-//   exits 1 with `byte-identical: false`.
+//   exits 1 with `byte-identical: false`. Both runs must also show the runner's
+//   method: the corpus root fresh, alone in its directory and outside the
+//   temporary directory, four runs of each compiler with the first marked cold,
+//   and a ratio that is the three warm runs' medians.
 // - compile() equals a base build's css, map, dependencies and warnings in the
 //   three sourceMap modes, with the entry as written and, where the filesystem
-//   folds case, miscased and through a symlinked ancestor written in another
+//   folds case, miscased and through a symlink whose target is in another
+//   directory, the link and the directory that holds it written in another
 //   case. The control, a compile() that changes the case of one dependency,
 //   must differ.
 // - compile()'s median moves at most 15 ms when the directory that holds the
@@ -44,6 +48,7 @@ const TITLES = {
   t2: 'MIG-B9-23: run.js fails a compile() 250 ms slower per call, and one that changes a byte (negative control)',
   t3: 'MIG-B9-23: compile()\'s median on the corpus moves at most 15 ms when the directory that holds the corpus root also holds 129,944 empty entries',
   t4: 'MIG-B9-23: the corpus through compile() equals the base build\'s css, map, dependencies and warnings in the three sourceMap modes',
+  method: 'MIG-B9-23: run.js compiles the corpus in a fresh directory outside the temporary directory and judges the three warm runs of each compiler, the cold first run left out (decision D8)',
 };
 
 function usage() {
@@ -108,6 +113,36 @@ function runner(uxdsl) {
   return { status: run.status, out: `${run.stdout}${run.stderr}` };
 }
 
+/**
+ * What one run of the corpus runner shows of its method: the problems found in
+ * its output, none when its corpus root is fresh, alone in its directory and
+ * outside the temporary directory, each compiler ran four times with the first
+ * marked cold, and its ratio is the warm runs' medians, within the rounding of
+ * the printed milliseconds.
+ */
+function methodProblems(out) {
+  const problems = [];
+  const root = /^ {2}corpus root: .+ \((.+)\)$/m.exec(out);
+  if (!root) problems.push('no corpus root line');
+  else if (root[1] !== 'fresh, alone in its directory, outside the temporary directory') problems.push(`corpus root ${root[1]}`);
+  const runs = /Dart Sass runs: (.+) ms; compile\(\) runs: (.+) ms \(alternated, Dart Sass first\)/.exec(out);
+  const ratio = /compile\(\)'s median is ([\d.]+)x/.exec(out);
+  if (!runs || !ratio) return [...problems, 'no runs line or no ratio'];
+  const warmRuns = (list) => {
+    const shape = /^\d+ \(cold, discarded\), (\d+), (\d+), (\d+)$/.exec(list);
+    return shape ? shape.slice(1).map(Number) : null;
+  };
+  const plain = warmRuns(runs[1]);
+  const piped = warmRuns(runs[2]);
+  if (!plain || !piped) return [...problems, `not four runs each with the first marked cold: ${runs[0]}`];
+  // Each printed duration is rounded to the millisecond, and the ratio to two decimals.
+  const p = median(plain);
+  const c = median(piped);
+  const printed = Number(ratio[1]);
+  if (printed < (c - 0.5) / (p + 0.5) - 0.005 || printed > (c + 0.5) / (p - 0.5) + 0.005) problems.push(`the ratio ${ratio[1]}x is not the warm runs' medians, ${c} over ${p} ms`);
+  return problems;
+}
+
 function t2(work, uxdsl) {
   const slow = runner(wrapper(path.join(work, 'wrappers/slow'), uxdsl, `await new Promise((resolve) => setTimeout(resolve, ${SLOW_MS}));`));
   const ratio = (/compile\(\)'s median is ([\d.]+)x/.exec(slow.out) || [])[1];
@@ -116,6 +151,8 @@ function t2(work, uxdsl) {
   const byte = runner(wrapper(path.join(work, 'wrappers/byte'), uxdsl, "result.css = result.css.slice(0, -1) + (result.css.endsWith('x') ? 'y' : 'x');"));
   const byteOk = byte.status === 1 && byte.out.includes('byte-identical: false');
   report(byteOk, TITLES.t2, `a compile() that changes the last byte of its css exits ${byte.status}${byteOk ? ' with "byte-identical: false"' : `, "byte-identical: false" not printed:\n${byte.out}`}`);
+  const problems = [...methodProblems(slow.out).map((problem) => `the slow run: ${problem}`), ...methodProblems(byte.out).map((problem) => `the changed-byte run: ${problem}`)];
+  report(problems.length === 0, TITLES.method, problems.length === 0 ? 'both runs printed the corpus root fresh, alone in its directory and outside the temporary directory, four runs of each compiler with the first marked cold, and the warm runs\' ratio' : problems.join('; '));
 }
 
 /** compile()'s median on each copy of the corpus root, interleaved, the order swapped each round. */
@@ -173,7 +210,7 @@ async function t4(work, root, base, candidate) {
     fs.mkdirSync(links);
     fs.symlinkSync(root, path.join(links, 'Linked-Root'), 'junction');
     entries.push(['the entry miscased', path.join(path.dirname(root), path.basename(root).toUpperCase(), 'CORPUS/Bootstrap.UXDSL')]);
-    entries.push(['the entry through a symlinked ancestor written in another case', path.join(links, 'LINKED-ROOT/corpus/BOOTSTRAP.uxdsl')]);
+    entries.push(['the entry through a symlink whose target is in another directory, the link and its directory written in another case', path.join(work, 'LINKS/LINKED-ROOT/corpus/BOOTSTRAP.uxdsl')]);
   }
   for (const sourceMap of [false, 'inline', 'external']) {
     for (const [label, entry] of entries) {
@@ -183,7 +220,7 @@ async function t4(work, root, base, candidate) {
       report(differ.length === 0, TITLES.t4, `sourceMap ${JSON.stringify(sourceMap)}, ${label}: ${differ.length === 0 ? 'equal' : `${differ.join(', ')} differ`} (${Buffer.byteLength(a.css)} bytes of css, ${a.dependencies.length} dependencies, ${a.warnings.length} warnings)`);
     }
   }
-  if (!FOLDS_CASE) console.log(`skip  ${TITLES.t4}: the entry miscased and through a symlinked ancestor: the filesystem does not fold case on ${process.platform}`);
+  if (!FOLDS_CASE) console.log(`skip  ${TITLES.t4}: the entry miscased and through a symlink written in another case: the filesystem does not fold case on ${process.platform}`);
   // The control changes the case of one dependency, as a spelling that differs from the base's would.
   const entry = entries[0][1];
   const recased = pick(await candidate.compile({ entry }, { includeTheme: false }));
@@ -211,7 +248,7 @@ async function main() {
     fs.cpSync(roots.small, roots.large, { recursive: true });
     console.log(`  ${ENTRIES} empty entries written; the corpus installed in ${path.dirname(roots.small)} and copied beside them`);
 
-    console.log('\nThe corpus runner\'s verdicts can fail:');
+    console.log('\nThe corpus runner\'s verdicts can fail, and its runs show its method:');
     t2(work, args.uxdsl);
     console.log('\nThe output is the base build\'s:');
     await t4(work, roots.small, base, candidate);
