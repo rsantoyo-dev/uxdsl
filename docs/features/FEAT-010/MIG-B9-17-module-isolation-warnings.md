@@ -8,7 +8,7 @@
 | Status | Ready |
 | Size | M (decision 6 of 2026-11-10: "The M part, C4 to C6") |
 | Depends on | MIG-B9-26 (decision 6 of 2026-11-10: this story is its M part, and edits after it the files both share). As MIG-B9-26's file named them for C4 to C6: MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings). Under README §7: MIG-B9-20 (`compile.ts`, `test/cli/**`, `fixtures/release-1.0/run.js`, `migration.md`, `cli.md`, `unified-engine-audit.md`, and the tests it rewrites when it removes `includeTheme`), MIG-B9-21 (`compile.ts`, `unified-engine-audit.md`) and MIG-B9-25 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-26 also waits for all three |
-| Blocks | MIG-B9-91. Under README §7: MIG-B9-27 (`migration.md`, where both rewrite an item); MIG-B9-28 and 39 (`test/cli/**`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`) and MIG-B9-60, 61 and 63 (`cli.md`) |
+| Blocks | MIG-B9-91. Under README §7: MIG-B9-27 (`migration.md`, where both rewrite an item); MIG-B9-28 and 39 (`test/cli/**`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`), MIG-B9-60, 61 and 63 (`cli.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10) |
 | Base | `feat/beta9` after MIG-B9-26, and so after MIG-B9-16, 20, 21 and 25. §3 and §4 were recorded on `f855765` for MIG-B9-26 and re-run on `e704b3e` when this file was made (the package's code is `f855765`'s); both are re-run on BASE before work starts |
 | Owns | None: every file this story edits is shared (below) |
 | Shares | `packages/uxdsl/src/sass/compile-sass.ts` (C4 to C6); `packages/uxdsl/src/diagnostics.ts` (one new code); `packages/uxdsl/src/compile.ts` (the `CompileResult.warnings` comment only); `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (made by MIG-B9-26; this story adds T6 and T8); `packages/uxdsl/test/cli/uxdsl-cli.test.js` (`ISOLATION_CASES`'s silent cases and the namespaced-`@use` test); `fixtures/release-1.0/run.js` and `fixtures/release-1.0/verdicts.test.js` (S-7's isolation case); `packages/uxdsl/docs/integrations/cli.md` (`generate-entry`); `packages/uxdsl/docs/migration.md` (item 9 of "beta.9 — Sass inside compile()"); `docs/architecture/unified-engine-audit.md` (the Sass stage's codes); `packages/uxdsl/README.md` (one sentence); `packages/uxdsl/CHANGELOG.md` |
@@ -23,7 +23,7 @@ MIG-B9-26 keeps the dotted near-misses, `@debug` and the probe's prefix.
 
 ## 2. Sources
 
-- The split, decision 6 of 2026-11-10 (`docs/features/FEAT-010-beta9.md:320–324`):
+- The split, decision 6 of 2026-11-10 (`docs/features/FEAT-010-beta9.md:320–322`):
 
   > - **Decision 6 — One story or two (Q1).** (b), a split.
   >   - MIG-B9-26 keeps the S part, C1 to C3: dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning; the `uxdsl-probe-` prefix exception is removed. It also takes decision 30.

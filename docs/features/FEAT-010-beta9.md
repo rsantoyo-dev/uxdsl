@@ -364,10 +364,11 @@ From PR #80's delivery notes:
 - **Decision 31 — `migration.md` is append-only.** `packages/uxdsl/docs/migration.md` is append-only, like the CHANGELOG: one subsection per story, as the index's §7 row for it now says. A story that rewrites an existing passage of `migration.md` lists it in Shares and is serialized as before. Consequence: MIG-B9-32, 33, 34 and 36 no longer wait for MIG-B9-26 and 27 on `migration.md`, unless another shared file keeps the wait.
 - **Decision 32 — Header statuses.** Some story files of waves 4 to 6, and MIG-B9-90's, had a header Status of "Ready" while their row in the index's §5 read otherwise: MIG-B9-41 to 43, 50 to 52, 54, 55, 60 to 65 and 90. Each header Status is set to its row's value.
 
-PR #80's other notes were not among the questions and are not decisions;
-they stay where PR #80 wrote them. For example, MIG-B9-51 and 52 list
-`scripts/agent-guide.test.js` and `migration.md` under Owns; their
-re-baseline after wave 3 moves those to Shares.
+PR #80's other notes, in its body and in its delivery report, were not
+among the questions and are not decisions; nothing here settles them. One
+of them, for example: MIG-B9-51 and 52 list `scripts/agent-guide.test.js`
+and `migration.md` under Owns, which their re-baseline after wave 3 can move
+to Shares.
 
 ## 3. Scope, in waves
 

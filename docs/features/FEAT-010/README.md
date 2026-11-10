@@ -207,7 +207,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | Ready |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Merged (PR #75) |
 | MIG-B9-25 | [The test suites remove the temporary directories they create](MIG-B9-25-suites-remove-temp-dirs.md) | 2 | — | S | 13 | Ready |
-| MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14 | Ready |
+| MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | Ready |
 | MIG-B9-17 | [The silent cases of `@use`'s module isolation warn](MIG-B9-17-module-isolation-warnings.md) | 2 | DEC-17 | M | 26 | Ready |
 | MIG-B9-27 | [`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract](MIG-B9-27-postcss-chain.md) | 2 | DEC-05 | S | 21 | Ready |
 | MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | Ready |
@@ -325,18 +325,28 @@ PR #80's notes, each as recommended (FEAT-010 §2, "Owner decisions of
 (decision 6): as an S story it keeps C1 to C3, and takes decision 30's fix
 for `compile()` run from standard input; its C4 to C6, module isolation's
 silent cases, are MIG-B9-17 (M), whose row follows it and which depends on
-it. MIG-B9-28's second part is MIG-B9-66, registered for `0.5.0-beta.10`
-after the last wave-6 row (decision 15); it depends on MIG-B9-28, and its
-story file is still to be written. `migration.md` is append-only
-(decision 31): only a story that rewrites one of its passages (MIG-B9-26,
-17, 27 and 52) stays serialized on it, so MIG-B9-32, 33, 34 and 36 no longer
-wait for MIG-B9-27 on any file but the append-only rows. Under §7,
-MIG-B9-17 takes MIG-B9-26's place on `compile.ts`, `test/cli/**`, `cli.md`
-and `unified-engine-audit.md`, and joins it on `compile-sass.ts`,
-`diagnostics.ts`, `fixtures/release-1.0/run.js` and `verdicts.test.js`:
-MIG-B9-27 waits for it on `migration.md`, MIG-B9-28 and 39 on
-`test/cli/**`, and MIG-B9-30 to 35, 37 and 38 on `diagnostics.ts` or
-`run.js`, while MIG-B9-36 waits for MIG-B9-26 on the playground only.
+it. MIG-B9-26's row now also names MIG-B9-21, which its header already
+depended on (C2 relies on `error.warnings`): the split took `compile.ts`, the
+§7 row that carried that wait, to MIG-B9-17. MIG-B9-28's second part is
+MIG-B9-66, registered for `0.5.0-beta.10` after the last wave-6 row
+(decision 15); it depends on MIG-B9-28, and its story file is still to be
+written. `migration.md` is append-only (decision 31): a story that rewrites
+one of its passages stays serialized on it (the story files name MIG-B9-26,
+17, 27 and 52; MIG-B9-20 and 60 are not classified yet), and a story that
+only appends its subsection waits for no story on it. So MIG-B9-32, 33, 34
+and 36 no longer wait for MIG-B9-26 or 27 on `migration.md`. Besides the
+append-only rows (the CHANGELOG and the package README), they share no file
+with MIG-B9-27, though 32 to 34 still follow it through MIG-B9-24
+(`theme-validate.ts`);
+32 to 34 wait for MIG-B9-26 and 17 on `diagnostics.ts`, and 33, 34 and 36
+for MIG-B9-26 on the playground. Under §7, MIG-B9-17 takes MIG-B9-26's place
+on `compile.ts`, `test/cli/**`, `cli.md` and `unified-engine-audit.md`, and
+joins it on `compile-sass.ts`, `diagnostics.ts`, `migration.md`,
+`fixtures/release-1.0/run.js`, `verdicts.test.js` and the new
+`sass-stage-diagnostics.test.js`: MIG-B9-27 waits for it on `migration.md`,
+MIG-B9-28 and 39 on `test/cli/**`, and MIG-B9-30 to 35, 37 and 38 on
+`diagnostics.ts` or `run.js`, while MIG-B9-36 waits for MIG-B9-26 on the
+playground only.
 Eleven stories carry an "Owner decisions of 2026-11-10" block at the end of
 their §15 (MIG-B9-16, 17, 24 to 29, 51, 52 and 91), which rules where it
 differs from the contract or from an earlier block. The header Status of
@@ -440,9 +450,10 @@ story starts, and listing it changes who waits:
 
 - `packages/uxdsl/src/sass/compile-sass.ts` for MIG-B9-21's `error.warnings`
   (MIG-B9-14's flag 11): MIG-B9-26 and 17 would wait for MIG-B9-21 on it,
-  and through it for MIG-B9-20. Both already do: MIG-B9-26 because its
-  header depends on MIG-B9-21 (C2 relies on `error.warnings`), MIG-B9-17
-  through `compile.ts`. MIG-B9-23, which this item also named, is merged.
+  and through it for MIG-B9-20. Both already do: MIG-B9-26 because it
+  depends on MIG-B9-21 (its §5 row and its header: C2 relies on
+  `error.warnings`), MIG-B9-17 through `compile.ts`. MIG-B9-23, which this
+  item also named, is merged.
 
 `packages/uxdsl/src/diagnostics.ts`, for the catalog code that the
 detection of isolation's silent cases needs (MIG-B9-14 §15, flag 3), is in
