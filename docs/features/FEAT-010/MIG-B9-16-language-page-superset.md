@@ -827,3 +827,14 @@ findings on this story were applied before the owner's review:
   a row only where two unmerged story files list a file as one they edit,
   and no other one lists it (MIG-B9-50's Shares name
   `scripts/lib/doc-examples.js`, not the test file).
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists those that concern this story; its Q1 and Q2 above are decisions 1 and 2. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Q1, how much of the page the story rewrites (decision 1): (c).** The contract had assumed (a), the registered scope, until answered. The story rewrites the registered passages (`page.tsx:28` and 107–133), the subtitle and the first heading ("A .uxdsl file is CSS", lines 22 and 24), and the directive paragraph (lines 79–82). What changes:
+  - C6 and C7 apply. Every passage of this file that applies "only if Q1 is answered (b) or (c)" or "under Q1 (c)" now applies: §5's C6 and C7, §8's sentences (T3 also asserts that the subtitle no longer contains `A .uxdsl file is CSS`, and T1 covers C7's example) and the inventory's rows.
+  - §6's item "The passages outside the registration … only under Q1 (§15)" no longer applies, and the "must stay byte-identical" list's directives section is the one C7 edits.
+  - The story stays S.
+- **Q2, a directive inside `@media` or `@supports` under its rule (decision 2): (a)**, as the contract assumed. It is intended: through `compile()` the directive compiles (Dart Sass moves the at-rule out, `protect.cases.js` D10), and through `uxdsl/postcss` alone it is `UXD_DIRECTIVE_CONTEXT`. The page documents the asymmetry (C7). AGENTS.md's sentence that makes the line-80 claim (F1: lines 502–507 on `f855765`) becomes a follow-up, proposed for MIG-B9-51, where F1 had named MIG-B9-30 first and MIG-B9-51 as the alternative; MIG-B9-51's §15 records the proposal. This story does not edit `AGENTS.md`, as §5 already says.
+- **F2, `compile()` from standard input (decision 30, from PR #80's notes).** F2 left its destination to the owner. The fix goes in MIG-B9-26: when `process.argv[1]` is not a file path, the Sass stage gives `NodePackageImporter` the current working directory as its entry-point directory, with a test run from `node -`. Nothing changes here; §4 runs its probe from a file.

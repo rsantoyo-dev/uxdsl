@@ -4,25 +4,25 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
-| Decision gate | DEC-02 (decided 2026-10-23) for C1; C3 and C5 stay within DEC-17 (decided 2026-10-23). No DEC is open; six owner questions (§15) choose between options the registration leaves open |
+| Decision gate | DEC-02 (decided 2026-10-23) for C1; C3 stays within DEC-17 (decided 2026-10-23). No DEC is open. The owner answered §15's six questions on 2026-11-10 (§15, "Owner decisions of 2026-11-10"); C4 to C6, C5 included, are now MIG-B9-17's |
 | Status | Ready |
-| Size | M. Registered S by decision D5 of 2026-11-04. The decisions of 2026-11-08 add four detections of module isolation, which need a catalog code and work in the Sass stage's probe, and the removal of the probe prefix's exception. As one story it is M at its upper bound; §15, Q1 proposes a split into an S part (C1 to C3) and an M part (C4 to C6) |
-| Depends on | MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings, which D5 waits for). Under README §7: MIG-B9-16 (`packages/playground-nextjs/**`: the two pages whose three-cases sentence C3 edits), MIG-B9-20 (`compile.ts`, `test/cli/**`, `fixtures/release-1.0/run.js`, `migration.md`, `cli.md`, `unified-engine-audit.md`, the playground, and the tests it rewrites when it removes `includeTheme`), MIG-B9-21 (`compile.ts`, `unified-engine-audit.md`; `compile-sass.ts` for `error.warnings`, which C2 relies on) and MIG-B9-25 (`compile-sass.test.js`, `test/cli/**`, `fixtures/release-1.0/verdicts.test.js`) |
-| Blocks | MIG-B9-91. Under README §7: MIG-B9-27 (`compile.md`, `migration.md`); MIG-B9-28 (`compile-sass.test.js`, `test/cli/**`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); MIG-B9-30 to 36 (`migration.md`); MIG-B9-30, 33, 34, 35, 36 and 39 (`packages/playground-nextjs/**`); MIG-B9-39 (`test/cli/**`); in `0.5.0-beta.10`, MIG-B9-40 to 43 (the playground) and MIG-B9-60, 61 and 63 (`cli.md`). MIG-B9-24 shares no file with this story under the answers its §15 assumes |
+| Size | S. Registered S by decision D5 of 2026-11-04. The decisions of 2026-11-08 added four detections of module isolation, which need a catalog code and work in the Sass stage's probe, and the removal of the probe prefix's exception, which made it M at its upper bound. Decision 6 of 2026-11-10 split it (§15, Q1, option (b)): this story is the S part, C1 to C3, and the M part, C4 to C6, is MIG-B9-17 |
+| Depends on | MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings, which D5 waits for) and MIG-B9-21 (C2 relies on its `error.warnings`, in `compile-sass.ts`: README §7's note on that file. README §5's row names it since decision 6 of 2026-11-10 took `compile.ts`, the §7 row that carried this wait, to MIG-B9-17). Under README §7: MIG-B9-16 (`packages/playground-nextjs/**`: the two pages whose three-cases sentence C3 edits), MIG-B9-20 (`fixtures/release-1.0/run.js`, `migration.md`, the playground, and the tests it rewrites when it removes `includeTheme`) and MIG-B9-25 (`compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`) |
+| Blocks | MIG-B9-17 (decision 6 of 2026-11-10) and MIG-B9-91. Under README §7: MIG-B9-27 (`compile.md`, `migration.md`); MIG-B9-28 (`compile-sass.test.js`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); MIG-B9-30, 33, 34, 35, 36 and 39 (`packages/playground-nextjs/**`); in `0.5.0-beta.10`, MIG-B9-40 to 43 (the playground), MIG-B9-52 (`migration.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10). MIG-B9-24 shares no file with this story under the answers its §15 assumes |
 | Base | `feat/beta9` after MIG-B9-16, after MIG-B9-20, after MIG-B9-21 and after MIG-B9-25. §3 and §4 were recorded on `f855765`, before any of the four; they are re-run on that base before work starts |
-| Owns | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new) |
-| Shares | `packages/uxdsl/src/sass/protect.ts` (C1); `packages/uxdsl/src/sass/compile-sass.ts` (C2 to C6 and its header comment); `packages/uxdsl/src/diagnostics.ts` (one new code; `UXD_SASS_WARNING`'s meaning); `packages/uxdsl/src/compile.ts` (the `CompileResult.warnings` comment only); `packages/uxdsl/test/near-miss-functions.test.js` (`SASS_REJECTS`); `packages/uxdsl/test/core/compile-sass.test.js` (the twin's logger and "debug is dropped"); `packages/uxdsl/test/cli/uxdsl-cli.test.js` (`ISOLATION_CASES`'s silent cases and the namespaced-`@use` test); `fixtures/release-1.0/run.js` and `fixtures/release-1.0/verdicts.test.js` (S-7); `packages/uxdsl/docs/integrations/compile.md`; `packages/uxdsl/docs/integrations/cli.md` (`generate-entry`); `packages/uxdsl/docs/migration.md` (items 6 and 9 of "beta.9 — Sass inside compile()"); `docs/architecture/unified-engine-audit.md` (the Sass stage's codes); `packages/uxdsl/README.md` ("From SCSS", and one sentence); `packages/uxdsl/CHANGELOG.md`; `packages/playground-nextjs/src/app/docs/introduction/page.mdx` and `packages/playground-nextjs/src/app/docs/language/page.tsx` (the three-cases sentence only, C3) |
-| Output impact | API/CLI: `compile()`'s `warnings` gain one per `@debug` (C2) and the isolation warnings (C4 to C6, one new catalogued code); a dotted near-miss fails with the plugin's error instead of `UXD_SASS` (C1); a project name with the `uxdsl-probe-` prefix gets Dart Sass's CSS (C3). No other compiled CSS changes |
+| Owns | None: the test file this story adds is shared with MIG-B9-17 (below) |
+| Shares | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new: this story makes it, and MIG-B9-17 adds its T6 and T8); `packages/uxdsl/src/sass/protect.ts` (C1); `packages/uxdsl/src/sass/compile-sass.ts` (C2, C3, C9 (decision 30 of 2026-11-10) and its header comment); `packages/uxdsl/src/diagnostics.ts` (`UXD_SASS_WARNING`'s meaning); `packages/uxdsl/test/near-miss-functions.test.js` (`SASS_REJECTS`); `packages/uxdsl/test/core/compile-sass.test.js` (the twin's logger and "debug is dropped"); `fixtures/release-1.0/run.js` and `fixtures/release-1.0/verdicts.test.js` (S-7); `packages/uxdsl/docs/integrations/compile.md`; `packages/uxdsl/docs/migration.md` (item 6 of "beta.9 — Sass inside compile()"); `packages/uxdsl/README.md` ("From SCSS", and one sentence); `packages/uxdsl/CHANGELOG.md`; `packages/playground-nextjs/src/app/docs/introduction/page.mdx` and `packages/playground-nextjs/src/app/docs/language/page.tsx` (the three-cases sentence only, C3) |
+| Output impact | API/CLI: `compile()`'s `warnings` gain one per `@debug` (C2); a dotted near-miss fails with the plugin's error instead of `UXD_SASS` (C1); a project name with the `uxdsl-probe-` prefix gets Dart Sass's CSS (C3); `compile()` run from a script read on standard input (`node -`) compiles instead of rejecting with `ERR_INVALID_ARG_VALUE` (C9, decision 30 of 2026-11-10). No other compiled CSS changes. The isolation warnings (C4 to C6, one new catalogued code) are MIG-B9-17's |
 
 ## 1. Goal
 
 Through `compile()`, a near-miss with a dotted argument (`palete(primary.main)`)
 fails as it fails through `uxdsl/postcss`, naming the function meant, and every
 `@debug` Dart Sass evaluates reaches the build as a located warning. No project
-name can change what the Sass stage's probe decides. The four cases in which
-`@use`'s module isolation changes a build without an error each produce a
-located warning. Compiled CSS stays as it is, except for a project that named
-something with the probe's prefix, which now gets Dart Sass's CSS.
+name can change what the Sass stage's probe decides. Compiled CSS stays as it
+is, except for a project that named something with the probe's prefix, which
+now gets Dart Sass's CSS. The four cases in which `@use`'s module isolation
+changes a build without an error are MIG-B9-17's (decision 6 of 2026-11-10).
 
 ## 2. Sources
 
@@ -34,9 +34,11 @@ something with the probe's prefix, which now gets Dart Sass's CSS.
 
   > **D12 — Sass's `@debug` output** is accepted as dropped for now; MIG-B9-26 shows it as a warning.
 
-- The extension on MIG-B9-14's flag 3, decision of 2026-11-08 (`FEAT-010-beta9.md:220`):
-
-  > **Flag 3 — isolation's silent cases.** The silent cases of `@use`'s module isolation (another file's `@function` called, a `!default` set by an earlier file, a project `@function` shadowing a token, a bare call under a namespaced `@use`) are detected by MIG-B9-26.
+- The sources of C4 to C6 (the extension on MIG-B9-14's flag 3, decision of
+  2026-11-08; MIG-B9-14 §15's owner flag 3 and its follow-up; README §7's
+  note on `diagnostics.ts`; the isolation pins in `uxdsl-cli.test.js`,
+  `cli.md` and `migration.md` item 9) moved with them to MIG-B9-17 §2, by
+  decision 6 of 2026-11-10.
 
 - The extension on MIG-B9-15's flag 1, decision of 2026-11-08, as FEAT-010 §2 points to it (`FEAT-010-beta9.md:232–233`):
 
@@ -57,29 +59,16 @@ something with the probe's prefix, which now gets Dart Sass's CSS.
 
   Its decision (`:821`): "The flag's own question, whether the fix waits for a follow-up story or comes here, is answered: it waits for MIG-B9-26."
 - MIG-B9-12 §15, owner flag 8 (`MIG-B9-12-compile-sass.md:590`): "**`sassFrame`** is the frame and stack without the message line, never colored. `@debug` output is dropped (W4), whereas Dart Sass prints it."
-- MIG-B9-14 §15, owner flag 3 (`MIG-B9-14-cli-and-adapters.md:549–555`):
-
-  > **A4 review item: isolation's silent cases.** These compile differently without an error:
-  >    - a call to another file's `@function` stays in the CSS as written;
-  >    - a value an earlier file set for a variable declared `!default` elsewhere no longer reaches it;
-  >    - a project `@function` named like a UXDSL function no longer replaces the token in the other files.
-  >
-  >    Review DGE-1 adds a fourth: under a file's own namespaced `@use`, a bare function call stays in the CSS too. […]
-  >    - Options: an `--import` escape hatch for one release, or detection of an unresolved project-`@function` call. Detection needs `compile-sass.ts` and a catalog code, and is proposed with MIG-B9-26.
-
-  Its follow-up (`:660`): "Detect an unresolved call of a project `@function`, the silent isolation case of owner flag 3. It is the same files and the same kind of warning as its dotted near-misses and `@debug`."
 - DEC-02 (`FEAT-010-beta9.md:94`): "every near-miss of a UXDSL function name is an error with a "did you mean". With the review's precisions: a real CSS function (`shape()`) is never flagged; a top-level name one edit from a breakpoint stays `UXD_BREAKPOINT_UNKNOWN`; the check lives in `language.ts`, so theme values fail the same way."
 - DEC-17 (`FEAT-010-beta9.md:107`): "Where Sass calls it by its bare name (the same file, a file loaded with `@import`, `@use … as *`), the name means the author's function and the output is what Dart Sass produces; UXDSL emits one warning, located at the definition […]. A function reached only through a namespace (`helpers.space()`) shadows nothing, and mixins never conflict."
-- README §7's note (`docs/features/FEAT-010/README.md:380–383`): "`packages/uxdsl/src/diagnostics.ts` for the catalog code that MIG-B9-26's detection of isolation's silent cases needs (MIG-B9-14 §15, flag 3; the `compile-sass.ts` row lists 26 already): MIG-B9-30, 32 to 35, 37 and 38 would wait for MIG-B9-26."
 - The code and the pins, on `f855765`:
   - `packages/uxdsl/src/sass/compile-sass.ts:49–51`: "Every Sass warning is a `UXD_SASS_WARNING: …` warning, located like an error; an `@warn` is located by its stack frame. Sass's own cap (five per deprecation type, then a summary) applies; debug output is dropped." Line 660, in the reporting logger: `debug: () => undefined,`.
   - `compile-sass.ts:97–99`: "The `uxdsl-probe-` prefix is reserved for the probe: its functions, and the namespace under which it reaches `sass:meta`." The probe's names: `uxdsl-probe-builtin`, `-site`, `-pick`, `-eof`, `-cap`, `-replay` and the namespace `uxdsl-probe-meta` (`:156`, `:836–1100`).
   - `packages/uxdsl/test/near-miss-functions.test.js:42–44`: "Dart Sass reads a dotted argument as a module member, so through compile() a near-miss of palette() with a dotted key fails in Sass, located, before the plugin can name the function meant." `const SASS_REJECTS = new Set(['palete(primary.main)', 'pallete(primary.main)', 'pallet(primary.main)']);`
   - `packages/uxdsl/test/core/compile-sass.test.js:1096` and `:1109–1111`: the test titled "… @warn is reported; debug is dropped" ends with `assert.deepEqual(debug.actual.warnings, []);`, and the Dart Sass twin's logger (`:108`) has `debug() {}`.
-  - `packages/uxdsl/test/cli/uxdsl-cli.test.js:2238`: "MIG-B9-14: under a generated @use entry each file is its own module: a variable, mixin or placeholder from another file fails as UXD_SASS, a function call and a !default change without an error, and the file's own @use restores each" (it asserts `built.stderr === ''` for the three silent cases), and `:2296`: "MIG-B9-14: under a file's own namespaced @use, a bare call of the module's @function stays in the CSS and one named like a UXDSL function stays the token, with no error or warning, while a bare variable or mixin fails; […]".
   - `packages/uxdsl/docs/integrations/compile.md:490–493`: "**A dotted near-miss** such as `palete(primary.main)` is Dart Sass's `UXD_SASS: expected "(".` through `compile()`, before the plugin's `UXD_FUNCTION_UNKNOWN` suggestion can run"; `:501`: "an `@debug` prints nothing."; `:385–386`: "No UXDSL name is reserved; the one exception is the Sass stage's own helper prefix, `uxdsl-probe-`"; `:425–430`, the third recorded difference.
   - `packages/uxdsl/README.md:118–125` ("From SCSS"): "every SCSS file is a valid UXDSL file, except in three cases […] and a project function named with the Sass stage's internal prefix `uxdsl-probe-` can change the output."
-  - `packages/uxdsl/docs/integrations/cli.md:162–172` and `packages/uxdsl/docs/migration.md:160–213` (item 9) describe the three silent cases as compiling "differently, without an error"; `migration.md:145–148` (item 6) gives the dotted near-miss as `UXD_SASS`.
+  - `packages/uxdsl/docs/migration.md:145–148` (item 6) gives the dotted near-miss as `UXD_SASS`.
 
 ## 3. Preconditions
 
@@ -162,21 +151,6 @@ const config = (entry) => `module.exports = { entry: './src/${entry}', outFile: 
   }
   const meta = '@use "sass:math" as uxdsl-probe-meta;\n@function get-function($n) {\n  @return null;\n}\n@function space($n) {\n  @return $n * 3px;\n}\n.a {\n  v: space(2);\n}\n';
   console.log(`  @use "sass:math" as uxdsl-probe-meta: ${await core.compile({ source: meta, from }, opts).then((x) => JSON.stringify(x.css.replace(/\s+/g, ' ')), (e) => err(e))}`);
-  console.log('B5 under a generated @use entry (generate-entry --src src, then build)');
-  const cases = {
-    "another file's @function": { 'src/_helpers.uxdsl': '@function double($x) { @return $x * 2; }\n', 'src/widget.uxdsl': '.w { width: double(4px); }\n' },
-    'a !default an earlier file sets': { 'src/_a-config.uxdsl': '$tone: red;\n', 'src/b-button.uxdsl': '$tone: blue !default;\n.btn { color: $tone; }\n' },
-    'a project @function shadowing a token': { 'src/_shadow.uxdsl': '@function space($n) { @return $n * 4px; }\n', 'src/pad.uxdsl': '.p { padding: space(2); }\n' },
-    'a bare call under a namespaced @use': { 'src/_helpers.uxdsl': '@function space($n) { @return $n * 4px; }\n@function double($x) { @return $x * 2; }\n', 'src/pad.uxdsl': "@use './helpers';\n.p { padding: space(2); height: double(4px); }\n" },
-  };
-  let n = 0;
-  for (const [name, files] of Object.entries(cases)) {
-    const dir = put(path.join(root, `b5-${++n}`), { 'uxdsl.config.cjs': config('uxdsl-entry.uxdsl'), ...files });
-    const g = cli(dir, 'generate-entry', '--src', 'src');
-    const b = cli(dir, 'build');
-    const css = fs.readFileSync(path.join(dir, 'out/app.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '').replace(/\s+/g, ' ').trim();
-    console.log(`  ${name}: generate-entry exit ${g.status}; build exit ${b.status}, stderr ${JSON.stringify(b.stderr)}; ${JSON.stringify(css)}`);
-  }
   fs.rmSync(root, { recursive: true, force: true });
 })();
 EOF
@@ -186,7 +160,10 @@ node "$TMPDIR/mig-b9-26-baseline.js"; echo "exit=$?"; rm "$TMPDIR/mig-b9-26-base
 On a base that includes MIG-B9-20, which removes `includeTheme`, the
 script's `includeTheme: false` (in `opts` and in `config`) is dropped first;
 nothing else in it changes. Recorded on `f855765`, 2026-11-10 09:17 EST,
-exit 0, exactly:
+exit 0, exactly, with a fifth part, B5, that moved to MIG-B9-17's §4 with C4
+to C6 (decision 6 of 2026-11-10). The script without B5 was run again on
+`e704b3e` (2026-11-10, 14:06 EST; the package's code is `f855765`'s) and
+printed the same lines, exit 0:
 
 ```text
 B1 a near-miss with a dotted argument (compile() | uxdsl/postcss)
@@ -210,11 +187,6 @@ B4 a project function named with the uxdsl-probe- prefix, beside @function space
   uxdsl-probe-replay: Error uxdsl: the Sass stage's build evaluated a call other than its probe did (an internal error)
   uxdsl-probe-site: ".a { v: var(--uxdsl__space__2); } .b { v: var(--uxdsl__space__2); }"
   @use "sass:math" as uxdsl-probe-meta: Error uxdsl: the Sass stage's probe failed where the build did not (an internal error): There's already a module with namespace "uxdsl-probe-meta".
-B5 under a generated @use entry (generate-entry --src src, then build)
-  another file's @function: generate-entry exit 0; build exit 0, stderr ""; ".w { width: double(4px); }"
-  a !default an earlier file sets: generate-entry exit 0; build exit 0, stderr ""; ".btn { color: blue; }"
-  a project @function shadowing a token: generate-entry exit 0; build exit 0, stderr ""; ".p { padding: var(--uxdsl__space__2); }"
-  a bare call under a namespaced @use: generate-entry exit 0; build exit 0, stderr ""; ".p { padding: var(--uxdsl__space__2); height: double(4px); }"
 ```
 
 What it shows:
@@ -239,20 +211,15 @@ What it shows:
   into the token. The prefix matters only where a call is probed: with no
   function named like UXDSL's, a project `uxdsl-probe-pick` is called like any
   function.
-- **B5.** Each of the four registered cases compiles with exit 0 and an empty
-  stderr. Dart Sass compiles the `.scss` twins of the same files under a
-  `@use` entry to the same CSS (`double(4px)`, `blue`, and `space(2)` where
-  UXDSL writes the token), also without a message. Through a hand-written
-  `@import` entry the same files give `8px`, `red` and `8px`, the last with
-  one `UXD_FUNCTION_SHADOWED`.
 
 The pins, each exit 0 on `f855765` (with `TMPDIR` set to a scratch directory):
 
 ```bash
 node --test packages/uxdsl/test/near-miss-functions.test.js                                       # 5 pass: SASS_REJECTS pins UXD_SASS for the three dotted calls
 node --test --test-name-pattern="debug is dropped" packages/uxdsl/test/core/compile-sass.test.js  # 1 pass, 56 skipped: pins []
-node --test --test-name-pattern="MIG-B9-14: (under a generated @use entry|through a hand-written @import entry|under a file's own namespaced @use)" packages/uxdsl/test/cli/uxdsl-cli.test.js   # 3 pass, 158 skipped: pins the empty stderr
 ```
+
+The third pin, on the isolation cases' empty stderr, moved to MIG-B9-17's §4.
 
 The Bootstrap corpus, for C7 (Bootstrap 5.3.8's `scss/` copied from
 `npm pack bootstrap@5.3.8`, every file renamed to `.uxdsl`, compiled with
@@ -270,7 +237,9 @@ and 475 ms (`compile()`), 1.35×.
 
 The contract assumes the recommended option of each §15 question until the
 owner answers it. Each item names its part for Q1: part 1 is C1 to C3, part 2
-is C4 to C6; C7 and C8 apply to both.
+is C4 to C6; C7 and C8 apply to both. The owner answered on 2026-11-10 (§15,
+"Owner decisions of 2026-11-10"): this story is part 1, and part 2 is
+MIG-B9-17 (decision 6).
 
 - **C1 — A dotted near-miss fails as it fails through `uxdsl/postcss` (DEC-02; MIG-B9-13's flag 10; part 1).**
   In a `.uxdsl` file, take a call in a declaration value whose name
@@ -347,57 +316,8 @@ is C4 to C6; C7 and C8 apply to both.
     MIG-B9-16's C1.2 writes it. These are the three places the owner's
     decision on MIG-B9-15's flag 1 names ("The package README, `compile.md`
     and the introduction page"), plus the page MIG-B9-16 adds.
-- **C4 — A function the build defines but Sass leaves as written (MIG-B9-14's flag 3: "another file's `@function` called", and the bare call under a namespaced `@use`; part 2; Q4 (a)).**
-  - **When.** All three hold:
-    - Dart Sass leaves a call `name(…)` in its output as written;
-    - a file the build loaded defines `@function name` (Sass's spelling:
-      `_` read as `-`);
-    - `name` is not a CSS function the compiler knows
-      (`KNOWN_CSS_FUNCTIONS`), and not a UXDSL function or breakpoint.
-  - **What.** One warning per author position and name, coded
-    `UXD_MODULE_ISOLATION`. The message names the function and the file that
-    defines it, and says that the function is not visible here, so Dart Sass
-    leaves the call in the CSS as written. It names the fix: `@use` that file
-    `as *`, or call it through its namespace. The test pins the wording.
-  - **Where.** Located where `compile()` locates a position in Dart Sass's
-    output: the declaration's start, as MIG-B9-13's flag 11 accepted.
-  - **The CSS** is unchanged.
-  - **§4's B5.** Case 1 (`double(4px)` in `widget.uxdsl`) and case 4
-    (`double(4px)` in `pad.uxdsl`) each warn once, and `uxdsl build` exits 0
-    with the warning on stderr.
-- **C5 — A project function named like a UXDSL function that no call reaches (flag 3: "a project `@function` shadowing a token", and the bare call under a namespaced `@use`; part 2; Q5 (a)).**
-  - **When.** All three hold:
-    - a loaded file defines `@function <name>`, where `<name>` is a token
-      function, `tone` or a breakpoint of the effective theme;
-    - no call of the build reaches that definition: neither a bare call
-      (which `UXD_FUNCTION_SHADOWED` reports) nor a call through a namespace
-      (`helpers.space(2)`);
-    - at least one bare call of that name in a `.uxdsl` file of the build
-      keeps UXDSL's token.
-  - **What.** One `UXD_MODULE_ISOLATION` warning per such definition. It is
-    located at the definition, as `UXD_FUNCTION_SHADOWED` is. It names the
-    function, its file, a file where the bare call keeps the token, and the
-    fix.
-  - **The CSS** is unchanged: the token, by DEC-17.
-  - **§4's B5.** Case 3 warns at `src/_shadow.uxdsl:1:11` and case 4 at
-    `src/_helpers.uxdsl:1:11`.
-- **C6 — A `!default` an earlier file sets (flag 3: "a `!default` set by an earlier file"; part 2; Q6 (b)).**
-  - **When.** All of these hold:
-    - a `.uxdsl` file that Sass loads as a module, through `@use` or
-      `@forward` and not `@import`, declares a top-level `$name: … !default`;
-    - that default applies, because no `$name` is visible there;
-    - a file Sass evaluated earlier in the build assigns a top-level `$name`
-      without `!default`;
-    - that earlier file is not visible from the module and emits no CSS of
-      its own.
-  - **What.** One `UXD_MODULE_ISOLATION` warning at the `!default`
-    declaration. It names the variable and the earlier file, and says that
-    the default applies. It names the fix: `@use` that file `as *`, or
-    configure the module with `@use … with (…)`.
-  - **Never reported.** A module configured with `@use … with (…)` or
-    `@forward … with (…)`.
-  - **The CSS** is unchanged.
-  - **§4's B5.** Case 2 warns at `src/b-button.uxdsl:1:1`.
+- **C4 to C6 — Module isolation's silent cases (part 2).** MIG-B9-17, under
+  the same numbers, by decision 6 of 2026-11-10.
 - **C7 — Everything else stays silent (the negative controls of parts 1 and 2).**
   - The same files through an `@import` entry, or with the reading file's own
     `@use … as *`, share their members, and nothing new warns.
@@ -426,8 +346,8 @@ Must stay byte-identical with BASE:
 - for every input that compiles on BASE, `compile()`'s `css`, `map` and
   `dependencies`, except for a project that names a function, mixin,
   variable or namespace with the `uxdsl-probe-` prefix (C3);
-- `compile()`'s `warnings`: BASE's, in BASE's order, plus only C2's and C4 to
-  C6's additions;
+- `compile()`'s `warnings`: BASE's, in BASE's order, plus only C2's
+  additions (C4 to C6's are MIG-B9-17's);
 - every error on BASE, except C1's dotted near-misses and C3's internal
   errors, which then compile;
 - `uxdsl/postcss` used alone, in everything;
@@ -437,9 +357,9 @@ Must stay byte-identical with BASE:
   `src/generated/examples.json`, and the CLI and compiler captures; no
   playground file is edited but the three-cases sentence of the introduction
   page and of `/docs/language` (C3);
-- `DIAGNOSTIC_CATALOG`: BASE's codes plus `UXD_MODULE_ISOLATION` (Q4 (a)),
-  with `UXD_SASS_WARNING`'s meaning extended (Q2 (a)); every other entry as
-  on BASE.
+- `DIAGNOSTIC_CATALOG`: BASE's codes, with `UXD_SASS_WARNING`'s meaning
+  extended (Q2 (a)); every other entry as on BASE (`UXD_MODULE_ISOLATION`,
+  Q4 (a), is MIG-B9-17's).
 
 ## 6. Out of scope
 
@@ -452,21 +372,15 @@ Must stay byte-identical with BASE:
   `.css` files:** they keep Dart Sass's error (C1), because the plugin checks
   function names only in declaration values (DEC-02), and Dart Sass reads
   those files as written (MIG-B9-15's extension rule). No destination.
-- **`generate-entry`'s warning when it replaces an `@import` entry**
-  (`bin/uxdsl.js`, `writeEntry`): it says the three cases compile
-  "differently, without an error", which stays true. It is not edited, so the
-  story stays off `bin/uxdsl.js`'s row.
-- **An `--import` escape hatch for one release:** MIG-B9-14's flag 3 offered
-  it; the decision of 2026-11-08 chose detection. Not done.
-- **Isolation of variables, mixins and placeholders read from another
-  file:** these are loud already (`UXD_SASS`). No change.
+- **Module isolation's silent cases (C4 to C6) and the out-of-scope items
+  that concern them** (`generate-entry`'s warning when it replaces an
+  `@import` entry, an `--import` escape hatch, the isolation of variables,
+  mixins and placeholders, a `/docs/diagnostics` capture of
+  `UXD_MODULE_ISOLATION`): MIG-B9-17, by decision 6 of 2026-11-10.
 - **`error.warnings` itself:** MIG-B9-21. C2 only relies on it.
 - **SH-4 and RR-1,** the other recorded differences of functions named like
   UXDSL's: accepted by decision D19 of 2026-11-04 (MIG-B9-12's flags 18 and
   19). Unchanged.
-- **A `/docs/diagnostics` capture of `UXD_MODULE_ISOLATION`:** not required,
-  since the page renders the catalog. It would put the story on the
-  playground's §7 row. Proposed for MIG-B9-42 (wave 4) if wanted.
 - **`compile()` from a script read on standard input:** §15, finding F1.
 - **Windows:** MIG-B9-28.
 
@@ -497,30 +411,8 @@ Non-normative.
    namespace, `LOOKUP_CALL` and `MISSING_NAMESPACE`. Keep the tag in the
    call's `Stage`. Nothing is shared between calls, as the module's header
    requires.
-4. **C4.** After the reported pass:
-   - collect the `@function` names of every loaded file, with the same scan
-     `findShadowingFunctions` uses, extended to every name;
-   - find calls of those names in Dart Sass's output, outside strings,
-     comments and `url()`, skipping known CSS, UXDSL and breakpoint names;
-   - locate each through the stage's map.
-
-   Bootstrap's 27 functions never appear in its output (§4), so the corpus
-   pays one scan and no compile.
-5. **C5.** The probe already records, at each bare token call, what the name
-   means there. A definition that no record reaches, while a call of its name
-   kept the token, is the case. For Q5 (a) the probe must also see calls
-   through a namespace. One way: a statement at the start of each such
-   function's body that records the definition, much as the probe already
-   records it after the body.
-6. **C6.** Make the candidates lexically:
-   - top-level `!default` names in `.uxdsl` files Sass loaded as modules
-     (not in `pass.imported`);
-   - top-level plain assignments of the same name in files evaluated
-     earlier;
-   - for Q6 (b), only earlier files to which no mapping of the output points.
-
-   Confirm with the probe: `global-variable-exists("<name>")` just before the
-   declaration. Only a build with a candidate pays a probe compile.
+4. **C4 to C6:** MIG-B9-17's approach, items 4 to 6 (decision 6 of
+   2026-11-10).
 
 Traps:
 
@@ -532,40 +424,25 @@ Traps:
 - **Never protect a call Sass can parse.** `colour(gray.300)` is Sass's to
   evaluate, and a project `@function colour` gives its value.
 - **P10.**
-  - Bootstrap loads every file with `@import` and its output holds none of
-    its function names, so C4 to C6 must cost it no compile.
-  - A detection that probes every build fails C8: the ratio roughly doubles.
   - `protect()` runs on every `.uxdsl` file. Test the dotted shape before
     calling `unknownFunctionMessage`.
+  - The P10 traps of C4 to C6's detections are MIG-B9-17's.
 - **C3's tag must reach no result.** Test with a scan of every result field
   and two compiles of the same input, including the corpus.
-- **`@use … with`.** A configured module's `!default` takes the configured
-  value. Do not report it; `global-variable-exists` may not see the
-  configuration.
-- **Positions.**
-  - C4 is located through the map (the declaration's start), never by
-    searching the author's text.
-  - C5 is located at the definition, as `UXD_FUNCTION_SHADOWED` is.
-  - C6 is located at the declaration.
-  - The CLI already removes the working directory from every path in a
-    message (`formatCliDiagnostic`), so `bin/uxdsl.js` needs no change.
-- **Comments.**
-  - `compile-sass.ts`'s header says "debug output is dropped" and "the
-    `uxdsl-probe-` prefix is reserved".
-  - `compile.ts`'s `CompileResult.warnings` comment lists the warning
-    sources.
-
-  Rewrite each to state the new behavior, with no story id (README §2).
+- **Positions.** The CLI already removes the working directory from every
+  path in a message (`formatCliDiagnostic`), so `bin/uxdsl.js` needs no
+  change. C4 to C6's positions, the `@use … with` trap and `compile.ts`'s
+  `CompileResult.warnings` comment are MIG-B9-17's.
+- **Comments.** `compile-sass.ts`'s header says "debug output is dropped"
+  and "the `uxdsl-probe-` prefix is reserved". Rewrite each to state the new
+  behavior, with no story id (README §2).
 - **`TMPDIR`.** The new test file removes every directory it creates
   (`t.after`), unlike `compile-sass.test.js`'s `project()`.
 
 Stop rule:
 
-- **Stop if** C4 to C6 cannot be detected without a Dart Sass compile in a
-  build that has no candidate (C8).
-- **Stop if** a detection would change any `compile()` result other than
-  `warnings`.
 - **Stop if** C1 cannot be met without making a BASE error silent.
+- The two stop rules of C4 to C6's detections are MIG-B9-17's.
 
 Set the story to Blocked, with the measurements in §15; the owner decides
 (README §2, "Authority"). Never change a test's assertion, the corpus
@@ -581,16 +458,16 @@ runner or P10's budget to pass.
 | T3b | same | `MIG-B9-26: a @debug evaluated before an @error is on the thrown error's warnings` | unit | C2 | the thrown error is BASE's (`UXD_SASS`, `"stop"`, `2:1`) |
 | T4 | `packages/uxdsl/test/core/compile-sass.test.js` (the twin's logger writes `debug` as the stage does; the title's "debug is dropped" becomes "@debug is reported") | the existing deprecation test, retitled `MIG-B9-12: … @warn is reported; @debug is reported as a warning` | unit | C2 | `assertSameAsTwin` compares the stage with the twin: a stage that drops `@debug` fails it |
 | T5 | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` | `MIG-B9-26: a project function named uxdsl-probe-pick, uxdsl-probe-replay or uxdsl-probe-site, and a @use … as uxdsl-probe-meta in a build that defines get-function, compile as under any other name; no result holds the stage's own names, and two compiles are equal` | unit | C3 | the test first asserts that its input is probed (a call seen both ways: `.a` the token, `.b` `6px` under `my-pick`), so it cannot pass on a path that never probes. Mutation: the fixed `uxdsl-probe-` prefix gives `v: 1` twice and fails it |
-| T6 | same | `MIG-B9-26: under a generated @use entry, another file's @function left as written, a project @function named like a token that no call reaches, a !default an earlier file sets, and a bare call under a namespaced @use each warn UXD_MODULE_ISOLATION once, located, with the CSS unchanged` | unit (`compile()`) | C4, C5, C6 | `MIG-B9-26: an @import entry, the reading file's own @use … as *, calls through the namespace, a function no file defines, a known CSS function, and a module configured with @use … with warn nothing new (negative control)` |
-| T7 | `packages/uxdsl/test/cli/uxdsl-cli.test.js` (`ISOLATION_CASES`'s three silent cases and the namespaced-`@use` test) | the two MIG-B9-14 tests, retitled: each silent case builds with exit 0 and its one `UXD_MODULE_ISOLATION` line on stderr instead of `''`; the namespaced form warns for `double` and `space` | CLI subprocess | C4, C5, C6 | the same tests' `@import`-entry test, `as *` and qualified forms keep their stderr (`''`, or BASE's `UXD_FUNCTION_SHADOWED` line) |
-| T8 | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` | `MIG-B9-26: a build with no project @function named like a UXDSL function and no !default in a module runs Dart Sass once, as on BASE` | unit (counts `compileString` through a wrapper of `sass` in `require.cache`) | C8 | a build with a C6 candidate runs a probe: the count is above 1, so the counter sees compiles |
-| T9 | `fixtures/release-1.0/run.js` (S-7) and `fixtures/release-1.0/verdicts.test.js` | S-7 `[tarball] the installed CLI prints a dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion (exit 1), a @debug as a located warning (exit 0), and an isolation case as a located UXD_MODULE_ISOLATION warning (exit 0)`; `MIG-B9-26: S-7 rejects BASE's UXD_SASS line, an empty stderr and an unlocated warning (negative control)` | tarball | C1, C2, C4 | the verdict test's control |
+| T9 | `fixtures/release-1.0/run.js` (S-7) and `fixtures/release-1.0/verdicts.test.js` | S-7 `[tarball] the installed CLI prints a dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion (exit 1) and a @debug as a located warning (exit 0)`; `MIG-B9-26: S-7 rejects BASE's UXD_SASS line, an empty stderr and an unlocated warning (negative control)` | tarball | C1, C2 | the verdict test's control |
 | T10 | `fixtures/sass-corpus/run.js` (unedited) | its own output | fixture | C8 | a detection that probes every build exceeds the budget |
 | T11 | `packages/uxdsl/test/diagnostics-catalog.test.js`, `scripts/doc-examples.test.js`, `fixtures/parity/run.js` (unedited) | as they are | unit, docs, parity | C2, C7, the catalog and the documentation | their own |
 
-T1, T2, T3, T5, T6 and T7 fail on BASE, as §4 shows. T4 fails on BASE once the
-twin's logger writes `@debug`. T3b needs MIG-B9-21's `error.warnings`. T8 and
-the C7 controls pass on BASE by design, and each has a control that shows it
+T6, T7 and T8, and S-7's isolation case of T9, moved to MIG-B9-17 with C4
+to C6 (decision 6 of 2026-11-10); they keep their ids there.
+
+T1, T2, T3 and T5 fail on BASE, as §4 shows. T4 fails on BASE once the
+twin's logger writes `@debug`. T3b needs MIG-B9-21's `error.warnings`. The
+C7 controls pass on BASE by design, and each has a control that shows it
 can fail.
 
 ## 9. Acceptance criteria
@@ -601,19 +478,15 @@ can fail.
     - `protect.ts` without the near-miss rule (T1, T2);
     - the rule without the context guard (T2's control);
     - `debug: () => undefined` restored (T3);
-    - the fixed `uxdsl-probe-` prefix (T5);
-    - each detection removed in turn (T6);
-    - a probe compile on every build (T8).
+    - the fixed `uxdsl-probe-` prefix (T5).
+  - The mutations of T6 and T8 (each detection removed in turn; a probe
+    compile on every build) moved to MIG-B9-17's AC1.
 - **AC2** `node --test packages/uxdsl/test/core/compile-sass.test.js` exits 0.
   - Test file: `compile-sass.test.js`.
   - Mutation: a stage that drops `@debug` fails T4's twin comparison.
-- **AC3** `node --test packages/uxdsl/test/cli/uxdsl-cli.test.js` exits 0.
-  - Test file: `uxdsl-cli.test.js`.
-  - Mutation: no detection, so stderr is `''`, fails T7.
-- **AC4** `node --test packages/uxdsl/test/diagnostics-catalog.test.js packages/uxdsl/test/diagnostics-coverage.test.js` exits 0.
-  - Test files: as named.
-  - Mutation: a catalogued `UXD_MODULE_ISOLATION` that no source emits, or
-    that no test asserts, fails it.
+- **AC3 and AC4** (T7; `UXD_MODULE_ISOLATION` in the catalog) moved to
+  MIG-B9-17 with C4 to C6 (decision 6 of 2026-11-10), under the same
+  numbers.
 - **AC5** `node fixtures/parity/run.js` exits 0 without `--update`, and `git diff --exit-code "$(git merge-base HEAD origin/feat/beta9)" -- fixtures/parity/expected` exits 0.
   - Test file: `fixtures/parity/run.js`.
   - Mutation: none; an invariant guard (C7).
@@ -655,24 +528,25 @@ can fail.
 Owner checks, never marked PASS by the agent:
 
 - Answer §15's Q1 to Q6 before the story starts. The contract assumes each
-  recommended option until then.
-- Review the wording of the three `UXD_MODULE_ISOLATION` messages and of the
-  catalog entry in the PR.
+  recommended option until then. (Answered on 2026-11-10: §15, "Owner
+  decisions of 2026-11-10".)
+- The review of the `UXD_MODULE_ISOLATION` messages and catalog entry moved
+  to MIG-B9-17.
 
 ## 10. Generated artifacts and guards
 
 | Artifact | Needed |
 | --- | --- |
-| CHANGELOG | yes: `protect.ts`, `compile-sass.ts` and `compile.ts` are in `VISUAL_DEFAULT_FILES`. One subsection under `## 0.5.0-beta.9 — unreleased`. Its `### Visual changes`: a project that named something with `uxdsl-probe-` gets Dart Sass's CSS (C3); none otherwise |
-| package README | yes: the "From SCSS" exceptions (C3), and one sentence on the new warnings |
+| CHANGELOG | yes: `protect.ts` and `compile-sass.ts` are in `VISUAL_DEFAULT_FILES`. One subsection under `## 0.5.0-beta.9 — unreleased`. Its `### Visual changes`: a project that named something with `uxdsl-probe-` gets Dart Sass's CSS (C3); none otherwise |
+| package README | yes: the "From SCSS" exceptions (C3), and one sentence on the `@debug` warning |
 | `verify-docs-update.js` classification | no (no file added under `src`; if one is added, it is classified) |
 | `npm run generate:language` | no |
 | `AGENTS.md` + agent guide | no. Its near-miss sentence (`AGENTS.md:771`) becomes true through `compile()`, and nothing it says about Sass warnings changes; `--check` runs (AC7) |
-| `DIAGNOSTIC_CATALOG` | yes: `UXD_MODULE_ISOLATION` (`core`), and `UXD_SASS_WARNING`'s meaning |
+| `DIAGNOSTIC_CATALOG` | yes: `UXD_SASS_WARNING`'s meaning (`UXD_MODULE_ISOLATION` is MIG-B9-17's) |
 | `npm run generate:capabilities` | run, no diff expected (the diagnostics capability is one row) |
 | playground `uxdsl:build` + captures | run, no change expected (AC9) |
-| `migration.md` | yes (items 6 and 9) |
-| `docs/architecture/unified-engine-audit.md` | yes: the Sass stage's codes (line 59) |
+| `migration.md` | yes (item 6; item 9 is MIG-B9-17's) |
+| `docs/architecture/unified-engine-audit.md` | no (the Sass stage's codes, line 59, gain `UXD_MODULE_ISOLATION` in MIG-B9-17) |
 
 ## 11. Documentation
 
@@ -684,16 +558,13 @@ Owner checks, never marked PASS by the agent:
     (`:425–430`): the prefix exception goes (C3);
   - one example that documents the dotted near-miss's
     `UXD_FUNCTION_UNKNOWN`, compiled by the harness.
-- `packages/uxdsl/docs/integrations/cli.md`, `generate-entry` (`:162–185`):
-  the three cases compile differently and now warn `UXD_MODULE_ISOLATION`,
-  and so does the bare call under a namespaced `@use`.
 - `packages/uxdsl/docs/migration.md`, "beta.9 — Sass inside compile()": item
-  6 (`:145–148`) is rewritten, and item 9 (`:160–213`) names the warning.
+  6 (`:145–148`) is rewritten.
 - `packages/uxdsl/README.md`: "From SCSS" (`:118–125`) with two exceptions
   (Q3 (c)), and one sentence beside the pipeline paragraph.
 - `packages/uxdsl/CHANGELOG.md`: one subsection.
-- `docs/architecture/unified-engine-audit.md:59`: the Sass stage's
-  diagnostics, with `UXD_MODULE_ISOLATION`.
+- MIG-B9-17 documents C4 to C6: `cli.md`'s `generate-entry`, item 9 of
+  `migration.md`, and `unified-engine-audit.md:59`.
 - `packages/playground-nextjs/src/app/docs/introduction/page.mdx` (line 53
   on `f855765`) and `packages/playground-nextjs/src/app/docs/language/page.tsx`
   (the sentence MIG-B9-16's C1.2 writes): the three-cases sentence, as the
@@ -705,8 +576,6 @@ Owner checks, never marked PASS by the agent:
 ```bash
 TMPDIR=<empty dir> node --test packages/uxdsl/test/near-miss-functions.test.js packages/uxdsl/test/core/sass-stage-diagnostics.test.js   # exit 0; <empty dir> stays empty
 node --test packages/uxdsl/test/core/compile-sass.test.js                                    # exit 0
-node --test packages/uxdsl/test/cli/uxdsl-cli.test.js                                        # background; exit 0
-node --test packages/uxdsl/test/diagnostics-catalog.test.js packages/uxdsl/test/diagnostics-coverage.test.js   # exit 0
 node --test --test-concurrency=1 packages/uxdsl/test/performance/*.test.js                    # exit 0
 node fixtures/parity/run.js                                                                  # exit 0
 sysctl -n hw.model                                                                           # MacBookPro18,3 (AC6)
@@ -720,10 +589,13 @@ npm run verify:1.0 -- --skip-playground-walk                                    
 npm run verify:playground-browser                                                            # background; exit 0 (Chrome; README §2, before a PR)
 ```
 
+AC3's and AC4's commands moved to MIG-B9-17's §12; `npm test` still runs
+both files.
+
 ## 13. Delivery
 
 Branch `feat/b9-26-near-misses-debug-isolation`. Commit:
-`feat(FEAT-010): MIG-B9-26 - dotted near-misses keep their suggestion through compile(), @debug is a warning, no project name changes the probe, and module isolation's silent cases warn`.
+`feat(FEAT-010): MIG-B9-26 - dotted near-misses keep their suggestion through compile(), @debug is a warning, and no project name changes the probe`.
 
 PR title: `FEAT-010: MIG-B9-26 - Dotted near-misses keep DEC-02's "did you mean" through compile(); Sass's @debug reaches the build as a warning`.
 The body:
@@ -731,11 +603,10 @@ The body:
 - **Goal:** §1, in two sentences.
 - **The owner's answers:** Q1 to Q6, as given, and where the contract
   follows them.
-- **C1 to C6:** §4's B1 to B5 before and after, from the same script.
+- **C1 to C3:** §4's B1 to B4 before and after, from the same script.
 - **C7 and C8:**
   - parity, the playground and the captures unchanged;
-  - the corpus run's output;
-  - T8's compile counts.
+  - the corpus run's output.
 - **Not run, or not a pass:** Windows; what an ubuntu CI run cannot show.
 - **Owner checks:** the list in §9.
 - The last line: `🤖 Generated with [Claude Code](https://claude.com/claude-code)`.
@@ -899,3 +770,20 @@ findings on this story were applied before the owner's review:
 - **F3.** The index's §7 now lists this story on the rows of every file in
   Shares, with new rows for `compile.md`, `migration.md`, `cli.md`,
   `unified-engine-audit.md` and `fixtures/release-1.0/verdicts.test.js`.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists those that concern this story; its Q1 to Q6 above are decisions 6 to 11. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Q1, one story or two (decision 6): (b), a split.** The contract had assumed (a), one story, until answered.
+  - This story keeps the S part, C1 to C3, and is S. It also takes decision 30 (below).
+  - The M part, C4 to C6, with Q4 to Q6 (decisions 9 to 11), is [MIG-B9-17](MIG-B9-17-module-isolation-warnings.md), "The silent cases of `@use`'s module isolation warn": wave 2, right after this story, which it depends on. Its file is made from this file's C4 to C6 material.
+  - **The numbering.** Option (b) reads "Each keeps its C-n, T-n and AC-n as numbered here, and C7 and C8 apply to both", so the numbers do not change: this story's C4, C5 and C6 are MIG-B9-17's C4, C5 and C6; C7 and C8 are in both files, as written; T6, T7 and T8 are MIG-B9-17's, retitled `MIG-B9-17: …`; T9 is divided, S-7's near-miss and `@debug` cases staying here and its isolation case becoming MIG-B9-17's T9; T10 and T11 are in both; AC1 is in both, its mutations divided (T1, T2, T3 and T5's here, T6 and T8's there); AC2 stays here; AC3 and AC4 are MIG-B9-17's; AC5 to AC8 and AC10 are in both; AC9 stays here as written, and MIG-B9-17's AC9 asserts that no playground file changes. §4's B5 and its isolation pin are MIG-B9-17's §4; Q4 to Q6 are in MIG-B9-17's §15 as they were asked here.
+  - The header, §1, §2 and §4 to §13 of this file drop what moved and say where it went; §3 and the questions above stay as written.
+  - **Under README §7.** This story leaves the rows of `compile.ts`, `test/cli/**`, `cli.md` and `unified-engine-audit.md`, which MIG-B9-17 takes. The new row `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` lists this story, which makes the file, then MIG-B9-17. Decision 31 makes `migration.md` append-only: MIG-B9-30 to 36 no longer wait for this story on it, while MIG-B9-17, 27 and 52, which rewrite a passage of it too, still do (this story rewrites item 6). The header's Owns, Shares, Depends on and Blocks follow decisions 6 and 31.
+- **Q2, `@debug`'s code (decision 7): (a)**, as the contract assumed. A `@debug` is `UXD_SASS_WARNING: DEBUG: …`, and the catalog's meaning of `UXD_SASS_WARNING` is extended. C2 does not change.
+- **Q3, the prefix (decision 8): (c)**, as the contract assumed. The probe's names come from a random tag made per `compile()` call, which reaches no result. C3 does not change.
+- **`compile()` from standard input (decision 30), added to this story's contract.** Finding F1 above records that `compile()` rejects with `ERR_INVALID_ARG_VALUE` when Node reads the main module from standard input (`node -`): Dart Sass's `NodePackageImporter`, which the Sass stage constructs on every pass (`compile-sass.ts:669` on `f855765`), reads `process.argv[1]`. MIG-B9-16 (its F2) and MIG-B9-24 (its new fact 6) found the same. The decision puts the fix in this story, so §6's item "`compile()` from a script read on standard input: §15, finding F1" no longer applies.
+  - **C9 (added).** When `process.argv[1]` is not a file path, the Sass stage gives `NodePackageImporter` the current working directory as its entry-point directory, so `compile()` run from a script read on standard input compiles as it does from a script file.
+  - **T12 (added),** in `packages/uxdsl/test/core/sass-stage-diagnostics.test.js`, the file this story makes: a test runs `compile()` from `node -`. Its negative control is BASE's `ERR_INVALID_ARG_VALUE`. AC1, which runs that file, covers it.
+  - **A fact for the implementer, not a change to the decision.** F1 also records that `new NodePackageImporter(process.cwd())` alone throws the same from standard input. Dart Sass 1.107.0's constructor calls `entrypointFilename()`, which reads `require.main` and then `process.argv[1]`, before it reads the directory it is given (`sass.dart.js`, the `nodePackageImporterClass` closure). Checked again on `e704b3e` on 2026-11-10: piped into `node -`, the constructor given `process.cwd()` throws `ERR_INVALID_ARG_VALUE`; the same text run with `node -e` constructs the importer. So the directory alone does not avoid the throw; how the stage keeps the constructor from reading `-` is the implementation's. If no way meets C9, the story is set to Blocked with a finding and the owner decides (README §2, "Authority").

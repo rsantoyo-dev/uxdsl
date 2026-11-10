@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 6 |
 | Decision gate | None (plan §5.6 and D-3: a note, not an implementation) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | S |
 | Depends on | MIG-B9-30 (the breakpoint block is the syntax a container form would extend) |
 | Blocks | — |

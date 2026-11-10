@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 6 |
 | Decision gate | None (plan §8.2; the ladder's steps 2 and 3) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | M |
 | Depends on | MIG-B9-43 (the playground's strict check and exceptions file become this command's first user) |
 | Blocks | — |
