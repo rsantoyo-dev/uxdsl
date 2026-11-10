@@ -22,6 +22,44 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The canonical-grammar codemod leaves a canonical typography name as it is, so a second run changes nothing (MIG-B9-29)
+
+`scripts/codemod-canonical-grammar.js` no longer renames a typography variable
+that is already named after its CSS property: a name ending in
+`-font-family`, `-font-size`, `-line-height`, `-font-weight`,
+`-letter-spacing`, `-text-transform`, `-text-decoration`, `-font-style`,
+`-margin-block-start` or `-margin-block-end` is left as it is. It used to
+rename six of them, so `--uxdsl__typography__h1-font-size` became
+`--uxdsl__typography__h1-font-font-size`, on a first run over sources that
+already used the canonical names and again on every later run. Running the
+codemod again now changes nothing.
+
+A former name is renamed as before (`--uxdsl__typography__h1-size` →
+`--uxdsl__typography__h1-font-size`), except a name that reads both ways:
+role `body-text`'s former `--uxdsl__typography__body-text-transform` is also
+role `body`'s canonical `text-transform`. Such a name is left as a canonical
+one. When the effective theme (the packaged base merged with `--theme`)
+defines the role its former reading names, the name is reported under its
+file, the way an ambiguous Palette split is:
+
+```text
+unresolved: --uxdsl__typography__body-text-transform (ambiguous: role body's text-transform, or role body-text's former -transform, now --uxdsl__typography__body-text-text-transform)
+```
+
+A name the run renames is checked in the form the run leaves it, so a second
+run prints the same reports as the first. Neither the packaged base nor the
+playground defines a role ending in `-font`, `-letter` or `-text`, so without
+`--theme` nothing is reported.
+
+Without `--theme`, the first path given is now read. It used to be skipped:
+`codemod-canonical-grammar.js a b` read only `b`, and a single path, also
+through `npm run codemod:canonical-grammar -- <path>`, printed the usage line
+and exited 2. Flags and paths may come in any order.
+
+### Visual changes
+
+None: the codemod is a script, and compiled output is byte-identical.
+
 ### `build --watch` keeps a generated entry current; `generate-entry` records its invocation, writes `.uxdsl` paths and namespaces from `--src`, in path order (MIG-B9-22)
 
 `generate-entry` records its invocation in the entry's header and, with no
