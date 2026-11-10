@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 6 |
 | Decision gate | None (plan §5.1; no syntax change) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | M |
 | Depends on | MIG-B9-20 (the removed option it detects), MIG-B9-32 (roles that relied on inheritance) |
 | Blocks | — |

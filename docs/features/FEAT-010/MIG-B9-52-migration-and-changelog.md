@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 5 |
 | Decision gate | None (audit DE-12; plan §3.3 and §8 item 6) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | S |
 | Depends on | MIG-B9-01 (and every story with output impact, whose entries it organizes) |
 | Blocks | MIG-B9-92 (DEC-03, revised 2026-11-04) |
@@ -151,3 +151,9 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). 
 - **Two releases (decision D13 of 2026-11-04, DEC-03 revised).** This story ships in `0.5.0-beta.10` and blocks MIG-B9-92, the beta.10 gate and release record, instead of MIG-B9-91. MIG-B9-91, the beta.9 gate, includes an English beta.8 → beta.9 migration section; the review above, written for option (b), asks to move C1 into that gate.
 - **The codemod (decision D4 of 2026-11-04).** MIG-B9-03's finding 3 is registered as MIG-B9-29, "The canonical-grammar codemod is idempotent" (S, wave 2): a second run is a no-op, pinned by a test, and "MIG-B9-52's release-notes instruction follows". The finding's target for this story is "MIG-B9-52 (one instruction)" (MIG-B9-03 §15).
 - **The `engines` release note (decision D10 of 2026-11-04).** `uxdsl` declares `"engines": { "node": ">=20.19" }` in MIG-B9-91, with the release note in the beta.9 migration section. MIG-B9-12's owner flag 11 had proposed that note for this story.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists the one that concerns this story. It proposes a follow-up for this story; it does not change its contract, and the re-baseline after wave 3 decides how it enters.
+
+- **Running the codemod over sources only (decision 25, on MIG-B9-29's Q3).** MIG-B9-03's finding 7: `scripts/codemod-canonical-grammar.js` walks generated outputs too, and on `f855765` it rewrites the playground's compiled `src/app/uxdsl.css` and `src/generated/examples.json` with the sources (MIG-B9-29 §15, F2). The owner chose option (a): this story documents running the codemod over sources, not build outputs, and the codemod's walk stays as it is. MIG-B9-29, which ships in `0.5.0-beta.9`, makes a second run a no-op, and its decision 24 makes `npm run codemod:canonical-grammar -- <path>` read every path.
