@@ -876,3 +876,13 @@ findings on this story were applied before the owner's review:
   `compile-sass.ts` row, after MIG-B9-26.
 - **A path (R16).** New fact 5 and §6 name `ds-runtime/apply-theme.ts` and
   `ds-runtime/theme-generator.ts` with their directory.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists those that concern this story; its Q1 to Q4 above are decisions 26 to 29. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Q1, the candidates (decision 26): (b)**, as the contract assumed: the output-free C2 and C3 (`plugin.ts`), plus one engine pass per compilation (C1: `theme-validate.ts`, `theme-generator.ts`). No change; README §7's rows already follow it.
+- **Q2, the gated candidates (decision 27): (a)**, as the contract assumed: the stage map only on request, and Dart Sass's map without `sourcesContent`, stay out of this story. No change.
+- **Q3, a timing criterion (decision 28): (a)**, as the contract assumed: none. C1 to C3's deterministic counts are the contract; timings are indicative and go in §14, with MIG-B9-23's runner discipline. No change.
+- **Q4, a theme value PostCSS cannot parse, though `validateTheme` accepts it (decision 29): (a)**, as the contract assumed: every error is kept as on BASE, and C2 skips only the inspection. No change.
+- **New fact 6, `compile()` from standard input (decision 30, from PR #80's notes).** The fact proposed no story. The owner put the fix in MIG-B9-26: when `process.argv[1]` is not a file path, the Sass stage gives `NodePackageImporter` the current working directory as its entry-point directory, with a test run from `node -`. Nothing changes here; §4 runs from a file.

@@ -7,9 +7,9 @@
 | Decision gate | DEC-05 (decided 2026-10-23). Registered by decision D7 of 2026-11-04, on MIG-B9-13 §15, flag 8 (F3) |
 | Status | Ready |
 | Size | S |
-| Depends on | MIG-B9-21 (D7: "after MIG-B9-21, since it edits `plugin.ts`"). Under README §7 also: MIG-B9-20, an earlier row of the `plugin.ts` and `migration.md` rows, which also removes the `includeTheme` option that `test/no-silent-output.test.js` passes 12 times; MIG-B9-25 (`test/no-silent-output.test.js`); MIG-B9-26 (`compile.md`, `migration.md`) |
-| Blocks | MIG-B9-24, 30, 31 and 35 (later rows of README §7's `plugin.ts` row); MIG-B9-28 (`test/no-silent-output.test.js`); MIG-B9-30 to 36 (`migration.md`); in `0.5.0-beta.10`, MIG-B9-52 and 60 (`migration.md`); MIG-B9-91 (every story of waves 0 to 3) |
-| Base | `feat/beta9` after MIG-B9-20, MIG-B9-21, MIG-B9-25 and MIG-B9-26. §3 and §4 were recorded on `f855765`, before all four; they are re-run when the story starts (§3) |
+| Depends on | MIG-B9-21 (D7: "after MIG-B9-21, since it edits `plugin.ts`"). Under README §7 also: MIG-B9-20, an earlier row of the `plugin.ts` and `migration.md` rows, which also removes the `includeTheme` option that `test/no-silent-output.test.js` passes 12 times; MIG-B9-25 (`test/no-silent-output.test.js`); MIG-B9-26 (`compile.md`, `migration.md`); MIG-B9-17 (`migration.md`, where both stories rewrite an item: decisions 6 and 31 of 2026-11-10) |
+| Blocks | MIG-B9-24, 30, 31 and 35 (later rows of README §7's `plugin.ts` row); MIG-B9-28 (`test/no-silent-output.test.js`); in `0.5.0-beta.10`, MIG-B9-52 (`migration.md`, which it restructures), and MIG-B9-60 there only if its re-baselined file rewrites a passage (decision 31 of 2026-11-10 makes `migration.md` append-only, so MIG-B9-30 to 36 no longer wait for this story on it); MIG-B9-91 (every story of waves 0 to 3) |
+| Base | `feat/beta9` after MIG-B9-20, MIG-B9-21, MIG-B9-25, MIG-B9-26 and MIG-B9-17. §3 and §4 were recorded on `f855765`, before all of them; they are re-run when the story starts (§3) |
 | Owns | Outcome A only: `packages/uxdsl/test/postcss-chain.test.js` (new), `fixtures/mig-b9-27-postcss-chain/` (new: `run.js`, `README.md`) |
 | Shares | Outcome A only: `packages/uxdsl/src/plugin.ts` (the plugin factory, `rejectSassSyntax`, the header comment), `packages/uxdsl/test/no-silent-output.test.js` (F3's pin), `packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/README.md`, `packages/uxdsl/docs/integrations/compile.md`, `packages/uxdsl/docs/migration.md` (item 4 of "beta.9 — Sass inside compile()"). Outcome B edits this file only |
 | Output impact | Outcome A: API — a PostCSS chain that fails as `UXD_SASS_CONTEXT` on BASE compiles; the plugin alone and `compile()` are byte-identical. Outcome B: none |
@@ -811,3 +811,20 @@ findings on this story were applied before the owner's review:
   the outcome.
 - **Start gates (R12).** §3 checks the base's tree for each story, instead
   of searching `origin/feat/beta9`'s commit subjects.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists those that concern this story; its Q1 to Q3 above are decisions 12 to 14. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Q1, where the real plugins come from (decision 12): (b)**, as the contract assumed. Stand-ins in `npm test` reproduce each plugin's timing (T1, T2, T6), and T7 is a fixture run by hand that installs the pinned real plugins, postcss-nested and postcss-simple-vars among them, into a temporary directory. No `package.json` changes. No change to the contract.
+- **Q2, what "every contract" covers for a stylesheet with Sass and another mistake (decision 13): (a)**, the strict reading, as the contract assumed. The plugin alone returns BASE's result for every input, as C1 is written. No change.
+- **Q3, MIG-B9-13's CHANGELOG item that outcome A makes false (decision 14): (b).** The contract had assumed (a), append only, until answered. What changes, in outcome A only:
+  - Besides this story's own subsection, MIG-B9-13's `### Breaking` item that says a PostCSS chain fails in either order (lines 440–446 on `f855765`) is rewritten in the `## 0.5.0-beta.9 — unreleased` section, so that section lists no breaking change that never ships.
+  - §11's CHANGELOG item follows: the subsection, and that item rewritten, rather than a subsection that says the item no longer holds. `packages/uxdsl/CHANGELOG.md` is already in Shares; README §7's CHANGELOG row records the rewrite, and no other story edits that item.
+  - Outcome B edits nothing, as before.
+- **Under README §7, after decisions 6 and 31.** Decision 6 split MIG-B9-26: its C4 to C6 are MIG-B9-17, whose row comes between MIG-B9-26's and this story's. Decision 31 makes `migration.md` append-only; a story that rewrites one of its passages stays serialized. This story rewrites item 4 of "beta.9 — Sass inside compile()" (§11), so:
+  - it waits on `migration.md` for MIG-B9-26 (item 6; also `compile.md`) and for MIG-B9-17 (item 9);
+  - MIG-B9-30 to 36 no longer wait for it on `migration.md`; MIG-B9-24, 30, 31 and 35 still wait for it on `plugin.ts`, MIG-B9-28 on `no-silent-output.test.js`, and MIG-B9-52, which restructures `migration.md`, there;
+  - §3's start gate for MIG-B9-26, whose comment reads "both parts' files, if the owner splits it", also needs MIG-B9-17 merged: `! command grep -qx "To be filled in the delivering PR." docs/features/FEAT-010/MIG-B9-17-module-isolation-warnings.md` exits 0 before the story starts.
+
+  The header's Depends on, Base and Blocks follow.

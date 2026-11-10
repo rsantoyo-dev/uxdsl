@@ -786,3 +786,21 @@ findings on this story were applied before the owner's review:
   and the header's Output impact no longer lists the report.
 - **A quote (R17).** §2 quotes the codemod's lines 144–147 as the file
   writes them.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists those that concern this story; its Q1 to Q3 above are decisions 23 to 25. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Q1, a name that reads both ways (decision 23): (b).** The contract had assumed (a) until answered. Role `body-text`'s former `--uxdsl__typography__body-text-transform` is role `body`'s canonical `text-transform`: the canonical reading wins, plus an `unresolved:` report when the effective theme defines the former role. What changes:
+  - C3's exception still leaves such a name as it is, and C4 applies: a name that C2 keeps, and that would also be the former name of a typography role the effective theme defines (the packaged base merged with `--theme`), is printed under its file as one `unresolved:` line per occurrence, naming the variable and that role. The file counts among those "with findings" and is not changed. A name whose former reading names no role of the effective theme is not reported.
+  - C1's `unresolved:` lines include C4's, which a second run prints again.
+  - T5 takes its "under Q1 (b)" title, assertions and control (the same file without `--theme` prints no `unresolved:` line). AC1's mutations are the "under Q1 (b)" ones: a report on every canonical name fails T5's control, and no report fails T5.
+  - The header's Output impact sentence "Under §15's Q1 (b) it would also report the names a theme role makes ambiguous" now applies.
+- **Q2, fix F1 here (decision 24): (b).** The contract had assumed (a), the registration as written, until answered. Without `--theme` the first path argument is dropped, so `npm run codemod:canonical-grammar -- <path>` fails; it is fixed in this story. What changes:
+  - The one-line fix in the same file: `themeIndex === -1 || i !== themeIndex + 1`.
+  - C6 is added: every path argument is read, whether or not `--theme` is given, and `--write` may follow a path.
+  - C5's item "the argument handling §4's part (3) shows, until the owner answers §15's Q2" no longer holds for that handling; the rest of C5 stays.
+  - One test is added, in `packages/uxdsl/test/codemod-canonical-grammar.test.js`, which AC1 runs: `MIG-B9-29: without --theme, every path given is read, the first one included`. Its control is `… p.css` alone exiting 0 with `p.css` rewritten, where BASE exits 2.
+  - AC2's part (3) no longer prints what §4 records: its "unless the owner answered Q2 with (b)" applies. The tests need not put a flag first.
+  - The story stays S.
+- **Q3, MIG-B9-03's finding 7, generated outputs (decision 25): (a)**, as the contract assumed. MIG-B9-52 documents running the codemod over sources only; the walk stays BASE's. MIG-B9-52's §15 records the proposal. No change.

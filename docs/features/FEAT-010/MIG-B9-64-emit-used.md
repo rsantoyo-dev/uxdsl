@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 6 |
 | Decision gate | None (plan §5.5; opt-in, no syntax change) |
-| Status | Ready |
+| Status | Draft — recommended cut (review 2026-10-11) |
 | Size | M |
 | Depends on | MIG-B9-20 |
 | Blocks | — |
