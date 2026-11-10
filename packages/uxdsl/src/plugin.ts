@@ -568,10 +568,13 @@ function emitTheme(c: Compilation) {
     return;
   }
   // `@uxdsl theme;`: the blocks take the marker's place. The @imports stay
-  // first (above), since CSS honors one only before every other rule.
+  // first (above), since CSS honors one only before every other rule. The
+  // first block keeps the marker's leading raw, or a newline when the marker
+  // had none and a node now precedes it (the imports above, or a rule written
+  // right before it), so it never glues onto that node.
   if (blocks.length) {
     const parsedBefore = new Map(blocks.map((node) => [node, node.raws.before]));
-    parsedBefore.set(blocks[0], marker.raws.before);
+    parsedBefore.set(blocks[0], marker.raws.before || (marker.prev() ? '\n' : marker.raws.before));
     marker.parent!.insertBefore(marker, blocks);
     for (const node of blocks) node.raws.before = parsedBefore.get(node);
   }
@@ -955,6 +958,17 @@ function checkReferences(c: Compilation) {
   });
 }
 
+// --- reportThemeEmission -----------------------------------------------------
+
+/**
+ * One result message per compilation, `{ type: 'uxdsl-theme', emitted }`,
+ * saying whether it emitted the theme: compile() returns it as
+ * `themeEmitted`, and a build host counts its stylesheets from it.
+ */
+function reportThemeEmission(c: Compilation) {
+  c.result.messages.push({ type: 'uxdsl-theme', plugin: PLUGIN, emitted: c.themeEmitted });
+}
+
 // --- the plugin --------------------------------------------------------------
 
 function uxdslPlugin(opts: UxdslOptions = {}) {
@@ -968,6 +982,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       expandResponsive(compilation);
       rejectLeftoverDirectives(compilation);
       checkReferences(compilation);
+      reportThemeEmission(compilation);
     },
   };
 }

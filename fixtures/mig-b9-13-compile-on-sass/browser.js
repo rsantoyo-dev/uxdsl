@@ -57,8 +57,9 @@ const SHARED = `.k { color: ${RED}; }\n`;
 const A = `@import "./_shared.uxdsl";\n.k { color: ${BLUE}; }\n`;
 const IMPORTS = '@import "./_a.uxdsl";\n@import "./_shared.uxdsl";\n';
 const HOVER = `background-color: ${RED};`;
-const BUTTON = `.btn {\n  @ds-button(contained);\n  &:hover { ${HOVER} }\n}\n`;
-const PLAIN_BUTTON = '.btn {\n  @ds-button(contained);\n}\n';
+// The two button probes carry the theme (`@uxdsl theme;`): t5 reads the theme's hover background.
+const BUTTON = `@uxdsl theme;\n.btn {\n  @ds-button(contained);\n  &:hover { ${HOVER} }\n}\n`;
+const PLAIN_BUTTON = '@uxdsl theme;\n.btn {\n  @ds-button(contained);\n}\n';
 
 const PAGE = (css) => `<!doctype html>
 <style>p, button { outline: 1px solid ${BLACK}; }</style>

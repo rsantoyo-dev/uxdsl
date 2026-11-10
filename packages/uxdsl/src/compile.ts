@@ -125,6 +125,9 @@ export interface CompileResult {
    * `UXD_FUNCTION_SHADOWED` at each definition), then the plugin's; each at
    * the author's file, line and column when it has a position. */
   warnings: CompileWarning[];
+  /** Whether this compilation emitted the theme: its stylesheet, or a file it
+   * loads, reached `@uxdsl theme;`. */
+  themeEmitted: boolean;
 }
 
 /** How positions and the source map name an anonymous source. */
@@ -233,7 +236,11 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     ...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)),
   ];
 
-  return { css, map, dependencies, warnings };
+  // The plugin's own message for this compilation (the last one, should a
+  // caller's PostCSS setup ever run it twice).
+  const themeMessage = [...result.messages].reverse().find((message) => message.type === 'uxdsl-theme' && message.plugin === 'uxdsl');
+  const themeEmitted = Boolean(themeMessage && (themeMessage as { emitted?: unknown }).emitted);
+  return { css, map, dependencies, warnings, themeEmitted };
 }
 
 // --- options -----------------------------------------------------------------

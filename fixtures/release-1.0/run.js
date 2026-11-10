@@ -582,13 +582,13 @@ async function main() {
     };
     let partial = '';
     await check('B2-b', 'a partial theme with externals: CLI, generateThemeCss and the plugin emit the same :root; a component entry none', async () => {
-      p.write('src/uxdsl-entry.uxdsl', source);
+      p.write('src/uxdsl-entry.uxdsl', `@uxdsl theme;\n${source}`);
       configure(theme, references);
       p.uxdsl('build');
       partial = p.read('src/uxdsl.css');
       if (!/--uxdsl__font__ui:\s*var\(--font-geist-sans\)/.test(partial)) throw new Error('the external font token is not in the output');
       if (JSON.stringify(vars(partial)) !== JSON.stringify(vars(themeApi.generateThemeCss(theme, references)))) throw new Error('CLI vs generateThemeCss');
-      const direct = await postcss([plugin({ theme, references })]).process(source, { from: undefined });
+      const direct = await postcss([plugin({ theme, references })]).process(`@uxdsl theme;\n${source}`, { from: undefined });
       if (JSON.stringify(vars(partial)) !== JSON.stringify(vars(direct.css))) throw new Error('CLI vs the plugin');
       const component = await postcss([plugin({ theme, references, includeTheme: false })]).process(source, { from: undefined });
       if (/:root/.test(component.css)) throw new Error('includeTheme: false emitted :root');
@@ -634,7 +634,7 @@ async function main() {
   watch: ['src/**/*.uxdsl'],
 };\n`);
     p.write('uxdsl.theme.cjs', "module.exports = { palette: { primary: { main: '#123456' } }, fonts: { families: { ui: 'var(--font-geist-sans)' } }, breakpoints: { xl: 1440 } };\n");
-    p.write('src/theme.uxdsl', '/* theme-only entry */');
+    p.write('src/theme.uxdsl', '/* theme-only entry */\n@uxdsl theme;');
     p.write('src/panel-a.uxdsl', '.card { @ds-surface(contained); width: xs(100%) xl(50%); }');
     p.write('src/panel-b.uxdsl', '.button { @ds-button(contained primary 2); }');
     p.write('src/panel-c.uxdsl', '.input { @ds-input(outlined primary 2); }');
@@ -665,6 +665,8 @@ async function main() {
     });
     await check('B3-e', '--no-include-theme overrides every builds[] entry, the theme entry included', () => {
       p.write('src/panel-b.uxdsl', '.button { @ds-button(contained primary 2); }');
+      // The flag governs an entry without the marker; a marker emits the theme whatever the flag says.
+      p.write('src/theme.uxdsl', '/* theme-only entry */');
       p.uxdsl('build', '--no-include-theme');
       if (/:root/.test(p.read('src/theme.css'))) throw new Error('theme.css still has :root');
       return 'no :root anywhere';
@@ -806,7 +808,7 @@ async function main() {
     await check('UX-10', 'reference validation stays near-linear', async () => {
       const block = (i) => `.c-${i} { padding: density(2); color: palette(primary); background: palette(surface); border-radius: radius(2); }\n`;
       const timeFor = async (count) => {
-        p.write(`src/perf-${count}.uxdsl`, Array.from({ length: count }, (_, i) => block(i)).join(''));
+        p.write(`src/perf-${count}.uxdsl`, `@uxdsl theme;\n${Array.from({ length: count }, (_, i) => block(i)).join('')}`);
         const started = process.hrtime.bigint();
         await core.compile({ entry: path.join(p.root, `src/perf-${count}.uxdsl`) }, { theme: {}, includeTheme: true });
         return Number(process.hrtime.bigint() - started) / 1e6;

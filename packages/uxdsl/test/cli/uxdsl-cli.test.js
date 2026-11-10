@@ -133,7 +133,7 @@ const HOST_FONT_THEME = { ...FULL_THEME, fonts: { families: { ui: 'var(--host-to
 test('MIG-B2-01: externalTokens declared in uxdsl.config.cjs lets a UXDSL-generated declaration reference a host variable with no fallback', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', references: { externalTokens: ['--host-token'] } };`);
-  write(dir, 'src/entry.uxdsl', '/* no component rules needed — includeTheme defaults to true */');
+  write(dir, 'src/entry.uxdsl', '/* no component rules needed: the theme is emitted at the marker */\n@uxdsl theme;');
   write(dir, 'uxdsl.theme.cjs', `module.exports = ${JSON.stringify(HOST_FONT_THEME)};`);
   const config = await cli.loadConfig({}, dir);
   const source = fs.readFileSync(config.entry, 'utf8');
@@ -144,7 +144,7 @@ test('MIG-B2-01: externalTokens declared in uxdsl.config.cjs lets a UXDSL-genera
 test('MIG-B2-01: the same theme without externalTokens still fails with UXD_REFERENCE_MISSING', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', '/* no component rules needed — includeTheme defaults to true */');
+  write(dir, 'src/entry.uxdsl', '/* no component rules needed: the theme is emitted at the marker */\n@uxdsl theme;');
   write(dir, 'uxdsl.theme.cjs', `module.exports = ${JSON.stringify(HOST_FONT_THEME)};`);
   const config = await cli.loadConfig({}, dir);
   assert.equal(config.references, undefined);
@@ -328,7 +328,7 @@ test('MIG-B3-01: buildOnce with includeTheme: false emits no :root', async () =>
 test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root — and no breakpoint marker (stability phase 2)', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
+  write(dir, 'src/entry.uxdsl', `@uxdsl theme;\n.card { @ds-surface(contained); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
   await cli.buildOnce(config);
@@ -342,7 +342,7 @@ test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root �
 
 test('MIG-B3-01: a theme entry and a component entry compiled separately compose without any duplicate definitions', async () => {
   const dir = mkTmpDir();
-  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'theme.uxdsl', '/* theme-only entry */\n@uxdsl theme;');
   write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
   const themeConfig = await cli.loadConfig({ entry: path.join(dir, 'theme.uxdsl'), out: path.join(dir, 'theme.css') }, dir);
   themeConfig.theme = FULL_THEME;
@@ -495,7 +495,7 @@ test('MIG-B3-02: buildOnce compiles a theme entry and a component entry from one
       { entry: './panel.uxdsl', outFile: './panel.css', includeTheme: false },
     ],
   };`);
-  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'theme.uxdsl', '/* theme-only entry */\n@uxdsl theme;');
   write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
@@ -1346,8 +1346,8 @@ test('MIG-B6-24: the exact reproduction fails before writing, naming the offendi
     { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
     { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' },
   ] };`);
-  write(dir, 'src/theme.uxdsl', '');
-  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  write(dir, 'src/theme.uxdsl', '@uxdsl theme;');
+  write(dir, 'src/panel.uxdsl', '@uxdsl theme;\n.p { padding: density(2); }\n');
   const config = await cli.loadConfig({}, dir);
   await assert.rejects(
     () => cli.buildOnce(config),
@@ -1383,8 +1383,8 @@ test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, na
     { entry: './src/a.uxdsl', outFile: './out/a.css' },
     { entry: './src/b.uxdsl', outFile: './out/b.css' },
   ] };`);
-  write(dir, 'src/a.uxdsl', '.a { color: red; }');
-  write(dir, 'src/b.uxdsl', '.b { color: blue; }');
+  write(dir, 'src/a.uxdsl', '@uxdsl theme;\n.a { color: red; }');
+  write(dir, 'src/b.uxdsl', '@uxdsl theme;\n.b { color: blue; }');
   const config = await cli.loadConfig({}, dir);
   const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
   const relevant = messages.filter((m) => /entries emit the theme/.test(m));
@@ -1395,7 +1395,8 @@ test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, na
 test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-include-theme fixes it', async () => {
   const dir = mkTmpDir();
   write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
-  const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
+  write(dir, 'src/panel-theme.uxdsl', '@uxdsl theme;\n.p { padding: density(2); }\n');
+  const failing = await cli.loadConfig({ entry: './src/panel-theme.uxdsl', out: './out/x.module.css' }, dir);
   await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root, which CSS Modules reject/);
 
   const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);

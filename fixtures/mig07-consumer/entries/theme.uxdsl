@@ -1,4 +1,5 @@
-/* Theme entry: compiled with includeTheme: true. Defines every global
+/* Theme entry: writes `@uxdsl theme;` below, so it defines every global
    :root token the four panel entries below consume. No component markup
    of its own — the theme JSON (theme.json) is the actual source of the
    tokens. */
+@uxdsl theme;

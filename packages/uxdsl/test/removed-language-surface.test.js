@@ -45,7 +45,7 @@ test('@theme { … } is removed: UXD_THEME_BLOCK_REMOVED, located, naming the th
 });
 
 test('@theme: the JSON is the only source — what a pack used to define is written in the theme', () => {
-  const css = compile('.card { border-radius: radius(2); box-shadow: shadow(2); padding: density(4); }', {
+  const css = compile('@uxdsl theme;\n.card { border-radius: radius(2); box-shadow: shadow(2); padding: density(4); }', {
     theme: { radii: { 2: '99px' }, shadows: { 2: '0 9px 9px red' }, densities: { 4: 'xs(space(1)) md(space(2))' } },
     includeTheme: true,
   });

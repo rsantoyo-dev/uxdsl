@@ -43,8 +43,8 @@ test('watch retargets the entry and source globs without restarting the CLI, and
   // `themeFile` pointer); what a config reload retargets is the entry and the
   // watch globs.
   const config = (folder) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl']};`;
-  put('old/entry.uxdsl', '.old { color: red; }');
-  put('next/entry.uxdsl', '.next { color: blue; }');
+  put('old/entry.uxdsl', '@uxdsl theme;\n.old { color: red; }');
+  put('next/entry.uxdsl', '@uxdsl theme;\n.next { color: blue; }');
   put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
   put('uxdsl.config.cjs', config('old'));
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -59,7 +59,7 @@ test('watch retargets the entry and source globs without restarting the CLI, and
   await waitFor(() => css().includes('.next'));
   put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
   await waitFor(() => css().includes('#fedcba'));
-  put('next/entry.uxdsl', '.updated { color: green; }');
+  put('next/entry.uxdsl', '@uxdsl theme;\n.updated { color: green; }');
   await waitFor(() => css().includes('.updated'));
   await delay(300);
   const before = (logs.match(/\[uxdsl\] built/g) || []).length;
@@ -122,7 +122,7 @@ test('watch mode reloads config and theme on change instead of serving a stale r
   installPostcssUxdsl(dir);
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */');
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */\n@uxdsl theme;');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -147,7 +147,7 @@ test('watch mode reloads a theme value that comes from a nested require() (e.g. 
   installPostcssUxdsl(dir);
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */');
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */\n@uxdsl theme;');
   // The theme file itself is stable; the actual token data lives in a
   // separate JSON file it requires — a common real-world split (JSON as
   // pure data, a thin .cjs wrapper around it). Only theme-data.json
@@ -251,7 +251,7 @@ test('watch mode with a "builds" config rebuilds every entry from one watcher, e
     // the exact shape that needs the self-trigger exclusion to do anything.
     watch: ['src/**/*.uxdsl', 'src/**/*.css'],
   };\n`);
-  fs.writeFileSync(path.join(dir, 'src', 'theme.uxdsl'), '/* theme-only entry */');
+  fs.writeFileSync(path.join(dir, 'src', 'theme.uxdsl'), '/* theme-only entry */\n@uxdsl theme;');
   fs.writeFileSync(path.join(dir, 'src', 'panel.uxdsl'), '.card { color: red; }');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 

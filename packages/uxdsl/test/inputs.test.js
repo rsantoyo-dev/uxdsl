@@ -19,7 +19,7 @@ const theme={breakpoints:{xs:0,md:800},spacing:FULL_SPACING,palette:{...BASE_PAL
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function vars(css){const out=[];postcss.parse(css).walkDecls(/^--uxdsl__input__/,d=>{if(d.parent.selector===':root')out.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value])});return out;}
 test('Input PostCSS and runtime share custom roles, fields and responsive variables',async()=>{
- const css=(await compile('.x { @ds-input(search); }',theme)).css;
+ const css=(await compile('@uxdsl theme;\n.x { @ds-input(search); }',theme)).css;
  assert.deepEqual(vars(css),vars(generateThemeCss(theme)));
  for(const [width,value] of [[799,'8px'],[800,'16px'],[801,'16px'],[1400,'16px']])assert.equal(inspectInputTheme(theme,width)['--uxdsl__input__search-base-padding'],value);
  assert(css.includes('var(--uxdsl__input__search-focus-shadow)'));
@@ -44,7 +44,7 @@ test('Input tone, size, base precedence and native defaults match both adapters'
 });
 test('an Input role is defined in the theme JSON only and does not leak into another compilation',async()=>{
  const source='.x { @ds-input(search); }';
- const css=(await compile(source,withBaseline({inputs:{search:{surface:'outlined',base:{padding:'9px'},states:{focus:{bg:'red',color:'white',placeholder:'gray'}}}}}))).css;
+ const css=(await compile('@uxdsl theme;\n'+source,withBaseline({inputs:{search:{surface:'outlined',base:{padding:'9px'},states:{focus:{bg:'red',color:'white',placeholder:'gray'}}}}}))).css;
  for(const text of ['--uxdsl__input__search-base-padding: 9px','--uxdsl__input__search-focus-bg: red','--uxdsl__input__search-focus-color: white','var(--uxdsl__surface__outlined-radius)'])assert(css.includes(text));
  await assert.rejects(()=>compile(source),/UXD_INPUT/);
  await assert.rejects(()=>compile('@theme { input-search: { @ds-surface(outlined); padding: 7px; } } '+source),/UXD_THEME_BLOCK_REMOVED/);

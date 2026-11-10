@@ -8,6 +8,9 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
 const postcss = require('postcss');
 const plugin = require('../dist/plugin');
 const { compile } = require('../dist/entries/index');
@@ -77,4 +80,72 @@ test('DE-9: the emitted theme is reference-checked like any other: a dangling th
   const theme = { palette: { primary: { main: 'color(nope.500)' } } };
   const error = failure(() => run('@uxdsl theme;\n.a { color: red; }\n', { includeTheme: false, theme }));
   assert.match(error.message, /UXD_REFERENCE_MISSING: .*--uxdsl__color__nope-500/);
+});
+
+// compile() reports whether its compilation emitted the theme. The PostCSS
+// plugin says so in one result message per compilation, which compile() reads:
+// a build host counts its stylesheets from that flag, never from its own
+// options or a :root search.
+
+const tmpProject = (t, files) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-theme-emitted-'));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  for (const [name, text] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), text);
+  return dir;
+};
+const themeMessages = (result) => result.messages.filter((message) => message.type === 'uxdsl-theme');
+const definitions = (css) => css.split('--uxdsl__palette__primary-main:').length - 1;
+
+test('MIG-B9-20: compile() reports whether the compilation emitted the theme', async (t) => {
+  const marked = await compile({ source: '@uxdsl theme;\n.card { padding: density(4); }\n', from: 'marked.uxdsl' }, { theme: {} });
+  assert.equal(marked.themeEmitted, true, 'the marker emits the theme, and compile() says so');
+  assert.ok(rootBlocks(marked.css) > 0, 'control: the marked output defines :root');
+
+  const unmarked = await compile({ source: '.card { padding: density(4); }\n', from: 'card.uxdsl' }, { theme: {}, includeTheme: false });
+  assert.equal(unmarked.themeEmitted, false, 'no marker and no default theme: nothing emitted, and compile() says so');
+  assert.equal(rootBlocks(unmarked.css), 0, 'control: the unmarked output defines no :root');
+
+  const dir = tmpProject(t, {
+    '_theme.uxdsl': '@uxdsl theme;\n',
+    'global.uxdsl': "@use './theme';\n.card { padding: density(4); }\n",
+  });
+  const used = await compile({ entry: path.join(dir, 'global.uxdsl') }, { theme: {}, includeTheme: false });
+  assert.equal(used.themeEmitted, true, 'a marker reached through @use emits the theme');
+  assert.ok(rootBlocks(used.css) > 0);
+
+  const alone = await postcss([plugin({ discoverTheme: false, includeTheme: false })]).process('@uxdsl theme;\n.a { color: red; }\n', { from: 'a.css' });
+  assert.deepEqual(themeMessages(alone), [{ type: 'uxdsl-theme', plugin: 'uxdsl', emitted: true }], 'the plugin alone pushes one message per compilation');
+  const aloneUnmarked = await postcss([plugin({ discoverTheme: false, includeTheme: false })]).process('.a { color: red; }\n', { from: 'a.css' });
+  assert.deepEqual(themeMessages(aloneUnmarked), [{ type: 'uxdsl-theme', plugin: 'uxdsl', emitted: false }]);
+});
+
+test('MIG-B9-20: a marker partial reached by @use from two modules of one compilation is emitted once; reached by two @import it is UXD_THEME_MARKER', async (t) => {
+  const dir = tmpProject(t, {
+    '_theme.uxdsl': '@uxdsl theme;\n',
+    '_a.uxdsl': "@use './theme';\n.a { color: palette(primary.main); }\n",
+    '_b.uxdsl': "@use './theme';\n.b { color: palette(primary.main); }\n",
+    'used.uxdsl': "@use './a';\n@use './b';\n",
+    'imported.uxdsl': "@import './theme';\n@import './theme';\n.c { color: red; }\n",
+  });
+  const used = await compile({ entry: path.join(dir, 'used.uxdsl') }, { theme: {}, includeTheme: false });
+  assert.equal(used.themeEmitted, true);
+  const once = await compile({ source: '@uxdsl theme;\n', from: 'once.uxdsl' }, { theme: {}, includeTheme: false });
+  assert.ok(definitions(once.css) > 0, 'control: one theme defines the token');
+  assert.equal(definitions(used.css), definitions(once.css), 'Sass loads a @use module once, so the theme is emitted once');
+  assert.equal(rootBlocks(used.css), rootBlocks(once.css));
+  await assert.rejects(
+    compile({ entry: path.join(dir, 'imported.uxdsl') }, { theme: {}, includeTheme: false }),
+    /UXD_THEME_MARKER: .*appears twice/,
+    'an @import copies the partial each time, and a second marker is an error',
+  );
+});
+
+test('MIG-B9-20: a stylesheet that is only `@uxdsl theme;` compiles to exactly generateThemeCss, with or without a Google Fonts import', () => {
+  for (const theme of [{}, { fonts: { google: [] } }, { fonts: { google: ['Inter:wght@400;700', 'Playfair Display'] } }]) {
+    const generated = generateThemeCss(theme);
+    assert.equal(run('@uxdsl theme;', { includeTheme: false, theme }), generated, JSON.stringify(theme));
+  }
+  // A marker glued onto the rule before it still starts the theme on a line of its own.
+  const glued = run('.a { color: red; }@uxdsl theme;', { includeTheme: false, theme: { fonts: { google: [] } } });
+  assert.ok(glued.startsWith('.a { color: red; }\n:root {'), glued.slice(0, 40));
 });

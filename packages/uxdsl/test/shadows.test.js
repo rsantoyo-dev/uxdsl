@@ -21,7 +21,7 @@ function shadows(css) {
   return result;
 }
 test('Shadow JSON has equivalent build/runtime output; references are preserved', async () => {
-  const result = await compile('.card { box-shadow: shadow(2); } .panel { box-shadow: shadow(named); }', { theme });
+  const result = await compile('@uxdsl theme;\n.card { box-shadow: shadow(2); } .panel { box-shadow: shadow(named); }', { theme });
   assert.deepEqual(shadows(result.css), shadows(generateThemeCss(theme)));
   assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__2\)/);
   assert.match(result.css, /box-shadow: var\(--uxdsl__shadow__named\)/);
@@ -32,12 +32,14 @@ test('Shadow boundaries preserve layers, inset and later rule persistence', () =
 });
 test('Shadows compile from the JSON through the shared rules; a @theme pack fails and definitions do not leak', async () => {
   // The threshold is the theme's (`md: 800` over the base map).
-  const built = await compile('.card { box-shadow: shadow(2); }', { theme: { breakpoints: { md: 800 }, spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: expression } } });
+  const built = await compile('@uxdsl theme;\n.card { box-shadow: shadow(2); }', { theme: { breakpoints: { md: 800 }, spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: expression } } });
   assert.deepEqual(shadows(built.css), shadows(generateShadowCss({ breakpoints: theme.breakpoints, shadows: {2:expression} })));
   await assert.rejects(() => compile('@theme { shadow-2: 0 99px 99px red; } .card { box-shadow: shadow(2); }', {theme}), /UXD_THEME_BLOCK_REMOVED/);
-  const first = await compile('.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: '0 99px 99px red' } } });
+  const first = await compile('@uxdsl theme;\n.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE, shadows: { 2: '0 99px 99px red' } } });
   assert(first.css.includes('99px'));
-  assert(!(await compile('.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })).css.includes('99px'));
+  const second = (await compile('@uxdsl theme;\n.card { box-shadow: shadow(2); }', { theme: { spacing: FULL_SPACING, palette: BASE_PALETTE } })).css;
+  assert(second.includes('--uxdsl__shadow__2:'), 'control: the second compilation emits its own shadow-2');
+  assert(!second.includes('99px'));
 });
 test('nested CSS, token dependencies, commas and zero preset survive', () => {
   const css = generateShadowCss({shadows:{custom:'inset 0 calc(space(2) + 1px) 3px palette(surface.main), 0 1px 2px color(gray.300)'}});

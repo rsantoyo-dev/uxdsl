@@ -194,7 +194,7 @@ test('MIG-B9-13: a bare-specifier .css @import stays a CSS @import; @use of the 
 // touch ordinary CSS it doesn't need to. ---
 
 test('stability phase 2: a theme entry ends with its last rule — no /*@uxdsl-bp*/ trailer and no #uxdsl-bp-meta rule', async () => {
-  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: true });
+  const { css } = await core.compile({ source: '@uxdsl theme;\n.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: true });
   assert.doesNotMatch(css, /@uxdsl-bp/);
   assert.doesNotMatch(css, /#uxdsl-bp-meta/);
   assert.match(css, /:root/, 'control: the theme itself is still emitted');

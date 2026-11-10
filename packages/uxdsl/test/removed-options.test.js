@@ -15,7 +15,7 @@ const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 
 const SOURCE = '.a { padding: xs(1rem) md(2rem); color: palette(primary); margin: space(2); border-color: color(gray.300); }';
-const run = (options) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(SOURCE, { from: undefined });
+const run = (options, source = SOURCE) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(source, { from: undefined });
 const removedWarnings = (result) => result.warnings().map((w) => w.text).filter((text) => /^UXD_OPTION_REMOVED/.test(text));
 
 test('removed options: no option, no warning — and the output is the reference for the cases below', async () => {
@@ -43,7 +43,7 @@ for (const [shape, breakpoints] of [
 }
 
 test('removed options: the same holds with includeTheme: true — the theme compiles against its own map', async () => {
-  const result = await run({ breakpoints: { a: 0, b: 500 }, includeTheme: true });
+  const result = await run({ breakpoints: { a: 0, b: 500 }, includeTheme: true }, `@uxdsl theme;\n${SOURCE}`);
   assert.equal(removedWarnings(result).length, 1);
   assert.match(result.css, /@media \(min-width: 1280px\)/);
 });

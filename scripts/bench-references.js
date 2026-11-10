@@ -43,7 +43,8 @@ const LINES_PER_BLOCK = 12;
 
 function sourceForLines(lines) {
   const blocks = Math.round(lines / LINES_PER_BLOCK);
-  let css = '';
+  // The theme is emitted at the marker, so its declarations are validated too.
+  let css = '@uxdsl theme;\n';
   for (let i = 0; i < blocks; i++) css += block(i);
   return css;
 }

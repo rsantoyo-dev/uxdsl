@@ -111,7 +111,7 @@ test('MIG-B2-02: an override with palette(missing) still fails with UXD_REFERENC
 });
 
 test('MIG-B2-02: PostCSS and generateThemeCss produce the same cascaded variables for an omitted theme', async () => {
-  const result = await compile('', { theme: undefined });
+  const result = await compile('@uxdsl theme;', { theme: undefined });
   const postcssVars = cascadedVariables(result.css);
   const runtimeVars = cascadedVariables(generateThemeCss());
   assert.deepEqual(postcssVars, runtimeVars);
@@ -166,7 +166,7 @@ test('MIG-B2-02: resolving one theme does not leak into the next resolution or m
 
 test('MIG-B2-02: default headings and controls compile without legacy imports at every boundary', async () => {
   const source = '.h { @ds-typo(h1); } .s { @ds-surface(contained); } .b { @ds-button(contained primary 2); } .i { @ds-input(outlined primary 2); }';
-  const result = await compile(source);
+  const result = await compile(`@uxdsl theme;\n${source}`);
   const runtime = postcss.parse(generateThemeCss());
   const valueAt = (root, width) => {
     let result;
@@ -195,14 +195,14 @@ test('MIG-B2-02: default headings and controls compile without legacy imports at
 // accidents, so both need real regression coverage, not just a docs note.
 
 test('MIG-B6-29: DEFAULT_THEME requests Google Fonts by default; fonts: { google: [] } opts out', async () => {
-  const zeroConfig = await compile('.x { color: red; }');
+  const zeroConfig = await compile('@uxdsl theme;\n.x { color: red; }');
   // The full URL, not just the prefix: MIG-B6-29 phase 4's shared encoder
   // (test/fonts.test.js has its own dedicated coverage of the encoding
   // rules themselves) must still produce exactly this for the shipped
   // default (`Inter:wght@400;500;600;700`, from theme/base.json).
   assert.match(zeroConfig.css, /@import url\('https:\/\/fonts\.googleapis\.com\/css2\?family=Inter:wght@400;500;600;700&display=swap'\);/);
 
-  const optedOut = await compile('.x { color: red; }', { theme: { fonts: { google: [] } } });
+  const optedOut = await compile('@uxdsl theme;\n.x { color: red; }', { theme: { fonts: { google: [] } } });
   assert.doesNotMatch(optedOut.css, /@import/);
   assert.deepEqual(resolveTheme({ fonts: { google: [] } }).fonts.google, []);
 });

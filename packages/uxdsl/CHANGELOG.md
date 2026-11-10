@@ -22,6 +22,32 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### The theme is emitted only at `@uxdsl theme;`; `includeTheme` is removed (MIG-B9-20)
+
+### Added
+
+- **`compile()` reports whether it emitted the theme.** Its result has a
+  `themeEmitted` field next to `css`, `map`, `dependencies` and `warnings`:
+  `true` when the compilation emitted the theme — at `@uxdsl theme;`, in the
+  stylesheet or in a file it loads, or with `includeTheme` — and `false`
+  otherwise. A marker in a partial that two modules of one compilation load
+  with `@use` is emitted once (Dart Sass loads a module once), and the result
+  says `true`; two `@import`s of it remain `UXD_THEME_MARKER` ("appears
+  twice"). The playground's paradigm frame and runtime sandbox, which now
+  write `@uxdsl theme;`, fail their build when it is `false`.
+
+### Visual changes
+
+- **A marker with nothing before it starts the theme on a line of its own.**
+  When `@uxdsl theme;` is the first statement of a stylesheet, the theme's
+  Google Fonts `@import` still leads the file, and the first `:root` block
+  used to follow it on the same line (`…display=swap'); :root {`); it now
+  follows on the next line, as it does without the marker, so a stylesheet
+  that is only `@uxdsl theme;` compiles to exactly what `generateThemeCss`
+  returns. The same holds for a marker written right after a rule on its
+  line. Whitespace only: nothing renders differently, and a stylesheet
+  without the marker is unchanged.
+
 ### `build --watch` keeps a generated entry current; `generate-entry` records its invocation, writes `.uxdsl` paths and namespaces from `--src`, in path order (MIG-B9-22)
 
 `generate-entry` records its invocation in the entry's header and, with no

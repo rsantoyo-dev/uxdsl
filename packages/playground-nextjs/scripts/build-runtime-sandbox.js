@@ -31,8 +31,9 @@ async function main() {
   const theme = themes.default;
   const { compile } = loadCore();
   const entry = path.join(PLAYGROUND, 'runtime-sandbox/sandbox.uxdsl');
-  const { css, warnings } = await compile({ entry }, { theme });
+  const { css, warnings, themeEmitted } = await compile({ entry }, { theme });
   if (warnings.length) throw new Error(`runtime sandbox: the compiler warned:\n${warnings.map((w) => w.text).join('\n')}`);
+  if (!themeEmitted) throw new Error('runtime sandbox: compile() emitted no theme; the stylesheet must write @uxdsl theme;');
 
   const bundle = await esbuild.build({
     entryPoints: [path.join(PLAYGROUND, 'src/runtime-sandbox/sandbox-entry.ts')],

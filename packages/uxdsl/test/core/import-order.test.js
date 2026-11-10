@@ -37,7 +37,7 @@ function assertImportsFirst(css, what) {
 }
 
 test('MIG-B7-14: compile({ entry }) with the default theme leads with the Google Fonts @import', async () => {
-  const dir = project({ 'entry.uxdsl': '.a { padding: density(2); }\n' });
+  const dir = project({ 'entry.uxdsl': '@uxdsl theme;\n.a { padding: density(2); }\n' });
   const css = cssOf(await core.compile({ entry: path.join(dir, 'entry.uxdsl') }));
   const first = nodes(css)[0];
   assert.ok(isImport(first), `the first rule must be the @import, was ${label(first)}`);
@@ -49,7 +49,7 @@ test('MIG-B7-14: an author @import that arrives through a partial is still honor
   // Dart Sass inlines the local partial and hoists the remote import it contains
   // to the top of its output; it must not end up behind the theme's :root.
   const dir = project({
-    'entry.uxdsl': '@import "./partial.uxdsl";\n.a { padding: density(2); }\n',
+    'entry.uxdsl': '@uxdsl theme;\n@import "./partial.uxdsl";\n.a { padding: density(2); }\n',
     'partial.uxdsl': '@import url("https://example.com/author.css");\n.b { color: red; }\n',
   });
   const css = cssOf(await core.compile({ entry: path.join(dir, 'entry.uxdsl') }));
@@ -60,7 +60,7 @@ test('MIG-B7-14: an author @import that arrives through a partial is still honor
 });
 
 test('MIG-B7-14 (valid control): fonts.google: [] leaves no import of the theme\'s and does not reorder anything else', async () => {
-  const dir = project({ 'entry.uxdsl': '.a { padding: density(2); }\n' });
+  const dir = project({ 'entry.uxdsl': '@uxdsl theme;\n.a { padding: density(2); }\n' });
   const css = cssOf(await core.compile({ entry: path.join(dir, 'entry.uxdsl') }, { theme: { fonts: { google: [] } } }));
   assert.doesNotMatch(css, /@import/);
   assert.equal(nodes(css)[0].selector, ':root');

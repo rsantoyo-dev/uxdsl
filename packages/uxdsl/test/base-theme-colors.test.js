@@ -81,7 +81,7 @@ test('negative control: a Color edit reaches every role that references it, and 
 });
 
 test('`color(white, 0.5)`, `color(black)` and a bare shade compile with no theme of the project\'s own', async () => {
-  const result = await postcss([plugin({})]).process('.a { background: color(white, 0.5); color: color(black); border-color: color(gray.450); }', { from: undefined });
+  const result = await postcss([plugin({})]).process('@uxdsl theme;\n.a { background: color(white, 0.5); color: color(black); border-color: color(gray.450); }', { from: undefined });
   assert.match(result.css, /\.a\s*\{[^}]*background:\s*color-mix\(in srgb, var\(--uxdsl__color__white\) 50%, transparent\)/);
   assert.match(result.css, /color:\s*var\(--uxdsl__color__black\)/);
   assert.match(result.css, /border-color:\s*var\(--uxdsl__color__gray-450\)/);
@@ -92,7 +92,7 @@ test('`color(white, 0.5)`, `color(black)` and a bare shade compile with no theme
 test('build and runtime emit the same reference for a palette role, and the contrast gate still passes', async () => {
   const theme = resolveTheme();
   const runtime = generateThemeCss(theme);
-  const built = (await postcss([plugin({})]).process('.a { color: palette(primary.main); }', { from: undefined })).css;
+  const built = (await postcss([plugin({})]).process('@uxdsl theme;\n.a { color: palette(primary.main); }', { from: undefined })).css;
   for (const line of ['--uxdsl__palette__primary-main: var(--uxdsl__color__purple-700);', '--uxdsl__palette__warning-contrast: var(--uxdsl__color__white);']) {
     assert.ok(runtime.includes(line), `runtime: ${line}`);
     assert.ok(built.includes(line), `build: ${line}`);

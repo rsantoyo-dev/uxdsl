@@ -55,7 +55,7 @@ async function load(browser, css) {
 }
 
 async function main() {
-  const source = `${AUTHOR_IMPORT}\n.probe { padding: density(2); }`;
+  const source = `${AUTHOR_IMPORT}\n@uxdsl theme;\n.probe { padding: density(2); }`;
   const css = (await postcss([plugin({ includeTheme: true })]).process(source, { from: undefined })).css;
 
   const nodes = postcss.parse(css).nodes.filter((node) => node.type !== 'comment');

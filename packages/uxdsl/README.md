@@ -393,6 +393,14 @@ present in the page for the referenced `var()`s to resolve. Both entries
 must share the same effective theme (breakpoints, tokens, overrides) or the
 generated variable names can diverge.
 
+`compile()` returns `themeEmitted` next to `css`, `map`, `dependencies` and
+`warnings`: `true` when that compilation emitted the theme — at
+`@uxdsl theme;`, written in the stylesheet or in a file it loads (a partial
+loaded with `@use` from two modules of one compilation is emitted once), or
+with `includeTheme` — and `false` when it did not. A tool that builds several
+stylesheets counts them from it, not from its own options or a `:root`
+search.
+
 ### `@uxdsl theme;` — the theme where you write it (PostCSS only, e.g. Next.js)
 
 With the PostCSS plugin alone — no CLI, no generated stylesheet — one plugin

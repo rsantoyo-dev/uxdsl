@@ -1,9 +1,11 @@
 'use strict';
 
 // Stability phase 1 (audit 2026-09-29, finding T10): the generated theme is
-// inserted at one place — after the author's prelude (`@charset`, body-less
-// `@layer` statements, `@import`s, leading comments) and before the author's
-// rules — as one string, the exact bytes `generateThemeCss` returns. Until now
+// inserted at one place — where `@uxdsl theme;` is written, which these
+// sources write after the author's prelude (`@charset`, body-less `@layer`
+// statements, `@import`s, leading comments) and before the author's rules —
+// as one string, the exact bytes `generateThemeCss` returns; its `@import`s
+// lead the file. Until now
 // only the `@import`s and the density block went there; every other family was
 // `root.append`ed after the author's rules, so an author's own
 // `:root { --uxdsl__palette__primary-main: … }` silently lost to the theme's
@@ -29,7 +31,7 @@ const isGenerated = (node) => !isAuthor(node) && ((node.type === 'rule' && /^:ro
   || (node.type === 'atrule' && node.name === 'media' && (node.nodes || []).every((child) => child.type === 'rule' && /^:root/.test(child.selector))));
 
 test('T10: an author\'s own :root override of a theme variable now wins — it follows every generated block', () => {
-  const css = compile(':root { --uxdsl__palette__primary-main: rebeccapurple; }\n.a { color: palette(primary); }');
+  const css = compile('@uxdsl theme;\n:root { --uxdsl__palette__primary-main: rebeccapurple; }\n.a { color: palette(primary); }');
   const nodes = topLevel(css);
   const authorRoot = nodes.findIndex((node) => node.type === 'rule' && node.selector === ':root' && node.toString().includes('rebeccapurple'));
   // The base palette references its Colors collection (stability phase 5), so the theme's own declaration is a var().
@@ -43,8 +45,8 @@ test('T10: an author\'s own :root override of a theme variable now wins — it f
   assert.equal(winners[winners.length - 1], 'rebeccapurple');
 });
 
-test('T10: the generated theme is contiguous, after the prelude and before the first author rule', () => {
-  const source = '@charset "utf-8";\n/* header */\n@layer base, components;\n@import url("https://example.com/a.css") layer(base);\n@import url("https://example.com/b.css");\n.a { padding: xs(1rem) md(2rem); }\n.b { color: palette(primary); }';
+test('T10: the generated theme is contiguous, at the marker written after the prelude and before the first author rule', () => {
+  const source = '@charset "utf-8";\n/* header */\n@layer base, components;\n@import url("https://example.com/a.css") layer(base);\n@import url("https://example.com/b.css");\n@uxdsl theme;\n.a { padding: xs(1rem) md(2rem); }\n.b { color: palette(primary); }';
   const css = compile(source);
   const nodes = topLevel(css);
   const kinds = nodes.map(describeNode);
@@ -67,19 +69,21 @@ test('T10: the generated theme is contiguous, after the prelude and before the f
 
 test('T10: the plugin\'s theme is byte-identical to generateThemeCss, for a theme-only entry and once the author\'s rules are removed', () => {
   const generated = generateThemeCss(resolveTheme({}));
-  assert.equal(compile(''), generated);
-  const withAuthor = compile('.a { color: red; }\n.b { padding: xs(1rem) md(2rem); }');
+  assert.equal(compile('@uxdsl theme;'), generated);
+  const withAuthor = compile('@uxdsl theme;\n.a { color: red; }\n.b { padding: xs(1rem) md(2rem); }');
   assert.ok(withAuthor.startsWith(generated), 'the theme leads the output verbatim, the author\'s rules follow');
 });
 
 test('T10: one formatting style — every generated block is a one-line rule or media block', () => {
-  for (const node of topLevel(compile('')).filter(isGenerated)) {
+  const generated = topLevel(compile('@uxdsl theme;')).filter(isGenerated);
+  assert.ok(generated.length > 10, 'control: the marker emitted the theme');
+  for (const node of generated) {
     assert.doesNotMatch(node.toString(), /\n/, `generated block is multi-line: ${node.toString().slice(0, 80)}`);
   }
 });
 
 test('T10: a token the theme JSON adds goes to the same one place as the rest of the theme', () => {
-  const css = compile('@import url("https://example.com/a.css");\n.a { padding: density(custom); }', { theme: { densities: { custom: 'xs(space(1)) md(space(2))' } } });
+  const css = compile('@import url("https://example.com/a.css");\n@uxdsl theme;\n.a { padding: density(custom); }', { theme: { densities: { custom: 'xs(space(1)) md(space(2))' } } });
   const nodes = topLevel(css);
   assert.match(css, /--uxdsl__density__custom: var\(--uxdsl__space__1\)/);
   const firstAuthorRule = nodes.findIndex((node) => node.type === 'rule' && node.selector === '.a');

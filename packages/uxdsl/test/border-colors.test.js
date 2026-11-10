@@ -26,7 +26,7 @@ const compile = (source, options = {}) => postcss([plugin(options)]).process(sou
 
 test('MIG-04: border(1..5) resolves out of the box, and validates in strict mode, with only a theme object', async () => {
   const theme = { spacing: SPACING, palette: PALETTE };
-  const result = await compile('.x { border: border(1); }', { theme });
+  const result = await compile('@uxdsl theme;\n.x { border: border(1); }', { theme });
   assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
   assert(result.css.includes('--uxdsl__color__gray-300:'));
   assert(result.css.includes('--uxdsl__border__1: 1px solid var(--uxdsl__color__gray-300)'));
@@ -56,7 +56,7 @@ test('MIG-04: a theme overriding every DEFAULT_BORDERS key never needs the gray 
       3: 'xs(1px solid palette(primary.main))', 4: 'xs(1px solid palette(primary.main))', 5: 'xs(1px solid palette(primary.main))',
     },
   };
-  const result = await compile('.x { border: border(1); }', { theme });
+  const result = await compile('@uxdsl theme;\n.x { border: border(1); }', { theme });
   assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
   assert(result.css.includes('--uxdsl__border__1: 1px solid var(--uxdsl__palette__primary-main)'));
   // The gray dependency is still emitted (foundations always defines it —

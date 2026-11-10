@@ -20,7 +20,7 @@ test('Once() is the sequence of named steps, over one Compilation object', () =>
   const once = index.match(/Once\(root: Root, \{ result \}: \{ result: Result \}\) \{([\s\S]*?)\n    \},/);
   assert.ok(once, 'Once() is found');
   const calls = [...once[1].matchAll(/\b(\w+)\((compilation|root, result, opts)\)/g)].map((match) => match[1]);
-  assert.deepEqual(calls, ['validateOptions', 'rejectSassSyntax', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences']);
+  assert.deepEqual(calls, ['validateOptions', 'rejectSassSyntax', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
   assert.ok(once[1].trim().split('\n').length <= 8, 'Once() only sequences the steps');
   for (const step of calls) assert.match(index, new RegExp(`^function ${step}\\(`, 'm'), `${step} is a top-level function`);
   assert.match(index, /^interface Compilation \{/m);

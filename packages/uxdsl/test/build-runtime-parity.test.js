@@ -61,7 +61,9 @@ const SYNTHETIC = {
 const THEMES = { 'packaged base ({} override)': {}, ...PLAYGROUND_THEMES, 'synthetic: every token function in every family': SYNTHETIC };
 
 const AUTHOR = '.parity-author { padding: xs(density(2)) md(space(3)); color: palette(primary); }';
-const compile = (theme, source = '') => postcss([plugin({ theme, discoverTheme: false, includeTheme: true })]).process(source, { from: undefined }).css;
+// Every compilation here writes `@uxdsl theme;` first, where the theme goes:
+// alone it is a theme-only entry, before AUTHOR the theme precedes its rules.
+const compile = (theme, source = '') => postcss([plugin({ theme, discoverTheme: false, includeTheme: true })]).process(source ? `@uxdsl theme;\n${source}` : '@uxdsl theme;', { from: undefined }).css;
 
 /** The plugin's output with the author's own rule (and the @media blocks the
  * responsive value split it into) removed — what remains is the theme. */
