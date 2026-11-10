@@ -60,7 +60,7 @@ async function main() {
   // Component CSS compiled ahead of time, exactly as a build would produce it.
   // Nothing below recompiles it — that is the point: applyTheme moves values
   // underneath rules that are already fixed.
-  const componentCss = (await postcss([plugin({ theme, includeTheme: false })]).process(
+  const componentCss = (await postcss([plugin({ theme })]).process(
     `.probe { @ds-surface(contained 2); border: border(2); }
      .action { @ds-button(contained primary); }
      .field { @ds-input(outlined); }`,

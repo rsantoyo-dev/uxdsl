@@ -185,7 +185,7 @@ async function main() {
   const themeCss = fs.existsSync(themeCssPath) ? fs.readFileSync(themeCssPath, 'utf8') : '';
   const panelCss = fs.existsSync(panelCssPath) ? fs.readFileSync(panelCssPath, 'utf8') : '';
   check('the theme entry defines :root', /:root/.test(themeCss));
-  check('the component entry (includeTheme: false) does not define :root', !/:root/.test(panelCss));
+  check('the component entry (no marker) does not define :root', !/:root/.test(panelCss));
   check('the component entry\'s @ds-surface(contained) actually compiled', /background/.test(panelCss));
 
   const multiTrackedFiles = ['uxdsl.config.cjs', path.join('src', 'theme.uxdsl'), path.join('src', 'panel-a.uxdsl'), 'package.json'];
@@ -225,9 +225,9 @@ async function main() {
   check('the config init writes type-checks clean against the installed package', cleanCheck.ok);
   if (!cleanCheck.ok) console.log(cleanCheck.output);
   const tarballConfig = path.join(tarball.dir, 'uxdsl.config.cjs');
-  fs.writeFileSync(tarballConfig, fs.readFileSync(tarballConfig, 'utf8').replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  includeThem: false,\n"));
+  fs.writeFileSync(tarballConfig, fs.readFileSync(tarballConfig, 'utf8').replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  outfile: './src/uxdsl.css',\n"));
   const typoCheck = typeCheck();
-  check('a typo in that config is reported (TS2561), not a missing module (TS2307)', !typoCheck.ok && /TS2561/.test(typoCheck.output) && !/TS2307/.test(typoCheck.output));
+  check('a typo in that config is reported (TS2561, "Did you mean to write \'outFile\'?"), not a missing module (TS2307)', !typoCheck.ok && /TS2561/.test(typoCheck.output) && /Did you mean to write 'outFile'\?/.test(typoCheck.output) && !/TS2307/.test(typoCheck.output));
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   if (failures.length) {

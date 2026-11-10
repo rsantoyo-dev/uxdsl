@@ -9,11 +9,14 @@
 // `rootContext`), line and column. The map goes to the next loader with
 // absolute paths as its sources. Use it as
 // `use: ['style-loader', 'css-loader', 'uxdsl/webpack']` (or
-// MiniCssExtractPlugin's loader in place of style-loader).
+// MiniCssExtractPlugin's loader in place of style-loader). There is no theme
+// switch: a module emits the theme when it reaches `@uxdsl theme;` (the app's
+// global .uxdsl), and a component module carries only its own rules. A removed
+// option is reported once per compilation and never passed on.
 import path from 'path';
 import { compile } from './compile';
 import type { CompileConfig, CompileWarning } from './compile';
-import { discoverThemeAsync } from './config';
+import { discoverThemeAsync, removedOptionWarnings } from './config';
 
 /** Loader options: the same theme options as the PostCSS plugin and the Vite
  * plugin, plus `sourceMap` (defaults to webpack's own `this.sourceMap`) and
@@ -21,7 +24,6 @@ import { discoverThemeAsync } from './config';
 interface UxdslLoaderOptions {
   theme?: Record<string, unknown>;
   references?: Record<string, unknown>;
-  includeTheme?: boolean;
   discoverTheme?: boolean;
   configRoot?: string;
   sourceMap?: boolean;
@@ -42,7 +44,12 @@ interface LoaderContext {
   rootContext: string;
   resourcePath: string;
   sourceMap?: boolean;
+  /** Webpack's compilation this module is built in; absent under a bare loader runner. */
+  _compilation?: object;
 }
+
+/** Compilations already told about the removed options the loader was given. */
+const toldCompilations = new WeakSet<object>();
 
 // A compile() warning as one line, in the CLI's shape:
 // `<file>:<line>:<column>: <text>` with the file relative to `root`,
@@ -71,6 +78,13 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
   const callback = this.async();
   try {
     const options = this.getOptions() || {};
+    // Once per compilation (every module of it shares the options); once per
+    // call where there is no compilation to remember.
+    const compilation = this._compilation;
+    if (!compilation || !toldCompilations.has(compilation)) {
+      if (compilation) toldCompilations.add(compilation);
+      for (const text of removedOptionWarnings(options)) this.emitWarning(new Error(text));
+    }
     const configRoot = options.configRoot || this.rootContext;
     const discoverTheme = options.discoverTheme !== false;
 
@@ -105,7 +119,6 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
       {
         theme: theme as Record<string, unknown>,
         references,
-        includeTheme: options.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: this.resourcePath,
         sass: options.sass,

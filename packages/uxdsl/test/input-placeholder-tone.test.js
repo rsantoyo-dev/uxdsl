@@ -50,7 +50,7 @@ const plugin = exported.default || exported;
 const { checkThemeContrast, resolveTheme } = require('./helpers/ds-runtime');
 
 const FULL_SPACING = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [i + 1, `${(i + 1) * 4}px`]));
-const compile = (source, theme = {}) => postcss([plugin({ theme, includeTheme: false })]).process(source, { from: undefined });
+const compile = (source, theme = {}) => postcss([plugin({ theme })]).process(source, { from: undefined });
 
 /** Compiles a single `@ds-input(role [tone])` directive and reads the color
  * its real, compiled `::placeholder` rule carries — the thing a browser

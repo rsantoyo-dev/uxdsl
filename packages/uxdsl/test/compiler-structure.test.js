@@ -64,8 +64,8 @@ test('MIG-B9-13: no source file holds a raw Unicode noncharacter; a character ra
 });
 
 test('one plugin instance compiles two stylesheets with two themes independently', () => {
-  const instance = plugin({ discoverTheme: false, includeTheme: false });
-  const a = postcss([plugin({ discoverTheme: false, includeTheme: false, theme: { breakpoints: { md: 900 } } })]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
+  const instance = plugin({ discoverTheme: false });
+  const a = postcss([plugin({ discoverTheme: false, theme: { breakpoints: { md: 900 } } })]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
   const b = postcss([instance]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
   const c = postcss([instance]).process('.b { padding: xs(1px) md(2px); }', { from: undefined }).css;
   assert.match(a, /min-width: 900px/);

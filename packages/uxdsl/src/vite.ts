@@ -3,7 +3,7 @@ import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compile } from './compile';
 import type { CompileConfig, CompileWarning } from './compile';
-import { discoverThemeAsync } from './config';
+import { discoverThemeAsync, removedOptionWarnings } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
 // compiles. `resolveId` turns `./panel.uxdsl`
@@ -21,7 +21,11 @@ import { discoverThemeAsync } from './config';
 // compile() warning reaches `this.warn()` at its file (relative to Vite's
 // root), line and column. There is no `breakpoints` option: breakpoints are a
 // theme family — declared under `breakpoints` in the theme file (or the
-// `theme` option), the one place every integration reads them from.
+// `theme` option), the one place every integration reads them from. There is
+// no theme switch either: a module emits the theme when it reaches
+// `@uxdsl theme;` (the app's global .uxdsl), and a component module carries
+// only its own rules. A removed option is reported once per build, in
+// `buildStart`, and never passed on.
 
 export interface UxDslPluginOptions {
   /** Explicit theme override — skips discovery entirely when given. Its
@@ -30,9 +34,6 @@ export interface UxDslPluginOptions {
   /** Same shape as the PostCSS plugin's `references` option. Always taken from
    * here (or left undefined): a theme file carries no references. */
   references?: Record<string, unknown>;
-  /** Same meaning as the PostCSS plugin's own option: emit (or skip) the
-   * global `:root` token definitions. Defaults to `true`. */
-  includeTheme?: boolean;
   /** When `theme` is omitted, discover the theme file (`THEME_CANDIDATES`
    * in `uxdsl/config`) from `configRoot` — the same discovery the CLI and the
    * PostCSS plugin used directly both do. Default
@@ -105,6 +106,10 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       projectRoot = config.root || projectRoot;
       viteSourceMapEnabled = Boolean(config.build?.sourcemap) || Boolean(config.css?.devSourcemap);
     },
+    // Once per build, and once per dev server.
+    buildStart() {
+      for (const text of removedOptionWarnings(userOptions)) this.warn(text);
+    },
     resolveId(id: string, importer: string | undefined) {
       // A leading "/" is ambiguous on POSIX: `path.isAbsolute` can't tell
       // a real absolute filesystem path apart from Vite's own
@@ -161,7 +166,6 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       const { css, map, dependencies, warnings } = await compile({ entry: absPath }, {
         theme: theme as Record<string, unknown>,
         references: userOptions.references,
-        includeTheme: userOptions.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: absPath,
         sass: userOptions.sass,

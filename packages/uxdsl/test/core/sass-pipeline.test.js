@@ -21,7 +21,7 @@ function project(files) {
 }
 
 const flat = (css) => css.replace(/\s+/g, ' ').trim();
-const build = (dir, file = 'entry.uxdsl', config = {}) => core.compile({ entry: path.join(dir, file) }, { includeTheme: false, ...config });
+const build = (dir, file = 'entry.uxdsl', config = {}) => core.compile({ entry: path.join(dir, file) }, { ...config });
 
 async function failure(promise) {
   try {
@@ -170,7 +170,7 @@ test('MIG-B9-10: dependencies lists the entry first and every loaded file', asyn
 
 test('MIG-B9-10: compile({ source, from }) resolves relative loads from a from that does not exist on disk', async () => {
   const dir = project({ '_part.uxdsl': '.p { color: red; }\n' });
-  const result = await core.compile({ source: '@use "part";\n', from: path.join(dir, 'virtual.uxdsl') }, { includeTheme: false });
+  const result = await core.compile({ source: '@use "part";\n', from: path.join(dir, 'virtual.uxdsl') });
   assert.match(flat(result.css), /\.p \{ color: red; \}/);
 });
 

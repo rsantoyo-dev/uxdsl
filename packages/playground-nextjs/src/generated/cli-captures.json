@@ -58,7 +58,7 @@
     },
     {
       "id": "build-entry",
-      "title": "Compile one file to one output, bypassing the config's entry",
+      "title": "Compile one file to one output, bypassing the config's entry: card.uxdsl writes no @uxdsl theme;, so only its own rules, and the build says nothing here defines the tokens",
       "argv": [
         "build",
         "--entry",
@@ -67,35 +67,19 @@
         "dist/card.css"
       ],
       "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card.css (47670 bytes)\n",
-      "stderr": "",
+      "stdout": "[uxdsl] built dist/card.css (463 bytes)\n",
+      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n",
       "facts": {
-        "bytes": 47670,
-        "rootBlocks": 16
+        "bytes": 463,
+        "rootBlocks": 0
+      },
+      "files": {
+        "dist/card.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}"
       }
     },
     {
-      "id": "build-include-theme",
-      "title": "With --include-theme (the default): the entry also defines every token in :root",
-      "argv": [
-        "build",
-        "--entry",
-        "src/card.uxdsl",
-        "--out",
-        "dist/card-with-theme.css",
-        "--include-theme"
-      ],
-      "exit": 0,
-      "stdout": "[uxdsl] Theme config detected\n[uxdsl] built dist/card-with-theme.css (47670 bytes)\n",
-      "stderr": "",
-      "facts": {
-        "bytes": 47670,
-        "rootBlocks": 16
-      }
-    },
-    {
-      "id": "build-no-include-theme",
-      "title": "With --no-include-theme: only the component rules, consuming tokens another entry defines",
+      "id": "build-removed-flag",
+      "title": "The removed --no-include-theme flag: the theme is emitted only where @uxdsl theme; is written",
       "argv": [
         "build",
         "--entry",
@@ -104,16 +88,9 @@
         "dist/card-only.css",
         "--no-include-theme"
       ],
-      "exit": 0,
-      "stdout": "[uxdsl] built dist/card-only.css (463 bytes)\n",
-      "stderr": "",
-      "facts": {
-        "bytes": 463,
-        "rootBlocks": 0
-      },
-      "files": {
-        "dist/card-only.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}"
-      }
+      "exit": 1,
+      "stdout": "",
+      "stderr": "[uxdsl] Error: --no-include-theme was removed: the theme is emitted only where `@uxdsl theme;` is written. Write it once, at the top level of the stylesheet that defines the tokens, and leave it out of component entries.\n"
     },
     {
       "id": "build-sourcemap",
@@ -124,12 +101,11 @@
         "src/card.uxdsl",
         "--out",
         "dist/card-mapped.css",
-        "--no-include-theme",
         "--sourcemap"
       ],
       "exit": 0,
       "stdout": "[uxdsl] built dist/card-mapped.css (507 bytes) + card-mapped.css.map (382 bytes)\n",
-      "stderr": "",
+      "stderr": "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.\n",
       "files": {
         "dist/card-mapped.css": ".card {\n  padding: var(--uxdsl__surface__contained-padding);\n  border-radius: var(--uxdsl__surface__contained-radius);\n  background: var(--uxdsl__surface__contained-bg);\n  color: var(--uxdsl__surface__contained-color);\n  border: var(--uxdsl__surface__contained-border);\n  box-shadow: var(--uxdsl__surface__contained-shadow);\n  display: flex;\n  flex-direction: column;\n  gap: var(--uxdsl__density__4);\n}@media (min-width: 768px) {.card {\n  flex-direction: row;\n}\n}\n/*# sourceMappingURL=card-mapped.css.map */"
       },
@@ -284,7 +260,7 @@
         "src/styles.uxdsl": "/* Your styles. src/uxdsl-entry.uxdsl loads this file with @use; that entry is\n   regenerated by `uxdsl generate-entry`, so write here, not there. */\n\n.example {\n  @ds-surface(contained);\n  padding: density(3);\n}\n",
         "src/uxdsl-entry.uxdsl": "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */\n/* As the build's entry, it is regenerated by uxdsl build --watch when a .uxdsl file under --src is added or removed, and by uxdsl generate-entry with no arguments, from the line above. */\n\n/* --- Application & Component Imports --- */\n@use './uxdsl-theme.uxdsl' as uxdsl-theme;\n@use './styles.uxdsl' as styles;\n",
         "src/uxdsl-theme.uxdsl": "// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n// Written by uxdsl generate-entry next to the entry, which loads it first: the\n// theme (every --uxdsl__ token) is emitted where the line below is, before the\n// entry's other files. generate-entry --no-theme leaves this file out.\n@uxdsl theme;\n",
-        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"includeThem\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css'],\n  // Dart Sass options for every entry: the deprecations to silence (they are\n  // printed as UXD_SASS_WARNING) and whether to silence those of packages.\n  // sass: { silenceDeprecations: ['import'], quietDeps: true },\n};\n\nmodule.exports = config;\n",
+        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"outfile\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css'],\n  // Dart Sass options for every entry: the deprecations to silence (they are\n  // printed as UXD_SASS_WARNING) and whether to silence those of packages.\n  // sass: { silenceDeprecations: ['import'], quietDeps: true },\n};\n\nmodule.exports = config;\n",
         "package.json": "{\n  \"name\": \"my-app\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"uxdsl:build\": \"uxdsl build\",\n    \"uxdsl:watch\": \"uxdsl build --watch\"\n  }\n}\n"
       }
     },
@@ -298,11 +274,11 @@
       "stdout": "[uxdsl] Initializing...\n  -> Detected Next.js\n  -> Created uxdsl.config.cjs\n  -> Created src/styles.uxdsl (edit this one)\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Generated theme file at src/uxdsl-theme.uxdsl: `@uxdsl theme;`, loaded first by the entry.\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n  -> Created postcss.config.js\n  -> Added script(s) to package.json: uxdsl:build, uxdsl:watch\n\n[uxdsl] Initialization complete.\nInstall it in this project: npm i -D uxdsl\nNext steps:\n1. Edit src/styles.uxdsl. The entry src/uxdsl-entry.uxdsl is generated: the watch below regenerates it when a .uxdsl file is added or removed; without it, run \"npx uxdsl generate-entry\".\n2. Build: npm run uxdsl:build\n   Watch:  npm run uxdsl:watch (alongside next dev)\n3. Import the generated CSS once, from your root layout or app entry (path relative to that file):\n   import './src/uxdsl.css';\n\nEditor support: uxdsl.config.cjs is type-checked by your editor (// @ts-check).\nFor .uxdsl highlighting and completion (VS Code extension, installed from a .vsix)\nand theme JSON completion (\"$schema\"), see \"Editor support\" in the uxdsl README.\n",
       "stderr": "",
       "files": {
-        "postcss.config.js": "module.exports = {\n  plugins: {\n    // Next.js's own default PostCSS plugins, with Next's own options. A custom\n    // postcss.config.js replaces Next's defaults, so they are named here; these\n    // are the modules Next ships and uses for its default configuration. To\n    // pin your own versions instead, install postcss-flexbugs-fixes and\n    // postcss-preset-env and use those names.\n    'next/dist/compiled/postcss-flexbugs-fixes': {},\n    'next/dist/compiled/postcss-preset-env': {\n      autoprefixer: { flexbox: 'no-2009' },\n      stage: 3,\n      features: { 'custom-properties': false },\n    },\n    // The CLI-generated global CSS already contains the theme; the project's\n    // uxdsl.theme.json (or uxdsl.theme.js/.cjs), if any, is discovered\n    // automatically for everything else.\n    'uxdsl/postcss': { includeTheme: false },\n  },\n};\n",
+        "postcss.config.js": "module.exports = {\n  plugins: {\n    // Next.js's own default PostCSS plugins, with Next's own options. A custom\n    // postcss.config.js replaces Next's defaults, so they are named here; these\n    // are the modules Next ships and uses for its default configuration. To\n    // pin your own versions instead, install postcss-flexbugs-fixes and\n    // postcss-preset-env and use those names.\n    'next/dist/compiled/postcss-flexbugs-fixes': {},\n    'next/dist/compiled/postcss-preset-env': {\n      autoprefixer: { flexbox: 'no-2009' },\n      stage: 3,\n      features: { 'custom-properties': false },\n    },\n    // The theme is emitted only where @uxdsl theme; is written: the\n    // CLI-generated global CSS has it (src/uxdsl-theme.uxdsl), so a CSS\n    // Module gets none. The project's uxdsl.theme.json (or\n    // uxdsl.theme.js/.cjs), if any, is discovered automatically.\n    'uxdsl/postcss': {},\n  },\n};\n",
         "src/styles.uxdsl": "/* Your styles. src/uxdsl-entry.uxdsl loads this file with @use; that entry is\n   regenerated by `uxdsl generate-entry`, so write here, not there. */\n\n.example {\n  @ds-surface(contained);\n  padding: density(3);\n}\n",
         "src/uxdsl-entry.uxdsl": "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl */\n/* As the build's entry, it is regenerated by uxdsl build --watch when a .uxdsl file under --src is added or removed, and by uxdsl generate-entry with no arguments, from the line above. */\n\n/* --- Application & Component Imports --- */\n@use './uxdsl-theme.uxdsl' as uxdsl-theme;\n@use './styles.uxdsl' as styles;\n",
         "src/uxdsl-theme.uxdsl": "// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n// Written by uxdsl generate-entry next to the entry, which loads it first: the\n// theme (every --uxdsl__ token) is emitted where the line below is, before the\n// entry's other files. generate-entry --no-theme leaves this file out.\n@uxdsl theme;\n",
-        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"includeThem\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css'],\n  // Dart Sass options for every entry: the deprecations to silence (they are\n  // printed as UXD_SASS_WARNING) and whether to silence those of packages.\n  // sass: { silenceDeprecations: ['import'], quietDeps: true },\n};\n\nmodule.exports = config;\n",
+        "uxdsl.config.cjs": "// @ts-check\n// Checked by your editor against UXDSL's config type (a mistyped key such as\n// \"outfile\" is flagged as you type). Type-only: nothing is loaded at build\n// time. See \"Editor support\" in the uxdsl README.\n/** @type {import('uxdsl/config').UxdslConfig} */\nconst config = {\n  // Entry point for your styles (generated or manual)\n  entry: './src/uxdsl-entry.uxdsl',\n  // Output CSS file\n  outFile: './src/uxdsl.css',\n  // Watch patterns for HMR/Rebuilds\n  watch: ['src/**/*.uxdsl', 'src/**/*.css'],\n  // Dart Sass options for every entry: the deprecations to silence (they are\n  // printed as UXD_SASS_WARNING) and whether to silence those of packages.\n  // sass: { silenceDeprecations: ['import'], quietDeps: true },\n};\n\nmodule.exports = config;\n",
         "package.json": "{\n  \"name\": \"my-app\",\n  \"private\": true,\n  \"scripts\": {\n    \"dev\": \"next dev\",\n    \"uxdsl:build\": \"uxdsl build\",\n    \"uxdsl:watch\": \"uxdsl build --watch\"\n  }\n}\n"
       }
     },
@@ -322,7 +298,7 @@
         "--help"
       ],
       "exit": 0,
-      "stdout": "Usage: uxdsl build [options]\n\nCompiles the entry from uxdsl.config.cjs (or --config, or --entry/--out) to\none CSS file. The theme comes from the theme file next to the config\n(uxdsl.theme.json, or uxdsl.theme.js/.cjs exporting a computed theme).\n\nOptions:\n  --config, -c      Path to the build config (default: uxdsl.config.cjs or\n                    uxdsl.config.js in the current directory).\n  --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.\n  --out, -o         Output CSS file path (with --entry).\n  --watch, -w       Rebuild on file changes. Survives a broken edit: the last\n                    good CSS stays on disk until the next valid save. An entry\n                    that records the generate-entry run that wrote it is\n                    regenerated when a .uxdsl file that run scans is added or\n                    removed.\n  --include-theme, --no-include-theme\n                    Emit (or skip) the global :root token definitions.\n                    Default true. Pass --no-include-theme for a component or\n                    CSS-Module entry that consumes tokens another entry\n                    defines. Overrides \"includeTheme\" in the config.\n  --sourcemap, --sourcemap=inline, --no-sourcemap\n                    Emit a source map. Bare --sourcemap means \"external\":\n                    writes <outFile>.map and a sourceMappingURL comment;\n                    =inline embeds it as a data URI. Default off. Overrides\n                    \"sourcemap\" in the config.\n  --strict-theme=<family,...>, --no-strict-theme\n                    Fail the build, before writing anything, when one of the\n                    named theme families is only partly declared by the\n                    project and the rest was filled from the base theme\n                    (e.g. --strict-theme=palette,breakpoints). A scope is\n                    required: the theme model is partial overrides, so an\n                    unscoped check flagged the recommended usage as\n                    incomplete. --no-strict-theme turns off \"strictTheme\"\n                    from the config for one run.\n\n",
+      "stdout": "Usage: uxdsl build [options]\n\nCompiles the entry from uxdsl.config.cjs (or --config, or --entry/--out) to\none CSS file. The theme comes from the theme file next to the config\n(uxdsl.theme.json, or uxdsl.theme.js/.cjs exporting a computed theme).\n\nOptions:\n  --config, -c      Path to the build config (default: uxdsl.config.cjs or\n                    uxdsl.config.js in the current directory).\n  --entry, -e       Entry .uxdsl file; with --out, compiles it without a config.\n  --out, -o         Output CSS file path (with --entry).\n  --watch, -w       Rebuild on file changes. Survives a broken edit: the last\n                    good CSS stays on disk until the next valid save. An entry\n                    that records the generate-entry run that wrote it is\n                    regenerated when a .uxdsl file that run scans is added or\n                    removed.\n  --sourcemap, --sourcemap=inline, --no-sourcemap\n                    Emit a source map. Bare --sourcemap means \"external\":\n                    writes <outFile>.map and a sourceMappingURL comment;\n                    =inline embeds it as a data URI. Default off. Overrides\n                    \"sourcemap\" in the config.\n  --strict-theme=<family,...>, --no-strict-theme\n                    Fail the build, before writing anything, when one of the\n                    named theme families is only partly declared by the\n                    project and the rest was filled from the base theme\n                    (e.g. --strict-theme=palette,breakpoints). A scope is\n                    required: the theme model is partial overrides, so an\n                    unscoped check flagged the recommended usage as\n                    incomplete. --no-strict-theme turns off \"strictTheme\"\n                    from the config for one run.\n\n",
       "stderr": ""
     },
     {
@@ -373,7 +349,6 @@
         "action": "edit src/card.uxdsl: add xxl(2rem), a breakpoint that is not configured",
         "output": [
           "[uxdsl] change src/card.uxdsl",
-          "[uxdsl] Theme config detected",
           "! [uxdsl] build failed: uxdsl: src/card.uxdsl:5:3: UXD_BREAKPOINT_UNKNOWN: xxl(...) is not a configured breakpoint or a known CSS function; configured breakpoints: xs, sm, md, lg, xl.",
           "!   3 |   display: flex;",
           "!   4 |   flex-direction: xs(column) md(row);",

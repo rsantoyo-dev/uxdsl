@@ -6,7 +6,7 @@ What UXDSL can do, **derived** from its own sources (language metadata, theme-fa
 
 Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runtime API, output of the real tool); **documented** — example code or prose only; **none** — not mentioned. The detection reads source text, not rendered pages, so it is a **lower bound** on what the playground shows. A capability is a **gap** when its level is below the one it requires (`live` for nearly everything; `documented` for deprecated syntax and CLI-only options). `capability-evidence.json` in the playground records the evidence text cannot find and the gaps accepted for now.
 
-**121 capabilities · 121 shown at the level they require · 0 gaps.**
+**120 capabilities · 120 shown at the level they require · 0 gaps.**
 
 | Kind | Capabilities | live | documented | none | gaps |
 | --- | ---: | ---: | ---: | ---: | ---: |
@@ -18,7 +18,7 @@ Levels: **live** — executed on the page (compiled `.uxdsl`, a call to the runt
 | Interaction states | 12 | 12 | 0 | 0 | 0 |
 | Runtime API (named in the package docs) | 37 | 37 | 0 | 0 | 0 |
 | CLI commands | 4 | 0 | 4 | 0 | 0 |
-| CLI flags | 16 | 1 | 15 | 0 | 0 |
+| CLI flags | 15 | 1 | 14 | 0 | 0 |
 | Package exports | 12 | 12 | 0 | 0 | 0 |
 | Diagnostics | 1 | 1 | 0 | 0 | 0 |
 
@@ -184,7 +184,6 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `--exclude` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--first` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--help` | documented | documented | `src/app/docs/tooling/page.mdx` |
-| `--include-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--multi` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--no-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--out` | documented | documented | `src/app/docs/tooling/page.mdx` |

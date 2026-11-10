@@ -29,8 +29,7 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 - **`compile()` reports whether it emitted the theme.** Its result has a
   `themeEmitted` field next to `css`, `map`, `dependencies` and `warnings`:
   `true` when the compilation emitted the theme — at `@uxdsl theme;`, in the
-  stylesheet or in a file it loads, or with `includeTheme` — and `false`
-  otherwise. A marker in a partial that two modules of one compilation load
+  stylesheet or in a file it loads — and `false` otherwise. A marker in a partial that two modules of one compilation load
   with `@use` is emitted once (Dart Sass loads a module once), and the result
   says `true`; two `@import`s of it remain `UXD_THEME_MARKER` ("appears
   twice"). The playground's paradigm frame and runtime sandbox, which now
@@ -56,6 +55,84 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   writes the pair through `generate-entry` (plain, Vite and Next.js), and
   `init --multi` ends `src/theme.uxdsl` with `@uxdsl theme;`. The
   playground's generated entry loads `src/app/uxdsl-theme.uxdsl` first.
+- **A CLI build warns `UXD_THEME_MARKER` once when the theme is defined
+  nowhere, or more than once.** Counted from each entry's `themeEmitted`: no
+  entry reaching `@uxdsl theme;` while the CSS references a `--uxdsl__` token
+  (and some entry's output is not a `*.module.css`, which cannot carry the
+  theme) prints ``[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches
+  `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens
+  its CSS references. …``; more than one entry emitting it — a marker in a
+  partial several entries load — prints ``… <n> entries emit the theme
+  (builds[0], builds[1]): each reaches `@uxdsl theme;`, itself or through a
+  file it loads. …``, which replaces the former, uncoded `<n> entries emit the
+  theme (…); usually only one theme entry should.` A single-entry build and a
+  `builds` project are counted alike. `build --watch` counts over the last
+  result of every entry (a selective rebuild reads the others from the
+  session) and prints the warning when that state changes, not on every
+  rebuild. A build that references no token, or whose every output is a CSS
+  Module, prints nothing. The text comes from one helper, shared with the
+  bundler adapters; the catalog's `UXD_THEME_MARKER` names both warnings.
+- **`[uxdsl] Theme config detected` follows the compilation.** It is printed
+  for an entry that emitted the theme, after compiling it, and no longer for
+  an entry that only resolves its references against the theme file.
+
+### Removed
+
+- **`includeTheme` is removed; the theme is emitted only where
+  `@uxdsl theme;` is written** (DEC-06). A stylesheet without the marker
+  emits no theme: no `:root` blocks and no Google Fonts `@import` — the output
+  `includeTheme: false` gave, byte for byte (`.card{padding:density(4)}` is
+  46 characters, `themeEmitted: false`). The option is gone from
+  `UxdslOptions`, `CompileConfig`, `UxdslConfig` (both branches),
+  `UxdslBuild` and the Vite plugin's and webpack loader's options; passed
+  anyway, to the PostCSS plugin, `compile()`, the Vite plugin or the webpack
+  loader, it prints `UXD_OPTION_REMOVED: the "includeTheme" option was
+  removed and is ignored; write @uxdsl theme; in the stylesheet that defines
+  the tokens.` and changes nothing — once per compilation in the plugin, once
+  per `compile()` call (after Dart Sass's warnings), once per build in Vite
+  (at `buildStart`) and once per compilation in webpack. The adapters pass no
+  theme switch to `compile()` any more. The four options removed in
+  stability phase 1 now print the same template (`the "breakpoints" option
+  was removed …`, no longer "plugin option") and are reported by
+  `compile()`, Vite and webpack too, where they used to be ignored without a
+  word. The table lives in one place, shared by the four hosts.
+- **The CLI's `includeTheme` config key and `--include-theme` /
+  `--no-include-theme` flags are removed.** The key, at the top level or in a
+  `builds[]` entry, fails the build with ``"includeTheme" is not a
+  build-config key any more — write `@uxdsl theme;` in the stylesheet that
+  defines the tokens; an entry without it emits no theme.``; each form of the
+  flag (`--include-theme`, `--no-include-theme`, `--include-theme=<value>`)
+  fails `build` with ``<flag> was removed: the theme is emitted only where
+  `@uxdsl theme;` is written. …`` and writes nothing. On another command the
+  flag is an unknown option, as any other. The `resolveIncludeTheme` and
+  `warnIfMultipleEntriesEmitTheme` exports of the CLI module are gone.
+
+### Breaking
+
+- **A stylesheet that relied on the default emission loses its theme until
+  it writes `@uxdsl theme;`.** A single entry, a Vite or webpack global
+  `.uxdsl`, or a PostCSS-only global stylesheet that never wrote the marker
+  used to carry the theme by default; it now carries only its own rules.
+  Write `@uxdsl theme;` once, at the top level of the global stylesheet. An
+  entry written by `generate-entry` gets it from the theme file the next time
+  `generate-entry` (or `build --watch`) regenerates it. The CLI warns
+  `UXD_THEME_MARKER` when a build defines the tokens nowhere; the PostCSS
+  plugin alone cannot tell, so it does not.
+- **A config that still names `includeTheme`, or a script that passes
+  `--include-theme`/`--no-include-theme`, fails.** A top-level
+  `includeTheme` in a `builds` config, which the CLI used to ignore without a
+  word although `UxdslConfig` documented it as applying to every entry, fails
+  the same way.
+- **`init --multi`'s config and Next.js `postcss.config.js` carry no theme
+  switch.** `init --multi` writes its panel entry as
+  `{ entry, outFile }`, and the Next.js scaffold writes
+  `'uxdsl/postcss': {}`: the CLI-built global CSS carries the theme from its
+  generated theme file, so a CSS Module gets none.
+- **The CSS Module leak error names the marker.** An entry whose output is a
+  `*.module.css` and would emit `:root` fails with ``… A CSS Module carries no
+  theme: remove `@uxdsl theme;` (or the :root rule) from this entry and the
+  files it loads, and write it in the global stylesheet.`` instead of `Set
+  includeTheme: false for component entries.`
 
 ### Visual changes
 

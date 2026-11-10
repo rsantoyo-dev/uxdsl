@@ -60,7 +60,7 @@ async function prepare(blocks) {
     return original(root, consumers, options);
   };
   try {
-    await postcss([plugin({ includeTheme: true, references: { mode: 'off' } })])
+    await postcss([plugin({ references: { mode: 'off' } })])
       .process(source(blocks), { from: `perf-${blocks}.uxdsl` });
   } finally {
     implementation.enforceReferences = original;

@@ -117,8 +117,8 @@ test('MIG-B2-02: PostCSS and generateThemeCss produce the same cascaded variable
   assert.deepEqual(postcssVars, runtimeVars);
 });
 
-test('MIG-B2-02: includeTheme: false with no theme option at all emits zero :root blocks and still validates', async () => {
-  const result = await compile('.x { padding: density(2); }', { includeTheme: false });
+test('MIG-B2-02: without the marker and with no theme option at all, zero :root blocks, and references still validate', async () => {
+  const result = await compile('.x { padding: density(2); }');
   assert.ok(!result.css.includes(':root'));
   assert.match(result.css, /var\(--uxdsl__density__2\)/);
 });
@@ -182,7 +182,7 @@ test('MIG-B2-02: default headings and controls compile without legacy imports at
     assert.equal(valueAt(result.root, width), expected);
     assert.equal(valueAt(runtime, width), expected);
   }
-  const component = await compile(source, { includeTheme: false });
+  const component = await compile(source);
   assert.doesNotMatch(component.css, /:root/);
   assert.throws(() => resolveTheme(new Date()), /UXD_THEME_INVALID/);
 });

@@ -51,12 +51,12 @@ function problemsOf(css, { authorValue = false } = {}) {
 
 const codeOf = (message) => (/\b(UXD_[A-Z0-9_]+)\b/.exec(String(message)) || [])[1];
 
-/** compile() on a case, `includeTheme: false`: `{ css }` (normalized) or `{ error, message, located }`. */
+/** compile() on a case (no marker, so no theme): `{ css }` (normalized) or `{ error, message, located }`. */
 async function compiled(name, source) {
   const entry = path.join(dir, `${name}.uxdsl`);
   fs.writeFileSync(entry, source + '\n');
   try {
-    return { css: normalize((await core.compile({ entry }, { includeTheme: false })).css) };
+    return { css: normalize((await core.compile({ entry })).css) };
   } catch (error) {
     return { error: codeOf(error.message), message: error.message, located: /:\d+:\d+:/.test(error.message) || typeof error.line === 'number' };
   }
@@ -132,7 +132,7 @@ async function bothCompilers(name, source) {
   fs.writeFileSync(scss, source + '\n');
   fs.writeFileSync(uxdsl, source + '\n');
   const live = require('sass').compile(scss, { style: 'expanded', logger: silentLogger }).css;
-  const compiled = (await core.compile({ entry: uxdsl }, { theme: {}, includeTheme: false })).css;
+  const compiled = (await core.compile({ entry: uxdsl }, { theme: {} })).css;
   return { live, compiled };
 }
 

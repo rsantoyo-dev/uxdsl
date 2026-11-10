@@ -91,8 +91,8 @@ test('T10: a token the theme JSON adds goes to the same one place as the rest of
   assert.equal(nodes.slice(firstAuthorRule).filter(isGenerated).length, 0, 'nothing generated follows the author rule');
 });
 
-test('T10 (control): includeTheme: false inserts nothing and validates against the same rendered theme', () => {
-  const css = compile('@import url("https://example.com/a.css");\n.a { padding: density(2); }', { includeTheme: false });
+test('T10 (control): without the marker nothing is inserted, and references validate against the same rendered theme', () => {
+  const css = compile('@import url("https://example.com/a.css");\n.a { padding: density(2); }');
   assert.equal(topLevel(css).length, 2);
   assert.doesNotMatch(css, /:root/);
 });

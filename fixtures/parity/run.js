@@ -32,7 +32,7 @@ const UPDATE = process.argv.includes('--update');
 const EXPECT_ERROR = new Set(['missing-import', 'import-cycle']);
 
 function runCli(entry, outFile) {
-  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', entry, '--out', outFile, '--no-include-theme'], {
+  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', entry, '--out', outFile], {
     encoding: 'utf8',
   });
   if (result.status !== 0) {
@@ -43,7 +43,7 @@ function runCli(entry, outFile) {
 
 async function runCore(entry) {
   try {
-    const { css } = await core.compile({ entry }, { includeTheme: false });
+    const { css } = await core.compile({ entry });
     return { css };
   } catch (err) {
     return { error: err.message };
@@ -59,7 +59,7 @@ async function runCore(entry) {
 // fixtures/webpack-adapter/ — this only needs to prove the CSS output
 // agrees.
 async function runVite(entry) {
-  const plugin = uxdslVitePlugin({ includeTheme: false });
+  const plugin = uxdslVitePlugin();
   const ctx = { addWatchFile() {}, warn() {} };
   try {
     const virtualId = plugin.resolveId.call(ctx, entry, undefined);
@@ -83,7 +83,7 @@ function runWebpack(entry) {
         return (err, css) => resolve(err ? { error: err.message } : { css });
       },
       getOptions() {
-        return { includeTheme: false };
+        return {};
       },
       addDependency() {},
       emitWarning() {},

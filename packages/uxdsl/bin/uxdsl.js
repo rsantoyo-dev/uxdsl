@@ -63,6 +63,7 @@ const REMOVED_CONFIG_KEYS = {
   breakpoints: 'declare "breakpoints" in the theme file — the theme is the one source of thresholds for every integration',
   output: 'use "outFile"',
   sourceMap: 'the key is spelled "sourcemap", like the --sourcemap flag',
+  includeTheme: 'write `@uxdsl theme;` in the stylesheet that defines the tokens; an entry without it emits no theme',
 };
 
 // Commands that used to exist. Each maps to what replaces it, so the error is
@@ -175,11 +176,6 @@ Options:
                     that records the generate-entry run that wrote it is
                     regenerated when a .uxdsl file that run scans is added or
                     removed.
-  --include-theme, --no-include-theme
-                    Emit (or skip) the global :root token definitions.
-                    Default true. Pass --no-include-theme for a component or
-                    CSS-Module entry that consumes tokens another entry
-                    defines. Overrides "includeTheme" in the config.
   --sourcemap, --sourcemap=inline, --no-sourcemap
                     Emit a source map. Bare --sourcemap means "external":
                     writes <outFile>.map and a sourceMappingURL comment;
@@ -299,9 +295,8 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
   let configModule = null;
 
   // Raw, unresolved values tracked across every branch below and combined
-  // into `resolvedConfig.includeTheme`/`strictTheme`/`sourceMap` in one place
-  // — see resolveIncludeTheme/resolveStrictTheme below.
-  let rawIncludeTheme;
+  // into `resolvedConfig.strictTheme`/`sourceMap` in one place — see
+  // resolveStrictTheme/resolveSourceMap below.
   let rawStrictTheme;
   let rawSourceMap;
 
@@ -343,15 +338,8 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
       if (configModule.outFile !== undefined && typeof configModule.outFile !== 'string') {
         throw new Error(`Invalid configuration in ${configPath}: "outFile" must be a string path.`);
       }
-      // MIG-B3-01: same treatment as entry/outFile above — a wrong type
-      // here used to be silently swallowed by the plugin's own `!== false`
-      // check (a typo'd string or number reads as "true"), which is a
-      // confusing way to discover a config mistake.
-      if (configModule.includeTheme !== undefined && typeof configModule.includeTheme !== 'boolean') {
-        throw new Error(`Invalid configuration in ${configPath}: "includeTheme" must be a boolean.`);
-      }
-      // MIG-B6-21 (FEAT-008): validated here for the same reason as
-      // includeTheme — a typo'd value ('External', true) must fail loudly
+      // MIG-B6-21 (FEAT-008): validated here, naming the file, like entry and
+      // outFile above — a typo'd value ('External', true) must fail loudly
       // rather than read as "no map" and leave the user hunting for one.
       if (configModule.sourcemap !== undefined && configModule.sourcemap !== false && configModule.sourcemap !== 'inline' && configModule.sourcemap !== 'external') {
         throw new Error(`Invalid configuration in ${configPath}: "sourcemap" must be false, "inline" or "external".`);
@@ -381,7 +369,7 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
       const baseDir = path.dirname(configPath);
 
       // MIG-B3-02: "builds" is mutually exclusive with top-level entry/
-      // outFile/includeTheme — a project declares either one entry inline
+      // outFile — a project declares either one entry inline
       // or a list of them, never both, so there's exactly one place to look
       // for "what does this build actually compile".
       if (configModule.builds !== undefined) {
@@ -405,22 +393,14 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
           if (typeof buildEntry.outFile !== 'string') {
             throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].outFile" must be a string path.`);
           }
-          if (buildEntry.includeTheme !== undefined && typeof buildEntry.includeTheme !== 'boolean') {
-            throw new Error(`Invalid configuration in ${configPath}: "builds[${index}].includeTheme" must be a boolean.`);
-          }
           return {
             entry: resolvePath(buildEntry.entry, baseDir),
             outFile: resolvePath(buildEntry.outFile, baseDir),
-            // Resolved to a definite boolean below, alongside the
-            // single-entry case — see the `--include-theme` precedence
-            // comment near the end of this function.
-            includeTheme: buildEntry.includeTheme,
           };
         });
       } else {
         resolvedConfig.entry = resolvePath(configModule.entry, baseDir);
         resolvedConfig.outFile = resolvePath(configModule.outFile, baseDir);
-        rawIncludeTheme = configModule.includeTheme;
       }
       resolvedConfig.watch = configModule.watch || [];
       // `references` has exactly one home: the build config. A theme file
@@ -473,18 +453,6 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
     return null;
   }
 
-  // A `--include-theme`/`--no-include-theme` flag always wins over the build
-  // config's own `includeTheme` — for `builds`, that means the flag overrides
-  // every entry uniformly; each entry's own `includeTheme` is only consulted
-  // when the flag is absent.
-  if (hasBuilds) {
-    resolvedConfig.builds = resolvedConfig.builds.map((buildEntry) => ({
-      ...buildEntry,
-      includeTheme: resolveIncludeTheme(argv['include-theme'], buildEntry.includeTheme),
-    }));
-  } else {
-    resolvedConfig.includeTheme = resolveIncludeTheme(argv['include-theme'], rawIncludeTheme);
-  }
   // MIG-B4-01: independent of `builds` — the theme is shared across every
   // entry, so this is resolved once here regardless of single/multi mode.
   resolvedConfig.strictTheme = resolveStrictTheme(argv['strict-theme'], rawStrictTheme, { knownFamilies: getKnownThemeFamilies(), requireKnownFamilies: true });
@@ -544,33 +512,14 @@ async function loadConfig(argv, cwd = process.cwd(), { themeOnly = false } = {})
   return resolvedConfig;
 }
 
-// MIG-B3-01 (FEAT-004): `--include-theme`/config `includeTheme` resolve at
-// one point, after every "found a config" branch, so the flag/config/default
-// precedence is written once.
-// MIG-B6-22 (FEAT-008): `--include-theme`/`--no-include-theme` arrive as
-// real booleans from minimist (bare flag or `--no-` negation), but
-// `--include-theme=false`/`=true` arrive as the strings `"false"`/`"true"`
-// — previously only `typeof flagValue === 'boolean'` was accepted, so the
-// `=value` form silently fell through to the config value/default instead
-// of taking effect. Any other explicit value is a hard error instead of
-// silently reading as `true`, matching the bare-boolean-flag contract
-// minimist itself already provides — including a *number*, which is the
-// case a code review caught this missing for: minimist auto-parses an
-// undeclared flag's numeric-looking value (`--include-theme=0`) into the
-// actual JS number `0`, which is neither `'true'`/`'false'` (so the old
-// string-only check skipped it) nor a real boolean, and fell all the way
-// through to the config value/default — silently accepting a value never
-// documented as valid. Checking "not already a real boolean" up front,
-// rather than "is a string", catches every such explicit-but-invalid value.
 // MIG-B6-21 (FEAT-008): `--sourcemap` (bare) means `external`, the mode that
 // actually needs a filename; `--sourcemap=inline` and `--sourcemap=external`
 // name the mode outright, and `--no-sourcemap` turns it off. `=true`/`=false`
 // are accepted as synonyms of the bare/negated forms so the flag behaves like
 // every other boolean-ish flag here (MIG-B6-22 made that consistency a rule),
-// and — for the same reason resolveIncludeTheme checks "not already a real
-// boolean" — a numeric value like `--sourcemap=0`, which minimist parses into
-// the JS number 0, is rejected instead of quietly reading as a mode.
-// Precedence is flag > config > false.
+// and any other explicit value is a hard error: a numeric value like
+// `--sourcemap=0`, which minimist parses into the JS number 0, is rejected
+// instead of quietly reading as a mode. Precedence is flag > config > false.
 function resolveSourceMap(flagValue, configValue) {
   if (flagValue !== undefined) {
     if (flagValue === true || flagValue === 'true' || flagValue === 'external') return 'external';
@@ -581,17 +530,6 @@ function resolveSourceMap(flagValue, configValue) {
   if (configValue === 'inline' || configValue === 'external') return configValue;
   if (configValue === false || configValue === undefined) return false;
   throw new Error(`Invalid "sourcemap" in configuration: ${JSON.stringify(configValue)}. Expected false, "inline" or "external".`);
-}
-
-function resolveIncludeTheme(flagValue, configValue) {
-  if (flagValue !== undefined && typeof flagValue !== 'boolean') {
-    if (flagValue === 'true') flagValue = true;
-    else if (flagValue === 'false') flagValue = false;
-    else throw new Error(`Invalid value for --include-theme: "${flagValue}". Expected true or false (or --no-include-theme).`);
-  }
-  if (typeof flagValue === 'boolean') return flagValue;
-  if (typeof configValue === 'boolean') return configValue;
-  return true;
 }
 
 // MIG-B5-01 (FEAT-006): `strictTheme`/`--strict-theme` accepts three
@@ -759,11 +697,13 @@ function validateSassConfig(sass, configPath) {
   }
 }
 
-// Compiles one { entry, outFile, includeTheme } pair against the theme,
-// references and Dart Sass options every entry in a build shares. Returns the
-// CSS to write without writing it: buildOnce compiles every entry to memory
-// first, so a failure partway through a `builds` array leaves nothing written
-// rather than some files updated and others stale.
+// Compiles one { entry, outFile } pair against the theme, references and Dart
+// Sass options every entry in a build shares. Returns the CSS to write without
+// writing it: buildOnce compiles every entry to memory first, so a failure
+// partway through a `builds` array leaves nothing written rather than some
+// files updated and others stale. Also returns what the build counts the theme
+// from: whether the entry emitted it (compile()'s `themeEmitted`, true when it
+// reached `@uxdsl theme;`) and whether its CSS references a --uxdsl__ token.
 async function compileEntryToCss(entryConfig, sharedConfig) {
   // Each of these names its concrete fix, not a generic "invalid
   // configuration".
@@ -776,14 +716,6 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   if (!fs.existsSync(entryConfig.entry)) {
     throw new Error(`Entry file not found: ${entryConfig.entry}. Pass --entry <path> pointing at an existing .uxdsl file, or run "npx uxdsl generate-entry" to create one.`);
   }
-  // `includeTheme` defaults to true, as the plugin's own option does: an
-  // omitted config key or flag means "this entry defines the theme".
-  const includeTheme = entryConfig.includeTheme !== false;
-  // Don't claim a theme was "detected" (i.e. will be emitted) for an entry
-  // that only uses it to resolve/validate references against — that's
-  // exactly what includeTheme: false means.
-  if (sharedConfig.theme && includeTheme) console.log('[uxdsl] Theme config detected');
-
   // Delegates to compile(), the one pipeline every integration runs (protect,
   // Dart Sass, restore, the UXDSL plugin), so the CLI has no copy of its own
   // to drift. `to` is the absolute outFile, which is also where an external
@@ -791,17 +723,20 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // both modes. `sass` is the config's Dart Sass options, shared by every
   // entry.
   const sourceMap = sharedConfig.sourceMap || false;
-  const { css: compiledCss, map, dependencies, warnings } = await uxdslCore.compile(
+  const { css: compiledCss, map, dependencies, warnings, themeEmitted } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
       theme: sharedConfig.theme,
       references: sharedConfig.references,
-      includeTheme,
       to: entryConfig.outFile,
       sourceMap,
       sass: sharedConfig.sass,
     }
   );
+
+  // The theme file is "detected" for an entry that emitted the theme, not for
+  // one that only resolves and validates its references against it.
+  if (sharedConfig.theme && themeEmitted) console.log('[uxdsl] Theme config detected');
 
   // 'inline' is already complete (core appended its own data URI). 'external'
   // needs the annotation only this side can write, since only the CLI knows
@@ -818,7 +753,10 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // the theme files discovered) lets watch mode rebuild only the entries a
   // changed file affects. `warnings` are compile()'s, each at the author's
   // file, line and column when it has a position; buildOnce prints them.
-  return { outFile: entryConfig.outFile, finalCss, dependencies, warnings, mapFile, mapContent: map };
+  return {
+    outFile: entryConfig.outFile, finalCss, dependencies, warnings, mapFile, mapContent: map,
+    themeEmitted: themeEmitted === true, referencesTokens: uxdslCore.referencesThemeTokens(compiledCss),
+  };
 }
 
 // The theme's "Unknown …" warnings (validateTheme's), printed as
@@ -898,37 +836,32 @@ function findThemeLeakSelector(css) {
 // against each entry's already-compiled, in-memory CSS), refuses an entry
 // whose outFile is named like a CSS Module and would still define :root —
 // Next.js (and other CSS Modules loaders) reject a bare `:root` selector
-// ("Selector :root is not pure"), and the CLI previously never noticed.
-// `includeTheme: false` is the normal way to avoid this; this only catches
-// the actual output, not just the config flag, since a legacy import or
-// explicit native CSS could still reintroduce the selector even with
-// `includeTheme: false`. Not a general CSS Modules purity validator — only
-// the one selector this compiler itself produces for the theme.
+// ("Selector :root is not pure"). An entry that does not reach
+// `@uxdsl theme;` emits no theme; this checks the actual output, not the
+// source, since explicit native CSS can still write the selector. Not a
+// general CSS Modules purity validator — only the one selector this compiler
+// itself produces for the theme.
 function assertNoThemeLeakIntoCssModule(outFile, css, label) {
   if (!/\.module\.css$/i.test(outFile)) return;
   const leaked = findThemeLeakSelector(css);
   if (!leaked) return;
   throw new Error(
     `${label}this entry would emit :root, which CSS Modules reject ` +
-    '("Selector :root is not pure"). Set includeTheme: false for component entries.'
+    '("Selector :root is not pure"). A CSS Module carries no theme: remove `@uxdsl theme;` (or the :root rule) from this entry and the files it loads, and write it in the global stylesheet.'
   );
 }
 
-// Deduplicated the same way warnUnknownThemeKeys already is (see its own
-// comment) — keyed by the exact set of entries involved, so a config edit
-// that changes *which* entries emit the theme warns again, but repeating
-// the same rebuild in watch mode does not.
-const warnedMultipleThemeEntries = new Set();
-
-function warnIfMultipleEntriesEmitTheme(themeEmittingLabels) {
-  if (themeEmittingLabels.length <= 1) return;
-  const key = themeEmittingLabels.join(',');
-  if (warnedMultipleThemeEntries.has(key)) return;
-  warnedMultipleThemeEntries.add(key);
-  console.warn(
-    `[uxdsl] Warning: ${themeEmittingLabels.length} entries emit the theme (${themeEmittingLabels.join(', ')}); ` +
-    'usually only one theme entry should.'
-  );
+// The build's UXD_THEME_MARKER warning, from the last result of every entry
+// (compile()'s own text, shared with the Vite plugin and the webpack loader),
+// with what to do about an entry generate-entry wrote. Null when one entry
+// emits the theme, or none does and nothing needs it.
+function themeEmissionMessage(states) {
+  const warning = uxdslCore.themeEmissionWarning(states, 'entry');
+  if (!warning) return null;
+  const hint = warning.kind === 'many'
+    ? ' A component entry written by generate-entry leaves it out with --no-theme.'
+    : ' For an entry generate-entry wrote, run uxdsl generate-entry again.';
+  return `[uxdsl] Warning: ${warning.text}${hint}`;
 }
 
 function formatCliDiagnostic(message) {
@@ -1093,7 +1026,15 @@ function commitCompiled(compiled) {
 // own, though two entries' lines read the same. Every build that recompiles an
 // entry prints its warnings again. A theme warning compile() reports without a
 // file is skipped: warnUnknownThemeKeys prints it with its path.
-async function buildOnce(config, entryIndices) {
+//
+// The theme is counted over the last result of every entry: this build's, and,
+// for an entry a selective build did not recompile, the one `session` (a watch
+// session's { themeStates, themeWarning }) holds. No entry emitting it while
+// the CSS references its tokens, or more than one emitting it, is one
+// UXD_THEME_MARKER warning; with a session it is printed when it differs from
+// the one printed last, and the session is updated only by a build that
+// succeeds.
+async function buildOnce(config, entryIndices, session) {
   // MIG-B4-01 (FEAT-005): fails fast, before compiling or writing
   // anything, if the project explicitly declared a theme family that
   // ended up partially filled from DEFAULT_THEME — the same question
@@ -1118,7 +1059,7 @@ async function buildOnce(config, entryIndices) {
 
   const entries = config && config.builds && config.builds.length
     ? config.builds
-    : [{ entry: config && config.entry, outFile: config && config.outFile, includeTheme: config && config.includeTheme }];
+    : [{ entry: config && config.entry, outFile: config && config.outFile }];
   const multi = entries.length > 1;
   const indices = entryIndices || entries.map((_, i) => i);
 
@@ -1152,12 +1093,8 @@ async function buildOnce(config, entryIndices) {
   // output, before any of them are written — a CSS-Module-named outFile
   // that would still define :root fails the whole build
   // here, same as any other compile error (item 4: nothing partial gets
-  // written). More than one entry emitting the theme at all (regardless
-  // of outFile name) is a warning, not an error — usually intentional to
-  // have exactly one, but not necessarily wrong to have more.
-  const themeEmittingLabels = [];
+  // written).
   for (const { index, outFile, finalCss } of compiled) {
-    const entryConfig = entries[index] || {};
     const label = multi ? `builds[${index}] (${path.relative(process.cwd(), outFile)}): ` : '';
     try {
       assertNoThemeLeakIntoCssModule(outFile, finalCss, label);
@@ -1165,11 +1102,20 @@ async function buildOnce(config, entryIndices) {
       annotateThemeError(err, config || {});
       throw err;
     }
-    if (entryConfig.includeTheme !== false) {
-      themeEmittingLabels.push(multi ? `builds[${index}]` : path.relative(process.cwd(), outFile));
-    }
   }
-  warnIfMultipleEntriesEmitTheme(themeEmittingLabels);
+
+  // The theme, counted over the last result of every entry. A CSS Module
+  // cannot carry it (the check above refuses its :root).
+  const themeStates = new Map(session ? session.themeStates : []);
+  for (const { index, outFile, themeEmitted, referencesTokens } of compiled) {
+    themeStates.set(index, {
+      label: multi ? `builds[${index}]` : path.relative(process.cwd(), outFile),
+      themeEmitted, referencesTokens, canCarryTheme: !/\.module\.css$/i.test(outFile),
+    });
+  }
+  for (const index of themeStates.keys()) if (index >= entries.length) themeStates.delete(index);
+  const themeWarning = themeEmissionMessage([...themeStates.keys()].sort((a, b) => a - b).map((index) => themeStates.get(index)));
+  if (themeWarning && (!session || session.themeWarning !== themeWarning)) console.warn(themeWarning);
 
   // Every entry is compiled before anything is written — item 4: a failure
   // in entry 3 of 5 must not leave entries 1-2 written and 3-5 missing.
@@ -1193,7 +1139,13 @@ async function buildOnce(config, entryIndices) {
     }
   }
 
-  return compiled.map(({ index, outFile, dependencies }) => ({ index, outFile, dependencies }));
+  if (session) {
+    session.themeStates = themeStates;
+    session.themeWarning = themeWarning;
+  }
+  return compiled.map(({ index, outFile, dependencies, themeEmitted, referencesTokens }) => ({
+    index, outFile, dependencies, themeEmitted, referencesTokens, canCarryTheme: !/\.module\.css$/i.test(outFile),
+  }));
 }
 
 // --- Command: Theme introspection (MIG-B3-04, FEAT-004) ---
@@ -1667,7 +1619,9 @@ function createWatcher(targets) {
 // config and theme candidates until one loads. `initialResults` are the
 // first build's results, absent when it failed; they seed the dependency
 // graph, so the first change after start already rebuilds only the entries
-// it affects.
+// it affects. `initialSession` is the theme count the first build seeded
+// (buildOnce's `session`); every later build, full or selective, reads and
+// updates it, so a selective build counts the theme over every entry.
 //
 // Beside the config's `watch` patterns, the session follows every entry of
 // the current config and every file the graph holds (each file an entry's
@@ -1690,8 +1644,9 @@ function createWatcher(targets) {
 // records no invocation is never written. A regeneration that fails prints
 // `[uxdsl] Error: regenerating <entry>: …` and writes nothing; the event is
 // then built as any other.
-function startWatch(initialConfig, argv, cwd, builder, initialResults) {
+function startWatch(initialConfig, argv, cwd, builder, initialResults, initialSession) {
   let config = initialConfig;
+  const session = initialSession || { themeStates: new Map(), themeWarning: null };
   // Entry index -> Set<absolute dependency path>, from each entry's own
   // compile() result: seeded by the first build, replaced by every successful
   // full build, and updated for the entries a selective build recompiled. A
@@ -1815,7 +1770,7 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     followAll();
     try {
       const startedAt = Date.now();
-      const results = await builder(config);
+      const results = await builder(config, undefined, session);
       dependencyGraph = new Map(results.map(({ index, dependencies }) => [index, new Set(dependencies)]));
       followAll(startedAt);
     } catch (err) {
@@ -1832,7 +1787,7 @@ function startWatch(initialConfig, argv, cwd, builder, initialResults) {
     if (await refreshWatcher()) followAll();
     try {
       const startedAt = Date.now();
-      const results = await builder(config, indices);
+      const results = await builder(config, indices, session);
       for (const { index, dependencies } of results) {
         dependencyGraph.set(index, new Set(dependencies));
       }
@@ -2379,7 +2334,7 @@ async function generateEntry(argv) {
 // The object itself is unchanged, so the compiled CSS is byte-identical.
 const CONFIG_TYPE_HEADER = `// @ts-check
 // Checked by your editor against UXDSL's config type (a mistyped key such as
-// "includeThem" is flagged as you type). Type-only: nothing is loaded at build
+// "outfile" is flagged as you type). Type-only: nothing is loaded at build
 // time. See "Editor support" in the uxdsl README.
 /** @type {import('uxdsl/config').UxdslConfig} */
 `;
@@ -2413,14 +2368,15 @@ async function init(argv) {
     // theme file — a build config that carries them is rejected.
     const configContent = CONFIG_TYPE_HEADER + (isMulti
       ? `const config = {
-  // A theme entry (emits the shared :root definitions once) plus any
-  // number of component/CSS-Module entries — includeTheme: false, no
-  // :root of their own — compiled together from this one config. Add
-  // more entries here as the project grows; see the CLI README's
-  // "Multiple entries, one shared theme" section for the full contract.
+  // A theme entry (src/theme.uxdsl writes @uxdsl theme;, so it emits the
+  // shared :root definitions once) plus any number of component/CSS-Module
+  // entries — no marker, no :root of their own — compiled together from
+  // this one config. Add more entries here as the project grows; see the
+  // CLI README's "Multiple entries, one shared theme" section for the full
+  // contract.
   builds: [
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
-    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' },
   ],
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl'],
@@ -2502,10 +2458,11 @@ ${SASS_CONFIG_COMMENT}};
       stage: 3,
       features: { 'custom-properties': false },
     },
-    // The CLI-generated global CSS already contains the theme; the project's
-    // uxdsl.theme.json (or uxdsl.theme.js/.cjs), if any, is discovered
-    // automatically for everything else.
-    'uxdsl/postcss': { includeTheme: false },
+    // The theme is emitted only where @uxdsl theme; is written: the
+    // CLI-generated global CSS has it (src/uxdsl-theme.uxdsl), so a CSS
+    // Module gets none. The project's uxdsl.theme.json (or
+    // uxdsl.theme.js/.cjs), if any, is discovered automatically.
+    'uxdsl/postcss': {},
   },
 };
 `;
@@ -2597,10 +2554,15 @@ const KNOWN_COMMANDS = ['init', 'generate-entry', 'build', 'theme'];
 // `manual` lists flags declared in neither `boolean` nor `string`: minimist
 // then applies its own inference (bare flag → `true`, `--no-x` → `false`,
 // `--x=value` → the raw string `value`), and the flag's own resolver (e.g.
-// `resolveIncludeTheme`) validates that raw value instead of trusting
+// `resolveSourceMap`) validates that raw value instead of trusting
 // minimist's boolean coercion, which turns any unrecognized string into
-// `true` (`--include-theme=banana`). A `manual` flag still counts as known
+// `true` (`--sourcemap=banana`). A `manual` flag still counts as known
 // for unknown-flag detection; only its type declaration is left out.
+//
+// `removed` maps a flag that used to exist to what replaces it: in any form
+// (`--x`, `--no-x`, `--x=<value>`) it is refused with that text, never read
+// as an unknown option. The removal is the command's own: another command
+// reports the same flag as unknown.
 const COMMAND_FLAG_SPECS = {
   init: { boolean: ['multi'], string: [], manual: [], alias: {} },
   // A bare `--first` reads as `''`, which generate-entry refuses: the flag
@@ -2615,7 +2577,12 @@ const COMMAND_FLAG_SPECS = {
   // of refused with the scoped form. `sourcemap` is `manual` for the same
   // reason: as a `string` flag, the bare `--sourcemap` would read as `''`
   // and lose the "bare flag means external" case.
-  build: { boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['include-theme', 'strict-theme', 'sourcemap'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' } },
+  build: {
+    boolean: ['watch'], string: ['entry', 'out', 'config'], manual: ['strict-theme', 'sourcemap'], alias: { watch: 'w', entry: 'e', out: 'o', config: 'c' },
+    removed: {
+      'include-theme': 'the theme is emitted only where `@uxdsl theme;` is written. Write it once, at the top level of the stylesheet that defines the tokens, and leave it out of component entries',
+    },
+  },
   // `theme` reads a theme, not an entry: --entry/--out have nothing to say to
   // it. Its strictness flag is build's, same name, same scope rule.
   theme: { boolean: ['diff', 'contrast'], string: ['config'], manual: ['strict-theme'], alias: { config: 'c' } },
@@ -2682,6 +2649,10 @@ function parseCommandArgv(rawArgs) {
   // as "unknown option" too would only bury that message under noise for a
   // typo'd command name.
   if ((cmd === undefined || KNOWN_COMMANDS.includes(cmd)) && unknownFlags.length > 0) {
+    const removed = cmd !== undefined && spec.removed
+      ? unknownFlags.find((rawArg) => Object.prototype.hasOwnProperty.call(spec.removed, canonicalFlagName(rawArg)))
+      : undefined;
+    if (removed) throw new Error(`${removed.replace(/=.*$/, '')} was removed: ${spec.removed[canonicalFlagName(removed)]}.`);
     const knownLongFlags = [...knownFlags];
     const message = unknownFlags.map((rawArg) => {
       const displayArg = rawArg.replace(/=.*$/, '');
@@ -2702,8 +2673,12 @@ function parseCommandArgv(rawArgs) {
 // until one loads; a build that fails prints `[uxdsl] build failed: ` with the
 // message and its frame, as every later failed build of the session does, and
 // returns the config. A successful build's results go to `report.results`,
-// from which `startWatch` seeds its dependency graph.
+// from which `startWatch` seeds its dependency graph; with `--watch`, the
+// session that counts the theme over every entry's last result goes to
+// `report.session`, seeded by this first build.
 async function loadAndBuildForWatch(argv, watching, report) {
+  const session = { themeStates: new Map(), themeWarning: null };
+  if (report && watching) report.session = session;
   let config = null;
   try {
     config = await loadConfig(argv);
@@ -2717,7 +2692,7 @@ async function loadAndBuildForWatch(argv, watching, report) {
     return config;
   }
   try {
-    const results = await buildOnce(config);
+    const results = await buildOnce(config, undefined, watching ? session : undefined);
     if (report) report.results = results;
   } catch (err) {
     if (!watching) throw err;
@@ -2782,7 +2757,7 @@ async function main() {
             throw new Error('Nothing to build: no uxdsl.config.cjs, no theme file and no --entry/--out. Run "npx uxdsl init" to set a project up, or pass --entry <file> --out <file>.');
           }
           if (watching) {
-            startWatch(config, argv, process.cwd(), buildOnce, report.results);
+            startWatch(config, argv, process.cwd(), buildOnce, report.results, report.session);
           }
         }
         break;
@@ -2819,7 +2794,6 @@ module.exports = {
   loadConfig,
   resolvePath,
   normalizeWatchGlobs,
-  resolveIncludeTheme,
   resolveStrictTheme,
   normalizeStrictThemeScope,
   getKnownThemeFamilies,
@@ -2853,5 +2827,5 @@ module.exports = {
   loadAndBuildForWatch,
   findThemeLeakSelector,
   assertNoThemeLeakIntoCssModule,
-  warnIfMultipleEntriesEmitTheme,
+  themeEmissionMessage,
 };

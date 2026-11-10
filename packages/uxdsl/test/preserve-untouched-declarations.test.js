@@ -27,9 +27,9 @@ const PROBES = [
   'a{--y: 1px /* keep */;}',
 ];
 
-const throughPlugin = (source) => postcss([plugin({ includeTheme: false, discoverTheme: false })])
+const throughPlugin = (source) => postcss([plugin({ discoverTheme: false })])
   .process(source, { from: undefined }).css;
-const throughCompile = async (source) => (await core.compile({ source }, { includeTheme: false })).css;
+const throughCompile = async (source) => (await core.compile({ source })).css;
 
 test('MIG-B9-05: PostCSS alone is an identity on every probe (the control the other assertions rely on)', () => {
   for (const probe of PROBES) {

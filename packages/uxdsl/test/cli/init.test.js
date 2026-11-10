@@ -24,7 +24,9 @@ const UXDSL_DIR = path.resolve(__dirname, '..', '..');
 const TSC = path.join(fs.realpathSync(UXDSL_DIR), 'node_modules', 'typescript', 'bin', 'tsc');
 
 // Exactly what `init` wrote before MIG-B7-12 (packages/uxdsl-cli/bin/uxdsl.js
-// at dcd8a26). Kept verbatim: it is the byte-identical-output baseline.
+// at dcd8a26): the byte-identical-output baseline. The --multi panel carries no
+// theme switch: the theme is emitted where `@uxdsl theme;` is written, which
+// init writes in the theme entry.
 const LEGACY_SINGLE = `module.exports = {
   // Entry point for your styles (generated or manual)
   entry: './src/uxdsl-entry.uxdsl',
@@ -36,13 +38,13 @@ const LEGACY_SINGLE = `module.exports = {
 `;
 const LEGACY_MULTI = `module.exports = {
   // A theme entry (emits the shared :root definitions once) plus any
-  // number of component/CSS-Module entries — includeTheme: false, no
+  // number of component/CSS-Module entries — no marker, no
   // :root of their own — compiled together from this one config. Add
   // more entries here as the project grows; see the CLI README's
   // "Multiple entries, one shared theme" section for the full contract.
   builds: [
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
-    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' },
   ],
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl']
@@ -186,14 +188,15 @@ test('MIG-B7-12: the generated configs type-check clean, and a typo in them is a
     }
     // Negative control: the typo the header comment promises to catch.
     const typo = branch === 'multi'
-      ? generated.replace("includeTheme: false }", 'includeThem: false }')
-      : generated.replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  includeThem: false,\n");
+      ? generated.replace("outFile: './src/panel-a.css' }", "outFile: './src/panel-a.css', outfile: './src/panel-a.css' }")
+      : generated.replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  outfile: './src/uxdsl.css',\n");
     assert.notEqual(typo, generated);
     fs.writeFileSync(configPath, typo);
     for (const opts of RESOLUTIONS) {
       const bad = typeCheck(dir, 'uxdsl.config.cjs', opts);
       assert.notEqual(bad.status, 0, `[${branch} ${opts.moduleResolution}] the typo must be reported`);
-      assert.match(bad.output, /TS2561|TS2353/, bad.output);
+      assert.match(bad.output, /TS2561/, bad.output);
+      assert.match(bad.output, /Did you mean to write 'outFile'\?/, bad.output);
       assert.doesNotMatch(bad.output, /TS2307/, 'the type must resolve, not merely fail to load');
     }
     // And without `// @ts-check` nothing is reported: that line is load-bearing.
@@ -262,7 +265,7 @@ test('phase 2 (3): init for Next.js writes a postcss.config.js that keeps Next\'
   const loaded = require(path.join(dir, 'postcss.config.js'));
   assert.deepEqual(Object.keys(loaded.plugins), ['next/dist/compiled/postcss-flexbugs-fixes', 'next/dist/compiled/postcss-preset-env', 'uxdsl/postcss']);
   assert.deepEqual(loaded.plugins['next/dist/compiled/postcss-preset-env'], { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } });
-  assert.deepEqual(loaded.plugins['uxdsl/postcss'], { includeTheme: false });
+  assert.deepEqual(loaded.plugins['uxdsl/postcss'], {});
   assert.match(config, /replaces Next's defaults/);
 });
 
@@ -360,8 +363,8 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
   }
 
   // No scaffolded .uxdsl file of any branch, --multi included, has an @import;
-  // exactly one writes the theme marker, and Next's PostCSS config still passes
-  // includeTheme: false.
+  // exactly one writes the theme marker, and Next's PostCSS config passes no
+  // option.
   for (const branch of Object.keys(BRANCHES)) {
     const dir = mkProject(branch);
     assert.equal(run(BRANCHES[branch].args, dir).status, 0);
@@ -370,7 +373,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     assert.ok(uxdslFiles.length >= 2, `[${branch}] scaffolded .uxdsl files: ${uxdslFiles.join(', ')}`);
     for (const file of uxdslFiles) assert.doesNotMatch(files[file], /@import/, `[${branch}] ${file}`);
     assert.equal(uxdslFiles.filter((file) => /^@uxdsl theme;$/m.test(files[file])).length, 1, `[${branch}] one .uxdsl file writes the marker`);
-    if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], { includeTheme: false });
+    if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], {});
   }
 
   // Negative control: the entry init used to write reports a deprecation in the
@@ -411,10 +414,64 @@ test('MIG-B9-20: init and init --multi build with the theme defined exactly once
   }
 
   // Negative control: a second marker, in the --multi panel entry, defines the
-  // theme twice across the outputs, which the count above would report.
+  // theme twice across the outputs, which the count above would report, and
+  // the build warns about it once.
   const dir = mkProject('multi');
   assert.equal(run(['init', '--multi'], dir).status, 0);
   fs.writeFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), `@uxdsl theme;\n${fs.readFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), 'utf8')}`);
-  assert.equal(run(['build'], dir).status, 0);
+  const twice = run(['build'], dir);
+  assert.equal(twice.status, 0);
   assert.equal(definitions(dir, 'multi'), 2);
+  assert.equal(twice.stderr.split('\n').filter((line) => /UXD_THEME_MARKER: 2 entries emit the theme \(builds\[0\], builds\[1\]\)/.test(line)).length, 1, twice.stderr);
+
+  // Negative control: without the theme @use the scaffolded entry defines nothing,
+  // and the build says so once.
+  const plain = mkProject('plain');
+  assert.equal(run(['init'], plain).status, 0);
+  const entryFile = path.join(plain, 'src', 'uxdsl-entry.uxdsl');
+  fs.writeFileSync(entryFile, fs.readFileSync(entryFile, 'utf8').replace("@use './uxdsl-theme.uxdsl' as uxdsl-theme;\n", ''));
+  const bare = run(['build'], plain);
+  assert.equal(bare.status, 0, bare.stdout + bare.stderr);
+  assert.equal(definitions(plain, 'plain'), 0);
+  assert.equal(bare.stderr.split('\n').filter((line) => /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/.test(line)).length, 1, bare.stderr);
+});
+
+test('MIG-B9-20: init --multi writes no theme switch in its config; the theme entry carries the marker', () => {
+  const dir = mkProject('multi');
+  assert.equal(run(['init', '--multi'], dir).status, 0);
+  const config = fs.readFileSync(path.join(dir, 'uxdsl.config.cjs'), 'utf8');
+  assert.doesNotMatch(config, /includeTheme/);
+  assert.deepEqual(require(path.join(dir, 'uxdsl.config.cjs')).builds, [
+    { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' },
+  ]);
+  assert.match(fs.readFileSync(path.join(dir, 'src', 'theme.uxdsl'), 'utf8'), /^@uxdsl theme;$/m);
+  assert.doesNotMatch(fs.readFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), 'utf8'), /@uxdsl theme;/);
+});
+
+test('MIG-B9-20: POSTCSS_SNIPPET carries no option; the CLI output passes through it unchanged and a CSS Module gets no :root', async () => {
+  const postcss = require('postcss');
+  const uxdsl = require('../../dist/plugin');
+  const rootBlocks = (css) => (css.match(/(^|[\s}]):root[\s{[:]/g) || []).length;
+  const dir = mkProject('next');
+  assert.equal(run(['init'], dir).status, 0);
+  const options = require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'];
+  assert.deepEqual(options, {});
+  const built = run(['build'], dir);
+  assert.equal(built.status, 0, built.stdout + built.stderr);
+  assert.equal(built.stderr, '');
+  const global = fs.readFileSync(path.join(dir, 'src', 'uxdsl.css'), 'utf8');
+  assert.ok(rootBlocks(global) > 0, 'control: the CLI-built global carries the theme');
+  const passed = await postcss([uxdsl({ ...options, configRoot: dir })]).process(global, { from: path.join(dir, 'src', 'uxdsl.css') });
+  assert.equal(passed.css.length, global.length, 'Next\'s pass over the CLI output adds nothing');
+  assert.equal(rootBlocks(passed.css), rootBlocks(global));
+  assert.deepEqual(passed.warnings().map((warning) => warning.text), []);
+
+  const moduleSource = '.panel { padding: density(2); color: palette(primary.main); }\n';
+  const cssModule = await postcss([uxdsl({ ...options, configRoot: dir })]).process(moduleSource, { from: path.join(dir, 'app', 'panel.module.css') });
+  assert.equal(rootBlocks(cssModule.css), 0, 'a CSS Module carries only its own rules');
+  assert.equal(cssModule.css, '.panel { padding: var(--uxdsl__density__2); color: var(--uxdsl__palette__primary-main); }\n');
+  // Negative control: the same module with the marker would carry the theme.
+  const marked = await postcss([uxdsl({ ...options, configRoot: dir })]).process(`@uxdsl theme;\n${moduleSource}`, { from: path.join(dir, 'app', 'panel.module.css') });
+  assert.ok(rootBlocks(marked.css) > 0);
 });

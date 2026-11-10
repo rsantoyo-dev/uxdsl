@@ -17,7 +17,7 @@ const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 
 async function compile(css, theme = {}) {
-  return (await postcss([plugin({ theme, includeTheme: false })]).process(css, { from: undefined })).css;
+  return (await postcss([plugin({ theme })]).process(css, { from: undefined })).css;
 }
 
 function importantFlags(css, prop) {

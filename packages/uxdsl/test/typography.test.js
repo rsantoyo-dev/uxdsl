@@ -118,7 +118,7 @@ test('a data-typo selector written with @ds-typo consumes exactly the configured
 // JSON because it is not one of TYPOGRAPHY_PROPERTIES' fields at all.
 
 const compileWithBase = (css, options = {}) =>
-  postcss([plugin({ includeTheme: false, ...options })]).process(css, { from: 'typo.uxdsl' });
+  postcss([plugin({ ...options })]).process(css, { from: 'typo.uxdsl' });
 
 const emitted = (css) => {
   const rule = postcss.parse(css).first;

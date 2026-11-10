@@ -8,8 +8,8 @@ import type { UxdslTheme, UxdslConfig, UxdslOptions } from 'uxdsl';
 export const configTypo = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  // @ts-expect-error `includeThem` is ignored by the CLI at run time.
-  includeThem: false,
+  // @ts-expect-error `outfile` is not `outFile`, and the CLI would not read it.
+  outfile: './dist/other.css',
 });
 
 export const bothEntryAndBuilds = defineConfig(
@@ -98,8 +98,8 @@ export const googleFontsShape: UxdslTheme = {
 };
 
 export const optionsTypo: UxdslOptions = {
-  // @ts-expect-error the option is `includeTheme`.
-  includeThem: false,
+  // @ts-expect-error the option is `discoverTheme`.
+  discoverThem: false,
 };
 
 export const optionsThemeTypo: UxdslOptions = {

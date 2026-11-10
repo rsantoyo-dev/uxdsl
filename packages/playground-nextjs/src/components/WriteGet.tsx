@@ -9,7 +9,8 @@ type ExampleId = keyof typeof generated.examples
  * Nothing here is typed by hand: the theme excerpt, the source and the compiled output are
  * src/generated/examples.json, written by scripts/capture-examples.js with uxdsl's own
  * compile() (and re-checked by `npm test`). The output is an excerpt — every rule the
- * source produced, plus the :root declarations of the tokens the example is about.
+ * source produced, plus the :root declarations of the tokens the example is about, which
+ * come from the stylesheet that writes `@uxdsl theme;` (fed by uxdsl.theme.json).
  */
 export default function WriteGet({ id }: { id: ExampleId }) {
   const example = generated.examples[id]
@@ -29,7 +30,7 @@ export default function WriteGet({ id }: { id: ExampleId }) {
           <CodeBlock language="scss" code={example.source} />
         </div>
         <div className="write-get__side">
-          <p className="write-get__label">CSS you get <span className="write-get__note">compiled by uxdsl; :root shows only {example.tokens.length === 1 ? 'this token' : 'these tokens'}</span></p>
+          <p className="write-get__label">CSS you get <span className="write-get__note">compiled by uxdsl; :root comes from the stylesheet that writes @uxdsl theme; and shows only {example.tokens.length === 1 ? 'this token' : 'these tokens'}</span></p>
           <CodeBlock language="css" code={example.output} />
         </div>
       </div>

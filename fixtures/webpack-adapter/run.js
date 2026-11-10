@@ -38,7 +38,7 @@ async function main() {
     "  module: {\n" +
     "    rules: [{\n" +
     "      test: /\\.uxdsl$/,\n" +
-    "      use: [MiniCssExtractPlugin.loader, 'css-loader', { loader: 'uxdsl/webpack', options: { includeTheme: false } }],\n" +
+    "      use: [MiniCssExtractPlugin.loader, 'css-loader', { loader: 'uxdsl/webpack' }],\n" +
     "    }],\n" +
     "  },\n" +
     "  plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],\n" +
@@ -80,7 +80,7 @@ async function main() {
     "  module: {\n" +
     "    rules: [{\n" +
     "      test: /\\.uxdsl$/,\n" +
-    "      use: [MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { sourceMap: true } }, { loader: 'uxdsl/webpack', options: { includeTheme: false } }],\n" +
+    "      use: [MiniCssExtractPlugin.loader, { loader: 'css-loader', options: { sourceMap: true } }, { loader: 'uxdsl/webpack' }],\n" +
     "    }],\n" +
     "  },\n" +
     "  plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],\n" +

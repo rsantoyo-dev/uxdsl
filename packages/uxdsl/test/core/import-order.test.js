@@ -66,9 +66,9 @@ test('MIG-B7-14 (valid control): fonts.google: [] leaves no import of the theme\
   assert.equal(nodes(css)[0].selector, ':root');
 });
 
-test('MIG-B7-14 (valid control): includeTheme:false emits no theme import and no :root', async () => {
+test('MIG-B7-14 (valid control): an entry without the marker emits no theme import and no :root', async () => {
   const dir = project({ 'entry.uxdsl': '.a { padding: density(2); }\n' });
-  const css = cssOf(await core.compile({ entry: path.join(dir, 'entry.uxdsl') }, { includeTheme: false }));
+  const css = cssOf(await core.compile({ entry: path.join(dir, 'entry.uxdsl') }));
   assert.doesNotMatch(css, /@import/);
   assert.doesNotMatch(css, /:root/);
 });

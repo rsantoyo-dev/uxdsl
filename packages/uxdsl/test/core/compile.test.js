@@ -39,7 +39,7 @@ test('require(\'uxdsl\') is an object: compile(), the resolved theme and defineC
 });
 
 test('stability phase 2: compile() has no breakpoints option — thresholds are the theme\'s own family', async () => {
-  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: false, theme: { breakpoints: { md: 900 } } });
+  const { css } = await core.compile({ source: '.a { padding: xs(1rem) md(2rem); }' }, { theme: { breakpoints: { md: 900 } } });
   assert.match(css, /@media \(min-width: 900px\)/);
   assert.doesNotMatch(css, /768px/);
 });
@@ -83,10 +83,10 @@ test('MIG-B9-13: compile({ source, from }): a bare-specifier .css @import stays 
   const dir = mkTmpDir();
   write(dir, 'node_modules/some-package/tokens.css', '.from-package { color: green; }\n');
   const from = path.join(dir, 'virtual-entry.uxdsl');
-  const imported = await core.compile({ source: "@import 'some-package/tokens.css';\n.a { color: red; }\n", from }, { includeTheme: false });
+  const imported = await core.compile({ source: "@import 'some-package/tokens.css';\n.a { color: red; }\n", from });
   assert.equal(imported.css, "@import 'some-package/tokens.css';\n.a {\n  color: red;\n}");
   assert.deepEqual(imported.dependencies, [from], 'a plain CSS @import is not loaded, so not a dependency');
-  const used = await core.compile({ source: "@use 'some-package/tokens';\n.a { color: red; }\n", from }, { includeTheme: false });
+  const used = await core.compile({ source: "@use 'some-package/tokens';\n.a { color: red; }\n", from });
   assert.equal(used.css, '.from-package {\n  color: green;\n}\n\n.a {\n  color: red;\n}');
   assert.deepEqual(used.dependencies, [from, path.join(dir, 'node_modules/some-package/tokens.css')]);
 });
@@ -94,7 +94,7 @@ test('MIG-B9-13: compile({ source, from }): a bare-specifier .css @import stays 
 test('MIG-B6-20: compile({ source, from }) does not require `from` to be a real file on disk (an unsaved editor buffer/Sass-preprocessed content)', async () => {
   const result = await core.compile(
     { source: '.a { color: red; }', from: path.join(FIXTURES, 'this-file-does-not-exist-on-disk.uxdsl') },
-    { includeTheme: false }
+    {}
   );
   assert.match(result.css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
@@ -110,7 +110,7 @@ test('MIG-B9-13: a file @imported twice is emitted twice, as Dart Sass does; loa
   const dir = mkTmpDir();
   write(dir, '_partial.uxdsl', ':root {\n  --dup-test: 1;\n}\n');
   write(dir, '_other.uxdsl', '@use "./partial";\n');
-  const used = await core.compile({ entry: write(dir, 'root.uxdsl', '@use "./partial";\n@use "./other";\n') }, { references: { mode: 'off' }, includeTheme: false });
+  const used = await core.compile({ entry: write(dir, 'root.uxdsl', '@use "./partial";\n@use "./other";\n') }, { references: { mode: 'off' } });
   assert.equal(used.css.split('--dup-test').length - 1, 1, 'a module is loaded once');
 });
 
@@ -120,7 +120,7 @@ test('MIG-B9-13: a file @imported twice is emitted twice, as Dart Sass does; loa
 test('MIG-B9-13: a nonexistent import fails as UXD_SASS "Can\'t find stylesheet to import." with the importing file, line 1 and column 9', async () => {
   const dir = mkTmpDir();
   const entry = write(dir, 'main.uxdsl', '@import "./missing-partial.uxdsl";\n.after { color: blue; }\n');
-  const error = await rejection(core.compile({ entry }, { includeTheme: false }));
+  const error = await rejection(core.compile({ entry }));
   assert.equal(error.code, 'UXD_SASS');
   assert.equal(error.message, `${entry}:1:9: UXD_SASS: Can't find stylesheet to import.`);
   assert.equal(error.file, entry);
@@ -134,18 +134,18 @@ test('MIG-B9-13: a nonexistent import fails as UXD_SASS "Can\'t find stylesheet 
 // unquoted url() or block comments. ---
 
 test('MIG-B6-18: an unquoted url() with "//" is left completely intact', async () => {
-  const { css } = await core.compile({ source: '.a { background: url(https://example.com/a.png); }' }, { includeTheme: false });
+  const { css } = await core.compile({ source: '.a { background: url(https://example.com/a.png); }' });
   assert.match(css, /url\(https:\/\/example\.com\/a\.png\)/);
 });
 
 test('MIG-B6-18: a block comment containing a URL is left completely intact (not treated as a line comment)', async () => {
-  const { css } = await core.compile({ source: '/* docs: https://uxdsl.dev */\n.a { color: red; }' }, { includeTheme: false });
+  const { css } = await core.compile({ source: '/* docs: https://uxdsl.dev */\n.a { color: red; }' });
   assert.match(css, /\/\* docs: https:\/\/uxdsl\.dev \*\//);
   assert.match(css, /\.a\s*\{\s*color:\s*red;?\s*\}/);
 });
 
 test('MIG-B9-13: a "//" line comment is dropped by Dart Sass', async () => {
-  const { css } = await core.compile({ source: '// a real comment\n.a { color: red; }' }, { includeTheme: false });
+  const { css } = await core.compile({ source: '// a real comment\n.a { color: red; }' });
   assert.equal(css, '.a {\n  color: red;\n}');
 });
 
@@ -153,7 +153,7 @@ test('MIG-B9-13: a "//" line comment is dropped by Dart Sass', async () => {
 // substitutes the variable, then the plugin splits the responsive value. ---
 
 test('MIG-B6-18: a $var holding a responsive expression expands into a real @media block', async () => {
-  const { css } = await core.compile({ source: '$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n' }, { includeTheme: false });
+  const { css } = await core.compile({ source: '$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n' });
   assert.match(css, /\.a\s*\{\s*gap:\s*1rem;?\s*\}/);
   assert.match(css, /@media \(min-width: 768px\)/);
   assert.doesNotMatch(css, /\$gap/);
@@ -166,11 +166,11 @@ test('MIG-B9-13: an @import with a media query stays a plain CSS @import; @inclu
   const dir = mkTmpDir();
   write(dir, 'shared.uxdsl', '.shared { color: red; }');
   const entry = write(dir, 'main.uxdsl', '@import "./shared.uxdsl";\n@import "./shared.uxdsl" (min-width: 768px);\n');
-  const { css } = await core.compile({ entry }, { includeTheme: false });
+  const { css } = await core.compile({ entry });
   assert.equal(css, '@import "./shared.uxdsl" (min-width: 768px);\n.shared {\n  color: red;\n}', 'the conditioned import is CSS, hoisted first');
   assert.doesNotMatch(css, /@media/);
   write(dir, '_part.uxdsl', '.part { color: red; }');
-  const loaded = await core.compile({ entry: write(dir, 'load.uxdsl', '@use "sass:meta";\n@include meta.load-css("part");\n@media (min-width: 768px) {\n  @include meta.load-css("part");\n}\n') }, { includeTheme: false });
+  const loaded = await core.compile({ entry: write(dir, 'load.uxdsl', '@use "sass:meta";\n@include meta.load-css("part");\n@media (min-width: 768px) {\n  @include meta.load-css("part");\n}\n') });
   assert.equal(loaded.css, '.part {\n  color: red;\n}\n\n@media (min-width: 768px) {\n  .part {\n    color: red;\n  }\n}');
 });
 
@@ -182,10 +182,10 @@ test('MIG-B9-13: an @import with a media query stays a plain CSS @import; @inclu
 test('MIG-B9-13: a bare-specifier .css @import stays a CSS @import; @use of the package path inlines it through the node_modules load paths', async () => {
   const dir = mkTmpDir();
   write(dir, 'node_modules/some-package/tokens.css', '.from-package { color: green; }\n');
-  const imported = await core.compile({ entry: write(dir, 'main.uxdsl', "@import 'some-package/tokens.css';\n.a { color: red; }\n") }, { includeTheme: false });
+  const imported = await core.compile({ entry: write(dir, 'main.uxdsl', "@import 'some-package/tokens.css';\n.a { color: red; }\n") });
   assert.equal(imported.css, "@import 'some-package/tokens.css';\n.a {\n  color: red;\n}");
   assert.doesNotMatch(imported.css, /from-package/, 'not inlined, as the former pipeline did');
-  const used = await core.compile({ entry: write(dir, 'use.uxdsl', "@use 'some-package/tokens';\n.a { color: red; }\n") }, { includeTheme: false });
+  const used = await core.compile({ entry: write(dir, 'use.uxdsl', "@use 'some-package/tokens';\n.a { color: red; }\n") });
   assert.equal(used.css, '.from-package {\n  color: green;\n}\n\n.a {\n  color: red;\n}');
 });
 
@@ -194,7 +194,7 @@ test('MIG-B9-13: a bare-specifier .css @import stays a CSS @import; @use of the 
 // touch ordinary CSS it doesn't need to. ---
 
 test('stability phase 2: a theme entry ends with its last rule — no /*@uxdsl-bp*/ trailer and no #uxdsl-bp-meta rule', async () => {
-  const { css } = await core.compile({ source: '@uxdsl theme;\n.a { padding: xs(1rem) md(2rem); }' }, { includeTheme: true });
+  const { css } = await core.compile({ source: '@uxdsl theme;\n.a { padding: xs(1rem) md(2rem); }' });
   assert.doesNotMatch(css, /@uxdsl-bp/);
   assert.doesNotMatch(css, /#uxdsl-bp-meta/);
   assert.match(css, /:root/, 'control: the theme itself is still emitted');
@@ -202,7 +202,7 @@ test('stability phase 2: a theme entry ends with its last rule — no /*@uxdsl-b
 });
 
 test('MIG-B6-18 (positive control): plain native CSS with no UXDSL functions compiles unchanged', async () => {
-  const { css } = await core.compile({ source: '.a {\n  color: red;\n  margin: 0 auto;\n}\n' }, { includeTheme: false });
+  const { css } = await core.compile({ source: '.a {\n  color: red;\n  margin: 0 auto;\n}\n' });
   assert.match(css, /\.a\s*\{\s*color:\s*red;\s*margin:\s*0 auto;?\s*\}/);
 });
 
@@ -231,7 +231,7 @@ test('MIG-B6-21: compile() rejects an unrecognised sourceMap value instead of si
   }
   // The three documented values are accepted.
   for (const good of [false, 'inline', 'external']) {
-    await assert.doesNotReject(() => core.compile({ source: '.a{}' }, { sourceMap: good, includeTheme: false }));
+    await assert.doesNotReject(() => core.compile({ source: '.a{}' }, { sourceMap: good }));
   }
 });
 
@@ -239,7 +239,7 @@ test('MIG-B6-18: compile() returns dependencies (entry first) and warnings', asy
   const dir = mkTmpDir();
   write(dir, 'shared.uxdsl', '.shared { color: red; }');
   const entry = write(dir, 'main.uxdsl', '@import "./shared.uxdsl";\n.a { color: blue; }\n');
-  const result = await core.compile({ entry }, { includeTheme: false });
+  const result = await core.compile({ entry });
   assert.equal(typeof result.css, 'string');
   assert.ok(Array.isArray(result.dependencies));
   assert.equal(result.dependencies[0], entry);
@@ -248,7 +248,7 @@ test('MIG-B6-18: compile() returns dependencies (entry first) and warnings', asy
 });
 
 test('MIG-B9-13: compile({ source, from }) with a from that does not exist lists from first in dependencies', async () => {
-  const result = await core.compile({ source: '.a { color: red; }', from: '/virtual/panel.uxdsl' }, { includeTheme: false });
+  const result = await core.compile({ source: '.a { color: red; }', from: '/virtual/panel.uxdsl' });
   assert.equal(result.css, '.a {\n  color: red;\n}');
   assert.deepEqual(result.dependencies, [path.resolve('/virtual/panel.uxdsl')], 'Dart Sass loaded it, as the stage reports, never the empty list');
 });
@@ -409,24 +409,24 @@ test('MIG-B9-13: compile({ source }) without from is an anonymous .uxdsl file in
   write(dir, '_part.uxdsl', '.p { color: red; }\n');
   const seen = [];
   await inDirectory(dir, async () => {
-    const used = await core.compile({ source: '@use "part";\n.a { color: blue; }\n' }, { includeTheme: false, sourceMap: 'external' });
+    const used = await core.compile({ source: '@use "part";\n.a { color: blue; }\n' }, { sourceMap: 'external' });
     assert.equal(used.css, '.p {\n  color: red;\n}\n\n.a {\n  color: blue;\n}', 'a relative @use resolves from the working directory');
     assert.deepEqual(used.dependencies, [path.join(dir, '_part.uxdsl')], 'the anonymous source is never a dependency');
     assert.deepEqual(JSON.parse(used.map).sources, ['_part.uxdsl', '<css input>']);
     seen.push(JSON.stringify(used));
 
-    const plugin = await rejection(core.compile({ source: '.a { padding: space(404); }\n' }, { includeTheme: false }));
+    const plugin = await rejection(core.compile({ source: '.a { padding: space(404); }\n' }));
     assert.ok(plugin.message.startsWith('uxdsl: <css input>:1:6: UXD_SPACE_REFERENCE: '), plugin.message);
     assert.equal('file' in plugin, false, 'no file');
     seen.push(plugin.message, plugin.stack);
 
-    const missing = await rejection(core.compile({ source: '@use "nope";\n.a { color: red; }\n' }, { includeTheme: false }));
+    const missing = await rejection(core.compile({ source: '@use "nope";\n.a { color: red; }\n' }));
     assert.equal(missing.message, "<css input>:1:1: UXD_SASS: Can't find stylesheet to import.");
     assert.equal('file' in missing, false, 'no file');
     assert.match(missing.sassFrame, /<css input> 1:1 {2}root stylesheet/);
     seen.push(missing.message, missing.stack, missing.sassFrame);
 
-    const warned = await core.compile({ source: '@function space($k) { @return $k; }\n.a { padding: space(2); }\n@import "part";\n' }, { includeTheme: false });
+    const warned = await core.compile({ source: '@function space($k) { @return $k; }\n.a { padding: space(2); }\n@import "part";\n' });
     assert.deepEqual(warned.warnings, [
       { text: 'UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.', line: 3, column: 9 },
       { text: "UXD_FUNCTION_SHADOWED: @function space (<css input>:1) replaces UXDSL's space() in this build; rename it to use the token", line: 1, column: 11 },
@@ -440,10 +440,10 @@ test('MIG-B9-13: compile({ source }) without from is an anonymous .uxdsl file (n
   const dir = mkTmpDir();
   write(dir, '_part.uxdsl', '.p { color: red; }\n');
   const named = path.join(dir, 'named.uxdsl');
-  const missing = await rejection(core.compile({ source: '@use "nope";\n', from: named }, { includeTheme: false }));
+  const missing = await rejection(core.compile({ source: '@use "nope";\n', from: named }));
   assert.equal(missing.message, `${named}:1:1: UXD_SASS: Can't find stylesheet to import.`);
   assert.equal(missing.file, named);
-  const used = await core.compile({ source: '@use "part";\n', from: named }, { includeTheme: false });
+  const used = await core.compile({ source: '@use "part";\n', from: named });
   assert.deepEqual(used.dependencies, [named, path.join(dir, '_part.uxdsl')]);
 });
 
@@ -466,10 +466,10 @@ test('MIG-B9-13: config.sass passes silenceDeprecations and quietDeps to Dart Sa
   const dir = mkTmpDir();
   write(dir, '_a.uxdsl', '.a { color: red; }\n');
   const entry = write(dir, 'entry.uxdsl', '@import "a";\n');
-  const loud = await core.compile({ entry }, { includeTheme: false });
+  const loud = await core.compile({ entry });
   assert.equal(loud.warnings.length, 1);
   assert.ok(loud.warnings[0].text.startsWith('UXD_SASS_WARNING: [import] '), loud.warnings[0].text);
-  const quiet = await core.compile({ entry }, { includeTheme: false, sass: { silenceDeprecations: ['import'], quietDeps: true } });
+  const quiet = await core.compile({ entry }, { sass: { silenceDeprecations: ['import'], quietDeps: true } });
   assert.deepEqual(quiet.warnings, []);
   assert.equal(quiet.css, loud.css);
 });
@@ -481,12 +481,12 @@ test('MIG-B9-13: config.sass.quietDeps reaches Dart Sass: it silences the deprec
   write(dir, '_own.uxdsl', '.own { color: blue; }\n');
   const entry = write(dir, 'entry.uxdsl', '@use "dep";\n@import "own";\n');
   const positions = (result) => result.warnings.map((warning) => [warning.text.startsWith('UXD_SASS_WARNING: [import] '), warning.file, warning.line, warning.column]);
-  const loud = await core.compile({ entry }, { includeTheme: false });
+  const loud = await core.compile({ entry });
   assert.deepEqual(positions(loud), [
     [true, entry, 2, 9],
     [true, path.join(dir, 'node_modules', 'dep', '_index.scss'), 1, 9],
   ], 'without the option, the dependency\'s [import] deprecation is reported after the entry\'s');
-  const quiet = await core.compile({ entry }, { includeTheme: false, sass: { quietDeps: true } });
+  const quiet = await core.compile({ entry }, { sass: { quietDeps: true } });
   assert.deepEqual(positions(quiet), [[true, entry, 2, 9]], 'quietDeps alone silences the dependency\'s deprecation, and only that one');
   assert.equal(quiet.css, loud.css);
 });
@@ -496,7 +496,7 @@ const selectorsOf = (css) => require('postcss').parse(css).nodes.filter((node) =
 
 test('MIG-B9-13: a rule nested after a control directive follows the directive\'s generated rules', async () => {
   const source = '.btn { @ds-button(contained); &:hover { background: red; } }';
-  const { css } = await core.compile({ source }, { includeTheme: false });
+  const { css } = await core.compile({ source });
   const selectors = selectorsOf(css);
   const generated = selectors.indexOf('.btn:hover:not(:where(:disabled, [aria-disabled="true"]))');
   const author = selectors.indexOf('.btn:hover');
@@ -509,7 +509,7 @@ test('MIG-B9-13: a rule nested after a control directive follows the directive\'
   const postcss = require('postcss');
   const exported = require('../../dist/plugin');
   const plugin = exported.default || exported;
-  const root = postcss([plugin({ includeTheme: false, discoverTheme: false })]).process('.btn { @ds-button(contained); &:hover { background: red; } }', { from: undefined }).root;
+  const root = postcss([plugin({ discoverTheme: false })]).process('.btn { @ds-button(contained); &:hover { background: red; } }', { from: undefined }).root;
   const [btn, firstState] = root.nodes;
   assert.equal(btn.selector, '.btn');
   assert.ok(btn.nodes.some((node) => node.type === 'rule' && node.selector === '&:hover'), 'the nested rule stays inside .btn');
@@ -522,15 +522,15 @@ test('MIG-B9-13: dependencies are what Dart Sass loaded, then the discovered the
   write(dir, '_b.uxdsl', '.b { color: blue; }\n');
   write(dir, 'x.css', '.x { color: green; }\n');
   const entry = write(dir, 'entry.uxdsl', '@use "a";\n@use "b";\n@import "x.css";\n');
-  const loaded = await core.compile({ entry }, { includeTheme: false, theme: {} });
+  const loaded = await core.compile({ entry }, { theme: {} });
   assert.deepEqual(loaded.dependencies, [entry, path.join(dir, '_a.uxdsl'), path.join(dir, '_b.uxdsl')], 'the entry first, then Sass\'s load order, each once; the plain-CSS @import target is not loaded');
   assert.match(loaded.css, /^@import "x\.css";/);
-  const usedCss = await core.compile({ entry: write(dir, 'use-css.uxdsl', '@use "x";\n') }, { includeTheme: false, theme: {} });
+  const usedCss = await core.compile({ entry: write(dir, 'use-css.uxdsl', '@use "x";\n') }, { theme: {} });
   assert.deepEqual(usedCss.dependencies, [path.join(dir, 'use-css.uxdsl'), path.join(dir, 'x.css')], 'the same file loaded with @use is listed');
 
   write(dir, 'uxdsl.theme.json', JSON.stringify({ breakpoints: { tablet: 700 } }));
   const source = '@function tablet($v) { @return $v; }\n.a { width: tablet(1px); }\n';
-  const discovered = await inDirectory(dir, () => core.compile({ source, from: path.join(dir, 'tab.uxdsl') }, { includeTheme: false }));
+  const discovered = await inDirectory(dir, () => core.compile({ source, from: path.join(dir, 'tab.uxdsl') }));
   assert.deepEqual(discovered.dependencies, [path.join(dir, 'tab.uxdsl'), path.join(dir, 'uxdsl.theme.json')], 'the discovered theme file follows Sass\'s files');
   assert.deepEqual(discovered.warnings.map((warning) => [warning.text.split(' (')[0], warning.line, warning.column]), [['UXD_FUNCTION_SHADOWED: @function tablet', 1, 11]]);
   assert.equal(discovered.css, '.a {\n  width: 1px;\n}');
@@ -540,7 +540,7 @@ test('MIG-B9-13: dependencies are what Dart Sass loaded (negative control): with
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.json', JSON.stringify({ breakpoints: { tablet: 700 } }));
   const source = '@function tablet($v) { @return $v; }\n.a { width: tablet(1px); }\n';
-  const explicit = await inDirectory(dir, () => core.compile({ source, from: path.join(dir, 'tab.uxdsl') }, { includeTheme: false, theme: {} }));
+  const explicit = await inDirectory(dir, () => core.compile({ source, from: path.join(dir, 'tab.uxdsl') }, { theme: {} }));
   assert.deepEqual(explicit.warnings, []);
   assert.deepEqual(explicit.dependencies, [path.join(dir, 'tab.uxdsl')], 'an explicit theme discovers nothing');
   assert.equal(explicit.css, '.a {\n  width: 1px;\n}');
@@ -552,7 +552,7 @@ test('MIG-B9-13: warnings are Dart Sass\'s, then the plugin\'s, at the author\'s
   // Line 1 gives Dart Sass's [import] warning and line 2 the plugin's reference warning; the
   // unknown theme family is the plugin's warning with no stylesheet position.
   const entry = write(dir, 'entry.uxdsl', '@import "a";\n.b { box-shadow: 0 0 0 space(1) var(--uxdsl__palette__nope-main); }\n');
-  const { warnings } = await core.compile({ entry }, { includeTheme: false, theme: { unknownfamily: { a: 'b' } }, references: { mode: 'warn' } });
+  const { warnings } = await core.compile({ entry }, { theme: { unknownfamily: { a: 'b' } }, references: { mode: 'warn' } });
   const codeOf = (warning) => (/^UXD_[A-Z_]+/.exec(warning.text) || ['(no code)'])[0];
   assert.deepEqual(warnings.map((warning) => [codeOf(warning), Object.keys(warning).sort().join(','), warning.file, warning.line, warning.column]), [
     ['UXD_SASS_WARNING', 'column,file,line,text', entry, 1, 9],

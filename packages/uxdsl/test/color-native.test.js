@@ -20,7 +20,7 @@ const file = path.join(process.cwd(), 'src', 'panel.uxdsl');
 const theme = { colors: { primary: '#123456' } };
 
 async function compile(css, opts = {}) {
-  return postcss([plugin({ includeTheme: false, theme, ...opts })]).process(css, { from: file });
+  return postcss([plugin({ theme, ...opts })]).process(css, { from: file });
 }
 async function compileFail(css) {
   return compile(css).then(() => null, caught => caught);

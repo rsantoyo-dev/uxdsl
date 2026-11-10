@@ -32,8 +32,7 @@ The **build config**, `uxdsl.config.cjs` (or `.js`), says what to compile and wh
 <thead><tr><th>Config key</th><th>What it does</th></tr></thead>
 <tbody>
 <tr><td><code>entry</code>, <code>outFile</code></td><td>One entry and its output.</td></tr>
-<tr><td><code>builds</code></td><td>Several entries, <code>[{"{ entry, outFile, includeTheme? }"}]</code>, compiled from one theme.</td></tr>
-<tr><td><code>includeTheme</code></td><td>Emit the theme's <code>:root</code> definitions (default <code>true</code>); per entry in <code>builds</code>.</td></tr>
+<tr><td><code>builds</code></td><td>Several entries, <code>[{"{ entry, outFile }"}]</code>, compiled from one theme.</td></tr>
 <tr><td><code>watch</code></td><td>Extra paths for <code>--watch</code>, beyond the entries, their imports and the config and theme files.</td></tr>
 <tr><td><code>references</code></td><td>Tokens defined outside the theme (<code>externalTokens</code>, <code>css</code>) and how strictly a missing one fails.</td></tr>
 <tr><td><code>strictTheme</code></td><td>Families the project must declare completely, such as <code>['palette']</code>.</td></tr>
@@ -57,19 +56,18 @@ The project every command below runs in — a config made with `defineConfig` fr
 
 <CliRun id="build" collapsed />
 <CliRun id="build-config" collapsed />
-<CliRun id="build-entry" collapsed />
 <CliRun id="build-help" collapsed />
 
 <div className="doc-section">
 
 ## Multiple entries and CSS Modules
 
-The first entry defines every token in `:root`, once (`--include-theme`, the default). Every other entry — a component sheet, a CSS Module — compiles with `--no-include-theme` (or `includeTheme: false` in `builds`, or in the PostCSS plugin's options) and only consumes those tokens: no `:root`, so a CSS Modules loader accepts it, and nothing is repeated. This site does exactly that: every component's `.uxdsl` is a CSS Module compiled with `includeTheme: false`.
+The theme is emitted only where `@uxdsl theme;` is written. One stylesheet writes it — the entry `generate-entry` writes loads it from `uxdsl-theme.uxdsl`, a `builds` project's theme entry writes it itself — and defines every token in `:root`, once. Every other entry — a component sheet, a CSS Module — has no marker and only consumes those tokens: no `:root`, so a CSS Modules loader accepts it, and nothing is repeated. A build in which no entry reaches the marker while its CSS reads the tokens, or more than one does, warns `UXD_THEME_MARKER` once. The former `--include-theme` flags and `includeTheme` key are refused, naming the marker.
 
 </div>
 
-<CliRun id="build-include-theme" collapsed />
-<CliRun id="build-no-include-theme" />
+<CliRun id="build-entry" />
+<CliRun id="build-removed-flag" collapsed />
 
 <div className="doc-section">
 

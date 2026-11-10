@@ -92,19 +92,12 @@ function captureCli() {
     return { facts: { bytes: Buffer.byteLength(css), rootBlocks: count(css, /:root\s*\{/g), mediaQueries: count(css, /@media/g) } };
   });
   add('build-config', 'The same build with the config named explicitly', dir, ['build', '--config', 'uxdsl.config.cjs'], none);
-  add('build-entry', 'Compile one file to one output, bypassing the config\'s entry', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card.css'], (_, d) => {
+  add('build-entry', 'Compile one file to one output, bypassing the config\'s entry: card.uxdsl writes no @uxdsl theme;, so only its own rules, and the build says nothing here defines the tokens', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card.css'], (_, d) => {
     const css = read(d, 'dist/card.css');
-    return { facts: { bytes: Buffer.byteLength(css), rootBlocks: count(css, /:root\s*\{/g) } };
+    return { facts: { bytes: Buffer.byteLength(css), rootBlocks: count(css, /:root\s*\{/g) }, files: { 'dist/card.css': css } };
   });
-  add('build-include-theme', 'With --include-theme (the default): the entry also defines every token in :root', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card-with-theme.css', '--include-theme'], (_, d) => {
-    const css = read(d, 'dist/card-with-theme.css');
-    return { facts: { bytes: Buffer.byteLength(css), rootBlocks: count(css, /:root\s*\{/g) } };
-  });
-  add('build-no-include-theme', 'With --no-include-theme: only the component rules, consuming tokens another entry defines', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card-only.css', '--no-include-theme'], (_, d) => {
-    const css = read(d, 'dist/card-only.css');
-    return { facts: { bytes: Buffer.byteLength(css), rootBlocks: count(css, /:root\s*\{/g) }, files: { 'dist/card-only.css': css } };
-  });
-  add('build-sourcemap', 'With --sourcemap: a .map next to the CSS, pointing devtools at the .uxdsl source', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card-mapped.css', '--no-include-theme', '--sourcemap'], (_, d) => {
+  add('build-removed-flag', 'The removed --no-include-theme flag: the theme is emitted only where @uxdsl theme; is written', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card-only.css', '--no-include-theme'], none);
+  add('build-sourcemap', 'With --sourcemap: a .map next to the CSS, pointing devtools at the .uxdsl source', dir, ['build', '--entry', 'src/card.uxdsl', '--out', 'dist/card-mapped.css', '--sourcemap'], (_, d) => {
     const css = read(d, 'dist/card-mapped.css');
     const map = JSON.parse(read(d, 'dist/card-mapped.css.map'));
     return { files: { 'dist/card-mapped.css': css }, facts: { mapSources: map.sources, mapFile: map.file, sourceMappingURL: (css.match(/sourceMappingURL=([^\s*]+)/) || [])[1] || null } };
@@ -246,6 +239,7 @@ const DIAGNOSTICS = [
   { expect: 'UXD_SASS_CONTEXT', title: 'A $variable Sass keeps literally in a custom property (write #{$gap})', css: '$gap: 4px;\n.card {\n  --gap: $gap;\n}\n' },
   { expect: 'UXD_FUNCTION_SHADOWED', warning: true, title: 'A project @function named like a UXDSL function: the author\'s SCSS wins, with one warning', css: '@function space($n) {\n  @return $n * 4px;\n}\n.card {\n  padding: space(2);\n}\n' },
   { expect: 'UXD_SASS_WARNING', warning: true, title: 'A Dart Sass deprecation: @import of a partial (write @use; the build still succeeds)', css: "@import './card';\n" },
+  { expect: 'UXD_THEME_MARKER', warning: true, title: 'A build in which no stylesheet reaches @uxdsl theme; while its CSS reads the tokens: nothing it writes defines them', css: '.card {\n  padding: density(4);\n}\n' },
 ];
 
 // What is wrong with a case's run, or null: its code must come first on stderr, with exit 0

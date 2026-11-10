@@ -235,7 +235,7 @@ async function webpackAdapterRecord(tools, loader, root) {
       context: root,
       entry: './main.js',
       output: { path: outDir, filename: 'bundle.js' },
-      module: { rules: [{ test: /\.uxdsl$/, use: [MiniCssExtractPlugin.loader, cssLoader, { loader, options: { includeTheme: false, ...(sass ? { sass } : {}) } }] }] },
+      module: { rules: [{ test: /\.uxdsl$/, use: [MiniCssExtractPlugin.loader, cssLoader, { loader, options: { ...(sass ? { sass } : {}) } }] }] },
       plugins: [new MiniCssExtractPlugin({ filename: 'main.css' })],
       optimization: { minimize: false },
     }, (error, stats) => (error ? reject(error) : resolve({ stats, outDir })));
@@ -297,7 +297,7 @@ async function viteAdapterRecord(vite, plugin, root) {
         root,
         configFile: false,
         logLevel: 'silent',
-        plugins: [plugin({ includeTheme: false, ...(sass ? { sass } : {}) })],
+        plugins: [plugin({ ...(sass ? { sass } : {}) })],
         build: {
           outDir: `dist-vite-${name}`,
           emptyOutDir: true,
@@ -324,7 +324,7 @@ async function viteAdapterRecord(vite, plugin, root) {
     if (plain.error) throw new Error(`vite build failed: ${plain.error.split('\n')[0]}`);
     const silenced = await build('silenced', { silenceDeprecations: ['import'] });
     const unknownKey = await build('unknown-key', { bogus: 1 });
-    const server = await vite.createServer({ root, configFile: false, logLevel: 'silent', appType: 'custom', server: { middlewareMode: true, hmr: false }, plugins: [plugin({ includeTheme: false })] });
+    const server = await vite.createServer({ root, configFile: false, logLevel: 'silent', appType: 'custom', server: { middlewareMode: true, hmr: false }, plugins: [plugin()] });
     let watched = [];
     try {
       await server.transformRequest('/main.js');
@@ -581,7 +581,7 @@ async function main() {
       p.write('uxdsl.config.cjs', `module.exports = ${JSON.stringify({ entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', ...(referencesValue ? { references: referencesValue } : {}) })};\n`);
     };
     let partial = '';
-    await check('B2-b', 'a partial theme with externals: CLI, generateThemeCss and the plugin emit the same :root; a component entry none', async () => {
+    await check('B2-b', 'a partial theme with externals: the CLI, generateThemeCss and the plugin, each through `@uxdsl theme;`, emit the same :root; a source without the marker none', async () => {
       p.write('src/uxdsl-entry.uxdsl', `@uxdsl theme;\n${source}`);
       configure(theme, references);
       p.uxdsl('build');
@@ -590,9 +590,9 @@ async function main() {
       if (JSON.stringify(vars(partial)) !== JSON.stringify(vars(themeApi.generateThemeCss(theme, references)))) throw new Error('CLI vs generateThemeCss');
       const direct = await postcss([plugin({ theme, references })]).process(`@uxdsl theme;\n${source}`, { from: undefined });
       if (JSON.stringify(vars(partial)) !== JSON.stringify(vars(direct.css))) throw new Error('CLI vs the plugin');
-      const component = await postcss([plugin({ theme, references, includeTheme: false })]).process(source, { from: undefined });
-      if (/:root/.test(component.css)) throw new Error('includeTheme: false emitted :root');
-      return 'three paths agree';
+      const component = await postcss([plugin({ theme, references })]).process(source, { from: undefined });
+      if (/:root/.test(component.css)) throw new Error('a source without the marker emitted :root');
+      return 'three paths agree; none without the marker';
     });
     await check('B2-c', 'without its externals the build fails with UXD_REFERENCE_MISSING and keeps the previous output', () => {
       configure(theme);
@@ -625,10 +625,10 @@ async function main() {
     p.write('uxdsl.config.cjs', `module.exports = {
   builds: [
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
-    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.module.css', includeTheme: false },
-    { entry: './src/panel-b.uxdsl', outFile: './src/panel-b.module.css', includeTheme: false },
-    { entry: './src/panel-c.uxdsl', outFile: './src/panel-c.module.css', includeTheme: false },
-    { entry: './src/panel-d.uxdsl', outFile: './src/panel-d.module.css', includeTheme: false },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.module.css' },
+    { entry: './src/panel-b.uxdsl', outFile: './src/panel-b.module.css' },
+    { entry: './src/panel-c.uxdsl', outFile: './src/panel-c.module.css' },
+    { entry: './src/panel-d.uxdsl', outFile: './src/panel-d.module.css' },
   ],
   references: { externalTokens: ['--font-geist-sans'] },
   watch: ['src/**/*.uxdsl'],
@@ -641,12 +641,16 @@ async function main() {
     p.write('src/panel-d.uxdsl', '.title { @ds-typo(h1); }');
     const outputs = {};
     const readAll = () => Object.fromEntries(['theme.css', 'panel-a.module.css', 'panel-b.module.css', 'panel-c.module.css', 'panel-d.module.css'].map((f) => [f, p.read(`src/${f}`)]));
-    await check('B3-a', 'exactly one of five CLI-built entries defines :root', () => {
-      p.uxdsl('build');
+    // The UXD_THEME_MARKER lines a build printed on stderr.
+    const themeWarnings = (spawned) => (spawned.stderr || '').split('\n').filter((line) => /UXD_THEME_MARKER/.test(line));
+    await check('B3-a', 'exactly one of five CLI-built entries reaches `@uxdsl theme;` and defines :root; the build prints no theme warning', () => {
+      const built = p.spawn('build');
+      if (built.status !== 0) throw new Error(`exited ${built.status}: ${built.stderr.trim().split('\n')[0]}`);
+      if (themeWarnings(built).length) throw new Error(`warned: ${themeWarnings(built).join(' | ')}`);
       Object.assign(outputs, readAll());
       const withRoot = Object.entries(outputs).filter(([, css]) => /:root/.test(css)).map(([file]) => file);
       if (withRoot.join() !== 'theme.css') throw new Error(`:root in ${withRoot.join(', ')}`);
-      return 'theme.css only';
+      return 'theme.css only; no warning';
     });
     await check('B3-b', 'a breakpoint declared only in the theme file reaches a component entry', () => {
       if (!/@media \(min-width: 1440px\)/.test(outputs['panel-a.module.css'])) throw new Error('no 1440px query in panel-a');
@@ -663,13 +667,22 @@ async function main() {
       for (const file of ['theme.css', 'panel-a.module.css']) if (after[file] !== outputs[file]) throw new Error(`${file} changed`);
       return 'untouched';
     });
-    await check('B3-e', '--no-include-theme overrides every builds[] entry, the theme entry included', () => {
+    await check('B3-e', 'the removed --no-include-theme fails naming the marker and writes nothing; without the marker no entry defines :root and the build warns UXD_THEME_MARKER once', () => {
       p.write('src/panel-b.uxdsl', '.button { @ds-button(contained primary 2); }');
-      // The flag governs an entry without the marker; a marker emits the theme whatever the flag says.
+      for (const flag of ['--no-include-theme', '--include-theme']) {
+        const refused = p.spawn('build', flag);
+        if (refused.status !== 1) throw new Error(`${flag} exited ${refused.status}`);
+        if (!new RegExp(`${flag} was removed: the theme is emitted only where \`@uxdsl theme;\` is written`).test(refused.stderr)) throw new Error(`${flag}: ${refused.stderr.trim().split('\n')[0]}`);
+        if (/\[uxdsl\] (built|unchanged) /.test(refused.stdout)) throw new Error(`${flag} wrote output`);
+      }
       p.write('src/theme.uxdsl', '/* theme-only entry */');
-      p.uxdsl('build', '--no-include-theme');
-      if (/:root/.test(p.read('src/theme.css'))) throw new Error('theme.css still has :root');
-      return 'no :root anywhere';
+      const unmarked = p.spawn('build');
+      if (unmarked.status !== 0) throw new Error(`exited ${unmarked.status}: ${unmarked.stderr.trim().split('\n')[0]}`);
+      const withRoot = Object.entries(readAll()).filter(([, css]) => /:root/.test(css)).map(([file]) => file);
+      if (withRoot.length) throw new Error(`:root in ${withRoot.join(', ')}`);
+      const warned = themeWarnings(unmarked);
+      if (warned.length !== 1 || !/UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/.test(warned[0])) throw new Error(`theme warnings: ${JSON.stringify(warned)}`);
+      return 'both flags refused, nothing written; no :root anywhere and one warning';
     });
   }
 
@@ -678,19 +691,23 @@ async function main() {
   {
     const p = project('multi');
     let initialTheme = '';
-    await check('B4-a', '`init --multi` scaffolds a builds project that compiles: :root in the theme entry only', () => {
+    await check('B4-a', '`init --multi` scaffolds a builds project that compiles: `@uxdsl theme;` in src/theme.uxdsl, :root in the theme entry only, no theme warning', () => {
       p.uxdsl('init', '--multi');
       if (!/builds:\s*\[/.test(p.read('uxdsl.config.cjs'))) throw new Error('no builds array');
-      p.uxdsl('build');
+      if (/includeTheme/.test(p.read('uxdsl.config.cjs'))) throw new Error('the config carries a theme switch');
+      if (!/^@uxdsl theme;$/m.test(p.read('src/theme.uxdsl'))) throw new Error('src/theme.uxdsl does not write the marker');
+      const built = p.spawn('build');
+      if (built.status !== 0) throw new Error(`exited ${built.status}: ${built.stderr.trim().split('\n')[0]}`);
+      if (/UXD_THEME_MARKER/.test(built.stderr)) throw new Error(`warned: ${built.stderr.trim()}`);
       initialTheme = p.read('src/theme.css');
       if (!/:root/.test(initialTheme) || /:root/.test(p.read('src/panel-a.css'))) throw new Error(':root misplaced');
-      return 'theme.css + panel-a.css';
+      return 'theme.css + panel-a.css; no warning';
     });
     const DEFAULT_THEME = themeApi.DEFAULT_THEME;
     await check('B4-b', '--strict-theme=palette fails on a partial palette reached through a nested require(), writing nothing', () => {
       p.write('theme-data.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
       p.write('uxdsl.theme.cjs', "module.exports = require('./theme-data.json');\n");
-      p.write('uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './src/theme.css' }, { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false }], watch: ['src/**/*.uxdsl'] };\n");
+      p.write('uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './src/theme.css' }, { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' }], watch: ['src/**/*.uxdsl'] };\n");
       failsWith(() => p.uxdsl('build', '--strict-theme=palette'), /--strict-theme \(scoped to: palette\):.*palette/, 'partial palette');
       if (p.read('src/theme.css') !== initialTheme) throw new Error('the failed build wrote output');
       return 'refused before writing';
@@ -755,14 +772,14 @@ async function main() {
     const p = project('audit');
     p.write('src/url-case.uxdsl', '.a { background: url(https://example.com/a.png); }\n/* see https://example.com/docs */\n.b { color: red; }\n');
     await check('UX-02', 'url(https://…) and URL comments survive compile()', async () => {
-      const out = await core.compile({ entry: path.join(p.root, 'src/url-case.uxdsl') }, { theme: {}, includeTheme: false });
+      const out = await core.compile({ entry: path.join(p.root, 'src/url-case.uxdsl') }, { theme: {} });
       if (!out.css.includes('url(https://example.com/a.png)') || !out.css.includes('https://example.com/docs')) throw new Error('truncated');
       return 'intact';
     });
     p.write('src/missing-partial.uxdsl', '@import "./nope.uxdsl";\n.a { color: red; }\n');
     await check('N-02', 'a missing @import fails as Dart Sass\'s UXD_SASS at the @import instead of reaching the browser', async () => {
       let error;
-      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {}, includeTheme: false }); } catch (caught) { error = caught; }
+      try { await core.compile({ entry: path.join(p.root, 'src/missing-partial.uxdsl') }, { theme: {} }); } catch (caught) { error = caught; }
       return assertMissingImport(error);
     });
     await check('UX-03', 'errors carry file, line and column', async () => {
@@ -781,12 +798,19 @@ async function main() {
       failsWith(() => p.uxdsl('theme', '--strict-theme=,'), /strict/i, 'stray comma');
       return 'all three rejected';
     });
-    await check('UX-12', '--no-include-theme really suppresses :root', () => {
-      p.uxdsl('build', '--no-include-theme');
-      if (/:root/.test(p.read('src/out.css'))) throw new Error(':root emitted');
-      p.uxdsl('build');
-      if (!/:root/.test(p.read('src/out.css'))) throw new Error('the default stopped emitting :root');
-      return 'suppressed, and emitted by default';
+    await check('UX-12', 'the marker alone emits :root: without it none and one UXD_THEME_MARKER warning; with it :root and no warning', () => {
+      const markerWarnings = (spawned) => (spawned.stderr || '').split('\n').filter((line) => /UXD_THEME_MARKER/.test(line));
+      const unmarked = p.spawn('build');
+      if (unmarked.status !== 0) throw new Error(`exited ${unmarked.status}`);
+      if (/:root/.test(p.read('src/out.css'))) throw new Error(':root emitted without the marker');
+      if (markerWarnings(unmarked).length !== 1) throw new Error(`theme warnings without the marker: ${JSON.stringify(markerWarnings(unmarked))}`);
+      p.write('src/entry.uxdsl', '@uxdsl theme;\n.a { color: palette(primary.main); }\n');
+      const marked = p.spawn('build');
+      if (marked.status !== 0) throw new Error(`exited ${marked.status}`);
+      if (!/:root/.test(p.read('src/out.css'))) throw new Error('the marker did not emit :root');
+      if (markerWarnings(marked).length) throw new Error(`theme warnings with the marker: ${JSON.stringify(markerWarnings(marked))}`);
+      p.write('src/entry.uxdsl', '.a { color: palette(primary.main); }\n');
+      return 'none and one warning without it; emitted, silent, with it';
     });
     await check('UX-08', 'theme --diff summarises a mixed entry on stderr; stdout stays JSON', () => {
       p.write('uxdsl.theme.cjs', "module.exports = { palette: { primary: { main: '#00aa00' } } };\n");
@@ -810,7 +834,7 @@ async function main() {
       const timeFor = async (count) => {
         p.write(`src/perf-${count}.uxdsl`, `@uxdsl theme;\n${Array.from({ length: count }, (_, i) => block(i)).join('')}`);
         const started = process.hrtime.bigint();
-        await core.compile({ entry: path.join(p.root, `src/perf-${count}.uxdsl`) }, { theme: {}, includeTheme: true });
+        await core.compile({ entry: path.join(p.root, `src/perf-${count}.uxdsl`) }, { theme: {} });
         return Number(process.hrtime.bigint() - started) / 1e6;
       };
       await timeFor(200);
@@ -820,7 +844,7 @@ async function main() {
     });
     await check('UX-16', '$vars in responsive values expand through compile()', async () => {
       p.write('src/vars.uxdsl', '$gap: xs(1rem) md(2rem);\n.a { gap: $gap; }\n');
-      const out = await core.compile({ entry: path.join(p.root, 'src/vars.uxdsl') }, { theme: {}, includeTheme: false });
+      const out = await core.compile({ entry: path.join(p.root, 'src/vars.uxdsl') }, { theme: {} });
       if (/xs\(|md\(/.test(out.css) || !/@media/.test(out.css)) throw new Error('not expanded');
       return 'expanded';
     });
@@ -861,39 +885,39 @@ async function main() {
     });
   }
   await check('UX-05', 'functional pseudo-classes are not split by state expansion', async () => {
-    const css = await compileCss('.btn:is(.x, .y) { @ds-button(contained); }', { includeTheme: false });
+    const css = await compileCss('.btn:is(.x, .y) { @ds-button(contained); }');
     if (/\.btn:is\(\.x:hover/.test(css) || !/:is\(\.x, \.y\):hover/.test(css)) throw new Error(css.slice(0, 120));
     return 'intact';
   });
   await check('UX-07', '!important survives into every responsive breakpoint', async () => {
-    const importants = ((await compileCss('.a { padding: xs(1rem) md(2rem) !important; }', { includeTheme: false })).match(/!important/g) || []).length;
+    const importants = ((await compileCss('.a { padding: xs(1rem) md(2rem) !important; }')).match(/!important/g) || []).length;
     if (importants < 2) throw new Error(`only ${importants}`);
     return `${importants} occurrences`;
   });
   await check('UX-06', 'leftover and misspelled directives fail instead of passing through', async () => {
     for (const [source, label] of [['@ds-surface(contained);', 'root-level'], ['.a { @ds-surfce(contained); }', 'misspelled']]) {
       let failed = false;
-      try { await compileCss(source, { includeTheme: false }); } catch { failed = true; }
+      try { await compileCss(source); } catch { failed = true; }
       if (!failed) throw new Error(`${label} directive compiled`);
     }
     return 'both rejected';
   });
   await check('N-01', 'an unknown breakpoint function is an error', async () => {
-    try { await compileCss('.a { padding: xs(1rem) xxl(2rem); }', { includeTheme: false }); } catch { return 'rejected'; }
+    try { await compileCss('.a { padding: xs(1rem) xxl(2rem); }'); } catch { return 'rejected'; }
     throw new Error('xxl() reached the CSS');
   });
   await check('UX-15', 'CSS relative color syntax passes through', async () => {
-    const css = await compileCss('.a { color: color(from red srgb r g b / 0.5); }', { includeTheme: false });
+    const css = await compileCss('.a { color: color(from red srgb r g b / 0.5); }');
     if (!/from red srgb/.test(css)) throw new Error(css.slice(0, 100));
     return 'passed through';
   });
   await check('UX-09', '@ds-typo invents no fallback values', async () => {
-    const css = await compileCss('.t { @ds-typo(caption); }', { includeTheme: false });
+    const css = await compileCss('.t { @ds-typo(caption); }');
     for (const invented of [', auto)', ', none)', ', 0.8)', ', normal)']) if (css.includes(invented)) throw new Error(`emits ${invented}`);
     return 'none';
   });
   await check('UX-19', '@ds-typo emits one declaration per defined field', async () => {
-    const declarations = ((await compileCss('.t { @ds-typo(h1); }', { includeTheme: false })).match(/:\s*var\(/g) || []).length;
+    const declarations = ((await compileCss('.t { @ds-typo(h1); }')).match(/:\s*var\(/g) || []).length;
     const fields = Object.keys(engine.resolveTypographyRole(themeApi.DEFAULT_THEME.typography_details, 'h1'));
     if (declarations !== fields.length) throw new Error(`${declarations} vs ${fields.length}`);
     return `${declarations} = the theme's own ${fields.length} fields`;
@@ -958,7 +982,7 @@ async function main() {
     const p = project('sass-heavy');
     const fixtures = path.join(PACKAGE_DIR, 'test/core/fixtures/sass-maps');
     for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) p.write(file, fs.readFileSync(path.join(fixtures, file), 'utf8'));
-    return assertAuthorLocated(p.spawn('build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'));
+    return assertAuthorLocated(p.spawn('build', '--entry', 'heavy.uxdsl', '--out', 'out.css'));
   });
 
   // --- beta.9: the CLI and the adapters on Dart Sass -------------------------
@@ -1077,9 +1101,10 @@ async function main() {
   {
     const p = project('fonts');
     p.write('uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };\n");
-    p.write('src/entry.uxdsl', '.a { padding: density(2); color: palette(primary.main); }\n');
+    // The entry writes `@uxdsl theme;`, so the build carries the theme and its Google Fonts @import.
+    p.write('src/entry.uxdsl', '@uxdsl theme;\n.a { padding: density(2); color: palette(primary.main); }\n');
     let built = '';
-    await check('B7-14a', 'the CSS `uxdsl build` writes starts with the Google Fonts @import', () => {
+    await check('B7-14a', 'the CSS `uxdsl build` writes for an entry with `@uxdsl theme;` starts with the Google Fonts @import', () => {
       p.uxdsl('build');
       built = p.read('src/out.css');
       const first = postcss.parse(built).nodes.find((node) => node.type !== 'comment');

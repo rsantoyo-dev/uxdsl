@@ -17,7 +17,7 @@ const runtime = require('./helpers/ds-runtime');
 const language = require('../dist/language');
 
 const packageRoot = path.resolve(__dirname, '..');
-const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
+const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
 /** The error a source fails with: code, line and column are the located part. */
 function failure(source, options) {
   try { compile(source, options); } catch (error) { return error; }
@@ -47,7 +47,6 @@ test('@theme { … } is removed: UXD_THEME_BLOCK_REMOVED, located, naming the th
 test('@theme: the JSON is the only source — what a pack used to define is written in the theme', () => {
   const css = compile('@uxdsl theme;\n.card { border-radius: radius(2); box-shadow: shadow(2); padding: density(4); }', {
     theme: { radii: { 2: '99px' }, shadows: { 2: '0 9px 9px red' }, densities: { 4: 'xs(space(1)) md(space(2))' } },
-    includeTheme: true,
   });
   assert.match(css, /--uxdsl__radius__2: 99px/);
   assert.match(css, /--uxdsl__shadow__2: 0 9px 9px red/);
@@ -81,7 +80,7 @@ test('removed spellings in a theme value fail the same way on both CSS paths', (
     [{ surfaces: { hero: { radius: 'radius(full)' } } }, 'radius(pill)'],
     [{ densities: { hero: 'densities(1, 2)' } }, 'density('],
   ]) {
-    for (const run of [() => compile('.a { color: red; }', { theme, includeTheme: true }), () => runtime.generateThemeCss(theme)]) {
+    for (const run of [() => compile('@uxdsl theme;\n.a { color: red; }', { theme }), () => runtime.generateThemeCss(theme)]) {
       assert.throws(run, (error) => /UXD_SYNTAX_REMOVED/.test(error.message) && error.message.includes(replacement), JSON.stringify(theme));
     }
   }

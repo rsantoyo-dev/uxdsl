@@ -123,6 +123,7 @@ function fakeCorpus(plainMs, pipedMs) {
   let clock = 0n;
   const calls = [];
   const roots = [];
+  const configs = [];
   const css = '.a {\n  color: red;\n}\n';
   const surfaces = ['primary', 'secondary', 'success', 'info', 'warning', 'danger', 'light', 'dark'].map((name) => `.surface-${name} {}`).join('\n');
   const mixed = `${css}.card-x {\n  padding: var(--uxdsl__density__4);\n}\n.g { color: var(--uxdsl__color__gray-900); }\n${surfaces}\n.btn-x-danger { background: var(--uxdsl__palette__error-main); }\n`;
@@ -133,6 +134,7 @@ function fakeCorpus(plainMs, pipedMs) {
   return {
     calls,
     roots,
+    configs,
     now: () => clock,
     install(root) {
       roots.push(root);
@@ -147,7 +149,8 @@ function fakeCorpus(plainMs, pipedMs) {
         return { css, loadedUrls: [new URL('file:///bootstrap.scss')] };
       },
     },
-    async compile(input) {
+    async compile(input, config) {
+      configs.push(config);
       if (path.basename(input.entry) === 'with-extras.uxdsl') {
         calls.push('mixed');
         return { css: mixed, warnings: [] };
@@ -176,4 +179,12 @@ test('MIG-B9-23: a run of the corpus runner alternates Dart Sass and compile(), 
   assert.equal(path.dirname(path.dirname(root)), WORK, 'made by freshCorpusRoot() under the work directory');
   assert.equal(lines.find((line) => line.startsWith('  corpus root: ')), `  corpus root: ${root} (fresh, alone in its directory, outside the temporary directory)`);
   assert.equal(fs.existsSync(path.dirname(root)), false, 'its directory is removed after the run');
+});
+
+test('MIG-B9-20: the corpus runner passes compile() no includeTheme: Bootstrap has no marker, so it emits no theme without one', async () => {
+  const fake = fakeCorpus([300, 300, 300, 300], [400, 400, 400, 400]);
+  const passed = await runCorpus({ args: parseArgs([]), sass: fake.sass, sassVersion: 'fake', compile: fake.compile, install: fake.install, now: fake.now, log: () => {} });
+  assert.equal(passed, true);
+  assert.equal(fake.configs.length, 5, 'four timed compiles and the mixed one');
+  for (const config of fake.configs) assert.equal(config === undefined || !('includeTheme' in config), true, JSON.stringify(config));
 });

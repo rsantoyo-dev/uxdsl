@@ -50,7 +50,7 @@ function sourceForLines(lines) {
 }
 
 async function compileOnce(css, mode) {
-  const result = await postcss([plugin({ includeTheme: true, references: { mode } })])
+  const result = await postcss([plugin({ references: { mode } })])
     .process(css, { from: 'bench.uxdsl' });
   // Touching `css` forces the full stringification, so neither pass can look
   // faster merely by leaving work unfinished in PostCSS's lazy result.

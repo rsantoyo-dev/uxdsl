@@ -26,7 +26,7 @@ function buildHeavy() {
   for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) {
     fs.copyFileSync(path.join(PACKAGE_DIR, 'test/core/fixtures/sass-maps', file), path.join(dir, file));
   }
-  return spawnSync(process.execPath, [path.join(PACKAGE_DIR, 'bin/uxdsl.js'), 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'], { cwd: dir, encoding: 'utf8' });
+  return spawnSync(process.execPath, [path.join(PACKAGE_DIR, 'bin/uxdsl.js'), 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css'], { cwd: dir, encoding: 'utf8' });
 }
 
 test('MIG-B9-13: S-3 accepts `uxdsl build` of heavy.uxdsl: UXD_SPACE_REFERENCE at the author\'s 18:66, framed at the author\'s line 18', () => {
@@ -184,7 +184,7 @@ async function missingImport() {
   const dir = temporaryDirectory();
   fs.writeFileSync(path.join(dir, 'missing-partial.uxdsl'), '@import "./nope.uxdsl";\n.a { color: red; }\n');
   const { compile } = require(path.join(PACKAGE_DIR, 'dist/entries/index.js'));
-  return compile({ entry: path.join(dir, 'missing-partial.uxdsl') }, { theme: {}, includeTheme: false }).then(() => undefined, (error) => error);
+  return compile({ entry: path.join(dir, 'missing-partial.uxdsl') }, { theme: {} }).then(() => undefined, (error) => error);
 }
 
 test('MIG-B9-13: N-02 accepts Dart Sass\'s UXD_SASS "Can\'t find stylesheet to import." at missing-partial.uxdsl:1:9', async () => {
