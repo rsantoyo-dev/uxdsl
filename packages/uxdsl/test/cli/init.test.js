@@ -348,7 +348,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.equal(r.stderr, '', `[${branch}] there was no entry to replace, so no warning`);
     const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
-    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './styles.uxdsl' as styles;"], `[${branch}] the entry:\n${entry}`);
+    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './uxdsl-theme.uxdsl' as uxdsl-theme;", "@use './styles.uxdsl' as styles;"], `[${branch}] the entry:\n${entry}`);
     const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
     assert.match(styles, /src\/uxdsl-entry\.uxdsl loads this file with @use/, `[${branch}] styles.uxdsl says how it is loaded`);
     assert.match(styles, /`uxdsl generate-entry`/, `[${branch}] and what regenerates the entry`);
@@ -360,7 +360,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
   }
 
   // No scaffolded .uxdsl file of any branch, --multi included, has an @import;
-  // none writes the theme marker, and Next's PostCSS config still passes
+  // exactly one writes the theme marker, and Next's PostCSS config still passes
   // includeTheme: false.
   for (const branch of Object.keys(BRANCHES)) {
     const dir = mkProject(branch);
@@ -369,7 +369,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     const uxdslFiles = Object.keys(files).filter((file) => file.endsWith('.uxdsl'));
     assert.ok(uxdslFiles.length >= 2, `[${branch}] scaffolded .uxdsl files: ${uxdslFiles.join(', ')}`);
     for (const file of uxdslFiles) assert.doesNotMatch(files[file], /@import/, `[${branch}] ${file}`);
-    for (const [file, text] of Object.entries(files)) assert.doesNotMatch(text, /@uxdsl theme;/, `[${branch}] ${file}`);
+    assert.equal(uxdslFiles.filter((file) => /^@uxdsl theme;$/m.test(files[file])).length, 1, `[${branch}] one .uxdsl file writes the marker`);
     if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], { includeTheme: false });
   }
 
@@ -381,4 +381,40 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
   const legacy = run(['build'], control);
   assert.equal(legacy.status, 0, legacy.stdout + legacy.stderr);
   assert.match(legacy.stderr, /^\[uxdsl\] Warning: src\/uxdsl-entry\.uxdsl:1:9: UXD_SASS_WARNING: \[import\] /m);
+});
+
+// Every init branch carries `@uxdsl theme;` in exactly one scaffolded .uxdsl
+// file: the single-entry branches in the theme file generate-entry writes next
+// to the entry (loaded first), --multi in its theme entry, src/theme.uxdsl.
+test('MIG-B9-20: init and init --multi build with the theme defined exactly once', () => {
+  const definitions = (dir, branch) => outFiles(branch).reduce((n, f) => n + (fs.readFileSync(path.join(dir, f), 'utf8').match(/--uxdsl__space__5:/g) || []).length, 0);
+  for (const branch of Object.keys(BRANCHES)) {
+    const dir = mkProject(branch);
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const files = scaffolded(dir, branch);
+    const marked = Object.keys(files).filter((file) => file.endsWith('.uxdsl') && /^@uxdsl theme;$/m.test(files[file]));
+    assert.deepEqual(marked, [branch === 'multi' ? path.join('src', 'theme.uxdsl') : path.join('src', 'uxdsl-theme.uxdsl')], `[${branch}] the one marked file`);
+    if (branch !== 'multi') {
+      assert.match(r.stdout, /\[uxdsl\] Generated theme file at src[\\/]uxdsl-theme\.uxdsl: `@uxdsl theme;`, loaded first by the entry\.\n/, `[${branch}]`);
+      const entry = files[path.join('src', 'uxdsl-entry.uxdsl')];
+      assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './uxdsl-theme.uxdsl' as uxdsl-theme;", "@use './styles.uxdsl' as styles;"], `[${branch}] the theme file is loaded first`);
+    }
+    const built = run(['build'], dir);
+    assert.equal(built.status, 0, `[${branch}] ${built.stdout}${built.stderr}`);
+    assert.equal(built.stderr, '', `[${branch}] no warning`);
+    assert.equal(definitions(dir, branch), 1, `[${branch}] the theme is defined exactly once across ${outFiles(branch).join(', ')}`);
+    if (branch !== 'multi') {
+      const css = fs.readFileSync(path.join(dir, 'src', 'uxdsl.css'), 'utf8');
+      assert.ok(css.indexOf(':root') < css.indexOf('.example'), `[${branch}] the theme precedes the styles`);
+    }
+  }
+
+  // Negative control: a second marker, in the --multi panel entry, defines the
+  // theme twice across the outputs, which the count above would report.
+  const dir = mkProject('multi');
+  assert.equal(run(['init', '--multi'], dir).status, 0);
+  fs.writeFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), `@uxdsl theme;\n${fs.readFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), 'utf8')}`);
+  assert.equal(run(['build'], dir).status, 0);
+  assert.equal(definitions(dir, 'multi'), 2);
 });

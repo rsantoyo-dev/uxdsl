@@ -35,6 +35,27 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   says `true`; two `@import`s of it remain `UXD_THEME_MARKER` ("appears
   twice"). The playground's paradigm frame and runtime sandbox, which now
   write `@uxdsl theme;`, fail their build when it is `false`.
+- **`generate-entry` writes the theme file its entry loads first.** Next to
+  the entry it writes `uxdsl-theme.uxdsl`, whose one statement is
+  `@uxdsl theme;` (its `//` comments are Sass's silent ones and never reach
+  the CSS), and the entry's first `@use` loads it —
+  `@use './uxdsl-theme.uxdsl' as uxdsl-theme;`, before every `--first` file —
+  so the theme is emitted there, before every listed file. The scan never
+  lists that path; a file there that `generate-entry` did not write is
+  refused ("Rename that file"), as is a `--first` item naming it; a file
+  whose namespace would be `uxdsl-theme` takes `uxdsl-theme-2`. The entry
+  line counts the theme file's `@use` (`with 3 @use rules` for two files).
+  `--no-theme` writes neither the file nor the line, is recorded last in the
+  entry's header so that `generate-entry` with no arguments and
+  `build --watch` reproduce it, and leaves a generated theme file already
+  there as it is; `--theme=<value>` is refused. An entry recorded before
+  this (no `--no-theme` on its line) gains the theme file on its next
+  regeneration. `build --watch` writes the theme file again, before the
+  build, when it is deleted — also when it lies outside `--src` — and builds
+  once; a change to it is built as written and regenerates nothing. `init`
+  writes the pair through `generate-entry` (plain, Vite and Next.js), and
+  `init --multi` ends `src/theme.uxdsl` with `@uxdsl theme;`. The
+  playground's generated entry loads `src/app/uxdsl-theme.uxdsl` first.
 
 ### Visual changes
 
@@ -47,6 +68,16 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   returns. The same holds for a marker written right after a rule on its
   line. Whitespace only: nothing renders differently, and a stylesheet
   without the marker is unchanged.
+- **In a generated entry's CSS, the first listed file's leading comments now
+  follow the theme.** The theme is emitted at the theme file's
+  `@uxdsl theme;`, the entry's first `@use`, and Dart Sass writes the next
+  module's comments after it. The theme block keeps its place — after
+  `@charset` and the entry's header comments, before the first rule — and a
+  `/* … */` comment that opens the first listed file moves from just before
+  it to just after it. The playground's `uxdsl.css` stays 332,334 bytes with
+  `/* Single opt-in gate for DS typography */` moved; an `init` project's
+  `uxdsl.css` stays 48,138 bytes with `src/styles.uxdsl`'s two-line comment
+  moved. Nothing renders differently.
 
 ### `build --watch` keeps a generated entry current; `generate-entry` records its invocation, writes `.uxdsl` paths and namespaces from `--src`, in path order (MIG-B9-22)
 

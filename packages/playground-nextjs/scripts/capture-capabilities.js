@@ -82,8 +82,10 @@ function captureCli() {
   const none = () => ({});
 
   let dir = freshProject('cli');
+  // A first run: neither the entry nor the theme file it loads first exists yet.
   fs.rmSync(path.join(dir, 'src/main.uxdsl'), { force: true });
-  add('generate-entry', 'Write the entry from what is in src/, leaving one file out', dir, ['generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--exclude', 'legacy.uxdsl'], (_, d) => ({ files: { 'src/main.uxdsl': read(d, 'src/main.uxdsl') } }));
+  fs.rmSync(path.join(dir, 'src/uxdsl-theme.uxdsl'), { force: true });
+  add('generate-entry', 'Write the entry from what is in src/, leaving one file out, and the theme file it loads first', dir, ['generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--exclude', 'legacy.uxdsl'], (_, d) => ({ files: { 'src/uxdsl-theme.uxdsl': read(d, 'src/uxdsl-theme.uxdsl'), 'src/main.uxdsl': read(d, 'src/main.uxdsl') } }));
 
   add('build', 'Build with the discovered config (uxdsl.config.cjs + uxdsl.theme.json)', dir, ['build'], (_, d) => {
     const css = read(d, 'dist/app.css');
@@ -157,7 +159,7 @@ function captureCli() {
 
   add('help', 'Bare uxdsl asks, it does not build: the general help', dir, [], none);
   add('build-help', 'Per-command help: only that command\'s options', dir, ['build', '--help'], none);
-  add('generate-entry-help', 'Per-command help for generate-entry: --src, --out, --first, --exclude', dir, ['generate-entry', '--help'], none);
+  add('generate-entry-help', 'Per-command help for generate-entry: --src, --out, --first, --exclude, --no-theme', dir, ['generate-entry', '--help'], none);
   add('unknown-command', 'An unknown command is one line with a hint', dir, ['watch'], none);
 
   return { fixture: 'packages/playground-nextjs/capability-fixtures/cli-project', project, runs };

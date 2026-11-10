@@ -1020,6 +1020,8 @@ function watchSession(t, dir) {
 
 const readOr = (file, fallback = '') => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : fallback);
 const useLinesOf = (file) => readOr(file).split('\n').filter((line) => line.startsWith('@use '));
+/** The first @use of an entry generate-entry wrote without --no-theme: its theme file. */
+const THEME_USE_LINE = "@use './uxdsl-theme.uxdsl' as uxdsl-theme;";
 const lineList = (text) => text.split('\n').filter(Boolean);
 const buildLines = (text, out) => lineList(text).filter((line) => new RegExp(`^\\[uxdsl\\] (built|unchanged) ${out.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(line));
 
@@ -1040,10 +1042,10 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => css().includes('.b {'));
   await delay(WATCHER_SETTLE_MS * 2);
   let lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, `one build, and no second for the entry's own write:\n${lines.join('\n')}`);
   assert.equal(lines.length, 3, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
 
   // An unlink: the entry no longer lists the file, and the build does not fail.
   mark = session.output.length;
@@ -1051,10 +1053,10 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => !css().includes('.a {'));
   await delay(WATCHER_SETTLE_MS * 2);
   lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/a.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (1 file)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/a.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
   assert.equal(lines.length, 3, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use './b.uxdsl' as b;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './b.uxdsl' as b;"]);
 
   // A rename (an add, then an unlink): the entry lists the new name, once.
   mark = session.output.length;
@@ -1062,7 +1064,7 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => /\[uxdsl\] unlink src[\\/]b\.uxdsl/.test(session.output.slice(mark)) && buildLines(session.output.slice(mark), 'out/app.css').length > 0);
   await delay(WATCHER_SETTLE_MS * 2);
   const renamed = session.output.slice(mark);
-  assert.deepEqual(useLinesOf(entryPath), ["@use './c.uxdsl' as c;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './c.uxdsl' as c;"]);
   assert.equal((renamed.match(/\[uxdsl\] regenerated /g) || []).length, 1, renamed);
   assert.doesNotMatch(renamed, /build failed/, renamed);
   assert.match(css(), /\.b \{\n {2}color: blue;\n\}/, 'the renamed file is built');
@@ -1140,9 +1142,9 @@ test('MIG-B9-22: a file added in a new subdirectory, under a --src that the watc
   await waitFor(() => css().includes('.input {'));
   await delay(WATCHER_SETTLE_MS * 2);
   const lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/forms/input.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/forms/input.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (4 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/forms/input.uxdsl' as components-forms-input;", "@use './page.uxdsl' as app-page;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use '../components/card.uxdsl' as components-card;", "@use '../components/forms/input.uxdsl' as components-forms-input;", "@use './page.uxdsl' as app-page;"]);
 });
 
 // The entry starts recording its invocation while the session runs, written by
@@ -1174,9 +1176,9 @@ test('MIG-B9-22: an entry that records its invocation from a change made while t
   await waitFor(() => css().includes('.new {'));
   await delay(WATCHER_SETTLE_MS * 2);
   const lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/new.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/new.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/new.uxdsl' as components-new;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use '../components/card.uxdsl' as components-card;", "@use '../components/new.uxdsl' as components-new;"]);
   assert.equal(session.exited, false);
 });
 
@@ -1187,7 +1189,7 @@ test('MIG-B9-22: a generated builds[1] entry is regenerated beside a hand-writte
     'src/main.uxdsl': mainText,
     'src/_card.uxdsl': '.card { color: blue; }\n',
     'src/parts/one.uxdsl': '.one { color: olive; }\n',
-  }, ['--src', 'src/parts', '--out', 'src/gen/entry.uxdsl']);
+  }, ['--src', 'src/parts', '--out', 'src/gen/entry.uxdsl', '--no-theme']);
   const mainPath = path.join(dir, 'src', 'main.uxdsl');
   const genPath = path.join(dir, 'src', 'gen', 'entry.uxdsl');
   const genCss = () => readOr(path.join(dir, 'out', 'gen.css'));
@@ -1342,4 +1344,124 @@ test('MIG-B9-22: the watcher drops the event of a write it was told to keep, and
   assert.equal(cli.commitFileIfChanged(file, '/* c */\n'), 'written');
   await waitFor(() => events.length > 0);
   assert.ok(events.every((event) => event.endsWith(' entry.uxdsl')), events.join(', '));
+});
+
+// --- The theme file generate-entry writes, kept by `build --watch` ------------
+//
+// The theme file is planned with its entry: an unlink of it, or an add or
+// unlink of any .uxdsl file under --src, writes it first when it is missing,
+// and its own write's event is dropped. A change of it never regenerates
+// anything, and an entry that records --no-theme never writes it.
+
+test('MIG-B9-20: build --watch regenerates a deleted theme file and builds once; an added .uxdsl is listed after the theme; nothing loops', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'src/a.uxdsl': '.a { color: palette(primary.main); }\n',
+  }, ['--src', 'src']);
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  const themeText = fs.readFileSync(themePath, 'utf8');
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {') && css().includes(':root'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // An unlink of the theme file: written again before the build, which runs once.
+  let mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => fs.existsSync(themePath) && buildLines(session.output.slice(mark), 'out/app.css').length > 0);
+  await delay(WATCHER_SETTLE_MS * 2);
+  let lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/uxdsl-theme.uxdsl', '[uxdsl] regenerated src/uxdsl-theme.uxdsl (the theme file src/uxdsl-entry.uxdsl loads first)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, `one build, and none for the theme file's own write:\n${lines.join('\n')}`);
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.equal(readOr(themePath), themeText);
+  assert.match(css(), /:root/);
+
+  // An add: the entry lists the new file after the theme file; one build.
+  mark = session.output.length;
+  putFile(dir, 'src/b.uxdsl', '.b { color: blue; }\n');
+  await waitFor(() => css().includes('.b {'));
+  await delay(WATCHER_SETTLE_MS * 2);
+  lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.ok(css().indexOf(':root') < css().indexOf('.a {'), 'the theme precedes every module');
+
+  // A change of the theme file, written by hand, is built as written and never regenerates.
+  mark = session.output.length;
+  const edited = `${themeText}// edited by hand\n`;
+  fs.writeFileSync(themePath, edited);
+  await waitFor(() => buildLines(session.output.slice(mark), 'out/app.css').length > 0);
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  lines = lineList(session.output.slice(mark));
+  assert.equal(lines[0], '[uxdsl] change src/uxdsl-theme.uxdsl', lines.join('\n'));
+  assert.equal(lines.some((line) => line.startsWith('[uxdsl] regenerated ')), false, lines.join('\n'));
+  assert.equal(readOr(themePath), edited);
+
+  // Nothing loops: no build without an event.
+  mark = session.output.length;
+  await delay(WATCHER_SETTLE_MS * 2);
+  assert.equal(buildLines(session.output.slice(mark), 'out/app.css').length, 0, session.output.slice(mark));
+  assert.equal(session.exited, false);
+});
+
+test('MIG-B9-20: build --watch regenerates a theme file that lies outside --src on its own unlink, and builds once', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'src/components/a.uxdsl': '.a { color: palette(primary.main); }\n',
+  }, ['--src', 'src/components', '--out', 'src/uxdsl-entry.uxdsl']);
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  const themeText = fs.readFileSync(themePath, 'utf8');
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {') && css().includes(':root'));
+  await delay(WATCHER_SETTLE_MS);
+
+  const mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => buildLines(session.output.slice(mark), 'out/app.css').length > 0 || /build failed/.test(session.output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS * 2);
+  const lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/uxdsl-theme.uxdsl', '[uxdsl] regenerated src/uxdsl-theme.uxdsl (the theme file src/uxdsl-entry.uxdsl loads first)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.equal(readOr(themePath), themeText);
+  assert.equal(session.exited, false);
+});
+
+test('MIG-B9-20: an entry that records --no-theme never writes the theme file on any event (negative control)', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'src/a.uxdsl': '.a { color: red; }\n',
+  }, ['--src', 'src', '--no-theme']);
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  assert.equal(fs.existsSync(themePath), false);
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {'));
+  await delay(WATCHER_SETTLE_MS);
+
+  let mark = session.output.length;
+  putFile(dir, 'src/b.uxdsl', '.b { color: blue; }\n');
+  await waitFor(() => css().includes('.b {'));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.deepEqual(lineList(session.output.slice(mark)).slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)']);
+  assert.deepEqual(useLinesOf(entryPath), ["@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.equal(fs.existsSync(themePath), false, 'an add writes no theme file');
+
+  // A generated theme file left beside it, then deleted, is not written back.
+  fs.writeFileSync(themePath, '// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n@uxdsl theme;\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => /\[uxdsl\] unlink src[\\/]uxdsl-theme\.uxdsl/.test(session.output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(session.output.slice(mark), /regenerated/, session.output.slice(mark));
+  assert.equal(fs.existsSync(themePath), false, 'an unlink writes no theme file');
+  assert.doesNotMatch(css(), /:root/);
+  assert.equal(session.exited, false);
 });

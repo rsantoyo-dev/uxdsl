@@ -114,6 +114,24 @@ records one), writing an entry only when its content changes; `build --watch`
 runs it again when a `.uxdsl` file is added or removed under its `--src`,
 before it rebuilds, so a new component needs no command.
 
+`generate-entry` also writes `uxdsl-theme.uxdsl` next to the entry, a file
+whose one statement is `@uxdsl theme;` (its comments are Sass's silent ones,
+so none reaches the CSS), and loads it as the entry's first `@use`
+(`@use './uxdsl-theme.uxdsl' as uxdsl-theme;`, before every `--first` file):
+the theme is emitted there, before every listed file. The scan never lists
+that path, and the namespace `uxdsl-theme` is its own (a file whose namespace
+would be the same takes `uxdsl-theme-2`); a file at that path that
+`generate-entry` did not write is refused, and so is a `--first` item naming
+it. `--no-theme` writes neither the file nor the line, for an entry whose CSS
+reads tokens another entry defines; it is recorded with the invocation, so
+`generate-entry` with no arguments and `build --watch` keep it, and it leaves
+a generated theme file already there as it is. An entry recorded without it
+gains the theme file on its next regeneration. `build --watch` writes the theme
+file again when it is deleted, wherever it lies, before it rebuilds once; a
+change to it is built as written. `init` writes the pair through
+`generate-entry`, and `init --multi` writes `@uxdsl theme;` in its theme entry,
+`src/theme.uxdsl`.
+
 ## From SCSS: rename and keep building
 
 UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid

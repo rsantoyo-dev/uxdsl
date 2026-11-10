@@ -21,7 +21,7 @@ Each panel is the real stdout, stderr and exit status of the `uxdsl` CLI in this
 
 <div className="doc-section">
 
-`uxdsl init --multi` scaffolds a theme entry plus one component entry instead of one entry. `uxdsl generate-entry --src <dir> --out <file> --first <a,b> --exclude <a,b>` rewrites the entry's `@use` list from the `.uxdsl` files under a directory: one `@use` per file, each with its own namespace, so each file is its own Sass module and `@use`s what it reads from another. `--first` puts the files it names first, in that order. `uxdsl <command> --help` prints one command's options, `uxdsl --version` the installed version. An unknown command or flag fails before anything runs, with a suggestion.
+`uxdsl init --multi` scaffolds a theme entry plus one component entry instead of one entry. `uxdsl generate-entry --src <dir> --out <file> --first <a,b> --exclude <a,b>` rewrites the entry's `@use` list from the `.uxdsl` files under a directory: one `@use` per file, each with its own namespace, so each file is its own Sass module and `@use`s what it reads from another. `--first` puts the files it names first, in that order. Its first `@use` loads `uxdsl-theme.uxdsl`, a file it writes next to the entry whose one statement is `@uxdsl theme;`: the theme is emitted there, before every listed file. `--no-theme` writes neither, for an entry whose CSS reads tokens another entry defines. `uxdsl <command> --help` prints one command's options, `uxdsl --version` the installed version. An unknown command or flag fails before anything runs, with a suggestion.
 
 ## Two files, two jobs
 
