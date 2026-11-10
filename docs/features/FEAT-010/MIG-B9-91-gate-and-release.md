@@ -182,3 +182,9 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-04). 
 - **`engines` (decision D10 of 2026-11-04).** `uxdsl` declares `"engines": { "node": ">=20.19" }` (MIG-B9-12's owner flag 11: `sass` 1.107.0, `chokidar` 5 and `readdirp` 5 require it), in this story, with the release note in the beta.9 migration section.
 - **CI on Windows (decision D11 of 2026-11-04).** CI runs on Windows before the release: this story depends on MIG-B9-28, "CI on Windows" (wave 2; its scout sizes it, S or split). Windows is unverified today (MIG-B9-13's owner flag 20; MIG-B9-23's `realCase` path runs on win32).
 - **The playground's lockfile (decision D19 of 2026-11-04).** MIG-B9-12's owner flag 15 is accepted as delivered, and its lockfile item goes to this story: the playground's lockfile records `../uxdsl`'s manifest, stale for devDependencies since MIG-B9-10, while `npm ci` there still passes.
+
+### Owner decisions of 2026-11-09 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-09). The owner was given 13 numbered recommendations, in Spanish, on the owner flags of MIG-B9-22 and MIG-B9-23 and on three housekeeping items, and answered, verbatim, "todoc omo recomendadi" ("todo como recomendado", "everything as recommended"): each recommendation is the owner's decision of 2026-11-09. This record is in English and lists those that concern this story. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **T3's paired statistic (decision 4, on MIG-B9-23's flag 4).** MIG-B9-23's budget fixture (`fixtures/mig-b9-23-compile-budget/run.js`) keeps the difference of the two medians that its C2 names, with 61 rounds by default (C2 allows at least 9). This story decides whether T3 also reports a paired statistic, the median of per-round differences (MIG-B9-23 §15, "Delivery of 2026-11-09", flag 4 and new fact 5).

@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). Merged: MIG-B9-01 to 05, 10 to 15 and 53; wave 1 is complete. The index has each story's status. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). On 2026-11-09 the owner settled the flags of MIG-B9-22 and 23 and registered MIG-B9-44 (§2). Merged: MIG-B9-01 to 05, 10 to 15, 22, 23 and 53; wave 1 is complete. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
 | Release | Two releases (DEC-03, revised on 2026-11-04): `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with waves 0 to 3 and MIG-B9-91; then `uxdsl@0.5.0-beta.10`, with waves 4 to 6, MIG-B9-90 and MIG-B9-92. |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
@@ -116,8 +116,9 @@ No story is blocked by a decision. Each story a decision touches carries an
 "Owner decisions of 2026-10-23" block at the end of its §15; where that
 block and the story's contract differ, the block rules. Eight stories also
 carry an "Owner decisions of 2026-11-04" block (below), which rules where it
-differs from an earlier block, and six carry an "Owner decisions of
-2026-11-08" block (below), which rules in the same way.
+differs from an earlier block; six carry an "Owner decisions of 2026-11-08"
+block and four an "Owner decisions of 2026-11-09" block (below), which rule
+in the same way.
 
 ### Review of 2026-10-11
 
@@ -234,6 +235,53 @@ flag 1, D3's sentence, which also gives MIG-B9-26 the removal of the
 `/docs/language` page on the superset"; flag 4, the files outside Owns and
 Shares; and the flaky watch test, which goes to MIG-B9-39.
 
+### Owner decisions of 2026-11-09
+
+On 2026-11-09, after MIG-B9-23 (PR #75, merged into `feat/beta9` as
+`dfcd216`) and MIG-B9-22 (PR #76, `08d00e0`) reached `main` (PR #78,
+`8dacc8b`), the owner was given 13 numbered recommendations, in Spanish, on
+the owner flags of the two deliveries (each story's §15, "Delivery of
+2026-11-09", and the bodies of PR #75 and PR #76) and on three housekeeping
+items. The owner answered, verbatim:
+
+> todoc omo recomendadi
+
+("todo como recomendado", typed with two slips: "everything as
+recommended.") Every recommendation below is therefore the owner's decision
+of 2026-11-09; this record is in English. The numbers 1 to 13 are the order
+in which the recommendations were given; they belong to this list only, and
+a story cites one as "decision 12 of 2026-11-09". Four stories carry an
+"Owner decisions of 2026-11-09" block at the end of their §15: MIG-B9-22,
+23, 40 and 91. The index registers MIG-B9-44 at the head of wave 4.
+
+MIG-B9-23's flags:
+
+- **Decision 1 — Where D8's fresh directory lives (MIG-B9-23's flag 1).** The corpus runner compiles from `fixtures/sass-corpus/.work/run-XXXXXX/corpus-root`: git-ignored, outside `os.tmpdir()` and holding nothing else, so `$TMPDIR`'s size reaches no measurement. Confirmed: the first reading, not a fresh subdirectory of `os.tmpdir()`.
+- **Decision 2 — An execute-only directory (flag 3).** A directory that can be searched but not listed keeps the spelling as written, the base's behavior, through `access(R_OK)` (test T9b), unlike Dart Sass and a realpath-only spelling. Accepted.
+- **Decision 3 — AC1's triple (flag 5).** The review's fix to `run.js` (`f442d02`) restarted the count: the first three runner invocations after it, 1.33×, 1.31× and 1.36× from 11:26 EST on 2026-11-09, are AC1's triple; the 13 earlier invocations after the Sass stage's change are recorded in MIG-B9-23 §14. Accepted.
+- **Decision 4 — T3's statistic (flag 4).** The budget fixture keeps the difference of the two medians, with 61 rounds by default (C2 allows at least 9). MIG-B9-91 decides whether T3 also reports a paired statistic, the median of per-round differences. Kept.
+
+MIG-B9-22's flags:
+
+- **Decision 5 — AC3 (MIG-B9-22's flag 1).** The literal `grep -c "RussianDoll"` on `uxdsl.css` is 0 before and after, since the component's selectors are `.concentric-*` and `.ring-label`. AC3 is read as satisfied by the counts that see the duplicate: lines starting `.concentric-wrapper {` 2 → 1, rules 1,274 → 1,252, the diff being exactly the hunks `3c3,5` and `415,579d416`. Accepted.
+- **Decision 6 — `theme-def.uxdsl`'s comment (flag 2).** Its lines 14–15, also in the compiled `uxdsl.css`, still name the deleted script `generate-uxdsl-entry.js`. MIG-B9-40 rewrites the comment.
+- **Decision 7 — An entry generated before MIG-B9-22 (flag 3).** It records no invocation, so it is treated as hand-written: watch never rewrites it, and `generate-entry` with no arguments re-runs nothing for it (it writes the defaults, as before, when it is the default output). The documentation tells users to run `generate-entry` once with their options. Kept as delivered, with no start-up hint.
+- **Decision 8 — `ENTRY_PRIORITY_PATTERNS` (flag 4).** It is removed whole, `layout` and `app` included, not only `variables` and `theme-def`; a project that relied on those names being listed first uses `--first` (documented as Breaking). Confirmed.
+- **Decision 9 — E1's fallback (flag 5; the review's finding F1).** `generate-entry` with no arguments, when no configured entry records an invocation, re-runs the recorded line of the default output file if it has one, and exits 1 naming the file when that line does not parse. Accepted.
+- **Decision 10 — E2's watch targets (flag 6; the review's finding F3).** `build --watch` recomputes its watch targets before every selective build too, not only on full rebuilds. Accepted.
+
+Housekeeping:
+
+- **Decision 11 — The index's §7 completed** with the files the two stories touched. The `fixtures/sass-corpus` row lists `run.js`, `run.test.js`, `README.md` and `.gitignore`, for MIG-B9-10, 23 and 25 (MIG-B9-23's flag 2); MIG-B9-22 is added to the rows for `packages/uxdsl/test/cli/**` and `fixtures/mig-b2-03-cli-init/**` (MIG-B9-22's follow-up).
+- **Decision 12 — MIG-B9-44 registered,** "The playground's visual comparison harness is deterministic": S, from MIG-B9-22's delivery. `fixtures/playground-browser/snapshot.js`'s interaction step times out on `.density-card__edit-btn`, at the base too, so a snapshot completes only with `--no-interactions`; and two snapshots of one build differ by up to 1,266 box-only differences, from unstyled `<select>` widths of ±4 px, although the fixture's README says they are identical. It must merge before any wave-4 story starts, because every wave-4 story relies on `compare.js`: it is placed at the head of wave 4, which ships in `0.5.0-beta.10` under DEC-03 (b), so `0.5.0-beta.9`'s scope does not change, and MIG-B9-40 depends on it.
+- **Decision 13 — `main` merged into `feat/beta9`.** `main` carries two Dependabot updates that `feat/beta9` lacks: PR #52 (`playwright-core` 1.63.0 → 1.64.1 in `fixtures/mig02-nextjs-cssmodules`) and PR #59 (the playground's minor-and-patch group: `@next/mdx`, `@types/mdx`, `react-syntax-highlighter` and `postcss-loader`). `packages/uxdsl` is identical on both. The documentation PR that records these decisions carries that merge.
+
+The deliveries' other notes were not among the recommendations and are not
+decisions; they stay where the deliveries wrote them. Among them are
+MIG-B9-23's flags 6 to 8: the story that merges second rebases its CHANGELOG
+subsection and README sentence, MIG-B9-21 rebases on MIG-B9-23, and the PR
+targets `feat/beta9`.
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
@@ -250,7 +298,7 @@ index's §5 sits there.
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. | MIG-B9-16, MIG-B9-20 to 29 | `0.5.0-beta.9` |
 | 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. | MIG-B9-30 to 39 | `0.5.0-beta.9` |
-| 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. | MIG-B9-40 to 43 | `0.5.0-beta.10` |
+| 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. Registered on 2026-11-09, first in the wave: a deterministic visual comparison harness. | MIG-B9-40 to 44 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. | MIG-B9-60 to 65 | `0.5.0-beta.10` |
 | 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 after wave 3, before wave 4; MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |

@@ -314,3 +314,19 @@ The scout re-ran §3 and §4 on `7e8d7b4` (`git merge-base HEAD origin/feat/beta
 - **FEAT-010 README §7 (the index's owner):** add MIG-B9-22 to the `packages/uxdsl/test/cli/**` row and to `fixtures/mig-b2-03-cli-init/**`, which this story edited (the scout's plan; not done in a delivery commit, which edits only this story's row of §5). In §5, MIG-B9-23's row still reads "In review (PR #75)", although it merged as `dfcd216`.
 - **MIG-B9-39** (every host's watch recovers after a failed compile) builds on E2's watcher: `refreshWatcher` now runs before selective builds too, and an error while a recreated watcher starts is not caught there, as it already was not on a full rebuild.
 - **MIG-B9-50:** the root README's beta.5 section tells readers to run `generate-entry` by hand; when the README is rewritten, the current quick start should say that `uxdsl:watch` regenerates the entry.
+
+### Owner decisions of 2026-11-09
+
+The owner decided the flags of "Delivery of 2026-11-09" above on 2026-11-09, after this story merged (PR #76, `08d00e0`) and reached `main` (PR #78). The owner was given 13 numbered recommendations, in Spanish, on the owner flags of this story and MIG-B9-23 and on three housekeeping items, and answered, verbatim, "todoc omo recomendadi" ("todo como recomendado", "everything as recommended"): each recommendation is the owner's decision of 2026-11-09, recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-09), which numbers them 1 to 13. This record is in English and lists those that concern this story. Where they differ from this story's contract or from an earlier block, they rule.
+
+- **Flag 1, AC3 (decision 5):** accepted. The literal `grep -c "RussianDoll"` on `uxdsl.css` is 0 before and after, since the component's selectors are `.concentric-*` and `.ring-label`; AC3 is read as satisfied by the counts that see the duplicate: lines starting `.concentric-wrapper {` 2 → 1, rules 1,274 → 1,252, the diff being exactly the hunks `3c3,5` and `415,579d416`.
+- **Flag 2, `theme-def.uxdsl`'s comment (decision 6):** MIG-B9-40 rewrites the comment at its lines 14–15, also in the compiled `uxdsl.css`, which still names the deleted script.
+- **Flag 3, an entry generated before this story (decision 7):** kept as delivered, with no start-up hint. It records no invocation, so it is treated as hand-written: watch never rewrites it, and `generate-entry` with no arguments re-runs nothing for it (it writes the defaults, as before, when it is the default output); the documentation tells users to run `generate-entry` once with their options.
+- **Flag 4, `ENTRY_PRIORITY_PATTERNS` (decision 8):** confirmed. It is removed whole, `layout` and `app` included, not only `variables` and `theme-def`; a project that relied on those names being listed first uses `--first` (documented as Breaking).
+- **Flag 5, E1's fallback (decision 9; the review's finding F1):** accepted. With no arguments, when no configured entry records an invocation, `generate-entry` re-runs the recorded line of the default output file if it has one, and exits 1 naming the file when that line does not parse.
+- **Flag 6, E2's watch targets (decision 10; the review's finding F3):** accepted. `build --watch` recomputes its watch targets before every selective build too, not only on full rebuilds.
+
+Two housekeeping decisions answer this story's follow-ups:
+
+- **The index's §7 (decision 11):** this story is added to the rows for `packages/uxdsl/test/cli/**` and `fixtures/mig-b2-03-cli-init/**`.
+- **MIG-B9-44 registered (decision 12),** "The playground's visual comparison harness is deterministic" (S), as the follow-up above proposed: `snapshot.js`'s interaction step that times out on `.density-card__edit-btn`, and the box-only differences from unstyled `<select>` widths between two snapshots of one build. It is the first row of wave 4 (`0.5.0-beta.10`), and MIG-B9-40 depends on it.

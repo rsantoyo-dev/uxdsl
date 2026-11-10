@@ -7,7 +7,7 @@
 | Decision gate | DEC-14 (decided: the playground is the reference implementer) |
 | Status | Ready |
 | Size | M |
-| Depends on | MIG-B9-22, MIG-B9-30, MIG-B9-33, MIG-B9-34 (the engine it implements must be final) |
+| Depends on | MIG-B9-22, MIG-B9-30, MIG-B9-33, MIG-B9-34 (the engine it implements must be final); MIG-B9-44 (the visual comparison harness; decision 12 of 2026-11-09, §15) |
 | Blocks | MIG-B9-41 |
 | Base | `feat/beta9` after wave 3 |
 | Owns | `packages/playground-nextjs/src/components/ds/**` (new: `Button`, `Field`, `Surface`, `CodeBlock`, `Section`, `PageTitle`, `Text`), `packages/playground-nextjs/uxdsl.config.cjs`, the component files it absorbs (deleted) |
@@ -223,3 +223,10 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
 
 - **DEC-07:** there are no breakpoint at-rules; the precondition looks for `(--lg)` in SideNav.
+
+### Owner decisions of 2026-11-09 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-09). The owner was given 13 numbered recommendations, in Spanish, on the owner flags of MIG-B9-22 and MIG-B9-23 and on three housekeeping items, and answered, verbatim, "todoc omo recomendadi" ("todo como recomendado", "everything as recommended"): each recommendation is the owner's decision of 2026-11-09. This record is in English and lists those that concern this story. Where they differ from this story's contract, from the review above or from the owner decisions of 2026-10-23, they rule.
+
+- **`theme-def.uxdsl`'s comment (decision 6, on MIG-B9-22's flag 2).** This story rewrites the comment at lines 14–15 of `packages/playground-nextjs/src/app/theme-def.uxdsl`, which still names the deleted script `generate-uxdsl-entry.js` ("The file stays because generate-uxdsl-entry.js imports it first, by name") and reaches the compiled `uxdsl.css`. MIG-B9-22's delivery notes that the file keeps its place because `uxdsl:build`'s `--first` names it (MIG-B9-22 §15); it is the second name there, after `typography-roles.uxdsl`.
+- **A new dependency: MIG-B9-44 (decision 12).** MIG-B9-44, "The playground's visual comparison harness is deterministic" (S, the first row of wave 4), merges before any wave-4 story starts, because every wave-4 story relies on `compare.js`; this story depends on it, and the header's Depends on lists it. Until it merges, `fixtures/playground-browser/snapshot.js`'s interaction step times out on `.density-card__edit-btn`, and two snapshots of one build differ by up to 1,266 box-only differences from unstyled `<select>` widths (MIG-B9-22 §15).
