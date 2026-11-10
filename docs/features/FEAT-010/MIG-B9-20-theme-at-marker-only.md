@@ -9,9 +9,9 @@
 | Size | M |
 | Depends on | MIG-B9-14 |
 | Blocks | MIG-B9-50, MIG-B9-60, MIG-B9-64 |
-| Base | `feat/beta9` after MIG-B9-14 |
+| Base | `feat/beta9` at `f855765` (after MIG-B9-14, 15, 22, 23 and the owner decisions of 2026-11-09) |
 | Owns | `packages/uxdsl/test/include-theme.test.js` (deleted; its intents move to `theme-marker.test.js`), `packages/uxdsl/test/theme-marker.test.js` |
-| Shares | `packages/uxdsl/src/plugin.ts`, `packages/uxdsl/src/compile.ts`, `packages/uxdsl/src/types.ts`, `packages/uxdsl/src/vite.ts`, `packages/uxdsl/src/webpack.ts`, `packages/uxdsl/bin/uxdsl.js`, `fixtures/release-1.0/run.js`, `fixtures/mig02-nextjs-cssmodules/**`, `packages/playground-nextjs/scripts/generate-uxdsl-entry.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` |
+| Shares | `packages/uxdsl/src/{plugin,compile,config,types,vite,webpack,diagnostics}.ts`, `packages/uxdsl/bin/uxdsl.js`, `packages/uxdsl/test/**`, `packages/uxdsl/README.md`, `packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/docs/{migration.md,agent-guide.md (generated),integrations/{cli,compile,vite,webpack}.md}`, `fixtures/release-1.0/{run.js,verdicts.test.js}`, `fixtures/{mig02-nextjs-cssmodules,mig07-consumer,webpack-adapter,vite-adapter,mig-b2-03-cli-init}/**`, `fixtures/parity/run.js`, `fixtures/sass-corpus/{run.js,run.test.js}`, `fixtures/mig-b9-23-compile-budget/run.js`, `fixtures/mig-b9-13-compile-on-sass/browser.js`, `scripts/lib/doc-examples.js`, `scripts/bench-references.js`, `packages/playground-nextjs/{.stylelintrc.json, paradigm/frame.uxdsl, runtime-sandbox/sandbox.uxdsl, scripts/{build-paradigm-frame,build-runtime-sandbox,capture-capabilities,capture-examples}.js, capability-fixtures/cli-project/src/**, src/app/{uxdsl-entry.uxdsl,uxdsl-theme.uxdsl (new),uxdsl.css}, src/generated/*.json, src/components/WriteGet.tsx, src/app/docs/{quick-start/page.mdx,tooling/page.mdx,language/page.tsx}}`, `docs/architecture/{unified-engine-audit,playground-capability-matrix}.md`, `AGENTS.md` |
 | Output impact | **breaking** (API/CLI): `includeTheme` option, config key and flags removed; a project without the marker emits no theme |
 
 ## 1. Goal
@@ -241,3 +241,24 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). 
 
 - **A strict comparison of error oracles (the decision on MIG-B9-14's flag 10).** A strict comparison of error oracles in `fixtures/parity/run.js` goes to this story. Its line 150 compares by substring in both directions, so the frame recorded in `missing-import.json` and `import-cycle.json` is not guarded: a CLI with no frame passes all ten cases (MIG-B9-14 §15, flag 10).
 - **The exclusion rule, for information (the decision on MIG-B9-14's flag 17).** MIG-B9-22 makes `generate-entry` exclude only the output file, instead of every file with the entry's file name in any directory. The decision notes that this matters for this story's `uxdsl-theme.uxdsl`, which its approach (§7) excludes from the entry's scan "like the entry itself". README §7's prose and the review above run MIG-B9-22 before this story; README §5 lists this story first.
+
+### Stale corrections and findings of 2026-11-10 (scout and design)
+
+Recorded before implementing, on `feat/beta9` at `f855765` (Node 20.19.0, Sass 1.107.0). The two header lines below are preconditions or Owns/Shares and were corrected in place; every other item is a stale statement elsewhere in the story, listed here and not rewritten. No contract (§5), test (§8) or acceptance criterion (§9) text was changed.
+
+**Header lines corrected in place.**
+
+- Base. Old: `` | Base | `feat/beta9` after MIG-B9-14 | ``. New: `` | Base | `feat/beta9` at `f855765` (after MIG-B9-14, 15, 22, 23 and the owner decisions of 2026-11-09) | ``.
+- Shares. Old: `` | Shares | `packages/uxdsl/src/plugin.ts`, `packages/uxdsl/src/compile.ts`, `packages/uxdsl/src/types.ts`, `packages/uxdsl/src/vite.ts`, `packages/uxdsl/src/webpack.ts`, `packages/uxdsl/bin/uxdsl.js`, `fixtures/release-1.0/run.js`, `fixtures/mig02-nextjs-cssmodules/**`, `packages/playground-nextjs/scripts/generate-uxdsl-entry.js`, `packages/uxdsl/CHANGELOG.md`, `AGENTS.md` | ``. New: the row now in the header. Why: MIG-B9-22 (PR #76) deleted `scripts/generate-uxdsl-entry.js` (the playground runs the CLI's `generate-entry`); MIG-B9-23 §15 assigns `fixtures/sass-corpus/run.js` to this story; the review of 2026-10-11 and MIG-B9-14 §15 add the other fixtures; the scout found the rest that pass or rely on the option (the budget fixture, `scripts/lib/doc-examples.js`, `scripts/bench-references.js`, the playground's paradigm frame, runtime sandbox, `capture-examples.js` and `cli-project` capture fixture, its stylelint config for the new generated theme file).
+
+**Stale statements, not rewritten.**
+
+- §2, Next.js: "the Next.js scaffold writes `@uxdsl theme;` in the global stylesheet already" is wrong. The scaffold writes no marker, and `POSTCSS_SNIPPET` passes `'uxdsl/postcss': { includeTheme: false }` (bin/uxdsl.js:2440 at `f855765`). `init --multi` scaffolds one panel entry (`src/panel-a.uxdsl`), not several.
+- §7, `excludedFiles`: it no longer exists in bin/uxdsl.js. Since MIG-B9-22, `planEntry` leaves out only its own output file, by path, and `--exclude` file names; the generated `uxdsl-theme.uxdsl` has to be left out explicitly (the owner decision of 2026-11-08 on MIG-B9-14's flag 17).
+- §4, the baseline: on `f855765` the command prints `47275 46` (recorded `47273 44` on `685c132`). The figures are Sass's formatting after MIG-B9-13; the module without the theme is `.card {\n  padding: var(--uxdsl__density__4);\n}`.
+- §11, documentation: it omits `packages/uxdsl/docs/integrations/compile.md` (lines 56 and 117 document `includeTheme`), the playground pages `src/app/docs/quick-start/page.mdx` (68, 88), `tooling/page.mdx` (35-36, 67-72) and `language/page.tsx` (103), and `docs/releases/0.5.0-beta.9.md:33` (the prepublish record's "Next.js without the CLI" row). That release record is left to MIG-B9-91, which refreshes it.
+- The review of 2026-10-11, figures: `POSTCSS_SNIPPET` is now at bin/uxdsl.js:2440 (not 1814), and 48 files under `packages/uxdsl/test` name `includeTheme` on 295 lines (not 43 files, 185 times); 2 test files carry the `--include-theme` flags.
+- M3's `@use './uxdsl-theme' as uxdsl-theme;` is written MIG-B9-22's way: `@use './uxdsl-theme.uxdsl' as uxdsl-theme;` (each `@use` writes the `.uxdsl` extension).
+- M7 is obsolete as written: the script it names was deleted by MIG-B9-22, and §6's "MIG-B9-22" item is done. Its intent (the playground's `src/app/uxdsl.css` keeps its theme block after the prelude and before the first rule) is met by M3's generated `src/app/uxdsl-theme.uxdsl`, listed first by the CLI's `generate-entry` ahead of the playground's four `--first` files.
+- M3's "the Next.js scaffold is unchanged" and M4's "in a `builds` project" are overruled by the owner decisions of 2026-10-23 above (the Next.js scaffold writes the marker and `POSTCSS_SNIPPET` drops the option; a build that emits no theme warns on every host).
+- `fixtures/sass-corpus/run.js` joins this story (MIG-B9-23 §15: "It owns dropping run.js's `{ includeTheme: false }`").
