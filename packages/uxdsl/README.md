@@ -725,10 +725,10 @@ typography variable (`--uxdsl__typography__h1-size` →
 `--uxdsl__typography__h1-font-size`) and leaves a name already called after
 its CSS property as it is, so a second run changes nothing; a name a theme
 role makes ambiguous (`--uxdsl__typography__body-text-transform`, when the
-theme defines a `body-text` role) is left and reported. It walks `.uxdsl`,
-`.css`, `.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`, `.md` and `.json` files
-and skips `node_modules`, `dist` and `.next`. It rewrites prose too, so review
-a documentation file it touches.
+theme defines a `body-text` role) is left and reported, once per occurrence.
+It walks `.uxdsl`, `.css`, `.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`,
+`.md` and `.json` files and skips `node_modules`, `dist` and `.next`. It
+rewrites prose too, so review a documentation file it touches.
 
 ---
 

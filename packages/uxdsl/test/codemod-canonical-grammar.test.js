@@ -244,7 +244,10 @@ test('MIG-B9-29: a canonical name that is also a theme role\'s former name is le
     ['lead-font-style', 'lead-font', 'style', 'lead', 'font-style'],
     ['wide-letter-spacing', 'wide-letter', 'spacing', 'wide', 'letter-spacing'],
   ];
-  const a = `${AMBIGUOUS.map(([name], i) => `.a${i} { a: var(${typo(name)}); }`).join('\n')}\n`;
+  // One name occurs twice: every occurrence gets its own report line.
+  const TWICE = 'body-text-transform';
+  const a = `${AMBIGUOUS.map(([name], i) => `.a${i} { a: var(${typo(name)}); }`).join('\n')}\n`
+    + `.a${AMBIGUOUS.length} { b: var(${typo(TWICE)}); }\n`;
   const b = `.b { font-size: var(${typo('body-text-size')}); }\n`;
   const theme = {
     typography_details: {
@@ -269,13 +272,16 @@ test('MIG-B9-29: a canonical name that is also a theme role\'s former name is le
     const found = block(result.lines, 'a.css');
     assert.ok(found, `the ${pass} run lists a.css`);
     assert.equal(found.header, '  a.css');
-    assert.equal(found.lines.length, AMBIGUOUS.length, found.lines.join('\n'));
+    assert.equal(found.lines.length, AMBIGUOUS.length + 1, found.lines.join('\n'));
     for (const [name, formerRole, suffix, role, property] of AMBIGUOUS) {
       const lines = found.lines.filter((line) => line.startsWith(`     unresolved: ${typo(name)} `));
-      assert.equal(lines.length, 1, `the ${pass} run reports ${name} once`);
-      assert.ok(lines[0].includes(`role ${role}'s ${property}`), lines[0]);
-      assert.ok(lines[0].includes(`role ${formerRole}'s former -${suffix}`), lines[0]);
-      assert.ok(lines[0].includes(typo(`${formerRole}-${FORMER[suffix]}`)), lines[0]);
+      const occurrences = name === TWICE ? 2 : 1;
+      assert.equal(lines.length, occurrences, `the ${pass} run reports ${name} once per occurrence (${occurrences})`);
+      for (const line of lines) {
+        assert.ok(line.includes(`role ${role}'s ${property}`), line);
+        assert.ok(line.includes(`role ${formerRole}'s former -${suffix}`), line);
+        assert.ok(line.includes(typo(`${formerRole}-${FORMER[suffix]}`)), line);
+      }
     }
     reports.push(found.lines);
     assert.equal(fs.readFileSync(path.join(dir, 'b.css'), 'utf8'), `.b { font-size: var(${typo('body-text-font-size')}); }\n`);

@@ -40,7 +40,7 @@ role `body-text`'s former `--uxdsl__typography__body-text-transform` is also
 role `body`'s canonical `text-transform`. Such a name is left as a canonical
 one. When the effective theme (the packaged base merged with `--theme`)
 defines the role its former reading names, the name is reported under its
-file, the way an ambiguous Palette split is:
+file, once per occurrence, the way an ambiguous Palette split is:
 
 ```text
 unresolved: --uxdsl__typography__body-text-transform (ambiguous: role body's text-transform, or role body-text's former -transform, now --uxdsl__typography__body-text-text-transform)
