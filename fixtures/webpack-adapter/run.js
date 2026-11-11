@@ -23,9 +23,12 @@ async function main() {
   // Breakpoints are declared in the theme file (there is no loader option for
   // them); the 900px media query below proves the discovered theme is applied.
   write('uxdsl.theme.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } }, breakpoints: { md: 900 } };\n");
-  write('partial.uxdsl', '.partial { color: green; }\n');
-  write('panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
-  write('main.js', "import './panel.uxdsl';\n");
+  // In a subdirectory, so a map that names the panel from the wrong directory
+  // shows. The global stylesheet writes the one `@uxdsl theme;`.
+  write('src/styles/global.uxdsl', '@uxdsl theme;\n');
+  write('src/styles/partial.uxdsl', '.partial { color: green; }\n');
+  write('src/styles/panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
+  write('main.js', "import './src/styles/global.uxdsl';\nimport './src/styles/panel.uxdsl';\n");
   write(
     'webpack.config.js',
     "const path = require('path');\n" +
@@ -47,15 +50,24 @@ async function main() {
   );
 
   // --- build with css-loader + MiniCssExtractPlugin ---
-  run(path.join(dir, 'node_modules/.bin/webpack'), ['build']);
+  const built = run(path.join(dir, 'node_modules/.bin/webpack'), ['build']);
   const cssPath = path.join(dir, 'dist', 'styles.css');
   assert.ok(fs.existsSync(cssPath), 'MiniCssExtractPlugin must produce a real dist/styles.css');
   const css = fs.readFileSync(cssPath, 'utf8');
   assert.match(css, /\.a\s*\{[^}]*color:\s*red/, 'extracted CSS must contain the compiled rule');
   assert.match(css, /900px/, "the discovered theme's own breakpoints must take effect");
   assert.match(css, /\.partial\s*\{[^}]*color:\s*green/, '@import-ed partial must be inlined into the same output');
-  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.cjs must be discovered and applied");
-  console.log('  ok  - css-loader + MiniCssExtractPlugin produce a real CSS file with the compiled rules, options and theme applied');
+  // A definition, not the var() reference the panel's rule alone would give.
+  const defined = /--uxdsl__palette__adapteronlybrand-main:\s*#0af/;
+  assert.doesNotMatch('.a { background: var(--uxdsl__palette__adapteronlybrand-main); }', defined, 'control: the reference alone does not pass for a definition');
+  assert.match(css, defined, "the project's uxdsl.theme.cjs must be discovered and applied where the global writes @uxdsl theme;");
+  assert.doesNotMatch(built, /UXD_THEME_MARKER/, 'one global stylesheet writes the marker: no theme warning');
+  // Control: the same build from an entry that skips the global stylesheet
+  // prints the warning, once, where the check above reads.
+  write('control.js', "import './src/styles/panel.uxdsl';\n");
+  const control = run(path.join(dir, 'node_modules/.bin/webpack'), ['build', '--entry-reset', '--entry', './control.js', '--output-path', path.join(dir, 'dist-control')]);
+  assert.equal(control.split('UXD_THEME_MARKER: no module reaches').length - 1, 1, `control: without the global the build warns once:\n${control}`);
+  console.log('  ok  - css-loader + MiniCssExtractPlugin produce a real CSS file with the compiled rules, options and theme applied, and no theme warning (and one without the global)');
 
   // --- no absolute build-machine paths anywhere in dist/ ---
   const distFiles = fs.readdirSync(path.join(dir, 'dist')).map((f) => path.join(dir, 'dist', f));
@@ -91,9 +103,11 @@ async function main() {
   const mapPath = path.join(dir, 'dist-map', 'styles.css.map');
   assert.ok(fs.existsSync(mapPath), 'a source map must be emitted for the extracted CSS when devtool is on');
   const mapped = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+  // Control: a source that names the panel from the wrong directory fails this check.
+  assert.equal(['webpack://uxdsl-webpack-adapter-consumer/./panel.uxdsl'].some((src) => src.endsWith('src/styles/panel.uxdsl')), false);
   assert.ok(
-    mapped.sources.some((src) => String(src).endsWith('panel.uxdsl')),
-    `the map must name the .uxdsl source, got: ${JSON.stringify(mapped.sources)}`
+    mapped.sources.some((src) => String(src).endsWith('src/styles/panel.uxdsl')),
+    `the map must name the .uxdsl source at its path, src/styles/panel.uxdsl, got: ${JSON.stringify(mapped.sources)}`
   );
   // A real lookup: the line holding `color: red` must resolve back to
   // panel.uxdsl, which is what a devtools "go to source" actually does.
@@ -103,7 +117,7 @@ async function main() {
   assert.notEqual(redLine, -1, 'the mapped build must still contain the compiled rule');
   const consumer = new SourceMapConsumer(mapped);
   const original = consumer.originalPositionFor({ line: redLine + 1, column: mappedCss[redLine].indexOf('color: red') });
-  assert.ok(String(original.source).endsWith('panel.uxdsl'), `a mapped position must resolve to panel.uxdsl, got ${original.source}`);
+  assert.ok(String(original.source).endsWith('src/styles/panel.uxdsl'), `a mapped position must resolve to src/styles/panel.uxdsl, got ${original.source}`);
   console.log('  ok  - source maps reach css-loader and resolve a real position back to the .uxdsl source');
 
   // --- watch mode: editing a partial recompiles ---
@@ -125,7 +139,7 @@ async function main() {
     "  }\n" +
     "  if (runs === 1) {\n" +
     "    setTimeout(() => {\n" +
-    "      fs.writeFileSync(path.join(__dirname, 'partial.uxdsl'), '.partial { color: blue; }\\n');\n" +
+    "      fs.writeFileSync(path.join(__dirname, 'src', 'styles', 'partial.uxdsl'), '.partial { color: blue; }\\n');\n" +
     "    }, 300);\n" +
     "    return;\n" +
     "  }\n" +

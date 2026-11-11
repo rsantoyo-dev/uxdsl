@@ -6,7 +6,9 @@
 // It checks real CSS extraction, no absolute build-machine paths in the
 // production output, `?inline` returning the raw string, module-graph
 // invalidation when an `@import`-ed partial changes, and the project's own
-// theme file being discovered and applied.
+// theme file being discovered and applied: the global stylesheet writes
+// `@uxdsl theme;`, so the extracted CSS defines the project's own token, and
+// a build with exactly that one marker prints no UXD_THEME_MARKER.
 //
 // The peer range is `vite: ">=4.0.0"`, so the whole scenario runs twice, each
 // time in its own fresh install: with `vite@^5` and with the current major,
@@ -20,6 +22,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const assert = require('node:assert/strict');
+const { spawnSync } = require('node:child_process');
 const { packAndInstall } = require('../lib/tarball-consumer');
 
 /** The two Vite majors the gate installs, with the module style their consumer uses. */
@@ -74,6 +77,9 @@ async function scenario({ range, style }) {
   const files = consumerFiles(style);
 
   write('uxdsl.theme.cjs', "module.exports = { palette: { adapteronlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };\n");
+  // The global stylesheet: the one marker, imported plain only. The panel is
+  // also imported ?inline, so a marker there would make two modules emit it.
+  write('global.uxdsl', '@uxdsl theme;\n');
   write('partial.uxdsl', '.partial { color: green; }\n');
   write('panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; padding: xs(1rem) md(2rem); background: palette(adapteronlybrand); }\n');
   // A plain `export` of an otherwise-unused value is dead code from
@@ -81,12 +87,13 @@ async function scenario({ range, style }) {
   // extracted separately — write it somewhere Rollup can't prove is
   // unobservable, so the whole module (and therefore the ?inline import)
   // isn't tree-shaken out of the production bundle entirely.
-  write('main.js', "import './panel.uxdsl';\nimport inlineCss from './panel.uxdsl?inline';\nglobalThis.__uxdslInlineCss = inlineCss;\n");
+  write('main.js', "import './global.uxdsl';\nimport './panel.uxdsl';\nimport inlineCss from './panel.uxdsl?inline';\nglobalThis.__uxdslInlineCss = inlineCss;\n");
   write('index.html', '<!doctype html><html><body><script type="module" src="/main.js"></script></body></html>\n');
   write(files.configFile, files.config('dist', false));
 
   // --- vite build: real CSS extraction ---
-  run(path.join(dir, 'node_modules/.bin/vite'), ['build']);
+  const built = spawnSync(path.join(dir, 'node_modules/.bin/vite'), ['build'], { cwd: dir, encoding: 'utf8', timeout: 180000 });
+  assert.equal(built.status, 0, `vite build failed:\n${built.stdout}${built.stderr}`);
   const assetsDir = path.join(dir, 'dist', 'assets');
   const assetFiles = fs.readdirSync(assetsDir);
   const cssFile = assetFiles.find((f) => f.endsWith('.css'));
@@ -99,8 +106,20 @@ async function scenario({ range, style }) {
   ok('vite build extracts a real .css asset with the compiled rules');
 
   // --- theme applied ---
-  assert.match(css, /--uxdsl__palette__adapteronlybrand-main/, "the project's uxdsl.theme.cjs must be discovered and applied");
-  ok('the project theme (uxdsl.theme.cjs) is discovered and applied');
+  // A definition, not the var() reference the panel's rule alone would give.
+  const defined = /--uxdsl__palette__adapteronlybrand-main:\s*#0af/;
+  assert.doesNotMatch('.a{background:var(--uxdsl__palette__adapteronlybrand-main)}', defined, 'control: the reference alone does not pass for a definition');
+  assert.match(css, defined, "the project's uxdsl.theme.cjs must be discovered and applied where the global writes @uxdsl theme;");
+  assert.doesNotMatch(`${built.stdout}${built.stderr}`, /UXD_THEME_MARKER/, 'one global stylesheet writes the marker: no theme warning');
+  // Control: the same build from a main.js that skips the global stylesheet
+  // prints the warning, once, where the check above reads.
+  const mainJs = fs.readFileSync(path.join(dir, 'main.js'), 'utf8');
+  write('main.js', mainJs.replace("import './global.uxdsl';\n", ''));
+  const control = spawnSync(path.join(dir, 'node_modules/.bin/vite'), ['build', '--outDir', 'dist-control'], { cwd: dir, encoding: 'utf8', timeout: 180000 });
+  write('main.js', mainJs);
+  assert.equal(control.status, 0, `the control vite build failed:\n${control.stdout}${control.stderr}`);
+  assert.equal(`${control.stdout}${control.stderr}`.split('UXD_THEME_MARKER: no module reaches').length - 1, 1, `control: without the global the build warns once:\n${control.stdout}${control.stderr}`);
+  ok('the project theme (uxdsl.theme.cjs) is discovered and defined at the global stylesheet\'s @uxdsl theme;, with no theme warning (and one without the global)');
 
   // --- does Vite actually chain our CSS source map? ---
   // The plugin follows Vite's own `build.sourcemap`, so this builds a second

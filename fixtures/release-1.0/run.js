@@ -204,6 +204,17 @@ const ADAPTER_PROJECT = {
 };
 const ADAPTER_FILES = ['styles/_legacy.uxdsl', 'styles/_partial.uxdsl', 'styles/panel.uxdsl'];
 const ADAPTER_DEPRECATION = 'styles/_partial.uxdsl:1:9: UXD_SASS_WARNING: [import] Sass @import rules are deprecated and will be removed in Dart Sass 3.0.0.';
+// The panel reads palette tokens and no module writes `@uxdsl theme;`: each
+// adapter says so once, at the end of the build.
+const ADAPTER_THEME_WARNING = 'UXD_THEME_MARKER: no module reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them.';
+
+/** What is wrong with an adapter's warnings, or null: the deprecation then the theme warning, and with the deprecation silenced the theme warning alone. */
+function adapterWarningsMismatch(record) {
+  if (JSON.stringify(record.warnings) !== JSON.stringify([ADAPTER_DEPRECATION, ADAPTER_THEME_WARNING])) return `warnings: ${JSON.stringify(record.warnings)}, expected one at styles/_partial.uxdsl:1:9 and one UXD_THEME_MARKER at the end of the build`;
+  if (record.silencedWarnings.some((warning) => warning !== ADAPTER_THEME_WARNING)) return `sass.silenceDeprecations did not remove the deprecation: ${JSON.stringify(record.silencedWarnings)}`;
+  if (JSON.stringify(record.silencedWarnings) !== JSON.stringify([ADAPTER_THEME_WARNING])) return `the silenced build's theme warning: ${JSON.stringify(record.silencedWarnings)}, expected exactly one UXD_THEME_MARKER`;
+  return null;
+}
 
 function writeAdapterProject(root) {
   for (const [file, text] of Object.entries(ADAPTER_PROJECT)) {
@@ -265,20 +276,21 @@ async function webpackAdapterRecord(tools, loader, root) {
 /**
  * S-5's verdict on `webpackAdapterRecord`: the deprecation in the @use'd
  * partial is one warning, at styles/_partial.uxdsl:1:9, which
- * sass.silenceDeprecations removes; an unknown sass key fails the module with
- * compile()'s message; the three files are file dependencies; and the CSS map
- * webpack emits names each at its path from the project's directory, the
- * partial's declaration mapping back to the partial's line 2.
+ * sass.silenceDeprecations removes; the build's one UXD_THEME_MARKER warning
+ * follows it in both; an unknown sass key fails the module with compile()'s
+ * message; the three files are file dependencies; and the CSS map webpack
+ * emits names each at its path from the project's directory, the partial's
+ * declaration mapping back to the partial's line 2.
  */
 function assertWebpackAdapter(record) {
-  if (JSON.stringify(record.warnings) !== JSON.stringify([ADAPTER_DEPRECATION])) throw new Error(`warnings: ${JSON.stringify(record.warnings)}, expected one, at styles/_partial.uxdsl:1:9`);
-  if (record.silencedWarnings.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${JSON.stringify(record.silencedWarnings)}`);
+  const mismatch = adapterWarningsMismatch(record);
+  if (mismatch) throw new Error(mismatch);
   if (!/unknown sass option "bogus"/.test(record.unknownKeyError || '')) throw new Error(record.unknownKeyError ? `the unknown sass key failed with another message: ${record.unknownKeyError.split('\n').slice(0, 2).join(' ')}` : 'an unknown sass key did not fail the module');
   const missing = ADAPTER_FILES.filter((file) => !record.dependencies.includes(file));
   if (missing.length) throw new Error(`not a file dependency: ${missing.join(', ')} (${JSON.stringify(record.dependencies)})`);
   if (JSON.stringify(record.mapSources) !== JSON.stringify(ADAPTER_FILES)) throw new Error(`the CSS map's .uxdsl sources are ${JSON.stringify(record.mapSources)}, expected ${JSON.stringify(ADAPTER_FILES)}`);
   if (record.lookup !== 'styles/_partial.uxdsl:2') throw new Error(`the partial's declaration maps back to ${record.lookup}, expected styles/_partial.uxdsl:2`);
-  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path';
+  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations, then one UXD_THEME_MARKER; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path';
 }
 
 /**
@@ -349,17 +361,18 @@ async function viteAdapterRecord(vite, plugin, root) {
 /**
  * S-6's verdict on `viteAdapterRecord`: the deprecation in the @use'd partial
  * is one warning, at styles/_partial.uxdsl:1:9, which sass.silenceDeprecations
- * removes; an unknown sass key fails the build with compile()'s message; and
- * the dev server's module graph lists the three files under the CSS module,
- * so an edit to any of them updates it.
+ * removes; the build's one UXD_THEME_MARKER warning follows it in both; an
+ * unknown sass key fails the build with compile()'s message; and the dev
+ * server's module graph lists the three files under the CSS module, so an
+ * edit to any of them updates it.
  */
 function assertViteAdapter(record) {
-  if (JSON.stringify(record.warnings) !== JSON.stringify([ADAPTER_DEPRECATION])) throw new Error(`warnings: ${JSON.stringify(record.warnings)}, expected one, at styles/_partial.uxdsl:1:9`);
-  if (record.silencedWarnings.length) throw new Error(`sass.silenceDeprecations did not remove the deprecation: ${JSON.stringify(record.silencedWarnings)}`);
+  const mismatch = adapterWarningsMismatch(record);
+  if (mismatch) throw new Error(mismatch);
   if (!/unknown sass option "bogus"/.test(record.unknownKeyError || '')) throw new Error(record.unknownKeyError ? `the unknown sass key failed with another message: ${record.unknownKeyError.split('\n')[0]}` : 'an unknown sass key did not fail the build');
   const missing = ADAPTER_FILES.filter((file) => !record.watched.includes(file));
   if (missing.length) throw new Error(`not in the dev server's module graph under the CSS module: ${missing.join(', ')} (${JSON.stringify(record.watched)})`);
-  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the build; the three files are in the dev server\'s module graph';
+  return 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations, then one UXD_THEME_MARKER; an unknown sass key fails the build; the three files are in the dev server\'s module graph';
 }
 
 /** N-02's verdict on compile() of a file whose first line @imports a missing partial. */
@@ -1001,7 +1014,7 @@ async function main() {
   });
   // The bundlers are instruments, from the repository; the adapters under test
   // are the installed package's.
-  await check('S-5', '[tarball] the installed uxdsl/webpack in real webpack builds (the repository\'s webpack, css-loader and MiniCssExtractPlugin): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, an unknown sass key fails the module, the partials are file dependencies, and the CSS map names each file at its path', async () => {
+  await check('S-5', '[tarball] the installed uxdsl/webpack in real webpack builds (the repository\'s webpack, css-loader and MiniCssExtractPlugin): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, the build warns UXD_THEME_MARKER once at its end (no module writes the marker), an unknown sass key fails the module, the partials are file dependencies, and the CSS map names each file at its path', async () => {
     const tools = {
       webpack: instrument('webpack'),
       MiniCssExtractPlugin: instrument('mini-css-extract-plugin'),
@@ -1010,7 +1023,7 @@ async function main() {
     };
     return assertWebpackAdapter(await webpackAdapterRecord(tools, req.resolve('uxdsl/webpack'), project('webpack-sass').root));
   });
-  await check('S-6', '[tarball] the installed uxdsl/vite in real `vite build`s and a dev server (the repository\'s Vite): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, an unknown sass key fails the build, and the partials are in the module graph', async () => {
+  await check('S-6', '[tarball] the installed uxdsl/vite in real `vite build`s and a dev server (the repository\'s Vite): a deprecation in a @use\'d partial is a warning at its file, line and column that sass.silenceDeprecations removes, the build warns UXD_THEME_MARKER once at its end (no module writes the marker), an unknown sass key fails the build, and the partials are in the module graph', async () => {
     const vite = await import(pathToFileURL(instrument.resolve('vite')).href);
     const mod = req('uxdsl/vite');
     return assertViteAdapter(await viteAdapterRecord(vite, mod.default || mod, project('vite-sass').root));

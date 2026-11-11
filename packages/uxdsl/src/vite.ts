@@ -1,8 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
-import { compile } from './compile';
-import type { CompileConfig, CompileWarning } from './compile';
+import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
+import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
 import { discoverThemeAsync, removedOptionWarnings } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
@@ -26,6 +26,16 @@ import { discoverThemeAsync, removedOptionWarnings } from './config';
 // `@uxdsl theme;` (the app's global .uxdsl), and a component module carries
 // only its own rules. A removed option is reported once per build, in
 // `buildStart`, and never passed on.
+//
+// A build counts the theme over all its modules: `load` returns compile()'s
+// `themeEmitted`, and whether the CSS references a --uxdsl__ token, as the
+// module's meta, and `buildEnd` (in `vite build` and `vite build --watch`)
+// reads it for every .uxdsl module, so no module reaching `@uxdsl theme;`
+// while the CSS references tokens, or more than one module emitting the
+// theme, is one UXD_THEME_MARKER warning per build. A failed build warns
+// nothing. The dev server has no end of build: it never reports "none", and
+// warns "more than one" when the set of emitting modules it has loaded
+// changes.
 
 export interface UxDslPluginOptions {
   /** Explicit theme override — skips discovery entirely when given. Its
@@ -71,6 +81,14 @@ function realPathFromVirtualId(id: string): string {
   return queryIndex === -1 ? id : id.slice(0, queryIndex);
 }
 
+/** A module as a warning names it: its file relative to `root`, `?inline` kept. */
+function moduleLabel(id: string, root: string): string {
+  return path.relative(root, realPathFromVirtualId(id)) + (inlineRE.test(id) ? '?inline' : '');
+}
+
+/** What load() records about the theme in a module's meta. */
+type ThemeMeta = Pick<ThemeEmission, 'themeEmitted' | 'referencesTokens'>;
+
 // Vite's CSS_LANGS_RE requires the extension immediately followed by `$`
 // or `?` — `&lang.css` at the very end of the id satisfies that. `?uxdsl`
 // is our own marker (see isVirtualId); `&inline` is preserved so Vite's
@@ -98,6 +116,11 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
   // rather than adding a plugin option that could disagree with them —
   // `build.sourcemap` for a build, `css.devSourcemap` for the dev server.
   let viteSourceMapEnabled = false;
+  let command: ResolvedConfig['command'] = 'build';
+  // The dev server: whether each module it loaded emitted the theme, and the
+  // set of emitting modules it last warned about.
+  const servedEmitting = new Map<string, boolean>();
+  let servedWarning = '';
 
   return {
     name: 'uxdsl',
@@ -105,6 +128,7 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
     configResolved(config: ResolvedConfig) {
       projectRoot = config.root || projectRoot;
       viteSourceMapEnabled = Boolean(config.build?.sourcemap) || Boolean(config.css?.devSourcemap);
+      command = config.command;
     },
     // Once per build, and once per dev server.
     buildStart() {
@@ -163,7 +187,7 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // embedded data URI would instead bury it inside the CSS text where
       // Vite's own pipeline can't compose it.
       const wantMap = viteSourceMapEnabled;
-      const { css, map, dependencies, warnings } = await compile({ entry: absPath }, {
+      const { css, map, dependencies, warnings, themeEmitted } = await compile({ entry: absPath }, {
         theme: theme as Record<string, unknown>,
         references: userOptions.references,
         sourceMap: wantMap ? 'external' : false,
@@ -175,10 +199,42 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       if (discovered) for (const dep of discovered.dependencies) this.addWatchFile(dep);
       for (const warning of warnings) this.warn(formatWarning(warning, projectRoot));
 
+      if (command === 'serve') {
+        servedEmitting.set(id, themeEmitted);
+        for (const servedId of [...servedEmitting.keys()]) {
+          if (!fs.existsSync(realPathFromVirtualId(servedId))) servedEmitting.delete(servedId);
+        }
+        const emitting = [...servedEmitting].filter(([, emitted]) => emitted).map(([servedId]) => moduleLabel(servedId, projectRoot)).sort();
+        if (emitting.length < 2) servedWarning = '';
+        else if (emitting.join('\n') !== servedWarning) {
+          servedWarning = emitting.join('\n');
+          const warning = themeEmissionWarning(emitting.map((label) => ({ label, themeEmitted: true, referencesTokens: true, canCarryTheme: true })), 'module');
+          if (warning) this.warn(warning.text);
+        }
+      }
+
       // This is the map for the CSS this hook just produced. It is returned
       // as the module's own map only because the module *is* that CSS —
       // never as the map of a JavaScript module wrapping it.
-      return { code: css, map: map ? JSON.parse(map) : null };
+      const meta: ThemeMeta = { themeEmitted, referencesTokens: referencesThemeTokens(css) };
+      return { code: css, map: map ? JSON.parse(map) : null, meta: { uxdsl: meta } };
+    },
+    // Once per `vite build` (and per rebuild in `--watch`), over every .uxdsl
+    // module of the build. A module whose meta is missing makes the count
+    // incomplete, and an incomplete count never reports "none".
+    buildEnd(error?: Error) {
+      if (error || command !== 'build') return;
+      const sheets: ThemeEmission[] = [];
+      let complete = true;
+      for (const id of this.getModuleIds()) {
+        if (!isVirtualId(id)) continue;
+        const meta = this.getModuleInfo(id)?.meta?.uxdsl as ThemeMeta | undefined;
+        if (meta) sheets.push({ label: moduleLabel(id, projectRoot), themeEmitted: meta.themeEmitted, referencesTokens: meta.referencesTokens, canCarryTheme: true });
+        else complete = false;
+      }
+      sheets.sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : 0));
+      const warning = themeEmissionWarning(sheets, 'module', { complete });
+      if (warning) this.warn(warning.text);
     },
   };
 }

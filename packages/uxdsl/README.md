@@ -432,6 +432,22 @@ warning (in `build --watch`, counted over the last result of every entry, and
 printed again only when that state changes). A stylesheet whose output is a
 `*.module.css` cannot carry the theme, so the marker there is an error.
 
+The bundler adapters count the same way, over a whole build: in a Vite or
+webpack app the marker goes in the global `.uxdsl`, and a component module
+carries only its own rules. `vite build` (and every rebuild of
+`vite build --watch`) warns `UXD_THEME_MARKER` once, at the end of the build,
+when no module reaches the marker while the CSS references tokens or when more
+than one module emits the theme — a plain import and an `?inline` import of
+the same file are two modules. The Vite dev server has no end of build: it
+warns only "more than one", when the set of emitting modules changes, so run
+`vite build` to check for none. The webpack loader warns once per compilation,
+over every module it built or webpack kept (watch mode, the persistent cache);
+a `*.module.uxdsl` is a CSS Module and cannot carry the theme. Where the loader
+cannot see the end of the build — a child compilation
+(`experimentalUseImportModule: false`), `thread-loader`, a new process whose
+persistent cache restores every `.uxdsl` module, so the loader never runs — it
+says nothing rather than guess.
+
 The former `includeTheme` option, the CLI's `includeTheme` config key and its
 `--include-theme`/`--no-include-theme` flags are removed: the option warns
 `UXD_OPTION_REMOVED` and is ignored, the key and the flags are errors naming

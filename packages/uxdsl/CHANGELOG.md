@@ -72,6 +72,24 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   rebuild. A build that references no token, or whose every output is a CSS
   Module, prints nothing. The text comes from one helper, shared with the
   bundler adapters; the catalog's `UXD_THEME_MARKER` names both warnings.
+- **Vite and webpack warn `UXD_THEME_MARKER` once at the end of a build.**
+  The same two warnings, from the same helper, over every `.uxdsl` module of
+  a build (``… no module reaches `@uxdsl theme;` …``, `… 2 modules emit the
+  theme (b.uxdsl, global.uxdsl) …`, modules named by path from the project,
+  sorted). Vite: `load()` returns each module's `themeEmitted` and whether its
+  CSS references a token as module meta, and `buildEnd` counts them once per
+  `vite build` and per rebuild of `vite build --watch` (an SSR build too; a
+  failed build says nothing); a plain and an `?inline` import of one file are
+  two modules. The dev server has no end of build: it warns only "more than
+  one", when the set of emitting modules changes. webpack: the loader records
+  the flags on the module's `buildInfo` and on the outer module of the same
+  resource that mini-css-extract-plugin and style-loader build, and counts
+  every module in its chain at the compilation's `finishModules`, rebuilt or
+  kept by watch mode or the persistent cache; a `*.module.uxdsl` cannot carry
+  the theme. A child compilation (`experimentalUseImportModule: false`),
+  `thread-loader` and a new process whose persistent cache restores every
+  `.uxdsl` module (the loader never runs there) print nothing rather than a
+  guess.
 - **`[uxdsl] Theme config detected` follows the compilation.** It is printed
   for an entry that emitted the theme, after compiling it, and no longer for
   an entry that only resolves its references against the theme file.
