@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D4 of 2026-11-04, as proposed in MIG-B9-03 §15, finding 3) |
-| Status | Ready |
+| Status | In review (PR #82) |
 | Size | S |
 | Depends on | None (README §5). It shares no file with MIG-B9-20 or MIG-B9-21 except the append-only `packages/uxdsl/CHANGELOG.md` and `packages/uxdsl/README.md` rows of README §7. Its baseline (§4) and its test T6 read `packages/playground-nextjs/src`, which MIG-B9-20 rewrites; reading is not sharing |
 | Blocks | MIG-B9-91 (it depends on every story of waves 0 to 3); MIG-B9-52 (decision D4 of 2026-11-04: "MIG-B9-52's release-notes instruction follows") |
@@ -663,7 +663,92 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in one PR (#82), from `feat/b9-29-codemod-idempotent`, by the light flow the owner chose on 2026-11-04 (FEAT-010 §2, D1): one scout, one implementer, one review and the deliverer. The size stays S.
+
+Where the delivery differs from §5, two things rule:
+- the owner's decisions 23 to 25 of 2026-11-10, recorded in §15 by the documentation PR #81 (`docs/b9-owner-decisions-2026-11-10`);
+- the "Delivery of 2026-11-10" block in §15.
+
+The scout's report, the implementer's evidence and the review stay with the run's evidence outside the repository. What they decided is summarized below.
+
+- **Base and merges.**
+  - The base is `feat/beta9` at `e704b3e` (PR #80, which wrote this story's file).
+  - `git fetch origin` ran before the review's fix and again before the PR was opened. Both times `origin/feat/beta9` was still at `e704b3e`, so no merge was needed.
+  - The story's commits since the base:
+    - `842cf11`, by the implementer: the codemod, the test file, the README sentence and the CHANGELOG subsection;
+    - `e84dd81`, by the deliverer: the review's finding R1;
+    - this record.
+- **Environment.**
+  - macOS 27.0 (Darwin 27.0.0, Apple M1 Pro).
+  - Node 20.19.0 and npm 11.21.1, CI's versions. Google Chrome 157.0.8103.39 at the macOS default path.
+  - Every command ran with `TMPDIR` set to a scratch directory of the role's own, never the owner's.
+  - The pre-commit hook (the docs guard, then the playground build) ran on every commit. No commit used `--no-verify` or `HUSKY=0`. The docs guard refused the first attempt at `e84dd81`, which changed only the test file (§15). The commit then carried the README and CHANGELOG clause "once per occurrence", which is true of the code.
+  - MIG-B9-20's workflow ran at the same time on this machine (load average up to about 16). Its `uxdsl build --watch` was not touched, and this run leaves no process behind.
+- **Preconditions (§3).**
+  - All nine lines exit 0 on `e704b3e`, run with `command grep` (the scout).
+  - No line was stale, so §3 and §4 are not corrected. §2's quote of the index row (line 213) predates PR #80, which changed that row to `Ready`. It is a source quote, not a precondition.
+  - On the head, lines 3, 4 and 8 exit 1 by design: this story replaced the suffix rule and the argument line those lines pin, and added the test file line 8 says is absent. The other six exit 0.
+- **Baseline (§4).**
+  - On `e704b3e` the output is byte-identical to the 45 lines recorded for `f855765` (`diff` exit 0). `f855765..e704b3e` touches only `docs/features`.
+  - AC4's four tests: 38 of 38.
+  - §12's guard: `head vs BASE: 0; control vs BASE: 18`.
+- **Contract as delivered** (the scout's amended reading under decisions 23 to 25, which the code follows):
+  - **C1.** A second run writes no file and ends `0 file(s) rewritten` (or `0 file(s) would change`). It prints exactly the first run's `unresolved:` lines, under `  <file>`. This holds for every typography input and for every input of §4, T1 and T6. It does not hold "for any files": a quoted `palette()`/`color()` argument inside a directive needs a second run, on BASE as on the head (F8 in §15).
+  - **C2.** A name ending in one of the ten `TYPOGRAPHY_PROPERTIES` values is never renamed. The token is the whole `[a-z0-9-]+` run, not followed by `[\w-]`.
+  - **C3.** Every other name ending in a former suffix is renamed as on BASE and counted under `typography variable suffixes ×n`. The six dual endings (`-font-size`, `-font-weight`, `-font-style`, `-letter-spacing`, `-text-transform`, `-text-decoration`) are read as canonical (decision 23 (b)).
+  - **C4** (decision 23 (b)). It is checked on the name as the run leaves it (owner flag 1 of the delivery). A name ending in a dual ending whose former reading names a role in the effective theme's `typography_details` gets one `unresolved:` line per occurrence. The lines come after the count line and before `densities(…)`, for example `unresolved: --uxdsl__typography__body-text-transform (ambiguous: role body's text-transform, or role body-text's former -transform, now --uxdsl__typography__body-text-text-transform)`. Without `--theme` nothing is reported: none of the 17 roles of the base or the playground ends in `-font`, `-letter` or `-text`.
+  - **C5.** Everything else is BASE's: the other rewrites and their lines, the usage line, the exit codes, the extensions, `SKIP_DIRS`, how `--theme` is loaded, and the walk (decision 25 (a)). The script has no exports and stays in `files`.
+  - **C6** (decision 24 (b)). The argument line (line 43 on BASE, 57 on the head) reads `(themeIndex === -1 || i !== themeIndex + 1)`. Every argument that is not a flag, and not the value after `--theme`, is a path, in any order. With no path left, the usage line goes to stderr and the exit code is 2.
+- **Failing test first.**
+  - The test file was run on `e704b3e`'s codemod before the change: 7 tests, 1 pass (T4, by design), 6 fail (T1, T2, T3, T5, T6, T9), exit 1. The failures:
+    - T1: `.h`'s six dual names became `h1-font-font-size` and the like on the first run.
+    - T2: `typography variable suffixes ×2`, with no C4 report.
+    - T3: 18 of the 30 names were rewritten.
+    - T5: the six names became `body-text-text-transform` and the like.
+    - T6: `typography-roles.uxdsl ×59`, `uxdsl.css ×451`.
+    - T9: `p.css q.css` listed only `q.css`.
+  - The final file (`e84dd81`) on BASE's script fails the same six and passes T4.
+- **Mutation checks.**
+  - The implementer's seven mutants are each caught:
+    - BASE's suffix rule;
+    - no rename;
+    - a report on every canonical name;
+    - no report;
+    - an input-only C4;
+    - BASE's line 43;
+    - no `themeIndex` filter.
+  - The review ran 19 mutants (M0–M18). One survived: M8, reports deduplicated per name (finding R1, fixed in `e84dd81`).
+  - The deliverer re-ran M0–M15 on the final test file. Every one is caught except M14 (roles read from the `--theme` override rather than the effective theme). M14 is an equivalent mutant: no role of the packaged base ends in `-font`, `-letter` or `-text`, so no input tells the two apart. M8 now fails T5: `expected: 7`, `actual: 6`.
+- **Tests and counts.**
+  - Seven `MIG-B9-29:` tests in `packages/uxdsl/test/codemod-canonical-grammar.test.js`: T1 to T6 and T9. T7 is AC4's four unedited files, and T8 is §12's guard.
+  - Each test creates and removes its own `uxdsl-grammar-codemod-*` directory.
+  - `npm test` runs the file (`node --test test/*.test.js` in `packages/uxdsl`).
+- **Acceptance criteria (§9) and §12**, on `e84dd81`:
+  - **AC1.** `node --test packages/uxdsl/test/codemod-canonical-grammar.test.js` exits 0: 7 tests, 7 pass, 0 skipped. `TMPDIR` is left empty.
+  - **AC2.** §4's block, through `bash`, exits 0.
+    - Part (1): run 1 prints `W former.css`, `typography variable suffixes ×7` and `1 file(s) rewritten (1 with findings).`. Run 2 prints `0 file(s) rewritten (0 with findings).`. The ten canonical names are unchanged, and "former, after run 2" equals "former, after run 1".
+    - Part (2): `216 tracked files copied`, then `14 file(s) rewritten (14 with findings).`. The preview lists only the two `densities(…)` reports (the CHANGELOG and README): `0 file(s) would change (2 with findings)`, then `0 file(s) rewritten (2 with findings).`, `diff -rq exit=0` and `lines the second run changed: 0`.
+    - Part (3), under C6: `~ p.css` and `~ q.css` (×7 each), `2 file(s) would change`, exit 0. Then `~ p.css`, `1 file(s) would change`, exit 0.
+  - **AC3.** §12's guard exits 0: `lines outside typography names, head vs BASE: 0; control vs BASE: 18`.
+  - **AC4.** The four tests: 38 of 38, exit 0. The `git diff --exit-code e704b3e -- …` line exits 0.
+  - **AC5.** `npm test` exits 0: 1,563 tests, 1,562 pass, 0 fail, 1 skipped (MIG-B9-11's Bootstrap corpus). `npm run verify:1.0 -- --skip-playground-walk` exits 0: `71/71 automated checks passed.` `npm run verify:playground-browser` exits 0: `pages loaded: 380; focusable elements checked: 2222`, `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus, contrast page = Node.`, and its six negative controls were caught. No run failed, so none was re-run. The implementer's runs of the same three gates on `842cf11` also exited 0.
+- **Generated artifacts and guards (§10).**
+  - CHANGELOG: one `### … (MIG-B9-29)` subsection at the top of `## 0.5.0-beta.9 — unreleased`, above MIG-B9-22's, with C6's sentence (owner flag 2 of the delivery), then `### Visual changes`: none.
+  - Package README: the one sentence of §11, with decision 23 (b)'s clause and "once per occurrence".
+  - On `842cf11`:
+    - `npm run verify:doc-examples` exits 0;
+    - `node scripts/generate-language-artifacts.js --check` exits 0;
+    - `node scripts/generate-agent-guide.js --check` exits 0.
+  - On `e84dd81`:
+    - `scripts/version-mentions.test.js`: 2 of 2;
+    - the docs guard passes (the hook).
+  - Not touched: AGENTS.md, the agent guide, `migration.md`, the release notes and `DIAGNOSTIC_CATALOG`. No file under `packages/uxdsl/src` changed.
+- **Not verified, or not a pass.**
+  - `npm test` skips one test: the existing MIG-B9-11 Bootstrap-corpus timing test, which needs `UXDSL_SASS_CORPUS`.
+  - `verify:1.0` ran locally with `--skip-playground-walk`, as AC5 says. CI's `verify:1.0 (one tarball, real Chrome)` runs the full gate. Its result is in the PR's checks, not in this record.
+  - Windows was not run (MIG-B9-28). The test uses no shell tool and builds every path with `path`.
+  - `npm test` and the two gates left entries from other suites in the scratch `TMPDIR` (`postcss-uxdsl-config-test-*`, `uxdsl-cli-*`, `uxdsl-sass-stage-*`, …). None has this story's prefix. This is MIG-B9-25's territory, and the directory was emptied afterwards.
+  - C1 "for any files": not true. See F8.
 
 ## 15. Findings and follow-ups
 
@@ -804,3 +889,78 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
   - AC2's part (3) no longer prints what §4 records: its "unless the owner answered Q2 with (b)" applies. The tests need not put a flag first.
   - The story stays S.
 - **Q3, MIG-B9-03's finding 7, generated outputs (decision 25): (a)**, as the contract assumed. MIG-B9-52 documents running the codemod over sources only; the walk stays BASE's. MIG-B9-52's §15 records the proposal. No change.
+
+### Delivery of 2026-11-10
+
+**The review.** One reviewer read `842cf11` in full and ran §4, §12 and AC4 on the head. It also ran a fuzz of 116,424 typography names against BASE, and 19 mutants. It reported two findings. Both were reproduced before anything changed.
+
+- **R1 (should-fix), applied in `e84dd81`.** C4 says one `unresolved:` line per occurrence, and the code prints one per occurrence. But no test planted an ambiguous name twice, so reports deduplicated per name (mutant M8) passed all seven tests. Reproduced: M8 applied in place, 7 of 7 pass. T5 now plants `body-text-transform` twice and expects two lines for it, seven in all, in both runs. Under M8, T5 fails (`expected: 7`, `actual: 6`). The head passes 7 of 7. Every other mutant fails the same tests as before. The README sentence and the CHANGELOG now say "once per occurrence".
+- **R2 (should-fix), recorded as F8 below; no code change.** C1 claims a second run is a no-op "for any files", and it is not. C5 keeps BASE's behavior for every rewrite other than the typography one, so the code stays as it is. C1 is reported as holding for every typography input and for every input of §4, T1 and T6, with F8 as the exception (§14).
+
+**New findings.**
+
+- **F7 — The directive rewrite corrupts a JSON string that holds an escaped double quote.** Found by the scout; pre-existing on BASE.
+  - Input: `{"css":".c { @ds-button(\"outlined\", primary); }"}`.
+  - Result: `@ds-button(\outlined\ primary)`, which `JSON.parse` rejects (`Bad escaped character in JSON at position 25`).
+  - A second run leaves the file as it is, so this is not an idempotency defect.
+  - T1's `.json` fixture writes the quoted form with single quotes, and the test says why in a comment.
+  - Proposed: the follow-up story below, with F3 and F8.
+- **F8 — A quoted `palette()`/`color()` argument inside a directive takes two runs.** Found by the review; pre-existing on BASE.
+  - Input: `@ds-surface(palette("primary-main"))` and `@ds-button(contained, color('gray-300'))`.
+  - Run 1 prints only `directive arguments ×2`. The dashed-key rewrite runs before the directive rewrite strips the quotes, so it leaves `palette(primary-main)` and `color(gray-300)`.
+  - Run 2 prints `palette()/color() dashed -> dotted ×2` and `1 file(s) rewritten`. Run 3 gives `0 file(s) rewritten`. BASE `e704b3e` prints the same three runs. With an ambiguous key, run 2 would also print an `unresolved:` line that run 1 did not.
+  - It sits in the same directive-argument rewrite as F3 and F7.
+  - The README sentence of §11 ("so a second run changes nothing") and the CHANGELOG ("Running the codemod again now changes nothing") are written about typography names. For this input they are broader than the code (owner flag 3).
+- **C4 is decided on the name as the run leaves it** (the scout's reading, owner flag 1). §5 says "a name that C2 keeps", which can be read on the input instead. Measured with roles `lead` and `lead-font` and a file holding `--uxdsl__typography__lead-size`:
+  - Read on the input: run 1 renames the name to `lead-font-size` and reports nothing, and run 2 reports it. That breaks C1's "a second run prints them again".
+  - Read on the output: both runs print the same report.
+  - T2's `lead-size` case pins the output reading, and the input-only mutant fails it.
+- **The docs guard asks for a README change on a test-only commit.** `scripts/verify-docs-update.js` counts any staged file under `packages/uxdsl` outside `README.md`, `CHANGELOG.md`, `docs/` and the lockfiles as package code, `test/` included. `e84dd81` was refused until it staged a README change. No story is proposed: here the README gained a true clause. The fact is recorded for the next deliverer whose review fix touches only a test.
+
+**Facts.**
+
+- The fuzz (the review): 116,424 generated typography names × 12 terminators, run through the head and BASE.
+  - 882 lines differ, all names ending in a canonical property that the head leaves as they are.
+  - There are no other differences, and a second head run writes nothing.
+  - Empty head: `-size` becomes `-font-size`, as on BASE, and `-font-size` is kept.
+- T6's corpus (`packages/playground-nextjs/src`, `fixtures/parity`) holds only tracked files: 144 on disk, 144 tracked. CI sees the same corpus.
+- Through `npm --prefix packages/uxdsl run codemod:canonical-grammar -- <path>`, C6 works:
+  - a lone path previews and exits 0;
+  - `-- <p> --write` rewrites it;
+  - `-- --theme t.js` alone exits 2.
+  On BASE the lone path prints the usage line and exits 2.
+
+**Owner flags.**
+
+1. **C4 on the name as the run leaves it.** Delivered as (a), the output reading. Alternative (b): only names kept as read. (b) is closer to §5's words, but a second run can then print a report the first did not. Recommendation: (a), as delivered.
+2. **Where C6 is documented.** Delivered as (a): one sentence in the CHANGELOG subsection. Without `--theme`, the first path is now read; it used to be skipped, and a lone path printed the usage line. The README keeps §11's single sentence, since its documented commands put `--theme` first and are unaffected. Alternatives: (b) a README clause too; (c) nowhere. Recommendation: (a), as delivered.
+3. **F8 and the shipped claim "a second run changes nothing".** Options:
+   - (a) Keep the README and CHANGELOG wording, and fix F8 in the follow-up story below, so the claim holds in beta.9.
+   - (b) Qualify both now to "a second run changes no typography name".
+   - (c) Fix F8 here, which C5 forbids and which widens the story.
+
+   Recommendation: (a), if the follow-up is placed in beta.9; otherwise (b).
+4. **F3, F7 and F8, one follow-up.** All three are defects of the directive-argument rewrite, all pre-existing on BASE:
+   - F3: a function argument left half done;
+   - F7: an escaped `\"` inside a JSON string;
+   - F8: a quoted `palette()`/`color()` that needs a second run.
+
+   Options:
+   - (a) A new S story, proposed as MIG-B9-18 (the first free number, since PR #81 registers MIG-B9-17; the index's owner may renumber it): "The codemod's directive-argument rewrite is complete in one run". It would run the dashed-key rewrite after the quotes are stripped, rewrite a comma list with function arguments, and leave a JSON escape intact. Placed in wave 3 so it ships in beta.9.
+   - (b) Fold them into MIG-B9-60's `doctor --fix`, which applies "the grammar codemod".
+
+   Recommendation: (a).
+5. **F5, still open.** Which story removes the second codemod instruction from `docs/releases/0.5.0-beta.9.md`:
+   - (a) MIG-B9-91, which writes beta.9's record;
+   - (b) MIG-B9-52, as D4 says, in beta.10.
+
+   After this story the second run is harmless for typography names. Recommendation: (a).
+
+**Follow-ups.**
+
+- **MIG-B9-18 (proposed, new, S, wave 3):** F3, F7 and F8 (owner flag 4).
+- **MIG-B9-52:** decision 25 (a). Document running the codemod over sources only, not build outputs (MIG-B9-03's finding 7). If owner flag 5 is answered (b), also remove the release notes' second instruction.
+- **MIG-B9-91:** the second instruction in beta.9's notes, if owner flag 5 is answered (a).
+- **MIG-B9-50:** F4, the README's list of skipped directories (three of the six). Unchanged here.
+- **MIG-B9-25:** `npm test` and the two gates still leave entries from other suites in `TMPDIR`. This story's test leaves none.
+- **PR #81, the documentation PR on `docs/b9-owner-decisions-2026-11-10`:** it adds an "Owner decisions of 2026-11-10" block to this section. Whichever of the two PRs merges second keeps that block before this one.

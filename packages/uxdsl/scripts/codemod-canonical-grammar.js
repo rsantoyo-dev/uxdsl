@@ -16,8 +16,22 @@
 // Usage:
 //   node node_modules/uxdsl/scripts/codemod-canonical-grammar.js [--write] [--theme uxdsl.theme.json] <paths…>
 //
-// A path is a file or a directory (walked for .uxdsl .css .scss .ts .tsx .js .jsx .mdx .md
-// .json; node_modules, dist and .next are skipped). Without --write it only reports.
+// Flags and paths may come in any order: every argument that is not a flag,
+// and not the file after --theme, is a path. A path is a file or a directory
+// (walked for .uxdsl .css .scss .ts .tsx .js .jsx .mdx .md .json; node_modules,
+// dist and .next are skipped). Without --write it only reports.
+//
+// A typography variable is renamed only when its name does not already end in
+// a CSS property name the engine gives typography variables (font-family,
+// font-size, line-height, font-weight, letter-spacing, text-transform,
+// text-decoration, font-style, margin-block-start, margin-block-end), so a
+// second run changes nothing. A name with a former suffix inside it
+// (`…-size-sm`, `…-size_x`) is left. A name such as
+// `--uxdsl__typography__body-text-transform` reads both ways: role `body`'s
+// `text-transform`, or role `body-text`'s former `-transform`. It is left as
+// a canonical name, and, as the run leaves it, reported when the theme
+// defines the role its former reading names (`body-text`), so it can be
+// decided by hand.
 //
 // A dashed palette()/color() argument is rewritten only when the split is
 // unambiguous against the theme: `palette(primary-main)` becomes
@@ -40,7 +54,7 @@ const args = process.argv.slice(2);
 const write = args.includes('--write');
 const themeIndex = args.indexOf('--theme');
 const themePath = themeIndex === -1 ? null : args[themeIndex + 1];
-const targets = args.filter((arg, i) => !arg.startsWith('--') && i !== themeIndex + 1);
+const targets = args.filter((arg, i) => !arg.startsWith('--') && (themeIndex === -1 || i !== themeIndex + 1));
 if (!targets.length) {
   console.error('usage: codemod-canonical-grammar.js [--write] [--theme uxdsl.theme.json] <paths…>');
   process.exit(2);
@@ -54,6 +68,7 @@ const override = themePath ? require(path.resolve(themePath)) : {};
 const theme = resolveTheme(override.theme && !override.palette ? override.theme : override);
 const palette = theme.palette || {};
 const colors = theme.colors || {};
+const typographyRoles = theme.typography_details || {};
 
 const EXTENSIONS = new Set(['.uxdsl', '.css', '.scss', '.ts', '.tsx', '.js', '.jsx', '.mdx', '.md', '.json']);
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.next', '.git', 'out', 'build']);
@@ -89,6 +104,13 @@ function dotted(kind, key) {
 
 const DIRECTIVES = ['ds-surface', 'ds-button', 'ds-input', 'ds-typo'];
 
+// The former typography suffixes and the CSS property each one names.
+const TYPOGRAPHY_SUFFIXES = { size: 'font-size', line: 'line-height', weight: 'font-weight', spacing: 'letter-spacing', transform: 'text-transform', decoration: 'text-decoration', style: 'font-style' };
+// The CSS property names the engine gives typography variables, in the order
+// of the engine's `TYPOGRAPHY_PROPERTIES`. A name ending in one of them is
+// canonical and never renamed.
+const TYPOGRAPHY_PROPERTIES = ['font-family', 'font-size', 'line-height', 'font-weight', 'letter-spacing', 'text-transform', 'text-decoration', 'font-style', 'margin-block-start', 'margin-block-end'];
+
 function rewrite(text, report) {
   let out = text;
   const count = (label, n) => { if (n) report.push([label, n]); };
@@ -121,9 +143,27 @@ function rewrite(text, report) {
     });
   }
   count('directive arguments', n); n = 0;
-  const TYPOGRAPHY_SUFFIXES = { size: 'font-size', line: 'line-height', weight: 'font-weight', spacing: 'letter-spacing', transform: 'text-transform', decoration: 'text-decoration', style: 'font-style' };
-  out = out.replace(/(--uxdsl__typography__[a-z0-9-]*?)-(size|line|weight|spacing|transform|decoration|style)\b(?!-)/g, (match, head, suffix) => { n++; return `${head}-${TYPOGRAPHY_SUFFIXES[suffix]}`; });
+  // A typography variable is decided on its whole name: the longest run of
+  // `[a-z0-9-]` after the prefix, not followed by a word character or `-`.
+  const ambiguousNames = [];
+  out = out.replace(/--uxdsl__typography__([a-z0-9-]+)(?![\w-])/g, (match, name) => {
+    let next = name;
+    if (!TYPOGRAPHY_PROPERTIES.some((property) => name.endsWith(`-${property}`))) {
+      const former = /^(.*)-(size|line|weight|spacing|transform|decoration|style)$/.exec(name);
+      if (former) { n++; next = `${former[1]}-${TYPOGRAPHY_SUFFIXES[former[2]]}`; }
+    }
+    // A name that, as the run leaves it, ends in a property name and whose
+    // former reading names a role of the theme reads both ways: it is reported.
+    const property = TYPOGRAPHY_PROPERTIES.find((p) => next.endsWith(`-${p}`));
+    const former = property && /^(.+)-(size|weight|spacing|transform|decoration|style)$/.exec(next);
+    if (former && Object.prototype.hasOwnProperty.call(typographyRoles, former[1])) {
+      const role = next.slice(0, -property.length - 1);
+      ambiguousNames.push(`--uxdsl__typography__${next} (ambiguous: role ${role}'s ${property}, or role ${former[1]}'s former -${former[2]}, now --uxdsl__typography__${former[1]}-${TYPOGRAPHY_SUFFIXES[former[2]]})`);
+    }
+    return `--uxdsl__typography__${next}`;
+  });
   count('typography variable suffixes', n); n = 0;
+  for (const item of ambiguousNames) report.push(['unresolved', item]);
   const densities = (out.match(/\bdensities\(/g) || []).length;
   if (densities) report.push(['unresolved', `densities(…) ×${densities}: define a Density token in the theme and use density(k)`]);
   return out;
