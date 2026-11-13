@@ -84,6 +84,58 @@ compiles them as written, and UXDSL's dotted tokens fail there
 for `.uxdsl` files: `compile()` runs Dart Sass itself (the `compile()` guide's
 [Sass inside `compile()`](compile.md#sass-inside-compile)).
 
+## The theme: `@uxdsl theme;` in the global `.uxdsl`
+
+The loader compiles each module on its own, and a module emits the theme —
+the `:root` token definitions and the theme's Google Fonts `@import` — only
+where it writes `@uxdsl theme;`. Write it once, at the top level of the global
+stylesheet the app imports first; every component module leaves it out and
+carries only its own rules:
+
+```css
+/* src/styles/global.uxdsl — imported once, first */
+@uxdsl theme;
+body { margin: 0; }
+```
+
+```css
+/* src/styles/panel.uxdsl — tokens only */
+.panel { @ds-surface(contained); padding: density(2); }
+```
+
+A component module alone compiles to its own rules: `.card{padding:density(4)}`
+is 47 bytes extracted by `MiniCssExtractPlugin` (no minifier). A
+`*.module.uxdsl` file is a CSS Module (css-loader's default `auto` rule):
+css-loader rejects a bare `:root` there as impure, so it never writes the
+marker. There is no option for the theme; the former `includeTheme` option is
+ignored with one `UXD_OPTION_REMOVED` warning per compilation, as are the
+other removed options.
+
+The loader counts the modules that emitted the theme and warns
+`UXD_THEME_MARKER` once per compilation, at `finishModules`, when the theme is
+defined nowhere or more than once:
+
+```text
+WARNING in UXD_THEME_MARKER: no module reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them.
+WARNING in UXD_THEME_MARKER: 2 modules emit the theme (src/styles/b.uxdsl, src/styles/global.uxdsl): each reaches `@uxdsl theme;`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load.
+```
+
+- It counts every `.uxdsl` module the loader handled, the ones rebuilt and
+  the ones webpack kept (watch mode, the persistent filesystem cache): an
+  edit to a `.js` file in watch mode still warns about a missing marker.
+- "No module" is reported only when some module's CSS references a
+  `--uxdsl__` token and at least one module is not a `*.module.uxdsl`, so a
+  build of plain CSS, or one made only of CSS Modules, says nothing. "More
+  than one" is reported always.
+- **Where the loader cannot see the whole build, it says nothing rather than
+  guess:** a child compilation (mini-css-extract-plugin with
+  `experimentalUseImportModule: false`), a loader run in `thread-loader`'s
+  workers or a bare loader runner (no compiler to count on), and a new
+  process whose persistent cache restores every `.uxdsl` module, so that the
+  loader never runs. Turbopack does not run the loader's hooks either.
+
+There is no switch to silence the warning.
+
 ## Options
 
 ```js
@@ -92,7 +144,6 @@ for `.uxdsl` files: `compile()` runs Dart Sass itself (the `compile()` guide's
   options: {
     theme,            // explicit theme object — skips discovery entirely when given
     references,       // same shape as the PostCSS plugin's `references` option
-    includeTheme,      // emit (or skip) the global :root token definitions — default true
     discoverTheme,     // default true; see "Project theme" below
     configRoot,        // directory theme discovery searches from — default webpack's rootContext
     sourceMap,         // default webpack's own this.sourceMap (set from devtool); see "Source maps"

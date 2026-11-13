@@ -501,8 +501,12 @@ checks it in Chrome.
 
 ## Where the theme goes in the compiled output
 
-A stylesheet that writes `@uxdsl theme;` right after its prelude compiles to,
-in order:
+The theme goes where `@uxdsl theme;` is, and a stylesheet without the marker
+has none: it compiles to its prelude and its own rules, nothing inserted. The
+theme's Google Fonts `@import`s still lead the output wherever the marker
+sits, since CSS honors an `@import` only before every other rule. Write the
+marker after the prelude and before the first rule; a stylesheet that does so
+compiles to, in order:
 
 1. the author's `@charset`, if any, and leading comments;
 2. the theme's Google Fonts `@import`s (from `fonts.google`);
@@ -516,6 +520,13 @@ in order:
    blocks, every block on one line;
 5. the author's rules, in written order, with the `@media` blocks the compiler
    creates for their responsive declarations right after each rule.
+
+In a Sass entry the marker comes after the `@use` rules, which Sass requires
+first; in an entry `generate-entry` writes, it is the first `@use`'d file.
+There, Dart Sass hoists every author CSS `@import` above the theme's blocks,
+the entry's own body-less `@layer` statements land after them (the theme is
+unlayered, so that order is valid CSS), and a comment that opens the next
+listed file follows the theme.
 
 A declaration the grammar does not change is printed exactly as written, with
 its spacing and inline comments (`margin: 0 /* c */ auto`, an empty

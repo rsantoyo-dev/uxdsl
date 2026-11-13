@@ -7,8 +7,8 @@ twelve boundary widths in light/dark, and on the served build for the CSS
 Module the installed CLI writes. Set `UXDSL_CHROME_PATH` if Chrome is not
 installed at `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`.
 
-Proves the 5-entry guide (`includeTheme: true` theme entry + four
-`includeTheme: false` CSS-Module panels) compiles in a **real Next.js
+Proves the 5-entry guide (a theme entry that writes `@uxdsl theme;` + four
+CSS-Module panels without the marker) compiles in a **real Next.js
 production build**, under css-loader's actual strict/pure CSS Modules
 mode — not a hand-rolled webpack config that approximates it.
 
@@ -38,8 +38,9 @@ Each run:
 
 1. **Compile** (`compile.js`): builds the same 5 entries
    `fixtures/mig07-consumer/entries/` defines — `theme.uxdsl`
-   (`includeTheme: true`) into `styles/theme.css` (plain global CSS), and
-   the four panels (`includeTheme: false`) into `styles/panel-*.module.css`.
+   (which writes `@uxdsl theme;`) into `styles/theme.css` (plain global
+   CSS), and the four panels (no marker, so no theme) into
+   `styles/panel-*.module.css`.
    Then the installed CLI (`uxdsl build`, run in `uxdsl-cli/`) builds
    `styles/panel.module.uxdsl` into `styles/panel.generated.module.css`
    (see "A CSS Module written in `.uxdsl`" below); `compile.js` fails if
@@ -77,8 +78,8 @@ output starts with `@charset "UTF-8";`. Next.js never runs Sass on it: the
 uxdsl CLI compiles it with Dart Sass into `styles/panel.generated.module.css`
 (git-ignored), and `pages/index.js` imports that file like any CSS Module.
 The CLI's project is `uxdsl-cli/`: `uxdsl.config.cjs` holds one `builds`
-entry with `includeTheme: false` (the theme comes from `styles/theme.css`,
-and a `.module.css` holding `:root` is not pure), and `uxdsl.theme.cjs`
+entry whose module writes no `@uxdsl theme;` (the theme comes from
+`styles/theme.css`, and a `.module.css` holding `:root` is not pure), and `uxdsl.theme.cjs`
 re-exports the theme `styles/theme.css` is compiled with, so the CLI checks
 the module's tokens against the palette the page defines. Both sit in their
 own directory because a theme file at this fixture's root would be
@@ -89,7 +90,7 @@ plugin's theme discovery.
 
 A second Next.js app, `postcss-only/`, uses UXDSL with no CLI at all: its
 `postcss.config.js` is Next's default plugins plus
-`'uxdsl/postcss': { includeTheme: false }`, `styles/globals.css` starts with
+`'uxdsl/postcss': {}` (no option: the marker is the switch), `styles/globals.css` starts with
 `@uxdsl theme;`, and `styles/card.module.css` only uses tokens. The script packs
 and installs the tarball (through `../mig07-consumer`), links it into the app,
 runs `next build` (static export) and reads computed styles in Chrome at two

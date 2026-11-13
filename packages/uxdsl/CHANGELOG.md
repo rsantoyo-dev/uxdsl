@@ -146,6 +146,14 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `{ entry, outFile }`, and the Next.js scaffold writes
   `'uxdsl/postcss': {}`: the CLI-built global CSS carries the theme from its
   generated theme file, so a CSS Module gets none.
+- **A `postcss.config.js` that passes `'uxdsl/postcss': { includeTheme: false }`
+  keeps building, with one `UXD_OPTION_REMOVED` warning per file.** Write
+  `'uxdsl/postcss': {}` and keep `@uxdsl theme;` in the global stylesheet; the
+  plugin alone compiles one file at a time and does not warn when no file
+  writes the marker. The migration guide's "beta.9 — the theme is emitted
+  only at `@uxdsl theme;`" lists every step; the package README's "Where the
+  theme goes: `@uxdsl theme;`", the CLI, `compile()`, Vite and webpack guides
+  and the agent guide describe the marker as the only switch.
 - **The CSS Module leak error names the marker.** An entry whose output is a
   `*.module.css` and would emit `:root` fails with ``… A CSS Module carries no
   theme: remove `@uxdsl theme;` (or the :root rule) from this entry and the

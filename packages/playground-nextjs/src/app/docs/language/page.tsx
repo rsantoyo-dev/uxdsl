@@ -98,10 +98,13 @@ export default function LanguagePage() {
 
         <h2 id="theme-marker"><code>@uxdsl theme;</code></h2>
         <p>
-          For a PostCSS-only setup (one plugin configuration for every stylesheet, as in Next.js without the CLI): written once, at
-          the top level of the one global stylesheet, it is where the theme’s <code>:root</code> is emitted. The plugin then runs with
-          <code> includeTheme: false</code> everywhere else. A misspelled, repeated or nested marker is <code>UXD_THEME_MARKER</code>.
-          See the <Link href="/docs/quick-start">quick start</Link>.
+          The theme’s <code>:root</code> is emitted where this line is written, and nowhere else: written once, at the top level of
+          the one global stylesheet, it defines every token there, and every other stylesheet — a component sheet, a CSS Module —
+          leaves it out and only consumes them. There is no option for it, on any path: the CLI, the Vite plugin, the Webpack loader
+          and the PostCSS plugin alone. The entry <code>uxdsl generate-entry</code> writes loads it from its generated{' '}
+          <code>uxdsl-theme.uxdsl</code>. A misspelled, repeated or nested marker is <code>UXD_THEME_MARKER</code>, and so is the
+          warning a build prints when no stylesheet, or more than one, emits the theme. See the{' '}
+          <Link href="/docs/quick-start">quick start</Link>.
         </p>
 
         <h2 id="scss">The SCSS-style subset</h2>

@@ -48,12 +48,11 @@ does. Dart Sass declares Node 20.19 or later in its `engines`.
 ```javascript
 const { compile } = require('uxdsl');
 
-const { css, map, dependencies, warnings } = await compile(
+const { css, map, dependencies, warnings, themeEmitted } = await compile(
   { entry: './src/uxdsl-entry.uxdsl' },   // or { source, from? } for in-memory input
   {
     theme,               // theme override, same shape as the PostCSS plugin's `theme` option
     references,          // same shape as the PostCSS plugin's `references` option
-    includeTheme: true,  // emit the theme's :root tokens (default: true)
     to: './dist/app.css',
     sourceMap: false,    // false (default) | 'inline' | 'external'
     sourcesContent: true, // embed the original sources in the map (default: true)
@@ -91,6 +90,23 @@ const { css, map, dependencies, warnings } = await compile(
   (`UXD_SASS_WARNING`, then `UXD_FUNCTION_SHADOWED`), then the plugin's, each
   at the author's file, line and column when it has a position; one without
   a position is `{ text }` alone.
+- **The theme is emitted only where `@uxdsl theme;` is written**, in the
+  stylesheet or in a file it loads (`@use` of a partial that writes it, which
+  Dart Sass loads once per compilation): its `:root` blocks take the marker's
+  place and its Google Fonts `@import` leads the output. A stylesheet without
+  the marker carries only its own rules — `.card{padding:density(4)}` compiles
+  to `.card {\n  padding: var(--uxdsl__density__4);\n}` — and still checks
+  every reference against the theme. There is no option for it: a removed
+  option passed in `config` (`includeTheme`, `breakpoints`, `themeVar`,
+  `spaceVar`, `colorVar`) is ignored with one
+  `UXD_OPTION_REMOVED: the "<name>" option was removed and is ignored; …`
+  warning per call, after Dart Sass's.
+- `themeEmitted`: `true` when this compilation emitted the theme, `false`
+  when it did not. A tool that builds several stylesheets counts them from
+  it — the CLI, the Vite plugin and the webpack loader warn
+  `UXD_THEME_MARKER` when no stylesheet of a build that references tokens
+  emitted it, or more than one did — rather than from its options or a
+  `:root` search.
 - `sourceMap`: `'external'` returns the map as a JSON string in `map` and
   leaves `css` untouched — the caller adds the `sourceMappingURL` comment,
   since only it knows what the `.map` will be called. `'inline'` appends the
@@ -114,8 +130,8 @@ const { css, map, dependencies, warnings } = await compile(
   `@charset`, if there is one) — the theme's Google Fonts import first, then
   yours in the order you wrote them, then the theme's `:root`. Dart Sass
   moves an `@import` you wrote after another rule up there; nothing else is
-  reordered. `includeTheme: false` emits no theme `:root` and no theme
-  import.
+  reordered. A stylesheet without `@uxdsl theme;` has no theme `:root` and
+  no theme import.
 - The output ends with the stylesheet's last rule, and, like Dart Sass's own
   output, without a final newline. Nothing is appended after it (an earlier
   version added a `/*@uxdsl-bp*/` comment and a `#uxdsl-bp-meta` rule for a
