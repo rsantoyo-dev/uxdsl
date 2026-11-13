@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 5 |
 | Decision gate | None (plan §3.3; DEC-16 for the evidence rule) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | M |
 | Depends on | MIG-B9-15 (and every wave-3 story, whose sections it rewrites) |
 | Blocks | MIG-B9-90 |
@@ -160,3 +160,9 @@ To be filled in the delivering PR.
 Static review of the plan against `main` at `685c132`; not a change to the contract until the owner accepts it in PR review.
 
 - AGENTS.md is the repository's only agent instruction file (there is no CLAUDE.md) and the guide generator copies it byte for byte: moving "Maintaining this guide" to CONTRIBUTING.md removes the repository rules from what implementing agents load. Add a CLAUDE.md that points at CONTRIBUTING.md, or a repo-only section the generator strips.
+
+### Owner decisions of 2026-11-10 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). The owner was given 32 numbered questions, in Spanish, on the open questions of the seven story files written on 2026-11-10 and on three notes of their PR (#80), each with its options and a recommendation, and answered, verbatim, "fusiona y haz como recmiendes" ("fusiona y haz como recomiendes", "merge, and do as you recommend"): PR #80 was merged, and each recommendation is the owner's decision of 2026-11-10. This record is in English and lists the one that concerns this story. It proposes a follow-up for this story; it does not change its contract, and the re-baseline after wave 3 decides how it enters.
+
+- **`AGENTS.md`'s directive sentence (decision 2, on MIG-B9-16's Q2).** The owner decided that a directive inside `@media` or `@supports` under its rule compiles through `compile()` (Dart Sass moves the at-rule out) and is `UXD_DIRECTIVE_CONTEXT` through `uxdsl/postcss` alone, as intended, and MIG-B9-16 documents the asymmetry on `/docs/language`. `AGENTS.md` (lines 502–507 on `f855765`) says that `@ds-surface(...)` and the other directives, "nested inside `@media`/`@supports` under that rule", fail as `UXD_DIRECTIVE_CONTEXT`, which holds only for the plugin alone. Correcting that sentence is proposed for this story (MIG-B9-16 §15, F1). The re-baseline reads the sentence as wave 3 leaves it, since MIG-B9-30 to 36 also edit `AGENTS.md`.

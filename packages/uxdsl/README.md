@@ -795,10 +795,15 @@ node node_modules/uxdsl/scripts/codemod-canonical-grammar.js --write --theme uxd
 Without `--write` it only reports. A dashed Palette/Color argument is rewritten
 only when the split is unambiguous against the theme (the packaged base merged
 with `--theme`); a family whose own name contains a dash, an ambiguous split and
-`densities(…)` are reported for a decision by hand. It walks `.uxdsl`, `.css`,
-`.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`, `.md` and `.json` files and skips
-`node_modules`, `dist` and `.next`. It rewrites prose too, so review a
-documentation file it touches.
+`densities(…)` are reported for a decision by hand. It also renames a former
+typography variable (`--uxdsl__typography__h1-size` →
+`--uxdsl__typography__h1-font-size`) and leaves a name already called after
+its CSS property as it is, so a second run changes nothing; a name a theme
+role makes ambiguous (`--uxdsl__typography__body-text-transform`, when the
+theme defines a `body-text` role) is left and reported, once per occurrence.
+It walks `.uxdsl`, `.css`, `.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`,
+`.md` and `.json` files and skips `node_modules`, `dist` and `.next`. It
+rewrites prose too, so review a documentation file it touches.
 
 ---
 

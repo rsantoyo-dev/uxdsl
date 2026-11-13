@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.10` (DEC-03, revised 2026-11-04) |
 | Wave | 4 |
 | Decision gate | DEC-14 (decided: the playground is the reference implementer) |
-| Status | Ready |
+| Status | Draft (re-baseline after wave 3) |
 | Size | M |
 | Depends on | MIG-B9-22, MIG-B9-30, MIG-B9-33, MIG-B9-34 (the engine it implements must be final); MIG-B9-44 (the visual comparison harness; decision 12 of 2026-11-09, §15) |
 | Blocks | MIG-B9-41 |
