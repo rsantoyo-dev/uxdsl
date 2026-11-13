@@ -2,8 +2,8 @@
 
 Verifies `uxdsl` from the outside: installs it from a real
 `npm pack` tarball (never the monorepo's TypeScript source) and compiles
-one theme entry (`includeTheme: true`) plus four CSS-Module-style panel
-entries (`includeTheme: false`), covering the `@ds-surface`/`@ds-button`/
+one theme entry (which writes `@uxdsl theme;`) plus four CSS-Module-style
+panel entries (without the marker, so they carry no theme), covering the `@ds-surface`/`@ds-button`/
 `@ds-input`/`@ds-typo`/`border()`/`radius()` families from the original
 migration report.
 

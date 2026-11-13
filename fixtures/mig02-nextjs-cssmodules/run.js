@@ -13,7 +13,7 @@
  *
  * Two runs:
  *  1. Positive: the compiled theme entry as global CSS + the 4 panels as
- *     `.module.css` (includeTheme: false, so none contain `:root`), and
+ *     `.module.css` (no `@uxdsl theme;`, so none contain `:root`), and
  *     styles/panel.generated.module.css, which the installed CLI builds from
  *     styles/panel.module.uxdsl — must build clean, with no workaround (no
  *     `:global()`, no disabling pure mode) needed. browser.js then reads

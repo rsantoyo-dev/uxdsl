@@ -17,10 +17,9 @@
 //               than passing through untouched.
 //   Theme       The effective theme comes from the `theme` option or, when it
 //               is omitted, from conventional theme-file discovery
-//               (`discoverTheme`/`configRoot`). `includeTheme: false` compiles
-//               an entry that only consumes tokens another entry defines;
-//               `@uxdsl theme;` emits the theme where it is written, and only
-//               there, whatever `includeTheme` says.
+//               (`discoverTheme`/`configRoot`). `@uxdsl theme;` emits the
+//               theme where it is written, and only there: a stylesheet
+//               without it only consumes tokens another stylesheet defines.
 //   Integrity   Every emitted var() is checked against a real definition
 //               (`references`), failing the build by default rather than
 //               shipping a dangling token.
@@ -31,8 +30,9 @@
 //
 // One compilation is one `Compilation` object, built by `validateOptions` and
 // handed through `rejectSassSyntax`, `emitTheme`, `expandDirectives`,
-// `expandResponsive`, `rejectLeftoverDirectives` and `checkReferences`, in that
-// order. Nothing is stored on the PostCSS root or on the plugin instance.
+// `expandResponsive`, `rejectLeftoverDirectives`, `checkReferences` and
+// `reportThemeEmission`, in that order. Nothing is stored on the PostCSS root or
+// on the plugin instance.
 
 import type { AtRule, ChildNode, Declaration, Node as PostcssNode, Result, Root, Rule } from 'postcss';
 import postcss from 'postcss';
@@ -49,7 +49,7 @@ import { directiveInner, parseTypoArguments } from './directives';
 import { buildVarName } from './naming';
 import { resolveTheme } from './default-theme';
 import { diagnostic, locateError, missingKeyMessage, closestKey, suggestKeys, didYouMean, formatKeyList, editDistance, DIAGNOSTIC_CATALOG as CATALOG } from './diagnostics';
-import { discoverThemeSync } from './config';
+import { discoverThemeSync, removedOptionWarnings } from './config';
 import {
   resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, unknownFunctionMessage, parseTokenReference, tokenReferenceToCss,
   TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS,
@@ -61,17 +61,6 @@ import type { UxdslOptions } from './types';
 
 const PLUGIN = 'uxdsl';
 
-// The plugin options `breakpoints`, `themeVar`, `spaceVar` and `colorVar` are
-// gone: thresholds are the theme's own `breakpoints` family and the emitted
-// names are the `--uxdsl__<family>__<key>` contract. A caller that still
-// passes one is told so and the option is ignored, never thrown on.
-const REMOVED_OPTIONS: Record<string, string> = {
-  breakpoints: 'breakpoints are configured in the theme (`theme.breakpoints`)',
-  themeVar: 'palette() always compiles to var(--uxdsl__palette__<key>)',
-  spaceVar: 'space() always compiles to var(--uxdsl__space__<key>)',
-  colorVar: 'color() always compiles to var(--uxdsl__color__<key>)',
-};
-
 const KNOWN_FUNCTION_NAMES = new Set((KNOWN_CSS_FUNCTIONS as readonly string[]).map((name) => name.toLowerCase()));
 const DIRECTIVE_NAMES: string[] = LANGUAGE_COMPLETIONS.directives.filter((name) => name.startsWith('ds-'));
 const UNSPLITTABLE_AT_RULES = ['keyframes', 'font-face', 'page', 'counter-style'];
@@ -80,10 +69,9 @@ const UNSPLITTABLE_AT_RULES = ['keyframes', 'font-face', 'page', 'counter-style'
 interface Compilation {
   root: Root;
   result: Result;
-  includeTheme: boolean;
   /** `@uxdsl theme;` in this stylesheet, when written: the theme goes there. */
   themeMarker: AtRule | null;
-  /** Whether this compilation emitted the theme (the marker, or includeTheme). */
+  /** Whether this compilation emitted the theme: it carried the marker. */
   themeEmitted: boolean;
   /** The effective theme: DEFAULT_THEME with the override deep-merged on top, validated. */
   theme: Record<string, any>;
@@ -137,11 +125,8 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const validated = validateTheme(theme, { references: false });
   if (!validated.ok) throw themeValidationError(validated.errors);
   for (const warning of validated.warnings) result.warn(warning.message, { plugin: PLUGIN });
-  for (const [name, instead] of Object.entries(REMOVED_OPTIONS)) {
-    if ((opts as Record<string, unknown>)[name] !== undefined) {
-      result.warn(`UXD_OPTION_REMOVED: the "${name}" plugin option was removed and is ignored; ${instead}.`, { plugin: PLUGIN });
-    }
-  }
+  // An option that no longer exists is reported and ignored, never thrown on.
+  for (const text of removedOptionWarnings(opts)) result.warn(text, { plugin: PLUGIN });
   // The one breakpoint map of this compilation: the effective theme's.
   const bps: Record<string, number> = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints };
   const ordered = Object.entries(bps).map(([name, px]) => ({ name, px })).sort((a, b) => a.px - b.px);
@@ -155,13 +140,12 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const palette = theme.palette || {};
   return {
     root, result, theme, bps, ordered, originalSources, dslSources,
-    includeTheme: opts.includeTheme !== false,
     themeMarker: findThemeMarker(root),
     themeEmitted: false,
     references: (opts.references ?? discovered?.references ?? {}) as ReferenceOptions,
     bpNames: new Set(Object.keys(bps)),
     // Token maps are always computed so references keep validating against
-    // the effective theme; only the `:root` definitions are gated by includeTheme.
+    // the effective theme; only the `:root` definitions depend on the marker.
     densities: getDensityTokens(theme),
     edges: getEdgeTokens(theme),
     shadows: getShadowTokens(theme),
@@ -509,8 +493,6 @@ function findThemeMarker(root: Root): AtRule | null {
 
 const atRuleName = (node: ChildNode) => (node.type === 'atrule' ? node.name.toLowerCase() : '');
 const isCharsetOrComment = (node: ChildNode) => node.type === 'comment' || atRuleName(node) === 'charset';
-const isPrelude = (node: ChildNode) =>
-  isCharsetOrComment(node) || atRuleName(node) === 'import' || (atRuleName(node) === 'layer' && !(node as AtRule).nodes);
 
 /** Inserts `nodes`, in order, after the leading run of nodes satisfying `keep`. */
 function insertAfterLeading(root: Root, keep: (node: ChildNode) => boolean, nodes: ChildNode[]) {
@@ -533,45 +515,42 @@ function inheritSource<T extends { source?: unknown; nodes?: any[] }>(node: T, s
 
 /**
  * Inserts the whole theme — `renderThemeCss`, the exact bytes `generateThemeCss`
- * returns — at one place: its `@import`s right after the author's `@charset`
- * and leading comments, every other block after the author's whole prelude
- * (`@charset`, body-less `@layer`, `@import`s, comments) and before the
- * author's rules. CSS honors an `@import` only before every other rule and
- * `@charset` only first, and an author's own `:root { --uxdsl__… }` then
- * follows the theme's declaration and wins the cascade. Nothing the author
- * wrote is reordered.
+ * returns — where `@uxdsl theme;` is written, and nowhere when it is not: its
+ * `@import`s right after the author's `@charset` and leading comments, since
+ * CSS honors an `@import` only before every other rule and `@charset` only
+ * first, and every other block in the marker's place. An author's own
+ * `:root { --uxdsl__… }` written after the marker follows the theme's
+ * declaration and wins the cascade. Nothing the author wrote is reordered.
  */
 function emitTheme(c: Compilation) {
-  if (!c.includeTheme && !c.themeMarker) return;
+  const marker = c.themeMarker;
+  if (!marker) return;
   c.themeEmitted = true;
   const parsed = inheritSource(postcss.parse(renderThemeCss(c.theme, c.bps)), undefined);
   for (const node of parsed.nodes) { c.generated.add(node); (node as any).walk?.((child: ChildNode) => { c.generated.add(child); }); }
   const nodes = [...parsed.nodes];
   const imports = nodes.filter((node) => node.type === 'atrule' && node.name === 'import');
   const blocks = nodes.filter((node) => !imports.includes(node));
-  // A parsed string's first node has no leading raw; after an author's prelude
-  // it gets a newline so it never glues onto the previous node. Every other
-  // node keeps the raw it was parsed with: PostCSS's `Root.normalize` would
-  // otherwise rewrite the `before` of a node inserted after a sibling to that
-  // sibling's own and break byte-identity with `generateThemeCss`.
-  const inserted = (keep: (node: ChildNode) => boolean, group: ChildNode[]) => {
-    if (!group.length) return;
-    const parsedBefore = new Map(group.map((node) => [node, node.raws.before]));
-    if (c.root.nodes.some(keep) && !group[0].raws.before) parsedBefore.set(group[0], '\n');
-    insertAfterLeading(c.root, keep, group);
-    for (const node of group) node.raws.before = parsedBefore.get(node);
-  };
-  inserted(isCharsetOrComment, imports);
-  const marker = c.themeMarker;
-  if (!marker) {
-    inserted(isPrelude, blocks);
-    return;
+  // A parsed string's first node has no leading raw; after the author's
+  // `@charset` and leading comments it gets a newline so it never glues onto
+  // the previous node. Every other node keeps the raw it was parsed with:
+  // PostCSS's `Root.normalize` would otherwise rewrite the `before` of a node
+  // inserted after a sibling to that sibling's own and break byte-identity
+  // with `generateThemeCss`.
+  if (imports.length) {
+    const parsedBefore = new Map(imports.map((node) => [node, node.raws.before]));
+    if (c.root.nodes.some(isCharsetOrComment) && !imports[0].raws.before) parsedBefore.set(imports[0], '\n');
+    insertAfterLeading(c.root, isCharsetOrComment, imports);
+    for (const node of imports) node.raws.before = parsedBefore.get(node);
   }
   // `@uxdsl theme;`: the blocks take the marker's place. The @imports stay
-  // first (above), since CSS honors one only before every other rule.
+  // first (above), since CSS honors one only before every other rule. The
+  // first block keeps the marker's leading raw, or a newline when the marker
+  // had none and a node now precedes it (the imports above, or a rule written
+  // right before it), so it never glues onto that node.
   if (blocks.length) {
     const parsedBefore = new Map(blocks.map((node) => [node, node.raws.before]));
-    parsedBefore.set(blocks[0], marker.raws.before);
+    parsedBefore.set(blocks[0], marker.raws.before || (marker.prev() ? '\n' : marker.raws.before));
     marker.parent!.insertBefore(marker, blocks);
     for (const node of blocks) node.raws.before = parsedBefore.get(node);
   }
@@ -939,8 +918,8 @@ function rejectLeftoverDirectives(c: Compilation) {
 /**
  * The reference-integrity pass over the stylesheet actually emitted: every
  * declaration the theme generated, and every author declaration that used a
- * token function. A component entry (`includeTheme: false`) validates against
- * the rendered theme without emitting it; dependency CSS stays validation-only.
+ * token function. A compilation without the marker validates against the
+ * rendered theme without emitting it; dependency CSS stays validation-only.
  */
 function checkReferences(c: Compilation) {
   const consumers: Declaration[] = [];
@@ -953,6 +932,17 @@ function checkReferences(c: Compilation) {
     ...c.references, css,
     onWarning: (issue) => { c.result.warn(issue.message, { node: (issue as any).node, plugin: PLUGIN }); c.references.onWarning?.(issue); },
   });
+}
+
+// --- reportThemeEmission -----------------------------------------------------
+
+/**
+ * One result message per compilation, `{ type: 'uxdsl-theme', emitted }`,
+ * saying whether it emitted the theme: compile() returns it as
+ * `themeEmitted`, and a build host counts its stylesheets from it.
+ */
+function reportThemeEmission(c: Compilation) {
+  c.result.messages.push({ type: 'uxdsl-theme', plugin: PLUGIN, emitted: c.themeEmitted });
 }
 
 // --- the plugin --------------------------------------------------------------
@@ -968,6 +958,7 @@ function uxdslPlugin(opts: UxdslOptions = {}) {
       expandResponsive(compilation);
       rejectLeftoverDirectives(compilation);
       checkReferences(compilation);
+      reportThemeEmission(compilation);
     },
   };
 }

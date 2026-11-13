@@ -1,6 +1,6 @@
 'use strict';
 
-// MIG-B3-01 (FEAT-004): structural regression guard. `includeTheme` went
+// MIG-B3-01 (FEAT-004): structural regression guard. A plugin option went
 // unreachable from the CLI for an entire release because `buildOnce` bridged
 // config to the plugin through a hardcoded allowlist of keys, and nothing
 // caught a new plugin option falling outside that list. This test enumerates
@@ -16,7 +16,7 @@
 // silently drift, same as before), and the CLI's `uxdslCore.compile(...)`
 // call still forwards every one of those same keys through to `compile()`'s
 // `config` argument (so *this* boundary can't quietly become the next
-// place a key like `includeTheme` goes unreachable from).
+// place a plugin option goes unreachable from).
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -160,14 +160,14 @@ test("MIG-B9-14: every compile() option is forwarded by each host's compile() ca
 });
 
 test('MIG-B9-14: the forwarding check reports an option a compile() call leaves out (negative control)', () => {
-  const call = 'await uxdslCore.compile(\n  { entry },\n  {\n    theme,\n    references,\n    includeTheme,\n    to,\n    sourceMap,\n  }\n);';
-  const keys = ['theme', 'references', 'includeTheme', 'to', 'sourcesContent', 'sourceMap', 'sass'];
+  const call = 'await uxdslCore.compile(\n  { entry },\n  {\n    theme,\n    references,\n    to,\n    sourceMap,\n  }\n);';
+  const keys = ['theme', 'references', 'to', 'sourcesContent', 'sourceMap', 'sass'];
   assert.deepEqual(unforwardedCompileOptions(keys, call, COMPILE_CALL_HOSTS[0][2], 'a call without sass'), ['sass']);
   // The adapters' call shapes, in COMPILE_CALL_HOSTS's order: uxdsl/vite's
   // compile({ entry: absPath }, { … }) and uxdsl/webpack's compile({ source, from }, { … }).
   const adapterCalls = [
-    'const { css } = await compile({ entry: absPath }, {\n  theme: theme as Record<string, unknown>,\n  references: userOptions.references,\n  includeTheme: userOptions.includeTheme,\n  sourceMap: wantMap ? \'external\' : false,\n  to: absPath,\n});',
-    'const { css } = await compile(\n  { source, from: this.resourcePath },\n  {\n    theme: theme as Record<string, unknown>,\n    references,\n    includeTheme: options.includeTheme,\n    sourceMap: wantMap ? \'external\' : false,\n    to: this.resourcePath,\n  }\n);',
+    'const { css } = await compile({ entry: absPath }, {\n  theme: theme as Record<string, unknown>,\n  references: userOptions.references,\n  sourceMap: wantMap ? \'external\' : false,\n  to: absPath,\n});',
+    'const { css } = await compile(\n  { source, from: this.resourcePath },\n  {\n    theme: theme as Record<string, unknown>,\n    references,\n    sourceMap: wantMap ? \'external\' : false,\n    to: this.resourcePath,\n  }\n);',
   ];
   for (const [index, adapterCall] of adapterCalls.entries()) {
     assert.deepEqual(unforwardedCompileOptions(keys, adapterCall, COMPILE_CALL_HOSTS[1 + index][2], 'an adapter call without sass'), ['sass']);

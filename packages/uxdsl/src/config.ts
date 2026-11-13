@@ -234,7 +234,7 @@ export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme |
 //
 // Deliberately *not* generic. `defineConfig<T extends UxdslConfig>(config: T)`
 // reads as stricter and is in fact weaker: inference widens `T` to include
-// whatever extra keys the literal has, so `includeThem: false` would be
+// whatever extra keys the literal has, so `outfile: './a.css'` would be
 // accepted and silently ignored by the CLI — exactly the typo this exists to
 // catch. A plain parameter type gets TypeScript's excess property check on the
 // object literal instead, which is what reports the typo.
@@ -253,4 +253,35 @@ export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme |
  */
 export function defineConfig(config: UxdslConfig): UxdslConfig {
   return config;
+}
+
+/**
+ * Options that no longer exist, each with what replaced it. The PostCSS
+ * plugin, compile(), the Vite plugin and the webpack loader each warn
+ * UXD_OPTION_REMOVED for one that is passed, and ignore it: breakpoints are
+ * the theme's own family, the emitted variable names are the
+ * `--uxdsl__<family>__<key>` contract, and the theme is emitted where
+ * `@uxdsl theme;` is written.
+ */
+export const REMOVED_OPTIONS: Readonly<Record<string, string>> = Object.freeze({
+  breakpoints: 'breakpoints are configured in the theme (`theme.breakpoints`)',
+  themeVar: 'palette() always compiles to var(--uxdsl__palette__<key>)',
+  spaceVar: 'space() always compiles to var(--uxdsl__space__<key>)',
+  colorVar: 'color() always compiles to var(--uxdsl__color__<key>)',
+  includeTheme: 'write @uxdsl theme; in the stylesheet that defines the tokens',
+});
+
+/** The UXD_OPTION_REMOVED warning for each removed option `options` carries, in the table's order. */
+export function removedOptionWarnings(options: unknown): string[] {
+  if (!options || typeof options !== 'object') return [];
+  return Object.entries(REMOVED_OPTIONS)
+    .filter(([name]) => (options as Record<string, unknown>)[name] !== undefined)
+    .map(([name, instead]) => `UXD_OPTION_REMOVED: the "${name}" option was removed and is ignored; ${instead}.`);
+}
+
+/** The removed options `options` carries, as given: what compile() hands the plugin, which warns. */
+export function removedOptionsIn(options: unknown): Record<string, unknown> {
+  if (!options || typeof options !== 'object') return {};
+  const given = options as Record<string, unknown>;
+  return Object.fromEntries(Object.keys(REMOVED_OPTIONS).filter((name) => given[name] !== undefined).map((name) => [name, given[name]]));
 }

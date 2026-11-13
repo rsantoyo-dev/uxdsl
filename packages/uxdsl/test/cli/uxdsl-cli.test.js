@@ -133,7 +133,7 @@ const HOST_FONT_THEME = { ...FULL_THEME, fonts: { families: { ui: 'var(--host-to
 test('MIG-B2-01: externalTokens declared in uxdsl.config.cjs lets a UXDSL-generated declaration reference a host variable with no fallback', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', references: { externalTokens: ['--host-token'] } };`);
-  write(dir, 'src/entry.uxdsl', '/* no component rules needed — includeTheme defaults to true */');
+  write(dir, 'src/entry.uxdsl', '/* no component rules needed: the theme is emitted at the marker */\n@uxdsl theme;');
   write(dir, 'uxdsl.theme.cjs', `module.exports = ${JSON.stringify(HOST_FONT_THEME)};`);
   const config = await cli.loadConfig({}, dir);
   const source = fs.readFileSync(config.entry, 'utf8');
@@ -144,7 +144,7 @@ test('MIG-B2-01: externalTokens declared in uxdsl.config.cjs lets a UXDSL-genera
 test('MIG-B2-01: the same theme without externalTokens still fails with UXD_REFERENCE_MISSING', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', '/* no component rules needed — includeTheme defaults to true */');
+  write(dir, 'src/entry.uxdsl', '/* no component rules needed: the theme is emitted at the marker */\n@uxdsl theme;');
   write(dir, 'uxdsl.theme.cjs', `module.exports = ${JSON.stringify(HOST_FONT_THEME)};`);
   const config = await cli.loadConfig({}, dir);
   assert.equal(config.references, undefined);
@@ -262,47 +262,58 @@ test('MIG-B2-03: generated entries rely on the canonical plugin theme instead of
   assert.match(generated, /^@use '\.\/components\/Button\.uxdsl' as components-button;$/m);
 });
 
-// --- MIG-B3-01 (FEAT-004): includeTheme/breakpoints reach the plugin ---
-// Root cause fixed here: `buildOnce` used to hand the plugin a hardcoded
-// three-key allowlist (breakpoints/theme/references) with breakpoints
-// eagerly defaulted before the theme was even resolved. `includeTheme` was
-// unreachable from the CLI, and `theme.breakpoints` (already supported by
-// the plugin) was permanently shadowed by that eager default.
+// --- The theme is emitted where `@uxdsl theme;` is written; `includeTheme`,
+// the config key and the --include-theme flags, are removed loudly. ---
 
-test('MIG-B3-01: resolveIncludeTheme — flag overrides config, config overrides the true default', () => {
-  assert.equal(cli.resolveIncludeTheme(undefined, undefined), true);
-  assert.equal(cli.resolveIncludeTheme(undefined, false), false);
-  assert.equal(cli.resolveIncludeTheme(undefined, true), true);
-  assert.equal(cli.resolveIncludeTheme(true, false), true);
-  assert.equal(cli.resolveIncludeTheme(false, true), false);
-});
+test('MIG-B9-20: includeTheme in uxdsl.config.cjs (top level or builds[]) is an error naming the marker; --include-theme and --no-include-theme are removed flags', async () => {
+  const instead = /is not a build-config key any more — write `@uxdsl theme;` in the stylesheet that defines the tokens; an entry without it emits no theme\./;
+  for (const [label, config, key] of [
+    ['top level', "{ entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false }", '"includeTheme"'],
+    ['top level, true', "{ entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: true }", '"includeTheme"'],
+    ['builds[1]', "{ builds: [{ entry: './src/entry.uxdsl', outFile: './src/a.css' }, { entry: './src/entry.uxdsl', outFile: './src/b.css', includeTheme: false }] }", '"builds\\[1\\]\\.includeTheme"'],
+    // Before, a top-level includeTheme next to builds was silently ignored.
+    ['top level of a builds config', "{ includeTheme: false, builds: [{ entry: './src/entry.uxdsl', outFile: './src/a.css' }] }", '"includeTheme"'],
+  ]) {
+    const dir = mkTmpDir();
+    write(dir, 'uxdsl.config.cjs', `module.exports = ${config};`);
+    write(dir, 'src/entry.uxdsl', '@uxdsl theme;\n.x { color: red; }');
+    await assert.rejects(() => cli.loadConfig({}, dir), new RegExp(`Invalid configuration in .*uxdsl\\.config\\.cjs: ${key} ${instead.source}`), label);
+    const spawned = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+    assert.equal(spawned.status, 1, label);
+    assert.match(spawned.stderr, instead, label);
+    assert.equal(fs.existsSync(path.join(dir, 'src', 'out.css')) || fs.existsSync(path.join(dir, 'src', 'a.css')), false, `${label}: nothing written`);
+    // Control: the same config without the key builds.
+    write(dir, 'uxdsl.config.cjs', `module.exports = ${config.replace(/,? ?includeTheme: (false|true),?/, (m) => (m.startsWith(',') && m.endsWith(',') ? ',' : ''))};`);
+    const built = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+    assert.equal(built.status, 0, `${label}: control\n${built.stderr}`);
+  }
 
-test('MIG-B3-01: "includeTheme" in uxdsl.config.cjs reaches loadConfig\'s resolved config', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({}, dir);
-  assert.equal(config.includeTheme, false);
-});
-
-test('MIG-B3-01: --no-include-theme overrides a config that declares includeTheme: true', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: true };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({ 'include-theme': false }, dir);
-  assert.equal(config.includeTheme, false);
-});
-
-test('MIG-B3-01: a non-boolean "includeTheme" in uxdsl.config.cjs is a hard, actionable error', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: 'yes' };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  await assert.rejects(() => cli.loadConfig({}, dir), /"includeTheme" must be a boolean/);
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  write(dir, 'src/a.uxdsl', '@uxdsl theme;\n.a { color: red; }\n');
+  const removed = /was removed: the theme is emitted only where `@uxdsl theme;` is written\. Write it once, at the top level of the stylesheet that defines the tokens, and leave it out of component entries\./;
+  for (const [flag, named] of [['--include-theme', '--include-theme'], ['--no-include-theme', '--no-include-theme'], ['--include-theme=false', '--include-theme'], ['--include-theme=0', '--include-theme']]) {
+    const result = spawnSync(process.execPath, [CLI_BIN, 'build', flag], { cwd: dir, encoding: 'utf8' });
+    assert.equal(result.status, 1, flag);
+    assert.match(result.stderr, new RegExp(`\\[uxdsl\\] Error: ${named} ${removed.source}`), flag);
+    assert.equal(fs.existsSync(path.join(dir, 'out')), false, `${flag}: nothing written`);
+    assert.throws(() => cli.parseCommandArgv(['build', flag]), new RegExp(`^Error: ${named} was removed`), flag);
+  }
+  // Negative controls: a typo is still an unknown option, and the removal is
+  // scoped to build — the flag means nothing to another command.
+  assert.throws(() => cli.parseCommandArgv(['build', '--include-thme']), /Unknown option --include-thme\./);
+  assert.throws(() => cli.parseCommandArgv(['theme', '--include-theme']), /Unknown option --include-theme\./);
+  const typo = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-thme'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(typo.status, 1);
+  assert.match(typo.stderr, /Unknown option --include-thme\./);
+  const built = spawnSync(process.execPath, [CLI_BIN, 'build'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(built.status, 0, built.stderr);
+  assert.ok(fs.existsSync(path.join(dir, 'out', 'a.css')));
 });
 
 test('phase 2: a theme-declared breakpoint reaches the compiled output through the theme, with no separate breakpoints channel', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', '.x { width: xs(100%) xl(50%); }');
   write(dir, 'uxdsl.theme.cjs', `module.exports = { breakpoints: { xl: 1440 } };`);
   const config = await cli.loadConfig({}, dir);
@@ -314,9 +325,9 @@ test('phase 2: a theme-declared breakpoint reaches the compiled output through t
   assert.doesNotMatch(css, /1280px/);
 });
 
-test('MIG-B3-01: buildOnce with includeTheme: false emits no :root', async () => {
+test('MIG-B3-01: buildOnce of an entry without the marker emits no :root', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
@@ -325,10 +336,10 @@ test('MIG-B3-01: buildOnce with includeTheme: false emits no :root', async () =>
   assert.doesNotMatch(css, /:root/);
 });
 
-test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root — and no breakpoint marker (stability phase 2)', async () => {
+test('MIG-B3-01: buildOnce of an entry with the marker emits :root — and no breakpoint marker (stability phase 2)', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', `.card { @ds-surface(contained); }`);
+  write(dir, 'src/entry.uxdsl', `@uxdsl theme;\n.card { @ds-surface(contained); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
   await cli.buildOnce(config);
@@ -342,15 +353,13 @@ test('MIG-B3-01: buildOnce with includeTheme: true (default) still emits :root �
 
 test('MIG-B3-01: a theme entry and a component entry compiled separately compose without any duplicate definitions', async () => {
   const dir = mkTmpDir();
-  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'theme.uxdsl', '/* theme-only entry */\n@uxdsl theme;');
   write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
   const themeConfig = await cli.loadConfig({ entry: path.join(dir, 'theme.uxdsl'), out: path.join(dir, 'theme.css') }, dir);
   themeConfig.theme = FULL_THEME;
-  themeConfig.includeTheme = true;
   await cli.buildOnce(themeConfig);
   const panelConfig = await cli.loadConfig({ entry: path.join(dir, 'panel.uxdsl'), out: path.join(dir, 'panel.css') }, dir);
   panelConfig.theme = FULL_THEME;
-  panelConfig.includeTheme = false;
   await cli.buildOnce(panelConfig);
 
   const themeCss = fs.readFileSync(themeConfig.outFile, 'utf8');
@@ -358,13 +367,13 @@ test('MIG-B3-01: a theme entry and a component entry compiled separately compose
   assert.match(themeCss, /:root/, 'the theme entry must still define :root');
   assert.doesNotMatch(panelCss, /:root/, 'the component entry must not define it a second time');
   // The component entry's own reference (@ds-surface) must still resolve —
-  // includeTheme: false only skips emitting definitions, not validation.
+  // an entry without the marker skips emitting definitions, not validation.
   assert.match(panelConfig && fs.readFileSync(panelConfig.outFile, 'utf8'), /background/);
 });
 
-test('MIG-B3-01: includeTheme: false still fails with UXD_REFERENCE_MISSING for an unknown token', async () => {
+test('MIG-B3-01: an entry without the marker still fails with UXD_REFERENCE_MISSING for an unknown token', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css', includeTheme: false };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
   write(dir, 'src/entry.uxdsl', `.x { color: shadow(nonexistent); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
@@ -431,18 +440,18 @@ test('MIG-B3-02: "builds" must be a non-empty array', async () => {
   await assert.rejects(() => cli.loadConfig({}, dir), /"builds" must be a non-empty array/);
 });
 
-test('MIG-B3-02: each builds[] entry is validated the same way a top-level entry/outFile/includeTheme would be', async () => {
+test('MIG-B3-02: each builds[] entry is validated the same way a top-level entry/outFile would be', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [{ entry: 123, outFile: './a.css' }] };`);
   await assert.rejects(() => cli.loadConfig({}, dir), /"builds\[0\]\.entry" must be a string path/);
 });
 
-test('MIG-B3-02: loadConfig resolves each builds[] entry\'s paths relative to the build config, with per-entry includeTheme', async () => {
+test('MIG-B3-02: loadConfig resolves each builds[] entry\'s paths relative to the build config', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = {
     builds: [
-      { entry: './src/theme.uxdsl', outFile: './src/theme.css', includeTheme: true },
-      { entry: './src/panel.uxdsl', outFile: './src/panel.css', includeTheme: false },
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+      { entry: './src/panel.uxdsl', outFile: './src/panel.css' },
     ],
   };`);
   write(dir, 'src/theme.uxdsl', '/* theme */');
@@ -451,23 +460,8 @@ test('MIG-B3-02: loadConfig resolves each builds[] entry\'s paths relative to th
   assert.equal(config.builds.length, 2);
   assert.equal(config.builds[0].entry, path.join(dir, 'src/theme.uxdsl'));
   assert.equal(config.builds[0].outFile, path.join(dir, 'src/theme.css'));
-  assert.equal(config.builds[0].includeTheme, true);
-  assert.equal(config.builds[1].includeTheme, false);
-});
-
-test('MIG-B3-02: --no-include-theme overrides every builds[] entry uniformly when passed', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = {
-    builds: [
-      { entry: './a.uxdsl', outFile: './a.css', includeTheme: true },
-      { entry: './b.uxdsl', outFile: './b.css' },
-    ],
-  };`);
-  write(dir, 'a.uxdsl', '');
-  write(dir, 'b.uxdsl', '');
-  const config = await cli.loadConfig({ 'include-theme': false }, dir);
-  assert.equal(config.builds[0].includeTheme, false);
-  assert.equal(config.builds[1].includeTheme, false);
+  assert.equal(config.builds[1].entry, path.join(dir, 'src/panel.uxdsl'));
+  assert.deepEqual(Object.keys(config.builds[1]).sort(), ['entry', 'outFile'], 'an entry is its entry and outFile, nothing else');
 });
 
 test('MIG-B3-02: default watch globs cover every builds[] entry and its directory, deduplicated', async () => {
@@ -491,11 +485,11 @@ test('MIG-B3-02: buildOnce compiles a theme entry and a component entry from one
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = {
     builds: [
-      { entry: './theme.uxdsl', outFile: './theme.css', includeTheme: true },
-      { entry: './panel.uxdsl', outFile: './panel.css', includeTheme: false },
+      { entry: './theme.uxdsl', outFile: './theme.css' },
+      { entry: './panel.uxdsl', outFile: './panel.css' },
     ],
   };`);
-  write(dir, 'theme.uxdsl', '/* theme-only entry */');
+  write(dir, 'theme.uxdsl', '/* theme-only entry */\n@uxdsl theme;');
   write(dir, 'panel.uxdsl', `.card { @ds-surface(contained); }`);
   const config = await cli.loadConfig({}, dir);
   config.theme = FULL_THEME;
@@ -692,7 +686,7 @@ test('MIG-B4-01: with a "builds" config, a shared partially-defaulted theme fail
   write(dir, 'uxdsl.config.cjs', `module.exports = {
     builds: [
       { entry: './a.uxdsl', outFile: './a.css' },
-      { entry: './b.uxdsl', outFile: './b.css', includeTheme: false },
+      { entry: './b.uxdsl', outFile: './b.css' },
     ],
     strictTheme: ['palette'],
   };`);
@@ -798,13 +792,11 @@ test('MIG-B5-01: a "strictTheme" that is not an array of strings is a hard, acti
   await assert.rejects(() => cli.loadConfig({}, dir), /"strictTheme" must be an array of family names/);
 });
 
-// --- MIG-B6-22 (FEAT-008): --strict-theme/--include-theme "=true"/"=false"
-// string forms, unknown-family/unknown-flag suggestions, and per-command
-// flag scoping. Before this story, minimist's undeclared-flag inference
-// meant `--strict-theme=true`/`=false` were read as a *family named*
-// "true"/"false" (never matches a real family, so the gate silently did
-// nothing) and `--include-theme=false` was silently ignored (only a real
-// boolean, from the bare flag or --no- negation, was ever accepted).
+// --- MIG-B6-22 (FEAT-008): --strict-theme "=true"/"=false" string forms,
+// unknown-family/unknown-flag suggestions, and per-command flag scoping.
+// minimist's undeclared-flag inference would read `--strict-theme=true`/
+// `=false` as a *family named* "true"/"false", which never matches a real
+// family, so the gate would silently do nothing.
 
 test('MIG-B6-22: normalizeStrictThemeScope never reads the strings "true"/"false" as family names — each gets its own answer', () => {
   assert.throws(() => cli.normalizeStrictThemeScope('true'), /--strict-theme needs a scope/);
@@ -848,9 +840,8 @@ test('MIG-B6-22: resolveStrictTheme validates both the flag and the config value
   );
 });
 
-// --- MIG-B6-22 code-review fixes: an empty-after-split family list, a
-// numeric --include-theme value, and a missing KNOWN_THEME_FAMILIES export
-// each used to be silently accepted instead of rejected. ---
+// --- MIG-B6-22 code-review fixes: an empty-after-split family list and a
+// missing KNOWN_THEME_FAMILIES export are rejected, never silently accepted. ---
 
 test('MIG-B6-22: normalizeStrictThemeScope rejects a stray comma instead of silently dropping the empty family and turning strict off', () => {
   const knownFamilies = new Set(['palette', 'fonts']);
@@ -894,22 +885,6 @@ test('MIG-B6-22 (subprocess): --strict-theme=, and --strict-theme=palette,,fonts
   const doubleComma = spawnSync(process.execPath, [CLI_BIN, 'build', '--strict-theme=palette,,fonts'], { cwd: dir, encoding: 'utf8' });
   assert.equal(doubleComma.status, 1);
   assert.match(doubleComma.stderr, /A family list cannot contain an empty entry/);
-});
-
-test('MIG-B6-22: resolveIncludeTheme rejects a number (minimist auto-parses --include-theme=0/=1 into a real number)', () => {
-  assert.throws(() => cli.resolveIncludeTheme(0, undefined), /Invalid value for --include-theme: "0"/);
-  assert.throws(() => cli.resolveIncludeTheme(1, undefined), /Invalid value for --include-theme: "1"/);
-  assert.throws(() => cli.resolveIncludeTheme(0, true), /Invalid value for --include-theme: "0"/, 'an explicit invalid flag value must fail even when config would otherwise supply a valid one');
-});
-
-test('MIG-B6-22 (subprocess): --include-theme=0 is a hard error, not a silently-accepted "true"', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
-  fs.mkdirSync(path.join(dir, 'src'));
-  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
-  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
-  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=0'], { cwd: dir, encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /\[uxdsl\] Error: Invalid value for --include-theme: "0"/);
 });
 
 test('MIG-B6-22: normalizeStrictThemeScope reports an incompatible install instead of silently skipping family validation', () => {
@@ -976,27 +951,6 @@ test('MIG-B6-22: loadConfig rejects an unknown family name in "strictTheme" from
   );
 });
 
-test('MIG-B6-22: resolveIncludeTheme coerces the "true"/"false" strings --include-theme=<value> produces', () => {
-  assert.equal(cli.resolveIncludeTheme('true', undefined), true);
-  assert.equal(cli.resolveIncludeTheme('false', undefined), false);
-  assert.equal(cli.resolveIncludeTheme('false', true), false, 'the CLI flag still overrides config');
-});
-
-test('MIG-B6-22: resolveIncludeTheme rejects any other string instead of silently reading it as truthy', () => {
-  assert.throws(
-    () => cli.resolveIncludeTheme('banana', undefined),
-    /Invalid value for --include-theme: "banana"\. Expected true or false \(or --no-include-theme\)\./
-  );
-});
-
-test('MIG-B6-22: loadConfig with --include-theme=false emits zero :root definitions, same as --no-include-theme', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './src/out.css' };`);
-  write(dir, 'src/entry.uxdsl', '.x { color: red; }');
-  const config = await cli.loadConfig({ 'include-theme': 'false' }, dir);
-  assert.equal(config.includeTheme, false);
-});
-
 // --- MIG-B6-22: parseCommandArgv — per-command flag scoping and unknown
 // flag/family detection. These exercise the same function main() calls,
 // without spawning a subprocess for every case.
@@ -1039,16 +993,16 @@ test('MIG-B6-22: parseCommandArgv skips flag validation for an unrecognized comm
 
 test('MIG-B6-22: parseCommandArgv resolves a repeated flag to its last occurrence, not an array', () => {
   assert.equal(cli.parseCommandArgv(['build', '--entry', 'a', '--entry', 'b']).argv.entry, 'b');
-  assert.equal(cli.parseCommandArgv(['build', '--include-theme=true', '--include-theme=false']).argv['include-theme'], 'false');
+  assert.equal(cli.parseCommandArgv(['build', '--sourcemap=inline', '--sourcemap=external']).argv.sourcemap, 'external');
   const viaAlias = cli.parseCommandArgv(['build', '-e', 'a', '-e', 'b']);
   assert.equal(viaAlias.argv.entry, 'b');
   assert.equal(viaAlias.argv.e, 'b');
 });
 
-test('MIG-B6-22: parseCommandArgv still accepts --no-include-theme and --no-strict-theme (manual flags keep their negation form)', () => {
-  const { argv } = cli.parseCommandArgv(['build', '--no-include-theme', '--no-strict-theme']);
-  assert.equal(argv['include-theme'], false);
+test('MIG-B6-22: parseCommandArgv still accepts --no-strict-theme and --no-sourcemap (manual flags keep their negation form)', () => {
+  const { argv } = cli.parseCommandArgv(['build', '--no-strict-theme', '--no-sourcemap']);
   assert.equal(argv['strict-theme'], false);
+  assert.equal(argv.sourcemap, false);
 });
 
 test('MIG-B6-22: parseCommandArgv reports every unknown flag when more than one is passed', () => {
@@ -1107,31 +1061,6 @@ test('phase 2 (3, subprocess): --strict-theme needs a scope; =true and the bare 
   assert.match(scoped.stderr, /--strict-theme \(scoped to: palette\):.*palette/);
   const elsewhere = run('build', '--strict-theme=breakpoints');
   assert.equal(elsewhere.status, 0, `breakpoints is untouched, so nothing is partial: ${elsewhere.stderr}`);
-});
-
-test('MIG-B6-22 (subprocess): --include-theme=false emits zero :root definitions, matching --no-include-theme', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
-  fs.mkdirSync(path.join(dir, 'src'));
-  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
-  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
-
-  const equalsFalse = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=false'], { cwd: dir, encoding: 'utf8' });
-  assert.equal(equalsFalse.status, 0, equalsFalse.stderr);
-  assert.equal((fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8').match(/:root/g) || []).length, 0);
-
-  const noFlag = spawnSync(process.execPath, [CLI_BIN, 'build', '--no-include-theme'], { cwd: dir, encoding: 'utf8' });
-  assert.equal(noFlag.status, 0, noFlag.stderr);
-  assert.equal((fs.readFileSync(path.join(dir, 'out', 'a.css'), 'utf8').match(/:root/g) || []).length, 0, 'control: --no-include-theme already worked before this fix');
-});
-
-test('MIG-B6-22 (subprocess): --include-theme=banana is a hard error, not a silent true', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-flags-'));
-  fs.mkdirSync(path.join(dir, 'src'));
-  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
-  fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), '.a { color: red; }\n');
-  const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--include-theme=banana'], { cwd: dir, encoding: 'utf8' });
-  assert.equal(result.status, 1);
-  assert.match(result.stderr, /\[uxdsl\] Error: Invalid value for --include-theme: "banana"/);
 });
 
 test('MIG-B6-22 (subprocess): a flag valid for another command fails as unknown for this one', () => {
@@ -1346,61 +1275,128 @@ test('MIG-B6-24: the exact reproduction fails before writing, naming the offendi
     { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
     { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' },
   ] };`);
-  write(dir, 'src/theme.uxdsl', '');
-  write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
+  write(dir, 'src/theme.uxdsl', '@uxdsl theme;');
+  write(dir, 'src/panel.uxdsl', '@uxdsl theme;\n.p { padding: density(2); }\n');
   const config = await cli.loadConfig({}, dir);
   await assert.rejects(
     () => cli.buildOnce(config),
-    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root, which CSS Modules reject \("Selector :root is not pure"\)\. Set includeTheme: false for component entries\./
+    /builds\[1\] \(.*panel\.module\.css\): this entry would emit :root, which CSS Modules reject \("Selector :root is not pure"\)\. A CSS Module carries no theme: remove `@uxdsl theme;` \(or the :root rule\) from this entry and the files it loads, and write it in the global stylesheet\./
   );
   assert.equal(fs.existsSync(path.join(dir, 'out')), false, 'nothing must be written, including the other, unrelated entry');
 });
 
-test('MIG-B6-24: a .module.css entry with includeTheme: false compiles without error', async () => {
+test('MIG-B6-24: a .module.css entry without the marker compiles without error', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
     { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
-    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' },
   ] };`);
-  write(dir, 'src/theme.uxdsl', '');
+  write(dir, 'src/theme.uxdsl', '@uxdsl theme;');
   write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
   const config = await cli.loadConfig({}, dir);
   await cli.buildOnce(config); // Must not throw.
   assert.ok(fs.existsSync(path.join(dir, 'out', 'panel.module.css')));
 });
 
-test('MIG-B6-24: includeTheme: false does not exempt a .module.css entry whose own content still defines :root (e.g. explicit native CSS)', async () => {
+test('MIG-B6-24: an entry without the marker is not exempt: a .module.css entry whose own content defines :root (e.g. explicit native CSS) fails', async () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css', includeTheme: false };`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/panel.uxdsl', outFile: './out/panel.module.css' };`);
   write(dir, 'src/panel.uxdsl', ':root { --leaked: 1; }\n.p { color: red; }');
   const config = await cli.loadConfig({}, dir);
   await assert.rejects(() => cli.buildOnce(config), /this entry would emit :root, which CSS Modules reject/);
 });
 
-test('MIG-B6-24: two .css entries that both emit the theme warn exactly once, naming both', async () => {
-  const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { builds: [
-    { entry: './src/a.uxdsl', outFile: './out/a.css' },
-    { entry: './src/b.uxdsl', outFile: './out/b.css' },
-  ] };`);
-  write(dir, 'src/a.uxdsl', '.a { color: red; }');
-  write(dir, 'src/b.uxdsl', '.b { color: blue; }');
-  const config = await cli.loadConfig({}, dir);
-  const { messages } = await captureWarningsAsync(() => cli.buildOnce(config));
-  const relevant = messages.filter((m) => /entries emit the theme/.test(m));
-  assert.equal(relevant.length, 1, JSON.stringify(messages));
-  assert.match(relevant[0], /2 entries emit the theme \(builds\[0\], builds\[1\]\); usually only one theme entry should\./);
-});
-
-test('MIG-B6-24: a single entry with --out ending in .module.css fails; --no-include-theme fixes it', async () => {
+test('MIG-B6-24: a single entry with --out ending in .module.css fails; leaving the marker out fixes it', async () => {
   const dir = mkTmpDir();
   write(dir, 'src/panel.uxdsl', '.p { padding: density(2); }\n');
-  const failing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
+  write(dir, 'src/panel-theme.uxdsl', '@uxdsl theme;\n.p { padding: density(2); }\n');
+  const failing = await cli.loadConfig({ entry: './src/panel-theme.uxdsl', out: './out/x.module.css' }, dir);
   await assert.rejects(() => cli.buildOnce(failing), /this entry would emit :root, which CSS Modules reject/);
 
-  const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css', 'include-theme': false }, dir);
+  const passing = await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/x.module.css' }, dir);
   await cli.buildOnce(passing); // Must not throw.
   assert.ok(fs.existsSync(path.join(dir, 'out', 'x.module.css')));
+});
+
+// A build counts the theme from what each entry's compilation reports: none
+// emitting it while the CSS reads its tokens, or more than one emitting it, is
+// one UXD_THEME_MARKER warning per build.
+
+const NONE_WARNING = '[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.';
+const manyWarning = (labels) => `[uxdsl] Warning: UXD_THEME_MARKER: ${labels.length} entries emit the theme (${labels.join(', ')}): each reaches \`@uxdsl theme;\`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load. A component entry written by generate-entry leaves it out with --no-theme.`;
+const themeWarnings = (messages) => messages.filter((message) => /UXD_THEME_MARKER/.test(message));
+
+async function buildWarnings(dir, argv = {}) {
+  const config = await cli.loadConfig(argv, dir);
+  return themeWarnings((await captureWarningsAsync(() => cli.buildOnce(config))).messages);
+}
+
+test('MIG-B9-20: a build with no marker warns once; with two emitters warns once; a marker in a *.module.css entry is an error', async () => {
+  const { themeEmissionWarning } = require('../../dist/compile');
+  // A single entry with no marker, whose CSS reads tokens.
+  const single = mkTmpDir();
+  write(single, 'src/card.uxdsl', '.card { padding: density(4); }\n');
+  assert.deepEqual(await buildWarnings(single, { entry: './src/card.uxdsl', out: './out/card.css' }), [NONE_WARNING]);
+  assert.equal(NONE_WARNING, `[uxdsl] Warning: ${themeEmissionWarning([{ label: 'out/card.css', themeEmitted: false, referencesTokens: true, canCarryTheme: true }], 'entry').text} For an entry generate-entry wrote, run uxdsl generate-entry again.`, 'the CLI prints the shared helper\'s text plus its own hint');
+
+  // A builds project with no marker.
+  const builds = mkTmpDir();
+  write(builds, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.css' }, { entry: './src/b.uxdsl', outFile: './out/b.css' }] };");
+  write(builds, 'src/a.uxdsl', '.a { color: palette(primary.main); }\n');
+  write(builds, 'src/b.uxdsl', '.b { margin: space(2); }\n');
+  assert.deepEqual(await buildWarnings(builds), [NONE_WARNING]);
+
+  // A marker in a partial two entries @use: each emits the theme.
+  const shared = mkTmpDir();
+  write(shared, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.css' }, { entry: './src/b.uxdsl', outFile: './out/b.css' }] };");
+  write(shared, 'src/_theme.uxdsl', '@uxdsl theme;\n');
+  write(shared, 'src/a.uxdsl', "@use './theme';\n.a { color: palette(primary.main); }\n");
+  write(shared, 'src/b.uxdsl', "@use './theme';\n.b { margin: space(2); }\n");
+  assert.deepEqual(await buildWarnings(shared), [manyWarning(['builds[0]', 'builds[1]'])]);
+  assert.equal(manyWarning(['builds[0]', 'builds[1]']), `[uxdsl] Warning: ${themeEmissionWarning([{ label: 'builds[0]', themeEmitted: true, referencesTokens: true, canCarryTheme: true }, { label: 'builds[1]', themeEmitted: true, referencesTokens: true, canCarryTheme: true }], 'entry').text} A component entry written by generate-entry leaves it out with --no-theme.`);
+
+  // A marker in a *.module.css entry is an error, with the marker's fix.
+  const leak = mkTmpDir();
+  write(leak, 'src/panel.uxdsl', '@uxdsl theme;\n.p { padding: density(2); }\n');
+  await assert.rejects(
+    async () => cli.buildOnce(await cli.loadConfig({ entry: './src/panel.uxdsl', out: './out/panel.module.css' }, leak)),
+    /this entry would emit :root, which CSS Modules reject \("Selector :root is not pure"\)\. A CSS Module carries no theme: remove `@uxdsl theme;` \(or the :root rule\) from this entry and the files it loads, and write it in the global stylesheet\./
+  );
+
+  // Negative controls: exactly one marker; no token at all; only CSS Modules,
+  // which cannot carry the theme.
+  const correct = mkTmpDir();
+  write(correct, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './out/theme.css' }, { entry: './src/b.uxdsl', outFile: './out/b.css' }] };");
+  write(correct, 'src/theme.uxdsl', '@uxdsl theme;\n');
+  write(correct, 'src/b.uxdsl', '.b { margin: space(2); }\n');
+  assert.deepEqual(await buildWarnings(correct), []);
+  const plain = mkTmpDir();
+  write(plain, 'src/plain.uxdsl', '.plain { color: red; }\n');
+  assert.deepEqual(await buildWarnings(plain, { entry: './src/plain.uxdsl', out: './out/plain.css' }), []);
+  const modules = mkTmpDir();
+  write(modules, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/a.uxdsl', outFile: './out/a.module.css' }, { entry: './src/b.uxdsl', outFile: './out/b.module.css' }] };");
+  write(modules, 'src/a.uxdsl', '.a { color: palette(primary.main); }\n');
+  write(modules, 'src/b.uxdsl', '.b { margin: space(2); }\n');
+  assert.deepEqual(await buildWarnings(modules), []);
+
+  // Through the real CLI, on stderr, once.
+  const spawned = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'src/card.uxdsl', '--out', 'out/card.css'], { cwd: single, encoding: 'utf8' });
+  assert.equal(spawned.status, 0, spawned.stderr);
+  assert.equal(spawned.stderr.split('\n').filter((line) => /UXD_THEME_MARKER/.test(line)).length, 1, spawned.stderr);
+});
+
+test("MIG-B9-20: '[uxdsl] Theme config detected' is printed only for an entry that emitted the theme", () => {
+  const dir = mkTmpDir();
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123' } } }));
+  write(dir, 'src/card.uxdsl', '.card { color: palette(primary.main); }\n');
+  write(dir, 'src/theme.uxdsl', '@uxdsl theme;\n');
+  const card = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'src/card.uxdsl', '--out', 'out/card.css'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(card.status, 0, card.stderr);
+  assert.doesNotMatch(card.stdout, /Theme config detected/, 'a component entry uses the theme file but emits no theme');
+  const theme = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'src/theme.uxdsl', '--out', 'out/theme.css'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(theme.status, 0, theme.stderr);
+  assert.match(theme.stdout, /^\[uxdsl\] Theme config detected$/m, 'control: the entry that emits the theme says so');
+  assert.ok(theme.stdout.indexOf('Theme config detected') < theme.stdout.indexOf('built out/theme.css'), 'before its built line');
 });
 
 // --- MIG-B6-21 (FEAT-008): source maps ---
@@ -1504,7 +1500,7 @@ test('MIG-B6-21: a multi-entry build that fails writes neither CSS nor map for a
     path.join(dir, 'uxdsl.config.cjs'),
     "module.exports = { builds: [\n" +
     "  { entry: 'src/a.uxdsl', outFile: 'dist/a.css' },\n" +
-    "  { entry: 'src/b.uxdsl', outFile: 'dist/b.css', includeTheme: false },\n" +
+    "  { entry: 'src/b.uxdsl', outFile: 'dist/b.css' },\n" +
     "] };\n"
   );
   const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--sourcemap'], { cwd: dir, encoding: 'utf8' });
@@ -1589,10 +1585,10 @@ test('phase 2 (3): `uxdsl <command> --help` prints that command\'s options and n
   const build = runCli(dir, 'build', '--help');
   assert.equal(build.status, 0);
   assert.match(build.stdout, /^Usage: uxdsl build \[options\]/);
-  for (const flag of ['--config', '--entry', '--out', '--watch', '--include-theme', '--sourcemap', '--strict-theme=<family,...>', '--no-strict-theme']) {
+  for (const flag of ['--config', '--entry', '--out', '--watch', '--sourcemap', '--strict-theme=<family,...>', '--no-strict-theme']) {
     assert.ok(build.stdout.includes(flag), `build --help must document ${flag}`);
   }
-  assert.doesNotMatch(build.stdout, /--diff|--contrast|--multi|--src/);
+  assert.doesNotMatch(build.stdout, /--diff|--contrast|--multi|--src|--include-theme/);
 
   const theme = runCli(dir, 'theme', '--help');
   assert.match(theme.stdout, /^Usage: uxdsl theme /);
@@ -1679,7 +1675,7 @@ const SHADOWED_WARNING = "[uxdsl] Warning: src/_helpers.uxdsl:1:11: UXD_FUNCTION
 
 function sassProject(extraConfig = '') {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false${extraConfig} };\n`);
+  write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css'${extraConfig} };\n`);
   write(dir, 'src/entry.uxdsl', "@import './card';\n@import './helpers';\n.e { padding: space(2); }\n");
   write(dir, 'src/_card.uxdsl', '.card { color: red; }\n');
   write(dir, 'src/_helpers.uxdsl', '@function space($n) { @return $n * 4px; }\n');
@@ -1688,7 +1684,7 @@ function sassProject(extraConfig = '') {
 
 function twoEntryProject() {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },\n  { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },\n] };\n");
+  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/a.uxdsl', outFile: './out/a.css' },\n  { entry: './src/b.uxdsl', outFile: './out/b.css' },\n] };\n");
   return dir;
 }
 
@@ -1720,7 +1716,7 @@ test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecatio
 
   // Sass's cap: five located warnings of one type, then Sass's own summary, which has no position.
   const capped = mkTmpDir();
-  write(capped, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false };\n");
+  write(capped, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css' };\n");
   write(capped, 'src/entry.uxdsl', `${[1, 2, 3, 4, 5, 6, 7].map((n) => `@import './p${n}';`).join('\n')}\n`);
   for (const n of [1, 2, 3, 4, 5, 6, 7]) write(capped, `src/_p${n}.uxdsl`, `.p${n} { color: red; }\n`);
   const cap = runCli(capped, 'build');
@@ -1785,7 +1781,7 @@ test('MIG-B9-14: warnings print once with their position; sass.silenceDeprecatio
   const themed = sassProject();
   write(themed, 'uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
   const without = runCli(themed, 'theme');
-  write(themed, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', includeTheme: false, sass: { silenceDeprecations: ['import'], quietDeps: true } };\n");
+  write(themed, 'uxdsl.config.cjs', "module.exports = { entry: './src/entry.uxdsl', outFile: './out/entry.css', sass: { silenceDeprecations: ['import'], quietDeps: true } };\n");
   const withSass = runCli(themed, 'theme');
   assert.equal(without.status, 0, without.stderr);
   assert.equal(withSass.status, 0, withSass.stderr);
@@ -1855,7 +1851,7 @@ test('MIG-B9-14: an unknown theme family prints once, though compile() also repo
   // compile() reports the theme's warning too, with no file: printed as it
   // comes, it would be a second line.
   const { compile } = require('../../dist/compile');
-  const { warnings } = await compile({ source: '.a { color: red; }', from: path.join(mkTmpDir(), 'a.uxdsl') }, { theme, includeTheme: false });
+  const { warnings } = await compile({ source: '.a { color: red; }', from: path.join(mkTmpDir(), 'a.uxdsl') }, { theme });
   assert.ok(warnings.some((w) => /Unknown theme family "migB914UnknownFamily"/.test(w.text) && w.file === undefined), JSON.stringify(warnings));
 
   const dir = cliProject();
@@ -1902,7 +1898,7 @@ test("MIG-B9-14: the CLI's config accepts exactly the sass values compile() acce
     write(dir, 'uxdsl.config.cjs', `module.exports = { entry: './a.uxdsl', outFile: './a.css', sass: ${JSON.stringify(probe)} };\n`);
     write(dir, 'a.uxdsl', '.a{}\n');
     const cliAccepts = await cli.loadConfig({}, dir).then(() => true, () => false);
-    const compileAccepts = await compile({ source: '.a{}', from: path.join(dir, 'a.uxdsl') }, { theme: {}, includeTheme: false, sass: probe }).then(() => true, () => false);
+    const compileAccepts = await compile({ source: '.a{}', from: path.join(dir, 'a.uxdsl') }, { theme: {}, sass: probe }).then(() => true, () => false);
     assert.equal(cliAccepts, compileAccepts, `sass: ${JSON.stringify(probe)} — loadConfig ${cliAccepts ? 'accepts' : 'refuses'} it, compile() ${compileAccepts ? 'accepts' : 'refuses'} it`);
   }
 });
@@ -1948,8 +1944,10 @@ test('MIG-B9-14: the sass type check fails for a shape that drops an optional me
 // `%`, `#`, `?`, `'` and `\` percent-encoded. The namespace is the file's path
 // relative to --src, without `.uxdsl` and the underscore, lowercased, every
 // character outside [a-z0-9-] a `-`, with `f-` before a leading digit or `-`,
-// and `-2`, `-3`… for a name a file earlier in path order already took. Each
-// listed file is its own Sass module.
+// and `-2`, `-3`… for a name a file earlier in path order already took (the
+// theme file's namespace, uxdsl-theme, is taken first). Each listed file is its
+// own Sass module, loaded after the theme file generate-entry writes next to the
+// entry.
 
 const ENTRY_NOTE = "/* As the build's entry, it is regenerated by uxdsl build --watch when a .uxdsl file under --src is added or removed, and by uxdsl generate-entry with no arguments, from the line above. */";
 
@@ -1965,10 +1963,22 @@ const entryHeader = (invocation) => [
 
 const useLines = (text) => text.split('\n').filter((line) => line.startsWith('@use '));
 
+/** The theme file generate-entry writes next to the entry, and the entry's
+ * first @use, which loads it (unless --no-theme). */
+const THEME_FILE_TEXT = [
+  '// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY',
+  '// Written by uxdsl generate-entry next to the entry, which loads it first: the',
+  '// theme (every --uxdsl__ token) is emitted where the line below is, before the',
+  "// entry's other files. generate-entry --no-theme leaves this file out.",
+  '@uxdsl theme;',
+  '',
+].join('\n');
+const THEME_USE = "@use './uxdsl-theme.uxdsl' as uxdsl-theme;";
+
 /** A project whose config compiles src/uxdsl-entry.uxdsl, with `files` written. */
 function entryProject(files) {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n");
+  write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n");
   for (const [rel, content] of Object.entries(files)) write(dir, rel, content);
   return dir;
 }
@@ -1994,9 +2004,9 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.equal(generated.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n');
+  assert.equal(generated.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated theme file at src/uxdsl-theme.uxdsl: `@uxdsl theme;`, loaded first by the entry.\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 3 @use rules.\n');
   assert.equal(generated.stderr, '', 'no entry was replaced, so no warning');
-  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...entryHeader('uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl'), "@use './card.uxdsl' as card;", "@use './components/card.uxdsl' as components-card;", ''].join('\n'));
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...entryHeader('uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl'), THEME_USE, "@use './card.uxdsl' as card;", "@use './components/card.uxdsl' as components-card;", ''].join('\n'));
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   assert.equal(built.stderr, '', 'an @use entry reports no deprecation');
@@ -2021,10 +2031,10 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   };
   const regenerated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(regenerated.status, 0, regenerated.stderr);
-  assert.match(regenerated.stdout, /with 6 @use rules\.\n$/);
+  assert.match(regenerated.stdout, /with 7 @use rules\.\n$/);
   assert.equal(regenerated.stderr, '', 'the replaced entry already used @use');
   const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
-  assert.deepEqual(lines, pathOrder(Object.keys(lineOf)).map((key) => lineOf[key]), 'path order');
+  assert.deepEqual(lines, [THEME_USE, ...pathOrder(Object.keys(lineOf)).map((key) => lineOf[key])], 'the theme file, then path order');
   const rebuilt = runCli(dir, 'build');
   assert.equal(rebuilt.status, 0, rebuilt.stderr);
   assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.hash \{\n {2}color: olive;\n\}/, 'a#b.uxdsl loads through its encoded URL');
@@ -2034,7 +2044,7 @@ test('MIG-B9-14: generate-entry writes @use lines with unique namespaces for two
   const first = runCli(dir, 'generate-entry', '--src', 'src', '--first', 'components/card.uxdsl,card');
   assert.equal(first.status, 0, first.stderr);
   const rest = pathOrder(Object.keys(lineOf).filter((key) => key !== './components/card.uxdsl' && key !== './card.uxdsl'));
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [lineOf['./components/card.uxdsl'], lineOf['./card.uxdsl'], ...rest.map((key) => lineOf[key])]);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, lineOf['./components/card.uxdsl'], lineOf['./card.uxdsl'], ...rest.map((key) => lineOf[key])]);
   assert.equal(runCli(dir, 'build').status, 0);
 
   // Each --first mistake exits 1 and leaves the entry as it was.
@@ -2063,6 +2073,7 @@ test("MIG-B9-22: each @use's namespace is the file's path relative to --src, whe
   assert.equal(generated.status, 0, generated.stderr);
   const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
   assert.deepEqual(lines, [
+    THEME_USE,
     "@use '../2col.uxdsl' as f-2col;",
     "@use '../components/card.uxdsl' as components-card;",
     "@use '../theme/tokens.uxdsl' as theme-tokens;",
@@ -2071,7 +2082,7 @@ test("MIG-B9-22: each @use's namespace is the file's path relative to --src, whe
   assert.equal(lines.some((line) => / as f----/.test(line)), false, lines.join('\n'));
 
   // The CSS is the same under that name: no file reads an entry's namespaces.
-  const build = () => runCli(dir, 'build', '--entry', 'src/app/entry.uxdsl', '--out', 'out/nested.css', '--no-include-theme');
+  const build = () => runCli(dir, 'build', '--entry', 'src/app/entry.uxdsl', '--out', 'out/nested.css');
   const built = build();
   assert.equal(built.status, 0, built.stderr);
   const css = fs.readFileSync(path.join(dir, 'out', 'nested.css'), 'utf8');
@@ -2090,7 +2101,7 @@ test('MIG-B9-22: each @use names its file with .uxdsl, so a .scss file beside a 
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './variables.uxdsl' as variables;", "@use './zeta.uxdsl' as zeta;"]);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, "@use './variables.uxdsl' as variables;", "@use './zeta.uxdsl' as zeta;"]);
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   const css = fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
@@ -2116,12 +2127,12 @@ test('MIG-B9-22: without --first, generate-entry lists files by path only, and -
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
   const urls = () => useLines(fs.readFileSync(entryPath, 'utf8')).map((line) => line.match(/^@use '([^']+)' as /)[1]);
   assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
-  assert.deepEqual(urls(), pathOrder(keys).map(urlOfKey));
+  assert.deepEqual(urls(), ['./uxdsl-theme.uxdsl', ...pathOrder(keys).map(urlOfKey)]);
   // Negative control: the order the file names gave is another order.
   assert.notDeepEqual(previousOrder(keys), pathOrder(keys));
 
   assert.equal(runCli(dir, 'generate-entry', '--src', 'src', '--first', 'theme-def,layout').status, 0);
-  assert.deepEqual(urls(), ['./theme-def.uxdsl', './layout.uxdsl', ...pathOrder(keys.filter((key) => key !== './theme-def.uxdsl' && key !== './layout.uxdsl')).map(urlOfKey)]);
+  assert.deepEqual(urls(), ['./uxdsl-theme.uxdsl', './theme-def.uxdsl', './layout.uxdsl', ...pathOrder(keys.filter((key) => key !== './theme-def.uxdsl' && key !== './layout.uxdsl')).map(urlOfKey)]);
 });
 
 test('MIG-B9-14: two files named alike through @use without `as` collide in Sass (negative control)', () => {
@@ -2142,7 +2153,7 @@ test('MIG-B9-14: generate-entry percent-encodes a backslash in a file name, and 
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './a%5Cb.uxdsl' as a-b;"]);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, "@use './a%5Cb.uxdsl' as a-b;"]);
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   assert.match(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /\.slash \{\n {2}color: olive;\n\}/);
@@ -2160,16 +2171,16 @@ test('MIG-B9-22: generate-entry leaves out only its output file: a file with its
   const entryPath = path.join(dir, 'src', 'main.uxdsl');
   const generated = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.match(generated.stdout, /with 2 @use rules\.\n$/);
+  assert.match(generated.stdout, /with 3 @use rules\.\n$/);
   const lines = useLines(fs.readFileSync(entryPath, 'utf8'));
-  assert.deepEqual(lines, ["@use './card.uxdsl' as card;", "@use './pages/main.uxdsl' as pages-main;"]);
+  assert.deepEqual(lines, [THEME_USE, "@use './card.uxdsl' as card;", "@use './pages/main.uxdsl' as pages-main;"]);
   // Negative control: the entry, which the scan finds under --src, is not listed.
   assert.equal(lines.some((line) => line.startsWith("@use './main.uxdsl'")), false, lines.join('\n'));
 
   const ordered = runCli(dir, 'generate-entry', '--src', 'src', '--out', 'src/main.uxdsl', '--first', 'pages/main');
   assert.equal(ordered.status, 0, ordered.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './pages/main.uxdsl' as pages-main;", "@use './card.uxdsl' as card;"]);
-  const built = runCli(dir, 'build', '--entry', 'src/main.uxdsl', '--out', 'out/main.css', '--no-include-theme');
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, "@use './pages/main.uxdsl' as pages-main;", "@use './card.uxdsl' as card;"]);
+  const built = runCli(dir, 'build', '--entry', 'src/main.uxdsl', '--out', 'out/main.css');
   assert.equal(built.status, 0, built.stderr);
   const css = fs.readFileSync(path.join(dir, 'out', 'main.css'), 'utf8');
   assert.ok(css.indexOf('.main {') >= 0 && css.indexOf('.main {') < css.indexOf('.card {'), css);
@@ -2300,7 +2311,7 @@ test("MIG-B9-14: under a file's own namespaced @use, a bare call of the module's
   });
   const generated = runCli(dir, 'generate-entry', '--src', 'src');
   assert.equal(generated.status, 0, generated.stderr);
-  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './helpers.uxdsl' as helpers;", "@use './pad.uxdsl' as pad;"]);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), [THEME_USE, "@use './helpers.uxdsl' as helpers;", "@use './pad.uxdsl' as pad;"]);
   const css = () => fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
 
   const bare = runCli(dir, 'build');
@@ -2353,7 +2364,7 @@ test('MIG-B9-14: generate-entry warns once when it replaces an entry that loaded
   for (const fragment of ['UXD_SASS', '@function', '!default', "@use './variables' as *;", 'namespace', 'migration guide']) {
     assert.ok(lines[0].includes(fragment), `the warning names ${fragment}: ${lines[0]}`);
   }
-  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), ["@use './card.uxdsl' as card;"]);
+  assert.deepEqual(useLines(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8')), [THEME_USE, "@use './card.uxdsl' as card;"]);
 
   // No warning on a second run: the entry it replaces already uses @use.
   const again = runCli(dir, 'generate-entry', '--src', 'src');
@@ -2377,7 +2388,7 @@ test('MIG-B9-22: generate-entry records its invocation and re-runs it with no ar
   const generated = runCli(dir, 'generate-entry', '--src', 'src', '--first', 'my styles/base', '--exclude', 'legacy.uxdsl');
   assert.equal(generated.status, 0, generated.stderr);
   const text = fs.readFileSync(entryPath, 'utf8');
-  assert.equal(text, [...entryHeader(recorded), "@use './my styles/base.uxdsl' as my-styles-base;", "@use './card.uxdsl' as card;", ''].join('\n'));
+  assert.equal(text, [...entryHeader(recorded), THEME_USE, "@use './my styles/base.uxdsl' as my-styles-base;", "@use './card.uxdsl' as card;", ''].join('\n'));
   const built = runCli(dir, 'build');
   assert.equal(built.status, 0, built.stderr);
   assert.ok(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8').startsWith(`/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n/* ${recorded} */\n`), 'the recorded line is a comment of the CSS too');
@@ -2386,7 +2397,7 @@ test('MIG-B9-22: generate-entry records its invocation and re-runs it with no ar
   const before = fs.statSync(entryPath);
   const again = runCli(dir, 'generate-entry');
   assert.equal(again.status, 0, again.stderr);
-  assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 2 @use rules (identical to the file on disk; not rewritten).\n`);
+  assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Theme file at src/uxdsl-theme.uxdsl is up to date (identical to the file on disk; not rewritten).\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 3 @use rules (identical to the file on disk; not rewritten).\n`);
   assert.equal(fs.readFileSync(entryPath, 'utf8'), text);
   const after = fs.statSync(entryPath);
   assert.equal(after.mtimeMs, before.mtimeMs, 'not written');
@@ -2398,8 +2409,8 @@ test('MIG-B9-22: generate-entry records its invocation and re-runs it with no ar
   write(dir, 'src/old/legacy.uxdsl', '.older { color: gray; }\n');
   const regenerated = runCli(dir, 'generate-entry');
   assert.equal(regenerated.status, 0, regenerated.stderr);
-  assert.match(regenerated.stdout, /\[uxdsl\] Generated entry file at src\/uxdsl-entry\.uxdsl with 3 @use rules\.\n$/);
-  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...entryHeader(recorded), "@use './my styles/base.uxdsl' as my-styles-base;", "@use './card.uxdsl' as card;", "@use './zeta.uxdsl' as zeta;", ''].join('\n'));
+  assert.match(regenerated.stdout, /\[uxdsl\] Generated entry file at src\/uxdsl-entry\.uxdsl with 4 @use rules\.\n$/);
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), [...entryHeader(recorded), THEME_USE, "@use './my styles/base.uxdsl' as my-styles-base;", "@use './card.uxdsl' as card;", "@use './zeta.uxdsl' as zeta;", ''].join('\n'));
 
   // A recorded line that does not parse, that writes another file, or whose
   // --first no longer matches: exit 1, naming the entry, and nothing is written.
@@ -2432,11 +2443,11 @@ test('MIG-B9-22: the recorded invocation writes whitespace, a quote, a backslash
   assert.equal(generated.status, 0, generated.stderr);
   const text = fs.readFileSync(entryPath, 'utf8');
   assert.equal(text.split('\n')[2], '/* uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl --first "a b/x.uxdsl,q\\"r/y.uxdsl,s\\\\t/z.uxdsl,c*\\/w.uxdsl,h\\u0023{v}/k.uxdsl" --exclude=-dash.uxdsl */');
-  assert.equal(useLines(text).length, 6, text);
+  assert.equal(useLines(text).length, 7, text);
   assert.equal(useLines(text).some((line) => line.includes('-dash')), false, text);
   const again = runCli(dir, 'generate-entry');
   assert.equal(again.status, 0, again.stderr);
-  assert.match(again.stdout, /is up to date with 6 @use rules/);
+  assert.match(again.stdout, /is up to date with 7 @use rules/);
   assert.equal(fs.readFileSync(entryPath, 'utf8'), text);
 });
 
@@ -2448,16 +2459,16 @@ test('MIG-B9-22: with no arguments, a configured entry that records no invocatio
     ['generated before the invocation was recorded', "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */\n\n/* --- Application & Component Imports --- */\n@use './card' as card;\n"],
   ]) {
     const dir = mkTmpDir();
-    write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/main.uxdsl', outFile: './out/app.css', includeTheme: false };\n");
+    write(dir, 'uxdsl.config.cjs', "module.exports = { entry: './src/main.uxdsl', outFile: './out/app.css' };\n");
     write(dir, 'src/card.uxdsl', '.card { color: red; }\n');
     const mainPath = write(dir, 'src/main.uxdsl', entryText);
     const before = fs.statSync(mainPath);
     const run = runCli(dir, 'generate-entry');
     assert.equal(run.status, 0, `${name}: ${run.stderr}`);
-    assert.equal(run.stdout, '[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n', name);
+    assert.equal(run.stdout, '[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Generated theme file at src/uxdsl-theme.uxdsl: `@uxdsl theme;`, loaded first by the entry.\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 3 @use rules.\n', name);
     assert.equal(fs.readFileSync(mainPath, 'utf8'), entryText, name);
     assert.equal(fs.statSync(mainPath).mtimeMs, before.mtimeMs, name);
-    assert.equal(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8'), [...entryHeader('uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl'), "@use './card.uxdsl' as card;", "@use './main.uxdsl' as main;", ''].join('\n'), name);
+    assert.equal(fs.readFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), 'utf8'), [...entryHeader('uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl'), THEME_USE, "@use './card.uxdsl' as card;", "@use './main.uxdsl' as main;", ''].join('\n'), name);
   }
 });
 
@@ -2469,7 +2480,7 @@ test('MIG-B9-22: with no arguments and no configured entry that records an invoc
   const recorded = 'uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl --first b.uxdsl --exclude legacy.uxdsl';
   for (const [name, config] of [
     ['without a build config or a theme file', null],
-    ['with a build config whose entry is another file, written by hand', "module.exports = { entry: './main.uxdsl', outFile: './out/app.css', includeTheme: false };\n"],
+    ['with a build config whose entry is another file, written by hand', "module.exports = { entry: './main.uxdsl', outFile: './out/app.css' };\n"],
   ]) {
     const dir = mkTmpDir();
     if (config) write(dir, 'uxdsl.config.cjs', config);
@@ -2482,13 +2493,13 @@ test('MIG-B9-22: with no arguments and no configured entry that records an invoc
     const generated = runCli(dir, 'generate-entry', '--first', 'b', '--exclude', 'legacy.uxdsl');
     assert.equal(generated.status, 0, `${name}: ${generated.stderr}`);
     const text = fs.readFileSync(entryPath, 'utf8');
-    assert.equal(text, [...entryHeader(recorded), "@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", ''].join('\n'), name);
+    assert.equal(text, [...entryHeader(recorded), THEME_USE, "@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", ''].join('\n'), name);
 
     // Nothing changed: the recorded invocation, which writes nothing.
     const before = fs.statSync(entryPath);
     const again = runCli(dir, 'generate-entry');
     assert.equal(again.status, 0, `${name}: ${again.stderr}`);
-    assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 2 @use rules (identical to the file on disk; not rewritten).\n`, name);
+    assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Theme file at src/uxdsl-theme.uxdsl is up to date (identical to the file on disk; not rewritten).\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 3 @use rules (identical to the file on disk; not rewritten).\n`, name);
     assert.equal(fs.readFileSync(entryPath, 'utf8'), text, name);
     assert.equal(fs.statSync(entryPath).mtimeMs, before.mtimeMs, `${name}: not written`);
 
@@ -2496,7 +2507,7 @@ test('MIG-B9-22: with no arguments and no configured entry that records an invoc
     write(dir, 'src/c.uxdsl', '.c { color: green; }\n');
     const regenerated = runCli(dir, 'generate-entry');
     assert.equal(regenerated.status, 0, `${name}: ${regenerated.stderr}`);
-    assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), ["@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", "@use './c.uxdsl' as c;"], name);
+    assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, "@use './b.uxdsl' as b;", "@use './a.uxdsl' as a;", "@use './c.uxdsl' as c;"], name);
     if (mainPath) assert.equal(fs.readFileSync(mainPath, 'utf8'), mainText, name);
 
     // A recorded line that does not parse: exit 1, naming the file, and nothing
@@ -2514,20 +2525,21 @@ test('MIG-B9-22: with no arguments and no configured entry that records an invoc
 
 test('MIG-B9-22: with no arguments, generate-entry re-runs, in config order, the invocation each entry of "builds" records, and leaves an entry that records none', () => {
   const dir = mkTmpDir();
-  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/main.uxdsl', outFile: './out/main.css', includeTheme: false },\n  { entry: './src/b/entry.uxdsl', outFile: './out/b.css', includeTheme: false },\n  { entry: './src/a/entry.uxdsl', outFile: './out/a.css', includeTheme: false },\n] };\n");
+  write(dir, 'uxdsl.config.cjs', "module.exports = { builds: [\n  { entry: './src/main.uxdsl', outFile: './out/main.css' },\n  { entry: './src/b/entry.uxdsl', outFile: './out/b.css' },\n  { entry: './src/a/entry.uxdsl', outFile: './out/a.css' },\n] };\n");
   const mainText = '.main { color: red; }\n';
   const mainPath = write(dir, 'src/main.uxdsl', mainText);
   write(dir, 'src/a/one.uxdsl', '.one { color: red; }\n');
   write(dir, 'src/b/two.uxdsl', '.two { color: red; }\n');
-  assert.equal(runCli(dir, 'generate-entry', '--src', 'src/a', '--out', 'src/a/entry.uxdsl').status, 0);
-  assert.equal(runCli(dir, 'generate-entry', '--src', 'src/b', '--out', 'src/b/entry.uxdsl').status, 0);
+  // Two component entries beside the hand-written one: no theme file of their own.
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src/a', '--out', 'src/a/entry.uxdsl', '--no-theme').status, 0);
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src/b', '--out', 'src/b/entry.uxdsl', '--no-theme').status, 0);
   write(dir, 'src/a/three.uxdsl', '.three { color: red; }\n');
   write(dir, 'src/b/four.uxdsl', '.four { color: red; }\n');
   const rerun = runCli(dir, 'generate-entry');
   assert.equal(rerun.status, 0, rerun.stderr);
   assert.deepEqual(rerun.stdout.split('\n').filter((line) => / records: |Generated entry file/.test(line)), [
-    '[uxdsl] src/b/entry.uxdsl records: uxdsl generate-entry --src ./src/b --out ./src/b/entry.uxdsl',
-    '[uxdsl] src/a/entry.uxdsl records: uxdsl generate-entry --src ./src/a --out ./src/a/entry.uxdsl',
+    '[uxdsl] src/b/entry.uxdsl records: uxdsl generate-entry --src ./src/b --out ./src/b/entry.uxdsl --no-theme',
+    '[uxdsl] src/a/entry.uxdsl records: uxdsl generate-entry --src ./src/a --out ./src/a/entry.uxdsl --no-theme',
     '[uxdsl] Generated entry file at src/b/entry.uxdsl with 2 @use rules.',
     '[uxdsl] Generated entry file at src/a/entry.uxdsl with 2 @use rules.',
   ]);
@@ -2545,7 +2557,7 @@ test('MIG-B9-22: with no arguments, generate-entry re-runs, in config order, the
   const bPath = path.join(dir, 'src', 'b', 'entry.uxdsl');
   const aPath = path.join(dir, 'src', 'a', 'entry.uxdsl');
   const bText = fs.readFileSync(bPath, 'utf8');
-  const aLine = '/* uxdsl generate-entry --src ./src/a --out ./src/a/entry.uxdsl */';
+  const aLine = '/* uxdsl generate-entry --src ./src/a --out ./src/a/entry.uxdsl --no-theme */';
   const aBroken = fs.readFileSync(aPath, 'utf8').replace(aLine, aLine.replace(' */', ' --bogus */'));
   assert.ok(aBroken.includes('--bogus'), aBroken);
   fs.writeFileSync(aPath, aBroken);
@@ -2554,4 +2566,129 @@ test('MIG-B9-22: with no arguments, generate-entry re-runs, in config order, the
   assert.match(refused.stderr, /^\[uxdsl\] Error: src\/a\/entry\.uxdsl: its recorded invocation does not parse \(Unknown option --bogus\.\): /m);
   assert.equal(fs.readFileSync(bPath, 'utf8'), bText, 'the entry planned before the failing one is not written');
   assert.equal(fs.readFileSync(aPath, 'utf8'), aBroken);
+});
+
+// --- generate-entry: the theme file ----------------------------------------
+//
+// generate-entry writes a second file next to the entry, uxdsl-theme.uxdsl,
+// whose one statement is `@uxdsl theme;`, and loads it as the entry's first
+// @use (THEME_USE, above): the theme is emitted there, before every listed
+// file. Its comments are Sass's silent ones, so they never reach the CSS.
+// --no-theme writes neither the file nor the line, and is recorded with the
+// invocation.
+
+test("MIG-B9-20: generate-entry writes uxdsl-theme.uxdsl with the marker and lists it first; --no-theme skips it; the output's theme precedes every module", () => {
+  const dir = entryProject({ 'src/card.uxdsl': '.card { color: palette(primary.main); }\n', 'src/a/b.uxdsl': '.b { padding: density(2); }\n' });
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  const recorded = 'uxdsl generate-entry --src ./src --out ./src/uxdsl-entry.uxdsl';
+
+  const generated = runCli(dir, 'generate-entry', '--src', 'src');
+  assert.equal(generated.status, 0, generated.stderr);
+  assert.equal(generated.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated theme file at src/uxdsl-theme.uxdsl: `@uxdsl theme;`, loaded first by the entry.\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 3 @use rules.\n');
+  assert.equal(fs.readFileSync(themePath, 'utf8'), THEME_FILE_TEXT);
+  const entryText = fs.readFileSync(entryPath, 'utf8');
+  assert.equal(entryText, [...entryHeader(recorded), THEME_USE, "@use './a/b.uxdsl' as a-b;", "@use './card.uxdsl' as card;", ''].join('\n'));
+
+  // The build emits the theme at the marker, before every module's rules, and
+  // no comment of the theme file; one entry emits it, so nothing warns.
+  const built = runCli(dir, 'build');
+  assert.equal(built.status, 0, built.stderr);
+  assert.doesNotMatch(built.stderr, /UXD_THEME_MARKER/);
+  const css = fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+  const firstRoot = css.indexOf(':root');
+  assert.ok(firstRoot > 0, 'the theme is emitted');
+  assert.ok(firstRoot < css.indexOf('.b {') && firstRoot < css.indexOf('.card {'), 'before every module');
+  assert.doesNotMatch(css, /AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n\/\/|Written by uxdsl generate-entry next to the entry/, "the theme file's comments are silent");
+
+  // With no arguments: the same pair, nothing written.
+  const again = runCli(dir, 'generate-entry');
+  assert.equal(again.status, 0, again.stderr);
+  assert.equal(again.stdout, `[uxdsl] src/uxdsl-entry.uxdsl records: ${recorded}\n[uxdsl] Scanning ./src for .uxdsl files...\n[uxdsl] Theme file at src/uxdsl-theme.uxdsl is up to date (identical to the file on disk; not rewritten).\n[uxdsl] Entry file at src/uxdsl-entry.uxdsl is up to date with 3 @use rules (identical to the file on disk; not rewritten).\n`);
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), entryText);
+  // A deleted theme file is written again by the run with no arguments.
+  fs.unlinkSync(themePath);
+  assert.equal(runCli(dir, 'generate-entry').status, 0);
+  assert.equal(fs.readFileSync(themePath, 'utf8'), THEME_FILE_TEXT);
+
+  // An entry recorded before the theme file existed (no --no-theme on its line)
+  // still parses, and its next run writes the theme file and loads it first.
+  fs.unlinkSync(themePath);
+  fs.writeFileSync(entryPath, [...entryHeader(recorded), "@use './a/b.uxdsl' as a-b;", "@use './card.uxdsl' as card;", ''].join('\n'));
+  const upgraded = runCli(dir, 'generate-entry');
+  assert.equal(upgraded.status, 0, upgraded.stderr);
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), entryText);
+  assert.equal(fs.readFileSync(themePath, 'utf8'), THEME_FILE_TEXT);
+
+  // --no-theme: recorded, no line and no file written; an existing generated
+  // theme file is left where it is, unused. The run with no arguments keeps it.
+  const noTheme = runCli(dir, 'generate-entry', '--src', 'src', '--no-theme');
+  assert.equal(noTheme.status, 0, noTheme.stderr);
+  assert.equal(noTheme.stdout, '[uxdsl] Scanning src for .uxdsl files...\n[uxdsl] Generated entry file at src/uxdsl-entry.uxdsl with 2 @use rules.\n');
+  const componentText = [...entryHeader(`${recorded} --no-theme`), "@use './a/b.uxdsl' as a-b;", "@use './card.uxdsl' as card;", ''].join('\n');
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), componentText);
+  assert.equal(fs.readFileSync(themePath, 'utf8'), THEME_FILE_TEXT, 'the generated theme file is not deleted');
+  fs.unlinkSync(themePath);
+  const bareNoTheme = runCli(dir, 'generate-entry');
+  assert.equal(bareNoTheme.status, 0, bareNoTheme.stderr);
+  assert.match(bareNoTheme.stdout, new RegExp(`records: ${recorded} --no-theme\\n`));
+  assert.equal(fs.readFileSync(entryPath, 'utf8'), componentText);
+  assert.equal(fs.existsSync(themePath), false, 'a --no-theme entry never writes the theme file');
+  const component = runCli(dir, 'build');
+  assert.equal(component.status, 0, component.stderr);
+  assert.doesNotMatch(fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8'), /:root/, 'without the theme file, no theme');
+  assert.equal(component.stderr.split('\n').filter((line) => /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/.test(line)).length, 1, `the build says so once:\n${component.stderr}`);
+  const valued = runCli(dir, 'generate-entry', '--src', 'src', '--theme=yes');
+  assert.equal(valued.status, 1);
+  assert.match(valued.stderr, /^\[uxdsl\] Error: --no-theme takes no value \(got --theme=yes\)\.$/m);
+
+  // A file at that path that generate-entry did not write is refused in both
+  // modes, and nothing is written.
+  fs.writeFileSync(themePath, '.mine { color: red; }\n');
+  for (const args of [['--src', 'src'], ['--src', 'src', '--no-theme']]) {
+    const refused = runCli(dir, 'generate-entry', ...args);
+    assert.equal(refused.status, 1, args.join(' '));
+    assert.match(refused.stderr, /^\[uxdsl\] Error: src[\\/]uxdsl-theme\.uxdsl was not written by generate-entry, which writes its theme file under that name next to the entry\. Rename that file\.$/m, args.join(' '));
+    assert.equal(fs.readFileSync(entryPath, 'utf8'), componentText, `${args.join(' ')}: the entry is left as it was`);
+    assert.equal(fs.readFileSync(themePath, 'utf8'), '.mine { color: red; }\n');
+  }
+  fs.unlinkSync(themePath);
+
+  // --first naming the theme file is refused, by path, though the file does not exist.
+  for (const item of ['uxdsl-theme', './uxdsl-theme.uxdsl']) {
+    const refused = runCli(dir, 'generate-entry', '--src', 'src', '--first', item);
+    assert.equal(refused.status, 1, item);
+    assert.match(refused.stderr, new RegExp(`^\\[uxdsl\\] Error: --first "${item.replace(/\./g, '\\.')}" names the theme file generate-entry writes, which the entry always loads first\\.$`, 'm'), item);
+  }
+  assert.equal(fs.existsSync(themePath), false);
+
+  // The namespace uxdsl-theme is the theme file's: a file whose own name is
+  // the same takes the next one. A uxdsl-theme.uxdsl in another directory is a
+  // file like any other (negative control: the exclusion is by exact path).
+  write(dir, 'src/uxdsl_theme.uxdsl', '.u { color: red; }\n');
+  write(dir, 'src/sub/uxdsl-theme.uxdsl', '.sub { color: blue; }\n');
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
+  assert.deepEqual(useLines(fs.readFileSync(entryPath, 'utf8')), [THEME_USE, "@use './a/b.uxdsl' as a-b;", "@use './card.uxdsl' as card;", "@use './sub/uxdsl-theme.uxdsl' as sub-uxdsl-theme;", "@use './uxdsl_theme.uxdsl' as uxdsl-theme-2;"]);
+  const rebuilt = runCli(dir, 'build');
+  assert.equal(rebuilt.status, 0, rebuilt.stderr);
+  const rebuiltCss = fs.readFileSync(path.join(dir, 'out', 'app.css'), 'utf8');
+  assert.match(rebuiltCss, /\.sub \{\n {2}color: blue;\n\}/);
+  assert.equal(rebuiltCss.split('--uxdsl__palette__primary-main:').length - 1, css.split('--uxdsl__palette__primary-main:').length - 1, 'the theme is emitted once');
+});
+
+test('MIG-B9-20: generate-entry refuses a value on --no-theme in either spelling and writes nothing', () => {
+  const dir = mkTmpDir();
+  write(dir, 'src/a.uxdsl', '.a { color: red; }\n');
+  const listing = () => fs.readdirSync(path.join(dir, 'src')).sort();
+  for (const flag of ['--no-theme=true', '--no-theme=1', '--no-theme=', '--theme=false']) {
+    const refused = runCli(dir, 'generate-entry', flag);
+    assert.equal(refused.status, 1, `${flag}:\n${refused.stdout}${refused.stderr}`);
+    assert.match(refused.stderr, new RegExp(`^\\[uxdsl\\] Error: --no-theme takes no value \\(got ${flag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)\\.$`, 'm'), flag);
+    assert.deepEqual(listing(), ['a.uxdsl'], `${flag}: nothing written`);
+  }
+  // Controls: the bare flag skips the theme file, and no flag writes it.
+  assert.equal(runCli(dir, 'generate-entry', '--no-theme').status, 0);
+  assert.deepEqual(listing(), ['a.uxdsl', 'uxdsl-entry.uxdsl']);
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
+  assert.deepEqual(listing(), ['a.uxdsl', 'uxdsl-entry.uxdsl', 'uxdsl-theme.uxdsl']);
 });

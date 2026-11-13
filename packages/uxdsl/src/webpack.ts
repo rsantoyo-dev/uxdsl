@@ -9,11 +9,30 @@
 // `rootContext`), line and column. The map goes to the next loader with
 // absolute paths as its sources. Use it as
 // `use: ['style-loader', 'css-loader', 'uxdsl/webpack']` (or
-// MiniCssExtractPlugin's loader in place of style-loader).
+// MiniCssExtractPlugin's loader in place of style-loader). There is no theme
+// switch: a module emits the theme when it reaches `@uxdsl theme;` (the app's
+// global .uxdsl), and a component module carries only its own rules. A removed
+// option is reported once per compilation and never passed on.
+//
+// A compilation counts the theme over every module this loader is in the
+// chain of: each build records what compile() said (`themeEmitted`, whether
+// the CSS references a --uxdsl__ token, whether the module may carry the
+// theme — a `*.module.uxdsl` is a CSS Module and cannot) on the module's
+// buildInfo, and on the module that issued it when that one has the same
+// resource (the outer module mini-css-extract-plugin's and style-loader's
+// pitching loaders build), so a module webpack keeps from an earlier build or
+// restores from its persistent cache still counts. At the compilation's
+// finishModules, no module reaching `@uxdsl theme;` while the CSS references
+// tokens, or more than one module emitting the theme, is one UXD_THEME_MARKER
+// warning. Where the loader cannot see webpack's compiler (a bare loader
+// runner, thread-loader) or runs in a child compiler, and in a compiler it has
+// not run in yet (a new process whose persistent cache restored every .uxdsl
+// module), it checks nothing: it never guesses.
+import fs from 'fs';
 import path from 'path';
-import { compile } from './compile';
-import type { CompileConfig, CompileWarning } from './compile';
-import { discoverThemeAsync } from './config';
+import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
+import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
+import { discoverThemeAsync, removedOptionWarnings } from './config';
 
 /** Loader options: the same theme options as the PostCSS plugin and the Vite
  * plugin, plus `sourceMap` (defaults to webpack's own `this.sourceMap`) and
@@ -21,7 +40,6 @@ import { discoverThemeAsync } from './config';
 interface UxdslLoaderOptions {
   theme?: Record<string, unknown>;
   references?: Record<string, unknown>;
-  includeTheme?: boolean;
   discoverTheme?: boolean;
   configRoot?: string;
   sourceMap?: boolean;
@@ -42,6 +60,77 @@ interface LoaderContext {
   rootContext: string;
   resourcePath: string;
   sourceMap?: boolean;
+  /** Webpack's compiler, compilation and module this module is built by; absent under a bare loader runner. */
+  _compiler?: WebpackCompiler;
+  _compilation?: WebpackCompilation;
+  _module?: WebpackModule;
+}
+
+/** The parts of webpack's own objects the theme count reads. */
+interface WebpackModule {
+  buildInfo?: Record<string, unknown>;
+  resource?: string;
+  loaders?: Array<{ loader: string }>;
+}
+interface WebpackCompilation {
+  compiler: WebpackCompiler;
+  warnings: Error[];
+  moduleGraph?: { getIssuer(module: WebpackModule): WebpackModule | null | undefined };
+  hooks: { finishModules: { tap(name: string, fn: (modules: Iterable<WebpackModule>) => void): void } };
+}
+interface WebpackCompiler {
+  context: string;
+  isChild(): boolean;
+  webpack?: { WebpackError: new (message: string) => Error };
+  hooks: { thisCompilation: { tap(name: string, fn: (compilation: WebpackCompilation) => void): void } };
+}
+
+/** What a module's build said about the theme, on its buildInfo. */
+type ThemeFlags = Omit<ThemeEmission, 'label'>;
+const BUILD_INFO_KEY = 'uxdslTheme';
+
+/** Compilations already told about the removed options the loader was given. */
+const toldCompilations = new WeakSet<object>();
+/** Compilers whose every compilation counts the theme at finishModules. */
+const countingCompilers = new WeakSet<object>();
+
+const realPaths = new Map<string, string>();
+function realPath(file: string): string {
+  let real = realPaths.get(file);
+  if (real === undefined) {
+    try { real = fs.realpathSync(file); } catch { real = file; }
+    realPaths.set(file, real);
+  }
+  return real;
+}
+
+/** Whether `loader`, as a module's `loaders` names it, is this file. */
+function isThisLoader(loader: string): boolean {
+  return realPath(loader) === realPath(__filename);
+}
+
+/** At `compilation`'s finishModules: the one UXD_THEME_MARKER warning over every module this loader built, rebuilt or kept. */
+function countThemeAtFinishModules(compilation: WebpackCompilation): void {
+  compilation.hooks.finishModules.tap('uxdsl', (modules) => {
+    // Every stylesheet, by resource: what its last build said, or null when no
+    // module of it carries that (webpack restored it without the flags).
+    const byResource = new Map<string, ThemeFlags | null>();
+    for (const module of modules) {
+      if (!module.resource || !module.loaders?.some((entry) => isThisLoader(entry.loader))) continue;
+      const flags = module.buildInfo?.[BUILD_INFO_KEY] as ThemeFlags | undefined;
+      if (flags) byResource.set(module.resource, flags);
+      else if (!byResource.has(module.resource)) byResource.set(module.resource, null);
+    }
+    const context = compilation.compiler.context;
+    const sheets: ThemeEmission[] = [];
+    for (const [resource, flags] of byResource) if (flags) sheets.push({ label: path.relative(context, resource), ...flags });
+    sheets.sort((a, b) => (a.label < b.label ? -1 : a.label > b.label ? 1 : 0));
+    const complete = [...byResource.values()].every((flags) => flags !== null);
+    const warning = themeEmissionWarning(sheets, 'module', { complete });
+    if (!warning) return;
+    const WebpackError = compilation.compiler.webpack?.WebpackError || Error;
+    compilation.warnings.push(new WebpackError(warning.text));
+  });
 }
 
 // A compile() warning as one line, in the CLI's shape:
@@ -71,6 +160,21 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
   const callback = this.async();
   try {
     const options = this.getOptions() || {};
+    // Once per compilation (every module of it shares the options); once per
+    // call where there is no compilation to remember.
+    const compilation = this._compilation;
+    if (!compilation || !toldCompilations.has(compilation)) {
+      if (compilation) toldCompilations.add(compilation);
+      for (const text of removedOptionWarnings(options)) this.emitWarning(new Error(text));
+    }
+    // The first module of the first compilation this loader runs in counts this
+    // compilation and every later one of its compiler.
+    const compiler = this._compiler;
+    if (compiler && compilation && !compiler.isChild() && !countingCompilers.has(compiler)) {
+      countingCompilers.add(compiler);
+      countThemeAtFinishModules(compilation);
+      compiler.hooks.thisCompilation.tap('uxdsl', countThemeAtFinishModules);
+    }
     const configRoot = options.configRoot || this.rootContext;
     const discoverTheme = options.discoverTheme !== false;
 
@@ -100,17 +204,24 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     // in the chain (css-loader) instead of letting it compose.
     const wantMap = options.sourceMap !== undefined ? options.sourceMap !== false : this.sourceMap === true;
 
-    const { css, map, dependencies, warnings } = await compile(
+    const { css, map, dependencies, warnings, themeEmitted } = await compile(
       { source, from: this.resourcePath },
       {
         theme: theme as Record<string, unknown>,
         references,
-        includeTheme: options.includeTheme,
         sourceMap: wantMap ? 'external' : false,
         to: this.resourcePath,
         sass: options.sass,
       }
     );
+
+    const module = this._module;
+    if (module?.buildInfo) {
+      const flags: ThemeFlags = { themeEmitted, referencesTokens: referencesThemeTokens(css), canCarryTheme: !/\.module\.uxdsl$/i.test(this.resourcePath) };
+      module.buildInfo[BUILD_INFO_KEY] = flags;
+      const issuer = compilation?.moduleGraph?.getIssuer(module);
+      if (issuer?.buildInfo && issuer.resource === module.resource) issuer.buildInfo[BUILD_INFO_KEY] = flags;
+    }
 
     for (const dep of dependencies) this.addDependency(dep);
     if (discovered) for (const dep of discovered.dependencies) this.addDependency(dep);

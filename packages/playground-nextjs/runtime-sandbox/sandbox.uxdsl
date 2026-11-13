@@ -3,6 +3,8 @@
    default theme. It lives outside src/ on purpose: it is not part of the site's global
    stylesheet, it is the "compiled project" the runtime functions act on inside an iframe. */
 
+@uxdsl theme;
+
 html,
 body {
   margin: 0;

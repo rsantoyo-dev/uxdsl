@@ -1,4 +1,4 @@
-/* CSS Module panel: compiled with includeTheme: false. Exercises
+/* CSS Module panel: no `@uxdsl theme;`, so it defines no token of its own. Exercises
    border(1..5) resolving without an extra color import (MIG-04). */
 .box {
   border: border(2);

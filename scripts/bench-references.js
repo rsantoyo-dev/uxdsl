@@ -43,13 +43,14 @@ const LINES_PER_BLOCK = 12;
 
 function sourceForLines(lines) {
   const blocks = Math.round(lines / LINES_PER_BLOCK);
-  let css = '';
+  // The theme is emitted at the marker, so its declarations are validated too.
+  let css = '@uxdsl theme;\n';
   for (let i = 0; i < blocks; i++) css += block(i);
   return css;
 }
 
 async function compileOnce(css, mode) {
-  const result = await postcss([plugin({ includeTheme: true, references: { mode } })])
+  const result = await postcss([plugin({ references: { mode } })])
     .process(css, { from: 'bench.uxdsl' });
   // Touching `css` forces the full stringification, so neither pass can look
   // faster merely by leaving work unfinished in PostCSS's lazy result.

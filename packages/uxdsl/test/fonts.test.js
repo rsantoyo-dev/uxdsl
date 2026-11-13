@@ -45,7 +45,7 @@ test('a literal apostrophe in a family name would break out of the single-quoted
   // output instead of trusting the encoded string alone.
   assert.doesNotMatch(encodeGoogleFontFamily("O'Brien"), /'/);
   const theme = { fonts: { google: ["O'Brien Sans"] } };
-  const compiled = await compile('.x { color: red; }', { theme });
+  const compiled = await compile('@uxdsl theme;\n.x { color: red; }', { theme });
   assert.doesNotThrow(() => postcss.parse(compiled.css), 'the emitted CSS must remain syntactically valid');
   assert.match(compiled.css, /family=O%27Brien\+Sans/);
 });
@@ -73,7 +73,7 @@ test('the PostCSS plugin and generateThemeCss emit byte-identical @import URLs f
   const theme = { fonts: { google: ['Open Sans:wght@400;700', 'Playfair Display'] } };
   const extractUrls = (css) => [...css.matchAll(/@import url\('([^']+)'\)/g)].map((m) => m[1]);
 
-  const compiled = await compile('.x { color: red; }', { theme });
+  const compiled = await compile('@uxdsl theme;\n.x { color: red; }', { theme });
   const pluginUrls = extractUrls(compiled.css);
   const runtimeUrls = extractUrls(generateThemeCss(theme));
 
@@ -86,7 +86,7 @@ test('the PostCSS plugin and generateThemeCss emit byte-identical @import URLs f
 
 test('a space in the family name used to produce an invalid URL before this phase; now it does not, in either path', async () => {
   const theme = { fonts: { google: ['Open Sans:wght@400;700'] } };
-  const compiled = await compile('.x { color: red; }', { theme });
+  const compiled = await compile('@uxdsl theme;\n.x { color: red; }', { theme });
   assert.doesNotMatch(compiled.css, /family=Open Sans/, 'a literal space in the emitted URL is invalid');
   assert.match(compiled.css, /family=Open\+Sans/);
 
@@ -114,8 +114,8 @@ test('repeated compilation is idempotent: no duplicate or accumulating @import a
   // Simulates a watcher recompiling the same source from scratch on every
   // rebuild — each call is independent, but must produce the identical,
   // single @import every time, not an accumulating or drifting one.
-  const compiledFirst = await compile('.x { color: red; }', { theme });
-  const compiledSecond = await compile('.x { color: red; }', { theme });
+  const compiledFirst = await compile('@uxdsl theme;\n.x { color: red; }', { theme });
+  const compiledSecond = await compile('@uxdsl theme;\n.x { color: red; }', { theme });
   assert.equal((compiledFirst.css.match(/@import/g) || []).length, 1);
   assert.equal(compiledFirst.css, compiledSecond.css);
 });

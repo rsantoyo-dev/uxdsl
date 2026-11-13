@@ -68,6 +68,13 @@ fails as `UXD_SASS_CONTEXT`. In the plugin, and in the runtime:
 - `control-engine.ts`: shared role inheritance, state fields, tones and emission.
 - `buttons.ts`, `inputs.ts`: family-specific fields, states, defaults, public API.
 - PostCSS: legacy syntax and stylesheet AST adapter, on Dart Sass's output inside `compile()`; runtime: theme/style adapter.
+- Theme emission (`plugin.ts`): the theme is emitted only where `@uxdsl theme;`
+  is written, as the exact string `generateThemeCss` returns; no option turns
+  it on or off. `compile()` reports `themeEmitted` for each compilation, and
+  the build hosts (the CLI, `uxdsl/vite`, `uxdsl/webpack`) count it over a
+  build and warn `UXD_THEME_MARKER` through one shared helper in `compile.ts`
+  when no stylesheet emits it while the CSS references tokens, or more than
+  one does. The PostCSS plugin alone has no end of build and does not count.
 - Generated artifacts: default packs and editor inventory; never edit independently.
 
 ## Testing scenarios

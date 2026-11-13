@@ -13,7 +13,7 @@ const plugin = exported.default || exported;
 const runtime = require('./helpers/ds-runtime');
 const language = require('../dist/language');
 
-const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
+const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
 function failure(source, options) {
   try { compile(source, options); } catch (error) { return error; }
   return assert.fail(`expected ${JSON.stringify(source)} to fail, but it compiled`);
@@ -51,7 +51,7 @@ test('token functions: exactly one argument for space/density/radius/shadow/bord
     [{ surfaces: { contained: { shadow: 'shadow(1, 2)' } } }, 'UXD_SHADOW_ARGUMENT'],
   ]) {
     assert.throws(() => runtime.generateThemeCss(theme), new RegExp(code));
-    assert.throws(() => compile('.a { color: red; }', { theme, includeTheme: true }), new RegExp(code));
+    assert.throws(() => compile('@uxdsl theme;\n.a { color: red; }', { theme }), new RegExp(code));
   }
 });
 
@@ -110,7 +110,7 @@ test('palette()/color(): the dotted path is the only spelling', () => {
     '.a { color: var(--uxdsl__palette__text-primary-main); background: var(--uxdsl__palette__text-primary-dark); }');
   // A theme value with the dashed spelling is refused the same way.
   assert.throws(() => runtime.generateThemeCss({ surfaces: { contained: { bg: 'palette(surface-main)' } } }), /UXD_PALETTE_SYNTAX: .*palette\(surface\.main\)/);
-  assert.throws(() => compile('.a { color: red; }', { theme: { surfaces: { contained: { bg: 'palette(surface-main)' } } }, includeTheme: true }), /UXD_PALETTE_SYNTAX/);
+  assert.throws(() => compile('@uxdsl theme;\n.a { color: red; }', { theme: { surfaces: { contained: { bg: 'palette(surface-main)' } } } }), /UXD_PALETTE_SYNTAX/);
 });
 
 test('token keys are bare: a quoted key is UXD_TOKEN_KEY', () => {

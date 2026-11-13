@@ -79,7 +79,7 @@ test('phase 4: compiled `references.css` is the PostCSS plugin\'s option; the th
   assert.equal(result.errors[0].code, 'UXD_REFERENCE_CONTEXT');
   // The plugin still reads it: a component entry validated against another entry's CSS.
   const plugin = require('../dist/plugin');
-  const out = postcss([plugin({ discoverTheme: false, includeTheme: false, references: { css: [':root { --host-font: Inter; }'] } })])
+  const out = postcss([plugin({ discoverTheme: false, references: { css: [':root { --host-font: Inter; }'] } })])
     .process('.a { font-family: var(--host-font); color: palette(primary); }', { from: undefined }).css;
   assert.match(out, /var\(--host-font\)/);
 });

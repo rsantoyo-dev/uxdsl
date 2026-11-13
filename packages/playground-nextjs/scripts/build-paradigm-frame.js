@@ -26,8 +26,9 @@ async function main() {
   const { themes } = require(path.join(PLAYGROUND, 'themes.js'));
   const theme = deepMergeTheme(themes.default, require(path.join(PLAYGROUND, 'paradigm/theme.json')));
   const entry = path.join(PLAYGROUND, 'paradigm/frame.uxdsl');
-  const { css, warnings } = await compile({ entry }, { theme });
+  const { css, warnings, themeEmitted } = await compile({ entry }, { theme });
   if (warnings.length) throw new Error(`paradigm frame: the compiler warned:\n${warnings.map((w) => w.text).join('\n')}`);
+  if (!themeEmitted) throw new Error('paradigm frame: compile() emitted no theme; the stylesheet must write @uxdsl theme;');
 
   const html = `<!doctype html>
 <html lang="en">

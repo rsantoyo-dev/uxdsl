@@ -1,7 +1,8 @@
 // What a Next.js project writes to use UXDSL through PostCSS only: Next's own
 // default plugins (a custom postcss.config.js replaces them), then the UXDSL
-// plugin with includeTheme: false, so CSS Modules never carry :root. The one
-// global stylesheet says where the theme goes with `@uxdsl theme;`.
+// plugin with no option. The theme is emitted only where `@uxdsl theme;` is
+// written: the one global stylesheet says so, and CSS Modules never carry
+// :root.
 module.exports = {
   plugins: {
     'next/dist/compiled/postcss-flexbugs-fixes': {},
@@ -10,6 +11,6 @@ module.exports = {
       stage: 3,
       features: { 'custom-properties': false },
     },
-    'uxdsl/postcss': { includeTheme: false },
+    'uxdsl/postcss': {},
   },
 };

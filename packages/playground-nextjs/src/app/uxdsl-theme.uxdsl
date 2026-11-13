@@ -1,0 +1,5 @@
+// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY
+// Written by uxdsl generate-entry next to the entry, which loads it first: the
+// theme (every --uxdsl__ token) is emitted where the line below is, before the
+// entry's other files. generate-entry --no-theme leaves this file out.
+@uxdsl theme;

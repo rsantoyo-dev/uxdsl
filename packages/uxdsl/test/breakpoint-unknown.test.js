@@ -18,7 +18,7 @@ const { KNOWN_CSS_FUNCTIONS } = require('../dist/language');
 const file = path.join(process.cwd(), 'src', 'panel.uxdsl');
 
 async function compile(css, opts = {}) {
-  return postcss([plugin({ includeTheme: false, ...opts })]).process(css, { from: file });
+  return postcss([plugin({ ...opts })]).process(css, { from: file });
 }
 async function compileFail(css, opts = {}) {
   return compile(css, opts).then(() => null, caught => caught);

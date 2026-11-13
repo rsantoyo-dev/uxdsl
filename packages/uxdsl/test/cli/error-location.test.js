@@ -125,7 +125,7 @@ test("MIG-B9-14: a Sass error prints UXD_SASS at the author's position with Sass
   for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) {
     fs.copyFileSync(path.join(__dirname, '..', 'core', 'fixtures', 'sass-maps', file), path.join(heavy, file));
   }
-  const h = spawnSync(process.execPath, [cli, 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'], { cwd: heavy, encoding: 'utf8' });
+  const h = spawnSync(process.execPath, [cli, 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css'], { cwd: heavy, encoding: 'utf8' });
   assert.equal(h.status, 1, h.stderr);
   const lines = h.stderr.split('\n');
   assert.match(lines[0], /^\[uxdsl\] Error: uxdsl: heavy\.uxdsl:18:66: UXD_SPACE_REFERENCE: space\(404\) does not exist/);
@@ -145,7 +145,7 @@ test("MIG-B9-14: the CLI's Sass frame shows the author's text, where error.cause
 
   // The protected text exists: a printer of error.cause.message would show it.
   const { compile } = require('../../dist/compile');
-  const error = await compile({ source, from: path.join(directory, 'src', 'a.uxdsl') }, { theme: {}, includeTheme: false }).then(() => null, (e) => e);
+  const error = await compile({ source, from: path.join(directory, 'src', 'a.uxdsl') }, { theme: {} }).then(() => null, (e) => e);
   assert.ok(error, 'the source must fail in Sass');
   assert.equal(error.code, 'UXD_SASS');
   assert.match(error.cause.message, /#\{"palette\(primary\.main\)"\}/);

@@ -26,7 +26,7 @@ function buildHeavy() {
   for (const file of ['heavy.uxdsl', '_mixins.uxdsl']) {
     fs.copyFileSync(path.join(PACKAGE_DIR, 'test/core/fixtures/sass-maps', file), path.join(dir, file));
   }
-  return spawnSync(process.execPath, [path.join(PACKAGE_DIR, 'bin/uxdsl.js'), 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css', '--no-include-theme'], { cwd: dir, encoding: 'utf8' });
+  return spawnSync(process.execPath, [path.join(PACKAGE_DIR, 'bin/uxdsl.js'), 'build', '--entry', 'heavy.uxdsl', '--out', 'out.css'], { cwd: dir, encoding: 'utf8' });
 }
 
 test('MIG-B9-13: S-3 accepts `uxdsl build` of heavy.uxdsl: UXD_SPACE_REFERENCE at the author\'s 18:66, framed at the author\'s line 18', () => {
@@ -126,9 +126,9 @@ const viteRecordOnce = () => {
   return viteRecord;
 };
 
-test('MIG-B9-14: S-5 accepts uxdsl/webpack in real webpack builds: the located deprecation that sass.silenceDeprecations removes, the unknown key\'s failure, the partials as dependencies, and a CSS map that names each file at its path', async () => {
+test('MIG-B9-14: S-5 accepts uxdsl/webpack in real webpack builds: the located deprecation that sass.silenceDeprecations removes, the end-of-build UXD_THEME_MARKER, the unknown key\'s failure, the partials as dependencies, and a CSS map that names each file at its path', async () => {
   const record = await webpackRecordOnce();
-  assert.equal(assertWebpackAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path', JSON.stringify(record));
+  assert.equal(assertWebpackAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations, then one UXD_THEME_MARKER; an unknown sass key fails the module; the three files are dependencies; the CSS map names each at its path', JSON.stringify(record));
 });
 
 test('MIG-B9-14: S-5 rejects an unlocated or unsilenced warning, an unknown key that does not fail, a partial that is not a dependency, and a map that names a file beside the module (negative control)', async () => {
@@ -138,6 +138,10 @@ test('MIG-B9-14: S-5 rejects an unlocated or unsilenced warning, an unknown key 
     [{ warnings: [record.warnings[0].replace('styles/_partial.uxdsl:1:9: ', '')] }, /^warnings: /],
     [{ warnings: [] }, /^warnings: \[\]/],
     [{ silencedWarnings: record.warnings }, /did not remove the deprecation/],
+    // What the loader did before it counted the theme at the end of a compilation.
+    [{ warnings: [record.warnings[0]] }, /^warnings: .*expected one at styles\/_partial\.uxdsl:1:9 and one UXD_THEME_MARKER/],
+    [{ silencedWarnings: [] }, /^the silenced build's theme warning: \[\]/],
+    [{ warnings: [record.warnings[0], record.warnings[1], record.warnings[1]] }, /^warnings: /],
     // What the loader did before it passed `sass` on: the key was ignored.
     [{ unknownKeyError: null }, /^an unknown sass key did not fail the module$/],
     [{ unknownKeyError: 'Module build failed (from uxdsl/webpack):\nError: something else' }, /failed with another message/],
@@ -151,7 +155,7 @@ test('MIG-B9-14: S-5 rejects an unlocated or unsilenced warning, an unknown key 
   }
 });
 
-test('MIG-B9-14: S-6 accepts uxdsl/vite in real `vite build`s and a dev server: the located deprecation that sass.silenceDeprecations removes, the unknown key\'s failure, and the partials in the module graph; the record leaves NODE_ENV as it found it', async () => {
+test('MIG-B9-14: S-6 accepts uxdsl/vite in real `vite build`s and a dev server: the located deprecation that sass.silenceDeprecations removes, the end-of-build UXD_THEME_MARKER, the unknown key\'s failure, and the partials in the module graph; the record leaves NODE_ENV as it found it', async () => {
   // Vite sets NODE_ENV when it is unset; the gate's later checks run npm in
   // child processes that would inherit it.
   const nodeEnv = process.env.NODE_ENV;
@@ -159,7 +163,7 @@ test('MIG-B9-14: S-6 accepts uxdsl/vite in real `vite build`s and a dev server: 
   try {
     const record = await viteRecordOnce();
     assert.equal(process.env.NODE_ENV, undefined, 'NODE_ENV is unset again after the record');
-    assert.equal(assertViteAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations; an unknown sass key fails the build; the three files are in the dev server\'s module graph', JSON.stringify(record));
+    assert.equal(assertViteAdapter(record), 'the [import] deprecation at styles/_partial.uxdsl:1:9, removed by sass.silenceDeprecations, then one UXD_THEME_MARKER; an unknown sass key fails the build; the three files are in the dev server\'s module graph', JSON.stringify(record));
   } finally {
     if (nodeEnv === undefined) delete process.env.NODE_ENV; else process.env.NODE_ENV = nodeEnv;
   }
@@ -171,6 +175,11 @@ test('MIG-B9-14: S-6 rejects an unlocated or unsilenced warning, an unknown key 
     // What the plugin passed to this.warn() before warnings carried their position.
     [{ warnings: [record.warnings[0].replace('styles/_partial.uxdsl:1:9: ', '')] }, /^warnings: /],
     [{ silencedWarnings: record.warnings }, /did not remove the deprecation/],
+    // What the plugin did before it counted the theme at the end of a build.
+    [{ warnings: [record.warnings[0]] }, /^warnings: .*expected one at styles\/_partial\.uxdsl:1:9 and one UXD_THEME_MARKER/],
+    [{ silencedWarnings: [] }, /^the silenced build's theme warning: \[\]/],
+    // The theme warning printed twice in one build.
+    [{ warnings: [record.warnings[0], record.warnings[1], record.warnings[1]] }, /^warnings: /],
     // What the plugin did before it passed `sass` on: the key was ignored.
     [{ unknownKeyError: null }, /^an unknown sass key did not fail the build$/],
     [{ watched: record.watched.filter((file) => file !== 'styles/_partial.uxdsl') }, /^not in the dev server's module graph under the CSS module: styles\/_partial\.uxdsl/],
@@ -184,7 +193,7 @@ async function missingImport() {
   const dir = temporaryDirectory();
   fs.writeFileSync(path.join(dir, 'missing-partial.uxdsl'), '@import "./nope.uxdsl";\n.a { color: red; }\n');
   const { compile } = require(path.join(PACKAGE_DIR, 'dist/entries/index.js'));
-  return compile({ entry: path.join(dir, 'missing-partial.uxdsl') }, { theme: {}, includeTheme: false }).then(() => undefined, (error) => error);
+  return compile({ entry: path.join(dir, 'missing-partial.uxdsl') }, { theme: {} }).then(() => undefined, (error) => error);
 }
 
 test('MIG-B9-13: N-02 accepts Dart Sass\'s UXD_SASS "Can\'t find stylesheet to import." at missing-partial.uxdsl:1:9', async () => {

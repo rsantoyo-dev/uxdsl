@@ -57,8 +57,9 @@ const SHARED = `.k { color: ${RED}; }\n`;
 const A = `@import "./_shared.uxdsl";\n.k { color: ${BLUE}; }\n`;
 const IMPORTS = '@import "./_a.uxdsl";\n@import "./_shared.uxdsl";\n';
 const HOVER = `background-color: ${RED};`;
-const BUTTON = `.btn {\n  @ds-button(contained);\n  &:hover { ${HOVER} }\n}\n`;
-const PLAIN_BUTTON = '.btn {\n  @ds-button(contained);\n}\n';
+// The two button probes carry the theme (`@uxdsl theme;`): t5 reads the theme's hover background.
+const BUTTON = `@uxdsl theme;\n.btn {\n  @ds-button(contained);\n  &:hover { ${HOVER} }\n}\n`;
+const PLAIN_BUTTON = '@uxdsl theme;\n.btn {\n  @ds-button(contained);\n}\n';
 
 const PAGE = (css) => `<!doctype html>
 <style>p, button { outline: 1px solid ${BLACK}; }</style>
@@ -112,13 +113,18 @@ async function main() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-compile-rendering-'));
   try {
     write(dir, { 'nesting.uxdsl': NESTING, '_shared.uxdsl': SHARED, '_a.uxdsl': A, 'imports.uxdsl': IMPORTS, 'button.uxdsl': BUTTON, 'plain-button.uxdsl': PLAIN_BUTTON });
-    const flat = { theme: {}, includeTheme: false };
-    const nesting = (await compile({ entry: path.join(dir, 'nesting.uxdsl') }, flat)).css;
-    const imports = (await compile({ entry: path.join(dir, 'imports.uxdsl') }, flat)).css;
-    const button = (await compile({ entry: path.join(dir, 'button.uxdsl') }, { theme: {} })).css;
-    const plainButton = (await compile({ entry: path.join(dir, 'plain-button.uxdsl') }, { theme: {} })).css;
+    // No probe writes `@uxdsl theme;` but the button one, so the others carry only their own rules.
+    const results = {
+      nesting: await compile({ entry: path.join(dir, 'nesting.uxdsl') }, { theme: {} }),
+      imports: await compile({ entry: path.join(dir, 'imports.uxdsl') }, { theme: {} }),
+      button: await compile({ entry: path.join(dir, 'button.uxdsl') }, { theme: {} }),
+      plainButton: await compile({ entry: path.join(dir, 'plain-button.uxdsl') }, { theme: {} }),
+    };
+    const { nesting, imports, button, plainButton } = Object.fromEntries(Object.entries(results).map(([name, result]) => [name, result.css]));
 
     console.log(`compile() from ${PACKAGE.startsWith(`${ROOT}${path.sep}`) ? path.relative(ROOT, PACKAGE) : PACKAGE}`);
+    // Each probe is compiled with options compile() takes: none is reported as a removed option.
+    check('the probes pass compile() no removed option', Object.entries(results).filter(([, result]) => result.warnings.some((warning) => warning.text.startsWith('UXD_OPTION_REMOVED'))).map(([name]) => name), []);
     // The probes without UXDSL syntax compile to Dart Sass's output.
     check('t1–t3: the nesting probe is Dart Sass\'s output', nesting, sass.compileString(NESTING, { style: 'expanded' }).css);
     const twins = path.join(dir, 'scss');

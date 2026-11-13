@@ -67,15 +67,16 @@ function loadInstalled() {
 
 async function buildOnce(installed, theme) {
   const { plugin, postcss } = installed;
-  const compile = (source, includeTheme) =>
-    postcss([plugin({ theme, includeTheme })]).process(source, { from: undefined }).then((r) => r.css);
+  // The plugin takes no theme switch: theme.uxdsl writes `@uxdsl theme;`, so it
+  // alone emits the theme; the panels have no marker and emit none.
+  const compile = (source) =>
+    postcss([plugin({ theme })]).process(source, { from: undefined }).then((r) => r.css);
 
   const entries = fs.readdirSync(ENTRIES_DIR).filter((f) => f.endsWith('.uxdsl')).sort();
   const outputs = {};
   for (const file of entries) {
     const source = fs.readFileSync(path.join(ENTRIES_DIR, file), 'utf8');
-    const includeTheme = file === 'theme.uxdsl';
-    outputs[file] = await compile(source, includeTheme);
+    outputs[file] = await compile(source);
   }
   return outputs;
 }
@@ -152,7 +153,9 @@ async function main() {
     "import type { UxdslTheme, UxdslConfig, UxdslOptions } from 'uxdsl';",
     "export const config: UxdslConfig = defineConfig({ entry: './a.uxdsl', outFile: './a.css' });",
     "export const theme: UxdslTheme = { palette: { brand: { main: '#000' } }, typography_details: { h1: { fontSize: '2rem' } } };",
-    "export const options: UxdslOptions = { theme, includeTheme: false };",
+    "export const options: UxdslOptions = { theme };",
+    '// @ts-expect-error includeTheme was removed: the theme goes where @uxdsl theme; is written. If it came back, the directive would be unused and tsc fails.',
+    "export const removed: UxdslOptions = { theme, includeTheme: false };",
     '// @ts-expect-error the field is `fontSize` — if this stops erroring the directive is unused and tsc fails.',
     "export const typo: UxdslTheme = { typography_details: { h1: { fontsize: '2rem' } } };",
   ].join('\n'));
@@ -162,7 +165,7 @@ async function main() {
   }, null, 2));
   try {
     execFileSync('node', [path.join(PACKAGE_DIR, 'node_modules/typescript/bin/tsc'), '--project', typeDir], { cwd: FIXTURE_DIR, encoding: 'utf8', stdio: 'pipe' });
-    check('a TypeScript consumer type-checks against the installed tarball (Node16 resolution, exports map, @ts-expect-error used)', true);
+    check('a TypeScript consumer type-checks against the installed tarball (Node16 resolution, exports map, both @ts-expect-error used: a theme typo, and the removed includeTheme)', true);
   } catch (err) {
     check(`a TypeScript consumer type-checks against the installed tarball — FAILED:\n${err.stdout || err.stderr || err.message}`, false);
   }
@@ -170,7 +173,7 @@ async function main() {
 
   const theme = JSON.parse(fs.readFileSync(path.join(FIXTURE_DIR, 'theme.json'), 'utf8'));
 
-  console.log('\nBuilding: 1 theme entry (includeTheme: true) + 4 CSS-Module panel entries (includeTheme: false)...');
+  console.log('\nBuilding: 1 theme entry (writes @uxdsl theme;) + 4 CSS-Module panel entries (no marker)...');
   let outputs;
   try {
     outputs = await buildOnce(installed, theme);
@@ -180,9 +183,9 @@ async function main() {
     outputs = {};
   }
 
-  check('theme entry emits :root (it is the includeTheme: true entry)', (outputs['theme.uxdsl'] || '').includes(':root'));
+  check('theme entry emits :root (it writes @uxdsl theme;)', (outputs['theme.uxdsl'] || '').includes(':root'));
   for (const file of ['panel-surface.uxdsl', 'panel-button.uxdsl', 'panel-input.uxdsl', 'panel-border.uxdsl']) {
-    check(`${file} emits zero :root blocks (includeTheme: false — a CSS Modules loader in strict mode accepts this)`, !!outputs[file] && !outputs[file].includes(':root'));
+    check(`${file} emits zero :root blocks (no marker — a CSS Modules loader in strict mode accepts this)`, !!outputs[file] && !outputs[file].includes(':root'));
   }
 
   // Parity: the theme entry's PostCSS output and the installed runtime's

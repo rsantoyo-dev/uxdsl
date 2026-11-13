@@ -30,7 +30,7 @@ const codeOf = (error) => (/\b(UXD_[A-Z0-9_]+)\b/.exec(String(error && error.mes
 /** The effective theme's breakpoint names: what a project `@function` may shadow besides the token functions and tone(). */
 const RESERVED = Object.keys(core.resolveTheme(THEME).breakpoints);
 const silentLogger = { warn() {}, debug() {} };
-const uxdsl = () => plugin({ theme: THEME, includeTheme: false, discoverTheme: false });
+const uxdsl = () => plugin({ theme: THEME, discoverTheme: false });
 
 /** What the UXDSL plugin alone (no Sass) makes of `source`: `{ css }` or `{ error }`. */
 function oracle(source) {
@@ -111,14 +111,14 @@ const compileDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-
 /** compile() on a case, as the file `<id>.uxdsl`: `{ css, warnings, located }` (warning codes, and the warnings themselves) or `{ error }`. */
 async function throughCompile(id, source) {
   try {
-    const result = await core.compile({ source, from: path.join(compileDir, `${id}.uxdsl`) }, { theme: THEME, includeTheme: false });
+    const result = await core.compile({ source, from: path.join(compileDir, `${id}.uxdsl`) }, { theme: THEME });
     return { css: result.css, warnings: result.warnings.map((warning) => codeOf({ message: warning.text })), located: result.warnings };
   } catch (error) {
     return { error: codeOf(error), message: error.message };
   }
 }
 
-test('MIG-B9-13: the 63 protect/restore cases through compile() (theme THEME, includeTheme false) give the expected CSS; O2 and O3 report UXD_FUNCTION_SHADOWED at O2.uxdsl:1:11 and O3.uxdsl:1:11', async () => {
+test('MIG-B9-13: the 63 protect/restore cases through compile() (theme THEME, no marker) give the expected CSS; O2 and O3 report UXD_FUNCTION_SHADOWED at O2.uxdsl:1:11 and O3.uxdsl:1:11', async () => {
   const mismatches = [];
   const shadowed = {};
   for (const [id, source, expected, options = {}] of CASES) {

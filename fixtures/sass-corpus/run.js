@@ -226,7 +226,7 @@ async function runCorpus({ args, sass, sassVersion, compile, install = installCo
 
     const delivered = deprecationCounter();
     let compileError = null;
-    const piped = () => compile({ entry: entryUxdsl }, { includeTheme: false }).catch((error) => {
+    const piped = () => compile({ entry: entryUxdsl }).catch((error) => {
       compileError = error;
       throw error;
     });
@@ -275,7 +275,7 @@ async function runCorpus({ args, sass, sassVersion, compile, install = installCo
     // UXDSL on top of Bootstrap's own Sass: Bootstrap's part must not move.
     fs.writeFileSync(path.join(corpus, '_uxdsl-extras.uxdsl'), extras);
     fs.writeFileSync(path.join(corpus, 'with-extras.uxdsl'), '@import "bootstrap";\n@import "uxdsl-extras";\n');
-    const mixed = (await compile({ entry: path.join(corpus, 'with-extras.uxdsl') }, { includeTheme: false })).css;
+    const mixed = (await compile({ entry: path.join(corpus, 'with-extras.uxdsl') })).css;
     const prefix = mixed.startsWith(expected.replace(/\n+$/, ''));
     const checks = [
       ['Bootstrap\'s CSS is an unchanged prefix', prefix],

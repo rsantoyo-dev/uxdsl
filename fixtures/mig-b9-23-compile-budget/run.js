@@ -14,8 +14,10 @@
 //   three sourceMap modes, with the entry as written and, where the filesystem
 //   folds case, miscased and through a symlink whose target is in another
 //   directory, the link and the directory that holds it written in another
-//   case. The control, a compile() that changes the case of one dependency,
-//   must differ.
+//   case. The corpus writes no `@uxdsl theme;`, so compile() emits no theme
+//   for it; a base whose compile() emits the theme without the marker is
+//   compiled with that switch off, as the same stylesheet without one. The
+//   control, a compile() that changes the case of one dependency, must differ.
 // - compile()'s median moves at most 15 ms when the directory that holds the
 //   corpus root also holds 129,944 empty entries. The control, a compile() that
 //   lists that directory on each call, must move more. It runs last, as long
@@ -161,7 +163,7 @@ async function medians(compile, roots, rounds) {
   for (let round = 0; round < WARMUPS + rounds; round++) {
     for (const where of round % 2 === 0 ? ['small', 'large'] : ['large', 'small']) {
       const start = process.hrtime.bigint();
-      await compile({ entry: path.join(roots[where], 'corpus/bootstrap.uxdsl') }, { includeTheme: false });
+      await compile({ entry: path.join(roots[where], 'corpus/bootstrap.uxdsl') });
       const ms = Number(process.hrtime.bigint() - start) / 1e6;
       if (round >= WARMUPS) times[where].push(ms);
     }
@@ -198,12 +200,26 @@ const pick = (result) => ({
   warnings: result.warnings.map(({ text, file, line, column }) => ({ text, file, line, column })),
 });
 
+/**
+ * The config a base build's compile() takes for the corpus. A base that emits
+ * the theme without `@uxdsl theme;` (its compile() reports no `themeEmitted`
+ * for a stylesheet without the marker, or reports `true`) is compiled with its
+ * theme switch off, which is how a stylesheet without the marker compiles now;
+ * any other base takes no option.
+ */
+async function baseConfigFor(base, work) {
+  const probe = await base.compile({ source: '.a{}', from: path.join(work, 'probe.uxdsl') });
+  return probe.themeEmitted === false ? {} : { includeTheme: false };
+}
+
 /** The fields of `a` and `b` that differ. */
 function differences(a, b) {
   return Object.keys(a).filter((key) => JSON.stringify(a[key]) !== JSON.stringify(b[key]));
 }
 
 async function t4(work, root, base, candidate) {
+  const baseConfig = await baseConfigFor(base, work);
+  console.log(`  the base compiles the corpus with ${JSON.stringify(baseConfig)}, the candidate with no option`);
   const entries = [['the entry as written', path.join(root, 'corpus/bootstrap.uxdsl')]];
   if (FOLDS_CASE) {
     const links = path.join(work, 'links');
@@ -214,8 +230,8 @@ async function t4(work, root, base, candidate) {
   }
   for (const sourceMap of [false, 'inline', 'external']) {
     for (const [label, entry] of entries) {
-      const a = pick(await candidate.compile({ entry }, { includeTheme: false, sourceMap }));
-      const b = pick(await base.compile({ entry }, { includeTheme: false, sourceMap }));
+      const a = pick(await candidate.compile({ entry }, { sourceMap }));
+      const b = pick(await base.compile({ entry }, { ...baseConfig, sourceMap }));
       const differ = differences(a, b);
       report(differ.length === 0, TITLES.t4, `sourceMap ${JSON.stringify(sourceMap)}, ${label}: ${differ.length === 0 ? 'equal' : `${differ.join(', ')} differ`} (${Buffer.byteLength(a.css)} bytes of css, ${a.dependencies.length} dependencies, ${a.warnings.length} warnings)`);
     }
@@ -223,9 +239,9 @@ async function t4(work, root, base, candidate) {
   if (!FOLDS_CASE) console.log(`skip  ${TITLES.t4}: the entry miscased and through a symlink written in another case: the filesystem does not fold case on ${process.platform}`);
   // The control changes the case of one dependency, as a spelling that differs from the base's would.
   const entry = entries[0][1];
-  const recased = pick(await candidate.compile({ entry }, { includeTheme: false }));
+  const recased = pick(await candidate.compile({ entry }));
   recased.dependencies = recased.dependencies.map((file, index) => (index === 1 ? path.join(path.dirname(file), path.basename(file).toUpperCase()) : file));
-  const differ = differences(recased, pick(await base.compile({ entry }, { includeTheme: false })));
+  const differ = differences(recased, pick(await base.compile({ entry }, baseConfig)));
   report(differ.join() === 'dependencies', `${TITLES.t4} (negative control: a compile() that changes the case of one dependency fails it)`, differ.length === 0 ? 'no difference found' : `${differ.join(', ')} differ`);
 }
 

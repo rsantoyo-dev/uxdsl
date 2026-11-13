@@ -138,31 +138,17 @@ export type UxdslThemeOverride = UxdslDeepPartial<UxdslTheme>;
 /**
  * Options accepted by the PostCSS plugin.
  *
- * Stability phase 1 removed `breakpoints` (in all three shapes it accepted),
- * `themeVar`, `spaceVar` and `colorVar`. Thresholds are the theme's own
+ * There is no theme switch: a stylesheet emits the theme where it writes
+ * `@uxdsl theme;`, once, and a stylesheet without the marker carries only its
+ * own rules. `breakpoints` (in all three shapes it accepted), `themeVar`,
+ * `spaceVar` and `colorVar` are removed too. Thresholds are the theme's own
  * `breakpoints` family — one source, validated once — and the emitted variable
  * names are the `--uxdsl__<family>__<key>` contract, not something a caller
- * renames. A JavaScript caller that still passes one gets a
+ * renames. A JavaScript caller that still passes a removed option gets a
  * `UXD_OPTION_REMOVED` warning and the option is ignored.
  */
 export interface UxdslOptions {
   theme?: UxdslThemeOverride;
-  /**
-   * Whether this compilation emits the global `:root` token definitions
-   * (foundations, typography, density, shadows, edges, surfaces, buttons,
-   * inputs). Defaults to `true`, matching the historical single-entry
-   * behavior where one compiled file both defines and consumes tokens.
-   *
-   * Set to `false` for a component/CSS-Module entry that only consumes
-   * tokens a separate `includeTheme: true` entry already defines — for
-   * example, one shared theme import plus several CSS Module files. This
-   * avoids re-emitting duplicate global declarations and the bare `:root`
-   * selector that CSS Modules loaders reject as impure. Token references
-   * (`space()`, `palette()`, `density()`, `@ds-surface`, `@ds-button`,
-   * `@ds-input`, ...) still resolve and validate normally either way —
-   * only the definitions themselves are skipped.
-   */
-  includeTheme?: boolean;
   references?: ReferenceOptions;
   /**
    * When `theme` is omitted (and this isn't `false`), the plugin looks for
@@ -185,9 +171,6 @@ export interface UxdslBuild {
   entry: string;
   /** Where this entry's compiled CSS is written. */
   outFile: string;
-  /** Overrides the shared `includeTheme` for this entry only. A `--include-theme`
-   * / `--no-include-theme` flag still wins over both. */
-  includeTheme?: boolean;
 }
 
 /**
@@ -237,13 +220,10 @@ export type UxdslConfig =
   | (UxdslConfigShared & {
       entry: string;
       outFile: string;
-      includeTheme?: boolean;
       builds?: never;
     })
   | (UxdslConfigShared & {
       builds: UxdslBuild[];
       entry?: never;
       outFile?: never;
-      /** Applies to every entry that does not set its own. */
-      includeTheme?: boolean;
     });

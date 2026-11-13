@@ -30,7 +30,8 @@ const MAX_GROWTH = 2.5;
 const SAMPLES = 3;
 
 function source(blocks) {
-  let css = '';
+  // The theme is emitted too, so its own declarations are consumers as well.
+  let css = '@uxdsl theme;\n';
   for (let i = 0; i < blocks; i++) {
     css += `.card-${i} {
   padding: density(2);
@@ -59,7 +60,7 @@ async function prepare(blocks) {
     return original(root, consumers, options);
   };
   try {
-    await postcss([plugin({ includeTheme: true, references: { mode: 'off' } })])
+    await postcss([plugin({ references: { mode: 'off' } })])
       .process(source(blocks), { from: `perf-${blocks}.uxdsl` });
   } finally {
     implementation.enforceReferences = original;

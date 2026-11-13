@@ -8,5 +8,5 @@ const { defineConfig } = require('uxdsl/config');
 module.exports = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  includeTheme: true,
+  strictTheme: ['palette'],
 });

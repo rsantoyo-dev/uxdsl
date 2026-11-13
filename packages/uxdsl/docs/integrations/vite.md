@@ -96,13 +96,68 @@ nothing extra to declare for that form.
 
 Ensure your `tsconfig.json`'s `include` array covers this new file (e.g., `"include": ["src/**/*.ts", "src/**/*.d.ts"]`).
 
+## The theme: `@uxdsl theme;` in the global `.uxdsl`
+
+Each `.uxdsl` import is compiled on its own, and a module emits the theme —
+the `:root` token definitions and the theme's Google Fonts `@import` — only
+where it writes `@uxdsl theme;`. Write it once, at the top level of the global
+stylesheet the app imports first; every component module leaves it out and
+carries only its own rules:
+
+```css
+/* src/global.uxdsl — imported once, from main.js */
+@uxdsl theme;
+body { margin: 0; }
+```
+
+```css
+/* src/panel.uxdsl — tokens only */
+.panel { @ds-surface(contained); padding: density(2); }
+```
+
+A component module alone compiles to its own rules: `.card{padding:density(4)}`
+is `.card {\n  padding: var(--uxdsl__density__4);\n}` from `load()`, and 40
+bytes in a minified `vite build` asset. There is no option for it; the former
+`includeTheme` option is ignored with one `UXD_OPTION_REMOVED` warning per
+build (at `buildStart`, once per dev server), as are the other removed options.
+
+`vite build` counts the modules that emitted the theme, from each
+compilation's report, and warns `UXD_THEME_MARKER` once at the end of the
+build when the theme is defined nowhere or more than once:
+
+```text
+[plugin uxdsl] UXD_THEME_MARKER: no module reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them.
+[plugin uxdsl] UXD_THEME_MARKER: 2 modules emit the theme (src/a.uxdsl, src/b.uxdsl): each reaches `@uxdsl theme;`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load.
+```
+
+- "No module" is reported only when some module's CSS references a
+  `--uxdsl__` token, so a build of plain CSS says nothing.
+- "More than one" is reported always: a marker in a partial two modules
+  `@use`, or one file imported both plainly and with `?inline` (two modules,
+  labelled `src/panel.uxdsl` and `src/panel.uxdsl?inline`). Keep the marker in
+  the file imported plainly, once.
+- The count is over the whole build, not per page: a multi-page app whose
+  pages each import their own global stylesheet with the marker has one
+  emitter per page and warns "more than one" on every build. Import one
+  shared global file from every page to stay silent.
+- Every rebuild of `vite build --watch` counts again; an SSR build counts its
+  own modules; a failed build says nothing.
+- **The dev server has no end of build**, so it cannot tell that no module
+  emitted the theme: it warns only "more than one", when the set of emitting
+  modules changes, and never "no module". It counts every module it has
+  compiled during the session until that module's file is deleted, so a
+  global file the app no longer imports, still on disk with its marker, is
+  counted until the server restarts. Run `vite build` to check for a missing
+  or repeated marker.
+
+There is no switch to silence the warning.
+
 ## Options
 
 ```ts
 uxdsl({
   theme,             // explicit theme object — skips discovery entirely when given
   references,        // same shape as the PostCSS plugin's `references` option
-  includeTheme,       // emit (or skip) the global :root token definitions — default true
   discoverTheme,      // default true; see "Project theme" below
   configRoot,         // directory theme discovery searches from — default Vite's own project root
   sass,               // Dart Sass options, passed to compile(): { silenceDeprecations?, quietDeps? }

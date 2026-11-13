@@ -28,7 +28,7 @@ const entry = (name) => path.join(MAPS, name);
 
 async function failure(name) {
   try {
-    await core.compile({ entry: entry(name) }, { includeTheme: false });
+    await core.compile({ entry: entry(name) });
   } catch (error) {
     return error;
   }
@@ -70,7 +70,7 @@ test('MIG-B9-10: a Sass error keeps its exact column', async () => {
 
 test('MIG-B9-10: the final map names the original files with their content', async () => {
   const to = path.join(MAPS, 'out', 'ok.css');
-  const result = await core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap: 'external', to });
+  const result = await core.compile({ entry: entry('ok.uxdsl') }, { sourceMap: 'external', to });
   const map = JSON.parse(result.map);
   const sources = map.sources.map((source) => path.basename(source));
   assert.ok(sources.includes('ok.uxdsl') && sources.includes('_mixins.uxdsl'), `sources: ${map.sources}`);
@@ -97,7 +97,7 @@ const rejection = (promise) => promise.then(() => assert.fail('the compile succe
 function pluginOnStage(file, { map = false, to, references } = {}) {
   const stage = compileSassStage({ entry: file }, { reserved: RESERVED, sourceMap: true });
   const options = { from: file, to, map: map ? { prev: stage.map, inline: false, annotation: false, ...map } : false };
-  return postcss([restoreDirectiveSpacing, plugin({ theme: {}, includeTheme: false, references })]).process(stage.css, options);
+  return postcss([restoreDirectiveSpacing, plugin({ theme: {}, references })]).process(stage.css, options);
 }
 
 /** Every mapping of `map` whose source is a key of `texts` and that lies outside that file's text: a line past its end, or a column past its line's length. */
@@ -116,7 +116,7 @@ function outsideMappings(map, texts) {
 
 test('MIG-B9-13: the final map names only the author\'s files, relative to `to`, with their text, and no mapping points into Dart Sass\'s output; the CSS is identical in the three modes', async () => {
   const to = path.join(MAPS, 'out', 'ok.css');
-  const build = (sourceMap) => core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap, to });
+  const build = (sourceMap) => core.compile({ entry: entry('ok.uxdsl') }, { sourceMap, to });
   const external = await build('external');
   const map = JSON.parse(external.map);
   assert.deepEqual([...map.sources].sort(), ['../_mixins.uxdsl', '../ok.uxdsl', '<no source>']);
@@ -136,7 +136,7 @@ test('MIG-B9-13: the final map names only the author\'s files, relative to `to`,
 
   // A source that holds a sourceMappingURL comment of its own: Dart Sass drops it, and the three modes still agree.
   const annotated = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-maps-annotated-')), 'annotated.uxdsl');
-  const compileAnnotated = (sourceMap) => core.compile({ source: '/*# sourceMappingURL=foo.css.map */\n.a { padding: space(2); }\n', from: annotated }, { includeTheme: false, sourceMap });
+  const compileAnnotated = (sourceMap) => core.compile({ source: '/*# sourceMappingURL=foo.css.map */\n.a { padding: space(2); }\n', from: annotated }, { sourceMap });
   const [a, b, c] = [await compileAnnotated(false), await compileAnnotated('external'), await compileAnnotated('inline')];
   assert.equal(b.css, a.css);
   assert.equal(c.css.slice(0, c.css.lastIndexOf(marker)), a.css);
@@ -150,7 +150,7 @@ test('MIG-B9-13: the final map names an author\'s file as PostCSS names it: rela
   fs.mkdirSync(path.dirname(file));
   fs.writeFileSync(file, text);
   const to = path.join(dir, 'out', 'a.css');
-  const named = async (opts) => JSON.parse((await core.compile({ entry: file }, { includeTheme: false, sourceMap: 'external', ...opts })).map).sources;
+  const named = async (opts) => JSON.parse((await core.compile({ entry: file }, { sourceMap: 'external', ...opts })).map).sources;
   const postcssNames = (opts) => postcss([]).process(text, { from: file, map: { inline: false, annotation: false }, ...opts }).map.toJSON().sources;
   assert.deepEqual(await named({ to }), ['../my%20src%20%231/a%3F.uxdsl']);
   assert.deepEqual(await named({ to }), postcssNames({ to }), 'the name PostCSS gives the same file for the same `to`');
@@ -220,7 +220,7 @@ test('MIG-B9-13: a relocated error ends where it starts and carries the author\'
   const long = `${Array.from({ length: 12 }, (_, index) => `.selector-number-${index}`).join(', ')} { padding: space(404); }`;
   assert.ok(long.length > 160, 'the author\'s line is over 160 characters');
   fs.writeFileSync(path.join(dir, 'long.uxdsl'), `${long}\n`);
-  const wide = await rejection(core.compile({ entry: path.join(dir, 'long.uxdsl') }, { includeTheme: false }));
+  const wide = await rejection(core.compile({ entry: path.join(dir, 'long.uxdsl') }));
   const column = long.indexOf('padding: space(404)') + 1;
   assert.deepEqual([where(wide), wide.endLine, wide.endColumn], [`long.uxdsl:1:${column}`, 1, column]);
   const framed = markedLine(wide.showSourceCode(false));
@@ -240,12 +240,12 @@ function referenceProject() {
 test('MIG-B9-13: plugin warnings, references.onWarning issues and a ReferenceIntegrityError name the author\'s file, line and column', async () => {
   const file = referenceProject();
   const seen = [];
-  const warned = await core.compile({ entry: file }, { includeTheme: false, references: { mode: 'warn', onWarning: (issue) => seen.push(where(issue)) } });
+  const warned = await core.compile({ entry: file }, { references: { mode: 'warn', onWarning: (issue) => seen.push(where(issue)) } });
   const missing = warned.warnings.filter((warning) => warning.text.startsWith('UXD_REFERENCE_MISSING: '));
   assert.deepEqual(missing.map(where), ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
   assert.deepEqual(seen, ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
 
-  const error = await rejection(core.compile({ entry: file }, { includeTheme: false }));
+  const error = await rejection(core.compile({ entry: file }));
   assert.equal(error.name, 'ReferenceIntegrityError');
   assert.equal(error.message, formatted(file));
   assert.equal(where(error), '_mix.uxdsl:3:5');
@@ -278,7 +278,7 @@ test('MIG-B9-13: locations do not depend on PostCSS\'s prev-map arithmetic', asy
     return position;
   };
   try {
-    const error = await rejection(core.compile({ entry: entry('heavy.uxdsl') }, { includeTheme: false, sourceMap: 'external', to: path.join(MAPS, 'out', 'heavy.css') }));
+    const error = await rejection(core.compile({ entry: entry('heavy.uxdsl') }, { sourceMap: 'external', to: path.join(MAPS, 'out', 'heavy.css') }));
     assert.equal(where(error), 'heavy.uxdsl:18:66');
     // Control: under the same stub, PostCSS's own location through map.prev is one less.
     let direct;
@@ -323,7 +323,7 @@ test('MIG-B9-13: a parse error in CSS compile() did not get from Dart Sass (the 
   // does not have: only the references case's marked line has text to compare.
   const broken = [
     [{ theme: { palette: { primary: { main: 'red /* oops' } } } }, 'Unclosed comment', null],
-    [{ theme: {}, includeTheme: false, references: { css: ['.x { color: red; }\n.y {\n  color: blue;\n'] } }, 'Unclosed block', '.y {'],
+    [{ theme: {}, references: { css: ['.x { color: red; }\n.y {\n  color: blue;\n'] } }, 'Unclosed block', '.y {'],
   ];
   const nodeFrame = /^ {4}at (?:<css input>|<input css [^>]*>|.*\.uxdsl):\d+:\d+$/;
   for (const [config, reason, shown] of broken) {
@@ -345,9 +345,9 @@ test('MIG-B9-13: a parse error in CSS compile() did not get from Dart Sass (the 
   }
   // Control: a position in Dart Sass's output is still the author's, for a plugin error and for PostCSS's own parse error.
   fs.writeFileSync(path.join(dir, 'token.uxdsl'), text.replace('space(1)', 'space(404)'));
-  assert.equal(where(await rejection(core.compile({ entry: path.join(dir, 'token.uxdsl') }, { includeTheme: false }))), 'token.uxdsl:5:3');
+  assert.equal(where(await rejection(core.compile({ entry: path.join(dir, 'token.uxdsl') }))), 'token.uxdsl:5:3');
   fs.writeFileSync(path.join(dir, 'colon.uxdsl'), '@use "sass:string";\n.x {\n  b: string.unquote("a:b");\n}\n');
-  const parsed = await rejection(core.compile({ entry: path.join(dir, 'colon.uxdsl') }, { includeTheme: false }));
+  const parsed = await rejection(core.compile({ entry: path.join(dir, 'colon.uxdsl') }));
   assert.deepEqual([parsed.name, parsed.reason, where(parsed)], ['CssSyntaxError', 'Missed semicolon', 'colon.uxdsl:3:3']);
 });
 
@@ -361,8 +361,8 @@ test('MIG-B9-13: a plugin warning, an onWarning issue or a ReferenceIntegrityErr
   let warned;
   let error;
   try {
-    warned = await core.compile({ entry: file }, { includeTheme: false, references: { mode: 'warn', onWarning: (issue) => seen.push({ ...issue }) } });
-    error = await rejection(core.compile({ entry: file }, { includeTheme: false }));
+    warned = await core.compile({ entry: file }, { references: { mode: 'warn', onWarning: (issue) => seen.push({ ...issue }) } });
+    error = await rejection(core.compile({ entry: file }));
   } finally {
     prototype.originalPositionFor = originalPositionFor;
   }
@@ -376,7 +376,7 @@ test('MIG-B9-13: a plugin warning, an onWarning issue or a ReferenceIntegrityErr
   assert.deepEqual([error.file, error.line, error.column], [file, undefined, undefined]);
   assert.doesNotMatch(error.message, /\.uxdsl:\d/, 'the message names no position');
   // Control: with the lookup restored, the same build is located.
-  const located = await core.compile({ entry: file }, { includeTheme: false, references: { mode: 'warn' } });
+  const located = await core.compile({ entry: file }, { references: { mode: 'warn' } });
   assert.deepEqual(located.warnings.filter((warning) => warning.text.startsWith('UXD_REFERENCE_MISSING: ')).map(where), ['_mix.uxdsl:3:5', 'entry.uxdsl:5:24']);
 });
 
@@ -391,9 +391,10 @@ test('MIG-B9-13: a top-level comment whose text starts with "# sourceMappingURL=
   const sass = require('sass');
   assert.match(sass.compileString(sources.spaced, { style: 'expanded' }).css, /\/\* # sourceMappingURL=x\.map \*\//, 'Dart Sass keeps the comment');
   for (const [name, source] of Object.entries(sources)) {
-    for (const includeTheme of [false, true]) {
-      const label = `${name}, includeTheme ${includeTheme}`;
-      const build = (sourceMap) => core.compile({ source, from: path.join(dir, `${name}.uxdsl`) }, { includeTheme, sourceMap });
+    for (const marked of [false, true]) {
+      const label = `${name}, ${marked ? 'with' : 'without'} the marker`;
+      const text = marked ? `@uxdsl theme;\n${source}` : source;
+      const build = (sourceMap) => core.compile({ source: text, from: path.join(dir, `${name}.uxdsl`) }, { sourceMap });
       const [off, external, inline] = [await build(false), await build('external'), await build('inline')];
       assert.equal(external.css, off.css, `${label}: 'external' and false`);
       assert.equal(inline.css.slice(0, inline.css.lastIndexOf(marker)), off.css, `${label}: 'inline' and false`);
@@ -420,8 +421,8 @@ test('MIG-B9-13: the final map keeps every author mapping when the stage names i
   const stageModule = require('../../dist/sass/compile-sass.js');
   const real = stageModule.compileSassStage;
   const to = path.join(MAPS, 'out', 'ok.css');
-  const build = () => core.compile({ entry: entry('ok.uxdsl') }, { includeTheme: false, sourceMap: 'external', to });
-  const anonymous = () => rejection(core.compile({ source: '.a {\n  padding: space(404);\n}\n' }, { includeTheme: false, sourceMap: 'external', to }));
+  const build = () => core.compile({ entry: entry('ok.uxdsl') }, { sourceMap: 'external', to });
+  const anonymous = () => rejection(core.compile({ source: '.a {\n  padding: space(404);\n}\n' }, { sourceMap: 'external', to }));
   const posix = authorMappings(JSON.parse((await build()).map));
   const unconverted = await anonymous();
   stageModule.compileSassStage = (input, options) => {

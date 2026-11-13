@@ -92,6 +92,9 @@ async function main() {
   check('init creates src/uxdsl-entry.uxdsl', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')));
   check('init creates src/styles.uxdsl, the file the user edits', fs.existsSync(path.join(project, 'src', 'styles.uxdsl')));
   check('the generated entry loads src/styles.uxdsl with @use', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && /@use '\.\/styles\.uxdsl' as styles;/.test(fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8')));
+  const themeFile = path.join(project, 'src', 'uxdsl-theme.uxdsl');
+  check('init creates src/uxdsl-theme.uxdsl, whose one statement is `@uxdsl theme;`', fs.existsSync(themeFile) && fs.readFileSync(themeFile, 'utf8').split('\n').filter((line) => line.trim() && !line.startsWith('//')).join('\n') === '@uxdsl theme;');
+  check('the generated entry loads the theme file first', fs.existsSync(path.join(project, 'src', 'uxdsl-entry.uxdsl')) && fs.readFileSync(path.join(project, 'src', 'uxdsl-entry.uxdsl'), 'utf8').split('\n').find((line) => line.startsWith('@use ')) === "@use './uxdsl-theme.uxdsl' as uxdsl-theme;");
   check('init prints exactly one import path', init1.output.split('\n').filter((l) => /^\s*import '/.test(l)).length === 1);
   check('init does NOT create postcss.config.js (no Next.js marker present)', !fs.existsSync(path.join(project, 'postcss.config.js')));
   check('init output documents the generated CSS import and watch command', /src\/uxdsl\.css/.test(init1.output) && /uxdsl:watch/.test(init1.output));
@@ -115,7 +118,7 @@ async function main() {
   }
 
   // --- 5: a second init changes nothing ---
-  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), path.join('src', 'styles.uxdsl'), 'package.json'];
+  const trackedFiles = ['uxdsl.config.cjs', path.join('src', 'uxdsl-entry.uxdsl'), path.join('src', 'uxdsl-theme.uxdsl'), path.join('src', 'styles.uxdsl'), 'package.json'];
   const before = snapshotHashes(project, trackedFiles);
   const init2 = runCli(['init'], project);
   const after = snapshotHashes(project, trackedFiles);
@@ -168,6 +171,7 @@ async function main() {
   check('init --multi exits 0 in an empty project', multiInit1.ok);
   check('init --multi creates uxdsl.config.cjs with a "builds" array', fs.existsSync(path.join(multiProject, 'uxdsl.config.cjs')) && /builds:\s*\[/.test(fs.readFileSync(path.join(multiProject, 'uxdsl.config.cjs'), 'utf8')));
   check('init --multi creates src/theme.uxdsl', fs.existsSync(path.join(multiProject, 'src', 'theme.uxdsl')));
+  check('init --multi\'s theme entry writes `@uxdsl theme;` and the panel does not', /^@uxdsl theme;$/m.test(fs.readFileSync(path.join(multiProject, 'src', 'theme.uxdsl'), 'utf8')) && !/@uxdsl theme;/.test(fs.readFileSync(path.join(multiProject, 'src', 'panel-a.uxdsl'), 'utf8')));
   check('init --multi creates src/panel-a.uxdsl with a real example, not an empty file', fs.readFileSync(path.join(multiProject, 'src', 'panel-a.uxdsl'), 'utf8').trim().length > 0);
   check('init --multi output documents both generated CSS files', /theme\.css/.test(multiInit1.output) && /panel-a\.css/.test(multiInit1.output));
 
@@ -181,7 +185,7 @@ async function main() {
   const themeCss = fs.existsSync(themeCssPath) ? fs.readFileSync(themeCssPath, 'utf8') : '';
   const panelCss = fs.existsSync(panelCssPath) ? fs.readFileSync(panelCssPath, 'utf8') : '';
   check('the theme entry defines :root', /:root/.test(themeCss));
-  check('the component entry (includeTheme: false) does not define :root', !/:root/.test(panelCss));
+  check('the component entry (no marker) does not define :root', !/:root/.test(panelCss));
   check('the component entry\'s @ds-surface(contained) actually compiled', /background/.test(panelCss));
 
   const multiTrackedFiles = ['uxdsl.config.cjs', path.join('src', 'theme.uxdsl'), path.join('src', 'panel-a.uxdsl'), 'package.json'];
@@ -221,9 +225,9 @@ async function main() {
   check('the config init writes type-checks clean against the installed package', cleanCheck.ok);
   if (!cleanCheck.ok) console.log(cleanCheck.output);
   const tarballConfig = path.join(tarball.dir, 'uxdsl.config.cjs');
-  fs.writeFileSync(tarballConfig, fs.readFileSync(tarballConfig, 'utf8').replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  includeThem: false,\n"));
+  fs.writeFileSync(tarballConfig, fs.readFileSync(tarballConfig, 'utf8').replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  outfile: './src/uxdsl.css',\n"));
   const typoCheck = typeCheck();
-  check('a typo in that config is reported (TS2561), not a missing module (TS2307)', !typoCheck.ok && /TS2561/.test(typoCheck.output) && !/TS2307/.test(typoCheck.output));
+  check('a typo in that config is reported (TS2561, "Did you mean to write \'outFile\'?"), not a missing module (TS2307)', !typoCheck.ok && /TS2561/.test(typoCheck.output) && /Did you mean to write 'outFile'\?/.test(typoCheck.output) && !/TS2307/.test(typoCheck.output));
 
   console.log(`\n${failures.length === 0 ? 'PASS' : 'FAIL'}`);
   if (failures.length) {

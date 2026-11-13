@@ -52,7 +52,7 @@ import { compileSassStage } from './sass/compile-sass';
 import type { SassStageResult } from './sass/compile-sass';
 import { restoreDirectiveSpacing } from './sass/protect';
 import { resolveTheme } from './default-theme';
-import { discoverThemeSync } from './config';
+import { discoverThemeSync, removedOptionsIn } from './config';
 import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
 import { formatReferenceIssues } from './reference-core';
 import type { ReferenceIssue } from './reference-core';
@@ -85,8 +85,6 @@ export interface CompileConfig {
    * issue at the author's file, line and column. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   references?: Record<string, any>;
-  /** Whether this compilation emits the theme. Default `true`. */
-  includeTheme?: boolean;
   /** Where the CSS will be written: a source map's `sources` are relative to
    * its directory (to the working directory without it). */
   to?: string;
@@ -125,6 +123,9 @@ export interface CompileResult {
    * `UXD_FUNCTION_SHADOWED` at each definition), then the plugin's; each at
    * the author's file, line and column when it has a position. */
   warnings: CompileWarning[];
+  /** Whether this compilation emitted the theme: its stylesheet, or a file it
+   * loads, reached `@uxdsl theme;`. */
+  themeEmitted: boolean;
 }
 
 /** How positions and the source map name an anonymous source. */
@@ -195,9 +196,11 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     result = await postcss([
       restoreDirectiveSpacing,
       uxdslPlugin({
+        // A removed option is handed to the plugin, which reports it as
+        // UXD_OPTION_REMOVED and ignores it.
+        ...removedOptionsIn(config),
         theme: config.theme,
         references: relocatingReferences(config.references, locate, stageEntry, hidden),
-        includeTheme: config.includeTheme !== false,
       }),
       dropAnnotations,
     ]).process(stage.css, {
@@ -233,7 +236,11 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
     ...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)),
   ];
 
-  return { css, map, dependencies, warnings };
+  // The plugin's own message for this compilation (the last one, should a
+  // caller's PostCSS setup ever run it twice).
+  const themeMessage = [...result.messages].reverse().find((message) => message.type === 'uxdsl-theme' && message.plugin === 'uxdsl');
+  const themeEmitted = Boolean(themeMessage && (themeMessage as { emitted?: unknown }).emitted);
+  return { css, map, dependencies, warnings, themeEmitted };
 }
 
 // --- options -----------------------------------------------------------------
@@ -521,4 +528,55 @@ function finalMap(result: Result, prev: RawSourceMap, stage: SassStageResult, op
     }
   }
   return out.toString();
+}
+
+// --- the build-level theme check ---------------------------------------------
+
+/** What one compiled stylesheet of a build says about the theme. */
+export interface ThemeEmission {
+  /** The stylesheet as a warning names it: an entry's label, or a module's path relative to the project. */
+  label: string;
+  /** compile()'s `themeEmitted` for it. */
+  themeEmitted: boolean;
+  /** Whether its CSS references a --uxdsl__ token. */
+  referencesTokens: boolean;
+  /** Whether it may carry the theme: a CSS Module cannot (`:root` is not pure there). */
+  canCarryTheme: boolean;
+}
+
+/** Whether compiled CSS references a theme token: a `var(--uxdsl__…)` outside comments. */
+export function referencesThemeTokens(css: string): boolean {
+  return /var\(\s*--uxdsl__/.test(String(css).replace(/\/\*[\s\S]*?\*\//g, ''));
+}
+
+/**
+ * The UXD_THEME_MARKER warning for one whole build, or null: more than one
+ * stylesheet emitting the theme (a marker in a partial is emitted by every
+ * stylesheet that loads the partial), or none emitting it while one references
+ * a token and one could carry the theme, which leaves that token defined
+ * nowhere. `unit` is what the host compiles one of: a CLI entry or a bundler
+ * module. `complete` is false when the host could not see every stylesheet's
+ * result, and then "none" is never reported. Labels are named in the order
+ * given.
+ */
+export function themeEmissionWarning(
+  sheets: ThemeEmission[],
+  unit: 'entry' | 'module',
+  { complete = true }: { complete?: boolean } = {},
+): { kind: 'many' | 'none'; text: string } | null {
+  const units = unit === 'entry' ? 'entries' : 'modules';
+  const emitting = sheets.filter((sheet) => sheet.themeEmitted).map((sheet) => sheet.label);
+  if (emitting.length > 1) {
+    return {
+      kind: 'many',
+      text: `UXD_THEME_MARKER: ${emitting.length} ${units} emit the theme (${emitting.join(', ')}): each reaches \`@uxdsl theme;\`, itself or through a file it loads. Keep the marker in the one global stylesheet that defines the tokens, not in a partial other stylesheets load.`,
+    };
+  }
+  if (complete && emitting.length === 0 && sheets.some((sheet) => sheet.referencesTokens) && sheets.some((sheet) => sheet.canCarryTheme)) {
+    return {
+      kind: 'none',
+      text: `UXD_THEME_MARKER: no ${unit} reaches \`@uxdsl theme;\`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write \`@uxdsl theme;\` once, at the top level of the global stylesheet that defines them.`,
+    };
+  }
+  return null;
 }

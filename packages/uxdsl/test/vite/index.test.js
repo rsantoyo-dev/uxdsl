@@ -100,7 +100,7 @@ test('MIG-B6-20: resolveId is idempotent for an id it already fully resolved (a 
 test('MIG-B6-20: load() compiles through uxdsl-core\'s compile() and returns plain CSS text', async () => {
   const dir = mkTmpDir();
   const entry = write(dir, 'panel.uxdsl', '.a { color: red; padding: xs(1rem) md(2rem); }');
-  const plugin = uxdsl({ includeTheme: false });
+  const plugin = uxdsl();
   const ctx = makeCtx();
   const result = await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
   assert.match(result.code, /\.a\s*\{[^}]*color:\s*red/);
@@ -118,7 +118,7 @@ test('MIG-B6-20: load() calls addWatchFile for the entry and every @import-ed de
   const dir = mkTmpDir();
   write(dir, 'partial.uxdsl', '.partial { color: green; }');
   const entry = write(dir, 'panel.uxdsl', '@import "./partial.uxdsl";\n.a { color: red; }');
-  const plugin = uxdsl({ includeTheme: false });
+  const plugin = uxdsl();
   const ctx = makeCtx();
   await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
   assert.ok(ctx.watched.some((f) => path.resolve(f) === path.resolve(entry)));
@@ -129,7 +129,7 @@ test('MIG-B6-20: load() discovers the theme file from configRoot when theme is o
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
-  const plugin = uxdsl({ includeTheme: false, configRoot: dir });
+  const plugin = uxdsl({ configRoot: dir });
   const result = await plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
   assert.match(result.code, /--uxdsl__palette__pluginonlybrand-main/);
 });
@@ -138,7 +138,7 @@ test('MIG-B6-20: load() also watches the discovered theme file', async () => {
   const dir = mkTmpDir();
   const themeFile = write(dir, 'uxdsl.theme.cjs', 'module.exports = {};');
   const entry = write(dir, 'panel.uxdsl', '.a { color: red; }');
-  const plugin = uxdsl({ includeTheme: false, configRoot: dir });
+  const plugin = uxdsl({ configRoot: dir });
   const ctx = makeCtx();
   await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
   assert.ok(ctx.watched.some((f) => path.resolve(f) === path.resolve(themeFile)));
@@ -148,7 +148,7 @@ test('MIG-B6-20: discoverTheme: false keeps validating against the built-in defa
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
-  const plugin = uxdsl({ includeTheme: false, configRoot: dir, discoverTheme: false });
+  const plugin = uxdsl({ configRoot: dir, discoverTheme: false });
   await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_PALETTE_REFERENCE/);
 });
 
@@ -156,7 +156,7 @@ test('MIG-B6-20: an explicit theme option always wins over discovery', async () 
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: palette(pluginonlybrand); }');
-  const plugin = uxdsl({ includeTheme: false, configRoot: dir, theme: {} });
+  const plugin = uxdsl({ configRoot: dir, theme: {} });
   await assert.rejects(plugin.load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /UXD_PALETTE_REFERENCE/);
 });
 
@@ -170,7 +170,7 @@ test('MIG-B6-20: compile warnings surface through this.warn(), not swallowed', a
   // dropping the `for (const warning of warnings) this.warn(...)` loop.
   const dir = mkTmpDir();
   const entry = write(dir, 'panel.uxdsl', '.a { color: red; }');
-  const plugin = uxdsl({ includeTheme: false });
+  const plugin = uxdsl();
   const ctx = makeCtx();
   await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
   assert.deepEqual(ctx.warnings, []);
@@ -193,7 +193,7 @@ function sassProject() {
 // A load after configResolved, as Vite runs it: `root` is the project's
 // directory, and a build's sourcemap setting asks compile() for a map.
 async function loadThroughVite(dir, entry, options = {}, { resolveConfig = true } = {}) {
-  const plugin = uxdsl({ includeTheme: false, ...options });
+  const plugin = uxdsl({ ...options });
   if (resolveConfig) plugin.configResolved({ root: dir, build: { sourcemap: true }, css: {} });
   const ctx = makeCtx();
   const result = await plugin.load.call(ctx, `${entry}?uxdsl&lang.css`);
@@ -258,10 +258,10 @@ test('phase 2: breakpoints come from the theme (discovered or explicit); there i
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.json', '{ "breakpoints": { "md": 900 } }');
   const entry = write(dir, 'panel.uxdsl', '.a { padding: xs(1rem) md(2rem); }');
-  const discovered = await uxdsl({ includeTheme: false, configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
+  const discovered = await uxdsl({ configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
   assert.match(discovered.code, /900px/);
   assert.doesNotMatch(discovered.code, /768px/);
-  const explicit = await uxdsl({ includeTheme: false, theme: { breakpoints: { md: 1000 } } }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
+  const explicit = await uxdsl({ theme: { breakpoints: { md: 1000 } } }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`);
   assert.match(explicit.code, /1000px/);
 });
 
@@ -269,7 +269,7 @@ test('phase 2: a theme file exporting { theme, references } fails the load with 
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { theme: {}, references: { externalTokens: ['--x'] } };");
   const entry = write(dir, 'panel.uxdsl', '.a { color: red; }');
-  await assert.rejects(uxdsl({ includeTheme: false, configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /That wrapper was removed/);
+  await assert.rejects(uxdsl({ configRoot: dir }).load.call(makeCtx(), `${entry}?uxdsl&lang.css`), /That wrapper was removed/);
 });
 
 test('phase 2: the plugin source carries no scss pre-pass and no breakpoints option', () => {
@@ -279,6 +279,75 @@ test('phase 2: the plugin source carries no scss pre-pass and no breakpoints opt
   for (const removed of ['scss?:', 'scssLoadPaths?:', 'compileWithSass', 'inlineUxdslImportsForSass', "('sass')", 'breakpoints?:', 'userOptions.breakpoints']) {
     assert.equal(source.includes(removed), false, `${removed} must be gone from the plugin`);
   }
-  const options = uxdsl({ includeTheme: false });
+  const options = uxdsl();
   assert.equal(typeof options.load, 'function', 'control: the plugin still builds');
+});
+
+// --- The theme is emitted where `@uxdsl theme;` is written -----------------
+
+/** A real `vite build` of `files` (main.js imports the modules); its UXDSL warnings and extracted CSS. */
+async function viteBuild(files, options = {}) {
+  const vite = await import('vite');
+  const dir = mkTmpDir();
+  for (const [file, text] of Object.entries(files)) write(dir, file, text);
+  write(dir, 'index.html', '<!doctype html><html><body><script type="module" src="/main.js"></script></body></html>\n');
+  const logged = [];
+  const logger = { info() {}, warn: (m) => logged.push(m), warnOnce: (m) => logged.push(m), error: (m) => logged.push(m), clearScreen() {}, hasErrorLogged: () => false, hasWarned: false };
+  try {
+    await vite.build({ root: dir, configFile: false, customLogger: logger, logLevel: 'warn', plugins: [uxdsl({ discoverTheme: false, ...options })], build: { outDir: 'dist', emptyOutDir: true } });
+    const assets = path.join(dir, 'dist', 'assets');
+    const css = fs.readdirSync(assets).filter((f) => f.endsWith('.css')).map((f) => fs.readFileSync(path.join(assets, f), 'utf8')).join('');
+    return { css, warnings: logged.map((m) => String(m).replace(/\x1b\[[0-9;]*m/g, '')).filter((m) => /UXD_/.test(m)) };
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
+test('MIG-B9-20: a component module compiles to its own rules only (bytes recorded)', async () => {
+  const dir = mkTmpDir();
+  const entry = write(dir, 'panel.uxdsl', '.card{padding:density(4)}\n');
+  const { result } = await loadThroughVite(dir, entry, { discoverTheme: false }, { resolveConfig: false });
+  assert.equal(result.code, '.card {\n  padding: var(--uxdsl__density__4);\n}');
+  assert.equal(result.code.length, 46);
+  assert.doesNotMatch(result.code, /:root/);
+  // Negative control: the same module with the marker carries the theme.
+  const marked = write(dir, 'marked.uxdsl', '@uxdsl theme;\n.card{padding:density(4)}\n');
+  const withMarker = await loadThroughVite(dir, marked, { discoverTheme: false }, { resolveConfig: false });
+  assert.match(withMarker.result.code, /:root/);
+  // A real build of that component, minified as Vite does: 40 bytes, no :root.
+  const { css } = await viteBuild({ 'main.js': "import './panel.uxdsl';\n", 'panel.uxdsl': '.card{padding:density(4)}\n' });
+  assert.equal(css.trim(), '.card{padding:var(--uxdsl__density__4)}');
+  assert.equal(css.length, 40);
+});
+
+test('MIG-B9-20: includeTheme passed to the Vite plugin warns UXD_OPTION_REMOVED once per build and is ignored', async () => {
+  const files = { 'main.js': "import './global.uxdsl';\nimport './a.uxdsl';\nimport './b.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': '.a { padding: density(4); }\n', 'b.uxdsl': '.b { margin: space(2); }\n' };
+  const removed = (warnings) => warnings.filter((m) => /UXD_OPTION_REMOVED/.test(m));
+  const without = await viteBuild(files);
+  assert.deepEqual(removed(without.warnings), [], 'control: no option, no warning');
+  for (const includeTheme of [false, true]) {
+    const passed = await viteBuild(files, { includeTheme });
+    assert.equal(removed(passed.warnings).length, 1, `three modules, one build, one warning: ${JSON.stringify(passed.warnings)}`);
+    assert.match(removed(passed.warnings)[0], /UXD_OPTION_REMOVED: the "includeTheme" option was removed and is ignored; write @uxdsl theme; in the stylesheet that defines the tokens\./);
+    assert.equal(passed.css, without.css, `includeTheme: ${includeTheme} changes nothing`);
+  }
+});
+
+test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the Vite plugin warn UXD_OPTION_REMOVED once per build each and are ignored', async () => {
+  const files = { 'main.js': "import './global.uxdsl';\nimport './a.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': '.a { padding: xs(1rem) md(2rem); color: palette(primary.main); margin: space(2); border-color: color(gray.300); }\n' };
+  const removed = (warnings) => warnings.filter((m) => /UXD_OPTION_REMOVED/.test(m));
+  const expected = [
+    /UXD_OPTION_REMOVED: the "breakpoints" option was removed and is ignored; breakpoints are configured in the theme \(`theme\.breakpoints`\)\./,
+    /UXD_OPTION_REMOVED: the "themeVar" option was removed and is ignored; palette\(\) always compiles to var\(--uxdsl__palette__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "spaceVar" option was removed and is ignored; space\(\) always compiles to var\(--uxdsl__space__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "colorVar" option was removed and is ignored; color\(\) always compiles to var\(--uxdsl__color__<key>\)\./,
+  ];
+  const without = await viteBuild(files);
+  assert.deepEqual(removed(without.warnings), [], 'control: no option, no warning');
+  const passed = await viteBuild(files, { breakpoints: { xs: 0, md: 600 }, themeVar: '--x', spaceVar: '--y', colorVar: '--z' });
+  const got = removed(passed.warnings);
+  assert.equal(got.length, expected.length, `two modules, one build, one warning per option: ${JSON.stringify(passed.warnings)}`);
+  expected.forEach((pattern, index) => assert.match(got[index], pattern));
+  assert.equal(passed.css, without.css, 'the options change nothing');
+  assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
 });

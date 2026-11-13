@@ -4,7 +4,7 @@
 /**
  * Stability phase 4 (decision DE-9): UXDSL in Next.js with PostCSS only — no
  * CLI, no generated stylesheet. The project's postcss.config.js is Next's
- * default plugins plus `'uxdsl/postcss': { includeTheme: false }`; the one
+ * default plugins plus `'uxdsl/postcss': {}`; the one
  * global stylesheet starts with `@uxdsl theme;`; CSS Modules just use tokens.
  *
  * The package is the tarball ../mig07-consumer/run.js packs and installs (this

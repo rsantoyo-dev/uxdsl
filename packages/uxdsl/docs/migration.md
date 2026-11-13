@@ -247,6 +247,57 @@ What to check when you upgrade:
     | `UXD_VARIABLE_UNDEFINED` | Through `compile()`, `UXD_SASS: Undefined variable.`; with the PostCSS plugin alone, `UXD_SASS_CONTEXT` |
     | `UXD_VARIABLE_CONTEXT` | Through `compile()`, nothing: a `$variable` declared in a rule is Sass, scoped to that rule; with the PostCSS plugin alone, `UXD_SASS_CONTEXT` |
 
+## beta.9 — the theme is emitted only at `@uxdsl theme;`
+
+A stylesheet emits the theme — the `:root` token definitions and the theme's
+Google Fonts `@import` — only where it writes `@uxdsl theme;`, itself or in a
+file it loads (FEAT-010, DEC-06, MIG-B9-20). The `includeTheme` option, the
+CLI's `includeTheme` config key and its `--include-theme`/`--no-include-theme`
+flags are removed. A stylesheet without the marker compiles exactly as it did
+with `includeTheme: false`.
+
+1. **Write the marker once, in the global stylesheet.** A single entry, a
+   Vite or webpack global `.uxdsl`, or a PostCSS-only `globals.css` that
+   relied on the default emission now carries only its own rules. Write
+   `@uxdsl theme;` once, at its top level, after the prelude (`@charset`,
+   comments, `@layer` statements, `@import`s; in a Sass entry, after its
+   `@use` rules):
+
+   ```css
+   /* the global stylesheet */
+   @uxdsl theme;
+   body { margin: 0; }
+   ```
+
+2. **A generated entry gets it from its theme file.** Run `uxdsl
+   generate-entry` again (with no arguments it re-runs each recorded
+   invocation; `build --watch` does it on the next add or remove): it writes
+   `uxdsl-theme.uxdsl` next to the entry and loads it first. Commit that file
+   with the entry. For a component entry whose CSS reads tokens another entry
+   defines, add `--no-theme`. A file of your own named `uxdsl-theme.uxdsl`
+   next to the entry is refused: rename it.
+3. **Drop the option and the flags.** Remove `includeTheme` from
+   `uxdsl.config.cjs` (top level and every `builds[]` entry — it is now an
+   error, including the top-level form in a `builds` config, which used to be
+   ignored without a word), from `compile()` calls, from `uxdsl/vite` and
+   `uxdsl/webpack` options and from `postcss.config.js`
+   (`'uxdsl/postcss': {}`). Passed to the plugin, `compile()`, Vite or
+   webpack, it warns `UXD_OPTION_REMOVED` and is ignored; the CLI flags fail
+   `build` and write nothing. The theme entry of a `builds` project writes the
+   marker; the component entries leave it out, with no key.
+4. **Read the new warning.** The CLI, `vite build` and the webpack loader warn
+   `UXD_THEME_MARKER` once per build when no stylesheet reaches the marker
+   while the CSS references `--uxdsl__` tokens (a build of plain CSS, or of
+   CSS Modules only, says nothing), or when more than one stylesheet emits the
+   theme — usually a marker in a partial several stylesheets load: keep it in
+   the one global stylesheet. The Vite dev server reports only the second
+   case; the PostCSS plugin alone neither, since it sees one file at a time.
+5. **Expect a moved comment and a new message.** In a generated entry's CSS, a
+   comment that opens the first listed file now follows the theme block, which
+   keeps its place before the first rule. The CSS Module leak error now says
+   to remove `@uxdsl theme;` from that entry. A script that reads
+   `compile()`'s result can use its new `themeEmitted` field.
+
 ## Antes de actualizar (cualquier versión)
 
 Un cambio de versión puede cambiar defaults en familias que tu tema **nunca

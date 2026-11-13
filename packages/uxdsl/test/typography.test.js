@@ -32,7 +32,7 @@ function declarations(css) {
   return result.sort((a,b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
 }
 test('PostCSS and runtime emit equivalent Typography from the same JSON', async () => {
-  const result = await postcss([plugin({ theme })]).process('.title { @ds-typo(h1); }', { from: undefined });
+  const result = await postcss([plugin({ theme })]).process('@uxdsl theme;\n.title { @ds-typo(h1); }', { from: undefined });
   assert.deepEqual(declarations(result.css), declarations(generateThemeCss(theme)));
   assert.match(result.css, /font-size: var\(--uxdsl__typography__h1-font-size/);
   assert.match(result.css, /--uxdsl__space__4: 1rem/);
@@ -118,7 +118,7 @@ test('a data-typo selector written with @ds-typo consumes exactly the configured
 // JSON because it is not one of TYPOGRAPHY_PROPERTIES' fields at all.
 
 const compileWithBase = (css, options = {}) =>
-  postcss([plugin({ includeTheme: false, ...options })]).process(css, { from: 'typo.uxdsl' });
+  postcss([plugin({ ...options })]).process(css, { from: 'typo.uxdsl' });
 
 const emitted = (css) => {
   const rule = postcss.parse(css).first;

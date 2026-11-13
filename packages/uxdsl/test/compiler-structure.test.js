@@ -20,7 +20,7 @@ test('Once() is the sequence of named steps, over one Compilation object', () =>
   const once = index.match(/Once\(root: Root, \{ result \}: \{ result: Result \}\) \{([\s\S]*?)\n    \},/);
   assert.ok(once, 'Once() is found');
   const calls = [...once[1].matchAll(/\b(\w+)\((compilation|root, result, opts)\)/g)].map((match) => match[1]);
-  assert.deepEqual(calls, ['validateOptions', 'rejectSassSyntax', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences']);
+  assert.deepEqual(calls, ['validateOptions', 'rejectSassSyntax', 'emitTheme', 'expandDirectives', 'expandResponsive', 'rejectLeftoverDirectives', 'checkReferences', 'reportThemeEmission']);
   assert.ok(once[1].trim().split('\n').length <= 8, 'Once() only sequences the steps');
   for (const step of calls) assert.match(index, new RegExp(`^function ${step}\\(`, 'm'), `${step} is a top-level function`);
   assert.match(index, /^interface Compilation \{/m);
@@ -64,8 +64,8 @@ test('MIG-B9-13: no source file holds a raw Unicode noncharacter; a character ra
 });
 
 test('one plugin instance compiles two stylesheets with two themes independently', () => {
-  const instance = plugin({ discoverTheme: false, includeTheme: false });
-  const a = postcss([plugin({ discoverTheme: false, includeTheme: false, theme: { breakpoints: { md: 900 } } })]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
+  const instance = plugin({ discoverTheme: false });
+  const a = postcss([plugin({ discoverTheme: false, theme: { breakpoints: { md: 900 } } })]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
   const b = postcss([instance]).process('.a { padding: xs(1px) md(2px); }', { from: undefined }).css;
   const c = postcss([instance]).process('.b { padding: xs(1px) md(2px); }', { from: undefined }).css;
   assert.match(a, /min-width: 900px/);

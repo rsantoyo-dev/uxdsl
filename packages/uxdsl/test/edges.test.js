@@ -35,9 +35,10 @@ test('a @theme pack is not a second source of edges: it fails, and the JSON is w
 });
 test('edge definitions do not leak across PostCSS invocations', async () => {
   const baseline = { spacing: FULL_SPACING, palette: BASE_PALETTE };
-  const first = await compile('.a { border-radius: radius(2); }', { theme: { ...baseline, radii: { 2: '99px' } } });
+  const first = await compile('@uxdsl theme;\n.a { border-radius: radius(2); }', { theme: { ...baseline, radii: { 2: '99px' } } });
   assert(first.css.includes('--uxdsl__radius__2: 99px'));
-  const result = await compile('.b { border-radius: radius(2); }', { theme: baseline });
+  const result = await compile('@uxdsl theme;\n.b { border-radius: radius(2); }', { theme: baseline });
+  assert(result.css.includes('--uxdsl__radius__2:'), 'control: the second compilation emits its own radius-2');
   assert(!result.css.includes('99px'));
 });
 test('literal values, nested CSS, shape keywords and references are preserved', async () => {

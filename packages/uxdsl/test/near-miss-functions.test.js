@@ -18,8 +18,8 @@ const core = require('../dist/entries/index.js');
 const { generateThemeCss, resolveTheme, validateTheme } = require('./helpers/ds-runtime');
 
 const file = path.join(process.cwd(), 'src', 'panel.uxdsl');
-const throughPlugin = (css, opts = {}) => postcss([plugin({ includeTheme: false, discoverTheme: false, ...opts })]).process(css, { from: file });
-const throughCompile = (source, opts = {}) => core.compile({ source, from: file }, { includeTheme: false, discoverTheme: false, ...opts });
+const throughPlugin = (css, opts = {}) => postcss([plugin({ discoverTheme: false, ...opts })]).process(css, { from: file });
+const throughCompile = (source, opts = {}) => core.compile({ source, from: file }, { discoverTheme: false, ...opts });
 const failure = (promise) => promise.then(() => null, (error) => error);
 
 const unknownFunction = (name, suggestion) => `UXD_FUNCTION_UNKNOWN: ${name}() is not a function CSS or UXDSL knows; did you mean ${suggestion}()?`;
@@ -133,7 +133,7 @@ test('MIG-B9-04: a theme value spelled spacing(2) fails with the suggestion in i
     assert.equal(report.ok, false, `validateTheme: ${value}`);
     assert.deepEqual(report.errors.map((error) => error.code), ['UXD_FUNCTION_UNKNOWN'], `validateTheme: ${value}`);
     assert.match(report.errors[0].message, expected);
-    const viaPlugin = await failure(throughPlugin('.a { padding: density(gutter); }', { includeTheme: true, theme: { densities: { gutter: value } } }));
+    const viaPlugin = await failure(throughPlugin('@uxdsl theme;\n.a { padding: density(gutter); }', { theme: { densities: { gutter: value } } }));
     assert.ok(viaPlugin, `the plugin: ${value}`);
     assert.match(viaPlugin.message, expected);
   }

@@ -114,7 +114,7 @@ test('MIG-B6-20: loader options arrive via getOptions(), not the removed this.qu
     module: {
       rules: [{
         test: /\.uxdsl$/,
-        use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { includeTheme: false, theme: { breakpoints: { xs: 0, md: 900 } } } }],
+        use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { theme: { breakpoints: { xs: 0, md: 900 } } } }],
       }],
     },
   });
@@ -183,7 +183,7 @@ function sassConfig(dir, entry, loaderOptions) {
     context: dir,
     entry,
     output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
-    module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { includeTheme: false, ...loaderOptions } }] }] },
+    module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options: { ...loaderOptions } }] }] },
   };
 }
 
@@ -339,7 +339,7 @@ const NESTED_LOOKUPS = { 'color: green': 'styles/_partial.uxdsl:1', 'color: navy
 
 test('MIG-B9-14: the CSS map webpack emits names each .uxdsl file at its own path from any working directory, and a declaration of a partial maps back to that partial', async () => {
   const { dir, entry } = nestedMapProject();
-  const extract = [MiniCssExtractPlugin.loader, CSS_LOADER, { loader: LOADER, options: { includeTheme: false } }];
+  const extract = [MiniCssExtractPlugin.loader, CSS_LOADER, LOADER];
   // The test's own directory, the project's and the entry's: css-loader
   // resolves a source it receives as a relative path against the working
   // directory, so a map built from any of them must name the same files.
@@ -352,7 +352,7 @@ test('MIG-B9-14: the CSS map webpack emits names each .uxdsl file at its own pat
 
   // style-loader's chain: the map css-loader embeds in the bundle names the
   // same files.
-  await buildFrom(dir, dir, entry, [STYLE_LOADER, { loader: CSS_LOADER, options: { sourceMap: true } }, { loader: LOADER, options: { includeTheme: false } }]);
+  await buildFrom(dir, dir, entry, [STYLE_LOADER, { loader: CSS_LOADER, options: { sourceMap: true } }, LOADER]);
   const embedded = /"sources":(\[[^\]]*\])/.exec(fs.readFileSync(path.join(dir, 'dist/bundle.js'), 'utf8'));
   assert.ok(embedded, 'css-loader embeds the module\'s map in the bundle');
   assert.deepEqual(uxdslSourcesOf({ sources: JSON.parse(embedded[1]) }), NESTED_SOURCES, 'the map css-loader embeds for style-loader');
@@ -371,7 +371,7 @@ test('MIG-B9-14: a map whose sources reach css-loader relative to the module nam
     '};',
     '',
   ].join('\n'));
-  await buildFrom(dir, dir, entry, [MiniCssExtractPlugin.loader, CSS_LOADER, relativize, { loader: LOADER, options: { includeTheme: false } }], [new MiniCssExtractPlugin({ filename: 'main.css' })]);
+  await buildFrom(dir, dir, entry, [MiniCssExtractPlugin.loader, CSS_LOADER, relativize, LOADER], [new MiniCssExtractPlugin({ filename: 'main.css' })]);
   const { sources, lookups } = extractedMap(dir, Object.keys(NESTED_LOOKUPS));
   assert.notDeepEqual(sources, NESTED_SOURCES, JSON.stringify(sources));
   assert.notEqual(lookups['color: green'], NESTED_LOOKUPS['color: green'], JSON.stringify(lookups));
@@ -389,4 +389,66 @@ test('phase 2: a theme file exporting { theme, references } fails the compilatio
     output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
     module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, LOADER] }] },
   }), /That wrapper was removed/);
+});
+
+// --- The theme is emitted where `@uxdsl theme;` is written -----------------
+
+/** A production build with MiniCssExtractPlugin (no minify): the extracted CSS and the compilation's warnings. */
+async function extractBuild(files, loaderOptions = {}) {
+  const dir = mkTmpDir();
+  for (const [file, text] of Object.entries(files)) write(dir, file, text);
+  const stats = await runWebpack({
+    mode: 'production',
+    context: dir,
+    entry: path.join(dir, 'entry.js'),
+    output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+    module: { rules: [{ test: /\.uxdsl$/, use: [MiniCssExtractPlugin.loader, CSS_LOADER, { loader: LOADER, options: { discoverTheme: false, ...loaderOptions } }] }] },
+    plugins: [new MiniCssExtractPlugin({ filename: 'styles.css' })],
+    optimization: { minimize: false },
+    infrastructureLogging: { level: 'none' },
+  });
+  return { css: fs.readFileSync(path.join(dir, 'dist/styles.css'), 'utf8'), warnings: stats.compilation.warnings.map((warning) => warning.message) };
+}
+
+test('MIG-B9-20: a component module compiles to its own rules only (bytes recorded)', async () => {
+  const { css } = await extractBuild({ 'entry.js': "import './panel.uxdsl';\n", 'panel.uxdsl': '.card{padding:density(4)}\n' });
+  assert.equal(css, '.card {\n  padding: var(--uxdsl__density__4);\n}\n');
+  assert.equal(css.length, 47);
+  assert.doesNotMatch(css, /:root/);
+  // Negative control: the same module with the marker carries the theme.
+  const marked = await extractBuild({ 'entry.js': "import './panel.uxdsl';\n", 'panel.uxdsl': '@uxdsl theme;\n.card{padding:density(4)}\n' });
+  assert.match(marked.css, /:root/);
+});
+
+test('MIG-B9-20: includeTheme passed to the webpack loader warns UXD_OPTION_REMOVED once per compilation and is ignored', async () => {
+  const files = { 'entry.js': "import './global.uxdsl';\nimport './a.uxdsl';\nimport './b.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': '.a { padding: density(4); }\n', 'b.uxdsl': '.b { margin: space(2); }\n' };
+  const removed = (warnings) => warnings.filter((m) => /UXD_OPTION_REMOVED/.test(m));
+  const without = await extractBuild(files);
+  assert.deepEqual(removed(without.warnings), [], 'control: no option, no warning');
+  for (const includeTheme of [false, true]) {
+    const passed = await extractBuild(files, { includeTheme });
+    assert.equal(removed(passed.warnings).length, 1, `three modules, one compilation, one warning: ${JSON.stringify(passed.warnings)}`);
+    assert.match(removed(passed.warnings)[0], /UXD_OPTION_REMOVED: the "includeTheme" option was removed and is ignored; write @uxdsl theme; in the stylesheet that defines the tokens\./);
+    assert.equal(passed.css, without.css, `includeTheme: ${includeTheme} changes nothing`);
+  }
+});
+
+test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the webpack loader warn UXD_OPTION_REMOVED once per compilation each and are ignored', async () => {
+  const files = { 'entry.js': "import './global.uxdsl';\nimport './a.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': '.a { padding: xs(1rem) md(2rem); color: palette(primary.main); margin: space(2); border-color: color(gray.300); }\n' };
+  const removed = (warnings) => warnings.filter((m) => /UXD_OPTION_REMOVED/.test(m));
+  const expected = [
+    /UXD_OPTION_REMOVED: the "breakpoints" option was removed and is ignored; breakpoints are configured in the theme \(`theme\.breakpoints`\)\./,
+    /UXD_OPTION_REMOVED: the "themeVar" option was removed and is ignored; palette\(\) always compiles to var\(--uxdsl__palette__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "spaceVar" option was removed and is ignored; space\(\) always compiles to var\(--uxdsl__space__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "colorVar" option was removed and is ignored; color\(\) always compiles to var\(--uxdsl__color__<key>\)\./,
+  ];
+  const without = await extractBuild(files);
+  assert.deepEqual(removed(without.warnings), [], 'control: no option, no warning');
+  const passed = await extractBuild(files, { breakpoints: { xs: 0, md: 600 }, themeVar: '--x', spaceVar: '--y', colorVar: '--z' });
+  const got = removed(passed.warnings);
+  assert.equal(got.length, expected.length, `two modules, one compilation, one warning per option: ${JSON.stringify(passed.warnings)}`);
+  // webpack orders a compilation's warnings itself: each option is named by exactly one of them.
+  for (const pattern of expected) assert.equal(got.filter((text) => pattern.test(text)).length, 1, `${pattern}: ${JSON.stringify(got)}`);
+  assert.equal(passed.css, without.css, 'the options change nothing');
+  assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
 });

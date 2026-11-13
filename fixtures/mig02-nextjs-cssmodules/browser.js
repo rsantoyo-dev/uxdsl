@@ -28,7 +28,7 @@ const PRIMARY = 'rgb(37, 99, 235)';
 
 async function controlledDocument() {
   const theme = { ...sourceTheme, modes: { dark: { palette: { surface: { main: '#111111', contrast: '#eeeeee' } } } } };
-  const css = (await postcss([plugin({ theme, includeTheme: false })]).process('.probe { @ds-surface(contained 2); border: border(2); }', { from: undefined })).css;
+  const css = (await postcss([plugin({ theme })]).process('.probe { @ds-surface(contained 2); border: border(2); }', { from: undefined })).css;
   const browser = await chromium.launch({ executablePath: CHROME, headless: true });
   try {
     const page = await browser.newPage();
