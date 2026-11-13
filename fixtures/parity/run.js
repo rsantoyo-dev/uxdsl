@@ -31,8 +31,12 @@ const UPDATE = process.argv.includes('--update');
 // signature instead of CSS.
 const EXPECT_ERROR = new Set(['missing-import', 'import-cycle']);
 
+// The CLI prints paths relative to its working directory, and the error
+// oracles record them from the repository root, so it runs there wherever
+// this script is started from.
 function runCli(entry, outFile) {
   const result = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', entry, '--out', outFile], {
+    cwd: ROOT,
     encoding: 'utf8',
   });
   if (result.status !== 0) {
@@ -95,6 +99,25 @@ function runWebpack(entry) {
   });
 }
 
+// An error is compared with its oracle exactly, the frame included.
+function sameError(actual, expected) {
+  return actual === expected;
+}
+
+// An error oracle holds the CLI's head line and the frame Dart Sass prints
+// under it. The comparison must not accept the head line alone, or a CLI that
+// lost the frame would still match; a single-line oracle guards no frame at
+// all. Both fail the run before the comparison.
+function guardFrame(name, oracle) {
+  const head = oracle.split('\n')[0];
+  if (head === oracle) {
+    throw new Error(`[${name}] the error oracle is a single line; the frame is not guarded.\noracle: ${oracle}`);
+  }
+  if (sameError(head, oracle)) {
+    throw new Error(`[${name}] the oracle comparison accepts the head line alone; the frame is not guarded.\nhead line: ${head}`);
+  }
+}
+
 // Only the parts of an error message that are stable across machines/runs
 // are compared — full absolute temp paths would make the oracle
 // unreproducible across checkouts.
@@ -140,6 +163,7 @@ async function runCase(name) {
 
   const expectedPath = path.join(EXPECTED_DIR, `${name}.json`);
   if (UPDATE || !fs.existsSync(expectedPath)) {
+    if (expectError) guardFrame(name, actual.error);
     fs.writeFileSync(expectedPath, JSON.stringify(actual, null, 2) + '\n');
     console.log(`  wrote  - ${name} (oracle ${fs.existsSync(expectedPath) ? 'updated' : 'created'} — review the diff before committing)`);
     return;
@@ -147,7 +171,8 @@ async function runCase(name) {
 
   const expected = JSON.parse(fs.readFileSync(expectedPath, 'utf8'));
   if (expectError) {
-    if (!actual.error.includes(expected.error) && !expected.error.includes(actual.error)) {
+    guardFrame(name, expected.error);
+    if (!sameError(actual.error, expected.error)) {
       throw new Error(`[${name}] error message drifted from the oracle.\nexpected: ${expected.error}\nactual:   ${actual.error}\nRun with --update after reviewing why, if this is intentional.`);
     }
   } else if (actual.css !== expected.css) {
