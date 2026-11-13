@@ -201,8 +201,8 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-13 | [`compile()` on the new pipeline; the subset deleted](MIG-B9-13-compile-on-sass.md) | 1 | DEC-01, DEC-05 | M | 12 | Merged (PR #63) |
 | MIG-B9-14 | [The CLI, Vite and webpack on the new pipeline](MIG-B9-14-cli-and-adapters.md) | 1 | DEC-01 | M | 13 | Merged (PR #71) |
 | MIG-B9-15 | [Documentation of the superset](MIG-B9-15-superset-docs.md) | 1 | DEC-01 | S | 14 | Merged (PR #72) |
-| MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | In review (PR #88) |
-| MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13 | Ready |
+| MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | Merged (PR #88) |
+| MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13, 20 | Ready |
 | MIG-B9-22 | [`build --watch` keeps the entry; the playground drops its own generator](MIG-B9-22-watch-keeps-the-entry.md) | 2 | — | M | 14 | Merged (PR #76) |
 | MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | Ready |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Merged (PR #75) |
@@ -211,8 +211,9 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-17 | [The silent cases of `@use`'s module isolation warn](MIG-B9-17-module-isolation-warnings.md) | 2 | DEC-17 | M | 26 | Ready |
 | MIG-B9-27 | [`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract](MIG-B9-27-postcss-chain.md) | 2 | DEC-05 | S | 21 | Ready |
 | MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | Ready |
-| MIG-B9-29 | [The canonical-grammar codemod is idempotent](MIG-B9-29-codemod-idempotent.md) | 2 | — | S | — | In review (PR #82) |
+| MIG-B9-29 | [The canonical-grammar codemod is idempotent](MIG-B9-29-codemod-idempotent.md) | 2 | — | S | — | Merged (PR #82) |
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | Ready |
+| MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Ready |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Ready |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready |
@@ -220,9 +221,9 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-34 | [The `focus` family and one `:focus-visible` rule](MIG-B9-34-focus-family.md) | 3 | DEC-11 | M | 13 | Ready |
 | MIG-B9-35 | [Canvas-identity tones: a contrast warning](MIG-B9-35-canvas-tones.md) | 3 | DEC-12 | S | 13 | Ready |
 | MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Ready |
-| MIG-B9-37 | A located warning for a CSS-wide keyword as a theme token value | 3 | — | S | 13 | Draft (story file to be written; registered by D4 of 2026-11-04, as proposed in MIG-B9-03 §15, finding 4) |
-| MIG-B9-38 | A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS | 3 | — | S | 14, 22 | Draft (story file to be written; registered by the decision of 2026-11-08 on MIG-B9-14's flag 12, as proposed in its §15; it answers MIG-B9-13 §15, flag 14, and takes over the warning that D18 of 2026-11-04 kept with MIG-B9-14) |
-| MIG-B9-39 | Every host's watch recovers after a failed compile | 3 | — | S or split (its scout sizes it) | 14, 21, 22 | Draft (story file to be written; registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in its §15) |
+| MIG-B9-37 | [A located warning for a CSS-wide keyword as a theme token value](MIG-B9-37-css-wide-keyword-warning.md) | 3 | — | S | 13 | Ready |
+| MIG-B9-38 | [A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS](MIG-B9-38-plain-import-warning.md) | 3 | — | S | 14, 22 | Ready |
+| MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | M | 14, 21, 22 | Ready |
 | MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |
 | MIG-B9-44 | The playground's visual comparison harness is deterministic | 4 | — | S | — | Draft (story file to be written; registered by decision 12 of 2026-11-09, as MIG-B9-22's delivery proposed in its §15) |
 | MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34, 44 | Draft (re-baseline after wave 3) |
@@ -353,6 +354,25 @@ differs from the contract or from an earlier block. The header Status of
 MIG-B9-41 to 43, 50 to 52, 54, 55, 60 to 65 and 90 now reads as its row
 does (decision 32).
 
+On 2026-11-13 MIG-B9-20 was merged (PR #88); MIG-B9-29 had been merged
+before it (PR #82). Under the owner's standing instruction of 2026-11-10, quoted in
+FEAT-010 §2, their delivery flags became the owner's decisions without
+being put to the owner one by one, and the owner may override any of them:
+MIG-B9-29's are decisions 33 to 37 of 2026-11-10, which register MIG-B9-18
+in wave 3 (decision 36), and MIG-B9-20's are the decisions of 2026-11-13,
+whose decision 8 adds two items to MIG-B9-21, the CLI's "none" hint (F8)
+and RR-1. MIG-B9-29, 52 and 91 carry a block on decisions 33 to 37, and
+MIG-B9-20, 21, 60 and 91 one of 2026-11-13. The story files of MIG-B9-18
+and 37 to 39 are written; their rows link them, §7 follows their Owns and
+Shares and MIG-B9-21's decision-8 files, and each story's §15 holds its open
+questions for the owner, with the option its contract assumes until they
+are answered (MIG-B9-21 now has two). MIG-B9-39 is M, and its Q1 asks
+whether to split it. Under §7, MIG-B9-25 and MIG-B9-16 now wait for
+MIG-B9-21 (`test/cli/**`, the playground; MIG-B9-21's Q2 asks whether that
+order stands), and MIG-B9-38 for MIG-B9-25, 27, 28 and 31 (`test/cli/**`,
+`compile.md`, `fixtures/release-1.0/run.js`); MIG-B9-18 waits only for
+MIG-B9-21, by §7's opening sentence, until its Q4 is answered.
+
 ## 6. Branches and merges
 
 - One integration branch, `feat/beta9`, created from `main` by the first
@@ -378,16 +398,16 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | File | Stories that edit it |
 | --- | --- |
 | `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 24, 27, 30, 31, 35 |
-| `packages/uxdsl/src/compile.ts` | 13, 20, 21, 17 |
+| `packages/uxdsl/src/compile.ts` | 13, 20, 21, 17, 38 |
 | `packages/uxdsl/src/sass/compile-sass.ts` | 12, 23, 26, 17 |
 | `packages/uxdsl/src/sass/protect.ts` | 11, 26 |
 | `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25, 26, 28 |
 | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new) | 26, 17 |
-| `packages/uxdsl/test/cli/**` | 14, 20, 22, 25, 17, 28, 39 |
+| `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 39 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
 | `packages/uxdsl/test/core/sass-source-maps.test.js` | 13, 25, 28 |
 | `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 25 |
-| `packages/uxdsl/bin/uxdsl.js` | 14, 20, 22, 38, 39, 60, 61, 63 |
+| `packages/uxdsl/bin/uxdsl.js` | 14, 20, 21, 22, 37, 38, 39, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 26, 17, 30, 32, 33, 34, 35, 37, 38 |
 | `packages/uxdsl/src/theme/base.json` and `base.contrast-exceptions.json` | 33, 34, 35 |
@@ -396,17 +416,18 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 31, 34 |
 | `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 31, 32, 34, 35, 36 |
 | `packages/uxdsl/CHANGELOG.md` | every story that lists it in Owns or Shares (append-only, one subsection per story; MIG-B9-27, in its outcome A, also rewrites MIG-B9-13's `### Breaking` item on PostCSS chains, by decision 14 of 2026-11-10, and no other story edits that item) |
-| `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 51 |
-| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 26, 27 |
-| `packages/uxdsl/docs/integrations/cli.md` | 20, 17, 60, 61, 63 |
+| `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 37, 51 |
+| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 26, 27, 38 |
+| `packages/uxdsl/docs/integrations/cli.md` | 20, 21, 17, 39, 60, 61, 63 |
+| `packages/uxdsl/docs/integrations/vite.md`, `webpack.md` | 20, 21, 39 |
 | `packages/uxdsl/docs/migration.md` | 20, 26, 17, 27, 30, 31, 32, 33, 34, 35, 36, 52, 60 (append-only, one subsection per story, by decision 31 of 2026-11-10; a story that rewrites an existing passage lists the file in Shares and is serialized as before: MIG-B9-26, 17 and 27 rewrite items 6, 9 and 4 of "beta.9 — Sass inside compile()", and MIG-B9-52 restructures the file. A story that only appends its subsection waits for no story on this file) |
 | `docs/architecture/unified-engine-audit.md` | 20, 21, 17 |
 | `scripts/verify-docs-update.js` | 11, 12, 13, 21, 34 |
 | `scripts/agent-guide.test.js` | 25, 51, 52 |
-| `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 26, 17, 30, 31, 91, 92 |
-| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 66 |
+| `fixtures/release-1.0/run.js` | 02, 13, 14, 20, 26, 17, 30, 31, 38, 91, 92 |
+| `fixtures/release-1.0/verdicts.test.js` | 14, 25, 26, 17, 38, 66 |
 | `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore` | 10, 20, 23, 25, 66 (`run.test.js`) |
-| `packages/playground-nextjs/**` | 16, 20, 22, 26, 30, 33, 34, 35, 36, 39, 40, 41, 42, 43 |
+| `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 33, 34, 35, 36, 39, 40, 41, 42, 43 |
 | `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
 | `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 25, 91 |
 | `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10) |
@@ -416,7 +437,7 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `packages/uxdsl/src/contrast.ts`, `fixtures/release-1.0/contrast-baseline.json` | 34, 35 |
 | `fixtures/mig02-nextjs-cssmodules/browser*.js` | 34, 36 |
 | `fixtures/parity/expected/**` | 13, 31, 33, 34 |
-| `fixtures/mig07-consumer/**`, `fixtures/webpack-adapter/**` | 20, 66 (`fixtures/mig07-consumer/**`) |
+| `fixtures/mig07-consumer/**`, `fixtures/webpack-adapter/**` | 20, 39 (`fixtures/webpack-adapter/**`), 66 (`fixtures/mig07-consumer/**`) |
 | `fixtures/parity/run.js` | 20, 25, 66 |
 | `fixtures/mig-b2-03-cli-init/**` | 20, 22, 25, 66 |
 | `packages/_deprecated/shims.test.js`, `fixtures/release-1.0/audit-lock.test.js` | 25, 66 |
@@ -436,13 +457,30 @@ T6), `test/vite/index.test.js` and `test/webpack/loader.test.js` (T7), and
 `includeTheme`, so its delivery may edit test files no row names for it;
 every story registered since 2026-11-04 already comes after it.
 
-The rows that name MIG-B9-37 and 92 come from their proposals, those that
-name MIG-B9-38 and 39 from the decisions of 2026-11-08 that registered them,
-MIG-B9-44's from decision 12 of 2026-11-09, and MIG-B9-66's from decision 15
-of 2026-11-10 and the files MIG-B9-28's question 1, option (b), names for
-its second part, before their story files exist; they are provisional: each
-story file states its Owns and Shares, and this table follows them before
-the story starts.
+The rows that name MIG-B9-92 come from its proposal, MIG-B9-44's from
+decision 12 of 2026-11-09, and MIG-B9-66's from decision 15 of 2026-11-10
+and the files MIG-B9-28's question 1, option (b), names for its second part,
+before their story files exist; they are provisional: each story file states
+its Owns and Shares, and this table follows them before the story starts.
+
+The rows that name MIG-B9-37, 38 and 39 follow the Owns and Shares of their
+story files, written on 2026-11-13, in the options each contract assumes
+until the owner answers its §15: MIG-B9-37 is on `bin/uxdsl.js` under its
+Q5 (a), MIG-B9-38 on `compile.ts` and `bin/uxdsl.js` under its Q1 (a) and
+Q4 (b), and MIG-B9-39 is one M story under its Q1 (a). The new test files of
+MIG-B9-37, 38 and 39 are owned, except MIG-B9-38's CLI test, which sits
+under `test/cli/**`. `fixtures/vite-adapter/**`, which only MIG-B9-39 edits
+among unmerged stories, has no row. MIG-B9-18's files, the codemod and its
+test, are on no row: no unmerged story edits them, and it shares only the
+append-only CHANGELOG and package README; whether it waits for MIG-B9-21
+under this section's opening sentence is its §15's Q4, and until that is
+answered it does. MIG-B9-21 is on the rows for `bin/uxdsl.js`,
+`test/cli/**`, `cli.md` and `packages/playground-nextjs/**` by decision 8 of
+2026-11-13 (the hint, its test, its documentation and the regenerated
+captures), and on `vite.md` and `webpack.md` under its §15's Q1 (a); its
+Q2 asks whether that order stands. The playground row now lists its stories
+in §5's order (MIG-B9-16 after MIG-B9-20 to 22, as the paragraph of
+2026-11-08 in §5 says it waits).
 
 One file that the decisions of 2026-11-08 may add to an earlier story is
 not in the table yet. MIG-B9-21's story file states its Shares before the

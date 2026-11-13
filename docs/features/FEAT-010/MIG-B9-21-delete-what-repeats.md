@@ -7,11 +7,11 @@
 | Decision gate | None (`uxdsl/engine` is exempt from semver by contract; nothing semver-bound is removed) |
 | Status | Ready |
 | Size | M |
-| Depends on | MIG-B9-13 |
+| Depends on | MIG-B9-13; MIG-B9-20 (merged, PR #88), whose CLI hint decision 8 of 2026-11-13 has this story reword (§15) |
 | Blocks | — |
-| Base | `feat/beta9` after MIG-B9-13 |
+| Base | `feat/beta9` after MIG-B9-13 and MIG-B9-20 (`cc10de6` or later) |
 | Owns | `packages/uxdsl/src/default-theme.ts`, `base-theme.ts`, `ds-runtime/breakpoints.ts`, `entries/engine.ts`, `reference-integrity.ts` (the `!important` comparator), `scripts/measure-exports.js` (new) |
-| Shares | `packages/uxdsl/src/compile.ts`, `vite.ts`, `webpack.ts`, `plugin.ts` (comments and `REMOVED_OPTIONS`), `bin/uxdsl.js` (comments), `scripts/verify-docs-update.js`, `packages/uxdsl/CHANGELOG.md` |
+| Shares | `packages/uxdsl/src/compile.ts`, `vite.ts`, `webpack.ts`, `plugin.ts` (comments and `REMOVED_OPTIONS`), `bin/uxdsl.js` (comments, and the "none" hint of `themeEmissionMessage`: decision 8 of 2026-11-13), `scripts/verify-docs-update.js`, `packages/uxdsl/CHANGELOG.md`; for decision 8 of 2026-11-13 (§15): `packages/uxdsl/test/cli/uxdsl-cli.test.js`, `packages/uxdsl/docs/integrations/cli.md`, `packages/playground-nextjs/src/generated/cli-captures.json` and `compiler-captures.json` (regenerated); under §15's Q1 (a), one sentence each in `packages/uxdsl/docs/integrations/cli.md`, `vite.md` and `webpack.md` |
 | Output impact | API (`uxdsl/engine`, semver-exempt): exports with no consumer removed |
 
 ## 1. Goal
@@ -212,3 +212,67 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-08). 
 - **The files Dart Sass loaded, for information (the decision on MIG-B9-14's flag 16).** Flag 16 offered this story as the alternative to a new one, if `compile()` should put the files Dart Sass loaded on its error. The decision registers MIG-B9-39 instead, in which the adapters re-register the last good dependencies and `err.file`; MIG-B9-39 depends on this story.
 
 A fact, not a decision: `compile-sass.ts` is in neither this story's Shares nor README §7's row for that file (MIG-B9-12, 23 and 26). Its `finish()` throws the Sass stage's error without the warnings Sass raised before it (line 664 at `4ecdc51`), so `error.warnings` likely needs that file. Listing this story on that row makes MIG-B9-23 and MIG-B9-26, later rows, wait for it (README §7).
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decision 8 of 2026-11-13. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). MIG-B9-20 was merged into `feat/beta9` as PR #88 (`cc10de6`) and left eight owner flags in its §15 ("Delivery of 2026-11-13"). They were not put to the owner one by one: under that instruction each recommendation is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English and lists the decision that concerns this story. It adds two items to this story, because this story is the next one on `bin/uxdsl.js` and `packages/uxdsl/test/cli/**`. Where it differs from this story's contract or from an earlier block, it rules. Facts below were checked on `5a041fc` (`feat/beta9` after MIG-B9-20, merged into `docs/b9-wave3-story-files`).
+
+**Added item F8 — the CLI's "none" hint is reworded so that it is true in general (MIG-B9-20's flag F8, option (b); review finding HB-5).**
+
+- What stays: the `UXD_THEME_MARKER`-coded text the CLI shares with Vite and webpack (`themeEmissionWarning` in `packages/uxdsl/src/compile.ts:562`, its "none" text at line 578). It stands as MIG-B9-20's M4, a recorded deviation from M4's literal sentence (review finding CT-3). The "many" hint is not part of the decision.
+- The current text. `themeEmissionMessage` in `packages/uxdsl/bin/uxdsl.js` (lines 854–865) appends a hint to the shared text; the "none" hint is line 863:
+
+  ```js
+      : ' For an entry generate-entry wrote, run uxdsl generate-entry again.';
+  ```
+
+  The CLI prints it at the end of this line (`cli.md:399`):
+
+  ```text
+  [uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry again.
+  ```
+- The new text, as the decision gives it, "for example": `' An entry generate-entry wrote without --no-theme loads its theme file; run uxdsl generate-entry again if that file is missing.'`. This story writes that text unless its review finds it untrue for some entry; a different wording is recorded in §14 with the reason.
+- Where the current hint is repeated, all of which change with it:
+  - `packages/uxdsl/test/cli/uxdsl-cli.test.js:1325`, the constant `NONE_WARNING`, which the test `MIG-B9-20: a build with no marker warns once; with two emitters warns once; a marker in a *.module.css entry is an error` (line 1334) compares, and whose line 1340 restates the hint in an `assert.equal` literal.
+  - `packages/uxdsl/docs/integrations/cli.md:399`, the example output.
+  - `packages/playground-nextjs/src/generated/cli-captures.json:71` and `108`, and `packages/playground-nextjs/src/generated/compiler-captures.json:384` and `400`: `stderr` captured by `packages/playground-nextjs/scripts/capture-capabilities.js`, which writes both files (its lines 35 and 36). The decision names `cli-captures.json`; `compiler-captures.json` also holds the hint, and the same script regenerates both. `npm test` fails while they are stale (AGENTS.md).
+  - The CHANGELOG: MIG-B9-20's subsection quotes the warning only up to "…" (`packages/uxdsl/CHANGELOG.md:65–67`), without the hint. This story's own subsection says that the hint changed.
+- Unaffected, because they match the warning without its hint: `packages/uxdsl/test/cli/watch-mode.test.js:1483` and `1557`, and `fixtures/release-1.0/run.js:697`. The package README, `migration.md`, AGENTS.md and the generated agent guide do not quote the hint. The playground's `tooling/page.mdx` and `test/cli/init.test.js` contain "no entry reaches" but not the hint.
+- K8 ("Nothing else changes", which lists "the CLI's output text") has one exception: this hint.
+- A test pins it, with a negative control: the updated `NONE_WARNING` assertion fails with the current line 863.
+
+**Added item RR-1 — the comment above `loadConfig`'s sourcemap validation (MIG-B9-20's review nit RR-1).**
+
+- `packages/uxdsl/bin/uxdsl.js:341–343` on `5a041fc`:
+
+  ```js
+        // MIG-B6-21 (FEAT-008): validated here, naming the file, like entry and
+        // outFile above — a typo'd value ('External', true) must fail loudly
+        // rather than read as "no map" and leave the user hunting for one.
+  ```
+
+- The `MIG-B6-21 (FEAT-008):` prefix is dropped; the sentence states a reason and stays (K7's rule).
+- K7 already covers it, and T6 fails on it: no comment in `bin/uxdsl.js` may name a story id. RR-1 names it so that it is not missed. On `5a041fc`, 40 lines of `bin/uxdsl.js` match `MIG-B6-21\|FEAT-0\|MIG-B`, among them the other `MIG-B6-21` comments at lines 459, 515, 940, 955 and 1127. All of them are K7's.
+
+**Size, Base and Shares.**
+
+- The size stays M. F8 changes one message line, one test constant and its restated literal, one documentation line and two regenerated captures, and adds a CHANGELOG sentence. RR-1 is within K7.
+- F8's hint exists only since MIG-B9-20, which is merged, so the story's base must include `cc10de6`. Every base of this story from now on does.
+- The added item touches files outside this story's Shares: `packages/uxdsl/test/cli/uxdsl-cli.test.js`, `packages/uxdsl/docs/integrations/cli.md`, and `packages/playground-nextjs/src/generated/{cli,compiler}-captures.json`. Its `bin/uxdsl.js` entry also covers the message, not only comments.
+- In the index's §7, those files are on the rows for `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`. Several stories that come after this story in the index's §5 are on those rows, among them MIG-B9-16 (`packages/playground-nextjs/**`), MIG-B9-25 and 28 (`test/cli/**`) and MIG-B9-17 (`test/cli/**`, `cli.md`). Who waits for whom is set when the header's Shares and the index follow, before the story starts. This block does not edit either.
+
+### Open questions for the owner (answer before implementing)
+
+Raised by the review of the decisions of 2026-11-13, on `5a041fc`. Under the owner's standing instruction of 2026-11-10 (FEAT-010 §2, the lead-in to decisions 33 to 37), each question is answered with its recommended option unless the owner overrides it. This story's header Shares and the index's §7 rows already follow the option each question assumes.
+
+1. **Q1 — Who documents the out-of-band case of decision 2 of 2026-11-13.** Decision 2 (MIG-B9-20's flag F2, option (a)) keeps the "none" warning for a project that delivers its theme out of band (SSR `generateThemeCss`, `applyTheme`, another build) and documents the case. On `5a041fc` no shipped document states it: `cli.md:416` says "There is no switch to silence it.", and `vite.md:153` and `webpack.md:141` say "There is no switch to silence the warning." (FEAT-010 §2, the second fact under the decisions of 2026-11-13). No story is assigned the sentence.
+   - (a) This story: one sentence next to each of those three lines, with its F8 edit of `cli.md`. It adds `vite.md` and `webpack.md` to its Shares.
+   - (b) MIG-B9-39, which already edits `cli.md`, `vite.md` and `webpack.md` (its Shares).
+   - (c) MIG-B9-91 lists it among beta.9's known limitations in `docs/releases/0.5.0-beta.9.md`, and the three documents stay as they are.
+
+   Recommendation: (a). This story already rewords the same warning's hint and edits `cli.md` for it, and the integration pages are where a user reads the warning. The header's Shares and the index assume (a) until the owner answers.
+2. **Q2 — Who waits for whom on the files decision 8 of 2026-11-13 adds.** Decision 8 assigns the hint to this story as "the next story on `bin/uxdsl.js` and `packages/uxdsl/test/cli/**`". On `5a041fc` this story was on neither of those §7 rows, and in §5's order it comes before MIG-B9-16 and MIG-B9-25. With this story added to the rows for `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`, MIG-B9-25 (`uxdsl-cli.test.js`) and MIG-B9-16 (the playground) wait for it; neither did before. MIG-B9-17 and 28 already waited for it, through MIG-B9-26, which depends on this story. MIG-B9-26 waits for MIG-B9-16, 25 and this story either way, so either order serializes one S story behind or before this one.
+   - (a) §5's order, as the index now has it: MIG-B9-25 and 16 wait for this story on those files.
+   - (b) This story's row moves after MIG-B9-25's in §5, so it waits for MIG-B9-16 and 25 on those files, and MIG-B9-25 stays "early in wave 2" (decision D2 of 2026-11-04) ahead of it.
+
+   Recommendation: (a). It keeps §5's order and makes decision 8's premise true; the critical path is the same under both, since MIG-B9-26 waits for all three stories. The index assumes (a) until the owner answers.

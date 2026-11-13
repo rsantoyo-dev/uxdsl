@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D4 of 2026-11-04, as proposed in MIG-B9-03 §15, finding 3) |
-| Status | In review (PR #82) |
+| Status | Merged (PR #82) |
 | Size | S |
 | Depends on | None (README §5). It shares no file with MIG-B9-20 or MIG-B9-21 except the append-only `packages/uxdsl/CHANGELOG.md` and `packages/uxdsl/README.md` rows of README §7. Its baseline (§4) and its test T6 read `packages/playground-nextjs/src`, which MIG-B9-20 rewrites; reading is not sharing |
 | Blocks | MIG-B9-91 (it depends on every story of waves 0 to 3); MIG-B9-52 (decision D4 of 2026-11-04: "MIG-B9-52's release-notes instruction follows") |
