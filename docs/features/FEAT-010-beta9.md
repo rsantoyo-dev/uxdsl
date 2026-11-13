@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). On 2026-11-09 the owner settled the flags of MIG-B9-22 and 23 and registered MIG-B9-44 (§2). On 2026-11-10 the owner answered the open questions of the story files of MIG-B9-16 and 24 to 29 and three notes of their PR, split MIG-B9-26 into MIG-B9-26 and MIG-B9-17, made `migration.md` append-only and registered MIG-B9-66 (§2). Merged: MIG-B9-01 to 05, 10 to 15, 22, 23 and 53; wave 1 is complete. The index has each story's status. |
+| Status | Planned on 2026-10-11 over `main` at `685c132`. Every decision confirmed by the owner on 2026-10-23 (§2). MIG-B9-23 added on 2026-11-02, by the owner's decision on MIG-B9-13's AC1. On 2026-11-04 the owner revised DEC-03 to two releases and registered MIG-B9-24 to 29, 37 and 92 (§2). On 2026-11-08 the owner settled the flags of MIG-B9-14 and 15 and registered MIG-B9-16, 38 and 39 (§2). On 2026-11-09 the owner settled the flags of MIG-B9-22 and 23 and registered MIG-B9-44 (§2). On 2026-11-10 the owner answered the open questions of the story files of MIG-B9-16 and 24 to 29 and three notes of their PR, split MIG-B9-26 into MIG-B9-26 and MIG-B9-17, made `migration.md` append-only and registered MIG-B9-66 (§2); under the owner's standing instruction of the same day, MIG-B9-29's delivery flags became decisions 33 to 37, which register MIG-B9-18 in wave 3 (§2). Merged: MIG-B9-01 to 05, 10 to 15, 22, 23, 29 and 53; wave 1 is complete. The index has each story's status. |
 | Goal | Make the definition below true in the code and pinned by tests, then make the playground the best implementer of it. |
 | Release | Two releases (DEC-03, revised on 2026-11-04): `uxdsl@0.5.0-beta.9`, the first publish of the single `uxdsl` package, with waves 0 to 3 and MIG-B9-91; then `uxdsl@0.5.0-beta.10`, with waves 4 to 6, MIG-B9-90 and MIG-B9-92. |
 | Implemented by | AI agents only. The owner decides, reviews, merges and publishes. |
@@ -370,6 +370,35 @@ of them, for example: MIG-B9-51 and 52 list `scripts/agent-guide.test.js`
 and `migration.md` under Owns, which their re-baseline after wave 3 can move
 to Shares.
 
+On 2026-11-10 the owner also gave a standing instruction for FEAT-010,
+verbatim:
+
+> fusiona todo.. y preguntas como recomendadas, y sgeuimos
+
+("fusiona todo.. y preguntas como recomendadas, y seguimos", typed with one
+slip: "merge everything, and the questions as recommended, and let's keep
+going.") Under it, each pull request is merged into `feat/beta9` when CI is
+green, and every owner question is answered with its recommended option;
+merging into `main` stays the owner's (the index's §2, "Authority").
+MIG-B9-29 was merged into `feat/beta9` as PR #82 (`a00fbbe`), and its
+delivery left five owner flags (its §15, "Delivery of 2026-11-10", and PR #82's body).
+They were not put to the owner one by one: under the standing instruction
+each recommendation below is the owner's decision of 2026-11-10, and the
+owner may still override any of them. They continue this list's numbering,
+as decisions 33 to 37; this record is in English. MIG-B9-29 carries them in
+an "Owner decisions of 2026-11-10, on the delivery's flags" block at the end
+of its §15, and MIG-B9-91 the two that concern it (decisions 35 and 37) in a
+block of the same date. The index registers MIG-B9-18 in wave 3
+(decision 36).
+
+MIG-B9-29's delivery flags (its §15, "Delivery of 2026-11-10", owner flags 1 to 5):
+
+- **Decision 33 — Which name C4 reads (flag 1).** (a), the output reading, as delivered: C4 is decided on the name as the run leaves it, and T2's `lead-size` case pins it (the input-only mutant fails it). Run 1 and run 2 print the same C4 `unresolved:` lines for any input. Option (b), only names kept as read, is not taken: with roles `lead` and `lead-font`, run 1 would rename `--uxdsl__typography__lead-size` to `lead-font-size` without a report, and run 2 would report it.
+- **Decision 34 — Where C6 is documented (flag 2).** (a), as delivered: one sentence in MIG-B9-29's CHANGELOG subsection only ("Without `--theme`, the first path given is now read."). The package README keeps the single sentence of MIG-B9-29's §11, whose documented commands put `--theme` first.
+- **Decision 35 — F8 and the shipped claim "a second run changes nothing" (flag 3).** (a): the package README's "so a second run changes nothing" and the CHANGELOG's "Running the codemod again now changes nothing." stay as written, and F8 is fixed in `0.5.0-beta.9` by MIG-B9-18 (decision 36), so the claim holds when beta.9 ships. Until MIG-B9-18 merges, the claim is broader than the code for a quoted `palette()`/`color()` argument inside a directive (`@ds-surface(palette("primary-main"))` takes two runs). MIG-B9-91's gate requires every wave-3 story merged, MIG-B9-18 included.
+- **Decision 36 — F3, F7 and F8 (flag 4).** (a): MIG-B9-18 is registered, "The codemod's directive-argument rewrite is complete in one run": wave 3, S, decision gate none, depends on MIG-B9-29 (merged), branch `feat/b9-18-codemod-directive-arguments`. It runs the dashed-key rewrite on the arguments after the quotes are stripped (F8), rewrites a comma list with function arguments in one run (F3), and leaves a JSON string escape intact (F7). Option (b), folding them into MIG-B9-60's `doctor --fix`, is not taken. MIG-B9-18 ships in `0.5.0-beta.9` with wave 3.
+- **Decision 37 — F5, the second codemod instruction in `docs/releases/0.5.0-beta.9.md` (flag 5).** (a): MIG-B9-91 removes it when it writes beta.9's record; MIG-B9-52 does not. Decision D4 of 2026-11-04 had given the release notes' instruction to MIG-B9-52 ("MIG-B9-52's release-notes instruction follows"), which ships in `0.5.0-beta.10`.
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
@@ -385,7 +414,7 @@ index's §5 sits there.
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 | `0.5.0-beta.9` |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. Registered on 2026-11-10, by splitting MIG-B9-26: the silent cases of `@use`'s module isolation warn. | MIG-B9-16, MIG-B9-17, MIG-B9-20 to 29 | `0.5.0-beta.9` |
-| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. | MIG-B9-30 to 39 | `0.5.0-beta.9` |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. | MIG-B9-18, MIG-B9-30 to 39 | `0.5.0-beta.9` |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. Registered on 2026-11-09, first in the wave: a deterministic visual comparison harness. | MIG-B9-40 to 44 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). | MIG-B9-60 to 66 | `0.5.0-beta.10` |
