@@ -432,3 +432,23 @@ test('MIG-B9-20: includeTheme passed to the webpack loader warns UXD_OPTION_REMO
     assert.equal(passed.css, without.css, `includeTheme: ${includeTheme} changes nothing`);
   }
 });
+
+test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the webpack loader warn UXD_OPTION_REMOVED once per compilation each and are ignored', async () => {
+  const files = { 'entry.js': "import './global.uxdsl';\nimport './a.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': '.a { padding: xs(1rem) md(2rem); color: palette(primary.main); margin: space(2); border-color: color(gray.300); }\n' };
+  const removed = (warnings) => warnings.filter((m) => /UXD_OPTION_REMOVED/.test(m));
+  const expected = [
+    /UXD_OPTION_REMOVED: the "breakpoints" option was removed and is ignored; breakpoints are configured in the theme \(`theme\.breakpoints`\)\./,
+    /UXD_OPTION_REMOVED: the "themeVar" option was removed and is ignored; palette\(\) always compiles to var\(--uxdsl__palette__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "spaceVar" option was removed and is ignored; space\(\) always compiles to var\(--uxdsl__space__<key>\)\./,
+    /UXD_OPTION_REMOVED: the "colorVar" option was removed and is ignored; color\(\) always compiles to var\(--uxdsl__color__<key>\)\./,
+  ];
+  const without = await extractBuild(files);
+  assert.deepEqual(removed(without.warnings), [], 'control: no option, no warning');
+  const passed = await extractBuild(files, { breakpoints: { xs: 0, md: 600 }, themeVar: '--x', spaceVar: '--y', colorVar: '--z' });
+  const got = removed(passed.warnings);
+  assert.equal(got.length, expected.length, `two modules, one compilation, one warning per option: ${JSON.stringify(passed.warnings)}`);
+  // webpack orders a compilation's warnings itself: each option is named by exactly one of them.
+  for (const pattern of expected) assert.equal(got.filter((text) => pattern.test(text)).length, 1, `${pattern}: ${JSON.stringify(got)}`);
+  assert.equal(passed.css, without.css, 'the options change nothing');
+  assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
+});

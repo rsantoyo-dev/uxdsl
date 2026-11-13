@@ -1556,3 +1556,29 @@ test('MIG-B9-20: buildOnce given only the rebuilt entry and no session warns no 
   assert.equal(alone.length, 1, 'without it, the component alone looks like a build with no theme');
   assert.match(alone[0], /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/);
 });
+
+test('MIG-B9-20: a watch build forgets the theme state of a builds[] entry the config no longer has', async () => {
+  const cli = require('../../bin/uxdsl.js');
+  const dir = fs.realpathSync(mkProject());
+  putFile(dir, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './out/theme.css' }, { entry: './src/panel.uxdsl', outFile: './out/panel.css' }] };\n");
+  putFile(dir, 'src/theme.uxdsl', '@uxdsl theme;\n');
+  putFile(dir, 'src/panel.uxdsl', '.panel { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  const captured = async (fn) => {
+    const original = console.warn;
+    const messages = [];
+    console.warn = (...args) => { messages.push(args.join(' ')); };
+    try { await fn(); } finally { console.warn = original; }
+    return messages.filter((message) => /UXD_THEME_MARKER/.test(message));
+  };
+  // The session of a config that had a third entry, which emitted the theme too.
+  const stale = { label: 'builds[2]', themeEmitted: true, referencesTokens: true, canCarryTheme: true };
+  const session = { themeStates: new Map([[2, stale]]), themeWarning: null };
+  assert.deepEqual(await captured(() => cli.buildOnce(config, undefined, session)), [], 'the removed entry is not a second emitter');
+  assert.deepEqual([...session.themeStates.keys()], [0, 1]);
+  // Control: an entry the config still has, emitting the theme, is counted.
+  const kept = { themeStates: new Map([[1, { ...stale, label: 'builds[1]' }]]), themeWarning: null };
+  const many = await captured(() => cli.buildOnce(config, [0], kept));
+  assert.equal(many.length, 1, JSON.stringify(many));
+  assert.match(many[0], /UXD_THEME_MARKER: 2 entries emit the theme \(builds\[0\], builds\[1\]\)/);
+});

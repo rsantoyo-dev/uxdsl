@@ -273,6 +273,29 @@ test('MIG-B9-20: includeTheme passed to the plugin or compile() warns UXD_OPTION
   }
 });
 
+// The four options removed before `includeTheme`, as every host words them.
+const OLDER_REMOVED = [
+  'UXD_OPTION_REMOVED: the "breakpoints" option was removed and is ignored; breakpoints are configured in the theme (`theme.breakpoints`).',
+  'UXD_OPTION_REMOVED: the "themeVar" option was removed and is ignored; palette() always compiles to var(--uxdsl__palette__<key>).',
+  'UXD_OPTION_REMOVED: the "spaceVar" option was removed and is ignored; space() always compiles to var(--uxdsl__space__<key>).',
+  'UXD_OPTION_REMOVED: the "colorVar" option was removed and is ignored; color() always compiles to var(--uxdsl__color__<key>).',
+];
+const OLDER_OPTIONS = { breakpoints: { xs: 0, md: 600 }, themeVar: '--x', spaceVar: '--y', colorVar: '--z' };
+
+test('MIG-B9-20: compile() warns UXD_OPTION_REMOVED for breakpoints, themeVar, spaceVar and colorVar too, and ignores them', async () => {
+  const source = '.a { padding: xs(1rem) md(2rem); color: palette(primary.main); margin: space(2); border-color: color(gray.300); }\n';
+  const without = await compile({ source }, { theme: {} });
+  assert.deepEqual(optionWarnings(without.warnings), [], 'control: no option, no warning');
+  const passed = await compile({ source }, { theme: {}, ...OLDER_OPTIONS });
+  assert.deepEqual(optionWarnings(passed.warnings), OLDER_REMOVED);
+  assert.equal(passed.css, without.css, 'the options change nothing: the theme\'s 768px threshold stands');
+  assert.match(passed.css, /@media \(min-width: 768px\)/);
+  for (const [name, value] of Object.entries(OLDER_OPTIONS)) {
+    const one = await compile({ source }, { theme: {}, [name]: value });
+    assert.deepEqual(optionWarnings(one.warnings), OLDER_REMOVED.filter((text) => text.includes(`"${name}"`)), name);
+  }
+});
+
 test('MIG-B9-20: the PostCSS plugin alone cannot tell that no file emitted the theme and does not warn', async () => {
   const source = '.a { color: palette(primary.main); padding: density(2); }\n';
   const unmarked = await processed(source);

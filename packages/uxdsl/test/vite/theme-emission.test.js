@@ -109,6 +109,21 @@ test('MIG-B9-20: Vite warns per build in an SSR build too, and a build that fail
   assert.deepEqual(failed.theme, []);
 });
 
+test('MIG-B9-20: a Vite build that fails outside the .uxdsl modules warns nothing about the theme', async (t) => {
+  // Every .uxdsl module loads and returns its meta, so the count is complete
+  // and would say "none": only the build's error keeps it silent.
+  const dir = project(t, { 'main.js': "import './a.uxdsl';\nimport './b.js';\n", 'a.uxdsl': TOKENS, 'b.js': "import x from './missing.js';\nconsole.log(x);\n" });
+  const failed = await build(dir);
+  assert.ok(failed.error, 'control: the build failed');
+  assert.match(String(failed.error.message), /missing\.js/);
+  assert.deepEqual(failed.theme, []);
+  // Control: the same project with the import fixed completes and says "none".
+  fs.writeFileSync(path.join(dir, 'b.js'), 'console.log(1);\n');
+  const fixed = await build(dir);
+  assert.equal(fixed.error, null, fixed.error && fixed.error.message);
+  assert.deepEqual(fixed.theme, [NONE]);
+});
+
 test('MIG-B9-20: vite build --watch warns on the build that loses the marker and is silent once it is restored', async (t) => {
   const vite = await import('vite');
   const dir = project(t, { 'main.js': "import './global.uxdsl';\nimport './a.uxdsl';\n", 'global.uxdsl': '@uxdsl theme;\n', 'a.uxdsl': TOKENS });

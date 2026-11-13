@@ -38,7 +38,9 @@ npm run uxdsl:build
 | `postcss.config.js` | Next.js projects only, when absent: Next's own default PostCSS plugins plus `uxdsl/postcss` (a custom `postcss.config.js` replaces Next's defaults, so they are named explicitly) |
 
 and adds `uxdsl:build` / `uxdsl:watch` scripts to `package.json` when they are
-missing. Import the generated `src/uxdsl.css` once, from your root layout or
+missing. A `src/uxdsl-theme.uxdsl` of the project's own (not written by
+`generate-entry`) is refused before anything is written: rename it and run
+`init` again. Import the generated `src/uxdsl.css` once, from your root layout or
 app entry. `src/styles.uxdsl` starts with one rule, so the first build is not
 blank:
 
@@ -173,7 +175,8 @@ invocation that wrote it:
   `build --watch` reproduce it, and it never deletes a theme file already
   there (another entry in the directory may load it). An entry recorded
   without it gains the theme file on its next regeneration.
-  `--theme=<value>` is refused. Two generated entries under one `--src` list
+  A value is refused in either spelling (`--no-theme=<value>`,
+  `--theme=<value>`). Two generated entries under one `--src` list
   each other unless each `--exclude`s the other's file name, as before: an
   entry that lists another one reaches its theme file too, which the build's
   `UXD_THEME_MARKER` warning reports.
@@ -401,8 +404,11 @@ succeeds) when the theme is defined nowhere or more than once:
 and at least one entry could carry the theme (its output is not a
 `*.module.css`): a build of plain CSS or of Bootstrap renamed to `.uxdsl`, or
 one whose every output is a CSS Module, prints nothing. "More than one" is
-reported always — typically a marker in a partial several entries load. A
-single-entry build is counted the same way, labelled by its output. In
+reported always — typically a marker in a partial several entries load, or
+one global stylesheet per page or app in one `builds` config, each with its
+own marker: the count is over the whole config, so keep one entry with the
+marker and load the theme from it. A single-entry build is counted the same
+way, labelled by its output. In
 `build --watch` the count is over the last result of every entry, a selective
 rebuild reading the others from the session, and the warning prints when that
 state changes, not on every rebuild: removing the marker warns once, a

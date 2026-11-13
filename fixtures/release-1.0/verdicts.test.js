@@ -178,6 +178,8 @@ test('MIG-B9-14: S-6 rejects an unlocated or unsilenced warning, an unknown key 
     // What the plugin did before it counted the theme at the end of a build.
     [{ warnings: [record.warnings[0]] }, /^warnings: .*expected one at styles\/_partial\.uxdsl:1:9 and one UXD_THEME_MARKER/],
     [{ silencedWarnings: [] }, /^the silenced build's theme warning: \[\]/],
+    // The theme warning printed twice in one build.
+    [{ warnings: [record.warnings[0], record.warnings[1], record.warnings[1]] }, /^warnings: /],
     // What the plugin did before it passed `sass` on: the key was ignored.
     [{ unknownKeyError: null }, /^an unknown sass key did not fail the build$/],
     [{ watched: record.watched.filter((file) => file !== 'styles/_partial.uxdsl') }, /^not in the dev server's module graph under the CSS module: styles\/_partial\.uxdsl/],

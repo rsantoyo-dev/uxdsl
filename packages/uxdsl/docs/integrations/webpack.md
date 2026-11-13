@@ -127,6 +127,10 @@ WARNING in UXD_THEME_MARKER: 2 modules emit the theme (src/styles/b.uxdsl, src/s
   `--uxdsl__` token and at least one module is not a `*.module.uxdsl`, so a
   build of plain CSS, or one made only of CSS Modules, says nothing. "More
   than one" is reported always.
+- The count is over the whole compilation, not per entry or chunk: a
+  multi-page app whose entries each import their own global stylesheet with
+  the marker has one emitter per entry and warns "more than one" on every
+  build. Import one shared global file from every entry to stay silent.
 - **Where the loader cannot see the whole build, it says nothing rather than
   guess:** a child compilation (mini-css-extract-plugin with
   `experimentalUseImportModule: false`), a loader run in `thread-loader`'s

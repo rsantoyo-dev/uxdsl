@@ -2675,3 +2675,20 @@ test("MIG-B9-20: generate-entry writes uxdsl-theme.uxdsl with the marker and lis
   assert.match(rebuiltCss, /\.sub \{\n {2}color: blue;\n\}/);
   assert.equal(rebuiltCss.split('--uxdsl__palette__primary-main:').length - 1, css.split('--uxdsl__palette__primary-main:').length - 1, 'the theme is emitted once');
 });
+
+test('MIG-B9-20: generate-entry refuses a value on --no-theme in either spelling and writes nothing', () => {
+  const dir = mkTmpDir();
+  write(dir, 'src/a.uxdsl', '.a { color: red; }\n');
+  const listing = () => fs.readdirSync(path.join(dir, 'src')).sort();
+  for (const flag of ['--no-theme=true', '--no-theme=1', '--no-theme=', '--theme=false']) {
+    const refused = runCli(dir, 'generate-entry', flag);
+    assert.equal(refused.status, 1, `${flag}:\n${refused.stdout}${refused.stderr}`);
+    assert.match(refused.stderr, new RegExp(`^\\[uxdsl\\] Error: --no-theme takes no value \\(got ${flag.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\)\\.$`, 'm'), flag);
+    assert.deepEqual(listing(), ['a.uxdsl'], `${flag}: nothing written`);
+  }
+  // Controls: the bare flag skips the theme file, and no flag writes it.
+  assert.equal(runCli(dir, 'generate-entry', '--no-theme').status, 0);
+  assert.deepEqual(listing(), ['a.uxdsl', 'uxdsl-entry.uxdsl']);
+  assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
+  assert.deepEqual(listing(), ['a.uxdsl', 'uxdsl-entry.uxdsl', 'uxdsl-theme.uxdsl']);
+});

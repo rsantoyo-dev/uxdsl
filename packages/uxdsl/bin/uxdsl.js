@@ -1962,6 +1962,14 @@ function themeFileOf(outFile) {
   return path.join(path.dirname(outFile), THEME_FILE_NAME);
 }
 
+// A file at the theme file's path that generate-entry did not write is
+// refused rather than overwritten or silently left out.
+function assertThemeFileOwned(themeFile) {
+  if (fs.existsSync(themeFile) && !fs.readFileSync(themeFile, 'utf8').startsWith(THEME_FILE_HEADER)) {
+    throw new Error(`${path.relative(process.cwd(), themeFile)} was not written by generate-entry, which writes its theme file under that name next to the entry. Rename that file.`);
+  }
+}
+
 // The characters a URL reads as something else (a percent escape, a fragment,
 // a query), that end the quoted string, or that start an escape in it (a
 // backslash, which a POSIX file name may hold), percent-encoded; every other
@@ -2117,6 +2125,11 @@ function entryOptions(argv, base) {
     first = String(argv.first).split(',').map((s) => s.trim()).filter(Boolean);
     if (first.length === 0) throw new Error('--first needs at least one path (comma-separated, relative to --src).');
   }
+  // minimist reads `--no-theme=<v>` as the key `no-theme`, not as theme
+  // false: a value in either spelling is refused, never ignored.
+  if (argv['no-theme'] !== undefined) {
+    throw new Error(`--no-theme takes no value (got --no-theme=${argv['no-theme']}).`);
+  }
   if (argv.theme !== undefined && typeof argv.theme !== 'boolean') {
     throw new Error(`--no-theme takes no value (got --theme=${argv.theme}).`);
   }
@@ -2134,11 +2147,9 @@ function planEntry(options) {
   const outputDir = path.dirname(outFile);
   // The theme file's path is generate-entry's, with or without --no-theme: it
   // is never listed, and a file there that generate-entry did not write is
-  // refused rather than overwritten or silently left out.
+  // refused.
   const themeFile = themeFileOf(outFile);
-  if (fs.existsSync(themeFile) && !fs.readFileSync(themeFile, 'utf8').startsWith(THEME_FILE_HEADER)) {
-    throw new Error(`${path.relative(process.cwd(), themeFile)} was not written by generate-entry, which writes its theme file under that name next to the entry. Rename that file.`);
-  }
+  assertThemeFileOwned(themeFile);
   const found = findFiles(srcDir, '.uxdsl').map((file) => {
     // The path relative to the entry as on disk, with `./`, a partial's
     // underscore and `.uxdsl`: the key of the entry's path order.
@@ -2360,6 +2371,11 @@ async function init(argv) {
   if (isMulti) console.log('  -> Multi-entry mode (--multi): a theme entry plus one example component entry');
 
   const srcDir = path.join(cwd, 'src');
+  // The generated entry writes its theme file next to it: a project file
+  // already at that path is refused before anything is written, so a refusal
+  // never leaves half a scaffold.
+  const entryPath = path.join(srcDir, 'uxdsl-entry.uxdsl');
+  if (!isMulti && !fs.existsSync(entryPath)) assertThemeFileOwned(themeFileOf(entryPath));
 
   // 1. Create uxdsl.config.cjs
   const configPath = path.join(cwd, 'uxdsl.config.cjs');
@@ -2430,7 +2446,6 @@ ${SASS_CONFIG_COMMENT}};
       console.log('  -> Created src/panel-a.uxdsl');
     }
   } else {
-    const entryPath = path.join(srcDir, 'uxdsl-entry.uxdsl');
     if (!fs.existsSync(entryPath)) {
       // Run generate logic to create initial file
       await generateEntry({ src: './src', out: entryPath });

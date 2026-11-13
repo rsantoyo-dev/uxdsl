@@ -475,3 +475,28 @@ test('MIG-B9-20: POSTCSS_SNIPPET carries no option; the CLI output passes throug
   const marked = await postcss([uxdsl({ ...options, configRoot: dir })]).process(`@uxdsl theme;\n${moduleSource}`, { from: path.join(dir, 'app', 'panel.module.css') });
   assert.ok(rootBlocks(marked.css) > 0);
 });
+
+test('MIG-B9-20: init refuses a src/uxdsl-theme.uxdsl it did not write before it writes anything', () => {
+  for (const branch of ['plain', 'next', 'vite']) {
+    const dir = mkProject(branch);
+    fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), '.mine { color: red; }\n');
+    const before = fs.readdirSync(dir).sort();
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 1, `[${branch}] ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /src[\\/]uxdsl-theme\.uxdsl was not written by generate-entry, which writes its theme file under that name next to the entry\. Rename that file\./, `[${branch}]`);
+    assert.deepEqual(fs.readdirSync(dir).sort(), before, `[${branch}] no config, no package.json change`);
+    assert.deepEqual(fs.readdirSync(path.join(dir, 'src')), ['uxdsl-theme.uxdsl'], `[${branch}] nothing written under src`);
+    assert.equal(fs.readFileSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), 'utf8'), '.mine { color: red; }\n');
+    // Renamed, the same init completes the scaffold.
+    fs.renameSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), path.join(dir, 'src', 'mine.uxdsl'));
+    const again = run(BRANCHES[branch].args, dir);
+    assert.equal(again.status, 0, `[${branch}] ${again.stdout}${again.stderr}`);
+    assert.ok(fs.existsSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl')), `[${branch}]`);
+  }
+  // Control: --multi writes no generated entry, so the file is the project's own and init goes on.
+  const multi = mkProject('multi');
+  fs.mkdirSync(path.join(multi, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(multi, 'src', 'uxdsl-theme.uxdsl'), '.mine { color: red; }\n');
+  assert.equal(run(['init', '--multi'], multi).status, 0);
+});

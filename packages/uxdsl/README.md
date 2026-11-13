@@ -49,8 +49,9 @@ arrives with `uxdsl` as a regular dependency and is loaded only when a file is
 compiled through Dart Sass, never by the PostCSS plugin used alone
 (`uxdsl/postcss`). Dart Sass declares Node 20.19 or later in its `engines`.
 
-`init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
-default theme is built in); `build` compiles it once
+`init` scaffolds a `uxdsl.config.cjs`, `src/styles.uxdsl` and the generated
+entry with its `uxdsl-theme.uxdsl` (no `uxdsl.theme.json`: the default theme is
+built in); `build` compiles the entry once
 to a plain `.css` file you import from your app like any other stylesheet.
 `npx uxdsl build --watch` recompiles as you edit (it follows every entry and
 every file Dart Sass loaded, and the config's `watch` globs add paths —

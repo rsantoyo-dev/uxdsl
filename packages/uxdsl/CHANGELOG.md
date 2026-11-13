@@ -47,12 +47,15 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `--no-theme` writes neither the file nor the line, is recorded last in the
   entry's header so that `generate-entry` with no arguments and
   `build --watch` reproduce it, and leaves a generated theme file already
-  there as it is; `--theme=<value>` is refused. An entry recorded before
+  there as it is; a value is refused in either spelling (`--no-theme=<value>`,
+  `--theme=<value>`). An entry recorded before
   this (no `--no-theme` on its line) gains the theme file on its next
   regeneration. `build --watch` writes the theme file again, before the
   build, when it is deleted — also when it lies outside `--src` — and builds
   once; a change to it is built as written and regenerates nothing. `init`
   writes the pair through `generate-entry` (plain, Vite and Next.js), and
+  refuses a `src/uxdsl-theme.uxdsl` it did not write before it writes
+  anything, so the refusal never leaves half a scaffold; and
   `init --multi` ends `src/theme.uxdsl` with `@uxdsl theme;`. The
   playground's generated entry loads `src/app/uxdsl-theme.uxdsl` first.
 - **A CLI build warns `UXD_THEME_MARKER` once when the theme is defined

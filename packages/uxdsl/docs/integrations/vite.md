@@ -136,12 +136,19 @@ build when the theme is defined nowhere or more than once:
   `@use`, or one file imported both plainly and with `?inline` (two modules,
   labelled `src/panel.uxdsl` and `src/panel.uxdsl?inline`). Keep the marker in
   the file imported plainly, once.
+- The count is over the whole build, not per page: a multi-page app whose
+  pages each import their own global stylesheet with the marker has one
+  emitter per page and warns "more than one" on every build. Import one
+  shared global file from every page to stay silent.
 - Every rebuild of `vite build --watch` counts again; an SSR build counts its
   own modules; a failed build says nothing.
 - **The dev server has no end of build**, so it cannot tell that no module
   emitted the theme: it warns only "more than one", when the set of emitting
-  modules changes, and never "no module". Run `vite build` to check for a
-  missing marker.
+  modules changes, and never "no module". It counts every module it has
+  compiled during the session until that module's file is deleted, so a
+  global file the app no longer imports, still on disk with its marker, is
+  counted until the server restarts. Run `vite build` to check for a missing
+  or repeated marker.
 
 There is no switch to silence the warning.
 
