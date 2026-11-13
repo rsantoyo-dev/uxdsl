@@ -54,7 +54,7 @@
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "@types/react-syntax-highlighter": "^15.5.13",
-    "concurrently": "^8.2.2",
+    "concurrently": "^10.0.7",
     "css-loader": "^7.1.2",
     "esbuild": "^0.25.12",
     "eslint": "^8.0.0",
