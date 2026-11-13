@@ -667,11 +667,25 @@ command). Import from the entry that owns the job: `uxdsl` (`compile()`,
 not build an application on it). The five former package names
 (`postcss-uxdsl`, `uxdsl-core`, `uxdsl-cli`, `vite-plugin-uxdsl`,
 `uxdsl-webpack-loader`) are deprecated re-exports; do not add them to a project.
-With the PostCSS plugin alone (Next.js, no CLI), configure
-`'uxdsl/postcss': { includeTheme: false }` and write `@uxdsl theme;` once, at
-the top level of the one global stylesheet: the theme is emitted there and
-nowhere else, and CSS Modules stay free of `:root` (`UXD_THEME_MARKER` for a
-misspelled, repeated or nested marker).
+The theme is emitted only where `@uxdsl theme;` is written — in a stylesheet
+or a file it loads — on every path: the PostCSS plugin, `compile()`, the CLI,
+`uxdsl/vite` and `uxdsl/webpack`. There is no option, config key or flag for
+it (the former `includeTheme` option warns `UXD_OPTION_REMOVED` and is
+ignored; the CLI's key and `--include-theme` flags are errors). Write the
+marker once, at the top level of the one global stylesheet; component sheets
+and CSS Modules leave it out and stay free of `:root` (`UXD_THEME_MARKER` for
+a misspelled, repeated or nested marker). With the PostCSS plugin alone
+(Next.js, no CLI), configure `'uxdsl/postcss': {}` and write the marker in
+the global stylesheet; that host compiles one file at a time and cannot tell
+that no file wrote it, so it does not warn. An entry `uxdsl generate-entry`
+writes loads the marker from its generated `uxdsl-theme.uxdsl` (`--no-theme`
+for a component entry); `uxdsl init` scaffolds it. `compile()` returns
+`themeEmitted`, and the CLI, `vite build` and the webpack loader count it over
+a build and warn `UXD_THEME_MARKER` when no stylesheet that could carry the
+theme emits it while the CSS references `--uxdsl__` tokens, or when more than
+one does (a marker in a shared partial). Do not hide the marker in a partial
+several stylesheets load, and do not add a `:root` block by hand to stand in
+for it.
 
 FEAT-002 moved every emitted variable to `--uxdsl__<family>__<key>` in
 0.5.0-beta.1; no automatic legacy aliases are emitted. The shipped
@@ -745,14 +759,17 @@ rule, after any `@charset`; `0.5.0-beta.6` and earlier still have the old
 placement. Put variant changes in the playground's own
 overrides.
 
-In compiled output the generated theme is one contiguous run, inserted after
-the author's prelude (`@charset`, leading comments, the theme's `@import`s,
-then the author's `@layer` statements and `@import`s) and before the author's
-rules (stability phase 1, audit T10) — the exact string `generateThemeCss`
-returns for the same theme, so build and runtime are byte-identical. An
-author's own `:root { --uxdsl__… }` therefore follows the theme's declaration
-and wins the cascade; to override a token in a stylesheet, write that rule
-rather than editing generated CSS.
+In compiled output the generated theme is one contiguous run at
+`@uxdsl theme;`: its `@import`s lead the output (after `@charset` and leading
+comments, before the author's own), its blocks take the marker's place, and
+they are the exact string `generateThemeCss` returns for the same theme, so
+build and runtime are byte-identical (stability phase 1, audit T10). A
+compilation without the marker emits no theme. Write the marker after the
+prelude (`@charset`, comments, `@layer` statements, `@import`s — in a Sass
+entry, after its `@use` rules) and before the rules; an author's own
+`:root { --uxdsl__… }` written after it follows the theme's declaration and
+wins the cascade. To override a token in a stylesheet, write that rule rather
+than editing generated CSS.
 
 Theme values have one grammar, in every family and on both CSS paths
 (stability phase 1, audit T1): a literal CSS value; a token function —

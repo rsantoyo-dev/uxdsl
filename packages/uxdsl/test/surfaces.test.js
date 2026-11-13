@@ -19,7 +19,7 @@ function declarations(css) {
  const result=[];postcss.parse(css).walkDecls(/^--uxdsl__surface__/,d=>result.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value]));return result;
 }
 test('Surface variables match build/runtime output and preserve composition references',async()=>{
- const result=await compile('.card { @ds-surface(contained); } .notice { @ds-surface(notice); }',{theme});
+ const result=await compile('@uxdsl theme;\n.card { @ds-surface(contained); } .notice { @ds-surface(notice); }',{theme});
  assert.deepEqual(declarations(result.css),declarations(generateThemeCss(theme)));
  assert(result.css.includes('border-radius: var(--uxdsl__surface__contained-radius)'));
  assert(result.css.includes('--uxdsl__surface__contained-radius: var(--uxdsl__radius__2)'));
@@ -43,10 +43,12 @@ test('tone and size composition matches compiled declarations',async()=>{
 test('Surface definitions come from the JSON through the shared rules; a @theme pack fails; no leakage',async()=>{
  const source='.x { @ds-surface(contained); }';
  const custom=withBaseline({surfaces:{contained:{bg:'pink',padding:'11px'}}});
- const output=await compile(source,{theme:custom});
+ const output=await compile('@uxdsl theme;\n'+source,{theme:custom});
  assert(output.css.includes('--uxdsl__surface__contained-bg: pink'));
  assert(output.css.includes('--uxdsl__surface__contained-padding: 11px'));
- assert(!(await compile(source,{theme:withBaseline()})).css.includes('11px'));
+ const baseline=(await compile('@uxdsl theme;\n'+source,{theme:withBaseline()})).css;
+ assert(baseline.includes('--uxdsl__surface__contained-padding:'),'control: the baseline compilation emits its own contained padding');
+ assert(!baseline.includes('11px'));
  assert.deepEqual(declarations(output.css),declarations(generateSurfaceCss(custom)));
  await assert.rejects(()=>compile('@theme { surface-contained: { bg: pink; padding: 11px; } } '+source,{theme:withBaseline()}),/UXD_THEME_BLOCK_REMOVED/);
 });

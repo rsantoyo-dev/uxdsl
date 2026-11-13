@@ -35,7 +35,7 @@ test('every base Button role ships focusvisible (an outline in the tone) and dis
 });
 
 test('@ds-button emits the two new state rules, with the tone in the outline, and @ds-input a cursor on disabled', async () => {
-  const css = await compile('.btn { @ds-button(outlined success); }\n.plain { @ds-button(contained); }\n.in { @ds-input(contained); }');
+  const css = await compile('@uxdsl theme;\n.btn { @ds-button(outlined success); }\n.plain { @ds-button(contained); }\n.in { @ds-input(contained); }');
   const btn = rulesOf(css, '.btn');
   const focus = btn.find((r) => r.selector === '.btn:focus-visible');
   assert.ok(focus, 'a :focus-visible rule');
@@ -68,7 +68,7 @@ test('space(0) and border(0) compile with no theme of the project\'s own, to an 
   assert.equal(base.spacing['0'], '0');
   assert.equal(base.borders['0'], 'none');
   assert.equal(Object.keys(base.spacing)[0], '0', 'the key sorts first');
-  const css = await compile('.z { padding: space(0); border: border(0); margin: density(0); border-radius: radius(0); box-shadow: shadow(0); }');
+  const css = await compile('@uxdsl theme;\n.z { padding: space(0); border: border(0); margin: density(0); border-radius: radius(0); box-shadow: shadow(0); }');
   assert.match(css, /\.z\s*\{[^}]*padding:\s*var\(--uxdsl__space__0\)/);
   assert.match(css, /border:\s*var\(--uxdsl__border__0\)/);
   assert.match(css, /--uxdsl__space__0: 0;/);

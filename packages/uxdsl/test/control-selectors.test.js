@@ -28,7 +28,7 @@ const FULL_SPACING = Object.fromEntries(Array.from({ length: 16 }, (_, i) => [i 
 const theme = { spacing: FULL_SPACING, palette: BASE_PALETTE };
 
 async function compile(css) {
-  return (await postcss([plugin({ theme, includeTheme: false })]).process(css, { from: undefined })).css;
+  return (await postcss([plugin({ theme })]).process(css, { from: undefined })).css;
 }
 
 const FUNCTIONAL_PSEUDOS = [

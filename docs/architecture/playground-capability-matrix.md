@@ -169,7 +169,7 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | Capability | Requires | Level | Evidence |
 | --- | --- | --- | --- |
 | `build` | documented | documented | `src/app/docs/diagnostics/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/quick-start/page.mdx` |
-| `generate-entry` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
+| `generate-entry` | documented | documented | `src/app/docs/language/page.tsx`, `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
 | `init` | documented | documented | `src/app/docs/quick-start/page.mdx`, `src/app/docs/tooling/page.mdx` |
 | `theme` | documented | documented | `src/app/docs/accessibility/page.mdx`, `src/app/docs/introduction/page.mdx`, `src/app/docs/language/page.tsx` |
 
@@ -184,8 +184,8 @@ Counted on comment-stripped source. **Candidates to classify, not defects**: a `
 | `--exclude` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--first` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--help` | documented | documented | `src/app/docs/tooling/page.mdx` |
-| `--include-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--multi` | documented | documented | `src/app/docs/tooling/page.mdx` |
+| `--no-theme` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--out` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--sourcemap` | documented | documented | `src/app/docs/tooling/page.mdx` |
 | `--src` | documented | documented | `src/app/docs/tooling/page.mdx` |

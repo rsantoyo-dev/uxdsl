@@ -15,7 +15,7 @@ const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 
 const SOURCE = '.a { padding: xs(1rem) md(2rem); color: palette(primary); margin: space(2); border-color: color(gray.300); }';
-const run = (options) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(SOURCE, { from: undefined });
+const run = (options, source = SOURCE) => postcss([plugin({ discoverTheme: false, ...options })]).process(source, { from: undefined });
 const removedWarnings = (result) => result.warnings().map((w) => w.text).filter((text) => /^UXD_OPTION_REMOVED/.test(text));
 
 test('removed options: no option, no warning — and the output is the reference for the cases below', async () => {
@@ -36,14 +36,14 @@ for (const [shape, breakpoints] of [
   test(`removed options: breakpoints as ${shape} is ignored with a warning, not thrown`, async () => {
     const baseline = await run({});
     const result = await run({ breakpoints });
-    assert.deepEqual(removedWarnings(result), ['UXD_OPTION_REMOVED: the "breakpoints" plugin option was removed and is ignored; breakpoints are configured in the theme (`theme.breakpoints`).']);
+    assert.deepEqual(removedWarnings(result), ['UXD_OPTION_REMOVED: the "breakpoints" option was removed and is ignored; breakpoints are configured in the theme (`theme.breakpoints`).']);
     assert.equal(result.css, baseline.css, 'the option changes nothing: the theme\'s 768px threshold stands');
     assert.doesNotMatch(result.css, /900px|500px/);
   });
 }
 
-test('removed options: the same holds with includeTheme: true — the theme compiles against its own map', async () => {
-  const result = await run({ breakpoints: { a: 0, b: 500 }, includeTheme: true });
+test('removed options: the same holds with the marker — the theme compiles against its own map', async () => {
+  const result = await run({ breakpoints: { a: 0, b: 500 } }, `@uxdsl theme;\n${SOURCE}`);
   assert.equal(removedWarnings(result).length, 1);
   assert.match(result.css, /@media \(min-width: 1280px\)/);
 });
@@ -70,10 +70,10 @@ test('removed options: the plugin source no longer mentions them outside the rem
   const fs = require('node:fs');
   const path = require('node:path');
   const source = fs.readFileSync(path.join(__dirname, '../src/plugin.ts'), 'utf8');
-  assert.doesNotMatch(source, /opts\.(breakpoints|themeVar|spaceVar|colorVar)\b/);
+  assert.doesNotMatch(source, /opts\.(breakpoints|themeVar|spaceVar|colorVar|includeTheme)\b/);
   assert.doesNotMatch(source, /normalizeBreakpoints|UxdslBreakpointSpec|UxDslOptions/);
   const types = fs.readFileSync(path.join(__dirname, '../src/types.ts'), 'utf8');
   assert.doesNotMatch(types, /UxdslBreakpointSpec|UxDslOptions|themeVar\?|spaceVar\?|colorVar\?/);
   const options = types.match(/export interface UxdslOptions \{([\s\S]*?)\n\}/)[1];
-  assert.deepEqual([...options.matchAll(/^\s*(\w+)\??:/gm)].map((m) => m[1]).sort(), ['configRoot', 'discoverTheme', 'includeTheme', 'references', 'theme']);
+  assert.deepEqual([...options.matchAll(/^\s*(\w+)\??:/gm)].map((m) => m[1]).sort(), ['configRoot', 'discoverTheme', 'references', 'theme']);
 });

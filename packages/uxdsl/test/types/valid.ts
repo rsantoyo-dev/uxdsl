@@ -9,7 +9,6 @@ import type { UxdslConfig, UxdslTheme, UxdslThemeOverride, UxdslOptions } from '
 export const single = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  includeTheme: true,
   strictTheme: ['palette', 'spacing'],
   sourcemap: 'external',
   watch: ['./tokens.json'],
@@ -19,8 +18,8 @@ export const single = defineConfig({
 // A multi-entry config: one theme entry plus component entries.
 export const multi = defineConfig({
   builds: [
-    { entry: './src/theme.uxdsl', outFile: './dist/theme.css', includeTheme: true },
-    { entry: './src/panel.uxdsl', outFile: './dist/panel.css', includeTheme: false },
+    { entry: './src/theme.uxdsl', outFile: './dist/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './dist/panel.css' },
   ],
   sourcemap: false,
   strictTheme: ['breakpoints'],
@@ -83,7 +82,6 @@ export const override: UxdslThemeOverride = {
 
 export const options: UxdslOptions = {
   theme: override,
-  includeTheme: false,
   discoverTheme: false,
   // A literal, not `process.cwd()`: this fixture is compiled in a project
   // without `@types/node`, which is the situation of a consumer that only has

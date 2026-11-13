@@ -9,7 +9,7 @@ const plugin = require('../dist/plugin');
 const file = path.join(process.cwd(), 'src', 'panel.uxdsl');
 
 async function compile(css) {
-  return postcss([plugin({ includeTheme: false })]).process(css, { from: file });
+  return postcss([plugin()]).process(css, { from: file });
 }
 
 for (const [property, value, code] of [
@@ -33,7 +33,7 @@ for (const [property, value, code] of [
 test('MIG-B6-13: reference warnings retain the declaration location', async () => {
   // A token function is checked at rewrite time whatever the mode; the
   // reference pass (and its warn mode) is for a var() the author wrote.
-  const result = await postcss([plugin({ includeTheme: false, references: { mode: 'warn' } })])
+  const result = await postcss([plugin({ references: { mode: 'warn' } })])
     .process('.a {\n  box-shadow: 0 0 0 space(1) var(--uxdsl__palette__primry-main);\n}', { from: file });
   const [warning] = result.warnings();
   assert.equal(warning.line, 2);
@@ -71,7 +71,7 @@ for (const [css, line, expectedName, expectedReason] of [
     const theme = css.includes('ds-button')
       ? { buttons: { contained: { base: { bg: 'palette(primry)' } } } }
       : undefined;
-    const error = await postcss([plugin({ includeTheme: false, theme })]).process(css, { from: file }).then(() => null, caught => caught);
+    const error = await postcss([plugin({ theme })]).process(css, { from: file }).then(() => null, caught => caught);
     assert.equal(error.name, expectedName);
     assert.equal(error.file, file);
     assert.equal(error.line, line);
@@ -103,7 +103,7 @@ for (const [theme, code, keyPath] of [
   [{ breakpoints: { md: '768' } }, 'UXD_THEME_INVALID', 'breakpoints.md'],
 ]) {
   test(`MIG-B6-13: ${code} at "${keyPath}" carries the theme key path`, async () => {
-    const error = await postcss([plugin({ includeTheme: false, theme })]).process('.a {}', { from: file }).then(() => null, caught => caught);
+    const error = await postcss([plugin({ theme })]).process('.a {}', { from: file }).then(() => null, caught => caught);
     assert.ok(error, 'compilation fails');
     assert.equal(error.keyPath, keyPath);
     assert.match(error.message, new RegExp(`^${code}: `));
@@ -117,7 +117,7 @@ for (const [theme, code, keyPath] of [
 // it was written (the $variable's definition, an @include argument).
 const { compile: compileThroughSass } = require('../dist/entries/index.js');
 async function failureThroughSass(source) {
-  return compileThroughSass({ source, from: file }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+  return compileThroughSass({ source, from: file }, { theme: {} }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
 }
 
 test('MIG-B9-13: an invalid reference reached through Sass is reported where Sass mapped its text (the $variable\'s definition, 1:7, frame showing density(16))', async () => {

@@ -6,6 +6,6 @@ const { defineConfig } = require('uxdsl/config');
 module.exports = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  // @ts-expect-error `includeThem` is ignored by the CLI at run time.
-  includeThem: true,
+  // @ts-expect-error `outfile` is not `outFile`, and the CLI would not read it.
+  outfile: './dist/other.css',
 });

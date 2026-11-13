@@ -204,12 +204,12 @@ function statementsOf(code) {
 async function compileWithPlugin(css, theme) {
   const exported = load('packages/uxdsl/dist/plugin');
   const plugin = exported.default || exported;
-  return (await postcss([plugin({ theme: theme || {}, includeTheme: false })]).process(css, { from: undefined })).css;
+  return (await postcss([plugin({ theme: theme || {} })]).process(css, { from: undefined })).css;
 }
 
 async function compileWithPipeline(css, theme) {
   const core = load('packages/uxdsl/dist/entries/index.js');
-  const out = await core.compile({ source: css, from: DOC_EXAMPLE_FILE }, { includeTheme: false, theme: theme || {} });
+  const out = await core.compile({ source: css, from: DOC_EXAMPLE_FILE }, { theme: theme || {} });
   return typeof out === 'string' ? out : out.css;
 }
 

@@ -16,7 +16,7 @@ const exported = require('../dist/plugin');
 const plugin = exported.default || exported;
 const { analyzeResponsiveValue } = require('../dist/language');
 
-const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, includeTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
+const compile = (source, options = {}) => postcss([plugin({ discoverTheme: false, ...options })]).process(source, { from: '/project/src/app.uxdsl' }).css;
 function failure(source, options) {
   try { compile(source, options); } catch (error) { return error; }
   return assert.fail(`expected ${JSON.stringify(source)} to fail, but it compiled`);
@@ -198,7 +198,7 @@ test('MIG-B9-13: a %placeholder anywhere in a compound, and a // comment PostCSS
   // Through compile(), Dart Sass extends the placeholder and drops the comment first.
   const from = path.join(temporaryDirectory(), 'p.uxdsl');
   const source = 'a%primary {\n  color: red;\n}\n.x {\n  @extend %primary;\n}\n.card {\n  margin: 0;\n  padding: space(2) // inner spacing\n}\n';
-  const { css } = await pipeline({ source, from }, { theme: {}, includeTheme: false });
+  const { css } = await pipeline({ source, from }, { theme: {} });
   assert.equal(css, 'a.x {\n  color: red;\n}\n\n.card {\n  margin: 0;\n  padding: var(--uxdsl__space__2);\n}');
 });
 
@@ -216,7 +216,7 @@ const unwrapNested = () => ({
 
 test('MIG-B9-13: in a PostCSS chain, Sass-like syntax another plugin resolves in a visitor (postcss-nested\'s &_title) reaches uxdsl/postcss first, in either order, because PostCSS runs every plugin\'s Once before any visitor; that plugin in a pass of its own first compiles', async () => {
   const source = '.phone {\n  &_title {\n    padding: space(2);\n  }\n}\n';
-  const uxdsl = () => plugin({ discoverTheme: false, includeTheme: false });
+  const uxdsl = () => plugin({ discoverTheme: false });
   for (const plugins of [[unwrapNested(), uxdsl()], [uxdsl(), unwrapNested()]]) {
     const error = await postcss(plugins).process(source, { from: '/project/src/app.css' }).then(() => assert.fail(`expected ${plugins.map((p) => p.postcssPlugin).join(', ')} to fail`), (caught) => caught);
     assert.equal(error.reason, sassContext('&_title'));
@@ -245,7 +245,7 @@ test('MIG-B9-13: a $variable Sass keeps literally gets the kept message, from th
     ['$gap: 4px;\n.card {\n  --gap: $gap;\n}\n', '$gap', 'the custom property --gap', 3, 3],
     ['$bp: 400px;\n@container card (min-width: $bp) {\n  .a { color: red; }\n}\n', '$bp', 'the @container prelude', 2, 1],
   ]) {
-    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    const error = await pipeline({ source, from }, { theme: {} }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
     assert.equal(error.name, 'CssSyntaxError', error.message);
     assert.equal(error.reason, keptBySass(construct, where));
     assert.deepEqual([error.file, error.line, error.column], [from, line, column]);
@@ -262,13 +262,13 @@ test('MIG-B9-13: through compile(), a $variable Dart Sass keeps in a supports fu
     ['$v: 7px;\n@import "x.css" supports(--x: $v);\n', 'the @import supports()', 2, 9],
     ['$v: 7px;\n@import "x.css" supports(selector(.a-$v));\n', 'the @import supports()', 2, 9],
   ]) {
-    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    const error = await pipeline({ source, from }, { theme: {} }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
     assert.equal(error.name, 'CssSyntaxError', error.message);
     assert.equal(error.reason, keptBySass('$v', where), source);
     assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
   }
   // Where Sass evaluates the variable, the same file compiles (negative control).
-  const { css } = await pipeline({ source: '$v: 7px;\n@supports (width: $v) {\n  .a { color: red; }\n}\n@import "x.css" supports(display: fn($v));\n', from }, { theme: {}, includeTheme: false });
+  const { css } = await pipeline({ source: '$v: 7px;\n@supports (width: $v) {\n  .a { color: red; }\n}\n@import "x.css" supports(display: fn($v));\n', from }, { theme: {} });
   assert.match(css, /@supports \(width: 7px\) \{/);
   assert.match(css, /@import "x\.css" supports\(display: fn\(7px\)\);/);
 });
@@ -314,13 +314,13 @@ test('MIG-B9-13: through compile(), a $variable in a url() Dart Sass keeps as wr
     ['$v: "x.png";\n@function --f() {\n  result: url($v);\n}\n', '$v', 'the CSS @function --f', 3, 3],
     ['$v: "x.png";\n@namespace x url($v);\n', '$v', 'the @namespace prelude', 2, 1],
   ]) {
-    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    const error = await pipeline({ source, from }, { theme: {} }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
     assert.equal(error.name, 'CssSyntaxError', error.message);
     assert.equal(error.reason, keptBySass(construct, where), source);
     assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
   }
   // Interpolated, or where Sass evaluates the call, the same values compile (negative control).
-  const { css } = await pipeline({ source: '$image: "hero.png";\n.hero {\n  --hero-bg: url(#{$image});\n  background-image: url($image);\n}\n', from }, { theme: {}, includeTheme: false });
+  const { css } = await pipeline({ source: '$image: "hero.png";\n.hero {\n  --hero-bg: url(#{$image});\n  background-image: url($image);\n}\n', from }, { theme: {} });
   assert.equal(css, '.hero {\n  --hero-bg: url(hero.png);\n  background-image: url("hero.png");\n}');
 });
 
@@ -345,7 +345,7 @@ test('MIG-B9-13: Dart Sass keeps the arguments of expression(), element(), type(
     ['$w: 1px;\n.a {\n  width: expression($w);\n}\n', '$w', 'expression()', 3, 3],
     ['$v: x;\n.a {\n  background: -moz-element($v);\n}\n', '$v', '-moz-element()', 3, 3],
   ]) {
-    const error = await pipeline({ source, from }, { theme: {}, includeTheme: false }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
+    const error = await pipeline({ source, from }, { theme: {} }).then(() => assert.fail(`expected ${JSON.stringify(source)} to fail`), (caught) => caught);
     assert.equal(error.name, 'CssSyntaxError', error.message);
     assert.equal(error.reason, keptBySass(construct, where), source);
     assert.deepEqual([error.file, error.line, error.column], [from, line, column], source);
@@ -363,7 +363,7 @@ test('MIG-B9-13: a dotted call in expression() is script, not a Sass call: the p
     '.a {\n  *zoom: expression(this.runtimeStyle.zoom="1", this.appendChild(document.createElement("br")).style.cssText="clear:both;font:0/0 serif");\n}',
   ]) {
     assert.equal(compile(source), source);
-    const { css } = await pipeline({ source: `${source}\n`, from }, { theme: {}, includeTheme: false });
+    const { css } = await pipeline({ source: `${source}\n`, from }, { theme: {} });
     assert.equal(css, sass.compileString(source, { style: 'expanded' }).css, source);
   }
   // A namespaced call in a custom property is still Sass kept as written (positive control).
@@ -459,7 +459,7 @@ test('MIG-B9-13: CSS that looks like Sass passes the plugin alone unchanged, and
   for (const source of LOOK_ALIKES) assert.equal(compile(source), source, source);
   const dir = temporaryDirectory();
   fs.writeFileSync(path.join(dir, '_tokens.uxdsl'), '$forwarded: 2px;\n.forwarded { width: $forwarded; }\n');
-  const { css } = await pipeline({ source: SASS_SOURCE, from: path.join(dir, 'all.uxdsl') }, { theme: {}, includeTheme: false });
+  const { css } = await pipeline({ source: SASS_SOURCE, from: path.join(dir, 'all.uxdsl') }, { theme: {} });
   for (const expected of [
     '.forwarded {\n  width: 2px;\n}',
     '.a {\n  color: red;\n}',
@@ -473,7 +473,7 @@ test('MIG-B9-13: CSS that looks like Sass passes the plugin alone unchanged, and
   }
   assert.doesNotMatch(css, /\$|#\{|@(use|forward|mixin|include|function|return|extend|if|each|for|while|at-root|content|debug)\b|\/\/|%base/);
   // Interpolation is how a $variable reaches a custom property.
-  const custom = await pipeline({ source: '$gap: 4px;\n.card {\n  --gap: #{$gap};\n}\n', from: path.join(dir, 'z.uxdsl') }, { theme: {}, includeTheme: false });
+  const custom = await pipeline({ source: '$gap: 4px;\n.card {\n  --gap: #{$gap};\n}\n', from: path.join(dir, 'z.uxdsl') }, { theme: {} });
   assert.equal(custom.css, '.card {\n  --gap: 4px;\n}');
 });
 

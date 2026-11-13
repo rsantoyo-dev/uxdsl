@@ -24,7 +24,9 @@ const UXDSL_DIR = path.resolve(__dirname, '..', '..');
 const TSC = path.join(fs.realpathSync(UXDSL_DIR), 'node_modules', 'typescript', 'bin', 'tsc');
 
 // Exactly what `init` wrote before MIG-B7-12 (packages/uxdsl-cli/bin/uxdsl.js
-// at dcd8a26). Kept verbatim: it is the byte-identical-output baseline.
+// at dcd8a26): the byte-identical-output baseline. The --multi panel carries no
+// theme switch: the theme is emitted where `@uxdsl theme;` is written, which
+// init writes in the theme entry.
 const LEGACY_SINGLE = `module.exports = {
   // Entry point for your styles (generated or manual)
   entry: './src/uxdsl-entry.uxdsl',
@@ -36,13 +38,13 @@ const LEGACY_SINGLE = `module.exports = {
 `;
 const LEGACY_MULTI = `module.exports = {
   // A theme entry (emits the shared :root definitions once) plus any
-  // number of component/CSS-Module entries — includeTheme: false, no
+  // number of component/CSS-Module entries — no marker, no
   // :root of their own — compiled together from this one config. Add
   // more entries here as the project grows; see the CLI README's
   // "Multiple entries, one shared theme" section for the full contract.
   builds: [
     { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
-    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css', includeTheme: false },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' },
   ],
   // Watch patterns for HMR/Rebuilds
   watch: ['src/**/*.uxdsl']
@@ -186,14 +188,15 @@ test('MIG-B7-12: the generated configs type-check clean, and a typo in them is a
     }
     // Negative control: the typo the header comment promises to catch.
     const typo = branch === 'multi'
-      ? generated.replace("includeTheme: false }", 'includeThem: false }')
-      : generated.replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  includeThem: false,\n");
+      ? generated.replace("outFile: './src/panel-a.css' }", "outFile: './src/panel-a.css', outfile: './src/panel-a.css' }")
+      : generated.replace("  outFile: './src/uxdsl.css',\n", "  outFile: './src/uxdsl.css',\n  outfile: './src/uxdsl.css',\n");
     assert.notEqual(typo, generated);
     fs.writeFileSync(configPath, typo);
     for (const opts of RESOLUTIONS) {
       const bad = typeCheck(dir, 'uxdsl.config.cjs', opts);
       assert.notEqual(bad.status, 0, `[${branch} ${opts.moduleResolution}] the typo must be reported`);
-      assert.match(bad.output, /TS2561|TS2353/, bad.output);
+      assert.match(bad.output, /TS2561/, bad.output);
+      assert.match(bad.output, /Did you mean to write 'outFile'\?/, bad.output);
       assert.doesNotMatch(bad.output, /TS2307/, 'the type must resolve, not merely fail to load');
     }
     // And without `// @ts-check` nothing is reported: that line is load-bearing.
@@ -262,7 +265,7 @@ test('phase 2 (3): init for Next.js writes a postcss.config.js that keeps Next\'
   const loaded = require(path.join(dir, 'postcss.config.js'));
   assert.deepEqual(Object.keys(loaded.plugins), ['next/dist/compiled/postcss-flexbugs-fixes', 'next/dist/compiled/postcss-preset-env', 'uxdsl/postcss']);
   assert.deepEqual(loaded.plugins['next/dist/compiled/postcss-preset-env'], { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } });
-  assert.deepEqual(loaded.plugins['uxdsl/postcss'], { includeTheme: false });
+  assert.deepEqual(loaded.plugins['uxdsl/postcss'], {});
   assert.match(config, /replaces Next's defaults/);
 });
 
@@ -348,7 +351,7 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     assert.equal(r.status, 0, r.stdout + r.stderr);
     assert.equal(r.stderr, '', `[${branch}] there was no entry to replace, so no warning`);
     const entry = fs.readFileSync(path.join(dir, 'src/uxdsl-entry.uxdsl'), 'utf8');
-    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './styles.uxdsl' as styles;"], `[${branch}] the entry:\n${entry}`);
+    assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './uxdsl-theme.uxdsl' as uxdsl-theme;", "@use './styles.uxdsl' as styles;"], `[${branch}] the entry:\n${entry}`);
     const styles = fs.readFileSync(path.join(dir, 'src/styles.uxdsl'), 'utf8');
     assert.match(styles, /src\/uxdsl-entry\.uxdsl loads this file with @use/, `[${branch}] styles.uxdsl says how it is loaded`);
     assert.match(styles, /`uxdsl generate-entry`/, `[${branch}] and what regenerates the entry`);
@@ -360,8 +363,8 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
   }
 
   // No scaffolded .uxdsl file of any branch, --multi included, has an @import;
-  // none writes the theme marker, and Next's PostCSS config still passes
-  // includeTheme: false.
+  // exactly one writes the theme marker, and Next's PostCSS config passes no
+  // option.
   for (const branch of Object.keys(BRANCHES)) {
     const dir = mkProject(branch);
     assert.equal(run(BRANCHES[branch].args, dir).status, 0);
@@ -369,8 +372,8 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
     const uxdslFiles = Object.keys(files).filter((file) => file.endsWith('.uxdsl'));
     assert.ok(uxdslFiles.length >= 2, `[${branch}] scaffolded .uxdsl files: ${uxdslFiles.join(', ')}`);
     for (const file of uxdslFiles) assert.doesNotMatch(files[file], /@import/, `[${branch}] ${file}`);
-    for (const [file, text] of Object.entries(files)) assert.doesNotMatch(text, /@uxdsl theme;/, `[${branch}] ${file}`);
-    if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], { includeTheme: false });
+    assert.equal(uxdslFiles.filter((file) => /^@uxdsl theme;$/m.test(files[file])).length, 1, `[${branch}] one .uxdsl file writes the marker`);
+    if (branch === 'next') assert.deepEqual(require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'], {});
   }
 
   // Negative control: the entry init used to write reports a deprecation in the
@@ -381,4 +384,119 @@ test("MIG-B9-14: init's entry uses @use and the project builds", () => {
   const legacy = run(['build'], control);
   assert.equal(legacy.status, 0, legacy.stdout + legacy.stderr);
   assert.match(legacy.stderr, /^\[uxdsl\] Warning: src\/uxdsl-entry\.uxdsl:1:9: UXD_SASS_WARNING: \[import\] /m);
+});
+
+// Every init branch carries `@uxdsl theme;` in exactly one scaffolded .uxdsl
+// file: the single-entry branches in the theme file generate-entry writes next
+// to the entry (loaded first), --multi in its theme entry, src/theme.uxdsl.
+test('MIG-B9-20: init and init --multi build with the theme defined exactly once', () => {
+  const definitions = (dir, branch) => outFiles(branch).reduce((n, f) => n + (fs.readFileSync(path.join(dir, f), 'utf8').match(/--uxdsl__space__5:/g) || []).length, 0);
+  for (const branch of Object.keys(BRANCHES)) {
+    const dir = mkProject(branch);
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 0, r.stdout + r.stderr);
+    const files = scaffolded(dir, branch);
+    const marked = Object.keys(files).filter((file) => file.endsWith('.uxdsl') && /^@uxdsl theme;$/m.test(files[file]));
+    assert.deepEqual(marked, [branch === 'multi' ? path.join('src', 'theme.uxdsl') : path.join('src', 'uxdsl-theme.uxdsl')], `[${branch}] the one marked file`);
+    if (branch !== 'multi') {
+      assert.match(r.stdout, /\[uxdsl\] Generated theme file at src[\\/]uxdsl-theme\.uxdsl: `@uxdsl theme;`, loaded first by the entry\.\n/, `[${branch}]`);
+      const entry = files[path.join('src', 'uxdsl-entry.uxdsl')];
+      assert.deepEqual(entry.split('\n').filter((line) => line.startsWith('@')), ["@use './uxdsl-theme.uxdsl' as uxdsl-theme;", "@use './styles.uxdsl' as styles;"], `[${branch}] the theme file is loaded first`);
+    }
+    const built = run(['build'], dir);
+    assert.equal(built.status, 0, `[${branch}] ${built.stdout}${built.stderr}`);
+    assert.equal(built.stderr, '', `[${branch}] no warning`);
+    assert.equal(definitions(dir, branch), 1, `[${branch}] the theme is defined exactly once across ${outFiles(branch).join(', ')}`);
+    if (branch !== 'multi') {
+      const css = fs.readFileSync(path.join(dir, 'src', 'uxdsl.css'), 'utf8');
+      assert.ok(css.indexOf(':root') < css.indexOf('.example'), `[${branch}] the theme precedes the styles`);
+    }
+  }
+
+  // Negative control: a second marker, in the --multi panel entry, defines the
+  // theme twice across the outputs, which the count above would report, and
+  // the build warns about it once.
+  const dir = mkProject('multi');
+  assert.equal(run(['init', '--multi'], dir).status, 0);
+  fs.writeFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), `@uxdsl theme;\n${fs.readFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), 'utf8')}`);
+  const twice = run(['build'], dir);
+  assert.equal(twice.status, 0);
+  assert.equal(definitions(dir, 'multi'), 2);
+  assert.equal(twice.stderr.split('\n').filter((line) => /UXD_THEME_MARKER: 2 entries emit the theme \(builds\[0\], builds\[1\]\)/.test(line)).length, 1, twice.stderr);
+
+  // Negative control: without the theme @use the scaffolded entry defines nothing,
+  // and the build says so once.
+  const plain = mkProject('plain');
+  assert.equal(run(['init'], plain).status, 0);
+  const entryFile = path.join(plain, 'src', 'uxdsl-entry.uxdsl');
+  fs.writeFileSync(entryFile, fs.readFileSync(entryFile, 'utf8').replace("@use './uxdsl-theme.uxdsl' as uxdsl-theme;\n", ''));
+  const bare = run(['build'], plain);
+  assert.equal(bare.status, 0, bare.stdout + bare.stderr);
+  assert.equal(definitions(plain, 'plain'), 0);
+  assert.equal(bare.stderr.split('\n').filter((line) => /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/.test(line)).length, 1, bare.stderr);
+});
+
+test('MIG-B9-20: init --multi writes no theme switch in its config; the theme entry carries the marker', () => {
+  const dir = mkProject('multi');
+  assert.equal(run(['init', '--multi'], dir).status, 0);
+  const config = fs.readFileSync(path.join(dir, 'uxdsl.config.cjs'), 'utf8');
+  assert.doesNotMatch(config, /includeTheme/);
+  assert.deepEqual(require(path.join(dir, 'uxdsl.config.cjs')).builds, [
+    { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+    { entry: './src/panel-a.uxdsl', outFile: './src/panel-a.css' },
+  ]);
+  assert.match(fs.readFileSync(path.join(dir, 'src', 'theme.uxdsl'), 'utf8'), /^@uxdsl theme;$/m);
+  assert.doesNotMatch(fs.readFileSync(path.join(dir, 'src', 'panel-a.uxdsl'), 'utf8'), /@uxdsl theme;/);
+});
+
+test('MIG-B9-20: POSTCSS_SNIPPET carries no option; the CLI output passes through it unchanged and a CSS Module gets no :root', async () => {
+  const postcss = require('postcss');
+  const uxdsl = require('../../dist/plugin');
+  const rootBlocks = (css) => (css.match(/(^|[\s}]):root[\s{[:]/g) || []).length;
+  const dir = mkProject('next');
+  assert.equal(run(['init'], dir).status, 0);
+  const options = require(path.join(dir, 'postcss.config.js')).plugins['uxdsl/postcss'];
+  assert.deepEqual(options, {});
+  const built = run(['build'], dir);
+  assert.equal(built.status, 0, built.stdout + built.stderr);
+  assert.equal(built.stderr, '');
+  const global = fs.readFileSync(path.join(dir, 'src', 'uxdsl.css'), 'utf8');
+  assert.ok(rootBlocks(global) > 0, 'control: the CLI-built global carries the theme');
+  const passed = await postcss([uxdsl({ ...options, configRoot: dir })]).process(global, { from: path.join(dir, 'src', 'uxdsl.css') });
+  assert.equal(passed.css.length, global.length, 'Next\'s pass over the CLI output adds nothing');
+  assert.equal(rootBlocks(passed.css), rootBlocks(global));
+  assert.deepEqual(passed.warnings().map((warning) => warning.text), []);
+
+  const moduleSource = '.panel { padding: density(2); color: palette(primary.main); }\n';
+  const cssModule = await postcss([uxdsl({ ...options, configRoot: dir })]).process(moduleSource, { from: path.join(dir, 'app', 'panel.module.css') });
+  assert.equal(rootBlocks(cssModule.css), 0, 'a CSS Module carries only its own rules');
+  assert.equal(cssModule.css, '.panel { padding: var(--uxdsl__density__2); color: var(--uxdsl__palette__primary-main); }\n');
+  // Negative control: the same module with the marker would carry the theme.
+  const marked = await postcss([uxdsl({ ...options, configRoot: dir })]).process(`@uxdsl theme;\n${moduleSource}`, { from: path.join(dir, 'app', 'panel.module.css') });
+  assert.ok(rootBlocks(marked.css) > 0);
+});
+
+test('MIG-B9-20: init refuses a src/uxdsl-theme.uxdsl it did not write before it writes anything', () => {
+  for (const branch of ['plain', 'next', 'vite']) {
+    const dir = mkProject(branch);
+    fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
+    fs.writeFileSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), '.mine { color: red; }\n');
+    const before = fs.readdirSync(dir).sort();
+    const r = run(BRANCHES[branch].args, dir);
+    assert.equal(r.status, 1, `[${branch}] ${r.stdout}${r.stderr}`);
+    assert.match(r.stderr, /src[\\/]uxdsl-theme\.uxdsl was not written by generate-entry, which writes its theme file under that name next to the entry\. Rename that file\./, `[${branch}]`);
+    assert.deepEqual(fs.readdirSync(dir).sort(), before, `[${branch}] no config, no package.json change`);
+    assert.deepEqual(fs.readdirSync(path.join(dir, 'src')), ['uxdsl-theme.uxdsl'], `[${branch}] nothing written under src`);
+    assert.equal(fs.readFileSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), 'utf8'), '.mine { color: red; }\n');
+    // Renamed, the same init completes the scaffold.
+    fs.renameSync(path.join(dir, 'src', 'uxdsl-theme.uxdsl'), path.join(dir, 'src', 'mine.uxdsl'));
+    const again = run(BRANCHES[branch].args, dir);
+    assert.equal(again.status, 0, `[${branch}] ${again.stdout}${again.stderr}`);
+    assert.ok(fs.existsSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl')), `[${branch}]`);
+  }
+  // Control: --multi writes no generated entry, so the file is the project's own and init goes on.
+  const multi = mkProject('multi');
+  fs.mkdirSync(path.join(multi, 'src'), { recursive: true });
+  fs.writeFileSync(path.join(multi, 'src', 'uxdsl-theme.uxdsl'), '.mine { color: red; }\n');
+  assert.equal(run(['init', '--multi'], multi).status, 0);
 });

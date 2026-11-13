@@ -121,7 +121,7 @@ const summarize = (value) => String(value).replace(/\s+/g, ' ').slice(0, 200);
 
 function throughPlugin(theme) {
   try {
-    const result = postcss([plugin({ theme, discoverTheme: false })]).process('.a { padding: space(1); color: palette(primary); }', { from: undefined });
+    const result = postcss([plugin({ theme, discoverTheme: false })]).process('@uxdsl theme;\n.a { padding: space(1); color: palette(primary); }', { from: undefined });
     const css = result.css;
     const warnings = result.warnings().map((w) => w.text);
     return { ok: true, css, warnings };
@@ -240,7 +240,7 @@ test('validation matrix: validateTheme does not normalize — fonts.families are
   const validated = runtime.validateTheme(theme);
   assert.equal(validated.theme.fonts.families.ui, 'Inter Tight, sans-serif');
   assert.match(runtime.generateThemeCss(theme), /--uxdsl__font__ui: Inter Tight, sans-serif;/);
-  const compiled = await postcss([plugin({ theme, discoverTheme: false })]).process('', { from: undefined });
+  const compiled = await postcss([plugin({ theme, discoverTheme: false })]).process('@uxdsl theme;', { from: undefined });
   assert.match(compiled.css, /--uxdsl__font__ui: Inter Tight, sans-serif;/);
 });
 

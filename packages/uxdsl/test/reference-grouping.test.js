@@ -37,7 +37,7 @@ test('grouping: a dangling Palette value is one line naming its consumers, not o
 });
 
 test('grouping: an author\'s own declaration is listed first, with its position', async () => {
-  const error = await caught(compile('.a {\n  color: palette(primary);\n}', { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } }));
+  const error = await caught(compile('@uxdsl theme; .a {\n  color: palette(primary);\n}', { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } }));
   assert.ok(error, 'compilation fails');
   const lines = missingLines(error.message);
   assert.equal(lines.length, 1, error.message);
@@ -98,7 +98,7 @@ test('formatReferenceIssues: cycles are left one per issue and missing tokens ar
 
 test('warn mode still reports every consumer individually', async () => {
   const warned = [];
-  const result = await compile('.a { color: palette(primary); }', { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } }, { references: { mode: 'warn', onWarning: (issue) => warned.push(issue) } });
+  const result = await compile('@uxdsl theme;\n.a { color: palette(primary); }', { palette: { primary: { main: 'var(--uxdsl__color__brand-500)' } } }, { references: { mode: 'warn', onWarning: (issue) => warned.push(issue) } });
   assert.ok(warned.length > 5);
   assert.equal(result.warnings().length, warned.length);
 });

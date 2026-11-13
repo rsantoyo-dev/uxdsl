@@ -43,8 +43,8 @@ test('watch retargets the entry and source globs without restarting the CLI, and
   // `themeFile` pointer); what a config reload retargets is the entry and the
   // watch globs.
   const config = (folder) => `module.exports={entry:'./${folder}/entry.uxdsl',outFile:'./out.css',watch:['${folder}/**/*.uxdsl']};`;
-  put('old/entry.uxdsl', '.old { color: red; }');
-  put('next/entry.uxdsl', '.next { color: blue; }');
+  put('old/entry.uxdsl', '@uxdsl theme;\n.old { color: red; }');
+  put('next/entry.uxdsl', '@uxdsl theme;\n.next { color: blue; }');
   put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#123456' } } }));
   put('uxdsl.config.cjs', config('old'));
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -59,7 +59,7 @@ test('watch retargets the entry and source globs without restarting the CLI, and
   await waitFor(() => css().includes('.next'));
   put('uxdsl.theme.json', JSON.stringify({ palette: { primary: { main: '#fedcba' } } }));
   await waitFor(() => css().includes('#fedcba'));
-  put('next/entry.uxdsl', '.updated { color: green; }');
+  put('next/entry.uxdsl', '@uxdsl theme;\n.updated { color: green; }');
   await waitFor(() => css().includes('.updated'));
   await delay(300);
   const before = (logs.match(/\[uxdsl\] built/g) || []).length;
@@ -122,7 +122,7 @@ test('watch mode reloads config and theme on change instead of serving a stale r
   installPostcssUxdsl(dir);
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */');
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */\n@uxdsl theme;');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -147,7 +147,7 @@ test('watch mode reloads a theme value that comes from a nested require() (e.g. 
   installPostcssUxdsl(dir);
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './src/uxdsl.css', watch: ['src/**/*.uxdsl'] };\n");
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */');
+  fs.writeFileSync(path.join(dir, 'src', 'uxdsl-entry.uxdsl'), '/* zero-config, all tokens come from the theme */\n@uxdsl theme;');
   // The theme file itself is stable; the actual token data lives in a
   // separate JSON file it requires — a common real-world split (JSON as
   // pure data, a thin .cjs wrapper around it). Only theme-data.json
@@ -244,14 +244,14 @@ test('watch mode with a "builds" config rebuilds every entry from one watcher, e
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), `module.exports = {
     builds: [
-      { entry: './src/theme.uxdsl', outFile: './src/theme.css', includeTheme: true },
-      { entry: './src/panel.uxdsl', outFile: './src/panel.css', includeTheme: false },
+      { entry: './src/theme.uxdsl', outFile: './src/theme.css' },
+      { entry: './src/panel.uxdsl', outFile: './src/panel.css' },
     ],
     // Matches init's own default watch list, and both compiled outFiles —
     // the exact shape that needs the self-trigger exclusion to do anything.
     watch: ['src/**/*.uxdsl', 'src/**/*.css'],
   };\n`);
-  fs.writeFileSync(path.join(dir, 'src', 'theme.uxdsl'), '/* theme-only entry */');
+  fs.writeFileSync(path.join(dir, 'src', 'theme.uxdsl'), '/* theme-only entry */\n@uxdsl theme;');
   fs.writeFileSync(path.join(dir, 'src', 'panel.uxdsl'), '.card { color: red; }');
   fs.writeFileSync(path.join(dir, 'uxdsl.theme.cjs'), "module.exports = { palette: { primary: { main: '#111111' } } };\n");
 
@@ -265,7 +265,7 @@ test('watch mode with a "builds" config rebuilds every entry from one watcher, e
   const panelCssPath = path.join(dir, 'src', 'panel.css');
   await waitFor(() => fs.existsSync(themeCssPath) && fs.existsSync(panelCssPath));
   await waitFor(() => fs.readFileSync(themeCssPath, 'utf8').includes('#111111'));
-  assert.doesNotMatch(fs.readFileSync(panelCssPath, 'utf8'), /:root/, 'the includeTheme: false entry must not define :root');
+  assert.doesNotMatch(fs.readFileSync(panelCssPath, 'utf8'), /:root/, 'the entry without the marker must not define :root');
   await delay(WATCHER_SETTLE_MS);
 
   // Editing the theme file rebuilds both entries against the new theme.
@@ -523,7 +523,7 @@ test('MIG-B6-23: creating a previously-missing partial recovers the build (unkno
 test('MIG-B9-14: in watch mode every failed build, the first one included, prints build failed: with the same frame, and the process keeps watching', async (t) => {
   const dir = mkProject();
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
-  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false };\n");
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), "@use './missing';\n.a { color: red; }\n");
 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -579,8 +579,8 @@ test("MIG-B9-14: editing a @use'd partial rebuilds only the entries that load it
   // No `watch` key: the patterns are the entries and src/**/*.uxdsl, which
   // match neither the .scss partial nor anything under shared/.
   put('uxdsl.config.cjs', `module.exports = { builds: [
-    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
-    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+    { entry: './src/a.uxdsl', outFile: './out/a.css' },
+    { entry: './src/b.uxdsl', outFile: './out/b.css' },
   ] };\n`);
   put('src/a.uxdsl', '.a { color: red; }\n');
   put('src/b.uxdsl', "@use './part';\n@use './tokens';\n@use '../shared/far';\n.b { color: blue; }\n");
@@ -665,8 +665,8 @@ test('MIG-B9-14: an entry that starts loading an existing file beside the file j
     fs.writeFileSync(path.join(dir, file), text);
   };
   put('uxdsl.config.cjs', `module.exports = { builds: [
-    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
-    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+    { entry: './src/a.uxdsl', outFile: './out/a.css' },
+    { entry: './src/b.uxdsl', outFile: './out/b.css' },
   ] };\n`);
   put('src/a.uxdsl', '.a { color: red; }\n');
   put('src/b.uxdsl', '.b { color: blue; }\n');
@@ -719,7 +719,7 @@ test('MIG-B9-14: an entry whose first build failed, saved so that it loads an ex
     fs.writeFileSync(path.join(dir, file), text);
   };
   // No `watch` key: the patterns are the entry and src/**/*.uxdsl, which do not match src/_x.scss.
-  put('uxdsl.config.cjs', "module.exports = { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false };\n");
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/b.uxdsl', outFile: './out/b.css' };\n");
   put('src/b.uxdsl', "@use './missing';\n.b { color: blue; }\n");
   put('src/_x.scss', '.x { color: teal; }\n');
   put('src/_legacy.uxdsl', '.legacy { color: gray; }\n');
@@ -771,7 +771,7 @@ test('MIG-B9-14: a file an entry starts loading after start is followed once tha
     fs.writeFileSync(path.join(dir, file), text);
   };
   // No `watch` key: the patterns are the entry and src/**/*.uxdsl, which do not reach lib/.
-  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false };\n");
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
   put('src/a.uxdsl', '.a { color: red; }\n');
   put('lib/_x.uxdsl', '.x { color: teal; }\n');
   const past = (Date.now() - 10000) / 1000;
@@ -813,7 +813,7 @@ test('MIG-B9-14: an entry a config edit moves outside the watch patterns is foll
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
     fs.writeFileSync(path.join(dir, file), text);
   };
-  const config = (entry) => `module.exports = { entry: './src/${entry}.uxdsl', outFile: './out/${entry}.css', includeTheme: false, watch: ['styles/**'] };\n`;
+  const config = (entry) => `module.exports = { entry: './src/${entry}.uxdsl', outFile: './out/${entry}.css', watch: ['styles/**'] };\n`;
   put('uxdsl.config.cjs', config('a'));
   put('styles/theme.uxdsl', '.t { color: red; }\n');
   put('src/a.uxdsl', '.a { color: red; }\n');
@@ -852,7 +852,7 @@ test('MIG-B9-14: an entry the watch patterns do not match is still followed: a f
   fs.mkdirSync(path.join(dir, 'src'), { recursive: true });
   fs.mkdirSync(path.join(dir, 'styles'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'styles', 'theme.uxdsl'), '.t { color: red; }\n');
-  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false, watch: ['styles/**'] };\n");
+  fs.writeFileSync(path.join(dir, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', watch: ['styles/**'] };\n");
   fs.writeFileSync(path.join(dir, 'src', 'a.uxdsl'), "@use './missing';\n.a { color: red; }\n");
 
   const child = spawn(process.execPath, [CLI_BIN, 'build', '--watch'], { cwd: dir, stdio: 'pipe' });
@@ -886,8 +886,8 @@ test('MIG-B9-14: a deleted directory of followed files outside the watch pattern
   };
   // No `watch` key: the patterns are the entries and src/**/*.uxdsl, which reach neither shared/ nor lib/.
   put('uxdsl.config.cjs', `module.exports = { builds: [
-    { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false },
-    { entry: './src/b.uxdsl', outFile: './out/b.css', includeTheme: false },
+    { entry: './src/a.uxdsl', outFile: './out/a.css' },
+    { entry: './src/b.uxdsl', outFile: './out/b.css' },
   ] };\n`);
   put('src/a.uxdsl', "@use '../shared/far';\n.a { color: red; }\n");
   put('src/b.uxdsl', "@use '../lib/deep/x';\n.b { color: blue; }\n");
@@ -948,7 +948,7 @@ test('MIG-B9-14: an entry outside the watch patterns whose directory is deleted 
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
     fs.writeFileSync(path.join(dir, file), text);
   };
-  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', includeTheme: false, watch: ['styles/**'] };\n");
+  put('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css', watch: ['styles/**'] };\n");
   put('styles/theme.uxdsl', '.t { color: red; }\n');
   put('src/a.uxdsl', '.a { color: red; }\n');
 
@@ -1020,12 +1020,14 @@ function watchSession(t, dir) {
 
 const readOr = (file, fallback = '') => (fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : fallback);
 const useLinesOf = (file) => readOr(file).split('\n').filter((line) => line.startsWith('@use '));
+/** The first @use of an entry generate-entry wrote without --no-theme: its theme file. */
+const THEME_USE_LINE = "@use './uxdsl-theme.uxdsl' as uxdsl-theme;";
 const lineList = (text) => text.split('\n').filter(Boolean);
 const buildLines = (text, out) => lineList(text).filter((line) => new RegExp(`^\\[uxdsl\\] (built|unchanged) ${out.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`).test(line));
 
 test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regenerates a generated entry before the build and the CSS follows, with one build per add or unlink', async (t) => {
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/a.uxdsl': '.a { color: red; }\n',
   }, ['--src', 'src']);
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
@@ -1040,10 +1042,10 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => css().includes('.b {'));
   await delay(WATCHER_SETTLE_MS * 2);
   let lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, `one build, and no second for the entry's own write:\n${lines.join('\n')}`);
   assert.equal(lines.length, 3, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
 
   // An unlink: the entry no longer lists the file, and the build does not fail.
   mark = session.output.length;
@@ -1051,10 +1053,10 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => !css().includes('.a {'));
   await delay(WATCHER_SETTLE_MS * 2);
   lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/a.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (1 file)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/a.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
   assert.equal(lines.length, 3, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use './b.uxdsl' as b;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './b.uxdsl' as b;"]);
 
   // A rename (an add, then an unlink): the entry lists the new name, once.
   mark = session.output.length;
@@ -1062,7 +1064,7 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
   await waitFor(() => /\[uxdsl\] unlink src[\\/]b\.uxdsl/.test(session.output.slice(mark)) && buildLines(session.output.slice(mark), 'out/app.css').length > 0);
   await delay(WATCHER_SETTLE_MS * 2);
   const renamed = session.output.slice(mark);
-  assert.deepEqual(useLinesOf(entryPath), ["@use './c.uxdsl' as c;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './c.uxdsl' as c;"]);
   assert.equal((renamed.match(/\[uxdsl\] regenerated /g) || []).length, 1, renamed);
   assert.doesNotMatch(renamed, /build failed/, renamed);
   assert.match(css(), /\.b \{\n {2}color: blue;\n\}/, 'the renamed file is built');
@@ -1073,7 +1075,7 @@ test('MIG-B9-22: adding, removing and renaming a .uxdsl file under --src regener
 // a regeneration would show; events on the entry itself never regenerate either.
 test('MIG-B9-22: a change never regenerates the entry, whose bytes and mtime stay as they were, and neither does an event on the entry itself', async (t) => {
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/a.uxdsl': '.a { color: red; }\n',
     'src/b.uxdsl': '.b { color: blue; }\n',
   }, ['--src', 'src']);
@@ -1125,7 +1127,7 @@ test('MIG-B9-22: a change never regenerates the entry, whose bytes and mtime sta
 test('MIG-B9-22: a file added in a new subdirectory, under a --src that the watch patterns do not reach, regenerates the entry', async (t) => {
   // No `watch` key: the patterns are the entry and src/app/**/*.uxdsl.
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/app/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/app/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/app/page.uxdsl': '.page { color: red; }\n',
     'src/components/card.uxdsl': '.card { color: blue; }\n',
   }, ['--src', 'src', '--out', 'src/app/uxdsl-entry.uxdsl']);
@@ -1140,9 +1142,9 @@ test('MIG-B9-22: a file added in a new subdirectory, under a --src that the watc
   await waitFor(() => css().includes('.input {'));
   await delay(WATCHER_SETTLE_MS * 2);
   const lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/forms/input.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/forms/input.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (4 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/forms/input.uxdsl' as components-forms-input;", "@use './page.uxdsl' as app-page;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use '../components/card.uxdsl' as components-card;", "@use '../components/forms/input.uxdsl' as components-forms-input;", "@use './page.uxdsl' as app-page;"]);
 });
 
 // The entry starts recording its invocation while the session runs, written by
@@ -1152,7 +1154,7 @@ test('MIG-B9-22: a file added in a new subdirectory, under a --src that the watc
 test('MIG-B9-22: an entry that records its invocation from a change made while the session runs has its --src watched from the build of that change', async (t) => {
   // No `watch` key: the patterns are the entry and src/app/**/*.uxdsl.
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/app/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/app/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/app/uxdsl-entry.uxdsl': "@use '../components/card';\n",
     'src/components/card.uxdsl': '.card { color: blue; }\n',
   });
@@ -1174,20 +1176,20 @@ test('MIG-B9-22: an entry that records its invocation from a change made while t
   await waitFor(() => css().includes('.new {'));
   await delay(WATCHER_SETTLE_MS * 2);
   const lines = lineList(session.output.slice(mark));
-  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/new.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (2 files)'], lines.join('\n'));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/components/new.uxdsl', '[uxdsl] regenerated src/app/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
   assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
-  assert.deepEqual(useLinesOf(entryPath), ["@use '../components/card.uxdsl' as components-card;", "@use '../components/new.uxdsl' as components-new;"]);
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use '../components/card.uxdsl' as components-card;", "@use '../components/new.uxdsl' as components-new;"]);
   assert.equal(session.exited, false);
 });
 
 test('MIG-B9-22: a generated builds[1] entry is regenerated beside a hand-written builds[0], which stays byte-identical, as does any entry that records no invocation when a file is added next to it', async (t) => {
   const mainText = "@use './card';\n.main { color: red; }\n";
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { builds: [\n  { entry: './src/main.uxdsl', outFile: './out/main.css', includeTheme: false },\n  { entry: './src/gen/entry.uxdsl', outFile: './out/gen.css', includeTheme: false },\n] };\n",
+    'uxdsl.config.cjs': "module.exports = { builds: [\n  { entry: './src/main.uxdsl', outFile: './out/main.css' },\n  { entry: './src/gen/entry.uxdsl', outFile: './out/gen.css' },\n] };\n",
     'src/main.uxdsl': mainText,
     'src/_card.uxdsl': '.card { color: blue; }\n',
     'src/parts/one.uxdsl': '.one { color: olive; }\n',
-  }, ['--src', 'src/parts', '--out', 'src/gen/entry.uxdsl']);
+  }, ['--src', 'src/parts', '--out', 'src/gen/entry.uxdsl', '--no-theme']);
   const mainPath = path.join(dir, 'src', 'main.uxdsl');
   const genPath = path.join(dir, 'src', 'gen', 'entry.uxdsl');
   const genCss = () => readOr(path.join(dir, 'out', 'gen.css'));
@@ -1222,7 +1224,7 @@ test('MIG-B9-22: an entry that records no invocation, written by hand or generat
     ['generated before the invocation was recorded', "/* AUTO-GENERATED FILE - DO NOT EDIT MANUALLY */\n/* Generated by uxdsl generate-entry */\n/* Run uxdsl generate-entry again, with the same options, after adding or removing a .uxdsl file. */\n\n/* --- Application & Component Imports --- */\n@use './a' as a;\n"],
   ]) {
     const dir = generatedProject({
-      'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+      'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
       'src/uxdsl-entry.uxdsl': entryText,
       'src/a.uxdsl': '.a { color: red; }\n',
     });
@@ -1247,7 +1249,7 @@ test('MIG-B9-22: an entry that records no invocation, written by hand or generat
 
 test('MIG-B9-22: adding a file the scan leaves out, an --exclude name or a file under node_modules or a dot-directory inside --src, writes nothing and prints no regenerated', async (t) => {
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/a.uxdsl': '.a { color: red; }\n',
   }, ['--src', 'src', '--exclude', 'legacy.uxdsl']);
   const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
@@ -1271,7 +1273,7 @@ test('MIG-B9-22: adding a file the scan leaves out, an --exclude name or a file 
 
 test('MIG-B9-22: a regeneration that cannot be done prints the error, writes nothing, and the session keeps watching and recovers', async (t) => {
   const dir = generatedProject({
-    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css', includeTheme: false };\n",
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
     'src/a.uxdsl': '.a { color: red; }\n',
     'src/b.uxdsl': '.b { color: blue; }\n',
   }, ['--src', 'src', '--first', 'a']);
@@ -1342,4 +1344,241 @@ test('MIG-B9-22: the watcher drops the event of a write it was told to keep, and
   assert.equal(cli.commitFileIfChanged(file, '/* c */\n'), 'written');
   await waitFor(() => events.length > 0);
   assert.ok(events.every((event) => event.endsWith(' entry.uxdsl')), events.join(', '));
+});
+
+// --- The theme file generate-entry writes, kept by `build --watch` ------------
+//
+// The theme file is planned with its entry: an unlink of it, or an add or
+// unlink of any .uxdsl file under --src, writes it first when it is missing,
+// and its own write's event is dropped. A change of it never regenerates
+// anything, and an entry that records --no-theme never writes it.
+
+test('MIG-B9-20: build --watch regenerates a deleted theme file and builds once; an added .uxdsl is listed after the theme; nothing loops', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
+    'src/a.uxdsl': '.a { color: palette(primary.main); }\n',
+  }, ['--src', 'src']);
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  const themeText = fs.readFileSync(themePath, 'utf8');
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {') && css().includes(':root'));
+  await delay(WATCHER_SETTLE_MS);
+
+  // An unlink of the theme file: written again before the build, which runs once.
+  let mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => fs.existsSync(themePath) && buildLines(session.output.slice(mark), 'out/app.css').length > 0);
+  await delay(WATCHER_SETTLE_MS * 2);
+  let lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/uxdsl-theme.uxdsl', '[uxdsl] regenerated src/uxdsl-theme.uxdsl (the theme file src/uxdsl-entry.uxdsl loads first)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, `one build, and none for the theme file's own write:\n${lines.join('\n')}`);
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.equal(readOr(themePath), themeText);
+  assert.match(css(), /:root/);
+
+  // An add: the entry lists the new file after the theme file; one build.
+  mark = session.output.length;
+  putFile(dir, 'src/b.uxdsl', '.b { color: blue; }\n');
+  await waitFor(() => css().includes('.b {'));
+  await delay(WATCHER_SETTLE_MS * 2);
+  lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (3 files)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.deepEqual(useLinesOf(entryPath), [THEME_USE_LINE, "@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.ok(css().indexOf(':root') < css().indexOf('.a {'), 'the theme precedes every module');
+
+  // A change of the theme file, written by hand, is built as written and never regenerates.
+  mark = session.output.length;
+  const edited = `${themeText}// edited by hand\n`;
+  fs.writeFileSync(themePath, edited);
+  await waitFor(() => buildLines(session.output.slice(mark), 'out/app.css').length > 0);
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  lines = lineList(session.output.slice(mark));
+  assert.equal(lines[0], '[uxdsl] change src/uxdsl-theme.uxdsl', lines.join('\n'));
+  assert.equal(lines.some((line) => line.startsWith('[uxdsl] regenerated ')), false, lines.join('\n'));
+  assert.equal(readOr(themePath), edited);
+
+  // Nothing loops: no build without an event.
+  mark = session.output.length;
+  await delay(WATCHER_SETTLE_MS * 2);
+  assert.equal(buildLines(session.output.slice(mark), 'out/app.css').length, 0, session.output.slice(mark));
+  assert.equal(session.exited, false);
+});
+
+test('MIG-B9-20: build --watch regenerates a theme file that lies outside --src on its own unlink, and builds once', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
+    'src/components/a.uxdsl': '.a { color: palette(primary.main); }\n',
+  }, ['--src', 'src/components', '--out', 'src/uxdsl-entry.uxdsl']);
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  const themeText = fs.readFileSync(themePath, 'utf8');
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {') && css().includes(':root'));
+  await delay(WATCHER_SETTLE_MS);
+
+  const mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => buildLines(session.output.slice(mark), 'out/app.css').length > 0 || /build failed/.test(session.output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS * 2);
+  const lines = lineList(session.output.slice(mark));
+  assert.deepEqual(lines.slice(0, 2), ['[uxdsl] unlink src/uxdsl-theme.uxdsl', '[uxdsl] regenerated src/uxdsl-theme.uxdsl (the theme file src/uxdsl-entry.uxdsl loads first)'], lines.join('\n'));
+  assert.equal(buildLines(lines.join('\n'), 'out/app.css').length, 1, lines.join('\n'));
+  assert.equal(lines.length, 3, lines.join('\n'));
+  assert.equal(readOr(themePath), themeText);
+  assert.equal(session.exited, false);
+});
+
+test('MIG-B9-20: an entry that records --no-theme never writes the theme file on any event (negative control)', async (t) => {
+  const dir = generatedProject({
+    'uxdsl.config.cjs': "module.exports = { entry: './src/uxdsl-entry.uxdsl', outFile: './out/app.css' };\n",
+    'src/a.uxdsl': '.a { color: red; }\n',
+  }, ['--src', 'src', '--no-theme']);
+  const entryPath = path.join(dir, 'src', 'uxdsl-entry.uxdsl');
+  const themePath = path.join(dir, 'src', 'uxdsl-theme.uxdsl');
+  assert.equal(fs.existsSync(themePath), false);
+  const css = () => readOr(path.join(dir, 'out', 'app.css'));
+  const session = watchSession(t, dir);
+  await waitFor(() => /watching for changes/.test(session.output) && css().includes('.a {'));
+  await delay(WATCHER_SETTLE_MS);
+
+  let mark = session.output.length;
+  putFile(dir, 'src/b.uxdsl', '.b { color: blue; }\n');
+  await waitFor(() => css().includes('.b {'));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.deepEqual(lineList(session.output.slice(mark)).slice(0, 2), ['[uxdsl] add src/b.uxdsl', '[uxdsl] regenerated src/uxdsl-entry.uxdsl (2 files)']);
+  assert.deepEqual(useLinesOf(entryPath), ["@use './a.uxdsl' as a;", "@use './b.uxdsl' as b;"]);
+  assert.equal(fs.existsSync(themePath), false, 'an add writes no theme file');
+
+  // A generated theme file left beside it, then deleted, is not written back.
+  fs.writeFileSync(themePath, '// AUTO-GENERATED FILE - DO NOT EDIT MANUALLY\n@uxdsl theme;\n');
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  mark = session.output.length;
+  fs.unlinkSync(themePath);
+  await waitFor(() => /\[uxdsl\] unlink src[\\/]uxdsl-theme\.uxdsl/.test(session.output.slice(mark)));
+  await delay(WATCHER_SETTLE_MS * 1.5);
+  assert.doesNotMatch(session.output.slice(mark), /regenerated/, session.output.slice(mark));
+  assert.equal(fs.existsSync(themePath), false, 'an unlink writes no theme file');
+  assert.doesNotMatch(css(), /:root/);
+  assert.equal(session.exited, false);
+});
+
+// A build counts the theme over the last result of every entry: a selective
+// rebuild of one entry reads the others' from the session, and a warning is
+// printed when the state it describes changes, not on every rebuild.
+
+test('MIG-B9-20: build --watch counts the theme over the last result of every entry', async (t) => {
+  const dir = mkProject();
+  const put = (file, text) => putFile(dir, file, text);
+  put('uxdsl.config.cjs', `module.exports = { builds: [
+    { entry: './src/theme.uxdsl', outFile: './out/theme.css' },
+    { entry: './src/panel.uxdsl', outFile: './out/panel.css' },
+  ] };\n`);
+  put('src/theme.uxdsl', '@uxdsl theme;\n');
+  put('src/panel.uxdsl', '.panel { padding: density(2); }\n');
+  const session = watchSession(t, dir);
+  const none = /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/;
+  const many = /UXD_THEME_MARKER: 2 entries emit the theme \(builds\[0\], builds\[1\]\)/;
+  const count = (text, pattern) => text.split('\n').filter((line) => pattern.test(line)).length;
+  const built = (text, out) => count(text, new RegExp(`^\\[uxdsl\\] (built|unchanged) out[\\\\/]${out}\\.css`));
+  await waitFor(() => /watching for changes/.test(session.output) && fs.existsSync(path.join(dir, 'out', 'panel.css')));
+  await delay(WATCHER_SETTLE_MS);
+  assert.equal(count(session.output, /UXD_THEME_MARKER/), 0, `a correct project warns nothing:\n${session.output}`);
+
+  // A selective rebuild of the component: the theme entry's last result says it emitted.
+  let mark = session.output.length;
+  put('src/panel.uxdsl', '.panel { padding: density(3); }\n');
+  await waitFor(() => built(session.output.slice(mark), 'panel') === 1);
+  await delay(500);
+  assert.equal(built(session.output.slice(mark), 'theme'), 0, 'control: only the component was rebuilt');
+  assert.equal(count(session.output.slice(mark), /UXD_THEME_MARKER/), 0, session.output.slice(mark));
+
+  // The marker removed: a selective rebuild of the theme entry alone warns once.
+  mark = session.output.length;
+  put('src/theme.uxdsl', '/* no marker */\n');
+  await waitFor(() => built(session.output.slice(mark), 'theme') === 1);
+  await delay(500);
+  assert.equal(count(session.output.slice(mark), none), 1, session.output.slice(mark));
+
+  // The same state again, in either entry: not repeated.
+  mark = session.output.length;
+  put('src/panel.uxdsl', '.panel { padding: density(4); }\n');
+  await waitFor(() => built(session.output.slice(mark), 'panel') === 1);
+  put('src/theme.uxdsl', '/* still no marker */\n');
+  await waitFor(() => built(session.output.slice(mark), 'theme') === 1);
+  await delay(500);
+  assert.equal(count(session.output.slice(mark), /UXD_THEME_MARKER/), 0, session.output.slice(mark));
+
+  // Fixed, then broken again: it warns again.
+  mark = session.output.length;
+  put('src/theme.uxdsl', '@uxdsl theme;\n');
+  await waitFor(() => built(session.output.slice(mark), 'theme') === 1);
+  await delay(500);
+  assert.equal(count(session.output.slice(mark), /UXD_THEME_MARKER/), 0, session.output.slice(mark));
+  mark = session.output.length;
+  put('src/theme.uxdsl', '/* no marker again */\n');
+  await waitFor(() => built(session.output.slice(mark), 'theme') === 1);
+  await delay(500);
+  assert.equal(count(session.output.slice(mark), none), 1, session.output.slice(mark));
+
+  // Two emitters: once.
+  mark = session.output.length;
+  put('src/panel.uxdsl', '@uxdsl theme;\n.panel { padding: density(4); }\n');
+  await waitFor(() => built(session.output.slice(mark), 'panel') === 1);
+  put('src/theme.uxdsl', '@uxdsl theme;\n');
+  await waitFor(() => built(session.output.slice(mark), 'theme') === 1);
+  await delay(WATCHER_SETTLE_MS);
+  assert.equal(count(session.output.slice(mark), many), 1, session.output.slice(mark));
+  assert.equal(count(session.output.slice(mark), none), 0, session.output.slice(mark));
+});
+
+test('MIG-B9-20: buildOnce given only the rebuilt entry and no session warns no entry when it rebuilds just a component (negative control: the session is load-bearing)', async () => {
+  const cli = require('../../bin/uxdsl.js');
+  const dir = fs.realpathSync(mkProject());
+  putFile(dir, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './out/theme.css' }, { entry: './src/panel.uxdsl', outFile: './out/panel.css' }] };\n");
+  putFile(dir, 'src/theme.uxdsl', '@uxdsl theme;\n');
+  putFile(dir, 'src/panel.uxdsl', '.panel { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  const captured = async (fn) => {
+    const original = console.warn;
+    const messages = [];
+    console.warn = (...args) => { messages.push(args.join(' ')); };
+    try { await fn(); } finally { console.warn = original; }
+    return messages.filter((message) => /UXD_THEME_MARKER/.test(message));
+  };
+  const session = { themeStates: new Map(), themeWarning: null };
+  assert.deepEqual(await captured(() => cli.buildOnce(config, undefined, session)), [], 'the full build: one emitter');
+  assert.deepEqual(await captured(() => cli.buildOnce(config, [1], session)), [], 'with the session, the component alone counts the theme entry too');
+  const alone = await captured(() => cli.buildOnce(config, [1]));
+  assert.equal(alone.length, 1, 'without it, the component alone looks like a build with no theme');
+  assert.match(alone[0], /UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`/);
+});
+
+test('MIG-B9-20: a watch build forgets the theme state of a builds[] entry the config no longer has', async () => {
+  const cli = require('../../bin/uxdsl.js');
+  const dir = fs.realpathSync(mkProject());
+  putFile(dir, 'uxdsl.config.cjs', "module.exports = { builds: [{ entry: './src/theme.uxdsl', outFile: './out/theme.css' }, { entry: './src/panel.uxdsl', outFile: './out/panel.css' }] };\n");
+  putFile(dir, 'src/theme.uxdsl', '@uxdsl theme;\n');
+  putFile(dir, 'src/panel.uxdsl', '.panel { padding: density(2); }\n');
+  const config = await cli.loadConfig({}, dir);
+  const captured = async (fn) => {
+    const original = console.warn;
+    const messages = [];
+    console.warn = (...args) => { messages.push(args.join(' ')); };
+    try { await fn(); } finally { console.warn = original; }
+    return messages.filter((message) => /UXD_THEME_MARKER/.test(message));
+  };
+  // The session of a config that had a third entry, which emitted the theme too.
+  const stale = { label: 'builds[2]', themeEmitted: true, referencesTokens: true, canCarryTheme: true };
+  const session = { themeStates: new Map([[2, stale]]), themeWarning: null };
+  assert.deepEqual(await captured(() => cli.buildOnce(config, undefined, session)), [], 'the removed entry is not a second emitter');
+  assert.deepEqual([...session.themeStates.keys()], [0, 1]);
+  // Control: an entry the config still has, emitting the theme, is counted.
+  const kept = { themeStates: new Map([[1, { ...stale, label: 'builds[1]' }]]), themeWarning: null };
+  const many = await captured(() => cli.buildOnce(config, [0], kept));
+  assert.equal(many.length, 1, JSON.stringify(many));
+  assert.match(many[0], /UXD_THEME_MARKER: 2 entries emit the theme \(builds\[0\], builds\[1\]\)/);
 });

@@ -51,7 +51,7 @@ function project(t, files, links = {}) {
 }
 
 const stage = (entry) => compileSassStage({ entry }, { reserved: RESERVED, sourceMap: false });
-const dependencies = async (entry) => (await compile({ entry }, { includeTheme: false })).dependencies;
+const dependencies = async (entry) => (await compile({ entry })).dependencies;
 const under = (dir, files) => files.map((file) => path.join(dir, file));
 
 /** Runs `fn` with every fs.readdirSync and fs.opendirSync recorded: its result and the directories listed, in order. */

@@ -53,7 +53,7 @@ test('each selector of a list gets the exclusion, and a functional pseudo-class 
 });
 
 test('through the compiler, an author rule after the directive still overrides the hover rule (same specificity)', () => {
-  const css = postcss([plugin({ discoverTheme: false, includeTheme: false, theme: { buttons: theme.buttons } })])
+  const css = postcss([plugin({ discoverTheme: false, theme: { buttons: theme.buttons } })])
     .process('.btn { @ds-button(cta); }\n.btn:hover { background: red; }', { from: undefined }).css;
   const rules = selectors(css);
   const generated = rules.indexOf(`.btn:hover${NOT_DISABLED}`);

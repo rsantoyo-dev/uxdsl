@@ -39,7 +39,7 @@ test('the generated theme emits the property-named variables and none of the abb
 });
 
 test('@ds-typo consumes the same names it defines, so a role resolves in a build and at run time alike', () => {
-  const css = postcss([plugin({ discoverTheme: false, includeTheme: true })]).process('.title { @ds-typo(h1); }', { from: undefined }).css;
+  const css = postcss([plugin({ discoverTheme: false })]).process('@uxdsl theme;\n.title { @ds-typo(h1); }', { from: undefined }).css;
   const emitted = css.match(/\.title \{([^}]*)\}/)[1];
   for (const reference of emitted.matchAll(/var\((--uxdsl__typography__h1-[\w-]+)\)/g)) {
     assert.ok(css.includes(`${reference[1]}:`), `${reference[1]} is defined by the theme block`);

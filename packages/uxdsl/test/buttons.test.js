@@ -16,7 +16,7 @@ const theme={breakpoints:{xs:0,md:800},spacing:FULL_SPACING,palette:{...BASE_PAL
 const compile=(source,theme={})=>postcss([plugin({theme})]).process(source,{from:undefined});
 function vars(css){const out=[];postcss.parse(css).walkDecls(/^--uxdsl__button__/,d=>{if(d.parent.selector===':root')out.push([d.parent.parent.type==='atrule'?d.parent.parent.params:'base',d.prop,d.value])});return out;}
 test('Buttons PostCSS/runtime share custom base and responsive state variables',async()=>{
- const result=await compile('.x { @ds-button(checkout); }',theme);
+ const result=await compile('@uxdsl theme;\n.x { @ds-button(checkout); }',theme);
  assert.deepEqual(vars(result.css),vars(generateThemeCss(theme)));
  assert(result.css.includes('var(--uxdsl__button__checkout-base-padding)'));
  assert(result.css.includes('var(--uxdsl__button__checkout-selected-shadow)'));
@@ -34,7 +34,7 @@ test('Button tone, size, state selectors and component CSS use shared compositio
 });
 test('a Button role is defined in the theme JSON only, and compilations are isolated',async()=>{
  const source='.x { @ds-button(checkout); }';
- const css=(await compile(source,withBaseline({buttons:{checkout:{surface:'outlined',base:{padding:'9px'},states:{hover:{bg:'red',color:'white'}}}}}))).css;
+ const css=(await compile('@uxdsl theme;\n'+source,withBaseline({buttons:{checkout:{surface:'outlined',base:{padding:'9px'},states:{hover:{bg:'red',color:'white'}}}}}))).css;
  assert(css.includes('--uxdsl__button__checkout-base-padding: 9px'));
  assert(css.includes('--uxdsl__button__checkout-hover-bg: red'));
  assert(css.includes('--uxdsl__button__checkout-hover-color: white'));

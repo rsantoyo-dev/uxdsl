@@ -18,7 +18,7 @@ const plugin = require('../dist/plugin');
 const file = path.join(process.cwd(), 'src', 'panel.uxdsl');
 
 async function compileFail(css) {
-  return postcss([plugin({ includeTheme: false })]).process(css, { from: file }).then(() => null, caught => caught);
+  return postcss([plugin()]).process(css, { from: file }).then(() => null, caught => caught);
 }
 
 test('MIG-B6-14: a directive at the document root fails as UXD_DIRECTIVE_CONTEXT, not silently discarded', async () => {
@@ -74,7 +74,7 @@ test('MIG-B6-14 (positive control): @ds-surface/@ds-button/@ds-input/@ds-typo as
     '.a { @ds-input(contained); }',
     '.a { @ds-typo(h1); }',
   ]) {
-    const result = await postcss([plugin({ includeTheme: false, theme })]).process(css, { from: file });
+    const result = await postcss([plugin({ theme })]).process(css, { from: file });
     assert.ok(result.css.length > 0, `${css} must still compile to non-empty CSS`);
   }
 });
@@ -85,7 +85,7 @@ test('MIG-B6-14 (positive control): a rule nested inside a top-level @media, wit
   // from "directive nested inside an @media that is inside the rule"
   // (rejected above) — same two at-rules, different nesting order.
   const theme = { palette: { primary: { main: '#123', dark: '#111', contrast: '#fff' }, surface: { main: '#fff', dark: '#eee', contrast: '#000' }, neutral: { main: '#999' } } };
-  const result = await postcss([plugin({ includeTheme: false, theme })])
+  const result = await postcss([plugin({ theme })])
     .process('@media (min-width: 10px) { .a { @ds-surface(contained); } }', { from: file });
   assert.ok(result.css.length > 0);
   assert.doesNotMatch(result.css, /@ds-surface/);

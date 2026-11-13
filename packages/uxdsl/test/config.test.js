@@ -221,7 +221,7 @@ const BRAND_THEME = `module.exports = { palette: {
 test('MIG-B6-19: the plugin discovers the theme file from configRoot when theme is omitted', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', BRAND_THEME);
-  const result = await postcss([plugin({ includeTheme: false, configRoot: dir })]).process(
+  const result = await postcss([plugin({ configRoot: dir })]).process(
     '.a { color: palette(reviewonlybrand); }',
     { from: undefined }
   );
@@ -231,7 +231,7 @@ test('MIG-B6-19: the plugin discovers the theme file from configRoot when theme 
 test('phase 2: the plugin reads breakpoints from the discovered theme file', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.json', '{ "breakpoints": { "md": 900 } }');
-  const result = await postcss([plugin({ includeTheme: false, configRoot: dir })]).process(
+  const result = await postcss([plugin({ configRoot: dir })]).process(
     '.a { padding: xs(1rem) md(2rem); }',
     { from: undefined }
   );
@@ -243,7 +243,7 @@ test('MIG-B6-19: discoverTheme: false keeps validating against the built-in defa
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', BRAND_THEME);
   await assert.rejects(
-    postcss([plugin({ includeTheme: false, configRoot: dir, discoverTheme: false })]).process(
+    postcss([plugin({ configRoot: dir, discoverTheme: false })]).process(
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
@@ -255,7 +255,7 @@ test('MIG-B6-19: an explicit theme option always wins over discovery, even an em
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', BRAND_THEME);
   await assert.rejects(
-    postcss([plugin({ includeTheme: false, configRoot: dir, theme: {} })]).process(
+    postcss([plugin({ configRoot: dir, theme: {} })]).process(
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
@@ -269,14 +269,14 @@ test('MIG-B6-19: two different configRoots processed in the same process do not 
   write(dirA, 'uxdsl.theme.cjs', BRAND_THEME);
   write(dirB, 'uxdsl.theme.cjs', 'module.exports = {};');
 
-  const resultA = await postcss([plugin({ includeTheme: false, configRoot: dirA })]).process(
+  const resultA = await postcss([plugin({ configRoot: dirA })]).process(
     '.a { color: palette(reviewonlybrand); }',
     { from: undefined }
   );
   assert.match(resultA.css, /var\(--uxdsl__palette__reviewonlybrand-main\)/);
 
   await assert.rejects(
-    postcss([plugin({ includeTheme: false, configRoot: dirB })]).process(
+    postcss([plugin({ configRoot: dirB })]).process(
       '.a { color: palette(reviewonlybrand); }',
       { from: undefined }
     ),
@@ -287,7 +287,7 @@ test('MIG-B6-19: two different configRoots processed in the same process do not 
 test('MIG-B6-19: the same plugin instance re-discovers a theme edited on disk between two compilations (not frozen at plugin construction)', async () => {
   const dir = mkTmpDir();
   const themeFile = write(dir, 'uxdsl.theme.cjs', BRAND_THEME);
-  const instance = plugin({ includeTheme: false, configRoot: dir });
+  const instance = plugin({ configRoot: dir });
 
   const first = await postcss([instance]).process('.a { color: palette(reviewonlybrand); }', { from: undefined });
   assert.match(first.css, /var\(--uxdsl__palette__reviewonlybrand-main\)/);
@@ -302,7 +302,7 @@ test('MIG-B6-19: the same plugin instance re-discovers a theme edited on disk be
 test('MIG-B6-19: discovery registers the theme file as a PostCSS dependency message', async () => {
   const dir = mkTmpDir();
   const themeFile = write(dir, 'uxdsl.theme.cjs', 'module.exports = {};');
-  const result = await postcss([plugin({ includeTheme: false, configRoot: dir })]).process('.a { color: red; }', { from: undefined });
+  const result = await postcss([plugin({ configRoot: dir })]).process('.a { color: red; }', { from: undefined });
   const dependencyFiles = result.messages.filter((m) => m.type === 'dependency').map((m) => m.file);
   assert.ok(dependencyFiles.includes(themeFile));
 });

@@ -69,7 +69,7 @@ const CASES = [
   ['UXD_SHADOW_BASE', () => runtime.generateShadowCss({ shadows: { x: 'md(0 1px 2px red)' } })],
   ['UXD_SHADOW_VIEWPORT', () => runtime.inspectShadowTheme({}, -1)],
   ['UXD_SHADOW_NAME_COLLISION', () => compilePresetRules({ x: { 'y__z': '1px' }, 'x__y': { z: '2px' } }, { xs: 0 }, 'UXD_SHADOW')],
-  ['UXD_SHADOW_REFERENCE', () => postcss([plugin({ discoverTheme: false, includeTheme: false })]).process('.a { box-shadow: shadow(99); }', { from: undefined }).css],
+  ['UXD_SHADOW_REFERENCE', () => postcss([plugin({ discoverTheme: false })]).process('.a { box-shadow: shadow(99); }', { from: undefined }).css],
   // Densities.
   ['UXD_DENSITY_MAP', () => getDensityTokens({ densities: 5 })],
   ['UXD_DENSITY_VALUE', () => getDensityTokens({ densities: { x: '' } })],
@@ -80,7 +80,7 @@ const CASES = [
   ['UXD_TYPO_ROLE', () => runtime.compileTypographyRules({ Hero: { fontSize: '2rem' } })],
   ['UXD_TYPO_BASE', () => runtime.compileTypographyRules({ h1: { fontSize: 'md(2rem)' } })],
   // References: an external token is a custom property name.
-  ['UXD_REFERENCE_CONTEXT', () => postcss([plugin({ discoverTheme: false, includeTheme: false, references: { externalTokens: ['not-a-custom-property'] } })]).process('.a { color: palette(primary); }', { from: undefined }).css],
+  ['UXD_REFERENCE_CONTEXT', () => postcss([plugin({ discoverTheme: false, references: { externalTokens: ['not-a-custom-property'] } })]).process('.a { color: palette(primary); }', { from: undefined }).css],
 ];
 
 for (const [code, provoke] of CASES) {

@@ -7,11 +7,14 @@
 // Each example below is a theme excerpt and a .uxdsl source (inline, or a file of the site
 // — paradigm/card.uxdsl is the home page's example and also the card inside its resizable
 // frame). This script compiles each one with `compile()` from `uxdsl`, the pipeline
-// `uxdsl build` runs, against the excerpt merged over the base theme, and writes
-// src/generated/examples.json: the excerpt, the source, and an excerpt of the output —
-// every rule the source produced, plus the `:root` declarations of the tokens the example
-// is about (with their @media wrappers), so the ladder a token compiles to is visible
-// without the other few hundred theme variables.
+// `uxdsl build` runs, against the excerpt merged over the base theme, exactly as written:
+// an example writes no `@uxdsl theme;`, so its own output carries only its rules. The
+// `:root` ladder a token compiles to comes from the stylesheet that writes the marker,
+// which is `generateThemeCss` of the same theme; the panel shows it next to the rules.
+// It writes src/generated/examples.json: the excerpt, the source, and an excerpt of the
+// output — every rule the source produced, plus the `:root` declarations of the tokens the
+// example is about (with their @media wrappers), so the ladder is visible without the other
+// few hundred theme variables. `bytes` is the size of the example's own CSS.
 //
 //   node scripts/capture-examples.js          rewrite the JSON file
 //   node scripts/capture-examples.js --check  fail when it differs from a fresh compile
@@ -29,6 +32,7 @@ const CHECK = process.argv.includes('--check');
 const uxdslRoot = path.dirname(require.resolve('uxdsl/package.json', { paths: [PLAYGROUND] }));
 const postcss = require(require.resolve('postcss', { paths: [uxdslRoot] }));
 const { compile, resolveTheme } = require('uxdsl');
+const { generateThemeCss } = require('uxdsl/theme');
 
 const file = (rel) => ({ path: rel, text: fs.readFileSync(path.join(PLAYGROUND, rel), 'utf8') });
 const json = (value) => ({ path: 'uxdsl.theme.json', text: JSON.stringify(value, null, 2) });
@@ -157,9 +161,10 @@ function print(container, indent = '') {
 async function captureOne(example) {
   const theme = JSON.parse(example.theme.text);
   const from = path.join(PLAYGROUND, example.source.path);
-  const { css, warnings } = await compile({ source: example.source.text, from }, { theme });
+  const { css, warnings, themeEmitted } = await compile({ source: example.source.text, from }, { theme });
   if (warnings && warnings.length) throw new Error(`${example.id}: the compiler warned:\n${warnings.map((w) => w.text).join('\n')}`);
-  const output = print(excerpt(postcss.parse(css), example.tokens)).join('\n');
+  if (themeEmitted !== false) throw new Error(`${example.id}: the example emitted the theme; an example writes no @uxdsl theme;`);
+  const output = print(excerpt(postcss.parse(`${generateThemeCss(theme)}\n${css}`), example.tokens)).join('\n');
   for (const token of example.tokens) if (!output.includes(token)) throw new Error(`${example.id}: the output defines no ${token}`);
   return {
     id: example.id,

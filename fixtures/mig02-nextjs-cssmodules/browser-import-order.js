@@ -7,8 +7,9 @@
  * check (browser.js) builds its theme with generateThemeCss — the runtime path,
  * which was always correct — and so never looked at what a *build* produces.
  *
- * This one compiles with the installed package's plugin and includeTheme:true
- * (the output the CLI writes to disk), loads it in real Chrome, and asserts on
+ * This one compiles with the installed package's plugin a stylesheet that
+ * writes `@uxdsl theme;` (the output the CLI writes to disk for the theme
+ * entry), loads it in real Chrome, and asserts on
  * what the browser actually does: that it REQUESTS fonts.googleapis.com, and
  * honors the author's own @import. It then loads the same CSS with the imports
  * moved back behind `:root` — the beta.6 ordering — and asserts the browser
@@ -55,8 +56,8 @@ async function load(browser, css) {
 }
 
 async function main() {
-  const source = `${AUTHOR_IMPORT}\n.probe { padding: density(2); }`;
-  const css = (await postcss([plugin({ includeTheme: true })]).process(source, { from: undefined })).css;
+  const source = `${AUTHOR_IMPORT}\n@uxdsl theme;\n.probe { padding: density(2); }`;
+  const css = (await postcss([plugin()]).process(source, { from: undefined })).css;
 
   const nodes = postcss.parse(css).nodes.filter((node) => node.type !== 'comment');
   assert.ok(nodes[0].type === 'atrule' && nodes[0].name === 'import', `compiled output must start with an @import, started with ${nodes[0].selector || '@' + nodes[0].name}`);

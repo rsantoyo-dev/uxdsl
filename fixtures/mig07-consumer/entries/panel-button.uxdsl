@@ -1,4 +1,4 @@
-/* CSS Module panel: compiled with includeTheme: false. */
+/* CSS Module panel: no `@uxdsl theme;`, so it defines no token of its own. */
 .btn {
   @ds-button(contained 2);
 }

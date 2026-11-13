@@ -232,7 +232,8 @@ test('MIG-B6-25: equivalent on the repository\'s own .uxdsl entries', async () =
   assert.ok(files.length >= 5, `expected the mig07 consumer entries, found ${files.length}`);
   for (const name of files) {
     const from = path.join(entries, name);
-    const calls = await capture(fs.readFileSync(from, 'utf8'), { theme, includeTheme: name === 'theme.uxdsl' }, from);
+    // theme.uxdsl writes `@uxdsl theme;`, so it alone emits the theme.
+    const calls = await capture(fs.readFileSync(from, 'utf8'), { theme }, from);
     calls.forEach((call, index) => compare(`${name}#${index}`, call.root, call.consumers, call.options));
   }
 });
@@ -245,7 +246,7 @@ test('MIG-B6-25: equivalent across successive compilations with different themes
     { label: 'fixture theme again', theme },
   ];
   for (const variant of themes) {
-    const calls = await capture(css, { theme: variant.theme, includeTheme: true }, 'successive.uxdsl');
+    const calls = await capture(`@uxdsl theme;\n${css}`, { theme: variant.theme }, 'successive.uxdsl');
     calls.forEach((call, index) => compare(`${variant.label}#${index}`, call.root, call.consumers, call.options));
   }
 });

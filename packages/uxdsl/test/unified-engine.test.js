@@ -15,17 +15,17 @@ function variables(css){const result={};postcss.parse(css).walkDecls(/^--/,d=>{l
 const FULL_SPACING=Object.fromEntries(Array.from({length:16},(_,i)=>[i+1,`${(i+1)*4}px`]));
 const theme={colors:{blue:{500:'#123456'},white:'#fff'},palette:{primary:{main:'var(--uxdsl__color__blue-500)',contrast:'var(--uxdsl__color__white)',dark:'#111'},surface:{main:'#fff',dark:'#eee',contrast:'#000'},neutral:{main:'#999',dark:'#333'},error:{main:'#f00'}},spacing:{...FULL_SPACING,1:'2px',2:'4px',3:'8px',gutter:'16px'},densities:{2:'xs(space(1)) md(space(3))'},breakpoints:{md:800},modes:{dark:{palette:{primary:{main:'#654321'}}}},surfaces:{card:{padding:'density(2)'}},buttons:{action:{surface:'card',states:{hover:{bg:'palette(primary)'}}}},inputs:{field:{surface:'card',base:{caret:'palette(primary)'}}}};
 test('all generated theme variables and mode selectors agree across build and runtime',async()=>{
- assert.deepEqual(variables((await compile('',theme)).css),variables(generateThemeCss(theme)));
+ assert.deepEqual(variables((await compile('@uxdsl theme;',theme)).css),variables(generateThemeCss(theme)));
 });
 test('Density tokens come from the JSON and no configuration leaks between builds',async()=>{
- const first=await compile('',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{custom:'xs(space(3))'}});
+ const first=await compile('@uxdsl theme;',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{custom:'xs(space(3))'}});
  assert(first.css.includes('--uxdsl__density__custom: var(--uxdsl__space__3)'));
  const baseline={spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors};
- const second=(await compile('',baseline)).css;assert(!second.includes('--uxdsl__density__custom:'));
+ const second=(await compile('@uxdsl theme;',baseline)).css;assert(!second.includes('--uxdsl__density__custom:'));
  assert.deepEqual(variables(second),variables(generateThemeCss(baseline)));
 });
 test('a JSON density for a built-in key replaces DEFAULT_DENSITIES; a @theme pack is an error, not a second source',async()=>{
- const explicitWins=await compile('',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{4:'xs(space(9))'}});
+ const explicitWins=await compile('@uxdsl theme;',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors,densities:{4:'xs(space(9))'}});
  assert(explicitWins.css.includes('--uxdsl__density__4: var(--uxdsl__space__9)'));
  assert(!explicitWins.css.includes(`--uxdsl__density__4: ${DEFAULT_DENSITIES['4']}`.replace(/space\((\d+)\)/g,'var(--uxdsl__space__$1)')));
  await assert.rejects(()=>compile('@theme { density-4: xs(space(1)) md(space(2)); }',{spacing:FULL_SPACING,palette:theme.palette,colors:theme.colors}),/UXD_THEME_BLOCK_REMOVED/);

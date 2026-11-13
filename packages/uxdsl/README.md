@@ -49,8 +49,9 @@ arrives with `uxdsl` as a regular dependency and is loaded only when a file is
 compiled through Dart Sass, never by the PostCSS plugin used alone
 (`uxdsl/postcss`). Dart Sass declares Node 20.19 or later in its `engines`.
 
-`init` scaffolds a `uxdsl.config.cjs` and an entry file (no theme file — the
-default theme is built in); `build` compiles it once
+`init` scaffolds a `uxdsl.config.cjs`, `src/styles.uxdsl` and the generated
+entry with its `uxdsl-theme.uxdsl` (no `uxdsl.theme.json`: the default theme is
+built in); `build` compiles the entry once
 to a plain `.css` file you import from your app like any other stylesheet.
 `npx uxdsl build --watch` recompiles as you edit (it follows every entry and
 every file Dart Sass loaded, and the config's `watch` globs add paths —
@@ -113,6 +114,24 @@ build config (for the file the defaults write when no entry of the config
 records one), writing an entry only when its content changes; `build --watch`
 runs it again when a `.uxdsl` file is added or removed under its `--src`,
 before it rebuilds, so a new component needs no command.
+
+`generate-entry` also writes `uxdsl-theme.uxdsl` next to the entry, a file
+whose one statement is `@uxdsl theme;` (its comments are Sass's silent ones,
+so none reaches the CSS), and loads it as the entry's first `@use`
+(`@use './uxdsl-theme.uxdsl' as uxdsl-theme;`, before every `--first` file):
+the theme is emitted there, before every listed file. The scan never lists
+that path, and the namespace `uxdsl-theme` is its own (a file whose namespace
+would be the same takes `uxdsl-theme-2`); a file at that path that
+`generate-entry` did not write is refused, and so is a `--first` item naming
+it. `--no-theme` writes neither the file nor the line, for an entry whose CSS
+reads tokens another entry defines; it is recorded with the invocation, so
+`generate-entry` with no arguments and `build --watch` keep it, and it leaves
+a generated theme file already there as it is. An entry recorded without it
+gains the theme file on its next regeneration. `build --watch` writes the theme
+file again when it is deleted, wherever it lies, before it rebuilds once; a
+change to it is built as written. `init` writes the pair through
+`generate-entry`, and `init --multi` writes `@uxdsl theme;` in its theme entry,
+`src/theme.uxdsl`.
 
 ## From SCSS: rename and keep building
 
@@ -201,7 +220,7 @@ in the `compile()` guide's
 | Import | What it is |
 | --- | --- |
 | `uxdsl` | `compile()` (the one pipeline every integration runs), `resolveTheme`, `DEFAULT_THEME`, `defineConfig`, and the types (`UxdslTheme`, `UxdslConfig`, `UxdslOptions`, …) |
-| `uxdsl/postcss` | the PostCSS plugin: `uxdsl({ theme?, includeTheme?, references?, discoverTheme?, configRoot? })` |
+| `uxdsl/postcss` | the PostCSS plugin: `uxdsl({ theme?, references?, discoverTheme?, configRoot? })` |
 | `uxdsl/vite` | the Vite plugin ([guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/vite.md)) |
 | `uxdsl/webpack` | the Webpack loader ([guide](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/webpack.md)) |
 | `uxdsl/runtime` | the browser theme API — `applyTheme`, `getAppliedTheme`, `resetTheme`, `subscribeTheme`, `loadPersistedTheme`; it does not import PostCSS |
@@ -328,17 +347,21 @@ or adds a threshold in its theme's `breakpoints` family (`{ "breakpoints":
 options are:
 
 ```ts
-uxdsl({ theme?, includeTheme?, references?, discoverTheme?, configRoot? })
+uxdsl({ theme?, references?, discoverTheme?, configRoot? })
 ```
 
 Stability phase 1 removed the `breakpoints` option (in the three shapes it
 accepted), which replaced the theme's map wholesale and was one of three places
 a threshold could come from, and the `themeVar`/`spaceVar`/`colorVar` callbacks,
 which let a caller rename the `--uxdsl__<family>__<key>` variables every other
-part of the system relies on. A JavaScript caller that still passes one gets a
-`UXD_OPTION_REMOVED` warning and the option is ignored (never a throw); in
-TypeScript it no longer type-checks, and neither do the `UxDslOptions` alias
-(use `UxdslOptions`) or `UxdslBreakpointSpec`.
+part of the system relies on. `0.5.0-beta.9` removed the theme switch: the
+theme is emitted where `@uxdsl theme;` is written (see
+[Where the theme goes](#where-the-theme-goes-uxdsl-theme)). A JavaScript caller
+that still passes one of these options — to the plugin, `compile()`, the Vite
+plugin or the webpack loader — gets one `UXD_OPTION_REMOVED` warning and the
+option is ignored (never a throw); in TypeScript it no longer type-checks, and
+neither do the `UxDslOptions` alias (use `UxdslOptions`) or
+`UxdslBreakpointSpec`.
 
 ### Thresholds are compiled, not applied at run time
 
@@ -360,46 +383,84 @@ document — an editor, an inspector — use `inspectResponsiveValue` from
 
 ---
 
-## Multi-entry theming (`includeTheme`)
+## Where the theme goes: `@uxdsl theme;`
 
-A single compiled `.uxdsl` file normally both **defines** the global design
-tokens (`:root { --uxdsl__space__1: ...; --uxdsl__surface__contained-padding: ...; }`) and
-**consumes** them (`@ds-surface`, `space()`, `palette()`, ...). That is the
-default and requires no configuration.
+A stylesheet emits the theme — the global token definitions
+(`:root { --uxdsl__space__1: ...; --uxdsl__surface__contained-padding: ...; }`)
+and the theme's Google Fonts `@import` — where it writes `@uxdsl theme;`, and
+only there. A stylesheet without the marker carries only its own rules: it
+**consumes** the tokens (`@ds-surface`, `space()`, `palette()`, ...) and
+validates every reference against the same effective theme, but defines
+none of them. There is no option to turn the theme on or off: the marker is
+the switch.
 
-Some setups compile several entries from one theme — for example, a Next.js
-app with one theme entry (`includeTheme: true`, the default) and multiple
-CSS Module entries per panel. CSS Modules loaders reject a bare `:root`
-selector as impure, and repeating the same global block in every entry is
-wasted, duplicate output. Pass `includeTheme: false` to a component entry so
-it only *consumes* tokens the theme entry already defines:
+Write the marker once, at the top level of the one global stylesheet that
+should carry the theme. Every other stylesheet — a component sheet, a CSS
+Module, a panel — leaves it out, so a CSS Modules loader, which rejects a bare
+`:root` as impure, accepts it, and the global block is never repeated:
 
-```js
-// theme entry — emits the global :root definitions once
-uxdsl({ theme, includeTheme: true }) // or omit the option; true is the default
-
-// component entries — resolve space()/palette()/@ds-surface/... against the
-// same theme, but do not redeclare :root
-uxdsl({ theme, includeTheme: false })
+```css
+/* the global stylesheet: defines every token once */
+@uxdsl theme;
+body { margin: 0; }
 ```
 
-`includeTheme: false` affects only the foundations, typography, density,
-shadow, edge, surface, button and input `:root` emitters, plus the theme's
-`fonts.google` `@import`. Token references
-and validation are unchanged — an entry compiled with `includeTheme: false`
-still rejects an undefined `@ds-surface(missing)` or `shadow(missing)` the
-same way a full entry does; it just relies on the theme entry's output being
-present in the page for the referenced `var()`s to resolve. Both entries
-must share the same effective theme (breakpoints, tokens, overrides) or the
-generated variable names can diverge.
+```css
+/* a component stylesheet: uses the tokens, defines none */
+.card { @ds-surface(contained); padding: density(2); }
+```
 
-### `@uxdsl theme;` — the theme where you write it (PostCSS only, e.g. Next.js)
+The marker can sit in a file the stylesheet loads (`@use` of a partial that
+writes it); Sass loads a `@use`d module once per compilation, so it is emitted
+once. Every stylesheet that loads such a partial emits the theme, though, so
+keep the marker out of a partial several stylesheets load. A component
+stylesheet and the global one must share the same effective theme
+(breakpoints, tokens, overrides), or the generated variable names can diverge.
+
+`uxdsl generate-entry` writes the marker for you: a file next to the entry,
+`uxdsl-theme.uxdsl`, loaded as the entry's first `@use` (`--no-theme` leaves it
+out, for an entry whose CSS reads tokens another entry defines). `uxdsl init`
+scaffolds it, and `init --multi` writes it in its theme entry.
+
+`compile()` returns `themeEmitted` next to `css`, `map`, `dependencies` and
+`warnings`: `true` when that compilation emitted the theme — at
+`@uxdsl theme;`, written in the stylesheet or in a file it loads — and `false`
+when it did not. A tool that builds several stylesheets counts them from it,
+not from its own options or a `:root` search. The CLI does: a build in which
+no entry reaches the marker while its CSS references `--uxdsl__` tokens, or in
+which more than one entry emits the theme, prints one `UXD_THEME_MARKER`
+warning (in `build --watch`, counted over the last result of every entry, and
+printed again only when that state changes). A stylesheet whose output is a
+`*.module.css` cannot carry the theme, so the marker there is an error.
+
+The bundler adapters count the same way, over a whole build: in a Vite or
+webpack app the marker goes in the global `.uxdsl`, and a component module
+carries only its own rules. `vite build` (and every rebuild of
+`vite build --watch`) warns `UXD_THEME_MARKER` once, at the end of the build,
+when no module reaches the marker while the CSS references tokens or when more
+than one module emits the theme — a plain import and an `?inline` import of
+the same file are two modules. The Vite dev server has no end of build: it
+warns only "more than one", when the set of emitting modules changes, so run
+`vite build` to check for none. The webpack loader warns once per compilation,
+over every module it built or webpack kept (watch mode, the persistent cache);
+a `*.module.uxdsl` is a CSS Module and cannot carry the theme. Where the loader
+cannot see the end of the build — a child compilation
+(`experimentalUseImportModule: false`), `thread-loader`, a new process whose
+persistent cache restores every `.uxdsl` module, so the loader never runs — it
+says nothing rather than guess.
+
+The former `includeTheme` option, the CLI's `includeTheme` config key and its
+`--include-theme`/`--no-include-theme` flags are removed: the option warns
+`UXD_OPTION_REMOVED` and is ignored, the key and the flags are errors naming
+the marker.
+
+### `@uxdsl theme;` with the PostCSS plugin alone (e.g. Next.js)
 
 With the PostCSS plugin alone — no CLI, no generated stylesheet — one plugin
 configuration compiles every CSS file of the app, the global stylesheet and
-each CSS Module alike. Configure it with `includeTheme: false`, so no module
-ever carries `:root`, and write `@uxdsl theme;` in the one global stylesheet:
-the theme is emitted there, at that position, and nowhere else.
+each CSS Module alike. It takes no option for the theme: write `@uxdsl theme;`
+in the one global stylesheet, and the theme is emitted there, at that
+position, and nowhere else; no module carries `:root`.
 
 ```js
 // postcss.config.js (Next.js: its own default plugins first, since a custom
@@ -408,7 +469,7 @@ module.exports = {
   plugins: {
     'next/dist/compiled/postcss-flexbugs-fixes': {},
     'next/dist/compiled/postcss-preset-env': { autoprefixer: { flexbox: 'no-2009' }, stage: 3, features: { 'custom-properties': false } },
-    'uxdsl/postcss': { includeTheme: false },
+    'uxdsl/postcss': {},
   },
 };
 ```
@@ -430,22 +491,29 @@ discovered from the working directory as always. Its Google Fonts `@import`
 still leads the stylesheet, since CSS honors an `@import` only before every
 other rule; the `:root` blocks take the marker's place. The marker is one
 statement, once per stylesheet, at the top level: `@uxdsl them;`, a second
-`@uxdsl theme;`, or one inside a rule or `@media` is `UXD_THEME_MARKER`. With
-the default `includeTheme: true` the marker only chooses where the one copy
-goes. `fixtures/mig02-nextjs-cssmodules/postcss-only.js` builds exactly this
-setup with `next build` from the packed tarball and checks it in Chrome.
+`@uxdsl theme;`, or one inside a rule or `@media` is `UXD_THEME_MARKER`. The
+plugin compiles one file at a time and has no end of build, so it cannot tell
+that no file of the app wrote the marker: it does not warn, and the tokens
+then resolve to nothing. `fixtures/mig02-nextjs-cssmodules/postcss-only.js`
+builds exactly this setup with `next build` from the packed tarball and
+checks it in Chrome.
 
 ---
 
 ## Where the theme goes in the compiled output
 
-With `includeTheme: true` (the default) the compiled stylesheet is, in order:
+The theme goes where `@uxdsl theme;` is, and a stylesheet without the marker
+has none: it compiles to its prelude and its own rules, nothing inserted. The
+theme's Google Fonts `@import`s still lead the output wherever the marker
+sits, since CSS honors an `@import` only before every other rule. Write the
+marker after the prelude and before the first rule; a stylesheet that does so
+compiles to, in order:
 
 1. the author's `@charset`, if any, and leading comments;
 2. the theme's Google Fonts `@import`s (from `fonts.google`);
 3. the rest of the author's prelude — body-less `@layer` statements and the
    author's own `@import`s, in written order;
-4. **the whole generated theme, as one contiguous run** — the exact string
+4. **the whole generated theme, as one contiguous run**, at the marker — the exact string
    `generateThemeCss` returns for the same theme: foundations (`:root` with
    Palette, Colors, Spacing, then the dark-mode scopes), `fonts.families` and
    Typography, Borders and Radii, Shadows, Surfaces, Buttons, Inputs,
@@ -453,6 +521,13 @@ With `includeTheme: true` (the default) the compiled stylesheet is, in order:
    blocks, every block on one line;
 5. the author's rules, in written order, with the `@media` blocks the compiler
    creates for their responsive declarations right after each rule.
+
+In a Sass entry the marker comes after the `@use` rules, which Sass requires
+first; in an entry `generate-entry` writes, it is the first `@use`'d file.
+There, Dart Sass hoists every author CSS `@import` above the theme's blocks,
+the entry's own body-less `@layer` statements land after them (the theme is
+unlayered, so that order is valid CSS), and a comment that opens the next
+listed file follows the theme.
 
 A declaration the grammar does not change is printed exactly as written, with
 its spacing and inline comments (`margin: 0 /* c */ auto`, an empty
@@ -499,9 +574,9 @@ uxdsl({
 })
 ```
 
-With `includeTheme: false`, the plugin already validates against the theme
-entry's output automatically — you do not need to pass `references.css`
-yourself for that case.
+A stylesheet without `@uxdsl theme;` is already validated against the theme
+it would emit — you do not need to pass `references.css` yourself for that
+case.
 
 `references.css` is compiled CSS, so only the PostCSS plugin reads it (and
 through it `compile()`, `uxdsl build` and the bundler adapters). The theme
@@ -1338,7 +1413,7 @@ project's own `postcss.config.js`:
 
 ```js
 // postcss.config.js — no `theme` option needed at all; discovered from cwd.
-module.exports = { plugins: { 'uxdsl/postcss': { includeTheme: false } } };
+module.exports = { plugins: { 'uxdsl/postcss': {} } };
 ```
 
 ```js
@@ -1870,7 +1945,7 @@ type-only, nothing loaded at run time:
 const config = {
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  includeTheme: true,
+  sourcemap: 'external',
 };
 
 module.exports = config;
@@ -1888,7 +1963,7 @@ const { defineConfig } = require('uxdsl/config');
 module.exports = defineConfig({
   entry: './src/app.uxdsl',
   outFile: './dist/app.css',
-  includeTheme: true,
+  sourcemap: 'external',
 });
 ```
 
@@ -1964,7 +2039,7 @@ Positions point at the `.uxdsl` you wrote, not at the compiled CSS:
 | Every declaration `@ds-button`/`@ds-surface`/`@ds-input`/`@ds-typo` expands into | The directive's own line |
 | A declaration from an `@import`-ed partial | That partial, at its own line |
 
-The theme CSS added by `includeTheme` (the `:root` custom-property blocks,
+The theme CSS `@uxdsl theme;` emits (the `:root` custom-property blocks,
 the `@media` mode blocks, the generated component classes) is deliberately
 **not** mapped: it is built from your theme JSON and has no origin in any
 `.uxdsl` file, so it lands under PostCSS's own `<no source>` placeholder
@@ -2002,7 +2077,8 @@ tarball, and among its checks exercises the CLI's
 from one `uxdsl.config.cjs`, a partial theme with `externalTokens` and a
 theme-file-only `breakpoints.xl`, exactly one entry defining `:root`
 across the five outputs, and both negative controls (an unknown token still
-fails; `--no-include-theme` overrides every entry).
+fails; without the marker no entry defines `:root` and the build warns
+`UXD_THEME_MARKER` once).
 
 ## Guide for AI agents
 

@@ -37,20 +37,37 @@ test('scope and breakpoint availability are respected', () => {
   assert.deepEqual(inspect('@media (min-width: 800px) { :root { --a: red; } } @media (min-width: 900px) { .x { color: var(--a); } }'), []);
 });
 test('strict components use declared themes and custom density 16 without globals', async () => {
-  const result = await postcss([plugin({ theme: { ...theme, densities: { 16: 'xs(space(1)) md(space(2))' } }, includeTheme: false })]).process('.x { padding: density(16); }', { from: undefined });
+  const result = await postcss([plugin({ theme: { ...theme, densities: { 16: 'xs(space(1)) md(space(2))' } } })]).process('.x { padding: density(16); }', { from: undefined });
   assert.match(result.css, /var\(--uxdsl__density__16\)/);
   assert.ok(!result.css.includes(':root'));
 });
 test('external providers are explicit and plain host CSS stays outside DSL validation', async () => {
-  // border(1) now resolves out of the box even with includeTheme: false and
-  // no theme option (MIG-B2-02's DEFAULT_THEME covers its dependencies), so
-  // a palette family DEFAULT_THEME doesn't define is used here instead to
-  // still exercise a reference that genuinely has no default.
-  await postcss([plugin({ includeTheme: false, references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] } })]).process('.x { color: palette(brand-custom.main); } .y { color: var(--host); }', { from: undefined });
-  await assert.rejects(postcss([plugin({ includeTheme: false })]).process('.x { color: palette(brand-custom.main); }', { from: undefined }), /UXD_PALETTE_REFERENCE/);
+  // border(1) resolves out of the box in a stylesheet without the theme and
+  // with no theme option (DEFAULT_THEME covers its dependencies), so a palette
+  // family DEFAULT_THEME doesn't define is used here instead to still exercise
+  // a reference that genuinely has no default.
+  await postcss([plugin({ references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] } })]).process('.x { color: palette(brand-custom.main); } .y { color: var(--host); }', { from: undefined });
+  await assert.rejects(postcss([plugin()]).process('.x { color: palette(brand-custom.main); }', { from: undefined }), /UXD_PALETTE_REFERENCE/);
 });
 test('runtime and PostCSS reject missing mandatory theme dependencies', async () => {
   const invalid = { ...theme, surfaces: { contained: { bg: 'palette(missing.main)' } } };
   assert.throws(() => generateThemeCss(invalid), /UXD_REFERENCE_MISSING/);
   await assert.rejects(postcss([plugin({ theme: invalid })]).process('.x { @ds-surface(contained); }', { from: undefined }), /UXD_REFERENCE_MISSING/);
+});
+test('MIG-B9-20: reference integrity does not depend on the marker', async () => {
+  const run = (source, options = {}) => postcss([plugin({ discoverTheme: false, ...options })]).process(source, { from: undefined });
+  const dangling = { palette: { primary: { main: 'color(nope.500)' } } };
+  // A dangling author reference fails with and without the marker.
+  for (const prefix of ['', '@uxdsl theme;\n']) {
+    await assert.rejects(run(`${prefix}.a { color: palette(nope.main); }`), /UXD_PALETTE_REFERENCE/, JSON.stringify(prefix));
+    // An author token whose theme value dangles fails too: without the marker
+    // the rendered theme is validated without being emitted.
+    await assert.rejects(run(`${prefix}.a { color: palette(primary.main); }`, { theme: dangling }), /UXD_REFERENCE_MISSING: .*--uxdsl__color__nope-500/, JSON.stringify(prefix));
+  }
+  // A dangling theme value fails at the marker, whatever the author wrote.
+  await assert.rejects(run('@uxdsl theme;\n.a { color: red; }', { theme: dangling }), /UXD_REFERENCE_MISSING: .*--uxdsl__color__nope-500/);
+  // Negative control: plain author CSS without the marker emits nothing that
+  // reads the dangling value, so it compiles.
+  const plain = await run('.a { color: red; }', { theme: dangling });
+  assert.equal(plain.css, '.a { color: red; }');
 });

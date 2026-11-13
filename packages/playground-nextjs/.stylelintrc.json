@@ -19,7 +19,8 @@
           "ds-surface",
           "ds-typo",
           "ds-input",
-          "theme"
+          "theme",
+          "uxdsl"
         ]
       }
     ],

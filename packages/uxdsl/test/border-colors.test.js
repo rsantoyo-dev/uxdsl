@@ -26,7 +26,7 @@ const compile = (source, options = {}) => postcss([plugin(options)]).process(sou
 
 test('MIG-04: border(1..5) resolves out of the box, and validates in strict mode, with only a theme object', async () => {
   const theme = { spacing: SPACING, palette: PALETTE };
-  const result = await compile('.x { border: border(1); }', { theme });
+  const result = await compile('@uxdsl theme;\n.x { border: border(1); }', { theme });
   assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
   assert(result.css.includes('--uxdsl__color__gray-300:'));
   assert(result.css.includes('--uxdsl__border__1: 1px solid var(--uxdsl__color__gray-300)'));
@@ -56,7 +56,7 @@ test('MIG-04: a theme overriding every DEFAULT_BORDERS key never needs the gray 
       3: 'xs(1px solid palette(primary.main))', 4: 'xs(1px solid palette(primary.main))', 5: 'xs(1px solid palette(primary.main))',
     },
   };
-  const result = await compile('.x { border: border(1); }', { theme });
+  const result = await compile('@uxdsl theme;\n.x { border: border(1); }', { theme });
   assert.match(result.css, /border: var\(--uxdsl__border__1\)/);
   assert(result.css.includes('--uxdsl__border__1: 1px solid var(--uxdsl__palette__primary-main)'));
   // The gray dependency is still emitted (foundations always defines it —
@@ -65,12 +65,12 @@ test('MIG-04: a theme overriding every DEFAULT_BORDERS key never needs the gray 
   assert(!/--uxdsl__border__\d+:[^;]*gray/.test(result.css));
 });
 
-test('MIG-04: a component entry (includeTheme: false) resolves border() against the theme entry without re-emitting the gray dependency, in strict mode', async () => {
-  // includeTheme: false still cross-validates against what the linked
-  // theme entry (same theme object, includeTheme: true) would emit, so
+test('MIG-04: a component entry (no marker) resolves border() against the theme entry without re-emitting the gray dependency, in strict mode', async () => {
+  // A stylesheet without the marker still cross-validates against what the
+  // linked theme entry (same theme object, `@uxdsl theme;`) would emit, so
   // that theme needs to cover border(2)'s own space(1) dependency — but,
   // per MIG-04, not colors.gray.
-  const componentEntry = await compile('.card { border: border(2); }', { theme: { spacing: SPACING }, includeTheme: false });
+  const componentEntry = await compile('.card { border: border(2); }', { theme: { spacing: SPACING } });
   assert(!componentEntry.css.includes(':root'));
   assert.match(componentEntry.css, /border: var\(--uxdsl__border__2\)/);
 });
@@ -83,12 +83,11 @@ test('MIG-04: an external stylesheet is accepted when declared, in strict mode',
   // strict mode rejects a reference truly absent from both the theme and
   // the defaults, use a palette family DEFAULT_THEME doesn't define.
   await assert.rejects(
-    compile('.x { color: palette(brand-custom.main); }', { includeTheme: false }),
+    compile('.x { color: palette(brand-custom.main); }'),
     /UXD_PALETTE_REFERENCE: palette\(brand-custom\.main\) does not exist/,
     'sanity check: a reference absent from both the theme and DEFAULT_THEME still fails validation'
   );
   const result = await compile('.x { color: palette(brand-custom.main); }', {
-    includeTheme: false,
     references: { externalTokens: ['--uxdsl__palette__brand-custom-main'] },
   });
   assert(!result.css.includes(':root'));
