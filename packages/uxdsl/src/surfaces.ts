@@ -11,7 +11,7 @@ import { BASE_THEME } from './base-theme';
 import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
-export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
+type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
 export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
 // Derived from theme/base.json, not a second,
 // independently-maintained literal.

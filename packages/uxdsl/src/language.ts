@@ -245,7 +245,7 @@ const NEAR_MISS_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
   shadows: 'shadow',
 });
 
-export interface UnknownFunctionOptions {
+interface UnknownFunctionOptions {
   /** The theme's own breakpoints; the effective map is these over the defaults, as every compilation builds it. */
   breakpoints?: BreakpointMap;
   /** The name sits at the top level of an author's declaration value, where the breakpoint check runs after the grammar. */
@@ -428,7 +428,7 @@ export const spacingValueToCss = (input: string): string => tokenValueToCss(inpu
 
 
 /** What an editor or the compiler needs to know about the responsive groups of one value. */
-export interface ResponsiveAnalysis {
+interface ResponsiveAnalysis {
   /** Top-level groups of adjacent breakpoint functions, in order, each with its source text. */
   groups: Array<{ names: string[]; text: string; hasBase: boolean; empty: string[]; important: boolean }>;
   /** The value is exactly one group and nothing else. */
@@ -499,7 +499,7 @@ export function inspectResponsiveValue(input: string, width: number, bps: Breakp
   };
 }
 
-export type DensityRule = { minWidth: number | null; breakpoint: string; values: Record<string, string> };
+type DensityRule = { minWidth: number | null; breakpoint: string; values: Record<string, string> };
 
 /** Both adapters share resolution, ordering and suppression of redundant rules. */
 export function compileDensityRules(

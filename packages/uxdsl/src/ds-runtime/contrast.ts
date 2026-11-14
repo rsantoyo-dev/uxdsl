@@ -51,7 +51,7 @@ import { deepMergeTheme } from './theme-validate';
 // Pure, theme-independent; the only place actual color math happens.
 // ---------------------------------------------------------------------
 
-export interface RGBA { r: number; g: number; b: number; a: number }
+interface RGBA { r: number; g: number; b: number; a: number }
 
 function clamp01(n: number): number { return Math.min(1, Math.max(0, n)); }
 
@@ -170,7 +170,7 @@ export function compositeOver(fg: RGBA, bg: { r: number; g: number; b: number })
 // theme's real generators emit at one (mode, viewport) pair.
 // ---------------------------------------------------------------------
 
-export type ResolvedColor = { ok: true; color: RGBA } | { ok: false; reason: string };
+type ResolvedColor = { ok: true; color: RGBA } | { ok: false; reason: string };
 
 const MAX_VAR_CHASE = 25; // generous; a real cycle is the only way to hit this.
 
@@ -294,14 +294,14 @@ function viewportsOf(theme: Record<string, any>): number[] {
 // Report shape, shared with MIG-B6-16 (`uxdsl theme --contrast`).
 // ---------------------------------------------------------------------
 
-export type ContrastMode = 'light' | 'dark';
-export type ContrastPairKind = 'text' | 'placeholder' | 'border';
-export type ContrastFamily = 'surface' | 'button' | 'input';
+type ContrastMode = 'light' | 'dark';
+type ContrastPairKind = 'text' | 'placeholder' | 'border';
+type ContrastFamily = 'surface' | 'button' | 'input';
 /** What a pair's foreground was measured against: the role's `own`
  * background (opaque, or a translucent tint composited over the page), or the
  * `ambient` page background, `palette.surface.main` — every border/underline
  * pair, and the text of a role whose own background is transparent. */
-export type ContrastAgainst = 'own' | 'ambient';
+type ContrastAgainst = 'own' | 'ambient';
 
 export interface ContrastFailure {
   mode: ContrastMode;

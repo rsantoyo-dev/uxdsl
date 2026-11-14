@@ -232,6 +232,9 @@ in the `compile()` guide's
 
 `uxdsl/engine` is a tooling API and is **exempt from semver**: it may change in
 a minor release. Everything else in the table follows semver.
+`scripts/measure-exports.js` in the UXDSL repository lists every entry's
+exports with the files that consume them; it is how the `uxdsl/engine` exports
+nothing used were found and removed.
 
 ---
 

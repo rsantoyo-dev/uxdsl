@@ -294,9 +294,9 @@ export function inspectDeclarationReferences(definitionsInOrder: ReferenceDeclar
   };
   // A resolution depends on the name and on the context's selector/conditions —
   // nothing else — and `definitions` is immutable here, so the answer is
-  // memoized per (name, context). The sort comparator is kept verbatim,
-  // including `Number(undefined)` being NaN for a declaration without an
-  // `important` flag: that quirk decides real orderings today.
+  // memoized per (name, context). A definition on the context's own selector
+  // wins over one on `:root`; among those, the last in document order applies.
+  // `!important` takes no part.
   const resolutions = new Map<string, Entry | undefined>();
   function resolve(name: string, context: Context): Entry | undefined {
     const key = `${name}\u0000${keyOf(context)}`;
@@ -304,8 +304,7 @@ export function inspectDeclarationReferences(definitionsInOrder: ReferenceDeclar
     const resolved = (definitions.get(name) || []).filter(entry =>
       (entry.context.selector === ':root' || entry.context.selector === context.selector) &&
       applies(entry.context.conditions, context.conditions)
-    ).sort((a, b) => Number(a.node.important) - Number(b.node.important) ||
-      Number(a.context.selector === context.selector) - Number(b.context.selector === context.selector) || a.order - b.order).pop();
+    ).sort((a, b) => Number(a.context.selector === context.selector) - Number(b.context.selector === context.selector) || a.order - b.order).pop();
     resolutions.set(key, resolved);
     return resolved;
   }

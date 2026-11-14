@@ -22,6 +22,36 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### What repeated is deleted (MIG-B9-21)
+
+#### Removed
+
+- **`uxdsl/engine` exports nothing used.** `uxdsl/engine` is exempt from
+  semver. `scripts/measure-exports.js` (in the repository) lists every
+  entry's exports with the files that consume them, outside the package and
+  inside it; the engine exports it found no consumer for are no longer
+  exported: the function `serializeBlock` (still used inside `css-blocks.ts`
+  by `serializeBlocks`, which stays exported) and the types `ResponsiveRule`,
+  `UnknownFunctionOptions`, `ResponsiveAnalysis`, `DensityRule`,
+  `TypographyStyle`, `TypographyDetails`, `SurfaceStyle`, `ButtonRole`,
+  `ButtonTheme`, `InputRole`, `InputTheme`, `RGBA`, `ResolvedColor`,
+  `ContrastMode`, `ContrastPairKind`, `ContrastFamily` and `ContrastAgainst`
+  (still declared, and named in the `.d.ts` files of the declarations that
+  use them). `uxdsl/engine` goes from 111 values to 110. No semver-bound
+  entry loses an export.
+- **`dist/ds-runtime/breakpoints.js`**, a one-line re-export of
+  `DEFAULT_BREAKPOINTS` that the package's `exports` map never reached.
+  `DEFAULT_BREAKPOINTS` is exported by `uxdsl/theme` and `uxdsl/engine`, as
+  before.
+- **A term of the reference checker's ordering that never decided one.** The
+  definition of a custom property the checker reads is the one on the
+  consumer's own selector over one on `:root`, and among those the last in
+  document order; `!important` takes no part, as before.
+
+#### Visual changes
+
+- None: compiled output and the theme CSS are byte-identical.
+
 ### The theme is emitted only at `@uxdsl theme;`; `includeTheme` is removed (MIG-B9-20)
 
 ### Added

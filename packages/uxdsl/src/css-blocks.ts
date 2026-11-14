@@ -20,7 +20,7 @@ export interface CssBlock {
 }
 
 /** `selector { a: b; c: d; }`, wrapped as `@media … { … }` when the block has a condition. */
-export function serializeBlock(block: CssBlock): string {
+function serializeBlock(block: CssBlock): string {
   const body = `${block.selector} { ${block.declarations.map(([property, value]) => `${property}: ${value};`).join(' ')} }`;
   return block.condition === undefined ? body : `${block.condition} { ${body} }`;
 }
@@ -31,7 +31,7 @@ export function serializeBlocks(blocks: CssBlock[], separator = '\n'): string {
 
 /** The compiled-rule shape every responsive engine returns (`compile*Rules`):
  * one entry per breakpoint that changes something, the base one unconditional. */
-export interface ResponsiveRule { minWidth: number | null; values: Record<string, string> }
+interface ResponsiveRule { minWidth: number | null; values: Record<string, string> }
 
 /** Responsive rules as blocks: the base rule bare, every other breakpoint under
  * `@<atRule> (min-width: <n>px)`. */

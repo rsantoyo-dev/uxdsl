@@ -52,11 +52,10 @@ import { diagnostic, locateError, missingKeyMessage, closestKey, suggestKeys, di
 import { discoverThemeSync, removedOptionWarnings } from './config';
 import {
   resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, unknownFunctionMessage, parseTokenReference, tokenReferenceToCss,
-  TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS,
+  TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS, DEFAULT_BREAKPOINTS,
 } from './language';
 import type { TokenReference, TokenContext } from './language';
 import { TYPOGRAPHY_PROPERTIES, resolveTypographyRole } from './typography';
-import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
 import type { UxdslOptions } from './types';
 
 const PLUGIN = 'uxdsl';

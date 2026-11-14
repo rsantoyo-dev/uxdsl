@@ -53,7 +53,7 @@ import type { SassStageResult } from './sass/compile-sass';
 import { restoreDirectiveSpacing } from './sass/protect';
 import { resolveTheme } from './default-theme';
 import { discoverThemeSync, removedOptionsIn } from './config';
-import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
+import { DEFAULT_BREAKPOINTS } from './language';
 import { formatReferenceIssues } from './reference-core';
 import type { ReferenceIssue } from './reference-core';
 

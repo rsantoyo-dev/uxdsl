@@ -9,8 +9,8 @@ export const BUTTON_PROPERTIES = { ...SURFACE_PROPERTIES, opacity: 'opacity', ou
  * the directive still overrides the generated rule. */
 export const NOT_DISABLED = ':not(:where(:disabled, [aria-disabled="true"]))';
 export const BUTTON_STATES = { hover: [`:hover${NOT_DISABLED}`], active: [`:active${NOT_DISABLED}`], focus: [':focus'], focusvisible: [':focus-visible'], disabled: [':disabled', '[aria-disabled="true"]'], selected: ['.is-selected', '[aria-pressed="true"]', '[aria-selected="true"]'] };
-export interface ButtonRole extends ControlRole {}
-export interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
+interface ButtonRole extends ControlRole {}
+interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
 // Derived from theme/base.json, not a second,
 // independently-maintained literal — `var(--uxdsl__button__tone-dark, ...)`
 // et al. are baked into the JSON as the same literal strings this file used

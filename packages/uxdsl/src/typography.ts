@@ -13,8 +13,8 @@ export const TYPOGRAPHY_PROPERTIES = Object.freeze({
   fontStyle: 'font-style',
   marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
 });
-export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
-export type TypographyDetails = Record<string, TypographyStyle>;
+type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
+type TypographyDetails = Record<string, TypographyStyle>;
 
 /** The CSS property `@ds-typo` emits for each field — the same map as the
  * variable suffixes above, kept under its own name for the callers that read
