@@ -755,7 +755,7 @@ Owner checks, never marked PASS by the agent:
   quoted form uses single quotes, so the expected JSON is the same text as
   the other files." The code on line 114 stays.
 - `packages/uxdsl/README.md`, "Codemod: `scripts/codemod-canonical-grammar.js`"
-  (lines 783–805): one sentence, appended after the sentence that ends "is
+  (lines 783–806): one sentence, appended after the sentence that ends "is
   left and reported, once per occurrence." (line 803). The existing wording
   stays (decision 35). It says three things:
   - a directive's arguments are rewritten in one run, a function argument
@@ -1048,3 +1048,19 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), 
 - **Q3 (decision 14): (a)**, as the contract assumed. An escaped quote is removed with its backslash, and the JSON stays valid. Nothing changes.
 - **Q4 (decision 15): (a), the story does not wait for MIG-B9-21; it starts now.** It differs from the contract's header, which assumed (b). The header's Depends on and Base now drop MIG-B9-21 (done in the PR that records this decision), and the index's §7 records this story as the one exception to its opening sentence. §3's preconditions, recorded on `5a041fc`, and §4's baseline are re-run on the base the story starts from, as the header says.
 - **Q5 (decision 16): (b), both of F3's forms.** It differs from the contract, which assumed (a), and widens decision 36 of 2026-11-10's paraphrase. C3's bullet for the form without parentheses, T2's `.b` and `.b2` cases and AC2's `.b` line are part of the contract, as the lead-in above says of Q5 (b).
+
+### Re-run on the base the story starts from (`65b48b6`, 2026-11-13)
+
+The scout re-ran §3 and §4 on `65b48b6` (`origin/feat/beta9` after PR #90),
+through `bash` from the worktree root. All twelve preconditions exit 0, and
+§4's output is byte-identical to the record for `5a041fc` (`git diff --stat
+5a041fc 65b48b6 -- packages/uxdsl` is empty). §12's guard prints the same
+counts (217 files, 0/0/18; 7065 lines, identical/different) and exits 0. One
+line was stale, and is corrected as README §1 item 4 allows:
+
+- §11, the README bullet. The section runs from its heading at line 783 to
+  "rewrites prose too, so review a documentation file it touches." at line
+  806, on `5a041fc` and on `65b48b6` alike; the insertion point (after line
+  803) was right.
+  - Old: `  (lines 783–805): one sentence, appended after the sentence that ends "is`
+  - New: `  (lines 783–806): one sentence, appended after the sentence that ends "is`
