@@ -1,10 +1,10 @@
-# MIG-B9-38 — A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS
+# MIG-B9-38 — A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS
 
 | Field | Value |
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 12, as proposed in MIG-B9-14 §15; it answers MIG-B9-13 §15, flag 14, and takes over the warning that D18 of 2026-11-04 kept with MIG-B9-14). Four questions for the owner are open in §15 and are answered before implementing; the contract states what it assumes until then |
+| Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 12, as proposed in MIG-B9-14 §15; it answers MIG-B9-13 §15, flag 14, and takes over the warning that D18 of 2026-11-04 kept with MIG-B9-14). Four questions for the owner were open in §15 (answered 2026-11-13, decisions 24 to 27; §15) |
 | Status | Ready |
 | Size | S |
 | Depends on | MIG-B9-14 and MIG-B9-22 (README §5; both merged, PR #71 and PR #76). Under README §7 it also waits for the earlier rows of the files it shares: MIG-B9-21 and 17 (`compile.ts`); MIG-B9-26, 17, 30, 32, 33, 34, 35 and 37 (`diagnostics.ts`); MIG-B9-37 (`bin/uxdsl.js`); MIG-B9-21, 25, 17 and 28 (`test/cli/**`); MIG-B9-26 and 27 (`compile.md`); MIG-B9-26, 17, 30 and 31 (`fixtures/release-1.0/run.js`); MIG-B9-25, 26 and 17 (`verdicts.test.js`); and MIG-B9-21, which every wave-3 story waits for (§7's preamble). MIG-B9-20, on several of these rows, is merged (PR #88) |
@@ -665,7 +665,8 @@ Non-normative.
 Owner checks, never marked PASS by the agent:
 
 - Answer §15's Q1 to Q4 before the story starts. The contract assumes
-  Q1 (a), Q2 (a), Q3 (a) and Q4 (b) until then.
+  Q1 (a), Q2 (a), Q3 (a) and Q4 (b) until then. (Answered 2026-11-13,
+  decisions 24 to 27, §15, as assumed.)
 
 ## 10. Generated artifacts and guards
 
@@ -728,7 +729,7 @@ scout, one implementer, one review and the deliverer.
 Branch `feat/b9-38-plain-import-warning`. Commit:
 `feat(FEAT-010): MIG-B9-38 - a plain @import of a .uxdsl, .scss or .sass URL left in the CSS warns UXD_PLAIN_IMPORT at its position`.
 
-PR title: `FEAT-010: MIG-B9-38 - a located CLI warning for a plain @import of a .uxdsl, .scss or .sass URL left in the CSS`.
+PR title: `FEAT-010: MIG-B9-38 - a located warning for a plain @import of a .uxdsl, .scss or .sass URL left in the CSS`.
 The body:
 
 - **Goal:** §1, in two sentences.
@@ -849,3 +850,16 @@ and an answer of (a) may retitle the story ("A located warning for …").
 
    Recommendation: (b): a two-line fix of a recorded defect in a file this
    story is already serialized on. The contract assumes (b).
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 24 to 27 of 2026-11-13. PR #89, which added this file, put its Q1 to Q4 to the owner as its questions 13 to 16. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). The questions were not put to the owner one by one: under that instruction each recommended option is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English. Each decision is the option the contract assumed, so nothing in §5, the header's Owns and Shares or the tests changes; only the title does.
+
+- **Q1 (decision 24): (a).** `compile()` reports the warning in `warnings`, so the CLI, `build --watch`, `uxdsl/vite`, `uxdsl/webpack` and any direct caller print it, located; T7 and T8 stay in Owns. The answer goes beyond the registered title's word "CLI", so the story is retitled to say what it makes it:
+  - New title (the H1 above and the index's §5 row): "A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS".
+  - Old title, as registered by the decision of 2026-11-08 on MIG-B9-14's flag 12 and quoted in §2: "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS". §2 keeps it, since it quotes the registration. §13's PR title follows the new one: `FEAT-010: MIG-B9-38 - a located warning for a plain @import of a .uxdsl, .scss or .sass URL left in the CSS`.
+- **Q2 (decision 25): (a).** The code is `UXD_PLAIN_IMPORT`, owner `compiler`; the catalog tests stay unedited.
+- **Q3 (decision 26): (a).** The URL's path, before `?` or `#`, ends with `.uxdsl`, `.scss` or `.sass`, compared without regard to case, for every scheme, at any depth (C2). F3, the extensionless `@import`, stays the owner's call.
+- **Q4 (decision 27): (b).** The `(<n> bytes)` fix rides along (C6, T6): two expressions in `bin/uxdsl.js`, and the story stays on §7's `bin/uxdsl.js` row.
+
+One consequence of decision 28 of 2026-11-13, for the header, which this block does not edit: MIG-B9-39 was split, and its CLI part is MIG-B9-19, so the story this one blocks on `bin/uxdsl.js` and `test/cli/**` is MIG-B9-19, not MIG-B9-39, and MIG-B9-06 (decision 29) follows on both files. The index's §5 and §7 follow.
