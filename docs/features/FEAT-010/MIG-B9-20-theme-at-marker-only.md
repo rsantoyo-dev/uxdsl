@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-06 (decided 2026-10-23: the marker is the only switch; `includeTheme` is removed) |
-| Status | In review (PR #88) |
+| Status | Merged (PR #88) |
 | Size | M |
 | Depends on | MIG-B9-14 |
 | Blocks | MIG-B9-50, MIG-B9-60, MIG-B9-64 |
@@ -487,3 +487,24 @@ Recorded before implementing, on `feat/beta9` at `f855765` (Node 20.19.0, Sass 1
 - **MIG-B9-16**: the language page's stale "SCSS-style subset" section is still there; only its marker passage changed here.
 - **Proposed MIG-B9-67**, only if the owner wants it: per-page or per-chunk theme counting on the CLI, Vite and webpack.
 - **F8**, if answered (b) or (c): reword the CLI hint, regenerate `cli-captures.json`, and update cli.md, the CHANGELOG and the CLI tests. That is a small follow-up, or part of MIG-B9-60.
+
+### Owner decisions of 2026-11-13, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 1 to 11 of 2026-11-13. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). This story was merged into `feat/beta9` as PR #88 (`cc10de6`) on 2026-11-13, with `npm test` and `verify:1.0` green. The flags F1 to F8 of the "Delivery of 2026-11-13" block above were not put to the owner one by one: under that instruction each recommendation is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English. The header's Status is the deliverer's to set.
+
+- **F1 (decision 1): (c)**, as implemented. The build-level "none" warning fires only when the build's CSS references a `--uxdsl__` token and some output can carry the theme: not a `*.module.css` `outFile` in the CLI (`bin/uxdsl.js:1113` and `1147`, `canCarryTheme: !/\.module\.css$/i.test(outFile)`), not a `*.module.uxdsl` resource in webpack (`src/webpack.ts:220`).
+- **F2 (decision 2): (a)** for `0.5.0-beta.9`. A project that delivers its theme out of band (SSR `generateThemeCss`, `applyTheme`, another build) keeps the "none" warning on every build, and the case is to be documented. MIG-B9-60's doctor revisits it. On `5a041fc` no shipped document states this case yet (FEAT-010 §2 records the search); the decision names no story for that sentence, and who writes it is an open question for the owner, Q1 of MIG-B9-21's §15.
+- **F3 (decision 3): (a)**, accepted and recorded under the CHANGELOG's "Visual changes" (`packages/uxdsl/CHANGELOG.md:177–186` on `5a041fc`), as done.
+- **F4 (decision 4): (a)**, as implemented. Gate checks S-5 and S-6 expect the deprecation plus exactly one `UXD_THEME_MARKER` (`fixtures/release-1.0/run.js:209–215`, `ADAPTER_THEME_WARNING`).
+- **F5 (decision 5): (a)**, as implemented. The Vite dev server warns "many" only, once per change of the emitting set; `vite build` is the gate.
+- **F6 (decision 6): (a).** The limits are accepted and documented (`packages/uxdsl/docs/integrations/webpack.md:134–139`): webpack stays silent in child-compilation mode, under `thread-loader` or a bare runner, in a fully cache-restored process and in Turbopack.
+- **F7 (decision 7): (a)**, as implemented. One `UXD_OPTION_REMOVED` template for the five removed options (`src/config.ts:266–279`, `REMOVED_OPTIONS`), checked on the plugin, `compile()`, Vite and webpack.
+- **F8 (decision 8): (b).**
+  - The `UXD_THEME_MARKER`-coded text shared with Vite and webpack stands as M4's implementation, a recorded deviation from M4's literal sentence (CT-3). M4 is not edited.
+  - The CLI's "none" hint is reworded so that it is true in general (HB-5), for example " An entry generate-entry wrote without --no-theme loads its theme file; run uxdsl generate-entry again if that file is missing."
+  - That rewording, and RR-1 above, are assigned to MIG-B9-21 as added items. MIG-B9-21's §15 has a block of this date with the current text and every file that repeats it.
+- **Follow-ups (decisions 9 to 11).**
+  - MIG-B9-91 refreshes `docs/releases/0.5.0-beta.9.md:33` and marks the two older beta.9 CHANGELOG subsections superseded (DGE-2). On `5a041fc` the first of them is in MIG-B9-14's subsection (`CHANGELOG.md:423–425`), not MIG-B9-22's as the delivery block above says. MIG-B9-91's §15 has a block of this date.
+  - MIG-B9-60 counts the `{ type: 'uxdsl-theme', plugin: 'uxdsl', emitted }` result message for the PostCSS-alone host and revisits F2. MIG-B9-60's §15 has a block of this date.
+  - MIG-B9-16 keeps its own scope: its C1 already replaces the "SCSS-style subset" section, now at `page.tsx:110`.
+- **The proposed MIG-B9-67 is not registered.** The owner has not asked for it, and it stays a proposal in the delivery block above.

@@ -182,3 +182,16 @@ Static review of the plan against `main` at `685c132`; not a change to the contr
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#2-decisions). Where they differ from this story's contract or from the review above, they rule.
 
 - **DEC-17:** a project function named like a UXDSL function is reported as `UXD_FUNCTION_SHADOWED` (a warning: the project's function wins), not `UXD_RESERVED_NAME`.
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 2 and 10 of 2026-11-13. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). MIG-B9-20 was merged into `feat/beta9` as PR #88 (`cc10de6`) and left eight owner flags and its follow-ups in its §15 ("Delivery of 2026-11-13"). They were not put to the owner one by one: under that instruction each recommendation is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English and lists the two decisions that concern this story. They are follow-ups for this story's re-baseline after wave 3; they do not change its contract, and that re-baseline decides how each enters it. Facts below were checked on `5a041fc` (`feat/beta9` after MIG-B9-20).
+
+- **The PostCSS-alone host (decision 10).** The doctor counts the PostCSS plugin's `{ type: 'uxdsl-theme', plugin: 'uxdsl', emitted }` result message, to cover the host that runs `uxdsl/postcss` alone (Next.js without the CLI).
+  - That host gives no build-level `UXD_THEME_MARKER` warning. The plugin runs once per file and PostCSS has no end-of-build hook, so counting across files would need process-global state, which AGENTS.md forbids (MIG-B9-20 §15, "The PostCSS plugin alone cannot tell", and the owner decision of 2026-10-23 recorded in MIG-B9-20's §15: "let the scaffold and `uxdsl doctor` (MIG-B9-60) cover that host").
+  - The seam: `reportThemeEmission` in `packages/uxdsl/src/plugin.ts:943–945` pushes the message once per compilation, and `compile()` reads it for `themeEmitted` (`packages/uxdsl/src/compile.ts:241`).
+- **A theme delivered out of band (decision 2, on MIG-B9-20's flag F2).** For `0.5.0-beta.9` a project that delivers its theme through SSR `generateThemeCss`, `applyTheme` or another build keeps the "none" warning on every CLI, `vite build` and webpack build, and the case is to be documented (who writes that sentence is Q1 of MIG-B9-21's §15). This story revisits F2. The option the delivery set aside for beta.9 was suppressing the warning through `references`; the revisit chooses, and nothing is decided here.
+- **Facts for the re-baseline, not decisions.**
+  - The §3 precondition `grep -q "includeTheme" packages/uxdsl/bin/uxdsl.js` exits 0 on `5a041fc`: the key is in `REMOVED_CONFIG_KEYS` (`bin/uxdsl.js:66`).
+  - §2 names `REMOVED_OPTIONS` as the plugin's. Since MIG-B9-20 it is in `packages/uxdsl/src/config.ts:266`, and the plugin imports `removedOptionWarnings` from there (`plugin.ts:52`).
+  - `includeTheme` is now one `UXD_OPTION_REMOVED` warning on the plugin, `compile()`, Vite and webpack, and a hard error in the CLI's config and flags (decision 7 of 2026-11-13).
