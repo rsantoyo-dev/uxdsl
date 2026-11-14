@@ -399,25 +399,25 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | --- | --- |
 | `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 24, 27, 30, 31, 35 |
 | `packages/uxdsl/src/compile.ts` | 13, 20, 21, 17, 38 |
-| `packages/uxdsl/src/sass/compile-sass.ts` | 12, 23, 26, 17 |
-| `packages/uxdsl/src/sass/protect.ts` | 11, 26 |
+| `packages/uxdsl/src/sass/compile-sass.ts` | 12, 21, 23, 26, 17 |
+| `packages/uxdsl/src/sass/protect.ts` | 11, 21, 26 |
 | `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25, 26, 28 |
 | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new) | 26, 17 |
 | `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 39 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
 | `packages/uxdsl/test/core/sass-source-maps.test.js` | 13, 25, 28 |
-| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 25 |
+| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25 |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 21, 22, 37, 38, 39, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
-| `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 26, 17, 30, 32, 33, 34, 35, 37, 38 |
+| `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 21, 26, 17, 30, 32, 33, 34, 35, 37, 38 |
 | `packages/uxdsl/src/theme/base.json` and `base.contrast-exceptions.json` | 33, 34, 35 |
-| `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 24, 32, 33, 34, 37 |
-| `packages/uxdsl/src/ds-runtime/theme-generator.ts` | 24, 34 |
-| `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 31, 34 |
-| `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 31, 32, 34, 35, 36 |
+| `packages/uxdsl/src/ds-runtime/theme-validate.ts` | 21, 24, 32, 33, 34, 37 |
+| `packages/uxdsl/src/ds-runtime/theme-generator.ts` | 21, 24, 34 |
+| `packages/uxdsl/src/foundations.ts`, `css-blocks.ts`, `reference-core.ts` | 21, 31, 34 |
+| `packages/uxdsl/src/control-engine.ts`, `inputs.ts`, `buttons.ts`, `surfaces.ts` | 21, 31, 32, 34, 35, 36 |
 | `packages/uxdsl/CHANGELOG.md` | every story that lists it in Owns or Shares (append-only, one subsection per story; MIG-B9-27, in its outcome A, also rewrites MIG-B9-13's `### Breaking` item on PostCSS chains, by decision 14 of 2026-11-10, and no other story edits that item) |
 | `AGENTS.md` and the generated agent guide | 01, 04, 13, 15, 20, 30, 31, 32, 33, 34, 35, 36, 37, 51 |
-| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 26, 27, 38 |
+| `packages/uxdsl/docs/integrations/compile.md` | 13, 15, 21, 26, 27, 38 |
 | `packages/uxdsl/docs/integrations/cli.md` | 20, 21, 17, 39, 60, 61, 63 |
 | `packages/uxdsl/docs/integrations/vite.md`, `webpack.md` | 20, 21, 39 |
 | `packages/uxdsl/docs/migration.md` | 20, 26, 17, 27, 30, 31, 32, 33, 34, 35, 36, 52, 60 (append-only, one subsection per story, by decision 31 of 2026-11-10; a story that rewrites an existing passage lists the file in Shares and is serialized as before: MIG-B9-26, 17 and 27 rewrite items 6, 9 and 4 of "beta.9 — Sass inside compile()", and MIG-B9-52 restructures the file. A story that only appends its subsection waits for no story on this file) |
@@ -429,16 +429,19 @@ in every `src` file, and MIG-B9-22 runs before MIG-B9-20 (both edit
 | `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md`, `.gitignore` | 10, 20, 23, 25, 66 (`run.test.js`) |
 | `packages/playground-nextjs/**` | 20, 21, 22, 16, 26, 30, 33, 34, 35, 36, 39, 40, 41, 42, 43 |
 | `fixtures/playground-browser/**` (MIG-B9-42 and 43: `walk.js`) | 40, 41, 42, 43, 44 |
-| `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 25, 91 |
+| `package.json`, `package-lock.json` (root and `packages/uxdsl`) | 01, 02, 10, 12, 13, 21 (root `package.json`), 25, 91 |
 | `packages/uxdsl/README.md` (the docs guard asks almost every code story to touch it) | every code story (append-only, one sentence per story; MIG-B9-26 and 27 also rewrite passages their §11 names, and MIG-B9-28 rewrites the sentence at lines 1550–1553 on `f855765` if `windows-latest` shows the on-disk case, by decision 20 of 2026-11-10) |
-| `packages/uxdsl/src/typography.ts` | 31, 33 |
-| `packages/uxdsl/src/language.ts` | 04, 30, 31 |
+| `packages/uxdsl/src/typography.ts` | 21, 31, 33 |
+| `packages/uxdsl/src/language.ts` | 04, 21, 30, 31 |
+| `packages/uxdsl/src/entries/engine.ts` | 21, 36 |
+| `packages/uxdsl/test/language.test.js` | 21, 30 |
+| `packages/uxdsl/test/reference-integrity.test.js` | 21, 31 |
 | `scripts/generate-language-artifacts.js` and its artifacts | 30, 32, 33, 34 |
-| `packages/uxdsl/src/contrast.ts`, `fixtures/release-1.0/contrast-baseline.json` | 34, 35 |
+| `packages/uxdsl/src/contrast.ts`, `fixtures/release-1.0/contrast-baseline.json` | 21 (`ds-runtime/contrast.ts` only), 34, 35 |
 | `fixtures/mig02-nextjs-cssmodules/browser*.js` | 34, 36 |
 | `fixtures/parity/expected/**` | 13, 31, 33, 34 |
 | `fixtures/mig07-consumer/**`, `fixtures/webpack-adapter/**` | 20, 39 (`fixtures/webpack-adapter/**`), 66 (`fixtures/mig07-consumer/**`) |
-| `fixtures/parity/run.js` | 20, 25, 66 |
+| `fixtures/parity/run.js` | 20, 21, 25, 66 |
 | `fixtures/mig-b2-03-cli-init/**` | 20, 22, 25, 66 |
 | `packages/_deprecated/shims.test.js`, `fixtures/release-1.0/audit-lock.test.js` | 25, 66 |
 | `.github/workflows/ci.yml` | 28, 66 |
@@ -481,6 +484,17 @@ captures), and on `vite.md` and `webpack.md` under its §15's Q1 (a); its
 Q2 asks whether that order stands. The playground row now lists its stories
 in §5's order (MIG-B9-16 after MIG-B9-20 to 22, as the paragraph of
 2026-11-08 in §5 says it waits).
+
+MIG-B9-21 is also on the rows of the files its §15 block "Facts re-measured
+on `d1e07a3`" (2026-11-13) adds to its Shares, in §5's order (its Q2 (a)):
+`src/sass/compile-sass.ts` for `error.warnings`, every `packages/uxdsl/src`
+row for K7's comment-only edits (and K2's `export` keywords on types),
+`compile.md`, the root `package.json`, `fixtures/parity/run.js`, the Vite and
+webpack tests, and three new rows where a wave-3 story also edits the file
+(`entries/engine.ts`, `test/language.test.js`,
+`test/reference-integrity.test.js`). Its other new or shared test files
+have no row: no other unmerged story edits them. The paragraph below
+predates that block; the file it names is now on its row.
 
 One file that the decisions of 2026-11-08 may add to an earlier story is
 not in the table yet. MIG-B9-21's story file states its Shares before the
