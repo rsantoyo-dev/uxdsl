@@ -2712,3 +2712,24 @@ test('MIG-B9-21: uxdsl build never uses a theme file from the working directory 
   assert.match(fs.readFileSync(path.join(dir, 'proj/out/a.css'), 'utf8'), /--uxdsl__space__2: 11px/);
   assert.match(withTheme.stdout, /^\[uxdsl\] Theme config detected$/m);
 });
+
+test('MIG-B9-21: uxdsl build prints a failed entry\'s warnings before its error, once', (t) => {
+  const dir = mkTmpDir();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  write(dir, 'a.uxdsl', '$m: (a: 1px);\n.a {\n  margin: map-get($m, a);\n  padding: space(999);\n}\n');
+  const run = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'a.uxdsl', '--out', 'out/a.css'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(run.status, 1, run.stderr);
+  const lines = run.stderr.split('\n');
+  const warning = lines.findIndex((line) => line.startsWith('[uxdsl] Warning: a.uxdsl:3:11: UXD_SASS_WARNING: [global-builtin] '));
+  const error = lines.findIndex((line) => line.startsWith('[uxdsl] Error: ') && /UXD_SPACE_REFERENCE/.test(line));
+  assert.ok(warning !== -1 && error !== -1 && warning < error, run.stderr);
+  assert.equal(lines.filter((line) => /UXD_SASS_WARNING/.test(line)).length, 1, run.stderr);
+  assert.equal(fs.existsSync(path.join(dir, 'out/a.css')), false);
+
+  // Negative control: the same error with nothing before it prints no warning line.
+  write(dir, 'a.uxdsl', '.a {\n  padding: space(999);\n}\n');
+  const plain = spawnSync(process.execPath, [CLI_BIN, 'build', '--entry', 'a.uxdsl', '--out', 'out/a.css'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(plain.status, 1, plain.stderr);
+  assert.doesNotMatch(plain.stderr, /\[uxdsl\] Warning/);
+  assert.match(plain.stderr, /^\[uxdsl\] Error: .*UXD_SPACE_REFERENCE/m);
+});

@@ -183,6 +183,10 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
         sourceMap: wantMap ? 'external' : false,
         to: absPath,
         sass: userOptions.sass,
+      }).catch((error: unknown) => {
+        // The warnings compile() produced before it failed come first.
+        for (const warning of (error as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.warn(formatWarning(warning, projectRoot));
+        throw error;
       });
 
       for (const dep of dependencies) this.addWatchFile(dep);

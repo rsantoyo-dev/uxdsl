@@ -142,6 +142,8 @@ export interface SassStageError extends Error {
   sassFrame: string;
   /** The `sass.Exception`. */
   cause: unknown;
+  /** What `SassStageResult.warnings` would have held, up to the failure. Every error the stage throws after Sass ran carries it. */
+  warnings: CompileWarning[];
 }
 
 type Role = 'uxdsl' | 'scss' | 'sass' | 'css';
@@ -268,9 +270,15 @@ export function compileSassStage(input: SassStageInput, options: SassStageOption
   const sass: typeof Sass = require('sass');
   const stage = openStage(sass, input, options);
   const first = runPass(stage, { report: true });
-  rethrowNonSass(stage, first);
-  const { report, shadowing } = resolveShadowing(stage, first);
-  return finish(stage, report, shadowing);
+  let reported: { report: Pass; shadowing: Definition[] } = { report: first, shadowing: [] };
+  try {
+    rethrowNonSass(stage, first);
+    reported = resolveShadowing(stage, first);
+    return finish(stage, reported.report, reported.shadowing);
+  } catch (error) {
+    if (error && typeof error === 'object') (error as { warnings?: CompileWarning[] }).warnings = stageWarnings(reported.report, reported.shadowing);
+    throw error;
+  }
 }
 
 // --- input and per-call state ------------------------------------------------------
@@ -718,7 +726,20 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
   rethrowNonSass(stage, pass);
   if (pass.failed) throw stageError(pass, pass.error as Sass.Exception);
   const result = pass.result as Sass.CompileResult;
-  const loadedFiles = result.loadedUrls.filter((url) => url.protocol === 'file:').map((url) => fileURLToPath(url));
+  const out: SassStageResult = { css: result.css, loadedFiles: loadedFilesOf(pass), warnings: stageWarnings(pass, shadowing) };
+  if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
+  return out;
+}
+
+/** The files `pass` loaded: Sass's load order when it compiled, the order the importer served them otherwise. */
+function loadedFilesOf(pass: Pass): string[] {
+  if (!pass.result) return [...pass.served.keys()];
+  return pass.result.loadedUrls.filter((url) => url.protocol === 'file:').map((url) => fileURLToPath(url));
+}
+
+/** Sass's warnings in Sass's order, then one per shadowing definition, in load order. */
+function stageWarnings(pass: Pass, shadowing: Definition[]): CompileWarning[] {
+  const loadedFiles = loadedFilesOf(pass);
   const order = (file: string): number => {
     const index = loadedFiles.indexOf(file);
     return index === -1 ? loadedFiles.length : index;
@@ -727,9 +748,7 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
     .slice()
     .sort((a, b) => order(a.file) - order(b.file) || a.line - b.line || a.column - b.column)
     .map((definition): CompileWarning => ({ text: definition.message, file: definition.file, line: definition.line, column: definition.column }));
-  const out: SassStageResult = { css: result.css, loadedFiles, warnings: [...pass.warns.map((warn) => convertWarning(pass, warn)), ...shadow] };
-  if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
-  return out;
+  return [...pass.warns.map((warn) => convertWarning(pass, warn)), ...shadow];
 }
 
 // --- the author's SCSS wins ----------------------------------------------------------

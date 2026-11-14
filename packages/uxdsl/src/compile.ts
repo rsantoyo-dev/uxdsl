@@ -155,9 +155,22 @@ type Locate = (line: number, column?: number) => AuthorPosition | null;
 /**
  * Compiles `input` through the four stages above. Input, `sourceMap` and
  * `sass` are checked before anything is read; a failure is thrown as the
- * stage that failed reports it, at the author's position.
+ * stage that failed reports it, at the author's position, and carries
+ * `warnings`: the warnings produced before it, as `CompileResult.warnings`
+ * would list them (`[]` when there were none).
  */
 export async function compile(input: CompileInput, config: CompileConfig = {}): Promise<CompileResult> {
+  const warnings: CompileWarning[] = [];
+  try {
+    return await compileInto(warnings, input, config);
+  } catch (error) {
+    if (error && typeof error === 'object') (error as { warnings?: CompileWarning[] }).warnings = warnings;
+    throw error;
+  }
+}
+
+/** compile(), pushing each warning onto `warnings` as soon as it exists. */
+async function compileInto(warnings: CompileWarning[], input: CompileInput, config: CompileConfig): Promise<CompileResult> {
   if (!input || (typeof input.entry !== 'string' && typeof input.source !== 'string')) {
     throw new Error('uxdsl: compile() requires either { entry } or { source }.');
   }
@@ -191,21 +204,27 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
       { reserved: reservedNames(theme), sourceMap: true, sass: config.sass }
     );
   } catch (error) {
+    const reported = (error as { warnings?: CompileWarning[] } | null)?.warnings ?? [];
+    warnings.push(...reported.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)));
     throw hidden ? hideInError(error, hidden) : error;
   }
+  warnings.push(...stage.warnings.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)));
 
   const locate = locator(stage, hidden);
   // The stage's map, chained only when a map is requested; every position is
   // located through the stage's map either way.
   const prev = sourceMap !== false ? chainable(stage.map!) : undefined;
   const sourcesContent = config.sourcesContent !== false;
-  let result: Result;
+  let result: Result | undefined;
+  // Keeps the Result the plugins warn on, for the warnings given before a failure.
+  const capture: Plugin = { postcssPlugin: 'uxdsl/capture', Once(_root, helpers) { result = helpers.result; } };
   try {
     // PostCSS's default parser, which reads Dart Sass's output as CSS and
     // rejects the text Sass printed that is not CSS, as stage 4 above
     // describes. `from` is always given (undefined for an anonymous source),
     // so PostCSS never warns that it is missing.
     result = await postcss([
+      capture,
       restoreDirectiveSpacing,
       uxdslPlugin({
         // A removed option is handed to the plugin, which reports it as
@@ -221,6 +240,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
       map: prev ? { prev, inline: false, annotation: false, sourcesContent } : false,
     });
   } catch (error) {
+    if (result) warnings.push(...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)));
     throw relocateError(error, stage.css, locate, stageEntry, hidden);
   }
 
@@ -240,10 +260,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   const dependencies = stage.loadedFiles.filter((file) => file !== hidden);
   for (const file of discovered?.dependencies ?? []) if (!dependencies.includes(file)) dependencies.push(file);
 
-  const warnings: CompileWarning[] = [
-    ...stage.warnings.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)),
-    ...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)),
-  ];
+  warnings.push(...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)));
 
   // The plugin's own message for this compilation (the last one, should a
   // caller's PostCSS setup ever run it twice).

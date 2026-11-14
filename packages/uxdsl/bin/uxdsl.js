@@ -1027,7 +1027,9 @@ function commitCompiled(compiled) {
 // of the deprecations it omitted for that entry), so each entry prints its
 // own, though two entries' lines read the same. Every build that recompiles an
 // entry prints its warnings again. A theme warning compile() reports without a
-// file is skipped: warnUnknownThemeKeys prints it with its path.
+// file is skipped: warnUnknownThemeKeys prints it with its path. An entry that
+// fails prints the warnings compile() produced before the failure (its error's
+// `warnings`) the same way, before its error.
 //
 // The theme is counted over the last result of every entry: this build's, and,
 // for an entry a selective build did not recompile, the one `session` (a watch
@@ -1067,19 +1069,23 @@ async function buildOnce(config, entryIndices, session) {
 
   const compiled = [];
   const printedWarnings = new Set();
+  const printWarnings = (warnings, i) => {
+    for (const warning of warnings || []) {
+      if (!warning.file && themeWarningTexts.has(warning.text)) continue;
+      const line = formatCompileWarning(warning);
+      const key = warning.file ? line : `${i}\n${line}`;
+      if (printedWarnings.has(key)) continue;
+      printedWarnings.add(key);
+      console.warn(line);
+    }
+  };
   for (const i of indices) {
     try {
       const result = await compileEntryToCss(entries[i], config || {});
-      for (const warning of result.warnings || []) {
-        if (!warning.file && themeWarningTexts.has(warning.text)) continue;
-        const line = formatCompileWarning(warning);
-        const key = warning.file ? line : `${i}\n${line}`;
-        if (printedWarnings.has(key)) continue;
-        printedWarnings.add(key);
-        console.warn(line);
-      }
+      printWarnings(result.warnings, i);
       compiled.push({ index: i, ...result });
     } catch (err) {
+      printWarnings(err && err.warnings, i);
       annotateThemeError(err, config || {});
       if (multi) {
         const label = entries[i] && entries[i].outFile

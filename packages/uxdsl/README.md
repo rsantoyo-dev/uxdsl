@@ -1690,7 +1690,9 @@ a file — relative to `to` (to the working directory without it) and
 URL-encoded — with their text; the CSS is identical in the three modes, and,
 like Dart Sass's own output, it does not end with a newline. `warnings` lists
 Dart Sass's warnings, then the plugin's; a warning with no position, such as
-an unknown theme family's, is `{ text }` alone. `dependencies` is every file
+an unknown theme family's, is `{ text }` alone; an error `compile()` rejects
+with carries, as `warnings`, those that came before it, and the CLI, the Vite
+plugin and the webpack loader show them before the error. `dependencies` is every file
 Dart Sass loaded (the entry, or `from`, first), then the theme file
 `compile()` discovered and the local modules it requires. The `sass` option
 (`{ silenceDeprecations?: string[], quietDeps?: boolean }`) is passed to Dart

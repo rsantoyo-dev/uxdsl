@@ -479,3 +479,32 @@ test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the webp
   assert.equal(passed.css, without.css, 'the options change nothing');
   assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
 });
+
+test('MIG-B9-21: the Vite plugin and the webpack loader emit a failed compile\'s warnings before the error (webpack)', async (t) => {
+  const dir = mkTmpDir();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const loader = require(LOADER);
+  // The loader called as webpack calls it, with the context it reads; `events` records the order.
+  const run = (source) => new Promise((resolve) => {
+    const events = [];
+    const context = {
+      resourcePath: path.join(dir, 'panel.uxdsl'),
+      rootContext: dir,
+      sourceMap: false,
+      getOptions: () => ({ discoverTheme: false }),
+      addDependency: () => {},
+      emitWarning: (warning) => events.push(['warning', warning.message]),
+      async: () => (err) => { events.push(['callback', err && err.message]); resolve(events); },
+    };
+    loader.call(context, source);
+  });
+  const events = await run('$m: (a: 1px);\n.a {\n  margin: map-get($m, a);\n  padding: space(999);\n}\n');
+  assert.equal(events.length, 2, JSON.stringify(events));
+  assert.equal(events[0][0], 'warning');
+  assert.match(events[0][1], /^panel\.uxdsl:3:11: UXD_SASS_WARNING: \[global-builtin\] /);
+  assert.equal(events[1][0], 'callback');
+  assert.match(events[1][1], /UXD_SPACE_REFERENCE/);
+  // Negative control: a failing module with nothing before the failure emits no warning.
+  const quiet = await run('.a {\n  padding: space(999);\n}\n');
+  assert.deepEqual(quiet.map(([kind]) => kind), ['callback']);
+});

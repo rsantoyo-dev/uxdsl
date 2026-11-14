@@ -523,6 +523,17 @@ outside a string and a `url()`, is read as a `//` comment:
   `sass.silenceDeprecations` silences a type and `sass.quietDeps` the
   deprecations of the files loaded through a load path or `pkg:`; an
   `@debug` prints nothing.
+- **An error carries the warnings that came before it.** Every error
+  `compile()` rejects with has a `warnings` property, `[]` when nothing came
+  first: what `CompileResult.warnings` would have listed up to the failure,
+  in the same order and at the same positions (Dart Sass's, then
+  `UXD_FUNCTION_SHADOWED`, then the plugin's; no `file` for an anonymous
+  source). A `[global-builtin]` deprecation on line 3 followed by
+  `space(999)` on line 4 rejects with the `UXD_SPACE_REFERENCE` error, whose
+  `warnings` holds the deprecation. Its class, message, `file`, `line`,
+  `column`, `code` and `sassFrame` are those it has without them. The CLI,
+  the Vite plugin and the webpack loader print or emit these warnings before
+  the error, as they print a successful compile's.
 
 ```scss
 @mixin size($name) {

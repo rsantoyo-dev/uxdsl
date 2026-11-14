@@ -222,6 +222,8 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     // type mismatch.
     callback(null, css, map ? withAbsoluteSources(JSON.parse(map), this.resourcePath) : undefined);
   } catch (err) {
+    // The warnings compile() produced before it failed come first.
+    for (const warning of (err as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
     callback(err);
   }
 }

@@ -22,7 +22,7 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
-### What repeated is deleted (MIG-B9-21)
+### One theme resolution per compilation, a failed compile keeps its warnings, and what repeated is deleted (MIG-B9-21)
 
 #### Removed
 
@@ -66,6 +66,25 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `discoverTheme` and `theme` to `compile()` and register its
   `dependencies`, which now carry the theme file, instead of discovering the
   theme themselves. What they compile and watch is unchanged.
+
+#### Added
+
+- **`compile()`'s error carries the warnings produced before it.** Every
+  error `compile()` rejects with has a `warnings` array (`[]` when nothing came
+  first), in the order and at the positions `CompileResult.warnings` would
+  have given: Dart Sass's, then `UXD_FUNCTION_SHADOWED`, then the plugin's. A
+  file whose line 3 calls `map-get()` and whose line 4 is
+  `padding: space(999);` rejects with the `UXD_SPACE_REFERENCE` error, and its
+  `warnings` holds
+  `UXD_SASS_WARNING: [global-builtin] Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.`
+  at line 3, column 11. Nothing else on the error changes.
+- **The CLI, the Vite plugin and the webpack loader show a failed compile's
+  warnings before its error.** `uxdsl build` prints them as
+  `[uxdsl] Warning: …` lines above `[uxdsl] Error: …` (once each, in watch mode
+  too), the Vite plugin calls `this.warn` and the webpack loader
+  `this.emitWarning` for each before failing the module. They used to be
+  lost. The PostCSS plugin used alone is unchanged: the host's PostCSS runner
+  owns its result.
 
 #### Fixed
 
