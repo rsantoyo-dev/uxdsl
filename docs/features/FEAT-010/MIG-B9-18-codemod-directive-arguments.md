@@ -7,9 +7,9 @@
 | Decision gate | None (registered by decision 36 of 2026-11-10, as proposed in MIG-B9-29 §15, owner flag 4) |
 | Status | Ready |
 | Size | S |
-| Depends on | MIG-B9-29 (merged, PR #82). Under README §7 it shares only the append-only rows (`packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/README.md`) with any unmerged story. §7's opening sentence, "every wave-3 story waits for MIG-B9-21", is asked about in §15, Q4; until it is answered the story also waits for MIG-B9-21 |
+| Depends on | MIG-B9-29 (merged, PR #82). Under README §7 it shares only the append-only rows (`packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/README.md`) with any unmerged story. It does not wait for MIG-B9-21: decision 15 of 2026-11-13 (§15, Q4 (a)) makes it the one exception to §7's opening sentence, "every wave-3 story waits for MIG-B9-21" |
 | Blocks | MIG-B9-91 (its gate requires every wave-3 story merged, MIG-B9-18 included: decision 35 of 2026-11-10). In `0.5.0-beta.10`, MIG-B9-60 if its story file comes to edit the codemod (§15, F12; provisional) |
-| Base | `feat/beta9` after MIG-B9-29 (and after MIG-B9-21 until §15's Q4 is answered). §3 and §4 were recorded on `5a041fc` (`docs/b9-wave3-story-files`: `feat/beta9` at `cc10de6`, with MIG-B9-20 merged, plus documentation commits); both are re-run on the base the story starts from |
+| Base | `feat/beta9` after MIG-B9-29 (`a00fbbe` or later; not after MIG-B9-21, by decision 15 of 2026-11-13). §3 and §4 were recorded on `5a041fc` (`docs/b9-wave3-story-files`: `feat/beta9` at `cc10de6`, with MIG-B9-20 merged, plus documentation commits); both are re-run on the base the story starts from |
 | Owns | `packages/uxdsl/scripts/codemod-canonical-grammar.js` (the directive-argument rewrite, its place in `rewrite()`, and the header comment), `packages/uxdsl/test/codemod-canonical-grammar.test.js` (new `MIG-B9-18:` tests appended; the comment at lines 112–113 rewritten) |
 | Shares | `packages/uxdsl/CHANGELOG.md` (one subsection under `## 0.5.0-beta.9 — unreleased`), `packages/uxdsl/README.md` (one sentence in "Codemod: `scripts/codemod-canonical-grammar.js`") |
 | Output impact | CLI: the shipped codemod rewrites a directive's function arguments and quoted `palette()`/`color()` arguments in one run, and removes an escaped quote with its backslash. Compiled output: none |
@@ -723,7 +723,8 @@ Owner checks, never marked PASS by the agent:
 
 - Answer §15's Q1 to Q5 before the story starts. Until then the contract
   assumes Q1 (a), Q2 (a), Q3 (a) and Q5 (a), and the story waits for
-  MIG-B9-21 (Q4 (b)).
+  MIG-B9-21 (Q4 (b)). (Answered 2026-11-13, decisions 12 to 16, §15: the
+  story does not wait for MIG-B9-21.)
 
 ## 10. Generated artifacts and guards
 
@@ -1037,3 +1038,13 @@ exception to its opening sentence.
    and the story's title is that the directive-argument rewrite is
    complete. It widens decision 36's paraphrase, so the contract assumes
    (a) until the owner answers.
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 12 to 16 of 2026-11-13. PR #89, which added this file, put its Q1 to Q5 to the owner as its questions 1 to 5. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). The questions were not put to the owner one by one: under that instruction each recommended option is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English. Where a decision differs from this story's contract, it rules; the contract is not rewritten here, and the items each decision changes are named below.
+
+- **Q1 (decision 12): (b), every token rewrite applies to the arguments after the quotes are removed.** It differs from the contract, which assumed (a), and widens decision 36 of 2026-11-10's wording. As the lead-in above says of Q1 (b): C6 and T6 are added (a quoted `radius("full")` inside a directive, F9, is finished in one run), and C1 loses its one exception, so C1 holds for any files. The CHANGELOG's "Running the codemod again now changes nothing." and the README's "so a second run changes nothing" then hold for every input (decision 35 of 2026-11-10).
+- **Q2 (decision 13): (a)**, as the contract assumed. Every comma inside the directive's parentheses becomes a space, nested ones included. Nothing changes.
+- **Q3 (decision 14): (a)**, as the contract assumed. An escaped quote is removed with its backslash, and the JSON stays valid. Nothing changes.
+- **Q4 (decision 15): (a), the story does not wait for MIG-B9-21; it starts now.** It differs from the contract's header, which assumed (b). The header's Depends on and Base now drop MIG-B9-21 (done in the PR that records this decision), and the index's §7 records this story as the one exception to its opening sentence. §3's preconditions, recorded on `5a041fc`, and §4's baseline are re-run on the base the story starts from, as the header says.
+- **Q5 (decision 16): (b), both of F3's forms.** It differs from the contract, which assumed (a), and widens decision 36 of 2026-11-10's paraphrase. C3's bullet for the form without parentheses, T2's `.b` and `.b2` cases and AC2's `.b` line are part of the contract, as the lead-in above says of Q5 (b).
