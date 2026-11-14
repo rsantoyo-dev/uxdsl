@@ -1064,3 +1064,37 @@ line was stale, and is corrected as README §1 item 4 allows:
   803) was right.
   - Old: `  (lines 783–805): one sentence, appended after the sentence that ends "is`
   - New: `  (lines 783–806): one sentence, appended after the sentence that ends "is`
+
+### Owner decisions of 2026-11-14 (the scout's two flags)
+
+The scout of the delivering run raised two flags against the contract as
+amended on 2026-11-13. Under the owner's standing instruction of 2026-11-10
+(quoted in the 2026-11-13 block above) each was answered with its
+recommended option. They were not put to the owner one by one; each is the
+owner's decision of 2026-11-14, and the owner may override either.
+
+- **Flag 1, F13 (an unclosed directive parenthesis): (b).** Decision 12
+  makes C1 hold for any files, while §6 and F13 kept BASE's two-run
+  behavior for `.a { @ds-surface(contained\n  background: palette("primary-main");\n}`.
+  Answer: the fallback join (the text to the first `)`) also has the token
+  rewrites run on the text it unquoted, so F13 is final in run 1 and C1
+  holds literally. F13 is a finding resolved by this answer. Its run-1
+  bytes differ from BASE: `.a { @ds-surface(contained background: palette(primary.main);\n}`
+  instead of `palette(primary-main)`, and a second run leaves it. The input
+  is malformed and the compiler rejects it either way; no C5 input, T5 row
+  or guard set holds it. The implementation brings every directive,
+  through the balanced pattern or the fallback, to `@ds-x(a b)` before the
+  token rewrites run, so the fallback's text is rewritten like any other.
+  Test: T4 plants it as `unclosed.css` and asserts those bytes after run 1,
+  and its second-run assertion covers it.
+- **Flag 2, F11 (`${…}` after a function argument): (b).** §6 pins F11 to
+  BASE's half rewrite, and no test did. Answer: one assertion inside T5,
+  separate from its nine-line table and its seven-line report, that
+  `.h { @ds-surface(contained, radius(2), ${r}); }` gives
+  `.h { @ds-surface(contained radius(2), ${r}); }`. T5 writes it to its own
+  file, `h.css`, with its own report block. §14 records it as an
+  assertion added within T5. The same file holds
+  `.w { @ds-surface(contained  primary); }` (two spaces, no comma): the
+  table's rows all hold a comma, which the comma rule collapses on its own,
+  so without that line a run that stops collapsing whitespace passed T5,
+  against AC1's mutation list; with it, that mutant fails T5.
