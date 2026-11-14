@@ -1436,11 +1436,13 @@ difference: discovery inside the plugin is **synchronous** (the plugin
 factory and its compilation pass both are), so an `uxdsl.theme.cjs`
 exporting an async factory function (`module.exports = async () => ({...})`)
 throws a clear error naming the file — pass a resolved `theme` object to the
-plugin directly instead, or use an integration that supports async config
-(the `uxdsl` CLI, `uxdsl/vite` or `uxdsl/webpack`, which all use
-`discoverThemeAsync`). The discovered theme file (and anything it locally
-`require()`s) is reported as a real PostCSS `dependency` message, so a
-bundler's own watcher picks up an edit to it.
+plugin directly instead, or use an integration that supports async config:
+the `uxdsl` CLI (which reads the theme file next to its build config) or
+`compile()`, which `uxdsl/vite` and `uxdsl/webpack` run and which discovers
+the theme once per compilation, asynchronously, in its `configRoot`. The
+discovered theme file (and anything it locally `require()`s) is reported as
+a real PostCSS `dependency` message, so a bundler's own watcher picks up an
+edit to it.
 
 ### Diagnostics
 
@@ -1689,8 +1691,8 @@ URL-encoded — with their text; the CSS is identical in the three modes, and,
 like Dart Sass's own output, it does not end with a newline. `warnings` lists
 Dart Sass's warnings, then the plugin's; a warning with no position, such as
 an unknown theme family's, is `{ text }` alone. `dependencies` is every file
-Dart Sass loaded (the entry, or `from`, first), then the theme files the
-plugin discovered. The `sass` option
+Dart Sass loaded (the entry, or `from`, first), then the theme file
+`compile()` discovered and the local modules it requires. The `sass` option
 (`{ silenceDeprecations?: string[], quietDeps?: boolean }`) is passed to Dart
 Sass — `quietDeps: true` silences the deprecations of the files it loads
 through a load path or `pkg:`, never those of the project's own files — and

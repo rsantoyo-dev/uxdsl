@@ -141,7 +141,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     root, result, theme, bps, ordered, originalSources, dslSources,
     themeMarker: findThemeMarker(root),
     themeEmitted: false,
-    references: (opts.references ?? discovered?.references ?? {}) as ReferenceOptions,
+    references: (opts.references ?? {}) as ReferenceOptions,
     bpNames: new Set(Object.keys(bps)),
     // Token maps are always computed so references keep validating against
     // the effective theme; only the `:root` definitions depend on the marker.

@@ -142,6 +142,33 @@ test('MIG-B6-20: discovers uxdsl.theme.cjs from rootContext when theme is omitte
   assert.match(bundle, /--uxdsl__palette__webpackonlybrand-main/);
 });
 
+test('MIG-B9-21: the adapter passes configRoot to compile(), which discovers the theme once and returns its files as dependencies', async (t) => {
+  const dir = mkTmpDir();
+  const empty = mkTmpDir();
+  t.after(() => { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true }); });
+  const themeFile = write(dir, 'uxdsl.theme.json', JSON.stringify({ spacing: { 2: '9px' } }));
+  write(dir, 'panel.uxdsl', '@uxdsl theme;\n.a { padding: space(2); }\n');
+  const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
+  const build = async (options) => {
+    const stats = await runWebpack({
+      mode: 'development',
+      context: dir,
+      entry,
+      output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+      module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options }] }] },
+    });
+    return { bundle: fs.readFileSync(path.join(dir, 'dist/bundle.js'), 'utf8'), deps: [...stats.compilation.fileDependencies].map((file) => path.resolve(file)) };
+  };
+  const discovered = await build({ configRoot: dir });
+  assert.match(discovered.bundle, /--uxdsl__space__2: 9px/);
+  assert.ok(discovered.deps.includes(path.resolve(themeFile)), 'the theme file is a webpack file dependency');
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../../src/webpack.ts'), 'utf8'), /discoverTheme(?:Async|Sync)/, 'the loader leaves discovery to compile()');
+  // Negative control: a configRoot with no theme file compiles against the base theme and depends on no theme file.
+  const base = await build({ configRoot: empty });
+  assert.match(base.bundle, /--uxdsl__space__2: 0\.25rem/);
+  assert.ok(!base.deps.includes(path.resolve(themeFile)));
+});
+
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");

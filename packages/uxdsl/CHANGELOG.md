@@ -48,9 +48,37 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   consumer's own selector over one on `:root`, and among those the last in
   document order; `!important` takes no part, as before.
 
+#### Changed
+
+- **One theme resolution per compilation, in `compile()`.** `compile()` takes
+  two new options, `discoverTheme` (default `true`) and `configRoot` (default
+  the working directory), both ignored when `theme` is given. Without
+  `theme`, it discovers the theme file once, asynchronously, in `configRoot`,
+  and hands that one theme to the reserved-name check and to the plugin,
+  where it used to read the working directory twice, synchronously. The
+  discovered theme file and the local modules it requires are listed in
+  `dependencies`, after the files Dart Sass loaded, as before.
+- **`compile()` accepts a theme file that exports an async function.** It
+  used to throw `… exports an async function` when it discovered one itself;
+  the PostCSS plugin used alone still does, since it discovers synchronously.
+- **`uxdsl/vite` and `uxdsl/webpack` discover through `compile()`.** They pass
+  their root (`configRoot`, or Vite's `root` and webpack's `rootContext`),
+  `discoverTheme` and `theme` to `compile()` and register its
+  `dependencies`, which now carry the theme file, instead of discovering the
+  theme themselves. What they compile and watch is unchanged.
+
+#### Fixed
+
+- **`uxdsl build` no longer uses a theme file from the working directory.**
+  When the build config's directory had no theme file, `compile()` searched
+  the working directory and used a `uxdsl.theme.*` it found there, silently
+  (no `Theme config detected`). The CLI now passes `discoverTheme: false`: the
+  theme is the file next to the build config, or the base theme.
+
 #### Visual changes
 
-- None: compiled output and the theme CSS are byte-identical.
+- None, except the CLI case under Fixed: compiled output and the theme CSS
+  are otherwise byte-identical.
 
 ### The theme is emitted only at `@uxdsl theme;`; `includeTheme` is removed (MIG-B9-20)
 

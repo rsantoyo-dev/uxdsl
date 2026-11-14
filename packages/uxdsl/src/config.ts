@@ -43,9 +43,8 @@ export interface DiscoveredTheme extends NormalizedThemeExport {
    * transitively `require()`d while loading — safe to feed directly into
    * a PostCSS `dependency` message or a file watcher's list. */
   dependencies: string[];
-  /** Always `undefined`: a theme file no longer carries `references` (they
-   * live in the build config or the plugin/adapter option). Kept on the type
-   * only until the plugin's own `discovered?.references` read is retired. */
+  /** Always `undefined`: a theme file carries no `references` (they live in
+   * the build config or the plugin/adapter option). */
   references?: undefined;
 }
 

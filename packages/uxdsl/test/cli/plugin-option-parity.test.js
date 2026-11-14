@@ -127,6 +127,7 @@ test('MIG-B6-18: every one of those same UxdslOptions keys is also forwarded by 
 // each host's call, or is listed here with the reason it is not forwarded.
 const KNOWN_UNFORWARDED_COMPILE_OPTIONS = {
   sourcesContent: "every host keeps the default: maps carry the author's text",
+  configRoot: 'the CLI reads the theme file next to its build config itself and passes discoverTheme: false',
 };
 
 const VITE_SRC = path.resolve(__dirname, '..', '..', 'src', 'vite.ts');

@@ -721,12 +721,14 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
   // to drift. `to` is the absolute outFile, which is also where an external
   // `.map` lands, so the map's `sources` are relative to the right place in
   // both modes. `sass` is the config's Dart Sass options, shared by every
-  // entry.
+  // entry. The theme is the one loadConfig read next to the build config, or
+  // none: compile() never searches the working directory for another.
   const sourceMap = sharedConfig.sourceMap || false;
   const { css: compiledCss, map, dependencies, warnings, themeEmitted } = await uxdslCore.compile(
     { entry: entryConfig.entry },
     {
       theme: sharedConfig.theme,
+      discoverTheme: false,
       references: sharedConfig.references,
       to: entryConfig.outFile,
       sourceMap,

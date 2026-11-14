@@ -144,6 +144,24 @@ test('MIG-B6-20: load() also watches the discovered theme file', async () => {
   assert.ok(ctx.watched.some((f) => path.resolve(f) === path.resolve(themeFile)));
 });
 
+test('MIG-B9-21: the adapter passes configRoot to compile(), which discovers the theme once and returns its files as dependencies', async (t) => {
+  const dir = mkTmpDir();
+  const empty = mkTmpDir();
+  t.after(() => { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true }); });
+  const themeFile = write(dir, 'uxdsl.theme.json', JSON.stringify({ spacing: { 2: '9px' } }));
+  const entry = write(dir, 'panel.uxdsl', '@uxdsl theme;\n.a { padding: space(2); }\n');
+  const ctx = makeCtx();
+  const result = await uxdsl({ configRoot: dir }).load.call(ctx, `${entry}?uxdsl&lang.css`);
+  assert.match(result.code, /--uxdsl__space__2: 9px/);
+  assert.deepEqual(ctx.watched, [entry, themeFile]);
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../../src/vite.ts'), 'utf8'), /discoverTheme(?:Async|Sync)/, 'the plugin leaves discovery to compile()');
+  // Negative control: a configRoot with no theme file compiles against the base theme and watches only the entry.
+  const bare = makeCtx();
+  const base = await uxdsl({ configRoot: empty }).load.call(bare, `${entry}?uxdsl&lang.css`);
+  assert.match(base.code, /--uxdsl__space__2: 0\.25rem/);
+  assert.deepEqual(bare.watched, [entry]);
+});
+
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");

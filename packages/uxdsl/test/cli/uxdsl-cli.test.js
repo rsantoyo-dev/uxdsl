@@ -2692,3 +2692,23 @@ test('MIG-B9-20: generate-entry refuses a value on --no-theme in either spelling
   assert.equal(runCli(dir, 'generate-entry', '--src', 'src').status, 0);
   assert.deepEqual(listing(), ['a.uxdsl', 'uxdsl-entry.uxdsl', 'uxdsl-theme.uxdsl']);
 });
+
+test('MIG-B9-21: uxdsl build never uses a theme file from the working directory when the build config\'s directory has none', (t) => {
+  const dir = mkTmpDir();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  write(dir, 'uxdsl.theme.json', JSON.stringify({ spacing: { 2: '9px' } }));
+  write(dir, 'proj/uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };");
+  write(dir, 'proj/src/a.uxdsl', '@uxdsl theme;\n.a { padding: space(2); }\n');
+  const run = spawnSync(process.execPath, [CLI_BIN, 'build', '--config', 'proj/uxdsl.config.cjs'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(run.status, 0, run.stderr);
+  const css = fs.readFileSync(path.join(dir, 'proj/out/a.css'), 'utf8');
+  assert.match(css, /--uxdsl__space__2: 0\.25rem/, 'the base theme: the build config names no theme file');
+  assert.doesNotMatch(run.stdout, /Theme config detected/);
+
+  // Control: a theme file next to the build config is the theme, and the CLI says so.
+  write(dir, 'proj/uxdsl.theme.json', JSON.stringify({ spacing: { 2: '11px' } }));
+  const withTheme = spawnSync(process.execPath, [CLI_BIN, 'build', '--config', 'proj/uxdsl.config.cjs'], { cwd: dir, encoding: 'utf8' });
+  assert.equal(withTheme.status, 0, withTheme.stderr);
+  assert.match(fs.readFileSync(path.join(dir, 'proj/out/a.css'), 'utf8'), /--uxdsl__space__2: 11px/);
+  assert.match(withTheme.stdout, /^\[uxdsl\] Theme config detected$/m);
+});
