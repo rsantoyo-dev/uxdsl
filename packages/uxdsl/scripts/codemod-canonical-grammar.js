@@ -163,8 +163,10 @@ function rewrite(text, report) {
   };
   out = out.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)\s*(,[^()]*)?\)/gi, dashed);
   // In a directive's arguments the commas are gone, so an alpha follows a space.
+  // The arguments are the same text the directive pass above joined: to the
+  // matching `)`, or else to the first one.
   for (const name of DIRECTIVES) {
-    out = out.replace(new RegExp(`@${name}${ARGS}`, 'gi'), (match) => match.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)(\s+[^()\s][^()]*)\)/gi, dashed));
+    out = out.replace(new RegExp(`@${name}${ARGS_OR_FIRST}`, 'gi'), (match) => match.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)(\s+[^()\s][^()]*)\)/gi, dashed));
   }
   count('palette()/color() dashed -> dotted', n); n = 0;
   for (const item of unresolved) report.push(['unresolved', item]);

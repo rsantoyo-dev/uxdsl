@@ -803,7 +803,8 @@ role makes ambiguous (`--uxdsl__typography__body-text-transform`, when the
 theme defines a `body-text` role) is left and reported, once per occurrence.
 A directive's arguments are rewritten in one run, a function argument
 (`@ds-surface(contained, radius(2), shadow(1))`, with or without the
-parentheses), a quoted `palette()`/`color()` argument and a quoted
+parentheses), a quoted `palette()`/`color()` argument, a dashed one with an
+alpha (also before an interpolation, `${…}` or `#{…}`) and a quoted
 `radius("full")` included, and an escaped quote inside a JSON or JavaScript
 string (`@ds-button(\"outlined\")`) is removed with its backslash, so the
 string stays valid.

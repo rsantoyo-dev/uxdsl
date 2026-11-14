@@ -542,8 +542,8 @@ test('MIG-B9-18: a second --write run changes no file, for directive arguments w
     fs.writeFileSync(path.join(dir, `g${ext}`), planted.get(`g${ext}`));
   }
   // An unclosed directive parenthesis: the rest of the line is joined into it,
-  // and its quoted key is rewritten in the same run.
-  const unclosed = '.a { @ds-surface(contained\n  background: palette("primary-main");\n}\n';
+  // and its quoted key, with or without an alpha, is rewritten in the same run.
+  const unclosed = '.a { @ds-surface(contained\n  background: palette("primary-main");\n}\n.b { @ds-surface(contained\n  background: palette("primary-main", 0.5);\n}\n';
   fs.writeFileSync(path.join(dir, 'unclosed.css'), unclosed);
 
   const args = ['--write', '--theme', 'theme.json', '.'];
@@ -567,7 +567,8 @@ test('MIG-B9-18: a second --write run changes no file, for directive arguments w
 
   assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'g.json'), 'utf8')).css, fs.readFileSync(path.join(dir, 'g.css'), 'utf8').split('\n').slice(0, -1),
     'the JSON strings are what the same run writes in a .css file');
-  assert.equal(fs.readFileSync(path.join(dir, 'unclosed.css'), 'utf8'), '.a { @ds-surface(contained background: palette(primary.main);\n}\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'unclosed.css'), 'utf8'),
+    '.a { @ds-surface(contained background: palette(primary.main);\n}\n.b { @ds-surface(contained background: palette(primary.main 0.5);\n}\n');
 });
 
 test('MIG-B9-18: a directive whose arguments hold no quote and no function call is rewritten as before (negative control)', (t) => {
@@ -589,11 +590,20 @@ test('MIG-B9-18: a directive whose arguments hold no quote and no function call 
   // interpolation, where the arguments up to the first `)` are joined and the
   // interpolation is left.
   fs.writeFileSync(path.join(dir, 'h.css'), '.w { @ds-surface(contained  primary); }\n.h { @ds-surface(contained, radius(2), ${r}); }\n');
+  // A dashed key with an alpha before an interpolation or a call nested three
+  // deep: the arguments up to the first `)` are joined and the key is dotted.
+  const I = [
+    ['.h1 { @ds-surface(contained, palette(primary-main, 0.5), ${r}); }', '.h1 { @ds-surface(contained palette(primary.main 0.5), ${r}); }'],
+    ['.h2 { @ds-surface(palette(primary-main, 0.5), #{$r}); }', '.h2 { @ds-surface(palette(primary.main 0.5), #{$r}); }'],
+    ['.d3 { @ds-surface(contained, palette(primary-main, 0.5), shadow(calc(var(--x)))); }', '.d3 { @ds-surface(contained palette(primary.main 0.5), shadow(calc(var(--x)))); }'],
+  ];
+  fs.writeFileSync(path.join(dir, 'i.css'), `${I.map(([input]) => input).join('\n')}\n`);
 
-  const result = run(dir, '--write', 'g.css', 'h.css');
+  const result = run(dir, '--write', 'g.css', 'h.css', 'i.css');
   assert.equal(result.status, 0, result.stderr);
   assert.equal(fs.readFileSync(path.join(dir, 'g.css'), 'utf8'), `${TABLE.map(([, output]) => output).join('\n')}\n`);
   assert.equal(fs.readFileSync(path.join(dir, 'h.css'), 'utf8'), '.w { @ds-surface(contained primary); }\n.h { @ds-surface(contained radius(2), ${r}); }\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'i.css'), 'utf8'), `${I.map(([, output]) => output).join('\n')}\n`);
   assert.deepEqual(result.lines.map((line) => line.trimEnd()), [
     'W g.css',
     '     rounded() -> radius() ×1',
@@ -604,7 +614,10 @@ test('MIG-B9-18: a directive whose arguments hold no quote and no function call 
     '     unresolved: densities(…) ×1: define a Density token in the theme and use density(k)',
     'W h.css',
     '     directive arguments ×2',
-    '2 file(s) rewritten (2 with findings).',
+    'W i.css',
+    '     palette()/color() dashed -> dotted ×3',
+    '     directive arguments ×3',
+    '3 file(s) rewritten (3 with findings).',
   ]);
 });
 
