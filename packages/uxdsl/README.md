@@ -801,6 +801,12 @@ typography variable (`--uxdsl__typography__h1-size` →
 its CSS property as it is, so a second run changes nothing; a name a theme
 role makes ambiguous (`--uxdsl__typography__body-text-transform`, when the
 theme defines a `body-text` role) is left and reported, once per occurrence.
+A directive's arguments are rewritten in one run, a function argument
+(`@ds-surface(contained, radius(2), shadow(1))`, with or without the
+parentheses), a quoted `palette()`/`color()` argument and a quoted
+`radius("full")` included, and an escaped quote inside a JSON or JavaScript
+string (`@ds-button(\"outlined\")`) is removed with its backslash, so the
+string stays valid.
 It walks `.uxdsl`, `.css`, `.scss`, `.ts`, `.tsx`, `.js`, `.jsx`, `.mdx`,
 `.md` and `.json` files and skips `node_modules`, `dist` and `.next`. It
 rewrites prose too, so review a documentation file it touches.

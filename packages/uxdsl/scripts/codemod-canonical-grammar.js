@@ -8,7 +8,7 @@
 //   radius(full)             -> radius(pill)
 //   palette(family-variant)  -> palette(family.variant)   (alpha kept)
 //   color(family-shade)      -> color(family.shade)
-//   @ds-x (args) / @ds-x args; / @ds-x(a, b) / @ds-x("a")
+//   @ds-x (args) / @ds-x args; / @ds-x(a, b) / @ds-x("a") / @ds-x(a, radius(2))
 //                            -> @ds-x(a b)
 //   --uxdsl__typography__<role>-size / -line / -weight / -spacing / -transform / -decoration / -style
 //                            -> -font-size / -line-height / -font-weight / -letter-spacing / -text-transform / -text-decoration / -font-style
@@ -43,6 +43,13 @@
 // The theme is the packaged base merged with `--theme` (a JSON file or a
 // `.js`/`.cjs` module exporting the theme object), so a project's own families
 // and colors count.
+//
+// A directive's arguments are read to the matching parenthesis, function calls
+// included, and in the form without parentheses to `;`, `}` or the end of the
+// line. Their quotes are removed first, an escaped quote (`\"`, `\'`) with its
+// backslash so a JSON or JavaScript string stays valid, and every rewrite above
+// then applies to them in the same run. Inside the parentheses the commas
+// become spaces, so an alpha there follows a space (`palette(primary.main 0.5)`).
 //
 // `densities(…)` has no mechanical rewrite (it needs a Density token in the
 // theme); occurrences are reported.
@@ -103,6 +110,17 @@ function dotted(kind, key) {
 }
 
 const DIRECTIVES = ['ds-surface', 'ds-button', 'ds-input', 'ds-typo'];
+// A directive's arguments in parentheses: the text to the matching `)`, with
+// up to two levels of nested calls, never across `;`, `{` or `}`. Where that
+// does not match (an unclosed or deeper parenthesis, an interpolation), the
+// text to the first `)`.
+const ARGS = '\\(((?:[^;{}()]|\\((?:[^;{}()]|\\([^;{}()]*\\))*\\))*)\\)';
+const ARGS_OR_FIRST = `(?:${ARGS}|\\(([^)]*)\\))`;
+// The arguments of the form without parentheses: from a letter to `;`, `}` or
+// the end of the line, function calls included.
+const LINE_ARGS = '([a-z](?:[^;{}()\\n]|\\((?:[^;{}()\\n]|\\([^;{}()\\n]*\\))*\\))*?)';
+// A quote, or an escaped quote together with its backslash.
+const QUOTE = /\\?["']/g;
 
 // The former typography suffixes and the CSS property each one names.
 const TYPOGRAPHY_SUFFIXES = { size: 'font-size', line: 'line-height', weight: 'font-weight', spacing: 'letter-spacing', transform: 'text-transform', decoration: 'text-decoration', style: 'font-style' };
@@ -115,34 +133,42 @@ function rewrite(text, report) {
   let out = text;
   const count = (label, n) => { if (n) report.push([label, n]); };
   let n;
+  // Every directive is brought to `@ds-x(a b)` first, so the token rewrites
+  // below see its arguments without quotes and without commas.
+  let directives = 0;
+  for (const name of DIRECTIVES) {
+    // `@ds-x (args)`, `@ds-x args;` and `@ds-x args }` -> `@ds-x(args)`.
+    out = out.replace(new RegExp(`@${name}\\s+${ARGS_OR_FIRST}`, 'gi'), (match, args, first) => { directives++; return `@${name}(${args ?? first})`; });
+    out = out.replace(new RegExp(`@${name}\\s+${LINE_ARGS}\\s*(?=[;}\\n])`, 'gi'), (match, inner) => { directives++; return `@${name}(${inner.trim()})`; });
+    out = out.replace(new RegExp(`@${name}${ARGS_OR_FIRST}`, 'gi'), (match, args, first) => {
+      const inner = args ?? first;
+      // Template literals and Sass interpolation (`${…}`, `#{…}`) are code, not arguments.
+      if (/[$#]\{/.test(inner)) return match;
+      const next = inner.replace(QUOTE, '').replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
+      if (next !== inner) directives++;
+      return `@${name}(${next})`;
+    });
+  }
   out = out.replace(/\brounded\(/g, () => { n = (n || 0) + 1; return 'radius('; }); count('rounded() -> radius()', n); n = 0;
   out = out.replace(/\belevation\(/g, () => { n++; return 'shadow('; }); count('elevation() -> shadow()', n); n = 0;
   out = out.replace(/\bradius\(\s*full\s*\)/g, () => { n++; return 'radius(pill)'; }); count('radius(full) -> radius(pill)', n); n = 0;
   const unresolved = [];
-  out = out.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)\s*(,[^()]*)?\)/gi, (match, fn, key, alpha) => {
+  const dashed = (match, fn, key, alpha) => {
     const kind = fn.toLowerCase();
     const result = dotted(kind, key.toLowerCase());
     if (!result) return match;
     if (typeof result !== 'string') { unresolved.push(`${match} (ambiguous: ${result.ambiguous.join(' or ')})`); return match; }
     n++;
     return `${fn}(${result}${alpha || ''})`;
-  });
+  };
+  out = out.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)\s*(,[^()]*)?\)/gi, dashed);
+  // In a directive's arguments the commas are gone, so an alpha follows a space.
+  for (const name of DIRECTIVES) {
+    out = out.replace(new RegExp(`@${name}${ARGS}`, 'gi'), (match) => match.replace(/\b(palette|color)\(\s*([a-z][a-z0-9-]*)(\s+[^()\s][^()]*)\)/gi, dashed));
+  }
   count('palette()/color() dashed -> dotted', n); n = 0;
   for (const item of unresolved) report.push(['unresolved', item]);
-  for (const name of DIRECTIVES) {
-    // `@ds-x (args)`, `@ds-x args;` and `@ds-x args {` -> `@ds-x(args)`.
-    out = out.replace(new RegExp(`@${name}\\s+\\(([^)]*)\\)`, 'gi'), (match, inner) => { n++; return `@${name}(${inner})`; });
-    out = out.replace(new RegExp(`@${name}\\s+([a-z][^;{}()\\n]*?)\\s*(?=[;}\\n])`, 'gi'), (match, inner) => { n++; return `@${name}(${inner.trim()})`; });
-    out = out.replace(new RegExp(`@${name}\\(([^)]*)\\)`, 'gi'), (match, inner) => {
-      // Template literals and Sass interpolation (`${…}`, `#{…}`) are code, not arguments.
-      if (/[$#]\{/.test(inner)) return match;
-      let next = inner.replace(/["']/g, '');
-      next = next.replace(/\s*,\s*/g, ' ').replace(/\s+/g, ' ').trim();
-      if (next !== inner) n++;
-      return `@${name}(${next})`;
-    });
-  }
-  count('directive arguments', n); n = 0;
+  count('directive arguments', directives);
   // A typography variable is decided on its whole name: the longest run of
   // `[a-z0-9-]` after the prefix, not followed by a word character or `-`.
   const ambiguousNames = [];
