@@ -124,10 +124,11 @@ test('MIG-B6-18: every one of those same UxdslOptions keys is also forwarded by 
 });
 
 // compile()'s own options. Every key of `CompileConfig` reaches compile() from
-// each host's call, or is listed here with the reason it is not forwarded.
+// each host's call, or is listed here with the reason it is not forwarded: a
+// string for every host, `{ hosts, reason }` for the hosts named.
 const KNOWN_UNFORWARDED_COMPILE_OPTIONS = {
   sourcesContent: "every host keeps the default: maps carry the author's text",
-  configRoot: 'the CLI reads the theme file next to its build config itself and passes discoverTheme: false',
+  configRoot: { hosts: ['the CLI'], reason: 'the CLI reads the theme file next to its build config itself and passes discoverTheme: false' },
 };
 
 const VITE_SRC = path.resolve(__dirname, '..', '..', 'src', 'vite.ts');
@@ -139,9 +140,15 @@ const COMPILE_CALL_HOSTS = [
   ['uxdsl/webpack', WEBPACK_SRC, /\bcompile\(\s*\{[\s\S]*?\},\s*\{([\s\S]*?)\}\s*\)/],
 ];
 
-function unforwardedCompileOptions(optionKeys, hostSource, callPattern, describeFor) {
+function listedAsUnforwarded(key, host) {
+  if (!Object.prototype.hasOwnProperty.call(KNOWN_UNFORWARDED_COMPILE_OPTIONS, key)) return false;
+  const entry = KNOWN_UNFORWARDED_COMPILE_OPTIONS[key];
+  return typeof entry === 'string' || entry.hosts.includes(host);
+}
+
+function unforwardedCompileOptions(optionKeys, hostSource, callPattern, describeFor, host) {
   const forwarded = new Set(extractObjectLiteralKeys(hostSource, callPattern, describeFor));
-  return optionKeys.filter((key) => !Object.prototype.hasOwnProperty.call(KNOWN_UNFORWARDED_COMPILE_OPTIONS, key) && !forwarded.has(key));
+  return optionKeys.filter((key) => !listedAsUnforwarded(key, host) && !forwarded.has(key));
 }
 
 test("MIG-B9-14: every compile() option is forwarded by each host's compile() call, or listed with its reason", () => {
@@ -149,7 +156,7 @@ test("MIG-B9-14: every compile() option is forwarded by each host's compile() ca
   assert.ok(optionKeys.includes('sass') && optionKeys.includes('sourcesContent'), JSON.stringify(optionKeys));
   const missingByHost = {};
   for (const [host, file, callPattern] of COMPILE_CALL_HOSTS) {
-    const missing = unforwardedCompileOptions(optionKeys, fs.readFileSync(file, 'utf8'), callPattern, `${host}'s compile() call in ${file}`);
+    const missing = unforwardedCompileOptions(optionKeys, fs.readFileSync(file, 'utf8'), callPattern, `${host}'s compile() call in ${file}`, host);
     if (missing.length) missingByHost[`${host} (${path.relative(path.resolve(__dirname, '..', '..'), file)})`] = missing;
   }
   assert.deepEqual(
@@ -173,4 +180,11 @@ test('MIG-B9-14: the forwarding check reports an option a compile() call leaves 
   for (const [index, adapterCall] of adapterCalls.entries()) {
     assert.deepEqual(unforwardedCompileOptions(keys, adapterCall, COMPILE_CALL_HOSTS[1 + index][2], 'an adapter call without sass'), ['sass']);
   }
+});
+
+test("MIG-B9-21: an option listed as unforwarded for the CLI alone is still required of uxdsl/vite and uxdsl/webpack", () => {
+  const keys = ['theme', 'configRoot', 'sourcesContent'];
+  const call = (host) => (host === 'the CLI' ? 'await uxdslCore.compile(\n  { entry },\n  {\n    theme,\n  }\n);' : 'await compile({ entry: absPath }, {\n  theme,\n});');
+  const reported = Object.fromEntries(COMPILE_CALL_HOSTS.map(([host, , callPattern]) => [host, unforwardedCompileOptions(keys, call(host), callPattern, `${host} without configRoot`, host)]));
+  assert.deepEqual(reported, { 'the CLI': [], 'uxdsl/vite': ['configRoot'], 'uxdsl/webpack': ['configRoot'] });
 });

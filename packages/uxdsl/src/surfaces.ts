@@ -1,3 +1,7 @@
+// Surfaces: `@ds-surface` and the `surfaces` theme family, container roles
+// composed from Density, Radius, Palette, Border and Shadow. The plugin,
+// generateThemeCss and the inspectors share this one engine.
+
 import valueParser from 'postcss-value-parser';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, getToneFamilies, tokenValueToCss, REMOVED_RADIUS_FULL } from './language';
 import { closestKey, formatKeyList } from './diagnostics';

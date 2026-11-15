@@ -1,3 +1,7 @@
+// The engine Buttons and Inputs share: role inheritance from a Surface,
+// responsive compilation, tone composition and one rule per interaction
+// state. buttons.ts and inputs.ts supply only their schema and defaults.
+
 import valueParser from 'postcss-value-parser';
 import { SurfaceTheme, getSurfaceTokens, surfaceDeclarations, surfaceValueToCss, requireRole } from './surfaces';
 import { parseDirectiveTokens, directiveArgumentsInner, toneError } from './directives';

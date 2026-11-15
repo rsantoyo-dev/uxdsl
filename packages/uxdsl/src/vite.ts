@@ -164,7 +164,6 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       if (!isVirtualId(id)) return null;
       const absPath = realPathFromVirtualId(id);
 
-
       // Vite drives maps from its own `build.sourcemap`
       // / `css.devSourcemap` settings, so this follows the resolved config
       // instead of inventing a plugin option. 'external' (never 'inline'):

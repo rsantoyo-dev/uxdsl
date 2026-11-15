@@ -79,9 +79,7 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   }
 }
 
-// Derived from theme/base.json, not computed here —
-// density defaults still stay inside the shipped 1-16 Spacing scale, that
-// shape is just data now instead of a formula.
+// The base theme's densities (theme/base.json), which stay within Spacing 1–16.
 export const DEFAULT_DENSITIES: Record<string, string> = BASE_THEME.densities as Record<string, string>;
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
 // `directiveArguments` lists each directive's override-argument function

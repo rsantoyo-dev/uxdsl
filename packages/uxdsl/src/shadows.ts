@@ -1,3 +1,7 @@
+// Shadows: the `shadows` theme family behind `shadow(k)`, static or
+// responsive. The plugin, generateThemeCss, generateShadowCss and
+// inspectShadowTheme share this one engine.
+
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext } from './language';
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { BASE_THEME } from './base-theme';

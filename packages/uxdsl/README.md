@@ -233,8 +233,8 @@ in the `compile()` guide's
 `uxdsl/engine` is a tooling API and is **exempt from semver**: it may change in
 a minor release. Everything else in the table follows semver.
 `scripts/measure-exports.js` in the UXDSL repository lists every entry's
-exports with the files that consume them; it is how the `uxdsl/engine` exports
-nothing used were found and removed. The package's source comments state what
+exports with the files that consume them, and names the ones nothing
+consumes. The package's source comments state what
 the code does and why; `scripts/no-history-comments.test.js` fails on one that
 names a story, a phase, a date or a release instead.
 
@@ -1444,10 +1444,11 @@ throws a clear error naming the file — pass a resolved `theme` object to the
 plugin directly instead, or use an integration that supports async config:
 the `uxdsl` CLI (which reads the theme file next to its build config) or
 `compile()`, which `uxdsl/vite` and `uxdsl/webpack` run and which discovers
-the theme once per compilation, asynchronously, in its `configRoot`. The
-discovered theme file (and anything it locally `require()`s) is reported as
-a real PostCSS `dependency` message, so a bundler's own watcher picks up an
-edit to it.
+the theme once per compilation, asynchronously, in its `configRoot`. Used
+alone, the plugin reports the theme file it discovered (and anything it
+locally `require()`s) as a PostCSS `dependency` message, so a bundler's own
+watcher picks up an edit to it; `compile()` lists those files in its
+`dependencies`.
 
 ### Diagnostics
 

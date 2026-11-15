@@ -1,3 +1,7 @@
+// Inputs: `@ds-input` and the `inputs` theme family, field roles built on a
+// Surface with caret, placeholder and their interaction states. This module
+// holds the schema and the defaults; the rest is control-engine.ts's.
+
 import { NOT_DISABLED } from './buttons';
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';

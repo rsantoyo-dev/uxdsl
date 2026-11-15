@@ -416,8 +416,8 @@ rebuild in the same state says nothing more, and fixing then breaking it
 again warns again. There is no switch to silence it.
 A project whose theme reaches the page another way (`generateThemeCss`
 rendered on the server, `applyTheme` in the browser, or a stylesheet another
-build writes) still gets the "no entry" warning on every build: the count sees
-only this build's entries.
+build writes) still gets the "no entry" warning from every `uxdsl build` (once
+per state in `build --watch`): the count sees only this build's entries.
 `[uxdsl] Theme config detected` is printed, after compiling, for an entry that
 emitted the theme.
 

@@ -1,6 +1,7 @@
-// The one shared Google Fonts encoder, used by both the PostCSS plugin
-// (plugin.ts) and the runtime/SSR generator (ds-runtime/theme-generator.ts),
-// so they emit the exact same `@import` for the same `theme.fonts.google`.
+// The one shared Google Fonts encoder, used by the theme generator
+// (ds-runtime/theme-generator.ts), which the PostCSS plugin and
+// generateThemeCss both render through, so they emit the exact same `@import`
+// for the same `theme.fonts.google`.
 // Browser-safe: no
 // Node globals, no import of `./config` or `fs`/`path` — see the guard test
 // in test/fonts.test.js. Never calls fetch; this only builds URL strings.

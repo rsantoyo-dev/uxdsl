@@ -5,8 +5,9 @@
 // That is the whole runtime API. There is no per-token setter and no
 // breakpoint rewriter: inline styles on `<html>` and compiled media queries
 // rewritten with a regex would compete with — and silently beat — the managed
-// stylesheet. The CHANGELOG ("Removed") maps the removed `updatePalette`/
-// `updateSpacing`/`updateBreakpoint` calls to `applyTheme` patches.
+// stylesheet. The CHANGELOG's table of removed runtime calls maps each
+// `updatePalette`/`updateSpacing`/`updateBreakpoint` call to an `applyTheme`
+// patch.
 export {
   applyTheme,
   getAppliedTheme,

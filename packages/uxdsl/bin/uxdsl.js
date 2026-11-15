@@ -1,5 +1,10 @@
 #!/usr/bin/env node
 
+// The `uxdsl` command: init, generate-entry, build (once or with --watch) and
+// theme. A build reads its theme once, in loadConfig, and compiles each entry
+// through the package's own compile() with it; it writes an output file only
+// when its content changed, and replaces it whole, by rename.
+
 const fs = require('fs');
 const path = require('path');
 const minimist = require('minimist');
@@ -538,9 +543,8 @@ function resolveSourceMap(flagValue, configValue) {
 // family `resolveTheme()` actually merges (spacing, palette, fonts,
 // typography_details) documents partial override as the intended
 // pattern, so there is no family that's safe to check unconditionally —
-// the library's own README example (`palette.primary.main` alone) and the
-// mig-b2-05-release fixture's partial `spacing` override would both read
-// as "incomplete".
+// the library's own README example (`palette.primary.main` alone) and a
+// partial `spacing` override would both read as "incomplete".
 //
 // A CLI flag value arrives as a comma-separated string
 // (`--strict-theme=palette,breakpoints`); a config value can already be a
@@ -554,7 +558,7 @@ function resolveSourceMap(flagValue, configValue) {
 // `--strict-theme=true`/`=false` arrive as strings (undeclared, `=value`
 // always does) and are matched before the CSV branch below, so neither is
 // read as a family named "true"/"false" — a silent no-op gate. Each of the
-// four gets its own answer (see strictThemeScopeRequired above), matched
+// four gets its own answer (see strictThemeScopeRequired below), matched
 // by exact, case-insensitive value: "True,false" is a two-element family
 // list, since a real family name can't contain a comma anyway.
 //
@@ -747,9 +751,9 @@ async function compileEntryToCss(entryConfig, sharedConfig) {
     finalCss = `${finalCss}\n/*# sourceMappingURL=${path.basename(mapFile)} */`;
   }
 
-  // `dependencies` (the entry first, then every file Dart Sass loaded, then
-  // the theme files discovered) lets watch mode rebuild only the entries a
-  // changed file affects. `warnings` are compile()'s, each at the author's
+  // `dependencies` (the entry first, then every file Dart Sass loaded; the
+  // theme file and the modules it requires are watched through loadConfig)
+  // lets watch mode rebuild only the entries a changed file affects. `warnings` are compile()'s, each at the author's
   // file, line and column when it has a position; buildOnce prints them.
   return {
     outFile: entryConfig.outFile, finalCss, dependencies, warnings, mapFile, mapContent: map,
@@ -2647,8 +2651,7 @@ function parseCommandArgv(rawArgs) {
   // minimist collects a repeated flag (`--entry a --entry b`) into an
   // array instead of keeping only the last one, which every consumer
   // below (`path.resolve`, `String(...).split(',')`, ...) would either
-  // choke on or silently misuse. The last occurrence winning is the
-  // documented contract, so collapse
+  // choke on or silently misuse. The last occurrence wins, so collapse
   // any array here, once, instead of at every call site.
   for (const key of Object.keys(argv)) {
     if (key !== '_' && Array.isArray(argv[key])) argv[key] = argv[key][argv[key].length - 1];

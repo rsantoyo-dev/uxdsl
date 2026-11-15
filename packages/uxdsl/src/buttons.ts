@@ -1,3 +1,7 @@
+// Buttons: `@ds-button` and the `buttons` theme family, action roles built on
+// a Surface with their interaction states. This module holds the schema and
+// the defaults; role inheritance, tones and state rules are control-engine.ts's.
+
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
 import { BASE_THEME } from './base-theme';

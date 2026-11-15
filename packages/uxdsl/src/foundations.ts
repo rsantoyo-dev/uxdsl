@@ -1,3 +1,7 @@
+// Foundations: palette, colors, spacing and the dark palette as custom
+// properties. Every value goes through the one value grammar, and two keys
+// that would produce the same variable name are an error.
+
 import { DEFAULT_BORDER_COLORS } from './edges';
 import { TokenContext, tokenValueToCss } from './language';
 import { themeError } from './diagnostics';

@@ -1,3 +1,7 @@
+// Borders and Radii: the `borders` and `radii` theme families behind
+// `border(k)` and `radius(k)`. The plugin, generateThemeCss, generateEdgeCss
+// and inspectEdgeTheme share this one engine.
+
 import { compilePresetRules, mergePresetTokens } from './preset-engine';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, tokenValueToCss } from './language';
 import { BASE_THEME } from './base-theme';

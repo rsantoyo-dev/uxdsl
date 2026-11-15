@@ -22,7 +22,9 @@ test('MIG-B9-13: a CSS error in an imported partial names the partial at its dec
   assert.match(result.stderr, /src\/partial\.uxdsl:3:3: UXD_DENSITY_REFERENCE: density\(16\) does not exist; available keys: 0–15\./);
   assert.match(result.stderr, />\s*3 \|\s+padding: density\(16\);/);
   // The error part: the @import deprecation the CLI prints before it names src/a.uxdsl, as it should.
-  const errorPart = result.stderr.slice(result.stderr.indexOf('[uxdsl] Error:'));
+  const errorAt = result.stderr.indexOf('[uxdsl] Error:');
+  assert.notEqual(errorAt, -1, result.stderr);
+  const errorPart = result.stderr.slice(errorAt);
   assert.doesNotMatch(errorPart, /src\/a\.uxdsl:\d/, 'never the importing file');
   assert.doesNotMatch(errorPart, /:3:12:/, 'not the token column the former pipeline printed');
   assert.equal(fs.existsSync(path.join(directory, 'src', 'a.css')), false);

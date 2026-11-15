@@ -1,3 +1,7 @@
+// Typography: the `typography_details` theme family and `@ds-typo(role)`. A
+// role's own field replaces `default`'s whole, and the directive emits one
+// declaration per field the effective theme defines, nothing else.
+
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
 import { buildVarName } from './naming';
 import { themeError } from './diagnostics';

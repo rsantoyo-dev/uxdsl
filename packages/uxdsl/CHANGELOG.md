@@ -97,8 +97,8 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   at line 3, column 11. Nothing else on the error changes.
 - **The CLI, the Vite plugin and the webpack loader show a failed compile's
   warnings before its error.** `uxdsl build` prints them as
-  `[uxdsl] Warning: …` lines above `[uxdsl] Error: …` (once each, in watch mode
-  too), the Vite plugin calls `this.warn` and the webpack loader
+  `[uxdsl] Warning: …` lines above `[uxdsl] Error: …` (once each), the Vite
+  plugin calls `this.warn` and the webpack loader
   `this.emitWarning` for each before failing the module. They used to be
   lost. The PostCSS plugin used alone is unchanged: the host's PostCSS runner
   owns its result.

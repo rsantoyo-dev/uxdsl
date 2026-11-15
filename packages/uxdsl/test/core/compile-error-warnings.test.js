@@ -83,6 +83,28 @@ test("MIG-B9-21: compile()'s error carries the warnings produced before it, in t
   assert.deepEqual(anonymousSass.warnings, [{ text: DEPRECATION, line: 3, column: 11 }]);
 });
 
+test("MIG-B9-21: a Sass error raised after a project @function shadows a token function carries UXD_FUNCTION_SHADOWED after Dart Sass's warnings", async (t) => {
+  const dir = project(t);
+  const file = path.join(dir, 'a.uxdsl');
+  // Line 2 defines a project space(), which raises @error for 999; line 9 is `last`.
+  const shadowing = (last) =>
+    `$m: (a: 1px);\n@function space($n) {\n  @if $n == 999 { @error "big"; }\n  @return $n * 1px;\n}\n.a {\n  margin: map-get($m, a);\n  padding: space(2);\n  ${last}\n}\n`;
+
+  // The same file, compiling: the deprecation, then the shadowing at the definition.
+  fs.writeFileSync(file, shadowing('width: space(3);'));
+  const ok = await compile({ entry: file }, { discoverTheme: false });
+  assert.deepEqual(
+    ok.warnings.map((warning) => [warning.text.split(':')[0], warning.line]),
+    [['UXD_SASS_WARNING', 7], ['UXD_FUNCTION_SHADOWED', 2]]
+  );
+
+  fs.writeFileSync(file, shadowing('width: space(999);'));
+  const error = await failure({ entry: file });
+  assert.equal(error.code, 'UXD_SASS');
+  assert.match(error.message, /UXD_SASS: "big"/);
+  assert.deepEqual(error.warnings, ok.warnings);
+});
+
 test("MIG-B9-21: compile()'s error carries an empty warnings list when nothing came before it", async (t) => {
   const dir = project(t);
   const file = path.join(dir, 'a.uxdsl');

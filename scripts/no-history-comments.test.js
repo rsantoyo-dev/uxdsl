@@ -5,7 +5,8 @@
 // a phase, a date, a release or a story item is reported as file:line with the
 // rule and the text it matched. Only comments are read, through the TypeScript
 // parser, so the same text in a string, a template literal or a regular
-// expression is never reported; a URL in a comment is ignored.
+// expression is never reported; a URL in a comment is ignored, and so is a
+// path to a fixture directory that exists. A story id is matched in any case.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
@@ -17,7 +18,7 @@ const REPO = path.resolve(__dirname, '..');
 const ts = require(require.resolve('typescript', { paths: [path.join(REPO, 'packages', 'uxdsl')] }));
 
 const RULES = [
-  ['story id', /\b(?:MIG|FEAT|DEC)-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/],
+  ['story id', /\b(?:MIG|FEAT|DEC)-[A-Z0-9]+(?:-[A-Z0-9]+)*\b/i],
   ['review or audit id', /\b(?:D|DE|HB|CT|RR|DGE|R)-\d+\b|\baudit (?:finding )?[A-Z]{1,3}\d+\b/],
   ['phase', /\bstability phase\b|\bphase \d+\b/i],
   ['date', /\b20\d\d-[01]\d-[0-3]\d\b/],
@@ -25,6 +26,10 @@ const RULES = [
   ['story item', /\bitems? \d+\b/],
 ];
 const URL_PATTERN = /\b[a-z][a-z0-9+.-]*:\/\/\S+/gi;
+// A fixture directory may carry a story's name; a path to one that exists is a
+// place a reader can open, so it is not reported. One that does not exist is.
+const FIXTURE_PATH_PATTERN = /\bfixtures\/[A-Za-z0-9._-]+/g;
+const withoutFixturePaths = (line) => line.replace(FIXTURE_PATH_PATTERN, (found) => (fs.existsSync(path.join(REPO, found)) ? '' : found));
 
 /** Every comment of a file, once each, with the line it starts on. */
 function commentsOf(fileName, text) {
@@ -55,7 +60,7 @@ function findHistory(fileName, text) {
   const found = [];
   for (const comment of commentsOf(fileName, text)) {
     comment.text.split('\n').forEach((raw, index) => {
-      const line = raw.replace(URL_PATTERN, '');
+      const line = withoutFixturePaths(raw.replace(URL_PATTERN, ''));
       for (const [rule, pattern] of RULES) {
         const match = line.match(pattern);
         if (match) found.push({ file: fileName, line: comment.line + index, rule, match: match[0], text: raw.trim() });
@@ -116,6 +121,17 @@ test('MIG-B9-21: a planted history comment is reported at its line, one sample p
     '7:review or audit id', '8:story item', '10:story id', '14:story id',
   ]);
   assert.deepEqual(reported('#!/usr/bin/env node\n// MIG-B6-17: in a script\n', 'bin.js'), ['2:story id']);
+});
+
+test('MIG-B9-21: a story id in lowercase is reported, and a path to a fixture that exists is not', () => {
+  const sample = [
+    "// the mig-b2-05-release fixture's partial override",
+    '// what fixtures/mig-b2-03-cli-init/ pins',
+    '// what fixtures/mig-b0-99-not-a-fixture/ pins',
+    '/* see feat-008 */',
+    'export {};',
+  ].join('\n');
+  assert.deepEqual(reported(sample), ['1:story id', '3:story id', '4:story id']);
 });
 
 test('MIG-B9-21: the same text in a string, a template literal, a regular expression or a URL is not reported', () => {

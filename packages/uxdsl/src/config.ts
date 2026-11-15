@@ -5,8 +5,9 @@ import type { UxdslConfig } from './types';
 export type { UxdslConfig, UxdslConfigShared, UxdslBuild, UxdslTheme, UxdslThemeOverride } from './types';
 
 // The one shared theme-file loader, used by the PostCSS plugin's own
-// discovery, the CLI, the Vite plugin and the Webpack loader, so they can
-// never disagree about which file wins or what shape it accepts.
+// discovery, by compile() (which uxdsl/vite and uxdsl/webpack run) and by the
+// CLI, so they can never disagree about which file wins or what shape it
+// accepts.
 //
 // Two files, two jobs:
 //   - the theme file (one of THEME_CANDIDATES) holds the theme, and only the
@@ -195,8 +196,8 @@ export function loadThemeConfigSync(themeConfigPath: string): NormalizedThemeExp
   return acceptThemeExport(mod, themeConfigPath);
 }
 
-/** Async counterpart used by the CLI and the bundler adapters — accepts
- * everything the sync loader does, plus an async factory export. */
+/** Async counterpart, used by the CLI's loadConfig and by discoverThemeAsync
+ * — accepts everything the sync loader does, plus an async factory export. */
 export async function loadThemeConfigAsync(themeConfigPath: string): Promise<NormalizedThemeExport> {
   clearLocalRequireCache(themeConfigPath);
   let mod = require(themeConfigPath);
@@ -221,7 +222,8 @@ export function discoverThemeSync(dir: string): DiscoveredTheme | null {
   return { theme, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
 }
 
-/** Async counterpart, for the CLI and the bundler adapters. */
+/** Async counterpart: what compile() runs once per compilation when it is
+ * given no theme, and so how uxdsl/vite and uxdsl/webpack discover one. */
 export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme | null> {
   const themeConfigPath = findThemeConfigPath(dir);
   if (!themeConfigPath) return null;

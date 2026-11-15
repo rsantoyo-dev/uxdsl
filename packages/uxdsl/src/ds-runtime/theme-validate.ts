@@ -1,3 +1,7 @@
+// The one theme validator (`validateTheme`) and the theme merge
+// (`deepMergeTheme`). Every path that accepts a theme validates it here;
+// nothing is coerced or normalized.
+
 import { compileDensityRules, getDensityTokens, validateBreakpoints, tokenValueToCss, DEFAULT_BREAKPOINTS } from '../language';
 import { compileInputRules } from '../inputs';
 import { compileButtonRules } from '../buttons';
@@ -106,11 +110,10 @@ function balancedParentheses(value: string): boolean {
  *
  * `deepMergeTheme({}, input)` reads like one but is not: with an empty base
  * every key takes the `out[key] = nextVal` branch, so nested objects are shared
- * with the input by reference (only arrays are sliced). The validator used that
- * as its "work on a copy" step and therefore normalized *the caller's* object
- * in place — invisible when the input was a freshly parsed JSON literal, and a
- * hard `TypeError` the moment the input shared a sub-object with the deep-frozen
- * packaged base, which is exactly what `resolveTheme()` returns.
+ * with the input by reference (only arrays are sliced). Used as a copy step it
+ * would let a change reach *the caller's* object — a hard `TypeError` when that
+ * object shares a sub-object with the deep-frozen packaged base, which is
+ * exactly what `resolveTheme()` returns.
  */
 export function cloneThemeValue<T>(value: T): T {
   if (Array.isArray(value)) return value.map((item) => cloneThemeValue(item)) as any;
