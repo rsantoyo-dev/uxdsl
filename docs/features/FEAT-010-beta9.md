@@ -517,6 +517,99 @@ MIG-B9-39 (Q1 to Q6; PR #89's questions 17 to 22):
 - **Decision 32 — When the flake and the captures count as done (Q5).** (a): C7 and C8 for the test and C9 for the captures, AC5's and AC6's stress runs, and the PR's CI runs; a later occurrence is recorded with its named step by the story whose run sees it, and routed by the owner. It now concerns MIG-B9-19.
 - **Decision 33 — The atomic-replace watch failure seen once on CI, Dependabot's PR #84 (Q6).** (a): out of scope for MIG-B9-39 and MIG-B9-19; the owner routes it. Q6 (a) names MIG-B9-06 only as an example ("for instance to Q2's story"), so no story is assigned it here.
 
+### Owner decisions of 2026-11-15
+
+Three stories were merged into `feat/beta9` on 2026-11-15: MIG-B9-21 as
+PR #92 (`cf98cb8`), MIG-B9-16 as PR #93 (`44eac7c`) and MIG-B9-25 as PR #94
+(`99f6a82`). Their §15 holds the flags they raised and the follow-ups they
+proposed: MIG-B9-21's "Delivery of 2026-11-15" (owner flags 1 to 5 and its
+follow-ups); MIG-B9-16's "Owner decisions taken under the standing
+instruction of 2026-11-10" (the scout's flags 1 to 3) and its "Delivery of
+2026-11-15"; and MIG-B9-25's "Owner decisions taken under the standing
+instruction of 2026-11-10 (2026-11-15)" (flags 1 to 8) and its "Delivery of
+2026-11-15". They fall under the owner's standing instruction of 2026-11-10
+for FEAT-010, quoted above, verbatim:
+
+> fusiona todo.. y preguntas como recomendadas, y sgeuimos
+
+("merge everything, and the questions as recommended, and let's keep
+going."), which the owner reaffirmed on 2026-11-13, verbatim:
+
+> haz todo como recomendado
+
+("do everything as recommended."), explicitly including recommendations
+that widen a registration. The flags were implemented as recommended and
+were not put to the owner one by one: each recommendation below is the
+owner's decision of 2026-11-15, and the owner may still override any of
+them. Where a follow-up named two possible homes without choosing, the
+decision chose the recommended one and gives the reason; each such decision
+is marked *routing*, and each one that registers a new story *widening*.
+This record is in English. The numbers 1 to 28 belong to this list only,
+and a story cites one as "decision 17 of 2026-11-15". Decisions 17 and 18
+register two story ids for `0.5.0-beta.10`, MIG-B9-94 and MIG-B9-95, the ids
+MIG-B9-21's delivery proposed; the owner may renumber them. No other id is
+registered: MIG-B9-96 waits on MIG-B9-39's delivery (decision 19), MIG-B9-97
+is not taken (decision 21) and MIG-B9-98 is not needed (decision 25). Eight
+stories carry a block of this date at the end of their §15: MIG-B9-21, 16
+and 25 ("Owner decisions of 2026-11-15, on the delivery's flags"), and
+MIG-B9-19, 28, 43, 51 and 91 ("Owner decisions of 2026-11-15 (apply before
+implementing)"). MIG-B9-39, in progress on its own branch, carries none:
+decisions 15, 19 and 27 concern it and are recorded here only, and its §15
+note follows when it merges. No decision of this list concerns MIG-B9-26,
+also in progress.
+
+MIG-B9-21's delivery flags (its §15, "Delivery of 2026-11-15", "Owner
+flags", each implemented as its recommendation):
+
+- **Decision 1 — The CLI and a theme file in the working directory (flag 1, K3 against K8).** (a), as implemented: "The CLI passes `discoverTheme: false`", so a `uxdsl.theme.json` in the working directory no longer stands in, silently, for a build config's missing theme file (the leak MIG-B9-21's "Facts re-measured on `d1e07a3`" reproduced). Not taken: (b) "Keep the leak and list both keys as unforwarded"; (c) "Pass `configRoot` = the config's directory, which searches twice". The story records that (b), if chosen instead, "is a one-line revert plus the list entry".
+- **Decision 2 — Warnings printed before an error against the frozen checks (flag 2).** (a), as implemented: "`fixtures/parity/run.js` compares the CLI output from `[uxdsl] Error:` on, still exactly, and `error-location.test.js` scopes its two `doesNotMatch` assertions to that part." Not taken: (b) "No host prints"; (c) "Re-record the oracles, which K8 forbids".
+- **Decision 3 — K5 against decision 7 of 2026-11-13 (flag 3, informational).** (a): "Keep all five `REMOVED_OPTIONS`, with no generic warning here." Not taken: (b) "Also add a generic unknown-option warning, a new `UXD_` code"; (c) "Delete three and add the generic warning". The generic warning is decision 17's story.
+- **Decision 4 — The extended Shares (flag 4).** (a): the Shares extended for the decided items (`a90042b`, the block "Facts re-measured on `d1e07a3`") are kept. Not taken: (b) "Restrict, deferring K3's doc corrections and the parity narrowing".
+- **Decision 5 — A `code` on the CssSyntaxError `compile()` throws for a UXDSL error (flag 5, MIG-B9-39's F3).** (a): "Not here." Not taken: (b) "Add it here." Its destination is decision 19.
+
+MIG-B9-16's flags (its §15, "Owner decisions taken under the standing
+instruction of 2026-11-10", flags 1 to 3, raised by the scout on
+2026-11-15 on `cf98cb8`):
+
+- **Decision 6 — AC2's total floor (flag 1).** (a): AC2's text ("at least 64 examples (62 on `f855765`)") is not rewritten, though the base has 65 and meets it trivially. The intended floor, measured on `cf98cb8`, is 65 plus the page's net gain, with the page's own count by route (at least 8 examples, at least 3 through `compile()`, 0 problems, under decision 1 of 2026-11-10) as the binding evidence; with the `@each` example kept (decision 8), the derived floor is 69. Not taken: (b) ask the owner to amend AC2's number before implementing.
+- **Decision 7 — T3's reach (flag 2).** (a): T3's checker also reports `<h2 id="css">It is CSS</h2>` and `or inside <code>@media</code> under the rule, it is` when present, and the phrase `every SCSS file is a valid UXDSL file` when missing, and T4 embeds base lines 24 and 79–80 and proves each is reported. It gives C6, C7 and C1.2 their negative controls; the checker does not assert `uxdsl-probe-`, which MIG-B9-26 will change (F4). Not taken: (b) T3 as §8 lists it, plus the subtitle check of decision 1 of 2026-11-10.
+- **Decision 8 — The base's `@each` example (flag 3).** (a): kept, as a second `compile()` example, the only one that interpolates a Sass variable into a directive argument. Not taken: (b) drop it, since the new feature example also shows `@each` over a map.
+
+MIG-B9-25's flags (its §15, "Owner decisions taken under the standing
+instruction of 2026-11-10 (2026-11-15)", flags 1 to 8):
+
+- **Decision 9 — A directory made where no test context is in scope (flag 1).** (a): "The exit path wherever no `t` is in scope: such a directory follows its file's exit code, so a failing file keeps all of them and a passing file removes them all; no call site or test signature changes." Not taken: (b) thread `t` through every helper and test callback ("hundreds of edited call sites, against §6"); (c) mixed, file by file.
+- **Decision 10 — `watch-mode.test.js` (flag 2).** (a): "The exit path in `mkProject`: a piped child keeps the file's process alive until it exits, so the removal runs after every watcher is gone; no hook edits." Not taken: (b) "Pass `t` and replace about 30 hooks with a kill that awaits `exit`." MIG-B9-19 inherits the constraint (decision 27).
+- **Decision 11 — The guard when the command cannot be spawned (flag 3).** (a): it prints `tmpdir-guard: cannot run <command>: <reason>`, then follows C3's failure branch: it keeps the directory, prints the kept line and exits 1, tested by `MIG-B9-25: the guard keeps its directory and exits 1 when the command cannot be run`. Not taken: (b) print the reason, remove the empty directory, exit 1; (c) Node's default, an unhandled error.
+- **Decision 12 — The helper's line for a kept directory (flag 4).** (a): `temporary directory kept: <absolute path>`, through `t.diagnostic` for a test and on stderr for the exit path; T6 and T7 assert it. Not taken: (b) the guard's sentence; (c) free per file.
+- **Decision 13 — The CHANGELOG (flag 5).** (a): no CHANGELOG entry; the docs guard is met by the package README sentence. Not taken: (b) a subsection, with the CHANGELOG added to Shares (AC6 and the index's row would change).
+- **Decision 14 — T9's kept corpus root when T9 fails (flag 6).** (a): removed in `finally`, pass or fail. Decision 5 of 2026-11-10 concerns temporary directories, and this root is under `fixtures/sass-corpus/.work`, in the repository, where AC5 requires no `.work` afterwards. Not taken: (b) keep it on a failure.
+- **Decision 15 — MIG-B9-39's new tests under `test/vite` and `test/webpack` (flag 7).** (a): "The second to merge moves its new tests to the helper; a follow-up for MIG-B9-39 records it." "The guard makes the conflict loud, not silent." Not taken: (b) MIG-B9-25 waits for MIG-B9-39; (c) MIG-B9-39 waits for MIG-B9-25. MIG-B9-25 merged first, so the second is MIG-B9-39 (decision 27).
+- **Decision 16 — The guard given no command (flag 8).** (a): it prints `usage: node scripts/tmpdir-guard.js <command> [args…]` on stderr, makes nothing and exits 1, tested by `MIG-B9-25: the guard prints its usage, makes nothing and exits 1 when it is given no command`. Not taken: (b) exit 0 doing nothing; (c) Node's error from `spawn(undefined)`, after the directory is made.
+
+The follow-ups, routed (MIG-B9-21's §15 "Follow-ups", MIG-B9-16's
+"Delivery of 2026-11-15" and MIG-B9-25's "Follow-ups" and "Delivery of
+2026-11-15"):
+
+- **Decision 17 (widening) — A generic unknown-option warning on the plugin, `compile()`, Vite and webpack (MIG-B9-21's follow-up).** The follow-up: "Any key other than the five removed ones is still ignored silently. Proposed: MIG-B9-60 (doctor) or a new MIG-B9-94." Registered as MIG-B9-94, "Unknown options warn on the plugin, `compile()`, Vite and webpack": wave 6, last in the wave (after MIG-B9-66), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 17 of 2026-11-15)". Reason: nothing is silent, but a new `UXD_` code across four hosts is a design decision of its own, and putting it in `0.5.0-beta.10` leaves beta.9's cut unchanged.
+  - The title given to the recorder, "Unknown options warn on every host", was adjusted to the four hosts the follow-up names. On `99f6a82` the CLI already refuses an unknown flag (`Unknown option …`, `packages/uxdsl/bin/uxdsl.js:2673`), but its build config ignores an unknown key: `rejectRemovedConfigKeys` (`bin/uxdsl.js:661–669`) checks only `REMOVED_CONFIG_KEYS`, and a `uxdsl.config.cjs` with `bogusKey: 1` built with exit 0 and no warning. Whether the CLI's build config joins the story is for its story file.
+  - MIG-B9-60's registered scope was checked and does not already cover it. Its T2 has `uxdsl doctor` scan a project for known removed items (the five former package names, `uxdsl watch`, `uxdsl.theme.config.*`, `REMOVED_CONFIG_KEYS`, removed grammar, old import and guide paths); no host warns on an unknown option there, so nothing is folded into MIG-B9-60.
+- **Decision 18 (widening) — The reference checker ignores `!important` where the CSS cascade does not (MIG-B9-21's follow-up).** The follow-up: "An important `:root` definition followed by a plain one hides a dangling reference in the important one. Fixing it re-records the equivalence oracle. Proposed: a new MIG-B9-95, or 1.0." Registered as MIG-B9-95, "The reference checker follows `!important` as the cascade does": wave 6, last in the wave (after MIG-B9-94), S, decision gate none, `0.5.0-beta.10`, status "Draft (story file to be written; registered by decision 18 of 2026-11-15)". It re-records the equivalence oracle (`ORACLE_SHA256`), which MIG-B9-21's K8 kept, so it is not in `0.5.0-beta.9`. Reason: a hidden dangling reference is a silent failure, and 1.0 is later than needed. For context: MIG-B9-21's K6 removed the comparator's dead `!important` term in `reference-core.ts`, and its T5 pins the behavior this story changes ("the definition that applies is the last one in document order, one on the context's own selector before one on `:root`, and `!important` takes no part").
+- **Decision 19 (routing) — A `code` on the CssSyntaxError `compile()` throws (MIG-B9-39's F3).** The follow-up: "Proposed: MIG-B9-39, or a new MIG-B9-96 if MIG-B9-39's contract does not take it." It goes to MIG-B9-39 if its delivery, in progress, takes it; otherwise it is registered as MIG-B9-96 when MIG-B9-39 merges. Reason: F3 is MIG-B9-39's own finding, and a new id is needed only if its delivery does not take it. Recorded here only; MIG-B9-39's story file is not edited while it is in progress. On `ef0dc8f`, the head of MIG-B9-39's branch read on 2026-11-15, its §15 still has F3 as written ("Proposed: MIG-B9-21, … or the owner's choice") and no delivery block.
+- **Decision 20 (routing) — Removing the 13 `FORMER` engine values together with the shims (MIG-B9-21's follow-up).** The values: `DIAGNOSTIC_CODES`, `TOKEN_FUNCTION_CODES`, `typographyValueToCss`, `TYPOGRAPHY_CSS_PROPERTIES`, `edgeValueToCss`, `DEFAULT_SHADOWS`, `cloneThemeValue`, `THEME_SCHEMA_KEY`, `parseLiteralColor`, `relativeLuminance`, `contrastRatio`, `compositeOver`, `resolveExpression`, which `packages/_deprecated/shims.test.js`'s `FORMER` table pins. No story now: the item is recorded for the story that removes `packages/_deprecated`, none of which is registered, at 1.0 at the latest. FEAT-010 keeps no list of 1.0 items; its out-of-feature list is §3's "Not in this feature, on purpose", and a line after it now records this item and decision 21's.
+- **Decision 21 (routing) — The `src`-only engine exports and the semver-bound dead exports MIG-B9-21 listed.** The follow-up: "Proposed: a 1.0 API review story (new MIG-B9-97, or FEAT-011)." A 1.0 API review, outside FEAT-010 (FEAT-011 or later); recorded, not registered here, and MIG-B9-97 is not taken. Reason: K2 removed none of them, and removing an export of a semver-bound entry is a 1.0 change; the `src`-only `uxdsl/engine` exports, though exempt from semver, were kept under K1's literal roots (Q-K1b) and are reviewed with them. The lists are MIG-B9-21's §15, "Dead exports of semver-bound entries, for 1.0" and "Kept in `uxdsl/engine`, for a later decision".
+- **Decision 22 (routing) — A watch-mode test that a failed compile's warnings print before its error (MIG-B9-21's follow-up).** MIG-B9-19, "which owns CLI watch recovery", as the follow-up proposed.
+- **Decision 23 — T6's remaining blind spots (MIG-B9-21's follow-up).** "A new `src` file before `git add`, and a bare id with no prefix (`B6-17`, `PR #88`)." No story; recorded.
+- **Decision 24 (routing) — RR-N1, the unreflowed 118-character comment line in `bin/uxdsl.js` (MIG-B9-21's follow-up).** MIG-B9-19, the next story on `bin/uxdsl.js`. On `99f6a82` it is line 756.
+- **Decision 25 (routing) — The playground's ESLint step loads no config (MIG-B9-16's delivery).** `next build` prints `Failed to load config "next/typescript" to extend from`, referenced from `packages/playground-nextjs/.eslintrc.json`, so ESLint checks nothing on the playground. The delivery proposed MIG-B9-43, with "a small story of its own on §7's `packages/playground-nextjs/**` row" as the alternative. MIG-B9-43's registered scope was checked and covers the playground's build hygiene: its H5 moves the playground to the current Next major and requires `npm audit` to be 0, its H1 enforces rules on the playground's sources, and its Shares include `packages/playground-nextjs/**`. It goes to MIG-B9-43, so MIG-B9-98 is not registered. Reason: the story that already enforces the playground's rules and upgrades its Next is where the lint step is restored, and a separate story would wait on the same row.
+- **Decision 26 (routing) — `verify:1.0`'s load-sensitive UX-10 and the five directories it leaves (MIG-B9-16's and MIG-B9-25's deliveries).** MIG-B9-91, the beta.9 gate. UX-10 failed once at `doubling cost x3.27` and passed alone at `x2.48` on the same HEAD under load (load average about 28); MIG-B9-91 decides whether it measures on a quieter basis (more repetitions, the minimum of several runs) or records its run conditions. `verify:1.0` leaves five directories in its `TMPDIR` (`uxdsl-1.0-gate-`, `uxdsl-1.0-upgrade-before-`, `uxdsl-vite-adapter-5-`, `uxdsl-vite-adapter-7-`, `uxdsl-webpack-adapter-`), and `packAndInstall` never removes its consumer directory; this is decision 4 of 2026-11-10's follow-up, with the five as its baseline.
+- **Decision 27 (routing) — MIG-B9-25's remaining follow-ups.**
+  - MIG-B9-19: its watch tests in `watch-mode.test.js` keep `mkProject`'s exit path, or pass `t` only with a kill that awaits the child's exit, registered before the directory's hook (flag 2, decision 10).
+  - MIG-B9-28: the guard (`scripts/tmpdir-guard.js`) and MIG-B9-25's §12 loop run on Windows, where `os.tmpdir()` reads `TEMP` and `TMP`.
+  - MIG-B9-51: `CONTRIBUTING.md` states the rule for a new test: make its directories with `packages/uxdsl/test/helpers/temporary-directory.js` (or remove them in `t.after`), and expect `npm test` to fail when one is left.
+  - MIG-B9-39: it adopts the helper for its new `test/vite` and `test/webpack` tests, since it merges second (flag 7, decision 15). Recorded here only.
+- **Decision 28 (routing; closes decision 33 of 2026-11-13) — The atomic-replace watch failure seen once on CI.** The test `MIG-B6-23: an output file is never observed empty or truncated while a rebuild is writing it (atomic replace)` failed once, on Dependabot's PR #84 against `main` (MIG-B9-39 §15, F2; MIG-B9-19 §4.5). It goes to MIG-B9-06, whose story file is still to be written and takes it into its scope; the index's §5 row for MIG-B9-06 says so. Reason: it is a CLI watch-mode failure in `packages/uxdsl/test/cli/watch-mode.test.js`, the class MIG-B9-06 covers, and MIG-B9-06 follows MIG-B9-19 on `test/cli/**`. MIG-B9-19's C8 makes the two other CI-flaky watch tests (lines 36 and 145) name the step that failed; the atomic-replace test, at line 442, is not among them, so MIG-B9-06 starts from its current failure message. MIG-B9-06 is in wave 3, so MIG-B9-91's gate waits for this fix too. Decision 33 of 2026-11-13 is not edited; this decision closes it.
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
@@ -532,15 +625,22 @@ index's §5 sits there.
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 | `0.5.0-beta.9` |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. Registered on 2026-11-10, by splitting MIG-B9-26: the silent cases of `@use`'s module isolation warn. | MIG-B9-16, MIG-B9-17, MIG-B9-20 to 29 | `0.5.0-beta.9` |
-| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. On 2026-11-13, the plain-`@import` warning was retitled "a located warning", since every host prints it (decision 24), and two stories were registered: by splitting MIG-B9-39 (decision 28), the CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed (MIG-B9-39 keeps the adapters); and the CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts (decision 29). | MIG-B9-06, MIG-B9-18, MIG-B9-19, MIG-B9-30 to 39 | `0.5.0-beta.9` |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. On 2026-11-13, the plain-`@import` warning was retitled "a located warning", since every host prints it (decision 24), and two stories were registered: by splitting MIG-B9-39 (decision 28), the CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed (MIG-B9-39 keeps the adapters); and the CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts (decision 29). On 2026-11-15, MIG-B9-06 (decision 29 of 2026-11-13) also took the atomic-replace watch failure seen once on CI (decision 28 of 2026-11-15). | MIG-B9-06, MIG-B9-18, MIG-B9-19, MIG-B9-30 to 39 | `0.5.0-beta.9` |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. Registered on 2026-11-09, first in the wave: a deterministic visual comparison harness. | MIG-B9-40 to 44 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
-| 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). | MIG-B9-60 to 66 | `0.5.0-beta.10` |
+| 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). Registered on 2026-11-15, last in the wave, from MIG-B9-21's delivery: unknown options warn on the plugin, `compile()`, Vite and webpack (decision 17); the reference checker follows `!important` as the cascade does (decision 18). | MIG-B9-60 to 66, MIG-B9-94, MIG-B9-95 | `0.5.0-beta.10` |
 | 7 | Release: the test exercise, the gates, the records. MIG-B9-91 closes beta.9 after wave 3, before wave 4; MIG-B9-90 and MIG-B9-92 close beta.10 after wave 6. | MIG-B9-90, 91, 92 | MIG-B9-91: `0.5.0-beta.9`; MIG-B9-90 and 92: `0.5.0-beta.10` |
 
 **Not in this feature, on purpose:** the MUI theme import (plan D-11, a
 mapping table in the docs is part of MIG-B9-50), container queries, fluid
 scales, DTCG, a Tailwind bridge. They wait for users to ask.
+
+**Not in this feature, for 1.0 at the latest** (decisions 20 and 21 of
+2026-11-15): removing the 13 `uxdsl/engine` values that
+`packages/_deprecated/shims.test.js`'s `FORMER` table pins, together with
+the shims, in the story that removes `packages/_deprecated` (none is
+registered); and a 1.0 API review of the `src`-only engine exports and the
+semver-bound dead exports MIG-B9-21's §15 lists, in FEAT-011 or later.
 
 ## 4. Supersedes
 

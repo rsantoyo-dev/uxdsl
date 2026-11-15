@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in MIG-B9-14 §15's follow-ups; §15 asks the owner six questions, and the contract states the option it assumes for each (answered 2026-11-13, decisions 28 to 33; §15)) |
-| Status | Ready |
+| Status | In review (PR #96) |
 | Size | S, by decision 28 of 2026-11-13 (§15, Q1 (b)): this file was split into two S stories. This story keeps the adapters (C1 to C5, T1 to T10, AC1 to AC3, and AC7 to AC9 for its part); the CLI and the tests (C6 to C9, T11 to T14, AC4 to AC6, and AC7 to AC9 for their part) are [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md). Registered as "S or split by its scout". The CLI watch's four older gaps that the registration also lists are MIG-B9-06 (decision 29 of 2026-11-13) |
 | Depends on | MIG-B9-14 (merged, PR #71), MIG-B9-22 (merged, PR #76) and MIG-B9-21 (Ready; its status is README §5's; it follows MIG-B9-20, merged as PR #88), as README §5 says. Under README §7 it waits for MIG-B9-21 alone on its files (`vite.ts`, `webpack.ts`, `vite.md`, `webpack.md`), as Q1 (b) says (decision 28 of 2026-11-13); MIG-B9-20, on those rows, is merged. It does not depend on MIG-B9-19: the two share only the append-only CHANGELOG and package README |
 | Blocks | MIG-B9-06 (decision 29 of 2026-11-13: after this story, for the adapters' class of the older gaps) and MIG-B9-91 (it depends on every story of waves 0 to 3). Under README §7: MIG-B9-64 (`vite.ts`, `webpack.ts`) |
@@ -116,8 +116,8 @@ All quotes were checked on `5a041fc`.
   - `packages/uxdsl/docs/integrations/vite.md`, lines 220–223: "And a load that fails adds no file: a partial an earlier load added stays watched, but one the failing load was the first to load (a new `@use` whose file has an error) recompiles nothing when it is fixed, until the `.uxdsl` file Vite imports is saved."
   - `packages/uxdsl/docs/integrations/cli.md`, lines 544–549: "A partial a build could not find (`Can't find stylesheet to import.`) is noticed when it appears only where a `watch` pattern matches it, since Dart Sass does not report the paths it tried: […] Add its directory to `watch` (`'shared/**/*.scss'`) to have it noticed."
 - The code:
-  - `packages/uxdsl/src/webpack.ts` lines 226–237: `addDependency` runs only after `compile()` resolves; the `catch (err)` calls `callback(err)` alone.
-  - `packages/uxdsl/src/vite.ts` lines 190–199: `addWatchFile` runs only after `compile()` resolves; `load` has no `catch`, and the plugin has no `hotUpdate` or `handleHotUpdate` hook.
+  - `packages/uxdsl/src/webpack.ts` lines 216–228: `addDependency` runs only after `compile()` resolves; the `catch (err)` emits `err.warnings`, then calls `callback(err)`.
+  - `packages/uxdsl/src/vite.ts` lines 174–191: `compile(...).catch()` emits `err.warnings` through `this.warn()` and rethrows; `addWatchFile` runs only after `compile()` resolves, and the plugin has no `hotUpdate` or `handleHotUpdate` hook.
   - `packages/uxdsl/bin/uxdsl.js` line 1696: `console.log('[uxdsl] watching for changes...');`, right after `createWatcher` (line 1685) and `followAll()` (line 1695), without waiting for the watcher's `ready`; lines 1780 and 1796: a failed build prints and follows nothing new; line 1852: the queued selective batch, `else runSelectiveBuild([...indices]).finally(…)`, runs after `building = false`.
 
 ## 3. Preconditions
@@ -126,9 +126,9 @@ Run from the worktree root on `5a041fc`, 2026-11-13, macOS 27.0, Node
 v20.19.0, npm 11.21.1. Each exited 0.
 
 ```bash
-git rev-parse --short HEAD                                  # 5a041fc
+git rev-parse --short HEAD                                  # cf98cb8 (feat/beta9 after MIG-B9-21, PR #92)
 for c in db0e28d 08d00e0 cc10de6; do git merge-base --is-ancestor "$c" HEAD || exit 1; done   # PR #71 (14), PR #76 (22), PR #88 (20) merged
-grep -n "addDependency\|addWatchFile\|catch (err)\|callback(err)" packages/uxdsl/src/webpack.ts packages/uxdsl/src/vite.ts   # webpack.ts:6 (comment), 58 (type), 226, 227, 235, 236; vite.ts:20 (comment), 198, 199
+grep -n "addDependency\|addWatchFile\|catch (err)\|callback(err)" packages/uxdsl/src/webpack.ts packages/uxdsl/src/vite.ts   # webpack.ts:6 (comment), 58 (type), 216, 224, 227; vite.ts:20 (comment), 191
 grep -n "console.log('\[uxdsl\] watching for changes...')" packages/uxdsl/bin/uxdsl.js           # 1696
 grep -n "else runSelectiveBuild(\[...indices\])" packages/uxdsl/bin/uxdsl.js                     # 1852
 node -e "for (const p of ['vite','webpack','mini-css-extract-plugin','style-loader','css-loader','chokidar','sass']) console.log(p, require('./packages/uxdsl/node_modules/'+p+'/package.json').version)"
@@ -147,7 +147,7 @@ step's runs): MIG-B9-25's subject. They were removed.
 0. On `5a041fc` each exited 1, as expected, since the stories are not merged:
 
 ```bash
-git log --oneline --grep='MIG-B9-21 -' HEAD | grep -q .    # MIG-B9-21 merged
+git log --oneline --grep='MIG-B9-21 -' HEAD | grep -q .    # MIG-B9-21 merged (exit 0 on cf98cb8)
 git log --oneline --grep='MIG-B9-38 -' HEAD | grep -q .    # MIG-B9-38 merged (README §7, bin/uxdsl.js)
 for s in 25 17 28; do git log --oneline --grep="MIG-B9-$s -" HEAD | grep -q . || exit 1; done   # README §7, test/cli/**
 ```
@@ -199,12 +199,12 @@ mkdir -p "$S/src" "$S/pack" "$S/consumer" "$S/projects" "$S/scripts"
 git archive HEAD packages/uxdsl tsconfig.base.json | tar -x -C "$S/src"
 ln -s "$W/packages/uxdsl/node_modules" "$S/src/packages/uxdsl/node_modules"
 (cd "$S/src/packages/uxdsl" && npm run build && npm pack --ignore-scripts --pack-destination "$S/pack")
-# uxdsl-0.5.0-beta.9.tgz, 284,866 bytes, 92 files; its dist equals the worktree's (diff -rq exit 0)
+# uxdsl-0.5.0-beta.9.tgz, 282,518 bytes, 90 files (cf98cb8); its dist equals the worktree's (diff -rq exit 0)
 cd "$S/consumer" && printf '{"name":"mig-b9-39-consumer","version":"1.0.0","private":true}\n' > package.json
 npm install --save-dev --ignore-scripts --no-audit --no-fund "$S/pack/uxdsl-0.5.0-beta.9.tgz" \
   vite@7.3.7 webpack@5.111.1 css-loader@7.1.5 mini-css-extract-plugin@2.10.2 style-loader@4.0.0
 # installed: uxdsl 0.5.0-beta.9, vite 7.3.7, webpack 5.111.1, css-loader 7.1.5, mini-css-extract-plugin 2.10.2,
-# style-loader 4.0.0, sass 1.108.2, chokidar 4.0.3, postcss 8.5.32
+# style-loader 4.0.0, sass 1.108.2, chokidar 4.0.3, postcss 8.5.33
 cd "$W"
 # Write the eight scripts of §4.2 into "$S/scripts", then:
 node "$S/scripts/cli-single.js" "$S/consumer" "$S/projects/cli-single"
@@ -1147,11 +1147,11 @@ webpack 5.111.1, style-loader 4.0.0, css-loader 7.1.5, mode development
   | invalid styles/parts/_card.uxdsl
   | compiled: 1 error(s): Module build failed (from ../../consumer/node_modules/uxdsl/dist/webpack.js): / Error: <root>/styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.
   | watched files of the project: , package.json, src, src/index.js, styles, styles/main.uxdsl
-  = dist/main.js: 7ea9f76150 (19318 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 1e107a739e (19392 B) rules: (none) + a module that throws "Module build failed"
 
 ### K2 fix it
   | (nothing: no rebuild)
-  = dist/main.js: 7ea9f76150 (19318 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 1e107a739e (19392 B) rules: (none) + a module that throws "Module build failed"
 
 ### K3 save the module unchanged (touch)
   | invalid styles/main.uxdsl
@@ -1163,11 +1163,11 @@ webpack 5.111.1, style-loader 4.0.0, css-loader 7.1.5, mode development
   | invalid styles/parts/_card.uxdsl
   | compiled: 1 error(s): Module build failed (from ../../consumer/node_modules/uxdsl/dist/webpack.js): / CssSyntaxError: uxdsl: <root>/styles/parts/_card.uxdsl:1:9: UXD_SPACE_REFERENCE: space(99) does not exist; available key
   | watched files of the project: , package.json, src, src/index.js, styles, styles/main.uxdsl
-  = dist/main.js: e46744181c (19719 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: f270e3809d (19713 B) rules: (none) + a module that throws "Module build failed"
 
 ### K5 fix it
   | (nothing: no rebuild)
-  = dist/main.js: e46744181c (19719 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: f270e3809d (19713 B) rules: (none) + a module that throws "Module build failed"
 
 ### K6 save the module unchanged (touch)
   | invalid styles/main.uxdsl
@@ -1178,11 +1178,11 @@ webpack 5.111.1, style-loader 4.0.0, css-loader 7.1.5, mode development
 ### K7 delete styles/parts/_card.uxdsl
   | compiled: 1 error(s): Module build failed (from ../../consumer/node_modules/uxdsl/dist/webpack.js): / Error: <root>/styles/main.uxdsl:1:1: UXD_SASS: Can't find stylesheet to import.
   | watched files of the project: , package.json, src, src/index.js, styles, styles/main.uxdsl
-  = dist/main.js: 66603e08ac (19322 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 0cf1563281 (19396 B) rules: (none) + a module that throws "Module build failed"
 
 ### K8 create it again
   | (nothing: no rebuild)
-  = dist/main.js: 66603e08ac (19322 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 0cf1563281 (19396 B) rules: (none) + a module that throws "Module build failed"
 
 ### K9 save the module unchanged (touch)
   | invalid styles/main.uxdsl
@@ -1199,11 +1199,11 @@ webpack 5.111.1, style-loader 4.0.0, css-loader 7.1.5, mode development
 ### K0 start
   | compiled: 1 error(s): Module build failed (from ../../consumer/node_modules/uxdsl/dist/webpack.js): / Error: <root>/styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.
   | watched files of the project: , package.json, src, src/index.js, styles, styles/main.uxdsl
-  = dist/main.js: 775654737f (20382 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 889f09ece6 (20456 B) rules: (none) + a module that throws "Module build failed"
 
 ### L1 fix styles/parts/_card.uxdsl (the first build failed in it)
   | (nothing: no rebuild)
-  = dist/main.js: 775654737f (20382 B) rules: (none) + a module that throws "Module build failed"
+  = dist/main.js: 889f09ece6 (20456 B) rules: (none) + a module that throws "Module build failed"
 
 ### L2 save the module unchanged (touch)
   | invalid styles/main.uxdsl
@@ -1220,12 +1220,13 @@ The text webpack prints for the failed module (`webpack-error-text.js`, `<scratc
 ERROR in ./styles/main.uxdsl (../../consumer/node_modules/css-loader/dist/cjs.js!../../consumer/node_modules/uxdsl/dist/webpack.js??ruleSet[1].rules[0].use[2]!./styles/main.uxdsl)
 Module build failed (from ../../consumer/node_modules/uxdsl/dist/webpack.js):
 Error: <root>/styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.
-    at diagnostic (<scratch>/consumer/node_modules/uxdsl/dist/diagnostics.js:138:19)
-    at stageError (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:997:48)
-    at finish (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:510:15)
-    at compileSassStage (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:48:12)
-    at compile (<scratch>/consumer/node_modules/uxdsl/dist/compile.js:95:53)
-    at Object.uxdslLoader (<scratch>/consumer/node_modules/uxdsl/dist/webpack.js:163:96)
+    at diagnostic (<scratch>/consumer/node_modules/uxdsl/dist/diagnostics.js:141:19)
+    at stageError (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:1015:48)
+    at finish (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:518:15)
+    at compileSassStage (<scratch>/consumer/node_modules/uxdsl/dist/sass/compile-sass.js:50:16)
+    at compileInto (<scratch>/consumer/node_modules/uxdsl/dist/compile.js:113:53)
+    at compile (<scratch>/consumer/node_modules/uxdsl/dist/compile.js:76:22)
+    at Object.uxdslLoader (<scratch>/consumer/node_modules/uxdsl/dist/webpack.js:149:96)
 ```
 
 A first webpack build that fails in the discovered theme file (`webpack-theme-first.js`):
@@ -1779,7 +1780,44 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #96, from `feat/b9-39-watch-recovers-after-failure` into `feat/beta9`, by the light flow for an S story (decision D1 of 2026-11-04; decision 28 of 2026-11-13): one scout, one implementer, one review and one deliverer. Where the delivered contract differs from §5, §8 or §9, §15's blocks rule; the differences are listed below. Only the owner merges.
+
+**Base and commits.** The base is `feat/beta9` at `cf98cb8`, after MIG-B9-21 (PR #92).
+
+| Commit | Content |
+| --- | --- |
+| `f38af40` | §15: stale lines corrected on `cf98cb8`, and the scout's findings and flags 1 to 4 answered as recommended |
+| `15689c1` | C1 to C5 in `webpack.ts` and `vite.ts`; T1 to T8 (two new files); T9 and T10 in the fixtures; `webpack.md`, `vite.md`, the README clause and the CHANGELOG subsection |
+| `be465ba` | Review findings: the theme-flags test (AC7's mutation), the `hotUpdate` spy in T6, T1 rebuilt to prove C1 (a), the per-compiler test, and the CHANGELOG narrowed for style-loader |
+| `ef0dc8f` | Merge of `origin/feat/beta9` at `44eac7c` (PR #93, MIG-B9-16), with no conflict |
+| `f769c95` | T1's waits pass over a build from before the edit (the first `npm test` failed T1 once) |
+| `5745377` | Merge of `origin/feat/beta9` at `99f6a82` (PR #94, MIG-B9-25), with no conflict |
+| `514d067` | The new tests use MIG-B9-25's `temporaryDirectory` helper (flag 4; decision 15 of 2026-11-15) |
+| `8f0815c` | Every wait after an edit in the webpack tests passes over a build from before it; `quiet` names the unrelated file (PR #96's first CI run failed T2 to T4) |
+| `59f1706` | Merge of `origin/feat/beta9` at `65359cf` (PR #95, the owner's decisions of 2026-11-15), with no conflict |
+
+`src/compile.ts`, `src/sass/**`, `src/diagnostics.ts` and the playground's generated files are unchanged: `git diff --exit-code cf98cb8 -- …` exits 0.
+
+**Environment.** macOS (Darwin 27), Node 20.19.0, npm 11.21.1, Chrome 157.0.8103.51. Package devDependencies: Vite 7.3.7, webpack 5.111.1, css-loader 7.1.5, mini-css-extract-plugin 2.10.2, style-loader 4.0.0. The fixtures installed vite 5.4.21 and 7.3.8. `TMPDIR` pointed into the session scratchpad for every run. The machine ran two other story workflows at the same time (load average 10 to 37), and it was suspended several times during the delivery: a test that "ran" for 500 to 990 s is a suspension.
+
+**Failing first.** On the base's `dist`, T1 to T4 failed with `<step>: no webpack build within 20 s`. T5 failed on the absolute path, the stack and the missing frame. T6 failed with `not sent within 10 s; sent: []`, T7 with `no build within 20 s`, and T8 on a missing `loc`. T9's child script failed on a base install (vite 7.3.7). T10 was not run against a base install; T1 covers the same mechanism there. The tests added at review are guards over a correct head, each shown failing under its mutation (below).
+
+**Criteria.**
+
+| AC | Result |
+| --- | --- |
+| AC1 | `node --test packages/uxdsl/test/webpack/watch-recovery.test.js`: 7 pass (T1 to T5, and the per-compiler and theme-flags tests), none skipped. `TMPDIR` is empty afterwards. Mutations: no `addDependency` in the `catch` fails T1 to T4; no theme tree fails T4; `callback(err)` fails T5 |
+| AC2 | `node --test packages/uxdsl/test/vite/watch-recovery.test.js`: 3 pass (T6 to T8), and `TMPDIR` is empty. Mutations: no `hotUpdate` fails T6 (with the spy; §15); no `addWatchFile` before the rethrow fails T7; no `loc` or `frame` fails T8 |
+| AC3 | `npm run verify:vite-adapter`: exit 0, with T9's line on vite 5.4.21 (cjs) and 7.3.8 (esm). `npm run verify:webpack-adapter`: exit 0, with T10's line. Mutation: without `handleHotUpdate` in the installed vite 5.4.21 consumer, T9's script fails (`not sent within 10 s; sent: []`). The fixtures' `packAndInstall` directories were removed by hand after each run (flag 3) |
+| AC7 | `theme-emission` (vite and webpack): 11 pass. `--test-name-pattern="MIG-B9-14\|MIG-B6-23"` over `vite/index.test.js` and `webpack/loader.test.js`: 6 pass, 34 skipped. The adapter suites: 61 of 61, which is 51 on the base plus 10 new, all in new files. `git diff --exit-code cf98cb8 -- …` exits 0. AC7's mutation (theme flags on the failed path) does not fail `theme-emission.test.js`; it fails this story's theme-flags test (§15, flag 5) |
+| AC8 | §4's adapter reproduction, from a tarball packed on `ef0dc8f`'s sources (90 files, 284,465 B; vite 7.3.7, webpack 5.111.1, sass 1.108.2, postcss 8.5.33), exits 0 on every script. It prints a rebuild at K2, K5 and K8 and at L1 (both chains), at T1, at V6 (`ws update [js-update /styles/main.uxdsl?uxdsl&lang.css]`), at W1 (`ws full-reload`, then 200; flag 1), and at B6, C1 and C2 (BUNDLE_END; C1's CSS is `7715671a50`, equal to B0's). Every successful hash is as on the base (`f1c987b600`, `aa63d11702`, `7715671a50`, `4b3c626800`, `64940e8e47`). Errors carry `loc` and a frame, and the theme error has neither. webpack's text is `styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.`, then the indented frame, with no stack line. V9 (`modules []`) and B9 (`nothing`) are unchanged. style-loader's failed bundles now differ from §4.3's (K1 `d2f5b14bc7` 18841 B, K4 `6b8f4cf036` 18771 B, K7 `66ef2406b1` 18778 B, first-fails K0 `8df247dab6` 19905 B), because the thrown module embeds the new message, which has no stack. `pgrep` afterwards finds nothing |
+| AC9 | `npm test`: run 1 on `ef0dc8f` exited 1 (T1, fixed in `f769c95`). Run 2 on `514d067` exited 1 (`MIG-B9-20: build --watch counts the theme over the last result of every entry`, `waitFor timed out` after 605 s, outside this story, during a suspension). Run 3 on `59f1706` exited 0, with 0 `not ok` and the tmpdir guard passing. `npm run verify:1.0 -- --skip-playground-walk`: run 1 exit 0 (71/71). Run 2 exit 1 (N-04's vite-adapter fixture exited 1, and `cssmod` was ended by a signal, both during that suspended, loaded window; the same `verify:vite-adapter` passed alone in the same gate run). Run 3 on `59f1706` exit 0 (`71/71 automated checks passed`) |
+
+**Other gates.** `npm run verify:playground-browser` (real Chrome): run 1 and run 2 exit 0 (`pages loaded: 380`, `PASS: no console errors, no UXDSL warnings, …`). `node --test scripts/no-history-comments.test.js`: 4 pass. `plugin-option-parity.test.js`: 5 pass. `node fixtures/parity/run.js`: 10 cases PASS.
+
+**CI.** Recorded in PR #96's closure comment. The first run (43726201875, on `514d067`) failed T2 to T4 on ubuntu, fixed in `8f0815c`. The run on `59f1706` (43732946338) passed `npm test`.
+
+**Not run, or not a pass.** Vite 6 was not run. There was no Linux or Windows reproduction beyond CI's ubuntu job. The CLI's §4 steps (S10, F1, S13), C6 to C9 and AC4 to AC6 are MIG-B9-19's. `npm test` runs 1 and 2 and `verify:1.0` run 2 are failures, recorded above, not passes.
 
 ## 15. Findings and follow-ups
 
@@ -1969,3 +2007,52 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), 
 - **Q4 (decision 31): (a)**, as the contract assumed. webpack's error text gives the path relative to `rootContext`, then the frame, with no stack (C5).
 - **Q5 (decision 32): (a)**, as the contract assumed. It concerns the flake and the captures, which are now MIG-B9-19's (C7 to C9, AC5, AC6).
 - **Q6 (decision 33): (a)**, as the contract assumed. The atomic-replace failure on PR #84 (F2) is out of scope here and in MIG-B9-19; the owner routes it, and no story is assigned it.
+
+### Starting base: stale lines corrected (cf98cb8, 2026-11-15)
+
+The story starts from `feat/beta9` at `cf98cb8` (MIG-B9-21 merged as PR #92). Its scout re-ran §3 and §4 there. The lines below were stale and are corrected in place; the old and new line of each is recorded here.
+
+- **§3, HEAD.** Old: `git rev-parse --short HEAD                                  # 5a041fc`. New: `… # cf98cb8 (feat/beta9 after MIG-B9-21, PR #92)`. The story starts from the base after MIG-B9-21, as its header says.
+- **§3, the adapters' lines.** Old: `… # webpack.ts:6 (comment), 58 (type), 226, 227, 235, 236; vite.ts:20 (comment), 198, 199`. New: `… # webpack.ts:6 (comment), 58 (type), 216, 224, 227; vite.ts:20 (comment), 191`. MIG-B9-21 moved theme discovery into `compile()`, removed the adapters' own discovery and their `addDependency`/`addWatchFile` of the theme, and added the failed compile's warnings to the `catch`.
+- **§2, "The code".** Old: "`packages/uxdsl/src/webpack.ts` lines 226–237: `addDependency` runs only after `compile()` resolves; the `catch (err)` calls `callback(err)` alone. `packages/uxdsl/src/vite.ts` lines 190–199: `addWatchFile` runs only after `compile()` resolves; `load` has no `catch`, and the plugin has no `hotUpdate` or `handleHotUpdate` hook." New: "`webpack.ts` lines 216–228: `addDependency` runs only after `compile()` resolves; the `catch (err)` emits `err.warnings`, then calls `callback(err)`. `vite.ts` lines 174–191: `compile(...).catch()` emits `err.warnings` through `this.warn()` and rethrows; `addWatchFile` runs only after `compile()` resolves, and the plugin has no `hotUpdate` or `handleHotUpdate` hook." The recovery gap is the same.
+- **§3, "Before starting".** Old: `git log --oneline --grep='MIG-B9-21 -' HEAD | grep -q .    # MIG-B9-21 merged`. New: the same command, `# MIG-B9-21 merged (exit 0 on cf98cb8)`. The MIG-B9-38, 25, 17 and 28 lines still exit 1; since decision 28 they are MIG-B9-19's and do not gate this story.
+- **§3, the checks on the starting base.** Both adapters emit `err.warnings` before the error (webpack through `emitWarning`, Vite through `this.warn`), and MIG-B9-21's tests `the Vite plugin and the webpack loader emit a failed compile's warnings before the error` pin it; the failure path keeps that order. `compile()`'s error still carries `file`, `line`, `column`, `code` (`UXD_SASS` only) and `sassFrame` as §4.6 records, and now `warnings`; it never carries `dependencies`. MIG-B9-25's temporary-directory helper is not merged, and `ci.yml` has no Windows job (MIG-B9-28 is not merged).
+- **§4.1, the tarball and the install.** Old: `# uxdsl-0.5.0-beta.9.tgz, 284,866 bytes, 92 files; …` and `# style-loader 4.0.0, sass 1.108.2, chokidar 4.0.3, postcss 8.5.32`. New: `# uxdsl-0.5.0-beta.9.tgz, 282,518 bytes, 90 files (cf98cb8); …` and `… postcss 8.5.33`. MIG-B9-21 deleted files, and the registry now resolves postcss 8.5.33.
+- **§4.3, `webpack-error-text.js`'s stack.** Old: `at compile (…/dist/compile.js:95:53)` then `at Object.uxdslLoader (…/dist/webpack.js:163:96)`, with `diagnostics.js:138:19` and `compile-sass.js:997:48`, `510:15`, `48:12` above them. New: `at compileInto (…/dist/compile.js:113:53)`, `at compile (…/dist/compile.js:76:22)`, `at Object.uxdslLoader (…/dist/webpack.js:149:96)`, with `diagnostics.js:141:19` and `compile-sass.js:1015:48`, `518:15`, `50:16`. MIG-B9-21 split `compile()` into `compile()` and `compileInto()`, so C5's "no stack line from uxdsl's `dist`" also excludes `at compileInto (`.
+- **§4.3, style-loader's failed bundles.** Old: K1 `7ea9f76150 (19318 B)`, K4 `e46744181c (19719 B)`, K7 `66603e08ac (19322 B)`, first-fails K0 `775654737f (20382 B)`. New: K1 `1e107a739e (19392 B)`, K4 `f270e3809d (19713 B)`, K7 `0cf1563281 (19396 B)`, first-fails K0 `889f09ece6 (20456 B)`. The bundled module that throws embeds the error's stack, which changed with MIG-B9-21. Every successful output's hash is unchanged.
+
+### Findings and owner flags from the scout (2026-11-15)
+
+- **§7's `hideStack` (a finding; §7 is non-normative and is not rewritten).** On webpack 5.111.1, `ModuleBuildError` puts `err.stack` into `details` when `hideStack` is set, and `stats.toString()` prints `details` by default (`errorDetails: 'auto'`, fewer than three errors). Measured, that printed a stack line, which C5 forbids. The loader hands webpack an `Error` whose `stack` is its message instead: `toJson()` and `toString()` then show webpack's header and the text, and `details` is undefined.
+
+The four flags below were answered with their recommended option under the owner's standing instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y sgeuimos"), not put to the owner one by one. The owner may override any of them.
+
+1. **W1, a Vite dev module whose first load failed (a finding: C2's W1 line is wrong, and it is not rewritten).** Vite 5 and 7 never propagate an `update` through a module node they have not analyzed (Vite 7.3.7's `propagateUpdate` stops at `isSelfAccepting === undefined`), and Vite's client ignores an update for a module it never executed, so C2's "an `update` naming `/styles/main.uxdsl?uxdsl&lang.css`" at W1 cannot happen. Options: (a) the HMR hook returns the failed node's importers, so Vite sends its own `full-reload` (measured on 7.3.7 and 5.4.21), and V6 keeps its `update`; (b) force an `update` through Vite's internals, which is fragile and still does not recover the page; (c) leave W1 a documented limit. **Answer: (a).** It is the only option that recovers the page, and it uses Vite's own propagation on both majors.
+2. **Where the adapters get the theme file's `require()` tree on a failed compile (C1 (c), C2 (c), C3 (d)).** `compile()`'s error carries no dependencies, and `compile.ts` must not change. Options: (a) each adapter calls `config.ts`'s existing exports `findThemeConfigPath(configRoot)` and `collectLocalRequireTree(file)` in a `try`, only when `theme` is undefined and `discoverTheme !== false`, so MIG-B9-21's `/discoverTheme(?:Async|Sync)/` guard still holds and `config.ts` is not edited; (b) a shared helper in `config.ts`, which adds it to the Shares; (c) `compile()` puts its dependencies on its error, which the must-stay list forbids. **Answer: (a).** The documented limit: a theme file whose own `require()` throws part-way registers only the theme file, not the files it failed to load.
+3. **TMPDIR after the fixtures (AC3).** `fixtures/vite-adapter` and `fixtures/webpack-adapter` leave `packAndInstall`'s consumer directories in `TMPDIR` on the base, and MIG-B9-25 keeps `fixtures/lib/tarball-consumer.js` unedited. Options: (a) the new tests clean up after themselves, and the deliverer removes the fixtures' directories by hand and records them as base behaviour; (b) edit `tarball-consumer.js` here, outside the Shares and against MIG-B9-25's decision. **Answer: (a).**
+4. **MIG-B9-25's temporary-directory helper (in progress).** Options: (a) do not wait: the new test files make and remove their own directories (`mkdtemp`, `realpathSync`, `rmSync` in `t.after`), so they pass a leak guard, and whichever story merges second switches them to the helper; (b) wait for MIG-B9-25. **Answer: (a).** README §7 does not order the two stories on these new files.
+
+### Review findings and the implementer's (2026-11-15)
+
+The review mutated the built adapters one change at a time and ran the new tests. What it found, and what the deliverer did:
+
+- **AC7's mutation does not hold as written (a finding: AC7's mutation line is wrong, and it is not rewritten).** Writing theme flags on the failed path (`buildInfo.uxdslTheme = { themeEmitted: false, … }` before the error) passed every webpack test, `test/webpack/theme-emission.test.js` included, and in a real build whose global (`@uxdsl theme;` plus a broken `@use`) fails next to a component that references a token, it printed a false `UXD_THEME_MARKER` "no module reaches `@uxdsl theme;`" warning (none on the head). The guard is now `MIG-B9-39: a webpack module whose compile failed carries no theme flags, so a build whose global fails reports no missing @uxdsl theme`, in this story's new `test/webpack/watch-recovery.test.js`: both chains, with a control in which the same component without a global, every module compiled, gets the warning once. The mutation fails it; the head passes. An owner flag, answered with its recommended option under the owner's standing instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y sgeuimos"), not put to the owner one by one; the owner may override it. Options: (a) pin the must-stay line in the new file, leaving T15's `theme-emission.test.js` unedited as T15 requires (and clear of MIG-B9-25, which may edit `test/webpack`); (b) add the test to `theme-emission.test.js`, against T15's "unedited". **Answer: (a).**
+- **AC2's mutation "no `hotUpdate` fails T6" does not hold on Vite 7 as T6 was first written (a finding; the contract is not rewritten).** With `hotUpdate` removed, Vite 7.3.7's `handleHMRUpdate` falls back to the plugin's `handleHotUpdate` for a client `update`, so every dev step behaved as on the head (the review ran them all from the packed tarball). Only removing both hooks failed T6. T6 now wraps the plugin's HMR hooks and asserts that on Vite 7 `hotUpdate` is the hook that runs and returns the module (`/styles/main.uxdsl?uxdsl&lang.css` for V6, its importer `/main.js` for W1), and that `handleHotUpdate` is not called. With `hotUpdate` removed, T6 now fails (`hotUpdate returned the module for the fix: [{"hook":"handleHotUpdate",…}]`). An owner flag, answered the same way. Options: (a) pin the hook with a spy in T6, so AC2's mutation holds; (b) record that the mutation that holds is "no HMR hook" and leave `hotUpdate` unpinned. **Answer: (a).**
+- **T1 did not prove C1 (a) (a finding on the test; fixed).** Its break was a Sass error in the partial itself, which the error names, so (b), `err.file`, recovered it alone: with the last-good record removed from the `catch`, T1 passed and only T3 failed. T1's partial now defines `$c`, which the module reads as `card.$c`; the break removes `$c`, so `Undefined variable.` is reported at `styles/main.uxdsl:2:`, and the test asserts that the error names the module and not the partial. Without the record, T1 now fails on both chains (`extract: the build after the partial is fixed: no webpack build within 20 s`), as do T3 and the per-compiler test below.
+- **"Per compiler, never process-wide" was unpinned (a nit; now pinned).** A process-wide record passed every webpack test. `MIG-B9-39: webpack keeps a module's last successful files per compiler: another compiler's failed compile of the same module does not register them` runs one compiler twice (good, then failing at the module) and a second compiler once on the same project: the first compiler's failed compile registers the partial its good compile loaded, the second's does not. A process-wide record fails it, as does no record.
+- **The CHANGELOG said the last good output is kept on every host (fixed).** style-loader's `dist/main.js` changes on each failure: webpack writes a bundle whose CSS module throws. The subsection now says that mini-css-extract-plugin's extracted CSS and `vite build --watch`'s output stay the last good ones, while a style-loader bundle carries the error until the fix.
+- **webpack's watch in a test (the implementer's finding; fixed in the tests only).** webpack registers the project directory as a file dependency, and two things changed it right after a first build, each starting a spurious extra build: webpack creating `dist` inside it, and a project created next to one already watched (watchpack shares its directory watchers within a process). The tests pre-create `dist`, date every file and directory ten seconds back, and create all of a test's projects before any watcher starts.
+- **T1's new break made it flaky under load (found by the deliverer's `npm test`; fixed in the test).** The first `npm test` after the change above failed T1 once (`style: the build after the partial is fixed: no webpack build within 20 s`), and 2 of 5 runs of `node --test test/webpack/*.test.js` failed it at load average 15 to 27: once the build after the break had no error, once the build after the fix still had the break's error. Both are an extra webpack build of the module from before the edit took effect, taken by the test as the build that carries the edit. The test from before the change passed 6 of 6 runs under the same load, and 10 of 10 instrumented runs of the new one passed, so the cause was not pinned down. T1's two waits now pass over builds that do not show the edit (`next(step, accept)`: the break's wait wants `Undefined variable.`, the fix's wants no error), and a wait that times out names the builds it passed over. The recovery claim is unchanged: without the last-good record no build without errors arrives, and T1 still times out. Afterwards, 8 runs of `node --test test/webpack/*.test.js` at load average 10 to 37: T1 passed 7. In the eighth, its first build timed out after the test had run for 909 s, and in three runs MIG-B9-20's watch test timed out after 510 to 991 s. Those durations mean the host was suspended, not that the tests failed. With the record removed, T1 still fails (`extract: the build after the partial is fixed: no webpack build within 20 s`).
+- **Flag 4 carried out.** MIG-B9-25 merged first (PR #94, merged into this branch with `99f6a82`), so the two new test files now make their directories with its `temporaryDirectory` helper (`test/helpers/temporary-directory.js`). They keep their own last-in-first-out cleanup, so a watcher or server closes before its project is removed. A project is removed when its test passes, and kept with `temporary directory kept: <path>` printed when it fails, as the helper does. Both files leave `TMPDIR` empty (10 of 10 pass).
+- **The same extra build on CI's ubuntu runner, in T2 to T4 (found by PR #96's first CI run; fixed in the tests).** Run 43726201875 failed T2 (the build after the module `@use`s the broken partial had no error), T3 (the build after the delete had no `Can't find stylesheet to import.`) and T4 (the build after the theme fix still had `UXD_THEME_INVALID`). The cause is the same as T1's: an extra build from before the edit, taken as the build that carries it. Every wait after an edit now passes over builds that do not show the edit (`clean`, or the expected error). `quiet(step, ms, file)` now fails when the watcher reports the unrelated file changed, through webpack's `invalid` hook or a build's `compiler.modifiedFiles`, rather than on any build in the window, so an extra build from the previous edit no longer trips it. The negative controls keep their meaning: a loader that registered the unrelated file would make the watcher report it. Locally, three runs of `node --test packages/uxdsl/test/webpack/*.test.js` passed, and `TMPDIR` was left empty.
+
+### Delivery of 2026-11-15
+
+New facts and follow-ups from the delivery. Each follow-up has a proposed story id.
+
+- **F3 is not taken here, so it is MIG-B9-96 (decision 19 of 2026-11-15).** Giving the `CssSyntaxError` that `compile()` throws a `code` changes `compile.ts` or `diagnostics.ts`, which this story's must-stay list forbids. Under decision 19 it is registered as MIG-B9-96 when this story merges. Proposed: **MIG-B9-96**, as the decision says.
+- **webpack runs an extra build of a module edited just before a build starts (follow-up for the test helpers).** It was seen locally under load and on CI's ubuntu runner. The new tests pass over it (§15, the two blocks above). The older watch tests in `test/webpack/loader.test.js` (MIG-B9-20's `in webpack watch mode the count covers modules the rebuild kept`) still take the next build as the one that carries an edit. Proposed: fold the same `next(step, accept)` into those tests, in **MIG-B9-19** (the story on watch tests) or a new story under an id the owner assigns (MIG-B9-98 was proposed for, and not given to, another item: decision 25).
+- **The machine sleeps during long runs.** Three `npm test` and three `verify:1.0` runs were needed, and every failure outside this story's tests had a duration of 500 to 990 s. A workflow that runs `npm test` on this machine should keep it awake (for example `caffeinate -i`). For the owner; no story.
+- **The fixtures' `packAndInstall` directories (flag 3)** stay in `TMPDIR` after `verify:vite-adapter`, `verify:webpack-adapter` and `verify:1.0`. They were removed by hand each time. MIG-B9-25's question 2 proposes the follow-up, which `fixtures/lib/tarball-consumer.js` would take. Proposed: the story decision 15's routing names, or **MIG-B9-25's follow-up**.
+- **Vite 6 is untested.** `hotUpdate` is the hook on Vite 6 and later, and it was measured only on 7.3.7 and 7.3.8. Proposed: an install of `vite@^6` in `fixtures/vite-adapter`, in **MIG-B9-64** (on `vite.ts`) or a new story.
+

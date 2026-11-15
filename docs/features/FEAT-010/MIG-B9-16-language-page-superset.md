@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-01 (decided, owner, 2026-10-09). Registered by the owner's decision of 2026-11-08 on MIG-B9-15's flag 3 (FEAT-010 §2; MIG-B9-15 §15) |
-| Status | In review (PR #93) |
+| Status | Merged (PR #93) |
 | Size | S |
 | Depends on | MIG-B9-15 (merged, PR #72, `4ecdc51`). Under §7 (`packages/playground-nextjs/**`) it also waits for MIG-B9-22 (merged, PR #76, `08d00e0`) and MIG-B9-20 (merged, PR #88, `cc10de6`; its page edit is `4a39826`). MIG-B9-21 (merged, PR #92, `cf98cb8`), on the same §7 row, edited no file this story edits |
 | Blocks | MIG-B9-26 (its C3 edits the three-cases sentence this page will carry), 30, 33, 34, 35, 36 and 19 (MIG-B9-39's place, by decision 28 of 2026-11-13), the later rows of §7's `packages/playground-nextjs/**` row (wave 4's MIG-B9-40 to 43 follow on the same row); MIG-B9-91 (every story of waves 0 to 3). MIG-B9-62 keeps the page in `0.5.0-beta.10` |
@@ -935,3 +935,15 @@ New facts and follow-ups from the delivery of PR #93 (§14 has the evidence).
 - **`verify:1.0`'s UX-10 is load-sensitive.** On a machine shared by three workflows (load average about 28), UX-10 failed once at `doubling cost x3.27` and passed alone at `x2.48`. Proposed: **MIG-B9-91** (the gate and the release record) decides whether UX-10 measures on a quieter basis (more repetitions, the minimum of several runs) or records its run conditions.
 - **`DemoColors.uxdsl:104`'s 11 color-interpolation warnings** still print in every playground build. This is already MIG-B9-14's follow-up (MIG-B9-43, or MIG-B9-40), so nothing new is proposed.
 - **F1 to F4 stand as recorded.** F1 (AGENTS.md's directive sentence) is MIG-B9-51's by decision 2. F2 (`compile()` from stdin) is MIG-B9-26's by decision 30. F3 (the `calc()` simplification) is proposed for MIG-B9-52. F4 is MIG-B9-26, which changes this page's three-cases sentence after this story; the checker does not assert `uxdsl-probe-`, so MIG-B9-26 can change it without failing T3.
+
+### Owner decisions of 2026-11-15, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-15), as decisions 6 to 8, 25 and 26 of 2026-11-15. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"), recommendations that widen a registration included. This story was merged into `feat/beta9` as PR #93 (`44eac7c`) on 2026-11-15. The scout's flags 1 to 3, recorded above under "Owner decisions taken under the standing instruction of 2026-11-10", were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-15, and the owner may still override any of them. This record is in English. The header's Status is the deliverer's to set.
+
+- **Flag 1, AC2's total floor (decision 6): (a).** AC2's text is not rewritten; the intended floor, measured on `cf98cb8`, is 65 plus the page's net gain, with the page's own count by route as the binding evidence. With the `@each` example kept, the derived floor is 69.
+- **Flag 2, T3's reach (decision 7): (a).** T3's checker also reports the old heading and the old directive sentence when present and the qualified sentence when missing, and T4 embeds base lines 24 and 79–80 and proves each is reported.
+- **Flag 3, the base's `@each` example (decision 8): (a).** It is kept as a second `compile()` example.
+- **Follow-ups of the "Delivery of 2026-11-15" block, routed.**
+  - The playground's ESLint step (decision 25): MIG-B9-43, whose registered scope covers the playground's build hygiene (H5's Next move and `npm audit`, H1's rules, its Shares on `packages/playground-nextjs/**`). No MIG-B9-98 is registered. MIG-B9-43's §15 has a block of this date.
+  - `verify:1.0`'s UX-10 (decision 26): MIG-B9-91, whose §15 has a block of this date.
+  - `DemoColors.uxdsl:104`'s warnings and F1 to F4 stand as recorded above; no decision of this date changes them.

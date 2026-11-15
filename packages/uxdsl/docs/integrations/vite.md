@@ -217,13 +217,31 @@ Every `compile()` warning reaches Vite through `this.warn()` as one line,
 `N repetitive deprecation warnings omitted.`) is its text alone. Every file
 Dart Sass loaded for the module (a `@use`d, `@forward`ed or `@import`ed
 partial, a `.scss` file, a package's file) and the discovered theme file are
-added with `addWatchFile`, so an edit to any of them recompiles it, with two
-exceptions. The dev server does not watch `node_modules` (Vite's default
-`server.watch.ignored`), so an edit to a package's file is not seen. And a
-load that fails adds no file: a partial an earlier load added stays
-watched, but one the failing load was the first to load (a new `@use`
-whose file has an error) recompiles nothing when it is fixed, until the
-`.uxdsl` file Vite imports is saved.
+added with `addWatchFile`, so an edit to any of them recompiles it. The dev
+server does not watch `node_modules` (Vite's default
+`server.watch.ignored`), so an edit to a package's file is not seen.
+
+A load that fails still adds, before it rethrows the error, the module's own
+file, every file its last successful load added, the file the error names,
+and the discovered theme file with the local modules it requires. An edit to
+any of them recovers:
+
+- under `vite build --watch` it starts a rebuild, a first build that failed
+  included;
+- in the dev server, the plugin's `hotUpdate` hook (Vite 6 and later) or
+  `handleHotUpdate` hook (Vite 4 and 5) adds the failed module to the
+  update. A module that loaded before gets its `update`, as for any edit; a
+  module whose first load failed, which Vite never sends an update for,
+  reloads the page through the modules that import it.
+
+A partial that never existed, which the module `@use`s before it is
+created, is noticed when the `.uxdsl` file Vite imports is saved.
+
+The error a failed load throws keeps `compile()`'s message and carries
+`loc` (`{ file, line, column }`, the file absolute) and `frame` (Dart
+Sass's for a Sass error, PostCSS's without color for a UXDSL error), in the
+dev server's error payload and in `vite build --watch`'s `ERROR` event. A
+theme error names no file and has neither.
 
 ### Dart Sass runs inside `compile()`
 

@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | None (registered by decision 36 of 2026-11-10, as proposed in MIG-B9-29 §15, owner flag 4) |
-| Status | In review (PR #91) |
+| Status | Merged (PR #91) |
 | Size | S |
 | Depends on | MIG-B9-29 (merged, PR #82). Under README §7 it shares only the append-only rows (`packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/README.md`) with any unmerged story. It does not wait for MIG-B9-21: decision 15 of 2026-11-13 (§15, Q4 (a)) makes it the one exception to §7's opening sentence, "every wave-3 story waits for MIG-B9-21" |
 | Blocks | MIG-B9-91 (its gate requires every wave-3 story merged, MIG-B9-18 included: decision 35 of 2026-11-10). In `0.5.0-beta.10`, MIG-B9-60 if its story file comes to edit the codemod (§15, F12; provisional) |

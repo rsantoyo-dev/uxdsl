@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D2 of 2026-11-04) |
-| Status | In review (PR #94) |
+| Status | Merged (PR #94) |
 | Size | S |
 | Depends on | MIG-B9-13 (merged, PR #63). Under README §7 it also waits for MIG-B9-20, which edits most of the files this story edits (§3, §15) |
 | Blocks | Under README §7: MIG-B9-26 (`test/core/compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-17 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`; decision 6 of 2026-11-10); MIG-B9-27 (`test/no-silent-output.test.js`); MIG-B9-28 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`); MIG-B9-19 and 06 (`test/cli/**`; in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-91 (the root `package.json`; it also depends on every story of waves 0 to 3); in `0.5.0-beta.10`, MIG-B9-51 and 52 (`scripts/agent-guide.test.js`) and, provisionally, MIG-B9-66 (decision 15 of 2026-11-10: the fixtures and shims it would run on Windows) |
@@ -942,3 +942,23 @@ Recorded by the deliverer of PR #94, on `6585143`.
 - **MIG-B9-19:** its watch tests in `watch-mode.test.js` keep `mkProject`'s exit path, or pass `t` only with a kill that awaits the child's exit, registered before the directory's hook (owner flag 2).
 - **MIG-B9-28:** the guard and §12's loop on Windows.
 - **MIG-B9-51:** `CONTRIBUTING.md` states the rule for a new test: make its directories with `packages/uxdsl/test/helpers/temporary-directory.js` (or remove them in `t.after`) and expect `npm test` to fail when one is left.
+
+### Owner decisions of 2026-11-15, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-15), as decisions 9 to 16, 26 and 27 of 2026-11-15. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"), recommendations that widen a registration included. This story was merged into `feat/beta9` as PR #94 (`99f6a82`) on 2026-11-15. Its flags 1 to 8, recorded above under "Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-15)", were implemented as recommended and were not put to the owner one by one: each recommendation is the owner's decision of 2026-11-15, and the owner may still override any of them. This record is in English. The header's Status is the deliverer's to set.
+
+- **Flag 1 (decision 9): (a).** The exit path wherever no test context is in scope.
+- **Flag 2 (decision 10): (a).** The exit path in `mkProject` for `watch-mode.test.js`; no hook edits.
+- **Flag 3 (decision 11): (a).** When the command cannot be spawned, the guard prints `tmpdir-guard: cannot run <command>: <reason>`, keeps its directory, prints the kept line and exits 1.
+- **Flag 4 (decision 12): (a).** The helper's fixed line, `temporary directory kept: <absolute path>`.
+- **Flag 5 (decision 13): (a).** No CHANGELOG entry.
+- **Flag 6 (decision 14): (a).** T9 removes its corpus root in `finally`, pass or fail.
+- **Flag 7 (decision 15): (a).** Whichever of this story and MIG-B9-39 merges second adopts the helper. This story merged first, so it is MIG-B9-39.
+- **Flag 8 (decision 16): (a).** Given no command, the guard prints its usage on stderr, makes nothing and exits 1.
+- **Follow-ups, routed.**
+  - The gate's and the `verify:*` fixtures' leftovers, `packAndInstall`'s consumer directory included, with the five entries of the "Delivery of 2026-11-15" block as the baseline (decision 26): MIG-B9-91.
+  - The watch tests' exit path (decision 27): MIG-B9-19.
+  - The guard and §12's loop on Windows (decision 27): MIG-B9-28.
+  - The rule for a new test in `CONTRIBUTING.md` (decision 27): MIG-B9-51.
+  - The helper for MIG-B9-39's new `test/vite` and `test/webpack` tests (decisions 15 and 27): MIG-B9-39, recorded in FEAT-010 §2 only while MIG-B9-39 is in progress; its §15 note follows when it merges.
+  - Each destination story with a written story file (MIG-B9-19, 28, 51 and 91) has a block of this date at the end of its §15.
