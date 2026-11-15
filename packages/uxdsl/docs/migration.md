@@ -146,7 +146,8 @@ What to check when you upgrade:
    Through `compile()`, `color: palete(primary.main)` fails as
    `UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did
    you mean palette()?` at the declaration's start, as through the plugin
-   alone: correct the spelling to `palette(primary.main)`. In a selector, an
+   alone, also in a declaration Sass never evaluates (a mixin nothing
+   includes): correct the spelling to `palette(primary.main)`. In a selector, an
    at-rule's prelude, a variable, a mixin's argument, a `@return`, or a
    `.scss`, `.sass` or `.css` file, Dart Sass cannot parse it and the error is
    `UXD_SASS: expected "(".`, located at the call.

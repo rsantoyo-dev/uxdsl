@@ -514,8 +514,10 @@ outside a string and a `url()`, is read as a `//` comment:
   alone, with its suggestion, at the declaration's start: `spacing(2)` and,
   in a declaration's value, the dotted `palete(primary.main)`, which Dart Sass
   could not parse, are `UXD_FUNCTION_UNKNOWN: … did you mean …?`, and
-  `xd(primary.main)` is `UXD_BREAKPOINT_UNKNOWN`. A dotted near-miss
-  elsewhere — in a selector, an at-rule's prelude, a variable, a mixin's
+  `xd(primary.main)` is `UXD_BREAKPOINT_UNKNOWN`. In a declaration Sass never
+  evaluates (a mixin nothing includes, an `@if false` branch, a placeholder
+  nothing extends) the dotted call fails the same way, once Sass has compiled.
+  A dotted near-miss elsewhere — in a selector, an at-rule's prelude, a variable, a mixin's
   argument or a `@return`, after a `@function` of that name in the same file,
   or in a `.scss`, `.sass` or `.css` file — stays Dart Sass's
   `UXD_SASS: expected "(".`, so it never reaches the CSS unchecked:

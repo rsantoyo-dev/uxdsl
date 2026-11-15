@@ -102,6 +102,7 @@ test('MIG-B9-26: a dotted near-miss in a selector, an @media prelude, a .scss pa
     ['a mixin argument a selector interpolates', '@mixin m($v) {\n  .#{$v} {\n    color: red;\n  }\n}\n@include m(palete(primary.main));\n', 6],
     ['a function\'s @return', '@function f() {\n  @return palete(primary.main);\n}\n.a {\n  color: f();\n}\n', 2],
     ['an interpolation in a selector', '.#{palete(primary.main)} {\n  color: red;\n}\n', 1],
+    ['a nested property with a value', '.a {\n  font: palete(primary.main) {\n    family: x;\n  }\n}\n', 2],
   ]) {
     const error = await failure(compileSource(source, from));
     assert.ok(error, `${label}: compile() fails`);
@@ -118,6 +119,46 @@ test('MIG-B9-26: a dotted near-miss in a selector, an @media prelude, a .scss pa
   // Without the function, colour(gray.300) is the plugin's error, as on uxdsl/postcss.
   const plain = await failure(compileSource('.a {\n  color: colour(gray.300);\n}\n', from));
   assert.match(plain.reason, /^UXD_FUNCTION_UNKNOWN: colour\(\) is not a function CSS or UXDSL knows; did you mean color\(\)\?$/);
+});
+
+test('MIG-B9-26: a dotted near-miss in a declaration Sass never evaluates (an unused @mixin, @if false, a placeholder nothing extends) fails with the plugin\'s error at the declaration, never compiles silently', async (t) => {
+  const dir = project(t);
+  const from = path.join(dir, 'src', 'main.uxdsl');
+  const PALETE = 'UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()?';
+  for (const [label, source, line, column, reason] of [
+    ['an unused @mixin', '@mixin m {\n  color: palete(primary.main);\n}\n.a {\n  color: red;\n}\n', 2, 3, PALETE],
+    ['@if false', '@if false {\n  .a { color: palete(primary.main); }\n}\n.b {\n  color: red;\n}\n', 2, 8, PALETE],
+    ['a placeholder nothing extends', '%p {\n  color: palete(primary.main);\n}\n.a {\n  color: red;\n}\n', 2, 3, PALETE],
+    ['nested in calc() in an unused @mixin', '@mixin m {\n  width: calc(palete(primary.main) + 1px);\n}\n', 2, 3, PALETE],
+    ['a breakpoint\'s near-miss in an unused @mixin', '@mixin m {\n  color: xd(primary.main);\n}\n', 2, 3, null],
+  ]) {
+    const error = await failure(compileSource(source, from));
+    assert.ok(error, `${label}: compile() fails`);
+    assert.notEqual(error.code, 'UXD_SASS', `${label}: not Dart Sass's error (${error.message.split('\n')[0]})`);
+    // The same reason the plugin gives for the declaration where it is evaluated.
+    const evaluated = await failure(throughPlugin(`.a {\n  ${source.split('\n')[line - 1].trim().replace(/^\.a \{ | \}$/g, '')}\n}\n`, from));
+    assert.equal(error.reason, evaluated.reason, `${label}: the plugin's code and message`);
+    if (reason) assert.equal(error.reason, reason, label);
+    else assert.match(error.reason, /^UXD_BREAKPOINT_UNKNOWN: xd\(\.\.\.\) is not a configured breakpoint/, label);
+    assert.deepEqual([error.file, error.line, error.column], [from, line, column], `${label}: at the declaration`);
+    assert.ok(error.showSourceCode(false).includes(source.split('\n')[line - 1]), `${label}: the frame shows the author's line`);
+    assert.doesNotMatch(error.stack, /<input css/, `${label}: no position outside the author's file`);
+  }
+  // Warnings given before the failure stay on the error.
+  const debugged = await failure(compileSource('@debug "first";\n@mixin m {\n  color: palete(primary.main);\n}\n', from));
+  assert.equal(debugged.reason, PALETE);
+  assert.deepEqual(debugged.warnings, [{ text: 'UXD_SASS_WARNING: DEBUG: first', file: from, line: 1, column: 1 }]);
+  // An anonymous source names no file.
+  const anonymous = await failure(core.compile({ source: '@mixin m {\n  color: palete(primary.main);\n}\n' }, OPTIONS));
+  assert.equal(anonymous.reason, PALETE);
+  assert.deepEqual([anonymous.file, anonymous.line, anonymous.column], [undefined, 2, 3]);
+  assert.match(anonymous.message, /^uxdsl: <css input>:2:3: UXD_FUNCTION_UNKNOWN: /);
+
+  const cli = project(t, { 'uxdsl.config.cjs': CONFIG, 'src/main.uxdsl': '@mixin m {\n  color: palete(primary.main);\n}\n.a {\n  color: red;\n}\n' });
+  const built = build(cli);
+  assert.equal(built.status, 1, built.stderr);
+  assert.equal(built.stderr.split('\n')[0], `[uxdsl] Error: uxdsl: src/main.uxdsl:2:3: ${PALETE}`, built.stderr);
+  assert.equal(fs.existsSync(path.join(cli, 'out', 'app.css')), false, 'nothing is written');
 });
 
 test('MIG-B9-26: each @debug Dart Sass evaluates is a UXD_SASS_WARNING: DEBUG: warning at its rule, in Sass\'s order, from a .uxdsl, a .scss partial, a load-path dependency with quietDeps, and once per evaluation in a loop; uxdsl build prints it and exits 0', async (t) => {

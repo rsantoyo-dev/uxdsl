@@ -9,7 +9,7 @@ import type { RawSourceMap } from 'source-map-js';
 import type { CompileWarning } from '../compile';
 import { diagnostic } from '../diagnostics';
 import { findShadowingFunctions, protect, TOKEN_FUNCTION_NAMES } from './protect';
-import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
+import type { ProtectCall, ProtectNearMiss, ProtectProblem, ProtectResult } from './protect';
 
 // The Sass stage: one synchronous function that compiles an entry with Dart
 // Sass (the pure-JavaScript `sass` package), so that a `.scss` project renamed
@@ -41,8 +41,9 @@ import type { ProtectCall, ProtectProblem, ProtectResult } from './protect';
 //   name in a directory that cannot be listed keeps its written case.
 // - Files are read as Dart Sass reads them (UTF-8; a BOM is a character; text
 //   that is not valid UTF-8 is Sass's `Invalid UTF-8.` at the first bad
-//   character). A `.uxdsl` file goes through `protect()`; `.scss`, `.sass` and
-//   `.css` are served as written.
+//   character). A `.uxdsl` file goes through `protect()`, and the result lists
+//   the near-miss calls protect rewrote in the files loaded; `.scss`, `.sass`
+//   and `.css` are served as written.
 // - A Sass failure is a `UXD_SASS` error at the author's file, line and column
 //   (columns translated back through protect's map), with Sass's message, its
 //   code frame and stack re-rendered with the author's text (`sassFrame`), and
@@ -128,8 +129,17 @@ export interface SassStageResult {
   map?: RawSourceMap;
   /** Absolute paths: the entry first (listed even when it exists only in memory), then each loaded file once in first-load order; no `sass:` module and no plain-CSS `@import` target. */
   loadedFiles: string[];
+  /** The near-miss calls protect rewrote in the `.uxdsl` files loaded (`palete(primary.main)`, which Dart Sass cannot parse), in load order, each with its file and that file's text. The plugin reports each one Sass evaluated; one in a declaration Sass never evaluated is in no CSS. */
+  nearMisses: SassStageNearMiss[];
   /** Sass's warnings and `@debug` output in Sass's order (`UXD_SASS_WARNING: [<id>] <first line>`, `UXD_SASS_WARNING: DEBUG: <first line>` or `UXD_SASS_WARNING: <first line>`), then one `UXD_FUNCTION_SHADOWED: …` per shadowing definition, located at the definition. */
   warnings: CompileWarning[];
+}
+
+export interface SassStageNearMiss extends ProtectNearMiss {
+  /** Absolute. */
+  file: string;
+  /** The file's text as read. */
+  source: string;
 }
 
 /** Thrown for a Sass failure. An I/O error reading a file is rethrown unchanged instead; invalid input is a TypeError thrown before Sass runs. */
@@ -786,7 +796,12 @@ function finish(stage: Stage, pass: Pass, shadowing: Definition[]): SassStageRes
   rethrowNonSass(stage, pass);
   if (pass.failed) throw stageError(pass, pass.error as Sass.Exception);
   const result = pass.result as Sass.CompileResult;
-  const out: SassStageResult = { css: result.css, loadedFiles: loadedFilesOf(pass), warnings: stageWarnings(pass, shadowing) };
+  const loadedFiles = loadedFilesOf(pass);
+  const nearMisses = loadedFiles.flatMap((file) => {
+    const served = pass.served.get(file);
+    return served && served.protected ? served.protected.nearMisses.map((miss) => ({ ...miss, file, source: served.original })) : [];
+  });
+  const out: SassStageResult = { css: result.css, loadedFiles, warnings: stageWarnings(pass, shadowing), nearMisses };
   if (stage.sourceMap && result.sourceMap) out.map = translateMap(pass, result.sourceMap);
   return out;
 }

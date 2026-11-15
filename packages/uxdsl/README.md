@@ -147,7 +147,8 @@ want them. No name is reserved: a project `@function` named like a UXDSL functio
 with `UXD_FUNCTION_SHADOWED`, that it hides the token of that name. Each
 `@debug` Sass evaluates is a warning at its rule, `UXD_SASS_WARNING: DEBUG: …`,
 and a misspelled function with a dotted key (`palete(primary.main)`) names the
-function meant, as it does through the PostCSS plugin.
+function meant, as it does through the PostCSS plugin, even in a mixin nothing
+includes.
 
 1. **Rename** each `.scss` file to `.uxdsl`. Rename it rather than copy it: a
    `.scss` twin beside a `.uxdsl` file makes `@use './card'` ambiguous (Dart

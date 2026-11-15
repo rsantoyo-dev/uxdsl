@@ -36,7 +36,10 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   `UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did
   you mean palette()?`, and `xd(primary.main)` as `UXD_BREAKPOINT_UNKNOWN`.
   `uxdsl build` prints `[uxdsl] Error: uxdsl: src/main.uxdsl:2:3:
-  UXD_FUNCTION_UNKNOWN: …` and exits 1. The same call in a selector, an
+  UXD_FUNCTION_UNKNOWN: …` and exits 1. A declaration Sass never evaluates (a
+  mixin nothing includes, an `@if false` branch, a placeholder nothing
+  extends), where Dart Sass failed the same way, fails with that error too,
+  once Sass has compiled. The same call in a selector, an
   at-rule's prelude, a variable, a mixin's argument or a `@return`, after a
   same-file `@function` of that name, or in a `.scss`, `.sass` or `.css` file
   keeps Dart Sass's error.

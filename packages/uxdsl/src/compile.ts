@@ -49,7 +49,7 @@ import postcss, { Plugin, Result, Warning } from 'postcss';
 import type { RawSourceMap, SourceMapConsumer as Consumer } from 'source-map-js';
 import uxdslPlugin = require('./plugin');
 import { compileSassStage } from './sass/compile-sass';
-import type { SassStageResult } from './sass/compile-sass';
+import type { SassStageNearMiss, SassStageResult } from './sass/compile-sass';
 import { restoreDirectiveSpacing } from './sass/protect';
 import { resolveTheme } from './default-theme';
 import { discoverThemeAsync, removedOptionsIn } from './config';
@@ -261,12 +261,33 @@ async function compileInto(warnings: CompileWarning[], input: CompileInput, conf
   for (const file of discovered?.dependencies ?? []) if (!dependencies.includes(file)) dependencies.push(file);
 
   warnings.push(...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)));
+  // A near-miss Sass evaluated failed in the plugin above; one in a declaration
+  // Sass never evaluated reached no CSS, and fails here with the same error.
+  if (stage.nearMisses.length > 0) throw await nearMissError(stage.nearMisses[0], theme, stageEntry, hidden);
 
   // The plugin's own message for this compilation (the last one, should a
   // caller's PostCSS setup ever run it twice).
   const themeMessage = [...result.messages].reverse().find((message) => message.type === 'uxdsl-theme' && message.plugin === 'uxdsl');
   const themeEmitted = Boolean(themeMessage && (themeMessage as { emitted?: unknown }).emitted);
   return { css, map, dependencies, warnings, themeEmitted };
+}
+
+/**
+ * The plugin's error for a near-miss call protect rewrote in a declaration
+ * Sass never evaluated: the plugin compiles the call alone as a declaration's
+ * value (inside `calc()` when it was nested in another call, as the plugin
+ * reads a nested call), and the error is moved to the author's declaration,
+ * frame included.
+ */
+async function nearMissError(miss: SassStageNearMiss, theme: CompileConfig['theme'], entry: string, hidden: string | undefined): Promise<unknown> {
+  const css = `.x{a:${miss.topLevel ? miss.call : `calc(${miss.call})`}}`;
+  const at: AuthorPosition = { file: miss.file === hidden ? undefined : miss.file, line: miss.line, column: miss.column, source: miss.source };
+  try {
+    await postcss([uxdslPlugin({ theme })]).process(css, { from: hidden ? undefined : entry });
+  } catch (error) {
+    return relocateError(error, css, () => at, entry, hidden);
+  }
+  return new Error(`uxdsl: ${at.file ?? ANONYMOUS}:${at.line}:${at.column}: ${miss.call} is not a function CSS or UXDSL knows.`);
 }
 
 // --- options -----------------------------------------------------------------

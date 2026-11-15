@@ -51,7 +51,10 @@ import { TOKEN_FUNCTIONS, unknownFunctionMessage } from '../language';
 //   custom property, a variable, an `@include` or `@return` argument keep Dart
 //   Sass's error. A name declared by any `@function` earlier in the text, or
 //   in `options.unprotected`, is the author's and its calls are left as
-//   written. `options.site` is never asked about such a call;
+//   written. `options.site` is never asked about such a call. Each rewritten
+//   call is listed in `nearMisses` with its declaration's position, since the
+//   plugin sees it only where Sass evaluates the declaration (not in a mixin
+//   nothing includes, under `@if false`, in a placeholder nothing extends);
 // - the output has exactly as many lines as the input: a rewrite spanning
 //   lines re-emits its newlines after the replacement, and the result maps
 //   every column of the output back to the input;
@@ -116,6 +119,17 @@ export interface ProtectOptions {
   bodies?: boolean;
 }
 
+/** A near-miss call the near-miss rule rewrote, which reaches the plugin only where Sass evaluates its declaration. */
+export interface ProtectNearMiss {
+  /** 1-based line and column of the declaration holding the call (its property name). */
+  line: number;
+  column: number;
+  /** The call as written, from its name to its closing parenthesis. */
+  call: string;
+  /** Whether the call is at the top of the declaration's value, not inside another call. */
+  topLevel: boolean;
+}
+
 export interface ProtectResult {
   /** The text to hand to Sass. */
   code: string;
@@ -123,6 +137,8 @@ export interface ProtectResult {
   toOriginalColumn(line0: number, column0: number): number;
   /** The shadowing `@function` declarations found, in order of appearance. */
   problems: ProtectProblem[];
+  /** The near-miss calls rewritten, in order of appearance. */
+  nearMisses: ProtectNearMiss[];
 }
 
 type Mode = 'general' | 'directive';
@@ -280,6 +296,7 @@ class Protector {
   /** The reserved names as a breakpoint map, for `unknownFunctionMessage`. */
   private readonly breakpoints: Record<string, number>;
   readonly problems: ProtectProblem[] = [];
+  readonly nearMisses: ProtectNearMiss[] = [];
 
   constructor(
     private readonly src: string,
@@ -490,27 +507,36 @@ class Protector {
     const resolved = sassName(written);
     if (written.toLowerCase() === 'tone' || this.reserved.has(resolved) || this.declared.has(resolved) || this.unprotected.has(resolved)) return false;
     if (!unknownFunctionMessage(written, { breakpoints: this.breakpoints })) return false;
-    if (!this.inDeclarationValue(start, close + 1)) return false;
+    const declaration = this.declarationStart(start, close + 1);
+    if (declaration === -1) return false;
     const call = this.tokenCall(start, paren, end);
     if (!call) return false;
+    const lineStart = s.lastIndexOf('\n', declaration - 1) + 1;
+    this.nearMisses.push({
+      line: s.slice(0, lineStart).split('\n').length,
+      column: declaration - lineStart + 1,
+      call: s.slice(start, close + 1),
+      topLevel: this.depth <= 0,
+    });
     this.rewrite(start, call.close + 1, call.text);
     return true;
   }
 
-  /** Whether [start, after) lies in the value of a property declaration: its statement starts with a property name and `:` before `start`, and ends with `;` or `}`, not `{`. */
-  private inDeclarationValue(start: number, after: number): boolean {
+  /** Where the property declaration whose value holds [start, after) starts: its statement starts with a property name and `:` before `start`, and ends with `;` or `}`, not `{`. -1 when it is not in one. */
+  private declarationStart(start: number, after: number): number {
     const s = this.src;
-    let k = skipBlank(s, this.statementStart);
-    if (s[k] === '-' && s[k + 1] === '-') return false;
+    const declaration = skipBlank(s, this.statementStart);
+    let k = declaration;
+    if (s[k] === '-' && s[k + 1] === '-') return -1;
     let named = false;
     while (k < start) {
       if (isIdentChar(s[k])) { k++; named = true; continue; }
       if (s[k] === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); named = true; continue; }
       break;
     }
-    if (!named) return false;
+    if (!named) return -1;
     const colon = skipBlank(s, k);
-    if (s[colon] !== ':' || colon >= start) return false;
+    if (s[colon] !== ':' || colon >= start) return -1;
     let depth = this.depth;
     let m = after;
     while (m < s.length) {
@@ -521,10 +547,10 @@ class Protector {
       if (c === '#' && s[m + 1] === '{') { m = endOfInterpolation(s, m); continue; }
       if (c === '(') depth++;
       else if (c === ')') depth--;
-      else if ((c === ';' || c === '{' || c === '}') && depth <= 0) return c !== '{';
+      else if ((c === ';' || c === '{' || c === '}') && depth <= 0) return c === '{' ? -1 : declaration;
       m++;
     }
-    return true;
+    return declaration;
   }
 
   private isUnprotected(name: string): boolean {
@@ -690,6 +716,7 @@ export function protect(source: string, options: ProtectOptions = {}): ProtectRe
     code,
     toOriginalColumn: (line0, column0) => protector.toOriginalColumn(line0, column0),
     problems: protector.problems,
+    nearMisses: protector.nearMisses,
   };
 }
 
