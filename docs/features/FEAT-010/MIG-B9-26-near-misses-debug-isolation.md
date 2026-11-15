@@ -180,7 +180,7 @@ B1 a near-miss with a dotted argument (compile() | uxdsl/postcss)
     CssSyntaxError b1/src/panel.uxdsl:2:3 UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()?
     CssSyntaxError b1/src/panel.uxdsl:2:10 UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()?
 B2 uxdsl build: exit 1; [uxdsl] Error: src/main.uxdsl:2:29: UXD_SASS: expected "(".
-B3 @debug: compile() warnings []; uxdsl build exit 0, stderr ""
+B3 @debug: compile() warnings []; uxdsl build exit 0, stderr "[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches `@uxdsl theme;`, so nothing this build writes defines the --uxdsl__ tokens its CSS references. Write `@uxdsl theme;` once, at the top level of the global stylesheet that defines them. For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.\n"
 B4 a project function named with the uxdsl-probe- prefix, beside @function space (Dart Sass: v: space(2), then v: 6px)
   my-pick: ".a { v: var(--uxdsl__space__2); } .b { v: 6px; }"
   uxdsl-probe-pick: ".a { v: 1; } .b { v: 1; }"
@@ -200,7 +200,8 @@ What it shows:
 - **B3.** Dart Sass's own logger receives two `debug` calls for this input
   (`src/_part.scss:1:1 DEBUG: from a .scss partial`, then
   `src/main.uxdsl:3:1 DEBUG: gap is 4px`); `compile()` returns no warning and
-  the CLI prints nothing. Dart Sass's CLI prints each `@debug` as
+  the CLI prints no `@debug` (only MIG-B9-20's `UXD_THEME_MARKER`, re-run on
+  `99f6a82`). Dart Sass's CLI prints each `@debug` as
   `<file>:<line> DEBUG: <message>`, one line per evaluation (a `@debug` in a
   loop prints once per iteration), and `quietDeps` does not silence it (both
   checked with the repository's `sass` 1.107.0).
@@ -551,23 +552,25 @@ Owner checks, never marked PASS by the agent:
 ## 11. Documentation
 
 - `packages/uxdsl/docs/integrations/compile.md`:
-  - the "A dotted near-miss" bullet (`:490–493`): through `compile()` it now
-    fails as through the plugin;
-  - the "Warnings" bullet (`:494–501`): `@debug` is a `UXD_SASS_WARNING`;
-  - "Functions named like UXDSL's" (`:383–386`) and its recorded differences
-    (`:425–430`): the prefix exception goes (C3);
+  - the "A dotted near-miss" bullet (`:514–517` on `99f6a82`): through
+    `compile()` it now fails as through the plugin;
+  - the "Warnings" bullet (`:518–525`): `@debug` is a `UXD_SASS_WARNING`;
+  - "Functions named like UXDSL's" (heading `:407`, the exception sentence
+    `:409–410`) and its recorded differences (`:445–452`): the prefix
+    exception goes (C3);
   - one example that documents the dotted near-miss's
     `UXD_FUNCTION_UNKNOWN`, compiled by the harness.
 - `packages/uxdsl/docs/migration.md`, "beta.9 — Sass inside compile()": item
   6 (`:145–148`) is rewritten.
-- `packages/uxdsl/README.md`: "From SCSS" (`:118–125`) with two exceptions
-  (Q3 (c)), and one sentence beside the pipeline paragraph.
+- `packages/uxdsl/README.md`: "From SCSS" (`:136–145` on `99f6a82`) with two
+  exceptions (Q3 (c)), and one sentence beside the pipeline paragraph
+  (`:210–216`, which names the recorded differences).
 - `packages/uxdsl/CHANGELOG.md`: one subsection.
 - MIG-B9-17 documents C4 to C6: `cli.md`'s `generate-entry`, item 9 of
   `migration.md`, and `unified-engine-audit.md:59`.
 - `packages/playground-nextjs/src/app/docs/introduction/page.mdx` (line 53
-  on `f855765`) and `packages/playground-nextjs/src/app/docs/language/page.tsx`
-  (the sentence MIG-B9-16's C1.2 writes): the three-cases sentence, as the
+  on `f855765` and on `99f6a82`) and `packages/playground-nextjs/src/app/docs/language/page.tsx`
+  (the sentence MIG-B9-16's C1.2 writes, `:146–150` on `99f6a82`): the three-cases sentence, as the
   package README words it after C3 (Q3 (c): two cases). No other playground
   text changes.
 
@@ -594,7 +597,7 @@ both files.
 
 ## 13. Delivery
 
-Branch `feat/b9-26-near-misses-debug-isolation`. Commit:
+Branch `feat/b9-26-near-misses-debug`. Commit:
 `feat(FEAT-010): MIG-B9-26 - dotted near-misses keep their suggestion through compile(), @debug is a warning, and no project name changes the probe`.
 
 PR title: `FEAT-010: MIG-B9-26 - Dotted near-misses keep DEC-02's "did you mean" through compile(); Sass's @debug reaches the build as a warning`.
@@ -791,3 +794,29 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
 ### Under README §7, after decisions 28 and 29 of 2026-11-13
 
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13). Decision 28 split MIG-B9-39 in two: MIG-B9-39 keeps the adapters, and [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md) takes the CLI and the tests, with the places MIG-B9-39 had on the rows of `bin/uxdsl.js`, `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`. On `packages/playground-nextjs/**`, the later row that waits for this story is MIG-B9-19, not MIG-B9-39, which no longer edits the playground. MIG-B9-06, registered by decision 29, is not on that row. The header's Blocks follows; nothing else in this story changes.
+
+### Implementation record (2026-11-15)
+
+**Stale lines corrected before the work (README §1, item 4).** Re-run on
+BASE `99f6a82` on 2026-11-15; every §3 precondition and start gate exits 0.
+
+- §4, recorded output, B3. Old: `B3 @debug: compile() warnings []; uxdsl build exit 0, stderr ""`.
+  New: the same line with the stderr MIG-B9-20 adds, its one
+  `[uxdsl] Warning: UXD_THEME_MARKER: no entry reaches …` line, recorded in
+  full in §4 (B3's entry references `space(2)` and writes no marker). Its "What it
+  shows" bullet: old "the CLI prints nothing", new "the CLI prints no
+  `@debug` (only MIG-B9-20's `UXD_THEME_MARKER`, re-run on `99f6a82`)". The
+  `@debug` finding itself is unchanged; B1, B2 and B4 reproduce line for line.
+- §13. Old: "Branch `feat/b9-26-near-misses-debug-isolation`." New: "Branch
+  `feat/b9-26-near-misses-debug`." (decision 6 moved the isolation part to
+  MIG-B9-17; the workflow created the branch under the shorter name).
+- §11, line references. Old: compile.md `:490–493`, `:494–501`, `:383–386`,
+  `:425–430`; README `:118–125`. New, on `99f6a82`: compile.md `:514–517`,
+  `:518–525`, heading `:407` with the exception sentence `:409–410`,
+  `:445–452`; README `:136–145` and its pipeline paragraph `:210–216`;
+  `language/page.tsx:146–150`; `page.mdx:53` and migration.md `:145–148`
+  unchanged. MIG-B9-20 and MIG-B9-21 moved them. §2's citations say "on
+  `f855765`" and stay as written.
+- F1's location, recorded only (F1 itself is not rewritten; C9 supersedes
+  it): `compile-sass.ts:669` on `f855765` is `compile-sass.ts:677` on
+  `99f6a82`, in `runPass`, once per pass.
