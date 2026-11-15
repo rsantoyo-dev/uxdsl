@@ -273,9 +273,16 @@ async function runCorpus({ args, sass, sassVersion, compile, install = installCo
     log(`  compile() returned ${timings.piped.result.warnings.length} warnings`);
 
     // UXDSL on top of Bootstrap's own Sass: Bootstrap's part must not move.
-    fs.writeFileSync(path.join(corpus, '_uxdsl-extras.uxdsl'), extras);
-    fs.writeFileSync(path.join(corpus, 'with-extras.uxdsl'), '@import "bootstrap";\n@import "uxdsl-extras";\n');
-    const mixed = (await compile({ entry: path.join(corpus, 'with-extras.uxdsl') })).css;
+    // Its two files are removed after the compile, whatever its outcome, so a
+    // kept corpus holds the corpus as installed.
+    let mixed;
+    try {
+      fs.writeFileSync(path.join(corpus, '_uxdsl-extras.uxdsl'), extras);
+      fs.writeFileSync(path.join(corpus, 'with-extras.uxdsl'), '@import "bootstrap";\n@import "uxdsl-extras";\n');
+      mixed = (await compile({ entry: path.join(corpus, 'with-extras.uxdsl') })).css;
+    } finally {
+      for (const name of ['_uxdsl-extras.uxdsl', 'with-extras.uxdsl']) fs.rmSync(path.join(corpus, name), { force: true });
+    }
     const prefix = mixed.startsWith(expected.replace(/\n+$/, ''));
     const checks = [
       ['Bootstrap\'s CSS is an unchanged prefix', prefix],

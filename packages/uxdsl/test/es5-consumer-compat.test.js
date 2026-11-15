@@ -54,8 +54,8 @@ test('ds-runtime.ts (and everything it re-exports, including contrast.ts) compil
 
 test('sanity check: this test actually detects the real bug it pins (a bare for-of over a Map, under ES5)', () => {
   const fs = require('node:fs');
-  const os = require('node:os');
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-es5-check-'));
+  const { temporaryDirectory } = require('./helpers/temporary-directory');
+  const dir = temporaryDirectory('uxdsl-es5-check-');
   const file = path.join(dir, 'bad.ts');
   fs.writeFileSync(file, 'const m = new Map<string, number>();\nfor (const [k, v] of m) { console.log(k, v); }\n');
   const program = ts.createProgram([file], { target: ts.ScriptTarget.ES5, module: ts.ModuleKind.CommonJS, noEmit: true });

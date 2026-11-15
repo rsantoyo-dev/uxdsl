@@ -15,7 +15,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 
@@ -26,7 +26,7 @@ function git(dir, args) {
 }
 
 function mkFakeRepo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'verify-docs-guard-'));
+  const dir = temporaryDirectory('verify-docs-guard-');
   git(dir, ['init', '-q']);
   git(dir, ['config', 'user.email', 'test@example.com']);
   git(dir, ['config', 'user.name', 'Test']);

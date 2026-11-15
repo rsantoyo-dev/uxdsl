@@ -3,7 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { execFileSync, spawnSync } = require('node:child_process');
 
@@ -18,7 +18,7 @@ test('MIG-B7-15: the packaged guide is AGENTS.md byte for byte behind the genera
 });
 
 test('MIG-B7-15: --check fails on any drift (negative control)', () => {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-agent-guide-'));
+  const dir = temporaryDirectory('uxdsl-agent-guide-');
   const stale = path.join(dir, 'agent-guide.md');
   fs.writeFileSync(stale, render().replace('Preserve intent, not just the current computed value.', 'Preserve intent.'));
   assert.equal(check(stale), false, 'an edited copy must fail the check');

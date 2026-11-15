@@ -8,7 +8,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -18,7 +18,7 @@ const STYLE_LOADER = require.resolve('style-loader');
 const CSS_LOADER = require.resolve('css-loader');
 
 function mkTmpDir() {
-  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-webpack-loader-test-')));
+  return fs.realpathSync(temporaryDirectory('uxdsl-webpack-loader-test-'));
 }
 
 function write(dir, relPath, content) {

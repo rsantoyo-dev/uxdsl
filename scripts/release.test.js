@@ -23,7 +23,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
@@ -241,7 +241,7 @@ const REAL_SCRIPT = path.resolve(__dirname, 'release.js');
 const PKG_NAMES = ['uxdsl'];
 
 function mkFakeMonorepo({ withGenerateStub = false } = {}) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-release-guard-'));
+  const dir = temporaryDirectory('uxdsl-release-guard-');
   fs.mkdirSync(path.join(dir, 'scripts'), { recursive: true });
   fs.copyFileSync(REAL_SCRIPT, path.join(dir, 'scripts', 'release.js'));
   if (withGenerateStub) {

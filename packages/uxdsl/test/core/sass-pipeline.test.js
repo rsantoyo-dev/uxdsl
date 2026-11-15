@@ -5,14 +5,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 
 const core = require('../../dist/entries/index.js');
 
 /** Writes `files` ({ relativePath: text }) into a fresh directory and returns its path. */
 function project(files) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-pipeline-'));
+  const dir = temporaryDirectory('uxdsl-sass-pipeline-');
   for (const [file, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, file)), { recursive: true });
     fs.writeFileSync(path.join(dir, file), text);
