@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | DEC-02 (decided 2026-10-23) for C1; C3 stays within DEC-17 (decided 2026-10-23). No DEC is open. The owner answered §15's six questions on 2026-11-10 (§15, "Owner decisions of 2026-11-10"); C4 to C6, C5 included, are now MIG-B9-17's |
-| Status | Ready |
+| Status | In review (PR #97) |
 | Size | S. Registered S by decision D5 of 2026-11-04. The decisions of 2026-11-08 added four detections of module isolation, which need a catalog code and work in the Sass stage's probe, and the removal of the probe prefix's exception, which made it M at its upper bound. Decision 6 of 2026-11-10 split it (§15, Q1, option (b)): this story is the S part, C1 to C3, and the M part, C4 to C6, is MIG-B9-17 |
 | Depends on | MIG-B9-14 (merged, PR #71: the CLI prints `compile()`'s warnings, which D5 waits for) and MIG-B9-21 (C2 relies on its `error.warnings`, in `compile-sass.ts`: README §7's note on that file. README §5's row names it since decision 6 of 2026-11-10 took `compile.ts`, the §7 row that carried this wait, to MIG-B9-17). Under README §7: MIG-B9-16 (`packages/playground-nextjs/**`: the two pages whose three-cases sentence C3 edits), MIG-B9-20 (`fixtures/release-1.0/run.js`, `migration.md`, the playground, and the tests it rewrites when it removes `includeTheme`) and MIG-B9-25 (`compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`) |
 | Blocks | MIG-B9-17 (decision 6 of 2026-11-10) and MIG-B9-91. Under README §7: MIG-B9-27 (`compile.md`, `migration.md`); MIG-B9-28 (`compile-sass.test.js`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); MIG-B9-30, 33, 34, 35, 36 and 19 (`packages/playground-nextjs/**`; MIG-B9-19 in MIG-B9-39's place, by decision 28 of 2026-11-13); in `0.5.0-beta.10`, MIG-B9-40 to 43 (the playground), MIG-B9-52 (`migration.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10). MIG-B9-24 shares no file with this story under the answers its §15 assumes |
@@ -616,7 +616,80 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+- **PR:** #97 (`feat/b9-26-near-misses-debug` into `feat/beta9`), not merged
+  (only the owner merges).
+- **Base and implementation:** BASE `99f6a82` (worktree start), merged with
+  `origin/feat/beta9` at `e89fdb8` in `62089b9`; `origin/feat/beta9` had not
+  moved at the final fetch. Commits: `ff2fd0e` (stale corrections),
+  `f69a713` (C1, C2, C3, C9), `c92237c` (R1: the near-miss replay),
+  `62089b9` (merge), `a10a431` (re-review RR1/RR2 tests, S3 to S5 docs),
+  `82d12ae` (§15: flags 1 to 4, the review and re-reviews, `compile.ts` in
+  Shares), then this closure commit.
+- **Environment:** macOS, `MacBookPro18,3`, Node v20.19.0, npm 11.21.1, each
+  command with its own empty `TMPDIR` under the session's scratch directory.
+- **Criterion to test:**
+  - C1 → T1/T2 (`near-miss-functions.test.js` `SASS_REJECTS`,
+    `sass-stage-diagnostics.test.js`: the nested/alpha/capitals/breakpoint
+    cases and the context guard's control), T5 (a declaration Sass never
+    evaluates: unused `@mixin`, `@if false`, a placeholder, nested `calc()`,
+    `xd()`, `calc(xd())`, a `@use`'d partial, two near-misses, warnings kept,
+    an anonymous source, the CLI; `rgb()` keeping `UXD_SASS`).
+  - C2 → T3, T3b (`sass-stage-diagnostics.test.js`), T4
+    (`compile-sass.test.js`, "@debug is reported as a warning").
+  - C3 → the `uxdsl-probe-…` names test (`sass-stage-diagnostics.test.js`).
+  - C9 → the standard-input test (`sass-stage-diagnostics.test.js`).
+  - C7/C8 → parity, the playground build, the captures check, AC6's corpus.
+- **Commands, on `82d12ae` unless stated (load average in braces):**
+  - `npm test`: exit 0; 1654 tests, 0 failing; `TMPDIR` 0 entries left
+    (13:06–13:11, {2.15 4.48 6.77}).
+  - `node --test packages/uxdsl/test/near-miss-functions.test.js
+    packages/uxdsl/test/core/compile-sass.test.js
+    packages/uxdsl/test/core/sass-stage-diagnostics.test.js`: 69/69, 0 left
+    (AC1, AC2).
+  - `node --test fixtures/release-1.0/verdicts.test.js`: 12/12 (AC8, first
+    part).
+  - AC6, `node fixtures/sass-corpus/run.js`, the first three invocations after
+    the last change to `compile-sass.ts`/`protect.ts` (`c92237c`), in a row:
+    13:00:50 {4.89 5.99 8.05}, 13:00:56 {4.73 5.94 8.02}, 13:01:02
+    {5.32 6.04 8.05}; each exit 0, `compile() returned 21 warnings` (BASE's
+    21), every corpus check `ok`, `TMPDIR` 0 entries. Exit 0 asserts
+    `byte-identical: true` and the 1.5× budget, but the finisher's capture
+    kept only each run's last eight lines, so those three ratios are not
+    recorded. A second set of three, full output: 13:01:21 {5.14 5.98 7.98}
+    byte-identical: true, 1.33×; 13:01:26 {4.89 5.91 7.94} true, 1.31×;
+    13:01:32 {5.22 5.96 7.95} true, 1.28×; each 21 warnings, 0 entries.
+    (The implementer's 1.40×/1.46×/1.18× predate `c92237c`; the re-review's
+    1.35× was one run at {5.55}.)
+  - `node --test --test-concurrency=1 packages/uxdsl/test/performance/*.test.js`:
+    exit 0 (1 test), 0 left.
+  - `node scripts/generate-language-artifacts.js --check`: exit 0;
+    `node scripts/generate-agent-guide.js --check`: exit 0 (AC7, second part).
+  - `npm run verify:doc-examples`: exit 0, 71 examples and 24 excerpts (AC7).
+  - `node packages/playground-nextjs/scripts/capture-capabilities.js --check`:
+    up to date; the playground build (pre-commit hook of `a10a431` and
+    `82d12ae`): `unchanged src/app/uxdsl.css`, the same eleven Sass warning
+    lines (AC9); `git diff --name-only <BASE> -- packages/playground-nextjs`
+    lists only `introduction/page.mdx` and `language/page.tsx`.
+  - `node fixtures/parity/run.js`: exit 0; `git diff --exit-code <BASE> --
+    fixtures/parity/expected`: exit 0 (AC5).
+  - `npm run verify:playground-browser`: exit 0, 13:01:56–13:05:56
+    {4.71 5.80 7.83}, every negative control caught. The deliverer's two
+    earlier attempts on `62089b9` timed out (30 s per `page.goto`, load
+    average 26) or did not finish.
+  - `npm run verify:1.0`: 72/72 on `62089b9` on the deliverer's re-run (UX-10's
+    timing failed once under load); not re-run after `a10a431`, which changed
+    a test and docs only; CI's `verify:1.0` job runs it with the real-Chrome
+    walk.
+  - Mutations: AC1's, run by the implementer; R1's replay: M1 to M3b failed
+    the re-review's runs, and M4 to M8 fail T5 since `a10a431` (each applied
+    to the built `dist`, then restored and compared byte for byte).
+- **Documentation:** `compile.md` (near-miss bullet, the `@debug` warning, the
+  prefix exception removed, one compiled example), `migration.md` item 6,
+  the package README ("From SCSS", one sentence), the CHANGELOG subsection,
+  `diagnostics.ts`'s `UXD_SASS_WARNING` meaning, and the two playground
+  pages' three-cases sentence. `AGENTS.md` unchanged.
+- **Not verified:** Windows; the owner checks in §9; CI's results are in
+  the PR.
 
 ## 15. Findings and follow-ups
 
@@ -963,3 +1036,26 @@ lens). The finisher reproduced each finding on HEAD's `dist` before acting.
   and the replay give `UXD_FUNCTION_UNKNOWN … did you mean xs()?`. It comes
   from `f69a713`'s evaluated path; an edge case, loud either way; no fix in
   this story.
+
+### Delivery of 2026-11-15
+
+- **New facts.** The near-miss replay sits in `compile.ts` (flag 4, a Shares
+  widening; README §7's `compile.ts` row is `13, 20, 21, 26, 17, 38`).
+  `verify:playground-browser` passes at load average about 5; the earlier
+  timeouts were load. The Bootstrap corpus is 1.28× to 1.35× after
+  `c92237c`.
+- **Flags.** Flags 1 to 4, all answered with the recommendation under the
+  standing instruction (above); no new flag at delivery.
+- **Follow-ups for later stories.**
+  - MIG-B9-17 (next on `compile.ts`): the replay (`nearMissError`, after the
+    plugin's warnings are collected) is the code it meets in
+    `compileInto`; T5 pins its file, order, nesting and warnings.
+  - RR5's parenthesised `(xd(primary.main))`, evaluated, is
+    `UXD_BREAKPOINT_UNKNOWN` through `compile()` and `UXD_FUNCTION_UNKNOWN`
+    through `uxdsl/postcss`: a candidate for a later diagnostics story
+    (README §7's `diagnostics.ts` queue), not scheduled.
+  - RR4's position difference (value's line when evaluated, property's when
+    replayed) stays unless a story aligns the replay with `locator()`.
+  - S3: a near-miss inside a Sass color function is that function's
+    `UXD_SASS`, as the canonical token is; DEC-02's suggestion does not reach
+    there and nothing asks it to.
