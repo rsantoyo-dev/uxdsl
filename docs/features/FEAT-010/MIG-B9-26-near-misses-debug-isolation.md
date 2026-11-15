@@ -11,7 +11,7 @@
 | Blocks | MIG-B9-17 (decision 6 of 2026-11-10) and MIG-B9-91. Under README §7: MIG-B9-27 (`compile.md`, `migration.md`); MIG-B9-28 (`compile-sass.test.js`); MIG-B9-30, 32, 33, 34, 35, 37 and 38 (`diagnostics.ts`); MIG-B9-30 and 31 (`fixtures/release-1.0/run.js`); MIG-B9-30, 33, 34, 35, 36 and 19 (`packages/playground-nextjs/**`; MIG-B9-19 in MIG-B9-39's place, by decision 28 of 2026-11-13); in `0.5.0-beta.10`, MIG-B9-40 to 43 (the playground), MIG-B9-52 (`migration.md`) and, provisionally, MIG-B9-66 (`verdicts.test.js`; decision 15 of 2026-11-10). MIG-B9-24 shares no file with this story under the answers its §15 assumes |
 | Base | `feat/beta9` after MIG-B9-16, after MIG-B9-20, after MIG-B9-21 and after MIG-B9-25. §3 and §4 were recorded on `f855765`, before any of the four; they are re-run on that base before work starts |
 | Owns | None: the test file this story adds is shared with MIG-B9-17 (below) |
-| Shares | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new: this story makes it, and MIG-B9-17 adds its T6 and T8); `packages/uxdsl/src/sass/protect.ts` (C1); `packages/uxdsl/src/sass/compile-sass.ts` (C2, C3, C9 (decision 30 of 2026-11-10) and its header comment); `packages/uxdsl/src/diagnostics.ts` (`UXD_SASS_WARNING`'s meaning); `packages/uxdsl/test/near-miss-functions.test.js` (`SASS_REJECTS`); `packages/uxdsl/test/core/compile-sass.test.js` (the twin's logger and "debug is dropped"); `fixtures/release-1.0/run.js` and `fixtures/release-1.0/verdicts.test.js` (S-7); `packages/uxdsl/docs/integrations/compile.md`; `packages/uxdsl/docs/migration.md` (item 6 of "beta.9 — Sass inside compile()"); `packages/uxdsl/README.md` ("From SCSS", and one sentence); `packages/uxdsl/CHANGELOG.md`; `packages/playground-nextjs/src/app/docs/introduction/page.mdx` and `packages/playground-nextjs/src/app/docs/language/page.tsx` (the three-cases sentence only, C3) |
+| Shares | `packages/uxdsl/test/core/sass-stage-diagnostics.test.js` (new: this story makes it, and MIG-B9-17 adds its T6 and T8); `packages/uxdsl/src/sass/protect.ts` (C1); `packages/uxdsl/src/sass/compile-sass.ts` (C2, C3, C9 (decision 30 of 2026-11-10) and its header comment); `packages/uxdsl/src/diagnostics.ts` (`UXD_SASS_WARNING`'s meaning); `packages/uxdsl/test/near-miss-functions.test.js` (`SASS_REJECTS`); `packages/uxdsl/test/core/compile-sass.test.js` (the twin's logger and "debug is dropped"); `fixtures/release-1.0/run.js` and `fixtures/release-1.0/verdicts.test.js` (S-7); `packages/uxdsl/docs/integrations/compile.md`; `packages/uxdsl/docs/migration.md` (item 6 of "beta.9 — Sass inside compile()"); `packages/uxdsl/README.md` ("From SCSS", and one sentence); `packages/uxdsl/CHANGELOG.md`; `packages/playground-nextjs/src/app/docs/introduction/page.mdx` and `packages/playground-nextjs/src/app/docs/language/page.tsx` (the three-cases sentence only, C3); `packages/uxdsl/src/compile.ts` (the near-miss replay only, R1's fix: a Shares widening, §15's flag 4 of 2026-11-15) |
 | Output impact | API/CLI: `compile()`'s `warnings` gain one per `@debug` (C2); a dotted near-miss fails with the plugin's error instead of `UXD_SASS` (C1); a project name with the `uxdsl-probe-` prefix gets Dart Sass's CSS (C3); `compile()` run from a script read on standard input (`node -`) compiles instead of rejecting with `ERR_INVALID_ARG_VALUE` (C9, decision 30 of 2026-11-10). No other compiled CSS changes. The isolation warnings (C4 to C6, one new catalogued code) are MIG-B9-17's |
 
 ## 1. Goal
@@ -820,3 +820,146 @@ BASE `99f6a82` on 2026-11-15; every §3 precondition and start gate exits 0.
 - F1's location, recorded only (F1 itself is not rewritten; C9 supersedes
   it): `compile-sass.ts:669` on `f855765` is `compile-sass.ts:677` on
   `99f6a82`, in `runPass`, once per pass.
+
+### Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-15)
+
+The scout raised three flags on 2026-11-15 on `99f6a82`. Under the owner's
+standing instruction of 2026-11-10 ("fusiona todo.. y preguntas como
+recomendadas, y sgeuimos": every question answered with its recommended
+option), reaffirmed on 2026-11-13, each was answered with its recommendation,
+implemented, and is recorded here as the owner's decision taken that way; the
+owner may override any of them.
+
+- **Flag 1 — C1's "declaration value".** §7's guard (look ahead to the first
+  `;`, `{` or `}`) would also protect `$x: palete(primary.main);`,
+  `@include m(palete(primary.main));` and `@return palete(primary.main);`;
+  through `.#{$x} {}`, or a mixin that interpolates its argument into a
+  selector, the near-miss would then reach a compiled selector unchecked,
+  making a BASE `UXD_SASS` error silent. Options: (a) protect only inside a
+  property declaration (the statement starts with a property name followed
+  by `:`, not `$`, `@`, `%` or `--`, and does not end with `{`); variable
+  assignments, `@include`/`@return`/`@if` arguments, custom properties and
+  directive arguments keep BASE's behavior; (b) protect any statement that
+  ends with `;`, accepting the leak. **Answer: (a)**, implemented; T2's
+  control has `$x` through `.#{$x}`, an `@include` argument, a `@return`, an
+  `@supports` condition and a nested property with a value.
+- **Flag 2 — the CLI collapses identical located warning lines** within one
+  build (`bin/uxdsl.js` `printWarnings`), so a `@debug` in a loop that prints
+  the same text twice is two `compile()` warnings and one CLI line. Options:
+  (a) keep the CLI's rule (`compile()` keeps one warning per evaluation; T3's
+  loop uses distinct messages; the CHANGELOG says an identical located line
+  prints once per build); (b) exempt `DEBUG:` lines, editing `bin/uxdsl.js`
+  outside this story's Shares. **Answer: (a)**, implemented.
+- **Flag 3 — C9's entry-point directory.** Decision 30 says "the current
+  working directory"; the stage passed `path.dirname(entryPath)`, and the
+  throw comes from the constructor reading `process.argv[1]`, not from the
+  directory. Options: (a) keep `dirname(entryPath)` and only hide `argv[1]`
+  during construction; (b) pass `process.cwd()` when `argv[1]` is not a file
+  path, as the decision words it, and hide `argv[1]` during construction.
+  **Answer: (b)**, implemented: in the standard-input case the importer gets
+  `process.cwd()`, constructed with `process.argv` cut to `[argv0]` and
+  restored in a `finally`; every other caller keeps `dirname(entryPath)`. The
+  review (R3, below) found the directory choice unobservable on `compile()`'s
+  paths: the argv swap is the whole fix.
+- **Flag 4 — R1's fix edits `packages/uxdsl/src/compile.ts`, outside the
+  header's Shares** (raised by both re-reviews of 2026-11-15, RR3 and S1).
+  README §7 gave `compile.ts` to MIG-B9-17 when decision 6 of 2026-11-10
+  split this story. The replay needs the theme (the plugin's message for
+  `xd()` depends on it), the plugin's result ("when the build otherwise
+  succeeds": an earlier plugin error such as `space(999)` is reported first)
+  and `relocateError`/`AuthorPosition`, all of which only `compile.ts` has;
+  `compileSassStage` is synchronous and gets only the reserved names.
+  Options: (a) keep the replay in `compile.ts`, the one place the plugin runs,
+  and widen this story's Shares to it; (b) move it into `compile-sass.ts`,
+  which would rebuild the plugin's error (reason, frame, `CssSyntaxError`
+  shape) inside the stage — a second serializer, which AGENTS.md forbids —
+  and throw before any plugin error. **Answer: (a)**, a **Shares widening**:
+  the header's Shares names `compile.ts` (the near-miss replay only), and
+  README §7's `compile.ts` row reads `13, 20, 21, 26, 17, 38`, 26 before 17.
+  The order does not change: MIG-B9-17 already follows this story (README
+  §5's row, "Depends on 26"), it has not started, and `compile.ts` is
+  untouched on `feat/beta9` since `99f6a82` (only `vite.ts` and `webpack.ts`
+  changed under `packages/uxdsl/src`). No other §7 row changes.
+
+### Review of 2026-11-15
+
+One review of `f69a713`; the deliverer reproduced and applied it.
+
+- **R1 (blocking), fixed in `c92237c`.** The near-miss rewrite made BASE
+  errors silent: `palete(primary.main)` in a mixin nothing includes, an
+  `@if false` branch or a placeholder nothing extends compiled to CSS with no
+  error (Dart Sass parsed the protected `#{"…"}`, never evaluated the body,
+  and the plugin never saw it), where BASE failed as `UXD_SASS 2:29`.
+  Reproduced with a new test that failed on `f69a713` ("an unused @mixin:
+  compile() fails"). Fix: `protect()` lists each near-miss it rewrites with
+  its declaration's position (`ProtectResult.nearMisses`); the Sass stage
+  returns those of the files loaded (`SassStageResult.nearMisses`); when the
+  build otherwise succeeds (an evaluated one already failed in the plugin),
+  `compile()` runs the plugin on the call alone as a declaration's value
+  (inside `calc()` when it was nested) and throws that error, moved to the
+  author's declaration with its frame. The new test pins the three cases,
+  a nested `calc()` and an `xd(primary.main)` one, the plugin's reason for the
+  same declaration, the position, the frame, no `<input css` in the stack, a
+  prior `@debug` on `error.warnings`, an anonymous source, and the CLI (exit
+  1, nothing written). Within C1 as written; no contract change. It edits
+  `compile.ts`, outside the Shares: flag 4 above (a Shares widening).
+- **R2 (should-fix):** flags 1 to 3 above and `verify:1.0` done by the
+  deliverer; the status and §14 are filled in the closure commit (the
+  finisher's).
+- **R3 (nit), recorded:** flag 3's directory choice has no effect a test can
+  see (Dart Sass resolves `pkg:` from the containing file's URL, and the
+  entry always has one); the code is kept as decided.
+- **R4 (nit), applied in `c92237c`:** T2's control pins
+  `font: palete(primary.main) { family: x; }` staying `UXD_SASS`, so the
+  guard's forward `{` check is pinned. The other unpinned parts the review
+  names (the colon check, the `--` exclusion, the interpolation guard) were
+  found equivalent in practice and stay unpinned.
+
+### Re-review of 2026-11-15
+
+Two re-reviews of `62089b9` (a correctness lens with mutations, a scope
+lens). The finisher reproduced each finding on HEAD's `dist` before acting.
+
+- **RR1 and RR2 (should-fix), fixed.** Mutations M4 to M8 of the replay
+  survived the story's tests. T5 (`sass-stage-diagnostics.test.js`, "a dotted
+  near-miss in a declaration Sass never evaluates …") now also pins: a
+  breakpoint's near-miss nested in `calc()` in an unused mixin
+  (`UXD_FUNCTION_UNKNOWN: xd() … did you mean xs()?`, the plugin's reason for
+  the evaluated declaration, M4); an unused near-miss in a `.uxdsl` partial
+  the entry `@use`s, reported at `_mod.uxdsl:3:3` with the partial's frame
+  (M5, M6); two unused near-misses, the first reported (M8); and a plugin
+  warning (`Unknown theme family "widgets"`) staying on `error.warnings`
+  (M7). Each of M4, M5, M6, M7 and M8, applied to the built `dist`, fails the
+  test; unmutated it passes and leaves its `TMPDIR` empty.
+- **RR3 and S1 (should-fix / blocking), done:** flag 4 above (a Shares
+  widening), the header's Shares, README §7's `compile.ts` row, and R1's
+  bullet.
+- **S2 (blocking), done:** R2's bullet no longer claims the status and §14;
+  the closure commit fills both.
+- **S3 (should-fix), a finding, documented.** Inside a Sass function that
+  evaluates its argument (`rgb(palete(primary.main))`,
+  `darken(palete(primary.main), 10%)`), an evaluated dotted near-miss fails
+  as that function's `UXD_SASS` (`$channels: Expected red channel to be a
+  number, was palete(primary.main).`), as `rgb(palette(primary.main))` does
+  on BASE and HEAD; through `uxdsl/postcss` alone it is
+  `UXD_FUNCTION_UNKNOWN`. Nothing is silent: a token is a string to Sass
+  (AGENTS.md). C1 is not rewritten; `compile.md`'s near-miss bullet,
+  `migration.md`'s item 6 and the CHANGELOG subsection say it in one clause,
+  and T5 pins both calls as `UXD_SASS` with Sass's message.
+- **S4 (nit), applied:** `compile.md` and the CHANGELOG say the unevaluated
+  near-miss fails "once the rest of the build has compiled with no error"
+  (an earlier plugin error, `space(999)`, is reported first).
+- **S5 (nit), applied:** the README's "From SCSS" sentence says "in a
+  declaration's value".
+- **RR4 (nit), recorded as a known difference.** When a declaration's value
+  starts on a later line, the evaluated path reports the value's position
+  (`.a {\n  color:\n    palete(primary.main);\n}` at 3:5, through Sass's
+  map) and the replay the property name's (the same declaration in an unused
+  `@mixin` at 2:3), which is C1's "declaration's start". Both are loud and on
+  the author's declaration; not changed.
+- **RR5 (nit), recorded as a finding.** `color: (xd(primary.main));`
+  evaluated through `compile()` is `UXD_BREAKPOINT_UNKNOWN` (Sass strips the
+  parentheses before the plugin sees the value), where `uxdsl/postcss` alone
+  and the replay give `UXD_FUNCTION_UNKNOWN … did you mean xs()?`. It comes
+  from `f69a713`'s evaluated path; an edge case, loud either way; no fix in
+  this story.

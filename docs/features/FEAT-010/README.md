@@ -450,7 +450,7 @@ edit `bin/uxdsl.js`).
 | File | Stories that edit it |
 | --- | --- |
 | `packages/uxdsl/src/plugin.ts` | 04, 05, 13, 20, 21, 24, 27, 30, 31, 35 |
-| `packages/uxdsl/src/compile.ts` | 13, 20, 21, 17, 38 |
+| `packages/uxdsl/src/compile.ts` | 13, 20, 21, 26, 17, 38 |
 | `packages/uxdsl/src/sass/compile-sass.ts` | 12, 21, 23, 26, 17 |
 | `packages/uxdsl/src/sass/protect.ts` | 11, 21, 26 |
 | `packages/uxdsl/test/core/compile-sass.test.js` | 12, 25, 26, 28 |
