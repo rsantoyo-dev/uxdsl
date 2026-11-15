@@ -202,18 +202,18 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-14 | [The CLI, Vite and webpack on the new pipeline](MIG-B9-14-cli-and-adapters.md) | 1 | DEC-01 | M | 13 | Merged (PR #71) |
 | MIG-B9-15 | [Documentation of the superset](MIG-B9-15-superset-docs.md) | 1 | DEC-01 | S | 14 | Merged (PR #72) |
 | MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | Merged (PR #88) |
-| MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13, 20 | In review (PR #92) |
+| MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13, 20 | Merged (PR #92) |
 | MIG-B9-22 | [`build --watch` keeps the entry; the playground drops its own generator](MIG-B9-22-watch-keeps-the-entry.md) | 2 | — | M | 14 | Merged (PR #76) |
-| MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | In review (PR #93) |
+| MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | Merged (PR #93) |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Merged (PR #75) |
-| MIG-B9-25 | [The test suites remove the temporary directories they create](MIG-B9-25-suites-remove-temp-dirs.md) | 2 | — | S | 13 | In review (PR #94) |
+| MIG-B9-25 | [The test suites remove the temporary directories they create](MIG-B9-25-suites-remove-temp-dirs.md) | 2 | — | S | 13 | Merged (PR #94) |
 | MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | Ready |
 | MIG-B9-17 | [The silent cases of `@use`'s module isolation warn](MIG-B9-17-module-isolation-warnings.md) | 2 | DEC-17 | M | 26 | Ready |
 | MIG-B9-27 | [`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract](MIG-B9-27-postcss-chain.md) | 2 | DEC-05 | S | 21 | Ready |
 | MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | Ready |
 | MIG-B9-29 | [The canonical-grammar codemod is idempotent](MIG-B9-29-codemod-idempotent.md) | 2 | — | S | — | Merged (PR #82) |
 | MIG-B9-24 | [The plugin's fixed per-build costs](MIG-B9-24-plugin-fixed-costs.md) | 2 | — | S | 20, 21 | Ready |
-| MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | In review (PR #91) |
+| MIG-B9-18 | [The codemod's directive-argument rewrite is complete in one run](MIG-B9-18-codemod-directive-arguments.md) | 3 | — | S | 29 | Merged (PR #91) |
 | MIG-B9-30 | [Breakpoint media queries: `@media (--lg)`](MIG-B9-30-breakpoint-blocks.md) | 3 | DEC-07 | M | 13 | Ready |
 | MIG-B9-31 | [Scoped palettes reach every composite](MIG-B9-31-scoped-palettes.md) | 3 | DEC-08 | M | 13 | Ready |
 | MIG-B9-32 | [One inheritance rule for roles: `extends`](MIG-B9-32-custom-roles.md) | 3 | DEC-09 | S | 34 | Ready |
@@ -225,7 +225,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-38 | [A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS](MIG-B9-38-plain-import-warning.md) | 3 | — | S | 14, 22 | Ready |
 | MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | S | 14, 21, 22 | Ready |
 | MIG-B9-19 | [The CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed](MIG-B9-19-cli-watch-recovers.md) | 3 | — | S | 14, 21, 22 | Ready |
-| MIG-B9-06 | The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts | 3 | — | S | 19, 39 | Draft (story file to be written; registered by decision 29 of 2026-11-13) |
+| MIG-B9-06 | The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts | 3 | — | S | 19, 39 | Draft (story file to be written; registered by decision 29 of 2026-11-13; it also takes the atomic-replace watch failure seen once on CI, Dependabot's PR #84, by decision 28 of 2026-11-15) |
 | MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |
 | MIG-B9-44 | The playground's visual comparison harness is deterministic | 4 | — | S | — | Draft (story file to be written; registered by decision 12 of 2026-11-09, as MIG-B9-22's delivery proposed in its §15) |
 | MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34, 44 | Draft (re-baseline after wave 3) |
@@ -245,6 +245,8 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-64 | [`emit: 'used'`, opt-in](MIG-B9-64-emit-used.md) | 6 | — | M | 20 | Draft — recommended cut (review 2026-10-11) |
 | MIG-B9-65 | [Container context: a design note](MIG-B9-65-container-context-note.md) | 6 | — | S | 30 | Draft (re-baseline after wave 3) |
 | MIG-B9-66 | CI on Windows, part two: parity, the consumer fixtures and the shims | 6 | — | S or split (its story file sets it) | 28 | Draft (story file to be written; registered by decision 15 of 2026-11-10) |
+| MIG-B9-94 | Unknown options warn on the plugin, `compile()`, Vite and webpack | 6 | — | S | — | Draft (story file to be written; registered by decision 17 of 2026-11-15) |
+| MIG-B9-95 | The reference checker follows `!important` as the cascade does | 6 | — | S | — | Draft (story file to be written; registered by decision 18 of 2026-11-15) |
 | MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3) |
 | MIG-B9-92 | The beta.10 gate and release record | 7 | DEC-03 | M | every story of waves 4 to 6; 90 | Draft (story file to be written; registered by D13 of 2026-11-04, as the review's 91b proposed in MIG-B9-91 §15) |
 
@@ -393,6 +395,34 @@ gate, which requires every wave-3 story, now includes them. MIG-B9-18, 19,
 MIG-B9-16, 17, 25, 26 and 28, whose headers named MIG-B9-39 in their Blocks
 on `test/cli/**` or the playground, now name MIG-B9-19 (and MIG-B9-06 on
 `test/cli/**`) there, with a note at the end of their §15.
+
+On 2026-11-15 MIG-B9-21 (PR #92, `cf98cb8`), MIG-B9-16 (PR #93, `44eac7c`)
+and MIG-B9-25 (PR #94, `99f6a82`) were merged into `feat/beta9`. Under the
+owner's standing instruction, reaffirmed on 2026-11-13 ("haz todo como
+recomendado", "do everything as recommended"), their delivery flags and
+follow-ups became the owner's decisions of 2026-11-15 without being put to
+the owner one by one, and the owner may override any of them (FEAT-010 §2,
+decisions 1 to 28 of 2026-11-15). MIG-B9-94 and MIG-B9-95 are registered
+for `0.5.0-beta.10`, the last wave-6 rows, after MIG-B9-66, with their story
+files still to be written (decisions 17 and 18); MIG-B9-92, which depends on
+every story of waves 4 to 6, now waits for them, and `0.5.0-beta.9`'s scope
+does not change. They have no §7 rows: without a story file they have no
+Owns or Shares, and as the last wave-6 rows they come after every unmerged
+story on the files they will likely edit (`plugin.ts`, `compile.ts`,
+`vite.ts`, `webpack.ts`, `config.ts` and `diagnostics.ts` for MIG-B9-94;
+`reference-core.ts` and `reference-integrity-equivalence.test.js`, the
+oracle, for MIG-B9-95), so no provisional row would change who waits.
+MIG-B9-06 also takes the atomic-replace watch failure (decision 28, which
+closes decision 33 of 2026-11-13); it is in wave 3, so MIG-B9-91's gate
+waits for that fix. The
+playground's ESLint finding goes to MIG-B9-43, whose scope covers the
+playground's build hygiene (decision 25), so no MIG-B9-98 is registered;
+MIG-B9-96 is registered only if MIG-B9-39's delivery does not take MIG-B9-39's
+F3 (decision 19). MIG-B9-16, 19, 21, 25, 28, 43, 51 and 91 carry a block of
+this date at the end of their §15; MIG-B9-39, in progress, gets its note when
+it merges.
+The rows of MIG-B9-21, 16 and 25, and MIG-B9-18's (PR #91, `f6c009d`),
+now read Merged, as do their headers.
 
 ## 6. Branches and merges
 

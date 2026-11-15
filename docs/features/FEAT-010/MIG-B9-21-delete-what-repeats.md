@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (`uxdsl/engine` is exempt from semver by contract; nothing semver-bound is removed) |
-| Status | In review (PR #92) |
+| Status | Merged (PR #92) |
 | Size | M |
 | Depends on | MIG-B9-13; MIG-B9-20 (merged, PR #88), whose CLI hint decision 8 of 2026-11-13 has this story reword (§15) |
 | Blocks | — |
@@ -503,3 +503,21 @@ It is on the beta.8 packages: `postcss-uxdsl` with `theme` given through `postcs
 - **A watch-mode test that a failed compile's warnings print before its error.** Proposed: MIG-B9-19, which owns CLI watch recovery.
 - **T6's remaining blind spots.** A new `src` file before `git add`, and a bare id with no prefix (`B6-17`, `PR #88`). Proposed: no story; recorded.
 - **RR-N1.** An unreflowed 118-character comment line at `bin/uxdsl.js:756`. Proposed: the next story on `bin/uxdsl.js` (MIG-B9-19).
+
+### Owner decisions of 2026-11-15, on the delivery's flags
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-15), as decisions 1 to 5 and 17 to 24 of 2026-11-15. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), and reaffirmed it on 2026-11-13, verbatim, "haz todo como recomendado" ("do everything as recommended"), recommendations that widen a registration included. This story was merged into `feat/beta9` as PR #92 (`cf98cb8`) on 2026-11-15. The owner flags 1 to 5 of the "Delivery of 2026-11-15" block above were implemented as recommended and were not put to the owner one by one: under that instruction each recommendation is the owner's decision of 2026-11-15, and the owner may still override any of them. This record is in English. The header's Status is the deliverer's to set.
+
+- **Flag 1 (decision 1): (a)**, as implemented. The CLI passes `discoverTheme: false`.
+- **Flag 2 (decision 2): (a)**, as implemented. `fixtures/parity/run.js` compares the CLI output from `[uxdsl] Error:` on, still exactly, and `error-location.test.js` scopes its two `doesNotMatch` assertions to that part.
+- **Flag 3 (decision 3): (a).** All five `REMOVED_OPTIONS` are kept, with no generic warning in this story.
+- **Flag 4 (decision 4): (a).** The extended Shares (`a90042b`) are kept.
+- **Flag 5 (decision 5): (a).** No `code` on the CssSyntaxError `compile()` throws, in this story.
+- **Follow-ups, routed.**
+  - The generic unknown-option warning (decision 17, widening): registered as MIG-B9-94, "Unknown options warn on the plugin, `compile()`, Vite and webpack", wave 6, last in the wave, S, `0.5.0-beta.10`, story file to be written. MIG-B9-60's registered scope does not already cover it (its doctor scans for known removed items). The title given to the recorder said "every host"; on `99f6a82` the CLI's build config also ignores an unknown key silently, which the story file decides on.
+  - The reference checker and `!important` (decision 18, widening): registered as MIG-B9-95, "The reference checker follows `!important` as the cascade does", wave 6, last in the wave, S, `0.5.0-beta.10`, story file to be written. It changes the behavior this story's T5 pins and re-records the equivalence oracle.
+  - A `code` on the CssSyntaxError (decision 19): MIG-B9-39 if its delivery takes it; otherwise MIG-B9-96, registered when MIG-B9-39 merges.
+  - The 13 `FORMER` engine values (decision 20): no story now; the story that removes `packages/_deprecated`, at 1.0 at the latest. Recorded in FEAT-010 §3, after "Not in this feature, on purpose".
+  - The `src`-only engine exports and the semver-bound dead exports (decision 21): a 1.0 API review outside FEAT-010 (FEAT-011 or later); MIG-B9-97 is not taken.
+  - The watch-mode test of warnings printed before an error (decision 22) and RR-N1 (decision 24, `bin/uxdsl.js:756` on `99f6a82`): MIG-B9-19, whose §15 has a block of this date.
+  - T6's remaining blind spots (decision 23): no story; recorded.
