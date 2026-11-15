@@ -70,21 +70,41 @@ async function edit(dir, file, text) {
 const silent = { info() {}, warn() {}, warnOnce() {}, error() {}, clearScreen() {}, hasErrorLogged: () => false, hasWarned: false };
 
 /**
+ * The plugin, with each HMR hook it defines wrapped to record its calls: the
+ * hook, the file and the URLs of the modules it returned (`calls`).
+ */
+function spiedPlugin(options) {
+  const plugin = uxdsl(options);
+  const calls = [];
+  for (const name of ['hotUpdate', 'handleHotUpdate']) {
+    const hook = plugin[name];
+    if (typeof hook !== 'function') continue;
+    plugin[name] = function (context, ...rest) {
+      const result = hook.call(this, context, ...rest);
+      calls.push({ hook: name, file: context.file, returned: result ? result.map((node) => node.url) : undefined });
+      return result;
+    };
+  }
+  return { plugin, calls };
+}
+
+/**
  * A dev server listening on a free port, closed when the test ends. It records
- * every update and full reload it sends to its clients (`messages`) and the
- * error payloads (`errors`). `waitFor(step, predicate)` resolves with the first
- * message since the last `clear()` that matches, and rejects naming `step`
- * after 10 s.
+ * every update and full reload it sends to its clients (`messages`), the
+ * error payloads (`errors`) and the plugin's HMR hook calls (`hookCalls`).
+ * `waitFor(step, predicate)` resolves with the first message since the last
+ * `clear()` that matches, and rejects naming `step` after 10 s.
  */
 async function devServer(t, dir, options = { discoverTheme: false }) {
   const vite = await import('vite');
+  const { plugin, calls: hookCalls } = spiedPlugin(options);
   const server = await vite.createServer({
     root: dir,
     configFile: false,
     logLevel: 'silent',
     customLogger: silent,
     appType: 'spa',
-    plugins: [uxdsl(options)],
+    plugins: [plugin],
     server: { port: 40000 + Math.floor(Math.random() * 9000), strictPort: false, watch: { usePolling: true, interval: 50 } },
   });
   cleanup(t, () => server.close());
@@ -109,7 +129,8 @@ async function devServer(t, dir, options = { discoverTheme: false }) {
     server,
     messages,
     errors,
-    clear() { messages.length = 0; errors.length = 0; },
+    hookCalls,
+    clear() { messages.length = 0; errors.length = 0; hookCalls.length = 0; },
     /** The module as a browser fetches it after an update. */
     async fetchModule() {
       const response = await fetch(`${base}${MODULE_URL}&t=${Date.now()}`);
@@ -149,6 +170,11 @@ test("MIG-B9-39: the Vite dev server sends the module's update when the failing 
   dev.clear();
   await edit(dir, 'styles/parts/_newpart.uxdsl', '.newpart { color: green; }\n');
   await dev.waitFor('the update after the new partial is fixed', updatesTheModule);
+  // Vite 7 runs `hotUpdate`, not `handleHotUpdate`, and the module comes from it.
+  const newpart = path.join(dir, 'styles', 'parts', '_newpart.uxdsl');
+  const fromHook = (call) => call.hook === 'hotUpdate' && path.resolve(call.file) === newpart && (call.returned || []).includes(MODULE_URL);
+  assert.ok(dev.hookCalls.some(fromHook), `hotUpdate returned the module for the fix: ${JSON.stringify(dev.hookCalls)}`);
+  assert.deepEqual(dev.hookCalls.filter((call) => call.hook === 'handleHotUpdate'), [], 'Vite 7 does not call handleHotUpdate');
   const fixed = await dev.fetchModule();
   assert.equal(fixed.status, 200);
   assert.match(fixed.body, /\.newpart \{\\n {2}color: green;/);
@@ -163,6 +189,7 @@ test("MIG-B9-39: the Vite dev server sends the module's update when the failing 
   assert.deepEqual(firstDev.messages, [], 'after a first load that failed, an edit to a file the module never loaded sends nothing');
   await edit(first, 'styles/parts/_card.uxdsl', CARD);
   await firstDev.waitFor('the full reload after the partial of the first load is fixed', (message) => message.type === 'full-reload');
+  assert.ok(firstDev.hookCalls.some((call) => call.hook === 'hotUpdate' && (call.returned || []).includes('/main.js')), `hotUpdate returned the module's importer: ${JSON.stringify(firstDev.hookCalls)}`);
   const reloaded = await firstDev.fetchModule();
   assert.equal(reloaded.status, 200);
   assert.match(reloaded.body, /\.card \{\\n {2}color: red;/);

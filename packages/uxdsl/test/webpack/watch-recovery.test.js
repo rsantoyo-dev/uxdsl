@@ -25,6 +25,12 @@ const CARD = '.card { color: red; }\n';
 const CARD_SASS_ERROR = '.card { color: ; }\n';
 const CARD_UXDSL_ERROR = '.card { padding: space(99); }\n';
 const OTHER = '.other { color: gray; }\n';
+// A module that reads a variable from its partial: when the partial loses the
+// variable, the error names the module, not the partial, so only the record of
+// the last successful compile can register the partial.
+const MAIN_VAR = "@use './parts/card';\n.main { color: card.$c; }\n";
+const CARD_VAR = '$c: blue;\n.card { color: red; }\n';
+const CARD_NO_VAR = '.card { color: red; }\n';
 
 const cleanups = new WeakMap();
 /** Runs `fn` when the test ends, after every cleanup registered later: a watcher or server closes before its project is removed. */
@@ -135,8 +141,9 @@ async function edit(dir, file, text) {
 }
 
 test('MIG-B9-39: webpack watch rebuilds when the partial that broke a module is fixed, with mini-css-extract-plugin and with style-loader', async (t) => {
-  const dirs = { extract: project(t, { 'styles/main.uxdsl': MAIN, 'styles/parts/_card.uxdsl': CARD, 'styles/other.uxdsl': OTHER }) };
-  dirs.style = project(t, { 'styles/main.uxdsl': MAIN, 'styles/parts/_card.uxdsl': CARD, 'styles/other.uxdsl': OTHER });
+  const files = { 'styles/main.uxdsl': MAIN_VAR, 'styles/parts/_card.uxdsl': CARD_VAR, 'styles/other.uxdsl': OTHER };
+  const dirs = { extract: project(t, files) };
+  dirs.style = project(t, files);
   for (const chain of ['extract', 'style']) {
     const dir = dirs[chain];
     const builds = watch(t, config(dir, chain));
@@ -144,16 +151,20 @@ test('MIG-B9-39: webpack watch rebuilds when the partial that broke a module is 
     assert.deepEqual(errorsOf(good), []);
     const goodOutput = fs.readFileSync(output(dir, chain));
 
-    await edit(dir, 'styles/parts/_card.uxdsl', CARD_SASS_ERROR);
+    // The partial loses the variable the module reads: the error names the module, so the partial is registered only because the last good compile loaded it.
+    await edit(dir, 'styles/parts/_card.uxdsl', CARD_NO_VAR);
     const failed = await builds.next(`${chain}: the build after the partial is broken`);
-    assert.ok(errorsOf(failed).some((message) => /UXD_SASS: Expected expression\./.test(message)), errorsOf(failed).join('\n'));
+    const failure = errorsOf(failed).find((message) => /UXD_SASS: Undefined variable\./.test(message));
+    assert.ok(failure, errorsOf(failed).join('\n'));
+    assert.ok(failure.includes(`${path.join('styles', 'main.uxdsl')}:2:`), `${chain}: the error names the module\n${failure}`);
+    assert.ok(!failure.split('\n')[0].includes('_card.uxdsl'), `${chain}: the error's first line does not name the partial\n${failure}`);
     if (chain === 'extract') assert.deepEqual(fs.readFileSync(output(dir, chain)), goodOutput, 'the extracted main.css stays the last good one');
 
     // Negative control: a .uxdsl file the module never loaded is not registered.
     await edit(dir, 'styles/other.uxdsl', '.other { color: black; }\n');
     await builds.quiet(`${chain}: an edit to a file the module never loaded`, 2000);
 
-    await edit(dir, 'styles/parts/_card.uxdsl', CARD);
+    await edit(dir, 'styles/parts/_card.uxdsl', CARD_VAR);
     const fixed = await builds.next(`${chain}: the build after the partial is fixed`);
     assert.deepEqual(errorsOf(fixed), []);
     assert.deepEqual(fs.readFileSync(output(dir, chain)), goodOutput, `${chain}: the recovered output equals the first build's`);
@@ -247,4 +258,61 @@ test('MIG-B9-39: webpack reports a failed compile at the file relative to rootCo
     assert.ok(json[0].indexOf(position) < json[0].search(frame), `${kind}: the message, then the frame`);
   }
   // The two kinds draw different frames, so a loader that prints one kind for both fails above.
+});
+
+/** One build of `compiler` (compiler.run()): its stats and the files webpack registered for it. */
+function runOnce(compiler) {
+  return new Promise((resolve, reject) => {
+    compiler.run((err, stats) => {
+      if (err) return reject(err);
+      resolve({ errors: errorsOf(stats), warnings: stats.toJson({ all: false, warnings: true }).warnings.map((warning) => warning.message), files: stats.compilation.fileDependencies });
+    });
+  });
+}
+
+test('MIG-B9-39: webpack keeps a module\'s last successful files per compiler: another compiler\'s failed compile of the same module does not register them', async (t) => {
+  const dir = project(t, { 'styles/main.uxdsl': MAIN_VAR, 'styles/parts/_card.uxdsl': CARD_VAR });
+  const partial = path.join(dir, 'styles', 'parts', '_card.uxdsl');
+  const first = webpack(config(dir, 'style'));
+  cleanup(t, () => new Promise((resolve) => first.close(() => resolve())));
+  const good = await runOnce(first);
+  assert.deepEqual(good.errors, []);
+  assert.ok(good.files.has(partial), 'the good compile registers the partial');
+
+  fs.writeFileSync(partial, CARD_NO_VAR);
+  const again = await runOnce(first);
+  assert.ok(again.errors.some((message) => /UXD_SASS: Undefined variable\./.test(message) && message.includes(`${path.join('styles', 'main.uxdsl')}:2:`)), again.errors.join('\n'));
+  assert.ok(again.files.has(partial), 'the same compiler\'s failed compile registers the partial its last good compile loaded');
+
+  // Negative control: a compiler that never compiled the module successfully has no record to register.
+  const other = webpack(config(dir, 'style'));
+  cleanup(t, () => new Promise((resolve) => other.close(() => resolve())));
+  const failed = await runOnce(other);
+  assert.ok(failed.errors.some((message) => /UXD_SASS: Undefined variable\./.test(message)), failed.errors.join('\n'));
+  assert.ok(!failed.files.has(partial), 'another compiler\'s failed compile of the same module does not register the partial');
+});
+
+test('MIG-B9-39: a webpack module whose compile failed carries no theme flags, so a build whose global fails reports no missing @uxdsl theme', async (t) => {
+  // The global that reaches `@uxdsl theme;` fails in its partial; a component references a token.
+  const dir = project(t, {
+    'src/index.js': "import '../styles/global.uxdsl';\nimport '../styles/component.uxdsl';\n",
+    'styles/global.uxdsl': "@use './parts/bad';\n@uxdsl theme;\n",
+    'styles/parts/_bad.uxdsl': '.bad { color: ; }\n',
+    'styles/component.uxdsl': '.component { margin: space(2); }\n',
+  });
+  for (const chain of ['extract', 'style']) {
+    const compiler = webpack(config(dir, chain));
+    cleanup(t, () => new Promise((resolve) => compiler.close(() => resolve())));
+    const { errors, warnings } = await runOnce(compiler);
+    assert.ok(errors.some((message) => /UXD_SASS: Expected expression\./.test(message)), `${chain}: the global fails\n${errors.join('\n')}`);
+    // The failed module's theme is unknown, so the count is incomplete and never reports "none".
+    assert.deepEqual(warnings.filter((message) => /UXD_THEME_MARKER/.test(message)), [], `${chain}: no theme warning from an incomplete count`);
+  }
+  // Control: the same component with no global, every module compiled, does get the warning, so the count runs in these builds.
+  const none = project(t, { 'src/index.js': "import '../styles/component.uxdsl';\n", 'styles/component.uxdsl': '.component { margin: space(2); }\n' });
+  const compiler = webpack(config(none, 'extract'));
+  cleanup(t, () => new Promise((resolve) => compiler.close(() => resolve())));
+  const { errors, warnings } = await runOnce(compiler);
+  assert.deepEqual(errors, []);
+  assert.equal(warnings.filter((message) => /UXD_THEME_MARKER/.test(message)).length, 1, `the complete count warns\n${warnings.join('\n')}`);
 });

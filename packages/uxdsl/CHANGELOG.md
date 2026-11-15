@@ -25,7 +25,9 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 ### Every host's watch recovers after a failed compile, and the adapters' errors are located (MIG-B9-39)
 
 A compile that fails, and is then fixed, rebuilds on the save that fixes it,
-with the last good output kept meanwhile, a first build that failed included:
+a first build that failed included. Meanwhile mini-css-extract-plugin's
+extracted CSS and `vite build --watch`'s output stay the last good ones,
+while a style-loader bundle carries the error until the fix:
 
 - **`uxdsl/webpack` under `webpack --watch`**, with mini-css-extract-plugin
   and with style-loader. A failed compile still registers, before it reports
