@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D2 of 2026-11-04) |
-| Status | Ready |
+| Status | In review (PR #94) |
 | Size | S |
 | Depends on | MIG-B9-13 (merged, PR #63). Under README §7 it also waits for MIG-B9-20, which edits most of the files this story edits (§3, §15) |
 | Blocks | Under README §7: MIG-B9-26 (`test/core/compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-17 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`; decision 6 of 2026-11-10); MIG-B9-27 (`test/no-silent-output.test.js`); MIG-B9-28 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`); MIG-B9-19 and 06 (`test/cli/**`; in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-91 (the root `package.json`; it also depends on every story of waves 0 to 3); in `0.5.0-beta.10`, MIG-B9-51 and 52 (`scripts/agent-guide.test.js`) and, provisionally, MIG-B9-66 (decision 15 of 2026-11-10: the fixtures and shims it would run on Windows) |
@@ -621,7 +621,63 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #94, from `feat/b9-25-suites-remove-temp-dirs` into `feat/beta9`. The story is size S, so it took the light flow (D1 of 2026-11-04): a scout, one implementer, one review and the deliverer. Where the delivered contract differs from §5, §15's blocks rule: decisions 3 to 5 of 2026-11-10 and the owner flags taken on 2026-11-15. Only the owner merges.
+
+**Base and commits.** The base is `feat/beta9` at `cf98cb8`, and `origin/feat/beta9` had not moved when the PR was opened, so there is no merge.
+
+| Commit | Content |
+| --- | --- |
+| `8e455e5` | Stale preconditions and baseline re-run on `cf98cb8` (§15, "Stale lines corrected on 2026-11-15") |
+| `83ff459` | The guard, the helper, T1–T9 and the extra guard tests, 25 files and two fixtures moved to the helper, `run.js --keep`, the README sentences |
+| `6585143` | Review fixes: the owner flags in §15, the guard's usage test, the narrowed README sentence |
+
+**Environment.** macOS (Darwin 27), Node 20.19.0, npm 11.21.1, Chrome at the macOS default path. Every run had `TMPDIR` set to a directory in the session scratchpad, and each directory was removed afterwards. Three story workflows shared the machine, with a 1-minute load of 15 to 42, so durations are indicative only.
+
+**Base figures for the lines of §5, §7 and §2 that stay as written** (re-measured by the scout on `cf98cb8`):
+- C1: 990 entries (957 on `f855765`).
+- C2: 25 of 111 steps leave entries (25 of 105).
+- Must-stay totals: 1,618 tests, 1,617 pass, 1 skipped.
+- §7 item 2: `project()` has 48 call sites and makes 492 directories per run.
+- §2: `run.js`'s mixed check is at lines 277–278 and keep/remove at 292–293 (before this change). `compile-sass.test.js`'s `project()` is at lines 56–60.
+
+**Failing first.**
+- `temporary-directory.test.js`: 3/3 not ok, `Cannot find module …/test/helpers/temporary-directory.js`.
+- `tmpdir-guard.test.js`: 8/8 not ok, `Cannot find module scripts/tmpdir-guard.js`.
+- T9 on BASE's `run.js`: the kept `corpus/` held `_uxdsl-extras.uxdsl` and `with-extras.uxdsl`. The scout reproduced both halves, and the review reproduced the throwing half under a success-only removal.
+- The usage test (review fix): not ok against a guard without its no-command check.
+
+**Criteria to evidence.**
+
+| Criterion | Test or command | Result |
+| --- | --- | --- |
+| C1 / AC1 | `TMPDIR=<empty> npm test` (deliverer, 01:56–02:02, before the fix commit, on the same tree) | exit 0, **0 entries left**; 1,631 tests, 1,630 pass, 0 fail, 1 skipped (BASE 1,618 + 13 new); `PASS: 10 parity case(s)`; `All checks passed.` |
+| AC1 mutation | the guard around `compile-sass` and `compile` tests, on a copy with BASE's `project()` | guard exit 1 with 95/95 tests passing; the leak line and 492 `  uxdsl-sass-stage-*` lines; given directory empty |
+| C2 / AC2 | §12's loop (deliverer, 02:03–02:10, on `6585143`) | `steps=113 fail=0`, scratch gone |
+| AC2 mutation | the loop's `step` on the same copy | `left 492 in …: node --test test/core/compile-sass.test.js`, `fail=1`; the real file gives `fail=0` |
+| C3 / AC3 | `node --test scripts/tmpdir-guard.test.js` | 9/9 pass, given directory empty; the review's 5 mutations each fail their test; the usage test fails without its check |
+| C4 / AC4 | `node --test packages/uxdsl/test/temporary-directory.test.js` | 3/3 pass, directory empty; 5 mutations (implementer and review) each fail as AC4 says |
+| C5 | T5, T8; `git status --porcelain` after AC1 | pass; empty |
+| C6 / AC5 | `node --test fixtures/sass-corpus/run.test.js`; the AC5 grep | 9/9 pass, no `.work` before or after; the grep exits 1; the review's real `--keep` run against the registry keeps no extras file |
+| AC6 | `git diff --name-only cf98cb8` | 36 paths, all in Owns, Shares or this file; no CHANGELOG (owner flag 5) |
+| Parity | `node fixtures/parity/run.js` | exit 0, `PASS: 10 parity case(s)` |
+| Gate | `npm run verify:1.0 -- --skip-playground-walk` (02:11–02:13) | exit 0, `71/71 automated checks passed`; it left 5 directories in its `TMPDIR` (decision 4, out of scope) |
+| Browser | `npm run verify:playground-browser` (real Chrome, 02:13–02:17) | exit 0, `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus, contrast page = Node.` |
+| AC1 again | `TMPDIR=<empty> npm test` on the closure record's tree (02:18–02:23) | exit 0, 0 entries left; 1,631 tests, 1,630 pass, 0 fail, 1 skipped |
+| Hooks | the pre-commit hook (`verify:docs` and the playground build) on all three commits | passed, no `--no-verify` |
+
+The implementer and the reviewer each also ran `npm test` with an empty `TMPDIR` on `83ff459`: exit 0, 0 entries, 1,630 tests.
+
+**Documentation.**
+- `packages/uxdsl/README.md` ("Verified from a real install"), narrowed by R2: directories made through the helper are removed when the tests pass and kept, path printed, when they fail; the others are removed when their test or file ends.
+- `fixtures/sass-corpus/README.md`: what a kept root holds.
+- The headers of the guard and the helper state C3 and C4 as behavior.
+- No CHANGELOG, `generate:language`, AGENTS.md, catalog or capabilities change (§10).
+
+**Not run, or not a pass.**
+- Windows (MIG-B9-28).
+- The gate's leftovers (decision 4).
+- AC1's mutation as a whole `npm test`: it was run as the guard around the mutated core tests, on a copy, not as a full run.
+- CI's result is the PR's.
 
 ## 15. Findings and follow-ups
 
@@ -870,3 +926,19 @@ alone (`types`, `theme-marker`, `namespace-migration`,
 `finally`, whatever the outcome. §11 is not rewritten; the README sentence
 says what holds: directories made through the helper follow decision 5, the
 others are removed when their test or file ends.
+
+### Delivery of 2026-11-15
+
+Recorded by the deliverer of PR #94, on `6585143`.
+
+**New facts.**
+- `npm run verify:1.0` leaves 5 directories in the temporary directory it is given: `uxdsl-1.0-gate-`, `uxdsl-1.0-upgrade-before-`, `uxdsl-vite-adapter-5-`, `uxdsl-vite-adapter-7-` and `uxdsl-webpack-adapter-`. MIG-B9-23 recorded 18. This story does not touch them (decision 4).
+- Since the guard, `npm test` has 113 steps (§12's loop), and 1,631 tests with the review's usage test.
+- A test file whose directories use the exit path prints `temporary directory kept: <path>` on stderr when one of its tests fails. Under the guard, that path is inside the guard's kept `uxdsl-npm-test-*` directory, which the guard's last line names.
+
+**Follow-ups.**
+- **MIG-B9-91:** the gate's and the `verify:*` fixtures' leftovers, including `packAndInstall`'s consumer directory (decision 4), with the 5 entries above as its baseline.
+- **MIG-B9-39:** whichever of MIG-B9-39 and this story merges second moves the directories of its new `test/vite` and `test/webpack` tests to the helper (owner flag 7).
+- **MIG-B9-19:** its watch tests in `watch-mode.test.js` keep `mkProject`'s exit path, or pass `t` only with a kill that awaits the child's exit, registered before the directory's hook (owner flag 2).
+- **MIG-B9-28:** the guard and §12's loop on Windows.
+- **MIG-B9-51:** `CONTRIBUTING.md` states the rule for a new test: make its directories with `packages/uxdsl/test/helpers/temporary-directory.js` (or remove them in `t.after`) and expect `npm test` to fail when one is left.
