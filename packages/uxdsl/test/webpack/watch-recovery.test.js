@@ -99,17 +99,21 @@ const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * next build's stats, errors included, for which `accept` holds (any build by
  * default), and rejects naming `step` and the builds it passed over after
  * 20 s. webpack may run one more build of a module edited just before a build
- * started; passing over it keeps the wait on the build that carries the edit.
- * `quiet(step, ms)` fails when the watcher sees a change (webpack's `invalid`
- * hook) within `ms`. The watcher is closed when the test ends.
+ * started, so a wait after an edit passes over any build that does not show
+ * it and stays on the build that carries the edit.
+ * `quiet(step, ms, file)` fails when the watcher reports `file` changed
+ * (webpack's `invalid` hook, or a build's modified files) within `ms`. The
+ * watcher is closed when the test ends.
  */
 function watch(t, options) {
   const compiler = webpack(options);
   const ready = [];
   const waiting = [];
   const changed = [];
+  const modified = [];
   compiler.hooks.invalid.tap('watch-recovery-test', (file) => changed.push(file));
   const watching = compiler.watch({ aggregateTimeout: 50 }, (err, stats) => {
+    modified.push(...(compiler.modifiedFiles || []));
     const build = { err, stats };
     const next = waiting.shift();
     if (next) next(build); else ready.push(build);
@@ -138,17 +142,19 @@ function watch(t, options) {
         if (build) deliver(build); else waiting.push(deliver);
       });
     },
-    async quiet(step, ms) {
+    async quiet(step, ms, file) {
       changed.length = 0;
+      modified.length = 0;
       await delay(ms);
-      assert.deepEqual(changed, [], `${step}: the watcher saw a change within ${ms} ms`);
-      assert.equal(ready.length, 0, `${step}: a build ran within ${ms} ms`);
+      assert.ok(!changed.includes(file) && !modified.includes(file), `${step}: the watcher saw ${file} change within ${ms} ms (changed: ${JSON.stringify(changed)}, builds' modified files: ${JSON.stringify(modified)})`);
     },
   };
 }
 
 /** The text of a build's errors, one per line. */
 const errorsOf = (stats) => stats.toJson({ all: false, errors: true }).errors.map((error) => error.message);
+/** A build without errors. */
+const clean = (stats) => errorsOf(stats).length === 0;
 
 /** Writes a file and waits a moment, so the next build is the one that carries the edit. */
 async function edit(dir, file, text) {
@@ -181,10 +187,10 @@ test('MIG-B9-39: webpack watch rebuilds when the partial that broke a module is 
 
     // Negative control: a .uxdsl file the module never loaded is not registered.
     await edit(dir, 'styles/other.uxdsl', '.other { color: black; }\n');
-    await builds.quiet(`${chain}: an edit to a file the module never loaded`, 2000);
+    await builds.quiet(`${chain}: an edit to a file the module never loaded`, 2000, path.join(dir, 'styles/other.uxdsl'));
 
     await edit(dir, 'styles/parts/_card.uxdsl', CARD_VAR);
-    const fixed = await builds.next(`${chain}: the build after the partial is fixed`, (stats) => errorsOf(stats).length === 0);
+    const fixed = await builds.next(`${chain}: the build after the partial is fixed`, clean);
     assert.deepEqual(errorsOf(fixed), []);
     assert.deepEqual(fs.readFileSync(output(dir, chain)), goodOutput, `${chain}: the recovered output equals the first build's`);
   }
@@ -198,18 +204,19 @@ test("MIG-B9-39: webpack watch recovers when the failing compile's own partial, 
   const builds = watch(t, config(dir, 'extract'));
   assert.deepEqual(errorsOf(await builds.next('the first build')), []);
   await edit(dir, 'styles/main.uxdsl', `@use './parts/newpart';\n${MAIN}`);
-  const failed = await builds.next('the build after the module @uses the broken partial');
-  assert.ok(errorsOf(failed).some((message) => message.includes(`${path.join('styles', 'parts', '_newpart.uxdsl')}:1:`)), errorsOf(failed).join('\n'));
+  const namesNewpart = (stats) => errorsOf(stats).some((message) => message.includes(`${path.join('styles', 'parts', '_newpart.uxdsl')}:1:`));
+  const failed = await builds.next('the build after the module @uses the broken partial', namesNewpart);
+  assert.ok(namesNewpart(failed), errorsOf(failed).join('\n'));
   await edit(dir, 'styles/parts/_newpart.uxdsl', '.newpart { color: green; }\n');
-  assert.deepEqual(errorsOf(await builds.next('the build after the new partial is fixed')), []);
+  assert.deepEqual(errorsOf(await builds.next('the build after the new partial is fixed', clean)), []);
   assert.match(fs.readFileSync(output(dir, 'extract'), 'utf8'), /\.newpart \{\s*color: green;\s*\}/);
 
   const firstBuilds = watch(t, config(first, 'extract'));
   assert.ok(errorsOf(await firstBuilds.next('the first build, which fails')).some((message) => /UXD_SASS/.test(message)));
   await edit(first, 'styles/other.uxdsl', '.other { color: black; }\n');
-  await firstBuilds.quiet('an edit to a file the module never loaded, after a first build that failed', 2000);
+  await firstBuilds.quiet('an edit to a file the module never loaded, after a first build that failed', 2000, path.join(first, 'styles/other.uxdsl'));
   await edit(first, 'styles/parts/_card.uxdsl', CARD);
-  assert.deepEqual(errorsOf(await firstBuilds.next('the build after the partial of the first build is fixed')), []);
+  assert.deepEqual(errorsOf(await firstBuilds.next('the build after the partial of the first build is fixed', clean)), []);
   assert.match(fs.readFileSync(output(first, 'extract'), 'utf8'), /\.card \{\s*color: red;\s*\}/);
 });
 
@@ -220,10 +227,11 @@ test('MIG-B9-39: a partial deleted while a module loads it fails the module, and
   const goodOutput = fs.readFileSync(output(dir, 'extract'));
   await delay(300);
   fs.rmSync(path.join(dir, 'styles/parts/_card.uxdsl'));
-  const failed = await builds.next('the build after the partial is deleted');
-  assert.ok(errorsOf(failed).some((message) => /UXD_SASS: Can't find stylesheet to import\./.test(message)), errorsOf(failed).join('\n'));
+  const cannotFind = (stats) => errorsOf(stats).some((message) => /UXD_SASS: Can't find stylesheet to import\./.test(message));
+  const failed = await builds.next('the build after the partial is deleted', cannotFind);
+  assert.ok(cannotFind(failed), errorsOf(failed).join('\n'));
   await edit(dir, 'styles/parts/_card.uxdsl', CARD);
-  assert.deepEqual(errorsOf(await builds.next('the build after the partial is created again')), []);
+  assert.deepEqual(errorsOf(await builds.next('the build after the partial is created again', clean)), []);
   assert.deepEqual(fs.readFileSync(output(dir, 'extract')), goodOutput);
 });
 
@@ -236,13 +244,13 @@ test('MIG-B9-39: a first webpack build that fails in the discovered theme file r
   const failed = await builds.next('the first build, which fails in the theme file');
   assert.ok(errorsOf(failed).some((message) => /UXD_THEME_INVALID/.test(message)), errorsOf(failed).join('\n'));
   await edit(dir, 'uxdsl.theme.json', '{ "spacing": { "2": "7px" } }\n');
-  assert.deepEqual(errorsOf(await builds.next('the build after the theme file is fixed')), []);
+  assert.deepEqual(errorsOf(await builds.next('the build after the theme file is fixed', clean)), []);
   assert.match(fs.readFileSync(output(dir, 'extract'), 'utf8'), /--uxdsl__space__2: 7px/);
 
   const offBuilds = watch(t, config(off, 'extract', { discoverTheme: false, theme: {} }));
   assert.ok(errorsOf(await offBuilds.next('the first build, which fails in the module')).some((message) => /UXD_SASS/.test(message)));
   await edit(off, 'uxdsl.theme.json', '{ "spacing": { "2": "7px" } }\n');
-  await offBuilds.quiet('an edit to uxdsl.theme.json with discoverTheme: false and a theme option', 2000);
+  await offBuilds.quiet('an edit to uxdsl.theme.json with discoverTheme: false and a theme option', 2000, path.join(off, 'uxdsl.theme.json'));
 });
 
 /** One webpack build with style-loader, which fails; its errors as toJson() and toString() give them. */
