@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | None (registered by decision 36 of 2026-11-10, as proposed in MIG-B9-29 §15, owner flag 4) |
-| Status | Ready |
+| Status | In review (PR #91) |
 | Size | S |
 | Depends on | MIG-B9-29 (merged, PR #82). Under README §7 it shares only the append-only rows (`packages/uxdsl/CHANGELOG.md`, `packages/uxdsl/README.md`) with any unmerged story. It does not wait for MIG-B9-21: decision 15 of 2026-11-13 (§15, Q4 (a)) makes it the one exception to §7's opening sentence, "every wave-3 story waits for MIG-B9-21" |
 | Blocks | MIG-B9-91 (its gate requires every wave-3 story merged, MIG-B9-18 included: decision 35 of 2026-11-10). In `0.5.0-beta.10`, MIG-B9-60 if its story file comes to edit the codemod (§15, F12; provisional) |
@@ -755,7 +755,7 @@ Owner checks, never marked PASS by the agent:
   quoted form uses single quotes, so the expected JSON is the same text as
   the other files." The code on line 114 stays.
 - `packages/uxdsl/README.md`, "Codemod: `scripts/codemod-canonical-grammar.js`"
-  (lines 783–805): one sentence, appended after the sentence that ends "is
+  (lines 783–806): one sentence, appended after the sentence that ends "is
   left and reported, once per occurrence." (line 803). The existing wording
   stays (decision 35). It says three things:
   - a directive's arguments are rewritten in one run, a function argument
@@ -887,7 +887,63 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in one PR (#91), from `feat/b9-18-codemod-directive-arguments`, by the light flow the owner chose on 2026-11-04 (FEAT-010 §2, D1): one scout, one implementer, one review and the deliverer. The size stays S.
+
+Where the delivery differs from §5, three things rule: decisions 12 to 16 of 2026-11-13, the owner's decisions of 2026-11-14 on the scout's two flags, and the "Delivery of 2026-11-14" block (all in §15). The scout's report, the implementer's evidence and the review stay with the run's evidence outside the repository. What they decided is summarized below.
+
+- **Base and merges.**
+  - The base is `feat/beta9` at `65b48b6` (PR #90).
+  - `git fetch origin` ran before the PR was opened. `origin/feat/beta9` was still at `65b48b6`, so no merge was needed.
+  - The story's commits since the base:
+    - `9d7ffbb`, the implementer: §11's README range and the re-run on `65b48b6`;
+    - `f836144`, the implementer: the codemod, T1 to T6, the README sentence and the CHANGELOG subsection;
+    - `ba2b2f8`, the implementer: the owner's decisions of 2026-11-14;
+    - `b7da4ea`, the deliverer: the review's finding R1;
+    - this record.
+- **Environment.**
+  - macOS 27.0 (Darwin 27.0.0). Node 20.19.0 and npm 11.21.1, CI's versions. Google Chrome 157.0.8103.51 at the macOS default path.
+  - Every command ran with `TMPDIR` set to a scratch directory of the role's own.
+  - The pre-commit hook (the docs guard, then the playground build) ran on every commit. No commit used `--no-verify` or `HUSKY=0`.
+  - MIG-B9-21's workflow ran on the same machine at the same time (load average up to about 235). Its worktree and processes were not touched.
+- **Preconditions and baseline (§3, §4).** On `65b48b6` all twelve preconditions exit 0. §4's output is byte-identical to the record for `5a041fc`, and §12's guard prints the same counts. One line was stale (§11's README range), corrected in §15.
+- **Contract as delivered.**
+  - **C1.** A second run writes no file and prints only the first run's `unresolved:` lines and a summary starting `0 file(s) rewritten` (or `0 file(s) would change`). This holds for any files, with no exception: decision 12 removed the `radius("full")` exception, and flag 1 (b) of 2026-11-14 settled the unclosed parenthesis (F13), with or without an alpha.
+  - **C2 to C4**, as §5 says. Commas become spaces (Q2 (a)), and an escaped quote is removed with its backslash (Q3 (a)).
+  - **C3.** Q5 (b) covers both forms.
+  - **C6.** Decision 12 made it binding.
+  - **C5.** BASE's bytes and lines for every directive outside the C2–C4 class, F11's half rewrite included. A dashed key with an alpha before `${…}`, `#{…}` or a call nested three deep keeps BASE's dotted result (R1).
+- **Failing test first.**
+  - With T1 to T6 appended and the codemod at `65b48b6`, the file exited 1: MIG-B9-29's seven tests ok; T1, T2, T3, T4 and T6 not ok; T5 ok (by design). T4 failed at `the second run: g.css has the same bytes`.
+  - For R1, T5 gained `i.css` and T4's `unclosed.css` gained an alpha line. On `ba2b2f8`'s codemod both tests failed (11 pass, 2 fail). After `b7da4ea`: 13 of 13.
+- **Mutation checks.**
+  - The implementer: AC1's list, each caught by the test it names (dashed-first T1, first-paren T2, char-quotes T3, no-collapse T5, join-before-brace T5, full-first T6, BASE T1–T4 and T6).
+  - The review ran 13 mutants. 12 were caught. The survivor was R1's input class, fixed in `b7da4ea` and now pinned by T5 and T4.
+  - The review's fuzz, 16,384 directive lines: the head's run 2 changed 0 lines; BASE's changed 1,824.
+- **Tests.** Six `MIG-B9-18:` tests appended to `packages/uxdsl/test/codemod-canonical-grammar.test.js` (T1 to T6, titles as §8 under Q5 (b)). T7 is AC4, and T8 is §12's guard. Assertions added beyond §8:
+  - within T5: `h.css` with F11 (`.h { @ds-surface(contained, radius(2), ${r}); }` gives `.h { @ds-surface(contained radius(2), ${r}); }`, flag 2 (b)) and the whitespace-only `.w` line, with its own report block;
+  - within T5: `i.css` with R1's three inputs and BASE's bytes, `palette()/color() dashed -> dotted ×3`, `directive arguments ×3`;
+  - within T4: `unclosed.css` (F13, flag 1 (b)), with and without an alpha;
+  - within T1: an ambiguous quoted key with an alpha.
+  - The comment at the old lines 112–113 is rewritten, and no MIG-B9-29 test body is edited.
+- **Acceptance criteria (§9) and §12, on `b7da4ea`.**
+  - **AC1.** The test file exits 0: 13 tests, 13 pass, 0 skipped. `TMPDIR` is left empty.
+  - **AC2.** §4's reproduction, through `bash`, exits 0.
+    - Part (1): `f3.css` holds `.a { @ds-surface(contained radius(2) shadow(1)); }` and `.b { @ds-surface(contained radius(2)); }` after run 1 (`directive arguments ×2`). `f7.json` is `{"css":".c { @ds-button(outlined primary); }"}`, with `JSON.parse: ok` in every run. `f8.css` is dotted with `palette()/color() dashed -> dotted ×2` in run 1. `rf.css` is final after run 1 (`radius(full) -> radius(pill) ×1`). Runs 2 and 3 of each print `0 file(s) would change (0 with findings).` and `0 file(s) rewritten (0 with findings).`.
+    - Part (2): `unresolved:` in all three runs.
+    - Part (3): `.m` is `radius(2 3) shadow(1)` and `.q` is `palette(primary.main 0.5)`, and run 2 is a no-op.
+    - Part (4): as recorded.
+  - **AC3.** The guard exits 0 with `corpus: 217 files; lines that differ, head vs BASE: 16, outside @ds- lines: 0; control vs BASE, outside @ds- lines: 18` and `generated set: 7065 lines; head vs BASE: identical; control vs BASE: different`. The 16 lines are this story's own README and CHANGELOG examples, which the codemod rewrites as prose.
+  - **AC4.** The four suites: 38 of 38. Both invariant checks exit 0.
+  - **AC5.**
+    - `npm test` exits 0: 1,597 tests, 0 `not ok`, 1 skipped (MIG-B9-11's Bootstrap corpus).
+    - `npm run verify:1.0 -- --skip-playground-walk` exited 1 on its first run: `66/71 automated checks passed. FAIL: B7-15a, N-04, N-03, B7-16, B7-17`. The run was under MIG-B9-21's load (`spawnSync npm ETIMEDOUT`, children that `exited null`). `scripts/capability-matrix.test.js` passed 7/7 when run alone right after. The single re-run exited 0: `71/71 automated checks passed.` The first run is not a pass.
+    - `npm run verify:playground-browser` exits 0: `pages loaded: 380; focusable elements checked: 2220`, `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus, contrast page = Node.`, and every negative control was caught.
+    - The implementer's runs of the same three gates on `f836144`'s content also exited 0.
+- **Generated artifacts and guards (§10).**
+  - CHANGELOG: one `### … (MIG-B9-18)` subsection at the top of `## 0.5.0-beta.9 — unreleased`, above MIG-B9-20's, ending with `### Visual changes`: none.
+  - Package README: §11's sentence, plus a clause in `b7da4ea` for a dashed key with an alpha before an interpolation.
+  - `npm run verify:doc-examples` and `node scripts/generate-agent-guide.js --check` exit 0 (the implementer, and inside `npm test`). No other artifact is needed.
+- **Not run, or not a pass.** The first `verify:1.0` run. Nothing is published. CI is recorded on PR #91.
 
 ## 15. Findings and follow-ups
 
@@ -1048,3 +1104,62 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), 
 - **Q3 (decision 14): (a)**, as the contract assumed. An escaped quote is removed with its backslash, and the JSON stays valid. Nothing changes.
 - **Q4 (decision 15): (a), the story does not wait for MIG-B9-21; it starts now.** It differs from the contract's header, which assumed (b). The header's Depends on and Base now drop MIG-B9-21 (done in the PR that records this decision), and the index's §7 records this story as the one exception to its opening sentence. §3's preconditions, recorded on `5a041fc`, and §4's baseline are re-run on the base the story starts from, as the header says.
 - **Q5 (decision 16): (b), both of F3's forms.** It differs from the contract, which assumed (a), and widens decision 36 of 2026-11-10's paraphrase. C3's bullet for the form without parentheses, T2's `.b` and `.b2` cases and AC2's `.b` line are part of the contract, as the lead-in above says of Q5 (b).
+
+### Re-run on the base the story starts from (`65b48b6`, 2026-11-13)
+
+The scout re-ran §3 and §4 on `65b48b6` (`origin/feat/beta9` after PR #90),
+through `bash` from the worktree root. All twelve preconditions exit 0, and
+§4's output is byte-identical to the record for `5a041fc` (`git diff --stat
+5a041fc 65b48b6 -- packages/uxdsl` is empty). §12's guard prints the same
+counts (217 files, 0/0/18; 7065 lines, identical/different) and exits 0. One
+line was stale, and is corrected as README §1 item 4 allows:
+
+- §11, the README bullet. The section runs from its heading at line 783 to
+  "rewrites prose too, so review a documentation file it touches." at line
+  806, on `5a041fc` and on `65b48b6` alike; the insertion point (after line
+  803) was right.
+  - Old: `  (lines 783–805): one sentence, appended after the sentence that ends "is`
+  - New: `  (lines 783–806): one sentence, appended after the sentence that ends "is`
+
+### Owner decisions of 2026-11-14 (the scout's two flags)
+
+The scout of the delivering run raised two flags against the contract as
+amended on 2026-11-13. Under the owner's standing instruction of 2026-11-10
+(quoted in the 2026-11-13 block above) each was answered with its
+recommended option. They were not put to the owner one by one; each is the
+owner's decision of 2026-11-14, and the owner may override either.
+
+- **Flag 1, F13 (an unclosed directive parenthesis): (b).** Decision 12
+  makes C1 hold for any files, while §6 and F13 kept BASE's two-run
+  behavior for `.a { @ds-surface(contained\n  background: palette("primary-main");\n}`.
+  Answer: the fallback join (the text to the first `)`) also has the token
+  rewrites run on the text it unquoted, so F13 is final in run 1 and C1
+  holds literally. F13 is a finding resolved by this answer. Its run-1
+  bytes differ from BASE: `.a { @ds-surface(contained background: palette(primary.main);\n}`
+  instead of `palette(primary-main)`, and a second run leaves it. The input
+  is malformed and the compiler rejects it either way; no C5 input, T5 row
+  or guard set holds it. The implementation brings every directive,
+  through the balanced pattern or the fallback, to `@ds-x(a b)` before the
+  token rewrites run, so the fallback's text is rewritten like any other.
+  Test: T4 plants it as `unclosed.css` and asserts those bytes after run 1,
+  and its second-run assertion covers it.
+- **Flag 2, F11 (`${…}` after a function argument): (b).** §6 pins F11 to
+  BASE's half rewrite, and no test did. Answer: one assertion inside T5,
+  separate from its nine-line table and its seven-line report, that
+  `.h { @ds-surface(contained, radius(2), ${r}); }` gives
+  `.h { @ds-surface(contained radius(2), ${r}); }`. T5 writes it to its own
+  file, `h.css`, with its own report block. §14 records it as an
+  assertion added within T5. The same file holds
+  `.w { @ds-surface(contained  primary); }` (two spaces, no comma): the
+  table's rows all hold a comma, which the comma rule collapses on its own,
+  so without that line a run that stops collapsing whitespace passed T5,
+  against AC1's mutation list; with it, that mutant fails T5.
+
+### Delivery of 2026-11-14
+
+- **R1, the review's finding, fixed in `b7da4ea`.** The space-alpha dashed pass read a directive's arguments only through the balanced pattern. Where that pattern does not match, the directive pass had already joined the text to the first `)`, which happens with `${…}`, `#{…}`, a call nested three deep or an unclosed parenthesis. So `palette(primary-main, 0.5)` became `palette(primary-main 0.5)` and was never dotted, with no report. BASE dotted it. On `ba2b2f8`, `.h1 { @ds-surface(contained, palette(primary-main, 0.5), ${r}); }` gave `palette(primary-main 0.5), ${r}`. It now gives BASE's `palette(primary.main 0.5), ${r}`. The pass now reads the same text the directive pass joined (`ARGS_OR_FIRST`). The 2026-11-14 decision block's sentence "the fallback's text is rewritten like any other" was false on `ba2b2f8` for a key with an alpha. It holds from `b7da4ea`: `.b { @ds-surface(contained\n  background: palette("primary-main", 0.5);\n}` is `palette(primary.main 0.5)` after run 1. Tests: T5's `i.css` and T4's `unclosed.css`.
+- **The first `verify:1.0` run failed on load** (§14, AC5), and its single re-run passed. MIG-B9-21's workflow was running heavy suites on the same machine. Not a code finding.
+- **The guard's head total is 16**, all lines with `@ds-` in this story's own README and CHANGELOG examples, as §12 anticipates.
+- **Follow-ups.**
+  - **MIG-B9-60** (proposed): F11 stays a known half rewrite (`${…}` after a function argument keeps BASE's bytes), as do the other directives the balanced pattern does not match. If `uxdsl doctor` loads the codemod as a module, its story file should list this file (F12).
+  - **MIG-B9-25** (proposed): when its temporary-directory helper lands, this file's `tmp()` helper can move to it. Section 7 named a helper that did not exist yet.
