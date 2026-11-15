@@ -8,16 +8,16 @@ export type { UxdslConfig, UxdslConfigShared, UxdslBuild, UxdslTheme, UxdslTheme
 // discovery, the CLI, the Vite plugin and the Webpack loader, so they can
 // never disagree about which file wins or what shape it accepts.
 //
-// Two files, two jobs (stability phase 2, DE-10):
+// Two files, two jobs:
 //   - the theme file (one of THEME_CANDIDATES) holds the theme, and only the
 //     theme: `uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` for a computed one
 //     exporting the same object, or a function (sync; async where the loader
 //     can await it) returning it. Breakpoints live here, under `breakpoints`.
 //   - the build config (`uxdsl.config.js`/`.cjs`) says what to compile and
 //     where, and carries `references`. It never carries a theme.
-// A theme file exporting the former `{ theme, references }` wrapper is refused
-// with an error that says where each half now goes, rather than being read as
-// a theme with two unknown families.
+// A theme file exporting a `{ theme, references }` wrapper is refused with an
+// error that says where each half goes, rather than being read as a theme
+// with two unknown families.
 
 export const THEME_CANDIDATES = [
   'uxdsl.theme.cjs',
@@ -67,11 +67,11 @@ export function findThemeConfigPath(dir: string): string | null {
 
 const WRAPPER_KEYS = ['theme', 'references'];
 
-/** A theme file exports the theme itself. The `{ theme, references }` wrapper
- * it used to accept is refused, not guessed at: silently reading it as a theme
- * would compile the project against an empty override (with `theme` and
- * `references` reported as unknown families at best), and the two halves now
- * have different homes. */
+/** A theme file exports the theme itself. A `{ theme, references }` wrapper
+ * is refused, not guessed at: silently reading it as a theme would compile
+ * the project against an empty override (with `theme` and `references`
+ * reported as unknown families at best), and the two halves have different
+ * homes. */
 export function assertBareThemeExport(themeModule: any, themeConfigPath: string): void {
   const found = WRAPPER_KEYS.filter((key) => Object.prototype.hasOwnProperty.call(themeModule, key));
   if (found.length === 0) return;
@@ -120,9 +120,9 @@ export function warnIfLooksLikeBuildConfig(themeModule: any, themeConfigPath: st
   );
 }
 
-/** Same tree-walking `require.cache` traversal the CLI's watch mode has
- * always used to find nested local modules to invalidate/watch — moved
- * here so the plugin's own discovery gets the same "don't serve a stale
+/** The tree-walking `require.cache` traversal that finds the nested local
+ * modules to invalidate/watch, shared by the CLI's watch mode and the
+ * plugin's own discovery, so both get the same "don't serve a stale
  * require() result" guarantee. `node_modules` is excluded: those files
  * don't change during a project's own dev loop and walking into a large
  * dependency graph would be wasteful. */

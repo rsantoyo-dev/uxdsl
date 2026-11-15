@@ -8,9 +8,8 @@ import { getInputTokens, inputDeclarations, inspectInputTheme } from '../inputs'
 import { deepMergeTheme } from './theme-validate';
 
 /**
- * MIG-B6-29 (FEAT-008), phase 2/4 — the accessibility contrast gate
- * (`checkThemeContrast`), step 7 of the story's own "Implementación".
- * MIG-B6-16 uses this for `uxdsl theme --contrast`.
+ * The accessibility contrast gate (`checkThemeContrast`), also behind
+ * `uxdsl theme --contrast`.
  *
  * Deliberately does not implement its own color/theme resolution: every
  * pair checked here comes from calling the *same* functions the real
@@ -18,9 +17,9 @@ import { deepMergeTheme } from './theme-validate';
  * `inputDeclarations`, `inspectSurfaceTheme`/`inspectButtonTheme`/
  * `inspectInputTheme`, `generateFoundationCss`) — never a hand-written
  * list of pairs, and never a second parser that could drift from what
- * PostCSS/the runtime actually emit. "No inventar CSS que el motor no
- * emite" (the story's own words) is the reason every accessor below
- * reaches into an existing engine module instead of re-deriving anything.
+ * PostCSS/the runtime actually emit: checking CSS the engine does not emit
+ * would prove nothing, so every accessor below reaches into an existing
+ * engine module instead of re-deriving anything.
  *
  * What this checks, precisely (see `ContrastReport` below for what it
  * does not): for every Surface/Button/Input role, for every tone
@@ -30,9 +29,8 @@ import { deepMergeTheme } from './theme-validate';
  * every configured breakpoint:
  *   - text color vs. its effective background (4.5:1, WCAG 1.4.3);
  *   - input placeholder color vs. its effective background (4.5:1 — WCAG
- *     itself is more permissive about placeholder text specifically; this
- *     story asks for the same normal-text threshold, so that is what this
- *     checks, not a relaxed one);
+ *     itself is more permissive about placeholder text specifically; the
+ *     gate holds it to the normal-text threshold, not a relaxed one);
  *   - border/underline color vs. the theme's ambient page background,
  *     `palette.surface.main` (3:1, WCAG 1.4.11 non-text contrast).
  *
@@ -42,8 +40,8 @@ import { deepMergeTheme } from './theme-validate';
  * underneath. Border/underline are checked only against that same ambient
  * background (the outer, page-facing side of the component boundary) —
  * not also against the component's own inner background — a deliberate
- * simplification of "cada rol sobre surface.main", disclosed here and in
- * the story's own evidence rather than silently assumed.
+ * simplification ("every role on surface.main"), stated here rather than
+ * silently assumed.
  */
 
 // ---------------------------------------------------------------------
@@ -236,8 +234,7 @@ function resolveColorMix(expr: string, varMap: Record<string, string>, depth: nu
  * (exactly what `presetValueToCss` emits for `palette(x, alpha)`), a
  * border/underline shorthand, or a literal color — down to a concrete
  * RGBA, or a disclosed `unresolved` reason. Never throws: an
- * unresolvable color is exactly the case the story requires to fail the
- * gate loudly, not silently. */
+ * unresolvable color fails the gate loudly, not silently. */
 export function resolveExpression(expr: string, varMap: Record<string, string>, depth = 0): ResolvedColor {
   const value = expr.trim();
   if (!value) return { ok: false, reason: 'empty value' };
@@ -291,7 +288,7 @@ function viewportsOf(theme: Record<string, any>): number[] {
 }
 
 // ---------------------------------------------------------------------
-// Report shape, shared with MIG-B6-16 (`uxdsl theme --contrast`).
+// Report shape, shared with `uxdsl theme --contrast`.
 // ---------------------------------------------------------------------
 
 type ContrastMode = 'light' | 'dark';
@@ -334,7 +331,7 @@ export interface ContrastExceptionRecord {
   reason: string;
 }
 
-/** A pattern exception (stability phase 5, audit DE-7): a *structural class*
+/** A pattern exception: a *structural class*
  * of pairs rather than one pair — every failing pair of one tone family,
  * optionally narrowed. It exists for a finding that is a property of the role
  * and not of a color: a canvas-identity family (`surface`, `light`, `dark`)
@@ -404,11 +401,10 @@ export interface ContrastReport {
   excepted: ContrastExceptedPair[];
   /** Problems with the exceptions list itself, not with the theme's
    * colors: a duplicate `id`, a malformed record, or an exception that
-   * matched nothing (the override/theme moved on and the recorded resolved
-   * colors no longer occur; a pattern that covers no failing pair) — each
-   * fails the gate per the story's own "una excepción obsoleta o duplicada
-   * falla en CI", so a stale exception can never silently keep "covering" a
-   * color that has since changed. */
+   * matched nothing (the recorded resolved colors do not occur in the
+   * theme; a pattern that covers no failing pair) — each fails the gate, so
+   * a stale exception can never silently keep "covering" a color that has
+   * since changed. */
   exceptionIssues: string[];
   checked: ContrastCheckedPair[];
 }
@@ -544,8 +540,8 @@ export function checkThemeContrast(
   const excepted: ContrastExceptedPair[] = [];
   const exceptionIssues: string[] = [];
   const prepared = prepareExceptions(options.exceptions, exceptionIssues);
-  // Enumerating every tone × breakpoint is how "todos sus estados... y cada
-  // intervalo responsive" (the story's own requirement) gets covered without
+  // Enumerating every tone × breakpoint is how every state and every
+  // responsive interval gets covered without
   // hand-picking which combinations matter — but most fields (e.g. a
   // 'contained'/'flat' surface's `border`, which surfaceDeclarations never
   // varies by tone; a color with no responsive expression at all) resolve

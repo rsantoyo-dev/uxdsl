@@ -66,10 +66,10 @@ function missingTokenHint(reference: string, definitions: Iterable<string>): str
   if (!match) return '';
   const [, family, key] = match;
   const prefix = `--uxdsl__${family}__`;
-  // Stability phase 1: never the missing name itself. A token defined only in
-  // another scope (a dark-mode palette entry with no light-mode counterpart)
-  // is in `definitions` under the very name that is missing here, and used to
-  // come back as `Did you mean "neutral-dark"?` for `neutral-dark`.
+  // Never the missing name itself. A token defined only in another scope (a
+  // dark-mode palette entry with no light-mode counterpart) is in
+  // `definitions` under the very name that is missing here, and must not come
+  // back as `Did you mean "neutral-dark"?` for `neutral-dark`.
   const candidates = Array.from(definitions).filter(name => name.startsWith(prefix) && name !== reference).map(name => name.slice(prefix.length));
   const candidate = closestKey(key, candidates);
   if (!candidate) return '';
@@ -89,11 +89,10 @@ function describeConsumer(issue: ReferenceIssue): string {
 }
 
 /**
- * Stability phase 1 (audit finding "cascading errors"): one line per missing
- * token, not one per consumer. A Palette value that does not resolve is
- * referenced by every Surface, Button and Input variable built on it, so a
- * single typo used to come back as twelve `UXD_REFERENCE_MISSING` lines that
- * all named the same token. The lines list the consumers (an author's own
+ * One line per missing token, not one per consumer. A Palette value that does
+ * not resolve is referenced by every Surface, Button and Input variable built
+ * on it, so one line per consumer would print a dozen `UXD_REFERENCE_MISSING`
+ * lines for a single typo, all naming the same token. The lines list the consumers (an author's own
  * declaration with its position first, then the theme's), capped at `limit`;
  * `issues` itself stays one per consumer for tooling and warn mode.
  */
@@ -144,12 +143,10 @@ function parseMinWidth(condition: string): number | null {
   const match = condition.match(/^@media \(min-width:\s*([\d.]+)px\)$/);
   return match ? Number(match[1]) : null;
 }
-// The min-width regex used to run on every condition of
-// every pair compared, which at 24k lines meant millions of identical matches
-// against a handful of distinct strings. The caller passes a memoized reader
-// so the parse happens once per condition *per pass* — deliberately not a
-// module-level cache, which would be exactly the cross-build process-global
-// state the engine audit forbids.
+// The caller passes a memoized min-width reader, so the parse happens once per
+// condition *per pass* rather than once per pair compared (millions of
+// identical matches on a large stylesheet) — deliberately not a module-level
+// cache, which would be cross-build process-global state.
 function conditionsApply(definition: string[], consumer: string[], minWidthOf: (condition: string) => number | null = parseMinWidth) {
   return definition.every(condition => {
     if (consumer.includes(condition)) return true;
@@ -224,9 +221,8 @@ export function inspectDeclarationReferences(definitionsInOrder: ReferenceDeclar
     if (existing) existing.push(entry); else definitions.set(entry.node.prop, [entry]);
   }
   // The consumer loop only ever needs the *distinct* contexts, and always in
-  // the order they first appear — the previous code rebuilt and re-deduplicated
-  // the full per-entry list for every consumer, which is the O(consumers x
-  // entries) term this story is about.
+  // the order they first appear, so they are deduplicated once here rather
+  // than per consumer, which would cost O(consumers x entries).
   //
   // Deduplicating alone is not enough: a stylesheet of N components declares
   // O(N) distinct selectors, so scanning every distinct context per consumer
@@ -270,9 +266,7 @@ export function inspectDeclarationReferences(definitionsInOrder: ReferenceDeclar
   const issues: ReferenceIssue[] = [];
   const seen = new Set<string>();
   // `definitions` is complete before the first report and never changes after,
-  // so both hint lists are built at most once instead of once per issue — a
-  // file with thousands of missing tokens used to rebuild them thousands of
-  // times.
+  // so both hint lists are built at most once instead of once per issue.
   let spaceKeyHint: string | undefined;
   let hintNames: string[] | undefined;
   const report = (code: ReferenceIssue['code'], node: ReferenceDeclaration, chain: string[]) => {

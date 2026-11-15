@@ -7,9 +7,8 @@ import { responsiveBlocks, serializeBlocks } from './css-blocks';
 // independently-maintained literal.
 export const DEFAULT_SHADOWS: Record<string, string> = BASE_THEME.shadows as Record<string, string>;
 export interface ShadowTheme extends TokenContext { shadows?: Record<string, string>; breakpoints?: BreakpointMap }
-// Same `keyPathPrefix` fix as
-// edges.ts's radii/borders — `{ shadows: { '1': '' } }` previously threw an
-// unlocated Error.
+// Located with `keyPathPrefix`, as edges.ts's radii/borders are:
+// `{ shadows: { '1': '' } }` fails naming `shadows.1`.
 export const getShadowTokens = (theme: ShadowTheme = {}) => mergePresetTokens(DEFAULT_SHADOWS, theme.shadows, 'UXD_SHADOW', 'shadows');
 export function compileShadowRules(theme: ShadowTheme = {}, breakpoints: BreakpointMap = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints }) {
   return compilePresetRules({ shadow: getShadowTokens(theme) }, breakpoints, 'UXD_SHADOW', theme);

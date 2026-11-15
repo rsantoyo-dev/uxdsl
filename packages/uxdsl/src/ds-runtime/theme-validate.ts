@@ -55,7 +55,7 @@ export const KNOWN_THEME_FAMILIES = new Set([
  */
 export const THEME_SCHEMA_KEY = '$schema';
 
-// Stability phase 1: the three lexical rules every theme key and leaf obeys.
+// The three lexical rules every theme key and leaf obeys.
 // The JSON Schema (scripts/generate-language-artifacts.js) is generated from
 // these same patterns, so an editor and the compiler reject the same names.
 //
@@ -71,7 +71,7 @@ export const THEME_NAME_PATTERN = /^[a-z][a-z0-9-]*$/;
 export const THEME_KEY_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 // A leaf is a nonempty (not blank) CSS value. `;`, `{` and `}` never belong
 // in one — the theme is compiled to a stylesheet, and a value carrying them
-// could inject rules (audit finding T3). Parentheses must also balance; a
+// could inject rules. Parentheses must also balance; a
 // regex cannot express that, so the schema states only this pattern.
 // `fonts.google` entries are Google Fonts specs (`Inter:wght@400;700`), not
 // CSS values: they are percent-encoded into a URL, so only "nonempty" applies.
@@ -147,7 +147,7 @@ export function deepMergeTheme<TBase extends Record<string, any>, TOverride exte
 }
 
 /**
- * The one theme validator (stability phase 1, audit finding T2).
+ * The one theme validator.
  *
  * Called by the PostCSS plugin (on the effective theme, before any engine),
  * by `generateThemeCss`, by `applyTheme` and by the CLI, so every path answers
@@ -161,7 +161,7 @@ export function deepMergeTheme<TBase extends Record<string, any>, TOverride exte
  *    strings), `modes` to `dark` and `modes.dark` to `palette`; palette
  *    families are objects; keys follow `THEME_NAME_PATTERN`/`THEME_KEY_PATTERN`.
  * 2. Breakpoints, once: `validateBreakpoints` (a zero-width base, distinct,
- *    finite, non-negative widths) as `UXD_BP_INVALID`. Engines no longer
+ *    finite, non-negative widths) as `UXD_BP_INVALID`. Engines do not
  *    re-check the map under their own family code.
  * 3. Engines: the same `compile*Rules`/generators the two CSS paths run, so
  *    closed field sets (`UXD_TYPO_FIELD`, `UXD_BUTTON_STATE`, …) and

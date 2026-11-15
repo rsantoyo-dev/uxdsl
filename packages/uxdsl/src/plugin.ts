@@ -124,7 +124,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const validated = validateTheme(theme, { references: false });
   if (!validated.ok) throw themeValidationError(validated.errors);
   for (const warning of validated.warnings) result.warn(warning.message, { plugin: PLUGIN });
-  // An option that no longer exists is reported and ignored, never thrown on.
+  // A removed option is reported and ignored, never thrown on.
   for (const text of removedOptionWarnings(opts)) result.warn(text, { plugin: PLUGIN });
   // The one breakpoint map of this compilation: the effective theme's.
   const bps: Record<string, number> = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints };

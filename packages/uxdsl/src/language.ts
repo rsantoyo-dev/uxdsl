@@ -121,10 +121,9 @@ export function getToneFamilies(palette: Record<string, unknown> = {}): string[]
   });
 }
 
-// Located with `themeError` the
-// same way typography.ts already is — `{ densities: { x: '' } }` previously
-// threw `UXD_DENSITY_VALUE: Invalid x.` with no `.keyPath`, leaving no way
-// to tell it came from `densities.x` versus a merged default/legacy key.
+// Located with `themeError`, as typography.ts is: `{ densities: { x: '' } }`
+// fails with `.keyPath` set to `densities.x`, so it reads apart from a merged
+// default or legacy key.
 /** Effective Density map is local to a compilation: defaults < legacy < JSON. */
 export function getDensityTokens(theme: { densities?: Record<string, string> } = {}, legacy: Record<string, string> = {}): Record<string, string> {
   if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw themeError('UXD_DENSITY_MAP', 'Expected an object', 'densities');

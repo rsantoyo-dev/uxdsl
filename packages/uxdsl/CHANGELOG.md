@@ -78,6 +78,11 @@ them. See `docs/releases/0.5.0-beta.9.md`.
   "more than one" hint are unchanged. The CLI, Vite and webpack pages now say
   that a theme delivered another way (`generateThemeCss` on the server,
   `applyTheme`, another build) still gets the "no entry"/"no module" warning.
+- **Source comments state behavior.** The comments in `src/` and
+  `bin/uxdsl.js` say what the code does and why, without naming the story,
+  phase, date or release that introduced it; a repository test now fails on
+  one that does. No code changed with them: compiled output is
+  byte-identical.
 
 #### Added
 

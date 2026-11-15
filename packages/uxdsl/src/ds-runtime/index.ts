@@ -3,11 +3,10 @@
 // A build compiles the project's theme JSON; `applyTheme` applies the same JSON
 // in the browser by replacing the custom properties of one managed `<style>`.
 // That is the whole runtime API. There is no per-token setter and no
-// breakpoint rewriter: the previous `updatePalette`/`updateSpacing`/
-// `updateBreakpoint` family wrote inline styles on `<html>` and rewrote compiled
-// media queries with a regex, which competed with — and silently beat — the
-// managed stylesheet. The mapping from those calls to `applyTheme` patches is
-// in the CHANGELOG ("Removed", stability phase 2).
+// breakpoint rewriter: inline styles on `<html>` and compiled media queries
+// rewritten with a regex would compete with — and silently beat — the managed
+// stylesheet. The CHANGELOG ("Removed") maps the removed `updatePalette`/
+// `updateSpacing`/`updateBreakpoint` calls to `applyTheme` patches.
 export {
   applyTheme,
   getAppliedTheme,

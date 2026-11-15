@@ -34,18 +34,17 @@ export interface ControlTheme extends SurfaceTheme { [key: string]: any }
 export const TONE_VARIANTS = ['main', 'dark', 'contrast'] as const;
 
 /**
- * Stability phase 1 (audit T6): `tone(main|dark|contrast)` is the value
- * function a Button/Input theme value uses to say "the requested tone's
- * variant, else primary's". It compiles to exactly the fallback chain the base
- * theme used to spell out by hand:
+ * `tone(main|dark|contrast)` is the value function a Button/Input theme value
+ * uses to say "the requested tone's variant, else primary's". It compiles to
+ * the fallback chain
  *
  *   tone(dark)  ->  var(--uxdsl__button__tone-dark, var(--uxdsl__palette__primary-dark))
  *
  * and, in the per-tone variant of the same value (`<role>-tone-<family>-…`),
- * straight to that family's own variant. The literal chain is still recognised
- * for one release (deprecated): the regex substitution it relied on only ever
- * matched that exact text, which is why `states.hover.bg: 'palette(primary.dark)'`
- * never varied by tone — it was not the magic literal.
+ * straight to that family's own variant. The literal chain, written by hand,
+ * is still recognised for one release (deprecated), and only that exact text:
+ * an explicit reference such as `states.hover.bg: 'palette(primary.dark)'`
+ * never varies by tone.
  */
 export function toneReferences(value: string, family: 'input' | 'button', tone: string | null, fail: (message: string) => Error): string {
   const parsed = valueParser(value);
@@ -134,12 +133,11 @@ function compileRules(theme: ControlTheme = {}, breakpoints: BreakpointMap = { .
       // the vscode extension's completion generator can derive the exact
       // same tone list without duplicating this predicate by hand.
       //
-      // Stability phase 1 (audit T8): a per-tone variant is emitted only when
-      // the tone changes the value. Every compiled reference to one carries
-      // the untoned variable as its var() fallback, so an omitted variant
-      // resolves to exactly what the identical copy used to say — 341 of the
-      // default output's 745 declarations were such copies
-      // (`…-tone-<family>-disabled-opacity: 0.6`, eleven times over).
+      // A per-tone variant is emitted only when the tone changes the value.
+      // Every compiled reference to one carries the untoned variable as its
+      // var() fallback, so an omitted variant resolves to exactly what an
+      // identical copy would say (`…-tone-<family>-disabled-opacity: 0.6`
+      // would otherwise repeat once per tone).
       for (const tone of getToneFamilies(theme.palette)) {
         for (const [key, value] of Object.entries(style)) {
           const toned = toneReferences(value, family, tone, fail);

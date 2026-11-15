@@ -234,7 +234,9 @@ in the `compile()` guide's
 a minor release. Everything else in the table follows semver.
 `scripts/measure-exports.js` in the UXDSL repository lists every entry's
 exports with the files that consume them; it is how the `uxdsl/engine` exports
-nothing used were found and removed.
+nothing used were found and removed. The package's source comments state what
+the code does and why; `scripts/no-history-comments.test.js` fails on one that
+names a story, a phase, a date or a release instead.
 
 ---
 

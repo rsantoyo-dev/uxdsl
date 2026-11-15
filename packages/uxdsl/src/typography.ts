@@ -35,7 +35,7 @@ export function resolveTypographyRole(details: TypographyDetails, role: string):
   return role === 'default' ? { ...style } : { ...details.default, ...style };
 }
 
-/** Stability phase 1: the one value grammar. A typography field may reference
+/** The one value grammar. A typography field may reference
  * any token (`palette(primary)` in `letterSpacing`, `radius(2)`…), not only
  * `space()`/`density()`; the reference pass judges whether it exists. */
 export function typographyValueToCss(input: string, context?: TokenContext): string {
@@ -44,9 +44,9 @@ export function typographyValueToCss(input: string, context?: TokenContext): str
 
 export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS, context?: TokenContext) {
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
-  // Stability phase 1: the breakpoint map has one owner and one code
-  // (`UXD_BP_INVALID`, language.ts); this engine no longer restates the
-  // same rules under `UXD_TYPO_BP`.
+  // The breakpoint map has one owner and one code (`UXD_BP_INVALID`,
+  // language.ts); this engine does not restate the same rules under a code
+  // of its own.
   const ordered = validateBreakpoints(breakpoints);
   if (!details || typeof details !== 'object' || Array.isArray(details)) throw themeError('UXD_TYPO_DETAILS', 'Expected an object', 'typography_details');
   for (const [role, style] of Object.entries(details)) {
