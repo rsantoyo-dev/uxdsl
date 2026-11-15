@@ -223,7 +223,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Ready |
 | MIG-B9-37 | [A located warning for a CSS-wide keyword as a theme token value](MIG-B9-37-css-wide-keyword-warning.md) | 3 | — | S | 13 | Ready |
 | MIG-B9-38 | [A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS](MIG-B9-38-plain-import-warning.md) | 3 | — | S | 14, 22 | Ready |
-| MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | S | 14, 21, 22 | Ready |
+| MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | S | 14, 21, 22 | In review (PR #96) |
 | MIG-B9-19 | [The CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed](MIG-B9-19-cli-watch-recovers.md) | 3 | — | S | 14, 21, 22 | Ready |
 | MIG-B9-06 | The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts | 3 | — | S | 19, 39 | Draft (story file to be written; registered by decision 29 of 2026-11-13; it also takes the atomic-replace watch failure seen once on CI, Dependabot's PR #84, by decision 28 of 2026-11-15) |
 | MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |

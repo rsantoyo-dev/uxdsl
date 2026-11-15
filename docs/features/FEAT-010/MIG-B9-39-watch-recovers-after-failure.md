@@ -5,7 +5,7 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
 | Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in MIG-B9-14 §15's follow-ups; §15 asks the owner six questions, and the contract states the option it assumes for each (answered 2026-11-13, decisions 28 to 33; §15)) |
-| Status | Ready |
+| Status | In review (PR #96) |
 | Size | S, by decision 28 of 2026-11-13 (§15, Q1 (b)): this file was split into two S stories. This story keeps the adapters (C1 to C5, T1 to T10, AC1 to AC3, and AC7 to AC9 for its part); the CLI and the tests (C6 to C9, T11 to T14, AC4 to AC6, and AC7 to AC9 for their part) are [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md). Registered as "S or split by its scout". The CLI watch's four older gaps that the registration also lists are MIG-B9-06 (decision 29 of 2026-11-13) |
 | Depends on | MIG-B9-14 (merged, PR #71), MIG-B9-22 (merged, PR #76) and MIG-B9-21 (Ready; its status is README §5's; it follows MIG-B9-20, merged as PR #88), as README §5 says. Under README §7 it waits for MIG-B9-21 alone on its files (`vite.ts`, `webpack.ts`, `vite.md`, `webpack.md`), as Q1 (b) says (decision 28 of 2026-11-13); MIG-B9-20, on those rows, is merged. It does not depend on MIG-B9-19: the two share only the append-only CHANGELOG and package README |
 | Blocks | MIG-B9-06 (decision 29 of 2026-11-13: after this story, for the adapters' class of the older gaps) and MIG-B9-91 (it depends on every story of waves 0 to 3). Under README §7: MIG-B9-64 (`vite.ts`, `webpack.ts`) |
@@ -1780,7 +1780,44 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #96, from `feat/b9-39-watch-recovers-after-failure` into `feat/beta9`, by the light flow for an S story (decision D1 of 2026-11-04; decision 28 of 2026-11-13): one scout, one implementer, one review and one deliverer. Where the delivered contract differs from §5, §8 or §9, §15's blocks rule; the differences are listed below. Only the owner merges.
+
+**Base and commits.** The base is `feat/beta9` at `cf98cb8`, after MIG-B9-21 (PR #92).
+
+| Commit | Content |
+| --- | --- |
+| `f38af40` | §15: stale lines corrected on `cf98cb8`, and the scout's findings and flags 1 to 4 answered as recommended |
+| `15689c1` | C1 to C5 in `webpack.ts` and `vite.ts`; T1 to T8 (two new files); T9 and T10 in the fixtures; `webpack.md`, `vite.md`, the README clause and the CHANGELOG subsection |
+| `be465ba` | Review findings: the theme-flags test (AC7's mutation), the `hotUpdate` spy in T6, T1 rebuilt to prove C1 (a), the per-compiler test, and the CHANGELOG narrowed for style-loader |
+| `ef0dc8f` | Merge of `origin/feat/beta9` at `44eac7c` (PR #93, MIG-B9-16), with no conflict |
+| `f769c95` | T1's waits pass over a build from before the edit (the first `npm test` failed T1 once) |
+| `5745377` | Merge of `origin/feat/beta9` at `99f6a82` (PR #94, MIG-B9-25), with no conflict |
+| `514d067` | The new tests use MIG-B9-25's `temporaryDirectory` helper (flag 4; decision 15 of 2026-11-15) |
+| `8f0815c` | Every wait after an edit in the webpack tests passes over a build from before it; `quiet` names the unrelated file (PR #96's first CI run failed T2 to T4) |
+| `59f1706` | Merge of `origin/feat/beta9` at `65359cf` (PR #95, the owner's decisions of 2026-11-15), with no conflict |
+
+`src/compile.ts`, `src/sass/**`, `src/diagnostics.ts` and the playground's generated files are unchanged: `git diff --exit-code cf98cb8 -- …` exits 0.
+
+**Environment.** macOS (Darwin 27), Node 20.19.0, npm 11.21.1, Chrome 157.0.8103.51. Package devDependencies: Vite 7.3.7, webpack 5.111.1, css-loader 7.1.5, mini-css-extract-plugin 2.10.2, style-loader 4.0.0. The fixtures installed vite 5.4.21 and 7.3.8. `TMPDIR` pointed into the session scratchpad for every run. The machine ran two other story workflows at the same time (load average 10 to 37), and it was suspended several times during the delivery: a test that "ran" for 500 to 990 s is a suspension.
+
+**Failing first.** On the base's `dist`, T1 to T4 failed with `<step>: no webpack build within 20 s`. T5 failed on the absolute path, the stack and the missing frame. T6 failed with `not sent within 10 s; sent: []`, T7 with `no build within 20 s`, and T8 on a missing `loc`. T9's child script failed on a base install (vite 7.3.7). T10 was not run against a base install; T1 covers the same mechanism there. The tests added at review are guards over a correct head, each shown failing under its mutation (below).
+
+**Criteria.**
+
+| AC | Result |
+| --- | --- |
+| AC1 | `node --test packages/uxdsl/test/webpack/watch-recovery.test.js`: 7 pass (T1 to T5, and the per-compiler and theme-flags tests), none skipped. `TMPDIR` is empty afterwards. Mutations: no `addDependency` in the `catch` fails T1 to T4; no theme tree fails T4; `callback(err)` fails T5 |
+| AC2 | `node --test packages/uxdsl/test/vite/watch-recovery.test.js`: 3 pass (T6 to T8), and `TMPDIR` is empty. Mutations: no `hotUpdate` fails T6 (with the spy; §15); no `addWatchFile` before the rethrow fails T7; no `loc` or `frame` fails T8 |
+| AC3 | `npm run verify:vite-adapter`: exit 0, with T9's line on vite 5.4.21 (cjs) and 7.3.8 (esm). `npm run verify:webpack-adapter`: exit 0, with T10's line. Mutation: without `handleHotUpdate` in the installed vite 5.4.21 consumer, T9's script fails (`not sent within 10 s; sent: []`). The fixtures' `packAndInstall` directories were removed by hand after each run (flag 3) |
+| AC7 | `theme-emission` (vite and webpack): 11 pass. `--test-name-pattern="MIG-B9-14\|MIG-B6-23"` over `vite/index.test.js` and `webpack/loader.test.js`: 6 pass, 34 skipped. The adapter suites: 61 of 61, which is 51 on the base plus 10 new, all in new files. `git diff --exit-code cf98cb8 -- …` exits 0. AC7's mutation (theme flags on the failed path) does not fail `theme-emission.test.js`; it fails this story's theme-flags test (§15, flag 5) |
+| AC8 | §4's adapter reproduction, from a tarball packed on `ef0dc8f`'s sources (90 files, 284,465 B; vite 7.3.7, webpack 5.111.1, sass 1.108.2, postcss 8.5.33), exits 0 on every script. It prints a rebuild at K2, K5 and K8 and at L1 (both chains), at T1, at V6 (`ws update [js-update /styles/main.uxdsl?uxdsl&lang.css]`), at W1 (`ws full-reload`, then 200; flag 1), and at B6, C1 and C2 (BUNDLE_END; C1's CSS is `7715671a50`, equal to B0's). Every successful hash is as on the base (`f1c987b600`, `aa63d11702`, `7715671a50`, `4b3c626800`, `64940e8e47`). Errors carry `loc` and a frame, and the theme error has neither. webpack's text is `styles/parts/_card.uxdsl:1:16: UXD_SASS: Expected expression.`, then the indented frame, with no stack line. V9 (`modules []`) and B9 (`nothing`) are unchanged. style-loader's failed bundles now differ from §4.3's (K1 `d2f5b14bc7` 18841 B, K4 `6b8f4cf036` 18771 B, K7 `66ef2406b1` 18778 B, first-fails K0 `8df247dab6` 19905 B), because the thrown module embeds the new message, which has no stack. `pgrep` afterwards finds nothing |
+| AC9 | `npm test`: run 1 on `ef0dc8f` exited 1 (T1, fixed in `f769c95`). Run 2 on `514d067` exited 1 (`MIG-B9-20: build --watch counts the theme over the last result of every entry`, `waitFor timed out` after 605 s, outside this story, during a suspension). Run 3 on `59f1706` exited 0, with 0 `not ok` and the tmpdir guard passing. `npm run verify:1.0 -- --skip-playground-walk`: run 1 exit 0 (71/71). Run 2 exit 1 (N-04's vite-adapter fixture exited 1, and `cssmod` was ended by a signal, both during that suspended, loaded window; the same `verify:vite-adapter` passed alone in the same gate run). Run 3 on `59f1706` exit 0 (`71/71 automated checks passed`) |
+
+**Other gates.** `npm run verify:playground-browser` (real Chrome): run 1 and run 2 exit 0 (`pages loaded: 380`, `PASS: no console errors, no UXDSL warnings, …`). `node --test scripts/no-history-comments.test.js`: 4 pass. `plugin-option-parity.test.js`: 5 pass. `node fixtures/parity/run.js`: 10 cases PASS.
+
+**CI.** Recorded in PR #96's closure comment. The first run (43726201875, on `514d067`) failed T2 to T4 on ubuntu, fixed in `8f0815c`. The run on `59f1706` (43732946338) passed `npm test`.
+
+**Not run, or not a pass.** Vite 6 was not run. There was no Linux or Windows reproduction beyond CI's ubuntu job. The CLI's §4 steps (S10, F1, S13), C6 to C9 and AC4 to AC6 are MIG-B9-19's. `npm test` runs 1 and 2 and `verify:1.0` run 2 are failures, recorded above, not passes.
 
 ## 15. Findings and follow-ups
 
@@ -2008,3 +2045,14 @@ The review mutated the built adapters one change at a time and ran the new tests
 - **T1's new break made it flaky under load (found by the deliverer's `npm test`; fixed in the test).** The first `npm test` after the change above failed T1 once (`style: the build after the partial is fixed: no webpack build within 20 s`), and 2 of 5 runs of `node --test test/webpack/*.test.js` failed it at load average 15 to 27: once the build after the break had no error, once the build after the fix still had the break's error. Both are an extra webpack build of the module from before the edit took effect, taken by the test as the build that carries the edit. The test from before the change passed 6 of 6 runs under the same load, and 10 of 10 instrumented runs of the new one passed, so the cause was not pinned down. T1's two waits now pass over builds that do not show the edit (`next(step, accept)`: the break's wait wants `Undefined variable.`, the fix's wants no error), and a wait that times out names the builds it passed over. The recovery claim is unchanged: without the last-good record no build without errors arrives, and T1 still times out. Afterwards, 8 runs of `node --test test/webpack/*.test.js` at load average 10 to 37: T1 passed 7. In the eighth, its first build timed out after the test had run for 909 s, and in three runs MIG-B9-20's watch test timed out after 510 to 991 s. Those durations mean the host was suspended, not that the tests failed. With the record removed, T1 still fails (`extract: the build after the partial is fixed: no webpack build within 20 s`).
 - **Flag 4 carried out.** MIG-B9-25 merged first (PR #94, merged into this branch with `99f6a82`), so the two new test files now make their directories with its `temporaryDirectory` helper (`test/helpers/temporary-directory.js`). They keep their own last-in-first-out cleanup, so a watcher or server closes before its project is removed. A project is removed when its test passes, and kept with `temporary directory kept: <path>` printed when it fails, as the helper does. Both files leave `TMPDIR` empty (10 of 10 pass).
 - **The same extra build on CI's ubuntu runner, in T2 to T4 (found by PR #96's first CI run; fixed in the tests).** Run 43726201875 failed T2 (the build after the module `@use`s the broken partial had no error), T3 (the build after the delete had no `Can't find stylesheet to import.`) and T4 (the build after the theme fix still had `UXD_THEME_INVALID`). The cause is the same as T1's: an extra build from before the edit, taken as the build that carries it. Every wait after an edit now passes over builds that do not show the edit (`clean`, or the expected error). `quiet(step, ms, file)` now fails when the watcher reports the unrelated file changed, through webpack's `invalid` hook or a build's `compiler.modifiedFiles`, rather than on any build in the window, so an extra build from the previous edit no longer trips it. The negative controls keep their meaning: a loader that registered the unrelated file would make the watcher report it. Locally, three runs of `node --test packages/uxdsl/test/webpack/*.test.js` passed, and `TMPDIR` was left empty.
+
+### Delivery of 2026-11-15
+
+New facts and follow-ups from the delivery. Each follow-up has a proposed story id.
+
+- **F3 is not taken here, so it is MIG-B9-96 (decision 19 of 2026-11-15).** Giving the `CssSyntaxError` that `compile()` throws a `code` changes `compile.ts` or `diagnostics.ts`, which this story's must-stay list forbids. Under decision 19 it is registered as MIG-B9-96 when this story merges. Proposed: **MIG-B9-96**, as the decision says.
+- **webpack runs an extra build of a module edited just before a build starts (follow-up for the test helpers).** It was seen locally under load and on CI's ubuntu runner. The new tests pass over it (§15, the two blocks above). The older watch tests in `test/webpack/loader.test.js` (MIG-B9-20's `in webpack watch mode the count covers modules the rebuild kept`) still take the next build as the one that carries an edit. Proposed: fold the same `next(step, accept)` into those tests, in **MIG-B9-19** (the story on watch tests) or a new story under an id the owner assigns (MIG-B9-98 was proposed for, and not given to, another item: decision 25).
+- **The machine sleeps during long runs.** Three `npm test` and three `verify:1.0` runs were needed, and every failure outside this story's tests had a duration of 500 to 990 s. A workflow that runs `npm test` on this machine should keep it awake (for example `caffeinate -i`). For the owner; no story.
+- **The fixtures' `packAndInstall` directories (flag 3)** stay in `TMPDIR` after `verify:vite-adapter`, `verify:webpack-adapter` and `verify:1.0`. They were removed by hand each time. MIG-B9-25's question 2 proposes the follow-up, which `fixtures/lib/tarball-consumer.js` would take. Proposed: the story decision 15's routing names, or **MIG-B9-25's follow-up**.
+- **Vite 6 is untested.** `hotUpdate` is the hook on Vite 6 and later, and it was measured only on 7.3.7 and 7.3.8. Proposed: an install of `vite@^6` in `fixtures/vite-adapter`, in **MIG-B9-64** (on `vite.ts`) or a new story.
+
