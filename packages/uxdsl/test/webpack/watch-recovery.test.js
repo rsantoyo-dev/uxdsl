@@ -11,7 +11,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const webpack = require('webpack');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
@@ -46,7 +46,7 @@ function cleanup(t, fn) {
 }
 
 /**
- * A project in its own temporary directory, removed when the test ends. Every
+ * A project in its own temporary directory, removed when the test passes. Every
  * file and directory is dated ten seconds back, so a watcher started next does
  * not take them for edits. `dist` exists beforehand: webpack creating it in the
  * first build would change the project directory, which webpack watches, and
@@ -55,8 +55,12 @@ function cleanup(t, fn) {
  * and a project created next to a watched one would look changed to its own.
  */
 function project(t, files) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-webpack-recovery-')));
-  cleanup(t, () => fs.rmSync(dir, { recursive: true, force: true }));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-webpack-recovery-'));
+  // Removed once the watchers and servers registered after it are closed, when the test passes; kept, with its path printed, when it fails.
+  cleanup(t, () => {
+    if (t.passed) fs.rmSync(dir, { recursive: true, force: true });
+    else t.diagnostic(`temporary directory kept: ${dir}`);
+  });
   const past = new Date(Date.now() - 10000);
   fs.mkdirSync(path.join(dir, 'dist'));
   fs.utimesSync(path.join(dir, 'dist'), past, past);

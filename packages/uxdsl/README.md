@@ -91,7 +91,7 @@ a function called by its bare name stays in the CSS, with no error);
 with `@import`. `uxdsl/vite` and `uxdsl/webpack` take the same `sass` option,
 which `compile()` validates, and report each warning as
 `<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
-webpack's `rootContext`; after a failed compile, both rebuild when the file
+webpack's `rootContext`; after a failed compile, both rebuild the module when the file
 at fault, a file the module's last good compile loaded or the theme file is saved, and
 their errors carry the location and the frame (Vite's `loc` and `frame`,
 webpack's message); `uxdsl/webpack` hands

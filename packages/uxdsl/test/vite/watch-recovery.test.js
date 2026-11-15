@@ -10,7 +10,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 
 const mod = require('../../dist/vite.js');
@@ -38,10 +38,14 @@ function cleanup(t, fn) {
   cleanups.get(t).push(fn);
 }
 
-/** A project in its own temporary directory, removed when the test ends. Every file and directory is dated ten seconds back, so a watcher started next does not take them for edits. */
+/** A project in its own temporary directory, removed when the test passes. Every file and directory is dated ten seconds back, so a watcher started next does not take them for edits. */
 function project(t, files) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-vite-recovery-')));
-  cleanup(t, () => fs.rmSync(dir, { recursive: true, force: true }));
+  const dir = fs.realpathSync(temporaryDirectory('uxdsl-vite-recovery-'));
+  // Removed once the watchers and servers registered after it are closed, when the test passes; kept, with its path printed, when it fails.
+  cleanup(t, () => {
+    if (t.passed) fs.rmSync(dir, { recursive: true, force: true });
+    else t.diagnostic(`temporary directory kept: ${dir}`);
+  });
   const past = new Date(Date.now() - 10000);
   const all = {
     'index.html': '<!doctype html><html><body><script type="module" src="/main.js"></script></body></html>\n',
