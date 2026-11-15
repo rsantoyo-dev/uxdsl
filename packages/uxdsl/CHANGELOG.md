@@ -116,6 +116,34 @@ them. See `docs/releases/0.5.0-beta.9.md`.
 - None, except the CLI case under Fixed: compiled output and the theme CSS
   are otherwise byte-identical.
 
+### The canonical-grammar codemod rewrites a directive's arguments in one run (MIG-B9-18)
+
+`scripts/codemod-canonical-grammar.js` reads a directive's arguments to the
+matching parenthesis and removes their quotes before its other rewrites, so a
+directive reaches its canonical spelling in the first run. Before:
+
+- `@ds-surface(contained, radius(2), shadow(1))` was left half done, as
+  `@ds-surface(contained radius(2), shadow(1))`, and
+  `@ds-surface contained radius(2);` was not rewritten at all;
+- `@ds-surface(palette("primary-main"))` and
+  `@ds-surface(contained radius("full"))` took two runs, and an ambiguous
+  quoted key was reported only from the second run;
+- a JSON string holding `@ds-button(\"outlined\", primary)` became
+  `@ds-button(\outlined\ primary)`, which `JSON.parse` rejects.
+
+Each is now complete after one run: `@ds-surface(contained radius(2) shadow(1))`,
+`@ds-surface(contained radius(2))`, `@ds-surface(palette(primary.main))`,
+`@ds-surface(contained radius(pill))` and `@ds-button(outlined primary)`, an
+escaped quote removed with its backslash. A second run changes nothing for
+them too, and prints the first run's `unresolved:` lines, an ambiguous key
+with an alpha inside a directive included (reported as it is written after the
+first run, `palette(brand-blue-main 0.5)`). A directive whose arguments hold no
+quote and no function call is rewritten as before.
+
+### Visual changes
+
+None: the codemod is a script, and compiled output is byte-identical.
+
 ### The theme is emitted only at `@uxdsl theme;`; `includeTheme` is removed (MIG-B9-20)
 
 ### Added

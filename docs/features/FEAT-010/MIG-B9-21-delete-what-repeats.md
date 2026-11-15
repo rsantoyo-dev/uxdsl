@@ -277,6 +277,15 @@ Raised by the review of the decisions of 2026-11-13, on `5a041fc`. Under the own
 
    Recommendation: (a). It keeps §5's order and makes decision 8's premise true; the critical path is the same under both, since MIG-B9-26 waits for all three stories. The index assumes (a) until the owner answers.
 
+### Owner decisions of 2026-11-13, on the open questions above (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 17 and 18 of 2026-11-13. PR #89 put Q1 and Q2 above to the owner as its questions 6 and 7. Under the owner's standing instruction of 2026-11-10, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"), they were not put to the owner one by one: each recommended option is the owner's decision of 2026-11-13, and the owner may still override either. This record is in English. Both are the option this story's header and the index already assumed, so nothing changes; this story is being implemented with both applied.
+
+- **Q1 (decision 17): (a).** This story writes one sentence next to each of the "no switch" lines of `cli.md` (`cli.md:416` on `5a041fc`), `vite.md` (`vite.md:153`) and `webpack.md` (`webpack.md:141`), documenting decision 2's out-of-band case (a theme delivered through SSR `generateThemeCss`, `applyTheme` or another build still warns "none"), with its F8 edit of `cli.md`. `vite.md` and `webpack.md` are in the header's Shares, as they already are on `d1e07a3`.
+- **Q2 (decision 18): (a).** The index's §5 order stands: MIG-B9-25 and MIG-B9-16 wait for this story on `packages/uxdsl/test/cli/**` and `packages/playground-nextjs/**`.
+
+For information, from the other decisions of the same list: MIG-B9-18 does not wait for this story (decision 15), and MIG-B9-39's split (decision 28) leaves MIG-B9-39 waiting for this story alone on its files (`vite.ts`, `webpack.ts`, `vite.md`, `webpack.md`), while MIG-B9-19, its CLI part, waits for it on `bin/uxdsl.js`, `test/cli/**`, `cli.md` and the playground.
+
 ### Facts re-measured on `d1e07a3` (2026-11-13)
 
 Re-measured by the delivery's scout on `d1e07a3` (`feat/beta9` with waves 0 and 1 and MIG-B9-20, 22, 23 and 29 merged), before any code was written (README §1 item 4). Each item is a finding: the old line above stays as written, and this block gives the line as it stands on the base. None of them changes a contract line or an acceptance criterion.

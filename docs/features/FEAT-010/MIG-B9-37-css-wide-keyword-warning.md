@@ -777,7 +777,8 @@ BASE below is `git merge-base HEAD origin/feat/beta9`.
 Owner checks, never marked PASS by the agent:
 
 - Answer §15's Q1 to Q5 before the story starts. The contract assumes
-  Q1 (a), Q2 (a), Q3 (a), Q4 (a) and Q5 (a) until then.
+  Q1 (a), Q2 (a), Q3 (a), Q4 (a) and Q5 (a) until then. (Answered
+  2026-11-13, decisions 19 to 23, §15, as assumed.)
 
 ## 10. Generated artifacts and guards
 
@@ -1028,3 +1029,15 @@ answer changes nothing in §5.
    762–771 and 1027–1028 on `5a041fc`) say a theme warning is printed once, in the form that names
    its path; (a) applies that design to the new warning. The contract
    assumes (a).
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 19 to 23 of 2026-11-13. PR #89, which added this file, put its Q1 to Q5 to the owner as its questions 8 to 12. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). The questions were not put to the owner one by one: under that instruction each recommended option is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English. Each decision is the option the contract assumed, so nothing in §5, the header's Shares or the tests changes.
+
+- **Q1 (decision 19): (a).** The warning is located at the key path, from `validateTheme`, and every path relays it as it relays `UXD_THEME_FAMILY`.
+- **Q2 (decision 20): (a).** A new catalogued code, `UXD_THEME_KEYWORD`, owner `theme` (C7).
+- **Q3 (decision 21): (a).** Only a value that is itself a keyword warns; a responsive expression whose group is a keyword does not. AC3's count is the one stated for (a).
+- **Q4 (decision 22): (a).** `generateThemeCss` is unchanged (C6); a caller that wants the warning calls `validateTheme` on the same theme, and the README says so.
+- **Q5 (decision 23): (a).** The CLI prints it once per process, at its key path, through `warnUnknownThemeKeys`, whose filter is extended to the new code; `bin/uxdsl.js` stays in Shares.
+
+One consequence of decision 28 of 2026-11-13, for the header, which this block does not edit: MIG-B9-39 was split, and its CLI part is MIG-B9-19, so the story this one blocks on `bin/uxdsl.js` is MIG-B9-19, not MIG-B9-39, and MIG-B9-06 (decision 29) follows on that file too. The index's §5 and §7 follow.

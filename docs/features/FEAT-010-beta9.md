@@ -449,6 +449,74 @@ Two facts checked on `5a041fc` while recording, not decisions:
 - The delivery places the first stale CHANGELOG passage in MIG-B9-22's subsection, "about line 384". On `5a041fc` it is `packages/uxdsl/CHANGELOG.md:423–425` ("The Next.js PostCSS setup is unchanged (`'uxdsl/postcss': { includeTheme: false }`, no `@uxdsl theme;`)"). It sits in MIG-B9-14's subsection, "The CLI, Vite and webpack on the Sass pipeline (MIG-B9-14)" (heading at line 362), which commit `e51b775` added. The second passage is DE-9's "Added: `@uxdsl theme;`" subsection (heading at line 1025; `includeTheme` at lines 1027, 1030 and 1031).
 - Decision 2 keeps the warning "and documents it", but no shipped document states the out-of-band case on `5a041fc`. `cli.md`, `vite.md`, `webpack.md` and `compile.md` (the theme-warning passages), `migration.md`'s new beta.9 section, the package README and the CHANGELOG's MIG-B9-20 subsection were searched. What they say is that the warning cannot be silenced: "There is no switch to silence it." (`cli.md:416`) and "There is no switch to silence the warning." (`vite.md:153`, `webpack.md:141`). This record does not assign the missing sentence to any story; who writes it is an open question for the owner, Q1 of MIG-B9-21's §15.
 
+PR #89 (merged into `feat/beta9` as `d1e07a3` on 2026-11-13) wrote the
+story files of MIG-B9-18, 37, 38 and 39, and its body put 22 numbered open
+questions to the owner: the "Open questions for the owner" of MIG-B9-18's
+§15 (its Q1 to Q5), MIG-B9-21's (Q1, Q2), MIG-B9-37's (Q1 to Q5),
+MIG-B9-38's (Q1 to Q4) and MIG-B9-39's (Q1 to Q6), in that order. They fall
+under the owner's standing instruction of 2026-11-10, quoted above,
+verbatim:
+
+> fusiona todo.. y preguntas como recomendadas, y sgeuimos
+
+("merge everything, and the questions as recommended, and let's keep
+going.") They were not put to the owner one by one: under that instruction
+each question's recommended option below is the owner's decision of
+2026-11-13, and the owner may still override any of them. PR #89's body
+listed six of them as recommendations that widen a registration, for the
+owner to look at before they apply: its questions 1, 5, 13, 17, 18 and 19,
+which are decisions 12, 16, 24, 28, 29 and 30 here. This record is in
+English. The decisions continue this list's numbering, as decisions 12 to
+33, in PR #89's order, so PR #89's question n is decision n + 11 of
+2026-11-13. The lead-in above was written for decisions 1 to 11: its "No new
+story id is registered" and its four stories stay true of those eleven.
+Decisions 28 and 29 register two story ids, MIG-B9-19 and MIG-B9-06. The
+standing instruction assigns no id, so the recorder took them, as each
+decision says, and the owner may renumber them. Six stories carry an "Owner
+decisions of 2026-11-13" block for these decisions at the end of their §15:
+MIG-B9-18, 19, 21, 37, 38 and 39.
+
+MIG-B9-18 (its §15, Q1 to Q5; PR #89's questions 1 to 5):
+
+- **Decision 12 — Only the dashed-key rewrite, or every token rewrite, after the quotes are removed (Q1).** (b): every token rewrite applies to a directive's arguments after the quotes are removed, so a quoted `radius("full")` (F9) is finished in one run too. C6 and T6 are added, and C1 loses its one exception. It widens decision 36 of 2026-11-10's wording ("It runs the dashed-key rewrite on the arguments after the quotes are stripped"); the story's contract had assumed (a). Decision 35 of 2026-11-10's claim, "a second run changes nothing", then holds for every input when beta.9 ships.
+- **Decision 13 — A comma inside a nested call (Q2).** (a), as the contract assumed: BASE's rule, every comma inside the directive's parentheses becomes a space, nested ones included.
+- **Decision 14 — What "leaves a JSON string escape intact" means (Q3; F7).** (a), as the contract assumed: an escaped quote in a directive's arguments is removed with its backslash, as a plain quote is; no escape is split, and the JSON stays valid.
+- **Decision 15 — Does MIG-B9-18 wait for MIG-B9-21 (Q4)?** (a): no, it starts now. MIG-B9-18 edits no file under `packages/uxdsl/src` or `bin`, which MIG-B9-21's K7 rewrites, and shares only the append-only CHANGELOG and package README with it; decision 36 of 2026-11-10 names only MIG-B9-29, merged, as its dependency. The story had assumed (b), the index's §7 sentence "every wave-3 story waits for MIG-B9-21" as written. Its header's Depends on and Base drop MIG-B9-21, and the index's §7 records MIG-B9-18 as the one exception to that sentence.
+- **Decision 16 — F3's form without parentheses (Q5).** (b): both of F3's forms, the comma list in parentheses and `@ds-surface contained radius(2);`. C3's bullet for the form without parentheses, T2's `.b` and `.b2` cases and AC2's `.b` line are part of the contract. It widens decision 36 of 2026-11-10's paraphrase ("rewrites a comma list with function arguments in one run (F3)"); the contract had assumed (a).
+
+MIG-B9-21 (Q1, Q2; PR #89's questions 6 and 7):
+
+- **Decision 17 — Who documents decision 2's out-of-band case (Q1).** (a), as the story assumed: MIG-B9-21 writes one sentence next to each of the "no switch" lines of `cli.md`, `vite.md` and `webpack.md` ("There is no switch to silence it.", `cli.md:416`; "There is no switch to silence the warning.", `vite.md:153` and `webpack.md:141`, on `5a041fc`), with its F8 edit of `cli.md`. `vite.md` and `webpack.md` are in its Shares, as they already are on `d1e07a3`. MIG-B9-21 is being implemented with this answer applied. This settles the open question the second fact above recorded.
+- **Decision 18 — Who waits for whom on the files decision 8 adds (Q2).** (a), as the index assumed: the index's §5 order stands, and MIG-B9-25 and MIG-B9-16 wait for MIG-B9-21 on `packages/uxdsl/test/cli/**` and `packages/playground-nextjs/**`.
+
+MIG-B9-37 (Q1 to Q5; PR #89's questions 8 to 12), each (a), as the contract assumed, so §5 of the story does not change:
+
+- **Decision 19 — Where the warning is located (Q1).** (a): the key path, from `validateTheme`, relayed by every path as `UXD_THEME_FAMILY` is.
+- **Decision 20 — The code (Q2).** (a): a new catalogued code, `UXD_THEME_KEYWORD`, owner `theme`.
+- **Decision 21 — A keyword that is the whole of a breakpoint group (Q3).** (a): only a value that is itself a keyword warns.
+- **Decision 22 — `generateThemeCss` (Q4).** (a): unchanged; a caller that wants the warning calls `validateTheme` on the same theme, and the README says so.
+- **Decision 23 — How the CLI prints it (Q5).** (a): once per process, at its key path, by `warnUnknownThemeKeys`, whose filter is extended to the new code; `bin/uxdsl.js` stays in the story's Shares.
+
+MIG-B9-38 (Q1 to Q4; PR #89's questions 13 to 16):
+
+- **Decision 24 — Which hosts print it (Q1).** (a), as the contract assumed: `compile()` reports it in `warnings`, so the CLI, `build --watch`, `uxdsl/vite`, `uxdsl/webpack` and any direct caller print it, located. It goes beyond the registered title's word "CLI", so the story is retitled to say what the answer makes it: "A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS". The title registered on 2026-11-08, "A located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS", is recorded in the story's §15.
+- **Decision 25 — The code (Q2).** (a): `UXD_PLAIN_IMPORT`, owner `compiler`.
+- **Decision 26 — Which URLs (Q3).** (a): the URL's path, before `?` or `#`, ends with `.uxdsl`, `.scss` or `.sass`, compared without regard to case, for every scheme.
+- **Decision 27 — The byte count (Q4).** (b), as the contract assumed: the `(<n> bytes)` fix rides along, two `Buffer.byteLength` expressions in `bin/uxdsl.js`.
+
+MIG-B9-39 (Q1 to Q6; PR #89's questions 17 to 22):
+
+- **Decision 28 — One M story, or two S stories (Q1).** (b), a split into two S stories, as Q1 (b) describes; the contract had assumed (a), one M story.
+  - MIG-B9-39 keeps the adapters: C1 to C5, T1 to T10, AC1 to AC3, and AC7 to AC9 for its part. It shares only `vite.ts`, `webpack.ts`, `vite.md`, `webpack.md`, the two adapter fixtures and the append-only rows, so under the index's §7 it waits for MIG-B9-21 alone on its files.
+  - The second story, the CLI and the tests, C6 to C9, T11 to T14, AC4 to AC6, and AC7 to AC9 for its part, is registered as MIG-B9-19, "The CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed": wave 3, S, decision gate none, depends on MIG-B9-14, 21 and 22 (MIG-B9-39's registration); it is on `bin/uxdsl.js`, `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`, as MIG-B9-39 was; branch `feat/b9-19-cli-watch-recovers`. The title given to the recorder, "… and its watch test is stable", was adjusted: C8 makes the two CI-flaky tests diagnosable and C9 makes the captures check name the differing line, and neither promises stability (decision 32).
+  - Each keeps its C-n, T-n and AC-n as numbered in MIG-B9-39, and the "must stay byte-identical" list applies to both. Neither story depends on the other: they share only the append-only CHANGELOG and package README.
+  - The id: the owner assigns ids, and the standing instruction does not, so the recorder took the first free id in the 1x range, 19, as MIG-B9-17 and 18 had been taken. The owner may renumber.
+- **Decision 29 — The CLI watch's four older gaps (Q2).** (a), as the contract assumed: a separate story, registered as MIG-B9-06, "The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts". It covers MIG-B9-14 §15's four gaps (the queued selective batch that runs outside `building`; a glob root or plain `watch` path deleted and re-created; a file modified after Dart Sass read it, during the build that first loads it; a missing partial created where no pattern matches), the same class in the adapters (a partial that never existed, created later), and MIG-B9-22's uncaught error while a recreated watcher starts. Wave 3, S, decision gate none, after MIG-B9-19 and, for the adapters' class, MIG-B9-39; on `bin/uxdsl.js`, `packages/uxdsl/test/cli/**` and `cli.md`, provisionally until its story file states its Owns and Shares. Status "Draft (story file to be written; registered by decision 29 of 2026-11-13)". The id: the 1x range has no free id after 19, so the recorder took the lowest free id, 06; ids name stories, not waves (MIG-B9-17 is in wave 2 and MIG-B9-18 in wave 3). The owner may renumber. The fourth gap's documented limit (`cli.md`'s Watch mode, accepted by MIG-B9-14's flag 15) stays until MIG-B9-06 fixes it.
+- **Decision 30 — Two extensions of "the last good dependencies and `err.file`" (Q3).** (a), both, as the contract assumed: (i) the CLI follows the file a failed build names (C6, now MIG-B9-19's), and (ii) the adapters also register the discovered theme file's tree on a failed compile, the first included (C1 (c), C2 (c), C3 (d), MIG-B9-39's). It widens the registration's words "the adapters re-register the last good dependencies and `err.file`".
+- **Decision 31 — The path in webpack's error text (Q4).** (a): relative to `rootContext`, with the frame and no stack (C5, MIG-B9-39's).
+- **Decision 32 — When the flake and the captures count as done (Q5).** (a): C7 and C8 for the test and C9 for the captures, AC5's and AC6's stress runs, and the PR's CI runs; a later occurrence is recorded with its named step by the story whose run sees it, and routed by the owner. It now concerns MIG-B9-19.
+- **Decision 33 — The atomic-replace watch failure seen once on CI, Dependabot's PR #84 (Q6).** (a): out of scope for MIG-B9-39 and MIG-B9-19; the owner routes it. Q6 (a) names MIG-B9-06 only as an example ("for instance to Q2's story"), so no story is assigned it here.
+
 ## 3. Scope, in waves
 
 The stories are grouped in waves. A wave is an order, not a release: under
@@ -464,7 +532,7 @@ index's §5 sits there.
 | 0 | Housekeeping and validation: numbering, dependencies, `main` proven on a real project, the language refuses near-misses, byte-preserving plugin. | MIG-B9-01 to 05 | `0.5.0-beta.9` |
 | 1 | The SCSS superset: tests first, the protect pass, Dart Sass with the `.uxdsl` importer, `compile()` on the new pipeline, the CLI and adapters, the documentation. | MIG-B9-10 to 15 | `0.5.0-beta.9` |
 | 2 | One source of truth, less code: the theme at the marker only, deletions, `build --watch` keeps the entry; `compile()` within 1.5× of Dart Sass. Registered on 2026-11-04: the plugin's fixed per-build costs, the suites remove their temporary directories, dotted near-misses and `@debug` through `compile()`, `uxdsl/postcss` in a PostCSS chain, CI on Windows, an idempotent codemod. Registered on 2026-11-08: the playground's `/docs/language` page on the superset. Registered on 2026-11-10, by splitting MIG-B9-26: the silent cases of `@use`'s module isolation warn. | MIG-B9-16, MIG-B9-17, MIG-B9-20 to 29 | `0.5.0-beta.9` |
-| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. | MIG-B9-18, MIG-B9-30 to 39 | `0.5.0-beta.9` |
+| 3 | Output-changing decisions, each behind its DEC: `@media (--lg)`, scoped palettes, one `extends` rule for roles and typography, focus, canvas-tone contrast warnings, `:user-invalid`. Registered on 2026-11-04: a located warning for a CSS-wide keyword as a theme token value. Registered on 2026-11-08: a located CLI warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS; every host's watch recovers after a failed compile. Registered on 2026-11-10, from MIG-B9-29's delivery (decision 36): the codemod's directive-argument rewrite is complete in one run. On 2026-11-13, the plain-`@import` warning was retitled "a located warning", since every host prints it (decision 24), and two stories were registered: by splitting MIG-B9-39 (decision 28), the CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed (MIG-B9-39 keeps the adapters); and the CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts (decision 29). | MIG-B9-06, MIG-B9-18, MIG-B9-19, MIG-B9-30 to 39 | `0.5.0-beta.9` |
 | 4 | The playground as reference implementer: the design-system layer, one demo frame and one editor, the five principles live, nothing hardcoded. Registered on 2026-11-09, first in the wave: a deterministic visual comparison harness. | MIG-B9-40 to 44 | `0.5.0-beta.10` |
 | 5 | Documentation and presentation: README and quick start, AGENTS.md and CONTRIBUTING.md, migration guide in English, maintenance signals, "Why UXDSL", the VS Code extension. | MIG-B9-50 to 55 | `0.5.0-beta.10` (MIG-B9-53 is merged already) |
 | 6 | Tools for the adoption ladder: `doctor`, `audit` and `migrate --suggest`, the generated reference, `explain` and hover, `emit: 'used'`, the container note. Registered on 2026-11-10, last in the wave: CI on Windows, part two (parity, the consumer fixtures and the shims). | MIG-B9-60 to 66 | `0.5.0-beta.10` |

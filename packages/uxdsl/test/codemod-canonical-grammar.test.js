@@ -109,8 +109,8 @@ function plant(ext, lines) {
     case '.md': case '.mdx':
       return `# Fixture\n\n\`\`\`css\n${body}\`\`\`\n`;
     case '.json':
-      // A double quote inside a JSON string is an escape (`\"`), which the
-      // directive rewrite does not handle; the quoted form uses single quotes.
+      // The quoted form uses single quotes, so the expected JSON holds the same
+      // text as the other files.
       return `${JSON.stringify({ css: lines.map((line) => line.replace(/"/g, "'")) }, null, 2)}\n`;
     default:
       return body;
@@ -365,4 +365,273 @@ test('MIG-B9-29: without --theme, every path given is read, the first one includ
     assert.deepEqual(usage.lines, []);
     assert.match(usage.stderr, /^usage: codemod-canonical-grammar\.js /);
   }
+});
+
+// A theme that makes `brand-blue-main` ambiguous: `brand.blue-main` or `brand-blue.main`.
+const AMBIGUOUS_THEME = { palette: { brand: { 'blue-main': '#1d4ed8' }, 'brand-blue': { main: '#1e40af' } } };
+const AMBIGUOUS = '(ambiguous: brand.blue-main or brand-blue.main)';
+const DIRECTIVE_COUNT = /^ {5}directive arguments ×\d+$/;
+const writeTheme = (dir) => fs.writeFileSync(path.join(dir, 'theme.json'), `${JSON.stringify(AMBIGUOUS_THEME, null, 2)}\n`);
+
+/** Runs the same command again, after ageing every file: nothing is written and nothing is reported but `unresolved:` lines. */
+function assertSecondRunIsNoOp(dir, args, unresolved, what) {
+  const before = age(dir);
+  const second = run(dir, ...args);
+  assert.equal(second.status, 0, second.stderr);
+  assertUnchanged(before, snapshot(dir), what);
+  const expected = [];
+  for (const [rel, lines] of unresolved) if (lines.length) expected.push(`  ${rel}`, ...lines);
+  assert.deepEqual(second.lines.slice(0, -1), expected, `${what}: only the first run's unresolved lines`);
+  const verb = args.includes('--write') ? 'rewritten' : 'would change';
+  assert.ok(lastLine(second.lines).startsWith(`0 file(s) ${verb} (${expected.filter((line) => !line.startsWith('     ')).length} with findings).`), lastLine(second.lines));
+}
+
+const unresolvedOf = (found) => (found ? found.lines.filter((line) => line.startsWith('     unresolved: ')) : []);
+
+test('MIG-B9-18: a quoted palette() or color() argument in a directive is rewritten in the first run', (t) => {
+  const dir = tmp(t);
+  writeTheme(dir);
+  fs.writeFileSync(path.join(dir, 'f8.css'), [
+    '.d { @ds-surface(palette("primary-main")); }',
+    ".e { @ds-button(contained, color('gray-300')); }",
+    '',
+  ].join('\n'));
+  fs.writeFileSync(path.join(dir, 'q.css'), '.q { @ds-surface(contained, palette("primary-main", 0.5)); }\n');
+  fs.writeFileSync(path.join(dir, 'amb.css'), [
+    '.g { @ds-surface(palette("brand-blue-main")); }',
+    '.h { @ds-surface(contained, palette("brand-blue-main", 0.5)); }',
+    '',
+  ].join('\n'));
+
+  const args = ['--write', '--theme', 'theme.json', 'f8.css', 'q.css', 'amb.css'];
+  const first = run(dir, ...args);
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'f8.css'), 'utf8'), [
+    '.d { @ds-surface(palette(primary.main)); }',
+    '.e { @ds-button(contained color(gray.300)); }',
+    '',
+  ].join('\n'));
+  assert.equal(fs.readFileSync(path.join(dir, 'q.css'), 'utf8'), '.q { @ds-surface(contained palette(primary.main 0.5)); }\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'amb.css'), 'utf8'), [
+    '.g { @ds-surface(palette(brand-blue-main)); }',
+    '.h { @ds-surface(contained palette(brand-blue-main 0.5)); }',
+    '',
+  ].join('\n'));
+
+  const f8 = block(first.lines, 'f8.css');
+  assert.equal(f8.header, 'W f8.css');
+  assert.equal(f8.lines.length, 2, f8.lines.join('\n'));
+  assert.equal(f8.lines[0], '     palette()/color() dashed -> dotted ×2');
+  assert.match(f8.lines[1], DIRECTIVE_COUNT);
+  const q = block(first.lines, 'q.css');
+  assert.equal(q.lines[0], '     palette()/color() dashed -> dotted ×1');
+  assert.match(q.lines[1], DIRECTIVE_COUNT);
+  const amb = block(first.lines, 'amb.css');
+  assert.equal(amb.header, 'W amb.css');
+  assert.deepEqual(unresolvedOf(amb), [
+    `     unresolved: palette(brand-blue-main) ${AMBIGUOUS}`,
+    `     unresolved: palette(brand-blue-main 0.5) ${AMBIGUOUS}`,
+  ], 'the first run reports the ambiguous keys');
+  assert.equal(amb.lines.length, 3, amb.lines.join('\n'));
+  assert.match(amb.lines[2], DIRECTIVE_COUNT);
+  assert.equal(summary(first.lines), '3 file(s) rewritten (3 with findings).');
+
+  assertSecondRunIsNoOp(dir, args, [['amb.css', unresolvedOf(amb)]], 'the second run');
+  assertSecondRunIsNoOp(dir, args.filter((arg) => arg !== '--write'), [['amb.css', unresolvedOf(amb)]], 'the preview after it');
+});
+
+test('MIG-B9-18: a directive\'s function arguments are rewritten in one run, with or without parentheses', async (t) => {
+  const dir = tmp(t);
+  fs.writeFileSync(path.join(dir, 'f3.css'), [
+    '.a { @ds-surface(contained, radius(2), shadow(1)); }',
+    '.c { @ds-surface (contained, radius(2), shadow(1)); }',
+    '.l { @ds-surface(',
+    '  contained,',
+    '  radius(2),',
+    '  shadow(1)',
+    '); }',
+    '.b { @ds-surface contained radius(2); }',
+    '.b2 { @ds-surface contained, radius(2), shadow(1); }',
+    '.m { @ds-surface(contained, radius(2, 3), shadow(1)); }',
+    '',
+  ].join('\n'));
+  const expected = [
+    '.a { @ds-surface(contained radius(2) shadow(1)); }',
+    '.c { @ds-surface(contained radius(2) shadow(1)); }',
+    '.l { @ds-surface(contained radius(2) shadow(1)); }',
+    '.b { @ds-surface(contained radius(2)); }',
+    '.b2 { @ds-surface(contained radius(2) shadow(1)); }',
+    '.m { @ds-surface(contained radius(2 3) shadow(1)); }',
+  ];
+
+  const first = run(dir, '--write', 'f3.css');
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'f3.css'), 'utf8'), `${expected.join('\n')}\n`);
+  const found = block(first.lines, 'f3.css');
+  assert.equal(found.header, 'W f3.css');
+  assert.equal(found.lines.length, 1, found.lines.join('\n'));
+  assert.match(found.lines[0], DIRECTIVE_COUNT);
+  assertSecondRunIsNoOp(dir, ['--write', 'f3.css'], [], 'the second run');
+
+  // What the first run writes, where it holds only a role, a size override and
+  // a shadow override, compiles.
+  const postcss = require('postcss');
+  const plugin = require('../dist/plugin');
+  for (const css of expected.filter((line) => !line.includes('radius(2 3)'))) {
+    await postcss([plugin()]).process(css, { from: 'x.css' });
+  }
+});
+
+test('MIG-B9-18: an escaped quote in a JSON or JavaScript string is removed with its backslash, and the string stays valid', (t) => {
+  const dir = tmp(t);
+  // The JSON string holds an escaped double quote in the directive, and a `\n`
+  // escape after it that must stay as it is.
+  const json = '{"css":".c { @ds-button(\\"outlined\\", primary); }\\n.k { a: b; }"}\n';
+  assert.equal(JSON.parse(json).css, '.c { @ds-button("outlined", primary); }\n.k { a: b; }');
+  fs.writeFileSync(path.join(dir, 'f7.json'), json);
+  fs.writeFileSync(path.join(dir, 'f7.css'), '.c { @ds-button("outlined", primary); }\n.k { a: b; }');
+  fs.writeFileSync(path.join(dir, 'f7.js'), "export const css = '.c { @ds-button(\\'outlined\\', primary); }';\n");
+
+  const first = run(dir, '--write', 'f7.json', 'f7.css', 'f7.js');
+  assert.equal(first.status, 0, first.stderr);
+  const rewritten = fs.readFileSync(path.join(dir, 'f7.json'), 'utf8');
+  assert.equal(rewritten, '{"css":".c { @ds-button(outlined primary); }\\n.k { a: b; }"}\n');
+  assert.equal(JSON.parse(rewritten).css, fs.readFileSync(path.join(dir, 'f7.css'), 'utf8'), 'the JSON string is what the same run writes in a .css file');
+  assert.equal(fs.readFileSync(path.join(dir, 'f7.css'), 'utf8'), '.c { @ds-button(outlined primary); }\n.k { a: b; }');
+  assert.equal(fs.readFileSync(path.join(dir, 'f7.js'), 'utf8'), "export const css = '.c { @ds-button(outlined primary); }';\n");
+  for (const rel of ['f7.json', 'f7.css', 'f7.js']) {
+    const found = block(first.lines, rel);
+    assert.equal(found.header, `W ${rel}`);
+    assert.deepEqual(found.lines, ['     directive arguments ×1'], `${rel}'s report`);
+  }
+  assertSecondRunIsNoOp(dir, ['--write', 'f7.json', 'f7.css', 'f7.js'], [], 'the second run');
+});
+
+/** One file of each type the codemod walks, holding `lines`; JavaScript strings escape their single quotes. */
+function plantStrings(ext, lines) {
+  switch (ext) {
+    case '.ts': case '.tsx': case '.js': case '.jsx':
+      return `export const css = [\n${lines.map((line) => `  '${line.replace(/'/g, "\\'")}',`).join('\n')}\n].join('\\n');\n`;
+    case '.md': case '.mdx':
+      return `# Fixture\n\n\`\`\`css\n${lines.join('\n')}\n\`\`\`\n`;
+    case '.json':
+      return `${JSON.stringify({ css: lines }, null, 2)}\n`;
+    default:
+      return `${lines.join('\n')}\n`;
+  }
+}
+
+test('MIG-B9-18: a second --write run changes no file, for directive arguments with quotes, escapes and function calls, in every file type the codemod walks', (t) => {
+  const NAMES = ['ds-surface', 'ds-button', 'DS-INPUT', 'ds-typo'];
+  const FORMS = [(n, a) => `@${n}(${a})`, (n, a) => `@${n} (${a})`, (n, a) => `@${n} ${a}`];
+  const ARGS = [
+    '"primary"', "'outlined'", 'radius(2)', 'radius(2), shadow(1)', 'radius(2, 3)', 'radius("full")',
+    'palette("primary-main")', "color('gray-300')", 'palette("primary-main", 0.5)',
+    'palette("brand-blue-main")', "palette('brand-blue-main', 0.5)", 'palette(brand-blue-main, 0.5)',
+  ];
+  const lines = [];
+  for (const n of NAMES) for (const form of FORMS) for (const a of ARGS) for (const sep of [', ', ' ']) for (const end of ['; }', ' }']) {
+    lines.push(`.x { ${form(n, `contained${sep}${a}`)}${end}`);
+  }
+
+  const dir = tmp(t);
+  writeTheme(dir);
+  const planted = new Map();
+  for (const ext of EXTENSIONS) {
+    planted.set(`g${ext}`, plantStrings(ext, lines));
+    fs.writeFileSync(path.join(dir, `g${ext}`), planted.get(`g${ext}`));
+  }
+  // An unclosed directive parenthesis: the rest of the line is joined into it,
+  // and its quoted key, with or without an alpha, is rewritten in the same run.
+  const unclosed = '.a { @ds-surface(contained\n  background: palette("primary-main");\n}\n.b { @ds-surface(contained\n  background: palette("primary-main", 0.5);\n}\n';
+  fs.writeFileSync(path.join(dir, 'unclosed.css'), unclosed);
+
+  const args = ['--write', '--theme', 'theme.json', '.'];
+  const first = run(dir, ...args);
+  assert.equal(first.status, 0, first.stderr);
+  const unresolved = [];
+  for (const [rel, text] of planted) {
+    assert.notEqual(fs.readFileSync(path.join(dir, rel), 'utf8'), text, `the first run rewrites ${rel}`);
+    const found = block(first.lines, rel);
+    assert.equal(found.header, `W ${rel}`);
+    unresolved.push([rel, unresolvedOf(found)]);
+  }
+  assert.ok(unresolved.every(([, found]) => found.length > 0), 'every file has an ambiguous key to report');
+  assert.equal(summary(first.lines), `${EXTENSIONS.length + 1} file(s) rewritten (${EXTENSIONS.length + 1} with findings).`);
+
+  // The headers come in the order the first run printed them.
+  const order = headers(first.lines);
+  unresolved.sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
+  assertSecondRunIsNoOp(dir, args, unresolved, 'the second run');
+  assertSecondRunIsNoOp(dir, args.filter((arg) => arg !== '--write'), unresolved, 'the preview after it');
+
+  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir, 'g.json'), 'utf8')).css, fs.readFileSync(path.join(dir, 'g.css'), 'utf8').split('\n').slice(0, -1),
+    'the JSON strings are what the same run writes in a .css file');
+  assert.equal(fs.readFileSync(path.join(dir, 'unclosed.css'), 'utf8'),
+    '.a { @ds-surface(contained background: palette(primary.main);\n}\n.b { @ds-surface(contained background: palette(primary.main 0.5);\n}\n');
+});
+
+test('MIG-B9-18: a directive whose arguments hold no quote and no function call is rewritten as before (negative control)', (t) => {
+  const dir = tmp(t);
+  const TABLE = [
+    ['.a { @ds-surface (contained, primary); }', '.a { @ds-surface(contained primary); }'],
+    ['.b { @ds-button outlined, primary; }', '.b { @ds-button(outlined primary); }'],
+    ['.c { @ds-input(outlined,  primary) }', '.c { @ds-input(outlined primary) }'],
+    ['.d { @ds-typo h1 {', '.d { @ds-typo h1 {'],
+    ['.e { @DS-SURFACE contained }', '.e { @ds-surface(contained)}'],
+    ['.f { @ds-surface(contained, ${r}); }', '.f { @ds-surface(contained, ${r}); }'],
+    ['.g { @ds-surface(contained, #{$r}); }', '.g { @ds-surface(contained, #{$r}); }'],
+    ['.h { @ds-surface(contained,primary,2); }', '.h { @ds-surface(contained primary 2); }'],
+    ['.i { a: rounded(2); b: elevation(1); c: radius(full); d: palette(primary-main, 0.5); e: color(gray-300); f: densities(2); }',
+      '.i { a: radius(2); b: shadow(1); c: radius(pill); d: palette(primary.main, 0.5); e: color(gray.300); f: densities(2); }'],
+  ];
+  fs.writeFileSync(path.join(dir, 'g.css'), `${TABLE.map(([input]) => input).join('\n')}\n`);
+  // Arguments separated by a run of spaces; and a function argument before an
+  // interpolation, where the arguments up to the first `)` are joined and the
+  // interpolation is left.
+  fs.writeFileSync(path.join(dir, 'h.css'), '.w { @ds-surface(contained  primary); }\n.h { @ds-surface(contained, radius(2), ${r}); }\n');
+  // A dashed key with an alpha before an interpolation or a call nested three
+  // deep: the arguments up to the first `)` are joined and the key is dotted.
+  const I = [
+    ['.h1 { @ds-surface(contained, palette(primary-main, 0.5), ${r}); }', '.h1 { @ds-surface(contained palette(primary.main 0.5), ${r}); }'],
+    ['.h2 { @ds-surface(palette(primary-main, 0.5), #{$r}); }', '.h2 { @ds-surface(palette(primary.main 0.5), #{$r}); }'],
+    ['.d3 { @ds-surface(contained, palette(primary-main, 0.5), shadow(calc(var(--x)))); }', '.d3 { @ds-surface(contained palette(primary.main 0.5), shadow(calc(var(--x)))); }'],
+  ];
+  fs.writeFileSync(path.join(dir, 'i.css'), `${I.map(([input]) => input).join('\n')}\n`);
+
+  const result = run(dir, '--write', 'g.css', 'h.css', 'i.css');
+  assert.equal(result.status, 0, result.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'g.css'), 'utf8'), `${TABLE.map(([, output]) => output).join('\n')}\n`);
+  assert.equal(fs.readFileSync(path.join(dir, 'h.css'), 'utf8'), '.w { @ds-surface(contained primary); }\n.h { @ds-surface(contained radius(2), ${r}); }\n');
+  assert.equal(fs.readFileSync(path.join(dir, 'i.css'), 'utf8'), `${I.map(([, output]) => output).join('\n')}\n`);
+  assert.deepEqual(result.lines.map((line) => line.trimEnd()), [
+    'W g.css',
+    '     rounded() -> radius() ×1',
+    '     elevation() -> shadow() ×1',
+    '     radius(full) -> radius(pill) ×1',
+    '     palette()/color() dashed -> dotted ×2',
+    '     directive arguments ×7',
+    '     unresolved: densities(…) ×1: define a Density token in the theme and use density(k)',
+    'W h.css',
+    '     directive arguments ×2',
+    'W i.css',
+    '     palette()/color() dashed -> dotted ×3',
+    '     directive arguments ×3',
+    '3 file(s) rewritten (3 with findings).',
+  ]);
+});
+
+test('MIG-B9-18: a quoted radius("full") in a directive becomes radius(pill) in the first run', (t) => {
+  const dir = tmp(t);
+  fs.writeFileSync(path.join(dir, 'rf.css'), '.f { @ds-surface(contained radius("full")); }\n');
+
+  const first = run(dir, '--write', 'rf.css');
+  assert.equal(first.status, 0, first.stderr);
+  assert.equal(fs.readFileSync(path.join(dir, 'rf.css'), 'utf8'), '.f { @ds-surface(contained radius(pill)); }\n');
+  const found = block(first.lines, 'rf.css');
+  assert.equal(found.header, 'W rf.css');
+  assert.equal(found.lines.length, 2, found.lines.join('\n'));
+  assert.equal(found.lines[0], '     radius(full) -> radius(pill) ×1');
+  assert.match(found.lines[1], DIRECTIVE_COUNT);
+  assertSecondRunIsNoOp(dir, ['--write', 'rf.css'], [], 'the second run');
 });

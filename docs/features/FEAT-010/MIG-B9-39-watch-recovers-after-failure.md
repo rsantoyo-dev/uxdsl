@@ -4,15 +4,15 @@
 | --- | --- |
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 3 |
-| Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in MIG-B9-14 §15's follow-ups; §15 asks the owner six questions, and the contract states the option it assumes for each) |
+| Decision gate | None (registered by the decision of 2026-11-08 on MIG-B9-14's flag 16, as proposed in MIG-B9-14 §15's follow-ups; §15 asks the owner six questions, and the contract states the option it assumes for each (answered 2026-11-13, decisions 28 to 33; §15)) |
 | Status | Ready |
-| Size | M. Registered as "S or split by its scout". This file is the first part: the adapters' recovery and error frames, the CLI's recovery from a failed build, the flaky watch-mode test and the stale captures check. The CLI watch's four older gaps that the registration also lists are proposed as a separate story (§15, Q2). Q1 asks whether this file should itself be split into two S stories |
-| Depends on | MIG-B9-14 (merged, PR #71), MIG-B9-22 (merged, PR #76) and MIG-B9-21 (Ready, not started; it follows MIG-B9-20, merged as PR #88), as README §5 says. Under README §7 it also waits for MIG-B9-37 and MIG-B9-38 (`bin/uxdsl.js`); for MIG-B9-25, MIG-B9-17 and MIG-B9-28 (`packages/uxdsl/test/cli/**`); and for MIG-B9-16, 26, 30, 33, 34, 35 and 36 (`packages/playground-nextjs/**`, for `capture-capabilities.js`). §15 lists the rows it must be added to |
-| Blocks | Under README §7: MIG-B9-60, 61 and 63 (`bin/uxdsl.js`, `cli.md`); MIG-B9-64 (`vite.ts`, `webpack.ts`); MIG-B9-40 to 43 (`packages/playground-nextjs/**`). MIG-B9-91 depends on every story of waves 0 to 3 |
-| Base | `feat/beta9` after MIG-B9-21 and MIG-B9-38, and after the earlier stories of each README §7 row above. §3 and §4 were recorded on `5a041fc` (`docs/b9-wave3-story-files`: `origin/feat/beta9` at `cc10de6`, MIG-B9-20 merged, plus story files only; `git diff --stat cc10de6 5a041fc -- packages fixtures scripts .github` is empty). Both are re-run on the base the story starts from, which will include MIG-B9-21 and 38 (§3, "Before starting") |
-| Owns | `packages/uxdsl/test/webpack/watch-recovery.test.js` (new), `packages/uxdsl/test/vite/watch-recovery.test.js` (new), `packages/playground-nextjs/scripts/test-captures-check.cjs` (new) |
-| Shares | `packages/uxdsl/src/webpack.ts`, `packages/uxdsl/src/vite.ts`, `packages/uxdsl/bin/uxdsl.js` (`startWatch`, `runFullBuild`, `runSelectiveBuild`, `loadAndBuildForWatch`), `packages/uxdsl/test/cli/watch-mode.test.js`, `packages/playground-nextjs/scripts/capture-capabilities.js`, `packages/playground-nextjs/package.json` (the `test:captures` script), `fixtures/vite-adapter/run.js`, `fixtures/webpack-adapter/run.js`, `packages/uxdsl/docs/integrations/cli.md` (Watch mode), `vite.md` and `webpack.md`, `packages/uxdsl/CHANGELOG.md` (one subsection under `## 0.5.0-beta.9 — unreleased`), `packages/uxdsl/README.md` (one sentence, lines 89–95) |
-| Output impact | API/CLI: `uxdsl/webpack` and `uxdsl/vite` rebuild after a failed compile when the file at fault is fixed; their errors carry the location and the frame (Vite's `loc` and `frame`; webpack's message); `build --watch` follows the file a failed build names, and prints `[uxdsl] watching for changes...` once its watcher is ready. Compiled output: none |
+| Size | S, by decision 28 of 2026-11-13 (§15, Q1 (b)): this file was split into two S stories. This story keeps the adapters (C1 to C5, T1 to T10, AC1 to AC3, and AC7 to AC9 for its part); the CLI and the tests (C6 to C9, T11 to T14, AC4 to AC6, and AC7 to AC9 for their part) are [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md). Registered as "S or split by its scout". The CLI watch's four older gaps that the registration also lists are MIG-B9-06 (decision 29 of 2026-11-13) |
+| Depends on | MIG-B9-14 (merged, PR #71), MIG-B9-22 (merged, PR #76) and MIG-B9-21 (Ready; its status is README §5's; it follows MIG-B9-20, merged as PR #88), as README §5 says. Under README §7 it waits for MIG-B9-21 alone on its files (`vite.ts`, `webpack.ts`, `vite.md`, `webpack.md`), as Q1 (b) says (decision 28 of 2026-11-13); MIG-B9-20, on those rows, is merged. It does not depend on MIG-B9-19: the two share only the append-only CHANGELOG and package README |
+| Blocks | MIG-B9-06 (decision 29 of 2026-11-13: after this story, for the adapters' class of the older gaps) and MIG-B9-91 (it depends on every story of waves 0 to 3). Under README §7: MIG-B9-64 (`vite.ts`, `webpack.ts`) |
+| Base | `feat/beta9` after MIG-B9-21 (decision 28 of 2026-11-13). §3 and §4 were recorded on `5a041fc` (`docs/b9-wave3-story-files`: `origin/feat/beta9` at `cc10de6`, MIG-B9-20 merged, plus story files only; `git diff --stat cc10de6 5a041fc -- packages fixtures scripts .github` is empty). Both are re-run on the base the story starts from, which will include MIG-B9-21 (§3, "Before starting": its lines for MIG-B9-38, 25, 17 and 28 are MIG-B9-19's since the split, §15) |
+| Owns | `packages/uxdsl/test/webpack/watch-recovery.test.js` (new), `packages/uxdsl/test/vite/watch-recovery.test.js` (new). `packages/playground-nextjs/scripts/test-captures-check.cjs` (T14) is MIG-B9-19's since decision 28 of 2026-11-13 |
+| Shares | `packages/uxdsl/src/webpack.ts`, `packages/uxdsl/src/vite.ts`, `fixtures/vite-adapter/run.js`, `fixtures/webpack-adapter/run.js`, `packages/uxdsl/docs/integrations/vite.md` and `webpack.md`, `packages/uxdsl/CHANGELOG.md` (one subsection under `## 0.5.0-beta.9 — unreleased`), `packages/uxdsl/README.md` (one sentence, lines 89–95). Since decision 28 of 2026-11-13, `packages/uxdsl/bin/uxdsl.js`, `packages/uxdsl/test/cli/watch-mode.test.js`, `packages/playground-nextjs/scripts/capture-capabilities.js`, `packages/playground-nextjs/package.json` and `packages/uxdsl/docs/integrations/cli.md` are MIG-B9-19's |
+| Output impact | API: `uxdsl/webpack` and `uxdsl/vite` rebuild after a failed compile when the file at fault is fixed; their errors carry the location and the frame (Vite's `loc` and `frame`; webpack's message). Compiled output: none. The `build --watch` items this field listed (it follows the file a failed build names, and prints `[uxdsl] watching for changes...` once its watcher is ready) are MIG-B9-19's since decision 28 of 2026-11-13 |
 
 ## 1. Goal
 
@@ -1686,7 +1686,7 @@ again afterwards.
     invariant guard.
 
 Owner checks, separate from the above: Q1 to Q6 answered (§15) before the
-story starts.
+story starts. (Answered 2026-11-13, decisions 28 to 33, §15.)
 
 ## 10. Generated artifacts and guards
 
@@ -1943,3 +1943,29 @@ are listed for the owner in the PR that adds this file.
 
    **Recommendation: (a).** It is a different failure (an output judged
    truncated, not a lost event), seen once. **Until answered:** (a).
+
+### Owner decisions of 2026-11-13 (apply before implementing)
+
+Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13), as decisions 28 to 33 of 2026-11-13. PR #89, which added this file, put Q1 to Q6 above to the owner as its questions 17 to 22. On 2026-11-10 the owner gave a standing instruction for FEAT-010, verbatim, "fusiona todo.. y preguntas como recomendadas, y sgeuimos" ("merge everything, and the questions as recommended, and let's keep going"). The questions were not put to the owner one by one: under that instruction each recommended option is the owner's decision of 2026-11-13, and the owner may still override any of them. This record is in English and lists the decisions that concern this story. Where a decision differs from this story's contract, it rules; the contract is not rewritten here, and the items each decision changes are named below.
+
+- **Q1 (decision 28): (b), a split into two S stories.** It differs from the contract, which assumed (a), one M story.
+  - **What stays here:** the adapters, C1 to C5, T1 to T10, AC1 to AC3, and AC7 to AC9 for their part. This story is S. Under the index's §7 it waits for MIG-B9-21 alone on its files.
+  - **What moved to [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md),** "The CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed" (wave 3, S, Ready; the id was taken by the recorder, and the owner may renumber it): C6 to C9; T11 to T14 (retitled `MIG-B9-19: …`); AC4 to AC6; and, for the CLI's part, AC7 to AC9. MIG-B9-19's file is made from this file's material for them: §2's items on the registration, the CLI, the flake and the captures; §3's lines for `bin/uxdsl.js`, `watch-mode.test.js` and the captures check, and the "Before starting" lines for MIG-B9-38, 25, 17 and 28; §4's setup, `lib.js`, `cli-single.js`, `cli-first-and-builds.js`, the CLI's output, §4.4's CLI rows, §4.5 and §4.6; F1, F2, F5, F6 and F7; and Q1, Q2, Q3, Q5 and Q6.
+  - **The numbers do not change.** Option (b) reads "Each keeps its C-n, T-n and AC-n as numbered here, and the must-stay list applies to both". So §5's "must stay byte-identical" list holds for both stories as written.
+  - **How to read the rest of this file.** §1 to §14 are kept as written, and that text stays valid for this story's part. Where it names C6 to C9, T11 to T14, AC4 to AC6 or the CLI, those items are MIG-B9-19's, and this story does not implement them:
+    - §1's `uxdsl build --watch` and its sentence on the flaky test and the captures check;
+    - §5's hosts sentence, for `uxdsl build --watch`;
+    - §6's CLI items, now with their destinations: the four older gaps and `refreshWatcher` are MIG-B9-06's (decision 29), and the atomic-replace failure is the owner's to route (decision 33);
+    - §7's "CLI, C6", "CLI, C7" and "The captures" items, the CLI's part of "Tests that wait", and the stop rule's "fixing C6 or C7" item;
+    - §8's T11 to T14, and T15's `watch-mode.test.js` tests. T15 here keeps the Vite and webpack files: `test/vite/theme-emission.test.js`, `test/webpack/theme-emission.test.js`, `test/vite/index.test.js` and `test/webpack/loader.test.js`;
+    - §9: AC4 to AC6. AC7 here runs T15's adapter commands as §3 runs them, with the same `git diff`. AC8 here runs the adapters' steps (K2, K5, K8 and L1 on both chains, T1, V6, W1, B6, C1, C2, V9 and B9), and S10, F1 and S13 are MIG-B9-19's. AC9 is in both;
+    - §10's playground row;
+    - §11's `cli.md` item and the `startWatch` comments. The CHANGELOG subsection here covers C1 to C5; MIG-B9-19 writes its own for C6 to C9;
+    - §12's CLI, captures and stress lines.
+  - **§13's flow.** Q1 (a)'s assumption, the light flow with two implementers, no longer arises: each part is an S story delivered by the light flow (decision D1 of 2026-11-04), with one implementer.
+  - **The index.** Its §5 marks this row S and adds MIG-B9-19's. Its §7 takes this story off the rows for `bin/uxdsl.js`, `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`, and puts MIG-B9-19 on them. The header's Size, Owns, Shares, Depends on, Blocks, Base and Output impact follow (done in the PR that records this decision).
+- **Q2 (decision 29): (a)**, as the contract assumed. The CLI watch's four older gaps are registered as MIG-B9-06, "The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts" (wave 3, S, story file to be written). It also covers the same class in the adapters, a partial that never existed and is created later (§4's V9 and B9), and MIG-B9-22's uncaught error while a recreated watcher starts. It comes after MIG-B9-19 and, for the adapters' class, after this story. §5's must-stay item for V9 and B9 holds here, and MIG-B9-06 changes it.
+- **Q3 (decision 30): (a), both extensions**, as the contract assumed. This story's is (ii): the adapters register the discovered theme file's tree on a failed compile, the first included (C1 (c), C2 (c), C3 (d)). Extension (i), C6, is MIG-B9-19's. The decision widens the registration's words "the adapters re-register the last good dependencies and `err.file`".
+- **Q4 (decision 31): (a)**, as the contract assumed. webpack's error text gives the path relative to `rootContext`, then the frame, with no stack (C5).
+- **Q5 (decision 32): (a)**, as the contract assumed. It concerns the flake and the captures, which are now MIG-B9-19's (C7 to C9, AC5, AC6).
+- **Q6 (decision 33): (a)**, as the contract assumed. The atomic-replace failure on PR #84 (F2) is out of scope here and in MIG-B9-19; the owner routes it, and no story is assigned it.
