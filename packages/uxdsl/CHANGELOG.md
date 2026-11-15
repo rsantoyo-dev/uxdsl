@@ -22,6 +22,100 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### One theme resolution per compilation, a failed compile keeps its warnings, and what repeated is deleted (MIG-B9-21)
+
+#### Removed
+
+- **`uxdsl/engine` exports nothing used.** `uxdsl/engine` is exempt from
+  semver. `scripts/measure-exports.js` (in the repository) lists every
+  entry's exports with the files that consume them, outside the package and
+  inside it; the engine exports it found no consumer for are no longer
+  exported: the function `serializeBlock` (still used inside `css-blocks.ts`
+  by `serializeBlocks`, which stays exported) and the types `ResponsiveRule`,
+  `UnknownFunctionOptions`, `ResponsiveAnalysis`, `DensityRule`,
+  `TypographyStyle`, `TypographyDetails`, `SurfaceStyle`, `ButtonRole`,
+  `ButtonTheme`, `InputRole`, `InputTheme`, `RGBA`, `ResolvedColor`,
+  `ContrastMode`, `ContrastPairKind`, `ContrastFamily` and `ContrastAgainst`
+  (still declared, and named in the `.d.ts` files of the declarations that
+  use them). `uxdsl/engine` goes from 111 values to 110. No semver-bound
+  entry loses an export.
+- **`dist/ds-runtime/breakpoints.js`**, a one-line re-export of
+  `DEFAULT_BREAKPOINTS` that the package's `exports` map never reached.
+  `DEFAULT_BREAKPOINTS` is exported by `uxdsl/theme` and `uxdsl/engine`, as
+  before.
+- **A term of the reference checker's ordering that never decided one.** The
+  definition of a custom property the checker reads is the one on the
+  consumer's own selector over one on `:root`, and among those the last in
+  document order; `!important` takes no part, as before.
+
+#### Changed
+
+- **One theme resolution per compilation, in `compile()`.** `compile()` takes
+  two new options, `discoverTheme` (default `true`) and `configRoot` (default
+  the working directory), both ignored when `theme` is given. Without
+  `theme`, it discovers the theme file once, asynchronously, in `configRoot`,
+  and hands that one theme to the reserved-name check and to the plugin,
+  where it used to read the working directory twice, synchronously. The
+  discovered theme file and the local modules it requires are listed in
+  `dependencies`, after the files Dart Sass loaded, as before.
+- **`compile()` accepts a theme file that exports an async function.** It
+  used to throw `… exports an async function` when it discovered one itself;
+  the PostCSS plugin used alone still does, since it discovers synchronously.
+- **`uxdsl/vite` and `uxdsl/webpack` discover through `compile()`.** They pass
+  their root (`configRoot`, or Vite's `root` and webpack's `rootContext`),
+  `discoverTheme` and `theme` to `compile()` and register its
+  `dependencies`, which now carry the theme file, instead of discovering the
+  theme themselves. What they compile and watch is unchanged.
+- **The CLI's "no entry" hint names a remedy that works for every generated
+  entry.** The `UXD_THEME_MARKER` "no entry" warning of `uxdsl build` ended
+  with `For an entry generate-entry wrote, run uxdsl generate-entry again.`;
+  it now ends with
+  `For an entry generate-entry wrote, run uxdsl generate-entry with that entry's options, --out included, but not --no-theme: the entry then loads `@uxdsl theme;` from uxdsl-theme.uxdsl.`
+  A bare `uxdsl generate-entry` replays the `--no-theme` an entry records,
+  and for an entry an earlier release wrote at another path it writes a new
+  entry at the default one, so the old hint left the warning in place in
+  both cases. The warning's coded text, shared with Vite and webpack, and the
+  "more than one" hint are unchanged. The CLI, Vite and webpack pages now say
+  that a theme delivered another way (`generateThemeCss` on the server,
+  `applyTheme`, another build) still gets the "no entry"/"no module" warning.
+- **Source comments state behavior.** The comments in `src/` and
+  `bin/uxdsl.js` say what the code does and why, without naming the story,
+  phase, date or release that introduced it; a repository test now fails on
+  one that does. No code changed with them: compiled output is
+  byte-identical.
+
+#### Added
+
+- **`compile()`'s error carries the warnings produced before it.** Every
+  error `compile()` rejects with has a `warnings` array (`[]` when nothing came
+  first), in the order and at the positions `CompileResult.warnings` would
+  have given: Dart Sass's, then `UXD_FUNCTION_SHADOWED`, then the plugin's. A
+  file whose line 3 calls `map-get()` and whose line 4 is
+  `padding: space(999);` rejects with the `UXD_SPACE_REFERENCE` error, and its
+  `warnings` holds
+  `UXD_SASS_WARNING: [global-builtin] Global built-in functions are deprecated and will be removed in Dart Sass 3.0.0.`
+  at line 3, column 11. Nothing else on the error changes.
+- **The CLI, the Vite plugin and the webpack loader show a failed compile's
+  warnings before its error.** `uxdsl build` prints them as
+  `[uxdsl] Warning: …` lines above `[uxdsl] Error: …` (once each), the Vite
+  plugin calls `this.warn` and the webpack loader
+  `this.emitWarning` for each before failing the module. They used to be
+  lost. The PostCSS plugin used alone is unchanged: the host's PostCSS runner
+  owns its result.
+
+#### Fixed
+
+- **`uxdsl build` no longer uses a theme file from the working directory.**
+  When the build config's directory had no theme file, `compile()` searched
+  the working directory and used a `uxdsl.theme.*` it found there, silently
+  (no `Theme config detected`). The CLI now passes `discoverTheme: false`: the
+  theme is the file next to the build config, or the base theme.
+
+#### Visual changes
+
+- None, except the CLI case under Fixed: compiled output and the theme CSS
+  are otherwise byte-identical.
+
 ### The canonical-grammar codemod rewrites a directive's arguments in one run (MIG-B9-18)
 
 `scripts/codemod-canonical-grammar.js` reads a directive's arguments to the

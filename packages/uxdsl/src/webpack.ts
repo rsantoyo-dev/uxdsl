@@ -32,7 +32,7 @@ import fs from 'fs';
 import path from 'path';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { discoverThemeAsync, removedOptionWarnings } from './config';
+import { removedOptionWarnings } from './config';
 
 /** Loader options: the same theme options as the PostCSS plugin and the Vite
  * plugin, plus `sourceMap` (defaults to webpack's own `this.sourceMap`) and
@@ -175,21 +175,6 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
       countThemeAtFinishModules(compilation);
       compiler.hooks.thisCompilation.tap('uxdsl', countThemeAtFinishModules);
     }
-    const configRoot = options.configRoot || this.rootContext;
-    const discoverTheme = options.discoverTheme !== false;
-
-    // Same discovery rule as the Vite plugin: resolve the theme exactly once
-    // here (the one place that knows the real project root), and always hand
-    // compile() a defined `theme` (`{}` when nothing was found/enabled) so
-    // the PostCSS plugin's own discovery — which only knows `process.cwd()`,
-    // not webpack's `rootContext` — never second-guesses it.
-    let discovered: Awaited<ReturnType<typeof discoverThemeAsync>> = null;
-    if (options.theme === undefined && discoverTheme) {
-      discovered = await discoverThemeAsync(configRoot);
-    }
-    const theme = options.theme !== undefined
-      ? options.theme
-      : (discoverTheme ? (discovered ? discovered.theme : {}) : {});
     // A theme file carries no `references`: they come from
     // the loader options or nowhere. Breakpoints are the theme's `breakpoints`
     // family; there is no loader option for them.
@@ -207,7 +192,12 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     const { css, map, dependencies, warnings, themeEmitted } = await compile(
       { source, from: this.resourcePath },
       {
-        theme: theme as Record<string, unknown>,
+        // compile() discovers the theme file in webpack's `rootContext` (or
+        // `configRoot`) and lists it, with the modules it requires, in
+        // `dependencies`.
+        theme: options.theme,
+        discoverTheme: options.discoverTheme,
+        configRoot: options.configRoot || this.rootContext,
         references,
         sourceMap: wantMap ? 'external' : false,
         to: this.resourcePath,
@@ -224,7 +214,6 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     }
 
     for (const dep of dependencies) this.addDependency(dep);
-    if (discovered) for (const dep of discovered.dependencies) this.addDependency(dep);
     for (const warning of warnings) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
 
     // The loader contract wants a map *object*, not the JSON string
@@ -233,6 +222,8 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     // type mismatch.
     callback(null, css, map ? withAbsoluteSources(JSON.parse(map), this.resourcePath) : undefined);
   } catch (err) {
+    // The warnings compile() produced before it failed come first.
+    for (const warning of (err as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
     callback(err);
   }
 }

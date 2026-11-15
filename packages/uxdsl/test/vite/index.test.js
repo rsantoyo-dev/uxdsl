@@ -144,6 +144,24 @@ test('MIG-B6-20: load() also watches the discovered theme file', async () => {
   assert.ok(ctx.watched.some((f) => path.resolve(f) === path.resolve(themeFile)));
 });
 
+test('MIG-B9-21: the adapter passes configRoot to compile(), which discovers the theme once and returns its files as dependencies', async (t) => {
+  const dir = mkTmpDir();
+  const empty = mkTmpDir();
+  t.after(() => { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true }); });
+  const themeFile = write(dir, 'uxdsl.theme.json', JSON.stringify({ spacing: { 2: '9px' } }));
+  const entry = write(dir, 'panel.uxdsl', '@uxdsl theme;\n.a { padding: space(2); }\n');
+  const ctx = makeCtx();
+  const result = await uxdsl({ configRoot: dir }).load.call(ctx, `${entry}?uxdsl&lang.css`);
+  assert.match(result.code, /--uxdsl__space__2: 9px/);
+  assert.deepEqual(ctx.watched, [entry, themeFile]);
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../../src/vite.ts'), 'utf8'), /discoverTheme(?:Async|Sync)/, 'the plugin leaves discovery to compile()');
+  // Negative control: a configRoot with no theme file compiles against the base theme and watches only the entry.
+  const bare = makeCtx();
+  const base = await uxdsl({ configRoot: empty }).load.call(bare, `${entry}?uxdsl&lang.css`);
+  assert.match(base.code, /--uxdsl__space__2: 0\.25rem/);
+  assert.deepEqual(bare.watched, [entry]);
+});
+
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { pluginonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
@@ -350,4 +368,21 @@ test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the Vite
   expected.forEach((pattern, index) => assert.match(got[index], pattern));
   assert.equal(passed.css, without.css, 'the options change nothing');
   assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
+});
+
+test('MIG-B9-21: the Vite plugin and the webpack loader emit a failed compile\'s warnings before the error (Vite)', async (t) => {
+  const dir = mkTmpDir();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const entry = write(dir, 'panel.uxdsl', '$m: (a: 1px);\n.a {\n  margin: map-get($m, a);\n  padding: space(999);\n}\n');
+  const plugin = uxdsl({ configRoot: dir, discoverTheme: false });
+  const ctx = makeCtx();
+  await assert.rejects(plugin.load.call(ctx, `${entry}?uxdsl&lang.css`), /UXD_SPACE_REFERENCE/);
+  assert.equal(ctx.warnings.length, 1, JSON.stringify(ctx.warnings));
+  // Formatted as on success: relative to the project root (here, without a resolved Vite config, the working directory).
+  assert.ok(ctx.warnings[0].startsWith(`${path.relative(process.cwd(), entry)}:3:11: UXD_SASS_WARNING: [global-builtin] `), ctx.warnings[0]);
+  // Negative control: a failing module with nothing before the failure warns nothing.
+  write(dir, 'panel.uxdsl', '.a {\n  padding: space(999);\n}\n');
+  const quiet = makeCtx();
+  await assert.rejects(plugin.load.call(quiet, `${entry}?uxdsl&lang.css`), /UXD_SPACE_REFERENCE/);
+  assert.deepEqual(quiet.warnings, []);
 });

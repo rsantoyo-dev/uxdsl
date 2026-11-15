@@ -73,9 +73,16 @@ const { css, map, dependencies, warnings, themeEmitted } = await compile(
 - `theme`: the project's theme override. Its `breakpoints` family is where
   thresholds are declared — there is no separate `breakpoints` option, so
   every integration reads them from the one place. Omitted, `compile()`
-  discovers the theme file from the working directory, as the PostCSS plugin
-  does; the CLI and the adapters discover it from their own root
-  (`uxdsl/config`'s `discoverThemeAsync`) and pass the result here.
+  discovers the theme file (`uxdsl/config`'s `THEME_CANDIDATES`) in
+  `configRoot`, once per compilation and asynchronously, so a theme file may
+  export an async function. The Vite plugin and the webpack loader pass
+  their own root as `configRoot`; the CLI reads the theme file next to its
+  build config itself and passes `discoverTheme: false`. The PostCSS plugin
+  used alone discovers synchronously and refuses an async export.
+- `discoverTheme`: `false` compiles against the base theme when `theme` is
+  omitted. Default `true`; ignored with `theme`.
+- `configRoot`: the directory the theme file is discovered in. Default: the
+  working directory; ignored with `theme`.
 - `sass`: `{ silenceDeprecations?: string[], quietDeps?: boolean }`, passed to
   Dart Sass: the deprecation ids it stops reporting, and whether to silence
   the deprecations of the files it loads through a load path or `pkg:` (never
@@ -84,7 +91,8 @@ const { css, map, dependencies, warnings, themeEmitted } = await compile(
   ignored.
 - `dependencies`: every file Dart Sass loaded, absolute — the entry (or
   `from`) first, then Sass's load order, each once, with no `sass:` module and
-  no plain-CSS `@import` target — then the theme files the plugin discovered.
+  no plain-CSS `@import` target — then the discovered theme file and the
+  local modules it requires (none with `theme` or `discoverTheme: false`).
   Safe to feed to a bundler's file-watcher.
 - `warnings`: `{ text, file?, line?, column? }[]`: Dart Sass's
   (`UXD_SASS_WARNING`, then `UXD_FUNCTION_SHADOWED`), then the plugin's, each
@@ -515,6 +523,17 @@ outside a string and a `url()`, is read as a `//` comment:
   `sass.silenceDeprecations` silences a type and `sass.quietDeps` the
   deprecations of the files loaded through a load path or `pkg:`; an
   `@debug` prints nothing.
+- **An error carries the warnings that came before it.** Every error
+  `compile()` rejects with has a `warnings` property, `[]` when nothing came
+  first: what `CompileResult.warnings` would have listed up to the failure,
+  in the same order and at the same positions (Dart Sass's, then
+  `UXD_FUNCTION_SHADOWED`, then the plugin's; no `file` for an anonymous
+  source). A `[global-builtin]` deprecation on line 3 followed by
+  `space(999)` on line 4 rejects with the `UXD_SPACE_REFERENCE` error, whose
+  `warnings` holds the deprecation. Its class, message, `file`, `line`,
+  `column`, `code` and `sassFrame` are those it has without them. The CLI,
+  the Vite plugin and the webpack loader print or emit these warnings before
+  the error, as they print a successful compile's.
 
 ```scss
 @mixin size($name) {

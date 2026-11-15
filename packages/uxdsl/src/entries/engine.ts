@@ -27,8 +27,8 @@ export type { ThemeStructure, ControlStructure } from '../ds-runtime/theme-struc
 export { inspectReferences, ReferenceIntegrityError } from '../reference-integrity';
 export { inspectDeclarationReferences } from '../reference-core';
 export type { ReferenceOptions, ReferenceIssue, ReferenceDeclaration } from '../reference-core';
-export { serializeBlock, serializeBlocks, responsiveBlocks, blockDeclarations } from '../css-blocks';
-export type { CssBlock, ResponsiveRule } from '../css-blocks';
+export { serializeBlocks, responsiveBlocks, blockDeclarations } from '../css-blocks';
+export type { CssBlock } from '../css-blocks';
 export { splitSelectorList } from '../control-engine';
 export { DEFAULT_THEME, resolveTheme } from '../default-theme';
 export { encodeGoogleFontFamily, googleFontsImportUrls } from '../fonts';

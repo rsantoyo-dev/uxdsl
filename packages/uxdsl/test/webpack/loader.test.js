@@ -142,6 +142,33 @@ test('MIG-B6-20: discovers uxdsl.theme.cjs from rootContext when theme is omitte
   assert.match(bundle, /--uxdsl__palette__webpackonlybrand-main/);
 });
 
+test('MIG-B9-21: the adapter passes configRoot to compile(), which discovers the theme once and returns its files as dependencies', async (t) => {
+  const dir = mkTmpDir();
+  const empty = mkTmpDir();
+  t.after(() => { fs.rmSync(dir, { recursive: true, force: true }); fs.rmSync(empty, { recursive: true, force: true }); });
+  const themeFile = write(dir, 'uxdsl.theme.json', JSON.stringify({ spacing: { 2: '9px' } }));
+  write(dir, 'panel.uxdsl', '@uxdsl theme;\n.a { padding: space(2); }\n');
+  const entry = write(dir, 'entry.js', "import './panel.uxdsl';");
+  const build = async (options) => {
+    const stats = await runWebpack({
+      mode: 'development',
+      context: dir,
+      entry,
+      output: { path: path.join(dir, 'dist'), filename: 'bundle.js' },
+      module: { rules: [{ test: /\.uxdsl$/, use: [STYLE_LOADER, CSS_LOADER, { loader: LOADER, options }] }] },
+    });
+    return { bundle: fs.readFileSync(path.join(dir, 'dist/bundle.js'), 'utf8'), deps: [...stats.compilation.fileDependencies].map((file) => path.resolve(file)) };
+  };
+  const discovered = await build({ configRoot: dir });
+  assert.match(discovered.bundle, /--uxdsl__space__2: 9px/);
+  assert.ok(discovered.deps.includes(path.resolve(themeFile)), 'the theme file is a webpack file dependency');
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '../../src/webpack.ts'), 'utf8'), /discoverTheme(?:Async|Sync)/, 'the loader leaves discovery to compile()');
+  // Negative control: a configRoot with no theme file compiles against the base theme and depends on no theme file.
+  const base = await build({ configRoot: empty });
+  assert.match(base.bundle, /--uxdsl__space__2: 0\.25rem/);
+  assert.ok(!base.deps.includes(path.resolve(themeFile)));
+});
+
 test('MIG-B6-20: discoverTheme: false keeps validating against the built-in default theme', async () => {
   const dir = mkTmpDir();
   write(dir, 'uxdsl.theme.cjs', "module.exports = { palette: { webpackonlybrand: { main: '#0af', dark: '#048', contrast: '#fff' } } };");
@@ -451,4 +478,33 @@ test('MIG-B9-20: breakpoints, themeVar, spaceVar and colorVar passed to the webp
   for (const pattern of expected) assert.equal(got.filter((text) => pattern.test(text)).length, 1, `${pattern}: ${JSON.stringify(got)}`);
   assert.equal(passed.css, without.css, 'the options change nothing');
   assert.match(passed.css, /min-width: ?768px/, "the theme's threshold stands");
+});
+
+test('MIG-B9-21: the Vite plugin and the webpack loader emit a failed compile\'s warnings before the error (webpack)', async (t) => {
+  const dir = mkTmpDir();
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const loader = require(LOADER);
+  // The loader called as webpack calls it, with the context it reads; `events` records the order.
+  const run = (source) => new Promise((resolve) => {
+    const events = [];
+    const context = {
+      resourcePath: path.join(dir, 'panel.uxdsl'),
+      rootContext: dir,
+      sourceMap: false,
+      getOptions: () => ({ discoverTheme: false }),
+      addDependency: () => {},
+      emitWarning: (warning) => events.push(['warning', warning.message]),
+      async: () => (err) => { events.push(['callback', err && err.message]); resolve(events); },
+    };
+    loader.call(context, source);
+  });
+  const events = await run('$m: (a: 1px);\n.a {\n  margin: map-get($m, a);\n  padding: space(999);\n}\n');
+  assert.equal(events.length, 2, JSON.stringify(events));
+  assert.equal(events[0][0], 'warning');
+  assert.match(events[0][1], /^panel\.uxdsl:3:11: UXD_SASS_WARNING: \[global-builtin\] /);
+  assert.equal(events[1][0], 'callback');
+  assert.match(events[1][1], /UXD_SPACE_REFERENCE/);
+  // Negative control: a failing module with nothing before the failure emits no warning.
+  const quiet = await run('.a {\n  padding: space(999);\n}\n');
+  assert.deepEqual(quiet.map(([kind]) => kind), ['callback']);
 });

@@ -52,8 +52,8 @@ import { compileSassStage } from './sass/compile-sass';
 import type { SassStageResult } from './sass/compile-sass';
 import { restoreDirectiveSpacing } from './sass/protect';
 import { resolveTheme } from './default-theme';
-import { discoverThemeSync, removedOptionsIn } from './config';
-import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
+import { discoverThemeAsync, removedOptionsIn } from './config';
+import { DEFAULT_BREAKPOINTS } from './language';
 import { formatReferenceIssues } from './reference-core';
 import type { ReferenceIssue } from './reference-core';
 
@@ -78,9 +78,16 @@ export interface CompileInput {
 export interface CompileConfig {
   /** The theme override, the PostCSS plugin's `theme` option. Its
    * `breakpoints` family is the one source of thresholds. Omitted, the theme
-   * file is discovered from the working directory, as the plugin does. */
+   * file is discovered in `configRoot`, once per compilation; a theme file
+   * may export an async function. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   theme?: Record<string, any>;
+  /** Whether to discover the theme file when `theme` is omitted. Default
+   * `true`; `false` compiles against the base theme. Ignored with `theme`. */
+  discoverTheme?: boolean;
+  /** The directory the theme file is discovered in. Default: the working
+   * directory. Ignored with `theme`. */
+  configRoot?: string;
   /** The plugin's `references` option. An `onWarning` callback receives each
    * issue at the author's file, line and column. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -117,7 +124,8 @@ export interface CompileResult {
   map?: string;
   /** Every file Dart Sass loaded, absolute: the entry (or `from`) first, then
    * Sass's load order, each once, with no `sass:` module and no plain-CSS
-   * `@import` target; then the theme files the plugin discovered. */
+   * `@import` target; then the discovered theme file and the local modules
+   * it requires. */
   dependencies: string[];
   /** Dart Sass's warnings (`UXD_SASS_WARNING` in Sass's order, then
    * `UXD_FUNCTION_SHADOWED` at each definition), then the plugin's; each at
@@ -147,9 +155,22 @@ type Locate = (line: number, column?: number) => AuthorPosition | null;
 /**
  * Compiles `input` through the four stages above. Input, `sourceMap` and
  * `sass` are checked before anything is read; a failure is thrown as the
- * stage that failed reports it, at the author's position.
+ * stage that failed reports it, at the author's position, and carries
+ * `warnings`: the warnings produced before it, as `CompileResult.warnings`
+ * would list them (`[]` when there were none).
  */
 export async function compile(input: CompileInput, config: CompileConfig = {}): Promise<CompileResult> {
+  const warnings: CompileWarning[] = [];
+  try {
+    return await compileInto(warnings, input, config);
+  } catch (error) {
+    if (error && typeof error === 'object') (error as { warnings?: CompileWarning[] }).warnings = warnings;
+    throw error;
+  }
+}
+
+/** compile(), pushing each warning onto `warnings` as soon as it exists. */
+async function compileInto(warnings: CompileWarning[], input: CompileInput, config: CompileConfig): Promise<CompileResult> {
   if (!input || (typeof input.entry !== 'string' && typeof input.source !== 'string')) {
     throw new Error('uxdsl: compile() requires either { entry } or { source }.');
   }
@@ -171,35 +192,45 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   const anonymous = entry === undefined && input.from === undefined;
   const stageEntry = entry ?? (input.from !== undefined ? path.resolve(input.from) : path.join(process.cwd(), ANONYMOUS_FILE));
   const hidden = anonymous ? stageEntry : undefined;
+  // The one theme of this compilation: the reserved names, the plugin and
+  // `dependencies` all read it.
+  const discovered = config.theme === undefined && config.discoverTheme !== false ? await discoverThemeAsync(config.configRoot ?? process.cwd()) : null;
+  const theme = config.theme ?? discovered?.theme ?? {};
 
   let stage: SassStageResult;
   try {
     stage = compileSassStage(
       entry !== undefined ? { entry } : { entry: stageEntry, source: input.source as string },
-      { reserved: reservedNames(config.theme), sourceMap: true, sass: config.sass }
+      { reserved: reservedNames(theme), sourceMap: true, sass: config.sass }
     );
   } catch (error) {
+    const reported = (error as { warnings?: CompileWarning[] } | null)?.warnings ?? [];
+    warnings.push(...reported.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)));
     throw hidden ? hideInError(error, hidden) : error;
   }
+  warnings.push(...stage.warnings.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)));
 
   const locate = locator(stage, hidden);
   // The stage's map, chained only when a map is requested; every position is
   // located through the stage's map either way.
   const prev = sourceMap !== false ? chainable(stage.map!) : undefined;
   const sourcesContent = config.sourcesContent !== false;
-  let result: Result;
+  let result: Result | undefined;
+  // Keeps the Result the plugins warn on, for the warnings given before a failure.
+  const capture: Plugin = { postcssPlugin: 'uxdsl/capture', Once(_root, helpers) { result = helpers.result; } };
   try {
     // PostCSS's default parser, which reads Dart Sass's output as CSS and
     // rejects the text Sass printed that is not CSS, as stage 4 above
     // describes. `from` is always given (undefined for an anonymous source),
     // so PostCSS never warns that it is missing.
     result = await postcss([
+      capture,
       restoreDirectiveSpacing,
       uxdslPlugin({
         // A removed option is handed to the plugin, which reports it as
         // UXD_OPTION_REMOVED and ignores it.
         ...removedOptionsIn(config),
-        theme: config.theme,
+        theme,
         references: relocatingReferences(config.references, locate, stageEntry, hidden),
       }),
       dropAnnotations,
@@ -209,6 +240,7 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
       map: prev ? { prev, inline: false, annotation: false, sourcesContent } : false,
     });
   } catch (error) {
+    if (result) warnings.push(...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)));
     throw relocateError(error, stage.css, locate, stageEntry, hidden);
   }
 
@@ -226,15 +258,9 @@ export async function compile(input: CompileInput, config: CompileConfig = {}): 
   }
 
   const dependencies = stage.loadedFiles.filter((file) => file !== hidden);
-  for (const message of result.messages) {
-    const file = (message as { file?: unknown }).file;
-    if (message.type === 'dependency' && typeof file === 'string' && !dependencies.includes(file)) dependencies.push(file);
-  }
+  for (const file of discovered?.dependencies ?? []) if (!dependencies.includes(file)) dependencies.push(file);
 
-  const warnings: CompileWarning[] = [
-    ...stage.warnings.map((warning) => (hidden ? hideInWarning(warning, hidden) : warning)),
-    ...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)),
-  ];
+  warnings.push(...result.warnings().map((warning) => relocateWarning(warning, locate, stageEntry, hidden)));
 
   // The plugin's own message for this compilation (the last one, should a
   // caller's PostCSS setup ever run it twice).
@@ -266,14 +292,12 @@ function validateSassOption(sass: unknown): void {
 }
 
 /**
- * The breakpoint names of the effective theme the plugin will compile with:
- * `theme`, or the theme file discovered from the working directory when it is
- * omitted, over the default breakpoints. They are the names, beside the token
+ * The breakpoint names of the effective theme the plugin will compile with,
+ * over the default breakpoints. They are the names, beside the token
  * functions and `tone`, that a project `@function` replaces with a warning.
  */
 function reservedNames(theme: CompileConfig['theme']): string[] {
-  const override = theme !== undefined ? theme : discoverThemeSync(process.cwd())?.theme;
-  const breakpoints = resolveTheme(override).breakpoints;
+  const breakpoints = resolveTheme(theme).breakpoints;
   const own = breakpoints && typeof breakpoints === 'object' && !Array.isArray(breakpoints) ? breakpoints : {};
   return Object.keys({ ...DEFAULT_BREAKPOINTS, ...own });
 }

@@ -61,6 +61,19 @@ fails as `UXD_SASS_CONTEXT`. In the plugin, and in the runtime:
   output that the plugin reports back to the author's file through the Sass
   stage's source map; a parse error in CSS the plugin parses itself (the
   generated theme, `references.css`) keeps PostCSS's position in that CSS.
+  Every error `compile()` rejects with carries `warnings`, the warnings
+  produced before it in the order a result lists them (Dart Sass's, then
+  `UXD_FUNCTION_SHADOWED`, then the plugin's); the CLI, `uxdsl/vite` and
+  `uxdsl/webpack` print them before the error.
+- Theme discovery (`config.ts`, called from `compile.ts`): once per
+  compilation. Without `theme`, `compile()` finds the theme file in
+  `configRoot` (default the working directory) unless `discoverTheme` is
+  `false`, hands that one theme to the reserved-name check and to the plugin,
+  and lists the file and the local modules it requires in `dependencies`.
+  `uxdsl/vite` and `uxdsl/webpack` pass their root through and discover
+  nothing themselves; the CLI reads the theme file next to its build config
+  and passes `discoverTheme: false`. The plugin discovers, synchronously,
+  only when it is used alone without `theme`.
 - `language.ts`: breakpoints, responsive resolution, Density map and compilation.
 - `preset-engine.ts`: common value validation and token normalization.
 - `foundations.ts`: JSON Colors, Palette, Spacing and Palette modes.

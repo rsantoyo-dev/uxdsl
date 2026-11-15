@@ -1,3 +1,7 @@
+// Inputs: `@ds-input` and the `inputs` theme family, field roles built on a
+// Surface with caret, placeholder and their interaction states. This module
+// holds the schema and the defaults; the rest is control-engine.ts's.
+
 import { NOT_DISABLED } from './buttons';
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
@@ -5,8 +9,8 @@ import { BASE_THEME } from './base-theme';
 
 export const INPUT_PROPERTIES = { ...SURFACE_PROPERTIES, opacity: 'opacity', outline: 'outline', 'outline-offset': 'outline-offset', transform: 'transform', cursor: 'cursor', 'font-weight': 'font-weight', caret: 'caret-color', placeholder: 'placeholder', underline: 'border-bottom' };
 export const INPUT_STATES = { hover: [`:hover${NOT_DISABLED}`], focus: [':focus'], focusvisible: [':focus-visible'], readonly: [':read-only'], invalid: [':invalid', '[aria-invalid="true"]'], disabled: [':disabled', '[aria-disabled="true"]'] };
-export interface InputRole extends ControlRole {}
-export interface InputTheme extends SurfaceTheme { inputs?: Record<string, InputRole> }
+interface InputRole extends ControlRole {}
+interface InputTheme extends SurfaceTheme { inputs?: Record<string, InputRole> }
 // Derived from theme/base.json, not a second,
 // independently-maintained literal. Already deep-frozen (base-theme.ts).
 export const DEFAULT_INPUTS: Record<string, InputRole> = BASE_THEME.inputs as Record<string, InputRole>;

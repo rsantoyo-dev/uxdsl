@@ -1,3 +1,7 @@
+// Typography: the `typography_details` theme family and `@ds-typo(role)`. A
+// role's own field replaces `default`'s whole, and the directive emits one
+// declaration per field the effective theme defines, nothing else.
+
 import { BreakpointMap, DEFAULT_BREAKPOINTS, TokenContext, compileDensityRules, resolveResponsiveValue, validateBreakpoints, tokenValueToCss } from './language';
 import { buildVarName } from './naming';
 import { themeError } from './diagnostics';
@@ -13,8 +17,8 @@ export const TYPOGRAPHY_PROPERTIES = Object.freeze({
   fontStyle: 'font-style',
   marginBlockStart: 'margin-block-start', marginBlockEnd: 'margin-block-end',
 });
-export type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
-export type TypographyDetails = Record<string, TypographyStyle>;
+type TypographyStyle = Partial<Record<keyof typeof TYPOGRAPHY_PROPERTIES, string>>;
+type TypographyDetails = Record<string, TypographyStyle>;
 
 /** The CSS property `@ds-typo` emits for each field — the same map as the
  * variable suffixes above, kept under its own name for the callers that read
@@ -35,7 +39,7 @@ export function resolveTypographyRole(details: TypographyDetails, role: string):
   return role === 'default' ? { ...style } : { ...details.default, ...style };
 }
 
-/** Stability phase 1: the one value grammar. A typography field may reference
+/** The one value grammar. A typography field may reference
  * any token (`palette(primary)` in `letterSpacing`, `radius(2)`…), not only
  * `space()`/`density()`; the reference pass judges whether it exists. */
 export function typographyValueToCss(input: string, context?: TokenContext): string {
@@ -44,9 +48,9 @@ export function typographyValueToCss(input: string, context?: TokenContext): str
 
 export function compileTypographyRules(details: TypographyDetails, breakpoints: BreakpointMap = DEFAULT_BREAKPOINTS, context?: TokenContext) {
   if (details && typeof details === 'object' && !Array.isArray(details) && !Object.keys(details).length) return [];
-  // Stability phase 1: the breakpoint map has one owner and one code
-  // (`UXD_BP_INVALID`, language.ts); this engine no longer restates the
-  // same rules under `UXD_TYPO_BP`.
+  // The breakpoint map has one owner and one code (`UXD_BP_INVALID`,
+  // language.ts); this engine does not restate the same rules under a code
+  // of its own.
   const ordered = validateBreakpoints(breakpoints);
   if (!details || typeof details !== 'object' || Array.isArray(details)) throw themeError('UXD_TYPO_DETAILS', 'Expected an object', 'typography_details');
   for (const [role, style] of Object.entries(details)) {

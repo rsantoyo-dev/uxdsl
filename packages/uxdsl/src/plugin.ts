@@ -52,11 +52,10 @@ import { diagnostic, locateError, missingKeyMessage, closestKey, suggestKeys, di
 import { discoverThemeSync, removedOptionWarnings } from './config';
 import {
   resolveResponsiveValue, analyzeResponsiveValue, getDensityTokens, removedSyntaxMessage, unknownFunctionMessage, parseTokenReference, tokenReferenceToCss,
-  TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS,
+  TOKEN_FUNCTIONS, REMOVED_RADIUS_FULL, LANGUAGE_COMPLETIONS, KNOWN_CSS_FUNCTIONS, DEFAULT_BREAKPOINTS,
 } from './language';
 import type { TokenReference, TokenContext } from './language';
 import { TYPOGRAPHY_PROPERTIES, resolveTypographyRole } from './typography';
-import { DEFAULT_BREAKPOINTS } from './ds-runtime/breakpoints';
 import type { UxdslOptions } from './types';
 
 const PLUGIN = 'uxdsl';
@@ -125,7 +124,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
   const validated = validateTheme(theme, { references: false });
   if (!validated.ok) throw themeValidationError(validated.errors);
   for (const warning of validated.warnings) result.warn(warning.message, { plugin: PLUGIN });
-  // An option that no longer exists is reported and ignored, never thrown on.
+  // A removed option is reported and ignored, never thrown on.
   for (const text of removedOptionWarnings(opts)) result.warn(text, { plugin: PLUGIN });
   // The one breakpoint map of this compilation: the effective theme's.
   const bps: Record<string, number> = { ...DEFAULT_BREAKPOINTS, ...theme.breakpoints };
@@ -142,7 +141,7 @@ function validateOptions(root: Root, result: Result, opts: UxdslOptions): Compil
     root, result, theme, bps, ordered, originalSources, dslSources,
     themeMarker: findThemeMarker(root),
     themeEmitted: false,
-    references: (opts.references ?? discovered?.references ?? {}) as ReferenceOptions,
+    references: (opts.references ?? {}) as ReferenceOptions,
     bpNames: new Set(Object.keys(bps)),
     // Token maps are always computed so references keep validating against
     // the effective theme; only the `:root` definitions depend on the marker.

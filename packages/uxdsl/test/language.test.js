@@ -23,7 +23,7 @@ function densityDeclarations(css) {
 }
 
 test('shared module imports without a browser and preserves breakpoint compatibility export', () => {
-  assert.equal(require('../dist/ds-runtime/breakpoints').DEFAULT_BREAKPOINTS, language.DEFAULT_BREAKPOINTS);
+  assert.equal(require('../dist/entries/engine').DEFAULT_BREAKPOINTS, language.DEFAULT_BREAKPOINTS);
   assert.equal(typeof document, 'undefined');
 });
 test('Density preserves references and suppresses redundant breakpoints', () => {

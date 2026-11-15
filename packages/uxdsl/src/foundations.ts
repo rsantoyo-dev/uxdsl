@@ -1,3 +1,7 @@
+// Foundations: palette, colors, spacing and the dark palette as custom
+// properties. Every value goes through the one value grammar, and two keys
+// that would produce the same variable name are an error.
+
 import { DEFAULT_BORDER_COLORS } from './edges';
 import { TokenContext, tokenValueToCss } from './language';
 import { themeError } from './diagnostics';
@@ -11,12 +15,11 @@ import { CssBlock, serializeBlocks } from './css-blocks';
  * `UXD_FOUNDATION_NAME_COLLISION` instead of one silently overwriting the
  * other.
  *
- * Stability phase 1: every value goes through the one value grammar
- * (`tokenValueToCss`), so `palette.brand.main: 'color(gray.300)'` or
+ * Every value goes through the one value grammar (`tokenValueToCss`), so
+ * `palette.brand.main: 'color(gray.300)'` or
  * `palette.text.primary: 'palette(surface.contrast)'` compile to the same
- * `var(--uxdsl__…)` reference on both CSS paths — foundations used to be
- * emitted raw, and only the plugin's final pass over every declaration
- * resolved them at build time. */
+ * `var(--uxdsl__…)` reference on both CSS paths, with no later pass needed
+ * to resolve them. */
 function namespacedVars(namespace: string, map: Record<string, unknown>, names: NameRegistry, context: TokenContext): Array<[string, string]> {
   const out: Array<[string, string]> = [];
   for (const [key, val] of Object.entries(map)) {

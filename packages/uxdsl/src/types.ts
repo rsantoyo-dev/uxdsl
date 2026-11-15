@@ -154,11 +154,10 @@ export interface UxdslOptions {
    * When `theme` is omitted (and this isn't `false`), the plugin looks for
    * a conventional `uxdsl.theme.json` (or `uxdsl.theme.js`/`.cjs`) in
    * `configRoot` (default `process.cwd()`) and validates/compiles against
-   * it instead of the built-in default theme — the same discovery
-   * the CLI has always done, now available with the plugin used
-   * directly (e.g. from a project's own `postcss.config.js`). An explicit
-   * `theme` always wins outright; this has no effect when one is given.
-   * Set to `false` to keep the old always-default-theme behavior.
+   * it instead of the built-in default theme — the same file the CLI
+   * reads, found with the plugin used directly (e.g. from a project's own
+   * `postcss.config.js`). An explicit `theme` always wins outright; this has
+   * no effect when one is given. Set to `false` to always use the base theme.
    */
   discoverTheme?: boolean;
   /** Directory theme discovery searches from. Defaults to `process.cwd()`.
@@ -178,9 +177,9 @@ export interface UxdslBuild {
  *
  * A build config says what to compile and where. The theme is not here: it
  * comes from the theme file next to this config (`uxdsl.theme.json` or
- * `uxdsl.theme.js`/`.cjs`), which also owns `breakpoints`. The former
- * `theme`, `themeFile`, `breakpoints` and `output` keys are rejected by the
- * CLI with a message saying where each now goes.
+ * `uxdsl.theme.js`/`.cjs`), which also owns `breakpoints`. The `theme`,
+ * `themeFile`, `breakpoints` and `output` keys are rejected by the CLI with a
+ * message saying where each goes.
  */
 export interface UxdslConfigShared {
   /** Extra paths for `--watch` to observe, beyond the entries and their imports. */

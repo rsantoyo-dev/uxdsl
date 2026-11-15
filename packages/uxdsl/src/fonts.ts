@@ -1,7 +1,8 @@
-// The one shared
-// Google Fonts encoder, used by both the PostCSS plugin (src/index.ts) and
-// the runtime/SSR generator (ds-runtime/theme-generator.ts) so they emit the
-// exact same `@import` for the same `theme.fonts.google`. Browser-safe: no
+// The one shared Google Fonts encoder, used by the theme generator
+// (ds-runtime/theme-generator.ts), which the PostCSS plugin and
+// generateThemeCss both render through, so they emit the exact same `@import`
+// for the same `theme.fonts.google`.
+// Browser-safe: no
 // Node globals, no import of `./config` or `fs`/`path` — see the guard test
 // in test/fonts.test.js. Never calls fetch; this only builds URL strings.
 
@@ -11,8 +12,7 @@
 // `,` separates axis tags and separates values within one tuple, `;`
 // separates multiple value tuples, `.` and `-`/`_` appear in decimal axis
 // values and in real family names. A literal space is encoded as `+`
-// (the css2 API's own convention, not `%20`), matching this repo's existing
-// playground implementation. Anything else is percent-encoded, one character
+// (the css2 API's own convention, not `%20`). Anything else is percent-encoded, one character
 // at a time, so an unexpected character can never corrupt a later one.
 const CSS2_SAFE_CHAR = /[A-Za-z0-9:@;,._-]/;
 

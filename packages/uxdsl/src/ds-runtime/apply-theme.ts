@@ -211,7 +211,7 @@ export function applyTheme(patch: ThemeOverride = {}, options: ApplyThemeOptions
     : copy(patch || {});
 
   // Validate, generate and compare the structure before anything is committed.
-  // Stability phase 1: the one validator (`validateTheme`) runs on the
+  // The one validator (`validateTheme`) runs on the
   // effective theme; a patch that is not an object is a rejection like any
   // other, never an exception out of this function.
   let effective: Record<string, any>;

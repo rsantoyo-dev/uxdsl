@@ -7,21 +7,14 @@
  * `--uxdsl__input__outlined-focus-border`, `--uxdsl__typography__h1-font-size`,
  * ...).
  *
- * Centralizing this construction is what let every family move from a bare
- * `--<family>-<key>` (or, for palette/color, `--ds__<namespace>__<key>`) to
- * one shared `--uxdsl__<family>__<key>` shape in a single place (this file)
- * instead of a blind find-and-replace across every family that used to
- * hardcode its own — requested directly by the maintainer, and done while
- * the package is still unpublished (0.3.0, no npm release), the safest
- * possible time for a public-name change: no external consumer to alias,
- * deprecate or break.
+ * Every family shares the one `--uxdsl__<family>__<key>` shape, built here
+ * and nowhere else.
  *
- * `NameRegistry` is the other thing centralizing enabled: a way to detect
- * two different logical identifiers (e.g. palette family `"primary-main"`
- * and palette family `"primary"` sub-key `"main"`, or surface role
- * `"contained-shadow"` and role `"contained"` field `"shadow"`) producing
- * the identical generated name, so the second silently overwrites the
- * first with no diagnostic.
+ * `NameRegistry` detects two different logical identifiers (e.g. palette
+ * family `"primary-main"` and palette family `"primary"` sub-key `"main"`,
+ * or surface role `"contained-shadow"` and role `"contained"` field
+ * `"shadow"`) producing the identical generated name, where the second
+ * would otherwise silently overwrite the first with no diagnostic.
  */
 
 /** `--uxdsl__<family>__<key>` — edges, shadows, surfaces, buttons, inputs,

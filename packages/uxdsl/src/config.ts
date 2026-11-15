@@ -5,19 +5,20 @@ import type { UxdslConfig } from './types';
 export type { UxdslConfig, UxdslConfigShared, UxdslBuild, UxdslTheme, UxdslThemeOverride } from './types';
 
 // The one shared theme-file loader, used by the PostCSS plugin's own
-// discovery, the CLI, the Vite plugin and the Webpack loader, so they can
-// never disagree about which file wins or what shape it accepts.
+// discovery, by compile() (which uxdsl/vite and uxdsl/webpack run) and by the
+// CLI, so they can never disagree about which file wins or what shape it
+// accepts.
 //
-// Two files, two jobs (stability phase 2, DE-10):
+// Two files, two jobs:
 //   - the theme file (one of THEME_CANDIDATES) holds the theme, and only the
 //     theme: `uxdsl.theme.json`, or `uxdsl.theme.js`/`.cjs` for a computed one
 //     exporting the same object, or a function (sync; async where the loader
 //     can await it) returning it. Breakpoints live here, under `breakpoints`.
 //   - the build config (`uxdsl.config.js`/`.cjs`) says what to compile and
 //     where, and carries `references`. It never carries a theme.
-// A theme file exporting the former `{ theme, references }` wrapper is refused
-// with an error that says where each half now goes, rather than being read as
-// a theme with two unknown families.
+// A theme file exporting a `{ theme, references }` wrapper is refused with an
+// error that says where each half goes, rather than being read as a theme
+// with two unknown families.
 
 export const THEME_CANDIDATES = [
   'uxdsl.theme.cjs',
@@ -43,9 +44,8 @@ export interface DiscoveredTheme extends NormalizedThemeExport {
    * transitively `require()`d while loading — safe to feed directly into
    * a PostCSS `dependency` message or a file watcher's list. */
   dependencies: string[];
-  /** Always `undefined`: a theme file no longer carries `references` (they
-   * live in the build config or the plugin/adapter option). Kept on the type
-   * only until the plugin's own `discovered?.references` read is retired. */
+  /** Always `undefined`: a theme file carries no `references` (they live in
+   * the build config or the plugin/adapter option). */
   references?: undefined;
 }
 
@@ -68,11 +68,11 @@ export function findThemeConfigPath(dir: string): string | null {
 
 const WRAPPER_KEYS = ['theme', 'references'];
 
-/** A theme file exports the theme itself. The `{ theme, references }` wrapper
- * it used to accept is refused, not guessed at: silently reading it as a theme
- * would compile the project against an empty override (with `theme` and
- * `references` reported as unknown families at best), and the two halves now
- * have different homes. */
+/** A theme file exports the theme itself. A `{ theme, references }` wrapper
+ * is refused, not guessed at: silently reading it as a theme would compile
+ * the project against an empty override (with `theme` and `references`
+ * reported as unknown families at best), and the two halves have different
+ * homes. */
 export function assertBareThemeExport(themeModule: any, themeConfigPath: string): void {
   const found = WRAPPER_KEYS.filter((key) => Object.prototype.hasOwnProperty.call(themeModule, key));
   if (found.length === 0) return;
@@ -121,9 +121,9 @@ export function warnIfLooksLikeBuildConfig(themeModule: any, themeConfigPath: st
   );
 }
 
-/** Same tree-walking `require.cache` traversal the CLI's watch mode has
- * always used to find nested local modules to invalidate/watch — moved
- * here so the plugin's own discovery gets the same "don't serve a stale
+/** The tree-walking `require.cache` traversal that finds the nested local
+ * modules to invalidate/watch, shared by the CLI's watch mode and the
+ * plugin's own discovery, so both get the same "don't serve a stale
  * require() result" guarantee. `node_modules` is excluded: those files
  * don't change during a project's own dev loop and walking into a large
  * dependency graph would be wasteful. */
@@ -196,8 +196,8 @@ export function loadThemeConfigSync(themeConfigPath: string): NormalizedThemeExp
   return acceptThemeExport(mod, themeConfigPath);
 }
 
-/** Async counterpart used by the CLI and the bundler adapters — accepts
- * everything the sync loader does, plus an async factory export. */
+/** Async counterpart, used by the CLI's loadConfig and by discoverThemeAsync
+ * — accepts everything the sync loader does, plus an async factory export. */
 export async function loadThemeConfigAsync(themeConfigPath: string): Promise<NormalizedThemeExport> {
   clearLocalRequireCache(themeConfigPath);
   let mod = require(themeConfigPath);
@@ -222,7 +222,8 @@ export function discoverThemeSync(dir: string): DiscoveredTheme | null {
   return { theme, themeConfigPath, dependencies: dependenciesFor(themeConfigPath) };
 }
 
-/** Async counterpart, for the CLI and the bundler adapters. */
+/** Async counterpart: what compile() runs once per compilation when it is
+ * given no theme, and so how uxdsl/vite and uxdsl/webpack discover one. */
 export async function discoverThemeAsync(dir: string): Promise<DiscoveredTheme | null> {
   const themeConfigPath = findThemeConfigPath(dir);
   if (!themeConfigPath) return null;

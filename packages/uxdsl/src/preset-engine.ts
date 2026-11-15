@@ -8,22 +8,20 @@ import { themeError } from './diagnostics';
 // these presets — serializes a theme value the same way.
 export { RADIUS_KEYWORDS } from './language';
 
-/** @deprecated Use `tokenValueToCss` (language.ts). The error prefix is no
- * longer used — a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
- * belongs to — and the per-family serializers went with the `themeVar`/
- * `spaceVar`/`colorVar` plugin options they existed for. */
+/** @deprecated Use `tokenValueToCss` (language.ts). The error prefix is
+ * ignored — a bad alpha is `UXD_TOKEN_ALPHA` whichever family the value
+ * belongs to — and no family has a serializer of its own: `palette()`,
+ * `space()` and `color()` always compile to their `--uxdsl__` variable. */
 export function presetValueToCss(input: string, _errorPrefix?: string): string {
   return tokenValueToCss(input);
 }
 
-// `keyPathPrefix` is optional so
-// every pre-existing caller (surfaces.ts's own per-role merge, control-engine.ts)
-// keeps its exact prior message/shape; only a caller that actually knows which
-// top-level theme family it's validating (edges.ts, for `radii`/`borders`)
-// passes it, turning `UXD_EDGE_VALUE: Invalid token 1.` into a located
-// `UXD_EDGE_VALUE: Invalid token 1 (at radii.1).` with `.keyPath` set —
-// previously `{ radii: { '1': '' } }` gave no way to tell which family/key
-// was wrong without already knowing this function's internals.
+// `keyPathPrefix` is optional: a caller that knows which top-level theme
+// family it validates (edges.ts, for `radii`/`borders`) passes it, turning
+// `UXD_EDGE_VALUE: Invalid token 1.` into a located
+// `UXD_EDGE_VALUE: Invalid token 1 (at radii.1).` with `.keyPath` set, so
+// `{ radii: { '1': '' } }` names the family and key that are wrong. Callers
+// that merge one role (surfaces.ts, control-engine.ts) leave it out.
 export function mergePresetTokens(defaults: Record<string, string>, input: Record<string, string> | undefined, errorPrefix: string, keyPathPrefix?: string) {
   if (input !== undefined && (!input || typeof input !== 'object' || Array.isArray(input))) {
     throw keyPathPrefix
@@ -45,7 +43,7 @@ export function mergePresetTokens(defaults: Record<string, string>, input: Recor
 }
 
 export function compilePresetRules(tokens: Record<string, Record<string, string>>, breakpoints: BreakpointMap, errorPrefix: string, context?: TokenContext) {
-  // Stability phase 1: the breakpoint map has one owner and one code
+  // The breakpoint map has one owner and one code
   // (`UXD_BP_INVALID`), not one `<FAMILY>_BP` restatement per engine. A value
   // naming a breakpoint the map does not have is a value error, `_VALUE`.
   const ordered = validateBreakpoints(breakpoints);

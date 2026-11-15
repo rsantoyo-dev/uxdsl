@@ -1,3 +1,7 @@
+// Surfaces: `@ds-surface` and the `surfaces` theme family, container roles
+// composed from Density, Radius, Palette, Border and Shadow. The plugin,
+// generateThemeCss and the inspectors share this one engine.
+
 import valueParser from 'postcss-value-parser';
 import { BreakpointMap, DEFAULT_BREAKPOINTS, getDensityTokens, getToneFamilies, tokenValueToCss, REMOVED_RADIUS_FULL } from './language';
 import { closestKey, formatKeyList } from './diagnostics';
@@ -11,18 +15,16 @@ import { BASE_THEME } from './base-theme';
 import { responsiveBlocks, serializeBlocks } from './css-blocks';
 
 export const SURFACE_PROPERTIES = Object.freeze({ padding: 'padding', radius: 'border-radius', bg: 'background', color: 'color', border: 'border', shadow: 'box-shadow' });
-export type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
+type SurfaceStyle = Partial<Record<keyof typeof SURFACE_PROPERTIES, string>>;
 export interface SurfaceTheme extends EdgeTheme, ShadowTheme { densities?: Record<string,string>; palette?: Record<string, unknown>; surfaces?: Record<string, SurfaceStyle> }
 // Derived from theme/base.json, not a second,
 // independently-maintained literal.
 export const DEFAULT_SURFACES: Record<string, SurfaceStyle> = BASE_THEME.surfaces as Record<string, SurfaceStyle>;
 
-// Each throw below now carries
-// the theme key path it actually failed at (`surfaces`, `surfaces.<role>`,
-// `surfaces.<role>.<field>`) via `themeError`, matching typography.ts's
-// existing pattern — previously `{ surfaces: { contained: { bogus: 'red' } } }`
-// threw `UXD_SURFACE_FIELD: Unknown contained.bogus.` with no `.keyPath` at
-// all, even though the message already spelled out which role/field.
+// Each throw below carries the theme key path it failed at (`surfaces`,
+// `surfaces.<role>`, `surfaces.<role>.<field>`) via `themeError`, as
+// typography.ts does, so `{ surfaces: { contained: { bogus: 'red' } } }`
+// fails with `.keyPath` set to `surfaces.contained.bogus`.
 export function getSurfaceTokens(theme: SurfaceTheme = {}): Record<string, SurfaceStyle> {
   if (theme.surfaces !== undefined && (!theme.surfaces || typeof theme.surfaces !== 'object' || Array.isArray(theme.surfaces))) throw themeError('UXD_SURFACE_MAP', 'Expected an object', 'surfaces');
   const result: Record<string, SurfaceStyle> = { ...DEFAULT_SURFACES };
@@ -76,7 +78,7 @@ export function generateSurfaceCss(theme: SurfaceTheme = {}, breakpoints: Breakp
  * Composition used by PostCSS directives and live component previews.
  *
  * Precedence: role/tone defaults apply first; `size` then sets
- * padding and radius together (legacy behavior, unchanged); an explicit
+ * padding and radius together; an explicit
  * `radiusOverride`/`shadowOverride` replaces only that one property,
  * independently of `size` and of each other. A later plain CSS declaration
  * in the same rule still wins last, same as any other generated property.

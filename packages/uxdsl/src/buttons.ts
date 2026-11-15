@@ -1,3 +1,7 @@
+// Buttons: `@ds-button` and the `buttons` theme family, action roles built on
+// a Surface with their interaction states. This module holds the schema and
+// the defaults; role inheritance, tones and state rules are control-engine.ts's.
+
 import { SurfaceTheme, SURFACE_PROPERTIES } from './surfaces';
 import { createControlEngine, ControlRole } from './control-engine';
 import { BASE_THEME } from './base-theme';
@@ -9,14 +13,11 @@ export const BUTTON_PROPERTIES = { ...SURFACE_PROPERTIES, opacity: 'opacity', ou
  * the directive still overrides the generated rule. */
 export const NOT_DISABLED = ':not(:where(:disabled, [aria-disabled="true"]))';
 export const BUTTON_STATES = { hover: [`:hover${NOT_DISABLED}`], active: [`:active${NOT_DISABLED}`], focus: [':focus'], focusvisible: [':focus-visible'], disabled: [':disabled', '[aria-disabled="true"]'], selected: ['.is-selected', '[aria-pressed="true"]', '[aria-selected="true"]'] };
-export interface ButtonRole extends ControlRole {}
-export interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
-// Derived from theme/base.json, not a second,
-// independently-maintained literal — `var(--uxdsl__button__tone-dark, ...)`
-// et al. are baked into the JSON as the same literal strings this file used
-// to compute with buildVarName/buildNamespacedVarName. Already deep-frozen
-// (base-theme.ts), including every role/base/states level, so the manual
-// per-key freeze loop this file used to need is gone too.
+interface ButtonRole extends ControlRole {}
+interface ButtonTheme extends SurfaceTheme { buttons?: Record<string, ButtonRole> }
+// Derived from theme/base.json, not a second, independently-maintained
+// literal. Already deep-frozen (base-theme.ts), including every
+// role/base/states level.
 export const DEFAULT_BUTTONS: Record<string, ButtonRole> = BASE_THEME.buttons as Record<string, ButtonRole>;
 
 const engine = createControlEngine({ family: 'button', defaults: DEFAULT_BUTTONS, properties: BUTTON_PROPERTIES, states: BUTTON_STATES });

@@ -67,7 +67,7 @@ function controlStructure(
 /** Custom properties defined by a stylesheet: `--name` immediately followed by
  * a colon, which is a declaration rather than a `var()` reference.
  *
- * Stability phase 1 (audit T8): a Button/Input per-tone variant
+ * A Button/Input per-tone variant
  * (`--uxdsl__button__<role>-tone-<family>-<state>-<key>`) is left out. It is
  * emitted only when the tone changes the value, and every compiled reference
  * to one carries the untoned variable as its `var()` fallback — so a patch

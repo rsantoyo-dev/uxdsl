@@ -90,6 +90,34 @@ test('phase 4: uxdsl/config exports defineConfig and theme-file discovery', () =
   assert.deepEqual(keys(entry('config')), ['THEME_CANDIDATES', 'defineConfig', 'discoverThemeAsync', 'discoverThemeSync', 'findThemeConfigPath']);
 });
 
+test('MIG-B9-21: uxdsl/engine exports exactly the kept list', () => {
+  // Every name scripts/measure-exports.js finds a consumer for: outside the
+  // package, inside packages/uxdsl/src, or a deprecated shim's former name.
+  // splitSelectorList stays because test/theme-blocks.test.js imports it.
+  const kept = [
+    'BUTTON_PROPERTIES', 'BUTTON_STATES', 'DEFAULT_BORDERS', 'DEFAULT_BORDER_COLORS', 'DEFAULT_BREAKPOINTS', 'DEFAULT_BUTTONS', 'DEFAULT_DENSITIES',
+    'DEFAULT_INPUTS', 'DEFAULT_RADII', 'DEFAULT_SHADOWS', 'DEFAULT_SURFACES', 'DEFAULT_THEME', 'DIAGNOSTIC_CATALOG', 'DIAGNOSTIC_CODES',
+    'INPUT_PROPERTIES', 'INPUT_STATES', 'KNOWN_CSS_FUNCTIONS', 'KNOWN_THEME_FAMILIES', 'LANGUAGE_COMPLETIONS', 'NOT_DISABLED', 'RADIUS_KEYWORDS',
+    'REMOVED_RADIUS_FULL', 'ReferenceIntegrityError', 'SURFACE_PROPERTIES', 'THEME_KEY_PATTERN', 'THEME_NAME_PATTERN', 'THEME_SCHEMA_KEY',
+    'THEME_VALUE_PATTERN', 'TOKEN_FUNCTIONS', 'TOKEN_FUNCTION_CODES', 'TYPOGRAPHY_CSS_PROPERTIES', 'TYPOGRAPHY_PROPERTIES', 'analyzeResponsiveValue',
+    'blockDeclarations', 'buttonComponentCss', 'buttonDeclarations', 'checkThemeContrast', 'cloneThemeValue', 'compileButtonRules',
+    'compileDensityRules', 'compileEdgeRules', 'compileInputRules', 'compileShadowRules', 'compileSurfaceRules', 'compileTypographyRules',
+    'compositeOver', 'contrastRatio', 'deepMergeTheme', 'edgeValueToCss', 'encodeGoogleFontFamily', 'foundationBlocks', 'generateButtonCss',
+    'generateDensityCss', 'generateEdgeCss', 'generateFoundationCss', 'generateInputCss', 'generateShadowCss', 'generateSurfaceCss', 'generateThemeCss',
+    'generateTypographyCss', 'getButtonTokens', 'getDensityTokens', 'getEdgeTokens', 'getInputTokens', 'getShadowTokens', 'getSurfaceTokens',
+    'getToneFamilies', 'googleFontsImportUrls', 'inputComponentCss', 'inputDeclarations', 'inspectButtonTheme', 'inspectDeclarationReferences',
+    'inspectEdgeTheme', 'inspectInputTheme', 'inspectReferences', 'inspectResponsiveValue', 'inspectShadowTheme', 'inspectSurfaceTheme',
+    'inspectTypographyTheme', 'parseButtonArguments', 'parseInputArguments', 'parseLiteralColor', 'parseSurfaceArguments', 'parseTokenReference',
+    'relativeLuminance', 'removedSyntaxMessage', 'renderThemeCss', 'requireRole', 'resolveExpression', 'resolveResponsiveValue', 'resolveTheme',
+    'resolveTypographyRole', 'responsiveBlocks', 'responsiveEntries', 'serializeBlocks', 'spacingValueToCss', 'splitSelectorList', 'structuralChanges',
+    'surfaceDeclarations', 'surfaceValueToCss', 'themeStructure', 'themeValidationError', 'tokenReferenceToCss', 'tokenValueToCss', 'typographyBlocks',
+    'typographyValueToCss', 'unknownFunctionMessage', 'validateBreakpoints', 'validateResponsiveExpression', 'validateTheme',
+  ];
+  assert.equal(kept.length, 110);
+  assert.deepEqual(keys(entry('engine')), kept);
+  assert.equal('serializeBlock' in entry('engine'), false, 'serializeBlock has no consumer outside css-blocks.ts');
+});
+
 test('phase 4: a name exported by two entries is the same binding in both', () => {
   const entries = ['index', 'runtime', 'theme', 'language', 'config', 'engine'].map((name) => [name, entry(name)]);
   for (const [a, modA] of entries) {

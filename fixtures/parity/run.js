@@ -40,7 +40,12 @@ function runCli(entry, outFile) {
     encoding: 'utf8',
   });
   if (result.status !== 0) {
-    return { error: (result.stderr || result.stdout || '').trim() };
+    // The error part of the output, from its first `[uxdsl] Error:` line on:
+    // the CLI prints a failed entry's warnings (a Sass deprecation) before
+    // it, and the oracle records the error. Still compared exactly.
+    const output = (result.stderr || result.stdout || '').trim();
+    const at = output.indexOf('[uxdsl] Error:');
+    return { error: at === -1 ? output : output.slice(at) };
   }
   return { css: fs.readFileSync(outFile, 'utf8') };
 }

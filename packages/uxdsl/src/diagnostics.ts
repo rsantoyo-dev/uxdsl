@@ -1,3 +1,7 @@
+// Every `UXD_*` code with its meaning and fix (DIAGNOSTIC_CATALOG), and the
+// helpers that build diagnostics: `diagnostic()` refuses a code the catalog
+// does not list, and the "did you mean" suggestions are computed here.
+
 import type { Node } from 'postcss';
 
 const CODE_PATTERN = /^(UXD_[A-Z0-9_]+):/;

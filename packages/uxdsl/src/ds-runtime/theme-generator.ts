@@ -1,3 +1,7 @@
+// The theme stylesheet: renderTheme turns an effective theme into the CSS the
+// plugin and generateThemeCss both emit, byte for byte, and into the
+// declarations the reference check reads.
+
 import { foundationBlocks } from '../foundations';
 import { compileInputRules } from '../inputs';
 import { compileButtonRules } from '../buttons';

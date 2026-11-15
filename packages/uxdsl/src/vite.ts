@@ -3,7 +3,7 @@ import path from 'path';
 import type { Plugin, ResolvedConfig } from 'vite';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { discoverThemeAsync, removedOptionWarnings } from './config';
+import { removedOptionWarnings } from './config';
 
 // The bundler delivers real CSS through its own pipeline; UXDSL only
 // compiles. `resolveId` turns `./panel.uxdsl`
@@ -164,22 +164,6 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       if (!isVirtualId(id)) return null;
       const absPath = realPathFromVirtualId(id);
 
-      const configRoot = userOptions.configRoot ?? projectRoot;
-      const discoverTheme = userOptions.discoverTheme !== false;
-      // Discovery is resolved here, from this plugin's own `configRoot`
-      // (which can legitimately differ from `process.cwd()`). A defined
-      // `theme` — `{}` when nothing was found or discovery is off — is always
-      // handed to compile(), so the PostCSS plugin's own discovery (which
-      // only knows `process.cwd()`) never second-guesses it with the wrong
-      // root.
-      let discovered: Awaited<ReturnType<typeof discoverThemeAsync>> = null;
-      if (userOptions.theme === undefined && discoverTheme) {
-        discovered = await discoverThemeAsync(configRoot);
-      }
-      const theme = userOptions.theme !== undefined
-        ? userOptions.theme
-        : (discoverTheme ? (discovered ? discovered.theme : {}) : {});
-
       // Vite drives maps from its own `build.sourcemap`
       // / `css.devSourcemap` settings, so this follows the resolved config
       // instead of inventing a plugin option. 'external' (never 'inline'):
@@ -188,15 +172,23 @@ export default function uxdsl(userOptions: UxDslPluginOptions = {}): Plugin {
       // Vite's own pipeline can't compose it.
       const wantMap = viteSourceMapEnabled;
       const { css, map, dependencies, warnings, themeEmitted } = await compile({ entry: absPath }, {
-        theme: theme as Record<string, unknown>,
+        // compile() discovers the theme file in this plugin's root (Vite's
+        // `root` unless `configRoot` says otherwise) and lists it, with the
+        // modules it requires, in `dependencies`.
+        theme: userOptions.theme,
+        discoverTheme: userOptions.discoverTheme,
+        configRoot: userOptions.configRoot ?? projectRoot,
         references: userOptions.references,
         sourceMap: wantMap ? 'external' : false,
         to: absPath,
         sass: userOptions.sass,
+      }).catch((error: unknown) => {
+        // The warnings compile() produced before it failed come first.
+        for (const warning of (error as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.warn(formatWarning(warning, projectRoot));
+        throw error;
       });
 
       for (const dep of dependencies) this.addWatchFile(dep);
-      if (discovered) for (const dep of discovered.dependencies) this.addWatchFile(dep);
       for (const warning of warnings) this.warn(formatWarning(warning, projectRoot));
 
       if (command === 'serve') {

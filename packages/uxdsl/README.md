@@ -232,6 +232,11 @@ in the `compile()` guide's
 
 `uxdsl/engine` is a tooling API and is **exempt from semver**: it may change in
 a minor release. Everything else in the table follows semver.
+`scripts/measure-exports.js` in the UXDSL repository lists every entry's
+exports with the files that consume them, and names the ones nothing
+consumes. The package's source comments state what
+the code does and why; `scripts/no-history-comments.test.js` fails on one that
+names a story, a phase, a date or a release instead.
 
 ---
 
@@ -430,7 +435,10 @@ not from its own options or a `:root` search. The CLI does: a build in which
 no entry reaches the marker while its CSS references `--uxdsl__` tokens, or in
 which more than one entry emits the theme, prints one `UXD_THEME_MARKER`
 warning (in `build --watch`, counted over the last result of every entry, and
-printed again only when that state changes). A stylesheet whose output is a
+printed again only when that state changes). For an entry `generate-entry`
+wrote, the "no entry" warning's remedy is `generate-entry` with that entry's
+options, `--out` included, but not `--no-theme`; a bare re-run replays a
+recorded `--no-theme`. A stylesheet whose output is a
 `*.module.css` cannot carry the theme, so the marker there is an error.
 
 The bundler adapters count the same way, over a whole build: in a Vite or
@@ -1440,11 +1448,14 @@ difference: discovery inside the plugin is **synchronous** (the plugin
 factory and its compilation pass both are), so an `uxdsl.theme.cjs`
 exporting an async factory function (`module.exports = async () => ({...})`)
 throws a clear error naming the file — pass a resolved `theme` object to the
-plugin directly instead, or use an integration that supports async config
-(the `uxdsl` CLI, `uxdsl/vite` or `uxdsl/webpack`, which all use
-`discoverThemeAsync`). The discovered theme file (and anything it locally
-`require()`s) is reported as a real PostCSS `dependency` message, so a
-bundler's own watcher picks up an edit to it.
+plugin directly instead, or use an integration that supports async config:
+the `uxdsl` CLI (which reads the theme file next to its build config) or
+`compile()`, which `uxdsl/vite` and `uxdsl/webpack` run and which discovers
+the theme once per compilation, asynchronously, in its `configRoot`. Used
+alone, the plugin reports the theme file it discovered (and anything it
+locally `require()`s) as a PostCSS `dependency` message, so a bundler's own
+watcher picks up an edit to it; `compile()` lists those files in its
+`dependencies`.
 
 ### Diagnostics
 
@@ -1692,9 +1703,11 @@ a file — relative to `to` (to the working directory without it) and
 URL-encoded — with their text; the CSS is identical in the three modes, and,
 like Dart Sass's own output, it does not end with a newline. `warnings` lists
 Dart Sass's warnings, then the plugin's; a warning with no position, such as
-an unknown theme family's, is `{ text }` alone. `dependencies` is every file
-Dart Sass loaded (the entry, or `from`, first), then the theme files the
-plugin discovered. The `sass` option
+an unknown theme family's, is `{ text }` alone; an error `compile()` rejects
+with carries, as `warnings`, those that came before it, and the CLI, the Vite
+plugin and the webpack loader show them before the error. `dependencies` is every file
+Dart Sass loaded (the entry, or `from`, first), then the theme file
+`compile()` discovered and the local modules it requires. The `sass` option
 (`{ silenceDeprecations?: string[], quietDeps?: boolean }`) is passed to Dart
 Sass — `quietDeps: true` silences the deprecations of the files it loads
 through a load path or `pkg:`, never those of the project's own files — and

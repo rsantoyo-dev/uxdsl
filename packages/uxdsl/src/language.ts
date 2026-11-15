@@ -79,9 +79,7 @@ export function validateResponsiveExpression(expression: string, bps: Breakpoint
   }
 }
 
-// Derived from theme/base.json, not computed here —
-// density defaults still stay inside the shipped 1-16 Spacing scale, that
-// shape is just data now instead of a formula.
+// The base theme's densities (theme/base.json), which stay within Spacing 1–16.
 export const DEFAULT_DENSITIES: Record<string, string> = BASE_THEME.densities as Record<string, string>;
 // Inventory of existing completion behavior, not a claim of complete grammar coverage.
 // `directiveArguments` lists each directive's override-argument function
@@ -121,10 +119,9 @@ export function getToneFamilies(palette: Record<string, unknown> = {}): string[]
   });
 }
 
-// Located with `themeError` the
-// same way typography.ts already is — `{ densities: { x: '' } }` previously
-// threw `UXD_DENSITY_VALUE: Invalid x.` with no `.keyPath`, leaving no way
-// to tell it came from `densities.x` versus a merged default/legacy key.
+// Located with `themeError`, as typography.ts is: `{ densities: { x: '' } }`
+// fails with `.keyPath` set to `densities.x`, so it reads apart from a merged
+// default or legacy key.
 /** Effective Density map is local to a compilation: defaults < legacy < JSON. */
 export function getDensityTokens(theme: { densities?: Record<string, string> } = {}, legacy: Record<string, string> = {}): Record<string, string> {
   if (theme.densities !== undefined && (!theme.densities || typeof theme.densities !== 'object' || Array.isArray(theme.densities))) throw themeError('UXD_DENSITY_MAP', 'Expected an object', 'densities');
@@ -245,7 +242,7 @@ const NEAR_MISS_FUNCTIONS: Readonly<Record<string, string>> = Object.freeze({
   shadows: 'shadow',
 });
 
-export interface UnknownFunctionOptions {
+interface UnknownFunctionOptions {
   /** The theme's own breakpoints; the effective map is these over the defaults, as every compilation builds it. */
   breakpoints?: BreakpointMap;
   /** The name sits at the top level of an author's declaration value, where the breakpoint check runs after the grammar. */
@@ -428,7 +425,7 @@ export const spacingValueToCss = (input: string): string => tokenValueToCss(inpu
 
 
 /** What an editor or the compiler needs to know about the responsive groups of one value. */
-export interface ResponsiveAnalysis {
+interface ResponsiveAnalysis {
   /** Top-level groups of adjacent breakpoint functions, in order, each with its source text. */
   groups: Array<{ names: string[]; text: string; hasBase: boolean; empty: string[]; important: boolean }>;
   /** The value is exactly one group and nothing else. */
@@ -499,7 +496,7 @@ export function inspectResponsiveValue(input: string, width: number, bps: Breakp
   };
 }
 
-export type DensityRule = { minWidth: number | null; breakpoint: string; values: Record<string, string> };
+type DensityRule = { minWidth: number | null; breakpoint: string; values: Record<string, string> };
 
 /** Both adapters share resolution, ordering and suppression of redundant rules. */
 export function compileDensityRules(

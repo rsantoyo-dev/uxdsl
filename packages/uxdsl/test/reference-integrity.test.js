@@ -71,3 +71,19 @@ test('MIG-B9-20: reference integrity does not depend on the marker', async () =>
   const plain = await run('.a { color: red; }', { theme: dangling });
   assert.equal(plain.css, '.a { color: red; }');
 });
+
+test('MIG-B9-21: a !important definition does not outrank a later plain one when a reference is resolved', () => {
+  const { inspectReferences: inspectThroughEngine } = require('../dist/entries/engine');
+  const check = (css) => {
+    const root = postcss.parse(css, { from: 'important-fixture.css' });
+    const consumers = [];
+    root.walkDecls('color', (node) => consumers.push(node));
+    return inspectThroughEngine(root, consumers);
+  };
+  // The later plain definition applies, so the dangling one behind !important is never read.
+  assert.deepEqual(check(':root { --a: var(--missing) !important; } :root { --a: red; } .x { color: var(--a); }'), []);
+  // The fixture discriminates: the !important definition alone is read, and its reference is missing.
+  const [issue] = check(':root { --a: var(--missing) !important; } .x { color: var(--a); }');
+  assert.equal(issue.code, 'UXD_REFERENCE_MISSING');
+  assert.deepEqual(issue.chain, ['color', '--a', '--missing']);
+});
