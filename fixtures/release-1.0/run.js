@@ -191,6 +191,40 @@ function assertLocatedWarning(built, { silenced }) {
   return 'the [import] deprecation at src/a.uxdsl:1:9';
 }
 
+/** The line S-7 expects first on stderr for a dotted near-miss at src/a.uxdsl:2:3. */
+const S7_NEAR_MISS_HEAD = '[uxdsl] Error: uxdsl: src/a.uxdsl:2:3: UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()?';
+
+/**
+ * S-7's verdict on `uxdsl build` of src/a.uxdsl, `.a {\n  color: palete(primary.main);\n}\n`:
+ * exit 1, and the head line is the plugin's UXD_FUNCTION_UNKNOWN at the
+ * declaration's start with its suggestion, followed by the plugin's frame of
+ * the author's line, never Dart Sass's `UXD_SASS: expected "(".`.
+ */
+function assertNearMissSuggested(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 1) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  const [head, ...frame] = stderr.replace(/\n+$/, '').split('\n');
+  if (/UXD_SASS/.test(head)) throw new Error(`Dart Sass's error, not the plugin's: ${head}`);
+  if (head !== S7_NEAR_MISS_HEAD) throw new Error(`head line: ${head}`);
+  if (!frame.some((line) => line.includes('palete(primary.main)'))) throw new Error('no frame line shows the author\'s palete(primary.main)');
+  return 'src/a.uxdsl:2:3 UXD_FUNCTION_UNKNOWN, did you mean palette()';
+}
+
+/**
+ * S-7's verdict on `uxdsl build` of src/a.uxdsl, `$gap: 4px;\n@debug "gap is #{$gap}";\n.a {\n  padding: 1px;\n}\n`:
+ * exit 0, the output written, and the @debug printed once, at its rule, as
+ * `[uxdsl] Warning: src/a.uxdsl:2:1: UXD_SASS_WARNING: DEBUG: gap is 4px`.
+ */
+function assertDebugWarned(built) {
+  const stderr = built.stderr || '';
+  if (built.status !== 0) throw new Error(`exited ${built.status}: ${stderr.trim().split('\n')[0] || '(no stderr)'}`);
+  if (!/^\[uxdsl\] (built|unchanged) out\/a\.css/m.test(built.stdout || '')) throw new Error(`stdout: ${(built.stdout || '').trim().split('\n')[0] || '(empty)'}`);
+  const debugs = stderr.split('\n').filter((line) => line.includes('DEBUG:'));
+  if (debugs.length !== 1) throw new Error(`${debugs.length} DEBUG warnings, expected 1`);
+  if (debugs[0] !== '[uxdsl] Warning: src/a.uxdsl:2:1: UXD_SASS_WARNING: DEBUG: gap is 4px') throw new Error(`the @debug is not located at src/a.uxdsl:2:1: ${debugs[0]}`);
+  return 'the @debug at src/a.uxdsl:2:1';
+}
+
 /**
  * The project S-5 and S-6 build: styles/panel.uxdsl @uses styles/_partial.uxdsl,
  * which @imports styles/_legacy.uxdsl, so Dart Sass loads the three files and
@@ -1029,6 +1063,18 @@ async function main() {
     return assertViteAdapter(await viteAdapterRecord(vite, mod.default || mod, project('vite-sass').root));
   });
 
+  // --- beta.9: what the Sass stage reports -----------------------------------
+  console.log('\nWhat the Sass stage reports (FEAT-010, MIG-B9-26):');
+  await check('S-7', '[tarball] the installed CLI prints a dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion (exit 1) and a @debug as a located warning (exit 0)', () => {
+    const p = project('cli-sass-reports');
+    p.write('uxdsl.config.cjs', "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n");
+    p.write('src/a.uxdsl', '.a {\n  color: palete(primary.main);\n}\n');
+    const nearMiss = assertNearMissSuggested(p.spawn('build'));
+    p.write('src/a.uxdsl', '$gap: 4px;\n@debug "gap is #{$gap}";\n.a {\n  padding: 1px;\n}\n');
+    const debug = assertDebugWarned(p.spawn('build'));
+    return `${nearMiss}; ${debug}`;
+  });
+
   // --- beta.7: init, editor support, fonts, contrast -----------------------
   console.log('\nInit, editor support, fonts and contrast (from verify:beta7):');
   {
@@ -1240,4 +1286,4 @@ async function main() {
 
 if (require.main === module) main().catch((error) => { console.error(error); process.exitCode = 1; });
 
-module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };
+module.exports = { contrastSignature, exceptedSignature, contrastBaselineOf, assertContrastBaseline, auditLockfile, assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport, mapIntegrityProblems, DROPPED };

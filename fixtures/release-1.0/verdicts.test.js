@@ -9,7 +9,7 @@ const { spawnSync } = require('node:child_process');
 const { createRequire } = require('node:module');
 const { pathToFileURL } = require('node:url');
 const {
-  assertAuthorLocated, assertSassFramed, assertLocatedWarning, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
+  assertAuthorLocated, assertSassFramed, assertLocatedWarning, assertNearMissSuggested, assertDebugWarned, webpackAdapterRecord, assertWebpackAdapter, viteAdapterRecord, assertViteAdapter, assertMissingImport,
 } = require('./run');
 const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 
@@ -101,6 +101,41 @@ test('MIG-B9-14: S-4 rejects an error with no frame, the protected text or an un
     assert.throws(() => assertLocatedWarning({ status: 0, stdout: warned.stdout, stderr }, { silenced: false }), { message: reason }, stderr);
   }
   assert.throws(() => assertLocatedWarning(warned, { silenced: true }), { message: /did not remove the deprecation/ });
+});
+
+const S7_CONFIG = "module.exports = { entry: './src/a.uxdsl', outFile: './out/a.css' };\n";
+const buildNearMiss = () => buildProject({ 'uxdsl.config.cjs': S7_CONFIG, 'src/a.uxdsl': '.a {\n  color: palete(primary.main);\n}\n' });
+const buildDebug = () => buildProject({ 'uxdsl.config.cjs': S7_CONFIG, 'src/a.uxdsl': '$gap: 4px;\n@debug "gap is #{$gap}";\n.a {\n  padding: 1px;\n}\n' });
+
+test('MIG-B9-26: S-7 accepts the CLI\'s dotted near-miss as UXD_FUNCTION_UNKNOWN with its suggestion at src/a.uxdsl:2:3, and a @debug as a warning at src/a.uxdsl:2:1', () => {
+  const nearMiss = buildNearMiss();
+  assert.equal(assertNearMissSuggested(nearMiss), 'src/a.uxdsl:2:3 UXD_FUNCTION_UNKNOWN, did you mean palette()', nearMiss.stderr);
+  const debug = buildDebug();
+  assert.equal(assertDebugWarned(debug), 'the @debug at src/a.uxdsl:2:1', debug.stderr);
+});
+
+test('MIG-B9-26: S-7 rejects BASE\'s UXD_SASS line, an empty stderr and an unlocated warning (negative control)', () => {
+  const nearMiss = buildNearMiss();
+  const frame = nearMiss.stderr.split('\n').slice(1).join('\n');
+  for (const [built, reason] of [
+    // BASE: Dart Sass's error, located inside the call, with no suggestion.
+    [{ status: 1, stderr: '[uxdsl] Error: src/a.uxdsl:2:29: UXD_SASS: expected "(".\n  ╷\n2 │   color: palete(primary.main);\n' }, /Dart Sass's error/],
+    [{ status: 0, stderr: '' }, /^exited 0/],
+    [{ status: 1, stderr: `[uxdsl] Error: uxdsl: src/a.uxdsl:2:10: UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()?\n${frame}` }, /^head line/],
+    [{ status: 1, stderr: `${nearMiss.stderr.split('\n')[0]}\n` }, /no frame line/],
+  ]) {
+    assert.throws(() => assertNearMissSuggested(built), { message: reason }, built.stderr);
+  }
+
+  const debug = buildDebug();
+  for (const [built, reason] of [
+    // BASE: the @debug is dropped.
+    [{ status: 0, stdout: debug.stdout, stderr: '' }, /^0 DEBUG warnings, expected 1$/],
+    [{ status: 0, stdout: debug.stdout, stderr: '[uxdsl] Warning: UXD_SASS_WARNING: DEBUG: gap is 4px\n' }, /not located at src\/a\.uxdsl:2:1/],
+    [{ status: 1, stdout: '', stderr: '[uxdsl] Error: x\n' }, /^exited 1/],
+  ]) {
+    assert.throws(() => assertDebugWarned(built), { message: reason }, built.stderr);
+  }
 });
 
 // S-5 and S-6 run the adapters with the repository's bundlers, as the gate

@@ -39,11 +39,7 @@ const NEAR_MISSES = [
   ['tne(main)', 'tne', 'tone'],
 ];
 
-// Dart Sass reads a dotted argument as a module member, so through compile() a near-miss of
-// palette() with a dotted key fails in Sass, located, before the plugin can name the function meant.
-const SASS_REJECTS = new Set(['palete(primary.main)', 'pallete(primary.main)', 'pallet(primary.main)']);
-
-test('MIG-B9-13: near-miss names through compile(): palete, pallete and pallet(primary.main) fail located as UXD_SASS; the other 8 keep UXD_FUNCTION_UNKNOWN with the suggestion; all 11 keep it through uxdsl/postcss', async () => {
+test('MIG-B9-26: every near-miss fails through compile() as through uxdsl/postcss, palete, pallete and pallet(primary.main) included: the same code and message, at the declaration', async () => {
   for (const [call, name, suggestion] of NEAR_MISSES) {
     const source = `.a {\n  padding: ${call};\n}\n`;
     const viaPlugin = await failure(throughPlugin(source));
@@ -55,16 +51,11 @@ test('MIG-B9-13: near-miss names through compile(): palete, pallete and pallet(p
 
     const viaCompile = await failure(throughCompile(source));
     assert.ok(viaCompile, `${call} fails through compile()`);
-    if (SASS_REJECTS.has(call)) {
-      assert.equal(viaCompile.code, 'UXD_SASS', call);
-      assert.equal(viaCompile.sassMessage, 'expected "(".', call);
-      assert.equal(viaCompile.file, file, `${call} names the file`);
-      assert.equal(viaCompile.line, 2, `${call} is located on its line`);
-      continue;
-    }
-    assert.match(viaCompile.message, new RegExp(unknownFunction(name, suggestion).replace(/[()?.]/g, '\\$&')));
+    assert.notEqual(viaCompile.code, 'UXD_SASS', `${call}: not Dart Sass's error`);
+    assert.equal(viaCompile.reason, viaPlugin.reason, `${call}: the plugin's code and message`);
     assert.equal(viaCompile.file, file, `${call} names the file`);
     assert.equal(viaCompile.line, 2, `${call} is located at the declaration`);
+    assert.equal(viaCompile.column, 3, `${call} is located at the declaration's start`);
   }
 
   // Control: the canonical spellings compile to their variables in the same run.
@@ -72,6 +63,9 @@ test('MIG-B9-13: near-miss names through compile(): palete, pallete and pallet(p
   assert.match(ok.css, /padding: var\(--uxdsl__space__2\)/);
   assert.match(ok.css, /color: var\(--uxdsl__palette__primary-main\)/);
   assert.match(ok.css, /gap: var\(--uxdsl__density__2\)/);
+  const compiled = await throughCompile('.a { padding: space(2); color: palette(primary.main); gap: density(2); }');
+  assert.match(compiled.css, /padding: var\(--uxdsl__space__2\)/);
+  assert.match(compiled.css, /color: var\(--uxdsl__palette__primary-main\)/);
 
   // Control: a top-level name one edit from a breakpoint stays the breakpoint
   // check's error, which lists the configured names.

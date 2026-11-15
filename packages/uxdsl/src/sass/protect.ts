@@ -1,5 +1,5 @@
 import type { Plugin } from 'postcss';
-import { TOKEN_FUNCTIONS } from '../language';
+import { TOKEN_FUNCTIONS, unknownFunctionMessage } from '../language';
 
 // The protect pass: the text transformation that lets UXDSL's own syntax pass
 // through Dart Sass unchanged, and the one-line restore of what Sass changes.
@@ -37,6 +37,21 @@ import { TOKEN_FUNCTIONS } from '../language';
 //   nothing. A name defined in another file reaches this pass through
 //   `options.unprotected`. A call through a namespace (`helpers.space()`) is
 //   never protected. `@mixin` and `@include` names are never calls;
+// - a call in a property declaration's value whose name the plugin reports as
+//   a near-miss of a UXDSL name (`unknownFunctionMessage`, with the reserved
+//   names as the breakpoints: `palete`, `PALETE`, `xd`) and whose first
+//   argument is identifier characters and dots, with a dot followed by an
+//   identifier (`palete(primary.main)`, which Dart Sass cannot parse; not
+//   `colour(gray.300)`, which it reads as `gray .3`), is rewritten like a
+//   token call, so the plugin reports it with its suggestion. It sits at the
+//   top of the value or inside another call (`xs(…)`, `calc(…)`), outside any
+//   interpolation. The declaration is a statement that starts with a property
+//   name (identifier characters and interpolations, not `--`) followed by `:`
+//   and ends with `;` or `}`, not `{`: a selector, an at-rule's prelude, a
+//   custom property, a variable, an `@include` or `@return` argument keep Dart
+//   Sass's error. A name declared by any `@function` earlier in the text, or
+//   in `options.unprotected`, is the author's and its calls are left as
+//   written. `options.site` is never asked about such a call;
 // - the output has exactly as many lines as the input: a rewrite spanning
 //   lines re-emits its newlines after the replacement, and the result maps
 //   every column of the output back to the input;
@@ -120,6 +135,8 @@ interface Edit {
 }
 
 const WHITESPACE = /\s/;
+/** A first argument with a dot followed by an identifier start (`primary.main`, not `gray.300`): Dart Sass reads it as a module member and fails. */
+const DOTTED_KEY = /[A-Za-z0-9_-]\.[A-Za-z_-]/;
 const BARE_NUMBER = /^[+-]?(\d+(\.\d*)?|\.\d+)(e[+-]?\d+)?$/i;
 /** A character that makes the identifier after it something other than a function call: a class, an id, a variable, a placeholder, an at-rule, a parent reference, an escape. */
 const NOT_A_CALL_AFTER = new Set(['.', '#', '$', '%', '@', '&', '\\']);
@@ -253,6 +270,15 @@ class Protector {
   private delta = 0;
   private readonly edits = new Map<number, Edit[]>();
   private readonly defined = new Set<string>();
+  /** Every name a `@function` declared so far, as Sass resolves it. */
+  private readonly declared = new Set<string>();
+  /** Parenthesis depth of the scan position, and interpolations it is inside. */
+  private depth = 0;
+  private interpolations = 0;
+  /** Where the statement holding the scan position starts: after the last `;`, `{` or `}` outside parentheses and interpolations. */
+  private statementStart = 0;
+  /** The reserved names as a breakpoint map, for `unknownFunctionMessage`. */
+  private readonly breakpoints: Record<string, number>;
   readonly problems: ProtectProblem[] = [];
 
   constructor(
@@ -262,7 +288,9 @@ class Protector {
     private readonly file: string | undefined,
     private readonly site: ((call: ProtectCall) => string | null | undefined) | undefined,
     private readonly bodies: boolean,
-  ) {}
+  ) {
+    this.breakpoints = Object.fromEntries(Array.from(reserved, (name) => [name, 0]));
+  }
 
   run(): string {
     this.scan(this.src.length, 'general');
@@ -300,6 +328,9 @@ class Protector {
       if (c === '@') { this.atRule(end); continue; }
       if (c === '$') { this.variable(end, mode); continue; }
       if (isIdentStart(c) || (c === '-' && (isIdentStart(s[this.i + 1]) || s[this.i + 1] === '-'))) { this.identifier(end, mode); continue; }
+      if (c === '(') this.depth++;
+      else if (c === ')') this.depth--;
+      else if ((c === ';' || c === '{' || c === '}') && this.depth <= 0 && this.interpolations === 0) this.statementStart = this.i + 1;
       this.i++;
     }
   }
@@ -329,7 +360,9 @@ class Protector {
   private interpolation(end: number): void {
     const close = Math.min(endOfInterpolation(this.src, this.i), end);
     this.i = Math.min(this.i + 2, end);
+    this.interpolations++;
     if (close - 1 > this.i) this.scan(close - 1, 'general');
+    this.interpolations--;
     this.i = close;
   }
 
@@ -371,6 +404,7 @@ class Protector {
   private declaredFunction(from: number, to: number): void {
     const written = this.src.slice(from, to);
     const name = sassName(written);
+    this.declared.add(name);
     if (!TOKEN_FUNCTION_NAMES.has(name) && name !== 'tone' && !this.reserved.has(name)) return;
     this.defined.add(name);
     this.copy(from);
@@ -425,6 +459,8 @@ class Protector {
           }
         } else if (this.site && (sassName(written) === 'tone' || this.reserved.has(sassName(written)))) {
           this.reportPlainCall(start, j, end);
+        } else if (mode === 'general' && this.protectNearMiss(start, j, end)) {
+          return;
         }
       }
     } else if (mode === 'directive' && next === '.' && s[j + 1] === '$' && isIdentStart(s[j + 2])) {
@@ -434,6 +470,61 @@ class Protector {
       return;
     }
     this.i = j;
+  }
+
+  /** Rewrites a near-miss call with a dotted key in a property declaration's value (see the file comment); returns false, leaving the text alone, otherwise. */
+  private protectNearMiss(start: number, paren: number, end: number): boolean {
+    if (this.interpolations > 0) return false;
+    const s = this.src;
+    // The cheap test first: a first argument of identifier characters and dots, with a dot followed by an identifier start.
+    let k = paren + 1;
+    while (k < end && WHITESPACE.test(s[k])) k++;
+    const keyStart = k;
+    while (k < end && (isIdentChar(s[k]) || s[k] === '.')) k++;
+    const keyEnd = k;
+    while (k < end && WHITESPACE.test(s[k])) k++;
+    if ((s[k] !== ',' && s[k] !== ')') || !DOTTED_KEY.test(s.slice(keyStart, keyEnd))) return false;
+    const close = matchParen(s, paren);
+    if (close === -1 || close >= end) return false;
+    const written = s.slice(start, paren);
+    const resolved = sassName(written);
+    if (written.toLowerCase() === 'tone' || this.reserved.has(resolved) || this.declared.has(resolved) || this.unprotected.has(resolved)) return false;
+    if (!unknownFunctionMessage(written, { breakpoints: this.breakpoints })) return false;
+    if (!this.inDeclarationValue(start, close + 1)) return false;
+    const call = this.tokenCall(start, paren, end);
+    if (!call) return false;
+    this.rewrite(start, call.close + 1, call.text);
+    return true;
+  }
+
+  /** Whether [start, after) lies in the value of a property declaration: its statement starts with a property name and `:` before `start`, and ends with `;` or `}`, not `{`. */
+  private inDeclarationValue(start: number, after: number): boolean {
+    const s = this.src;
+    let k = skipBlank(s, this.statementStart);
+    if (s[k] === '-' && s[k + 1] === '-') return false;
+    let named = false;
+    while (k < start) {
+      if (isIdentChar(s[k])) { k++; named = true; continue; }
+      if (s[k] === '#' && s[k + 1] === '{') { k = endOfInterpolation(s, k); named = true; continue; }
+      break;
+    }
+    if (!named) return false;
+    const colon = skipBlank(s, k);
+    if (s[colon] !== ':' || colon >= start) return false;
+    let depth = this.depth;
+    let m = after;
+    while (m < s.length) {
+      const c = s[m];
+      if (c === '"' || c === "'") { m = endOfString(s, m); continue; }
+      if (c === '/' && s[m + 1] === '*') { m = endOfBlockComment(s, m); continue; }
+      if (c === '/' && s[m + 1] === '/') { m = endOfLineComment(s, m); continue; }
+      if (c === '#' && s[m + 1] === '{') { m = endOfInterpolation(s, m); continue; }
+      if (c === '(') depth++;
+      else if (c === ')') depth--;
+      else if ((c === ';' || c === '{' || c === '}') && depth <= 0) return c !== '{';
+      m++;
+    }
+    return true;
   }
 
   private isUnprotected(name: string): boolean {

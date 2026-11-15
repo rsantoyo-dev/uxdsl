@@ -22,6 +22,64 @@ the entries of FEAT-009's beta.7 stories (marked "FEAT-009, MIG-B7-…"), which
 reached npm first in `0.5.0-beta.8` under the former names; MIG-B9-52 moves
 them. See `docs/releases/0.5.0-beta.9.md`.
 
+### Dotted near-misses keep their suggestion through `compile()`, `@debug` is a warning, and no project name changes the Sass stage (MIG-B9-26)
+
+#### Changed
+
+- **A dotted near-miss names the function meant.** Through `compile()`, a
+  call in a declaration's value whose name the plugin reports as a near-miss
+  of a UXDSL name and whose first argument is a key with a dot followed by an
+  identifier (`palete(primary.main)`, `PALETE(primary.main, 0.5)`,
+  `xs(palete(primary.main)) md(red)`, `calc(palete(primary.main) + 1px)`)
+  failed in Dart Sass as `UXD_SASS: expected "(".`, located inside the call.
+  It now fails as through `uxdsl/postcss`, at the declaration's start:
+  `UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did
+  you mean palette()?`, and `xd(primary.main)` as `UXD_BREAKPOINT_UNKNOWN`.
+  `uxdsl build` prints `[uxdsl] Error: uxdsl: src/main.uxdsl:2:3:
+  UXD_FUNCTION_UNKNOWN: …` and exits 1. The same call in a selector, an
+  at-rule's prelude, a variable, a mixin's argument or a `@return`, after a
+  same-file `@function` of that name, or in a `.scss`, `.sass` or `.css` file
+  keeps Dart Sass's error.
+- **`@debug` is a warning.** Each evaluation of an `@debug` in any file the
+  build loads (`.uxdsl`, `.scss`, `.sass`, a load-path or `pkg:` dependency,
+  with `sass.quietDeps` or without) is a `compile()` warning,
+  `{ text: 'UXD_SASS_WARNING: DEBUG: <first line>', file, line, column }`, at
+  the `@debug` rule, in Sass's order among Sass's warnings; one evaluated
+  before a failure is on the error's `warnings`. `uxdsl build` prints it as
+  it prints every warning (`[uxdsl] Warning: src/main.uxdsl:3:1:
+  UXD_SASS_WARNING: DEBUG: gap is 4px`; the CLI prints an identical located
+  line once per build). It was dropped. `DIAGNOSTIC_CATALOG`'s meaning of
+  `UXD_SASS_WARNING` names it. Through `uxdsl/postcss` alone, `@debug` stays
+  `UXD_SASS_CONTEXT`.
+- **No project name changes what the Sass stage decides.** The names the
+  stage's probe writes into what Sass compiles (its functions, and the
+  namespace under which it reaches `sass:meta`) are made from a random tag
+  for each `compile()` call and reach no result. A project name with the
+  former fixed prefix `uxdsl-probe-` changed the output of a build that
+  defines a function named like UXDSL's, or failed with an internal error;
+  it now compiles as under any other name. `compile.md`'s third recorded
+  difference and the README's third exception are gone.
+
+#### Fixed
+
+- **`compile()` runs from a script Node reads on standard input** (`node -`).
+  It rejected with `ERR_INVALID_ARG_VALUE` ("The argument 'filename' must be
+  a file URL object, file URL string, or absolute path string. Received
+  '-'"), because Dart Sass's `NodePackageImporter` constructor reads
+  `process.argv[1]` even when given a directory. There the Sass stage now
+  gives the importer the working directory and constructs it with
+  `process.argv[1]` hidden, restored at once; every other caller is
+  unchanged.
+
+#### Visual changes
+
+- None, except for a project that names a function, mixin, variable or
+  `@use … as` namespace with the prefix `uxdsl-probe-` in a build that also
+  defines a function named like a UXDSL function: it now gets Dart Sass's
+  CSS (for example `.a { v: var(--uxdsl__space__2); } .b { v: 6px; }` where
+  it got `.a { v: 1; } .b { v: 1; }`). Every other compiled output, the
+  Bootstrap corpus and the theme CSS are byte-identical.
+
 ### One theme resolution per compilation, a failed compile keeps its warnings, and what repeated is deleted (MIG-B9-21)
 
 #### Removed

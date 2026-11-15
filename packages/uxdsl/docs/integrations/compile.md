@@ -406,8 +406,9 @@ this changes for a project that compiled with the earlier SCSS subset.
 
 ### Functions named like UXDSL's
 
-No UXDSL name is reserved; the one exception is the Sass stage's own helper
-prefix, `uxdsl-probe-` (see the recorded differences below). A project
+No name is reserved: the names the Sass stage writes for itself are made
+afresh for each `compile()` call and reach no result, so a project's own name
+never changes the output. A project
 `@function` named like a UXDSL function — a
 token function (`space`, `palette`, …), `tone`, or a breakpoint of the
 effective theme (`md`, or a project's own `xxl`) — wins wherever Dart Sass
@@ -442,14 +443,12 @@ compiles to this, with one `UXD_FUNCTION_SHADOWED` warning at line 1:
 }
 ```
 
-Three recorded differences from plain Dart Sass, none of which warns: a
+Two recorded differences from plain Dart Sass, neither of which warns: a
 function reached under a UXDSL name only through `@forward … as <prefix>*` is
-not found, so its calls keep the token; in a build where a loaded file
+not found, so its calls keep the token; and in a build where a loaded file
 defines a function named `get-function` or `function-exists`, a call in some
 `@import`ed files keeps the token where Dart Sass calls the project's
-function; and the Sass stage names its own helper functions with the prefix
-`uxdsl-probe-`, so a project function with that prefix can change the output
-of a build that defines a function named like UXDSL's.
+function.
 
 ### A `$variable` Sass keeps as written
 
@@ -511,18 +510,34 @@ outside a string and a `url()`, is read as a `//` comment:
   the declaration in a mixin). `error.showSourceCode()` frames the author's
   line. On a line the map does not cover, the error names the entry with no
   line or column.
-- **A dotted near-miss** such as `palete(primary.main)` is Dart Sass's
-  `UXD_SASS: expected "(".` through `compile()`, before the plugin's
-  `UXD_FUNCTION_UNKNOWN` suggestion can run; an undotted one (`spacing(2)`)
-  keeps the suggestion.
+- **A near-miss** of a UXDSL function fails as it fails through the plugin
+  alone, with its suggestion, at the declaration's start: `spacing(2)` and,
+  in a declaration's value, the dotted `palete(primary.main)`, which Dart Sass
+  could not parse, are `UXD_FUNCTION_UNKNOWN: … did you mean …?`, and
+  `xd(primary.main)` is `UXD_BREAKPOINT_UNKNOWN`. A dotted near-miss
+  elsewhere — in a selector, an at-rule's prelude, a variable, a mixin's
+  argument or a `@return`, after a `@function` of that name in the same file,
+  or in a `.scss`, `.sass` or `.css` file — stays Dart Sass's
+  `UXD_SASS: expected "(".`, so it never reaches the CSS unchecked:
+
+  ```scss
+  $accent: palette(primary.main);
+  .badge {
+    color: $accent;
+    border-color: palete(primary.main);  /* UXD_FUNCTION_UNKNOWN: palete() is not a function CSS or UXDSL knows; did you mean palette()? */
+  }
+  ```
 - **Warnings.** Every Sass warning is `UXD_SASS_WARNING: …` — a deprecation
   with its id in brackets (`[import]`, `[global-builtin]`, `[slash-div]`, …)
   or an `@warn`'s text — located like an error. Sass's own cap applies: five
   warnings per deprecation type, then one summary with no position
   (`UXD_SASS_WARNING: 3 repetitive deprecation warnings omitted.`).
   `sass.silenceDeprecations` silences a type and `sass.quietDeps` the
-  deprecations of the files loaded through a load path or `pkg:`; an
-  `@debug` prints nothing.
+  deprecations of the files loaded through a load path or `pkg:`. Each
+  evaluation of an `@debug`, in any file the build loads, is a warning at the
+  `@debug` rule, `UXD_SASS_WARNING: DEBUG: <its text>`, in Sass's order among
+  the others (a `@debug` in a loop warns once per iteration, and
+  `sass.quietDeps` does not silence it).
 - **An error carries the warnings that came before it.** Every error
   `compile()` rejects with has a `warnings` property, `[]` when nothing came
   first: what `CompileResult.warnings` would have listed up to the failure,

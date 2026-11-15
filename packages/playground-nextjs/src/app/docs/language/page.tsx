@@ -143,11 +143,10 @@ export default function LanguagePage() {
           <code>UXD_SASS_WARNING</code>; <code>@use</code> does not warn.
         </p>
         <p>
-          UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid UXDSL file, except in three cases that
+          UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid UXDSL file, except in two cases that
           the <a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a> documents: a{' '}
-          <code>$variable</code> Sass keeps as written fails as <code>UXD_SASS_CONTEXT</code>, text Sass prints that is not CSS
-          fails as a parse error, and a project function named with the Sass stage’s internal prefix{' '}
-          <code>uxdsl-probe-</code> can change the output.
+          <code>$variable</code> Sass keeps as written fails as <code>UXD_SASS_CONTEXT</code>, and text Sass prints that is not
+          CSS fails as a parse error.
         </p>
         <pre><code className="language-scss">{`@use 'sass:map';
 
