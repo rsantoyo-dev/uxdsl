@@ -743,6 +743,11 @@ To be filled in the delivering PR.
   is left.
 - **MIG-B9-39:** it rebases its watch-mode work on this story's
   `watch-mode.test.js`.
+- **MIG-B9-39 (2026-11-15, owner flag 7 below):** whichever of MIG-B9-39 and
+  this story merges second makes the temporary directories of its new
+  `test/vite` and `test/webpack` tests with
+  `packages/uxdsl/test/helpers/temporary-directory.js` (or removes them in
+  `t.after`), or `npm test` fails through the guard.
 
 ### Review of 2026-11-10 (applied in the PR that adds this file)
 
@@ -785,3 +790,83 @@ Before the implementation, on BASE `cf98cb8`. Each line's old and new form:
 - **§3, the block.** Old: no line for MIG-B9-21. New: `git merge-base --is-ancestor cf98cb8 HEAD   # MIG-B9-21 (PR #92): decision 18 of 2026-11-13`. MIG-B9-21 edited `cli/error-location.test.js`, `cli/uxdsl-cli.test.js`, `vite/index.test.js` and `webpack/loader.test.js`, all in this story's Shares; it exits 0.
 - **§3, the text under the block.** Old: "All ten exit 0 on `f855765`, run on 2026-11-10 from the repository root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the writer's own." New: "All twelve exit 0 on `cf98cb8` (BASE), run on 2026-11-15 from the worktree's root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the runner's own; on `f855765` the first ten exited 0 on 2026-11-10."
 - **§4, the baseline.** Old: the figures of `f855765` alone (1,556 tests, 957 entries, 105 steps of which 25 leave entries; `uxdsl-cli.test.js` 188, `init.test.js` 40, `watch-mode.test.js` 32, `vite/index.test.js` 15, `webpack/loader.test.js` 11). New: those figures kept as the record of `f855765`, and a "Re-run on `cf98cb8` (BASE)" item added with the base's: 1,618 tests (1,617 pass, 1 skipped), 990 entries, 111 steps of which the same 25 files leave entries (`uxdsl-cli.test.js` 195, `init.test.js` 52, `watch-mode.test.js` 38, `vite/index.test.js` 16, `webpack/loader.test.js` 18).
+
+### Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-15)
+
+Flags that arose while the story was implemented. Under the owner's standing
+instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y
+sgeuimos": every question answered with its recommended option), each was
+answered with its recommendation, which is what the branch implements. They
+were not put to the owner one by one; the owner may override any of them.
+
+1. **A directory made where no test context is in scope.** C4 says a test's
+   directory is kept when that test fails, but none of the 43 replaced
+   `mkdtemp` sites has a `t` in scope (`project()` in `compile-sass.test.js`
+   at 48 call sites, `mkTmpDir()`, `mkProject()`, directories made when a
+   file loads).
+   - (a) The exit path wherever no `t` is in scope: such a directory follows
+     its file's exit code, so a failing file keeps all of them and a passing
+     file removes them all; no call site or test signature changes.
+   - (b) Thread `t` through every helper and test callback: hundreds of edited
+     call sites, against §6.
+   - (c) Mixed, file by file.
+   - **Answer: (a).** It is §7's approach and keeps more, never less, on a
+     failure. The helper's header says so.
+2. **`watch-mode.test.js`.** The helper's `t.after` would run before the
+   test's later `t.after(() => child.kill())` (hooks run in registration
+   order) and `kill()` does not wait for the watcher to exit (§7's trap).
+   - (a) The exit path in `mkProject`: a piped child keeps the file's process
+     alive until it exits, so the removal runs after every watcher is gone;
+     no hook edits.
+   - (b) Pass `t` and replace about 30 hooks with a kill that awaits `exit`.
+   - **Answer: (a).**
+3. **The guard when the command cannot be spawned** (`spawn` emits `error`,
+   e.g. `ENOENT`); C3 names only exit 0, non-zero and a signal.
+   - (a) Print `tmpdir-guard: cannot run <command>: <reason>`, then C3's
+     failure branch: keep the directory, print the kept line, exit 1.
+   - (b) Print the reason, remove the empty directory, exit 1.
+   - (c) Node's default: an unhandled error, nothing of the guard's own.
+   - **Answer: (a).** Tested by `MIG-B9-25: the guard keeps its directory and
+     exits 1 when the command cannot be run`.
+4. **The helper's line for a kept directory** (C4 says only that the path is
+   printed).
+   - (a) `temporary directory kept: <absolute path>`, through `t.diagnostic`
+     for a test and on stderr for the exit path.
+   - (b) The guard's sentence. (c) Free per file.
+   - **Answer: (a).** T6 and T7 assert it.
+5. **CHANGELOG.** The workflow's general rule asks for one subsection per
+   story; §10 says none, the CHANGELOG is in neither Owns nor Shares, and AC6
+   limits the diff to Owns, Shares and this file.
+   - (a) No CHANGELOG entry. (b) A subsection, with the CHANGELOG added to
+     Shares (AC6 and the index's row change).
+   - **Answer: (a).** The docs guard is met by the package README sentence.
+6. **T9's kept corpus root when T9 fails.** Decision 5 keeps a failing test's
+   temporary directories, but the root is under `fixtures/sass-corpus/.work`
+   (the repository), and AC5 requires no `.work` afterwards.
+   - (a) Remove it in `finally`, pass or fail. (b) Keep it on a failure.
+   - **Answer: (a).** Decision 5 concerns temporary directories.
+7. **MIG-B9-39, in progress,** adds tests under `test/vite` and
+   `test/webpack`; a directory they leave fails the guard for whichever story
+   merges second.
+   - (a) The second to merge moves its new tests to the helper; a follow-up
+     for MIG-B9-39 records it. (b) This story waits for MIG-B9-39. (c)
+     MIG-B9-39 waits for this story.
+   - **Answer: (a).** The guard makes the conflict loud, not silent.
+8. **The guard given no command,** a case C3 does not name.
+   - (a) Print `usage: node scripts/tmpdir-guard.js <command> [args…]` on
+     stderr, make nothing and exit 1. (b) Exit 0 doing nothing. (c) Node's
+     error from `spawn(undefined)`, after the directory is made.
+   - **Answer: (a).** Tested, from the review, by `MIG-B9-25: the guard prints
+     its usage, makes nothing and exits 1 when it is given no command`.
+
+**Finding from the review (R2): §11's README wording overstates.** §11 asks
+for a sentence that "the package's tests" remove their directories when they
+pass and keep them when they fail. Eleven package test files that C4 leaves
+alone (`types`, `theme-marker`, `namespace-migration`,
+`codemod-size-overrides`, `codemod-canonical-grammar`,
+`core/compile-discovery`, `core/compile-error-warnings`,
+`core/sass-stage-case`, `cli/watch-selection`, `vite/theme-emission`,
+`webpack/theme-emission`) make their own and remove them in `t.after` or
+`finally`, whatever the outcome. §11 is not rewritten; the README sentence
+says what holds: directories made through the helper follow decision 5, the
+others are removed when their test or file ends.

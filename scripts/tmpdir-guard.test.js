@@ -119,6 +119,14 @@ test('MIG-B9-25: the guard keeps its directory and exits 1 when the command cann
   assert.deepEqual(fs.readdirSync(match[1]), [], 'nothing ran in it');
 });
 
+test('MIG-B9-25: the guard prints its usage, makes nothing and exits 1 when it is given no command', (t) => {
+  const dir = given(t);
+  const run = spawnSync(process.execPath, [GUARD], { env: { ...process.env, TMPDIR: dir, TMP: dir, TEMP: dir }, encoding: 'utf8' });
+  assert.equal(run.status, 1, run.stderr);
+  assert.equal(run.stderr, 'usage: node scripts/tmpdir-guard.js <command> [args…]\n');
+  assert.deepEqual(fs.readdirSync(dir), ['sentinel.txt'], 'no directory of its own was made');
+});
+
 test('MIG-B9-25: the guard removes a symbolic link left in its directory, never what the link points to', (t) => {
   const dir = given(t);
   const sentinel = scratch(t, 'uxdsl-tmpdir-guard-sentinel-');

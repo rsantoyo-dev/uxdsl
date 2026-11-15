@@ -2089,10 +2089,12 @@ reads a dependency's own version that way; fixed in 0.5.0-beta.1.
 The package's own test files run in parallel against the built `dist/`, so
 none of them may rebuild it: the one test that inspects the packed file list
 runs `npm pack --dry-run --ignore-scripts`, since `prepack` would recompile
-`dist/` under the others. They remove the temporary directories they make
-when they pass and keep them, printing each path, when they fail; the
-repository's `npm test` runs its steps in a temporary directory of its own
-and fails, naming each entry, when a passing step leaves one there.
+`dist/` under the others. Each removes the temporary directories it makes:
+those made through `test/helpers/temporary-directory.js` when the tests pass,
+keeping them and printing each path when they fail, and the others when the
+test or file that made them ends, whatever the outcome. The repository's
+`npm test` runs its steps in a temporary directory of its own and fails,
+naming each entry, when a passing step leaves one there.
 
 `fixtures/release-1.0/` (`npm run verify:1.0`) does the same from the one
 tarball, and among its checks exercises the CLI's
