@@ -207,7 +207,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | Merged (PR #93) |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Merged (PR #75) |
 | MIG-B9-25 | [The test suites remove the temporary directories they create](MIG-B9-25-suites-remove-temp-dirs.md) | 2 | — | S | 13 | Merged (PR #94) |
-| MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | In review (PR #97) |
+| MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | Merged (PR #97) |
 | MIG-B9-17 | [The silent cases of `@use`'s module isolation warn](MIG-B9-17-module-isolation-warnings.md) | 2 | DEC-17 | M | 26 | Ready |
 | MIG-B9-27 | [`uxdsl/postcss` in a PostCSS chain: run the Sass-syntax checks at `OnceExit` if that keeps every contract](MIG-B9-27-postcss-chain.md) | 2 | DEC-05 | S | 21 | Ready |
 | MIG-B9-28 | [CI on Windows](MIG-B9-28-ci-on-windows.md) | 2 | — | M | — | Ready |
@@ -223,9 +223,9 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-36 | [Inputs: `:user-invalid`](MIG-B9-36-user-invalid.md) | 3 | DEC-13 | S | 13 | Ready |
 | MIG-B9-37 | [A located warning for a CSS-wide keyword as a theme token value](MIG-B9-37-css-wide-keyword-warning.md) | 3 | — | S | 13 | Ready |
 | MIG-B9-38 | [A located warning for a plain `@import` of a `.uxdsl`, `.scss` or `.sass` URL left in the CSS](MIG-B9-38-plain-import-warning.md) | 3 | — | S | 14, 22 | Ready |
-| MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | S | 14, 21, 22 | In review (PR #96) |
+| MIG-B9-39 | [Every host's watch recovers after a failed compile](MIG-B9-39-watch-recovers-after-failure.md) | 3 | — | S | 14, 21, 22 | Merged (PR #96) |
 | MIG-B9-19 | [The CLI's watch recovers after a failed compile, and its flaky watch test and captures check name what failed](MIG-B9-19-cli-watch-recovers.md) | 3 | — | S | 14, 21, 22 | Ready |
-| MIG-B9-06 | The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts | 3 | — | S | 19, 39 | Draft (story file to be written; registered by decision 29 of 2026-11-13; it also takes the atomic-replace watch failure seen once on CI, Dependabot's PR #84, by decision 28 of 2026-11-15) |
+| MIG-B9-06 | The CLI watch's four older gaps, the same class in the adapters, and an error while a recreated watcher starts | 3 | — | S | 19, 39 | Draft (story file to be written; registered by decision 29 of 2026-11-13; it also takes the atomic-replace watch failure seen once on CI, Dependabot's PR #84, by decision 28 of 2026-11-15, and the webpack loader watch tests' extra-build class: webpack runs an extra build of a module edited just before a build starts, which the older watch tests in `packages/uxdsl/test/webpack/loader.test.js`, MIG-B9-20's among them, can take for the edit's, by decision 40 of 2026-11-15) |
 | MIG-B9-91 | [The gate and the release record](MIG-B9-91-gate-and-release.md) | 7 | DEC-03 | M | every story of waves 0 to 3; 28 | Draft (re-baseline after wave 3) |
 | MIG-B9-44 | The playground's visual comparison harness is deterministic | 4 | — | S | — | Draft (story file to be written; registered by decision 12 of 2026-11-09, as MIG-B9-22's delivery proposed in its §15) |
 | MIG-B9-40 | [The playground's design-system layer](MIG-B9-40-playground-design-system-layer.md) | 4 | DEC-14 | M | 22, 30, 33, 34, 44 | Draft (re-baseline after wave 3) |
@@ -247,6 +247,8 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-66 | CI on Windows, part two: parity, the consumer fixtures and the shims | 6 | — | S or split (its story file sets it) | 28 | Draft (story file to be written; registered by decision 15 of 2026-11-10) |
 | MIG-B9-94 | Unknown options warn on the plugin, `compile()`, Vite and webpack | 6 | — | S | — | Draft (story file to be written; registered by decision 17 of 2026-11-15) |
 | MIG-B9-95 | The reference checker follows `!important` as the cascade does | 6 | — | S | — | Draft (story file to be written; registered by decision 18 of 2026-11-15) |
+| MIG-B9-96 | `compile()`'s error for a UXDSL error carries its `UXD_` code | 6 | — | S | — | Draft (story file to be written; registered by decision 39 of 2026-11-15) |
+| MIG-B9-97 | The Vite adapter fixture runs on Vite 6 | 6 | — | S | — | Draft (story file to be written; registered by decision 41 of 2026-11-15) |
 | MIG-B9-90 | [The test exercise: an app from the public docs only](MIG-B9-90-test-exercise.md) | 7 | — | M | 50 | Draft (re-baseline after wave 3) |
 | MIG-B9-92 | The beta.10 gate and release record | 7 | DEC-03 | M | every story of waves 4 to 6; 90 | Draft (story file to be written; registered by D13 of 2026-11-04, as the review's 91b proposed in MIG-B9-91 §15) |
 
@@ -424,6 +426,27 @@ it merges.
 The rows of MIG-B9-21, 16 and 25, and MIG-B9-18's (PR #91, `f6c009d`),
 now read Merged, as do their headers.
 
+Later on 2026-11-15 MIG-B9-39 (PR #96, `e89fdb8`) and MIG-B9-26 (PR #97,
+`5dace3a`) were merged into `feat/beta9`; their rows and headers read
+Merged. Under the same standing instruction, their delivery flags and
+follow-ups became decisions 29 to 44 of 2026-11-15 without being put to the
+owner one by one, and the owner may override any of them (FEAT-010 §2).
+MIG-B9-39's delivery did not take its F3, so MIG-B9-96 is registered
+(decision 39, carrying out decision 19), and Vite 6, inside
+`peerDependencies.vite: ">=4.0.0"` but run by no fixture, is MIG-B9-97
+(decision 41; the id decision 21 left untaken): both for `0.5.0-beta.10`,
+the last wave-6 rows after MIG-B9-95, with their story files still to be
+written, so MIG-B9-92 now waits for them and `0.5.0-beta.9`'s scope does not
+change. They have no §7 rows: without a story file they have no Owns or
+Shares, and as the last wave-6 rows they come after every unmerged story on
+the files they will likely edit (`compile.ts` and `diagnostics.ts` for
+MIG-B9-96; `fixtures/vite-adapter/**`, which no other unmerged story edits,
+for MIG-B9-97). MIG-B9-06 also takes webpack's extra build in the older
+loader watch tests (decision 40); it stays in wave 3 after MIG-B9-19 and 39,
+and its provisional place on the `loader.test.js` row makes no story wait.
+MIG-B9-39 and 26 carry a block of this date at the end of their §15;
+MIG-B9-17's file, in progress, is not edited.
+
 ## 6. Branches and merges
 
 - One integration branch, `feat/beta9`, created from `main` by the first
@@ -458,7 +481,7 @@ edit `bin/uxdsl.js`).
 | `packages/uxdsl/test/cli/**` | 14, 20, 21, 22, 25, 17, 28, 38, 19, 06 |
 | `packages/uxdsl/test/no-silent-output.test.js` | 13, 25, 27, 28 |
 | `packages/uxdsl/test/core/sass-source-maps.test.js` | 13, 25, 28 |
-| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25 |
+| `packages/uxdsl/test/vite/index.test.js`, `test/webpack/loader.test.js` | 20, 21, 25, 06 (`loader.test.js`, provisional: decision 40 of 2026-11-15) |
 | `packages/uxdsl/bin/uxdsl.js` | 14, 20, 21, 22, 37, 38, 19, 06, 60, 61, 63 |
 | `packages/uxdsl/src/vite.ts`, `webpack.ts` | 14, 20, 21, 39, 64 |
 | `packages/uxdsl/src/diagnostics.ts` | 04, 11, 12, 13, 21, 26, 17, 30, 32, 33, 34, 35, 37, 38 |
@@ -527,8 +550,9 @@ on the rows for `vite.ts`, `webpack.ts`, `vite.md`, `webpack.md` and
 `fixtures/webpack-adapter/**`, and MIG-B9-19 takes its places on the rows
 for `bin/uxdsl.js`, `test/cli/**`, `cli.md` and the playground. MIG-B9-06's
 places on `bin/uxdsl.js`, `test/cli/**` and `cli.md`, after MIG-B9-19, come
-from decision 29 before its story file exists; they are provisional, like
-MIG-B9-92's, 44's and 66's. The new test files of
+from decision 29 before its story file exists, and its place on
+`test/webpack/loader.test.js` from decision 40 of 2026-11-15; they are
+provisional, like MIG-B9-92's, 44's and 66's. The new test files of
 MIG-B9-37, 38 and 39 are owned, except MIG-B9-38's CLI test, which sits
 under `test/cli/**`. `fixtures/vite-adapter/**`, which only MIG-B9-39 edits
 among unmerged stories, has no row. MIG-B9-18's files, the codemod and its
