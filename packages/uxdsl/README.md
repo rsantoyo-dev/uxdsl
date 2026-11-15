@@ -93,7 +93,8 @@ which `compile()` validates, and report each warning as
 `<file>:<line>:<column>: <text>`, the file relative to Vite's root or to
 webpack's `rootContext`; after a failed compile, both rebuild when the file
 at fault, a file the module's last good compile loaded or the theme file is saved, and
-their errors carry the location and the frame; `uxdsl/webpack` hands
+their errors carry the location and the frame (Vite's `loc` and `frame`,
+webpack's message); `uxdsl/webpack` hands
 css-loader a map whose sources are absolute paths, so the map webpack emits
 names each `.uxdsl` file at its path whatever the working directory. The CLI guide's
 [`generate-entry`](https://github.com/rsantoyo-dev/uxdsl/blob/main/packages/uxdsl/docs/integrations/cli.md#generate-entry),

@@ -91,8 +91,11 @@ const output = (dir, chain) => path.join(dir, 'dist', chain === 'extract' ? 'mai
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 /**
- * compiler.watch(), one build at a time. `next(step)` resolves with the next
- * build's stats, errors included, and rejects naming `step` after 20 s.
+ * compiler.watch(), one build at a time. `next(step, accept)` resolves with the
+ * next build's stats, errors included, for which `accept` holds (any build by
+ * default), and rejects naming `step` and the builds it passed over after
+ * 20 s. webpack may run one more build of a module edited just before a build
+ * started; passing over it keeps the wait on the build that carries the edit.
  * `quiet(step, ms)` fails when the watcher sees a change (webpack's `invalid`
  * hook) within `ms`. The watcher is closed when the test ends.
  */
@@ -109,12 +112,23 @@ function watch(t, options) {
   });
   cleanup(t, () => new Promise((resolve) => watching.close(() => resolve())));
   return {
-    next(step) {
+    next(step, accept = () => true) {
       return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(`${step}: no webpack build within 20 s`)), 20000);
+        const passed = [];
+        const timer = setTimeout(() => reject(new Error(`${step}: no ${passed.length ? 'matching ' : ''}webpack build within 20 s${passed.length ? `; builds passed over: ${JSON.stringify(passed)}` : ''}`)), 20000);
         const deliver = ({ err, stats }) => {
+          if (err) {
+            clearTimeout(timer);
+            return reject(err);
+          }
+          if (!accept(stats)) {
+            passed.push(errorsOf(stats).map((message) => message.split('\n').slice(0, 2).join(' ')));
+            const build = ready.shift();
+            if (build) deliver(build); else waiting.push(deliver);
+            return;
+          }
           clearTimeout(timer);
-          if (err) reject(err); else resolve(stats);
+          resolve(stats);
         };
         const build = ready.shift();
         if (build) deliver(build); else waiting.push(deliver);
@@ -153,8 +167,9 @@ test('MIG-B9-39: webpack watch rebuilds when the partial that broke a module is 
 
     // The partial loses the variable the module reads: the error names the module, so the partial is registered only because the last good compile loaded it.
     await edit(dir, 'styles/parts/_card.uxdsl', CARD_NO_VAR);
-    const failed = await builds.next(`${chain}: the build after the partial is broken`);
-    const failure = errorsOf(failed).find((message) => /UXD_SASS: Undefined variable\./.test(message));
+    const undefinedVariable = (message) => /UXD_SASS: Undefined variable\./.test(message);
+    const failed = await builds.next(`${chain}: the build after the partial is broken`, (stats) => errorsOf(stats).some(undefinedVariable));
+    const failure = errorsOf(failed).find(undefinedVariable);
     assert.ok(failure, errorsOf(failed).join('\n'));
     assert.ok(failure.includes(`${path.join('styles', 'main.uxdsl')}:2:`), `${chain}: the error names the module\n${failure}`);
     assert.ok(!failure.split('\n')[0].includes('_card.uxdsl'), `${chain}: the error's first line does not name the partial\n${failure}`);
@@ -165,7 +180,7 @@ test('MIG-B9-39: webpack watch rebuilds when the partial that broke a module is 
     await builds.quiet(`${chain}: an edit to a file the module never loaded`, 2000);
 
     await edit(dir, 'styles/parts/_card.uxdsl', CARD_VAR);
-    const fixed = await builds.next(`${chain}: the build after the partial is fixed`);
+    const fixed = await builds.next(`${chain}: the build after the partial is fixed`, (stats) => errorsOf(stats).length === 0);
     assert.deepEqual(errorsOf(fixed), []);
     assert.deepEqual(fs.readFileSync(output(dir, chain)), goodOutput, `${chain}: the recovered output equals the first build's`);
   }
