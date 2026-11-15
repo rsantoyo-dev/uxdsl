@@ -9,7 +9,7 @@
 | Size | S |
 | Depends on | MIG-B9-13 (merged, PR #63). Under README §7 it also waits for MIG-B9-20, which edits most of the files this story edits (§3, §15) |
 | Blocks | Under README §7: MIG-B9-26 (`test/core/compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-17 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`; decision 6 of 2026-11-10); MIG-B9-27 (`test/no-silent-output.test.js`); MIG-B9-28 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`); MIG-B9-19 and 06 (`test/cli/**`; in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-91 (the root `package.json`; it also depends on every story of waves 0 to 3); in `0.5.0-beta.10`, MIG-B9-51 and 52 (`scripts/agent-guide.test.js`) and, provisionally, MIG-B9-66 (decision 15 of 2026-11-10: the fixtures and shims it would run on Windows) |
-| Base | `feat/beta9` after MIG-B9-13 and MIG-B9-20. §3 and §4 were recorded on `f855765`, before MIG-B9-20; both are re-run on the base the story starts from (§3) |
+| Base | `feat/beta9` after MIG-B9-13 and MIG-B9-20. §3 and §4 were recorded on `f855765`, before MIG-B9-20, and re-run on `cf98cb8` (after MIG-B9-20, PR #88, and MIG-B9-21, PR #92) on 2026-11-15; the base's figures are in §4 and §14 |
 | Owns | `scripts/tmpdir-guard.js` (new), `scripts/tmpdir-guard.test.js` (new), `packages/uxdsl/test/helpers/temporary-directory.js` (new), `packages/uxdsl/test/temporary-directory.test.js` (new) |
 | Shares | the root `package.json` (the `test` script); `packages/uxdsl/test/cli/error-location.test.js`, `init.test.js`, `theme-command.test.js`, `uxdsl-cli.test.js`, `watch-mode.test.js`; `packages/uxdsl/test/core/compile-sass.test.js`, `compile.test.js`, `import-order.test.js`, `protect.test.js`, `sass-matrix.test.js`, `sass-matrix.record.js`, `sass-pipeline.test.js`, `sass-source-maps.test.js`; `packages/uxdsl/test/config.test.js`, `es5-consumer-compat.test.js`, `no-silent-output.test.js`, `vite/index.test.js`, `webpack/loader.test.js`; `packages/_deprecated/shims.test.js`; `scripts/verify-docs-update.test.js`, `scripts/release.test.js`, `scripts/agent-guide.test.js`; `fixtures/parity/run.js`; `fixtures/mig-b2-03-cli-init/run.js`; `fixtures/release-1.0/verdicts.test.js`, `fixtures/release-1.0/audit-lock.test.js`; `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md` (§15, question 1); `packages/uxdsl/README.md` (one sentence) |
 | Output impact | none (no compiled output, API or CLI change; `npm test` fails when a passing step leaves an entry in its temporary directory) |
@@ -119,6 +119,8 @@ the contract assumes it does not until the owner answers.
 git merge-base --is-ancestor 7aec3e0 HEAD                                                     # MIG-B9-13 (PR #63)
 git merge-base --is-ancestor dfcd216 HEAD                                                     # MIG-B9-23 (PR #75): the corpus root under fixtures/sass-corpus/.work
 git merge-base --is-ancestor 08d00e0 HEAD                                                     # MIG-B9-22 (PR #76): the CLI suite §4 measured
+git merge-base --is-ancestor cc10de6 HEAD                                                     # MIG-B9-20 (PR #88)
+git merge-base --is-ancestor cf98cb8 HEAD                                                     # MIG-B9-21 (PR #92): decision 18 of 2026-11-13
 command grep -q "fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-stage-'))" packages/uxdsl/test/core/compile-sass.test.js   # project() as §4 measured it
 command grep -q "'uxdsl-cli-watch-'" packages/uxdsl/test/cli/watch-mode.test.js
 command grep -q "'uxdsl-gate-verdicts-'" fixtures/release-1.0/verdicts.test.js
@@ -128,9 +130,10 @@ test ! -e scripts/tmpdir-guard.js && test ! -e packages/uxdsl/test/helpers/tempo
 node -e "require('node:test').test('t', (t) => { if (!('passed' in t)) throw new Error('no t.passed'); })"   # node:test's TestContext has passed
 ```
 
-All ten exit 0 on `f855765`, run on 2026-11-10 from the repository root
-with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of
-the writer's own. The last line's control, with `'passedx'` in place of
+All twelve exit 0 on `cf98cb8` (BASE), run on 2026-11-15 from the
+worktree's root with Node 20.19.0 (CI's version) and `TMPDIR` set to a
+scratch directory of the runner's own; on `f855765` the first ten exited 0
+on 2026-11-10. The last line's control, with `'passedx'` in place of
 `'passed'`, exits 1.
 
 **The base moves before this story starts.** MIG-B9-20 (Ready, in progress
@@ -236,6 +239,21 @@ Recorded on 2026-11-10, macOS 27.0 (Darwin 27.0.0, Apple M1 Pro), Node
   `Tarball consumer: <dir>` on every run, and that directory stays in both
   cases. The others remove theirs in `t.after` or `finally`, so they remove
   them whether they pass or fail.
+- **Re-run on `cf98cb8` (BASE), 2026-11-15,** in the story's worktree, with
+  `TMPDIR` set to an empty scratch directory (5 min 14 s under a 1-minute
+  load of 58 to 14: indicative only). 1,618 tests: 1,617 pass, 0 fail, 1
+  skipped (the same protect Bootstrap test). What it left in `TMPDIR`: 990
+  entries, all directories, 30 MB, 6,680 paths inside them; 52 links, 45
+  into `packages/uxdsl` (26 `uxdsl-cli-watch-*`, 10 `uxdsl-cli-init-*`, 5
+  `uxdsl-shims-*`, 2 `uxdsl-init-multi-*`, 2 `uxdsl-init-plain-*`). Each
+  step alone: all 111 steps exit 0; 86 leave nothing, the same 25 files
+  leave the 990 entries, every row of the table above unchanged but
+  `uxdsl-cli.test.js` 195 (`uxdsl-cli-test-` 180, `uxdsl-cli-map-` 10,
+  `uxdsl-cli-flags-` 5), `init.test.js` 52 (plain 18, next 12, multi 12,
+  vite 10), `watch-mode.test.js` 38, `vite/index.test.js` 16 and
+  `webpack/loader.test.js` 18. Seven test files are new since `f855765`
+  and one was deleted (`include-theme.test.js`); the new ones remove their
+  directories. `git status --porcelain` empty before and after.
 - **A kept corpus.** `runCorpus` from `fixtures/sass-corpus/run.js`, run
   with `parseArgs(['--keep'])` on a fake install, Dart Sass and `compile()`
   (no network), passed and printed `Kept <root>`; the root was under
@@ -757,3 +775,13 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
 ### Under README §7, after decisions 28 and 29 of 2026-11-13
 
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13). Decision 28 split MIG-B9-39 in two: MIG-B9-39 keeps the adapters, and [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md) takes the CLI and the tests, with the places MIG-B9-39 had on the rows of `bin/uxdsl.js`, `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`. MIG-B9-06, registered by decision 29, follows MIG-B9-19 on `test/cli/**` (its rows are provisional until its story file exists). On `test/cli/**`, MIG-B9-19 and 06 take MIG-B9-39's place after this story; MIG-B9-39 no longer edits that directory. The header's Blocks follows; nothing else in this story changes.
+
+### Stale lines corrected on 2026-11-15 (README §1 item 4)
+
+Before the implementation, on BASE `cf98cb8`. Each line's old and new form:
+
+- **Header, Base row.** Old: "§3 and §4 were recorded on `f855765`, before MIG-B9-20; both are re-run on the base the story starts from (§3)". New: "§3 and §4 were recorded on `f855765`, before MIG-B9-20, and re-run on `cf98cb8` (after MIG-B9-20, PR #88, and MIG-B9-21, PR #92) on 2026-11-15; the base's figures are in §4 and §14".
+- **§3, the block.** Old: no line for MIG-B9-20. New: `git merge-base --is-ancestor cc10de6 HEAD   # MIG-B9-20 (PR #88)`, the line §3 asks for when the story starts; it exits 0.
+- **§3, the block.** Old: no line for MIG-B9-21. New: `git merge-base --is-ancestor cf98cb8 HEAD   # MIG-B9-21 (PR #92): decision 18 of 2026-11-13`. MIG-B9-21 edited `cli/error-location.test.js`, `cli/uxdsl-cli.test.js`, `vite/index.test.js` and `webpack/loader.test.js`, all in this story's Shares; it exits 0.
+- **§3, the text under the block.** Old: "All ten exit 0 on `f855765`, run on 2026-11-10 from the repository root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the writer's own." New: "All twelve exit 0 on `cf98cb8` (BASE), run on 2026-11-15 from the worktree's root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the runner's own; on `f855765` the first ten exited 0 on 2026-11-10."
+- **§4, the baseline.** Old: the figures of `f855765` alone (1,556 tests, 957 entries, 105 steps of which 25 leave entries; `uxdsl-cli.test.js` 188, `init.test.js` 40, `watch-mode.test.js` 32, `vite/index.test.js` 15, `webpack/loader.test.js` 11). New: those figures kept as the record of `f855765`, and a "Re-run on `cf98cb8` (BASE)" item added with the base's: 1,618 tests (1,617 pass, 1 skipped), 990 entries, 111 steps of which the same 25 files leave entries (`uxdsl-cli.test.js` 195, `init.test.js` 52, `watch-mode.test.js` 38, `vite/index.test.js` 16, `webpack/loader.test.js` 18).
