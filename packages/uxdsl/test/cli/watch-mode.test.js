@@ -26,7 +26,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawn, spawnSync, execFileSync } = require('node:child_process');
 
@@ -69,7 +69,7 @@ test('watch retargets the entry and source globs without restarting the CLI, and
 });
 
 function mkProject() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-watch-'));
+  const dir = temporaryDirectory('uxdsl-cli-watch-');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'watch-test', version: '0.0.0' }, null, 2));
   return dir;
 }

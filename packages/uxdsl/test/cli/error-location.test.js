@@ -3,14 +3,14 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
 const cli = path.join(__dirname, '..', '..', 'bin', 'uxdsl.js');
 
 test('MIG-B9-13: a CSS error in an imported partial names the partial at its declaration start and prints its code frame', () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-location-'));
+  const directory = temporaryDirectory('uxdsl-cli-location-');
   fs.mkdirSync(path.join(directory, 'src'));
   fs.writeFileSync(path.join(directory, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
   fs.writeFileSync(path.join(directory, 'src', 'a.uxdsl'), '@import "./partial.uxdsl";\n');
@@ -31,7 +31,7 @@ test('MIG-B9-13: a CSS error in an imported partial names the partial at its dec
 });
 
 test('MIG-B6-13: a theme error names the theme file and exact key path', () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-theme-location-'));
+  const directory = temporaryDirectory('uxdsl-cli-theme-location-');
   fs.mkdirSync(path.join(directory, 'src'));
   fs.writeFileSync(path.join(directory, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
   fs.writeFileSync(path.join(directory, 'uxdsl.theme.json'), JSON.stringify({ typography_details: { h1: { fontsize: '2rem' } } }));
@@ -61,7 +61,7 @@ for (const [themeSnippet, expectedMessage] of [
   [{ palette: { primary: { main: 5 } } }, 'UXD_THEME_INVALID: Expected a nonempty string, got number 5 (at palette.primary.main).'],
 ]) {
   test(`MIG-B6-13: theme file location for ${expectedMessage.split(':')[0]} at ${expectedMessage.match(/\(at ([^)]+)\)/)[1]}`, () => {
-    const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-theme-location-'));
+    const directory = temporaryDirectory('uxdsl-cli-theme-location-');
     fs.mkdirSync(path.join(directory, 'src'));
     fs.writeFileSync(path.join(directory, 'uxdsl.config.cjs'), "module.exports = { entry: './src/a.uxdsl', outFile: './src/a.css' };");
     fs.writeFileSync(path.join(directory, 'uxdsl.theme.cjs'), `module.exports = ${JSON.stringify(themeSnippet)};`);
@@ -78,7 +78,7 @@ for (const [themeSnippet, expectedMessage] of [
 // the message line), every frame line indented by two spaces. A UXDSL error in
 // a Sass-heavy file keeps PostCSS's frame of the author's source.
 function mkSassProject(prefix) {
-  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), prefix)));
+  return fs.realpathSync(temporaryDirectory(prefix));
 }
 
 function put(directory, relative, text) {

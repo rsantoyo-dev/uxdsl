@@ -29,7 +29,7 @@
 // `normalize()` is the old matrix's (scss-subset.test.js), so the literals stay
 // comparable with the ones recorded before the pipeline.
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 
 const CASES_FILE = path.join(__dirname, 'sass-matrix.cases.js');
@@ -52,7 +52,7 @@ const silentLogger = { warn() {}, debug() {} };
 
 /** A fresh directory holding the matrix fixtures (`_partial.scss`, `partial-vars.uxdsl`, `plain.css`). */
 function fixtureDir(prefix) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  const dir = temporaryDirectory(prefix);
   for (const file of fs.readdirSync(FIXTURES)) fs.copyFileSync(path.join(FIXTURES, file), path.join(dir, file));
   return dir;
 }

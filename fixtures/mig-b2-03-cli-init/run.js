@@ -30,7 +30,7 @@
  */
 
 const fs = require('fs');
-const os = require('os');
+const { temporaryDirectory, removeWhenDone } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('path');
 const crypto = require('crypto');
 const { execFileSync } = require('child_process');
@@ -47,7 +47,7 @@ function check(label, condition) {
 }
 
 function mkProject() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-cli-init-'));
+  const dir = temporaryDirectory('uxdsl-cli-init-');
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: 'mig-b2-03-project', version: '0.0.0' }, null, 2));
   return dir;
 }
@@ -199,6 +199,7 @@ async function main() {
 
   // --- 10 (MIG-B7-12, FEAT-009): editor support from a real tarball ---
   const tarball = packAndInstall({ tmpPrefix: 'uxdsl-cli-init-tarball-' });
+  removeWhenDone(tarball.dir);
   const DOCUMENTED_SCHEMA = './node_modules/uxdsl/schema/theme.schema.json';
   const schemaFile = path.join(tarball.dir, DOCUMENTED_SCHEMA);
   check('the documented $schema path exists inside the installed tarball', fs.existsSync(schemaFile));

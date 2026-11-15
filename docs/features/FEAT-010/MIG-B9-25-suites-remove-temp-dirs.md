@@ -5,11 +5,11 @@
 | Feature · Release | FEAT-010 · `0.5.0-beta.9` |
 | Wave | 2 |
 | Decision gate | None (registered by decision D2 of 2026-11-04) |
-| Status | Ready |
+| Status | In review (PR #94) |
 | Size | S |
 | Depends on | MIG-B9-13 (merged, PR #63). Under README §7 it also waits for MIG-B9-20, which edits most of the files this story edits (§3, §15) |
 | Blocks | Under README §7: MIG-B9-26 (`test/core/compile-sass.test.js`, `fixtures/release-1.0/verdicts.test.js`); MIG-B9-17 (`test/cli/**`, `fixtures/release-1.0/verdicts.test.js`; decision 6 of 2026-11-10); MIG-B9-27 (`test/no-silent-output.test.js`); MIG-B9-28 (`test/cli/**`, `compile-sass.test.js`, `sass-source-maps.test.js`, `no-silent-output.test.js`); MIG-B9-19 and 06 (`test/cli/**`; in MIG-B9-39's place, by decisions 28 and 29 of 2026-11-13); MIG-B9-91 (the root `package.json`; it also depends on every story of waves 0 to 3); in `0.5.0-beta.10`, MIG-B9-51 and 52 (`scripts/agent-guide.test.js`) and, provisionally, MIG-B9-66 (decision 15 of 2026-11-10: the fixtures and shims it would run on Windows) |
-| Base | `feat/beta9` after MIG-B9-13 and MIG-B9-20. §3 and §4 were recorded on `f855765`, before MIG-B9-20; both are re-run on the base the story starts from (§3) |
+| Base | `feat/beta9` after MIG-B9-13 and MIG-B9-20. §3 and §4 were recorded on `f855765`, before MIG-B9-20, and re-run on `cf98cb8` (after MIG-B9-20, PR #88, and MIG-B9-21, PR #92) on 2026-11-15; the base's figures are in §4 and §14 |
 | Owns | `scripts/tmpdir-guard.js` (new), `scripts/tmpdir-guard.test.js` (new), `packages/uxdsl/test/helpers/temporary-directory.js` (new), `packages/uxdsl/test/temporary-directory.test.js` (new) |
 | Shares | the root `package.json` (the `test` script); `packages/uxdsl/test/cli/error-location.test.js`, `init.test.js`, `theme-command.test.js`, `uxdsl-cli.test.js`, `watch-mode.test.js`; `packages/uxdsl/test/core/compile-sass.test.js`, `compile.test.js`, `import-order.test.js`, `protect.test.js`, `sass-matrix.test.js`, `sass-matrix.record.js`, `sass-pipeline.test.js`, `sass-source-maps.test.js`; `packages/uxdsl/test/config.test.js`, `es5-consumer-compat.test.js`, `no-silent-output.test.js`, `vite/index.test.js`, `webpack/loader.test.js`; `packages/_deprecated/shims.test.js`; `scripts/verify-docs-update.test.js`, `scripts/release.test.js`, `scripts/agent-guide.test.js`; `fixtures/parity/run.js`; `fixtures/mig-b2-03-cli-init/run.js`; `fixtures/release-1.0/verdicts.test.js`, `fixtures/release-1.0/audit-lock.test.js`; `fixtures/sass-corpus/run.js`, `run.test.js`, `README.md` (§15, question 1); `packages/uxdsl/README.md` (one sentence) |
 | Output impact | none (no compiled output, API or CLI change; `npm test` fails when a passing step leaves an entry in its temporary directory) |
@@ -119,6 +119,8 @@ the contract assumes it does not until the owner answers.
 git merge-base --is-ancestor 7aec3e0 HEAD                                                     # MIG-B9-13 (PR #63)
 git merge-base --is-ancestor dfcd216 HEAD                                                     # MIG-B9-23 (PR #75): the corpus root under fixtures/sass-corpus/.work
 git merge-base --is-ancestor 08d00e0 HEAD                                                     # MIG-B9-22 (PR #76): the CLI suite §4 measured
+git merge-base --is-ancestor cc10de6 HEAD                                                     # MIG-B9-20 (PR #88)
+git merge-base --is-ancestor cf98cb8 HEAD                                                     # MIG-B9-21 (PR #92): decision 18 of 2026-11-13
 command grep -q "fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-sass-stage-'))" packages/uxdsl/test/core/compile-sass.test.js   # project() as §4 measured it
 command grep -q "'uxdsl-cli-watch-'" packages/uxdsl/test/cli/watch-mode.test.js
 command grep -q "'uxdsl-gate-verdicts-'" fixtures/release-1.0/verdicts.test.js
@@ -128,9 +130,10 @@ test ! -e scripts/tmpdir-guard.js && test ! -e packages/uxdsl/test/helpers/tempo
 node -e "require('node:test').test('t', (t) => { if (!('passed' in t)) throw new Error('no t.passed'); })"   # node:test's TestContext has passed
 ```
 
-All ten exit 0 on `f855765`, run on 2026-11-10 from the repository root
-with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of
-the writer's own. The last line's control, with `'passedx'` in place of
+All twelve exit 0 on `cf98cb8` (BASE), run on 2026-11-15 from the
+worktree's root with Node 20.19.0 (CI's version) and `TMPDIR` set to a
+scratch directory of the runner's own; on `f855765` the first ten exited 0
+on 2026-11-10. The last line's control, with `'passedx'` in place of
 `'passed'`, exits 1.
 
 **The base moves before this story starts.** MIG-B9-20 (Ready, in progress
@@ -236,6 +239,21 @@ Recorded on 2026-11-10, macOS 27.0 (Darwin 27.0.0, Apple M1 Pro), Node
   `Tarball consumer: <dir>` on every run, and that directory stays in both
   cases. The others remove theirs in `t.after` or `finally`, so they remove
   them whether they pass or fail.
+- **Re-run on `cf98cb8` (BASE), 2026-11-15,** in the story's worktree, with
+  `TMPDIR` set to an empty scratch directory (5 min 14 s under a 1-minute
+  load of 58 to 14: indicative only). 1,618 tests: 1,617 pass, 0 fail, 1
+  skipped (the same protect Bootstrap test). What it left in `TMPDIR`: 990
+  entries, all directories, 30 MB, 6,680 paths inside them; 52 links, 45
+  into `packages/uxdsl` (26 `uxdsl-cli-watch-*`, 10 `uxdsl-cli-init-*`, 5
+  `uxdsl-shims-*`, 2 `uxdsl-init-multi-*`, 2 `uxdsl-init-plain-*`). Each
+  step alone: all 111 steps exit 0; 86 leave nothing, the same 25 files
+  leave the 990 entries, every row of the table above unchanged but
+  `uxdsl-cli.test.js` 195 (`uxdsl-cli-test-` 180, `uxdsl-cli-map-` 10,
+  `uxdsl-cli-flags-` 5), `init.test.js` 52 (plain 18, next 12, multi 12,
+  vite 10), `watch-mode.test.js` 38, `vite/index.test.js` 16 and
+  `webpack/loader.test.js` 18. Seven test files are new since `f855765`
+  and one was deleted (`include-theme.test.js`); the new ones remove their
+  directories. `git status --porcelain` empty before and after.
 - **A kept corpus.** `runCorpus` from `fixtures/sass-corpus/run.js`, run
   with `parseArgs(['--keep'])` on a fake install, Dart Sass and `compile()`
   (no network), passed and printed `Kept <root>`; the root was under
@@ -603,7 +621,63 @@ The body:
 
 ## 14. Closure record
 
-To be filled in the delivering PR.
+Delivered in PR #94, from `feat/b9-25-suites-remove-temp-dirs` into `feat/beta9`. The story is size S, so it took the light flow (D1 of 2026-11-04): a scout, one implementer, one review and the deliverer. Where the delivered contract differs from §5, §15's blocks rule: decisions 3 to 5 of 2026-11-10 and the owner flags taken on 2026-11-15. Only the owner merges.
+
+**Base and commits.** The base is `feat/beta9` at `cf98cb8`, and `origin/feat/beta9` had not moved when the PR was opened, so there is no merge.
+
+| Commit | Content |
+| --- | --- |
+| `8e455e5` | Stale preconditions and baseline re-run on `cf98cb8` (§15, "Stale lines corrected on 2026-11-15") |
+| `83ff459` | The guard, the helper, T1–T9 and the extra guard tests, 25 files and two fixtures moved to the helper, `run.js --keep`, the README sentences |
+| `6585143` | Review fixes: the owner flags in §15, the guard's usage test, the narrowed README sentence |
+
+**Environment.** macOS (Darwin 27), Node 20.19.0, npm 11.21.1, Chrome at the macOS default path. Every run had `TMPDIR` set to a directory in the session scratchpad, and each directory was removed afterwards. Three story workflows shared the machine, with a 1-minute load of 15 to 42, so durations are indicative only.
+
+**Base figures for the lines of §5, §7 and §2 that stay as written** (re-measured by the scout on `cf98cb8`):
+- C1: 990 entries (957 on `f855765`).
+- C2: 25 of 111 steps leave entries (25 of 105).
+- Must-stay totals: 1,618 tests, 1,617 pass, 1 skipped.
+- §7 item 2: `project()` has 48 call sites and makes 492 directories per run.
+- §2: `run.js`'s mixed check is at lines 277–278 and keep/remove at 292–293 (before this change). `compile-sass.test.js`'s `project()` is at lines 56–60.
+
+**Failing first.**
+- `temporary-directory.test.js`: 3/3 not ok, `Cannot find module …/test/helpers/temporary-directory.js`.
+- `tmpdir-guard.test.js`: 8/8 not ok, `Cannot find module scripts/tmpdir-guard.js`.
+- T9 on BASE's `run.js`: the kept `corpus/` held `_uxdsl-extras.uxdsl` and `with-extras.uxdsl`. The scout reproduced both halves, and the review reproduced the throwing half under a success-only removal.
+- The usage test (review fix): not ok against a guard without its no-command check.
+
+**Criteria to evidence.**
+
+| Criterion | Test or command | Result |
+| --- | --- | --- |
+| C1 / AC1 | `TMPDIR=<empty> npm test` (deliverer, 01:56–02:02, before the fix commit, on the same tree) | exit 0, **0 entries left**; 1,631 tests, 1,630 pass, 0 fail, 1 skipped (BASE 1,618 + 13 new); `PASS: 10 parity case(s)`; `All checks passed.` |
+| AC1 mutation | the guard around `compile-sass` and `compile` tests, on a copy with BASE's `project()` | guard exit 1 with 95/95 tests passing; the leak line and 492 `  uxdsl-sass-stage-*` lines; given directory empty |
+| C2 / AC2 | §12's loop (deliverer, 02:03–02:10, on `6585143`) | `steps=113 fail=0`, scratch gone |
+| AC2 mutation | the loop's `step` on the same copy | `left 492 in …: node --test test/core/compile-sass.test.js`, `fail=1`; the real file gives `fail=0` |
+| C3 / AC3 | `node --test scripts/tmpdir-guard.test.js` | 9/9 pass, given directory empty; the review's 5 mutations each fail their test; the usage test fails without its check |
+| C4 / AC4 | `node --test packages/uxdsl/test/temporary-directory.test.js` | 3/3 pass, directory empty; 5 mutations (implementer and review) each fail as AC4 says |
+| C5 | T5, T8; `git status --porcelain` after AC1 | pass; empty |
+| C6 / AC5 | `node --test fixtures/sass-corpus/run.test.js`; the AC5 grep | 9/9 pass, no `.work` before or after; the grep exits 1; the review's real `--keep` run against the registry keeps no extras file |
+| AC6 | `git diff --name-only cf98cb8` | 36 paths, all in Owns, Shares or this file; no CHANGELOG (owner flag 5) |
+| Parity | `node fixtures/parity/run.js` | exit 0, `PASS: 10 parity case(s)` |
+| Gate | `npm run verify:1.0 -- --skip-playground-walk` (02:11–02:13) | exit 0, `71/71 automated checks passed`; it left 5 directories in its `TMPDIR` (decision 4, out of scope) |
+| Browser | `npm run verify:playground-browser` (real Chrome, 02:13–02:17) | exit 0, `PASS: no console errors, no UXDSL warnings, no unresolved var(), visible keyboard focus, contrast page = Node.` |
+| AC1 again | `TMPDIR=<empty> npm test` on the closure record's tree (02:18–02:23) | exit 0, 0 entries left; 1,631 tests, 1,630 pass, 0 fail, 1 skipped |
+| Hooks | the pre-commit hook (`verify:docs` and the playground build) on all three commits | passed, no `--no-verify` |
+
+The implementer and the reviewer each also ran `npm test` with an empty `TMPDIR` on `83ff459`: exit 0, 0 entries, 1,630 tests.
+
+**Documentation.**
+- `packages/uxdsl/README.md` ("Verified from a real install"), narrowed by R2: directories made through the helper are removed when the tests pass and kept, path printed, when they fail; the others are removed when their test or file ends.
+- `fixtures/sass-corpus/README.md`: what a kept root holds.
+- The headers of the guard and the helper state C3 and C4 as behavior.
+- No CHANGELOG, `generate:language`, AGENTS.md, catalog or capabilities change (§10).
+
+**Not run, or not a pass.**
+- Windows (MIG-B9-28).
+- The gate's leftovers (decision 4).
+- AC1's mutation as a whole `npm test`: it was run as the guard around the mutated core tests, on a copy, not as a full run.
+- CI's result is the PR's.
 
 ## 15. Findings and follow-ups
 
@@ -725,6 +799,11 @@ To be filled in the delivering PR.
   is left.
 - **MIG-B9-39:** it rebases its watch-mode work on this story's
   `watch-mode.test.js`.
+- **MIG-B9-39 (2026-11-15, owner flag 7 below):** whichever of MIG-B9-39 and
+  this story merges second makes the temporary directories of its new
+  `test/vite` and `test/webpack` tests with
+  `packages/uxdsl/test/helpers/temporary-directory.js` (or removes them in
+  `t.after`), or `npm test` fails through the guard.
 
 ### Review of 2026-11-10 (applied in the PR that adds this file)
 
@@ -757,3 +836,109 @@ Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-10). 
 ### Under README §7, after decisions 28 and 29 of 2026-11-13
 
 Recorded in [FEAT-010 §2](../FEAT-010-beta9.md#owner-decisions-of-2026-11-13). Decision 28 split MIG-B9-39 in two: MIG-B9-39 keeps the adapters, and [MIG-B9-19](MIG-B9-19-cli-watch-recovers.md) takes the CLI and the tests, with the places MIG-B9-39 had on the rows of `bin/uxdsl.js`, `packages/uxdsl/test/cli/**`, `cli.md` and `packages/playground-nextjs/**`. MIG-B9-06, registered by decision 29, follows MIG-B9-19 on `test/cli/**` (its rows are provisional until its story file exists). On `test/cli/**`, MIG-B9-19 and 06 take MIG-B9-39's place after this story; MIG-B9-39 no longer edits that directory. The header's Blocks follows; nothing else in this story changes.
+
+### Stale lines corrected on 2026-11-15 (README §1 item 4)
+
+Before the implementation, on BASE `cf98cb8`. Each line's old and new form:
+
+- **Header, Base row.** Old: "§3 and §4 were recorded on `f855765`, before MIG-B9-20; both are re-run on the base the story starts from (§3)". New: "§3 and §4 were recorded on `f855765`, before MIG-B9-20, and re-run on `cf98cb8` (after MIG-B9-20, PR #88, and MIG-B9-21, PR #92) on 2026-11-15; the base's figures are in §4 and §14".
+- **§3, the block.** Old: no line for MIG-B9-20. New: `git merge-base --is-ancestor cc10de6 HEAD   # MIG-B9-20 (PR #88)`, the line §3 asks for when the story starts; it exits 0.
+- **§3, the block.** Old: no line for MIG-B9-21. New: `git merge-base --is-ancestor cf98cb8 HEAD   # MIG-B9-21 (PR #92): decision 18 of 2026-11-13`. MIG-B9-21 edited `cli/error-location.test.js`, `cli/uxdsl-cli.test.js`, `vite/index.test.js` and `webpack/loader.test.js`, all in this story's Shares; it exits 0.
+- **§3, the text under the block.** Old: "All ten exit 0 on `f855765`, run on 2026-11-10 from the repository root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the writer's own." New: "All twelve exit 0 on `cf98cb8` (BASE), run on 2026-11-15 from the worktree's root with Node 20.19.0 (CI's version) and `TMPDIR` set to a scratch directory of the runner's own; on `f855765` the first ten exited 0 on 2026-11-10."
+- **§4, the baseline.** Old: the figures of `f855765` alone (1,556 tests, 957 entries, 105 steps of which 25 leave entries; `uxdsl-cli.test.js` 188, `init.test.js` 40, `watch-mode.test.js` 32, `vite/index.test.js` 15, `webpack/loader.test.js` 11). New: those figures kept as the record of `f855765`, and a "Re-run on `cf98cb8` (BASE)" item added with the base's: 1,618 tests (1,617 pass, 1 skipped), 990 entries, 111 steps of which the same 25 files leave entries (`uxdsl-cli.test.js` 195, `init.test.js` 52, `watch-mode.test.js` 38, `vite/index.test.js` 16, `webpack/loader.test.js` 18).
+
+### Owner decisions taken under the standing instruction of 2026-11-10 (2026-11-15)
+
+Flags that arose while the story was implemented. Under the owner's standing
+instruction of 2026-11-10 ("fusiona todo.. y preguntas como recomendadas, y
+sgeuimos": every question answered with its recommended option), each was
+answered with its recommendation, which is what the branch implements. They
+were not put to the owner one by one; the owner may override any of them.
+
+1. **A directory made where no test context is in scope.** C4 says a test's
+   directory is kept when that test fails, but none of the 43 replaced
+   `mkdtemp` sites has a `t` in scope (`project()` in `compile-sass.test.js`
+   at 48 call sites, `mkTmpDir()`, `mkProject()`, directories made when a
+   file loads).
+   - (a) The exit path wherever no `t` is in scope: such a directory follows
+     its file's exit code, so a failing file keeps all of them and a passing
+     file removes them all; no call site or test signature changes.
+   - (b) Thread `t` through every helper and test callback: hundreds of edited
+     call sites, against §6.
+   - (c) Mixed, file by file.
+   - **Answer: (a).** It is §7's approach and keeps more, never less, on a
+     failure. The helper's header says so.
+2. **`watch-mode.test.js`.** The helper's `t.after` would run before the
+   test's later `t.after(() => child.kill())` (hooks run in registration
+   order) and `kill()` does not wait for the watcher to exit (§7's trap).
+   - (a) The exit path in `mkProject`: a piped child keeps the file's process
+     alive until it exits, so the removal runs after every watcher is gone;
+     no hook edits.
+   - (b) Pass `t` and replace about 30 hooks with a kill that awaits `exit`.
+   - **Answer: (a).**
+3. **The guard when the command cannot be spawned** (`spawn` emits `error`,
+   e.g. `ENOENT`); C3 names only exit 0, non-zero and a signal.
+   - (a) Print `tmpdir-guard: cannot run <command>: <reason>`, then C3's
+     failure branch: keep the directory, print the kept line, exit 1.
+   - (b) Print the reason, remove the empty directory, exit 1.
+   - (c) Node's default: an unhandled error, nothing of the guard's own.
+   - **Answer: (a).** Tested by `MIG-B9-25: the guard keeps its directory and
+     exits 1 when the command cannot be run`.
+4. **The helper's line for a kept directory** (C4 says only that the path is
+   printed).
+   - (a) `temporary directory kept: <absolute path>`, through `t.diagnostic`
+     for a test and on stderr for the exit path.
+   - (b) The guard's sentence. (c) Free per file.
+   - **Answer: (a).** T6 and T7 assert it.
+5. **CHANGELOG.** The workflow's general rule asks for one subsection per
+   story; §10 says none, the CHANGELOG is in neither Owns nor Shares, and AC6
+   limits the diff to Owns, Shares and this file.
+   - (a) No CHANGELOG entry. (b) A subsection, with the CHANGELOG added to
+     Shares (AC6 and the index's row change).
+   - **Answer: (a).** The docs guard is met by the package README sentence.
+6. **T9's kept corpus root when T9 fails.** Decision 5 keeps a failing test's
+   temporary directories, but the root is under `fixtures/sass-corpus/.work`
+   (the repository), and AC5 requires no `.work` afterwards.
+   - (a) Remove it in `finally`, pass or fail. (b) Keep it on a failure.
+   - **Answer: (a).** Decision 5 concerns temporary directories.
+7. **MIG-B9-39, in progress,** adds tests under `test/vite` and
+   `test/webpack`; a directory they leave fails the guard for whichever story
+   merges second.
+   - (a) The second to merge moves its new tests to the helper; a follow-up
+     for MIG-B9-39 records it. (b) This story waits for MIG-B9-39. (c)
+     MIG-B9-39 waits for this story.
+   - **Answer: (a).** The guard makes the conflict loud, not silent.
+8. **The guard given no command,** a case C3 does not name.
+   - (a) Print `usage: node scripts/tmpdir-guard.js <command> [args…]` on
+     stderr, make nothing and exit 1. (b) Exit 0 doing nothing. (c) Node's
+     error from `spawn(undefined)`, after the directory is made.
+   - **Answer: (a).** Tested, from the review, by `MIG-B9-25: the guard prints
+     its usage, makes nothing and exits 1 when it is given no command`.
+
+**Finding from the review (R2): §11's README wording overstates.** §11 asks
+for a sentence that "the package's tests" remove their directories when they
+pass and keep them when they fail. Eleven package test files that C4 leaves
+alone (`types`, `theme-marker`, `namespace-migration`,
+`codemod-size-overrides`, `codemod-canonical-grammar`,
+`core/compile-discovery`, `core/compile-error-warnings`,
+`core/sass-stage-case`, `cli/watch-selection`, `vite/theme-emission`,
+`webpack/theme-emission`) make their own and remove them in `t.after` or
+`finally`, whatever the outcome. §11 is not rewritten; the README sentence
+says what holds: directories made through the helper follow decision 5, the
+others are removed when their test or file ends.
+
+### Delivery of 2026-11-15
+
+Recorded by the deliverer of PR #94, on `6585143`.
+
+**New facts.**
+- `npm run verify:1.0` leaves 5 directories in the temporary directory it is given: `uxdsl-1.0-gate-`, `uxdsl-1.0-upgrade-before-`, `uxdsl-vite-adapter-5-`, `uxdsl-vite-adapter-7-` and `uxdsl-webpack-adapter-`. MIG-B9-23 recorded 18. This story does not touch them (decision 4).
+- Since the guard, `npm test` has 113 steps (§12's loop), and 1,631 tests with the review's usage test.
+- A test file whose directories use the exit path prints `temporary directory kept: <path>` on stderr when one of its tests fails. Under the guard, that path is inside the guard's kept `uxdsl-npm-test-*` directory, which the guard's last line names.
+
+**Follow-ups.**
+- **MIG-B9-91:** the gate's and the `verify:*` fixtures' leftovers, including `packAndInstall`'s consumer directory (decision 4), with the 5 entries above as its baseline.
+- **MIG-B9-39:** whichever of MIG-B9-39 and this story merges second moves the directories of its new `test/vite` and `test/webpack` tests to the helper (owner flag 7).
+- **MIG-B9-19:** its watch tests in `watch-mode.test.js` keep `mkProject`'s exit path, or pass `t` only with a kill that awaits the child's exit, registered before the directory's hook (owner flag 2).
+- **MIG-B9-28:** the guard and §12's loop on Windows.
+- **MIG-B9-51:** `CONTRIBUTING.md` states the rule for a new test: make its directories with `packages/uxdsl/test/helpers/temporary-directory.js` (or remove them in `t.after`) and expect `npm test` to fail when one is left.

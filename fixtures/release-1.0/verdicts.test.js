@@ -3,7 +3,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory: makeTemporaryDirectory } = require('../../packages/uxdsl/test/helpers/temporary-directory');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 const { createRequire } = require('node:module');
@@ -18,7 +18,7 @@ const { PACKAGE_DIR } = require('../lib/tarball-consumer');
 // installed tarball; here the accepted output comes from this repository's own
 // build.
 
-const temporaryDirectory = () => fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-gate-verdicts-'));
+const temporaryDirectory = () => makeTemporaryDirectory('uxdsl-gate-verdicts-');
 
 /** `uxdsl build` of heavy.uxdsl, as S-3 runs it. */
 function buildHeavy() {

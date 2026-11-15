@@ -14,7 +14,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { spawnSync } = require('node:child_process');
@@ -59,7 +59,7 @@ const BRANCHES = {
 };
 
 function mkProject(branch) {
-  const dir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), `uxdsl-init-${branch}-`)));
+  const dir = fs.realpathSync(temporaryDirectory(`uxdsl-init-${branch}-`));
   fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ name: `init-${branch}`, version: '0.0.0', private: true }, null, 2));
   for (const [file, content] of Object.entries(BRANCHES[branch].markers)) fs.writeFileSync(path.join(dir, file), content);
   return dir;

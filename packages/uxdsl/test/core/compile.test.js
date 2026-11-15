@@ -11,6 +11,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const os = require('node:os');
+const { temporaryDirectory } = require('../helpers/temporary-directory');
 const path = require('node:path');
 const core = require('../../dist/entries/index.js');
 
@@ -24,7 +25,7 @@ function write(dir, relPath, content) {
 }
 
 function mkTmpDir() {
-  return fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'uxdsl-core-test-')));
+  return fs.realpathSync(temporaryDirectory('uxdsl-core-test-'));
 }
 
 // --- CommonJS consumption contract ---
