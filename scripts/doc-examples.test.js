@@ -249,7 +249,7 @@ const SUBSET_CLAIMS = [
 const SUPERSET_STATEMENTS = [
   ['the Sass failure code UXD_SASS', (text) => /\bUXD_SASS\b/.test(text)],
   ['the plugin-alone code UXD_SASS_CONTEXT', (text) => /\bUXD_SASS_CONTEXT\b/.test(text)],
-  ['the link to compile.md\'s "Sass inside compile()" section', (text) => text.includes('/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile')],
+  ['the link to compile.md\'s "Sass inside compile()" section', (text) => text.includes('<a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`}')],
   ['the sentence "every SCSS file is a valid UXDSL file"', (text) => text.includes('every SCSS file is a valid UXDSL file')],
 ];
 function languagePageProblems(text, catalog) {
@@ -293,4 +293,18 @@ test('MIG-B9-16: /docs/language makes none of the subset\'s claims, names only c
   ]);
   // A catalogued code is not reported: UXD_DIRECTIVE_CONTEXT is in the passages above.
   assert.ok('UXD_DIRECTIVE_CONTEXT' in catalog());
+});
+
+test('MIG-B9-16: the language page checker needs an anchor to compile.md\'s Sass section and the bare UXD_SASS code (negative control)', () => {
+  const linkProblem = 'lacks the link to compile.md\'s "Sass inside compile()" section';
+  const sassProblem = 'lacks the Sass failure code UXD_SASS';
+  // The section's path in a constant that no anchor uses is not a link on the page.
+  const unlinked = 'const COMPILE_SASS_URL = `${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`\n'
+    + '<p>the compile() guide documents it</p>';
+  assert.ok(languagePageProblems(unlinked, catalog()).includes(linkProblem));
+  const linked = '<a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a>';
+  assert.ok(!languagePageProblems(linked, catalog()).includes(linkProblem));
+  // UXD_SASS_CONTEXT and UXD_SASS_WARNING do not name the Sass failure code.
+  assert.ok(languagePageProblems('<code>UXD_SASS_CONTEXT</code> and <code>UXD_SASS_WARNING</code>', catalog()).includes(sassProblem));
+  assert.ok(!languagePageProblems('<code>UXD_SASS</code>', catalog()).includes(sassProblem));
 });

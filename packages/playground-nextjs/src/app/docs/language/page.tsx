@@ -7,8 +7,6 @@ import { FUNCTIONS, DIRECTIVES, describe } from '@/lib/language-reference'
 
 export const metadata = { title: 'Language' }
 
-const COMPILE_SASS_URL = `${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`
-
 // The lists on this page come from LANGUAGE_COMPLETIONS and DIAGNOSTIC_CATALOG
 // (uxdsl/language): a construct or a code the compiler gains appears here by itself, and a
 // function or directive without a description fails the build (describe()).
@@ -146,7 +144,7 @@ export default function LanguagePage() {
         </p>
         <p>
           UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid UXDSL file, except in three cases that
-          the <a href={COMPILE_SASS_URL} target="_blank" rel="noopener noreferrer">compile() guide</a> documents: a{' '}
+          the <a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a> documents: a{' '}
           <code>$variable</code> Sass keeps as written fails as <code>UXD_SASS_CONTEXT</code>, text Sass prints that is not CSS
           fails as a parse error, and a project function named with the Sass stage’s internal prefix{' '}
           <code>uxdsl-probe-</code> can change the output.
@@ -160,11 +158,11 @@ $tones: (info: palette(info.main), danger: palette(error.main));
 }
 
 .alert {
-  @include pad($inline: density(3));
+  @include pad($inline: density(3));  /* var(--uxdsl__density__3) */
   @each $name, $tone in $tones {
     &--#{$name} { border-color: $tone; }
   }
-  &__title { color: map.get($tones, info); }  /* var(--uxdsl__palette__info-main) */
+  &__title { color: map.get($tones, info); }
 }`}</code></pre>
         <p>
           To Sass a token is a string, so a Sass function that needs a color or a number fails on one as{' '}
@@ -196,7 +194,7 @@ $tones: (info: palette(info.main), danger: palette(error.main));
         <p>
           How files are found and imported, what Dart Sass’s output looks like, functions named like UXDSL’s, and every error
           and warning of the Sass stage are in the{' '}
-          <a href={COMPILE_SASS_URL} target="_blank" rel="noopener noreferrer">compile() guide</a>.
+          <a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a>.
         </p>
 
         <h2 id="errors">Errors the language can raise</h2>
