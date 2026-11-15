@@ -28,11 +28,21 @@
 // runner, thread-loader) or runs in a child compiler, and in a compiler it has
 // not run in yet (a new process whose persistent cache restored every .uxdsl
 // module), it checks nothing: it never guesses.
+//
+// A compile that fails emits the warnings it produced, then adds, before it
+// reports the error: the files the module's last successful compile in the
+// same compiler added, the file the error names, and the discovered theme
+// file's require() tree. So the save that fixes the failure rebuilds the
+// module, a first build that failed included. The failed module writes no
+// theme flags, so the count above stays incomplete. The error webpack reports
+// is compile()'s message with the paths under `rootContext` made relative,
+// then the frame (Dart Sass's for UXD_SASS, PostCSS's for a UXDSL error), each
+// line indented two spaces, and no stack.
 import fs from 'fs';
 import path from 'path';
 import { compile, referencesThemeTokens, themeEmissionWarning } from './compile';
 import type { CompileConfig, CompileWarning, ThemeEmission } from './compile';
-import { removedOptionWarnings } from './config';
+import { collectLocalRequireTree, findThemeConfigPath, removedOptionWarnings } from './config';
 
 /** Loader options: the same theme options as the PostCSS plugin and the Vite
  * plugin, plus `sourceMap` (defaults to webpack's own `this.sourceMap`) and
@@ -93,6 +103,8 @@ const BUILD_INFO_KEY = 'uxdslTheme';
 const toldCompilations = new WeakSet<object>();
 /** Compilers whose every compilation counts the theme at finishModules. */
 const countingCompilers = new WeakSet<object>();
+/** Per compiler, each module's resource and the files its last successful compile added. */
+const lastGoodFiles = new WeakMap<object, Map<string, string[]>>();
 
 const realPaths = new Map<string, string>();
 function realPath(file: string): string {
@@ -156,10 +168,50 @@ function withAbsoluteSources(map: { sources: string[] }, resourcePath: string): 
   return { ...map, sources: map.sources.map((source) => (source.startsWith('<') ? source : path.resolve(dir, decodeURIComponent(source)))) };
 }
 
+// The discovered theme file and the local modules it requires, for a compile
+// that failed: compile() lists them only in a successful result. Empty when a
+// `theme` option or `discoverTheme: false` turns discovery off, or when no
+// theme file is found.
+function themeFiles(options: UxdslLoaderOptions, root: string): string[] {
+  if (options.theme !== undefined || options.discoverTheme === false) return [];
+  try {
+    const file = findThemeConfigPath(root);
+    return file ? [file, ...collectLocalRequireTree(file)] : [];
+  } catch {
+    return [];
+  }
+}
+
+const ANSI_RE = /\x1b\[[0-9;]*m/g;
+
+// The frame under a failed compile's message: Dart Sass's own for UXD_SASS,
+// PostCSS's (without color) for an error PostCSS raised, none otherwise.
+function errorFrame(err: unknown): string {
+  const error = err as { code?: unknown; sassFrame?: unknown; showSourceCode?: unknown } | null;
+  if (error && error.code === 'UXD_SASS' && typeof error.sassFrame === 'string' && error.sassFrame.trim()) return error.sassFrame;
+  if (error && typeof error.showSourceCode === 'function') return String(error.showSourceCode(false)).replace(ANSI_RE, '');
+  return '';
+}
+
+// The error webpack reports for a failed compile: the message with every path
+// under `root` relative to it, then the frame indented two spaces. Its stack is
+// that same text, since webpack prints a loader error's stack.
+function reportedError(err: unknown, root: string): Error {
+  const message = String((err as { message?: unknown } | null)?.message ?? err).split(`${root}${path.sep}`).join('');
+  const frame = errorFrame(err);
+  const text = frame ? `${message}\n${frame.split('\n').map((line) => `  ${line}`).join('\n')}` : message;
+  const reported = new Error(text);
+  reported.stack = text;
+  return reported;
+}
+
 async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
   const callback = this.async();
+  const compiler = this._compiler;
+  const lastGood = compiler ? lastGoodFiles.get(compiler) ?? lastGoodFiles.set(compiler, new Map()).get(compiler)! : undefined;
+  let options: UxdslLoaderOptions = {};
   try {
-    const options = this.getOptions() || {};
+    options = this.getOptions() || {};
     // Once per compilation (every module of it shares the options); once per
     // call where there is no compilation to remember.
     const compilation = this._compilation;
@@ -169,7 +221,6 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     }
     // The first module of the first compilation this loader runs in counts this
     // compilation and every later one of its compiler.
-    const compiler = this._compiler;
     if (compiler && compilation && !compiler.isChild() && !countingCompilers.has(compiler)) {
       countingCompilers.add(compiler);
       countThemeAtFinishModules(compilation);
@@ -214,6 +265,7 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     }
 
     for (const dep of dependencies) this.addDependency(dep);
+    lastGood?.set(this.resourcePath, dependencies);
     for (const warning of warnings) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
 
     // The loader contract wants a map *object*, not the JSON string
@@ -222,9 +274,18 @@ async function uxdslLoader(this: LoaderContext, source: string): Promise<void> {
     // type mismatch.
     callback(null, css, map ? withAbsoluteSources(JSON.parse(map), this.resourcePath) : undefined);
   } catch (err) {
-    // The warnings compile() produced before it failed come first.
+    // The warnings compile() produced before it failed come first. Then the
+    // files whose edit can fix it; the module writes no theme flags, so the
+    // compilation's theme count stays incomplete.
     for (const warning of (err as { warnings?: CompileWarning[] } | null)?.warnings ?? []) this.emitWarning(new Error(formatWarning(warning, this.rootContext)));
-    callback(err);
+    const errorFile = (err as { file?: unknown } | null)?.file;
+    const files = new Set([
+      ...(lastGood?.get(this.resourcePath) ?? []),
+      ...(typeof errorFile === 'string' && path.isAbsolute(errorFile) ? [errorFile] : []),
+      ...themeFiles(options, options.configRoot || this.rootContext),
+    ]);
+    for (const file of files) this.addDependency(file);
+    callback(reportedError(err, this.rootContext));
   }
 }
 
