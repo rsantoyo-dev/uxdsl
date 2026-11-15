@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { LANGUAGE_COMPLETIONS, DIAGNOSTIC_CATALOG } from 'uxdsl/language'
 import { DEFAULT_BREAKPOINTS } from 'uxdsl/theme'
 import { PageTitle } from '@/components/PageTitle'
+import { GITHUB_URL } from '@/lib/docs'
 import { FUNCTIONS, DIRECTIVES, describe } from '@/lib/language-reference'
 
 export const metadata = { title: 'Language' }
@@ -19,13 +20,19 @@ const languageCodes = Object.entries(DIAGNOSTIC_CATALOG as Record<string, { owne
 export default function LanguagePage() {
   return (
     <>
-      <PageTitle title="Language" subtitle="A .uxdsl file is CSS, plus token functions, breakpoint functions and four directives." />
+      <PageTitle title="Language" subtitle="A .uxdsl file is SCSS, plus token functions, breakpoint functions and four directives." />
       <div className="doc-section">
-        <h2 id="css">It is CSS</h2>
+        <h2 id="css">It is SCSS</h2>
         <p>
-          Anything that is not one of the constructs below passes through unchanged: selectors, properties, <code>calc()</code>,
-          <code>@media</code>, <code>@container</code>, <code>@layer</code>, and native nesting (<code>&amp;:hover</code>,
-          <code>.a {'{'} .b {'{'} {'}'} {'}'}</code>), which is forwarded to the browser as written, not flattened. Names are
+          Through <code>compile()</code>, which the CLI and the bundler adapters run, Dart Sass compiles a <code>.uxdsl</code>{' '}
+          file first, and UXDSL then resolves the constructs below in Sass’s output (<a href="#scss">Sass, then UXDSL</a>).
+          Anything else is Dart Sass’s output, which UXDSL leaves as it is: nested rules
+          come out flattened (<code>.a {'{'} &amp;:hover {'{'} {'}'} {'}'}</code> is <code>.a:hover</code>,{' '}
+          <code>.a {'{'} .b {'{'} {'}'} {'}'}</code> is <code>.a .b</code>), a <code>@media</code> nested in a rule moves out
+          around the rule, and values are written as Dart Sass writes them (<code>calc(1px + 2px)</code> is <code>3px</code>).
+          The PostCSS plugin used alone, <code>uxdsl/postcss</code>, passes what is not one of the constructs through unchanged:
+          selectors, properties, <code>calc()</code>, <code>@media</code>, <code>@container</code>, <code>@layer</code>, and
+          native nesting, forwarded to the browser as written. Names are
           case-insensitive (<code>Space(1)</code> compiles like <code>space(1)</code>). Every reference is checked against the
           effective theme when it is rewritten; an unknown one stops the build with a <code>UXD_*</code> code and a suggestion.
         </p>
@@ -76,10 +83,15 @@ export default function LanguagePage() {
 
         <h2 id="directives">Directives</h2>
         <p>
-          A directive applies a role from the theme to the rule it is written in. It must be a direct child of that rule — at the
-          root of a file, or inside <code>@media</code> under the rule, it is <code>UXD_DIRECTIVE_CONTEXT</code> — and it is not itself
-          responsive: put a responsive value on a property instead. Arguments are separated by spaces, the role first; a declaration
-          written after the directive wins over the role’s.
+          A directive applies a role from the theme to the rule it is written in, as a direct child of that rule; at the root of a
+          file it is <code>UXD_DIRECTIVE_CONTEXT</code>. Arguments are separated by spaces, the role first; a declaration written
+          after the directive wins over the role’s.
+        </p>
+        <p>
+          Inside <code>@media</code> or <code>@supports</code> under its rule, the two paths differ. Through{' '}
+          <code>compile()</code>, Dart Sass moves the at-rule out around the rule, and the directive applies to the rule inside
+          it. With <code>uxdsl/postcss</code> alone it is <code>UXD_DIRECTIVE_CONTEXT</code>. Otherwise a directive is not
+          itself responsive: put a responsive value on a property instead.
         </p>
         <div className="doc-section__table-wrap">
           <table>
@@ -95,6 +107,17 @@ export default function LanguagePage() {
 .save { @ds-button(contained success); border-radius: radius(pill); }
 .cta { @ds-button(contained); @ds-button(outlined); }  /* UXD_DIRECTIVE_DUPLICATE: one control directive per rule */
 .panel { @ds-surface(glass); }  /* UXD_SURFACE_REFERENCE: the role is not in the theme */`}</code></pre>
+        <p>
+          Through <code>compile()</code>, this panel takes the contained role from {DEFAULT_BREAKPOINTS.md}px, the base theme’s{' '}
+          <code>md</code>, and the flat role below it:
+        </p>
+        <pre><code className="language-scss">{`.panel {
+  @ds-surface(flat);
+  @media (min-width: 768px) { @ds-surface(contained); }
+}`}</code></pre>
+        <p>The same directive with the PostCSS plugin alone, and a directive at the root of a file on either path:</p>
+        <pre><code className="language-css">{`.panel { @media (min-width: 768px) { @ds-surface(contained); } }  /* UXD_DIRECTIVE_CONTEXT: with the plugin alone */
+@ds-surface(contained);  /* UXD_DIRECTIVE_CONTEXT: at the root of a file */`}</code></pre>
 
         <h2 id="theme-marker"><code>@uxdsl theme;</code></h2>
         <p>
@@ -107,32 +130,72 @@ export default function LanguagePage() {
           <Link href="/docs/quick-start">quick start</Link>.
         </p>
 
-        <h2 id="scss">The SCSS-style subset</h2>
-        <p>The CLI, the Vite plugin and the Webpack loader read <code>.uxdsl</code> with this subset of Sass, and only this. The standalone PostCSS plugin reads plain CSS with <code>$variables</code> at the root of a file.</p>
-        <div className="doc-section__table-wrap">
-          <table>
-            <thead><tr><th>Supported</th><th>Notes</th></tr></thead>
-            <tbody>
-              <tr><td><code>$variables</code></td><td>At the root or in a block (block scope), <code>!default</code>, <code>#{'{$x}'}</code> in a selector, value or media query</td></tr>
-              <tr><td><code>@if</code> / <code>@else</code></td><td>No <code>@else if</code></td></tr>
-              <tr><td><code>@each $x in a, b</code></td><td>Lists only: no maps</td></tr>
-              <tr><td><code>@for $i from 1 through 3</code></td><td></td></tr>
-              <tr><td><code>@mixin</code> / <code>@include</code> / <code>@content</code></td><td>Positional arguments and defaults; an argument may be a token function or a responsive value. No keyword or variadic arguments</td></tr>
-              <tr><td><code>@import &quot;./partial&quot;</code></td><td>A path, with or without the <code>_partial</code> convention</td></tr>
-              <tr><td><code>{'//'}</code> comments</td><td>Removed from the output</td></tr>
-            </tbody>
-          </table>
-        </div>
+        <h2 id="scss">Sass, then UXDSL</h2>
         <p>
-          Anything else Sass has fails with a located error naming what to write instead: <code>@extend</code>, <code>@use</code>,
-          <code>@function</code>, Sass color and math functions and arithmetic outside <code>calc()</code> are <code>UXD_SCSS_UNSUPPORTED</code>;
-          <code>&amp;__item</code> (concatenating the parent selector, which native nesting cannot do) is <code>UXD_NESTING_INVALID</code>.
+          <code>uxdsl build</code>, <code>uxdsl/vite</code> and <code>uxdsl/webpack</code> compile a <code>.uxdsl</code> file
+          with <code>compile()</code>. Dart Sass compiles it first, all of SCSS as Dart Sass defines it: <code>@use</code> and{' '}
+          <code>@forward</code>, <code>@mixin</code>/<code>@include</code> with keyword and variadic arguments and{' '}
+          <code>@content</code>, <code>@function</code>, maps and lists, <code>@if</code>/<code>@else if</code>/<code>@each</code>/
+          <code>@for</code>/<code>@while</code>, <code>@extend</code> with <code>%placeholder</code>, the <code>sass:</code>{' '}
+          modules, nesting and <code>&amp;</code>. UXDSL then resolves its own words in Sass’s output, so a token can be a
+          variable’s or a map’s value, a mixin argument, or what <code>@each</code> and <code>@if</code> pick.{' '}
+          <code>@import</code> of a partial still loads it, with Dart Sass’s <code>[import]</code> deprecation as{' '}
+          <code>UXD_SASS_WARNING</code>; <code>@use</code> does not warn.
         </p>
+        <p>
+          UXDSL is to SCSS what TypeScript is to JavaScript: every SCSS file is a valid UXDSL file, except in three cases that
+          the <a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a> documents: a{' '}
+          <code>$variable</code> Sass keeps as written fails as <code>UXD_SASS_CONTEXT</code>, text Sass prints that is not CSS
+          fails as a parse error, and a project function named with the Sass stage’s internal prefix{' '}
+          <code>uxdsl-probe-</code> can change the output.
+        </p>
+        <pre><code className="language-scss">{`@use 'sass:map';
+
+$tones: (info: palette(info.main), danger: palette(error.main));
+
+@mixin pad($block: space(2), $inline: space(4)) {
+  padding: $block $inline;
+}
+
+.alert {
+  @include pad($inline: density(3));  /* var(--uxdsl__density__3) */
+  @each $name, $tone in $tones {
+    &--#{$name} { border-color: $tone; }
+  }
+  &__title { color: map.get($tones, info); }
+}`}</code></pre>
+        <p>
+          To Sass a token is a string, so a Sass function that needs a color or a number fails on one as{' '}
+          <code>UXD_SASS</code>. Write the operation in CSS instead: a Palette alpha such as{' '}
+          <code>palette(primary.main, 0.5)</code>, <code>color-mix()</code> or <code>calc()</code>.
+        </p>
+        <pre><code className="language-scss">{`.badge {
+  background: palette(primary.main, 0.15);
+  border-color: color-mix(in srgb, palette(primary.main) 70%, black);
+  padding: calc(space(2) / 2);
+  color: darken(palette(primary.main), 10%);  /* UXD_SASS: a token is a string to Sass, not a color */
+}`}</code></pre>
+        <p>
+          The PostCSS plugin used alone, <code>uxdsl/postcss</code>, compiles CSS plus UXDSL and no Sass. A Sass construct
+          reaching it fails as <code>UXD_SASS_CONTEXT</code>, naming the fix: name the file <code>.uxdsl</code> and compile it
+          with <code>uxdsl build</code>, <code>compile()</code> or an adapter. A few forms the guide lists fail earlier, as
+          PostCSS’s own <code>Unknown word</code>. Native nesting passes:
+        </p>
+        <pre><code className="language-css">{`.card { padding: density(2); }
+.card { &:hover { color: palette(primary.main); } }
+.card { &__title { color: palette(primary.main); } }  /* UXD_SASS_CONTEXT: an &-suffix selector is Sass */
+.card { gap: $gap; }  /* UXD_SASS_CONTEXT: a $variable is Sass */`}</code></pre>
+        <p>Through <code>compile()</code>, a Sass variable can also carry a directive’s argument:</p>
         <pre><code className="language-scss">{`$tones: primary, success;
 @mixin pad($size) { padding: $size; }
 @each $tone in $tones {
   .tag--#{$tone} { @ds-surface(contained #{$tone}); @include pad(density(2)); }
 }`}</code></pre>
+        <p>
+          How files are found and imported, what Dart Sass’s output looks like, functions named like UXDSL’s, and every error
+          and warning of the Sass stage are in the{' '}
+          <a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a>.
+        </p>
 
         <h2 id="errors">Errors the language can raise</h2>
         <p>Read from <code>DIAGNOSTIC_CATALOG</code>; what to do about each one is on <Link href="/docs/diagnostics">Diagnostics</Link>.</p>

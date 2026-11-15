@@ -217,3 +217,94 @@ test('MIG-B9-15: the READMEs and AGENTS.md make neither retired claim (negative 
   assert.deepEqual(matches("UXDSL is MUI for CSS, built on Material UI's engine.", POSITIONING_SLIPS), ['is MUI', "Material UI's engine"]);
   assert.deepEqual(matches("SCSS plus a design-system engine inspired by Material UI's theme engine.", POSITIONING_SLIPS), []);
 });
+
+// --- 5. the /docs/language page --------------------------------------------
+
+test('MIG-B9-16: an example that documents a code of the deleted subset fails the harness (negative control)', async () => {
+  // Through compile() the construct the subset refused compiles, so the documented error never happens.
+  const scss = await runExample({ lang: 'scss', code: '@use "sass:math";\n.a { padding: space(2); width: math.div(10px, 2); }  /* UXD_SCSS_UNSUPPORTED */', theme: null });
+  assert.deepEqual(scss, ['line 2 is documented as UXD_SCSS_UNSUPPORTED but the example compiles']);
+  // With the plugin alone, an &-suffix selector is Sass, which is not the retired code.
+  const css = await runExample({ lang: 'css', code: '.card { &__item { color: palette(primary.main); } }  /* UXD_NESTING_INVALID */', theme: null });
+  assert.equal(css.length, 1, JSON.stringify(css));
+  assert.match(css[0], /documented as UXD_NESTING_INVALID but fails with UXD_SASS_CONTEXT/);
+});
+
+// The language page says what a .uxdsl file is: SCSS, compiled by Dart Sass, then UXDSL's
+// words. Its checker reports each claim of the deleted subset still on the page, each code
+// the catalog lacks, and each statement or link of the superset the page does not carry.
+const LANGUAGE_PAGE = 'packages/playground-nextjs/src/app/docs/language/page.tsx';
+const SUBSET_CLAIMS = [
+  'which is forwarded to the browser as written, not flattened',
+  'The SCSS-style subset',
+  'with this subset of Sass, and only this',
+  'reads plain CSS with <code>$variables</code>',
+  'No <code>@else if</code>',
+  'Lists only: no maps',
+  'No keyword or variadic arguments',
+  'A .uxdsl file is CSS',
+  '<h2 id="css">It is CSS</h2>',
+  'or inside <code>@media</code> under the rule, it is',
+];
+const SUPERSET_STATEMENTS = [
+  ['the Sass failure code UXD_SASS', (text) => /\bUXD_SASS\b/.test(text)],
+  ['the plugin-alone code UXD_SASS_CONTEXT', (text) => /\bUXD_SASS_CONTEXT\b/.test(text)],
+  ['the link to compile.md\'s "Sass inside compile()" section', (text) => text.includes('<a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`}')],
+  ['the sentence "every SCSS file is a valid UXDSL file"', (text) => text.includes('every SCSS file is a valid UXDSL file')],
+];
+function languagePageProblems(text, catalog) {
+  const problems = SUBSET_CLAIMS.filter((claim) => text.includes(claim)).map((claim) => `makes a claim of the deleted subset: ${claim}`);
+  const codes = [...new Set(text.match(/\bUXD_[A-Z0-9_]+/g) || [])];
+  for (const code of codes.filter((name) => !(name in catalog))) problems.push(`names ${code}, which DIAGNOSTIC_CATALOG does not have`);
+  for (const [what, holds] of SUPERSET_STATEMENTS) if (!holds(text)) problems.push(`lacks ${what}`);
+  return problems;
+}
+const catalog = () => require(path.join(ROOT, 'packages/uxdsl/dist/entries/language.js')).DIAGNOSTIC_CATALOG;
+
+test('MIG-B9-16: /docs/language makes none of the subset\'s claims, names only catalogued codes and links compile.md\'s Sass section', () => {
+  assert.deepEqual(languagePageProblems(fs.readFileSync(path.join(ROOT, LANGUAGE_PAGE), 'utf8'), catalog()), []);
+});
+
+test('MIG-B9-16: /docs/language makes none of the subset\'s claims, names only catalogued codes and links compile.md\'s Sass section (negative control)', () => {
+  // The page's passages as they stood before the superset, verbatim.
+  const before = `
+      <PageTitle title="Language" subtitle="A .uxdsl file is CSS, plus token functions, breakpoint functions and four directives." />
+        <h2 id="css">It is CSS</h2>
+          Anything that is not one of the constructs below passes through unchanged: selectors, properties, <code>calc()</code>,
+          <code>@media</code>, <code>@container</code>, <code>@layer</code>, and native nesting (<code>&amp;:hover</code>,
+          <code>.a {'{'} .b {'{'} {'}'} {'}'}</code>), which is forwarded to the browser as written, not flattened. Names are
+          A directive applies a role from the theme to the rule it is written in. It must be a direct child of that rule — at the
+          root of a file, or inside <code>@media</code> under the rule, it is <code>UXD_DIRECTIVE_CONTEXT</code> — and it is not itself
+        <h2 id="scss">The SCSS-style subset</h2>
+        <p>The CLI, the Vite plugin and the Webpack loader read <code>.uxdsl</code> with this subset of Sass, and only this. The standalone PostCSS plugin reads plain CSS with <code>$variables</code> at the root of a file.</p>
+              <tr><td><code>@if</code> / <code>@else</code></td><td>No <code>@else if</code></td></tr>
+              <tr><td><code>@each $x in a, b</code></td><td>Lists only: no maps</td></tr>
+              <tr><td><code>@for $i from 1 through 3</code></td><td></td></tr>
+              <tr><td><code>@mixin</code> / <code>@include</code> / <code>@content</code></td><td>Positional arguments and defaults; an argument may be a token function or a responsive value. No keyword or variadic arguments</td></tr>
+          Anything else Sass has fails with a located error naming what to write instead: <code>@extend</code>, <code>@use</code>,
+          <code>@function</code>, Sass color and math functions and arithmetic outside <code>calc()</code> are <code>UXD_SCSS_UNSUPPORTED</code>;
+          <code>&amp;__item</code> (concatenating the parent selector, which native nesting cannot do) is <code>UXD_NESTING_INVALID</code>.
+`;
+  assert.deepEqual(languagePageProblems(before, catalog()), [
+    ...SUBSET_CLAIMS.map((claim) => `makes a claim of the deleted subset: ${claim}`),
+    'names UXD_SCSS_UNSUPPORTED, which DIAGNOSTIC_CATALOG does not have',
+    'names UXD_NESTING_INVALID, which DIAGNOSTIC_CATALOG does not have',
+    ...SUPERSET_STATEMENTS.map(([what]) => `lacks ${what}`),
+  ]);
+  // A catalogued code is not reported: UXD_DIRECTIVE_CONTEXT is in the passages above.
+  assert.ok('UXD_DIRECTIVE_CONTEXT' in catalog());
+});
+
+test('MIG-B9-16: the language page checker needs an anchor to compile.md\'s Sass section and the bare UXD_SASS code (negative control)', () => {
+  const linkProblem = 'lacks the link to compile.md\'s "Sass inside compile()" section';
+  const sassProblem = 'lacks the Sass failure code UXD_SASS';
+  // The section's path in a constant that no anchor uses is not a link on the page.
+  const unlinked = 'const COMPILE_SASS_URL = `${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`\n'
+    + '<p>the compile() guide documents it</p>';
+  assert.ok(languagePageProblems(unlinked, catalog()).includes(linkProblem));
+  const linked = '<a href={`${GITHUB_URL}/blob/main/packages/uxdsl/docs/integrations/compile.md#sass-inside-compile`} target="_blank" rel="noopener noreferrer">compile() guide</a>';
+  assert.ok(!languagePageProblems(linked, catalog()).includes(linkProblem));
+  // UXD_SASS_CONTEXT and UXD_SASS_WARNING do not name the Sass failure code.
+  assert.ok(languagePageProblems('<code>UXD_SASS_CONTEXT</code> and <code>UXD_SASS_WARNING</code>', catalog()).includes(sassProblem));
+  assert.ok(!languagePageProblems('<code>UXD_SASS</code>', catalog()).includes(sassProblem));
+});

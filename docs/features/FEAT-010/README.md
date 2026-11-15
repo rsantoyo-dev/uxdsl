@@ -204,7 +204,7 @@ its wave can run in parallel with its siblings, within §7.
 | MIG-B9-20 | [The theme is written where `@uxdsl theme;` is](MIG-B9-20-theme-at-marker-only.md) | 2 | DEC-06 | M | 14 | Merged (PR #88) |
 | MIG-B9-21 | [Delete what repeats](MIG-B9-21-delete-what-repeats.md) | 2 | — | M | 13, 20 | In review (PR #92) |
 | MIG-B9-22 | [`build --watch` keeps the entry; the playground drops its own generator](MIG-B9-22-watch-keeps-the-entry.md) | 2 | — | M | 14 | Merged (PR #76) |
-| MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | Ready |
+| MIG-B9-16 | [The playground's `/docs/language` page on the superset](MIG-B9-16-language-page-superset.md) | 2 | DEC-01 | S | 15 | In review (PR #93) |
 | MIG-B9-23 | [`compile()` within 1.5× of Dart Sass, wherever the project is](MIG-B9-23-compile-within-budget.md) | 2 | — | S | 13 | Merged (PR #75) |
 | MIG-B9-25 | [The test suites remove the temporary directories they create](MIG-B9-25-suites-remove-temp-dirs.md) | 2 | — | S | 13 | Ready |
 | MIG-B9-26 | [Dotted near-misses keep DEC-02's "did you mean" through `compile()`; Sass's `@debug` reaches the build as a warning](MIG-B9-26-near-misses-debug-isolation.md) | 2 | DEC-02 | S | 14, 21 | Ready |
